@@ -81,9 +81,8 @@ namespace Echoes.Tests.EditMode
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_Hero_Warrior.prefab");
             Assert.IsNotNull(prefab, "rode Echoes/Montar prefabs de personagens");
-            var animator = prefab.GetComponent<Animator>();
+            var animator = prefab.GetComponentInChildren<Animator>();
             Assert.IsNotNull(animator, "Animator preparado");
-            Assert.IsNull(animator.runtimeAnimatorController, "sem controlador ate a etapa de animacao");
             Assert.IsTrue(animator.avatar != null && animator.avatar.isHuman, "avatar Humanoid");
             var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Characters/M_Warrior.mat");
             Assert.IsNotNull(material);

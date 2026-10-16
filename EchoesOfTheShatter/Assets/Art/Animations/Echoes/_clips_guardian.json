@@ -1,0 +1,72 @@
+[
+ {
+  "name": "AN_Guardian_Roar",
+  "file": "AN_Guardian_Roar.fbx",
+  "frames": 60,
+  "seconds": 2.0,
+  "loop": false,
+  "events": {
+   "summon_marks": 30,
+   "slam": 48
+  },
+  "note": "Rugido 2,0 s; apice com bracos abertos em 24-42; Sentinelas em 1,0 s (quadro 30)",
+  "preview": [
+   "AN_Guardian_Roar_f000.png",
+   "AN_Guardian_Roar_f008.png",
+   "AN_Guardian_Roar_f024.png",
+   "AN_Guardian_Roar_f036.png",
+   "AN_Guardian_Roar_f048.png",
+   "AN_Guardian_Roar_f056.png"
+  ]
+ },
+ {
+  "name": "AN_Guardian_ShieldCharge_Windup",
+  "file": "AN_Guardian_ShieldCharge_Windup.fbx",
+  "frames": 27,
+  "seconds": 0.9,
+  "loop": false,
+  "events": {},
+  "note": "Preparacao 0,9 s (27 quadros)",
+  "preview": [
+   "AN_Guardian_ShieldCharge_Windup_f000.png",
+   "AN_Guardian_ShieldCharge_Windup_f005.png",
+   "AN_Guardian_ShieldCharge_Windup_f012.png",
+   "AN_Guardian_ShieldCharge_Windup_f018.png",
+   "AN_Guardian_ShieldCharge_Windup_f021.png",
+   "AN_Guardian_ShieldCharge_Windup_f027.png"
+  ]
+ },
+ {
+  "name": "AN_Guardian_ShieldCharge_Run",
+  "file": "AN_Guardian_ShieldCharge_Run.fbx",
+  "frames": 18,
+  "seconds": 0.6,
+  "loop": true,
+  "events": {},
+  "note": "Corrida em loop, ciclo 0,6 s",
+  "preview": [
+   "AN_Guardian_ShieldCharge_Run_f000.png",
+   "AN_Guardian_ShieldCharge_Run_f004.png",
+   "AN_Guardian_ShieldCharge_Run_f008.png",
+   "AN_Guardian_ShieldCharge_Run_f012.png",
+   "AN_Guardian_ShieldCharge_Run_f016.png"
+  ]
+ },
+ {
+  "name": "AN_Guardian_ShieldCharge_Recover",
+  "file": "AN_Guardian_ShieldCharge_Recover.fbx",
+  "frames": 30,
+  "seconds": 1.0,
+  "loop": false,
+  "events": {},
+  "note": "Recuperacao 1,0 s (30 quadros)",
+  "preview": [
+   "AN_Guardian_ShieldCharge_Recover_f000.png",
+   "AN_Guardian_ShieldCharge_Recover_f006.png",
+   "AN_Guardian_ShieldCharge_Recover_f012.png",
+   "AN_Guardian_ShieldCharge_Recover_f016.png",
+   "AN_Guardian_ShieldCharge_Recover_f022.png",
+   "AN_Guardian_ShieldCharge_Recover_f030.png"
+  ]
+ }
+]

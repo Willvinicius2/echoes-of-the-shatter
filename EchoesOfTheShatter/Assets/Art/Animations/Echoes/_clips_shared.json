@@ -1,0 +1,17 @@
+[
+ {
+  "name": "AN_Shared_Stun",
+  "file": "AN_Shared_Stun.fbx",
+  "frames": 24,
+  "seconds": 0.8,
+  "loop": true,
+  "events": {},
+  "note": "Stun 0,8 s, loop",
+  "preview": [
+   "AN_Shared_Stun_f000.png",
+   "AN_Shared_Stun_f006.png",
+   "AN_Shared_Stun_f012.png",
+   "AN_Shared_Stun_f018.png"
+  ]
+ }
+]

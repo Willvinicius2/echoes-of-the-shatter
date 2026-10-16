@@ -186,6 +186,7 @@ namespace Echoes.EditorTools
             SetRef(inputHandler, "actions", inputActions);
             SetBool(inputHandler, "loadSavedBindings", true);
             var heroPresentation = hero.AddComponent<PresentationController>();
+            hero.AddComponent<ImpactSquash>();
             SetRef(heroPresentation, "root", gameRoot);
             SetRef(heroPresentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.WarriorSkillSetPath));
             SetRef(heroController, "combatHost", combatHost);
@@ -501,6 +502,7 @@ namespace Echoes.EditorTools
             SetInt(controller, "level", level);
             if (boss) SetFloat(controller, "bodyRadius", 1f);
             var presentation = go.AddComponent<PresentationController>();
+            go.AddComponent<ImpactSquash>();
             SetRef(presentation, "root", gameRoot);
             var skillSetPath = AnimatorControllerBuilder.SkillSetPathFor(enemyId);
             if (skillSetPath != null) SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(skillSetPath));

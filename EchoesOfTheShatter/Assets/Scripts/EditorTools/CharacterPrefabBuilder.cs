@@ -49,7 +49,7 @@ namespace Echoes.EditorTools
             { "enemy.hollow_sentinel", new Spec { Folder = "HollowSentinel", Model = "SK_Enemy_HollowSentinel", Textures = "T_Enemy_HollowSentinel", Prefab = "P_Enemy_HollowSentinel", Material = "M_Enemy_HollowSentinel", Controller = "AC_EnemyHumanoid" } },
             { "enemy.shielded_sentinel", null },
             { "enemy.stone_herald", new Spec { Folder = "StoneHerald", Model = "SK_Enemy_StoneHerald", Textures = "T_Enemy_StoneHerald", Prefab = "P_Enemy_StoneHerald", Material = "M_Enemy_StoneHerald", Controller = "AC_EnemyHumanoid" } },
-            { "enemy.ghost_archer", new Spec { Folder = "GhostArcher", Model = "SK_Enemy_GhostArcher", Textures = "T_Enemy_GhostArcher", Prefab = "P_Enemy_GhostArcher", Material = "M_Enemy_GhostArcher" } },
+            { "enemy.ghost_archer", new Spec { Folder = "GhostArcher", Model = "SK_Enemy_GhostArcher", Textures = "T_Enemy_GhostArcher", Prefab = "P_Enemy_GhostArcher", Material = "M_Enemy_GhostArcher", Controller = "AC_GhostArcher" } },
             {
                 "enemy.crypt_guardian", new Spec
                 {
@@ -75,8 +75,9 @@ namespace Echoes.EditorTools
             }
             AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.Warrior, warrior);
             AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.EnemyHumanoid, sentinel);
+            AnimatorControllerBuilder.BuildArcherSkillSet();
             var bossSet = AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.Boss, boss);
-            bossSet.roarClipSeconds = KayKitAnimationImport.FindClip(AnimatorControllerBuilder.Boss.Actions.Find(a => a.State == "Roar").Fbx, "Flexing").length;
+            bossSet.roarClipSeconds = EchoesAnimationImport.Clip(EchoesAnimationImport.RoarName).length;
             EditorUtility.SetDirty(bossSet);
             AssetDatabase.SaveAssets();
         }
@@ -124,6 +125,28 @@ namespace Echoes.EditorTools
                 smr.updateWhenOffscreen = false;
             }
             foreach (var weapon in spec.Weapons) AttachWeapon(instance.transform, weapon);
+            // Generic (Espectro): os clipes do Blender usam caminhos a partir do osso "root"; o Animator fica no objeto que contem esse osso
+            // (a armature), senao os caminhos nao casam e o clipe nao anima nada.
+            var animatorHost = instance;
+            if (spec.Prefab == "P_Enemy_GhostArcher")
+            {
+                var rootBone = FindDeep(instance.transform, "root");
+                if (rootBone != null && rootBone.parent != null && rootBone.parent != instance.transform)
+                {
+                    var runtimeController = animator.runtimeAnimatorController;
+                    var avatar = animator.avatar;
+                    UnityEngine.Object.DestroyImmediate(animator);
+                    animatorHost = rootBone.parent.gameObject;
+                    animator = animatorHost.GetComponent<Animator>();
+                    if (animator == null) animator = animatorHost.AddComponent<Animator>();
+                    animator.applyRootMotion = false;
+                    animator.runtimeAnimatorController = runtimeController;
+                    animator.avatar = avatar;
+                }
+            }
+            // Eventos de clipe (release do Espectro, rugido do Guardiao) chegam ao PresentationController pelo relay (no objeto do Animator).
+            if (spec.Controller != null && animatorHost.GetComponent<AnimationEventRelay>() == null) animatorHost.AddComponent<AnimationEventRelay>();
+            if (spec.Prefab == "P_Enemy_GhostArcher" && instance.GetComponent<SpectralSway>() == null) instance.AddComponent<SpectralSway>();
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(instance, $"{PrefabDir}/{spec.Prefab}.prefab");
             UnityEngine.Object.DestroyImmediate(instance);

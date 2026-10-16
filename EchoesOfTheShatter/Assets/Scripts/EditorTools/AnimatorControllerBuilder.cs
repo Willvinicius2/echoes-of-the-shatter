@@ -33,6 +33,7 @@ namespace Echoes.EditorTools
             public string SkillId;    // vazio = sem habilidade (esquiva, rugido)
             public bool Placeholder;  // o KayKit nao tem o clipe certo
             public string Note;
+            public bool Hold;         // sem saida automatica para Empty (laco ou fase que o core encerra)
         }
 
         public sealed class ControllerSpec
@@ -42,8 +43,7 @@ namespace Echoes.EditorTools
             public string Rig;                // "Medium" ou "Large"
             public string SpeedSourceId;      // id em class_stats.csv (heroi) ou enemies.csv
             public bool Hero;
-            public string HitClip, DeathClip, StunClip;
-            public bool StunPlaceholder;
+            public string HitClip, DeathClip;
             public List<ActionSpec> Actions = new List<ActionSpec>();
         }
 
@@ -53,7 +53,7 @@ namespace Echoes.EditorTools
         public static readonly ControllerSpec Warrior = new ControllerSpec
         {
             Name = "AC_Warrior", SkillSet = "SO_SkillPresentation_Warrior", Rig = "Medium", SpeedSourceId = "class.warrior", Hero = true,
-            HitClip = "Hit_A", DeathClip = "Death_A", StunClip = "Hit_B", StunPlaceholder = true,
+            HitClip = "Hit_A", DeathClip = "Death_A",
             Actions =
             {
                 new ActionSpec { State = "Basic", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Slice_Horizontal", SkillId = "skill.warrior.iron_cut" },
@@ -67,7 +67,7 @@ namespace Echoes.EditorTools
         public static readonly ControllerSpec EnemyHumanoid = new ControllerSpec
         {
             Name = "AC_EnemyHumanoid", SkillSet = "SO_SkillPresentation_EnemyHumanoid", Rig = "Medium", SpeedSourceId = "enemy.hollow_sentinel", Hero = false,
-            HitClip = "Hit_A", DeathClip = "Death_B", StunClip = "Hit_B", StunPlaceholder = true,
+            HitClip = "Hit_A", DeathClip = "Death_B",
             Actions =
             {
                 new ActionSpec { State = "Strike", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Chop", SkillId = "skill.enemy.sentinel_strike" },
@@ -78,13 +78,16 @@ namespace Echoes.EditorTools
         public static readonly ControllerSpec Boss = new ControllerSpec
         {
             Name = "AC_Boss", SkillSet = "SO_SkillPresentation_Boss", Rig = "Large", SpeedSourceId = "enemy.crypt_guardian", Hero = false,
-            HitClip = "Hit_A", DeathClip = "Death_A", StunClip = "Hit_A", StunPlaceholder = true,
+            HitClip = "Hit_A", DeathClip = "Death_A",
             Actions =
             {
                 new ActionSpec { State = "Hammer", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Chop", SkillId = "skill.enemy.guardian_hammer", Note = "O Melee_2H_Slam do rig grande mergulha o corpo na horizontal (clipe de bruto curvado); o chop do rig medio, retargetado, mantem o chefe em pe" },
                 new ActionSpec { State = "ShieldBash", Fbx = Large("CombatMelee"), Clip = "Melee_Block_Attack", SkillId = "skill.enemy.guardian_shield_bash" },
-                new ActionSpec { State = "Charge", Fbx = Large("MovementBasic"), Clip = "Running_A", SkillId = "skill.enemy.guardian_shield_charge", Placeholder = true, Note = "Investida do Escudo: o rig grande nao tem avanco com escudo" },
-                new ActionSpec { State = "Roar", Fbx = Large("Simulation"), Clip = "Flexing", SkillId = "", Placeholder = true, Note = "Rugido de fase: nao ha rugido no KayKit" },
+                // Investida do Escudo (fase 2): preparacao, corrida em laco e recuperacao, cada uma com o seu clipe (golpes do Blender).
+                new ActionSpec { State = "ChargeWindup", Fbx = EchoesAnimationImport.PathOf(EchoesAnimationImport.ChargeWindupName), Clip = EchoesAnimationImport.ChargeWindupName, SkillId = "", Hold = true },
+                new ActionSpec { State = "ChargeRun", Fbx = EchoesAnimationImport.PathOf(EchoesAnimationImport.ChargeRunName), Clip = EchoesAnimationImport.ChargeRunName, SkillId = "", Hold = true },
+                new ActionSpec { State = "ChargeRecover", Fbx = EchoesAnimationImport.PathOf(EchoesAnimationImport.ChargeRecoverName), Clip = EchoesAnimationImport.ChargeRecoverName, SkillId = "" },
+                new ActionSpec { State = "Roar", Fbx = EchoesAnimationImport.PathOf(EchoesAnimationImport.RoarName), Clip = EchoesAnimationImport.RoarName, SkillId = "" },
             },
         };
 
@@ -97,9 +100,11 @@ namespace Echoes.EditorTools
         public static void BuildAll()
         {
             KayKitAnimationImport.Apply();
+            EchoesAnimationImport.Apply();
             SandboxBuilder.EnsureDir(ControllerDir);
             PlaceholderReport.Clear();
             foreach (var spec in All) BuildController(spec);
+            BuildArcherController();
             AssetDatabase.SaveAssets();
         }
 
@@ -151,12 +156,7 @@ namespace Echoes.EditorTools
             var death = sm.AddState("Death");
             death.motion = Clip(general, spec.DeathClip);
             var stun = sm.AddState("Stun");
-            stun.motion = Clip(general, spec.StunClip);
-            if (spec.StunPlaceholder)
-            {
-                stun.tag = PlaceholderTag;
-                PlaceholderReport.Add($"{spec.Name}/Stun");
-            }
+            stun.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.StunName); // clipe do Blender (Humanoid, serve a todos)
 
             var toDeath = sm.AddAnyStateTransition(death);
             toDeath.AddCondition(AnimatorConditionMode.If, 0f, "IsDead");
@@ -200,6 +200,7 @@ namespace Echoes.EditorTools
                     state.tag = PlaceholderTag;
                     PlaceholderReport.Add($"{spec.Name}/{action.State}");
                 }
+                if (action.Hold) continue;
                 var back = state.AddTransition(empty);
                 back.hasExitTime = true;
                 back.exitTime = 1f;
@@ -275,6 +276,112 @@ namespace Echoes.EditorTools
             {
                 UnityEngine.Object.DestroyImmediate(instance);
             }
+            if (spec == Boss)
+            {
+                // Investida do Escudo: tres estados, cada um com o clipe e a duracao autoral; o core manda as fases (preparacao, impacto, recuperacao).
+                set.entries.Add(new SkillPresentationEntry
+                {
+                    skillId = "skill.enemy.guardian_shield_charge", animatorState = "ChargeWindup", clipSeconds = EchoesAnimationImport.Spec(EchoesAnimationImport.ChargeWindupName).Seconds,
+                    windupState = "ChargeWindup", windupClipSeconds = EchoesAnimationImport.Spec(EchoesAnimationImport.ChargeWindupName).Seconds,
+                    impactState = "ChargeRun",
+                    recoveryState = "ChargeRecover", recoveryClipSeconds = EchoesAnimationImport.Spec(EchoesAnimationImport.ChargeRecoverName).Seconds,
+                    windupEnd = 1f, impactEnd = 1f, anchor = "socket_weapon_r",
+                });
+            }
+            set.dodgeState = "Dodge";
+            EditorUtility.SetDirty(set);
+            return set;
+        }
+
+        // ============================================================================================== Arqueiro Espectral (Generic)
+
+        public const string ArcherControllerName = "AC_GhostArcher";
+        public const string ArcherSkillSetName = "SO_SkillPresentation_GhostArcher";
+        public const string ArcherSkillId = "skill.enemy.ghost_arrow";
+
+        /// <summary>
+        /// AC_GhostArcher (Generic; golpes do Blender): Base com Idle e Glide (blend pela velocidade) e Death (IsDead), camada Action com Shoot
+        /// (velocidade do clipe em ActionSpeed) e camada Hit. O disparo sai no quadro 20 (evento "release"), que o PresentationController casa com o impacto do core.
+        /// </summary>
+        public static AnimatorController BuildArcherController()
+        {
+            var path = ControllerPath(ArcherControllerName);
+            if (File.Exists(Path.GetFullPath(Path.Combine(Application.dataPath, "../" + path)))) AssetDatabase.DeleteAsset(path);
+            var c = AnimatorController.CreateAnimatorControllerAtPath(path);
+            c.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            c.AddParameter(new AnimatorControllerParameter { name = "ActionSpeed", type = AnimatorControllerParameterType.Float, defaultFloat = 1f });
+            c.AddParameter("IsDead", AnimatorControllerParameterType.Bool);
+
+            var sm = c.layers[0].stateMachine;
+            var tree = new BlendTree { name = "Locomotion", blendType = BlendTreeType.Simple1D, blendParameter = "Speed", useAutomaticThresholds = false };
+            AssetDatabase.AddObjectToAsset(tree, c);
+            tree.AddChild(EchoesAnimationImport.Clip("AN_GhostArcher_Idle"), 0f);
+            tree.AddChild(EchoesAnimationImport.Clip("AN_GhostArcher_Glide"), MoveSpeedMeters(new ControllerSpec { SpeedSourceId = "enemy.ghost_archer", Hero = false }));
+            var loco = sm.AddState("Locomotion");
+            loco.motion = tree;
+            sm.defaultState = loco;
+            var death = sm.AddState("Death");
+            death.motion = EchoesAnimationImport.Clip("AN_GhostArcher_Death");
+            var toDeath = sm.AddAnyStateTransition(death);
+            toDeath.AddCondition(AnimatorConditionMode.If, 0f, "IsDead");
+            toDeath.hasExitTime = false;
+            toDeath.hasFixedDuration = true;
+            toDeath.duration = 0.1f;
+            toDeath.canTransitionToSelf = false;
+            var fromDeath = death.AddTransition(loco);
+            fromDeath.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsDead");
+            fromDeath.hasExitTime = false;
+            fromDeath.duration = 0.1f;
+
+            c.AddLayer("Action");
+            var layers = c.layers;
+            layers[1].defaultWeight = 1f;
+            c.layers = layers;
+            var action = c.layers[1].stateMachine;
+            var empty = action.AddState("Empty");
+            action.defaultState = empty;
+            var shoot = action.AddState("Shoot");
+            shoot.motion = EchoesAnimationImport.Clip("AN_GhostArcher_Shoot");
+            shoot.speedParameterActive = true;
+            shoot.speedParameter = "ActionSpeed";
+            var back = shoot.AddTransition(empty);
+            back.hasExitTime = true;
+            back.exitTime = 1f;
+            back.hasFixedDuration = true;
+            back.duration = 0.08f;
+
+            c.AddLayer("Hit");
+            layers = c.layers;
+            layers[2].defaultWeight = 1f;
+            c.layers = layers;
+            var hitMachine = c.layers[2].stateMachine;
+            var hitEmpty = hitMachine.AddState("Empty");
+            hitMachine.defaultState = hitEmpty;
+            var hit = hitMachine.AddState("Hit");
+            hit.motion = EchoesAnimationImport.Clip("AN_GhostArcher_Hit");
+            var hitBack = hit.AddTransition(hitEmpty);
+            hitBack.hasExitTime = true;
+            hitBack.exitTime = 1f;
+            hitBack.hasFixedDuration = true;
+            hitBack.duration = 0.08f;
+            EditorUtility.SetDirty(c);
+            return c;
+        }
+
+        public static SkillPresentationSet BuildArcherSkillSet()
+        {
+            SandboxBuilder.EnsureDir(SkillSetDir);
+            var set = SandboxBuilder.LoadOrCreate<SkillPresentationSet>($"{SkillSetDir}/{ArcherSkillSetName}.asset");
+            set.entries.Clear();
+            var shoot = EchoesAnimationImport.Spec("AN_GhostArcher_Shoot");
+            // A preparacao termina no quadro do disparo (release, 20) e o impacto logo depois: o core dispara o projetil no fim da preparacao.
+            set.entries.Add(new SkillPresentationEntry
+            {
+                skillId = ArcherSkillId, animatorState = "Shoot", clipSeconds = shoot.Seconds,
+                windupEnd = EchoesAnimationImport.ShootReleaseFrame / (float)shoot.Frames,
+                impactEnd = (EchoesAnimationImport.ShootReleaseFrame + 4) / (float)shoot.Frames,
+                anchor = "Hips",
+            });
             set.dodgeState = "Dodge";
             EditorUtility.SetDirty(set);
             return set;
@@ -290,6 +397,8 @@ namespace Echoes.EditorTools
                     return $"{SkillSetDir}/{EnemyHumanoid.SkillSet}.asset";
                 case "enemy.crypt_guardian":
                     return $"{SkillSetDir}/{Boss.SkillSet}.asset";
+                case "enemy.ghost_archer":
+                    return $"{SkillSetDir}/{ArcherSkillSetName}.asset";
                 default:
                     return null;
             }

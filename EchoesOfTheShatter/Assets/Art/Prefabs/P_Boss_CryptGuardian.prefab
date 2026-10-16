@@ -834,6 +834,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3503102822531874828}
   - component: {fileID: 6742885427184615642}
+  - component: {fileID: 4806233659666872718}
   m_Layer: 0
   m_Name: P_Boss_CryptGuardian
   m_TagString: Untagged
@@ -880,6 +881,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &4806233659666872718
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6493163015036903278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e653ecf4503aa48a9bcf63c736e4cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.AnimationEventRelay
 --- !u!1 &6564796550382682343
 GameObject:
   m_ObjectHideFlags: 0

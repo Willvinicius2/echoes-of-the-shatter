@@ -450,6 +450,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6791265111490394281}
   - component: {fileID: 6282325787554222072}
+  - component: {fileID: 9159298753300126417}
   m_Layer: 0
   m_Name: P_Enemy_StoneHerald
   m_TagString: Untagged
@@ -496,6 +497,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &9159298753300126417
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4732620455100590984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e653ecf4503aa48a9bcf63c736e4cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.AnimationEventRelay
 --- !u!1 &4802934440073077404
 GameObject:
   m_ObjectHideFlags: 0

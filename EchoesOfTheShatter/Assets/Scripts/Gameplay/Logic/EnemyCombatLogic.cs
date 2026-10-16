@@ -380,6 +380,11 @@ namespace Echoes.Gameplay
 
             for (var i = 0; i < bossEvents.Count; i++) HandleBossEvent(combatSystem, bossEvents[i]);
 
+            // Recuperacao do padrao (o core entra em Recovery depois do impacto): a apresentacao toca o clipe de recuperacao com a duracao do core.
+            if (info.State == BossState.Recovery && lastBossState != BossState.Recovery && bossSkill != null)
+                PublishPhase(combatSystem, bossSkill, ActionPhase.Recovery, rules.GetActionTiming(self.Stats, bossSkill).Recovery);
+            lastBossState = info.State;
+
             var distance = hasTarget ? Math.Max(0f, toTarget.Magnitude - target.RadiusMeters) : float.MaxValue;
             WantsToMove = hasTarget && info.State == BossState.Waiting && rules.CanMove(self.Stats) && distance > bossStopDistance;
             MoveTarget = hasTarget ? target.Position : self.Position;
@@ -421,6 +426,7 @@ namespace Echoes.Gameplay
         }
 
         SkillInfo bossSkill;
+        BossState lastBossState;
 
         // Investida do chefe (Escudo da fase 2): anda no passo fixo durante o impacto; bater em pilar chama o core.
         bool dashing;

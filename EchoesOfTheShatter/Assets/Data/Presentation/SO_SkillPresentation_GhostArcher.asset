@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1da0256305728e489ab62075eff0c00, type: 3}
+  m_Name: SO_SkillPresentation_GhostArcher
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.SkillPresentationSet
+  actionLayer: Action
+  emptyState: Empty
+  strikeFallbackState: SkillStrike
+  castFallbackState: SkillCast
+  dodgeState: Dodge
+  hitLayer: Hit
+  hitState: Hit
+  roarState: Roar
+  roarClipSeconds: 1
+  fallbackClipSeconds: 1
+  fallbackWindupEnd: 0.3
+  fallbackImpactEnd: 0.5
+  entries:
+  - skillId: skill.enemy.ghost_arrow
+    animatorState: Shoot
+    clipSeconds: 1.4666667
+    windupEnd: 0.45454547
+    impactEnd: 0.54545456
+    windupState: 
+    windupClipSeconds: 1
+    impactState: 
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: Hips

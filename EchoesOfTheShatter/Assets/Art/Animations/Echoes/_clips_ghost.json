@@ -1,0 +1,85 @@
+[
+ {
+  "name": "AN_GhostArcher_Idle",
+  "file": "AN_GhostArcher_Idle.fbx",
+  "frames": 60,
+  "seconds": 2.0,
+  "loop": true,
+  "events": {},
+  "note": "Flutuar 2,0 s, sobe/desce 8 cm (+-4 cm no Hips)",
+  "preview": [
+   "AN_GhostArcher_Idle_f000.png",
+   "AN_GhostArcher_Idle_f015.png",
+   "AN_GhostArcher_Idle_f030.png",
+   "AN_GhostArcher_Idle_f045.png"
+  ]
+ },
+ {
+  "name": "AN_GhostArcher_Glide",
+  "file": "AN_GhostArcher_Glide.fbx",
+  "frames": 36,
+  "seconds": 1.2,
+  "loop": true,
+  "events": {},
+  "note": "Deslizar em loop 1,2 s",
+  "preview": [
+   "AN_GhostArcher_Glide_f000.png",
+   "AN_GhostArcher_Glide_f009.png",
+   "AN_GhostArcher_Glide_f018.png",
+   "AN_GhostArcher_Glide_f027.png"
+  ]
+ },
+ {
+  "name": "AN_GhostArcher_Shoot",
+  "file": "AN_GhostArcher_Shoot.fbx",
+  "frames": 44,
+  "seconds": 1.467,
+  "loop": false,
+  "events": {
+   "draw_start": 5,
+   "aim_end": 19,
+   "release": 20
+  },
+  "note": "Mira 0,6 s (0-19), disparo no quadro 20, recuperacao 0,8 s (20-44)",
+  "preview": [
+   "AN_GhostArcher_Shoot_f000.png",
+   "AN_GhostArcher_Shoot_f005.png",
+   "AN_GhostArcher_Shoot_f012.png",
+   "AN_GhostArcher_Shoot_f019.png",
+   "AN_GhostArcher_Shoot_f020.png",
+   "AN_GhostArcher_Shoot_f024.png",
+   "AN_GhostArcher_Shoot_f044.png"
+  ]
+ },
+ {
+  "name": "AN_GhostArcher_Hit",
+  "file": "AN_GhostArcher_Hit.fbx",
+  "frames": 12,
+  "seconds": 0.4,
+  "loop": false,
+  "events": {},
+  "note": "Hit 0,4 s",
+  "preview": [
+   "AN_GhostArcher_Hit_f000.png",
+   "AN_GhostArcher_Hit_f003.png",
+   "AN_GhostArcher_Hit_f008.png",
+   "AN_GhostArcher_Hit_f012.png"
+  ]
+ },
+ {
+  "name": "AN_GhostArcher_Death",
+  "file": "AN_GhostArcher_Death.fbx",
+  "frames": 36,
+  "seconds": 1.2,
+  "loop": false,
+  "events": {},
+  "note": "Morte 1,2 s: afunda e encolhe",
+  "preview": [
+   "AN_GhostArcher_Death_f000.png",
+   "AN_GhostArcher_Death_f004.png",
+   "AN_GhostArcher_Death_f012.png",
+   "AN_GhostArcher_Death_f020.png",
+   "AN_GhostArcher_Death_f036.png"
+  ]
+ }
+]
