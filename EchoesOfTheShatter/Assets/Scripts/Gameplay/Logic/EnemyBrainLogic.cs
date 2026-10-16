@@ -62,7 +62,7 @@ namespace Echoes.Gameplay
                         break;
                     }
                     EnsureAttackChosen();
-                    if (CurrentAttack >= 0 && input.CanAct && input.DistanceToTarget <= CurrentProfile.RangeMeters)
+                    if (CurrentAttack >= 0 && input.CanAct && !input.HoldFire && input.DistanceToTarget <= CurrentProfile.RangeMeters)
                     {
                         events |= Enter(EnemyBrainState.Telegraph, 0.0) | EnemyBrainEvents.TelegraphStarted;
                         events |= AdvanceZeroLength();

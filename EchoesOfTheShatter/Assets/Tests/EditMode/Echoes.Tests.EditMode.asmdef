@@ -8,7 +8,8 @@
         "Echoes.Core",
         "Echoes.Gameplay",
         "Echoes.Presentation",
-        "Echoes.UI"
+        "Echoes.UI",
+        "Echoes.EditorTools"
     ],
     "includePlatforms": [
         "Editor"

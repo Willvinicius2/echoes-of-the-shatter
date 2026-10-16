@@ -9,5 +9,10 @@ namespace Echoes.Gameplay
         public float DistanceToTarget;
         /// <summary>false quando atordoado (interrompe o telegraph; docs/13, item 3).</summary>
         public bool CanAct;
+        /// <summary>
+        /// true = não começar um ataque agora (R-VIS-1, docs/14: o atirador só mira dentro da área visível menos 1 m).
+        /// Não interrompe um telegraph em andamento.
+        /// </summary>
+        public bool HoldFire;
     }
 }

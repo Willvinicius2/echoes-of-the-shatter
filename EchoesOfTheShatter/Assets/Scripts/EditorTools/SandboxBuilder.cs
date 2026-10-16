@@ -28,26 +28,26 @@ namespace Echoes.EditorTools
     /// </summary>
     public static class SandboxBuilder
     {
-        const string ScenePath = "Assets/Scenes/Sandbox/Base_Escala.unity";
-        const string DataDir = "Assets/Data/Presentation";
-        const string MaterialDir = "Assets/Art/Materials/Graybox";
-        const string GeneratedDir = "Assets/Art/Generated/Sandbox";
-        const string PrefabDir = "Assets/Art/Prefabs";
-        const string UiDir = "Assets/UI";
-        const string WarriorFbx = "Assets/Art/Characters/Warrior/SK_Warrior.fbx";
-        const string WarriorBaseMap = "Assets/Art/Characters/Warrior/T_Warrior_BC.png";
-        const string WarriorMaskMap = "Assets/Art/Characters/Warrior/T_Warrior_M.png";
-        const string CharacterShaderPath = "Assets/Art/Materials/Masters/SG_Character.shader";
-        const string CharacterMaterialDir = "Assets/Art/Materials/Characters";
-        const string WarriorPrefabPath = "Assets/Art/Prefabs/P_Hero_Warrior.prefab";
+        internal const string ScenePath = "Assets/Scenes/Sandbox/Base_Escala.unity";
+        internal const string DataDir = "Assets/Data/Presentation";
+        internal const string MaterialDir = "Assets/Art/Materials/Graybox";
+        internal const string GeneratedDir = "Assets/Art/Generated/Sandbox";
+        internal const string PrefabDir = "Assets/Art/Prefabs";
+        internal const string UiDir = "Assets/UI";
+        internal const string WarriorFbx = "Assets/Art/Characters/Warrior/SK_Warrior.fbx";
+        internal const string WarriorBaseMap = "Assets/Art/Characters/Warrior/T_Warrior_BC.png";
+        internal const string WarriorMaskMap = "Assets/Art/Characters/Warrior/T_Warrior_M.png";
+        internal const string CharacterShaderPath = "Assets/Art/Materials/Masters/SG_Character.shader";
+        internal const string CharacterMaterialDir = "Assets/Art/Materials/Characters";
+        internal const string WarriorPrefabPath = "Assets/Art/Prefabs/P_Hero_Warrior.prefab";
 
-        const float WallHeight = 3f;
-        const float WallThickness = 0.6f;
-        const float Tile = 2f;
-        const float ZoneBOffsetX = 300f;
-        const float HeroHeight = 1.5f;
+        internal const float WallHeight = 3f;
+        internal const float WallThickness = 0.6f;
+        internal const float Tile = 2f;
+        internal const float ZoneBOffsetX = 300f;
+        internal const float HeroHeight = 1.5f;
 
-        struct ZoneSpec
+        internal struct ZoneSpec
         {
             public string Name;
             public Vector3 Origin;
@@ -58,14 +58,14 @@ namespace Echoes.EditorTools
             public float CorridorLength;
         }
 
-        sealed class ZoneResult
+        internal sealed class ZoneResult
         {
             public Transform Spawn;
             public readonly List<Rect> FloorRects = new List<Rect>();
             public float[] Centers;
         }
 
-        sealed class Mats
+        internal sealed class Mats
         {
             public Material FloorA, FloorB, Wall, Pillar, Crate, Hero, Enemy, Boss, Checkpoint, Telegraph, Warrior;
         }
@@ -93,7 +93,7 @@ namespace Echoes.EditorTools
             }
         }
 
-        static void BuildScene()
+        internal static void BuildScene()
         {
             EnsureDir(DataDir); EnsureDir(MaterialDir); EnsureDir(GeneratedDir); EnsureDir(PrefabDir); EnsureDir(UiDir);
             EnsureDir(Path.GetDirectoryName(ScenePath).Replace('\\', '/'));
@@ -258,7 +258,7 @@ namespace Echoes.EditorTools
 
         // ------------------------------------------------------------------ zonas
 
-        static ZoneResult BuildZone(Transform parent, Mats mats, ZoneSpec z)
+        internal static ZoneResult BuildZone(Transform parent, Mats mats, ZoneSpec z)
         {
             var result = new ZoneResult();
             var root = new GameObject(z.Name).transform;
@@ -320,7 +320,7 @@ namespace Echoes.EditorTools
             return result;
         }
 
-        static void BuildRoomWalls(Transform parent, Material mat, string name, float cx, float cz, float s, float doorWidth, bool westDoor, bool eastDoor)
+        internal static void BuildRoomWalls(Transform parent, Material mat, string name, float cx, float cz, float s, float doorWidth, bool westDoor, bool eastDoor)
         {
             var half = s / 2f;
             var t = WallThickness;
@@ -334,7 +334,7 @@ namespace Echoes.EditorTools
             AddSideWall(parent, mat, name + "_E", cx + half + t / 2f, cz, full, doorWidth, eastDoor);
         }
 
-        static void AddSideWall(Transform parent, Material mat, string name, float x, float cz, float length, float doorWidth, bool hasDoor)
+        internal static void AddSideWall(Transform parent, Material mat, string name, float x, float cz, float length, float doorWidth, bool hasDoor)
         {
             var h = WallHeight;
             var t = WallThickness;
@@ -349,7 +349,7 @@ namespace Echoes.EditorTools
             AddWall(parent, mat, name + "_2", new Vector3(x, h / 2f, cz - offset), new Vector3(t, h, segment));
         }
 
-        static void AddWall(Transform parent, Material mat, string name, Vector3 center, Vector3 size)
+        internal static void AddWall(Transform parent, Material mat, string name, Vector3 center, Vector3 size)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             go.name = name;
@@ -359,7 +359,7 @@ namespace Echoes.EditorTools
             Apply(go, mat);
         }
 
-        static void AddFloorCollider(Transform parent, string name, float cx, float cz, float sx, float sz)
+        internal static void AddFloorCollider(Transform parent, string name, float cx, float cz, float sx, float sz)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -368,7 +368,7 @@ namespace Echoes.EditorTools
             box.size = new Vector3(sx, 0.2f, sz);
         }
 
-        static void AddFloorVisual(Transform parent, string name, Mesh mesh, Material mat)
+        internal static void AddFloorVisual(Transform parent, string name, Mesh mesh, Material mat)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -378,7 +378,7 @@ namespace Echoes.EditorTools
             mr.shadowCastingMode = ShadowCastingMode.Off;
         }
 
-        static void BuildRoomProps(Transform parent, Mats mats, string name, float cx, float cz, float s, bool arena)
+        internal static void BuildRoomProps(Transform parent, Mats mats, string name, float cx, float cz, float s, bool arena)
         {
             // Caixas do tamanho de um sarcófago (1 × 1 × 2 m, deitado) nos cantos, para dar escala.
             var edge = s / 2f - 3f;
@@ -413,7 +413,7 @@ namespace Echoes.EditorTools
             }
         }
 
-        static Mesh BuildCheckerMesh(List<Rect> rects, int parity)
+        internal static Mesh BuildCheckerMesh(List<Rect> rects, int parity)
         {
             var vertices = new List<Vector3>();
             var triangles = new List<int>();
@@ -453,7 +453,7 @@ namespace Echoes.EditorTools
             return mesh;
         }
 
-        static Mesh SaveMesh(Mesh mesh, string path)
+        internal static Mesh SaveMesh(Mesh mesh, string path)
         {
             if (AssetDatabase.LoadAssetAtPath<Object>(path) != null) AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(mesh, path);
@@ -462,7 +462,7 @@ namespace Echoes.EditorTools
 
         // ------------------------------------------------------------------ inimigos
 
-        static void SpawnZoneEnemies(Transform parent, Mats mats, CombatSystemHost host, GameRoot gameRoot, ZoneResult zone, string tag, float r1, float r2, float arena)
+        internal static void SpawnZoneEnemies(Transform parent, Mats mats, CombatSystemHost host, GameRoot gameRoot, ZoneResult zone, string tag, float r1, float r2, float arena)
         {
             var c = zone.Centers;
             var z0 = zone.Spawn.position.z;
@@ -479,9 +479,9 @@ namespace Echoes.EditorTools
             Enemy(parent, mats, host, gameRoot, $"Guardian_{tag}", "enemy.crypt_guardian", 4, P(c[2], z0, arena, 0.25f, 0f), true);
         }
 
-        static Vector3 P(float cx, float cz, float size, float fx, float fz) => new Vector3(cx + size * fx, 0f, cz + size * fz);
+        internal static Vector3 P(float cx, float cz, float size, float fx, float fz) => new Vector3(cx + size * fx, 0f, cz + size * fz);
 
-        static void Enemy(Transform parent, Mats mats, CombatSystemHost host, GameRoot gameRoot, string name, string enemyId, int level, Vector3 position, bool boss)
+        internal static void Enemy(Transform parent, Mats mats, CombatSystemHost host, GameRoot gameRoot, string name, string enemyId, int level, Vector3 position, bool boss)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -512,7 +512,7 @@ namespace Echoes.EditorTools
 
         // ------------------------------------------------------------------ assets
 
-        static Mats CreateMaterials()
+        internal static Mats CreateMaterials()
         {
             var tokens = ReadTokens();
             return new Mats
@@ -532,7 +532,7 @@ namespace Echoes.EditorTools
         }
 
         /// <summary>M_Warrior: SG_Character com o albedo pintado e a máscara (R emissivo, G rim, B tinta) do Guerreiro aprovado.</summary>
-        static Material WarriorMaterial()
+        internal static Material WarriorMaterial()
         {
             EnsureDir(CharacterMaterialDir);
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(CharacterShaderPath);
@@ -562,7 +562,7 @@ namespace Echoes.EditorTools
         /// P_Hero_Warrior: SK_Warrior em pose de repouso (bind pose do FBX), sem Animator.
         /// TODO(animação): ligar o Animator com o AC_Hero_Warrior e o avatar Humanoid na etapa de animação (docs/04, seção 3.3).
         /// </summary>
-        static GameObject BuildWarriorPrefab(Material material)
+        internal static GameObject BuildWarriorPrefab(Material material)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(WarriorFbx);
             if (model == null) throw new InvalidOperationException("FBX ausente: " + WarriorFbx);
@@ -582,21 +582,21 @@ namespace Echoes.EditorTools
             return prefab;
         }
 
-        static string ReadTokens()
+        internal static string ReadTokens()
         {
             // O arquivo mora em docs/ ao lado da pasta do repositório do projeto Unity.
             var path = Path.GetFullPath(Path.Combine(Application.dataPath, "../../docs/03_design_tokens.json"));
             return File.Exists(path) ? File.ReadAllText(path) : string.Empty;
         }
 
-        static Color Token(string json, string key, string fallback)
+        internal static Color Token(string json, string key, string fallback)
         {
             var m = Regex.Match(json, "\"" + Regex.Escape(key) + "\"\\s*:\\s*\"(#[0-9A-Fa-f]{6})\"");
             var hex = m.Success ? m.Groups[1].Value : fallback;
             return ColorUtility.TryParseHtmlString(hex, out var c) ? c : Color.magenta;
         }
 
-        static Material LitMaterial(string name, Color color)
+        internal static Material LitMaterial(string name, Color color)
         {
             var path = $"{MaterialDir}/{name}.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -612,7 +612,7 @@ namespace Echoes.EditorTools
             return mat;
         }
 
-        static Material TelegraphMaterial(string name, Color color)
+        internal static Material TelegraphMaterial(string name, Color color)
         {
             var path = $"{MaterialDir}/{name}.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -635,7 +635,7 @@ namespace Echoes.EditorTools
             return mat;
         }
 
-        static GameObject CreateProjectilePrefab(Mats mats)
+        internal static GameObject CreateProjectilePrefab(Mats mats)
         {
             var path = PrefabDir + "/P_Projectile_Placeholder.prefab";
             var temp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -648,7 +648,7 @@ namespace Echoes.EditorTools
             return prefab;
         }
 
-        static PanelSettings CreatePanelSettings()
+        internal static PanelSettings CreatePanelSettings()
         {
             var themePath = UiDir + "/ShatterRuntimeTheme.tss";
             if (!File.Exists(themePath))
@@ -667,7 +667,7 @@ namespace Echoes.EditorTools
             return panel;
         }
 
-        static void AddToBuildSettings()
+        internal static void AddToBuildSettings()
         {
             var list = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
             for (var i = 0; i < list.Count; i++)
@@ -678,7 +678,7 @@ namespace Echoes.EditorTools
 
         // ------------------------------------------------------------------ utilitários
 
-        static void Apply(GameObject go, Material mat, bool castShadow = false)
+        internal static void Apply(GameObject go, Material mat, bool castShadow = false)
         {
             var mr = go.GetComponent<MeshRenderer>();
             mr.sharedMaterial = mat;
@@ -686,7 +686,7 @@ namespace Echoes.EditorTools
             mr.shadowCastingMode = castShadow ? ShadowCastingMode.On : ShadowCastingMode.Off;
         }
 
-        static T LoadOrCreate<T>(string path) where T : ScriptableObject
+        internal static T LoadOrCreate<T>(string path) where T : ScriptableObject
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(path);
             if (asset != null) return asset;
@@ -695,7 +695,7 @@ namespace Echoes.EditorTools
             return asset;
         }
 
-        static void EnsureDir(string dir)
+        internal static void EnsureDir(string dir)
         {
             if (AssetDatabase.IsValidFolder(dir)) return;
             var parent = Path.GetDirectoryName(dir).Replace('\\', '/');
@@ -703,7 +703,7 @@ namespace Echoes.EditorTools
             AssetDatabase.CreateFolder(parent, Path.GetFileName(dir));
         }
 
-        static SerializedProperty Prop(Object target, string field, out SerializedObject so)
+        internal static SerializedProperty Prop(Object target, string field, out SerializedObject so)
         {
             so = new SerializedObject(target);
             var p = so.FindProperty(field);
@@ -711,35 +711,35 @@ namespace Echoes.EditorTools
             return p;
         }
 
-        static void SetRef(Object target, string field, Object value)
+        internal static void SetRef(Object target, string field, Object value)
         {
             var p = Prop(target, field, out var so);
             p.objectReferenceValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static void SetInt(Object target, string field, int value)
+        internal static void SetInt(Object target, string field, int value)
         {
             var p = Prop(target, field, out var so);
             p.intValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static void SetFloat(Object target, string field, float value)
+        internal static void SetFloat(Object target, string field, float value)
         {
             var p = Prop(target, field, out var so);
             p.floatValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static void SetBool(Object target, string field, bool value)
+        internal static void SetBool(Object target, string field, bool value)
         {
             var p = Prop(target, field, out var so);
             p.boolValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static void SetString(Object target, string field, string value)
+        internal static void SetString(Object target, string field, string value)
         {
             var p = Prop(target, field, out var so);
             p.stringValue = value;

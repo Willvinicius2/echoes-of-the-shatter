@@ -19,6 +19,12 @@ namespace Echoes.Interop
         public double XpBase { get; internal set; }
         public double XpPerLevel { get; internal set; }
         public string LootTableId { get; internal set; } = string.Empty;
+
+        /// <summary>Elite fixo: modificador de <c>elite_modifiers.csv</c> aplicado sempre (vazio = nenhum). Coluna <c>modifierId</c> do enemies.csv.</summary>
+        public string ModifierId { get; internal set; } = string.Empty;
+
+        /// <summary>Tabela de loot do elite (coluna opcional <c>eliteLootTableId</c>); vazio = a do inimigo.</summary>
+        public string EliteLootTableId { get; internal set; } = string.Empty;
         public IReadOnlyList<EnemyAttackInfo> Attacks { get; internal set; } = NoAttacks;
 
         public string NameKey => Id + ".name";
