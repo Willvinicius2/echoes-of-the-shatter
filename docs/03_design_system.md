@@ -3,11 +3,11 @@
 Projeto: **Echoes of the Shatter** · Responsável: Art Director · reescrito em 16/10/2026
 Fontes: `docs/08_decisoes_visual_3d.md` (decisões fechadas), `docs/arte/referencias-geracao/` (folhas aprovadas 01 a 24), `docs/00_plano_existente.md` (seções 5, 6, 7, 9 e 10) e `docs/01_plano_execucao.md`.
 Tokens em formato de máquina: `docs/03_design_tokens.json` (este documento manda; se os dois divergirem, corrigir o JSON).
-Motor: **Unreal Engine 5.8**, Forward Shading com MSAA, interface em **UMG** (widgets em C++ + Widget Blueprint).
+Motor: **Unity 6 LTS com URP** (C#), Forward (ou Forward+) com MSAA, interface em **UI Toolkit** (UXML + USS; tokens viram variáveis USS, seção 2.14).
 
-> Nota de substituição (16/10/2026): este documento substitui a versão de 15/10/2026, que era pixel art com Paper2D, sprites, viewport interno de 960 × 540, filtro nearest, escala inteira, fonte pixel e paleta ocre. Nada disso vale mais. A seção 9 lista as chaves de token renomeadas ou removidas.
+> Nota de substituição (16/10/2026): este documento substitui a versão de 15/10/2026, que era pixel art com Paper2D, sprites, viewport interno de 960 × 540, filtro nearest, escala inteira, fonte pixel e paleta ocre. A versão de 16/10/2026 (manhã) tinha sido escrita para Unreal Engine 5 (UMG, Slate, Niagara); o dono trocou o motor para Unity 6 LTS com URP no mesmo dia e esta versão adapta nomes e conceitos. Nada disso vale mais. A seção 9 lista as chaves de token renomeadas ou removidas.
 
-> Convenção de medidas da UI: o layout é desenhado no espaço de referência **1920 × 1080** (escala de DPI 1,0 em 1080 de lado menor) e roda em resolução nativa com a curva de DPI padrão do UE (seção 3.9). Posições de tela no formato `(x, y, l, a)` = canto superior esquerdo, largura, altura, sempre com a **âncora** indicada; toda posição é um deslocamento a partir da âncora, nunca coordenada absoluta. Arte 3D: 1 uu = 1 cm.
+> Convenção de medidas da UI: o layout é desenhado no espaço de referência **1920 × 1080** e roda em resolução nativa com `PanelSettings` em **Scale With Screen Size** (referência 1920 × 1080, Match Width Or Height = 1, ou seja, escala pela altura; seção 3.9). Posições de tela no formato `(x, y, l, a)` = canto superior esquerdo, largura, altura, sempre com a **âncora** indicada; toda posição é um deslocamento (`left`/`right`/`top`/`bottom` em USS com `position: absolute`, ou flexbox) a partir da âncora, nunca coordenada absoluta de tela. Arte 3D: medidas em cm; 1 unidade Unity = 100 cm.
 
 > Cores medidas: os hex deste documento foram medidos nas folhas aprovadas (mediana de regiões; núcleo = percentil 93 de brilho, meio = percentil 45–75, borda = percentil 8–30) e ajustados para contraste de texto. Onde o valor medido ficou fosco por sombra (névoas), o token traz a cor corrigida e a medida bruta.
 
@@ -153,7 +153,7 @@ Medido na folha 09: núcleo do círculo `#EF5A43`, meio `#703338` sobre piso esc
 
 ### 2.6 Cor-assinatura da névoa por área
 
-A cor do Exponential Height Fog de cada área é a sua assinatura. Valores em `color.fog.*` (cor corrigida, bruma medida, acento de luz, densidade de partida):
+A cor da névoa (`RenderSettings.fog`, modo Exponential Squared, ou shader de névoa por área) de cada área é a sua assinatura. Valores em `color.fog.*` (cor corrigida, bruma medida, acento de luz, densidade de partida):
 
 | Área | Fog | Medido | Acento | Descrição | Folha |
 |---|---|---|---|---|---|
@@ -169,7 +169,7 @@ A cor do Exponential Height Fog de cada área é a sua assinatura. Valores em `c
 | Endgame: Trilha de Cinza | `#8A3524` | `#572E23` | `#FF6A2A` | Brasa vermelha, floresta queimada | 19 |
 | Endgame: Salão do Martelo | `#9A3E1C` | `#4B2926` | `#FF7A1E` | Lava laranja, forja | 20 |
 
-Regras: a névoa cobre distância e fundo, nunca o jogador nem o telegraph (Inscattering baixo a menos de 15 m da câmera); o Mirante é o teto de luminosidade do jogo, nenhum outro cenário passa de luma média 0,45; cada área mantém **um** acento quente (luz de tocha, lava ou lanterna) para o jogador se orientar.
+Regras: a névoa cobre distância e fundo, nunca o jogador nem o telegraph (névoa quase nula a menos de 15 m da câmera); o Mirante é o teto de luminosidade do jogo, nenhum outro cenário passa de luma média 0,45; cada área mantém **um** acento quente (luz de tocha, lava ou lanterna) para o jogador se orientar.
 
 ### 2.7 Tipografia
 
@@ -187,9 +187,9 @@ Por que: Source Sans 3 tem Latin estendido completo, algarismos tabulares e abre
 Frase-teste: `Ação, coração e põe; Ñandú: ¿Qué pasó? ¡Olé! ÁÉÍÓÚ ÂÊÔ ÃÕ Çç àü ºª «» – — … 1.234,56 × ÷ % ▲▼`
 `▲▼` podem faltar: usar ícones `T_Icon_UI_arrow_up_32` e `_down_32`. Cinzel é pensada para maiúsculas e versaletes; confirmar que as minúsculas acentuadas aparecem bem em 32 px.
 
-**Escala tipográfica** (tamanho no espaço de 1080p; efetivo = × escala de DPI):
+**Escala tipográfica** (tamanho no espaço de 1080p; efetivo = × escala do PanelSettings):
 
-| Estilo | Fonte | px | pt UMG | Entrelinha | Efetivo no Deck (0,74) | Uso |
+| Estilo | Fonte | USS `font-size` (px) | pt (referência) | Entrelinha | Efetivo no Deck (0,74) | Uso |
 |---|---|---|---|---|---|---|
 | `micro` | Source Sans 3 SemiBold | 16 | 12 | 20 | 11,8 | Tecla no slot, contador de pilha, versão. Mínimo permitido |
 | `body` | Source Sans 3 | 20 | 15 | 26 | 14,8 | Texto padrão, botões, tooltip, listas |
@@ -199,11 +199,11 @@ Frase-teste: `Ação, coração e põe; Ñandú: ¿Qué pasó? ¡Olé! ÁÉÍÓ�
 | `damage` | Lilita One | 28 | 21 | — | 20,7 | Número de dano normal |
 | `damage_crit` | Lilita One | 44 | 33 | — | 32,6 | Número de dano crítico |
 
-Conversão: pt = px × 0,75 (Slate). Em 800p o `micro` fica em 11,8 px efetivos: é o piso; nenhum estilo novo abaixo disso.
+Conversão de referência: pt = px × 0,75; o USS usa o px do espaço de 1920 × 1080. Em 800p o `micro` fica em 11,8 px efetivos: é o piso; nenhum estilo novo abaixo disso.
 
 **Largura média para orçamento de texto:** ≈ 9,5 px por caractere em `body` (≈ 10,5 em `body_bold`; ≈ 7,5 em `micro`). Todo campo traz o número máximo de caracteres por linha derivado disso. O Frontend mede com a fonte final e atualiza a tabela se a média passar de 10 px.
 
-**Regras de texto:** itálico só em texto de sabor (Source Sans 3 Italic); sem caixa-alta automática; números em pt-BR (`1.234`, `1,20`, `8–12 mil`); quebra por palavra; truncar com `…` só em nomes de save e áreas, nunca em afixos. Texto grande (acessibilidade): corpo +25% (`body` 25 px; tooltip 576 de largura; painéis de texto com `ScrollBox`).
+**Regras de texto:** itálico só em texto de sabor (Source Sans 3 Italic); sem caixa-alta automática; números em pt-BR (`1.234`, `1,20`, `8–12 mil`); quebra por palavra; truncar com `…` só em nomes de save e áreas, nunca em afixos. Texto grande (acessibilidade): corpo +25% (`body` 25 px; tooltip 576 de largura; painéis de texto com `ScrollView`).
 
 ### 2.8 Espaçamento
 
@@ -240,9 +240,9 @@ Alvo de toque e de gamepad no Deck: nenhum controle interativo abaixo de 48 de a
 
 ### 2.10 Molduras de pedra e 9-slice
 
-Molduras de pedra escura com arestas orgânicas e espinhos nos cantos (folhas 10, 11 e 12). Cada moldura é um 9-slice (`Draw As = Box`) exportado em PNG com alpha, 2× de resolução do uso (retina para 4K). A margem do Box no UMG é fração da textura (margem ÷ tamanho).
+Molduras de pedra escura com arestas orgânicas e espinhos nos cantos (folhas 10, 11 e 12). Cada moldura é um 9-slice exportado em PNG com alpha no tamanho da tabela e aplicado por USS com `-unity-slice-left`, `-unity-slice-right`, `-unity-slice-top`, `-unity-slice-bottom` (em px da textura, igual à coluna Canto) e `-unity-slice-type: sliced`; `-unity-slice-scale` ajusta a espessura da borda sem mexer na textura. A textura entra no `background-image`, sem mip e com filtro bilinear.
 
-| Peça | Textura | Canto | Margem UMG | Visual |
+| Peça | Textura | Canto (`-unity-slice-*`) | Fração da textura | Visual |
 |---|---|---|---|---|
 | `nine_panel_ornate` | 128 × 128 | 48 | 0,375 | Pedra `#2A222F` com aresta `#6A606E`, filete dourado `#D9A441` de 3 px interno, espinhos e cristais nos cantos |
 | `nine_panel_plain` | 64 × 64 | 20 | 0,3125 | Pedra lisa, aresta `#6A606E` de 2 px, canto chanfrado |
@@ -252,12 +252,12 @@ Molduras de pedra escura com arestas orgânicas e espinhos nos cantos (folhas 10
 | `nine_bar_frame` | 64 × 64 | 16 | 0,25 | Moldura de barra com pontas espinhosas (barra de chefe tem cabeça de demônio central, imagem à parte) |
 | `nine_toast` | 64 × 64 | 20 | 0,3125 | Faixa de pedra com filete na cor semântica à esquerda (4 px) |
 
-**Regra do 9-slice:** o Slate estica bordas e centro; as bordas devem ser uniformes no eixo do estiramento e o ornamento fica **só nos cantos**. Ornamento repetido ao longo da borda (correntes, espinhos) é peça separada com `Tiling`.
-**Orbes e barras:** orbe é um vidro esférico 144 × 144 com moldura de pedra e caveira/cristais; preenchimento "lava" animado por material (ver 5.4), não por textura fixa. Barras têm preenchimento lava com gradiente de `life` para `life_dark` e brilho `life_highlight` no topo.
+**Regra do 9-slice:** o UI Toolkit estica bordas e centro; as bordas devem ser uniformes no eixo do estiramento e o ornamento fica **só nos cantos**. Ornamento repetido ao longo da borda (correntes, espinhos) é peça separada (outro `VisualElement` com `background-repeat`).
+**Orbes e barras:** orbe é um vidro esférico 144 × 144 com moldura de pedra e caveira/cristais; preenchimento "lava" animado por shader (ver 5.4), não por textura fixa. Barras têm preenchimento lava com gradiente de `life` para `life_dark` e brilho `life_highlight` no topo.
 
 ### 2.11 Ícones
 
-Ícones de habilidade e de item são pinturas quadradas com cena (herói em ação, objeto) como na folha 11; a moldura e a gema são **overlay do widget**, não fazem parte da imagem.
+Ícones de habilidade e de item são pinturas quadradas com cena (herói em ação, objeto) como na folha 11; a moldura e a gema são **overlay do elemento** (outro `VisualElement` por cima), não fazem parte da imagem.
 
 | Exportação | Onde | Regras |
 |---|---|---|
@@ -272,10 +272,10 @@ Nomes: `T_Icon_<categoria>_<id>_<tam>` (ex.: `T_Icon_Skill_warrior_iron_cut_128`
 
 ### 2.12 Sombras e contornos de interface
 
-- **Texto de UI sobre painel:** sombra `#0F0B14` a 90%, deslocamento (0, 2), sem blur.
-- **Texto no mundo** (dano, nome de item no chão, nome de elite): contorno de 3 px `#0F0B14` (`Outline Size = 3`), mais sombra (0, 2).
-- **Painel flutuante** (tooltip, modal): sombra suave de imagem (textura de sombra 9-slice, deslocamento (0, 8), 50%), não efeito de pós-processo.
-- Proibido: Background Blur do UMG e glow de tela cheia. Brilho de UI é textura aditiva pequena (gema, filete, lava).
+- **Texto de UI sobre painel:** `text-shadow` USS `0 2px 0 rgba(15,11,20,0.9)`, sem blur.
+- **Texto no mundo** (dano, nome de item no chão, nome de elite): contorno de 3 px `#0F0B14` (`-unity-text-outline-width: 3px` e `-unity-text-outline-color`), mais sombra (0, 2).
+- **Painel flutuante** (tooltip, modal): sombra suave de imagem (elemento irmão com textura de sombra em 9-slice, deslocamento (0, 8), 50%), não efeito de pós-processo.
+- Proibido: blur de fundo de UI (captura de tela) e glow de tela cheia. Brilho de UI é textura aditiva pequena (gema, filete, lava).
 
 ### 2.13 Movimento da interface
 
@@ -283,6 +283,30 @@ Nomes: `T_Icon_<categoria>_<id>_<tam>` (ex.: `T_Icon_Skill_warrior_iron_cut_128`
 - Tooltip: atraso de 150 ms, aparece sem animação. Toast: entra com deslocamento de 24, fica 3 s, some em 200 ms. Faixa de área: 3 s, some em 200 ms.
 - Animação 3D de personagens autorada a 30 fps; UI roda a taxa de quadro livre (animações por tempo).
 - Lava das barras e orbes: ondulação lenta (período 4 s, amplitude 3%), desligada com "Reduzir movimento".
+
+### 2.14 Tokens em USS
+
+Os tokens de `docs/03_design_tokens.json` viram variáveis USS em `Assets/UI/Styles/Tokens.uss`, num bloco `:root`, geradas por uma ferramenta de editor (a ferramenta é a única que escreve o arquivo). Regra de nome: `--` + caminho do token em kebab-case (pontos e sublinhados viram hífens). Valores: cor em `#RRGGBB` (ou `rgba()` quando há alpha), comprimento em `px` no espaço de referência 1920 × 1080, tempo em `ms`. Os valores de arte 3D (`art3d`, `juice` em cm) **não** viram variável USS.
+
+| Token JSON | Variável USS | Exemplo de uso |
+|---|---|---|
+| `color.surface.panel` | `--color-surface-panel` | `background-color: var(--color-surface-panel);` |
+| `color.surface.panel_raised` | `--color-surface-panel-raised` | cartão, botão secundário |
+| `color.surface.scrim` | `--color-surface-scrim` (rgba) | fundo de modal |
+| `color.text.primary` | `--color-text-primary` | `color: var(--color-text-primary);` |
+| `color.border.focus` | `--color-border-focus` | `:focus { border-color: var(--color-border-focus); }` |
+| `color.semantic.life` / `life_dark` | `--color-semantic-life` / `--color-semantic-life-dark` | preenchimento lava |
+| `color.rarity.rare` | `--color-rarity-rare` | borda do tooltip |
+| `color.element.fire.mid` | `--color-element-fire-mid` | emblema de elemento |
+| `font.styles.body.size_px` | `--font-body-size` | `font-size: var(--font-body-size);` |
+| `font.families.title.name` | `--font-title-family` (via `-unity-font-definition`) | títulos |
+| `space.s3` | `--space-s3` | `padding: var(--space-s3);` |
+| `size.item_slot` | `--size-item-slot` | `width/height` do slot |
+| `nine_slice.panel_ornate.margin_px` | `--slice-panel-ornate` | `-unity-slice-left/right/top/bottom` |
+| `motion.ui_fade_ms` | `--motion-ui-fade` | `transition-duration: var(--motion-ui-fade);` |
+| `viewport.safe_margin` | `--viewport-safe-margin` | margem do contêiner raiz |
+
+Observação: variáveis USS não valem em `@media`, e `transition-duration` aceita `var()`; se alguma propriedade não aceitar, a ferramenta de geração emite também a classe utilitária equivalente. O bloco `uss` do JSON registra a convenção e os exemplos.
 
 ---
 
@@ -292,7 +316,7 @@ Esta seção é a referência de arte (escala, proporções, texel, pintura, cor
 
 ### 3.1 Escala e proporções
 
-Unidade: 1 uu = 1 cm. Tile de cenário = 200 cm. Câmera 3/4 fixa (yaw 45°, pitch entre −50° e −60°, FOV estreito; Tech Lead fixa).
+Unidade: medidas em cm; 1 unidade Unity = 100 cm (herói = 1,5 unidades). Tile de cenário = 200 cm. Câmera 3/4 fixa (yaw 45°, pitch entre −50° e −60°, FOV estreito; Tech Lead fixa).
 
 | Tipo | Altura | Proporção | Relativo ao herói |
 |---|---|---|---|
@@ -332,7 +356,7 @@ LOD: trocas a 18 m e 32 m. O que fica **aqui** é a escala, as proporções, a d
 | Trimsheet de kit | 2048² por kit | — | **2,5 texel/cm** |
 | Terreno (tile de 200 cm) | 512² (tileable) | — | **2,56 texel/cm** |
 
-Tolerância de ±20% entre peças da mesma cena; o auditor usa o modo Texture Density do editor. Compressão: albedo BC7 (sRGB), máscara BC1 linear, folhagem BC3. Mipmaps ligados, filtro trilinear com anisotropia 4× (8× em PC), LOD Group próprio por tipo. No Deck o streaming usa um mip a menos que no PC; em jogo, o herói a 110 px de altura raramente precisa do mip 0 (ele existe para retrato, galeria e zoom).
+Tolerância de ±20% entre peças da mesma cena; o auditor usa o checker de densidade no editor. Compressão: albedo BC7 (sRGB), máscara BC1 linear, folhagem BC3. Mipmaps ligados, filtro trilinear com anisotropia 4× (8× em PC), `LODGroup` próprio por tipo. No Deck o Mipmap Streaming usa um mip a menos que no PC; em jogo, o herói a 110 px de altura raramente precisa do mip 0 (ele existe para retrato, galeria e zoom).
 Texturas de UI: UserInterface2D (RGBA), sRGB, mipmaps ligados nas molduras 9-slice de 128 e desligados nos ícones de 32.
 
 ### 3.4 Regras de pintura à mão
@@ -352,22 +376,22 @@ Texturas de UI: UserInterface2D (RGBA), sRGB, mipmaps ligados nas molduras 9-sli
 - Herói com altura mínima de tela de **110 px em 1080p** e **80 px em 800p** (zoom mínimo permitido; Tech Lead).
 - **Teste de silhueta:** preencher o personagem de preto sobre piso neutro `#6A5A55`, reduzido a 64 px de altura, em ângulo de câmera de jogo (yaw 45°, pitch −55°). Cada classe e cada arquétipo de inimigo tem de ser identificável. Reprovou: simplificar o interior e exagerar um elemento da silhueta.
 - **Inimigos:** 8 arquétipos do Ato I e 9 do endgame com silhuetas distintas (soldado com escudo, lanceiro, cão, corvo, golem de pedra, aríete/prensa, arqueiro espectral, lanterneiro; folhas 05 e 23). Dois inimigos no mesmo plano nunca compartilham a mesma silhueta.
-- **Outline:** não há contorno global (o estilo pintado depende de bordas limpas por MSAA). Há **contorno seletivo de 2 px por stencil só quando o herói do jogador ou um elite está oculto atrás de cenário** (herói `#FCD58A`, elite `#F2B23A`, alpha 0,8), para nunca perder o personagem. Inimigo sob o cursor ganha o mesmo contorno em branco-pergaminho.
+- **Outline:** não há contorno global (o estilo pintado depende de bordas limpas por MSAA). Há **contorno seletivo de 2 px (Renderer Feature do URP com Render Objects e teste de profundidade/stencil) só quando o herói do jogador ou um elite está oculto atrás de cenário** (herói `#FCD58A`, elite `#F2B23A`, alpha 0,8), para nunca perder o personagem. Inimigo sob o cursor ganha o mesmo contorno em branco-pergaminho.
 - Flash de acerto: lerp do albedo para `#FFFFFF` por 83 ms (parâmetro de material), 50% com "Reduzir flashes".
 
 ### 3.6 Materiais e renderização
 
-Poucos materiais mestres parametrizados (decisão 4 de `docs/08_decisoes_visual_3d.md`):
+Poucos shaders mestres em Shader Graph, parametrizados (decisão 4 de `docs/08_decisoes_visual_3d.md`); cada tipo de asset usa Materials derivados (variantes por propriedade, sem texturas novas):
 
-| Material mestre | Parâmetros |
+| Shader Graph | Propriedades |
 |---|---|
-| `M_Character` | albedo, máscara, RimColor/Power/Intensity, EmissiveColor/Intensity, HitFlash, TintLerp e TintColor (elite/corrompido), Dissolve (morte), ocluído |
-| `M_Environment` | albedo (trimsheet/terreno), cor de vértice (AO e variação), tinta de área, blend de neblina |
-| `M_VFX_Player` / `M_VFX_Threat` | aditivo translúcido (jogador); translúcido normal e opaco com contorno (ameaça) |
-| `M_UI` | moldura, lava (preenchimento animado), ícone com gema |
+| `SG_Character` | albedo, máscara, RimColor/Power/Intensity, EmissiveColor/Intensity, HitFlash, TintLerp e TintColor (elite/corrompido), Dissolve (morte), Occluded |
+| `SG_Environment` | albedo (trimsheet/terreno), cor de vértice (AO e variação), tinta de área, blend de neblina |
+| `SG_VFX_Player` / `SG_VFX_Threat` | aditivo translúcido (jogador); translúcido normal e opaco com contorno (ameaça) |
+| `SG_UI_Lava` | preenchimento lava animado e ícone com gema, para os elementos de UI que precisam de shader |
 
-Forward Shading com **MSAA 4×** (ver seção 18 do 04 para o Deck), sem Lumen, Nanite nem Virtual Shadow Maps. Sombras: CSM de 1 cascata curta (≈ 25 m) ou sombra de contato/blob; o Tech Lead decide e justifica. Anti-aliasing temporal e TSR desligados; sharpen 0. Pós-processo: tonemapper filmic leve, **sem** exposição automática (exposição manual fixa por área), **bloom leve** (limiar alto, intensidade ≈ 0,25) opcional no Deck, sem vinheta, grão nem aberração cromática (vinheta de vida baixa é widget). Exponential Height Fog com a cor-assinatura da área (2.6); sem volumetric fog. Luz direcional única por cena, sem luzes dinâmicas de ponto exceto até 4 por vista (tochas) com atenuação curta e sem sombra; o resto da luz de tocha é pintado.
-Tinta de área (opcional): um LUT de 16³ por área, gerado a partir da cor-assinatura, aplicado no pós-processo.
+URP com Forward (ou Forward+) e **MSAA 4×** (ver seção 18 do 04 para o Deck), sem iluminação global em tempo real e sem Depth of Field. Sombras: 1 cascata curta (≈ 25 m) ou sombra de contato/blob; o Tech Lead decide e justifica. TAA/STP desligados; sharpen 0. Pós-processo (Volume global): Tonemapping leve (Neutral), **sem** auto-exposição (exposição fixa por área), **bloom leve** (limiar alto, intensidade ≈ 0,25) opcional no Deck, sem vinheta, grão nem aberração cromática (vinheta de vida baixa é elemento de UI). Névoa com a cor-assinatura da área (2.6), sem névoa volumétrica. Uma Directional Light por cena e no máximo 4 Point Lights por vista (tochas), atenuação curta, sem sombra; o resto da luz de tocha é pintado.
+Tinta de área (opcional): uma textura LUT de 16³ por área (override Color Lookup do Volume), gerada a partir da cor-assinatura.
 
 ### 3.7 Kits de cenário
 
@@ -379,7 +403,7 @@ Tinta de área (opcional): um LUT de 16³ por área, gerado a partir da cor-assi
 
 ### 3.8 VFX: jogador versus ameaça
 
-Niagara; a spec por habilidade fica fora deste documento (esta seção fixa a linguagem).
+Sistema de partículas da Unity (Shuriken) com Shader Graph; o VFX Graph só onde o ganho justificar (o Tech Lead decide); a spec por habilidade fica fora deste documento (esta seção fixa a linguagem).
 
 | | **Efeitos do jogador** | **Ameaças inimigas** |
 |---|---|---|
@@ -409,25 +433,25 @@ Niagara; a spec por habilidade fica fora deste documento (esta seção fixa a li
 4. Orçamento: 300 projéteis ativos no máximo e 150 partículas por efeito; a soma de partículas visíveis ≤ 2.500 (Deck ≤ 1.500). Overdraw: no máximo 4 camadas translúcidas sobrepostas no mesmo ponto de tela.
 5. Hitstop, shake e flash seguem a seção 6.
 
-### 3.9 UI no motor
+### 3.9 UI no motor (UI Toolkit)
 
-- **DPI:** Project Settings → Engine → User Interface: `DPI Scale Rule = Shortest Side` com a curva padrão do UE (480 → 0,444; 1080 → 1,0; 2160 → 2,0). A UI é desenhada em 1080p de referência e escala de forma contínua: 800p (Steam Deck) → 0,74; 1440p → 1,33; 4K → 2,0. `Application Scale = 1,0`.
-- No UMG Designer: pré-visualizar em 1920 × 1080 e em 1280 × 800 (Deck). Âncoras em tudo; `Scale Box` só para as imagens de moldura. O piso de legibilidade (12 px efetivos) vale na menor resolução.
-- **Texturas de UI:** compressão `UserInterface2D (RGBA)`, sRGB, mipmaps ligados em molduras, filtro bilinear/trilinear, `Never Stream` ligado. PNG de origem em sRGB sem pré-multiplicar alpha.
-- **Fontes:** TTF importado como Font Face, `Hinting = Auto`, rasterização padrão com antialiasing; `Loading Policy = Inline` para as três famílias; Composite Font com fallback (2.7). Tamanhos só os da tabela 2.7.
-- **Cursor por hardware:** 32 × 32, em ×1, ×1,5 e ×2. Variantes: padrão, ataque, coletar, conversar, arrastar item. Estilo: ponta de pedra com filete dourado.
-- **Frame:** 60 fps alvo; animações de UI baseadas em tempo.
-- **Rendering do projeto:** Virtual Shadow Maps e Nanite desligados; Lumen desligado.
+- **Escala:** asset `ShatterPanelSettings` (PanelSettings): `Scale Mode = Scale With Screen Size`, `Reference Resolution = 1920 × 1080`, `Screen Match Mode = Match Width Or Height` com `Match = 1` (escala pela altura). Resultado: 1080p → 1,0; Steam Deck 1280 × 800 → 0,74; 1440p → 1,33; 4K → 2,0; ultrawide mantém a altura. Um só `PanelSettings` para o jogo inteiro; `Sort Order` por camada (HUD, painéis, tooltip, modal, conforme `z_order`).
+- **Preview:** UI Builder e Game View em 1920 × 1080 e em 1280 × 800 (Deck). Posicionamento por flexbox e `position: absolute` com âncoras em `left/right/top/bottom`; `ScrollView` onde houver rolagem. O piso de legibilidade (12 px efetivos) vale na menor resolução.
+- **Imagens de UI:** importadas como textura 2D de UI no `background-image`, sRGB, filtro bilinear, mipmaps desligados em ícones e molduras, compressão alta qualidade (ou nenhuma em molduras pequenas), agrupadas em atlas por tela. PNG de origem em sRGB sem pré-multiplicar alpha.
+- **Fontes:** TTF importado como **Font Asset (TextCore)** em modo SDF; Atlas Population `Dynamic` nas três famílias, com **lista de fallback** (2.7) para cobrir Latin Estendido, e um conjunto estático pré-gerado com a frase-teste para evitar picos em jogo. O USS referencia com `-unity-font-definition`. Tamanhos só os da tabela 2.7.
+- **Cursor:** `Cursor.SetCursor` com texturas de 32 × 32 (×1, ×1,5 e ×2 conforme a escala). Variantes: padrão, ataque, coletar, conversar, arrastar item. Estilo: ponta de pedra com filete dourado.
+- **Frame:** 60 fps alvo; animações de UI por `transition` USS e `schedule`, baseadas em tempo.
+- **Rendering do projeto:** sem iluminação global em tempo real; sombras e MSAA conforme 3.6.
 
 ---
 
 ## 4. Especificações de interface
 
-Telas do protótipo: HUD de combate (4.1), inventário e tooltip (4.2), Expedição (4.3), Relatório de expedição (4.4), menu principal e slots de save (4.5), pausa e opções com remapeamento (4.6), mapa do Ato I (4.7). Toda string vem de chave de localização (String Table / `FText`, pt_BR e en), nunca escrita no widget.
+Telas do protótipo: HUD de combate (4.1), inventário e tooltip (4.2), Expedição (4.3), Relatório de expedição (4.4), menu principal e slots de save (4.5), pausa e opções com remapeamento (4.6), mapa do Ato I (4.7). Toda string vem de chave de localização (Unity Localization, String Table, pt_BR e en), nunca escrita no UXML nem no C#.
 
 Atalhos globais: `Esc` fecha o painel do topo da pilha; sem painel aberto, abre a Pausa. `Enter` confirma o botão primário do painel ativo. `Tab`/`Shift+Tab` e setas movem o foco. Duplo clique = ação principal. No Steam Deck, o gamepad espelha tudo isso (A confirma, B volta, bumpers trocam abas).
 
-### 4.1 HUD de combate — `WBP_HUD` / `UShatterHUDWidget`
+### 4.1 HUD de combate — `HudView.uxml` + `HudView.cs`
 
 Layout a partir da folha 10: retrato e barras no canto superior esquerdo, barra de chefe no centro com cabeça de demônio, minimapa redondo à direita, e uma barra inferior de pedra com orbes nas pontas, poções, 6 habilidades e esquiva.
 
@@ -462,7 +486,7 @@ Layout a partir da folha 10: retrato e barras no canto superior esquerdo, barra 
 
 **Estados do HUD:** combate (completo); Refúgio (sem barra de chefe; habilidades sem cooldown); arena de chefe (barra de chefe + nome em `display` por 2 s na entrada); morte (HUD some em 200 ms; tela "Você caiu" em `display`, botão "Voltar ao checkpoint", sem penalidade); painel aberto (HUD visível; painéis não cobrem a barra inferior); cinemática (HUD oculto).
 
-**Números de dano** (mundo projetado na tela, `WBP_DamageNumber` em pool de 64):
+**Números de dano** (mundo projetado na tela, `ShatterDamageNumber` em pool de 64):
 
 | Tipo | Estilo | Cor | Movimento |
 |---|---|---|---|
@@ -478,7 +502,7 @@ Golpes no mesmo alvo dentro de 100 ms somam num número. Formato `1.234` (pt-BR)
 
 **Interação:** clique no orbe ou barra = nada; hover em habilidade = tooltip (nome, custo, recarga, tags, sigilos); itens no chão mostram rótulo (Mágico ou acima) e `Alt` mostra todos.
 
-### 4.2 Inventário — `WBP_Inventory` / `UShatterInventoryWidget` (tecla `I`)
+### 4.2 Inventário — `InventoryView.uxml` + `InventoryView.cs` (tecla `I`)
 
 Painel lateral à direita, personagem visível à esquerda e barra inferior livre.
 
@@ -488,7 +512,7 @@ Painel lateral à direita, personagem visível à esquerda e barra inferior livr
 | Cabeçalho | — | (1088, 56, 768, 48) | "Inventário" em `title`; botão fechar 48 × 48 em (1792, 56) |
 | Equipamento | — | (1088, 112, 768, 328) | Silhueta 3D da classe (render do herói) ao centro e 8 slots 88 × 88 ao redor: Arma (esq.-meio), Mão secundária (dir.-meio), Elmo (topo), Peitoral (centro abaixo do elmo), Luvas (esq.-baixo), Botas (base), Amuleto (dir.-topo), Anel (dir.-baixo). Demo: 5 posições ativas (Arma, Elmo, Peitoral, Botas, Anel), as outras com cadeado. Slot vazio mostra ícone-fantasma da posição em `border.subtle` |
 | Abas | — | (1088, 452, 768, 48) | "Mochila" · "Baú compartilhado" (só no Refúgio; fora dele fica desabilitada com tooltip "Disponível no Refúgio do Marco") |
-| Grade | — | (1096, 508, 752, 280) | 8 × 3 slots de 88 × 88 gap 4 na vista padrão; a Mochila tem 40 posições, rolagem vertical com `ScrollBox` (5 linhas de 8) |
+| Grade | — | (1096, 508, 752, 280) | 8 × 3 slots de 88 × 88 gap 4 na vista padrão; a Mochila tem 40 posições, rolagem vertical com `ScrollView` (5 linhas de 8) |
 | Recursos | — | (1088, 796, 768, 72) | Linha 1: Ouro, Lascas, Cinzas de Memória; linha 2: Fragmentos de Eco `12/50`, Cargas do Marco. Ícone 32 + número; hover com nome e explicação |
 
 **Interação (teclado, mouse e gamepad):**
@@ -500,7 +524,7 @@ Painel lateral à direita, personagem visível à esquerda e barra inferior livr
 
 **Estados:** normal; item preso ao cursor; mochila cheia (toast "Mochila cheia" + contador `40/40` em `semantic.warning`); Baú indisponível; slot bloqueado (demo).
 
-**Tooltip de item — `WBP_ItemTooltip` / `UShatterItemTooltip`:**
+**Tooltip de item — `ShatterItemTooltip`:**
 
 ```
 ┌───────────────────────────────┐  largura máx. 480 (≈ 50 caracteres por linha)
@@ -529,7 +553,7 @@ Painel lateral à direita, personagem visível à esquerda e barra inferior livr
 - Nome com gênero gramatical correto: exemplos "Espada Flamejante", "Lança Sombria".
 - **Texto mais longo para testar:** nome "Anel Flamejante do Recuperador Paciente" (40 caracteres → 2 linhas), afixo "+18% de dano de projétil contra inimigos atordoados" (51 caracteres → 2 linhas), efeito de Único com 3 linhas. Altura máxima do tooltip: 800; acima disso, o sabor é cortado primeiro.
 
-### 4.3 Expedição — `WBP_Expedition` / `UShatterExpeditionWidget` (falar com a Ilsa)
+### 4.3 Expedição — `ExpeditionView.uxml` + `ExpeditionView.cs` (falar com a Ilsa)
 
 Painel modal sobre `surface.scrim`. Fluxo: área dominada → objetivo → regras de IA → duração → previsão → iniciar.
 
@@ -537,13 +561,13 @@ Painel modal sobre `surface.scrim`. Fluxo: área dominada → objetivo → regra
 |---|---|---|
 | Painel | (160, 48, 1600, 984) | `nine_panel_ornate` |
 | Cabeçalho | (192, 64, 1536, 56) | "Expedição" em `title`; à direita: "Cargas do Marco: 7/12" com ícone e "Vigor: descansado" |
-| Coluna A — Áreas dominadas | (192, 136, 480, 784) | `ScrollBox`, linhas de 80: nome da área (`body_bold`), "Níveis 2–4 · Dominada" (`text.secondary`), selo. Áreas não dominadas desabilitadas com cadeado e "Vença a área na mão, com o chefe, para liberar" |
+| Coluna A — Áreas dominadas | (192, 136, 480, 784) | `ScrollView`, linhas de 80: nome da área (`body_bold`), "Níveis 2–4 · Dominada" (`text.secondary`), selo. Áreas não dominadas desabilitadas com cadeado e "Vença a área na mão, com o chefe, para liberar" |
 | Coluna B — Plano | (704, 136, 512, 784) | **Objetivo**: 3 botões segmentados com ícone 48 (XP · Ouro · Materiais). **Duração**: slider 1–12 h em passos de 1 h, rótulo "4 h · gasta 4 cargas"; abaixo, 12 barrinhas 32 × 16 por Vigor (h1–4 `vigor` 100%, h5–8 a 70%, h9–12 a 40%) com legenda "Descansado até 4 h, depois cansa". **Previsão** (cartão `panel_raised`): "8–12 mil de XP", "1,1–1,6 mil de Ouro", "Raros: até 4"; "Risco de recuo: Médio" com selo `semantic.warning` e motivo "Falta resistência a fogo" |
-| Coluna C — Regras de IA | (1248, 136, 480, 784) | Título "Regras (em ordem)" + contador `4/6`. Até 6 `WBP_RuleRow` (80, gap 8). Botão "+ Adicionar regra" (desabilitado com 6). Última linha fixa: "Senão: ataque básico" em `text.muted` |
+| Coluna C — Regras de IA | (1248, 136, 480, 784) | Título "Regras (em ordem)" + contador `4/6`. Até 6 `ShatterRuleRow` (80, gap 8). Botão "+ Adicionar regra" (desabilitado com 6). Última linha fixa: "Senão: ataque básico" em `text.muted` |
 | Aviso de compatibilidade | (192, 936, 944, 80) | Faixa `panel_raised` com filete `semantic.danger` (bloqueia) ou `semantic.warning`. Ex.: "Raio do Arquivo ainda não funciona em patrulha. Troque a habilidade para iniciar." |
 | Botões | (1184, 952, 544, 56) | "Cancelar" (secundário, 192) · "Iniciar expedição" (primário, 336) |
 
-**Linha de regra (`WBP_RuleRow`):** número de ordem (32) · linha 1: "Se: Vida abaixo de 35%" (combo de condição + valor) · linha 2: "Faça: Usar poção" (combo de ação) · alças ▲▼ e "×" à direita (32 cada). Condições usam ícone 48 (vida, recurso, inimigos próximos, elite, chefe). Valores percentuais em passos de 5%.
+**Linha de regra (`ShatterRuleRow`):** número de ordem (32) · linha 1: "Se: Vida abaixo de 35%" (combo de condição + valor) · linha 2: "Faça: Usar poção" (combo de ação) · alças ▲▼ e "×" à direita (32 cada). Condições usam ícone 48 (vida, recurso, inimigos próximos, elite, chefe). Valores percentuais em passos de 5%.
 
 **Estados:**
 - Nenhuma área dominada: colunas B e C desabilitadas; mensagem central "Vença o Guardião da Cripta para instalar o primeiro Marco de Retorno."
@@ -557,7 +581,7 @@ Painel modal sobre `surface.scrim`. Fluxo: área dominada → objetivo → regra
 
 **Texto mais longo:** regra "Se: 3 ou mais inimigos a até 4 m / Faça: Usar Fenda de Pedra" (cada linha ≤ 30 caracteres ≈ 285 px; combo com 392 úteis cabe; em pt-BR longo quebra em 2 linhas e a linha cresce para 112); aviso de 80 caracteres ≈ 760 px → 2 linhas em 928 úteis; nome de área "Armazém de Cinzas".
 
-### 4.4 Relatório de expedição — `WBP_ExpeditionReport` / `UShatterExpeditionReportWidget`
+### 4.4 Relatório de expedição — `ExpeditionReportView.uxml` + `ExpeditionReportView.cs`
 
 Aparece ao abrir o jogo (ou ao falar com o Tico) quando há expedição terminada. Coletar é obrigatório antes de fechar (a coleta é o salvamento).
 
@@ -567,7 +591,7 @@ Aparece ao abrir o jogo (ou ao falar com o Tico) quando há expedição terminad
 | Cabeçalho | (192, 64, 1536, 56) | Retrato do Tico 48 + "Relatório · Cripta Partida" em `title` |
 | Resumo | (192, 136, 736, 208) | Grade 2 × 3 de números grandes (`body_bold`) com rótulo `text.secondary`: Tempo efetivo "7 h 40 min de 8 h"; Encontros vencidos "212"; Poções gastas "31"; XP "+9.840"; Ouro "+1.312"; Motivo da parada (ícone + "Duração concluída" / "Recuou: sem poções" / "Relógio do PC voltou; encerrada no último ponto") |
 | Vigor por hora | (192, 360, 736, 96) | 12 colunas 48 × 64 (uma por hora), altura = XP da hora, cor `semantic.xp`; hora sem patrulha em `border.subtle`; hover mostra o recibo da hora |
-| Recibos | (192, 472, 736, 448) | Lista agrupada por hora (`ScrollBox`): "Hora 3 · 27 encontros · 4 poções · 1 recuo parcial"; clique expande ("Sentinela Oca ×3 · vencido em 18 s · 1 poção") |
+| Recibos | (192, 472, 736, 448) | Lista agrupada por hora (`ScrollView`): "Hora 3 · 27 encontros · 4 poções · 1 recuo parcial"; clique expande ("Sentinela Oca ×3 · vencido em 18 s · 1 poção") |
 | Loot | (976, 136, 768, 392) | Grade 8 × 4 de slots 88 (rolagem se exceder): Raros primeiro, depois Mágicos, Comuns, Páginas, Sigilos; materiais e Ouro em linha própria. Tooltip igual ao inventário |
 | Dica | (976, 544, 768, 144) | Cartão com filete `semantic.info`: "Sua cura falhou 3 vezes; tente subir o limiar para 45%." + botão terciário "Ajustar regra" |
 | Convite | (976, 704, 768, 144) | Cartão dourado: "Jogando esta rota você teria Fervor e chance de Únicos." + botão secundário "Jogar esta rota agora" |
@@ -586,7 +610,7 @@ Aparece ao abrir o jogo (ou ao falar com o Tico) quando há expedição terminad
 
 ### 4.5 Menu principal e slots de save
 
-**Menu principal — `WBP_MainMenu` / `UShatterMainMenuWidget`**
+**Menu principal — `MainMenuView.uxml` + `MainMenuView.cs`**
 
 | Bloco | Âncora | Posição | Conteúdo |
 |---|---|---|---|
@@ -599,7 +623,7 @@ Aparece ao abrir o jogo (ou ao falar com o Tico) quando há expedição terminad
 
 Estados: primeira execução (sem "Continuar" e sem "Carregar"; "Novo jogo" é primário); save danificado recuperado (toast `semantic.warning` "O save principal estava danificado. Carregamos o backup de 15/10/2026 21:35.").
 
-**Slots de save — `WBP_SaveSlots` / `UShatterSaveSlotsWidget`**: painel centralizado (400, 128, 1120, 824) com título "Carregar jogo" e 3 cartões `WBP_SaveSlotCard` de 1120 × 224 (gap 16).
+**Slots de save — `SaveSlotsView.uxml` + `SaveSlotsView.cs`**: painel centralizado (400, 128, 1120, 824) com título "Carregar jogo" e 3 cartões `ShatterSaveSlotCard` de 1120 × 224 (gap 16).
 Cartão (padding 24): retrato 96 × 96 à esquerda; à direita:
 - Linha 1: nome do personagem (`body_bold`) + selo de nuvem 32 ("Steam Cloud").
 - Linha 2: "Guerreiro · Nível 12" · "Pátio dos Marcos".
@@ -614,9 +638,9 @@ Interação: ↑/↓ entre cartões, `Enter` carrega, `Delete` apaga (abre confi
 
 ### 4.6 Pausa e opções
 
-**Pausa — `WBP_PauseMenu` / `UShatterPauseMenuWidget`** (`Esc`): `surface.scrim` sobre o jogo (single-player, o jogo pausa). Coluna central (760, 320, 400, —): "Continuar" (primário), "Opções", "Abrir pasta de logs", "Menu principal", "Sair do jogo". Sair e Menu principal mostram "O jogo é salvo automaticamente. Sair agora?" com "Sair" e "Ficar". Esc fecha a pausa.
+**Pausa — `PauseMenuView.uxml` + `PauseMenuView.cs`** (`Esc`): `surface.scrim` sobre o jogo (single-player, o jogo pausa). Coluna central (760, 320, 400, —): "Continuar" (primário), "Opções", "Abrir pasta de logs", "Menu principal", "Sair do jogo". Sair e Menu principal mostram "O jogo é salvo automaticamente. Sair agora?" com "Sair" e "Ficar". Esc fecha a pausa.
 
-**Opções — `WBP_Options` / `UShatterOptionsWidget`**: painel (160, 48, 1600, 984); abas no topo (192, 64): Jogo · Vídeo · Áudio · Controles · Acessibilidade. Conteúdo em lista de linhas de 56: rótulo à esquerda (largura 640), controle à direita (800). Rodapé: "Restaurar padrão" (texto), "Cancelar" (secundário), "Aplicar" (primário). Mudanças de vídeo pedem confirmação com contagem regressiva de 15 s ("Manter estas configurações?").
+**Opções — `OptionsView.uxml` + `OptionsView.cs`**: painel (160, 48, 1600, 984); abas no topo (192, 64): Jogo · Vídeo · Áudio · Controles · Acessibilidade. Conteúdo em lista de linhas de 56: rótulo à esquerda (largura 640), controle à direita (800). Rodapé: "Restaurar padrão" (texto), "Cancelar" (secundário), "Aplicar" (primário). Mudanças de vídeo pedem confirmação com contagem regressiva de 15 s ("Manter estas configurações?").
 
 | Aba | Itens |
 |---|---|
@@ -626,15 +650,15 @@ Interação: ↑/↓ entre cartões, `Enter` carrega, `Delete` apaga (abre confi
 | Controles | Remapeamento (abaixo), glifos de gamepad |
 | Acessibilidade | Texto grande; Tremor de tela (Normal / Reduzido / Desligado); Reduzir flashes; Reduzir sangue; Reduzir efeitos do jogador (100/60/30%); Reduzir movimento da interface; Daltonismo: reforço de forma nas raridades (sempre ligado) e telegraph alternativo (laranja → amarelo com listras) |
 
-**Remapeamento — `WBP_KeyBindRow` / `UShatterKeyBindRow`**: tabela com colunas Ação (480) · Principal (240) · Alternativa (240). Padrões do plano: Mover (W/S/A/D), Ataque básico (botão esquerdo), Habilidade 1–5 (botão direito, Q, E, R, F), Esquiva (Espaço), Poção 1 e 2 (1, 2), Inventário (I), Árvore passiva (P), Mapa (M), Mostrar itens no chão (Alt), Comparar item (Shift).
+**Remapeamento — `ShatterKeyBindRow`**: tabela com colunas Ação (480) · Principal (240) · Alternativa (240). Padrões do plano: Mover (W/S/A/D), Ataque básico (botão esquerdo), Habilidade 1–5 (botão direito, Q, E, R, F), Esquiva (Espaço), Poção 1 e 2 (1, 2), Inventário (I), Árvore passiva (P), Mapa (M), Mostrar itens no chão (Alt), Comparar item (Shift).
 - Clicar na célula (ou `Enter`): vira "Pressione uma tecla… (Esc cancela)" com borda `border.focus` piscando a 2 Hz.
 - Conflito: "Q já está em Habilidade 2. Trocar as duas?" → "Trocar" / "Cancelar".
 - `Esc` não é remapeável; "Mirar" é sempre o mouse (ou o analógico direito no gamepad).
 - Ação sem tecla: "—" em `semantic.warning` e aviso no rodapé "Ação sem tecla: Poção 2".
-- Glifos do HUD e dos tooltips atualizam na hora. Recomendação ao Frontend: Enhanced Input com *Player Mappable Key Settings*, salvo fora do Steam Cloud.
+- Glifos do HUD e dos tooltips atualizam na hora. Recomendação ao Frontend: Input System com rebinding (`PerformInteractiveRebinding`), salvo fora do Steam Cloud.
 **Texto mais longo:** "Mostrar itens no chão" (21 caracteres), "Tela cheia sem bordas" (21 ≈ 200 px no controle de 800), "Daltonismo: reforço de forma nas raridades" (43 ≈ 410 px; a coluna de rótulo de 640 comporta).
 
-### 4.7 Mapa do Ato I — `WBP_WorldMap` / `UShatterWorldMapWidget`
+### 4.7 Mapa do Ato I — `WorldMapView.uxml` + `WorldMapView.cs`
 
 Folha 12: ilhas flutuantes ligadas por uma trilha, nó de área com 3 losangos de dificuldade, painel lateral de pedra com a área selecionada.
 
@@ -650,79 +674,85 @@ Estados: área nova (pulso dourado), dominada (selo), bloqueada (cadeado e motiv
 
 ## 5. Componentes reutilizáveis
 
-Cada componente tem uma classe C++ base (lógica, estados, eventos) e um Widget Blueprint de visual. Cores e texturas vêm de uma única Data Asset `DA_ShatterUIStyle` (ou `USlateWidgetStyleAsset`) preenchida com os tokens.
+**Convenção de UI Toolkit:**
+- **Tela** = documento `<Nome>View.uxml` + classe `<Nome>View.cs` (MonoBehaviour com `UIDocument`; consulta elementos por `Q<T>("nome")` e só liga dados e eventos). Ex.: `HudView.uxml` + `HudView.cs`.
+- **Componente** = `VisualElement` customizado em C# (`[UxmlElement] public partial class ShatterBar : VisualElement`), prefixo `Shatter`, com `<Nome>.uxml` de template quando tiver estrutura interna. Lógica, estados e eventos ficam na classe; aparência, no USS.
+- **Estilo:** `Tokens.uss` (só variáveis em `:root`, **gerado** de `docs/03_design_tokens.json`, nunca editado à mão), `Components.uss` (um bloco por componente, seletores BEM como `.shatter-bar--boss`) e `Screens.uss` (ajustes por tela). Nenhuma cor, tamanho ou fonte literal fora de `Tokens.uss`: tudo por `var(--...)` (2.14).
+- **Estados:** pseudo-classes USS `:hover`, `:focus`, `:active`, `:disabled`, mais classes de modificador (`--selected`, `--empty`, `--low`, `--locked`).
+- **Localização:** textos por Unity Localization (String Tables pt_BR e en) ligadas no UXML; nunca texto literal.
+- **Pastas:** `Assets/UI/{Views,Components,Styles,Textures}`.
 
 ### 5.1 Estados comuns
 
 | Estado | Regra visual |
 |---|---|
 | Normal | Cores de repouso do componente |
-| Hover | Fundo um passo mais claro (`panel_hover` ou `action.primary_hover`); borda `border.gold_highlight`; som curto |
-| Pressionado | Fundo um passo mais escuro; **conteúdo desce 2** |
-| Desabilitado | Texto `text.disabled`, ícone a 40%, borda `border.subtle`; tooltip obrigatório com o motivo ("Requer 6 cargas") |
-| Foco (teclado, gamepad) | Anel de 3 `border.focus` a 3 por fora da borda, mais marcadores de canto 8 × 8; nunca só cor de fundo |
-| Selecionado | Abas, linhas e segmentos: fundo `panel_raised` + filete de 4 `border.gold` à esquerda (linhas) ou embaixo (abas) |
+| Hover (`:hover`) | Fundo um passo mais claro (`panel_hover` ou `action.primary_hover`); borda `border.gold_highlight`; som curto |
+| Pressionado (`:active`) | Fundo um passo mais escuro; **conteúdo desce 2** |
+| Desabilitado (`:disabled`) | Texto `text.disabled`, ícone a 40%, borda `border.subtle`; tooltip obrigatório com o motivo ("Requer 6 cargas") |
+| Foco (`:focus`, teclado e gamepad) | Anel de 3 `border.focus` a 3 por fora da borda, mais marcadores de canto 8 × 8; nunca só cor de fundo |
+| Selecionado (`--selected`) | Abas, linhas e segmentos: fundo `panel_raised` + filete de 4 `border.gold` à esquerda (linhas) ou embaixo (abas) |
 
 Hover e foco podem coexistir; o foco nunca some quando o mouse sai.
 
-### 5.2 Botão — `WBP_Button` / `UShatterButton`
+### 5.2 Botão — `ShatterButton`
 
 Variantes: **Primário** (`action.primary`, texto pergaminho; 1 por tela), **Secundário** (`action.secondary`, borda `border.default`), **Terciário/Texto** (sem fundo, texto `text.title`, sublinhado de 2 no hover), **Ícone** (48 × 48, tooltip obrigatório), **Perigoso** (secundário com texto `semantic.danger_text`; opção "segurar 1 s").
 Medidas: altura 56, padding horizontal 16, largura mínima 192, texto `body` centralizado; ícone opcional 32 à esquerda com gap 8. Glifo de tecla opcional à direita (`micro`).
 
-### 5.3 Painel — `WBP_Panel` / `UShatterPanel`
+### 5.3 Painel — `ShatterPanel`
 
 Variantes: **Ornamentado** (`nine_panel_ornate`, telas principais), **Simples** (`nine_panel_plain`, cartões), **Cartão** (`panel_raised` + filete semântico de 4 à esquerda: info, aviso, perigo, dourado). Slots: cabeçalho opcional (título `title` + fechar), corpo, rodapé. Padding 32.
 
-### 5.4 Barra — `WBP_Bar` / `UShatterBar` e `WBP_Orb` / `UShatterOrb`
+### 5.4 Barra — `ShatterBar` e `ShatterOrb`
 
 - Barra: moldura `nine_bar_frame`, fundo cor escura do token, preenchimento **lava** (gradiente do token claro ao escuro, brilho no topo, ondulação lenta); "rastro" de perda (parte perdida em `life_highlight` por 400 ms antes de cair); texto opcional `micro`. Alturas: 8 (XP), 16 (fina), 28 (chefe).
-- Orbe: esfera de vidro 144 × 144 com máscara circular; preenchimento por material (altura do líquido) com linha de superfície ondulada; reflexo estático.
+- Orbe: esfera de vidro 144 × 144 com máscara circular; máscara por `overflow: hidden` com `border-radius: 50%`; preenchimento por `SG_UI_Lava` (altura do líquido) ou `generateVisualContent`, com linha de superfície ondulada; reflexo estático em elemento filho.
 - Estados: normal, cheio (brilho no topo), baixo (< 30%: pulso de alpha 1 s), bloqueado (cinza `text.disabled`).
 
-### 5.5 Slot de item — `WBP_ItemSlot` / `UShatterItemSlot` · Slot de habilidade — `WBP_SkillSlot` / `UShatterSkillSlot`
+### 5.5 Slot de item — `ShatterItemSlot` · Slot de habilidade — `ShatterSkillSlot`
 
 - Item: 88 × 88, `nine_slot`, ícone 80 centralizado; canto pela raridade; gema inferior `#F2B23A`; número de pilha `micro` no canto inferior direito. Estados: vazio (ícone-fantasma), com item, hover (borda `border.gold_highlight`), arrastando (origem a 40%), alvo válido (borda `semantic.success`) ou inválido (`semantic.danger`), requisito não cumprido (hachura), bloqueado (cadeado 32), novo (ponto 8 `semantic.eco` até o primeiro hover).
 - Habilidade: 88 × 88, gema da classe embaixo; tecla em `micro` no canto inferior esquerdo sobre placa escura; recarga = escurecimento `#0F0B14` a 60% varrendo de cima para baixo + segundos restantes em `body` ("3", "0,8" abaixo de 1 s); recurso insuficiente = ícone tingido com a cor escura do recurso a 50%; pronta após recarga = brilho de borda por 150 ms; bloqueada (demo) = cadeado.
 
-### 5.6 Tooltip — `WBP_Tooltip` / `UShatterTooltip` (e `UShatterItemTooltip` para itens)
+### 5.6 Tooltip — `ShatterTooltip` (e `ShatterItemTooltip` para itens)
 
 Fundo `#161117` a 95%, `nine_tooltip`, sombra suave; padding 24; largura máxima 480 (576 com texto grande); atraso 150 ms; regras de posição de 4.2. Variantes: simples, habilidade (nome, custo, recarga, tags como chips `micro`, sigilos, emblema do elemento), item (4.2).
 
-### 5.7 Linha de regra — `WBP_RuleRow` / `UShatterRuleRow`
+### 5.7 Linha de regra — `ShatterRuleRow`
 
-80 (112 com quebra), fundo `panel_raised`; número de ordem em `text.title`; dois combos (`WBP_Dropdown` / `UShatterComboBox`) de condição e ação; alças ▲▼ e ×. Estados: normal, hover, foco, arrastando (sombra + linha-guia dourada de 4 no destino), inválida (borda `semantic.danger` + "Habilidade não equipada"), incompatível com idle (filete `semantic.danger` + nome da habilidade), fixa ("Senão: ataque básico", sem alças).
+80 (112 com quebra), fundo `panel_raised`; número de ordem em `text.title`; dois combos (`ShatterDropdown`) de condição e ação; alças ▲▼ e ×. Estados: normal, hover, foco, arrastando (sombra + linha-guia dourada de 4 no destino), inválida (borda `semantic.danger` + "Habilidade não equipada"), incompatível com idle (filete `semantic.danger` + nome da habilidade), fixa ("Senão: ataque básico", sem alças).
 
-### 5.8 Toast — `WBP_Toast` / `UShatterToast` (fila em `UShatterToastSubsystem`)
+### 5.8 Toast — `ShatterToast` (fila em `ToastService`)
 
 480 × 64, `nine_toast`, filete de 4 à esquerda na cor do tipo; ícone 32 + texto `body` (1 linha, ≤ 40 caracteres; 2 linhas → 96 de altura). Tipos: info, sucesso, aviso, perigo, loot (cor da raridade; ex.: "Raro: Elmo do Vigia"), especial Fragmento de Eco (`semantic.eco` + som próprio). Máximo 4 visíveis; o mais novo em cima; 3 s; hover pausa o tempo; ação opcional ("Desfazer").
 
 ### 5.9 Outros componentes
 
-| Componente | Widget / Classe | Nota |
+| Componente | Classe C# (`VisualElement`) | Nota |
 |---|---|---|
-| Abas | `WBP_Tabs` / `UShatterTabBar` | 48 de altura; `Ctrl+Tab`, clique e bumpers do gamepad (Q/E são habilidades) |
-| Combo | `WBP_Dropdown` / `UShatterComboBox` | Lista abre para baixo, máx. 8 itens visíveis, rolagem |
-| Slider | `WBP_Slider` / `UShatterSlider` | Trilho 8, alça 24 × 32, passos discretos, valor à direita |
-| Alternador | `WBP_Toggle` / `UShatterToggle` | Caixa 32 × 32 com marca de ouro; "Ligado/Desligado" escrito |
-| Segmentado | `WBP_Segmented` / `UShatterSegmentedControl` | Objetivo da expedição |
-| Diálogo | `WBP_ConfirmDialog` / `UShatterConfirmDialog` | 720 de largura, scrim 78%, foco inicial no botão seguro |
-| Cartão de save | `WBP_SaveSlotCard` / `UShatterSaveSlotCard` | 4.5 |
-| Linha de tecla | `WBP_KeyBindRow` / `UShatterKeyBindRow` | 4.6 |
-| Número de dano | `WBP_DamageNumber` / `UShatterDamageNumber` | Pool de 64, posição projetada |
-| Rótulo de item no chão | `WBP_LootLabel` / `UShatterLootLabel` | Placa de pedra + borda 2 da raridade + nome; empilhamento sem sobreposição (desloca 24) |
-| Glifo de tecla | `WBP_KeyGlyph` / `UShatterKeyGlyph` | Lê o mapeamento atual |
-| Mapa de área | `WBP_WorldMap` / `UShatterWorldMapWidget` | 4.7 |
+| Abas | `ShatterTabs` | 48 de altura; `Ctrl+Tab`, clique e bumpers do gamepad (Q/E são habilidades) |
+| Combo | `ShatterDropdown` | Lista abre para baixo, máx. 8 itens visíveis, rolagem |
+| Slider | `ShatterSlider` | Trilho 8, alça 24 × 32, passos discretos, valor à direita |
+| Alternador | `ShatterToggle` | Caixa 32 × 32 com marca de ouro; "Ligado/Desligado" escrito |
+| Segmentado | `ShatterSegmented` | Objetivo da expedição |
+| Diálogo | `ShatterConfirmDialog` | 720 de largura, scrim 78%, foco inicial no botão seguro |
+| Cartão de save | `ShatterSaveSlotCard` | 4.5 |
+| Linha de tecla | `ShatterKeyBindRow` | 4.6 |
+| Número de dano | `ShatterDamageNumber` | Pool de 64, posição projetada |
+| Rótulo de item no chão | `ShatterLootLabel` | Placa de pedra + borda 2 da raridade + nome; empilhamento sem sobreposição (desloca 24) |
+| Glifo de tecla | `ShatterKeyGlyph` | Lê o mapeamento atual |
+| Mapa de área | `WorldMapView.uxml` + `WorldMapView.cs` | 4.7 |
 
 ---
 
 ## 6. Feedback de combate ("juice")
 
-Valores alinhados à seção 5 do plano. Todos configuráveis em dados (`Content/Data/`), não no código.
+Valores alinhados à seção 5 do plano. Todos configuráveis em dados (ScriptableObject ou CSV em `Assets/Data/`), não no código.
 
 | Efeito | Quando | Valor |
 |---|---|---|
-| **Hitstop** | Golpe pesado / crítico / golpe pesado de chefe no jogador / jogador atingido | 60 / 80 / 80 / 40 ms; nenhum em golpe leve. Só pausa quem bateu e quem apanhou (`CustomTimeDilation` = 0 na entidade), nunca o jogo todo |
+| **Hitstop** | Golpe pesado / crítico / golpe pesado de chefe no jogador / jogador atingido | 60 / 80 / 80 / 40 ms; nenhum em golpe leve. Só pausa quem bateu e quem apanhou (`Animator.speed` = 0 e movimento travado nas duas entidades), nunca o jogo todo (não usar `Time.timeScale`) |
 | **Flash branco** | Inimigo atingido | Malha inteira em `#FFFFFF` por 83 ms via parâmetro de material (lerp, sem aditivo). Com "Reduzir flashes": 50% |
 | **Knockback** | Inimigo comum / elite / chefe | 20 / 6 / 0 cm em 100 ms |
 | **Tremor de câmera** | Só impactos grandes (golpe pesado que mata 3+, impacto de chefe, Golpe do Shatter) | Amplitude 3 cm (pesado), 5 cm (chefe), teto 8 cm; 120–250 ms; ruído a 30 Hz decaindo linearmente; só translação. Opções: Normal / Reduzido (50%) / Desligado |
@@ -735,7 +765,7 @@ Valores alinhados à seção 5 do plano. Todos configuráveis em dados (`Content
 | **Esquiva** | Espaço | 2 imagens residuais do herói a 50% e 25% de alpha nos primeiros 200 ms (janela de invulnerabilidade) |
 | **Vida baixa** | < 30% | Vinheta 4.1 + batimento sonoro |
 
-Regras: nenhum efeito usa blur de tela cheia; bloom só leve (3.6); limite de 300 projéteis ativos e partículas em pool; Niagara com sistemas pequenos e GPU emitters apenas quando passar de 200 partículas.
+Regras: nenhum efeito usa blur de tela cheia; bloom só leve (3.6); limite de 300 projéteis ativos e partículas em pool; sistemas pequenos, VFX Graph apenas acima de 200 partículas e com aprovação do Tech Lead.
 
 ---
 
@@ -743,13 +773,13 @@ Regras: nenhum efeito usa blur de tela cheia; bloom só leve (3.6); limite de 30
 
 **Arte 3D e render**
 - [ ] Cada tipo de asset dentro do orçamento da seção 17.3 do `docs/04_arquitetura.md`; auditoria no editor (17.4).
-- [ ] Densidade de texel dentro de ±20% da meta (3.3), medida com Texture Density.
+- [ ] Densidade de texel dentro de ±20% da meta (3.3), medida com um material de debug de checker de UV (ou o Rendering Debugger).
 - [ ] Nenhuma textura de personagem, prop ou kit com normal map; nenhum preto puro na paleta (valor mínimo `#0F0B14`).
 - [ ] Teste de silhueta (3.5) aprovado para as 3 classes, 8 inimigos do Ato I e 9 do endgame.
 - [ ] Contorno seletivo aparece só quando herói ou elite está oculto; nenhum outline global.
 - [ ] Captura em hardware real conforme o orçamento por cena da seção 18 do `docs/04_arquitetura.md`.
 - [ ] Cada área exibe sua cor-assinatura de névoa (2.6); telegraph legível em todas, incluindo as de névoa vermelha (variante `dark_outline`).
-- [ ] MSAA ativo, sem serrilhado visível em borda de pedra e arma; sem TSR, sem exposição automática.
+- [ ] MSAA ativo, sem serrilhado visível em borda de pedra e arma; sem TAA/STP, exposição fixa.
 
 **Texto e localização**
 - [ ] Frase-teste da 2.7 renderiza todos os glifos nos 7 estilos, em 1080p e em 800p; nenhum texto abaixo de 12 px efetivos no Deck.
@@ -767,7 +797,7 @@ Regras: nenhum efeito usa blur de tela cheia; bloom só leve (3.6); limite de 30
 
 **Interação**
 - [ ] Todas as telas operáveis só com teclado, só com mouse e só com gamepad; anel de foco sempre visível.
-- [ ] Cinco estados de cada componente da seção 5 conferidos na galeria `WBP_UIGallery`.
+- [ ] Cinco estados de cada componente da seção 5 conferidos na galeria `UIGallery.uxml`.
 - [ ] Remapear todas as ações; conflitos tratados; glifos do HUD atualizados; configuração persiste.
 - [ ] Expedição: estados vazio, cargas insuficientes, incompatível e "outro personagem em expedição" reproduzidos.
 - [ ] Relatório: não fecha sem coletar; não coleta duas vezes.
@@ -786,15 +816,15 @@ Regras: nenhum efeito usa blur de tela cheia; bloom só leve (3.6); limite de 30
 
 ## 8. Desvios do plano
 
-| Plano (Godot 4) | Agora (UE5.8) | Motivo |
+| Plano (Godot 4) | Agora (Unity 6 LTS, URP) | Motivo |
 |---|---|---|
-| Viewport interno de resolução fixa com escala inteira | UMG em resolução nativa com curva de DPI padrão do UE; mundo em 3D com Forward + MSAA | Decisões 1, 4 e 6 de `docs/08_decisoes_visual_3d.md` |
-| Imagens 2D e tiles | Skeletal Mesh e kits Static Mesh modulares com albedo pintado | Decisões 1 e 2 |
-| `tr()` e CSV de tradução | `FText` com String Tables (CSV exportado pelo Narrative) | Equivalente no UE5 |
+| Viewport interno de resolução fixa com escala inteira | UI Toolkit em resolução nativa com PanelSettings Scale With Screen Size (1920 × 1080); mundo em 3D com URP Forward e MSAA | Decisões 1, 4 e 6 de `docs/08_decisoes_visual_3d.md` |
+| Imagens 2D e tiles | Skinned Mesh com Animator e kits de malhas estáticas modulares em prefabs, com albedo pintado | Decisões 1 e 2 |
+| `tr()` e CSV de tradução | Unity Localization com String Tables (CSV exportado pelo Narrative) | Equivalente na Unity |
 | Fonte não definida | Source Sans 3, Cinzel e Lilita One (OFL 1.1) | Decisão deste documento; validar glifos no dia 1 |
 | Posições de equipamento sem nome | 8 posições nomeadas (5 no demo) | Necessário para desenhar o inventário; Vision Lead pode renomear |
 | Painel de build sem tecla | Proposta: `C` (Personagem) | Q/E/R/F/I/P/M já usados; fora do escopo |
-| Cor-assinatura de área só em texto | Cor de névoa por área (2.6) | Necessário para Exponential Height Fog e telegraph |
+| Cor-assinatura de área só em texto | Cor de névoa por área (2.6) | Necessário para a névoa por área e para o telegraph |
 
 ---
 
@@ -830,3 +860,6 @@ A versão 0.1.0 (15/10/2026) usava pixel art, Paper2D, sprites de 64 × 96, view
 
 **Chaves novas:** `color.base.pedra_*`, `color.base.dourado_claro`, `color.surface.lava_fill_dark`, `color.class_gem`, `color.damage.acid/shadow`, `color.element.*`, `color.threat.*`, `color.telegraph.*`, `color.character.*`, `color.fog.*`, `color.item_frame.*`, `color.fx.player_vfx_*`, `font.families.numeric`, `viewport.dpi_*`, `icon_export.*`, `art3d.*`, `motion.interpolation` (valor novo).
 **Mantidas com valores novos (mesmas chaves):** `color.surface.*`, `color.border.*`, `color.text.*`, `color.action.*`, `color.semantic.*`, `color.rarity.*`, `color.item_text.*`, `color.damage.*`, `size.*` (valores ×1,5 a ×2), `space.*` (×2), `nine_slice.*`, `elevation.*`, `z_order.*`, `motion.*`, `juice.hitstop_ms`, `juice.hit_flash_ms`, `juice.damage_number`.
+
+**Chaves novas da adaptação ao Unity (16/10/2026):** `uss` (convenção de variáveis e de arquivos de UI Toolkit), `viewport.panel_settings`, `meta.engine`, `art3d.unit_note`.
+**Chaves renomeadas nessa adaptação:** `font.slate_pt_per_px` → `font.pt_per_px`; `font.styles.*.slate_pt` → `font.styles.*.pt_ref`; `viewport.dpi_rule` e `viewport.dpi_curve` mantidas, agora descrevem o resultado do `PanelSettings` (Scale With Screen Size, `Match = 1`), não uma curva do motor.

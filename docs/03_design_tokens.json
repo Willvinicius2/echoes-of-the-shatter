@@ -1,21 +1,22 @@
 {
   "meta": {
     "name": "Echoes of the Shatter — design tokens",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "date": "2026-10-16",
     "owner": "Art Director",
     "source": "docs/03_design_system.md",
-    "units": "UI: unidades de layout UMG no espaço de referencia 1920x1080 (escala de DPI 1.0 em 1080 de lado menor). Arte 3D: 1 uu = 1 cm.",
+    "units": "UI: unidades de layout USS no espaco de referencia 1920x1080 (PanelSettings Scale With Screen Size, Match=1). Arte 3D: medidas em cm; 1 unidade Unity = 100 cm.",
     "color_format": "#RRGGBB em sRGB; alpha separado em 'alpha' (0-1) quando houver",
     "naming": "Chaves em snake_case; sugestao C++: namespace ShatterTokens { constexpr FColor Color_Text_Primary = ...; }",
     "visual_direction": "3D estilizado pintado a mao (docs/08_decisoes_visual_3d.md); fonte visual: docs/arte/referencias-geracao/aprovadas/",
-    "replaced_note": "Substituido em 16/10/2026: a v0.1.0 (15/10/2026) era pixel art, Paper2D e paleta ocre; nao vale mais."
+    "replaced_note": "Substituido em 16/10/2026: a v0.1.0 (15/10/2026) era pixel art, Paper2D e paleta ocre; nao vale mais. A v0.2.0 matinal era para Unreal (UMG/Slate); adaptada para Unity na v0.3.0.",
+    "engine": "Unity 6 LTS, URP, UI Toolkit (UXML + USS)"
   },
   "viewport": {
     "reference_width": 1920,
     "reference_height": 1080,
     "safe_margin": 32,
-    "dpi_rule": "Shortest Side",
+    "dpi_rule": "ScaleWithScreenSize, Match Width Or Height = 1 (escala pela altura)",
     "dpi_curve": [
       {
         "shortest_side": 480,
@@ -31,7 +32,17 @@
       }
     ],
     "steam_deck_scale": 0.74,
-    "min_effective_text_px": 12
+    "min_effective_text_px": 12,
+    "panel_settings": {
+      "scale_mode": "ScaleWithScreenSize",
+      "reference_resolution": [
+        1920,
+        1080
+      ],
+      "screen_match_mode": "MatchWidthOrHeight",
+      "match": 1.0,
+      "asset": "ShatterPanelSettings"
+    }
   },
   "color": {
     "base": {
@@ -378,58 +389,59 @@
       }
     },
     "required_glyphs": "ç Ç ã Ã õ Õ á Á à â Â é É ê Ê í Í ó Ó ô Ô ú Ú ü ñ Ñ ¿ ¡ º ª « » – — … · × ÷ % + − ▲ ▼",
-    "slate_pt_per_px": 0.75,
     "min_effective_px_steam_deck": 12,
     "styles": {
       "micro": {
         "family": "micro",
         "size_px": 16,
-        "slate_pt": 12,
         "line_height_px": 20,
-        "use": "teclas nos slots, contadores, versao"
+        "use": "teclas nos slots, contadores, versao",
+        "pt_ref": 12
       },
       "body": {
         "family": "body",
         "size_px": 20,
-        "slate_pt": 15,
         "line_height_px": 26,
-        "use": "texto padrao, tooltips, botoes, listas"
+        "use": "texto padrao, tooltips, botoes, listas",
+        "pt_ref": 15
       },
       "body_bold": {
         "family": "body",
         "size_px": 20,
-        "slate_pt": 15,
         "weight": "bold",
         "line_height_px": 26,
-        "use": "nome de item, cabecalho de secao"
+        "use": "nome de item, cabecalho de secao",
+        "pt_ref": 15
       },
       "title": {
         "family": "title",
         "size_px": 32,
-        "slate_pt": 24,
         "line_height_px": 40,
-        "use": "titulo de tela, faixa da area"
+        "use": "titulo de tela, faixa da area",
+        "pt_ref": 24
       },
       "display": {
         "family": "title",
         "size_px": 64,
-        "slate_pt": 48,
         "line_height_px": 72,
-        "use": "nome de chefe ao entrar, tela de morte"
+        "use": "nome de chefe ao entrar, tela de morte",
+        "pt_ref": 48
       },
       "damage": {
         "family": "numeric",
         "size_px": 28,
-        "slate_pt": 21,
-        "use": "numero de dano normal"
+        "use": "numero de dano normal",
+        "pt_ref": 21
       },
       "damage_crit": {
         "family": "numeric",
         "size_px": 44,
-        "slate_pt": 33,
-        "use": "numero de dano critico"
+        "use": "numero de dano critico",
+        "pt_ref": 33
       }
-    }
+    },
+    "pt_per_px": 0.75,
+    "definition": "Font Asset (TextCore) SDF, Atlas Population Dynamic, lista de fallback; USS -unity-font-definition"
   },
   "space": {
     "s0": 0,
@@ -476,7 +488,7 @@
     "status_px": 64,
     "inline_px": 32,
     "frame_overlay_px": 128,
-    "format": "PNG RGBA sem moldura; moldura e gema sao overlays do widget",
+    "format": "PNG RGBA sem moldura; moldura e gema sao overlays do elemento",
     "gem": "losango inferior central; cor da classe em habilidades, cor da raridade em itens"
   },
   "nine_slice": {
@@ -630,7 +642,7 @@
     }
   },
   "art3d": {
-    "units": "1 uu = 1 cm; tile de cenario = 200 cm",
+    "units": "medidas em cm; 1 unidade Unity = 100 cm; tile de cenario = 200 cm",
     "camera_reference": {
       "yaw_deg": 45,
       "pitch_deg": [
@@ -772,6 +784,54 @@
       "same_mesh_as_common": true,
       "scale_max": 1.15
     },
-    "tech_budget_owner": "docs/04_arquitetura.md secoes 17.3 e 18"
+    "tech_budget_owner": "docs/04_arquitetura.md secoes 17.3 e 18",
+    "unit_note": "heroi = 1,5 unidades Unity"
+  },
+  "uss": {
+    "tokens_file": "Assets/UI/Styles/Tokens.uss",
+    "generated_from": "docs/03_design_tokens.json (arquivo gerado por ferramenta de editor; nao editar a mao)",
+    "naming": "-- + caminho do token em kebab-case (ponto e sublinhado viram hifen); cor #RRGGBB ou rgba(); comprimento em px no espaco 1920x1080; tempo em ms",
+    "excluded_groups": [
+      "art3d",
+      "juice"
+    ],
+    "files": {
+      "tokens": "Tokens.uss",
+      "components": "Components.uss",
+      "screens": "Screens.uss"
+    },
+    "conventions": {
+      "screen": "<Nome>View.uxml + <Nome>View.cs (UIDocument)",
+      "component": "Shatter<Nome> : VisualElement ([UxmlElement])",
+      "selector": "BEM, ex.: .shatter-bar--boss",
+      "states": [
+        ":hover",
+        ":focus",
+        ":active",
+        ":disabled",
+        "--selected",
+        "--empty",
+        "--low",
+        "--locked"
+      ]
+    },
+    "map": {
+      "color.surface.panel": "--color-surface-panel",
+      "color.surface.panel_raised": "--color-surface-panel-raised",
+      "color.surface.scrim": "--color-surface-scrim",
+      "color.text.primary": "--color-text-primary",
+      "color.border.focus": "--color-border-focus",
+      "color.semantic.life": "--color-semantic-life",
+      "color.semantic.life_dark": "--color-semantic-life-dark",
+      "color.rarity.rare": "--color-rarity-rare",
+      "color.element.fire.mid": "--color-element-fire-mid",
+      "font.styles.body.size_px": "--font-body-size",
+      "font.families.title.name": "--font-title-family",
+      "space.s3": "--space-s3",
+      "size.item_slot": "--size-item-slot",
+      "nine_slice.panel_ornate.margin_px": "--slice-panel-ornate",
+      "motion.ui_fade_ms": "--motion-ui-fade",
+      "viewport.safe_margin": "--viewport-safe-margin"
+    }
   }
 }
