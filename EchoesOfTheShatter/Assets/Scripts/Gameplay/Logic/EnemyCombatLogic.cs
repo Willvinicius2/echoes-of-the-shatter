@@ -78,6 +78,22 @@ namespace Echoes.Gameplay
             return combat.PickAttack(enemy);
         }
 
+        /// <summary>true = inimigo parado e sem IA (o chefe antes do gatilho da arena). Sem passo, sem telegraph, sem movimento.</summary>
+        public bool Dormant { get; set; }
+
+        /// <summary>
+        /// R-VIS-1 (docs/14, seção 8.2): atirador só começa a mirar com ele mesmo dentro da área visível do herói menos 1 m; fora dela
+        /// anda para dentro. A área vem do frustum da câmera (<see cref="IsInsideVisibleArea"/>). A coluna de dados
+        /// <c>requireOnScreen</c> do enemy_ai.csv ainda não existe: hoje o valor vem do layout (JSON) por grupo.
+        /// </summary>
+        public bool RequireOnScreen { get; set; }
+
+        /// <summary>Posição (plano) dentro da área visível reduzida? Null = sem câmera: sempre dentro.</summary>
+        public Func<PlanarVector, bool> IsInsideVisibleArea { get; set; }
+
+        /// <summary>Velocidade máxima de movimento em m/s (patrulha usa uma fração dela).</summary>
+        public float FullMoveSpeedMeters => WorldUnits.ToMeters(rules.GetMoveSpeedUu(self.Stats, enemy.MoveSpeedUu));
+
         /// <summary>
         /// true quando não há NavMeshAgent: a lógica integra a perseguição no passo fixo (A-04).
         /// Com agente, quem anda é o agente (a cena copia a posição dele de volta).
@@ -86,6 +102,12 @@ namespace Echoes.Gameplay
 
         public void FixedTick(CombatSystem combatSystem, double dt)
         {
+            if (Dormant)
+            {
+                WantsToMove = false;
+                ChaseSpeed = 0f;
+                return;
+            }
             if (IntegratesMovement) self.Position += DirectVelocity() * (float)dt;
             combat = combatSystem;
             EnsureBoss(combatSystem);
@@ -102,6 +124,7 @@ namespace Echoes.Gameplay
                 HasTarget = hasTarget,
                 DistanceToTarget = hasTarget ? Math.Max(0f, toTarget.Magnitude - target.RadiusMeters) : float.MaxValue,
                 CanAct = rules.CanAct(self.Stats),
+                HoldFire = RequireOnScreen && IsInsideVisibleArea != null && !IsInsideVisibleArea(self.Position),
             };
 
             // Parado não acompanha o herói com o olhar; gira só depois do aggro.
@@ -121,7 +144,7 @@ namespace Echoes.Gameplay
             if ((events & EnemyBrainEvents.Interrupted) != 0) EndTelegraph(combatSystem);
 
             var canMove = rules.CanMove(self.Stats);
-            WantsToMove = hasTarget && canMove && Brain.WantsToMove && input.DistanceToTarget > StopDistance;
+            WantsToMove = hasTarget && canMove && Brain.WantsToMove && (input.DistanceToTarget > StopDistance || input.HoldFire);
             MoveTarget = hasTarget ? target.Position : self.Position;
             ChaseSpeed = WantsToMove ? WorldUnits.ToMeters(rules.GetMoveSpeedUu(self.Stats, enemy.MoveSpeedUu)) : 0f;
         }

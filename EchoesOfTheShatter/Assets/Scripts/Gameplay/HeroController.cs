@@ -52,6 +52,24 @@ namespace Echoes.Gameplay
         float verticalSpeed;
         float deadTime;
 
+        /// <summary>Disparado quando o herói volta ao checkpoint (morte ou saída): inimigos mortos reaparecem, a luta do chefe reinicia.</summary>
+        public event System.Action Respawned;
+
+        public Transform Checkpoint => checkpoint;
+
+        /// <summary>Define o checkpoint atual (as zonas de checkpoint e a arena chamam).</summary>
+        public void SetCheckpoint(Transform point)
+        {
+            if (point != null) checkpoint = point;
+        }
+
+        /// <summary>Volta ao checkpoint sem morrer (portal de saída): vida e poções cheias, como na morte.</summary>
+        public void ReturnToCheckpoint()
+        {
+            if (Logic == null) return;
+            Respawn();
+        }
+
         public HeroCombatLogic Logic { get; private set; }
         public Combatant Combatant => attributes != null ? attributes.Combatant : null;
         public PlayerInputHandler InputHandler => input;
@@ -193,6 +211,7 @@ namespace Echoes.Gameplay
             verticalSpeed = 0f;
             Logic.Self.Teleport(position.ToPlanar());
             combat.Revive(Logic.Self);
+            Respawned?.Invoke();
         }
 
         /// <summary>WASD → direção no chão relativa à câmera (W sobe na tela).</summary>

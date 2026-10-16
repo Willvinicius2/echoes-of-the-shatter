@@ -331,6 +331,8 @@ namespace Echoes.Interop
                     LootTableId = enemies.GetString(row, "lootTableId"),
                     IsBoss = enemies.GetBool(row, "isBoss", false, errors),
                     IsElite = enemies.GetBool(row, "isElite", false, errors),
+                    ModifierId = enemies.HasColumn("modifierId") ? enemies.GetString(row, "modifierId") : string.Empty,
+                    EliteLootTableId = enemies.HasColumn("eliteLootTableId") ? enemies.GetString(row, "eliteLootTableId") : string.Empty,
                     MoveSpeedUu = enemies.GetDouble(row, "moveSpeed", 0, errors),
                     AggroRangeUu = enemies.GetDouble(row, "aggroRange", 0, errors),
                 };

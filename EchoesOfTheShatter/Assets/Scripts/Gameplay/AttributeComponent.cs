@@ -56,7 +56,7 @@ namespace Echoes.Gameplay
         {
             ReleaseHandles();
             var stats = rules.CreateEnemyStats(enemy.Id, level);
-            var barrier = elite.Rolled ? rules.ApplyElite(stats, in elite) : 0.0;
+            var barrier = !elite.IsNone ? rules.ApplyElite(stats, in elite) : 0.0;
             var effects = rules.CreateEffectSet(stats, enemy, elite.Rolled);
             Combatant = new Combatant(CombatTeam.Enemy, enemy.Id, level, stats, effects, null, enemy, null, radiusMeters)
             {

@@ -109,7 +109,7 @@ namespace Echoes.Tests.EditMode
             var info = Rules.FindEnemy(enemyId);
             Assert.IsNotNull(info, enemyId);
             var stats = Rules.CreateEnemyStats(enemyId, level);
-            var barrier = elite.Rolled ? Rules.ApplyElite(stats, in elite) : 0.0;
+            var barrier = !elite.IsNone ? Rules.ApplyElite(stats, in elite) : 0.0;
             var effects = Rules.CreateEffectSet(stats, info, elite.Rolled);
             var combatant = new Combatant(CombatTeam.Enemy, enemyId, level, stats, effects, null, info, null, radius)
             {
