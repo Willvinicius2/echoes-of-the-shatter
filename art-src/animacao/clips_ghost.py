@@ -74,15 +74,15 @@ def shoot():
 
 def hit():
     idle0 = idle_pose(0.0)
-    back = merge(hp(0.03, -0.14, rx=-16, rz=5), torso(-14, -22, -10, -26, rz=-6),
+    back = merge(hp(0.03, -0.14, rx=-8, rz=5), torso(-8, -12, -8, -14, rz=-6),
                  {"LeftUpperArm": (14, 0, 62), "RightUpperArm": (10, 0, -58), "LeftLowerArm": (-30, 0, 0), "RightLowerArm": (-26, 0, 0),
                   "LeftHand": (-20, 0, 0), "RightHand": (-20, 0, 0)})
-    return {0: idle0, 3: dict(back, _i='EXPO', _e='EASE_OUT'), 8: merge(back, hp(0.0, -0.08, rx=-8), torso(-8, -12, -6, -14)), 12: idle0}
+    return {0: idle0, 3: dict(back, _i='EXPO', _e='EASE_OUT'), 8: merge(back, hp(0.0, -0.08, rx=-4), torso(-4, -6, -4, -8)), 12: idle0}
 
 
 def death():
     idle0 = idle_pose(0.0)
-    jolt = merge(hp(0.04, -0.12, rx=-20, rz=6), torso(-16, -26, -12, -30),
+    jolt = merge(hp(0.04, -0.12, rx=-8, rz=6), torso(-8, -14, -10, -24),
                  {"LeftUpperArm": (14, 0, 66), "RightUpperArm": (10, 0, -62), "LeftLowerArm": (-30, 0, 0), "RightLowerArm": (-26, 0, 0)})
     sink1 = merge(hp(-0.25, -0.1, rx=-6, rz=10, s=0.85), torso(10, 14, 20, 36, rz=8),
                   {"LeftUpperArm": (-14, 0, 40), "RightUpperArm": (-12, 0, -34), "LeftLowerArm": (-34, 0, 0), "RightLowerArm": (-40, 0, 0)})

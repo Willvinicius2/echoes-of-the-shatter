@@ -35,12 +35,12 @@ def roar():
     coil = merge(hips(-0.14, -0.05), torso(14, 16, 6, 16),
                  arms((22, 0, 6), -40, (22, 0, -6), -40), legs(-14, 26, -14, 26, 6))
     open_ = merge(hips(-0.02, -0.12), torso(-14, -36, -14, -44),
-                  arms((10, 0, 72), -14, (10, 0, -72), -14), legs(-4, 8, -4, 8, 7))
+                  arms((10, 0, 47), -34, (10, 0, -47), -34), legs(-4, 8, -4, 8, 7))
     keys = {0: rest, 8: coil, 24: dict(open_, _i='SINE')}
     for i, f in enumerate(range(26, 44, 2)):          # tremor do rugido
         a = 1 if i % 2 == 0 else -1
         keys[f] = merge(open_, torso(-14, -36 + 4 * a, -14, -44 + 6 * a, ry=8 * a, rz=4 * -a),
-                        arms((10 + 8 * a, 0, 72 + 6 * a), -14, (10 - 8 * a, 0, -72 - 6 * a), -14))
+                        arms((10 + 8 * a, 0, 47 + 5 * a), -34, (10 - 8 * a, 0, -47 - 5 * a), -34))
     keys[42]["_e"] = 'EASE_IN'
     keys[42]["_i"] = 'CUBIC'
     slam = merge(hips(-0.26, 0.18), torso(24, 26, 10, 26),
