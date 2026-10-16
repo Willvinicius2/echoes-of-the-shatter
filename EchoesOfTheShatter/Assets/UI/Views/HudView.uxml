@@ -1,0 +1,113 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <!-- HUD de combate (docs/03_design_system.md, seção 4.1). Sem texto literal: LocLabel por chave
+         e textos dinâmicos preenchidos pelo HudView.cs. Posições no espaço de referência 1920x1080. -->
+    <Style src="../Styles/Tokens.uss" />
+    <Style src="../Styles/Components.uss" />
+    <Style src="../Styles/Screens.uss" />
+    <ui:VisualElement name="hud-root" class="echoes-theme hud" picking-mode="Ignore">
+        <Echoes.UI.DamageNumberLayer name="damage-layer" picking-mode="Ignore" />
+
+        <ui:VisualElement name="top-left" class="hud__top-left" picking-mode="Ignore">
+            <ui:VisualElement name="portrait" class="hud__portrait" picking-mode="Ignore" />
+            <ui:VisualElement name="life-bar" class="shatter-bar shatter-bar--life hud__life-bar" picking-mode="Ignore">
+                <ui:VisualElement name="life-fill" class="shatter-bar__fill" picking-mode="Ignore" />
+                <ui:Label name="life-value" class="shatter-bar__value" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="resource-bar" class="shatter-bar shatter-bar--resource hud__resource-bar" picking-mode="Ignore">
+                <ui:VisualElement name="resource-fill" class="shatter-bar__fill" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="bottom-bar" class="hud__bottom-bar" picking-mode="Ignore">
+            <ui:VisualElement name="life-orb" class="shatter-orb shatter-orb--life hud__life-orb" picking-mode="Ignore">
+                <ui:VisualElement name="life-orb-fill" class="shatter-orb__fill" picking-mode="Ignore" />
+                <ui:Label name="life-orb-value" class="shatter-orb__value" picking-mode="Ignore" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="potion-0" class="shatter-potion-slot shatter-potion-slot--life hud__potion-0" picking-mode="Ignore">
+                <ui:VisualElement name="flask" class="shatter-potion-slot__flask" picking-mode="Ignore" />
+                <ui:VisualElement name="recharge" class="shatter-potion-slot__recharge" picking-mode="Ignore" />
+                <ui:Label name="count" class="shatter-potion-slot__count" picking-mode="Ignore" />
+                <ui:Label name="key" class="shatter-potion-slot__key" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="potion-1" class="shatter-potion-slot shatter-potion-slot--ward hud__potion-1" picking-mode="Ignore">
+                <ui:VisualElement name="flask" class="shatter-potion-slot__flask" picking-mode="Ignore" />
+                <ui:VisualElement name="recharge" class="shatter-potion-slot__recharge" picking-mode="Ignore" />
+                <ui:Label name="count" class="shatter-potion-slot__count" picking-mode="Ignore" />
+                <ui:Label name="key" class="shatter-potion-slot__key" picking-mode="Ignore" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="skills" class="hud__skills" picking-mode="Ignore">
+                <ui:VisualElement name="skill-0" class="shatter-skill-slot" picking-mode="Ignore">
+                    <ui:VisualElement name="icon" class="shatter-skill-slot__icon" picking-mode="Ignore" />
+                    <ui:Label name="name" class="shatter-skill-slot__name" picking-mode="Ignore" />
+                    <ui:VisualElement name="cooldown" class="shatter-skill-slot__cooldown" picking-mode="Ignore" />
+                    <ui:Label name="cooldown-text" class="shatter-skill-slot__cooldown-text" picking-mode="Ignore" />
+                    <ui:Label name="key" class="shatter-skill-slot__key" picking-mode="Ignore" />
+                    <ui:VisualElement name="gem" class="shatter-skill-slot__gem" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="skill-1" class="shatter-skill-slot" picking-mode="Ignore">
+                    <ui:VisualElement name="icon" class="shatter-skill-slot__icon" picking-mode="Ignore" />
+                    <ui:Label name="name" class="shatter-skill-slot__name" picking-mode="Ignore" />
+                    <ui:VisualElement name="cooldown" class="shatter-skill-slot__cooldown" picking-mode="Ignore" />
+                    <ui:Label name="cooldown-text" class="shatter-skill-slot__cooldown-text" picking-mode="Ignore" />
+                    <ui:Label name="key" class="shatter-skill-slot__key" picking-mode="Ignore" />
+                    <ui:VisualElement name="gem" class="shatter-skill-slot__gem" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="skill-2" class="shatter-skill-slot" picking-mode="Ignore">
+                    <ui:VisualElement name="icon" class="shatter-skill-slot__icon" picking-mode="Ignore" />
+                    <ui:Label name="name" class="shatter-skill-slot__name" picking-mode="Ignore" />
+                    <ui:VisualElement name="cooldown" class="shatter-skill-slot__cooldown" picking-mode="Ignore" />
+                    <ui:Label name="cooldown-text" class="shatter-skill-slot__cooldown-text" picking-mode="Ignore" />
+                    <ui:Label name="key" class="shatter-skill-slot__key" picking-mode="Ignore" />
+                    <ui:VisualElement name="gem" class="shatter-skill-slot__gem" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="skill-3" class="shatter-skill-slot" picking-mode="Ignore">
+                    <ui:VisualElement name="icon" class="shatter-skill-slot__icon" picking-mode="Ignore" />
+                    <ui:Label name="name" class="shatter-skill-slot__name" picking-mode="Ignore" />
+                    <ui:VisualElement name="cooldown" class="shatter-skill-slot__cooldown" picking-mode="Ignore" />
+                    <ui:Label name="cooldown-text" class="shatter-skill-slot__cooldown-text" picking-mode="Ignore" />
+                    <ui:Label name="key" class="shatter-skill-slot__key" picking-mode="Ignore" />
+                    <ui:VisualElement name="gem" class="shatter-skill-slot__gem" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="skill-4" class="shatter-skill-slot" picking-mode="Ignore">
+                    <ui:VisualElement name="icon" class="shatter-skill-slot__icon" picking-mode="Ignore" />
+                    <ui:Label name="name" class="shatter-skill-slot__name" picking-mode="Ignore" />
+                    <ui:VisualElement name="cooldown" class="shatter-skill-slot__cooldown" picking-mode="Ignore" />
+                    <ui:Label name="cooldown-text" class="shatter-skill-slot__cooldown-text" picking-mode="Ignore" />
+                    <ui:Label name="key" class="shatter-skill-slot__key" picking-mode="Ignore" />
+                    <ui:VisualElement name="gem" class="shatter-skill-slot__gem" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="skill-5" class="shatter-skill-slot" picking-mode="Ignore">
+                    <ui:VisualElement name="icon" class="shatter-skill-slot__icon" picking-mode="Ignore" />
+                    <ui:Label name="name" class="shatter-skill-slot__name" picking-mode="Ignore" />
+                    <ui:VisualElement name="cooldown" class="shatter-skill-slot__cooldown" picking-mode="Ignore" />
+                    <ui:Label name="cooldown-text" class="shatter-skill-slot__cooldown-text" picking-mode="Ignore" />
+                    <ui:Label name="key" class="shatter-skill-slot__key" picking-mode="Ignore" />
+                    <ui:VisualElement name="gem" class="shatter-skill-slot__gem" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="dodge" class="shatter-dodge-slot hud__dodge" picking-mode="Ignore">
+                <ui:VisualElement name="dodge-icon" class="shatter-dodge-slot__icon" picking-mode="Ignore" />
+                <Echoes.UI.LocLabel loc-key="dodge.name" class="shatter-dodge-slot__name" picking-mode="Ignore" />
+                <ui:Label name="dodge-key" class="shatter-dodge-slot__key" picking-mode="Ignore" />
+                <ui:VisualElement name="dodge-pips" class="shatter-dodge-slot__pips" picking-mode="Ignore" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="resource-orb" class="shatter-orb shatter-orb--resource hud__resource-orb" picking-mode="Ignore">
+                <ui:VisualElement name="resource-orb-fill" class="shatter-orb__fill" picking-mode="Ignore" />
+                <ui:Label name="resource-orb-value" class="shatter-orb__value" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="toast" class="hud__toast" picking-mode="Ignore">
+            <ui:Label name="toast-label" class="hud__toast-label" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="death-overlay" class="hud__death hud--hidden" picking-mode="Ignore">
+            <Echoes.UI.LocLabel loc-key="ui.death.title" class="hud__death-title" picking-mode="Ignore" />
+            <Echoes.UI.LocLabel loc-key="ui.death.checkpoint" class="hud__death-subtitle" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

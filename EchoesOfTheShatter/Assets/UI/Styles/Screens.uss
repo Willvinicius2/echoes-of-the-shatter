@@ -1,0 +1,164 @@
+/* Ajustes por tela (docs/03_design_system.md, seção 4). Posições = coordenadas da seção 4.1 no
+   espaço de referência 1920x1080 (PanelSettings Scale With Screen Size, Match = 1). */
+
+/* ---- HUD de combate ---- */
+.hud {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.hud--hidden {
+    display: none;
+}
+
+/* Retrato (32, 32, 96, 96) e barras finas: vida (140, 40, 240, 16), recurso (140, 62, 240, 12). */
+.hud__top-left {
+    position: absolute;
+    left: var(--viewport-safe-margin);
+    top: var(--viewport-safe-margin);
+    width: 348px;
+    height: var(--size-portrait);
+}
+
+.hud__portrait {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--size-portrait);
+    height: var(--size-portrait);
+    background-color: var(--color-surface-panel-raised);
+    border-width: 3px;
+    border-color: var(--color-border-gold);
+}
+
+.hud__life-bar {
+    position: absolute;
+    left: 108px;
+    top: 8px;
+    width: 240px;
+    height: var(--size-bar-thin-h);
+}
+
+.hud__resource-bar {
+    position: absolute;
+    left: 108px;
+    top: 30px;
+    width: 240px;
+    height: 12px;
+}
+
+/* Barra inferior: moldura (360, 896, 1200, 168), ancorada na base e no centro. */
+.hud__bottom-bar {
+    width: 1200px;
+    height: 168px;
+    margin-bottom: var(--space-s3);
+    background-color: var(--color-surface-panel);
+    border-width: 3px;
+    border-color: var(--color-border-gold);
+    border-top-left-radius: var(--space-s3);
+    border-top-right-radius: var(--space-s3);
+}
+
+/* Orbe de vida (376, 904) → (16, 8) dentro da barra. */
+.hud__life-orb {
+    position: absolute;
+    left: var(--space-s3);
+    top: var(--space-s2);
+}
+
+/* Poções P1 (536, 920) e P2 (608, 920) → (176, 24) e (248, 24). */
+.hud__potion-0 {
+    position: absolute;
+    left: 176px;
+    top: var(--space-s4);
+}
+
+.hud__potion-1 {
+    position: absolute;
+    left: 248px;
+    top: var(--space-s4);
+}
+
+/* Habilidades: 6 slots de 88 a partir de (696, 920) → (336, 24), espaço 8. */
+.hud__skills {
+    position: absolute;
+    left: 336px;
+    top: var(--space-s4);
+    flex-direction: row;
+}
+
+/* Esquiva (1288, 920) → (928, 24). */
+.hud__dodge {
+    position: absolute;
+    left: 928px;
+    top: var(--space-s4);
+}
+
+/* Orbe de recurso (1400, 904) → (1040, 8). */
+.hud__resource-orb {
+    position: absolute;
+    left: 1040px;
+    top: var(--space-s2);
+}
+
+/* Aviso curto (toast) no topo-direita: coluna em (1408, 332, 480). */
+.hud__toast {
+    position: absolute;
+    right: var(--viewport-safe-margin);
+    top: 332px;
+    width: var(--size-toast-w);
+    min-height: var(--size-toast-h);
+    padding-left: var(--space-s3);
+    padding-right: var(--space-s3);
+    justify-content: center;
+    background-color: var(--color-surface-panel);
+    border-left-width: 4px;
+    border-left-color: var(--color-semantic-warning);
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: var(--motion-toast-fade);
+}
+
+.hud__toast--visible {
+    opacity: 1;
+}
+
+.hud__toast-label {
+    margin: 0;
+    font-size: var(--font-body-size);
+    color: var(--color-text-primary);
+    white-space: normal;
+}
+
+/* Morte: "Você caiu" em display, sem penalidade (seção 4.1, estados do HUD). */
+.hud__death {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-surface-scrim);
+}
+
+.hud__death-title {
+    margin: 0;
+    font-size: var(--font-display-size);
+    color: var(--color-text-title);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.hud__death-subtitle {
+    margin-top: var(--space-s3);
+    font-size: var(--font-body-size);
+    color: var(--color-text-secondary);
+    -unity-text-align: middle-center;
+}

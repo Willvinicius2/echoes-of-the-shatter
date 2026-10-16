@@ -67,6 +67,12 @@ namespace Echoes.Core
             return key ?? string.Empty;
         }
 
+        /// <summary>Texto da chave sem fallback para a própria chave (para avisos opcionais).</summary>
+        public bool TryGet(string key, out string value)
+        {
+            return table.TryGet(Culture, key, out value);
+        }
+
         /// <summary>Substitui <c>{nome}</c> no texto da chave. Nunca concatena pedaços de frase.</summary>
         public string Format(string key, string name, string value)
         {
@@ -78,6 +84,12 @@ namespace Echoes.Core
         public string FormatInteger(long value)
         {
             return value.ToString("N0", numberCulture);
+        }
+
+        /// <summary>Número com casas decimais na cultura ("0,8" em pt-BR).</summary>
+        public string FormatDecimal(double value, int decimals)
+        {
+            return value.ToString("F" + decimals.ToString(CultureInfo.InvariantCulture), numberCulture);
         }
 
         static CultureInfo CreateNumberCulture(string column)

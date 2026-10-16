@@ -1,0 +1,19 @@
+{
+    "name": "Echoes.UI",
+    "rootNamespace": "Echoes.UI",
+    "references": [
+        "Echoes.Core",
+        "Echoes.Gameplay",
+        "Echoes.Presentation",
+        "Echoes.Interop"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
