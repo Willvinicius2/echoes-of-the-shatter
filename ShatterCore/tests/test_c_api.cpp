@@ -92,8 +92,16 @@ std::string StartParams(int hours, std::uint64_t seed) {
        << R"({"condition":"life_below","param":0.35,"action":"use_potion","ref_id":""},)"
        << R"({"condition":"enemies_at_least","param":2,"action":"use_skill","ref_id":"skill.warrior.cleave"},)"
        << R"({"condition":"always","param":0,"action":"use_skill","ref_id":"skill.warrior.iron_cut"}],)"
-       << R"("duration_hours":)" << hours << R"(,"seed":")" << seed << R"(","start_utc":1700000000})";
+       << R"("duration_hours":)" << hours;
+    if (seed != 0) os << R"(,"seed":")" << seed << R"(","start_utc":1700000000)";  // seed 0 = parâmetros confiáveis (sem seed nem início)
+    os << "}";
     return os.str();
+}
+
+shatter_trusted_now TrustedStart() {
+    shatter_trusted_now t{};
+    t.now = 1'700'000'000;
+    return t;
 }
 
 }  // namespace
@@ -492,14 +500,22 @@ TEST(c_api_loot_roll_buffer_too_small_changes_nothing) {
 TEST(c_api_save_roundtrip_files_backups_and_version_checks) {
     DbHandle db(tu::RichDir());
     shatter_error err{};
-    // save_v1.json do Data Engineer: abre pela fronteira e volta com o mesmo hash.
-    const std::string v1 = tu::ReadFile(tu::DataDir() + "/saves/save_v1.json");
+    // save_v2.json (publicado): abre pela fronteira e volta com o mesmo hash. O save_v1.json também abre (migra para v2).
+    const std::string v2 = tu::ReadFile(tu::DataDir() + "/saves/save_v2.json");
     SaveHandle s;
     std::int32_t load = -1;
-    ASSERT_EQ(shatter_save_from_json(v1.data(), v1.size(), &s.save, &load, &err), SHATTER_OK);
+    ASSERT_EQ(shatter_save_from_json(v2.data(), v2.size(), &s.save, &load, &err), SHATTER_OK);
     EXPECT_EQ(load, 0);
     const json::Value back = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_to_json(s.save, 1, o, c, n); }));
-    EXPECT_EQ(back["sha256"].AsString(), Parse(v1)["sha256"].AsString());
+    EXPECT_EQ(back["sha256"].AsString(), Parse(v2)["sha256"].AsString());
+    {
+        const std::string v1 = tu::ReadFile(tu::DataDir() + "/saves/save_v1.json");
+        SaveHandle migrated;
+        ASSERT_EQ(shatter_save_from_json(v1.data(), v1.size(), &migrated.save, &load, &err), SHATTER_OK);
+        shatter_save_summary msum{};
+        ASSERT_EQ(shatter_save_summary_get(migrated.save, &msum), SHATTER_OK);
+        EXPECT_EQ(msum.save_version, 2);
+    }
     shatter_save_summary sum{};
     ASSERT_EQ(shatter_save_summary_get(s.save, &sum), SHATTER_OK);
     EXPECT_EQ(sum.character_count, 1);
@@ -563,7 +579,7 @@ TEST(c_api_save_roundtrip_files_backups_and_version_checks) {
     EXPECT_EQ(shatter_save_read(nullptr, fbase.data(), fbase.size(), &r3.save, &rep, &err), SHATTER_OK);
     // save_version futuro também é VERSION_MISMATCH.
     std::string newer = SerializeJson(future, true);
-    newer = tu::Replace(newer, "\"save_version\": 1,", "\"save_version\": 2,");
+    newer = tu::Replace(newer, "\"save_version\": 2,", "\"save_version\": 3,");
     EXPECT_EQ(shatter_save_from_json(newer.data(), newer.size(), &none, &load, &err), SHATTER_VERSION_MISMATCH);
     EXPECT_EQ(load, static_cast<std::int32_t>(LoadStatus::TooNew));
     // Descanso diário: +4 num dia UTC novo, sem acumular.
@@ -610,15 +626,22 @@ TEST(c_api_expedition_end_to_end_matches_cpp_and_collects_once) {
         EXPECT_EQ(blocking, std::string("[\"skill.warrior.unsupported_roar\"]"));
     }
     // Inicia 4 h.
-    const std::string params = StartParams(4, 20261016);
-    ASSERT_EQ(shatter_save_start_expedition(db.db, save.save, params.data(), params.size(), &check, &err), SHATTER_OK);
+    const std::string params = StartParams(4, 0);
+    const shatter_trusted_now startNow = TrustedStart();
+    // A API antiga (start_utc e seed do chamador) foi retirada; seed e start_utc no JSON são recusados.
+    EXPECT_EQ(shatter_save_start_expedition(db.db, save.save, params.data(), params.size(), &check, &err), SHATTER_INVALID_ARGUMENT);
+    const std::string forged = StartParams(4, 20261016);
+    EXPECT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, forged.data(), forged.size(), &startNow, &check, &err), SHATTER_INVALID_ARGUMENT);
+    ASSERT_EQ(shatter_save_summary_get(save.save, &sum), SHATTER_OK);
+    EXPECT_EQ(sum.expedition_count, 0);  // nada foi iniciado
+    ASSERT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, params.data(), params.size(), &startNow, &check, &err), SHATTER_OK);
     ASSERT_EQ(check, SHATTER_START_OK);
     ASSERT_EQ(shatter_save_summary_get(save.save, &sum), SHATTER_OK);
     EXPECT_EQ(sum.marker_charges, 9 - 4);
     EXPECT_EQ(sum.running_expedition, 0);
-    ASSERT_EQ(shatter_save_start_expedition(db.db, save.save, params.data(), params.size(), &check, &err), SHATTER_OK);
+    ASSERT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, params.data(), params.size(), &startNow, &check, &err), SHATTER_OK);
     EXPECT_EQ(check, SHATTER_START_ANOTHER_RUNNING);  // RF-37
-    EXPECT_EQ(shatter_save_start_expedition(db.db, save.save, "{nope", 5, &check, &err), SHATTER_PARSE_ERROR);
+    EXPECT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, "{nope", 5, &startNow, &check, &err), SHATTER_PARSE_ERROR);
     EXPECT_EQ(err.line, 1);
 
     // Abrir o jogo 10 h depois: janela de 4 h; pedido pronto em JSON.
@@ -687,12 +710,36 @@ TEST(c_api_expedition_end_to_end_matches_cpp_and_collects_once) {
     // Coleta (RF-55): entra uma vez; a segunda não muda nada.
     ASSERT_EQ(shatter_save_summary_get(save.save, &sum), SHATTER_OK);
     const std::uint64_t uidBefore = sum.next_item_uid;
-    std::uint8_t collected = 0;
-    ASSERT_EQ(shatter_save_collect_expedition(db.db, save.save, 0, resultText.data(), resultText.size(), &collected, &err), SHATTER_OK);
-    EXPECT_EQ(collected, 1);
+    std::int32_t collectStatus = -1;
+    std::size_t collectNeeded = 0;
+    // Antes da hora: a janela não acabou, nada muda (o relógio confiável decide, não o chamador).
+    shatter_clock_input early{};
+    early.local_now_utc = 1'700'000'000 + 3600;
+    ASSERT_EQ(shatter_save_collect_expedition_trusted(db.db, save.save, 0, &early, 0, &collectStatus, nullptr, 0, &collectNeeded, &err), SHATTER_OK);
+    EXPECT_EQ(collectStatus, SHATTER_COLLECT_NOT_FINISHED);
+    EXPECT_EQ(collectNeeded, static_cast<std::size_t>(0));
+    ASSERT_EQ(shatter_save_summary_get(save.save, &sum), SHATTER_OK);
+    EXPECT_EQ(sum.running_expedition, 0);
+    // A API antiga (resultado do chamador) foi retirada.
+    std::uint8_t legacy = 9;
+    EXPECT_EQ(shatter_save_collect_expedition(db.db, save.save, 0, resultText.data(), resultText.size(), &legacy, &err), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(legacy, 0);
+    // Buffer pequeno: nada muda.
+    EXPECT_EQ(shatter_save_collect_expedition_trusted(db.db, save.save, 0, &clock, 0, &collectStatus, nullptr, 0, &collectNeeded, &err), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_TRUE(collectNeeded > 0);
+    ASSERT_EQ(shatter_save_summary_get(save.save, &sum), SHATTER_OK);
+    EXPECT_EQ(sum.running_expedition, 0);
+    shatter_status collectSt = SHATTER_INTERNAL;
+    const std::string collectedText = TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_save_collect_expedition_trusted(db.db, save.save, 0, &clock, SHATTER_RESULT_RECEIPTS, &collectStatus, o, c, n, &err);
+    }, &collectSt);
+    ASSERT_EQ(collectSt, SHATTER_OK);
+    EXPECT_EQ(collectStatus, SHATTER_COLLECT_COLLECTED);
+    // O que entrou é o que o core recalculou do pedido salvo (mesmo hash da simulação do C++).
+    EXPECT_EQ(Parse(collectedText)["result_hash"].AsString(), result["result_hash"].AsString());
     const std::string afterFirst = TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_to_json(save.save, 0, o, c, n); });
-    ASSERT_EQ(shatter_save_collect_expedition(db.db, save.save, 0, resultText.data(), resultText.size(), &collected, &err), SHATTER_OK);
-    EXPECT_EQ(collected, 0);
+    ASSERT_EQ(shatter_save_collect_expedition_trusted(db.db, save.save, 0, &clock, 0, &collectStatus, nullptr, 0, &collectNeeded, &err), SHATTER_OK);
+    EXPECT_EQ(collectStatus, SHATTER_COLLECT_ALREADY);
     EXPECT_EQ(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_to_json(save.save, 0, o, c, n); }), afterFirst);
     const json::Value saved = Parse(afterFirst);
     EXPECT_EQ(saved["data"]["expeditions"].At(0)["status"].AsString(), std::string("collected"));
@@ -704,7 +751,7 @@ TEST(c_api_expedition_end_to_end_matches_cpp_and_collects_once) {
     // Pedido de expedição já coletada é recusado; resultado sem hash também.
     std::size_t needed = 0;
     EXPECT_EQ(shatter_save_expedition_request(db.db, save.save, 0, &clock, &window, nullptr, 0, &needed, &err), SHATTER_INVALID_ARGUMENT);
-    EXPECT_EQ(shatter_save_collect_expedition(db.db, save.save, 0, "{\"stop\":\"retreat\"}", 18, &collected, &err), SHATTER_PARSE_ERROR);
+    EXPECT_EQ(shatter_save_collect_expedition_trusted(db.db, save.save, 9, &clock, 0, &collectStatus, nullptr, 0, &collectNeeded, &err), SHATTER_INVALID_ARGUMENT);
 }
 
 TEST(c_api_rf48_clock_rollback_reaches_the_report) {
@@ -712,8 +759,9 @@ TEST(c_api_rf48_clock_rollback_reaches_the_report) {
     SaveHandle save = MakeSave(db.db);
     shatter_error err{};
     std::int32_t check = -1;
-    const std::string params = StartParams(4, 77);
-    ASSERT_EQ(shatter_save_start_expedition(db.db, save.save, params.data(), params.size(), &check, &err), SHATTER_OK);
+    const std::string params = StartParams(4, 0);
+    const shatter_trusted_now startNow = TrustedStart();
+    ASSERT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, params.data(), params.size(), &startNow, &check, &err), SHATTER_OK);
     ASSERT_EQ(check, SHATTER_START_OK);
     // last_seen = T = início + 2 h; o relógio do PC agora diz T − 6 min.
     shatter_trusted_now seen{};
