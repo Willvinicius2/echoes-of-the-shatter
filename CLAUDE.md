@@ -53,7 +53,6 @@ ctest --test-dir build --output-on-failure
 
 ## Pendências de decisão
 - Itens "confirmar na instalação" do `docs/04_arquitetura.md`: conferir na Unity 6.3 instalada antes de o Frontend depender deles.
-- PC de entrada para medir a RNF-04 (pergunta P-4) ainda não definido; a seção 18 do `04` usa um placeholder.
 - O protótipo Godot F1 continua na raiz (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity.
 
 ## Próximo passo

@@ -16,147 +16,390 @@
   },
   "setores": [
     {
-      "id": "arte", "nome": "Direção de arte", "agente": "Art Director", "estado": "concluido",
+      "id": "arte",
+      "nome": "Direção de arte",
+      "agente": "Art Director",
+      "estado": "concluido",
       "resumo": "Visual do Spell Brigade aprovado, com 24 imagens de referência e design system.",
       "entregas": [
-        {"titulo": "24 referências de arte aprovadas", "arquivo": "docs/arte/referencias-geracao/aprovadas/"},
-        {"titulo": "Design system e tokens de cor da interface", "arquivo": "docs/03_design_system.md, docs/03_design_tokens.json"},
-        {"titulo": "Decisões de visual 3D e motor", "arquivo": "docs/08_decisoes_visual_3d.md"}
+        {
+          "titulo": "24 referências de arte aprovadas",
+          "arquivo": "docs/arte/referencias-geracao/aprovadas/"
+        },
+        {
+          "titulo": "Design system e tokens de cor da interface",
+          "arquivo": "docs/03_design_system.md, docs/03_design_tokens.json"
+        },
+        {
+          "titulo": "Decisões de visual 3D e motor",
+          "arquivo": "docs/08_decisoes_visual_3d.md"
+        }
       ],
       "proximo": "Aprovar as prévias de graybox quando chegarem (depende de você)."
     },
     {
-      "id": "design", "nome": "Game Design", "agente": "Game Designer", "estado": "aguardando_dono",
-      "resumo": "Decisões do protótipo escritas (esquiva, poções, Guardião, elites, IA); três perguntas esperam sua resposta.",
+      "id": "design",
+      "nome": "Game Design",
+      "agente": "Game Designer",
+      "estado": "andamento",
+      "resumo": "Decisões do protótipo escritas e as perguntas do Game Designer foram respondidas por você em 16/10.",
       "entregas": [
-        {"titulo": "Decisões que travavam o protótipo (10 itens)", "arquivo": "docs/13_design_pendencias.md"}
+        {
+          "titulo": "Decisões que travavam o protótipo (10 itens)",
+          "arquivo": "docs/13_design_pendencias.md"
+        }
       ],
-      "proximo": "Responder às perguntas do Game Designer."
+      "proximo": "Aplicar as respostas nos documentos e nas tabelas (Escudada no nível 4, Poção de Resguardo, pilares na arena)."
     },
     {
-      "id": "dados", "nome": "Dados", "agente": "Data Engineer", "estado": "concluido",
+      "id": "dados",
+      "nome": "Dados",
+      "agente": "Data Engineer",
+      "estado": "concluido",
       "resumo": "Tabelas CSV, esquemas, validador e documento de dados prontos.",
       "entregas": [
-        {"titulo": "Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)", "arquivo": "EchoesOfTheShatter/Content/Data/*.csv"},
-        {"titulo": "Esquemas JSON e validador", "arquivo": "EchoesOfTheShatter/Content/Data/schemas/, tools/validate_data.py"},
-        {"titulo": "Documento de dados", "arquivo": "docs/06_dados.md"}
+        {
+          "titulo": "Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)",
+          "arquivo": "EchoesOfTheShatter/Content/Data/*.csv"
+        },
+        {
+          "titulo": "Esquemas JSON e validador",
+          "arquivo": "EchoesOfTheShatter/Content/Data/schemas/, tools/validate_data.py"
+        },
+        {
+          "titulo": "Documento de dados",
+          "arquivo": "docs/06_dados.md"
+        }
       ],
-      "proximo": "Ajustar os CSVs conforme as respostas do Game Designer."
+      "proximo": "Ajustar os CSVs conforme as respostas do dono (skills.csv passa de 5 para 4 habilidades)."
     },
     {
-      "id": "conteudo", "nome": "Conteúdo e textos", "agente": "Narrative", "estado": "concluido",
+      "id": "conteudo",
+      "nome": "Conteúdo e textos",
+      "agente": "Narrative",
+      "estado": "concluido",
       "resumo": "Conteúdo do protótipo e textos em português e inglês escritos. A história é do dono.",
       "entregas": [
-        {"titulo": "Resumo do conteúdo e do tom", "arquivo": "docs/05_conteudo.md"},
-        {"titulo": "Textos pt_BR e en (interface, conteúdo, diálogos, expedição)", "arquivo": "EchoesOfTheShatter/Content/Data/Loc/*.csv"}
+        {
+          "titulo": "Resumo do conteúdo e do tom",
+          "arquivo": "docs/05_conteudo.md"
+        },
+        {
+          "titulo": "Textos pt_BR e en (interface, conteúdo, diálogos, expedição)",
+          "arquivo": "EchoesOfTheShatter/Content/Data/Loc/*.csv"
+        }
       ],
       "proximo": "Aguardar a história em criação pelo dono."
     },
     {
-      "id": "arquitetura", "nome": "Arquitetura", "agente": "Tech Lead", "estado": "concluido",
+      "id": "arquitetura",
+      "nome": "Arquitetura",
+      "agente": "Tech Lead",
+      "estado": "concluido",
       "resumo": "Arquitetura em Unity 6 + URP com o ShatterCore como DLL nativa.",
       "entregas": [
-        {"titulo": "Documento de arquitetura (cliente, núcleo, interop, testes)", "arquivo": "docs/04_arquitetura.md"},
-        {"titulo": "Interfaces do ShatterCore em C++", "arquivo": "ShatterCore/include/shatter/*.h"}
+        {
+          "titulo": "Documento de arquitetura (cliente, núcleo, interop, testes)",
+          "arquivo": "docs/04_arquitetura.md"
+        },
+        {
+          "titulo": "Interfaces do ShatterCore em C++",
+          "arquivo": "ShatterCore/include/shatter/*.h"
+        }
       ],
       "proximo": "Revisar o contrato da API C quando o Backend entregar."
     },
     {
-      "id": "backend", "nome": "Backend ShatterCore", "agente": "Backend Engineer", "estado": "nuvem",
-      "resumo": "Sessão na nuvem terminando motor, testes e API C; vai abrir um pull request em rascunho.",
+      "id": "backend",
+      "nome": "Backend ShatterCore",
+      "agente": "Backend Engineer",
+      "estado": "nuvem",
+      "resumo": "Pull request #3 aberto em rascunho: ShatterCore terminado com a API C. Aguarda revisão do orquestrador.",
       "entregas": [
-        {"titulo": "Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)", "arquivo": "ShatterCore/src/*.cpp"},
-        {"titulo": "Testes do núcleo já no repositório", "arquivo": "ShatterCore/tests/*.cpp"}
+        {
+          "titulo": "Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)",
+          "arquivo": "ShatterCore/src/*.cpp"
+        },
+        {
+          "titulo": "Testes do núcleo já no repositório",
+          "arquivo": "ShatterCore/tests/*.cpp"
+        }
       ],
-      "proximo": "Revisar o pull request quando chegar."
+      "proximo": "Revisar o pull request #3."
     },
     {
-      "id": "frontend", "nome": "Frontend Unity", "agente": "Frontend Engineer", "estado": "nuvem",
-      "resumo": "Sessão na nuvem escrevendo o gameplay em C#; a compilação será feita no PC depois.",
+      "id": "frontend",
+      "nome": "Frontend Unity",
+      "agente": "Frontend Engineer",
+      "estado": "nuvem",
+      "resumo": "Pull request #2 aberto em rascunho: protótipo jogável do Guerreiro na Cripta em C#. Aguarda revisão do orquestrador.",
       "entregas": [
-        {"titulo": "Projeto Unity 6.3 URP criado", "arquivo": "EchoesOfTheShatter/"}
+        {
+          "titulo": "Projeto Unity 6.3 URP criado",
+          "arquivo": "EchoesOfTheShatter/"
+        }
       ],
-      "proximo": "Compilar e testar no PC quando o pull request chegar."
+      "proximo": "Revisar o pull request #2; depois compilar e testar no PC."
     },
     {
-      "id": "arte_tecnica", "nome": "Arte técnica", "agente": "Artista técnico (Blender)", "estado": "nuvem",
-      "resumo": "Graybox dos heróis e inimigos no repositório; a sessão na nuvem termina o kit da Cripta, a cena de teste e o esqueleto humanoide.",
+      "id": "arte_tecnica",
+      "nome": "Arte técnica",
+      "agente": "Artista técnico (Blender)",
+      "estado": "nuvem",
+      "resumo": "Pull request #1 aberto em rascunho: kit da Cripta, sala de teste e esqueleto compartilhado. Aguarda revisão do orquestrador.",
       "entregas": [
-        {"titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)", "arquivo": "art-src/graybox/"},
-        {"titulo": "Prévias em imagem", "arquivo": "art-src/graybox/previews/"}
+        {
+          "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
+          "arquivo": "art-src/graybox/"
+        },
+        {
+          "titulo": "Prévias em imagem",
+          "arquivo": "art-src/graybox/previews/"
+        }
       ],
-      "proximo": "Mostrar as prévias para sua aprovação."
+      "proximo": "Revisar o pull request #1 e mostrar as prévias para sua aprovação."
     },
     {
-      "id": "qa", "nome": "QA", "agente": "QA Engineer", "estado": "andamento",
+      "id": "qa",
+      "nome": "QA",
+      "agente": "QA Engineer",
+      "estado": "andamento",
       "resumo": "Plano de testes escrito; a execução depende do código das sessões na nuvem.",
       "entregas": [
-        {"titulo": "Plano de QA (matriz de requisitos e casos)", "arquivo": "docs/10_qa.md"}
+        {
+          "titulo": "Plano de QA (matriz de requisitos e casos)",
+          "arquivo": "docs/10_qa.md"
+        }
       ],
       "proximo": "Rodar a suíte quando o ShatterCore e o gameplay chegarem."
     },
     {
-      "id": "pesquisa", "nome": "Pesquisa", "agente": "Pesquisador de referências", "estado": "concluido",
+      "id": "pesquisa",
+      "nome": "Pesquisa",
+      "agente": "Pesquisador de referências",
+      "estado": "concluido",
       "resumo": "Pesquisa do canal @stefan_3d_ai feita com acesso limitado ao YouTube.",
       "entregas": [
-        {"titulo": "Pesquisa do canal @stefan_3d_ai", "arquivo": "docs/pesquisa/stefan_3d_ai.md"}
+        {
+          "titulo": "Pesquisa do canal @stefan_3d_ai",
+          "arquivo": "docs/pesquisa/stefan_3d_ai.md"
+        }
       ],
       "proximo": "Nenhum; a lista de vídeos do canal não pôde ser obtida."
     },
     {
-      "id": "producao", "nome": "Produção", "agente": "Orquestrador", "estado": "andamento",
+      "id": "producao",
+      "nome": "Produção",
+      "agente": "Orquestrador",
+      "estado": "andamento",
       "resumo": "Coordena os setores, mantém este painel e o plano de execução.",
       "entregas": [
-        {"titulo": "Plano de execução e próximos passos", "arquivo": "docs/01_plano_execucao.md, docs/07_proximos_passos.md"},
-        {"titulo": "Este painel", "arquivo": "docs/progresso/estado.json, tools/painel/gerar_painel.py"}
+        {
+          "titulo": "Plano de execução e próximos passos",
+          "arquivo": "docs/01_plano_execucao.md, docs/07_proximos_passos.md"
+        },
+        {
+          "titulo": "Este painel",
+          "arquivo": "docs/progresso/estado.json, tools/painel/gerar_painel.py"
+        }
       ],
       "proximo": "Integrar os três pull requests quando chegarem."
     }
   ],
   "pendencias_dono": [
-    {"titulo": "Escudada já no nível 4?", "detalhe": "Pergunta do Game Designer sobre quando liberar a habilidade do escudo.", "origem": "docs/13_design_pendencias.md"},
-    {"titulo": "Segunda poção \"Resguardo\" como barreira?", "detalhe": "Pergunta do Game Designer sobre a segunda poção.", "origem": "docs/13_design_pendencias.md"},
-    {"titulo": "Arena do Guardião com pilares para a investida?", "detalhe": "Pergunta do Game Designer sobre a arena do chefe.", "origem": "docs/13_design_pendencias.md"},
-    {"titulo": "Qual é o PC de referência?", "detalhe": "Máquina para medir desempenho (60 FPS e tempos de simulação).", "origem": "docs/02_requisitos.md (P-4)"},
-    {"titulo": "Aprovar as prévias de graybox", "detalhe": "Quando o pull request da arte técnica chegar.", "origem": "art-src/graybox/previews/"},
-    {"titulo": "História do jogo", "detalhe": "Em criação por você.", "origem": "decisão do dono"}
+    {
+      "titulo": "Aprovar as prévias de graybox",
+      "detalhe": "Pull request #1 (rascunho) com o kit da Cripta, a sala de teste e o esqueleto.",
+      "origem": "PR #1, art-src/graybox/previews/"
+    },
+    {
+      "titulo": "História do jogo",
+      "detalhe": "Em criação por você.",
+      "origem": "decisão do dono"
+    }
   ],
   "decisoes": [
-    {"data": "2026-10-16", "titulo": "Visual no estilo Spell Brigade", "detalhe": "3D pintado à mão, personagens chibi, no lugar da pixel art."},
-    {"data": "2026-10-16", "titulo": "Motor: Unity 6 + URP", "detalhe": "Antes Godot 4, depois Unreal 5.8."},
-    {"data": "2026-10-16", "titulo": "Mago com capuz e cajado de cristal", "detalhe": "Sem lanterna."},
-    {"data": "2026-10-16", "titulo": "Fogo do Mago vermelho-laranja", "detalhe": "Como na arte aprovada."},
-    {"data": "2026-10-16", "titulo": "Tudo do projeto no disco D", "detalhe": "O disco C está cheio."},
-    {"data": "2026-10-16", "titulo": "Agentes por setor", "detalhe": "Trabalho pesado roda na nuvem."}
+    {
+      "data": "2026-10-16",
+      "titulo": "Visual no estilo Spell Brigade",
+      "detalhe": "3D pintado à mão, personagens chibi, no lugar da pixel art."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Motor: Unity 6 + URP",
+      "detalhe": "Antes Godot 4, depois Unreal 5.8."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Mago com capuz e cajado de cristal",
+      "detalhe": "Sem lanterna."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Fogo do Mago vermelho-laranja",
+      "detalhe": "Como na arte aprovada."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Tudo do projeto no disco D",
+      "detalhe": "O disco C está cheio."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Agentes por setor",
+      "detalhe": "Trabalho pesado roda na nuvem."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Escudada liberada no nível 4",
+      "detalhe": "No protótipo, conforme a recomendação do Game Designer; skills.csv passa de 5 para 4."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Segunda poção: Poção de Resguardo",
+      "detalhe": "Barreira de 30%, 2 cargas, 60 s."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Arena do Guardião com pilares",
+      "detalhe": "A investida que bate num pilar atordoa o chefe e derruba o escudo."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Guardião obrigatório nesta rodada",
+      "detalhe": "Decisão P-2."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Teste de paridade adiado",
+      "detalhe": "Fica para a próxima rodada; expedições idle usam números estimados com selo \"Estimativa\" (P-3)."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "PC de referência: PC de entrada genérico",
+      "detalhe": "GPU de 4 GB (nível GTX 1050 Ti/RX 570), CPU de 4 núcleos, 8 GB de RAM, 1080p (P-4)."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Licença Unity Personal ciente",
+      "detalhe": "Vale até US$ 200 mil de receita ou investimento em 12 meses; acima disso, Unity Pro (P-5)."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "CI só do núcleo na nuvem",
+      "detalhe": "GitHub Actions em Linux para o ShatterCore e a validação das tabelas; builds e testes da Unity rodam no PC do dono quando ele pedir."
+    }
   ],
   "nuvem": [
-    {"n": 1, "titulo": "ShatterCore: terminar motor, testes e API C", "setor": "Backend", "data": "2026-10-16", "detalhe": "", "saida": "Pull request em rascunho no GitHub"},
-    {"n": 2, "titulo": "Arte técnica: terminar graybox no Blender", "setor": "Arte técnica", "data": "2026-10-16", "detalhe": "Kit da Cripta, cena de teste e esqueleto humanoide.", "saida": "Pull request em rascunho no GitHub"},
-    {"n": 3, "titulo": "Frontend: gameplay C# do protótipo na Unity", "setor": "Frontend", "data": "2026-10-16", "detalhe": "Movimento, câmera, esquiva, habilidades do Guerreiro, IA do inimigo e HUD em UI Toolkit. A compilação será feita no PC depois.", "saida": "Pull request em rascunho no GitHub"}
+    {
+      "n": 1,
+      "titulo": "ShatterCore: terminar motor, testes e API C",
+      "setor": "Backend",
+      "data": "2026-10-16",
+      "detalhe": "",
+      "saida": "Pull request #3 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/3)"
+    },
+    {
+      "n": 2,
+      "titulo": "Arte técnica: terminar graybox no Blender",
+      "setor": "Arte técnica",
+      "data": "2026-10-16",
+      "detalhe": "Kit da Cripta, cena de teste e esqueleto humanoide.",
+      "saida": "Pull request #1 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/1)"
+    },
+    {
+      "n": 3,
+      "titulo": "Frontend: gameplay C# do protótipo na Unity",
+      "setor": "Frontend",
+      "data": "2026-10-16",
+      "detalhe": "Movimento, câmera, esquiva, habilidades do Guerreiro, IA do inimigo e HUD em UI Toolkit. A compilação será feita no PC depois.",
+      "saida": "Pull request #2 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/2)"
+    }
   ],
   "infraestrutura": [
-    {"item": "Unity 6.3 LTS (6000.3.26f1)", "detalhe": "D:\\Unity\\Editors, com módulo IL2CPP"},
-    {"item": "Unity CLI", "detalhe": "D:\\Unity\\cli"},
-    {"item": "Licença Unity Personal", "detalhe": "ativa"},
-    {"item": "Projeto URP", "detalhe": "EchoesOfTheShatter/, com o pacote Pipeline"},
-    {"item": "Plugin da Unity no Claude Code", "detalhe": "instalado"},
-    {"item": "Repositório privado no GitHub", "detalhe": "github.com/Willvinicius2/echoes-of-the-shatter, com Git LFS"},
-    {"item": "Visual Studio Build Tools", "detalhe": "MSVC 14.50"},
-    {"item": "Blender 5.1", "detalhe": "graybox e arte técnica"}
+    {
+      "item": "Unity 6.3 LTS (6000.3.26f1)",
+      "detalhe": "D:\\Unity\\Editors, com módulo IL2CPP"
+    },
+    {
+      "item": "Unity CLI",
+      "detalhe": "D:\\Unity\\cli"
+    },
+    {
+      "item": "Licença Unity Personal",
+      "detalhe": "ativa"
+    },
+    {
+      "item": "Projeto URP",
+      "detalhe": "EchoesOfTheShatter/, com o pacote Pipeline"
+    },
+    {
+      "item": "Plugin da Unity no Claude Code",
+      "detalhe": "instalado"
+    },
+    {
+      "item": "Repositório privado no GitHub",
+      "detalhe": "github.com/Willvinicius2/echoes-of-the-shatter, com Git LFS"
+    },
+    {
+      "item": "Visual Studio Build Tools",
+      "detalhe": "MSVC 14.50"
+    },
+    {
+      "item": "Blender 5.1",
+      "detalhe": "graybox e arte técnica"
+    }
   ],
   "marcos": [
-    {"titulo": "Visual e arquitetura definidos", "feito": true},
-    {"titulo": "Dados e textos do protótipo", "feito": true},
-    {"titulo": "Infraestrutura de desenvolvimento", "feito": true},
-    {"titulo": "ShatterCore completo com API C", "feito": false},
-    {"titulo": "Graybox da Cripta e dos personagens aprovado", "feito": false},
-    {"titulo": "Gameplay do Guerreiro compilando na Unity", "feito": false},
-    {"titulo": "Protótipo jogável do Guerreiro na Cripta Partida", "feito": false}
+    {
+      "titulo": "Visual e arquitetura definidos",
+      "feito": true
+    },
+    {
+      "titulo": "Dados e textos do protótipo",
+      "feito": true
+    },
+    {
+      "titulo": "Infraestrutura de desenvolvimento",
+      "feito": true
+    },
+    {
+      "titulo": "ShatterCore completo com API C",
+      "feito": false
+    },
+    {
+      "titulo": "Graybox da Cripta e dos personagens aprovado",
+      "feito": false
+    },
+    {
+      "titulo": "Gameplay do Guerreiro compilando na Unity",
+      "feito": false
+    },
+    {
+      "titulo": "Protótipo jogável do Guerreiro na Cripta Partida",
+      "feito": false
+    }
   ],
   "arte_aguardando": [
-    {"arquivo": "heroes_lineup.png", "titulo": "Graybox dos heróis (fila)", "detalhe": "Prévia de graybox."},
-    {"arquivo": "heroes_front.png", "titulo": "Graybox dos heróis (frente)", "detalhe": "Prévia de graybox."},
-    {"arquivo": "enemies_lineup.png", "titulo": "Graybox dos inimigos", "detalhe": "Prévia de graybox."},
-    {"arquivo": "boss_guardian.png", "titulo": "Graybox do Guardião da Cripta", "detalhe": "Prévia de graybox."}
+    {
+      "arquivo": "heroes_lineup.png",
+      "titulo": "Graybox dos heróis (fila)",
+      "detalhe": "Prévia de graybox."
+    },
+    {
+      "arquivo": "heroes_front.png",
+      "titulo": "Graybox dos heróis (frente)",
+      "detalhe": "Prévia de graybox."
+    },
+    {
+      "arquivo": "enemies_lineup.png",
+      "titulo": "Graybox dos inimigos",
+      "detalhe": "Prévia de graybox."
+    },
+    {
+      "arquivo": "boss_guardian.png",
+      "titulo": "Graybox do Guardião da Cripta",
+      "detalhe": "Prévia de graybox."
+    }
   ]
 }

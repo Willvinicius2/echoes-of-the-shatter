@@ -21,6 +21,8 @@ Pilares usados (plano, seção 1): P1 Conquistar pela ação, P2 Build com ident
 | 9 | Único do Guardião | 1ª vitória garantida, depois 20% por vitória, garantido na 5ª sem drop | Sim |
 | 10 | Valores de `rules.csv` | Manter 4 dos 5; `retreat_life_fraction` 0,20 para 0,25 | Sim |
 
+**Respostas do dono (16/10/2026).** Escudada no nível 4 (o dono não teve preferência; vale a recomendação deste documento). Segunda poção = Poção de Resguardo. Arena do Guardião com pilares, então o bônus da investida no item 4 fica. Guardião obrigatório nesta rodada (P-2 do `02_requisitos.md`). Os números continuam provisórios até o playtest.
+
 ---
 
 ## 1. Esquiva
@@ -138,7 +140,7 @@ Com 450 uu/s, a 200 uu do chefe o jogador gira ao redor a ~129°/s, mais que o g
 | `pattern.guardian.hammer` (versão fase 2) | 2 | idem | 0,9 s | 0,15 s | 0,8 s | idem | 30 | 3 |
 | `pattern.guardian.shield_charge` | 2 | nova `skill.enemy.guardian_shield_charge` | 0,9 s | investida de 700 uu a ~1000 uu/s (~0,7 s) | 1,0 s | corredor de 150 uu de largura | 20 | 2; recarga própria 12 s |
 
-Regras de escolha (RF-24, determinístico por seed do fluxo de eventos): atraso entre ações sorteado em 0,8–1,4 s (fase 1) e 0,6–1,1 s (fase 2); o mesmo padrão não repete mais de 2 vezes seguidas; primeira ação só 1,5 s depois de o jogador entrar na arena. Todo telegraph é uma forma no chão que enche durante a preparação, com som no início. Investida do Escudo que bate na parede da arena: stagger de 2,0 s e escudo caído por 5 s **[HIPÓTESE]** (exige pilares/paredes na arena; senão cortar só esse bônus).
+Regras de escolha (RF-24, determinístico por seed do fluxo de eventos): atraso entre ações sorteado em 0,8–1,4 s (fase 1) e 0,6–1,1 s (fase 2); o mesmo padrão não repete mais de 2 vezes seguidas; primeira ação só 1,5 s depois de o jogador entrar na arena. Todo telegraph é uma forma no chão que enche durante a preparação, com som no início. Investida do Escudo que bate na parede da arena: stagger de 2,0 s e escudo caído por 5 s **[HIPÓTESE]** (a arena tem pilares: confirmado pelo dono em 16/10/2026).
 
 ### 4.4 Transição e invocação
 
@@ -229,7 +231,7 @@ Interrompem a mira: stun (Escudada) e o impacto da Investida. Golpes comuns não
 | Corte de Ferro | inicial | 1 | **1** |
 | Investida | 2 | 2 | **2** |
 | Fenda de Pedra | 5 | 3 | **3** |
-| Escudada | 3 | fora do protótipo | **4** (hoje o CSV tem 5) |
+| Escudada | 3 | fora do protótipo | **4** (confirmado pelo dono; CSV atualizado em 16/10/2026) |
 
 Barra de 4 espaços: fica cheia no nível 4. Níveis 5 e 6 só dão vida e XP para testar o teto de nível do idle (RF-33).
 

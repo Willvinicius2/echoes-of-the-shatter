@@ -300,6 +300,8 @@ Formato: checklist objetivo. A coluna "Ver." indica onde se verifica.
 
 ## 6. Desvios do plano causados pela troca para UE5 (visão de produto)
 
+> Nota (16/10/2026): o motor passou para a Unity 6.3 LTS. Esta tabela registra os desvios da fase UE5 e fica como histórico; o D-10 não se aplica mais (Unity Personal, sem royalty).
+
 | # | Plano (Godot 4) | Agora (UE5) | Impacto no produto |
 |---|---|---|---|
 | D-1 | Godot 4 2D em pixel art, renderer Compatibility, foco em PCs fracos | UE 5.8 em 3D estilizado pintado à mão: Forward Shading com MSAA, sem Lumen, Nanite nem Virtual Shadow Maps (`docs/08_decisoes_visual_3d.md` e `docs/04_arquitetura.md`) | Requisito mínimo de hardware sobe; a meta "60 FPS com GPU integrada" vira risco a medir cedo (RNF-04) |
@@ -322,7 +324,7 @@ Simplificações de escopo desta rodada que **não** são causadas pelo UE5 (reg
 ## 7. Perguntas em aberto para o dono do projeto
 
 1. **P-1 Visual 2D no UE5:** respondida em 16/10/2026. O dono escolheu 3D estilizado pintado à mão, no estilo das referências aprovadas, e não pixel art (ver `docs/08_decisoes_visual_3d.md`).
-2. **P-2 Chefe e domínio:** o Guardião entra como obrigatório desta rodada? Se for cortado por prazo, aceita que o domínio da Cripta seja "área limpa até o fim" provisoriamente (contrariando a Regra 1)?
-3. **P-3 Paridade:** aceita adiar o teste de paridade (bot no UE headless) para a próxima rodada, com IdleProfiles provisórios marcados como não calibrados?
-4. **P-4 PC de referência:** qual máquina é o "PC de entrada" para medir RNF-04 (60 FPS) e RNF-03 (< 2 s)?
-5. **P-5 Versão e licença do UE5:** versão fixada em 16/10/2026 no UE 5.8. Continua em aberto: o dono está ciente do royalty da Epic no modelo de receita do Acesso Antecipado?
+2. **P-2 Chefe e domínio:** respondida em 16/10/2026. O Guardião é obrigatório nesta rodada: dominar a Cripta é vencer o Guardião (Regra 1 mantida).
+3. **P-3 Paridade:** respondida em 16/10/2026. O teste de paridade fica para a próxima rodada; os IdleProfiles usam valores estimados, marcados como não calibrados (selo "Estimativa" na tela).
+4. **P-4 PC de referência:** respondida em 16/10/2026. O "PC de entrada" é genérico: GPU de 4 GB do nível GTX 1050 Ti/RX 570, CPU de 4 núcleos, 8 GB de RAM, 1080p (ver `docs/04_arquitetura.md`, seção 18). O Steam Deck é medido como alvo à parte.
+5. **P-5 Motor e licença:** respondida em 16/10/2026. O motor passou para a Unity 6.3 LTS com a licença Unity Personal, sem royalty nem taxa por instalação. O dono está ciente de que a Personal vale enquanto a receita ou o investimento dos últimos 12 meses ficar abaixo de US$ 200 mil; acima disso, é preciso a Unity Pro.

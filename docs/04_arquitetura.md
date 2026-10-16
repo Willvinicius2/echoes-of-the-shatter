@@ -559,15 +559,15 @@ Notas: não passar `-quit` junto com `-runTests`; o código de saída é diferen
 | Job | Runner | Quando | Passos |
 |---|---|---|---|
 | `core-linux` | `ubuntu-latest` (GCC e Clang) | todo push/PR | `cmake -DSHATTER_WERROR=ON` → build → `ctest`; variante com `SHATTER_SANITIZE=ON` |
-| `core-windows` | `windows-latest` (MSVC) | todo push/PR | mesmo, com MSVC (o compilador da DLL do jogo); gera `shattercore.dll` como artefato |
+| `core-windows` | `windows-latest` (MSVC) | manual (`workflow_dispatch`) | mesmo, com MSVC (o compilador da DLL do jogo); gera `shattercore.dll` como artefato |
 | `data` | `ubuntu-latest` | todo push/PR | `python3 tools/validate_data.py` + teste `test_content` sobre o CSV real |
-| `bench` | `ubuntu-latest` | noturno | `SHATTER_BUILD_BENCH=ON`; falha se 12 h de expedição > 2 s |
-| `unity-tests` | **self-hosted Windows** com o Unity instalado | todo push na `main` e PR | Confere que a DLL do repositório é a do artefato `core-windows` (versão e hash); EditMode e PlayMode pela CLI (13.2) |
-| `unity-build` | self-hosted | todo push na `main` | Build Windows IL2CPP em batchmode (`-executeMethod Echoes.EditorTools.Build.Windows`) + `Player.Smoke` |
-| `unity-nightly` | self-hosted com GPU | noturno | Paridade + Smoke longo + teste de desempenho da seção 18 + loot de 1 milhão |
-| `steam-upload` | self-hosted | push na branch `release` | Build de release → `steamcmd` sobe para a branch **beta**; promover para default é manual no Steamworks |
+| `bench` | `ubuntu-latest` | manual (`workflow_dispatch`) | `SHATTER_BUILD_BENCH=ON`; falha se 12 h de expedição > 2 s |
+| `unity-tests` | PC do dono (fora do CI) | sob demanda | Confere que a DLL do repositório é a do artefato `core-windows` (versão e hash); EditMode e PlayMode pela CLI (13.2) |
+| `unity-build` | PC do dono (fora do CI) | sob demanda | Build Windows IL2CPP em batchmode (`-executeMethod Echoes.EditorTools.Build.Windows`) + `Player.Smoke` |
+| `unity-nightly` | PC do dono (fora do CI) | sob demanda | Paridade + Smoke longo + teste de desempenho da seção 18 + loot de 1 milhão |
+| `steam-upload` | PC do dono (fora do CI) | quando houver build de release | Build de release → `steamcmd` sobe para a branch **beta**; promover para default é manual no Steamworks |
 
-Runner próprio para o Unity: a licença (Personal) é ativada na máquina, sem depender de ação de terceiros no workflow. Alternativa: imagens do GameCI em runner hospedado (exige ativação de licença por segredo; **decisão do orquestrador** se o custo de manter a máquina pesar). Versão visível no menu: `0.3.1-ea+<hash>` (injetada pelo CI em `PlayerSettings.bundleVersion` pelo script de build).
+**Decisão do dono (16/10/2026): só o núcleo roda no GitHub Actions**, em runners Linux hospedados e dentro da cota grátis do repositório privado (`core-linux` e `data` a cada push/PR; `bench` sob demanda). O `core-windows` fica manual porque minuto de Windows conta em dobro na cota; no dia a dia a DLL sai de `tools\build_core.cmd` no PC do dono. Os jobs `unity-*` e `steam-upload` não são CI por enquanto: rodam no PC do dono pela Unity CLI quando ele pedir, com a licença Personal já ativada na máquina. Runner self-hosted ou GameCI só voltam se o dono pedir. Versão visível no menu: `0.3.1-ea+<hash>` (injetada pelo CI em `PlayerSettings.bundleVersion` pelo script de build).
 
 ---
 
@@ -689,7 +689,7 @@ Sem normal map em nenhum tipo de asset. Teto de assets de uma área carregada: �
 
 ## 18. Orçamentos de desempenho por cena (RNF-04)
 
-Alvo: 60 FPS estáveis (quadro ≤ 16,6 ms) na Cripta com 30 inimigos ativos, e carga da área < 3 s. **Hardware de referência pendente (P-4 do `docs/02_requisitos.md`)**: até o dono indicar a máquina, assume-se como "PC de entrada" uma GPU de 4 GB do nível de uma GTX 1050 Ti/RX 570 (ou GPU integrada moderna), CPU de 4 núcleos, 8 GB de RAM, 1080p. O Steam Deck é medido como alvo próprio. Os números abaixo são **metas iniciais a validar na F1** com Profiler, Frame Debugger e Stats, não resultados medidos.
+Alvo: 60 FPS estáveis (quadro ≤ 16,6 ms) na Cripta com 30 inimigos ativos, e carga da área < 3 s. **Hardware de referência (P-4 do `docs/02_requisitos.md`, decidido pelo dono em 16/10/2026)**: o "PC de entrada" é uma GPU de 4 GB do nível de uma GTX 1050 Ti/RX 570 (ou GPU integrada moderna), CPU de 4 núcleos, 8 GB de RAM, 1080p. O Steam Deck é medido como alvo próprio. Os números abaixo são **metas iniciais a validar na F1** com Profiler, Frame Debugger e Stats, não resultados medidos.
 
 | Recurso (cena de combate, pico) | PC de entrada (1080p, MSAA 4x) | Steam Deck (1280×800, MSAA 2x) |
 |---|---|---|

@@ -63,7 +63,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <p class="sub">Protótipo jogável do Guerreiro na Cripta Partida. Atualizado em 16/10/2026.</p>
 <div class="faixa">
 <a class="concluido" href="#s-arte"><b>Direção de arte</b>Concluído</a>
-<a class="aguardando_dono" href="#s-design"><b>Game Design</b>Aguardando você</a>
+<a class="andamento" href="#s-design"><b>Game Design</b>Em andamento</a>
 <a class="concluido" href="#s-dados"><b>Dados</b>Concluído</a>
 <a class="concluido" href="#s-conteudo"><b>Conteúdo e textos</b>Concluído</a>
 <a class="concluido" href="#s-arquitetura"><b>Arquitetura</b>Concluído</a>
@@ -75,17 +75,13 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <a class="andamento" href="#s-producao"><b>Produção</b>Em andamento</a>
 </div>
 <div class="cont">
-<div>6<span>aguardando você</span></div>
+<div>2<span>aguardando você</span></div>
 <div>3<span>sessões na nuvem</span></div>
 <div>5/11<span>setores concluídos</span></div>
 <div>3/7<span>marcos</span></div>
 </div></section>
 <h2>Aguardando você</h2><div class='grade'>
-<article class="card alerta"><h3>Escudada já no nível 4?</h3><p>Pergunta do Game Designer sobre quando liberar a habilidade do escudo.</p><span class="arq">docs/13_design_pendencias.md</span></article>
-<article class="card alerta"><h3>Segunda poção &quot;Resguardo&quot; como barreira?</h3><p>Pergunta do Game Designer sobre a segunda poção.</p><span class="arq">docs/13_design_pendencias.md</span></article>
-<article class="card alerta"><h3>Arena do Guardião com pilares para a investida?</h3><p>Pergunta do Game Designer sobre a arena do chefe.</p><span class="arq">docs/13_design_pendencias.md</span></article>
-<article class="card alerta"><h3>Qual é o PC de referência?</h3><p>Máquina para medir desempenho (60 FPS e tempos de simulação).</p><span class="arq">docs/02_requisitos.md (P-4)</span></article>
-<article class="card alerta"><h3>Aprovar as prévias de graybox</h3><p>Quando o pull request da arte técnica chegar.</p><span class="arq">art-src/graybox/previews/</span></article>
+<article class="card alerta"><h3>Aprovar as prévias de graybox</h3><p>Pull request #1 (rascunho) com o kit da Cripta, a sala de teste e o esqueleto.</p><span class="arq">PR #1, art-src/graybox/previews/</span></article>
 <article class="card alerta"><h3>História do jogo</h3><p>Em criação por você.</p><span class="arq">decisão do dono</span></article>
 </div>
 <h2>Marcos</h2><ul class='marcos'>
@@ -104,16 +100,16 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li>Design system e tokens de cor da interface<span class="arq">docs/03_design_system.md, docs/03_design_tokens.json</span></li>
 <li>Decisões de visual 3D e motor<span class="arq">docs/08_decisoes_visual_3d.md</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Aprovar as prévias de graybox quando chegarem (depende de você).</p></article>
-<article class="card" id="s-design"><header><div><h3>Game Design</h3><span class="mut peq">Game Designer</span></div><span class="pil aguardando_dono"><i></i>Aguardando você</span></header>
-<p>Decisões do protótipo escritas (esquiva, poções, Guardião, elites, IA); três perguntas esperam sua resposta.</p><ul>
+<article class="card" id="s-design"><header><div><h3>Game Design</h3><span class="mut peq">Game Designer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
+<p>Decisões do protótipo escritas e as perguntas do Game Designer foram respondidas por você em 16/10.</p><ul>
 <li>Decisões que travavam o protótipo (10 itens)<span class="arq">docs/13_design_pendencias.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Responder às perguntas do Game Designer.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Aplicar as respostas nos documentos e nas tabelas (Escudada no nível 4, Poção de Resguardo, pilares na arena).</p></article>
 <article class="card" id="s-dados"><header><div><h3>Dados</h3><span class="mut peq">Data Engineer</span></div><span class="pil concluido"><i></i>Concluído</span></header>
 <p>Tabelas CSV, esquemas, validador e documento de dados prontos.</p><ul>
 <li>Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)<span class="arq">EchoesOfTheShatter/Content/Data/*.csv</span></li>
 <li>Esquemas JSON e validador<span class="arq">EchoesOfTheShatter/Content/Data/schemas/, tools/validate_data.py</span></li>
 <li>Documento de dados<span class="arq">docs/06_dados.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Ajustar os CSVs conforme as respostas do Game Designer.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Ajustar os CSVs conforme as respostas do dono (skills.csv passa de 5 para 4 habilidades).</p></article>
 <article class="card" id="s-conteudo"><header><div><h3>Conteúdo e textos</h3><span class="mut peq">Narrative</span></div><span class="pil concluido"><i></i>Concluído</span></header>
 <p>Conteúdo do protótipo e textos em português e inglês escritos. A história é do dono.</p><ul>
 <li>Resumo do conteúdo e do tom<span class="arq">docs/05_conteudo.md</span></li>
@@ -125,19 +121,19 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li>Interfaces do ShatterCore em C++<span class="arq">ShatterCore/include/shatter/*.h</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Revisar o contrato da API C quando o Backend entregar.</p></article>
 <article class="card" id="s-backend"><header><div><h3>Backend ShatterCore</h3><span class="mut peq">Backend Engineer</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
-<p>Sessão na nuvem terminando motor, testes e API C; vai abrir um pull request em rascunho.</p><ul>
+<p>Pull request #3 aberto em rascunho: ShatterCore terminado com a API C. Aguarda revisão do orquestrador.</p><ul>
 <li>Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)<span class="arq">ShatterCore/src/*.cpp</span></li>
 <li>Testes do núcleo já no repositório<span class="arq">ShatterCore/tests/*.cpp</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Revisar o pull request quando chegar.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Revisar o pull request #3.</p></article>
 <article class="card" id="s-frontend"><header><div><h3>Frontend Unity</h3><span class="mut peq">Frontend Engineer</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
-<p>Sessão na nuvem escrevendo o gameplay em C#; a compilação será feita no PC depois.</p><ul>
+<p>Pull request #2 aberto em rascunho: protótipo jogável do Guerreiro na Cripta em C#. Aguarda revisão do orquestrador.</p><ul>
 <li>Projeto Unity 6.3 URP criado<span class="arq">EchoesOfTheShatter/</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Compilar e testar no PC quando o pull request chegar.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Revisar o pull request #2; depois compilar e testar no PC.</p></article>
 <article class="card" id="s-arte_tecnica"><header><div><h3>Arte técnica</h3><span class="mut peq">Artista técnico (Blender)</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
-<p>Graybox dos heróis e inimigos no repositório; a sessão na nuvem termina o kit da Cripta, a cena de teste e o esqueleto humanoide.</p><ul>
+<p>Pull request #1 aberto em rascunho: kit da Cripta, sala de teste e esqueleto compartilhado. Aguarda revisão do orquestrador.</p><ul>
 <li>Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)<span class="arq">art-src/graybox/</span></li>
 <li>Prévias em imagem<span class="arq">art-src/graybox/previews/</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Mostrar as prévias para sua aprovação.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Revisar o pull request #1 e mostrar as prévias para sua aprovação.</p></article>
 <article class="card" id="s-qa"><header><div><h3>QA</h3><span class="mut peq">QA Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
 <p>Plano de testes escrito; a execução depende do código das sessões na nuvem.</p><ul>
 <li>Plano de QA (matriz de requisitos e casos)<span class="arq">docs/10_qa.md</span></li>
@@ -153,6 +149,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </ul><p class="prox"><b>Próximo passo:</b> Integrar os três pull requests quando chegarem.</p></article>
 </div>
 <h2>Linha do tempo</h2><ul class='linha'>
+<li><code>4703257</code><span class="dt">16/10/2026</span><br>feat(painel): agente e gerador do painel de produção</li>
 <li><code>e12db47</code><span class="dt">16/10/2026</span><br>feat: projeto Unity 6.3 URP, ShatterCore em andamento, graybox e docs da equipe</li>
 <li><code>e24fcdf</code><span class="dt">16/10/2026</span><br>docs(arquitetura): apresentação em Unity 6 LTS + URP</li>
 <li><code>295165f</code><span class="dt">16/10/2026</span><br>docs: troca o motor para Unity 6 LTS com URP</li>
@@ -172,6 +169,14 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <article class="card"><h3>Fogo do Mago vermelho-laranja</h3><p>Como na arte aprovada.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Tudo do projeto no disco D</h3><p>O disco C está cheio.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Agentes por setor</h3><p>Trabalho pesado roda na nuvem.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Escudada liberada no nível 4</h3><p>No protótipo, conforme a recomendação do Game Designer; skills.csv passa de 5 para 4.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Segunda poção: Poção de Resguardo</h3><p>Barreira de 30%, 2 cargas, 60 s.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Arena do Guardião com pilares</h3><p>A investida que bate num pilar atordoa o chefe e derruba o escudo.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Guardião obrigatório nesta rodada</h3><p>Decisão P-2.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Teste de paridade adiado</h3><p>Fica para a próxima rodada; expedições idle usam números estimados com selo &quot;Estimativa&quot; (P-3).</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>PC de referência: PC de entrada genérico</h3><p>GPU de 4 GB (nível GTX 1050 Ti/RX 570), CPU de 4 núcleos, 8 GB de RAM, 1080p (P-4).</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Licença Unity Personal ciente</h3><p>Vale até US$ 200 mil de receita ou investimento em 12 meses; acima disso, Unity Pro (P-5).</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>CI só do núcleo na nuvem</h3><p>GitHub Actions em Linux para o ShatterCore e a validação das tabelas; builds e testes da Unity rodam no PC do dono quando ele pedir.</p><span class="arq">16/10/2026</span></article>
 </div>
 <h2>Galeria de arte</h2>
 <div class="abas"><button data-f="todas" aria-pressed="true">Todas (28)</button><button data-f="aprovada" aria-pressed="false">Aprovada (24)</button><button data-f="aguardando" aria-pressed="false">Aguardando aprovação (4)</button></div><div class="gal">
@@ -205,9 +210,9 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <figure data-k="aprovada"><img src="thumbs/24_predador_marcos.jpg" alt="Predador dos Marcos" loading="lazy"><figcaption><b>Predador dos Marcos</b>vistas, fases, rastros e arena<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
 </div>
 <h2>Sessões na nuvem</h2><div class='grade'>
-<article class="card"><header><h3>1. ShatterCore: terminar motor, testes e API C</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Backend - iniciada em 16/10/2026</p><p class="prox"><b>Resultado:</b> Pull request em rascunho no GitHub</p></article>
-<article class="card"><header><h3>2. Arte técnica: terminar graybox no Blender</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Arte técnica - iniciada em 16/10/2026</p><p>Kit da Cripta, cena de teste e esqueleto humanoide.</p><p class="prox"><b>Resultado:</b> Pull request em rascunho no GitHub</p></article>
-<article class="card"><header><h3>3. Frontend: gameplay C# do protótipo na Unity</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Frontend - iniciada em 16/10/2026</p><p>Movimento, câmera, esquiva, habilidades do Guerreiro, IA do inimigo e HUD em UI Toolkit. A compilação será feita no PC depois.</p><p class="prox"><b>Resultado:</b> Pull request em rascunho no GitHub</p></article>
+<article class="card"><header><h3>1. ShatterCore: terminar motor, testes e API C</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Backend - iniciada em 16/10/2026</p><p class="prox"><b>Resultado:</b> Pull request #3 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/3)</p></article>
+<article class="card"><header><h3>2. Arte técnica: terminar graybox no Blender</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Arte técnica - iniciada em 16/10/2026</p><p>Kit da Cripta, cena de teste e esqueleto humanoide.</p><p class="prox"><b>Resultado:</b> Pull request #1 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/1)</p></article>
+<article class="card"><header><h3>3. Frontend: gameplay C# do protótipo na Unity</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Frontend - iniciada em 16/10/2026</p><p>Movimento, câmera, esquiva, habilidades do Guerreiro, IA do inimigo e HUD em UI Toolkit. A compilação será feita no PC depois.</p><p class="prox"><b>Resultado:</b> Pull request #2 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/2)</p></article>
 </div>
 <h2>Infraestrutura</h2><div class='tab'><table><tr><th>Item</th><th>Detalhe</th></tr>
 <tr><td>Unity 6.3 LTS (6000.3.26f1)</td><td>D:\Unity\Editors, com módulo IL2CPP</td></tr>
