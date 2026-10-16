@@ -145,9 +145,26 @@ namespace Echoes.Gameplay
             LastEvents = events;
             if (Brain.State != before) StateChanged?.Invoke(before, Brain.State);
 
-            if ((events & EnemyBrainEvents.TelegraphStarted) != 0) BeginTelegraph(combatSystem);
-            if ((events & EnemyBrainEvents.AttackImpact) != 0) ResolveImpact(combatSystem);
-            if ((events & EnemyBrainEvents.Interrupted) != 0) EndTelegraph(combatSystem);
+            if ((events & EnemyBrainEvents.TelegraphStarted) != 0)
+            {
+                BeginTelegraph(combatSystem);
+                PublishPhase(combatSystem, CurrentAttackSkill, ActionPhase.Windup, Brain.CurrentProfile.Windup);
+            }
+            if ((events & EnemyBrainEvents.AttackImpact) != 0)
+            {
+                ResolveImpact(combatSystem);
+                PublishPhase(combatSystem, CurrentAttackSkill, ActionPhase.Impact, Brain.CurrentProfile.Impact);
+            }
+            if ((events & EnemyBrainEvents.AttackEnded) != 0) PublishPhase(combatSystem, CurrentAttackSkill, ActionPhase.Recovery, Brain.CurrentProfile.Recovery);
+            if ((events & EnemyBrainEvents.Interrupted) != 0)
+            {
+                EndTelegraph(combatSystem);
+                PublishPhase(combatSystem, CurrentAttackSkill, ActionPhase.None, 0.0);
+            }
+            else if (before == EnemyBrainState.Recover && Brain.State != EnemyBrainState.Recover)
+            {
+                PublishPhase(combatSystem, CurrentAttackSkill, ActionPhase.None, 0.0);
+            }
 
             var canMove = rules.CanMove(self.Stats);
             WantsToMove = hasTarget && canMove && Brain.WantsToMove && (input.DistanceToTarget > StopDistance || input.HoldFire);
@@ -251,6 +268,14 @@ namespace Echoes.Gameplay
                     evt.HalfAngleDegrees = (float)(skill.ConeAngleDegrees * 0.5);
                     break;
             }
+            combatSystem.Events.Publish(in evt);
+        }
+
+        // Fases do ataque para a apresentacao (clipe, velocidade do clipe): mesmo evento do heroi, so o dono muda.
+        void PublishPhase(CombatSystem combatSystem, SkillInfo skill, ActionPhase phase, double seconds)
+        {
+            if (skill == null) return;
+            var evt = new SkillPhaseEvent { Owner = self, Skill = skill, Phase = phase, PhaseSeconds = seconds, Direction = attackDirection };
             combatSystem.Events.Publish(in evt);
         }
 
@@ -371,16 +396,19 @@ namespace Echoes.Gameplay
                     if (skill == null) break;
                     bossSkill = skill;
                     BeginTelegraph(combatSystem, skill, e.Seconds, true);
+                    PublishPhase(combatSystem, skill, ActionPhase.Windup, e.Seconds);
                     break;
                 }
                 case BossEventKind.PatternImpact:
                     if (bossSkill != null && bossSkill.Shape == SkillShape.Dash) StartDash(combatSystem, bossSkill, e.Seconds);
                     else ResolveImpact(combatSystem, bossSkill);
+                    PublishPhase(combatSystem, bossSkill, ActionPhase.Impact, e.Seconds);
                     break;
                 case BossEventKind.PatternEnd:
                 case BossEventKind.PatternInterrupted:
                     dashing = false;
                     EndTelegraph(combatSystem);
+                    PublishPhase(combatSystem, bossSkill, ActionPhase.None, 0.0);
                     bossSkill = null;
                     break;
                 default:

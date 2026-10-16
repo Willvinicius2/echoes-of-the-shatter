@@ -21,6 +21,7 @@ namespace Echoes.Presentation
         static readonly int IsDeadParam = Animator.StringToHash("IsDead");
         static readonly int IsStaggeredParam = Animator.StringToHash("IsStaggered");
         static readonly int ActionSpeedParam = Animator.StringToHash("ActionSpeed");
+        static readonly int PhaseParam = Animator.StringToHash("Phase");
         static readonly int HitFlashId = Shader.PropertyToID("_HitFlash");
         static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
 
@@ -54,6 +55,7 @@ namespace Echoes.Presentation
         bool hasIsDead;
         bool hasIsStaggered;
         bool hasActionSpeed;
+        bool hasPhase;
         bool subscribed;
 
         Combatant Self => attributes != null ? attributes.Combatant : null;
@@ -88,6 +90,7 @@ namespace Echoes.Presentation
                     else if (hash == IsDeadParam) hasIsDead = true;
                     else if (hash == IsStaggeredParam) hasIsStaggered = true;
                     else if (hash == ActionSpeedParam) hasActionSpeed = true;
+                    else if (hash == PhaseParam) hasPhase = true;
                 }
             }
             var events = root != null ? root.Events : null;
@@ -97,6 +100,7 @@ namespace Echoes.Presentation
             events.Subscribe<DodgeStartedEvent>(OnDodge);
             events.Subscribe<CombatantDiedEvent>(OnDied);
             events.Subscribe<CombatantRevivedEvent>(OnRevived);
+            events.Subscribe<BossStateEvent>(OnBossState);
             subscribed = true;
         }
 
@@ -114,6 +118,7 @@ namespace Echoes.Presentation
             events.Unsubscribe<DodgeStartedEvent>(OnDodge);
             events.Unsubscribe<CombatantDiedEvent>(OnDied);
             events.Unsubscribe<CombatantRevivedEvent>(OnRevived);
+            events.Unsubscribe<BossStateEvent>(OnBossState);
         }
 
         void Update()
@@ -223,6 +228,16 @@ namespace Echoes.Presentation
             // velocidade = duração autoral da fase / duração da fase no CSV (seção 3.3).
             actionSpeed = evt.PhaseSeconds > 1e-4 && authored > 0f ? authored / (float)evt.PhaseSeconds : 1f;
             if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(state, actionLayerIndex, start);
+        }
+
+        // Fase do chefe (core): o rugido toca na camada Action com a velocidade ajustada a transitionSeconds; o parametro Phase acompanha.
+        void OnBossState(in BossStateEvent evt)
+        {
+            if (!ReferenceEquals(evt.Owner, Self) || evt.Kind != Echoes.Interop.BossEventKind.PhaseStart || !HasAnimator) return;
+            if (hasPhase) animator.SetInteger(PhaseParam, evt.Phase);
+            if (skillSet == null || actionLayerIndex < 0) return;
+            actionSpeed = evt.Seconds > 1e-4 ? skillSet.roarClipSeconds / (float)evt.Seconds : 1f;
+            PlayIfExists(skillSet.roarState, actionLayerIndex, 0f);
         }
 
         void OnDodge(in DodgeStartedEvent evt)

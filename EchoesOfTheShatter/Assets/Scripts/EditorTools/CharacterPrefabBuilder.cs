@@ -31,6 +31,7 @@ namespace Echoes.EditorTools
         public sealed class Spec
         {
             public string Folder, Model, Textures, Prefab, Material;
+            public string Controller; // AC_* (null = sem animacao ainda: Arqueiro Espectral)
             public WeaponSpec[] Weapons = Array.Empty<WeaponSpec>();
         }
 
@@ -39,20 +40,20 @@ namespace Echoes.EditorTools
 
         public static readonly Spec Warrior = new Spec
         {
-            Folder = "Warrior", Model = "SK_Warrior", Textures = "T_Warrior", Prefab = "P_Hero_Warrior", Material = "M_Warrior",
+            Folder = "Warrior", Model = "SK_Warrior", Textures = "T_Warrior", Prefab = "P_Hero_Warrior", Material = "M_Warrior", Controller = "AC_Warrior",
             Weapons = new[] { new WeaponSpec { Name = "WarriorHammer", Sockets = RightSockets }, new WeaponSpec { Name = "WarriorShield", Sockets = LeftSockets } },
         };
 
         static readonly Dictionary<string, Spec> EnemySpecs = new Dictionary<string, Spec>
         {
-            { "enemy.hollow_sentinel", new Spec { Folder = "HollowSentinel", Model = "SK_Enemy_HollowSentinel", Textures = "T_Enemy_HollowSentinel", Prefab = "P_Enemy_HollowSentinel", Material = "M_Enemy_HollowSentinel" } },
+            { "enemy.hollow_sentinel", new Spec { Folder = "HollowSentinel", Model = "SK_Enemy_HollowSentinel", Textures = "T_Enemy_HollowSentinel", Prefab = "P_Enemy_HollowSentinel", Material = "M_Enemy_HollowSentinel", Controller = "AC_EnemyHumanoid" } },
             { "enemy.shielded_sentinel", null },
-            { "enemy.stone_herald", new Spec { Folder = "StoneHerald", Model = "SK_Enemy_StoneHerald", Textures = "T_Enemy_StoneHerald", Prefab = "P_Enemy_StoneHerald", Material = "M_Enemy_StoneHerald" } },
+            { "enemy.stone_herald", new Spec { Folder = "StoneHerald", Model = "SK_Enemy_StoneHerald", Textures = "T_Enemy_StoneHerald", Prefab = "P_Enemy_StoneHerald", Material = "M_Enemy_StoneHerald", Controller = "AC_EnemyHumanoid" } },
             { "enemy.ghost_archer", new Spec { Folder = "GhostArcher", Model = "SK_Enemy_GhostArcher", Textures = "T_Enemy_GhostArcher", Prefab = "P_Enemy_GhostArcher", Material = "M_Enemy_GhostArcher" } },
             {
                 "enemy.crypt_guardian", new Spec
                 {
-                    Folder = "CryptGuardian", Model = "SK_Boss_CryptGuardian", Textures = "T_Boss_CryptGuardian", Prefab = "P_Boss_CryptGuardian", Material = "M_Boss_CryptGuardian",
+                    Folder = "CryptGuardian", Model = "SK_Boss_CryptGuardian", Textures = "T_Boss_CryptGuardian", Prefab = "P_Boss_CryptGuardian", Material = "M_Boss_CryptGuardian", Controller = "AC_Boss",
                     Weapons = new[] { new WeaponSpec { Name = "GuardianHammer", Sockets = RightSockets }, new WeaponSpec { Name = "GuardianShield", Sockets = LeftSockets } },
                 }
             },
@@ -61,11 +62,23 @@ namespace Echoes.EditorTools
         [MenuItem("Echoes/Montar prefabs de personagens")]
         public static void BuildAll()
         {
-            Build(Warrior);
+            // 1) clipes KayKit e controllers; 2) prefabs (com o controller); 3) SO_SkillPresentation_* com o tempo do golpe medido no clipe.
+            AnimatorControllerBuilder.BuildAll();
+            var warrior = Build(Warrior);
+            GameObject sentinel = null, boss = null;
             foreach (var pair in EnemySpecs)
             {
-                if (pair.Value != null) Build(pair.Value);
+                if (pair.Value == null) continue;
+                var prefab = Build(pair.Value);
+                if (pair.Key == "enemy.hollow_sentinel") sentinel = prefab;
+                if (pair.Key == "enemy.crypt_guardian") boss = prefab;
             }
+            AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.Warrior, warrior);
+            AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.EnemyHumanoid, sentinel);
+            var bossSet = AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.Boss, boss);
+            bossSet.roarClipSeconds = KayKitAnimationImport.FindClip(AnimatorControllerBuilder.Boss.Actions.Find(a => a.State == "Roar").Fbx, "Flexing").length;
+            EditorUtility.SetDirty(bossSet);
+            AssetDatabase.SaveAssets();
         }
 
         public static GameObject BuildWarrior() => Build(Warrior);
@@ -96,12 +109,12 @@ namespace Echoes.EditorTools
 
             var instance = UnityEngine.Object.Instantiate(model);
             instance.name = spec.Prefab;
-            // Animator preparado: avatar Humanoid (copiado do Rig_Humanoid_Chibi) ou Generic (Arqueiro Espectral), sem controlador ate a
-            // etapa de animacao, entao o modelo fica na pose de repouso.
+            // Animator com o avatar Humanoid (copiado do Rig_Humanoid_Chibi) ou Generic (Arqueiro Espectral, sem animacao ainda: sem controller)
+            // e o AC_* do KayKit (animacoes CC0); o PresentationController toca os estados a partir dos eventos do combate.
             var animator = instance.GetComponent<Animator>();
             if (animator == null) animator = instance.AddComponent<Animator>();
-            animator.applyRootMotion = false;
-            animator.runtimeAnimatorController = null;
+            animator.applyRootMotion = false; // sem root motion: a logica move o personagem
+            animator.runtimeAnimatorController = spec.Controller != null ? AnimatorControllerBuilder.Load(spec.Controller) : null;
             if (animator.avatar == null) animator.avatar = AvatarOf($"{folder}/{spec.Model}.fbx");
             foreach (var smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
