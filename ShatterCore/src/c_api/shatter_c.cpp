@@ -3,6 +3,7 @@
 // Sem exceções, sem estado global; toda função exportada é noexcept (falha de alocação é fatal).
 #include "shatter/shatter_c.h"
 
+#include <cmath>
 #include <cstddef>
 #include <cstring>
 #include <limits>

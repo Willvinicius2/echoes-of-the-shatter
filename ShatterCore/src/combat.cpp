@@ -140,7 +140,10 @@ ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill
 }
 
 double MoveSpeedUu(const StatBlock& stats, double baseMoveSpeedUu) {
-    return ClampMin0(baseMoveSpeedUu * stats.Get(StatId::MoveSpeed));
+    // Herói: class_stats.csv guarda move_speed em uu/s (450) e o StatBlock já devolve uu/s: base <= 0 usa o atributo direto.
+    // Inimigo: EnemyData::moveSpeed (uu/s) × atributo (multiplicador, base 1).
+    const double mult = stats.Get(StatId::MoveSpeed);
+    return ClampMin0(baseMoveSpeedUu > 0.0 ? baseMoveSpeedUu * mult : mult);
 }
 
 bool CanAct(const StatBlock& stats) { return stats.Get(StatId::AttackSpeed) > 0.0; }

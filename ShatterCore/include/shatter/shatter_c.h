@@ -471,7 +471,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_expedition_check(const shatter_d
                                                                 const char* params_json, size_t len,
                                                                 int32_t* start_check, uint8_t* out, size_t cap,
                                                                 size_t* needed, shatter_error* err) SHATTER_NOEXCEPT;
-/* Inicia no save (snapshot congelado, cargas descontadas). Recusa = OK com *start_check != 0 e save intacto. */
+/* RETIRADA na API 1.1 (docs/11, M-03): devolve INVALID_ARGUMENT. Use shatter_save_start_expedition_trusted (start_utc do
+ * relógio confiável e seed derivada pelo core). Era: inicia no save (snapshot congelado, cargas descontadas). */
 SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition(const shatter_db* db, shatter_save* save,
                                                                      const char* params_json, size_t len,
                                                                      int32_t* start_check,
@@ -509,8 +510,9 @@ SHATTER_API shatter_status SHATTER_CALL shatter_expedition_forecast(const shatte
                                                                    size_t len, uint64_t base_seed, int32_t samples,
                                                                    shatter_forecast* out,
                                                                    shatter_error* err) SHATTER_NOEXCEPT;
-/* Coleta sem duplicar (RF-55): itens, pilhas e XP entram e o status vira collected no MESMO save; o
- * chamador grava uma vez em seguida. *collected = 0 se já coletada (nada muda). */
+/* RETIRADA na API 1.1 (docs/11, A-05): devolve INVALID_ARGUMENT (*collected = 0). O resultado vinha do chamador. Use
+ * shatter_save_collect_expedition_trusted: o core recalcula o resultado pelo pedido salvo (RF-55, sem duplicar; o
+ * chamador grava o save uma vez em seguida). */
 SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const shatter_db* db, shatter_save* save,
                                                                        size_t index, const char* result_json,
                                                                        size_t len, uint8_t* collected,
@@ -701,6 +703,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing(const shatter_db* d
                                                              size_t skill_id_len, const shatter_statblock* stats,
                                                              const char* modifier_id, size_t modifier_id_len,
                                                              shatter_action_timing* out) SHATTER_NOEXCEPT;
+/* base_uu_per_sec > 0 (inimigo: "move_speed" do enemies.csv): base × atributo. base_uu_per_sec <= 0 (herói): o próprio
+ * atributo, que já vem em uu/s do class_stats.csv (move_speed = 450). */
 SHATTER_API shatter_status SHATTER_CALL shatter_move_speed(const shatter_statblock* stats, double base_uu_per_sec,
                                                            double* out) SHATTER_NOEXCEPT;
 /* `actor` (opcional): stun e stagger também impedem. */

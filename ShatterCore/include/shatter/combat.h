@@ -61,7 +61,9 @@ struct ActionTimingInfo {
 struct EliteProfile;
 ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill, const StatBlock& stats,
                                      const EliteProfile* elite = nullptr);
-double MoveSpeedUu(const StatBlock& stats, double baseMoveSpeedUu);  // base × MoveSpeed
+// Velocidade final em uu/s. `baseMoveSpeedUu` > 0 (inimigo: EnemyData::moveSpeed): base × atributo MoveSpeed (multiplicador).
+// `baseMoveSpeedUu` <= 0 (herói): o próprio atributo, que já vem em uu/s de class_stats.csv (move_speed = 450).
+double MoveSpeedUu(const StatBlock& stats, double baseMoveSpeedUu);
 bool CanAct(const StatBlock& stats);    // AttackSpeed > 0
 bool CanMove(const StatBlock& stats);   // MoveSpeed > 0
 // Índice do próximo ataque do inimigo (escolha ponderada; consome exatamente 1 número). -1 se não houver.
