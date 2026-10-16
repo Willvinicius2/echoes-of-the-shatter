@@ -21,6 +21,8 @@ p{margin:4px 0}.mut{color:var(--clara)}.peq{font-size:.85rem}
 .faixa a.concluido{border-color:var(--verde)}.faixa a.nuvem{border-color:var(--azul)}.faixa a.andamento{border-color:var(--ouro)}
 .faixa a.aguardando_dono{border-color:var(--lava)}.faixa a.bloqueado{border-color:var(--carm)}
 .faixa b{display:block;font-family:var(--f-tit);font-size:.85rem}
+.etapas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:14px}
+.etapa{background:var(--media);border-radius:4px;padding:8px 10px;font-size:.85rem}.etapa b{display:block;font-family:var(--f-tit);color:var(--ouro-claro)}.etapa.concluido{border-top:4px solid var(--verde)}.etapa.andamento{border-top:4px solid var(--ouro)}.etapa.pendente{border-top:4px dashed var(--clara)}
 .cont{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px}
 .cont div{font-family:var(--f-num);font-size:1.7rem;color:var(--ouro-claro)}.cont span{display:block;font:.8rem var(--f-txt);color:var(--clara)}
 .pil{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:2px 10px 2px 8px;border-radius:99px;background:var(--media);border:1px solid var(--clara);white-space:nowrap}
@@ -60,96 +62,164 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </style>
 <main>
 <section class="topo"><h1>Echoes of the Shatter</h1>
-<p class="sub">Protótipo jogável do Guerreiro na Cripta Partida. Atualizado em 16/10/2026.</p>
+<p class="sub">Etapa 2: fatia jogável da Cripta. Atualizado em 16/10/2026.</p>
 <div class="faixa">
-<a class="concluido" href="#s-arte"><b>Direção de arte</b>Concluído</a>
+<a class="andamento" href="#s-arte"><b>Direção de arte</b>Em andamento</a>
 <a class="andamento" href="#s-design"><b>Game Design</b>Em andamento</a>
-<a class="concluido" href="#s-dados"><b>Dados</b>Concluído</a>
+<a class="andamento" href="#s-dados"><b>Dados</b>Em andamento</a>
 <a class="concluido" href="#s-conteudo"><b>Conteúdo e textos</b>Concluído</a>
 <a class="concluido" href="#s-arquitetura"><b>Arquitetura</b>Concluído</a>
-<a class="nuvem" href="#s-backend"><b>Backend ShatterCore</b>Na nuvem</a>
-<a class="nuvem" href="#s-frontend"><b>Frontend Unity</b>Na nuvem</a>
-<a class="nuvem" href="#s-arte_tecnica"><b>Arte técnica</b>Na nuvem</a>
+<a class="andamento" href="#s-backend"><b>Backend ShatterCore</b>Em andamento</a>
+<a class="andamento" href="#s-frontend"><b>Frontend Unity</b>Em andamento</a>
+<a class="andamento" href="#s-arte_tecnica"><b>Arte técnica</b>Em andamento</a>
 <a class="andamento" href="#s-qa"><b>QA</b>Em andamento</a>
 <a class="concluido" href="#s-pesquisa"><b>Pesquisa</b>Concluído</a>
 <a class="andamento" href="#s-producao"><b>Produção</b>Em andamento</a>
 </div>
 <div class="cont">
-<div>2<span>aguardando você</span></div>
-<div>3<span>sessões na nuvem</span></div>
-<div>5/11<span>setores concluídos</span></div>
-<div>3/7<span>marcos</span></div>
+<div>7<span>aguardando você</span></div>
+<div>0<span>sessões na nuvem</span></div>
+<div>3/11<span>setores concluídos</span></div>
+<div>7/10<span>marcos</span></div>
+</div>
+<div class="etapas">
+<div class="etapa concluido"><b>Etapa 1</b>Base técnica<br><span class="pil concluido"><i></i>Concluído</span></div>
+<div class="etapa andamento"><b>Etapa 2</b>Fatia jogável da Cripta<br><span class="pil andamento"><i></i>Em andamento</span></div>
+<div class="etapa pendente"><b>Etapa 3</b>Ciclo completo do protótipo<br><span class="pil pendente"><i></i>Pendente</span></div>
+<div class="etapa pendente"><b>Etapa 4</b>Elenco e Ato I<br><span class="pil pendente"><i></i>Pendente</span></div>
+<div class="etapa pendente"><b>Etapa 5</b>Acesso Antecipado<br><span class="pil pendente"><i></i>Pendente</span></div>
 </div></section>
 <h2>Aguardando você</h2><div class='grade'>
-<article class="card alerta"><h3>Aprovar as prévias de graybox</h3><p>Pull request #1 (rascunho) com o kit da Cripta, a sala de teste e o esqueleto.</p><span class="arq">PR #1, art-src/graybox/previews/</span></article>
+<article class="card alerta"><h3>Endgame numa etapa própria?</h3><p>Pergunta aberta no fim do docs/15.</p><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta"><h3>Demo do Next Fest</h3><p>Pergunta aberta: fazer uma demo para o Next Fest?</p><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta"><h3>Calibração do idle na etapa 4</h3><p>Pergunta aberta: confirmar que a calibração fica na etapa 4.</p><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta"><h3>Arte da cápsula da Steam</h3><p>Pergunta aberta sobre a arte da cápsula da loja.</p><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta"><h3>Itens externos: CNPJ e Steam Direct</h3><p>Providências fora do código, que dependem de você.</p><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta"><h3>Mover o arquivo de paginação do Windows para o D:</h3><p>O disco C está cheio; a paginação precisa sair dele.</p><span class="arq">infraestrutura</span></article>
 <article class="card alerta"><h3>História do jogo</h3><p>Em criação por você.</p><span class="arq">decisão do dono</span></article>
 </div>
 <h2>Marcos</h2><ul class='marcos'>
 <li class="ok"><i></i><span>Visual e arquitetura definidos</span><span class="mut peq">feito</span></li>
 <li class="ok"><i></i><span>Dados e textos do protótipo</span><span class="mut peq">feito</span></li>
 <li class="ok"><i></i><span>Infraestrutura de desenvolvimento</span><span class="mut peq">feito</span></li>
-<li class=""><i></i><span>ShatterCore completo com API C</span><span class="mut peq">falta</span></li>
-<li class=""><i></i><span>Graybox da Cripta e dos personagens aprovado</span><span class="mut peq">falta</span></li>
-<li class=""><i></i><span>Gameplay do Guerreiro compilando na Unity</span><span class="mut peq">falta</span></li>
+<li class="ok"><i></i><span>ShatterCore completo com API C</span><span class="mut peq">feito</span></li>
+<li class="ok"><i></i><span>Graybox da Cripta e dos personagens aprovado</span><span class="mut peq">feito</span></li>
+<li class="ok"><i></i><span>Gameplay do Guerreiro compilando na Unity</span><span class="mut peq">feito</span></li>
 <li class=""><i></i><span>Protótipo jogável do Guerreiro na Cripta Partida</span><span class="mut peq">falta</span></li>
+<li class="ok"><i></i><span>Folhas de modelagem, heróis modulares e cenário aprovados</span><span class="mut peq">feito</span></li>
+<li class=""><i></i><span>Guerreiro 3D final (pintura, esqueleto, FBX)</span><span class="mut peq">falta</span></li>
+<li class=""><i></i><span>Fatia jogável da Cripta (Etapa 2)</span><span class="mut peq">falta</span></li>
 </ul>
 <h2>Setores</h2><div class='grade'>
-<article class="card" id="s-arte"><header><div><h3>Direção de arte</h3><span class="mut peq">Art Director</span></div><span class="pil concluido"><i></i>Concluído</span></header>
-<p>Visual do Spell Brigade aprovado, com 24 imagens de referência e design system.</p><ul>
+<article class="card" id="s-arte"><header><div><h3>Direção de arte</h3><span class="mut peq">Art Director</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
+<p>Folhas de modelagem, heróis modulares e cenário da Cripta aprovados em 16/10; Guerreiro 3D gerado, em acabamento.</p><ul>
 <li>24 referências de arte aprovadas<span class="arq">docs/arte/referencias-geracao/aprovadas/</span></li>
 <li>Design system e tokens de cor da interface<span class="arq">docs/03_design_system.md, docs/03_design_tokens.json</span></li>
 <li>Decisões de visual 3D e motor<span class="arq">docs/08_decisoes_visual_3d.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Aprovar as prévias de graybox quando chegarem (depende de você).</p></article>
+<li>Folhas de modelagem m01 a m09, heróis modulares e cenário c01 a c06<span class="arq">docs/arte/referencias-geracao/aprovadas/modelagem/</span></li>
+<li>Régua de escala do Spell Brigade<span class="arq">docs/arte/regua_spell_brigade.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Pintura, esqueleto e FBX do Guerreiro no Blender; fila do TripoSG.</p></article>
 <article class="card" id="s-design"><header><div><h3>Game Design</h3><span class="mut peq">Game Designer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>Decisões do protótipo escritas e as perguntas do Game Designer foram respondidas por você em 16/10.</p><ul>
+<p>Decisões de 16/10 aplicadas: câmera, escala, respawn e porta da arena.</p><ul>
 <li>Decisões que travavam o protótipo (10 itens)<span class="arq">docs/13_design_pendencias.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Aplicar as respostas nos documentos e nas tabelas (Escudada no nível 4, Poção de Resguardo, pilares na arena).</p></article>
-<article class="card" id="s-dados"><header><div><h3>Dados</h3><span class="mut peq">Data Engineer</span></div><span class="pil concluido"><i></i>Concluído</span></header>
-<p>Tabelas CSV, esquemas, validador e documento de dados prontos.</p><ul>
+<li>Layout da Cripta na escala da zona A<span class="arq">docs/14_layout_cripta.md</span></li>
+<li>Etapas do jogo (5 etapas)<span class="arq">docs/15_etapas.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Responder as perguntas abertas do docs/15 (com você).</p></article>
+<article class="card" id="s-dados"><header><div><h3>Dados</h3><span class="mut peq">Data Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
+<p>Branch etapa2/dados pronto: 5 tabelas novas, slot legs, visualSetId e save v2.</p><ul>
 <li>Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)<span class="arq">EchoesOfTheShatter/Content/Data/*.csv</span></li>
 <li>Esquemas JSON e validador<span class="arq">EchoesOfTheShatter/Content/Data/schemas/, tools/validate_data.py</span></li>
 <li>Documento de dados<span class="arq">docs/06_dados.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Ajustar os CSVs conforme as respostas do dono (skills.csv passa de 5 para 4 habilidades).</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Merge com o backend (etapa2/backend).</p></article>
 <article class="card" id="s-conteudo"><header><div><h3>Conteúdo e textos</h3><span class="mut peq">Narrative</span></div><span class="pil concluido"><i></i>Concluído</span></header>
-<p>Conteúdo do protótipo e textos em português e inglês escritos. A história é do dono.</p><ul>
+<p>Textos pt_BR e en; 35 chaves novas da Etapa 2 (incluindo o slot Calça).</p><ul>
 <li>Resumo do conteúdo e do tom<span class="arq">docs/05_conteudo.md</span></li>
 <li>Textos pt_BR e en (interface, conteúdo, diálogos, expedição)<span class="arq">EchoesOfTheShatter/Content/Data/Loc/*.csv</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Aguardar a história em criação pelo dono.</p></article>
 <article class="card" id="s-arquitetura"><header><div><h3>Arquitetura</h3><span class="mut peq">Tech Lead</span></div><span class="pil concluido"><i></i>Concluído</span></header>
-<p>Arquitetura em Unity 6 + URP com o ShatterCore como DLL nativa.</p><ul>
+<p>Arquitetura em Unity 6 + URP com o ShatterCore como DLL; personagem modular documentado.</p><ul>
 <li>Documento de arquitetura (cliente, núcleo, interop, testes)<span class="arq">docs/04_arquitetura.md</span></li>
 <li>Interfaces do ShatterCore em C++<span class="arq">ShatterCore/include/shatter/*.h</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Revisar o contrato da API C quando o Backend entregar.</p></article>
-<article class="card" id="s-backend"><header><div><h3>Backend ShatterCore</h3><span class="mut peq">Backend Engineer</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
-<p>Pull request #3 aberto em rascunho: ShatterCore terminado com a API C. Aguarda revisão do orquestrador.</p><ul>
+<li>Personagem modular (04 §17.4) e proposta C-10 do slot legs<span class="arq">docs/04_arquitetura.md</span></li>
+<li>Revisão de código: 0 crítico, 6 alto, 11 médio, 26 baixo<span class="arq">docs/11_revisao_codigo.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Revisar o contrato da API C ampliada.</p></article>
+<article class="card" id="s-backend"><header><div><h3>Backend ShatterCore</h3><span class="mut peq">Backend Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
+<p>PR #3 integrado no master (ShatterCore e API C v1). Branch etapa2/backend: regras novas, slot legs, save v2 e API C ampliada.</p><ul>
 <li>Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)<span class="arq">ShatterCore/src/*.cpp</span></li>
 <li>Testes do núcleo já no repositório<span class="arq">ShatterCore/tests/*.cpp</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Revisar o pull request #3.</p></article>
-<article class="card" id="s-frontend"><header><div><h3>Frontend Unity</h3><span class="mut peq">Frontend Engineer</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
-<p>Pull request #2 aberto em rascunho: protótipo jogável do Guerreiro na Cripta em C#. Aguarda revisão do orquestrador.</p><ul>
+<li>CI do núcleo em Linux<span class="arq">.github/workflows/core.yml, manual.yml</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Terminar a etapa2/backend e fazer o merge com os dados.</p></article>
+<article class="card" id="s-frontend"><header><div><h3>Frontend Unity</h3><span class="mut peq">Frontend Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
+<p>PR #2 integrado no master. Cena base com F1 a F6 e 101 testes EditMode passando. Branch etapa2/frontend: DLL real e movimento no passo fixo.</p><ul>
 <li>Projeto Unity 6.3 URP criado<span class="arq">EchoesOfTheShatter/</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Revisar o pull request #2; depois compilar e testar no PC.</p></article>
-<article class="card" id="s-arte_tecnica"><header><div><h3>Arte técnica</h3><span class="mut peq">Artista técnico (Blender)</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
-<p>Pull request #1 aberto em rascunho: kit da Cripta, sala de teste e esqueleto compartilhado. Aguarda revisão do orquestrador.</p><ul>
+<li>Cena base na escala 56 m<span class="arq">EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Terminar a etapa2/frontend.</p></article>
+<article class="card" id="s-arte_tecnica"><header><div><h3>Arte técnica</h3><span class="mut peq">Artista técnico (Blender)</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
+<p>PR #1 integrado no master. TripoSG gerando os modelos 3D: Sentinela, Cão, Arauto e Guardião prontos; Arqueiro Espectral sendo refeito.</p><ul>
 <li>Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)<span class="arq">art-src/graybox/</span></li>
 <li>Prévias em imagem<span class="arq">art-src/graybox/previews/</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Revisar o pull request #1 e mostrar as prévias para sua aprovação.</p></article>
+<li>Forma 3D do Guerreiro (TripoSG)<span class="arq">D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/</span></li>
+<li>Pesquisa de modelos 3D grátis<span class="arq">docs/pesquisa/modelos_3d_gratis.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Acabamento do Guerreiro no Blender (pintura, esqueleto, FBX) e fila do TripoSG (7 armas, 3 corpos, 15 peças, cenário).</p></article>
 <article class="card" id="s-qa"><header><div><h3>QA</h3><span class="mut peq">QA Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>Plano de testes escrito; a execução depende do código das sessões na nuvem.</p><ul>
+<p>77 casos novos para a Etapa 2 no plano de QA.</p><ul>
 <li>Plano de QA (matriz de requisitos e casos)<span class="arq">docs/10_qa.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Rodar a suíte quando o ShatterCore e o gameplay chegarem.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Rodar a suíte quando o backend e o frontend da Etapa 2 chegarem.</p></article>
 <article class="card" id="s-pesquisa"><header><div><h3>Pesquisa</h3><span class="mut peq">Pesquisador de referências</span></div><span class="pil concluido"><i></i>Concluído</span></header>
 <p>Pesquisa do canal @stefan_3d_ai feita com acesso limitado ao YouTube.</p><ul>
 <li>Pesquisa do canal @stefan_3d_ai<span class="arq">docs/pesquisa/stefan_3d_ai.md</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Nenhum; a lista de vídeos do canal não pôde ser obtida.</p></article>
 <article class="card" id="s-producao"><header><div><h3>Produção</h3><span class="mut peq">Orquestrador</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>Coordena os setores, mantém este painel e o plano de execução.</p><ul>
+<p>Os PRs #1, #2 e #3 estão no master. Etapa 1 concluída; Etapa 2 em andamento.</p><ul>
 <li>Plano de execução e próximos passos<span class="arq">docs/01_plano_execucao.md, docs/07_proximos_passos.md</span></li>
 <li>Este painel<span class="arq">docs/progresso/estado.json, tools/painel/gerar_painel.py</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Integrar os três pull requests quando chegarem.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Fechar a Etapa 2 e preparar a Etapa 3.</p></article>
 </div>
 <h2>Linha do tempo</h2><ul class='linha'>
+<li><code>493bf7b</code><span class="dt">16/10/2026</span><br>art+design: heróis modulares e cenário da Cripta aprovados; respawn no checkpoint e porta da arena</li>
+<li><code>53813d1</code><span class="dt">16/10/2026</span><br>loc: slot Calça (legs) e base Calça Gasta</li>
+<li><code>fd2e9d3</code><span class="dt">16/10/2026</span><br>docs(arquitetura): personagem modular (04 §17.4) e proposta C-10 do slot legs</li>
+<li><code>5e9c313</code><span class="dt">16/10/2026</span><br>docs: revisão de código do C# do protótipo e da API C (docs/11): 0 crítico, 6 alto, 11 médio, 26 baixo</li>
+<li><code>5858d38</code><span class="dt">16/10/2026</span><br>docs: layout da Cripta na escala da zona A (docs/14)</li>
+<li><code>8cf0b03</code><span class="dt">16/10/2026</span><br>docs(qa)+art: QA da Etapa 2 e folhas do personagem modular</li>
+<li><code>b6ac25b</code><span class="dt">16/10/2026</span><br>docs: etapas do jogo (docs/15_etapas.md) e CLAUDE.md apontando para a Etapa 2</li>
+<li><code>cbbedff</code><span class="dt">16/10/2026</span><br>ci+loc: CI do núcleo em Linux (core.yml, manual.yml) e 33 chaves de texto da Etapa 2</li>
+<li><code>e1df5c4</code><span class="dt">16/10/2026</span><br>feat(camera): câmera a 56 m e mapa na escala da zona A (decisão do dono de 16/10)</li>
+<li><code>3182cf3</code><span class="dt">16/10/2026</span><br>feat(unity): cena base com duas escalas de mapa e câmera ajustável; régua do Spell Brigade</li>
+<li><code>0deef58</code><span class="dt">16/10/2026</span><br>art: folhas de modelagem m01-m09 aprovadas pelo dono</li>
+<li><code>f5715c1</code><span class="dt">16/10/2026</span><br>build(graybox): FBX e .blend regerados no Blender 5.1 local; folhas de modelagem e pesquisa de modelos 3D</li>
+<li><code>8578982</code><span class="dt">16/10/2026</span><br>Merge PR #1: graybox da Cripta, sala de teste e esqueleto compartilhado</li>
+<li><code>59aad60</code><span class="dt">16/10/2026</span><br>Merge PR #2: protótipo do Guerreiro na Cripta em C# (Unity 6.3)</li>
+<li><code>8b7a350</code><span class="dt">16/10/2026</span><br>Merge PR #3: ShatterCore terminado e API C v1</li>
+<li><code>bbcefad</code><span class="dt">16/10/2026</span><br>docs: registra as respostas do dono de 16/10 (Escudada nível 4, Resguardo, pilares, P-2 a P-5, CI)</li>
+<li><code>4d074fd</code><span class="dt">16/10/2026</span><br>test(editmode): expiração no passo exato, fraqueza até o piso e ordem estável</li>
+<li><code>37ee6bf</code><span class="dt">16/10/2026</span><br>fix(presentation): libera materiais, checa parâmetros do Animator e cacheia VFX</li>
+<li><code>88d0e89</code><span class="dt">16/10/2026</span><br>fix(gameplay): saída do combate no OnDisable e ordem de passo estável</li>
+<li><code>4e11fda</code><span class="dt">16/10/2026</span><br>fix(interop): stub fiel ao src do ShatterCore</li>
+<li><code>f10249f</code><span class="dt">16/10/2026</span><br>test(core): remove parâmetro sem uso em test_c_api</li>
+<li><code>050b11b</code><span class="dt">16/10/2026</span><br>docs: registra as mudanças de contrato do ShatterCore</li>
+<li><code>1a94c3b</code><span class="dt">16/10/2026</span><br>test(core): RF-28 e RF-61 por busca, RF-25 em 1 milhão no noturno</li>
+<li><code>7c59822</code><span class="dt">16/10/2026</span><br>test(graybox): conferência dos FBX por reimportação</li>
+<li><code>9f14ac6</code><span class="dt">16/10/2026</span><br>feat(graybox): sala de teste da Cripta com o Guerreiro e 3 inimigos</li>
+<li><code>d6904a0</code><span class="dt">16/10/2026</span><br>feat(graybox): kit modular da Cripta Partida</li>
+<li><code>d4b6601</code><span class="dt">16/10/2026</span><br>fix(graybox): inimigos de frente para +Z no Unity e martelo do Guardião acima do piso</li>
+<li><code>033f066</code><span class="dt">16/10/2026</span><br>feat(graybox): heróis no esqueleto compartilhado</li>
+<li><code>98ab94c</code><span class="dt">16/10/2026</span><br>feat(graybox): esqueleto compartilhado Rig_Humanoid_Chibi</li>
+<li><code>c6827ba</code><span class="dt">16/10/2026</span><br>chore(graybox): caminhos relativos, paleta única e preset FBX canônico</li>
+<li><code>da498c2</code><span class="dt">16/10/2026</span><br>feat(core): API C estável e DLL shattercore para o Unity</li>
+<li><code>f492e2a</code><span class="dt">16/10/2026</span><br>perf(ui): HUD só monta texto quando o número mostrado muda</li>
+<li><code>a62085c</code><span class="dt">16/10/2026</span><br>docs(scripts): passo a passo para montar a cena de teste no editor</li>
+<li><code>65aed39</code><span class="dt">16/10/2026</span><br>test(editmode): cargas, recargas, máquina de estados e combate em passo fixo</li>
+<li><code>fb41d5d</code><span class="dt">16/10/2026</span><br>feat(ui): HUD em UI Toolkit com variáveis USS geradas dos tokens</li>
+<li><code>9c5698d</code><span class="dt">16/10/2026</span><br>feat(presentation): câmera 3/4, hitstop visual, telegraph e projéteis</li>
+<li><code>134c58a</code><span class="dt">16/10/2026</span><br>feat(gameplay): herói, inimigo, entrada e host do combate na cena</li>
+<li><code>7b0d8a2</code><span class="dt">16/10/2026</span><br>test(core): cobre os critérios [SC] que faltavam</li>
+<li><code>7c49b8b</code><span class="dt">16/10/2026</span><br>feat(core): fecha regras do idle, cargas, domínio e motivo de relógio</li>
+<li><code>680e654</code><span class="dt">16/10/2026</span><br>feat(gameplay): lógica pura de combate em passo fixo</li>
+<li><code>ec66486</code><span class="dt">16/10/2026</span><br>feat(core): EventBus, RulesService, localização por CSV e GameRoot</li>
+<li><code>d239c20</code><span class="dt">16/10/2026</span><br>feat(interop): fachada IRulesCore e stub provisório do motor de regras em C#</li>
 <li><code>4703257</code><span class="dt">16/10/2026</span><br>feat(painel): agente e gerador do painel de produção</li>
+<li><code>f497e06</code><span class="dt">16/10/2026</span><br>fix(core): compila sem warnings e passa no ASan/UBSan</li>
 <li><code>e12db47</code><span class="dt">16/10/2026</span><br>feat: projeto Unity 6.3 URP, ShatterCore em andamento, graybox e docs da equipe</li>
 <li><code>e24fcdf</code><span class="dt">16/10/2026</span><br>docs(arquitetura): apresentação em Unity 6 LTS + URP</li>
 <li><code>295165f</code><span class="dt">16/10/2026</span><br>docs: troca o motor para Unity 6 LTS com URP</li>
@@ -177,42 +247,76 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <article class="card"><h3>PC de referência: PC de entrada genérico</h3><p>GPU de 4 GB (nível GTX 1050 Ti/RX 570), CPU de 4 núcleos, 8 GB de RAM, 1080p (P-4).</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Licença Unity Personal ciente</h3><p>Vale até US$ 200 mil de receita ou investimento em 12 meses; acima disso, Unity Pro (P-5).</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>CI só do núcleo na nuvem</h3><p>GitHub Actions em Linux para o ShatterCore e a validação das tabelas; builds e testes da Unity rodam no PC do dono quando ele pedir.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Câmera a 56 m (faixa de 48 a 66 m)</h3><p>Escala de mapa da zona A: arena de 40 m com pilares, salas de 24 a 32 m, corredores de 6 m.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Motor continua Unity</h3><p>A Unreal não resolveria; o Spell Brigade é Unity 6 com URP.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Packs KayKit recusados como provisórios</h3><p>Não entram nem como arte temporária.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Modelos 3D pelo TripoSG (licença MIT)</h3><p>Gerados a partir das folhas de modelagem aprovadas.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Heróis modulares</h3><p>Corpo base mais peças; a calça é espaço de equipamento próprio (legs) e a aparência aprovada vira a armadura inicial.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Inimigos reaparecem ao voltar ao checkpoint</h3><p>Vale para toda a Cripta.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>A porta da arena fecha até o fim da luta</h3><p>Só abre quando o Guardião cai.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Graybox aprovado só como provisório</h3><p>Será trocado pelos modelos 3D finais.</p><span class="arq">16/10/2026</span></article>
 </div>
 <h2>Galeria de arte</h2>
-<div class="abas"><button data-f="todas" aria-pressed="true">Todas (28)</button><button data-f="aprovada" aria-pressed="false">Aprovada (24)</button><button data-f="aguardando" aria-pressed="false">Aguardando aprovação (4)</button></div><div class="gal">
-<figure class="ag" data-k="aguardando"><img src="thumbs/graybox_heroes_lineup.jpg" alt="Graybox dos heróis (fila)" loading="lazy"><figcaption><b>Graybox dos heróis (fila)</b>Prévia de graybox.<br><span class="pil aguardando_dono"><i></i>Aguardando aprovação</span></figcaption></figure>
-<figure class="ag" data-k="aguardando"><img src="thumbs/graybox_heroes_front.jpg" alt="Graybox dos heróis (frente)" loading="lazy"><figcaption><b>Graybox dos heróis (frente)</b>Prévia de graybox.<br><span class="pil aguardando_dono"><i></i>Aguardando aprovação</span></figcaption></figure>
-<figure class="ag" data-k="aguardando"><img src="thumbs/graybox_enemies_lineup.jpg" alt="Graybox dos inimigos" loading="lazy"><figcaption><b>Graybox dos inimigos</b>Prévia de graybox.<br><span class="pil aguardando_dono"><i></i>Aguardando aprovação</span></figcaption></figure>
-<figure class="ag" data-k="aguardando"><img src="thumbs/graybox_boss_guardian.jpg" alt="Graybox do Guardião da Cripta" loading="lazy"><figcaption><b>Graybox do Guardião da Cripta</b>Prévia de graybox.<br><span class="pil aguardando_dono"><i></i>Aguardando aprovação</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/01_key_art.jpg" alt="Key art com os 3 heróis e uma faixa de estilo" loading="lazy"><figcaption><b>Key art com os 3 heróis e uma faixa de estilo</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/02_guerreiro.jpg" alt="Guerreiro" loading="lazy"><figcaption><b>Guerreiro</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/03_arqueiro.jpg" alt="Arqueiro" loading="lazy"><figcaption><b>Arqueiro</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/04_mago.jpg" alt="Mago" loading="lazy"><figcaption><b>Mago</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/05_inimigos_ato1.jpg" alt="8 inimigos do Ato I nas versões normal, elite e corrompida" loading="lazy"><figcaption><b>8 inimigos do Ato I nas versões normal, elite e corrompida</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/06_chefes_ato1.jpg" alt="Os 4 chefes do Ato I, cada um enfrentando um herói" loading="lazy"><figcaption><b>Os 4 chefes do Ato I, cada um enfrentando um herói</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/07_cripta_tileset.jpg" alt="Cripta Partida" loading="lazy"><figcaption><b>Cripta Partida</b>arena com o Guerreiro e kit modular<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/08_pedreira_ponte.jpg" alt="Pedreira dos Ecos com o Arqueiro e Ponte do Sino com o Mago" loading="lazy"><figcaption><b>Pedreira dos Ecos com o Arqueiro e Ponte do Sino com o Mago</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/09_vfx_habilidades.jpg" alt="Efeitos das habilidades das 3 classes contra inimigos do Ato I e os telegraphs dos inimigos" loading="lazy"><figcaption><b>Efeitos das habilidades das 3 classes contra inimigos do Ato I e os telegraphs dos inimigos</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/10_hud_mockup.jpg" alt="HUD em combate" loading="lazy"><figcaption><b>HUD em combate</b>o Guerreiro contra o Guardião da Cripta<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/11_icones.jpg" alt="Ícones de habilidades (com o herói de cada classe) e de itens" loading="lazy"><figcaption><b>Ícones de habilidades (com o herói de cada classe) e de itens</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/12_mapa_mundi.jpg" alt="Mapa do Ato I e seleção de área com o Vigia do Sino" loading="lazy"><figcaption><b>Mapa do Ato I e seleção de área com o Vigia do Sino</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/13_estrada_lanternas.jpg" alt="Estrada das Lanternas (tutorial)" loading="lazy"><figcaption><b>Estrada das Lanternas (tutorial)</b>área com o Guerreiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/14_armazem_cinzas.jpg" alt="Armazém de Cinzas (área opcional de saque)" loading="lazy"><figcaption><b>Armazém de Cinzas (área opcional de saque)</b>área com o Arqueiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/15_patio_marcos.jpg" alt="Pátio dos Marcos" loading="lazy"><figcaption><b>Pátio dos Marcos</b>arena do Carrasco do Voto com o Mago e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/16_tuneis_voto.jpg" alt="Túneis do Voto" loading="lazy"><figcaption><b>Túneis do Voto</b>área com o Guerreiro, kit e planta da masmorra<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/17_mirante_partido.jpg" alt="Mirante Partido" loading="lazy"><figcaption><b>Mirante Partido</b>arena final do Ato I com o Arqueiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/18_ossario_marco.jpg" alt="Endgame, Ossário do Marco" loading="lazy"><figcaption><b>Endgame, Ossário do Marco</b>área com o Guerreiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/19_trilha_cinza.jpg" alt="Endgame, Trilha de Cinza" loading="lazy"><figcaption><b>Endgame, Trilha de Cinza</b>área com o Arqueiro, inimigos e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/20_salao_martelo.jpg" alt="Endgame, Salão do Martelo" loading="lazy"><figcaption><b>Endgame, Salão do Martelo</b>área com o Mago, inimigos e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/21_terrenos_ato1.jpg" alt="Terrenos das 8 áreas do Ato I (4 texturas por área)" loading="lazy"><figcaption><b>Terrenos das 8 áreas do Ato I (4 texturas por área)</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/22_terrenos_endgame.jpg" alt="Terrenos dos 3 mapas do endgame e marcas de perigo no chão" loading="lazy"><figcaption><b>Terrenos dos 3 mapas do endgame e marcas de perigo no chão</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/23_inimigos_endgame.jpg" alt="9 inimigos do endgame (3 por mapa) nas versões normal, elite e corrompida" loading="lazy"><figcaption><b>9 inimigos do endgame (3 por mapa) nas versões normal, elite e corrompida</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-<figure data-k="aprovada"><img src="thumbs/24_predador_marcos.jpg" alt="Predador dos Marcos" loading="lazy"><figcaption><b>Predador dos Marcos</b>vistas, fases, rastros e arena<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
-</div>
-<h2>Sessões na nuvem</h2><div class='grade'>
-<article class="card"><header><h3>1. ShatterCore: terminar motor, testes e API C</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Backend - iniciada em 16/10/2026</p><p class="prox"><b>Resultado:</b> Pull request #3 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/3)</p></article>
-<article class="card"><header><h3>2. Arte técnica: terminar graybox no Blender</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Arte técnica - iniciada em 16/10/2026</p><p>Kit da Cripta, cena de teste e esqueleto humanoide.</p><p class="prox"><b>Resultado:</b> Pull request #1 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/1)</p></article>
-<article class="card"><header><h3>3. Frontend: gameplay C# do protótipo na Unity</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Frontend - iniciada em 16/10/2026</p><p>Movimento, câmera, esquiva, habilidades do Guerreiro, IA do inimigo e HUD em UI Toolkit. A compilação será feita no PC depois.</p><p class="prox"><b>Resultado:</b> Pull request #2 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/2)</p></article>
+<div class="abas"><button data-f="todas" aria-pressed="true">Todas (52)</button>
+<button data-f="referencias" aria-pressed="false">Referências (24)</button>
+<button data-f="modelagem" aria-pressed="false">Modelagem (9)</button>
+<button data-f="modulares" aria-pressed="false">Heróis modulares (6)</button>
+<button data-f="cenario" aria-pressed="false">Cenário da Cripta (6)</button>
+<button data-f="modelos3d" aria-pressed="false">Modelos 3D (3)</button>
+<button data-f="graybox" aria-pressed="false">Graybox (4)</button>
+</div><div class="gal">
+<figure class="" data-k="referencias"><img src="thumbs/01_key_art.jpg" alt="Key art com os 3 heróis e uma faixa de estilo" loading="lazy"><figcaption><b>Key art com os 3 heróis e uma faixa de estilo</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/02_guerreiro.jpg" alt="Guerreiro" loading="lazy"><figcaption><b>Guerreiro</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/03_arqueiro.jpg" alt="Arqueiro" loading="lazy"><figcaption><b>Arqueiro</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/04_mago.jpg" alt="Mago" loading="lazy"><figcaption><b>Mago</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/05_inimigos_ato1.jpg" alt="8 inimigos do Ato I nas versões normal, elite e corrompida" loading="lazy"><figcaption><b>8 inimigos do Ato I nas versões normal, elite e corrompida</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/06_chefes_ato1.jpg" alt="Os 4 chefes do Ato I, cada um enfrentando um herói" loading="lazy"><figcaption><b>Os 4 chefes do Ato I, cada um enfrentando um herói</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/07_cripta_tileset.jpg" alt="Cripta Partida" loading="lazy"><figcaption><b>Cripta Partida</b>arena com o Guerreiro e kit modular<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/08_pedreira_ponte.jpg" alt="Pedreira dos Ecos com o Arqueiro e Ponte do Sino com o Mago" loading="lazy"><figcaption><b>Pedreira dos Ecos com o Arqueiro e Ponte do Sino com o Mago</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/09_vfx_habilidades.jpg" alt="Efeitos das habilidades das 3 classes contra inimigos do Ato I e os telegraphs dos inimigos" loading="lazy"><figcaption><b>Efeitos das habilidades das 3 classes contra inimigos do Ato I e os telegraphs dos inimigos</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/10_hud_mockup.jpg" alt="HUD em combate" loading="lazy"><figcaption><b>HUD em combate</b>o Guerreiro contra o Guardião da Cripta<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/11_icones.jpg" alt="Ícones de habilidades (com o herói de cada classe) e de itens" loading="lazy"><figcaption><b>Ícones de habilidades (com o herói de cada classe) e de itens</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/12_mapa_mundi.jpg" alt="Mapa do Ato I e seleção de área com o Vigia do Sino" loading="lazy"><figcaption><b>Mapa do Ato I e seleção de área com o Vigia do Sino</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/13_estrada_lanternas.jpg" alt="Estrada das Lanternas (tutorial)" loading="lazy"><figcaption><b>Estrada das Lanternas (tutorial)</b>área com o Guerreiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/14_armazem_cinzas.jpg" alt="Armazém de Cinzas (área opcional de saque)" loading="lazy"><figcaption><b>Armazém de Cinzas (área opcional de saque)</b>área com o Arqueiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/15_patio_marcos.jpg" alt="Pátio dos Marcos" loading="lazy"><figcaption><b>Pátio dos Marcos</b>arena do Carrasco do Voto com o Mago e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/16_tuneis_voto.jpg" alt="Túneis do Voto" loading="lazy"><figcaption><b>Túneis do Voto</b>área com o Guerreiro, kit e planta da masmorra<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/17_mirante_partido.jpg" alt="Mirante Partido" loading="lazy"><figcaption><b>Mirante Partido</b>arena final do Ato I com o Arqueiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/18_ossario_marco.jpg" alt="Endgame, Ossário do Marco" loading="lazy"><figcaption><b>Endgame, Ossário do Marco</b>área com o Guerreiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/19_trilha_cinza.jpg" alt="Endgame, Trilha de Cinza" loading="lazy"><figcaption><b>Endgame, Trilha de Cinza</b>área com o Arqueiro, inimigos e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/20_salao_martelo.jpg" alt="Endgame, Salão do Martelo" loading="lazy"><figcaption><b>Endgame, Salão do Martelo</b>área com o Mago, inimigos e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/21_terrenos_ato1.jpg" alt="Terrenos das 8 áreas do Ato I (4 texturas por área)" loading="lazy"><figcaption><b>Terrenos das 8 áreas do Ato I (4 texturas por área)</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/22_terrenos_endgame.jpg" alt="Terrenos dos 3 mapas do endgame e marcas de perigo no chão" loading="lazy"><figcaption><b>Terrenos dos 3 mapas do endgame e marcas de perigo no chão</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/23_inimigos_endgame.jpg" alt="9 inimigos do endgame (3 por mapa) nas versões normal, elite e corrompida" loading="lazy"><figcaption><b>9 inimigos do endgame (3 por mapa) nas versões normal, elite e corrompida</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="referencias"><img src="thumbs/24_predador_marcos.jpg" alt="Predador dos Marcos" loading="lazy"><figcaption><b>Predador dos Marcos</b>vistas, fases, rastros e arena<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m01_guerreiro.jpg" alt="Folha de modelagem: Guerreiro" loading="lazy"><figcaption><b>Folha de modelagem: Guerreiro</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m02_arqueiro.jpg" alt="Folha de modelagem: Arqueiro" loading="lazy"><figcaption><b>Folha de modelagem: Arqueiro</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m03_mago.jpg" alt="Folha de modelagem: Mago" loading="lazy"><figcaption><b>Folha de modelagem: Mago</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m04_sentinela_oca.jpg" alt="Folha de modelagem: Sentinela Oca" loading="lazy"><figcaption><b>Folha de modelagem: Sentinela Oca</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m05_cao_de_cinza.jpg" alt="Folha de modelagem: Cão-de-Cinza" loading="lazy"><figcaption><b>Folha de modelagem: Cão-de-Cinza</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m06_arauto_de_pedra.jpg" alt="Folha de modelagem: Arauto de Pedra" loading="lazy"><figcaption><b>Folha de modelagem: Arauto de Pedra</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m07_arqueiro_espectral.jpg" alt="Folha de modelagem: Arqueiro Espectral" loading="lazy"><figcaption><b>Folha de modelagem: Arqueiro Espectral</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m08_guardiao_cripta.jpg" alt="Folha de modelagem: Guardião da Cripta" loading="lazy"><figcaption><b>Folha de modelagem: Guardião da Cripta</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelagem"><img src="thumbs/modelagem_m09_armas.jpg" alt="Folha de modelagem: Armas" loading="lazy"><figcaption><b>Folha de modelagem: Armas</b>Aprovada em 16/10. Base para o modelo 3D.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modulares"><img src="thumbs/modulares_mod_b01_guerreiro_corpo.jpg" alt="Guerreiro, corpo base" loading="lazy"><figcaption><b>Guerreiro, corpo base</b>Corpo base; rostos novos do Guerreiro e do Arqueiro.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modulares"><img src="thumbs/modulares_mod_b02_arqueiro_corpo.jpg" alt="Arqueiro, corpo base" loading="lazy"><figcaption><b>Arqueiro, corpo base</b>Corpo base; rostos novos do Guerreiro e do Arqueiro.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modulares"><img src="thumbs/modulares_mod_b03_mago_corpo.jpg" alt="Mago, corpo base" loading="lazy"><figcaption><b>Mago, corpo base</b>Corpo base; rostos novos do Guerreiro e do Arqueiro.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modulares"><img src="thumbs/modulares_mod_a01_guerreiro_inicial.jpg" alt="Guerreiro, armadura inicial" loading="lazy"><figcaption><b>Guerreiro, armadura inicial</b>Armadura inicial em 5 peças: elmo, peitoral, luvas, calça e botas.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modulares"><img src="thumbs/modulares_mod_a02_arqueiro_inicial.jpg" alt="Arqueiro, armadura inicial" loading="lazy"><figcaption><b>Arqueiro, armadura inicial</b>Armadura inicial em 5 peças: elmo, peitoral, luvas, calça e botas.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modulares"><img src="thumbs/modulares_mod_a03_mago_inicial.jpg" alt="Mago, armadura inicial" loading="lazy"><figcaption><b>Mago, armadura inicial</b>Armadura inicial em 5 peças: elmo, peitoral, luvas, calça e botas.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="cenario"><img src="thumbs/cenario_c01_pisos.jpg" alt="Cripta: Pisos" loading="lazy"><figcaption><b>Cripta: Pisos</b>Folha do cenário da Cripta, aprovada em 16/10.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="cenario"><img src="thumbs/cenario_c02_paredes.jpg" alt="Cripta: Paredes" loading="lazy"><figcaption><b>Cripta: Paredes</b>Folha do cenário da Cripta, aprovada em 16/10.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="cenario"><img src="thumbs/cenario_c03_pilar_arco.jpg" alt="Cripta: Pilar e arco" loading="lazy"><figcaption><b>Cripta: Pilar e arco</b>Folha do cenário da Cripta, aprovada em 16/10.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="cenario"><img src="thumbs/cenario_c04_escada_portal.jpg" alt="Cripta: Escada e portal" loading="lazy"><figcaption><b>Cripta: Escada e portal</b>Folha do cenário da Cripta, aprovada em 16/10.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="cenario"><img src="thumbs/cenario_c05_decoracao.jpg" alt="Cripta: Decoração" loading="lazy"><figcaption><b>Cripta: Decoração</b>Folha do cenário da Cripta, aprovada em 16/10.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="cenario"><img src="thumbs/cenario_c06_entulho_abismo.jpg" alt="Cripta: Entulho e abismo" loading="lazy"><figcaption><b>Cripta: Entulho e abismo</b>Folha do cenário da Cripta, aprovada em 16/10.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_m01_guerreiro_prev_frente.jpg" alt="Guerreiro 3D (frente)" loading="lazy"><figcaption><b>Guerreiro 3D (frente)</b>Forma gerada pelo TripoSG a partir da folha aprovada. Ainda sem pintura nem esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_m01_guerreiro_prev_3-4.jpg" alt="Guerreiro 3D (três quartos)" loading="lazy"><figcaption><b>Guerreiro 3D (três quartos)</b>Forma gerada pelo TripoSG a partir da folha aprovada. Ainda sem pintura nem esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_m01_guerreiro_prev_costas.jpg" alt="Guerreiro 3D (costas)" loading="lazy"><figcaption><b>Guerreiro 3D (costas)</b>Forma gerada pelo TripoSG a partir da folha aprovada. Ainda sem pintura nem esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="ag" data-k="graybox"><img src="thumbs/graybox_heroes_lineup.jpg" alt="Graybox: Heróis (fila)" loading="lazy"><figcaption><b>Graybox: Heróis (fila)</b>Aprovado só como provisório.<br><span class="pil andamento"><i></i>Provisório</span></figcaption></figure>
+<figure class="ag" data-k="graybox"><img src="thumbs/graybox_heroes_front.jpg" alt="Graybox: Heróis (frente)" loading="lazy"><figcaption><b>Graybox: Heróis (frente)</b>Aprovado só como provisório.<br><span class="pil andamento"><i></i>Provisório</span></figcaption></figure>
+<figure class="ag" data-k="graybox"><img src="thumbs/graybox_enemies_lineup.jpg" alt="Graybox: Inimigos" loading="lazy"><figcaption><b>Graybox: Inimigos</b>Aprovado só como provisório.<br><span class="pil andamento"><i></i>Provisório</span></figcaption></figure>
+<figure class="ag" data-k="graybox"><img src="thumbs/graybox_boss_guardian.jpg" alt="Graybox: Guardião da Cripta" loading="lazy"><figcaption><b>Graybox: Guardião da Cripta</b>Aprovado só como provisório.<br><span class="pil andamento"><i></i>Provisório</span></figcaption></figure>
 </div>
 <h2>Infraestrutura</h2><div class='tab'><table><tr><th>Item</th><th>Detalhe</th></tr>
 <tr><td>Unity 6.3 LTS (6000.3.26f1)</td><td>D:\Unity\Editors, com módulo IL2CPP</td></tr>
@@ -223,6 +327,8 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <tr><td>Repositório privado no GitHub</td><td>github.com/Willvinicius2/echoes-of-the-shatter, com Git LFS</td></tr>
 <tr><td>Visual Studio Build Tools</td><td>MSVC 14.50</td></tr>
 <tr><td>Blender 5.1</td><td>graybox e arte técnica</td></tr>
+<tr><td>TripoSG (licença MIT)</td><td>Geração de modelos 3D a partir das folhas aprovadas</td></tr>
+<tr><td>CI do núcleo</td><td>.github/workflows/core.yml e manual.yml</td></tr>
 </table></div></main>
 <script>
 (function(){var b=document.querySelectorAll('.abas button'),f=document.querySelectorAll('.gal figure');

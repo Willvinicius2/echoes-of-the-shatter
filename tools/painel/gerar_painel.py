@@ -75,6 +75,8 @@ p{margin:4px 0}.mut{color:var(--clara)}.peq{font-size:.85rem}
 .faixa a.concluido{border-color:var(--verde)}.faixa a.nuvem{border-color:var(--azul)}.faixa a.andamento{border-color:var(--ouro)}
 .faixa a.aguardando_dono{border-color:var(--lava)}.faixa a.bloqueado{border-color:var(--carm)}
 .faixa b{display:block;font-family:var(--f-tit);font-size:.85rem}
+.etapas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:14px}
+.etapa{background:var(--media);border-radius:4px;padding:8px 10px;font-size:.85rem}.etapa b{display:block;font-family:var(--f-tit);color:var(--ouro-claro)}.etapa.concluido{border-top:4px solid var(--verde)}.etapa.andamento{border-top:4px solid var(--ouro)}.etapa.pendente{border-top:4px dashed var(--clara)}
 .cont{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px}
 .cont div{font-family:var(--f-num);font-size:1.7rem;color:var(--ouro-claro)}.cont span{display:block;font:.8rem var(--f-txt);color:var(--clara)}
 .pil{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:2px 10px 2px 8px;border-radius:99px;background:var(--media);border:1px solid var(--clara);white-space:nowrap}
@@ -138,11 +140,15 @@ def main() -> None:
             desc = titulos[nome]
             tit, _, resto = desc.partition(":")
             aprov.append((miniatura(origem, origem.stem), tit.strip() if resto else desc, resto.strip(), nome))
-    aguard = []
-    for it in estado.get("arte_aguardando", []):
-        origem = PREVIAS / it["arquivo"]
+    GRUPOS = [("referencias", "Referências"), ("modelagem", "Modelagem"), ("modulares", "Heróis modulares"),
+              ("cenario", "Cenário da Cripta"), ("modelos3d", "Modelos 3D"), ("graybox", "Graybox")]
+    itens = [("referencias", "aprovada", miniatura(APROV / n, Path(n).stem), (t.partition(":")[0].strip() if ":" in t else t),
+              t.partition(":")[2].strip()) for n, t in sorted(titulos.items()) if (APROV / n).exists()]
+    for it in estado.get("galeria", []):
+        origem = RAIZ / it["arquivo"]
         if origem.exists():
-            aguard.append((miniatura(origem, "graybox_" + origem.stem), it["titulo"], it.get("detalhe", ""), it["arquivo"]))
+            itens.append((it["grupo"], it["estado"], miniatura(origem, it["grupo"] + "_" + origem.stem), it["titulo"], it.get("detalhe", "")))
+    aprov = itens
 
     cont = {}
     for s in setores:
@@ -166,6 +172,10 @@ def main() -> None:
     o.append(f'<div>{cont.get("nuvem", 0)}<span>sessões na nuvem</span></div>')
     o.append(f'<div>{cont.get("concluido", 0)}/{len(setores)}<span>setores concluídos</span></div>')
     o.append(f'<div>{feitos}/{len(estado["marcos"])}<span>marcos</span></div>')
+    o.append("</div>")
+    o.append('<div class="etapas">')
+    for et in estado.get("etapas", []):
+        o.append(f'<div class="etapa {e(et["estado"])}"><b>Etapa {et["n"]}</b>{e(et["titulo"])}<br>{pilula(et["estado"], leg)}</div>')
     o.append("</div></section>")
 
     # Aguardando
@@ -204,22 +214,28 @@ def main() -> None:
 
     # Galeria
     o.append("<h2>Galeria de arte</h2>")
-    o.append(f'<div class="abas"><button data-f="todas" aria-pressed="true">Todas ({len(aprov) + len(aguard)})</button>'
-             f'<button data-f="aprovada" aria-pressed="false">Aprovada ({len(aprov)})</button>'
-             f'<button data-f="aguardando" aria-pressed="false">Aguardando aprovação ({len(aguard)})</button></div><div class="gal">')
-    for img, tit, det, arq in aguard:
-        o.append(f'<figure class="ag" data-k="aguardando"><img src="{e(img)}" alt="{e(tit)}" loading="lazy"><figcaption><b>{e(tit)}</b>{e(det)}<br>{pilula("aguardando_dono", {"aguardando_dono": "Aguardando aprovação"})}</figcaption></figure>')
-    for img, tit, det, arq in aprov:
-        o.append(f'<figure data-k="aprovada"><img src="{e(img)}" alt="{e(tit)}" loading="lazy"><figcaption><b>{e(tit)}</b>{e(det)}<br>{pilula("concluido", {"concluido": "Aprovada"})}</figcaption></figure>')
+    o.append(f'<div class="abas"><button data-f="todas" aria-pressed="true">Todas ({len(itens)})</button>')
+    for gid, gn in GRUPOS:
+        n = sum(1 for i in itens if i[0] == gid)
+        if n:
+            o.append(f'<button data-f="{gid}" aria-pressed="false">{e(gn)} ({n})</button>')
+    o.append('</div><div class="gal">')
+    for gid, est, img, tit, det in itens:
+        prov = est == "provisoria"
+        pil = pilula("andamento", {"andamento": "Provisório"}) if prov else pilula("concluido", {"concluido": "Aprovada"})
+        o.append(f'<figure class="{"ag" if prov else ""}" data-k="{gid}"><img src="{e(img)}" alt="{e(tit)}" loading="lazy"><figcaption><b>{e(tit)}</b>{e(det)}<br>{pil}</figcaption></figure>')
     o.append("</div>")
 
     # Nuvem
-    o.append("<h2>Sessões na nuvem</h2><div class='grade'>")
+    if estado["nuvem"]:
+      o.append("<h2>Sessões na nuvem</h2><div class='grade'>")
     for n in estado["nuvem"]:
+      if True:
         o.append(f'<article class="card"><header><h3>{n["n"]}. {e(n["titulo"])}</h3>{pilula("nuvem", leg)}</header>'
                  f'<p class="mut peq">{e(n["setor"])} - iniciada em {e(n["data"][8:10])}/{e(n["data"][5:7])}/{e(n["data"][:4])}</p>'
                  + (f'<p>{e(n["detalhe"])}</p>' if n.get("detalhe") else "") + f'<p class="prox"><b>Resultado:</b> {e(n["saida"])}</p></article>')
-    o.append("</div>")
+    if estado["nuvem"]:
+        o.append("</div>")
 
     # Infra
     o.append("<h2>Infraestrutura</h2><div class='tab'><table><tr><th>Item</th><th>Detalhe</th></tr>")
@@ -229,7 +245,7 @@ def main() -> None:
     o.append("<script>" + JS + "</script>")
 
     (PROG / "painel.html").write_text("\n".join(o), encoding="utf-8")
-    print(f"painel.html: {len(setores)} setores, {len(commits)} commits, {len(aprov)} aprovadas, {len(aguard)} aguardando")
+    print(f"painel.html: {len(setores)} setores, {len(commits)} commits, {len(itens)} imagens na galeria")
 
 
 if __name__ == "__main__":

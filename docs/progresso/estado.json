@@ -4,7 +4,7 @@
     "atualizado_em": "2026-10-16",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
-    "marco_atual": "Protótipo jogável do Guerreiro na Cripta Partida",
+    "marco_atual": "Etapa 2: fatia jogável da Cripta",
     "legenda_estados": {
       "concluido": "Concluído",
       "nuvem": "Na nuvem",
@@ -19,8 +19,8 @@
       "id": "arte",
       "nome": "Direção de arte",
       "agente": "Art Director",
-      "estado": "concluido",
-      "resumo": "Visual do Spell Brigade aprovado, com 24 imagens de referência e design system.",
+      "estado": "andamento",
+      "resumo": "Folhas de modelagem, heróis modulares e cenário da Cripta aprovados em 16/10; Guerreiro 3D gerado, em acabamento.",
       "entregas": [
         {
           "titulo": "24 referências de arte aprovadas",
@@ -33,30 +33,46 @@
         {
           "titulo": "Decisões de visual 3D e motor",
           "arquivo": "docs/08_decisoes_visual_3d.md"
+        },
+        {
+          "titulo": "Folhas de modelagem m01 a m09, heróis modulares e cenário c01 a c06",
+          "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/"
+        },
+        {
+          "titulo": "Régua de escala do Spell Brigade",
+          "arquivo": "docs/arte/regua_spell_brigade.md"
         }
       ],
-      "proximo": "Aprovar as prévias de graybox quando chegarem (depende de você)."
+      "proximo": "Pintura, esqueleto e FBX do Guerreiro no Blender; fila do TripoSG."
     },
     {
       "id": "design",
       "nome": "Game Design",
       "agente": "Game Designer",
       "estado": "andamento",
-      "resumo": "Decisões do protótipo escritas e as perguntas do Game Designer foram respondidas por você em 16/10.",
+      "resumo": "Decisões de 16/10 aplicadas: câmera, escala, respawn e porta da arena.",
       "entregas": [
         {
           "titulo": "Decisões que travavam o protótipo (10 itens)",
           "arquivo": "docs/13_design_pendencias.md"
+        },
+        {
+          "titulo": "Layout da Cripta na escala da zona A",
+          "arquivo": "docs/14_layout_cripta.md"
+        },
+        {
+          "titulo": "Etapas do jogo (5 etapas)",
+          "arquivo": "docs/15_etapas.md"
         }
       ],
-      "proximo": "Aplicar as respostas nos documentos e nas tabelas (Escudada no nível 4, Poção de Resguardo, pilares na arena)."
+      "proximo": "Responder as perguntas abertas do docs/15 (com você)."
     },
     {
       "id": "dados",
       "nome": "Dados",
       "agente": "Data Engineer",
-      "estado": "concluido",
-      "resumo": "Tabelas CSV, esquemas, validador e documento de dados prontos.",
+      "estado": "andamento",
+      "resumo": "Branch etapa2/dados pronto: 5 tabelas novas, slot legs, visualSetId e save v2.",
       "entregas": [
         {
           "titulo": "Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)",
@@ -71,14 +87,14 @@
           "arquivo": "docs/06_dados.md"
         }
       ],
-      "proximo": "Ajustar os CSVs conforme as respostas do dono (skills.csv passa de 5 para 4 habilidades)."
+      "proximo": "Merge com o backend (etapa2/backend)."
     },
     {
       "id": "conteudo",
       "nome": "Conteúdo e textos",
       "agente": "Narrative",
       "estado": "concluido",
-      "resumo": "Conteúdo do protótipo e textos em português e inglês escritos. A história é do dono.",
+      "resumo": "Textos pt_BR e en; 35 chaves novas da Etapa 2 (incluindo o slot Calça).",
       "entregas": [
         {
           "titulo": "Resumo do conteúdo e do tom",
@@ -96,7 +112,7 @@
       "nome": "Arquitetura",
       "agente": "Tech Lead",
       "estado": "concluido",
-      "resumo": "Arquitetura em Unity 6 + URP com o ShatterCore como DLL nativa.",
+      "resumo": "Arquitetura em Unity 6 + URP com o ShatterCore como DLL; personagem modular documentado.",
       "entregas": [
         {
           "titulo": "Documento de arquitetura (cliente, núcleo, interop, testes)",
@@ -105,16 +121,24 @@
         {
           "titulo": "Interfaces do ShatterCore em C++",
           "arquivo": "ShatterCore/include/shatter/*.h"
+        },
+        {
+          "titulo": "Personagem modular (04 §17.4) e proposta C-10 do slot legs",
+          "arquivo": "docs/04_arquitetura.md"
+        },
+        {
+          "titulo": "Revisão de código: 0 crítico, 6 alto, 11 médio, 26 baixo",
+          "arquivo": "docs/11_revisao_codigo.md"
         }
       ],
-      "proximo": "Revisar o contrato da API C quando o Backend entregar."
+      "proximo": "Revisar o contrato da API C ampliada."
     },
     {
       "id": "backend",
       "nome": "Backend ShatterCore",
       "agente": "Backend Engineer",
-      "estado": "nuvem",
-      "resumo": "Pull request #3 aberto em rascunho: ShatterCore terminado com a API C. Aguarda revisão do orquestrador.",
+      "estado": "andamento",
+      "resumo": "PR #3 integrado no master (ShatterCore e API C v1). Branch etapa2/backend: regras novas, slot legs, save v2 e API C ampliada.",
       "entregas": [
         {
           "titulo": "Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)",
@@ -123,30 +147,38 @@
         {
           "titulo": "Testes do núcleo já no repositório",
           "arquivo": "ShatterCore/tests/*.cpp"
+        },
+        {
+          "titulo": "CI do núcleo em Linux",
+          "arquivo": ".github/workflows/core.yml, manual.yml"
         }
       ],
-      "proximo": "Revisar o pull request #3."
+      "proximo": "Terminar a etapa2/backend e fazer o merge com os dados."
     },
     {
       "id": "frontend",
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
-      "estado": "nuvem",
-      "resumo": "Pull request #2 aberto em rascunho: protótipo jogável do Guerreiro na Cripta em C#. Aguarda revisão do orquestrador.",
+      "estado": "andamento",
+      "resumo": "PR #2 integrado no master. Cena base com F1 a F6 e 101 testes EditMode passando. Branch etapa2/frontend: DLL real e movimento no passo fixo.",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
           "arquivo": "EchoesOfTheShatter/"
+        },
+        {
+          "titulo": "Cena base na escala 56 m",
+          "arquivo": "EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity"
         }
       ],
-      "proximo": "Revisar o pull request #2; depois compilar e testar no PC."
+      "proximo": "Terminar a etapa2/frontend."
     },
     {
       "id": "arte_tecnica",
       "nome": "Arte técnica",
       "agente": "Artista técnico (Blender)",
-      "estado": "nuvem",
-      "resumo": "Pull request #1 aberto em rascunho: kit da Cripta, sala de teste e esqueleto compartilhado. Aguarda revisão do orquestrador.",
+      "estado": "andamento",
+      "resumo": "PR #1 integrado no master. TripoSG gerando os modelos 3D: Sentinela, Cão, Arauto e Guardião prontos; Arqueiro Espectral sendo refeito.",
       "entregas": [
         {
           "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
@@ -155,23 +187,31 @@
         {
           "titulo": "Prévias em imagem",
           "arquivo": "art-src/graybox/previews/"
+        },
+        {
+          "titulo": "Forma 3D do Guerreiro (TripoSG)",
+          "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/"
+        },
+        {
+          "titulo": "Pesquisa de modelos 3D grátis",
+          "arquivo": "docs/pesquisa/modelos_3d_gratis.md"
         }
       ],
-      "proximo": "Revisar o pull request #1 e mostrar as prévias para sua aprovação."
+      "proximo": "Acabamento do Guerreiro no Blender (pintura, esqueleto, FBX) e fila do TripoSG (7 armas, 3 corpos, 15 peças, cenário)."
     },
     {
       "id": "qa",
       "nome": "QA",
       "agente": "QA Engineer",
       "estado": "andamento",
-      "resumo": "Plano de testes escrito; a execução depende do código das sessões na nuvem.",
+      "resumo": "77 casos novos para a Etapa 2 no plano de QA.",
       "entregas": [
         {
           "titulo": "Plano de QA (matriz de requisitos e casos)",
           "arquivo": "docs/10_qa.md"
         }
       ],
-      "proximo": "Rodar a suíte quando o ShatterCore e o gameplay chegarem."
+      "proximo": "Rodar a suíte quando o backend e o frontend da Etapa 2 chegarem."
     },
     {
       "id": "pesquisa",
@@ -192,7 +232,7 @@
       "nome": "Produção",
       "agente": "Orquestrador",
       "estado": "andamento",
-      "resumo": "Coordena os setores, mantém este painel e o plano de execução.",
+      "resumo": "Os PRs #1, #2 e #3 estão no master. Etapa 1 concluída; Etapa 2 em andamento.",
       "entregas": [
         {
           "titulo": "Plano de execução e próximos passos",
@@ -203,14 +243,39 @@
           "arquivo": "docs/progresso/estado.json, tools/painel/gerar_painel.py"
         }
       ],
-      "proximo": "Integrar os três pull requests quando chegarem."
+      "proximo": "Fechar a Etapa 2 e preparar a Etapa 3."
     }
   ],
   "pendencias_dono": [
     {
-      "titulo": "Aprovar as prévias de graybox",
-      "detalhe": "Pull request #1 (rascunho) com o kit da Cripta, a sala de teste e o esqueleto.",
-      "origem": "PR #1, art-src/graybox/previews/"
+      "titulo": "Endgame numa etapa própria?",
+      "detalhe": "Pergunta aberta no fim do docs/15.",
+      "origem": "docs/15_etapas.md"
+    },
+    {
+      "titulo": "Demo do Next Fest",
+      "detalhe": "Pergunta aberta: fazer uma demo para o Next Fest?",
+      "origem": "docs/15_etapas.md"
+    },
+    {
+      "titulo": "Calibração do idle na etapa 4",
+      "detalhe": "Pergunta aberta: confirmar que a calibração fica na etapa 4.",
+      "origem": "docs/15_etapas.md"
+    },
+    {
+      "titulo": "Arte da cápsula da Steam",
+      "detalhe": "Pergunta aberta sobre a arte da cápsula da loja.",
+      "origem": "docs/15_etapas.md"
+    },
+    {
+      "titulo": "Itens externos: CNPJ e Steam Direct",
+      "detalhe": "Providências fora do código, que dependem de você.",
+      "origem": "docs/15_etapas.md"
+    },
+    {
+      "titulo": "Mover o arquivo de paginação do Windows para o D:",
+      "detalhe": "O disco C está cheio; a paginação precisa sair dele.",
+      "origem": "infraestrutura"
     },
     {
       "titulo": "História do jogo",
@@ -288,34 +353,49 @@
       "data": "2026-10-16",
       "titulo": "CI só do núcleo na nuvem",
       "detalhe": "GitHub Actions em Linux para o ShatterCore e a validação das tabelas; builds e testes da Unity rodam no PC do dono quando ele pedir."
-    }
-  ],
-  "nuvem": [
-    {
-      "n": 1,
-      "titulo": "ShatterCore: terminar motor, testes e API C",
-      "setor": "Backend",
-      "data": "2026-10-16",
-      "detalhe": "",
-      "saida": "Pull request #3 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/3)"
     },
     {
-      "n": 2,
-      "titulo": "Arte técnica: terminar graybox no Blender",
-      "setor": "Arte técnica",
       "data": "2026-10-16",
-      "detalhe": "Kit da Cripta, cena de teste e esqueleto humanoide.",
-      "saida": "Pull request #1 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/1)"
+      "titulo": "Câmera a 56 m (faixa de 48 a 66 m)",
+      "detalhe": "Escala de mapa da zona A: arena de 40 m com pilares, salas de 24 a 32 m, corredores de 6 m."
     },
     {
-      "n": 3,
-      "titulo": "Frontend: gameplay C# do protótipo na Unity",
-      "setor": "Frontend",
       "data": "2026-10-16",
-      "detalhe": "Movimento, câmera, esquiva, habilidades do Guerreiro, IA do inimigo e HUD em UI Toolkit. A compilação será feita no PC depois.",
-      "saida": "Pull request #2 em rascunho, aguardando revisão do orquestrador (github.com/Willvinicius2/echoes-of-the-shatter/pull/2)"
+      "titulo": "Motor continua Unity",
+      "detalhe": "A Unreal não resolveria; o Spell Brigade é Unity 6 com URP."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Packs KayKit recusados como provisórios",
+      "detalhe": "Não entram nem como arte temporária."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Modelos 3D pelo TripoSG (licença MIT)",
+      "detalhe": "Gerados a partir das folhas de modelagem aprovadas."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Heróis modulares",
+      "detalhe": "Corpo base mais peças; a calça é espaço de equipamento próprio (legs) e a aparência aprovada vira a armadura inicial."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Inimigos reaparecem ao voltar ao checkpoint",
+      "detalhe": "Vale para toda a Cripta."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "A porta da arena fecha até o fim da luta",
+      "detalhe": "Só abre quando o Guardião cai."
+    },
+    {
+      "data": "2026-10-16",
+      "titulo": "Graybox aprovado só como provisório",
+      "detalhe": "Será trocado pelos modelos 3D finais."
     }
   ],
+  "nuvem": [],
   "infraestrutura": [
     {
       "item": "Unity 6.3 LTS (6000.3.26f1)",
@@ -348,6 +428,14 @@
     {
       "item": "Blender 5.1",
       "detalhe": "graybox e arte técnica"
+    },
+    {
+      "item": "TripoSG (licença MIT)",
+      "detalhe": "Geração de modelos 3D a partir das folhas aprovadas"
+    },
+    {
+      "item": "CI do núcleo",
+      "detalhe": ".github/workflows/core.yml e manual.yml"
     }
   ],
   "marcos": [
@@ -365,41 +453,261 @@
     },
     {
       "titulo": "ShatterCore completo com API C",
-      "feito": false
+      "feito": true
     },
     {
       "titulo": "Graybox da Cripta e dos personagens aprovado",
-      "feito": false
+      "feito": true
     },
     {
       "titulo": "Gameplay do Guerreiro compilando na Unity",
-      "feito": false
+      "feito": true
     },
     {
       "titulo": "Protótipo jogável do Guerreiro na Cripta Partida",
       "feito": false
+    },
+    {
+      "titulo": "Folhas de modelagem, heróis modulares e cenário aprovados",
+      "feito": true
+    },
+    {
+      "titulo": "Guerreiro 3D final (pintura, esqueleto, FBX)",
+      "feito": false
+    },
+    {
+      "titulo": "Fatia jogável da Cripta (Etapa 2)",
+      "feito": false
     }
   ],
-  "arte_aguardando": [
+  "galeria": [
     {
-      "arquivo": "heroes_lineup.png",
-      "titulo": "Graybox dos heróis (fila)",
-      "detalhe": "Prévia de graybox."
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m01_guerreiro.png",
+      "titulo": "Folha de modelagem: Guerreiro",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
     },
     {
-      "arquivo": "heroes_front.png",
-      "titulo": "Graybox dos heróis (frente)",
-      "detalhe": "Prévia de graybox."
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m02_arqueiro.png",
+      "titulo": "Folha de modelagem: Arqueiro",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
     },
     {
-      "arquivo": "enemies_lineup.png",
-      "titulo": "Graybox dos inimigos",
-      "detalhe": "Prévia de graybox."
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m03_mago.png",
+      "titulo": "Folha de modelagem: Mago",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
     },
     {
-      "arquivo": "boss_guardian.png",
-      "titulo": "Graybox do Guardião da Cripta",
-      "detalhe": "Prévia de graybox."
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m04_sentinela_oca.png",
+      "titulo": "Folha de modelagem: Sentinela Oca",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m05_cao_de_cinza.png",
+      "titulo": "Folha de modelagem: Cão-de-Cinza",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m06_arauto_de_pedra.png",
+      "titulo": "Folha de modelagem: Arauto de Pedra",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m07_arqueiro_espectral.png",
+      "titulo": "Folha de modelagem: Arqueiro Espectral",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m08_guardiao_cripta.png",
+      "titulo": "Folha de modelagem: Guardião da Cripta",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelagem",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/m09_armas.png",
+      "titulo": "Folha de modelagem: Armas",
+      "detalhe": "Aprovada em 16/10. Base para o modelo 3D.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modulares",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/mod_b01_guerreiro_corpo.png",
+      "titulo": "Guerreiro, corpo base",
+      "detalhe": "Corpo base; rostos novos do Guerreiro e do Arqueiro.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modulares",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/mod_b02_arqueiro_corpo.png",
+      "titulo": "Arqueiro, corpo base",
+      "detalhe": "Corpo base; rostos novos do Guerreiro e do Arqueiro.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modulares",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/mod_b03_mago_corpo.png",
+      "titulo": "Mago, corpo base",
+      "detalhe": "Corpo base; rostos novos do Guerreiro e do Arqueiro.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modulares",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/mod_a01_guerreiro_inicial.png",
+      "titulo": "Guerreiro, armadura inicial",
+      "detalhe": "Armadura inicial em 5 peças: elmo, peitoral, luvas, calça e botas.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modulares",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/mod_a02_arqueiro_inicial.png",
+      "titulo": "Arqueiro, armadura inicial",
+      "detalhe": "Armadura inicial em 5 peças: elmo, peitoral, luvas, calça e botas.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modulares",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/mod_a03_mago_inicial.png",
+      "titulo": "Mago, armadura inicial",
+      "detalhe": "Armadura inicial em 5 peças: elmo, peitoral, luvas, calça e botas.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "cenario",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/c01_pisos.png",
+      "titulo": "Cripta: Pisos",
+      "detalhe": "Folha do cenário da Cripta, aprovada em 16/10.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "cenario",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/c02_paredes.png",
+      "titulo": "Cripta: Paredes",
+      "detalhe": "Folha do cenário da Cripta, aprovada em 16/10.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "cenario",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/c03_pilar_arco.png",
+      "titulo": "Cripta: Pilar e arco",
+      "detalhe": "Folha do cenário da Cripta, aprovada em 16/10.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "cenario",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/c04_escada_portal.png",
+      "titulo": "Cripta: Escada e portal",
+      "detalhe": "Folha do cenário da Cripta, aprovada em 16/10.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "cenario",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/c05_decoracao.png",
+      "titulo": "Cripta: Decoração",
+      "detalhe": "Folha do cenário da Cripta, aprovada em 16/10.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "cenario",
+      "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/c06_entulho_abismo.png",
+      "titulo": "Cripta: Entulho e abismo",
+      "detalhe": "Folha do cenário da Cripta, aprovada em 16/10.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/m01_guerreiro_prev_frente.png",
+      "titulo": "Guerreiro 3D (frente)",
+      "detalhe": "Forma gerada pelo TripoSG a partir da folha aprovada. Ainda sem pintura nem esqueleto.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/m01_guerreiro_prev_3-4.png",
+      "titulo": "Guerreiro 3D (três quartos)",
+      "detalhe": "Forma gerada pelo TripoSG a partir da folha aprovada. Ainda sem pintura nem esqueleto.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/m01_guerreiro_prev_costas.png",
+      "titulo": "Guerreiro 3D (costas)",
+      "detalhe": "Forma gerada pelo TripoSG a partir da folha aprovada. Ainda sem pintura nem esqueleto.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "graybox",
+      "arquivo": "art-src/graybox/previews/heroes_lineup.png",
+      "titulo": "Graybox: Heróis (fila)",
+      "detalhe": "Aprovado só como provisório.",
+      "estado": "provisoria"
+    },
+    {
+      "grupo": "graybox",
+      "arquivo": "art-src/graybox/previews/heroes_front.png",
+      "titulo": "Graybox: Heróis (frente)",
+      "detalhe": "Aprovado só como provisório.",
+      "estado": "provisoria"
+    },
+    {
+      "grupo": "graybox",
+      "arquivo": "art-src/graybox/previews/enemies_lineup.png",
+      "titulo": "Graybox: Inimigos",
+      "detalhe": "Aprovado só como provisório.",
+      "estado": "provisoria"
+    },
+    {
+      "grupo": "graybox",
+      "arquivo": "art-src/graybox/previews/boss_guardian.png",
+      "titulo": "Graybox: Guardião da Cripta",
+      "detalhe": "Aprovado só como provisório.",
+      "estado": "provisoria"
+    }
+  ],
+  "etapas": [
+    {
+      "n": 1,
+      "titulo": "Base técnica",
+      "estado": "concluido",
+      "prova": "Itens entregues listados no docs/15"
+    },
+    {
+      "n": 2,
+      "titulo": "Fatia jogável da Cripta",
+      "estado": "andamento",
+      "prova": "Você joga a Cripta inteira, com o Guerreiro final, e vence o Guardião"
+    },
+    {
+      "n": 3,
+      "titulo": "Ciclo completo do protótipo",
+      "estado": "pendente",
+      "prova": "Jogar, salvar, expedição, relatório e loot"
+    },
+    {
+      "n": 4,
+      "titulo": "Elenco e Ato I",
+      "estado": "pendente",
+      "prova": "Três classes, 8 áreas e 4 chefes jogáveis"
+    },
+    {
+      "n": 5,
+      "titulo": "Acesso Antecipado",
+      "estado": "pendente",
+      "prova": "Build na Steam validado no Steam Deck"
     }
   ]
 }
