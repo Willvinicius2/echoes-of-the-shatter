@@ -208,8 +208,11 @@ TEST(r2_new_columns_are_read_from_the_real_content) {
     EXPECT_NEAR(real->FindEnemy("enemy.ash_hound")->patrolSpeedMult, 0.0, 0.0);
     EXPECT_TRUE(real->FindEnemyAi("enemy.ghost_archer")->requireOnScreen);
     EXPECT_FALSE(real->FindEnemyAi("enemy.ash_hound")->requireOnScreen);
-    for (const char* id : {"skill.warrior.iron_cut", "skill.warrior.charge", "skill.warrior.stone_rift", "skill.warrior.shield_bash"})
-        EXPECT_NEAR(real->FindSkill(id)->idle.damageTakenMult, 0.85, 0.0);
+    // O valor é balanceamento (docs/09 §8.2); o teste só garante que a coluna foi lida e reduz o dano.
+    for (const char* id : {"skill.warrior.iron_cut", "skill.warrior.charge", "skill.warrior.stone_rift", "skill.warrior.shield_bash"}) {
+        const double m = real->FindSkill(id)->idle.damageTakenMult;
+        EXPECT_TRUE(m > 0.0 && m < 1.0);
+    }
 }
 
 TEST(r2_new_columns_are_validated) {
