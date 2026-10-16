@@ -31,3 +31,6 @@ EchoesOfTheShatter/crashlytics-build.properties
 # Backups automáticos do Blender
 *.blend1
 *.blend2
+
+# Saída do gerador do roteiro (tools/roteiro)
+/docs/roteiro/

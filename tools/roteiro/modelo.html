@@ -1,0 +1,278 @@
+<title>Echoes of the Shatter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono&display=swap">
+<style>
+/* Layout: menu de pedra fixo à esquerda + coluna de leitura; no celular o menu vira uma barra no topo. */
+:root{
+  --bg:#14161b; --surface:#1c1f26; --raise:#252932; --line:#2e333d;
+  --fg:#e7e2d7; --mut:#9ca2ad;
+  --arcane:#62b9ff; --ember:#ff7f45; --gold:#d8b45c;
+  --display:"Grenze",Georgia,"Times New Roman",serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --nav:272px;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#eef0f3; --surface:#ffffff; --raise:#e4e7ec; --line:#d3d8e0;
+  --fg:#1a1d23; --mut:#596070;
+  --arcane:#1d6db5; --ember:#bf4d17; --gold:#8d6a1c; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#eef0f3; --surface:#ffffff; --raise:#e4e7ec; --line:#d3d8e0;
+  --fg:#1a1d23; --mut:#596070;
+  --arcane:#1d6db5; --ember:#bf4d17; --gold:#8d6a1c; color-scheme:light}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.65 var(--body);margin:0}
+a{color:var(--arcane)}
+:focus-visible{outline:2px solid var(--arcane);outline-offset:2px;border-radius:3px}
+.app{display:grid;grid-template-columns:var(--nav) minmax(0,1fr);min-height:100vh}
+
+/* menu */
+nav{position:sticky;top:env(safe-area-inset-top,0px);height:100vh;overflow:auto;background:var(--surface);border-right:1px solid var(--line);
+  padding-block:22px 28px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:18px;display:flex;flex-direction:column;gap:18px}
+.marca{font:600 22px/1.05 var(--display);letter-spacing:.01em;color:var(--fg);text-decoration:none}
+.marca small{display:block;font:500 11px/1.4 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-top:6px}
+.busca{width:100%;font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.busca::placeholder{color:var(--mut)}
+.grupo h3{margin:0 0 6px;font:600 11px/1.3 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.grupo ul{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.grupo a{display:block;padding:5px 9px;border-radius:5px;color:var(--fg);text-decoration:none;font-size:14px;line-height:1.35}
+.grupo a:hover{background:var(--raise)}
+.grupo a[aria-current="page"]{background:var(--raise);box-shadow:inset 2px 0 0 var(--ember)}
+.grupo a .hits{color:var(--mut);font-size:12px;margin-left:4px}
+.vazio{color:var(--mut);font-size:13px}
+
+/* conteúdo */
+main{min-width:0;padding-block:28px 64px;padding-left:max(16px,clamp(16px,4vw,48px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.coluna{max-width:860px}
+
+.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:center;max-width:1180px}
+.hero h1{font:600 clamp(40px,6vw,68px)/.95 var(--display);margin:0;letter-spacing:.005em;text-wrap:balance}
+.hero h1 span{color:var(--ember)}
+.hero p{color:var(--mut);margin:14px 0 0;max-width:46ch}
+.hero img{width:100%;border-radius:8px;border:1px solid var(--line);display:block;cursor:zoom-in}
+.estado{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:20px;font-size:13px;color:var(--mut)}
+.estado b{color:var(--fg);font-weight:600}
+.estado code{font:12px var(--mono);color:var(--gold)}
+.botao{display:inline-flex;align-items:center;gap:8px;margin-top:22px;padding:10px 16px;border-radius:6px;background:var(--ember);color:#1a0d05;font-weight:600;text-decoration:none}
+.botao:hover{filter:brightness(1.08)}
+
+.secao{margin-top:52px;max-width:1180px}
+.secao>h2{font:600 30px/1.1 var(--display);margin:0 0 4px}
+.secao>p{color:var(--mut);margin:0 0 18px}
+.sub{font:600 11px/1.3 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:26px 0 12px}
+.sub small{color:var(--mut);font-size:11px;margin-left:6px;font-variant-numeric:tabular-nums}
+.galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.galeria figure{margin:0;display:grid;gap:8px}
+.galeria button{all:unset;cursor:zoom-in;border-radius:6px;overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3;max-width:100%;display:block}
+.galeria button:focus-visible{outline:2px solid var(--arcane)}
+.galeria img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.galeria button:hover img{transform:scale(1.03)}
+.galeria figcaption{font-size:13px;line-height:1.4;color:var(--mut)}
+.galeria figcaption b{color:var(--fg);font-weight:600}
+.indice{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:22px 28px}
+.indice h3{margin:0 0 8px;font:600 11px/1.3 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.indice ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.indice a{text-decoration:none;color:var(--fg)}
+.indice a:hover{color:var(--arcane)}
+.indice small{color:var(--mut);font-variant-numeric:tabular-nums;margin-left:6px}
+
+/* documento */
+.cab{border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:8px}
+.cab .trilha{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.cab .arq{font:12px var(--mono);color:var(--mut);margin-top:6px;word-break:break-all}
+.secoes{margin:14px 0 4px;font-size:14px}
+.secoes summary{cursor:pointer;color:var(--arcane)}
+.secoes ol{margin:8px 0 0;padding-left:20px;columns:2 220px;column-gap:28px}
+.secoes li{break-inside:avoid;margin:2px 0}
+.secoes button{all:unset;cursor:pointer;color:var(--fg)}
+.secoes button:hover{color:var(--arcane)}
+.prose{overflow-wrap:break-word}
+.prose h1{font:600 clamp(30px,4vw,42px)/1.08 var(--display);margin:18px 0 10px;text-wrap:balance}
+.prose h2{font:600 26px/1.15 var(--display);margin:40px 0 10px;padding-top:6px;border-top:1px solid var(--line);text-wrap:balance}
+.prose h3{font-size:17px;margin:28px 0 6px}
+.prose h4{font-size:15px;margin:22px 0 4px;color:var(--gold)}
+.prose p,.prose li{max-width:72ch}
+.prose code{font:13px var(--mono);background:var(--raise);padding:1px 5px;border-radius:4px}
+.prose pre{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow-x:auto;font-size:13px;line-height:1.5}
+.prose pre code{background:none;padding:0}
+.prose blockquote{margin:16px 0;padding:4px 16px;border-left:3px solid var(--arcane);color:var(--mut)}
+.prose hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+.tbl{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:6px}
+.prose table{border-collapse:collapse;font-size:13.5px;min-width:100%}
+.prose th,.prose td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.prose th{background:var(--surface);font-weight:600;white-space:nowrap}
+.prose tr:last-child td{border-bottom:0}
+.prose .sem-link{border-bottom:1px dotted var(--mut)}
+.erro{color:var(--ember)}
+
+dialog{border:0;padding:0;background:transparent;max-width:min(96vw,1400px);max-height:94vh}
+dialog::backdrop{background:rgb(5 6 9 / .86)}
+dialog img{display:block;max-width:100%;max-height:86vh;border-radius:6px;margin:auto}
+dialog p{color:#e7e2d7;text-align:center;margin:10px 0 0;font-size:14px}
+
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding-right:max(16px,env(safe-area-inset-right,0px));padding-left:max(16px,env(safe-area-inset-left,0px))}
+  nav .grupos{display:none}
+  nav.aberto .grupos{display:flex}
+  .abrir{display:inline-block!important}
+  .hero{grid-template-columns:minmax(0,1fr)}
+}
+.grupos{display:flex;flex-direction:column;gap:18px}
+.abrir{display:none;font:inherit;font-size:14px;color:var(--fg);background:var(--raise);border:1px solid var(--line);border-radius:6px;padding:7px 12px;cursor:pointer;justify-self:start}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <nav id="nav" aria-label="Documentos">
+    <a class="marca" href="#inicio">Echoes of the Shatter<small>Roteiro do jogo</small></a>
+    <input id="busca" class="busca" type="search" placeholder="Buscar nos documentos" aria-label="Buscar nos documentos">
+    <button id="abrir" class="abrir" type="button" aria-expanded="false">Documentos</button>
+    <div class="grupos" id="grupos"></div>
+  </nav>
+  <main id="main"></main>
+</div>
+<dialog id="zoom"><img id="zoomImg" alt=""><p id="zoomTxt"></p></dialog>
+
+<script type="application/json" id="dados">/*__DADOS__*/{}</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script>
+const D = JSON.parse(document.getElementById('dados').textContent);
+const todos = D.grupos.flatMap(g => g.docs.map(d => ({...d, grupo: g.grupo})));
+const porId = Object.fromEntries(todos.map(d => [d.id, d]));
+const porArquivo = Object.fromEntries(todos.map(d => [d.arquivo.split('/').pop(), d.id]));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dataBR = iso => iso ? iso.split('-').reverse().join('/') : '';
+const main = document.getElementById('main');
+const nav = document.getElementById('nav');
+
+function desenharMenu(filtro) {
+  const q = (filtro || '').trim().toLowerCase();
+  const atual = location.hash.slice(1);
+  let html = '';
+  for (const g of D.grupos) {
+    const itens = g.docs.map(d => {
+      let hits = '';
+      if (q) {
+        const n = D.textos[d.id].toLowerCase().split(q).length - 1;
+        if (!n && !d.rotulo.toLowerCase().includes(q)) return '';
+        hits = n ? `<span class="hits">${n}</span>` : '';
+      }
+      const cur = d.id === atual ? ' aria-current="page"' : '';
+      return `<li><a href="#${d.id}"${cur}>${esc(d.rotulo)}${hits}</a></li>`;
+    }).join('');
+    if (itens) html += `<div class="grupo"><h3>${esc(g.grupo)}</h3><ul>${itens}</ul></div>`;
+  }
+  document.getElementById('grupos').innerHTML = html || '<p class="vazio">Nada encontrado.</p>';
+}
+
+function inicio() {
+  const [hash, dia, msg] = D.commit;
+  const capa = D.arte[0];
+  const grupos = [...new Set(D.arte.map(a => a.grupo))];
+  const galeria = grupos.map(g => {
+    const figs = D.arte.map((a, i) => a.grupo !== g ? '' : `<figure><button type="button" data-zoom="${i}" aria-label="Ampliar: ${esc(a.legenda)}"><img src="${a.src}" alt="${esc(a.legenda)}" loading="lazy"></button><figcaption><b>${esc(a.legenda)}</b>${a.detalhe ? '<br>' + esc(a.detalhe) : ''}</figcaption></figure>`).join('');
+    const n = D.arte.filter(a => a.grupo === g).length;
+    return `<h3 class="sub">${esc(g)} <small>${n}</small></h3><div class="galeria">${figs}</div>`;
+  }).join('');
+  const indice = D.grupos.map(g => `<div><h3>${esc(g.grupo)}</h3><ul>${g.docs.map(d => `<li><a href="#${d.id}">${esc(d.rotulo)}</a><small>${dataBR(d.modificado)}</small></li>`).join('')}</ul></div>`).join('');
+  main.innerHTML = `
+    <section class="hero">
+      <div>
+        <h1>Echoes of the <span>Shatter</span></h1>
+        <p>ARPG 3D estilizado para PC (Steam), com três heróis: Guerreiro, Arqueiro e Mago. Feito em Unity 6.3 LTS com URP. Aqui estão os documentos e as artes aprovadas, sempre na versão mais recente do repositório.</p>
+        <div class="estado">
+          <span>Último commit <code>${esc(hash)}</code> em <b>${dataBR(dia)}</b></span>
+          <span>Página gerada em <b>${esc(D.gerado)}</b></span>
+        </div>
+        <div class="estado"><span>${esc(msg)}</span></div>
+        <a class="botao" href="${D.painel}" target="_blank" rel="noopener">Abrir o painel de produção ↗</a>
+      </div>
+      ${capa ? `<img src="${capa.src}" alt="${esc(capa.legenda)}" data-zoom="0">` : ''}
+    </section>
+    <section class="secao" id="arte">
+      <h2>Artes aprovadas</h2>
+      <p>${D.arte.length} imagens aprovadas, das pranchas de referência aos modelos 3D. Clique para ampliar.</p>
+      ${galeria}
+    </section>
+    <section class="secao">
+      <h2>Documentos</h2>
+      <p>Data da última alteração de cada um.</p>
+      <div class="indice">${indice}</div>
+    </section>`;
+}
+
+function slug(t) {
+  return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function documento(id) {
+  const d = porId[id];
+  let corpo;
+  try {
+    corpo = DOMPurify.sanitize(marked.parse(D.textos[id], {gfm: true}));
+  } catch (e) {
+    corpo = `<p class="erro">Não foi possível renderizar o documento. Recarregue a página.</p><pre>${esc(D.textos[id])}</pre>`;
+  }
+  main.innerHTML = `<div class="coluna">
+    <div class="cab"><div class="trilha">${esc(d.grupo)}</div><div class="arq">${esc(d.arquivo)} · alterado em ${dataBR(d.modificado)}</div>
+    <details class="secoes" id="secoes"><summary>Seções</summary><ol id="lista"></ol></details></div>
+    <article class="prose">${corpo}</article></div>`;
+  const art = main.querySelector('article');
+  art.querySelectorAll('table').forEach(t => { const w = document.createElement('div'); w.className = 'tbl'; t.replaceWith(w); w.appendChild(t); });
+  art.querySelectorAll('a[href]').forEach(a => {
+    const href = a.getAttribute('href');
+    if (/^https?:/i.test(href)) { a.target = '_blank'; a.rel = 'noopener'; return; }
+    if (href.startsWith('#')) {
+      a.addEventListener('click', e => { e.preventDefault(); const alvo = document.getElementById(href.slice(1)); if (alvo) alvo.scrollIntoView({behavior: 'smooth'}); });
+      return;
+    }
+    const m = href.match(/([^/\\#]+\.md)(#.*)?$/i);
+    if (m && porArquivo[m[1]]) { a.href = '#' + porArquivo[m[1]]; return; }
+    const s = document.createElement('span'); s.className = 'sem-link'; s.title = 'Arquivo do repositório: ' + href; s.textContent = a.textContent; a.replaceWith(s);
+  });
+  const vistos = {};
+  const h2s = [...art.querySelectorAll('h2,h3,h4')];
+  h2s.forEach(h => { let s = slug(h.textContent) || 'secao'; if (vistos[s]) s += '-' + (++vistos[s]); else vistos[s] = 1; h.id = s; });
+  const so2 = h2s.filter(h => h.tagName === 'H2');
+  if (so2.length > 2) {
+    document.getElementById('lista').innerHTML = so2.map(h => `<li><button type="button" data-ir="${h.id}">${esc(h.textContent)}</button></li>`).join('');
+  } else document.getElementById('secoes').hidden = true;
+}
+
+function rota() {
+  const id = location.hash.slice(1);
+  if (porId[id]) documento(id); else inicio();
+  if (id === 'arte') document.getElementById('arte').scrollIntoView(); else window.scrollTo(0, 0);
+  desenharMenu(document.getElementById('busca').value);
+  nav.classList.remove('aberto');
+  document.getElementById('abrir').setAttribute('aria-expanded', 'false');
+}
+
+document.addEventListener('click', e => {
+  const z = e.target.closest('[data-zoom]');
+  if (z) {
+    const a = D.arte[+z.dataset.zoom];
+    document.getElementById('zoomImg').src = a.src;
+    document.getElementById('zoomImg').alt = a.legenda;
+    document.getElementById('zoomTxt').textContent = a.legenda;
+    document.getElementById('zoom').showModal();
+    return;
+  }
+  const ir = e.target.closest('[data-ir]');
+  if (ir) document.getElementById(ir.dataset.ir)?.scrollIntoView({behavior: 'smooth'});
+});
+document.getElementById('zoom').addEventListener('click', e => e.currentTarget.close());
+document.getElementById('busca').addEventListener('input', e => { desenharMenu(e.target.value); if (e.target.value) { nav.classList.add('aberto'); } });
+document.getElementById('abrir').addEventListener('click', e => {
+  const aberto = nav.classList.toggle('aberto');
+  e.currentTarget.setAttribute('aria-expanded', String(aberto));
+});
+window.addEventListener('hashchange', rota);
+rota();
+</script>
