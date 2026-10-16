@@ -1,191 +1,203 @@
-"""Gera Guerreiro, Arqueiro e Mago (graybox, 150 cm) com Rig_Humanoid_Chibi compartilhado."""
-import bpy, sys, os, json
-from mathutils import Vector
-sys.path.insert(0, os.path.dirname(__file__))
+"""Gera Guerreiro, Arqueiro e Mago (graybox, 150 cm) sobre o Rig_Humanoid_Chibi compartilhado.
+
+Skinning rigido por peca: cada primitiva pesa 1,0 num unico osso. Silhuetas das folhas 02 a 04
+(docs/arte/referencias-geracao/aprovadas): Guerreiro = elmo dourado + pluma + martelo de bloco + escudo largo;
+Arqueiro = capuz com mascara de bico de osso + manto de penas + arco de osso; Mago = capuz pontudo com rosto
+visivel + cajado com cristal num anel dourado (nunca lanterna).
+"""
+import bpy, sys, os, json, math
+from mathutils import Vector, Matrix
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gb_lib import *
+from gb_rig import *
+
+GOLD = '#D9A441'
+HAND_R = Vector((0.41, 0.05, 0.38))
 
 
-# ---------------- Esqueleto compartilhado ----------------
-def bone_defs():
-    B = []  # (nome, pai, head, tail, deform)
-
-    def add(n, p, h, t, d=True):
-        B.append((n, p, tuple(h), tuple(t), d))
-    add("root", None, (0, 0, 0), (0, 0, 0.15), False)
-    add("Hips", "root", (0, 0, 0.46), (0, 0, 0.56))
-    add("Spine", "Hips", (0, 0, 0.56), (0, 0, 0.70))
-    add("Chest", "Spine", (0, 0, 0.70), (0, 0, 0.92))
-    add("Neck", "Chest", (0, 0, 0.92), (0, 0, 1.00))
-    add("Head", "Neck", (0, 0, 1.00), (0, 0, 1.50))
+def base_body(b, c, bulk=1.0, hand=0.12):
     for side, sx in (("Left", -1), ("Right", 1)):
-        add(f"{side}Shoulder", "Chest", (sx * 0.04, 0, 0.86), (sx * 0.20, 0, 0.86))
-        add(f"{side}UpperArm", f"{side}Shoulder", (sx * 0.20, 0, 0.86), (sx * 0.31, 0, 0.66))
-        add(f"{side}LowerArm", f"{side}UpperArm", (sx * 0.31, 0, 0.66), (sx * 0.37, 0.03, 0.47))
-        add(f"{side}Hand", f"{side}LowerArm", (sx * 0.37, 0.03, 0.47), (sx * 0.41, 0.05, 0.38))
-        add(f"{side}UpperLeg", "Hips", (sx * 0.11, 0, 0.46), (sx * 0.11, 0, 0.26))
-        add(f"{side}LowerLeg", f"{side}UpperLeg", (sx * 0.11, 0, 0.26), (sx * 0.11, 0, 0.08))
-        add(f"{side}Foot", f"{side}LowerLeg", (sx * 0.11, 0, 0.08), (sx * 0.11, 0.10, 0.03))
-        add(f"{side}Toes", f"{side}Foot", (sx * 0.11, 0.10, 0.03), (sx * 0.11, 0.17, 0.02))
-    add("socket_weapon_r", "RightHand", (0.41, 0.05, 0.38), (0.41, 0.10, 0.38), False)
-    add("socket_weapon_l", "LeftHand", (-0.41, 0.05, 0.38), (-0.41, 0.10, 0.38), False)
-    add("socket_cast", "RightHand", (0.43, 0.20, 0.45), (0.43, 0.25, 0.45), False)
-    add("socket_head", "Head", (0, 0, 1.50), (0, 0, 1.55), False)
-    add("socket_fx_ground", "root", (0, 0, 0), (0, 0.10, 0), False)
-    return B
-
-
-def make_armature(name, coll):
-    arm = bpy.data.armatures.new(name)
-    ob = bpy.data.objects.new(name, arm)
-    coll.objects.link(ob)
-    bpy.context.view_layer.objects.active = ob
-    ob.select_set(True)
-    bpy.ops.object.mode_set(mode='EDIT')
-    eb = {}
-    for n, p, h, t, d in bone_defs():
-        b = arm.edit_bones.new(n)
-        b.head, b.tail = Vector(h), Vector(t)
-        b.use_deform = d
-        if p:
-            b.parent = eb[p]
-        eb[n] = b
-    bpy.ops.object.mode_set(mode='OBJECT')
-    ob.select_set(False)
-    return ob
-
-
-def finish(coll, builders):
-    arm = make_armature("Rig_Humanoid_Chibi", coll)
-    objs = []
-    for bd in builders:
-        ob = bd.build(coll)
-        ob.parent = arm
-        m = ob.modifiers.new("Armature", 'ARMATURE')
-        m.object = arm
-        objs.append(ob)
-    return arm, objs
-
-
-# ---------------- corpo base ----------------
-def base_body(b, c, bulk=1.0):
-    for side, sx in (("Left", -1), ("Right", 1)):
-        b.add('box', (0.14, 0.26, 0.10), (sx * 0.11, 0.04, 0.05), c['boots'], bone=f"{side}Foot")
+        b.add('box', (0.14, 0.17, 0.10), (sx * 0.11, 0.0, 0.05), c['boots'], bone=f"{side}Foot")
+        b.add('box', (0.14, 0.10, 0.08), (sx * 0.11, 0.13, 0.04), c['boots'], bone=f"{side}Toes")
         b.limb((sx * 0.11, 0, 0.08), (sx * 0.11, 0, 0.26), 0.06, c['legs'], bone=f"{side}LowerLeg")
         b.limb((sx * 0.11, 0, 0.26), (sx * 0.11, 0, 0.46), 0.075, c['legs'], bone=f"{side}UpperLeg")
         b.limb((sx * 0.20, 0, 0.86), (sx * 0.31, 0, 0.66), 0.058 * bulk, c['arm'], bone=f"{side}UpperArm")
         b.limb((sx * 0.31, 0, 0.66), (sx * 0.37, 0.03, 0.47), 0.052 * bulk, c['arm'], bone=f"{side}LowerArm")
-        b.add('sph', (0.11, 0.11, 0.11), (sx * 0.41, 0.05, 0.38), c['hand'], bone=f"{side}Hand", seg=6)
+        b.add('sph', (hand, hand, hand * 1.1), (sx * 0.40, 0.045, 0.405), c['hand'], bone=f"{side}Hand", seg=6)
     b.add('box', (0.34, 0.22, 0.14), (0, 0, 0.50), c['pelvis'], bone="Hips")
     b.add('box', (0.36, 0.23, 0.12), (0, 0, 0.62), c['torso'], bone="Spine")
     b.add('box', (0.44 * bulk, 0.26, 0.24), (0, 0, 0.82), c['torso'], bone="Chest")
-    b.add('cyl', (0.12, 0.12, 0.08), (0, 0, 0.96), c['skin'], bone="Neck", seg=6)
+    b.add('cyl', (0.12, 0.12, 0.08), (0, 0, 0.96), c.get('neck', c['skin']), bone="Neck", seg=6)
+
+
+def cuffs(b, color, r=0.064):
+    for side, sx in (("Left", -1), ("Right", 1)):
+        b.limb((sx * 0.355, 0.025, 0.525), (sx * 0.366, 0.031, 0.49), r, color, bone=f"{side}LowerArm", seg=8)
 
 
 def warrior(coll):
-    c = dict(boots='#4A3A2E', legs='#5A5F6A', arm='#9AA0AA', hand='#7A5230', pelvis='#C02A22',
-             torso='#9AA0AA', skin='#E0B090')
+    armor, armor_l, red, plume = '#4E5360', '#6E7480', '#C02A22', '#E0301E'
+    c = dict(boots=armor, legs=armor, arm=armor, hand=armor_l, pelvis=red, torso=armor, skin='#E0B090', neck='#2A2A32')
     b = Builder("SK_Warrior_Body")
-    base_body(b, c, bulk=1.1)
-    b.add('box', (0.46, 0.04, 0.22), (0, 0.145, 0.78), '#C02A22', bone="Chest")           # tabardo
-    b.add('box', (0.40, 0.25, 0.04), (0, 0, 0.58), '#D9A441', bone="Spine")               # cinto
+    base_body(b, c, bulk=1.1, hand=0.13)
     for sx, s in ((-1, "Left"), (1, "Right")):
-        b.add('sph', (0.18, 0.16, 0.14), (sx * 0.22, 0, 0.88), '#9AA0AA', bone=f"{s}Shoulder", seg=6)
-    b.add('sph', (0.46, 0.44, 0.44), (0, 0, 1.22), '#9AA0AA', bone="Head")                # elmo
-    b.add('box', (0.32, 0.05, 0.07), (0, 0.205, 1.22), '#2A2A32', bone="Head")            # viseira
-    b.add('box', (0.07, 0.30, 0.10), (0, -0.02, 1.45), '#C02A22', bone="Head")            # pluma (topo 1.50)
-    sword = Builder("SM_Warrior_Sword")
-    h = Vector((0.41, 0.05, 0.38))
-    d = Vector((0, 0.6, 0.8)).normalized()
+        b.add('box', (0.12, 0.06, 0.09), (sx * 0.11, 0.07, 0.27), GOLD, bone=f"{s}LowerLeg")       # joelheira
+        b.add('cyl', (0.15, 0.15, 0.03), (sx * 0.11, 0, 0.11), GOLD, bone=f"{s}LowerLeg", seg=8)  # aro da bota
+        b.add('sph', (0.23, 0.21, 0.17), (sx * 0.23, 0, 0.90), armor_l, bone=f"{s}Shoulder", seg=8)  # ombreira
+        b.add('cyl', (0.24, 0.22, 0.03), (sx * 0.23, 0, 0.855), GOLD, bone=f"{s}Shoulder", seg=8)
+    cuffs(b, GOLD)
+    b.add('box', (0.30, 0.04, 0.36), (0, 0.13, 0.35), red, bone="Hips")                       # tabardo frente
+    b.add('box', (0.30, 0.04, 0.42), (0, -0.13, 0.33), red, bone="Hips")                      # tabardo costas
+    b.add('box', (0.42, 0.27, 0.05), (0, 0, 0.58), GOLD, bone="Spine")                        # cinto
+    b.add('cyl', (0.09, 0.09, 0.03), (0, 0.145, 0.58), GOLD, rot=(90, 0, 0), bone="Spine", seg=8)
+    b.add('box', (0.30, 0.04, 0.22), (0, 0.145, 0.80), red, bone="Chest")                     # tabardo peito
+    b.add('cyl', (0.08, 0.08, 0.02), (0, 0.17, 0.80), GOLD, rot=(90, 0, 0), bone="Chest", seg=8)
+    b.add('box', (0.46, 0.28, 0.04), (0, 0, 0.93), GOLD, bone="Chest")                        # gorjal
+    b.add('sph', (0.46, 0.44, 0.44), (0, 0, 1.22), GOLD, bone="Head")                         # elmo dourado
+    b.add('box', (0.30, 0.05, 0.05), (0, 0.205, 1.22), '#161117', bone="Head")                # viseira em T
+    b.add('box', (0.05, 0.05, 0.17), (0, 0.208, 1.15), '#161117', bone="Head")
+    b.add('box', (0.06, 0.40, 0.05), (0, 0, 1.43), '#A87A2E', bone="Head")                    # crista do elmo
+    b.add('box', (0.07, 0.22, 0.09), (0, -0.02, 1.455), plume, bone="Head")                   # pluma (topo 1,50)
+    b.add('box', (0.07, 0.24, 0.07), (0, -0.21, 1.37), plume, rot=(35, 0, 0), bone="Head")
+    # martelo de bloco de pedra (mao direita, cabeca para cima)
+    hammer = Builder("SK_Warrior_Hammer")
+    d = Vector((0.10, 0.12, 1.0)).normalized()
     R = aim((0, 0, 0), d)
-    sword.add('cyl', (0.04, 0.04, 0.12), h + d * 0.04, '#7A5230', rot=R, bone="RightHand", seg=6)
-    sword.add('box', (0.22, 0.05, 0.04), h + d * 0.10, '#D9A441', rot=R, bone="RightHand")
-    sword.add('box', (0.09, 0.025, 0.52), h + d * 0.38, '#D8DCE4', rot=R, bone="RightHand")
-    shield = Builder("SM_Warrior_Shield")
-    shield.add('box', (0.07, 0.46, 0.62), (-0.50, 0.10, 0.55), '#C02A22', bone="LeftHand")
-    shield.add('box', (0.09, 0.40, 0.56), (-0.52, 0.10, 0.55), '#9AA0AA', bone="LeftHand")
-    shield.add('sph', (0.14, 0.14, 0.14), (-0.55, 0.10, 0.55), '#D9A441', bone="LeftHand", seg=6)
-    return finish(coll, [b, sword, shield])
+    hammer.limb(HAND_R - d * 0.20, HAND_R + d * 0.50, 0.026, '#8A2A2A', bone="RightHand", seg=6)
+    hammer.add('bbox', (0.06, 0.06, 0.06), HAND_R - d * 0.22, GOLD, rot=R, bone="RightHand", bev=0.01)
+    hammer.add('bbox', (0.30, 0.22, 0.24), HAND_R + d * 0.58, '#8E8A96', rot=R, bone="RightHand", bev=0.03)
+    hammer.add('box', (0.10, 0.235, 0.255), HAND_R + d * 0.58, GOLD, rot=R, bone="RightHand")
+    # escudo largo com pedra e aro dourado (mao esquerda, virado 30 graus para fora)
+    shield = Builder("SK_Warrior_Shield")
+    shield.xf = Matrix.Translation((-0.42, 0.17, 0.56)) @ Matrix.Rotation(math.radians(30), 4, 'Z')
+    shield.add('bbox', (0.50, 0.05, 0.50), (0, 0, 0.06), GOLD, bone="LeftHand", bev=0.02)
+    shield.add('bbox', (0.354, 0.05, 0.354), (0, 0, -0.12), GOLD, rot=(0, 45, 0), bone="LeftHand", bev=0.02)
+    shield.add('box', (0.42, 0.06, 0.42), (0, 0.006, 0.07), '#8E8A96', bone="LeftHand")
+    shield.add('box', (0.29, 0.06, 0.29), (0, 0.006, -0.11), '#8E8A96', rot=(0, 45, 0), bone="LeftHand")
+    shield.add('sph', (0.14, 0.08, 0.14), (0, 0.045, 0.04), GOLD, bone="LeftHand", seg=8)
+    shield.xf = None
+    return [b, hammer, shield]
 
 
 def archer(coll):
-    c = dict(boots='#5A3A24', legs='#5A4030', arm='#2F7A32', hand='#7A5230', pelvis='#7A5230',
-             torso='#2F7A32', skin='#E0B090')
+    dark, mantle, hood, bone_c = '#3A2E28', '#3E5A2E', '#5FD04A', '#E8DCC0'
+    c = dict(boots='#6A4A2E', legs=dark, arm=dark, hand='#5A3A24', pelvis=mantle, torso=dark, skin='#E0B090')
     b = Builder("SK_Archer_Body")
     base_body(b, c, bulk=0.95)
-    b.add('box', (0.40, 0.25, 0.04), (0, 0, 0.58), '#7A5230', bone="Spine")
-    b.add('box', (0.46, 0.27, 0.10), (0, 0, 0.88), '#5FD04A', bone="Chest")               # gola
-    b.add('sph', (0.38, 0.36, 0.38), (0, 0.04, 1.19), '#E0B090', bone="Head")            # rosto
-    b.add('sph', (0.50, 0.46, 0.46), (0, -0.04, 1.23), '#5FD04A', bone="Head")           # capuz
-    b.add('cyl', (0.34, 0.34, 0.22), (0, -0.08, 1.39), '#5FD04A', bone="Head", taper=0.15, seg=6)
-    b.add('box', (0.30, 0.04, 0.12), (0, 0.205, 1.20), '#2A2A32', bone="Head")           # sombra do rosto
-    bow = Builder("SM_Archer_Bow")
-    pts = [(-0.44, 0.06, 0.00), (-0.44, 0.18, 0.22), (-0.44, 0.12, 0.42), (-0.44, 0.18, 0.62), (-0.44, 0.06, 0.84)]
+    for sx, s in ((-1, "Left"), (1, "Right")):
+        b.add('box', (0.11, 0.06, 0.10), (sx * 0.11, 0.07, 0.27), '#D8CCB0', bone=f"{s}LowerLeg")  # joelheira de osso
+    cuffs(b, '#6A4A2E', r=0.058)
+    b.add('cyl', (0.40, 0.30, 0.26), (0, 0, 0.40), mantle, taper=0.8, bone="Hips")             # tunica
+    b.add('box', (0.40, 0.26, 0.05), (0, 0, 0.58), '#6A4A2E', bone="Spine")                    # cinto
+    b.add('box', (0.10, 0.06, 0.10), (-0.13, 0.14, 0.54), '#5A3A24', bone="Spine")             # bolsa
+    b.add('cyl', (0.62, 0.50, 0.30), (0, -0.01, 0.80), mantle, taper=0.45, bone="Chest")       # manto de penas
+    b.add('cyl', (0.66, 0.54, 0.08), (0, -0.01, 0.66), '#A08A5A', taper=0.92, bone="Chest")   # franja das penas
+    b.add('box', (0.32, 0.30, 0.07), (0, 0.03, 1.03), '#2E4424', bone="Neck")                 # lenco
+    b.add('sph', (0.36, 0.34, 0.36), (0, 0.04, 1.19), '#E0B090', bone="Head")                 # rosto
+    b.add('sph', (0.50, 0.46, 0.46), (0, -0.03, 1.22), hood, bone="Head")                     # capuz
+    b.add('cyl', (0.32, 0.32, 0.22), (0, -0.08, 1.39), hood, bone="Head", taper=0.12, seg=6)  # ponta (topo 1,50)
+    b.add('sph', (0.30, 0.12, 0.26), (0, 0.17, 1.21), bone_c, bone="Head")                    # mascara de osso
+    b.limb((0, 0.21, 1.17), (0, 0.33, 1.07), 0.05, bone_c, bone="Head", taper=0.15, seg=4)   # bico
+    for sx in (-1, 1):
+        b.add('box', (0.05, 0.03, 0.025), (sx * 0.06, 0.225, 1.235), '#9AFF6A', bone="Head", emit=True)
+    bow = Builder("SK_Archer_Bow")
+    pts = [(-0.44, 0.06, 0.02), (-0.44, 0.19, 0.20), (-0.44, 0.13, 0.40), (-0.44, 0.19, 0.60), (-0.44, 0.06, 0.78)]
     for a, bb in zip(pts[:-1], pts[1:]):
-        bow.limb(a, bb, 0.022, '#7A5230', bone="LeftHand", seg=6)
-    bow.add('box', (0.012, 0.012, 0.84), (-0.44, 0.04, 0.42), '#E8E0D0', bone="LeftHand")
-    quiver = Builder("SM_Archer_Quiver")
-    quiver.add('cyl', (0.13, 0.13, 0.46), (0.10, -0.18, 0.88), '#7A5230', rot=(0, 15, 0), bone="Chest", seg=6)
+        bow.limb(a, bb, 0.024, '#D8CCB0', bone="LeftHand", seg=6)
+    bow.add('box', (0.05, 0.05, 0.11), (-0.44, 0.13, 0.40), '#6A4A2E', bone="LeftHand")       # empunhadura
+    bow.add('box', (0.012, 0.012, 0.76), (-0.44, 0.06, 0.40), '#E8E0D0', bone="LeftHand")     # corda
+    quiver = Builder("SK_Archer_Quiver")
+    quiver.add('cyl', (0.13, 0.13, 0.46), (0.10, -0.19, 0.88), '#6A4A2E', rot=(0, 15, 0), bone="Chest", seg=6)
     for i in (-1, 0, 1):
-        quiver.add('box', (0.03, 0.03, 0.10), (0.17 + i * 0.03, -0.18, 1.14), '#E8E0D0', bone="Chest")
-    return finish(coll, [b, bow, quiver])
+        quiver.add('box', (0.035, 0.035, 0.10), (0.165 + i * 0.035, -0.19, 1.15), hood, bone="Chest")
+    return [b, bow, quiver]
 
 
 def mage(coll):
-    c = dict(boots='#5A3A24', legs='#2E3A8C', arm='#2E3A8C', hand='#2A2A32', pelvis='#2E3A8C',
-             torso='#2E3A8C', skin='#E0B090')
+    navy, navy_l, cream = '#2E3A8C', '#3E4FA8', '#C8B890'
+    c = dict(boots='#5A3A24', legs='#3A2E28', arm=navy, hand='#2A2A32', pelvis=navy, torso=navy, skin='#E0B090')
     b = Builder("SK_Mage_Body")
     base_body(b, c, bulk=1.0)
-    b.add('cyl', (0.52, 0.46, 0.50), (0, 0, 0.37), '#2E3A8C', bone="Hips", taper=0.62)    # saia do manto
-    b.add('box', (0.30, 0.03, 0.50), (0, 0.235, 0.35), '#D9A441', bone="Hips")           # faixa dourada
-    b.add('box', (0.40, 0.25, 0.04), (0, 0, 0.58), '#7A5230', bone="Spine")              # cinto
-    b.add('box', (0.50, 0.30, 0.08), (0, 0, 0.90), '#C8B890', bone="Chest")              # gola
-    b.add('sph', (0.34, 0.30, 0.34), (0, 0.10, 1.18), '#E0B090', bone="Head")            # rosto
-    b.add('sph', (0.52, 0.50, 0.48), (0, -0.02, 1.20), '#2E3A8C', bone="Head")           # capuz
-    b.add('cyl', (0.34, 0.34, 0.18), (0, -0.04, 1.41), '#2E3A8C', bone="Head", taper=0.12, seg=6)
-    b.add('box', (0.30, 0.04, 0.12), (0, 0.215, 1.20), '#1A1A2A', bone="Head")
-    staff = Builder("SM_Mage_Staff")
-    sx, sy = 0.43, 0.08
-    staff.add('cyl', (0.05, 0.05, 1.55), (sx, sy, 0.775), '#7A5230', bone="RightHand", seg=6)
-    staff.add('box', (0.12, 0.12, 0.05), (sx, sy, 1.57), '#D9A441', bone="RightHand")
-    for dx, dy in ((0.07, 0), (-0.07, 0), (0, 0.07), (0, -0.07)):
-        staff.add('box', (0.03, 0.03, 0.24), (sx + dx, sy + dy, 1.68), '#D9A441', bone="RightHand")
-    staff.add('sph', (0.16, 0.16, 0.34), (sx, sy, 1.70), '#4A9CF0', bone="RightHand", seg=4, emit=True, matname="GB_Crystal")
-    return finish(coll, [b, staff])
+    cuffs(b, cream, r=0.062)
+    b.add('cyl', (0.52, 0.46, 0.50), (0, 0, 0.37), navy, bone="Hips", taper=0.62)             # saia do manto
+    b.add('cyl', (0.535, 0.475, 0.04), (0, 0, 0.14), GOLD, bone="Hips", taper=0.97)           # barra dourada
+    b.add('box', (0.10, 0.03, 0.48), (0, 0.196, 0.37), cream, rot=(9.9, 0, 0), bone="Hips")   # frente do manto
+    b.add('box', (0.40, 0.25, 0.05), (0, 0, 0.60), '#6A4A2E', bone="Spine")                   # cinto
+    b.add('bbox', (0.14, 0.06, 0.17), (-0.20, 0.10, 0.52), '#7A5230', bone="Hips", bev=0.015)  # livro na bolsa
+    b.add('box', (0.04, 0.02, 0.04), (-0.20, 0.135, 0.53), GOLD, bone="Hips")
+    b.add('box', (0.06, 0.03, 0.22), (0, 0.135, 0.80), GOLD, bone="Chest")                    # faixa do peito
+    b.add('box', (0.48, 0.30, 0.08), (0, 0, 0.91), navy_l, bone="Chest")                      # cachecol
+    b.add('sph', (0.34, 0.30, 0.34), (0, 0.09, 1.17), '#E0B090', bone="Head")                 # rosto visivel
+    for sx in (-1, 1):
+        b.add('box', (0.04, 0.02, 0.045), (sx * 0.065, 0.236, 1.185), '#1A1A2A', bone="Head")  # olhos
+    b.add('box', (0.24, 0.06, 0.06), (0, 0.185, 1.285), '#6A4428', bone="Head")               # franja do cabelo
+    b.add('sph', (0.52, 0.50, 0.50), (0, -0.06, 1.21), navy, bone="Head")                     # capuz
+    b.add('ring', (0.38, 0.38, 0.08), (0, 0.12, 1.18), navy_l, rot=(90, 0, 0), bone="Head", seg=10, tube=0.12)  # borda do capuz
+    b.add('cyl', (0.34, 0.34, 0.18), (0, -0.06, 1.41), navy, bone="Head", taper=0.12, seg=6)  # ponta (topo 1,50)
+    staff = Builder("SK_Mage_Staff")
+    sp = [(0.43, 0.08, 0.02), (0.445, 0.08, 0.45), (0.425, 0.085, 0.90), (0.44, 0.08, 1.38)]
+    for a, bb in zip(sp[:-1], sp[1:]):
+        staff.limb(a, bb, 0.024, '#7A5230', bone="RightHand", seg=6)
+    top = Vector((0.44, 0.08, 1.55))
+    staff.add('bbox', (0.07, 0.07, 0.07), (0.44, 0.08, 1.39), GOLD, bone="RightHand", bev=0.01)
+    staff.add('ring', (0.30, 0.30, 0.30), top, GOLD, rot=(90, 0, 0), bone="RightHand", seg=12, tube=0.10)
+    for a in (-50, 50):
+        u = Vector((math.sin(math.radians(a)), 0, math.cos(math.radians(a))))
+        staff.limb(top + u * 0.14, top + u * 0.21, 0.022, GOLD, bone="RightHand", taper=0.1, seg=4)
+    staff.add('sph', (0.12, 0.12, 0.24), top, '#4A9CF0', bone="RightHand", seg=4, emit=True)   # cristal azul
+    return [b, staff]
 
 
-report = {}
+report = dict(version=version_info(), heroes={})
 reset()
-x_off = {"Warrior": -2.0, "Archer": 0.0, "Mage": 2.0}
 for fn, key in ((warrior, "Warrior"), (archer, "Archer"), (mage, "Mage")):
     coll = new_coll("SK_" + key)
-    arm, objs = fn(coll)
-    arm.name = "Rig_Humanoid_Chibi"
+    arm = make_armature(coll)
+    objs = bind(arm, [bd.build(coll, turn=True) for bd in fn(coll)])
     body = objs[0]
     mn, mx = bbox([body])
     mn2, mx2 = bbox(objs)
-    report[key] = dict(body_h=round(mx.z - mn.z, 3), body_foot_z=round(mn.z, 3), body_w=round(mx.x - mn.x, 3),
-                       all_w=round(mx2.x - mn2.x, 3), all_h=round(mx2.z - mn2.z, 3),
-                       tris={o.name: tris(o) for o in objs}, bones=len(arm.data.bones),
-                       mats=len({m.name for o in objs for m in o.data.materials}))
-    export_fbx([arm] + objs, f"{FBX}/SK_{key}.fbx")
-    arm.location = (x_off[key] * 0.7071, -x_off[key] * 0.7071, 0)
-    bpy.context.view_layer.update()
+    report["heroes"][key] = dict(
+        file=f"fbx/SK_{key}.fbx", body_height=round(mx.z - mn.z, 3), foot_z=round(mn.z, 3) + 0.0,
+        unity_body=unity_bounds(mn, mx), unity_all=unity_bounds(mn2, mx2),
+        width_over_height=round((mx2.x - mn2.x) / (mx.z - mn.z), 2),
+        tris={o.name: tris(o) for o in objs}, tris_total=sum(tris(o) for o in objs),
+        bones=len(arm.data.bones), materials=sorted({m.name for o in objs for m in o.data.materials}),
+        vertex_groups={o.name: [g.name for g in o.vertex_groups] for o in objs})
+    export_fbx_rigged(arm, objs, f"{FBX}/SK_{key}.fbx")
+    arm.name = f"{RIG_NAME}_{key}"
+    arm.data.name = f"{RIG_NAME}_{key}"
 
-# previa
+# previas: herois virados para a camera (rotacao so do objeto, nao exportada)
+x_off = {"Warrior": -1.6, "Archer": 0.0, "Mage": 1.6}
+right = Vector((-0.7071, 0.7071, 0))          # direita da tela com a camera do jogo
 fl = Builder("Preview_Floor")
-fl.add('box', (8, 4, 0.05), (0, 0, -0.025), '#6A5A55')
+fl.add('box', (12, 12, 0.05), (0, 0, -0.025), '#6A5A55')
 fo = fl.build()
-setup_render(1600, 800)
-cam = game_camera((0, 0, 0.6), 14, ortho_scale=6.0)
-bpy.ops.object.light_add(type='SUN', location=(3, 3, 6))
+setup_render(1600, 900)
+for key, x in x_off.items():
+    a = bpy.data.objects[f"{RIG_NAME}_{key}"]
+    a.location = right * x
+    a.rotation_euler = (0, 0, math.pi)
+cam = game_camera((0, 0, 0.6), 14, ortho_scale=5.6)
 render(f"{PREV}/heroes_lineup.png")
-for r in [o for o in bpy.data.objects if o.type == 'ARMATURE']:
-    r.location = (r.location.x * 1.4142 * 0.7071 * 0 + (x_off[{'Rig_Humanoid_Chibi': 'Warrior', 'Rig_Humanoid_Chibi.001': 'Archer', 'Rig_Humanoid_Chibi.002': 'Mage'}[r.name]]), 0, 0)
+for key, x in x_off.items():
+    bpy.data.objects[f"{RIG_NAME}_{key}"].location = (-x, 0, 0)
 bpy.data.objects.remove(cam)
-game_camera((0, 0, 0.8), 14, ortho_scale=5.2, yaw=0, pitch=-12)
+cam = game_camera((0, 0, 0.82), 14, ortho_scale=5.2, yaw=0, pitch=-8)
 render(f"{PREV}/heroes_front.png")
+bpy.data.objects.remove(cam)
+for key, x in x_off.items():
+    bpy.data.objects[f"{RIG_NAME}_{key}"].rotation_euler = (0, 0, 0)
+cam = game_camera((0, 0, 0.82), 14, ortho_scale=5.2, yaw=0, pitch=-8)
+render(f"{PREV}/heroes_back.png")
+bpy.data.objects.remove(cam)
+for key in x_off:
+    a = bpy.data.objects[f"{RIG_NAME}_{key}"]
+    a.location = (0, 0, 0)
+    a.rotation_euler = (0, 0, 0)
 fo.hide_render = True
 fo.hide_viewport = True
 save_blend(f"{ROOT}/heroes_graybox.blend")
 json.dump(report, open(f"{PREV}/_heroes_report.json", "w"), indent=1)
-print("REPORT", json.dumps(report))
+print("REPORT", json.dumps({k: (v["body_height"], v["tris_total"]) for k, v in report["heroes"].items()}))
