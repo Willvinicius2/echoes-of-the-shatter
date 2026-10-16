@@ -46,11 +46,42 @@ if arm is not None:
     clear_pose(arm)
 me = ob.data
 
+# corpo base modular: 6 malhas de regiao (Head com pescoco, Torso, Arms, Hands, Legs, Feet), mesmo material e mesma UV
+region_report = None
+objs_out = [ob]
+if cfg.get("modular_role") == "body":
+    import bmesh
+    R6 = {"Head": ["Head", "Neck"], "Torso": ["Chest", "Spine", "Hips", "LeftShoulder", "RightShoulder"],
+          "Arms": ["LeftUpperArm", "LeftLowerArm", "RightUpperArm", "RightLowerArm"], "Hands": ["LeftHand", "RightHand"],
+          "Legs": ["LeftUpperLeg", "LeftLowerLeg", "RightUpperLeg", "RightLowerLeg"], "Feet": ["LeftFoot", "LeftToes", "RightFoot", "RightToes"]}
+    names6 = list(R6)
+    gname = {vg.index: vg.name for vg in ob.vertex_groups}
+    vreg6 = np.zeros((len(me.vertices), 6))
+    for v in me.vertices:
+        for g in v.groups:
+            for i, rn in enumerate(names6):
+                if gname[g.group] in R6[rn]:
+                    vreg6[v.index, i] += g.weight
+    freg6 = np.array([vreg6[list(p.vertices)].sum(0).argmax() for p in me.polygons])
+    objs_out = []
+    region_report = {}
+    for i, rn in enumerate(names6):
+        o2 = ob.copy(); o2.data = ob.data.copy(); o2.name = "Body_" + rn; o2.data.name = "Body_" + rn
+        bpy.context.scene.collection.objects.link(o2)
+        bm = bmesh.new(); bm.from_mesh(o2.data); bm.faces.ensure_lookup_table()
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if freg6[f.index] != i], context='FACES')
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+        bm.to_mesh(o2.data); bm.free()
+        region_report[rn] = len(o2.data.polygons)
+        objs_out.append(o2)
+    bpy.data.objects.remove(ob)
+    ob = objs_out[0]
+
 # FBX
 for o in bpy.context.scene.objects:
     o.select_set(False)
 fbx = fpath(cfg, cfg["asset"] + ".fbx")
-(gb_rig.export_fbx_rigged(arm, [ob], fbx) if arm is not None else gb_lib.export_fbx([ob], fbx))
+(gb_rig.export_fbx_rigged(arm, objs_out, fbx) if arm is not None else gb_lib.export_fbx(objs_out, fbx))
 bpy.ops.wm.save_as_mainfile(filepath=fpath(cfg, cfg["asset"] + ".blend"), compress=True)
-save_json(wpath(cfg, "export_report.json"), dict(fbx=fbx, pose=pose, tris=len(me.polygons)))
-print("S8", pose, len(me.polygons))
+save_json(wpath(cfg, "export_report.json"), dict(fbx=fbx, pose=pose, tris=len(me.polygons), regioes=region_report))
+print("S8", pose, len(me.polygons), region_report)

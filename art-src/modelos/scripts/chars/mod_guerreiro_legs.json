@@ -1,0 +1,98 @@
+{
+  "id": "mod_guerreiro_legs",
+  "asset": "SK_Warrior_Legs_Starter",
+  "kind": "humanoid",
+  "modular_role": "piece",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/pecas_guerreiro/legs/guerreiro_legs.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/mod_a01_guerreiro_inicial.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/legs",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/final",
+  "body_height_m": 1.5,
+  "mesh_name": "SK_Warrior_Legs_Starter",
+  "bake_shards": 1,
+  "markers_from": "D:/openclaude/EchoesOfTheShatter/art-src/modelos/scripts/chars/mod_guerreiro_body.json",
+  "tint_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ],
+  "cloth_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ],
+  "sat_max": 0.78,
+  "sat_keep_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      35,
+      55
+    ]
+  ],
+  "fit": {
+    "mode": "box",
+    "box": [
+      -0.285,
+      0.285,
+      -0.1,
+      0.21,
+      0.1,
+      0.64
+    ]
+  },
+  "tex_size": 256,
+  "tris_target": 900,
+  "tris_range": [
+    500,
+    1200
+  ],
+  "outer_shell": true,
+  "preserve_topology": false,
+  "tris_target_pre": 2600,
+  "cull_inner": true,
+  "occluder_ply": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body/game_raw.ply",
+  "size_scale": 1.0,
+  "body_rig_blend": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body/game_rig.blend",
+  "piece_rows": [
+    {
+      "boxes": [
+        [
+          1225,
+          17,
+          1504,
+          370
+        ]
+      ]
+    },
+    {
+      "boxes": [
+        [
+          1226,
+          398,
+          1501,
+          758
+        ]
+      ]
+    }
+  ],
+  "body_fill_ply": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body/game_raw.ply",
+  "shell_res": 450,
+  "keep_normals": false
+}

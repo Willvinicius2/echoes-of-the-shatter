@@ -1,0 +1,112 @@
+{
+  "id": "mod_guerreiro_body",
+  "asset": "SK_Warrior_Body",
+  "kind": "humanoid",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/corpo_guerreiro/corpo_guerreiro.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/mod_b01_guerreiro_corpo.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/final",
+  "height_ref": "bbox",
+  "body_height_m": 1.5,
+  "tris_target": 2500,
+  "tris_range": [
+    2000,
+    3000
+  ],
+  "tex_size": 512,
+  "min_component_ratio": 0.005,
+  "mesh_name": "SK_Warrior_Body",
+  "bake_shards": 1,
+  "tint_hues": [],
+  "cloth_hues": [],
+  "sat_max": 0.78,
+  "sat_keep_hues": [
+    [
+      0,
+      30
+    ]
+  ],
+  "markers": {
+    "hips": [
+      0,
+      0.02,
+      0.52
+    ],
+    "spine": [
+      0,
+      0.02,
+      0.66
+    ],
+    "chest": [
+      0,
+      0.02,
+      0.82
+    ],
+    "neck": [
+      0,
+      0.02,
+      1.1
+    ],
+    "head": [
+      0,
+      0.02,
+      1.14
+    ],
+    "head_top": [
+      0,
+      0.02,
+      1.49
+    ],
+    "shoulder": [
+      0.06,
+      0.02,
+      1.02
+    ],
+    "upperarm": [
+      0.24,
+      0.02,
+      0.97
+    ],
+    "lowerarm": [
+      0.39,
+      0.01,
+      0.71
+    ],
+    "hand": [
+      0.43,
+      0.0,
+      0.59
+    ],
+    "hand_tip": [
+      0.44,
+      -0.01,
+      0.5
+    ],
+    "upperleg": [
+      0.13,
+      0.05,
+      0.5
+    ],
+    "lowerleg": [
+      0.17,
+      0.05,
+      0.28
+    ],
+    "foot": [
+      0.21,
+      0.06,
+      0.09
+    ],
+    "toes": [
+      0.22,
+      -0.03,
+      0.04
+    ],
+    "toe_tip": [
+      0.22,
+      -0.14,
+      0.02
+    ]
+  },
+  "modular_role": "body"
+}

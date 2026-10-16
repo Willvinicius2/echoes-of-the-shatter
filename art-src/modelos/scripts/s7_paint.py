@@ -37,12 +37,16 @@ EXT = 1.12 * float((bmax - bmin).max())
 PX = EXT / VG
 KS = EXT / 2.0                 # escala dos limiares em metros (afinados para 2 m)
 
-VIEW = {
-    "front": dict(dir=(0, 1, 0), proj=lambda p: ((p[..., 0] - ctr[0]) / PX + VG / 2, VG / 2 - (p[..., 2] - ctr[2]) / PX, p[..., 1])),
-    "back": dict(dir=(0, -1, 0), proj=lambda p: (VG / 2 - (p[..., 0] - ctr[0]) / PX, VG / 2 - (p[..., 2] - ctr[2]) / PX, -p[..., 1])),
-    "right": dict(dir=(1, 0, 0), proj=lambda p: (VG / 2 - (p[..., 1] - ctr[1]) / PX, VG / 2 - (p[..., 2] - ctr[2]) / PX, p[..., 0])),
-    "left": dict(dir=(-1, 0, 0), proj=lambda p: (VG / 2 + (p[..., 1] - ctr[1]) / PX, VG / 2 - (p[..., 2] - ctr[2]) / PX, -p[..., 0])),
-}
+def make_view(phi_deg):
+    """Camera ortografica em azimute phi (0 = frente, camera em -Y; +90 = camera em +X, lado esquerdo; 180 = costas)."""
+    p = np.radians(phi_deg)
+    d = np.array([-np.sin(p), np.cos(p), 0.0])           # direcao em que a camera olha
+    r = np.array([d[1], -d[0], 0.0])                     # direita da tela
+    return dict(dir=tuple(d), phi=phi_deg,
+                proj=lambda q, r=r, d=d: (((q - ctr) @ r) / PX + VG / 2, VG / 2 - (q[..., 2] - ctr[2]) / PX, q @ d))
+
+
+VIEW = {"front": make_view(0), "back": make_view(180), "right": make_view(-90), "left": make_view(90)}
 
 
 def zbuffer(view):
@@ -137,9 +141,61 @@ def align(M, img, Sp):
     return C2, S2, iou0, iou(S2), float(1 / s)
 
 
-# --- entradas: folha de 3 vistas ou imagem unica (arma)
+# --- entradas: folha de 3 vistas, imagem unica (arma) ou fileiras de uma folha de pecas (modular)
 report = {}
-if cfg.get("single_view"):
+
+
+def sil_mask(phi, G=256):
+    vv = make_view(phi)
+    u, v, _ = vv["proj"](V)
+    pts = np.stack([u, v], 1) * (G / VG)
+    m = np.zeros((G, G), np.uint8)
+    for f in F:
+        cv2.fillConvexPoly(m, pts[f].astype(np.int32), 1)
+    return m
+
+
+def quick_iou(M, Sp):
+    """IoU depois de alinhar as caixas das duas silhuetas (escala por eixo: a peca foi esticada para caber no corpo)."""
+    ys_, xs_ = np.where(M); ysp, xsp = np.where(Sp)
+    if len(ysp) < 20 or len(ys_) < 20:
+        return 0.0
+    sx = (xs_.max() - xs_.min() + 1) / (xsp.max() - xsp.min() + 1)
+    sy = (ys_.max() - ys_.min() + 1) / (ysp.max() - ysp.min() + 1)
+    A = np.array([[sx, 0, xs_.min() - sx * xsp.min()], [0, sy, ys_.min() - sy * ysp.min()]], np.float32)
+    W = cv2.warpAffine(Sp.astype(np.float32), A, (M.shape[1], M.shape[0]), flags=cv2.INTER_LINEAR)
+    return float(((W > .5) & (M > 0)).sum() / max(((W > .5) | (M > 0)).sum(), 1))
+
+
+if cfg.get("piece_rows"):
+    sheet = cv2.cvtColor(cv2.imread(cfg["sheet"], cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
+    masks = {phi: sil_mask(phi) for phi in range(-180, 180, 15)}
+    panel, views, chosen = {}, [], []
+    allsc = {}
+    for i, row in enumerate(cfg["piece_rows"]):
+        best = None
+        for bi, (x0, y0, x1, y1) in enumerate(row["boxes"]):
+            crop = sheet[y0:y1, x0:x1]
+            for flip in (False, True):
+                im = crop[:, ::-1].copy() if flip else crop
+                sp = cv2.resize(figure_mask(im), (128, int(128 * im.shape[0] / im.shape[1]))) if False else figure_mask(im)
+                sp_small = cv2.resize(sp, (max(8, sp.shape[1] // 3), max(8, sp.shape[0] // 3)), interpolation=cv2.INTER_NEAREST)
+                for phi, M_ in masks.items():
+                    if any(abs(((phi - p0 + 180) % 360) - 180) < 50 for p0 in chosen):
+                        continue
+                    sc = quick_iou(M_, sp_small)
+                    allsc.setdefault((i, flip), {})[phi] = round(sc, 2)
+                    if best is None or sc > best[0]:
+                        best = (sc, bi, flip, phi, im)
+        sc, bi, flip, phi, im = best
+        chosen.append(phi)
+        nm = f"p{i}"
+        VIEW[nm] = make_view(phi)
+        panel[nm] = (im, figure_mask(im))
+        views.append(nm)
+        report[f"scores_{nm}"] = {str(k): v for k, v in allsc.items() if k[0] == i}
+        report[f"vista_{nm}"] = dict(azimute_deg=phi, caixa=bi, espelhada=flip, iou_rapido=round(sc, 3))
+elif cfg.get("single_view"):
     raw = cv2.imread(cfg["single_view"], cv2.IMREAD_UNCHANGED)
     alpha = raw[..., 3].copy() if raw.shape[2] == 4 else None
     rgb = cv2.cvtColor(raw[..., :3], cv2.COLOR_BGR2RGB)
@@ -164,7 +220,7 @@ Z, SAMPLE, SMASK = {}, {}, {}
 for view in views:
     Z[view] = zbuffer(view)
 Mk = {v: np.isfinite(Z[v]).astype(np.uint8) for v in views}
-if not cfg.get("single_view"):
+if not cfg.get("single_view") and not cfg.get("piece_rows"):
     # o painel lateral serve de vista direita se o personagem olha para a direita (silhueta da malha decide)
     cand = {}
     for name, flip in (("as_is", False), ("flipped", True)):

@@ -97,17 +97,70 @@ rig_name = "Rig_Quadruped_Simple" if cfg["kind"] == "quadruped" else gb_rig.RIG_
 arm.name = rig_name
 arm.data.name = rig_name
 
-# pesos automaticos
-bpy.ops.object.select_all(action='DESELECT')
-ob.select_set(True); arm.select_set(True)
-bpy.context.view_layer.objects.active = arm
-bpy.ops.object.parent_set(type='ARMATURE_AUTO')
-bpy.context.view_layer.objects.active = ob
-bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True)
+# pesos
+if cfg.get("modular_role") == "piece":
+    # peca modular: "shrinkwrap" leve (vertice dentro do corpo ou rente a ele sai para fora) e pesos copiados da superficie
+    # mais proxima do corpo base (mesmo esqueleto, mesma deformacao: a peca acompanha o corpo sem rasgar nem atravessar)
+    from mathutils.bvhtree import BVHTree
+    from mathutils import interpolate
+    ref = cfg["body_rig_blend"]
+    with bpy.data.libraries.load(ref) as (src, dst):
+        dst.objects = ["game"]
+    body = dst.objects[0]
+    bpy.context.scene.collection.objects.link(body)
+    bg = [vg.name for vg in body.vertex_groups]
+    bw = np.zeros((len(body.data.vertices), len(bg)))
+    for v in body.data.vertices:
+        for g in v.groups:
+            bw[v.index, g.group] = g.weight
+    bvh = BVHTree.FromObject(body, bpy.context.evaluated_depsgraph_get())
+    K = cfg["size_scale"]
+    off = cfg.get("shrink_offset", 0.004) * K
+    near = cfg.get("shrink_range", 0.03) * K
+    moved = 0
+    me = ob.data
+    for v in me.vertices:
+        loc, nrm, fi, d = bvh.find_nearest(v.co)
+        if loc is None:
+            continue
+        if (v.co - loc).dot(nrm) < off and d < near:
+            v.co = loc + nrm * off; moved += 1
+    me.update()
+    ob.vertex_groups.clear()
+    for n in bg:
+        ob.vertex_groups.new(name=n)
+    W = np.zeros((len(me.vertices), len(bg)))
+    for v in me.vertices:
+        loc, nrm, fi, d = bvh.find_nearest(v.co)
+        poly = body.data.polygons[fi]
+        vs = [body.data.vertices[i] for i in poly.vertices]
+        wts = interpolate.poly_3d_calc([x.co for x in vs], loc)
+        for x, w in zip(vs, wts):
+            W[v.index] += bw[x.index] * w
+    for i in range(len(me.vertices)):
+        idx = np.argsort(-W[i])[:4]
+        t = W[i, idx].sum()
+        for j in idx:
+            if W[i, j] > 1e-4:
+                ob.vertex_groups[j].add([i], float(W[i, j] / t), 'REPLACE')
+    bpy.data.objects.remove(body)
+    ob.parent = arm
+    m_ = ob.modifiers.new("Armature", 'ARMATURE'); m_.object = arm
+    shrink_moved = moved
+else:
+    bpy.ops.object.select_all(action='DESELECT')
+    ob.select_set(True); arm.select_set(True)
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True)
+    shrink_moved = 0
 deform = {b.name for b in arm.data.bones if b.use_deform}
 for vg in list(ob.vertex_groups):
     if vg.name not in deform:
         ob.vertex_groups.remove(vg)
+bpy.context.view_layer.objects.active = ob
+bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True)
 bpy.ops.object.vertex_group_limit_total(group_select_mode='ALL', limit=4)
 bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
 
@@ -138,7 +191,7 @@ for v in me.vertices:
     g = max(v.groups, key=lambda g: g.weight)
     n = ob.vertex_groups[g.group].name
     dom[n] = dom.get(n, 0) + 1
-rep = dict(bones=len(arm.data.bones), deform_bones=len(deform), max_influences=maxinf, unweighted_fixed=unw,
+rep = dict(shrinkwrap_vertices_moved=shrink_moved, bones=len(arm.data.bones), deform_bones=len(deform), max_influences=maxinf, unweighted_fixed=unw,
            dominant_bone_vertices=dom, humanoid=(gb_rig.humanoid_check([b.name for b in arm.data.bones]) if cfg["kind"] == "humanoid" else None))
 save_json(wpath(cfg, "rig_report.json"), rep)
 bpy.ops.wm.save_as_mainfile(filepath=wpath(cfg, "game_rig.blend"), compress=True)

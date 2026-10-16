@@ -13,7 +13,7 @@ TMPDIR = os.environ.get("MDL_TMP", r"D:\openclaude\_trabalho-claude\tmp")
 
 STAGES = [  # (id, script, interprete)
     ("s1", "s1_prepare.py", "blender"),      # limpa e normaliza a malha alta
-    ("s2", "s2_decimate.py", "venv"),        # malha de jogo (pymeshlab)
+    ("s2", "s2_decimate.py", "venv"),   # malha de jogo (pymeshlab)
     ("s2b", "s2b_ao_mesh.py", "venv"),      # malha alta reduzida para o AO
     ("s3", "s3_game_prep.py", "blender"),    # normais, sombreamento
     ("s4", "s4_rig.py", "blender"),          # esqueleto por marcos + pesos
@@ -41,7 +41,12 @@ def main():
     os.makedirs(TMPDIR, exist_ok=True)
     started = start is None
     prev = None
-    for sid, script, how in STAGES:
+    import json
+    piece = json.load(open(os.path.join(HERE, "chars", char + ".json"), encoding="utf-8")).get("modular_role") == "piece"
+    for st in STAGES:
+        sid, script, how = st[:3]
+        if len(st) > 3 and (st[3] == "p") != piece:
+            continue
         if sid == start:
             started = True
         if stop and prev == stop:

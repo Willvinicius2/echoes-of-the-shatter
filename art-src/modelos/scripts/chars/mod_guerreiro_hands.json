@@ -1,0 +1,111 @@
+{
+  "id": "mod_guerreiro_hands",
+  "asset": "SK_Warrior_Hands_Starter",
+  "kind": "humanoid",
+  "modular_role": "piece",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/pecas_guerreiro/hands/guerreiro_hands.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/mod_a01_guerreiro_inicial.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/hands",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/final",
+  "body_height_m": 1.5,
+  "mesh_name": "SK_Warrior_Hands_Starter",
+  "bake_shards": 1,
+  "markers_from": "D:/openclaude/EchoesOfTheShatter/art-src/modelos/scripts/chars/mod_guerreiro_body.json",
+  "tint_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ],
+  "cloth_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ],
+  "sat_max": 0.78,
+  "sat_keep_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      35,
+      55
+    ]
+  ],
+  "fit": {
+    "mode": "box",
+    "box": [
+      0.375,
+      0.495,
+      -0.07,
+      0.07,
+      0.47,
+      0.7
+    ]
+  },
+  "tex_size": 128,
+  "tris_target": 400,
+  "tris_range": [
+    300,
+    750
+  ],
+  "mirror_pair": true,
+  "outer_shell": true,
+  "preserve_topology": false,
+  "tris_target_pre": 1000,
+  "cull_inner": true,
+  "occluder_ply": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body/game_raw.ply",
+  "size_scale": 1.0,
+  "body_rig_blend": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body/game_rig.blend",
+  "piece_rows": [
+    {
+      "boxes": [
+        [
+          827,
+          131,
+          961,
+          363
+        ],
+        [
+          999,
+          130,
+          1133,
+          363
+        ]
+      ]
+    },
+    {
+      "boxes": [
+        [
+          848,
+          498,
+          968,
+          733
+        ],
+        [
+          1006,
+          498,
+          1132,
+          733
+        ]
+      ]
+    }
+  ],
+  "body_fill_ply": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body/game_raw.ply",
+  "shell_res": 450,
+  "keep_normals": false
+}
