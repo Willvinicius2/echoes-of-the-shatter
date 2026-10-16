@@ -157,6 +157,8 @@ struct LocEntry {
     std::string ptBR;
     std::string en;
     std::string file;
+    std::string context;
+    std::string gender;
 };
 
 inline std::vector<std::vector<std::string>> ParseCsvRfc4180(const std::string& text) {
@@ -197,17 +199,21 @@ inline std::map<std::string, LocEntry> ReadLoc(const std::string& locDir) {
         if (it->path().extension() != ".csv") continue;
         const auto rows = ParseCsvRfc4180(ReadFile(it->path().u8string()));
         if (rows.empty()) continue;
-        int kKey = -1, kPt = -1, kEn = -1;
+        int kKey = -1, kPt = -1, kEn = -1, kCtx = -1, kGender = -1;
         for (std::size_t c = 0; c < rows[0].size(); ++c) {
             if (rows[0][c] == "key") kKey = static_cast<int>(c);
             if (rows[0][c] == "pt_BR") kPt = static_cast<int>(c);
             if (rows[0][c] == "en") kEn = static_cast<int>(c);
+            if (rows[0][c] == "context") kCtx = static_cast<int>(c);
+            if (rows[0][c] == "gender") kGender = static_cast<int>(c);
         }
         if (kKey < 0 || kPt < 0 || kEn < 0) continue;
         for (std::size_t r = 1; r < rows.size(); ++r) {
             const auto& row = rows[r];
-            auto cell = [&](int k) { return static_cast<std::size_t>(k) < row.size() ? row[static_cast<std::size_t>(k)] : std::string(); };
-            out[cell(kKey)] = LocEntry{cell(kPt), cell(kEn), it->path().filename().u8string()};
+            auto cell = [&](int k) {
+                return k >= 0 && static_cast<std::size_t>(k) < row.size() ? row[static_cast<std::size_t>(k)] : std::string();
+            };
+            out[cell(kKey)] = LocEntry{cell(kPt), cell(kEn), it->path().filename().u8string(), cell(kCtx), cell(kGender)};
         }
     }
     return out;

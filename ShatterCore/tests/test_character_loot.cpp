@@ -157,7 +157,7 @@ TEST(loot_rf25_table_frequencies_match_weights) {
     ctx.mode = LootMode::Manual;
     ctx.areaLevel = 4;
     Pcg32 rng(2025);
-    const int n = 100000;
+    const int n = tu::Nightly() ? 1000000 : 100000;  // critério: 1 milhão (noturno); 100 mil por commit
     std::map<std::string, int> counts;
     for (int i = 0; i < n; ++i) {
         const LootDrop d = RollLootTable(db, *t, ctx, rng);

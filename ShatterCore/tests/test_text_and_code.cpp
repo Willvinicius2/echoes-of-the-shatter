@@ -15,7 +15,8 @@ std::string LocDir() { return tu::ContentDir() + "/Loc"; }
 
 // Remove comentários // e /* */ e o conteúdo de literais de texto/caractere (mantém as aspas),
 // para a busca textual não acusar palavras em comentários ("sem pow/exp/log/sin").
-std::string StripCommentsAndStrings(const std::string& src) {
+// Se `literals` não for nulo, recebe o conteúdo de cada literal de texto (para a busca do RF-61).
+std::string StripCommentsAndStrings(const std::string& src, std::vector<std::string>* literals = nullptr) {
     std::string out;
     out.reserve(src.size());
     enum { Code, Line, Block, Str, Chr } st = Code;
@@ -26,7 +27,7 @@ std::string StripCommentsAndStrings(const std::string& src) {
             case Code:
                 if (c == '/' && n == '/') { st = Line; ++i; }
                 else if (c == '/' && n == '*') { st = Block; ++i; }
-                else if (c == '"') { st = Str; out += c; }
+                else if (c == '"') { st = Str; out += c; if (literals) literals->emplace_back(); }
                 else if (c == '\'') { st = Chr; out += c; }
                 else out += c;
                 break;
@@ -38,8 +39,15 @@ std::string StripCommentsAndStrings(const std::string& src) {
                 else if (c == '\n') out += c;
                 break;
             case Str:
-                if (c == '\\') ++i;
-                else if (c == '"') { st = Code; out += c; }
+                if (c == '\\') {
+                    if (literals) { literals->back() += c; literals->back() += n; }
+                    ++i;
+                } else if (c == '"') {
+                    st = Code;
+                    out += c;
+                } else if (literals) {
+                    literals->back() += c;
+                }
                 break;
             case Chr:
                 if (c == '\\') ++i;
@@ -150,4 +158,69 @@ TEST(code_claude_md_forbidden_constructs_absent_from_core) {
     EXPECT_TRUE(cmakeCode.find("fast-math") == std::string::npos && cmakeCode.find("fp:fast") == std::string::npos);
     EXPECT_TRUE(cmakeCode.find("-ffp-contract=off") != std::string::npos);
     EXPECT_TRUE(cmakeCode.find("/fp:precise") != std::string::npos);
+}
+
+TEST(text_rf61_core_code_has_no_player_visible_text) {
+    // O core só devolve IDs e chaves; mensagens de erro são log técnico em inglês (ASCII). Um literal com
+    // acento ou outro caractere não ASCII em src/ ou include/ indicaria texto para o jogador no código.
+    const auto files = SourceFiles({CoreDir() + "/include", CoreDir() + "/src"});
+    int literals = 0;
+    for (const fs::path& f : files) {
+        std::vector<std::string> lits;
+        StripCommentsAndStrings(tu::ReadFile(f.u8string()), &lits);
+        for (const std::string& lit : lits) {
+            ++literals;
+            for (const char c : lit) {
+                if (static_cast<unsigned char>(c) >= 0x80) {
+                    FAIL(f.filename().u8string() + ": literal com texto nao ASCII: " + lit);
+                    break;
+                }
+            }
+        }
+    }
+    EXPECT_TRUE(literals > 100);
+}
+
+TEST(text_rf28_item_names_agree_in_gender_for_every_base_and_affix) {
+    // Parte automática do RF-28 [SC+UE]: a base guarda o gênero (item_bases.csv) e o Loc tem o nome com o
+    // mesmo gênero; cada prefixo tem as formas m/f (singular e plural) com o gênero certo; sufixos são
+    // invariáveis. Para todo par base × afixo a forma escolhida pelo gênero (e número) da base concorda.
+    // A revisão humana de 20 nomes fica no roteiro manual (UE).
+    ContentDB db;
+    db.LoadDirectory(tu::ContentDir());
+    ASSERT_TRUE(db.Finalize());
+    const auto loc = tu::ReadLoc(LocDir());
+    ASSERT_TRUE(!db.ItemBases().empty() && !db.Affixes().empty());
+    auto entry = [&](const std::string& key) -> const tu::LocEntry* {
+        const auto it = loc.find(key);
+        if (it == loc.end() || it->second.ptBR.empty() || it->second.en.empty()) {
+            FAIL("sem texto pt_BR/en: " + key);
+            return nullptr;
+        }
+        return &it->second;
+    };
+    int pairs = 0;
+    for (const ItemBaseData& base : db.ItemBases()) {
+        const tu::LocEntry* bn = entry(base.id + ".name");
+        if (bn == nullptr) continue;
+        const std::string g(1, base.grammaticalGender);
+        if (bn->gender != g) FAIL(base.id + ": genero no Loc (" + bn->gender + ") != item_bases.csv (" + g + ")");
+        const bool plural = bn->context.find("plural") != std::string::npos;
+        for (const AffixData& a : db.Affixes()) {
+            ++pairs;
+            if (a.kind == AffixKind::Suffix) {
+                const tu::LocEntry* sn = entry(a.id + ".name");
+                if (sn != nullptr && sn->context.find("invari") == std::string::npos)
+                    FAIL(a.id + ": sufixo sem forma unica marcada como invariavel");
+                continue;
+            }
+            const bool fem = base.grammaticalGender == 'f';
+            const char* form = fem ? (plural ? "_fp" : "_f") : (plural ? "_mp" : "");
+            const std::string key = a.id + ".name" + form;
+            const tu::LocEntry* an = entry(key);
+            if (an != nullptr && an->gender != g)
+                FAIL(base.id + " x " + a.id + ": forma " + key + " tem genero " + an->gender + ", a base e " + g);
+        }
+    }
+    EXPECT_EQ(pairs, static_cast<int>(db.ItemBases().size() * db.Affixes().size()));
 }
