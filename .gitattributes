@@ -1,0 +1,6 @@
+# Dados de conteúdo e fixtures: bytes estáveis (hash, checksum e determinismo).
+*.csv  text eol=lf
+*.json text eol=lf
+# Arte
+*.png  binary
+*.jpg  binary
