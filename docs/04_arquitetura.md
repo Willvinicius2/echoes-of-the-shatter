@@ -627,8 +627,10 @@ Todas ficam em `rules.csv` e podem mudar sem tocar no código.
 | `json.h` | `json::Value`, `Parse`, `Serialize` | `json.cpp` |
 | `sha256.h` | `Sha256` | `sha256.cpp` |
 | `save.h` | `SaveData`, `SavedExpedition`, `SerializeJson`, `ParseJson`, `Migrate`, `IFileIO`, `WriteSaveFile`, `ReadSaveFile`, `CollectExpedition` | `save.cpp`, `save_migrations.cpp`, `file_io.cpp` |
-| `shatter_c.h` | API C estável para P/Invoke (seção 9.2): handles opacos, status, buffers do chamador | `c_api/shatter_c.cpp` |
+| `shatter_c.h` | API C estável para P/Invoke (seção 9.2): handles opacos, status, buffers do chamador | `c_api/shatter_c.cpp` (+ `c_api/shatter_c.map`, exports no Linux) |
 | `shatter.h` | Inclui tudo (C++) | — |
+
+Mudanças nos headers depois da entrega do Tech Lead (adições em `save.h`, `expedition.h`, `character.h`, `rng.h` e a API C) estão registradas, com o motivo, em `docs/09_mudancas_contrato.md`.
 
 Verificação: todo header compila sozinho com `g++ -std=c++17 -fsyntax-only -Wall -Wextra -Wpedantic -Wshadow -Wconversion` e com `clang++` (o CMake tem o alvo `shattercore_header_check`, que faz isso em todo build).
 
