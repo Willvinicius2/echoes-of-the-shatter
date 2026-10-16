@@ -249,7 +249,7 @@ A direção das dependências é `Interop ← Core ← Gameplay ← Presentation
 
 ### 4.4 Convenção de nomes de assets
 
-Prefixos: `SM_` malha estática, `SK_` malha com esqueleto (FBX), `Rig_` esqueleto compartilhado, `AC_` Animator Controller, `AN_` clipe de animação, `M_` material, `SG_` Shader Graph mestre, `SGS_` sub-grafo, `T_<Nome>_BC` albedo, `_M` máscara empacotada, `P_` prefab, `FX_` prefab de VFX, `SO_` ScriptableObject, `L_`/nome simples para cenas (`Cripta.unity`). Sem normal map no projeto. Nome = `Prefixo_Dono_Descricao_Variante` (ex.: `SM_Cripta_Pillar_A`, `T_Warrior_BC`, `AN_Warrior_IronCut`). Pastas e assets em inglês/ASCII sem espaços; `<Area>` é o ID de conteúdo da área sem prefixo, em PascalCase (`Refugio`, `Cripta`). IDs de conteúdo (`skill.warrior.iron_cut`) vivem nos CSV e nos ScriptableObjects, nunca no nome do arquivo. Classes C# em PascalCase, um tipo por arquivo, nome do arquivo = nome do tipo.
+Prefixos: `SM_` malha estática, `SK_` malha com esqueleto (FBX), `Rig_` esqueleto compartilhado, `AC_` Animator Controller, `AN_` clipe de animação, `M_` material, `SG_` Shader Graph mestre, `SGS_` sub-grafo, `T_<Nome>_BC` albedo, `_M` máscara empacotada, `P_` prefab, `FX_` prefab de VFX, `SO_` ScriptableObject, `L_`/nome simples para cenas (`Cripta.unity`). Sem normal map no projeto. Nomes de personagem modular (corpo base e peças): seção 17.4. Nome = `Prefixo_Dono_Descricao_Variante` (ex.: `SM_Cripta_Pillar_A`, `T_Warrior_BC`, `AN_Warrior_IronCut`). Pastas e assets em inglês/ASCII sem espaços; `<Area>` é o ID de conteúdo da área sem prefixo, em PascalCase (`Refugio`, `Cripta`). IDs de conteúdo (`skill.warrior.iron_cut`) vivem nos CSV e nos ScriptableObjects, nunca no nome do arquivo. Classes C# em PascalCase, um tipo por arquivo, nome do arquivo = nome do tipo.
 
 ---
 
@@ -340,6 +340,7 @@ Justificativa:
 
 Detalhes:
 - Caminho: `Application.persistentDataPath/saves/slot_N.json` (+ `.tmp`, `.bak1..3`) → no Windows, `%USERPROFILE%\AppData\LocalLow\<Empresa>\<Produto>\saves\`. O C# passa o caminho em UTF-8 e a DLL faz a E/S (`IFileIO`). Empresa e produto ficam fixos em `ProjectSettings` antes do primeiro save publicado (mudar depois orfana saves): **confirmar na instalação** o caminho exato e o comportamento sob Proton.
+- `equipment` tem **11 posições** (inclui `legs`, 17.4); a mudança de 10 para 11 sobe `save_version` para 2, com migração `1→2` no core.
 - Envelope: `{format, save_version, sha256, data}`; hash sobre a forma **compacta canônica** de `data`.
 - Seeds e UIDs (`uint64`) vão como **string decimal** no JSON.
 - Quando salvar: ao trocar de área, coletar expedição, crafting, sair e a cada 5 min (timer do `SaveService`).
@@ -622,7 +623,7 @@ Todas ficam em `rules.csv` e podem mudar sem tocar no código.
 | `stats.h` | `StatId`, `ModKind`, `Modifier`, `ComputeStatValue`, `StatBlock` | `stats.cpp` |
 | `damage.h` | `HitInput`, `HitResult`, `ResolveHit`, `ArmorReduction`, `ClampResistance` | `damage.cpp` |
 | `effects.h` | `StackRule`, `TriggerKind`, `EffectData`, `ActiveEffect`, `EffectContainer`, `EffectiveCooldown` | `effects.cpp` |
-| `item.h` | `ItemSlot`, `RolledAffix`, `ItemInstance`, `StackEntry` | `types.cpp` ou `item.cpp` |
+| `item.h` | `ItemSlot` (11 valores com `Legs`, 17.4), `RolledAffix`, `ItemInstance`, `StackEntry` | `types.cpp` ou `item.cpp` |
 | `content.h` | `ClassData`, `SkillData` + `IdleProfile`, `EnemyData`, `AffixData`, `ItemBaseData`, `UniqueData`, `LootTableData`, `EncounterTemplate`, `MapData`, `ContentDB` | `content.cpp`, `csv.cpp` |
 | `character.h` | `CharacterState`, `CharacterSnapshot`, `BuildStatBlock`, `IsIdleCompatible` | `character.cpp` |
 | `loot.h` | `LootContext`, `LootDrop`, `RollLootTable`, `RollAffixes`, `PickWeighted`, `ItemModifiers` | `loot.cpp` |
@@ -655,7 +656,7 @@ A estrutura de pastas e os prefixos estão nas seções 4.2 e 4.4. Esta seção 
 | Escala | Blender em metros, unidade 1.0; **1 unidade Unity = 1 m**. Cubo de 1 m deve importar com escala 1 e herói de 1,50 m (seção 3.1). Importador: Scale Factor 1, "Convert Units" ligado |
 | Eixos | Y para cima, personagem olhando para **+Z** no Unity. Preset de exportação do Blender (Apply Scalings = "FBX Units Scale", frente e cima conforme o preset, transformações aplicadas) fixado em `art-src/export_presets/` depois de testar com um cubo e um esqueleto de teste: **confirmar na instalação** que a rotação importada é (0, 0, 0) e a escala 1, e registrar os valores |
 | Transformações | Aplicadas (escala 1, rotação 0) antes de exportar; pivô nos pés (personagens) e no canto/centro de base da grade (módulos) |
-| Rig | Generic, hierarquia e nomes de ossos iguais aos de `Rig_Humanoid_Chibi`; `root` na origem; ≤ 55 ossos (herói), ≤ 35 (inimigo), ≤ 100 (chefe), 4 influências por vértice no máximo; Optimize Game Objects ligado (expor só os sockets) |
+| Rig | Generic, hierarquia e nomes de ossos iguais aos de `Rig_Humanoid_Chibi`; `root` na origem; ≤ 55 ossos (herói), ≤ 35 (inimigo), ≤ 100 (chefe), 4 influências por vértice no máximo; Optimize Game Objects ligado (expor só os sockets), **exceto nos heróis modulares, onde fica desligado** (17.4) |
 | Animação | 30 fps autoral; um FBX por personagem com várias takes (ou um por clipe); sem root motion; frações de fase registradas no `SkillPresentationSet` |
 | UVs | UV0 para o albedo pintado (sem sobreposição em personagens); sem segunda UV (sem lightmaps) |
 | Normais e tangentes | Importar normais; **sem normal map** e sem cálculo de tangentes (economiza memória e tempo de importação) |
@@ -675,7 +676,7 @@ Triângulos (LOD0) e texturas. Os tamanhos máximos assumem a câmera da seção
 
 | Tipo | Triângulos LOD0: alvo de produção (teto duro) | Materiais | Texturas (por asset) | Observação |
 |---|---|---|---|---|
-| Herói (corpo + equipamento) | **4.000 a 6.500** (teto 10.000) | 1 (máx. 2) | 1024² albedo (BC7) + 512² máscara (BC1) | Variantes de cor por material e região B da máscara |
+| Herói modular (soma do corpo base visível + 5 peças, ver 17.4) | **4.000 a 6.500** (teto 10.000) | 1 (máx. 2) | Por peça; tamanhos e memória na 17.4 (corpo base e Chest 512², Head e Legs 256², Hands e Feet 128²) | Variantes de cor por material e região B da máscara; Único tem malha própria |
 | Inimigo comum | **1.500 a 3.500** (teto 5.000) | 1 | 512² albedo + 256² máscara | Fixa o teto de 30 ativos. **Elite não tem malha própria**: usa a malha do comum com tinta (região B da máscara), halo e escala até ×1,15, só por material e parâmetros |
 | Inimigo de enxame | **500 a 1.500** (teto 5.000, o do comum) | 1 | 256² albedo, máscara opcional | Muitos na tela; é onde mais se ganha em triângulos e ossos |
 | Chefe | **10.000 a 16.000** (teto 25.000) | 1 a 2 | 2048² albedo num material, **ou** 2 materiais de 1024² + 512² máscara | |
@@ -692,6 +693,70 @@ Sem normal map em nenhum tipo de asset. Teto de assets de uma área carregada: �
 ### 17.3 Auditoria automática
 
 `Art.Budgets` (teste de EditMode) e um `AssetPostprocessor` de aviso na importação percorrem o `AssetDatabase` por pasta/prefixo e conferem triângulos do LOD0, número de ossos, número de materiais, tamanho máximo de textura, compressão, renderer de cenário com sombra projetada ligada e material fora dos mestres. Falha lista asset e limite. Os limites vêm da tabela 17.2, num `SO_ArtBudgets` (dado, não código).
+
+### 17.4 Personagem modular (decisão do dono, 16/10/2026)
+
+Cada herói é um **corpo base sem equipamento** mais **peças de armadura** em modelos 3D separados; trocar o item troca a aparência. Espaços visuais: `head`, `body` (peitoral), `hands`, `legs` (espaço **novo**, com atributos, decidido pelo dono) e `feet`. Armas e escudo já são separados e ficam fora desta seção. A aparência aprovada de cada herói é a **armadura inicial** (conjunto `starter`). Raridades e Únicos terão peças próprias no futuro. Os modelos vêm do TripoSG e do Blender; as folhas do corpo base e das 5 peças estão em geração.
+
+**Montagem em runtime (`ModularCharacter`, MonoBehaviour de apresentação).**
+- Todas as peças são pesadas no **mesmo esqueleto** `Rig_Humanoid_Chibi` (17.1), com os mesmos nomes de ossos, e **não podem acrescentar ossos** (nada de ossos de capa ou saia; balanço, se vier, é do clipe). O corpo base e as peças são `SkinnedMeshRenderer` independentes.
+- Ao equipar, o `ModularCharacter` instancia o prefab da peça como filho do herói, monta **uma vez** o dicionário nome do osso → `Transform` e atribui `smr.bones` e `smr.rootBone` do herói. As peças **compartilham os ossos**: nenhum osso é duplicado e o `Animator` do herói anima tudo. `updateWhenOffscreen = false`; os `localBounds` da peça copiam os do corpo.
+- **Exceção ao 17.1:** no herói, *Optimize Game Objects* fica **desligado** (os 55 ossos têm de existir como `Transform` para a troca). É um herói por cena e o custo é desprezível; vale só para `SK_<Heroi>_*`. Inimigos continuam otimizados.
+- Trocar peça = devolver ao pool o `SkinnedMeshRenderer` anterior e instanciar o novo, sem recriar o `Animator` nem reiniciar a animação e nunca no meio de um hitstop. Alternativa, só se a medição mostrar custo de SMRs: fundir tudo em uma malha com `Mesh.CombineMeshes` a cada troca (um hitch único na troca, um SMR depois).
+- LOD: o herói é sempre perto e não usa `LodDriver`.
+
+**Máscara de regiões do corpo (a malha não atravessa a armadura).** O corpo base é exportado em **6 malhas por região**, no mesmo FBX e com o mesmo material: `Head`, `Torso`, `Arms`, `Hands`, `Legs`, `Feet` (um bit cada). Cada peça tem um `SO_HeroPart_<Heroi>_<Slot>_<Conjunto>` com `hidesRegions` (flags). Ao equipar, o `ModularCharacter` liga ou desliga o `Renderer` de cada região do corpo (união das máscaras das peças vestidas). Padrões por slot: `body` esconde `Torso` e `Arms`; `hands` esconde `Hands`; `legs` esconde `Legs`; `feet` esconde `Feet`; `head` não esconde nada (mantém o rosto) ou esconde `Head`, no caso de capacete fechado. Um manto ou vestido pode declarar `Legs` e `Feet` além do seu slot. Regras de arte: a peça **sobrepõe 1 a 2 cm** a borda da região escondida (sem fresta) e todo corte de região cai numa junta (pescoço, ombro, pulso, cintura, tornozelo). Escolhido em vez de uma máscara de vértice no shader porque dispensa shader e variante novos; o custo é 6 draws no corpo, aceitável para um herói.
+
+**Nomes de asset** (acrescenta à seção 4.4). `<Heroi>` = `Warrior`, `Mage`, `Archer`; `<Slot>` = `Head`, `Chest` (slot `body`; evita colisão com `Body` do corpo base), `Hands`, `Legs`, `Feet`; `<Conjunto>` = `visualSetId` em PascalCase.
+
+| Asset | Nome |
+|---|---|
+| Corpo base (FBX com 6 malhas de região) | `SK_<Heroi>_Body` (malhas `Body_Head`, `Body_Torso`, ...) |
+| Peça de armadura (FBX) | `SK_<Heroi>_<Slot>_<Conjunto>` (ex.: `SK_Warrior_Chest_Starter`, `SK_Mage_Legs_IronGuard`) |
+| Peça de Único | `SK_<Heroi>_<Slot>_Unq<IdDoÚnico>` (ex.: `SK_Warrior_Head_UnqBoneWarden`) |
+| Material e texturas | `M_<Heroi>_<Slot>_<Conjunto>`, `T_<Heroi>_<Slot>_<Conjunto>_BC` e `_M`; do corpo: `M_<Heroi>_Body`, `T_<Heroi>_Body_BC` |
+| Prefab e dado da peça | `P_<Heroi>_<Slot>_<Conjunto>` e `SO_HeroPart_<Heroi>_<Slot>_<Conjunto>` |
+| Catálogo | `SO_HeroPartCatalog_<Heroi>` (índice (slot, `visualSetId`) → peça), na pasta `Assets/Content/Heroes/<Heroi>/{Body,Parts}/` |
+
+**Orçamento de triângulos (LOD0).** O alvo do herói (4.000 a 6.500, teto 10.000, tabela 17.2) passa a ser a **soma dos triângulos renderizados no pior caso**: regiões do corpo que continuam visíveis mais as 5 peças vestidas. Metas iniciais, a confirmar com os modelos:
+
+| Parte | Alvo | Teto da peça |
+|---|---|---|
+| Corpo base inteiro (6 regiões, nu) | 2.000 a 3.000 (cabeça ~900 a 1.300, tronco 400 a 600, braços 300 a 500, mãos 100 a 200, pernas 200 a 300, pés 100 a 150) | 4.500 |
+| Head | 500 a 900 | 1.400 |
+| Chest | 900 a 1.500 | 2.200 |
+| Hands | 300 a 500 | 750 |
+| Legs | 500 a 800 | 1.200 |
+| Feet | 300 a 500 | 750 |
+
+A soma das peças é 2.500 a 4.200; com a cabeça do corpo visível (até ~1.300) o pior caso fica em ~5.500, dentro de 6.500. A auditoria 17.3 reprova a peça acima do teto da sua linha e **calcula o pior caso por herói** (maior peça de cada slot entre todos os conjuntos, mais as regiões que ela não esconde) contra 10.000 (duro), com aviso acima de 6.500. Peça de Único pode ir até o teto da sua linha e entra na mesma soma. Armas e escudo ficam **fora** da soma (são props, 17.2).
+
+**Texturas e memória.** Textura **por peça**, não por conjunto: o jogador mistura peças de conjuntos diferentes, e um atlas por conjunto obrigaria a carregar o conjunto inteiro por causa de uma peça. Tamanhos máximos (albedo BC7 e máscara BC1 em metade da resolução, na densidade de ~4 texel/cm da seção 17.2):
+
+| Textura | Albedo | Máscara | Memória com mips |
+|---|---|---|---|
+| Corpo base | 512² | 256² | ~0,4 MB |
+| Chest | 512² | 256² | ~0,4 MB |
+| Head, Legs | 256² | 128² | ~0,1 MB cada |
+| Hands, Feet | 128² | 64² | ~0,03 MB cada |
+
+Um conjunto completo custa ~0,7 MB de textura e ~0,5 a 1 MB de malha; um herói vestido, ~3 MB. Todas as peças do jogo carregadas (3 heróis × ~6 conjuntos × 5 peças = 90 peças) somariam ~22 a 30 MB (**estimativa**, não medida). Regra: as peças ficam em `Assets/Content/Heroes/`, referenciadas pelo catálogo de cada herói, e só o catálogo do herói ativo é carregado com a cena. **Orçamento de partes de herói carregadas: ≤ 30 MB**, dentro do teto de 120 MB por área. Se o conteúdo passar disso (muitos conjuntos, Únicos), o gatilho é **adotar Addressables só para as peças**, decisão que volta ao orquestrador (hoje Addressables está como não adotado, seção 2). Os tamanhos são tetos conferidos pela auditoria 17.3.
+
+**Como o item aponta para o visual.**
+- Coluna nova `visualSetId` em `item_bases.csv` (ID `vset.<nome>`, ex.: `vset.starter`, `vset.iron_guard`; **opcional**). Só vale nos slots visuais (`head`, `body`, `hands`, `legs`, `feet`) e é ignorada nos demais. `uniques.csv` aceita a mesma coluna opcional, que prevalece sobre a da base e aponta para o conjunto próprio `vset.unq_<id>`.
+- Resolução, em ordem, no `ModularCharacter` (nunca no core): (1) `uniques.csv.visualSetId`, se o item é Único; (2) `item_bases.csv.visualSetId`; (3) **fallback `vset.starter`**, a armadura inicial aprovada do herói. Se o catálogo do herói não tiver a peça (slot, conjunto), usa a peça `starter` do slot e registra aviso no log; slot vazio mostra o corpo base nu naquela região. Um teste de EditMode falha se algum `visualSetId` dos CSV não tiver peça para cada um dos 3 heróis, para o fallback silencioso não chegar ao build.
+- O `visualSetId` é **dado de apresentação**: o core o carrega e o expõe pelo getter do `RulesService` (9.6), mas ele não entra no `resultHash`, no simulador nem no save. O save guarda só o `baseId` do item.
+- **Alternativa**, se o Backend preferir não tocar o parser de `item_bases.csv`: arquivo próprio `item_visuals.csv` (`baseId,visualSetId`). Recomendo a coluna, porque dá uma linha por item e um só lugar para o Game Designer.
+
+**Tingimento por raridade.** Normal usa as cores pintadas. **Mágico e Raro** são variações de **material**, sem malha nova: o `SG_Character` já tem a região B da máscara (tinta), e o `ModularCharacter` aplica `_TintColor`, `_TintStrength` e `_AccentEmissive` (máscara R) na instância do material da peça, com valores de um `SO_RarityTint` (presentação). Proposta: Mágico = tinta azulada leve e sem emissivo; Raro = tinta amarelada forte e acento emissivo suave; os valores finais são do Art Director (`docs/03_design_system.md`). A raridade vem de `ItemInstance.rarity`, que o save já guarda. **Único** tem **malha e texturas próprias** (conjunto `vset.unq_<id>`, peça `Unq<Id>`) e não usa tingimento por raridade. Como cada instância de material é do personagem (3.3), a troca de raridade é `SetColor`/`SetFloat`, sem `MaterialPropertyBlock`.
+
+**Novo espaço `legs` no contrato e nos dados.**
+- `ItemSlot` (core, `item.h`) e o enum `@slots` ganham `legs` (string `"legs"`). Ordem proposta: `MainHand, OffHand, Head, Body, Hands, Legs, Feet, Amulet, Ring, Ring2, Belt` (11); `kItemSlotCount` passa de 10 para 11. O valor numérico do enum **não é persistido** (o save usa o nome), mas o Backend confere se `shatter_c.h` e os testes usam índices; se usarem, a alternativa é acrescentar `Legs` no fim, sem renumerar. O AA passa a usar as 9 primeiras posições (até `Ring`); `Ring2` e `Belt` continuam reservadas.
+- `allowedSlots` dos afixos aceita `legs`. Afixos com `allowedSlots` vazio (= todas as posições) passam a valer em `legs` e precisam de revisão do Game Designer. `item_bases.csv` aceita `slot = legs`, com as regras de `head/body/hands/feet` (sem dano de arma, `attackTime` nem `weaponTags`).
+- **Save: `equipment` passa de 10 para 11 posições** (chave nova `legs`, `null` ou `ItemInstance`). **`save_version` sobe de 1 para 2**, com a migração `1→2` no core (`save.h`), que acrescenta `equipment.legs = null` em cada personagem e recalcula o `sha256`. Nada é apagado: o save v1 continua legível e é regravado em v2 no primeiro save. Um save v2 não abre em jogo v1 (RNF-10). Fixtures: `save_v1.json` fica como entrada da migração e nasce `save_v2.json`. A migração ilustrativa de poções (`potion_slots`, pendência P10) é independente; se as duas mudanças chegarem juntas, entram na mesma v2.
+- Esquemas, `@slots`, `tools/validate_data.py`, RF-30 e D1 do `docs/06_dados.md` precisam do slot novo (Data Engineer). O contrato fechado está na proposta C-10 do `docs/09_mudancas_contrato.md`.
+
+**O que acontece com o graybox `SK_Warrior`.** `art-src/graybox/fbx/SK_Warrior.fbx` (e `SK_Mage`, `SK_Archer`) é uma malha única provisória. Continua servindo de teste de câmera e escala até os modelos chegarem. Quando chegar o corpo base, a Arte técnica o parte no Blender (script em `art-src/graybox/scripts/`) em `SK_<Heroi>_Body` (6 regiões) e 5 peças `starter` provisórias, só para exercitar o `ModularCharacter` e a máscara de regiões, e depois troca pelos modelos reais. O arquivo antigo fica no Git até a substituição e é **removido** quando nenhum prefab o referenciar (buscar as referências antes). O `Rig_Humanoid_Chibi.fbx` não muda: é a base de tudo.
 
 ---
 
