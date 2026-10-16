@@ -1,0 +1,28 @@
+using System;
+using System.Collections.Generic;
+
+namespace Echoes.Interop
+{
+    /// <summary>
+    /// Efeitos ativos de UMA entidade (handle <c>shatter_effects</c> da API C). Os modificadores dos
+    /// efeitos entram e saem do <see cref="IStatBlock"/> do alvo pelo próprio motor.
+    /// </summary>
+    public interface IEffectSet : IDisposable
+    {
+        /// <summary>
+        /// Aplica um efeito de conteúdo (ex.: <c>effect.stun</c>). Devolve false se o alvo é imune,
+        /// se a recarga interna bloqueou ou se o ID não existe.
+        /// </summary>
+        bool Apply(string effectId, double magnitude, string sourceId);
+
+        /// <summary>Avança <paramref name="dt"/> segundos (sempre o passo fixo) e acrescenta os eventos à lista.</summary>
+        void Tick(double dt, List<EffectTickEvent> outEvents);
+
+        int StackCount(string effectId);
+
+        int ActiveCount { get; }
+
+        /// <summary>Remove todos os efeitos (morte, reinício da luta).</summary>
+        void Clear();
+    }
+}
