@@ -1,0 +1,86 @@
+[
+ {
+  "id": "mod_b01_guerreiro_corpo",
+  "titulo": "Corpo base: guerreiro",
+  "tamanho": "1536x1024",
+  "prompt": "BASE BODY MODEL SHEET for a modular 3D character of the action-RPG \"Echoes of the Shatter\" (all equipment is modeled separately and worn on top). Attached image 1 is the owner-approved modeling sheet of OUR Warrior wearing the starting equipment; attached image 2 is the canonical design sheet. Draw the SAME character WITHOUT any equipment: no helmet or hood, no chest armor, robe or cloak, no gloves, no armored pants, no boots, no weapons. Keep exactly the same chibi proportions, height, head size, body build, A-pose and ground line as image 1, so the equipment pieces fit on top. The body wears only a plain close-fitting neutral undergarment: a dark grey sleeveless linen undershirt and short dark grey linen undershorts; bare arms, bare hands, bare feet. Show the head and face normally hidden under the helmet (new design for owner approval): a friendly but determined young adult with a sturdy jaw, short messy auburn-red hair echoing the red plume, thick eyebrows, warm skin tone, big readable chibi eyes. LAYOUT exactly like image 1: three full-body views side by side in three equal-width columns, left to right FRONT view, RIGHT SIDE profile view, BACK view; orthographic look, same scale, aligned on the same ground line, whole body inside each column with a clear margin. Neutral A-pose: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid lines, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, only soft painted shading. Finished stylized 3D game model look: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes; never blocky primitives, cubes or a graybox. Do not reproduce any existing character from the style reference one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m01_guerreiro.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/02_guerreiro.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png"
+  ]
+ },
+ {
+  "id": "mod_a01_guerreiro_inicial",
+  "titulo": "Armadura inicial em pecas: guerreiro",
+  "tamanho": "1536x1024",
+  "prompt": "EQUIPMENT MODEL SHEET (modular armor) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the owner-approved modeling sheet of OUR Warrior; attached image 2 is the canonical design sheet. Split that exact outfit into its five equipment pieces and draw each piece SEPARATELY, isolated, as a hollow piece of equipment with no body inside (as if worn by an invisible body, keeping the worn shape, size and proportions of image 1). Copy colors, materials and details exactly from image 1. The five pieces: 1 HEAD: the golden visor helmet with the big red plume; 2 BODY: the grey plate cuirass with gold-trimmed pauldrons and the red tabard hanging front and back; 3 HANDS: the pair of brown leather gauntlets with grey metal cuffs; 4 LEGS: the grey plate thigh guards and knee guards over brown trousers, from the hips down to the ankles; 5 FEET: the pair of brown leather boots with metal toe caps. LAYOUT: a clean grid of five columns in this order left to right: HEAD, BODY, HANDS, LEGS, FEET. Top row: FRONT view of each piece. Bottom row: BACK view of each piece, in the same column. All pieces at the same scale as worn on the character, each piece fully visible with a clear margin, pieces never touching each other. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid lines, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, only soft painted shading. Finished stylized 3D game model look: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes; never blocky primitives, cubes or a graybox. Do not reproduce any existing character from the style reference one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m01_guerreiro.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/02_guerreiro.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png"
+  ]
+ },
+ {
+  "id": "mod_b02_arqueiro_corpo",
+  "titulo": "Corpo base: arqueiro",
+  "tamanho": "1536x1024",
+  "prompt": "BASE BODY MODEL SHEET for a modular 3D character of the action-RPG \"Echoes of the Shatter\" (all equipment is modeled separately and worn on top). Attached image 1 is the owner-approved modeling sheet of OUR Archer wearing the starting equipment; attached image 2 is the canonical design sheet. Draw the SAME character WITHOUT any equipment: no helmet or hood, no chest armor, robe or cloak, no gloves, no armored pants, no boots, no weapons. Keep exactly the same chibi proportions, height, head size, body build, A-pose and ground line as image 1, so the equipment pieces fit on top. The body wears only a plain close-fitting neutral undergarment: a dark grey sleeveless linen undershirt and short dark grey linen undershorts; bare arms, bare hands, bare feet. Show the face normally hidden under the hood and the bone beak mask (new design for owner approval): a sharp-eyed young adult with bright green eyes, light freckles, dark brown hair tied in a short ponytail, lean build. LAYOUT exactly like image 1: three full-body views side by side in three equal-width columns, left to right FRONT view, RIGHT SIDE profile view, BACK view; orthographic look, same scale, aligned on the same ground line, whole body inside each column with a clear margin. Neutral A-pose: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid lines, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, only soft painted shading. Finished stylized 3D game model look: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes; never blocky primitives, cubes or a graybox. Do not reproduce any existing character from the style reference one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m02_arqueiro.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/03_arqueiro.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png"
+  ]
+ },
+ {
+  "id": "mod_a02_arqueiro_inicial",
+  "titulo": "Armadura inicial em pecas: arqueiro",
+  "tamanho": "1536x1024",
+  "prompt": "EQUIPMENT MODEL SHEET (modular armor) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the owner-approved modeling sheet of OUR Archer; attached image 2 is the canonical design sheet. Split that exact outfit into its five equipment pieces and draw each piece SEPARATELY, isolated, as a hollow piece of equipment with no body inside (as if worn by an invisible body, keeping the worn shape, size and proportions of image 1). Copy colors, materials and details exactly from image 1. The five pieces: 1 HEAD: the green hood together with the bone beak mask; 2 BODY: the feathered green cloak over the leather jerkin with belt and pouches; 3 HANDS: the pair of leather bracers with fingerless gloves; 4 LEGS: the dark brown leather trousers, from the hips down to the ankles; 5 FEET: the pair of tall brown leather boots with straps. LAYOUT: a clean grid of five columns in this order left to right: HEAD, BODY, HANDS, LEGS, FEET. Top row: FRONT view of each piece. Bottom row: BACK view of each piece, in the same column. All pieces at the same scale as worn on the character, each piece fully visible with a clear margin, pieces never touching each other. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid lines, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, only soft painted shading. Finished stylized 3D game model look: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes; never blocky primitives, cubes or a graybox. Do not reproduce any existing character from the style reference one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m02_arqueiro.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/03_arqueiro.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png"
+  ]
+ },
+ {
+  "id": "mod_b03_mago_corpo",
+  "titulo": "Corpo base: mago",
+  "tamanho": "1536x1024",
+  "prompt": "BASE BODY MODEL SHEET for a modular 3D character of the action-RPG \"Echoes of the Shatter\" (all equipment is modeled separately and worn on top). Attached image 1 is the owner-approved modeling sheet of OUR Mage wearing the starting equipment; attached image 2 is the canonical design sheet. Draw the SAME character WITHOUT any equipment: no helmet or hood, no chest armor, robe or cloak, no gloves, no armored pants, no boots, no weapons. Keep exactly the same chibi proportions, height, head size, body build, A-pose and ground line as image 1, so the equipment pieces fit on top. The body wears only a plain close-fitting neutral undergarment: a dark grey sleeveless linen undershirt and short dark grey linen undershorts; bare arms, bare hands, bare feet. Keep the face and hair already visible in image 1 identical (same lavender hair, same big eyes, same face). LAYOUT exactly like image 1: three full-body views side by side in three equal-width columns, left to right FRONT view, RIGHT SIDE profile view, BACK view; orthographic look, same scale, aligned on the same ground line, whole body inside each column with a clear margin. Neutral A-pose: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid lines, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, only soft painted shading. Finished stylized 3D game model look: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes; never blocky primitives, cubes or a graybox. Do not reproduce any existing character from the style reference one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m03_mago.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/04_mago.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png"
+  ]
+ },
+ {
+  "id": "mod_a03_mago_inicial",
+  "titulo": "Armadura inicial em pecas: mago",
+  "tamanho": "1536x1024",
+  "prompt": "EQUIPMENT MODEL SHEET (modular armor) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the owner-approved modeling sheet of OUR Mage; attached image 2 is the canonical design sheet. Split that exact outfit into its five equipment pieces and draw each piece SEPARATELY, isolated, as a hollow piece of equipment with no body inside (as if worn by an invisible body, keeping the worn shape, size and proportions of image 1). Copy colors, materials and details exactly from image 1. The five pieces: 1 HEAD: the ink-blue pointed hood with gold trims (empty, no face inside); 2 BODY: the blue robe with gold trims, long wide sleeves and the long robe skirt; 3 HANDS: a pair of simple blue cloth hand wraps with gold cuffs matching the robe (new design for owner approval, the approved art shows bare hands); 4 LEGS: simple dark blue cloth trousers worn under the robe, from the hips down to the ankles; 5 FEET: the pair of brown boots with gold trims. LAYOUT: a clean grid of five columns in this order left to right: HEAD, BODY, HANDS, LEGS, FEET. Top row: FRONT view of each piece. Bottom row: BACK view of each piece, in the same column. All pieces at the same scale as worn on the character, each piece fully visible with a clear margin, pieces never touching each other. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid lines, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, only soft painted shading. Finished stylized 3D game model look: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes; never blocky primitives, cubes or a graybox. Do not reproduce any existing character from the style reference one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m03_mago.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/04_mago.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png"
+  ]
+ }
+]
