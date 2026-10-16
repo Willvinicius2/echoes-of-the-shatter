@@ -436,6 +436,7 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(inputHandler, "actions", inputActions);
             SandboxBuilder.SetBool(inputHandler, "loadSavedBindings", true);
             var presentation = hero.AddComponent<PresentationController>();
+            hero.AddComponent<ImpactSquash>();
             SandboxBuilder.SetRef(presentation, "root", ctx.GameRoot);
             SandboxBuilder.SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.WarriorSkillSetPath));
             SandboxBuilder.SetRef(heroController, "combatHost", ctx.Host);
@@ -721,6 +722,7 @@ namespace Echoes.EditorTools
                 SetVector3Array(controller, "patrolPoints", points);
             }
             var presentation = go.AddComponent<PresentationController>();
+            go.AddComponent<ImpactSquash>();
             SandboxBuilder.SetRef(presentation, "root", ctx.GameRoot);
             var skillSetPath = AnimatorControllerBuilder.SkillSetPathFor(g.EnemyId);
             if (skillSetPath != null) SandboxBuilder.SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(skillSetPath));

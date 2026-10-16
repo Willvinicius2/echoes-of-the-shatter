@@ -320,6 +320,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6205775028179594157}
   - component: {fileID: 5165608688469231392}
+  - component: {fileID: 2630812479602547848}
   m_Layer: 0
   m_Name: P_Hero_Warrior
   m_TagString: Untagged
@@ -366,6 +367,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &2630812479602547848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1808004917059949263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e653ecf4503aa48a9bcf63c736e4cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.AnimationEventRelay
 --- !u!1 &1840819292900788839
 GameObject:
   m_ObjectHideFlags: 0

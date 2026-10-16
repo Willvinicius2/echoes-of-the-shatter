@@ -143,24 +143,24 @@ ModelImporter:
     - boneName: Spine
       humanName: Spine
       limit:
-        min: {x: -12, y: -12, z: -12}
-        max: {x: 12, y: 12, z: 12}
+        min: {x: -20, y: -20, z: -20}
+        max: {x: 20, y: 20, z: 20}
         value: {x: 0, y: 0, z: 0}
         length: 0
         modified: 1
     - boneName: Neck
       humanName: Neck
       limit:
-        min: {x: -10, y: -10, z: -10}
-        max: {x: 10, y: 10, z: 10}
+        min: {x: -20, y: -20, z: -20}
+        max: {x: 20, y: 20, z: 20}
         value: {x: 0, y: 0, z: 0}
         length: 0
         modified: 1
     - boneName: Head
       humanName: Head
       limit:
-        min: {x: -12, y: -12, z: -12}
-        max: {x: 12, y: 12, z: 12}
+        min: {x: -20, y: -20, z: -20}
+        max: {x: 20, y: 20, z: 20}
         value: {x: 0, y: 0, z: 0}
         length: 0
         modified: 1

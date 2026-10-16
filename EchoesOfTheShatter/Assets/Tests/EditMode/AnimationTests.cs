@@ -157,46 +157,176 @@ namespace Echoes.Tests.EditMode
             foreach (var name in new[] { "Basic", "Charge", "Rift", "Bash", "Dodge" }) CollectionAssert.Contains(states, name);
             var boss = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath("AC_Boss"));
             var bossStates = boss.layers[1].stateMachine.states.Select(s => s.state.name).ToList();
-            foreach (var name in new[] { "Hammer", "ShieldBash", "Charge", "Roar" }) CollectionAssert.Contains(bossStates, name);
+            foreach (var name in new[] { "Hammer", "ShieldBash", "ChargeWindup", "ChargeRun", "ChargeRecover", "Roar" }) CollectionAssert.Contains(bossStates, name);
         }
 
         [Test]
-        public void MissingClipsAreMarkedAsPlaceholdersAndListed()
+        public void NoPlaceholderClipsRemain()
         {
-            var placeholders = new List<string>();
-            foreach (var spec in AnimatorControllerBuilder.All)
+            foreach (var name in new[] { "AC_Warrior", "AC_EnemyHumanoid", "AC_Boss", "AC_GhostArcher" })
             {
-                var c = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath(spec.Name));
+                var c = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath(name));
+                Assert.IsNotNull(c, name);
                 foreach (var layer in c.layers)
-                {
                     foreach (var s in layer.stateMachine.states)
-                    {
-                        if (s.state.tag == AnimatorControllerBuilder.PlaceholderTag) placeholders.Add($"{spec.Name}/{s.state.name}");
-                    }
+                        Assert.AreNotEqual(AnimatorControllerBuilder.PlaceholderTag, s.state.tag, $"{name}/{s.state.name}: placeholder trocado pelos golpes do Blender");
+            }
+            Assert.AreEqual(0, AnimatorControllerBuilder.PlaceholderReport.Count);
+        }
+
+        [Test]
+        public void StunUsesTheSharedBlenderClipInTheThreeControllers()
+        {
+            var stun = EchoesAnimationImport.Clip(EchoesAnimationImport.StunName);
+            Assert.IsNotNull(stun);
+            Assert.IsTrue(stun.isHumanMotion, "Humanoid (serve ao Warrior e aos humanoides)");
+            foreach (var name in new[] { "AC_Warrior", "AC_EnemyHumanoid", "AC_Boss" })
+            {
+                var c = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath(name));
+                var state = c.layers[0].stateMachine.states.First(x => x.state.name == "Stun").state;
+                Assert.AreEqual(stun, state.motion, name);
+            }
+        }
+
+        [Test]
+        public void EchoesClipsAreImportedWithFramesLoopAndEvents()
+        {
+            foreach (var spec in EchoesAnimationImport.Clips)
+            {
+                var clip = EchoesAnimationImport.Clip(spec.Name);
+                Assert.IsNotNull(clip, spec.Name);
+                Assert.AreEqual(spec.Seconds, clip.length, 0.05f, spec.Name + ": duracao do _clips_*.json");
+                Assert.AreEqual(spec.Loop, clip.isLooping, spec.Name);
+                Assert.AreEqual(spec.Kind != EchoesAnimationImport.Kind.ArcherGeneric, clip.isHumanMotion, spec.Name + ": Humanoid ou Generic");
+                Assert.AreEqual(spec.Events.Length, clip.events.Length, spec.Name);
+                foreach (var e in spec.Events)
+                {
+                    var found = clip.events.FirstOrDefault(x => x.stringParameter == e.name);
+                    Assert.IsNotNull(found, spec.Name + ":" + e.name);
+                    Assert.AreEqual(EchoesAnimationImport.EventFunction, found.functionName);
+                    Assert.AreEqual(e.frame / EchoesAnimationImport.Fps, found.time, 0.04f, spec.Name + ":" + e.name + " no quadro certo");
                 }
             }
-            CollectionAssert.AreEquivalent(new[]
-            {
-                "AC_Warrior/Stun", "AC_EnemyHumanoid/Stun", "AC_Boss/Stun", "AC_Boss/Charge", "AC_Boss/Roar",
-            }, placeholders);
         }
 
         [Test]
-        public void PrefabsCarryTheirControllerExceptTheGenericArcher()
+        public void GhostArcherControllerHasIdleGlideShootHitAndDeath()
+        {
+            var c = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath(AnimatorControllerBuilder.ArcherControllerName));
+            Assert.IsNotNull(c);
+            var parameters = c.parameters.Select(p => p.name).ToList();
+            foreach (var name in new[] { "Speed", "ActionSpeed", "IsDead" }) CollectionAssert.Contains(parameters, name);
+            CollectionAssert.AreEquivalent(new[] { "Locomotion", "Death" }, c.layers[0].stateMachine.states.Select(s => s.state.name));
+            CollectionAssert.AreEquivalent(new[] { "Empty", "Shoot" }, c.layers[1].stateMachine.states.Select(s => s.state.name));
+            CollectionAssert.AreEquivalent(new[] { "Empty", "Hit" }, c.layers[2].stateMachine.states.Select(s => s.state.name));
+            var tree = (BlendTree)c.layers[0].stateMachine.states.First(s => s.state.name == "Locomotion").state.motion;
+            Assert.AreEqual("Speed", tree.blendParameter);
+            Assert.AreEqual(2, tree.children.Length, "Idle e Glide");
+            Assert.Less(tree.children[0].threshold, tree.children[1].threshold);
+            Assert.AreEqual(EchoesAnimationImport.Clip("AN_GhostArcher_Idle"), tree.children[0].motion);
+            Assert.AreEqual(EchoesAnimationImport.Clip("AN_GhostArcher_Glide"), tree.children[1].motion);
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_Enemy_GhostArcher.prefab");
+            Assert.AreEqual(AnimatorControllerBuilder.ArcherControllerName, prefab.GetComponentInChildren<Animator>().runtimeAnimatorController.name);
+            Assert.IsNotNull(prefab.GetComponentInChildren<AnimationEventRelay>());
+            Assert.AreEqual(prefab.GetComponentInChildren<Animator>().gameObject, prefab.GetComponentInChildren<AnimationEventRelay>().gameObject, "o relay fica no objeto do Animator");
+            Assert.IsNotNull(prefab.GetComponent<SpectralSway>(), "balanco procedural somado ao Idle");
+        }
+
+        [Test]
+        public void ArcherShotReleaseFrameMatchesTheCoreImpact()
+        {
+            var set = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>($"{AnimatorControllerBuilder.SkillSetDir}/{AnimatorControllerBuilder.ArcherSkillSetName}.asset");
+            Assert.IsTrue(set.TryGet(AnimatorControllerBuilder.ArcherSkillId, out var entry));
+            var shoot = EchoesAnimationImport.Spec("AN_GhostArcher_Shoot");
+            // A preparacao do core termina exatamente no quadro do disparo: o evento "release" e o projetil do core saem juntos.
+            Assert.AreEqual(EchoesAnimationImport.ShootReleaseFrame / (float)shoot.Frames, entry.windupEnd, 1e-4f);
+            var clip = EchoesAnimationImport.Clip("AN_GhostArcher_Shoot");
+            var release = clip.events.First(e => e.stringParameter == "release");
+            Assert.AreEqual(entry.windupEnd * clip.length, release.time, 0.03f);
+            using (var rules = TestWorld.LoadNativeRules())
+            {
+                var timing = rules.GetActionTiming(rules.CreateEnemyStats("enemy.ghost_archer", 3), rules.FindSkill(AnimatorControllerBuilder.ArcherSkillId));
+                var speed = entry.windupEnd * entry.clipSeconds / (float)timing.Windup;
+                Assert.Greater(speed, 0.5f);
+                Assert.Less(speed, 2f, "a velocidade do clipe fica numa faixa natural");
+            }
+        }
+
+        [Test]
+        public void BossRoarAndShieldChargeAreTimedByTheCore()
+        {
+            var set = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>($"{AnimatorControllerBuilder.SkillSetDir}/SO_SkillPresentation_Boss.asset");
+            var roar = EchoesAnimationImport.Clip(EchoesAnimationImport.RoarName);
+            Assert.AreEqual(roar.length, set.roarClipSeconds, 1e-3f);
+            Assert.IsNotNull(roar.events.FirstOrDefault(e => e.stringParameter == "summon_marks"), "Sentinelas no quadro 30");
+            Assert.IsNotNull(roar.events.FirstOrDefault(e => e.stringParameter == "slam"), "impacto no quadro 48");
+            Assert.IsTrue(set.TryGet("skill.enemy.guardian_shield_charge", out var charge));
+            Assert.IsTrue(charge.HasPhaseStates);
+            Assert.AreEqual("ChargeWindup", charge.windupState);
+            Assert.AreEqual("ChargeRun", charge.impactState);
+            Assert.AreEqual("ChargeRecover", charge.recoveryState);
+            Assert.IsTrue(EchoesAnimationImport.Clip(EchoesAnimationImport.ChargeRunName).isLooping, "corrida em laco");
+            using (var rules = TestWorld.LoadNativeRules())
+            {
+                var timing = rules.GetActionTiming(rules.CreateEnemyStats("enemy.crypt_guardian", 5), rules.FindSkill("skill.enemy.guardian_shield_charge"));
+                Assert.AreEqual(0.9, timing.Windup, 0.15, "preparacao do core perto de 0,9 s do clipe");
+                Assert.AreEqual(charge.windupClipSeconds / (float)timing.Windup, 1f, 0.5f);
+                Assert.AreEqual(charge.recoveryClipSeconds / (float)timing.Recovery, 1f, 0.5f);
+            }
+        }
+
+        [Test]
+        public void ImpactSquashSpringsBackToTheBaseScaleAndCanBeDisabled()
+        {
+            var baseScale = new Vector3(1f, 1f, 1f);
+            var squashed = ImpactSquash.ScaleAt(baseScale, 0.12f, 0f);
+            Assert.Less(squashed.y, 1f, "achata");
+            Assert.Greater(squashed.x, 1f, "alarga");
+            Assert.AreEqual(squashed.x, squashed.z, 1e-6f);
+            var stretched = ImpactSquash.ScaleAt(baseScale, -0.06f, 0f);
+            Assert.Greater(stretched.y, 1f, "estica");
+            Assert.That(Vector3.Distance(ImpactSquash.ScaleAt(baseScale, 0.12f, 1f), baseScale), Is.LessThan(0.01f), "volta a escala base");
+            var go = new GameObject("squash");
+            try
+            {
+                go.AddComponent<AttributeComponent>();
+                var squash = go.AddComponent<ImpactSquash>();
+                Assert.IsTrue(squash.IsActive);
+                ImpactSquash.GlobalEnabled = false;
+                Assert.IsFalse(squash.IsActive, "desligavel nas opcoes");
+            }
+            finally
+            {
+                ImpactSquash.GlobalEnabled = true;
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
+        public void SpectralSwayIsSmallAndBounded()
+        {
+            for (var t = 0f; t < 10f; t += 0.1f)
+            {
+                var offset = SpectralSway.OffsetAt(t, 1.2f, 2.5f, 0.35f);
+                Assert.Less(Quaternion.Angle(Quaternion.identity, offset), 4f, "balanco leve (poucos graus)");
+            }
+        }
+
+        [Test]
+        public void PrefabsCarryTheirController()
         {
             foreach (var (prefab, controller) in new[]
             {
                 ("P_Hero_Warrior", "AC_Warrior"), ("P_Enemy_HollowSentinel", "AC_EnemyHumanoid"), ("P_Enemy_StoneHerald", "AC_EnemyHumanoid"),
-                ("P_Boss_CryptGuardian", "AC_Boss"),
+                ("P_Boss_CryptGuardian", "AC_Boss"), ("P_Enemy_GhostArcher", "AC_GhostArcher"),
             })
             {
                 var go = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/{prefab}.prefab");
-                var animator = go.GetComponent<Animator>();
+                var animator = go.GetComponentInChildren<Animator>();
                 Assert.AreEqual(controller, animator.runtimeAnimatorController.name, prefab);
                 Assert.IsFalse(animator.applyRootMotion, prefab + ": sem root motion");
             }
-            var archer = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_Enemy_GhostArcher.prefab");
-            Assert.IsNull(archer.GetComponent<Animator>().runtimeAnimatorController, "o Espectro (Generic, sem pernas) fica sem animacao: pedido de Blender/Mixamo");
         }
 
         [Test]

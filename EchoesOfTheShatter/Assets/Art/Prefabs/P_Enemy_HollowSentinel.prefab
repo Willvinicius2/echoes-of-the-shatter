@@ -417,6 +417,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6400563450709893158}
   - component: {fileID: 2042984039203280153}
+  - component: {fileID: 3356611682148774241}
   m_Layer: 0
   m_Name: P_Enemy_HollowSentinel
   m_TagString: Untagged
@@ -463,6 +464,18 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &3356611682148774241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3060719102683543069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13e653ecf4503aa48a9bcf63c736e4cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.AnimationEventRelay
 --- !u!1 &3450459723580234199
 GameObject:
   m_ObjectHideFlags: 0

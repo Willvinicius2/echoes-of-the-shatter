@@ -203,6 +203,33 @@ namespace Echoes.Presentation
                 impactEnd = Mathf.Max(skillSet.fallbackWindupEnd, skillSet.fallbackImpactEnd);
             }
 
+            // Golpe em estados separados: cada fase toca o seu clipe, com a velocidade ajustada a duracao da fase no core.
+            if (entry != null && entry.HasPhaseStates && !string.IsNullOrEmpty(state))
+            {
+                string phaseState;
+                float phaseClip;
+                switch (evt.Phase)
+                {
+                    case ActionPhase.Windup:
+                        phaseState = entry.windupState;
+                        phaseClip = entry.windupClipSeconds;
+                        break;
+                    case ActionPhase.Impact:
+                        phaseState = string.IsNullOrEmpty(entry.impactState) ? entry.windupState : entry.impactState;
+                        phaseClip = 0f; // laco: velocidade 1
+                        break;
+                    default:
+                        phaseState = string.IsNullOrEmpty(entry.recoveryState) ? entry.windupState : entry.recoveryState;
+                        phaseClip = entry.recoveryClipSeconds;
+                        break;
+                }
+                actionSpeed = phaseClip > 0f && evt.PhaseSeconds > 1e-4 ? phaseClip / (float)evt.PhaseSeconds : 1f;
+                if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(phaseState, actionLayerIndex, 0f);
+                if (evt.Phase == ActionPhase.Impact && entry.impactVfx != null && vfxPool != null)
+                    vfxPool.Play(entry.impactVfx, FindAnchor(entry.anchor).position, transform.rotation, entry.vfxSeconds);
+                return;
+            }
+
             float start, authored;
             switch (evt.Phase)
             {
@@ -229,6 +256,11 @@ namespace Echoes.Presentation
             actionSpeed = evt.PhaseSeconds > 1e-4 && authored > 0f ? authored / (float)evt.PhaseSeconds : 1f;
             if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(state, actionLayerIndex, start);
         }
+
+        /// <summary>Evento de clipe (AnimationEventRelay): "release" do Espectro no quadro 20, "summon_marks" e "slam" do rugido do Guardiao.</summary>
+        public event System.Action<string> ClipEvent;
+
+        public void HandleClipEvent(string clipEvent) => ClipEvent?.Invoke(clipEvent);
 
         // Fase do chefe (core): o rugido toca na camada Action com a velocidade ajustada a transitionSeconds; o parametro Phase acompanha.
         void OnBossState(in BossStateEvent evt)

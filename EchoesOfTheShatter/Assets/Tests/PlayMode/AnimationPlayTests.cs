@@ -76,5 +76,60 @@ namespace Echoes.Tests.PlayMode
             }
             Assert.IsTrue(sawHit, "a camada Hit tocou Hit na Sentinela");
         }
+
+        [UnityTest]
+        public IEnumerator ArcherShootAndBossRoarEventsDriveTheAnimatorsAndFireClipEvents()
+        {
+            yield return SceneManager.LoadSceneAsync(ScenePath, LoadSceneMode.Single);
+            yield return null;
+            yield return null;
+            var host = Object.FindFirstObjectByType<CombatSystemHost>();
+            var enemies = Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var e in enemies.Where(x => x.EnemyId == "enemy.ghost_archer" || x.EnemyId == "enemy.crypt_guardian")) e.gameObject.SetActive(true);
+            yield return null;
+            yield return null;
+
+            // Espectro: a fase de preparacao toca Shoot; o evento "release" (quadro 20) chega ao PresentationController.
+            var archer = enemies.First(e => e.EnemyId == "enemy.ghost_archer");
+            var archerAnimator = archer.GetComponentInChildren<Animator>();
+            Assert.AreEqual("AC_GhostArcher", archerAnimator.runtimeAnimatorController.name);
+            var archerPresentation = archer.GetComponent<PresentationController>();
+            var clipEvents = new List<string>();
+            archerPresentation.ClipEvent += clipEvents.Add;
+            var arrow = host.Rules.FindSkill("skill.enemy.ghost_arrow");
+            var windup = new SkillPhaseEvent { Owner = archer.Combatant, Skill = arrow, Phase = ActionPhase.Windup, PhaseSeconds = 0.6 };
+            host.Events.Publish(in windup);
+            var sawShoot = false;
+            var releaseAt = -1f;
+            var started = Time.time;
+            for (var t = 0f; t < 1.2f; t += Time.deltaTime)
+            {
+                yield return null;
+                sawShoot |= archerAnimator.GetCurrentAnimatorStateInfo(archerAnimator.GetLayerIndex("Action")).IsName("Shoot");
+                if (releaseAt < 0f && clipEvents.Contains("release")) releaseAt = Time.time - started;
+            }
+            Assert.IsTrue(sawShoot, "a camada Action tocou Shoot");
+            Assert.Contains("release", clipEvents, "disparo no quadro 20");
+            Assert.AreEqual(0.6f, releaseAt, 0.25f, "o quadro 20 sai no fim da preparacao do core (0,6 s)");
+
+            // Guardiao: PhaseStart toca o rugido; os eventos summon_marks e slam chegam.
+            var boss = enemies.First(e => e.EnemyId == "enemy.crypt_guardian");
+            var bossAnimator = boss.GetComponentInChildren<Animator>();
+            Assert.AreEqual("AC_Boss", bossAnimator.runtimeAnimatorController.name);
+            var bossPresentation = boss.GetComponent<PresentationController>();
+            var bossEvents = new List<string>();
+            bossPresentation.ClipEvent += bossEvents.Add;
+            var phase = new BossStateEvent { Owner = boss.Combatant, Kind = Echoes.Interop.BossEventKind.PhaseStart, Phase = 2, Seconds = 2.0 };
+            host.Events.Publish(in phase);
+            var sawRoar = false;
+            for (var t = 0f; t < 2.4f; t += Time.deltaTime)
+            {
+                yield return null;
+                sawRoar |= bossAnimator.GetCurrentAnimatorStateInfo(bossAnimator.GetLayerIndex("Action")).IsName("Roar");
+            }
+            Assert.IsTrue(sawRoar, "a camada Action tocou Roar");
+            Assert.Contains("summon_marks", bossEvents);
+            Assert.Contains("slam", bossEvents);
+        }
     }
 }

@@ -30,6 +30,11 @@ MonoBehaviour:
     clipSeconds: 1.0666667
     windupEnd: 0.5
     impactEnd: 0.59375
+    windupState: 
+    windupClipSeconds: 1
+    impactState: 
+    recoveryState: 
+    recoveryClipSeconds: 1
     impactVfx: {fileID: 0}
     vfxSeconds: 1
     anchor: socket_weapon_r
@@ -38,6 +43,11 @@ MonoBehaviour:
     clipSeconds: 1.6333334
     windupEnd: 0.3838384
     impactEnd: 0.5252525
+    windupState: 
+    windupClipSeconds: 1
+    impactState: 
+    recoveryState: 
+    recoveryClipSeconds: 1
     impactVfx: {fileID: 0}
     vfxSeconds: 1
     anchor: socket_weapon_r

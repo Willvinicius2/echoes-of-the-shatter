@@ -20,6 +20,17 @@ namespace Echoes.Presentation
         [Range(0f, 1f)] public float windupEnd = 0.3f;
         [Tooltip("Fração do clipe onde termina o impacto.")]
         [Range(0f, 1f)] public float impactEnd = 0.5f;
+        [Header("Golpe em estados separados (opcional; ex.: Investida do Guardião: preparação, corrida em laço, recuperação)")]
+        [Tooltip("Estado da preparação. Vazio = o golpe usa só animatorState, dividido por windupEnd e impactEnd.")]
+        public string windupState = string.Empty;
+        [Min(0.01f)] public float windupClipSeconds = 1f;
+        [Tooltip("Estado do impacto (laço): toca com velocidade 1 enquanto durar a fase de impacto.")]
+        public string impactState = string.Empty;
+        public string recoveryState = string.Empty;
+        [Min(0.01f)] public float recoveryClipSeconds = 1f;
+        public bool HasPhaseStates => !string.IsNullOrEmpty(windupState);
+
+        [Header("VFX e âncora")]
         [Tooltip("VFX tocado no início do impacto (em pool).")]
         public GameObject impactVfx;
         [Tooltip("Segundos até devolver o VFX ao pool.")]

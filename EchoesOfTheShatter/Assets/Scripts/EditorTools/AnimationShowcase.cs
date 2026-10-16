@@ -248,6 +248,110 @@ namespace Echoes.EditorTools
         }
 
 
+
+        /// <summary>anim3_*: golpes do Blender de perto (Espectro atirando, Guardiao rugindo, Guerreiro atordoado), 3/4 frontal, FOV 35.</summary>
+        public static void RunClose3()
+        {
+            try
+            {
+                CharacterPrefabBuilder.BuildAll();
+                SandboxBuilder.Build();
+                CriptaBuilder.BuildScene();
+                EditorSceneManager.OpenScene(CriptaBuilder.ScenePath, OpenSceneMode.Single);
+                var dir = Environment.GetEnvironmentVariable("ECHOES_CAPTURE_DIR");
+                if (string.IsNullOrEmpty(dir)) dir = @"D:\openclaude\_trabalho-claude\capturas";
+                Directory.CreateDirectory(dir);
+
+                var layout = CriptaLayout.LoadFromDocument();
+                var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
+                var cam = follow.GetComponentInChildren<Camera>();
+                follow.enabled = false;
+                var hero = GameObject.Find("Hero");
+                if (hero != null) hero.SetActive(false);
+                foreach (var enemy in UnityEngine.Object.FindObjectsByType<Echoes.Gameplay.EnemyController>(FindObjectsSortMode.None)) enemy.gameObject.SetActive(false);
+                var origin = new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y);
+
+                var steps = new System.Collections.Generic.Queue<Action>();
+                void Cast(string prefabName, float distance, float lookHeight, float yaw, (string, AnimationClip, float)[] poses)
+                {
+                    GameObject go = null;
+                    Animator animator = null;
+                    steps.Enqueue(() =>
+                    {
+                        go = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/{prefabName}.prefab"));
+                        go.transform.SetPositionAndRotation(origin, Quaternion.identity);
+                        animator = go.GetComponentInChildren<Animator>(true);
+                    });
+                    foreach (var pose in poses)
+                    {
+                        var (label, clip, t) = pose;
+                        steps.Enqueue(() =>
+                        {
+                            clip.SampleAnimation(animator.gameObject, Mathf.Clamp(t, 0f, clip.length));
+                            var target = origin + Vector3.up * lookHeight;
+                            var direction = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                            cam.transform.position = target + direction * distance + Vector3.up * (distance * 0.22f);
+                            cam.transform.LookAt(target);
+                            cam.fieldOfView = 35f;
+                        });
+                        steps.Enqueue(() => Capture(cam, Path.Combine(dir, $"anim3_{label}.png"), 1280, 720));
+                    }
+                    steps.Enqueue(() => UnityEngine.Object.DestroyImmediate(go));
+                }
+
+                var shoot = EchoesAnimationImport.Clip("AN_GhostArcher_Shoot");
+                var roar = EchoesAnimationImport.Clip(EchoesAnimationImport.RoarName);
+                var stun = EchoesAnimationImport.Clip(EchoesAnimationImport.StunName);
+                var run = EchoesAnimationImport.Clip(EchoesAnimationImport.ChargeRunName);
+                var windup = EchoesAnimationImport.Clip(EchoesAnimationImport.ChargeWindupName);
+                Cast("P_Enemy_GhostArcher", 4f, 1.0f, 35f, new[]
+                {
+                    ("espectro_1_mira", shoot, 12 / EchoesAnimationImport.Fps),
+                    ("espectro_2_disparo", shoot, EchoesAnimationImport.ShootReleaseFrame / EchoesAnimationImport.Fps),
+                    ("espectro_3_recuperacao", shoot, 30 / EchoesAnimationImport.Fps),
+                });
+                Cast("P_Boss_CryptGuardian", 12f, 2.0f, 35f, new[]
+                {
+                    ("guardiao_1_rugido_abrindo", roar, 18 / EchoesAnimationImport.Fps),
+                    ("guardiao_2_rugido_apice", roar, 36 / EchoesAnimationImport.Fps),
+                    ("guardiao_3_investida_preparacao", windup, 20 / EchoesAnimationImport.Fps),
+                    ("guardiao_4_investida_corrida", run, 5 / EchoesAnimationImport.Fps),
+                });
+                Cast("P_Hero_Warrior", 4f, 0.8f, 35f, new[]
+                {
+                    ("guerreiro_atordoado", stun, 6 / EchoesAnimationImport.Fps),
+                });
+
+                EditorApplication.CallbackFunction tick = null;
+                tick = () =>
+                {
+                    try
+                    {
+                        if (steps.Count > 0)
+                        {
+                            steps.Dequeue()();
+                            return;
+                        }
+                        EditorApplication.update -= tick;
+                        Debug.Log("[AnimationShowcase] Capturas anim3 em " + dir);
+                        if (Application.isBatchMode) EditorApplication.Exit(0);
+                    }
+                    catch (Exception e)
+                    {
+                        EditorApplication.update -= tick;
+                        Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                        if (Application.isBatchMode) EditorApplication.Exit(1);
+                    }
+                };
+                EditorApplication.update += tick;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+            }
+        }
+
         /// <summary>Folha de contato (diagnostico): o clipe amostrado em N instantes, numa grade, para ajustar tempos e musculos.</summary>
         public static void RunSheet()
         {

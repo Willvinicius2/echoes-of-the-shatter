@@ -90,9 +90,8 @@ namespace Echoes.Tests.EditMode
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/{c.prefab}.prefab");
                 Assert.IsNotNull(prefab, c.prefab + " (menu Echoes/Montar prefabs de personagens)");
-                var animator = prefab.GetComponent<Animator>();
+                var animator = prefab.GetComponentInChildren<Animator>();
                 Assert.IsNotNull(animator, c.prefab);
-                Assert.IsNull(animator.runtimeAnimatorController, c.prefab + ": sem animacao ainda");
                 Assert.IsNotNull(animator.avatar, c.prefab);
                 Assert.AreEqual(c.humanoid, animator.avatar.isHuman, c.prefab + ": Humanoid so onde ha pernas");
                 foreach (var renderer in prefab.GetComponentsInChildren<Renderer>(true))
