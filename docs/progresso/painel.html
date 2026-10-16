@@ -117,7 +117,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <div>9<span>aguardando você</span></div>
 <div>0<span>sessões na nuvem</span></div>
 <div>5/11<span>setores concluídos</span></div>
-<div>8/10<span>marcos</span></div>
+<div>10/12<span>marcos</span></div>
 </div>
 <div class="etapas">
 <div class="etapa concluido"><b>Etapa 1</b>Base técnica<br><span class="pil concluido"><i></i>Concluído</span></div>
@@ -149,6 +149,8 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li class=""><i></i><span>Protótipo jogável do Guerreiro na Cripta Partida</span><span class="mut peq">falta</span></li>
 <li class="ok"><i></i><span>Folhas de modelagem, heróis modulares e cenário aprovados</span><span class="mut peq">feito</span></li>
 <li class="ok"><i></i><span>Guerreiro 3D final na Unity com shader de rim</span><span class="mut peq">feito</span></li>
+<li class="ok"><i></i><span>Etapa 2: Cripta montada na escala aprovada</span><span class="mut peq">feito</span></li>
+<li class="ok"><i></i><span>Etapa 2: DLL real na Unity</span><span class="mut peq">feito</span></li>
 <li class=""><i></i><span>Fatia jogável da Cripta (Etapa 2)</span><span class="mut peq">falta</span></li>
 </ul>
 <h2>Setores</h2><div class='grade'>
@@ -192,17 +194,18 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li>CI roda a cada push no núcleo (último sucesso em 3ad87b9)<span class="arq">.github/workflows/core.yml</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Fuga do Cão-de-Cinza no simulador.</p></article>
 <article class="card" id="s-frontend"><header><div><h3>Frontend Unity</h3><span class="mut peq">Frontend Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137).</p><ul>
+<p>PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode).</p><ul>
 <li>Projeto Unity 6.3 URP criado<span class="arq">EchoesOfTheShatter/</span></li>
 <li>Cena base na escala 56 m<span class="arq">EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity</span></li>
+<li>Cripta jogável na escala aprovada<span class="arq">EchoesOfTheShatter/Assets/Scenes/Cripta/Cripta.unity</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Ligar a API C 1.1 na Unity, trocar para as chamadas confiáveis e regravar o golden.</p></article>
 <article class="card" id="s-arte_tecnica"><header><div><h3>Arte técnica</h3><span class="mut peq">Artista técnico (Blender)</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>PR #1 no master. Guerreiro pintado já está na Unity com o shader de rim. Em andamento: acabamento dos inimigos e das armas; o lote do TripoSG com corpos, peças e cenário está rodando.</p><ul>
+<p>PR #1 no master. Guerreiro pintado na Unity com shader de rim. TripoSG: corpos e peças gerados, cenário sendo gerado agora. O acabamento dos inimigos espera memória livre.</p><ul>
 <li>Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)<span class="arq">art-src/graybox/</span></li>
 <li>Prévias em imagem<span class="arq">art-src/graybox/previews/</span></li>
 <li>Forma 3D do Guerreiro (TripoSG)<span class="arq">D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/</span></li>
 <li>Pesquisa de modelos 3D grátis<span class="arq">docs/pesquisa/modelos_3d_gratis.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Acabamento dos inimigos e das armas no Blender; receber o lote do TripoSG (corpos, peças, cenário).</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Receber o cenário do TripoSG; acabamento dos inimigos e das armas quando houver memória livre.</p></article>
 <article class="card" id="s-qa"><header><div><h3>QA</h3><span class="mut peq">QA Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
 <p>77 casos novos para a Etapa 2 no plano de QA.</p><ul>
 <li>Plano de QA (matriz de requisitos e casos)<span class="arq">docs/10_qa.md</span></li>
@@ -218,6 +221,13 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </ul><p class="prox"><b>Próximo passo:</b> Fechar a Etapa 2 e preparar a Etapa 3.</p></article>
 </div>
 <h2>Linha do tempo</h2><ul class='linha'>
+<li><code>83e789d</code><span class="dt">16/10/2026</span><br>Merge etapa2/frontend: Cripta jogável montada pelo layout do docs/14 (encontros, checkpoints com respawn, porta da arena, Guardião nativo); 162 testes</li>
+<li><code>49294be</code><span class="dt">16/10/2026</span><br>feat(cripta): CriptaBuilder, encontros, arena do Guardiao e regras do dono</li>
+<li><code>a4c1881</code><span class="dt">16/10/2026</span><br>Merge etapa2/frontend: gameplay consulta o core (poções, esquiva, stun, Guarda Quebrada, chefe, elite); EditMode 154/154</li>
+<li><code>9b7ec3d</code><span class="dt">16/10/2026</span><br>refactor(gameplay): pocoes, esquiva, stun, chefe e elite pelo core</li>
+<li><code>964f49a</code><span class="dt">16/10/2026</span><br>Merge etapa2/frontend: API C 1.1 ligada no NativeRulesCore (vitals, timing, poções, actor, elite, chefe), DLL nova; EditMode 144/144</li>
+<li><code>992c23d</code><span class="dt">16/10/2026</span><br>feat(interop): liga a API C 1.1 no NativeRulesCore e atualiza a DLL</li>
+<li><code>3ee18fc</code><span class="dt">16/10/2026</span><br>feat(painel): Backend e Dados com a Etapa 2 entregue</li>
 <li><code>bcf7864</code><span class="dt">16/10/2026</span><br>Merge etapa2/dados: chaves de esquiva e combate, loot de elite e transição do Guardião</li>
 <li><code>a862073</code><span class="dt">16/10/2026</span><br>test(core): fixtures com dodge_cancel_recovery_fraction, out_of_combat_seconds e eliteLootTableId; linha da chave estranha calculada</li>
 <li><code>d4de7c8</code><span class="dt">16/10/2026</span><br>feat(painel): votação e comentários nas perguntas ao dono</li>
@@ -325,10 +335,11 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <article class="card"><h3>Graybox aprovado só como provisório</h3><p>Será trocado pelos modelos 3D finais.</p><span class="arq">16/10/2026</span></article>
 </div>
 <h2>Galeria de arte</h2>
-<div class="abas"><button data-f="todas" aria-pressed="true">Todas (56)</button>
+<div class="abas"><button data-f="todas" aria-pressed="true">Todas (60)</button>
 <button data-f="referencias" aria-pressed="false">Referências (24)</button>
 <button data-f="modelagem" aria-pressed="false">Modelagem (9)</button>
 <button data-f="modulares" aria-pressed="false">Heróis modulares (6)</button>
+<button data-f="nojogo" aria-pressed="false">No jogo (4)</button>
 <button data-f="cenario" aria-pressed="false">Cenário da Cripta (6)</button>
 <button data-f="modelos3d" aria-pressed="false">Modelos 3D (7)</button>
 <button data-f="graybox" aria-pressed="false">Graybox (4)</button>
@@ -389,6 +400,10 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_SK_Warrior_3-4.jpg" alt="Guerreiro final (três quartos)" loading="lazy"><figcaption><b>Guerreiro final (três quartos)</b>Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
 <figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_SK_Warrior_costas.jpg" alt="Guerreiro final (costas)" loading="lazy"><figcaption><b>Guerreiro final (costas)</b>Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
 <figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_SK_Warrior_pose.jpg" alt="Guerreiro final (pose)" loading="lazy"><figcaption><b>Guerreiro final (pose)</b>Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="ag" data-k="nojogo"><img src="thumbs/nojogo_cripta_entrada.jpg" alt="Cripta: entrada" loading="lazy"><figcaption><b>Cripta: entrada</b>Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.<br><span class="pil andamento"><i></i>Em produção</span></figcaption></figure>
+<figure class="ag" data-k="nojogo"><img src="thumbs/nojogo_cripta_encontro1.jpg" alt="Cripta: primeiro encontro" loading="lazy"><figcaption><b>Cripta: primeiro encontro</b>Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.<br><span class="pil andamento"><i></i>Em produção</span></figcaption></figure>
+<figure class="ag" data-k="nojogo"><img src="thumbs/nojogo_cripta_arena.jpg" alt="Cripta: arena do Guardião" loading="lazy"><figcaption><b>Cripta: arena do Guardião</b>Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.<br><span class="pil andamento"><i></i>Em produção</span></figcaption></figure>
+<figure class="ag" data-k="nojogo"><img src="thumbs/nojogo_warrior_56m.jpg" alt="Guerreiro a 56 m" loading="lazy"><figcaption><b>Guerreiro a 56 m</b>Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.<br><span class="pil andamento"><i></i>Em produção</span></figcaption></figure>
 </div>
 <h2>Infraestrutura</h2><div class='tab'><table><tr><th>Item</th><th>Detalhe</th></tr>
 <tr><td>Unity 6.3 LTS (6000.3.26f1)</td><td>D:\Unity\Editors, com módulo IL2CPP</td></tr>

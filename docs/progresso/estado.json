@@ -164,7 +164,7 @@
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
       "estado": "andamento",
-      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137).",
+      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode).",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
@@ -173,6 +173,10 @@
         {
           "titulo": "Cena base na escala 56 m",
           "arquivo": "EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity"
+        },
+        {
+          "titulo": "Cripta jogável na escala aprovada",
+          "arquivo": "EchoesOfTheShatter/Assets/Scenes/Cripta/Cripta.unity"
         }
       ],
       "proximo": "Ligar a API C 1.1 na Unity, trocar para as chamadas confiáveis e regravar o golden."
@@ -182,7 +186,7 @@
       "nome": "Arte técnica",
       "agente": "Artista técnico (Blender)",
       "estado": "andamento",
-      "resumo": "PR #1 no master. Guerreiro pintado já está na Unity com o shader de rim. Em andamento: acabamento dos inimigos e das armas; o lote do TripoSG com corpos, peças e cenário está rodando.",
+      "resumo": "PR #1 no master. Guerreiro pintado na Unity com shader de rim. TripoSG: corpos e peças gerados, cenário sendo gerado agora. O acabamento dos inimigos espera memória livre.",
       "entregas": [
         {
           "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
@@ -201,7 +205,7 @@
           "arquivo": "docs/pesquisa/modelos_3d_gratis.md"
         }
       ],
-      "proximo": "Acabamento dos inimigos e das armas no Blender; receber o lote do TripoSG (corpos, peças, cenário)."
+      "proximo": "Receber o cenário do TripoSG; acabamento dos inimigos e das armas quando houver memória livre."
     },
     {
       "id": "qa",
@@ -708,6 +712,14 @@
       "feito": true
     },
     {
+      "titulo": "Etapa 2: Cripta montada na escala aprovada",
+      "feito": true
+    },
+    {
+      "titulo": "Etapa 2: DLL real na Unity",
+      "feito": true
+    },
+    {
       "titulo": "Fatia jogável da Cripta (Etapa 2)",
       "feito": false
     }
@@ -936,6 +948,34 @@
       "titulo": "Guerreiro final (pose)",
       "detalhe": "Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.",
       "estado": "aprovada"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/cripta_entrada.png",
+      "titulo": "Cripta: entrada",
+      "detalhe": "Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/cripta_encontro1.png",
+      "titulo": "Cripta: primeiro encontro",
+      "detalhe": "Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/cripta_arena.png",
+      "titulo": "Cripta: arena do Guardião",
+      "detalhe": "Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/warrior_56m.png",
+      "titulo": "Guerreiro a 56 m",
+      "detalhe": "Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.",
+      "estado": "producao"
     }
   ],
   "etapas": [

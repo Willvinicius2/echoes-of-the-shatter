@@ -150,7 +150,7 @@ def main() -> None:
             tit, _, resto = desc.partition(":")
             aprov.append((miniatura(origem, origem.stem), tit.strip() if resto else desc, resto.strip(), nome))
     GRUPOS = [("referencias", "Referências"), ("modelagem", "Modelagem"), ("modulares", "Heróis modulares"),
-              ("cenario", "Cenário da Cripta"), ("modelos3d", "Modelos 3D"), ("graybox", "Graybox")]
+              ("nojogo", "No jogo"), ("cenario", "Cenário da Cripta"), ("modelos3d", "Modelos 3D"), ("graybox", "Graybox")]
     itens = [("referencias", "aprovada", miniatura(APROV / n, Path(n).stem), (t.partition(":")[0].strip() if ":" in t else t),
               t.partition(":")[2].strip()) for n, t in sorted(titulos.items()) if (APROV / n).exists()]
     for it in estado.get("galeria", []):
@@ -248,8 +248,8 @@ def main() -> None:
             o.append(f'<button data-f="{gid}" aria-pressed="false">{e(gn)} ({n})</button>')
     o.append('</div><div class="gal">')
     for gid, est, img, tit, det in itens:
-        prov = est == "provisoria"
-        pil = pilula("andamento", {"andamento": "Provisório"}) if prov else pilula("concluido", {"concluido": "Aprovada"})
+        prov = est in ("provisoria", "producao")
+        pil = pilula("andamento", {"andamento": "Em produção" if est == "producao" else "Provisório"}) if prov else pilula("concluido", {"concluido": "Aprovada"})
         o.append(f'<figure class="{"ag" if prov else ""}" data-k="{gid}"><img src="{e(img)}" alt="{e(tit)}" loading="lazy"><figcaption><b>{e(tit)}</b>{e(det)}<br>{pil}</figcaption></figure>')
     o.append("</div>")
 
