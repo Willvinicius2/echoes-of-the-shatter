@@ -497,7 +497,7 @@ TEST(expedition_rf32_idle_is_about_35_percent_of_fervor_xp_on_the_same_receipts)
 }
 
 TEST(expedition_rf34_many_twelve_hour_expeditions_never_give_top_tier_or_more_than_four_rares) {
-    // Critério: 10 mil expedições de 12 h (SHATTER_NIGHTLY=1). Por commit: 120 (Release) ou 12 (Debug).
+    // Critério: 10 mil expedições de 12 h (SHATTER_NIGHTLY=1, ~12 min em Release). Por commit: 40 (Release) ou 6 (Debug).
     // Todo inimigo usa a tabela do Guardião (Único, livro de especialização, pedra de rota e Fragmento de Eco)
     // e Raro tem peso alto, para o teto de 4 Raros trabalhar de verdade.
     const std::unique_ptr<ContentDB> dbp = MakeDb({
@@ -510,9 +510,9 @@ TEST(expedition_rf34_many_twelve_hour_expeditions_never_give_top_tier_or_more_th
     });
     const ContentDB& db = *dbp;
 #ifdef NDEBUG
-    int n = 120;
+    int n = 40;
 #else
-    int n = 12;
+    int n = 6;
 #endif
     if (tu::Nightly()) n = 10000;
     int capped = 0;

@@ -76,6 +76,25 @@ json::Value SaveToJson(const SaveData& s);
 // Lê o objeto "data" já migrado para kCurrentSaveVersion. Campos ausentes → padrão.
 bool SaveFromJson(const json::Value& data, SaveData& out, std::string* error);
 
+// ADIÇÃO (docs/09_mudancas_contrato.md): as partes do save em JSON, no MESMO formato de "data"
+// (snake_case, uint64 como texto decimal). Usadas pela API C para o snapshot e o pedido de expedição.
+json::Value ItemToJson(const ItemInstance& item);
+bool ItemFromJson(const json::Value& v, ItemInstance& out, std::string* error = nullptr);
+json::Value CharacterToJson(const CharacterState& c);
+bool CharacterFromJson(const json::Value& v, CharacterState& out, std::string* error = nullptr);
+json::Value ExpeditionRequestToJson(const ExpeditionRequest& r);
+bool ExpeditionRequestFromJson(const json::Value& v, ExpeditionRequest& out, std::string* error = nullptr);
+// Nomes estáveis dos enums no JSON ("xp", "life_below", "use_potion", "running", "duration_reached"...).
+const char* ToString(ExpeditionObjective o);
+const char* ToString(AiCondition c);
+const char* ToString(AiAction a);
+const char* ToString(ExpeditionStatus s);
+const char* ToString(StopReason r);
+bool ParseExpeditionObjective(std::string_view text, ExpeditionObjective& out);
+bool ParseAiCondition(std::string_view text, AiCondition& out);
+bool ParseAiAction(std::string_view text, AiAction& out);
+bool ParseStopReason(std::string_view text, StopReason& out);
+
 // Envelope completo do arquivo (format, save_version, sha256, data). pretty=true no disco.
 std::string SerializeJson(const SaveData& s, bool pretty = true);
 

@@ -15,6 +15,8 @@ using json::Value;
 // ---------------------------------------------------------------------------
 // Enums <-> texto
 // ---------------------------------------------------------------------------
+constexpr const char* kStopNames[] = {"none", "duration_reached", "retreat", "clock_rollback", "incompatible_build",
+                                      "content_mismatch"};
 constexpr const char* kObjectiveNames[] = {"xp", "gold", "materials"};
 constexpr const char* kConditionNames[] = {"always",           "life_below",     "resource_above",
                                            "resource_below",   "enemies_at_least", "target_is_elite",
@@ -38,15 +40,62 @@ bool Fail(std::string* error, const std::string& msg) {
     return false;
 }
 
-// ---------------------------------------------------------------------------
-// SaveData -> JSON
-// ---------------------------------------------------------------------------
+template <std::size_t N>
+const char* NameOf(const char* const (&names)[N], std::size_t i) {
+    return i < N ? names[i] : names[0];
+}
+
 Value StrList(const std::vector<ContentId>& v) {
     Value a = Value::MakeArray();
     for (const ContentId& s : v) a.Push(Value(s));
     return a;
 }
 
+std::vector<ContentId> ReadStrList(const Value& v) {
+    std::vector<ContentId> out;
+    for (const Value& e : v.Items()) out.push_back(e.AsString());
+    return out;
+}
+
+}  // namespace
+
+// ---------------------------------------------------------------------------
+// Enums <-> texto (públicos)
+// ---------------------------------------------------------------------------
+const char* ToString(ExpeditionObjective o) { return NameOf(kObjectiveNames, static_cast<std::size_t>(o)); }
+const char* ToString(AiCondition c) { return NameOf(kConditionNames, static_cast<std::size_t>(c)); }
+const char* ToString(AiAction a) { return NameOf(kActionNames, static_cast<std::size_t>(a)); }
+const char* ToString(ExpeditionStatus s) { return NameOf(kStatusNames, static_cast<std::size_t>(s)); }
+const char* ToString(StopReason r) { return NameOf(kStopNames, static_cast<std::size_t>(r)); }
+
+bool ParseExpeditionObjective(std::string_view text, ExpeditionObjective& out) {
+    std::size_t i = 0;
+    if (!ParseName(kObjectiveNames, text, i)) return false;
+    out = static_cast<ExpeditionObjective>(i);
+    return true;
+}
+bool ParseAiCondition(std::string_view text, AiCondition& out) {
+    std::size_t i = 0;
+    if (!ParseName(kConditionNames, text, i)) return false;
+    out = static_cast<AiCondition>(i);
+    return true;
+}
+bool ParseAiAction(std::string_view text, AiAction& out) {
+    std::size_t i = 0;
+    if (!ParseName(kActionNames, text, i)) return false;
+    out = static_cast<AiAction>(i);
+    return true;
+}
+bool ParseStopReason(std::string_view text, StopReason& out) {
+    std::size_t i = 0;
+    if (!ParseName(kStopNames, text, i)) return false;
+    out = static_cast<StopReason>(i);
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// SaveData -> JSON
+// ---------------------------------------------------------------------------
 Value ItemToJson(const ItemInstance& it) {
     Value o = Value::MakeObject();
     o.Set("uid", json::FromUInt64(it.uid));
@@ -99,20 +148,20 @@ Value CharacterToJson(const CharacterState& c) {
     return o;
 }
 
-Value RequestToJson(const ExpeditionRequest& r) {
+Value ExpeditionRequestToJson(const ExpeditionRequest& r) {
     Value o = Value::MakeObject();
     Value snap = Value::MakeObject();
     snap.Set("character", CharacterToJson(r.snapshot.character));
     snap.Set("content_version", Value(r.snapshot.contentVersion));
     o.Set("snapshot", std::move(snap));
     o.Set("map_id", Value(r.mapId));
-    o.Set("objective", Value(kObjectiveNames[static_cast<std::size_t>(r.objective)]));
+    o.Set("objective", Value(ToString(r.objective)));
     Value rules = Value::MakeArray();
     for (const AiRule& ar : r.rules) {
         Value ro = Value::MakeObject();
-        ro.Set("condition", Value(kConditionNames[static_cast<std::size_t>(ar.condition)]));
+        ro.Set("condition", Value(ToString(ar.condition)));
         ro.Set("param", Value(ar.param));
-        ro.Set("action", Value(kActionNames[static_cast<std::size_t>(ar.action)]));
+        ro.Set("action", Value(ToString(ar.action)));
         ro.Set("ref_id", Value(ar.refId));
         rules.Push(std::move(ro));
     }
@@ -129,12 +178,6 @@ Value RequestToJson(const ExpeditionRequest& r) {
 // ---------------------------------------------------------------------------
 // JSON -> SaveData
 // ---------------------------------------------------------------------------
-std::vector<ContentId> ReadStrList(const Value& v) {
-    std::vector<ContentId> out;
-    for (const Value& e : v.Items()) out.push_back(e.AsString());
-    return out;
-}
-
 bool ItemFromJson(const Value& o, ItemInstance& it, std::string* err) {
     if (o.type() != json::Type::Object) return Fail(err, "item is not an object");
     it = ItemInstance();
@@ -187,23 +230,19 @@ bool CharacterFromJson(const Value& o, CharacterState& c, std::string* err) {
     return true;
 }
 
-bool RequestFromJson(const Value& o, ExpeditionRequest& r, std::string* err) {
+bool ExpeditionRequestFromJson(const Value& o, ExpeditionRequest& r, std::string* err) {
     if (o.type() != json::Type::Object) return Fail(err, "request is not an object");
     r = ExpeditionRequest();
     const Value& snap = o["snapshot"];
     if (!CharacterFromJson(snap["character"], r.snapshot.character, err)) return false;
     r.snapshot.contentVersion = static_cast<std::uint32_t>(snap["content_version"].AsInt(0));
     r.mapId = o["map_id"].AsString();
-    std::size_t idx = 0;
-    if (!ParseName(kObjectiveNames, o["objective"].AsString(), idx)) return Fail(err, "request: bad objective");
-    r.objective = static_cast<ExpeditionObjective>(idx);
+    if (!ParseExpeditionObjective(o["objective"].AsString(), r.objective)) return Fail(err, "request: bad objective");
     for (const Value& rv : o["rules"].Items()) {
         AiRule ar;
-        if (!ParseName(kConditionNames, rv["condition"].AsString(), idx)) return Fail(err, "rule: bad condition");
-        ar.condition = static_cast<AiCondition>(idx);
+        if (!ParseAiCondition(rv["condition"].AsString(), ar.condition)) return Fail(err, "rule: bad condition");
         ar.param = rv["param"].AsDouble(0.0);
-        if (!ParseName(kActionNames, rv["action"].AsString(), idx)) return Fail(err, "rule: bad action");
-        ar.action = static_cast<AiAction>(idx);
+        if (!ParseAiAction(rv["action"].AsString(), ar.action)) return Fail(err, "rule: bad action");
         ar.refId = rv["ref_id"].AsString();
         r.rules.push_back(std::move(ar));
     }
@@ -215,6 +254,8 @@ bool RequestFromJson(const Value& o, ExpeditionRequest& r, std::string* err) {
     r.contentVersion = static_cast<std::uint32_t>(o["content_version"].AsInt(0));
     return true;
 }
+
+namespace {
 
 // Aplica XP ao personagem com o teto de nível da área (mesma regra de FinalizeExpedition).
 void ApplyXp(const ContentDB& db, CharacterState& c, double gained, int capLevel) {
@@ -269,9 +310,9 @@ Value SaveToJson(const SaveData& s) {
     Value exps = Value::MakeArray();
     for (const SavedExpedition& e : s.expeditions) {
         Value eo = Value::MakeObject();
-        eo.Set("status", Value(kStatusNames[static_cast<std::size_t>(e.status)]));
+        eo.Set("status", Value(ToString(e.status)));
         eo.Set("character_index", Value(e.characterIndex));
-        eo.Set("request", RequestToJson(e.request));
+        eo.Set("request", ExpeditionRequestToJson(e.request));
         eo.Set("collected_result_hash", json::FromUInt64(e.collectedResultHash));
         exps.Push(std::move(eo));
     }
@@ -308,7 +349,7 @@ bool SaveFromJson(const Value& data, SaveData& out, std::string* error) {
         if (!ParseName(kStatusNames, ev["status"].AsString(), idx)) return Fail(error, "expedition: bad status");
         se.status = static_cast<ExpeditionStatus>(idx);
         se.characterIndex = static_cast<int>(ev["character_index"].AsInt(-1));
-        if (!RequestFromJson(ev["request"], se.request, error)) return false;
+        if (!ExpeditionRequestFromJson(ev["request"], se.request, error)) return false;
         se.collectedResultHash = ev["collected_result_hash"].AsUInt64(0);
         s.expeditions.push_back(std::move(se));
     }
