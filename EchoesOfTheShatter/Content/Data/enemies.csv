@@ -1,1 +1,8 @@
 id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange
+enemy.hollow_sentinel,family.soldier_echo,life:60:8|armor:8:1,12,3,loot.crypt.common,false,false,220,900
+enemy.ash_hound,family.altered_fauna,life:40:5,10,2,loot.crypt.common,false,false,380,1100
+enemy.stone_herald,family.construct,life:150:18|armor:30:3,28,5,loot.crypt.common,false,false,130,900
+enemy.ghost_archer,family.shooter,life:35:5,14,3,loot.crypt.common,false,false,200,1400
+enemy.shielded_sentinel,family.soldier_echo,life:120:16|armor:25:3,40,8,loot.crypt.elite,false,true,200,1000
+enemy.swift_ash_hound,family.altered_fauna,life:80:10,36,6,loot.crypt.elite,false,true,480,1200
+enemy.crypt_guardian,family.soldier_echo,life:1000:100|armor:40:4,150,30,loot.crypt.guardian,true,false,180,1400

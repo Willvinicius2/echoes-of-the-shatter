@@ -1,1 +1,2 @@
 id,monsterLevel,tier,encounters,bossEncounter,areaLootTable,idleAllowed
+map.act1.crypt,3,0,enc.crypt.patrol_a|enc.crypt.patrol_b|enc.crypt.hounds|enc.crypt.herald|enc.crypt.firing_line|enc.crypt.elite_shield|enc.crypt.elite_swift,enc.crypt.guardian,loot.crypt.area,true

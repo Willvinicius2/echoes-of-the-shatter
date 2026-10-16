@@ -1,1 +1,9 @@
 id,groups,weight,travelTime,isBoss
+enc.crypt.patrol_a,enemy.hollow_sentinel:2:3:0.08,3,6,false
+enc.crypt.patrol_b,enemy.hollow_sentinel:1:2:0.08|enemy.ghost_archer:1:2:0.05,2,6,false
+enc.crypt.hounds,enemy.ash_hound:3:5:0.05,2,4,false
+enc.crypt.herald,enemy.stone_herald:1:1:0.1|enemy.hollow_sentinel:1:2:0,1,8,false
+enc.crypt.firing_line,enemy.hollow_sentinel:1:2:0.05|enemy.ghost_archer:2:3:0.05,2,6,false
+enc.crypt.elite_shield,enemy.shielded_sentinel:1:1:0|enemy.hollow_sentinel:1:2:0,1,8,false
+enc.crypt.elite_swift,enemy.swift_ash_hound:1:1:0|enemy.ash_hound:2:3:0,1,8,false
+enc.crypt.guardian,enemy.crypt_guardian:1:1:0,1,0,true

@@ -1,0 +1,96 @@
+key,pt_BR,en,es,context,gender
+class.warrior.name,Guerreiro,Warrior,,class; max=16,m
+class.warrior.desc,Uma muralha que vira martelo.,A wall that turns into a hammer.,,class; max=60,
+resource.momentum.name,Ímpeto,Momentum,,resource; max=12,m
+resource.momentum.desc,Enche ao acertar e ao bloquear. Esvazia fora de combate.,Fills when you hit or block. Drains out of combat.,,resource; max=80,
+skill.warrior.iron_cut.name,Corte de Ferro,Iron Cut,,skill; max=24,m
+skill.warrior.iron_cut.desc,Arco frontal curto. Gera Ímpeto ao acertar.,Short frontal arc. Builds Momentum on hit.,,skill; max=90; GDD seção 4,
+skill.warrior.charge.name,Investida,Charge,,skill; max=24,f
+skill.warrior.charge.desc,Avanço com impacto na chegada.,A dash that strikes on arrival.,,skill; max=90; GDD seção 4,
+skill.warrior.stone_rift.name,Fenda de Pedra,Stone Rift,,skill; max=24,f
+skill.warrior.stone_rift.desc,Cone de fissuras para limpar grupos.,A cone of fissures that clears groups.,,skill; max=90; GDD seção 4,
+skill.warrior.shield_bash.name,Escudada,Shield Bash,,skill; max=24,f
+skill.warrior.shield_bash.desc,Golpe que acumula quebra de guarda e atordoa inimigos comuns.,A strike that builds guard break and stuns common enemies.,,skill; max=90; GDD seção 4; fora da barra do protótipo,
+effect.guard_break.name,Guarda Quebrada,Broken Guard,,effect; max=24,f
+effect.stun.name,Atordoado,Stunned,,effect; max=24,m
+effect.empty_throne_resolve.name,Brio do Trono Vazio,Resolve of the Empty Throne,,effect; max=28; provisório,m
+enemy.hollow_sentinel.name,Sentinela Oca,Hollow Sentinel,,enemy; max=28,f
+enemy.ash_hound.name,Cão-de-Cinza,Ash Hound,,enemy; max=28,m
+enemy.stone_herald.name,Arauto de Pedra,Stone Herald,,enemy; max=28,m
+enemy.ghost_archer.name,Arqueiro Fantasma,Ghost Archer,,enemy; max=28,m
+enemy.shielded_sentinel.name,Sentinela Oca Escudada,Shielded Hollow Sentinel,,enemy; elite; max=32,f
+enemy.swift_ash_hound.name,Cão-de-Cinza Veloz,Swift Ash Hound,,enemy; elite; max=32,m
+enemy.crypt_guardian.name,Guardião da Cripta,Crypt Guardian,,enemy; boss; max=28,m
+map.act1.crypt.name,Cripta Partida,Broken Crypt,,area; max=28,f
+area.refuge.name,Refúgio do Marco,Marker Refuge,,area; hub; max=28,m
+item_base.iron_sword.name,Espada de Ferro,Iron Sword,,item base; max=28,f
+item_base.stone_maul.name,Martelo de Pedra,Stone Maul,,item base; max=28,m
+item_base.iron_helm.name,Elmo de Ferro,Iron Helm,,item base; max=28,m
+item_base.leather_vest.name,Peitoral de Couro,Leather Vest,,item base; max=28,m
+item_base.leather_gloves.name,Luvas de Couro,Leather Gloves,,item base; plural; max=28,f
+item_base.worn_boots.name,Botas Gastas,Worn Boots,,item base; plural; max=28,f
+affix.sturdy.name,Robusto,Sturdy,,affix prefix; forma m singular,m
+affix.sturdy.name_f,Robusta,Sturdy,,affix prefix; forma f singular,f
+affix.sturdy.name_mp,Robustos,Sturdy,,affix prefix; forma m plural,m
+affix.sturdy.name_fp,Robustas,Sturdy,,affix prefix; forma f plural,f
+affix.honed.name,Afiado,Honed,,affix prefix; forma m singular,m
+affix.honed.name_f,Afiada,Honed,,affix prefix; forma f singular,f
+affix.honed.name_mp,Afiados,Honed,,affix prefix; forma m plural,m
+affix.honed.name_fp,Afiadas,Honed,,affix prefix; forma f plural,f
+affix.plated.name,Blindado,Plated,,affix prefix; forma m singular,m
+affix.plated.name_f,Blindada,Plated,,affix prefix; forma f singular,f
+affix.plated.name_mp,Blindados,Plated,,affix prefix; forma m plural,m
+affix.plated.name_fp,Blindadas,Plated,,affix prefix; forma f plural,f
+affix.cracked.name,Rachado,Cracked,,affix prefix; forma m singular,m
+affix.cracked.name_f,Rachada,Cracked,,affix prefix; forma f singular,f
+affix.cracked.name_mp,Rachados,Cracked,,affix prefix; forma m plural,m
+affix.cracked.name_fp,Rachadas,Cracked,,affix prefix; forma f plural,f
+affix.of_mending.name,de Restauro,of Mending,,affix suffix; invariável,
+affix.of_swiftness.name,de Presteza,of Swiftness,,affix suffix; invariável,
+affix.of_the_furnace.name,da Fornalha,of the Furnace,,affix suffix; invariável,
+affix.of_light_steps.name,de Passos Leves,of Light Steps,,affix suffix; invariável,
+unique.empty_throne_maul.name,Martelo do Trono Vazio,Maul of the Empty Throne,,unique; max=32; nome provisório,m
+unique.empty_throne_maul.desc,Ao derrotar um inimigo: 20% a mais de dano corpo a corpo por 4 s. Velocidade de movimento reduzida em 10%.,On kill: 20% more melee damage for 4 s. Movement speed is reduced by 10%.,,unique; max=120; bate com effects.csv e uniques.csv,
+unique.empty_throne_maul.flavor,Ainda pesa como um dever que ninguém mais cobra.,It still weighs like a duty no one collects anymore.,,unique; flavor; provisório,
+currency.gold.name,Ouro,Gold,,currency; max=12,m
+material.shards.name,Lascas,Shards,,material; plural; max=12,f
+potion.life.name,Poção de Vida,Life Potion,,potion; max=20; provisório (P1),f
+potion.life.desc,Restaura uma parte da vida.,Restores some of your life.,,potion; max=60; provisório (P1),
+dodge.name,Esquiva,Dodge,,hud; max=12,f
+dodge.desc,Rolamento rápido. Invulnerável no início. Tem 3 cargas.,A quick roll. Invulnerable at the start. Holds 3 charges.,,hud; max=70; valores no plano seção 5,
+stat.life.name,vida,life,,stat; minúsculo; max=24,f
+stat.life_regen.name,regeneração de vida,life regeneration,,stat; minúsculo; max=24,f
+stat.armor.name,armadura,armor,,stat; minúsculo; max=24,f
+stat.crit_chance.name,chance de crítico,critical chance,,stat; minúsculo; max=24,f
+stat.damage.name,dano,damage,,stat; minúsculo; max=24,m
+stat.attack_speed.name,velocidade de ataque,attack speed,,stat; minúsculo; max=24,f
+stat.move_speed.name,velocidade de movimento,movement speed,,stat; minúsculo; max=24,f
+stat.resist_fire.name,resistência a fogo,fire resistance,,stat; minúsculo; max=24,f
+stat.resource.name,recurso,resource,,stat; minúsculo; max=24,m
+stat.damage_taken.name,dano recebido,damage taken,,stat; minúsculo; max=24,m
+mod.flat,+{value} de {stat},+{value} {stat},,mod format; valor absoluto; max=40,
+mod.flat_pct,+{value}% de {stat},+{value}% {stat},,mod format; fração mostrada em %; max=40,
+mod.increased,+{value}% de {stat},+{value}% {stat},,mod format; aumentado; max=40,
+mod.more,{value}% a mais de {stat},{value}% more {stat},,mod format; mais; max=40,
+item.pattern.prefix_suffix,{base} {prefix} {suffix},{prefix} {base} {suffix},,nome de item; Mágico/Raro com prefixo e sufixo,
+item.pattern.prefix_only,{base} {prefix},{prefix} {base},,nome de item; só prefixo,
+item.pattern.suffix_only,{base} {suffix},{base} {suffix},,nome de item; só sufixo,
+item.pattern.plain,{base},{base},,nome de item; Comum,
+rarity.normal.name,Comum,Common,,rarity; max=10,
+rarity.normal.name_f,Comum,Common,,rarity; forma f,f
+rarity.magic.name,Mágico,Magic,,rarity; max=10,m
+rarity.magic.name_f,Mágica,Magic,,rarity; forma f,f
+rarity.rare.name,Raro,Rare,,rarity; max=10,m
+rarity.rare.name_f,Rara,Rare,,rarity; forma f,f
+rarity.unique.name,Único,Unique,,rarity; max=10,m
+rarity.unique.name_f,Única,Unique,,rarity; forma f,f
+slot.main_hand.name,Arma,Weapon,,slot; max=14,f
+slot.off_hand.name,Mão secundária,Off hand,,slot; max=16,f
+slot.head.name,Elmo,Helm,,slot; max=14,m
+slot.body.name,Peitoral,Chest,,slot; max=14,m
+slot.hands.name,Luvas,Gloves,,slot; max=14,f
+slot.feet.name,Botas,Boots,,slot; max=14,f
+slot.amulet.name,Amuleto,Amulet,,slot; max=14,m
+slot.ring.name,Anel,Ring,,slot; max=14,m
+slot.ring2.name,Segundo anel,Second ring,,slot; max=14,m
+slot.belt.name,Cinto,Belt,,slot; max=14,m

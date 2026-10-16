@@ -1,0 +1,22 @@
+key,pt_BR,en,es,context,gender
+npc.ilsa.name,Ilsa,Ilsa,,npc; max=16,f
+npc.ilsa.title,a Cartógrafa,the Cartographer,,npc; max=20,f
+npc.tico.name,Tico,Tico,,npc; max=16,m
+npc.tico.title,o Mensageiro,the Messenger,,npc; max=20,m
+npc.bram.name,Bram,Bram,,npc; sem função no protótipo; max=16,m
+npc.bram.title,o Ferreiro,the Smith,,npc; sem função no protótipo; max=20,m
+npc.odete.name,Irmã Odete,Sister Odete,,npc; sem função no protótipo; max=16,f
+npc.odete.title,a Leitora,the Reader,,npc; sem função no protótipo; max=20,f
+dlg.ilsa.greeting,Hora de olhar o mapa de novo.,Time to look at the map again.,,Ilsa; abertura; max=60; provisório,
+dlg.ilsa.offer,Escolha uma área que você já dominou e eu marco a rota.,Pick an area you have already conquered and I will mark the route.,,Ilsa; oferta de expedição; max=80; provisório,
+dlg.ilsa.not_dominated,Essa área você ainda não venceu. Rota só vale para terreno conhecido.,You have not beaten that area yet. Routes only work on known ground.,,Ilsa; área não dominada; max=90; provisório,
+dlg.ilsa.no_charges,Sem Cargas do Marco não tem rota. Vá lutar um pouco.,No Marker Charges means no route. Go fight a little.,,Ilsa; sem cargas; max=80; provisório,
+dlg.ilsa.crypt_done,O Marco da Cripta está de pé. A rota está liberada.,The Crypt Marker stands. The route is open.,,Ilsa; após vencer o Guardião RF-50; max=70; provisório,
+dlg.ilsa.busy,Seu herói ainda está na rota. Fale com o Tico depois.,Your hero is still on the route. Talk to Tico later.,,Ilsa; expedição ativa; max=70; provisório,
+dlg.ilsa.farewell,Boa rota.,Safe route.,,Ilsa; despedida; max=30; provisório,
+dlg.tico.greeting,Voltei! Trouxe o relatório!,I am back! I brought the report!,,Tico; abertura; max=40; provisório,
+dlg.tico.report_ready,Terminou! Quer ver como foi?,It is done! Want to see how it went?,,Tico; expedição pronta; max=50; provisório,
+dlg.tico.waiting,Ainda não deu o tempo. Calma!,Not enough time has passed. Easy!,,Tico; expedição em curso; max=50; provisório,
+dlg.tico.nothing,Não tenho nada para entregar ainda.,I have nothing to deliver yet.,,Tico; sem expedição; max=50; provisório,
+dlg.tico.delivery,Tudo aqui. Nada se perdeu no caminho.,All here. Nothing got lost on the way.,,Tico; entrega do loot; max=50; provisório,
+dlg.tico.farewell,Até a próxima rota!,See you on the next route!,,Tico; despedida; max=30; provisório,

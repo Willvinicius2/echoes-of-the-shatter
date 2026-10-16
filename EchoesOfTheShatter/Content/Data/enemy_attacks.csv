@@ -1,1 +1,9 @@
 enemyId,skillId,weight,telegraphed
+enemy.hollow_sentinel,skill.enemy.sentinel_strike,1,true
+enemy.ash_hound,skill.enemy.ash_bite,1,false
+enemy.stone_herald,skill.enemy.herald_slam,1,true
+enemy.ghost_archer,skill.enemy.ghost_arrow,1,true
+enemy.shielded_sentinel,skill.enemy.sentinel_strike,1,true
+enemy.swift_ash_hound,skill.enemy.ash_bite,1,false
+enemy.crypt_guardian,skill.enemy.guardian_hammer,3,true
+enemy.crypt_guardian,skill.enemy.guardian_shield_bash,2,true
