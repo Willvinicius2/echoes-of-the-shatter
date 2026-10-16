@@ -6,7 +6,8 @@
         "Echoes.Interop",
         "Echoes.Core",
         "Echoes.Gameplay",
-        "Echoes.Presentation"
+        "Echoes.Presentation",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -54,12 +54,62 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
-        public void ChibiRigGetsTheMuscleSetupForTheShortArms()
+        public void ChibiAvatarsGetTheMuscleSetupAndAreHumanoid()
         {
-            var importer = (ModelImporter)AssetImporter.GetAtPath(CharacterAssetPostprocessor.RigPath);
-            Assert.AreEqual(KayKitAnimationImport.ArmStretch, importer.humanDescription.armStretch, 1e-4f);
-            Assert.AreEqual(KayKitAnimationImport.LegStretch, importer.humanDescription.legStretch, 1e-4f);
-            Assert.IsTrue(AssetDatabase.LoadAssetAtPath<Avatar>(CharacterAssetPostprocessor.RigPath).isHuman);
+            var owners = KayKitAnimationImport.AvatarOwners().ToList();
+            Assert.GreaterOrEqual(owners.Count, 3, "rig, Arauto e Guardiao tem avatar proprio");
+            foreach (var path in owners)
+            {
+                var importer = (ModelImporter)AssetImporter.GetAtPath(path);
+                var description = importer.humanDescription;
+                Assert.AreEqual(KayKitAnimationImport.ArmStretch, description.armStretch, 1e-4f, path);
+                Assert.AreEqual(KayKitAnimationImport.LegStretch, description.legStretch, 1e-4f, path);
+                Assert.IsTrue(AssetDatabase.LoadAllAssetRepresentationsAtPath(path).OfType<Avatar>().Any(a => a.isHuman && a.isValid), path + ": avatar Humanoid valido");
+                foreach (var bone in description.human)
+                {
+                    var expected = bone.humanName == "Neck" ? KayKitAnimationImport.NeckLimit
+                        : bone.humanName == "Head" ? KayKitAnimationImport.HeadLimit
+                        : bone.humanName == "Spine" || bone.humanName == "Chest" || bone.humanName == "UpperChest" ? KayKitAnimationImport.TorsoLimit : 0f;
+                    if (expected <= 0f) continue;
+                    Assert.IsFalse(bone.limit.useDefaultValues, path + " " + bone.humanName);
+                    Assert.AreEqual(expected, bone.limit.max.x, 1e-4f, path + " " + bone.humanName + ": o tronco e a cabeca grande nao se dobram como no humano");
+                }
+            }
+            foreach (var model in new[] { "StoneHerald/SK_Enemy_StoneHerald", "CryptGuardian/SK_Boss_CryptGuardian" })
+            {
+                var importer = (ModelImporter)AssetImporter.GetAtPath($"Assets/Art/Characters/{model}.fbx");
+                Assert.AreEqual(ModelImporterAvatarSetup.CreateFromThisModel, importer.avatarSetup, model + ": escala propria, avatar proprio (senao o corpo afunda)");
+            }
+        }
+
+        [Test]
+        public void WeaponsStayChildrenOfTheHandBonesAndTheHierarchyIsExposed()
+        {
+            foreach (var (prefab, right, left) in new[] { ("P_Hero_Warrior", "Weapon_WarriorHammer", "Weapon_WarriorShield"), ("P_Boss_CryptGuardian", "Weapon_GuardianHammer", "Weapon_GuardianShield") })
+            {
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/{prefab}.prefab"));
+                try
+                {
+                    var animator = go.GetComponentInChildren<Animator>();
+                    Assert.IsTrue(animator.hasTransformHierarchy, prefab + ": sem Optimize Game Objects, o Animator nao esconde a hierarquia");
+                    var hammer = CharacterPrefabBuilder.FindDeep(go.transform, right);
+                    var shield = CharacterPrefabBuilder.FindDeep(go.transform, left);
+                    Assert.IsNotNull(hammer, right);
+                    Assert.IsNotNull(shield, left);
+                    Assert.IsTrue(hammer.IsChildOf(animator.GetBoneTransform(HumanBodyBones.RightHand)), prefab + ": martelo na mao direita");
+                    Assert.IsTrue(shield.IsChildOf(animator.GetBoneTransform(HumanBodyBones.LeftHand)), prefab + ": escudo na mao esquerda");
+                    // Seguem o osso quando o clipe amostra a pose.
+                    var clip = KayKitAnimationImport.FindClip($"{KayKitAnimationImport.Root}/Medium/Rig_Medium_CombatMelee.fbx", prefab.Contains("Boss") ? "Melee_2H_Attack_Chop" : "Melee_1H_Attack_Slice_Horizontal");
+                    var before = hammer.position;
+                    clip.SampleAnimation(animator.gameObject, clip.length * 0.3f);
+                    Assert.Greater(Vector3.Distance(before, hammer.position), 0.05f, prefab + ": a arma acompanha a mao");
+                    Assert.AreEqual(0f, Vector3.Distance(hammer.position, animator.GetBoneTransform(HumanBodyBones.RightHand).position), 0.2f, prefab + ": e continua na mao");
+                }
+                finally
+                {
+                    Object.DestroyImmediate(go);
+                }
+            }
         }
 
         [Test]

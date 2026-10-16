@@ -16,7 +16,7 @@
 | Investida (charge) | CombatMelee `Melee_1H_Attack_Stab` | MovementBasic `Running_A` (**placeholder**) |
 | Fenda de Pedra (stone_rift) | CombatMelee `Melee_2H_Attack_Chop` | — |
 | Escudada (shield_bash) | CombatMelee `Melee_Block_Attack` | CombatMelee `Melee_Block_Attack` |
-| Martelo | — | CombatMelee `Melee_2H_Slam` |
+| Martelo | — | Rig_Medium CombatMelee `Melee_2H_Attack_Chop` (retargetado; o `Melee_2H_Slam` do rig grande deita o corpo na horizontal) |
 | Sentinela (sentinel_strike) | CombatMelee `Melee_1H_Attack_Chop` | — |
 | Arauto (herald_slam) | CombatMelee `Melee_2H_Attack_Chop` | — |
 | Dodge (rolamento) | MovementAdvanced `Dodge_Forward` | — |

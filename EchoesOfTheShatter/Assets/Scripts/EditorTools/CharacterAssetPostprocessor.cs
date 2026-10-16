@@ -18,12 +18,19 @@ namespace Echoes.EditorTools
         /// <summary>Modelos sem pernas ou sem o conjunto humanoide: Generic (o avatar Humanoid falharia). O Arqueiro Espectral flutua.</summary>
         static bool IsGeneric(string path) => path.IndexOf("GhostArcher", System.StringComparison.Ordinal) >= 0;
 
+        /// <summary>
+        /// Modelos de escala bem diferente da do rig (Arauto e Guardiao, 2x a 3x maiores): avatar Humanoid proprio. Com o avatar do rig o
+        /// retarget escala a altura do quadril pela proporcao do rig e o corpo grande afunda (achatado). Heroi e Sentinela, na escala do rig, copiam o avatar dele.
+        /// </summary>
+        public static bool OwnsAvatar(string path) =>
+            path.IndexOf("StoneHerald", System.StringComparison.Ordinal) >= 0 || path.IndexOf("CryptGuardian", System.StringComparison.Ordinal) >= 0;
+
         static bool IsManaged(string path) =>
             path.StartsWith(CharactersRoot, System.StringComparison.Ordinal) || path.StartsWith(WeaponsRoot, System.StringComparison.Ordinal);
         public const string RigPath = "Assets/Art/Characters/Rigs/Rig_Humanoid_Chibi.fbx";
 
         // Muda quando as regras abaixo mudam: força a reimportação.
-        public override uint GetVersion() => 4;
+        public override uint GetVersion() => 5;
 
         void OnPreprocessModel()
         {
@@ -65,7 +72,7 @@ namespace Echoes.EditorTools
             {
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
             }
-            else if (assetPath == RigPath)
+            else if (assetPath == RigPath || OwnsAvatar(assetPath))
             {
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
             }
