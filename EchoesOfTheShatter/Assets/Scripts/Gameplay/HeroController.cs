@@ -57,6 +57,9 @@ namespace Echoes.Gameplay
         public PlayerInputHandler InputHandler => input;
         public float SecondsUntilRespawn => Combatant != null && Combatant.IsDead ? Mathf.Max(0f, respawnDelay - deadTime) : 0f;
 
+        PlanarVector lastSceneSync;
+        bool hasSceneSync;
+
         void Awake()
         {
             controller = GetComponent<CharacterController>();
@@ -153,16 +156,25 @@ namespace Echoes.Gameplay
         {
             if (Logic == null) return;
             var dt = Time.deltaTime;
-            var velocity = Logic.CurrentVelocity();
+            var combatant = Logic.Self;
 
+            // A posição lógica avança só no passo fixo (A-04). Aqui a cena segue a posição interpolada entre
+            // o passo anterior e o atual; o CharacterController resolve colisão e a gravidade (vertical).
+            // Teleporte externo (DevZoneTeleport, cutscene): a cena mudou o corpo sozinha; a lógica acompanha.
+            var sceneNow = transform.position.ToPlanar();
+            if (hasSceneSync && PlanarVector.Distance(sceneNow, lastSceneSync) > 0.05f) combatant.Teleport(sceneNow);
+            var wanted = combatant.InterpolatedPosition(combat != null ? combat.Clock.Alpha : 1.0);
+            var delta = wanted - transform.position.ToPlanar();
             if (controller.isGrounded && verticalSpeed < 0f) verticalSpeed = 0f;
             verticalSpeed += Physics.gravity.y * dt;
-            var motion = velocity.ToWorld(verticalSpeed) * dt;
-            if (controller.enabled) controller.Move(motion);
+            if (controller.enabled) controller.Move(delta.ToWorld(verticalSpeed * dt));
 
-            var combatant = Logic.Self;
             transform.rotation = Logic.FacingDirection().ToRotation(transform.rotation);
-            combatant.Position = transform.position.ToPlanar();
+            // Parede ou obstáculo: a lógica volta para onde o corpo realmente ficou (sem interpolar de volta).
+            var actual = transform.position.ToPlanar();
+            if (PlanarVector.Distance(actual, wanted) > 1e-3f) combatant.Teleport(actual);
+            lastSceneSync = actual;
+            hasSceneSync = true;
         }
 
         void Respawn()
@@ -174,7 +186,7 @@ namespace Echoes.Gameplay
             transform.SetPositionAndRotation(position, rotation);
             controller.enabled = true;
             verticalSpeed = 0f;
-            Logic.Self.Position = position.ToPlanar();
+            Logic.Self.Teleport(position.ToPlanar());
             combat.Revive(Logic.Self);
         }
 

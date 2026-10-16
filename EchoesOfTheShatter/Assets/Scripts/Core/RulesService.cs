@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Echoes.Interop;
+using Echoes.Interop.Native;
 using UnityEngine;
 
 namespace Echoes.Core
@@ -8,7 +9,7 @@ namespace Echoes.Core
     /// <summary>
     /// Dono do motor de regras na sessão de jogo (docs/04_arquitetura.md, seções 6.1 e 10.4).
     /// Carrega os CSV, guarda os erros e entrega o <see cref="IRulesCore"/> ao gameplay.
-    /// Hoje usa o stub em C#; a troca pela DLL acontece em <see cref="RulesCoreFactory"/>.
+    /// Usa a DLL nativa do ShatterCore e cai no stub em C# se ela nao carregar (<see cref="RulesCoreFactory"/>).
     /// </summary>
     public sealed class RulesService : IDisposable
     {
@@ -44,6 +45,11 @@ namespace Echoes.Core
             Debug.Log($"[Rules] {Core.ImplementationName} carregou content_version {Core.ContentVersion} de '{DataDirectory}'.");
             if (Core.IsProvisional)
                 Debug.LogWarning("[Rules] Motor de regras PROVISÓRIO (stub em C#). Trocar pela DLL do ShatterCore quando a API C existir.");
+            if (Core is NativeRulesCore)
+            {
+                for (var i = 0; i < NativeRulesCore.StillInStub.Count; i++)
+                    Debug.Log("[Rules] Ainda no stub (API C v1 nao cobre): " + NativeRulesCore.StillInStub[i]);
+            }
             var warnings = Core.LoadWarnings;
             for (var i = 0; i < warnings.Count; i++)
                 Debug.LogWarning("[Rules] Valor provisório em uso (falta no CSV): " + warnings[i]);

@@ -108,10 +108,18 @@ namespace Echoes.Interop
         {
             var c = RequireContent();
             if (!(target is StubStatBlock stub)) throw new ArgumentException("target must come from this rules core");
-            var stunImmune = enemyOrNull != null
+            return new StubEffectSet(c, stub, IsStunImmune(enemyOrNull));
+        }
+
+        /// <summary>Conteudo carregado (usado pelo NativeRulesCore para o que a API C v1 ainda nao traz); nulo antes de LoadContent.</summary>
+        internal StubContent ContentOrNull => content;
+
+        /// <summary>Imunidade a atordoamento (docs/13, item 3), pendente no core: elite, chefe e familia construct.</summary>
+        internal static bool IsStunImmune(EnemyInfo enemyOrNull)
+        {
+            return enemyOrNull != null
                 && (enemyOrNull.IsElite || enemyOrNull.IsBoss
                     || string.Equals(enemyOrNull.FamilyId, StubPendingRules.StunImmuneFamily, StringComparison.Ordinal));
-            return new StubEffectSet(c, stub, stunImmune);
         }
 
         public RngState CreateRng(ulong seed, RngStream stream, ulong index) => StubPcg32.ForStream(seed, stream, index);

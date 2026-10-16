@@ -67,8 +67,15 @@ namespace Echoes.Gameplay
             return combat.PickAttack(enemy);
         }
 
+        /// <summary>
+        /// true quando não há NavMeshAgent: a lógica integra a perseguição no passo fixo (A-04).
+        /// Com agente, quem anda é o agente (a cena copia a posição dele de volta).
+        /// </summary>
+        public bool IntegratesMovement { get; set; }
+
         public void FixedTick(CombatSystem combatSystem, double dt)
         {
+            if (IntegratesMovement) self.Position += DirectVelocity() * (float)dt;
             combat = combatSystem;
             var target = combatSystem.Hero;
             var hasTarget = target != null && !target.IsDead;
@@ -131,7 +138,7 @@ namespace Echoes.Gameplay
             Brain.Reset();
         }
 
-        /// <summary>Velocidade no plano para este quadro quando não há NavMeshAgent (m/s).</summary>
+        /// <summary>Velocidade de perseguição no plano quando não há NavMeshAgent (m/s); integrada em <see cref="FixedTick"/> se <see cref="IntegratesMovement"/>.</summary>
         public PlanarVector DirectVelocity()
         {
             if (!WantsToMove || self.Hitstop.IsActive) return PlanarVector.Zero;

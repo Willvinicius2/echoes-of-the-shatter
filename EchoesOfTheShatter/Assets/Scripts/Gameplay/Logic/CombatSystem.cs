@@ -135,6 +135,10 @@ namespace Echoes.Gameplay
             for (var i = 0; i < count && i < combatants.Count; i++)
             {
                 var c = combatants[i];
+                // Posição só avança aqui, em passos de 1/60 s (A-04): o resultado não depende do FPS.
+                c.PreviousPosition = c.Position;
+                var knockback = c.ConsumeKnockback((float)dt);
+                if (!knockback.IsZero) c.Position += knockback;
                 if (c.IsDead) continue;
                 if (c.SecondsSinceCombat < double.MaxValue) c.SecondsSinceCombat += dt;
 
