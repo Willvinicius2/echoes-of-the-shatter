@@ -1,0 +1,7 @@
+/* Exporta só a API C (shatter_*) da libshattercore.so; o resto do core fica local. */
+{
+  global:
+    shatter_*;
+  local:
+    *;
+};

@@ -245,19 +245,36 @@ TEST(expedition_rf38_retreat_with_and_without_potions_keeps_loot) {
         // O loot dos encontros vencidos antes do recuo é entregue.
         EXPECT_TRUE(b.encountersCleared >= 1 || b.receipts.size() == 1);
         if (b.encountersCleared >= 1) EXPECT_TRUE(Gold(b) > 0 || !b.items.empty());
-        if (b.receipts.back().outcome == EncounterOutcome::Retreated) {
-            EXPECT_NEAR(b.receipts.back().xpRaw, 0.0, 0.0);
-            EXPECT_TRUE(b.receipts.back().loot.items.empty() && b.receipts.back().loot.stacks.empty());
+        // "O loot já obtido nunca é perdido": no encontro do recuo ficam o XP e o loot dos abates já feitos
+        // (sem abate, nada); o loot de área (prêmio por concluir o encontro) não sai.
+        const EncounterReceipt& last = b.receipts.back();
+        if (last.outcome == EncounterOutcome::Retreated) {
+            if (last.kills == 0) {
+                EXPECT_NEAR(last.xpRaw, 0.0, 0.0);
+                EXPECT_TRUE(last.loot.items.empty() && last.loot.stacks.empty());
+            } else {
+                EXPECT_TRUE(last.xpRaw > 0.0);
+            }
         }
+        // O total entregue inclui o recibo do recuo (soma dos recibos com Vigor; sem teto aqui: nível 1).
+        double xp = 0.0;
+        for (const EncounterReceipt& rc : b.receipts) xp += rc.xpRaw * db.Rules().vigorByBand[rc.vigorBand];
+        if (!b.xpCapped) EXPECT_NEAR(b.xpGained, xp, 1e-6);
+        // Dica única e acionável: recuo sem poções → "leve mais poções".
+        ASSERT_EQ(b.tipKeys.size(), static_cast<std::size_t>(1));
+        EXPECT_EQ(b.tipKeys[0], std::string(kTipMorePotions));
     }
     EXPECT_TRUE(earlier >= runs - 1);  // sem poções recua mais cedo (ou no mesmo ponto)
-    // Falhas de cura são contadas e geram dica.
+    // Falhas de cura (quis beber sem ter poção) são contadas e geram a dica de poções.
     ExpeditionRequest req = tu::MakeRequest(db, 4, 3, 1, 0);
     const ExpeditionResult r = SimulateExpedition(db, req);
     EXPECT_TRUE(r.healFailures > 0);
-    bool tip = false;
-    for (const std::string& k : r.tipKeys) tip = tip || k == "tip.expedition.raise_potion_threshold";
-    EXPECT_TRUE(tip);
+    ASSERT_EQ(r.tipKeys.size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(r.tipKeys[0], std::string(kTipMorePotions));
+    // Expedição tranquila: "correu bem".
+    const ExpeditionResult calm = SimulateExpedition(tu::RichDb(), tu::MakeRequest(tu::RichDb(), 1, 3));
+    ASSERT_EQ(calm.tipKeys.size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(calm.tipKeys[0], std::string(kTipAllGood));
 }
 
 TEST(expedition_rf38_gear_swap_after_start_does_not_change_result) {
@@ -437,4 +454,126 @@ TEST(expedition_rnf03_twelve_hours_under_two_seconds_release) {
 #ifdef NDEBUG
     EXPECT_TRUE(sec < 2.0);
 #endif
+}
+
+TEST(expedition_rf32_idle_is_about_35_percent_of_fervor_xp_on_the_same_receipts) {
+    // Mesmo build, mesma área, horas 1–4 (Vigor 100%): o idle rende a taxa base; o jogo manual aplicaria
+    // o Fervor (×fervor_xp_mult) aos MESMOS recibos. Meta do plano: idle ≈ 35% (±5 p.p.) do manual.
+    const std::unique_ptr<ContentDB> dbp = BigXpDb();
+    const ContentDB& db = *dbp;
+    const ExpeditionResult r = SimulateExpedition(db, tu::MakeRequest(db, 4, 2718));
+    ASSERT_TRUE(r.receipts.size() > 100);
+    double manualXp = 0.0;
+    for (const EncounterReceipt& rc : r.receipts) manualXp += rc.xpRaw * db.Rules().fervorXpMult;
+    ASSERT_TRUE(manualXp > 0.0);
+    const double ratio = r.xpGained / manualXp;
+    EXPECT_NEAR(ratio, 0.35, 0.05);
+    EXPECT_NEAR(ratio, 1.0 / 3.0, 1e-9);  // com Fervor ×3 a conta exata é 33,3% (06_dados.md, D2)
+    // Ouro e materiais: o Fervor multiplica por exatamente fervor_gold_mat_mult (1,25) na mesma rolagem.
+    ContentDB gold;
+    gold.SetContentVersion(1);
+    LootTableData t;
+    t.id = "loot.test.gold";
+    LootEntry e;
+    e.kind = LootEntryKind::Stack;
+    e.refId = "material.shard";
+    e.minAmount = 4;
+    e.maxAmount = 400;
+    t.entries.push_back(e);
+    gold.Add(t);
+    ASSERT_TRUE(gold.Finalize());
+    for (std::uint64_t seed = 1; seed <= 200; ++seed) {
+        LootContext idle, manual;
+        idle.mode = LootMode::Idle;
+        manual.mode = LootMode::Manual;
+        Pcg32 a(seed), b(seed);
+        const LootDrop di = RollLootTable(gold, *gold.FindLootTable("loot.test.gold"), idle, a);
+        const LootDrop dm = RollLootTable(gold, *gold.FindLootTable("loot.test.gold"), manual, b);
+        ASSERT_TRUE(di.stacks.size() == 1 && dm.stacks.size() == 1);
+        const double base = static_cast<double>(di.stacks[0].amount);
+        // Arredonda para baixo (quantidade inteira); a diferença para ×1,25 é sempre < 1 unidade.
+        EXPECT_EQ(dm.stacks[0].amount, static_cast<std::int64_t>(std::floor(base * gold.Rules().fervorGoldMatMult)));
+    }
+}
+
+TEST(expedition_rf34_many_twelve_hour_expeditions_never_give_top_tier_or_more_than_four_rares) {
+    // Critério: 10 mil expedições de 12 h (SHATTER_NIGHTLY=1, ~12 min em Release). Por commit: 40 (Release) ou 6 (Debug).
+    // Todo inimigo usa a tabela do Guardião (Único, livro de especialização, pedra de rota e Fragmento de Eco)
+    // e Raro tem peso alto, para o teto de 4 Raros trabalhar de verdade.
+    const std::unique_ptr<ContentDB> dbp = MakeDb({
+        {"enemies.csv", tu::Replace(tu::Replace(tu::ReadFile(tu::RichDir() + "/enemies.csv"),
+                                                "life:80:8|armor:10:0,10,2,loot.crypt.common",
+                                                "life:80:8|armor:10:0,10,2,loot.crypt.guardian"),
+                                    "loot.crypt.common", "loot.crypt.guardian")},
+        {"loot_tables.csv", tu::Replace(tu::ReadFile(tu::RichDir() + "/loot_tables.csv"), "loot.crypt.guardian,2,1,60,30,10",
+                                        "loot.crypt.guardian,2,1,50,30,20")},
+    });
+    const ContentDB& db = *dbp;
+#ifdef NDEBUG
+    int n = 40;
+#else
+    int n = 6;
+#endif
+    if (tu::Nightly()) n = 10000;
+    int capped = 0;
+    for (int k = 0; k < n; ++k) {
+        const ExpeditionResult r = SimulateExpedition(db, tu::MakeRequest(db, 12, 900000 + static_cast<std::uint64_t>(k)));
+        int rares = 0;
+        for (const ItemInstance& it : r.items) {
+            rares += it.rarity == Rarity::Rare ? 1 : 0;
+            if (it.rarity == Rarity::Unique || !it.uniqueId.empty()) { FAIL("Unico no idle"); return; }
+        }
+        for (const StackEntry& s : r.stacks) {
+            if (s.id.rfind("book.", 0) == 0 || s.id.rfind("map_stone.", 0) == 0 || s.id == "material.echo_fragment" ||
+                (s.id.rfind("sigil.", 0) == 0 && s.id.rfind("sigil.common.", 0) != 0)) {
+                FAIL("item de topo no idle: " + s.id);
+                return;
+            }
+        }
+        if (rares > db.Rules().maxRaresPerExpedition) { FAIL("mais de 4 Raros numa expedicao"); return; }
+        capped += rares == db.Rules().maxRaresPerExpedition ? 1 : 0;
+    }
+    EXPECT_EQ(capped, n);  // com Raro frequente, toda expedição de 12 h bate no teto (e não passa dele)
+    // A taxa de Raro por item no idle é metade da manual (±10% relativo) na mesma tabela: ver
+    // loot_rare_cap_and_rare_rate_idle_is_half_of_manual (o número de itens por encontro não depende do modo).
+}
+
+TEST(expedition_rnf02_changing_a_damage_coefficient_keeps_loot_of_identical_encounters) {
+    // Fluxos separados: um coeficiente de dano maior muda o combate (duração, dano), mas o loot sorteado
+    // num encontro que termina igual (mesmo modelo, mesmos abates) continua idêntico.
+    const ContentDB& a = tu::RichDb();
+    std::string skills = tu::ReadFile(tu::RichDir() + "/skills.csv");
+    skills = tu::Replace(skills, "skill.warrior.iron_cut,class.warrior,,attack|melee|physical,melee,,10,,,,1,1.1,1.2",
+                         "skill.warrior.iron_cut,class.warrior,,attack|melee|physical,melee,,10,,,,1.4,1.1,1.2");
+    const std::unique_ptr<ContentDB> bp = MakeDb({{"skills.csv", skills}});
+    const ContentDB& b = *bp;
+    ASSERT_TRUE(b.FindSkill("skill.warrior.iron_cut")->coefficientByRank[0] > 1.3);
+    ExpeditionRequest req = tu::MakeRequest(a, 1, 8080);
+    const ExpeditionResult ra = SimulateExpedition(a, req);
+    const ExpeditionResult rb = SimulateExpedition(b, req);
+    EXPECT_NE(ra.resultHash, rb.resultHash);  // o combate mudou de fato
+    const std::size_t n = std::min(ra.receipts.size(), rb.receipts.size());
+    int compared = 0, durationsDiffer = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+        const EncounterReceipt& x = ra.receipts[i];
+        const EncounterReceipt& y = rb.receipts[i];
+        if (x.templateId != y.templateId || x.kills != y.kills || x.outcome != EncounterOutcome::Cleared ||
+            y.outcome != EncounterOutcome::Cleared)
+            continue;
+        ++compared;
+        durationsDiffer += x.duration != y.duration ? 1 : 0;
+        EXPECT_EQ(x.loot.items.size(), y.loot.items.size());
+        for (std::size_t k = 0; k < std::min(x.loot.items.size(), y.loot.items.size()); ++k) {
+            EXPECT_EQ(x.loot.items[k].baseId, y.loot.items[k].baseId);
+            EXPECT_ENUM_EQ(x.loot.items[k].rarity, y.loot.items[k].rarity);
+            EXPECT_EQ(x.loot.items[k].affixes.size(), y.loot.items[k].affixes.size());
+        }
+        EXPECT_EQ(x.loot.stacks.size(), y.loot.stacks.size());
+        for (std::size_t k = 0; k < std::min(x.loot.stacks.size(), y.loot.stacks.size()); ++k) {
+            EXPECT_EQ(x.loot.stacks[k].id, y.loot.stacks[k].id);
+            EXPECT_EQ(x.loot.stacks[k].amount, y.loot.stacks[k].amount);
+        }
+    }
+    EXPECT_TRUE(compared > 50);
+    EXPECT_TRUE(durationsDiffer > 0);  // o mesmo encontro durou outro tempo, e o loot não mudou
 }

@@ -26,6 +26,7 @@ EchoesOfTheShatter/crashlytics-build.properties
 
 # Build do ShatterCore (CMake)
 /build/
+/build-*/
 
 # Backups automáticos do Blender
 *.blend1

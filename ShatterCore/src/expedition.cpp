@@ -87,6 +87,10 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
     for (const ContentId& id : su.map->encounters) {
         const EncounterTemplate* e = db.FindEncounter(id);
         if (e == nullptr) return StopReason::ContentMismatch;
+        // Todo encontro precisa gerar ao menos um inimigo existente (senão duraria 0 s e nunca terminaria).
+        bool spawns = false;
+        for (const EncounterGroup& g : e->groups) spawns = spawns || (g.countMin >= 1 && db.FindEnemy(g.enemyId) != nullptr);
+        if (!spawns) return StopReason::ContentMismatch;
         su.encounters.push_back(e);
         su.encounterWeights.push_back(e->weight);
     }
@@ -169,8 +173,7 @@ public:
                 EnemyInst e;
                 e.data = ed;
                 e.elite = events_.Chance(g.eliteChance) || ed->isElite;
-                for (const StatGrowth& sg : ed->stats)
-                    e.stats.SetBase(sg.stat, sg.base + sg.perLevel * static_cast<double>(level_ - 1));
+                BuildEnemyStatBlock(*ed, level_, e.stats);
                 e.life = e.stats.Get(StatId::Life);
                 enemies_.push_back(std::move(e));
             }
@@ -226,7 +229,11 @@ public:
         rc.damageDealt = damageDealt_;
         rc.lifeFractionAtEnd = maxLife > 0.0 ? life_ / maxLife : 0.0;
         if (retreated) {
-            rc.outcome = EncounterOutcome::Retreated;  // sem XP nem loot deste encontro
+            // "O loot já obtido nunca é perdido" (plano, seção 7): ficam o XP e o loot dos inimigos mortos
+            // antes do recuo; só o loot de área (prêmio por concluir o encontro) não sai.
+            rc.outcome = EncounterOutcome::Retreated;
+            rc.xpRaw = xp_;
+            rc.loot = std::move(drop_);
             out.stopRetreat = true;
         } else {
             rc.outcome = EncounterOutcome::Cleared;
@@ -689,6 +696,10 @@ ExpeditionResult SimulateExpedition(const ContentDB& db, const ExpeditionRequest
     return FinalizeExpedition(db, req, p);
 }
 
+void ApplyWindowStop(ExpeditionProgress& progress, const OfflineWindow& window) {
+    if (window.endedByRollback && progress.stop == StopReason::DurationReached) progress.stop = StopReason::ClockRollback;
+}
+
 ExpeditionResult FinalizeExpedition(const ContentDB& db, const ExpeditionRequest& req,
                                     const ExpeditionProgress& progress) {
     const RulesConstants& rules = db.Rules();
@@ -757,13 +768,11 @@ ExpeditionResult FinalizeExpedition(const ContentDB& db, const ExpeditionRequest
         if (amount > 0) res.stacks.push_back({stackIds[k], amount});
     }
 
-    // Dicas (chaves de localização).
-    if (res.healFailures > 0) res.tipKeys.push_back("tip.expedition.raise_potion_threshold");
-    if (res.stop == StopReason::Retreat) {
-        res.tipKeys.push_back(req.snapshot.character.potions <= 0 ? "tip.expedition.bring_potions"
-                                                                   : "tip.expedition.retreat_risk");
-    }
-    if (res.xpCapped) res.tipKeys.push_back("tip.expedition.xp_capped");
+    // Dica (uma chave de localização; prioridade em expedition.h).
+    const std::int64_t potionsLeft = progress.potionsLeft < 0 ? req.snapshot.character.potions : progress.potionsLeft;
+    if (res.stop == StopReason::Retreat && potionsLeft > 0) res.tipKeys.push_back(kTipLowLife);
+    else if (res.stop == StopReason::Retreat || res.healFailures > 0) res.tipKeys.push_back(kTipMorePotions);
+    else res.tipKeys.push_back(kTipAllGood);
 
     // Hash canônico do resultado.
     Hasher h;

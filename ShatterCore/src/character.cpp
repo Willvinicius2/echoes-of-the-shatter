@@ -75,6 +75,13 @@ bool BuildStatBlock(const ContentDB& db, const CharacterState& c, StatBlock& out
     return true;
 }
 
+void BuildEnemyStatBlock(const EnemyData& enemy, int level, StatBlock& out) {
+    StatBlock sb;
+    const int lvl = level < 1 ? 1 : level;
+    for (const StatGrowth& g : enemy.stats) sb.SetBase(g.stat, g.base + g.perLevel * static_cast<double>(lvl - 1));
+    out = std::move(sb);
+}
+
 bool IsIdleCompatible(const ContentDB& db, const CharacterState& c, std::vector<ContentId>* blockingIds) {
     std::vector<ContentId> blocking;
     auto add = [&](const ContentId& id) {

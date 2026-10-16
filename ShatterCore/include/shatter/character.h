@@ -51,6 +51,11 @@ struct CharacterSnapshot {
 // Implementação: src/character.cpp. Retorna false (e preenche error) se algum ID não existir.
 bool BuildStatBlock(const ContentDB& db, const CharacterState& c, StatBlock& out, std::string* error = nullptr);
 
+// ADIÇÃO (docs/09_mudancas_contrato.md): atributos de um inimigo no nível de monstro `level`
+// (base + perLevel × (nível − 1) de cada StatGrowth, sem mods). O mesmo builder no simulador idle e,
+// pela API C, no combate em tempo real. Nível < 1 conta como 1.
+void BuildEnemyStatBlock(const EnemyData& enemy, int level, StatBlock& out);
+
 // Verifica se todas as habilidades da barra, Sigilos e Únicos equipados têm IdleProfile
 // suportado. Preenche `blockingIds` com o que bloqueia (UI: "X ainda não funciona em patrulha").
 bool IsIdleCompatible(const ContentDB& db, const CharacterState& c, std::vector<ContentId>* blockingIds);

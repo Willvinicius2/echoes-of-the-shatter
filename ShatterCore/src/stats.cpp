@@ -22,7 +22,7 @@ constexpr bool HasNeutralBaseOne(StatId id) {
            id == StatId::PotionEffect;
 }
 
-constexpr bool ValidStat(StatId id) { return static_cast<int>(id) >= 0 && static_cast<int>(id) < kStatCount; }
+constexpr bool ValidStat(StatId id) { return static_cast<int>(id) < kStatCount; }
 
 }  // namespace
 

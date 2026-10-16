@@ -132,8 +132,8 @@ inline int RunAll(int argc, char** argv) {
 
 #define EXPECT_EQ(a, b)                                                                     \
     do {                                                                                    \
-        const auto& shatter_va_ = (a);                                                      \
-        const auto& shatter_vb_ = (b);                                                      \
+        const auto shatter_va_ = (a); /* cópia: (a) pode ser membro de um temporário */      \
+        const auto shatter_vb_ = (b);                                                       \
         if (!(shatter_va_ == shatter_vb_))                                                  \
             ::shatter_test::ReportFailure(__FILE__, __LINE__,                               \
                 "EXPECT_EQ(" #a ", " #b "): " + ::shatter_test::ToStr(shatter_va_) +        \
@@ -142,8 +142,8 @@ inline int RunAll(int argc, char** argv) {
 
 #define EXPECT_NE(a, b)                                                                     \
     do {                                                                                    \
-        const auto& shatter_va_ = (a);                                                      \
-        const auto& shatter_vb_ = (b);                                                      \
+        const auto shatter_va_ = (a); /* cópia: (a) pode ser membro de um temporário */      \
+        const auto shatter_vb_ = (b);                                                       \
         if (shatter_va_ == shatter_vb_)                                                     \
             ::shatter_test::ReportFailure(__FILE__, __LINE__,                               \
                 "EXPECT_NE(" #a ", " #b "): ambos = " + ::shatter_test::ToStr(shatter_va_)); \

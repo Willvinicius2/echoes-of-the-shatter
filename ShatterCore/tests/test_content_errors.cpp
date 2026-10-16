@@ -145,3 +145,23 @@ TEST(content_real_data_passes_finalize) {
     if (!loaded || !fin) FAIL("conteudo real invalido:\n" + Dump(db));
     EXPECT_TRUE(db.ContentVersion() >= 1u);
 }
+
+TEST(content_encounter_must_spawn_at_least_one_enemy) {
+    // Um encontro com 0 inimigos duraria 0 s e travaria o simulador: Finalize recusa (programático ou CSV)
+    // e o simulador encerra com ContentMismatch se ainda assim receber um.
+    ContentDB db;
+    db.SetContentVersion(1);
+    EncounterTemplate e;
+    e.id = "enc.test.empty";
+    EncounterGroup g;
+    g.enemyId = "enemy.ghost";
+    g.countMin = 0;
+    g.countMax = 0;
+    e.groups.push_back(g);
+    db.Add(e);
+    EXPECT_FALSE(db.Finalize());
+    EXPECT_TRUE(HasError(db, "encounters.csv", 0, "E_RANGE"));
+    ExpectFail("grupo com zero inimigos", "encounters.csv",
+               tu::Replace(Table("encounters.csv"), "enemy.hollow_sentinel:1:2:0.1", "enemy.hollow_sentinel:0:2:0.1"),
+               "encounters.csv", 2, "E_RANGE");
+}
