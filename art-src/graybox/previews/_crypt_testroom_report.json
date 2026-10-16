@@ -1,0 +1,2111 @@
+{
+ "version": {
+  "blender": "5.2.2 LTS",
+  "python": "3.13.16"
+ },
+ "file": "crypt_testroom_graybox.blend",
+ "room_m": [
+  16,
+  16
+ ],
+ "blender_bounds": {
+  "min": [
+   -12.0,
+   -8.5,
+   -0.18
+  ],
+  "max": [
+   8.5,
+   8.5,
+   3.58
+  ]
+ },
+ "unity_bounds": {
+  "min": [
+   -8.5,
+   -0.18,
+   -8.5
+  ],
+  "max": [
+   12.0,
+   3.58,
+   8.5
+  ],
+  "size": [
+   20.5,
+   3.76,
+   17.0
+  ]
+ },
+ "instances": {
+  "SM_Cripta_Floor_2x2_A": 62,
+  "SM_Cripta_Floor_2x2_B": 4,
+  "SM_Cripta_Stairs_A": 1,
+  "SM_Cripta_WallCorner_A": 4,
+  "SM_Cripta_Wall_2m_A": 30,
+  "SM_Cripta_Arch_A": 1,
+  "SM_Cripta_Pillar_A": 4,
+  "SM_Cripta_Brazier_A": 2,
+  "SM_Cripta_Sarcophagus_A": 3,
+  "SM_Cripta_BonePile_A": 4,
+  "SK_Warrior": 1,
+  "SM_Enemy_HollowSentinel": 1,
+  "SM_Enemy_AshHound": 1,
+  "SM_Enemy_GhostArcher": 1
+ },
+ "scene_tris": 34020,
+ "hidden_in_game_preview": [
+  "SM_Cripta_WallCorner_A.001",
+  "SM_Cripta_WallCorner_A.002",
+  "SM_Cripta_WallCorner_A.003",
+  "SM_Cripta_Wall_2m_A.001",
+  "SM_Cripta_Wall_2m_A.002",
+  "SM_Cripta_Wall_2m_A.005",
+  "SM_Cripta_Wall_2m_A.006",
+  "SM_Cripta_Wall_2m_A.009",
+  "SM_Cripta_Wall_2m_A.010",
+  "SM_Cripta_Wall_2m_A.013",
+  "SM_Cripta_Wall_2m_A.014",
+  "SM_Cripta_Wall_2m_A.016",
+  "SM_Cripta_Wall_2m_A.017",
+  "SM_Cripta_Wall_2m_A.019",
+  "SM_Cripta_Wall_2m_A.020",
+  "SM_Cripta_Wall_2m_A.023",
+  "SM_Cripta_Wall_2m_A.024",
+  "SM_Cripta_Wall_2m_A.027",
+  "SM_Cripta_Wall_2m_A.028"
+ ],
+ "game_camera": {
+  "pitch": 55,
+  "yaw": 45,
+  "fov_vertical": 14.2,
+  "distance": 42,
+  "target": "heroi + (0, 0,52, 0)",
+  "hero_height_px_1080p": 117
+ },
+ "layout": [
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A",
+   "group": "Floor",
+   "blender_pos": [
+    -7,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.001",
+   "group": "Floor",
+   "blender_pos": [
+    -7,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.002",
+   "group": "Floor",
+   "blender_pos": [
+    -7,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.003",
+   "group": "Floor",
+   "blender_pos": [
+    -7,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.004",
+   "group": "Floor",
+   "blender_pos": [
+    -7,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.005",
+   "group": "Floor",
+   "blender_pos": [
+    -7,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.006",
+   "group": "Floor",
+   "blender_pos": [
+    -7,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.007",
+   "group": "Floor",
+   "blender_pos": [
+    -7,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.008",
+   "group": "Floor",
+   "blender_pos": [
+    -5,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.009",
+   "group": "Floor",
+   "blender_pos": [
+    -5,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.010",
+   "group": "Floor",
+   "blender_pos": [
+    -5,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.011",
+   "group": "Floor",
+   "blender_pos": [
+    -5,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.012",
+   "group": "Floor",
+   "blender_pos": [
+    -5,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.013",
+   "group": "Floor",
+   "blender_pos": [
+    -5,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.014",
+   "group": "Floor",
+   "blender_pos": [
+    -5,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.015",
+   "group": "Floor",
+   "blender_pos": [
+    -5,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.016",
+   "group": "Floor",
+   "blender_pos": [
+    -3,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.017",
+   "group": "Floor",
+   "blender_pos": [
+    -3,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.018",
+   "group": "Floor",
+   "blender_pos": [
+    -3,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.019",
+   "group": "Floor",
+   "blender_pos": [
+    -3,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.020",
+   "group": "Floor",
+   "blender_pos": [
+    -3,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.021",
+   "group": "Floor",
+   "blender_pos": [
+    -3,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.022",
+   "group": "Floor",
+   "blender_pos": [
+    -3,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.023",
+   "group": "Floor",
+   "blender_pos": [
+    -3,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.024",
+   "group": "Floor",
+   "blender_pos": [
+    -1,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    1.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.025",
+   "group": "Floor",
+   "blender_pos": [
+    -1,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    1.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.026",
+   "group": "Floor",
+   "blender_pos": [
+    -1,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    1.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_B",
+   "name": "SM_Cripta_Floor_2x2_B",
+   "group": "Floor",
+   "blender_pos": [
+    -1,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 180,
+   "unity_pos": [
+    1.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": -180.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_B",
+   "name": "SM_Cripta_Floor_2x2_B.001",
+   "group": "Floor",
+   "blender_pos": [
+    -1,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    1.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.027",
+   "group": "Floor",
+   "blender_pos": [
+    -1,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    1.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.028",
+   "group": "Floor",
+   "blender_pos": [
+    -1,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    1.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.029",
+   "group": "Floor",
+   "blender_pos": [
+    -1,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    1.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.030",
+   "group": "Floor",
+   "blender_pos": [
+    1,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.031",
+   "group": "Floor",
+   "blender_pos": [
+    1,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.032",
+   "group": "Floor",
+   "blender_pos": [
+    1,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_B",
+   "name": "SM_Cripta_Floor_2x2_B.002",
+   "group": "Floor",
+   "blender_pos": [
+    1,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 270,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": 90.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_B",
+   "name": "SM_Cripta_Floor_2x2_B.003",
+   "group": "Floor",
+   "blender_pos": [
+    1,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.033",
+   "group": "Floor",
+   "blender_pos": [
+    1,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.034",
+   "group": "Floor",
+   "blender_pos": [
+    1,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.035",
+   "group": "Floor",
+   "blender_pos": [
+    1,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.036",
+   "group": "Floor",
+   "blender_pos": [
+    3,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.037",
+   "group": "Floor",
+   "blender_pos": [
+    3,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.038",
+   "group": "Floor",
+   "blender_pos": [
+    3,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.039",
+   "group": "Floor",
+   "blender_pos": [
+    3,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.040",
+   "group": "Floor",
+   "blender_pos": [
+    3,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.041",
+   "group": "Floor",
+   "blender_pos": [
+    3,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.042",
+   "group": "Floor",
+   "blender_pos": [
+    3,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.043",
+   "group": "Floor",
+   "blender_pos": [
+    3,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.044",
+   "group": "Floor",
+   "blender_pos": [
+    5,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.045",
+   "group": "Floor",
+   "blender_pos": [
+    5,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.046",
+   "group": "Floor",
+   "blender_pos": [
+    5,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.047",
+   "group": "Floor",
+   "blender_pos": [
+    5,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.048",
+   "group": "Floor",
+   "blender_pos": [
+    5,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.049",
+   "group": "Floor",
+   "blender_pos": [
+    5,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.050",
+   "group": "Floor",
+   "blender_pos": [
+    5,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.051",
+   "group": "Floor",
+   "blender_pos": [
+    5,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.052",
+   "group": "Floor",
+   "blender_pos": [
+    7,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.053",
+   "group": "Floor",
+   "blender_pos": [
+    7,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.054",
+   "group": "Floor",
+   "blender_pos": [
+    7,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.055",
+   "group": "Floor",
+   "blender_pos": [
+    7,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.056",
+   "group": "Floor",
+   "blender_pos": [
+    7,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.057",
+   "group": "Floor",
+   "blender_pos": [
+    7,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.058",
+   "group": "Floor",
+   "blender_pos": [
+    7,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.059",
+   "group": "Floor",
+   "blender_pos": [
+    7,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.060",
+   "group": "Floor",
+   "blender_pos": [
+    -9,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    9.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Floor_2x2_A",
+   "name": "SM_Cripta_Floor_2x2_A.061",
+   "group": "Floor",
+   "blender_pos": [
+    -9,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    9.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Stairs_A",
+   "name": "SM_Cripta_Stairs_A",
+   "group": "Props",
+   "blender_pos": [
+    -11,
+    0,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    11.0,
+    0.0,
+    0.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_WallCorner_A",
+   "name": "SM_Cripta_WallCorner_A",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    8.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_WallCorner_A",
+   "name": "SM_Cripta_WallCorner_A.001",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_WallCorner_A",
+   "name": "SM_Cripta_WallCorner_A.002",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_WallCorner_A",
+   "name": "SM_Cripta_WallCorner_A.003",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    8.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A",
+   "group": "Walls",
+   "blender_pos": [
+    -7,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.001",
+   "group": "Walls",
+   "blender_pos": [
+    -7,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.002",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.003",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    -7,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    8.0,
+    0.0,
+    7.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.004",
+   "group": "Walls",
+   "blender_pos": [
+    -5,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.005",
+   "group": "Walls",
+   "blender_pos": [
+    -5,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    5.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.006",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.007",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    -5,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    8.0,
+    0.0,
+    5.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.008",
+   "group": "Walls",
+   "blender_pos": [
+    -3,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.009",
+   "group": "Walls",
+   "blender_pos": [
+    -3,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    3.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.010",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.011",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    -3,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    8.0,
+    0.0,
+    3.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.012",
+   "group": "Walls",
+   "blender_pos": [
+    -1,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    1.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.013",
+   "group": "Walls",
+   "blender_pos": [
+    -1,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    1.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.014",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    -1,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    1.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.015",
+   "group": "Walls",
+   "blender_pos": [
+    1,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.016",
+   "group": "Walls",
+   "blender_pos": [
+    1,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -1.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.017",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    1,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    -1.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.018",
+   "group": "Walls",
+   "blender_pos": [
+    3,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.019",
+   "group": "Walls",
+   "blender_pos": [
+    3,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -3.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.020",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.021",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    3,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    8.0,
+    0.0,
+    -3.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.022",
+   "group": "Walls",
+   "blender_pos": [
+    5,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.023",
+   "group": "Walls",
+   "blender_pos": [
+    5,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -5.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.024",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.025",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    5,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    8.0,
+    0.0,
+    -5.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.026",
+   "group": "Walls",
+   "blender_pos": [
+    7,
+    -8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.027",
+   "group": "Walls",
+   "blender_pos": [
+    7,
+    8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -7.0,
+    0.0,
+    -8.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.028",
+   "group": "Walls",
+   "blender_pos": [
+    8,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    -8.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Wall_2m_A",
+   "name": "SM_Cripta_Wall_2m_A.029",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    7,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    8.0,
+    0.0,
+    -7.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Arch_A",
+   "name": "SM_Cripta_Arch_A",
+   "group": "Walls",
+   "blender_pos": [
+    -8,
+    0,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    8.0,
+    0.0,
+    0.0
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_Pillar_A",
+   "name": "SM_Cripta_Pillar_A",
+   "group": "Props",
+   "blender_pos": [
+    -4,
+    -4,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    4.0,
+    0.0,
+    4.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Pillar_A",
+   "name": "SM_Cripta_Pillar_A.001",
+   "group": "Props",
+   "blender_pos": [
+    4,
+    -4,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -4.0,
+    0.0,
+    4.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Pillar_A",
+   "name": "SM_Cripta_Pillar_A.002",
+   "group": "Props",
+   "blender_pos": [
+    4,
+    4,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    -4.0,
+    0.0,
+    -4.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Pillar_A",
+   "name": "SM_Cripta_Pillar_A.003",
+   "group": "Props",
+   "blender_pos": [
+    -4,
+    4,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    4.0,
+    0.0,
+    -4.0
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Brazier_A",
+   "name": "SM_Cripta_Brazier_A",
+   "group": "Props",
+   "blender_pos": [
+    -7.0,
+    -2.8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    2.8
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Brazier_A",
+   "name": "SM_Cripta_Brazier_A.001",
+   "group": "Props",
+   "blender_pos": [
+    -7.0,
+    2.8,
+    0.0
+   ],
+   "blender_rot_z": 0.0,
+   "unity_pos": [
+    7.0,
+    0.0,
+    -2.8
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Sarcophagus_A",
+   "name": "SM_Cripta_Sarcophagus_A",
+   "group": "Props",
+   "blender_pos": [
+    -2.0,
+    -6.6,
+    0.0
+   ],
+   "blender_rot_z": 0,
+   "unity_pos": [
+    2.0,
+    0.0,
+    6.6
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Sarcophagus_A",
+   "name": "SM_Cripta_Sarcophagus_A.001",
+   "group": "Props",
+   "blender_pos": [
+    2.0,
+    -6.6,
+    0.0
+   ],
+   "blender_rot_z": 0,
+   "unity_pos": [
+    -2.0,
+    0.0,
+    6.6
+   ],
+   "unity_rot_y": 0.0
+  },
+  {
+   "asset": "SM_Cripta_Sarcophagus_A",
+   "name": "SM_Cripta_Sarcophagus_A.002",
+   "group": "Props",
+   "blender_pos": [
+    -6.6,
+    5.5,
+    0.0
+   ],
+   "blender_rot_z": 90,
+   "unity_pos": [
+    6.6,
+    0.0,
+    -5.5
+   ],
+   "unity_rot_y": -90.0
+  },
+  {
+   "asset": "SM_Cripta_BonePile_A",
+   "name": "SM_Cripta_BonePile_A",
+   "group": "Props",
+   "blender_pos": [
+    -3.2,
+    4.8,
+    0.0
+   ],
+   "blender_rot_z": 20,
+   "unity_pos": [
+    3.2,
+    0.0,
+    -4.8
+   ],
+   "unity_rot_y": -20.0
+  },
+  {
+   "asset": "SM_Cripta_BonePile_A",
+   "name": "SM_Cripta_BonePile_A.001",
+   "group": "Props",
+   "blender_pos": [
+    4.6,
+    1.8,
+    0.0
+   ],
+   "blender_rot_z": 130,
+   "unity_pos": [
+    -4.6,
+    0.0,
+    -1.8
+   ],
+   "unity_rot_y": -130.0
+  },
+  {
+   "asset": "SM_Cripta_BonePile_A",
+   "name": "SM_Cripta_BonePile_A.002",
+   "group": "Props",
+   "blender_pos": [
+    1.8,
+    -4.8,
+    0.0
+   ],
+   "blender_rot_z": 250,
+   "unity_pos": [
+    -1.8,
+    0.0,
+    4.8
+   ],
+   "unity_rot_y": 110.0
+  },
+  {
+   "asset": "SM_Cripta_BonePile_A",
+   "name": "SM_Cripta_BonePile_A.003",
+   "group": "Props",
+   "blender_pos": [
+    -5.4,
+    -5.4,
+    0.0
+   ],
+   "blender_rot_z": 75,
+   "unity_pos": [
+    5.4,
+    0.0,
+    5.4
+   ],
+   "unity_rot_y": -75.0
+  },
+  {
+   "asset": "SK_Warrior",
+   "name": "Rig_Humanoid_Chibi_Warrior",
+   "group": "Characters",
+   "blender_pos": [
+    0.6,
+    0.3,
+    0.0
+   ],
+   "blender_rot_z": -90.0,
+   "unity_pos": [
+    -0.6,
+    0.0,
+    -0.3
+   ],
+   "unity_rot_y": 90.0
+  },
+  {
+   "asset": "SM_Enemy_HollowSentinel",
+   "name": "SM_Enemy_HollowSentinel",
+   "group": "Characters",
+   "blender_pos": [
+    -3.0,
+    -1.6,
+    0.0
+   ],
+   "blender_rot_z": 117.82,
+   "unity_pos": [
+    3.0,
+    0.0,
+    1.6
+   ],
+   "unity_rot_y": -117.82
+  },
+  {
+   "asset": "SM_Enemy_AshHound",
+   "name": "SM_Enemy_AshHound",
+   "group": "Characters",
+   "blender_pos": [
+    -2.6,
+    1.9,
+    0.0
+   ],
+   "blender_rot_z": 63.43,
+   "unity_pos": [
+    2.6,
+    0.0,
+    -1.9
+   ],
+   "unity_rot_y": -63.43
+  },
+  {
+   "asset": "SM_Enemy_GhostArcher",
+   "name": "SM_Enemy_GhostArcher",
+   "group": "Characters",
+   "blender_pos": [
+    -5.2,
+    0.4,
+    0.0
+   ],
+   "blender_rot_z": 89.01,
+   "unity_pos": [
+    5.2,
+    0.0,
+    -0.4
+   ],
+   "unity_rot_y": -89.01
+  }
+ ]
+}

@@ -1,42 +1,138 @@
 {
- "SM_Enemy_HollowSentinel": {
-  "h": 1.64,
-  "z0": 0.0,
-  "w": 0.985,
-  "d": 0.74,
-  "tris": 432,
-  "mats": 8
+ "version": {
+  "blender": "5.2.2 LTS",
+  "python": "3.13.16"
  },
- "SM_Enemy_AshHound": {
-  "h": 1.01,
-  "z0": 0.0,
-  "w": 0.415,
-  "d": 1.857,
-  "tris": 244,
-  "mats": 5
- },
- "SM_Enemy_StoneHerald": {
-  "h": 1.96,
-  "z0": 0.0,
-  "w": 2.563,
-  "d": 0.932,
-  "tris": 220,
-  "mats": 4
- },
- "SM_Enemy_GhostArcher": {
-  "h": 1.48,
-  "z0": 0.02,
-  "w": 0.8,
-  "d": 0.914,
-  "tris": 324,
-  "mats": 5
- },
- "SM_Boss_CryptGuardian": {
-  "h": 5.147,
-  "z0": -0.122,
-  "w": 5.081,
-  "d": 2.835,
-  "tris": 552,
-  "mats": 9
+ "enemies": {
+  "SM_Enemy_HollowSentinel": {
+   "file": "fbx/SM_Enemy_HollowSentinel.fbx",
+   "height": 1.64,
+   "foot_z": 0.0,
+   "unity": {
+    "min": [
+     -0.525,
+     0.0,
+     -0.22
+    ],
+    "max": [
+     0.46,
+     1.64,
+     0.52
+    ],
+    "size": [
+     0.985,
+     1.64,
+     0.74
+    ]
+   },
+   "tris": 432,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Enemy_AshHound": {
+   "file": "fbx/SM_Enemy_AshHound.fbx",
+   "height": 1.01,
+   "foot_z": 0.0,
+   "unity": {
+    "min": [
+     -0.208,
+     0.0,
+     -0.792
+    ],
+    "max": [
+     0.208,
+     1.01,
+     1.065
+    ],
+    "size": [
+     0.416,
+     1.01,
+     1.857
+    ]
+   },
+   "tris": 244,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Enemy_StoneHerald": {
+   "file": "fbx/SM_Enemy_StoneHerald.fbx",
+   "height": 1.96,
+   "foot_z": 0.0,
+   "unity": {
+    "min": [
+     -1.282,
+     0.0,
+     -0.4
+    ],
+    "max": [
+     1.282,
+     1.96,
+     0.532
+    ],
+    "size": [
+     2.564,
+     1.96,
+     0.932
+    ]
+   },
+   "tris": 220,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Enemy_GhostArcher": {
+   "file": "fbx/SM_Enemy_GhostArcher.fbx",
+   "height": 1.48,
+   "foot_z": 0.02,
+   "unity": {
+    "min": [
+     -0.4,
+     0.02,
+     -0.35
+    ],
+    "max": [
+     0.4,
+     1.5,
+     0.564
+    ],
+    "size": [
+     0.8,
+     1.48,
+     0.914
+    ]
+   },
+   "tris": 324,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Boss_CryptGuardian": {
+   "file": "fbx/SM_Boss_CryptGuardian.fbx",
+   "height": 5.025,
+   "foot_z": 0.0,
+   "unity": {
+    "min": [
+     -2.556,
+     0.0,
+     -0.713
+    ],
+    "max": [
+     2.525,
+     5.025,
+     2.059
+    ],
+    "size": [
+     5.081,
+     5.025,
+     2.772
+    ]
+   },
+   "tris": 552,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  }
  }
 }

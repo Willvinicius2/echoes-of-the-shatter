@@ -1,43 +1,243 @@
 {
- "Warrior": {
-  "body_h": 1.5,
-  "body_foot_z": 0.0,
-  "body_w": 0.903,
-  "all_w": 1.123,
-  "all_h": 1.5,
-  "tris": {
-   "SK_Warrior_Body": 496,
-   "SM_Warrior_Sword": 44,
-   "SM_Warrior_Shield": 48
-  },
-  "bones": 27,
-  "mats": 9
+ "version": {
+  "blender": "5.2.2 LTS",
+  "python": "3.13.16"
  },
- "Archer": {
-  "body_h": 1.5,
-  "body_foot_z": 0.0,
-  "body_w": 0.903,
-  "all_w": 0.91,
-  "all_h": 1.511,
-  "tris": {
-   "SK_Archer_Body": 504,
-   "SM_Archer_Bow": 92,
-   "SM_Archer_Quiver": 56
+ "heroes": {
+  "Warrior": {
+   "file": "fbx/SK_Warrior.fbx",
+   "body_height": 1.5,
+   "foot_z": 0.0,
+   "unity_body": {
+    "min": [
+     -0.449,
+     0.0,
+     -0.328
+    ],
+    "max": [
+     0.449,
+     1.5,
+     0.233
+    ],
+    "size": [
+     0.898,
+     1.5,
+     0.561
+    ]
+   },
+   "unity_all": {
+    "min": [
+     -0.639,
+     0.0,
+     -0.328
+    ],
+    "max": [
+     0.642,
+     1.5,
+     0.307
+    ],
+    "size": [
+     1.281,
+     1.5,
+     0.635
+    ]
+   },
+   "width_over_height": 0.85,
+   "tris": {
+    "SK_Warrior_Body": 888,
+    "SK_Warrior_Hammer": 120,
+    "SK_Warrior_Shield": 160
+   },
+   "tris_total": 1168,
+   "bones": 27,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "vertex_groups": {
+    "SK_Warrior_Body": [
+     "LeftFoot",
+     "LeftToes",
+     "LeftLowerLeg",
+     "LeftUpperLeg",
+     "LeftUpperArm",
+     "LeftLowerArm",
+     "LeftHand",
+     "RightFoot",
+     "RightToes",
+     "RightLowerLeg",
+     "RightUpperLeg",
+     "RightUpperArm",
+     "RightLowerArm",
+     "RightHand",
+     "Hips",
+     "Spine",
+     "Chest",
+     "Neck",
+     "LeftShoulder",
+     "RightShoulder",
+     "Head"
+    ],
+    "SK_Warrior_Hammer": [
+     "RightHand"
+    ],
+    "SK_Warrior_Shield": [
+     "LeftHand"
+    ]
+   }
   },
-  "bones": 27,
-  "mats": 8
- },
- "Mage": {
-  "body_h": 1.5,
-  "body_foot_z": 0.0,
-  "body_w": 0.903,
-  "all_w": 0.966,
-  "all_h": 1.87,
-  "tris": {
-   "SK_Mage_Body": 544,
-   "SM_Mage_Staff": 88
+  "Archer": {
+   "file": "fbx/SK_Archer.fbx",
+   "body_height": 1.5,
+   "foot_z": 0.0,
+   "unity_body": {
+    "min": [
+     -0.445,
+     0.0,
+     -0.28
+    ],
+    "max": [
+     0.445,
+     1.5,
+     0.335
+    ],
+    "size": [
+     0.89,
+     1.5,
+     0.615
+    ]
+   },
+   "unity_all": {
+    "min": [
+     -0.465,
+     0.0,
+     -0.28
+    ],
+    "max": [
+     0.445,
+     1.5,
+     0.335
+    ],
+    "size": [
+     0.91,
+     1.5,
+     0.615
+    ]
+   },
+   "width_over_height": 0.61,
+   "tris": {
+    "SK_Archer_Body": 776,
+    "SK_Archer_Bow": 104,
+    "SK_Archer_Quiver": 56
+   },
+   "tris_total": 936,
+   "bones": 27,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "vertex_groups": {
+    "SK_Archer_Body": [
+     "LeftFoot",
+     "LeftToes",
+     "LeftLowerLeg",
+     "LeftUpperLeg",
+     "LeftUpperArm",
+     "LeftLowerArm",
+     "LeftHand",
+     "RightFoot",
+     "RightToes",
+     "RightLowerLeg",
+     "RightUpperLeg",
+     "RightUpperArm",
+     "RightLowerArm",
+     "RightHand",
+     "Hips",
+     "Spine",
+     "Chest",
+     "Neck",
+     "Head"
+    ],
+    "SK_Archer_Bow": [
+     "LeftHand"
+    ],
+    "SK_Archer_Quiver": [
+     "Chest"
+    ]
+   }
   },
-  "bones": 27,
-  "mats": 9
+  "Mage": {
+   "file": "fbx/SK_Mage.fbx",
+   "body_height": 1.5,
+   "foot_z": 0.0,
+   "unity_body": {
+    "min": [
+     -0.445,
+     0.0,
+     -0.31
+    ],
+    "max": [
+     0.445,
+     1.5,
+     0.252
+    ],
+    "size": [
+     0.89,
+     1.5,
+     0.562
+    ]
+   },
+   "unity_all": {
+    "min": [
+     -0.445,
+     0.0,
+     -0.31
+    ],
+    "max": [
+     0.602,
+     1.7,
+     0.252
+    ],
+    "size": [
+     1.047,
+     1.7,
+     0.562
+    ]
+   },
+   "width_over_height": 0.7,
+   "tris": {
+    "SK_Mage_Body": 844,
+    "SK_Mage_Staff": 280
+   },
+   "tris_total": 1124,
+   "bones": 27,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "vertex_groups": {
+    "SK_Mage_Body": [
+     "LeftFoot",
+     "LeftToes",
+     "LeftLowerLeg",
+     "LeftUpperLeg",
+     "LeftUpperArm",
+     "LeftLowerArm",
+     "LeftHand",
+     "RightFoot",
+     "RightToes",
+     "RightLowerLeg",
+     "RightUpperLeg",
+     "RightUpperArm",
+     "RightLowerArm",
+     "RightHand",
+     "Hips",
+     "Spine",
+     "Chest",
+     "Neck",
+     "Head"
+    ],
+    "SK_Mage_Staff": [
+     "RightHand"
+    ]
+   }
+  }
  }
 }

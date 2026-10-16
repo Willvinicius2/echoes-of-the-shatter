@@ -1,0 +1,331 @@
+{
+ "version": {
+  "blender": "5.2.2 LTS",
+  "python": "3.13.16"
+ },
+ "rig": "Rig_Humanoid_Chibi",
+ "bones": 27,
+ "deform_bones": 21,
+ "hierarchy": {
+  "root": null,
+  "Hips": "root",
+  "Spine": "Hips",
+  "Chest": "Spine",
+  "Neck": "Chest",
+  "Head": "Neck",
+  "socket_head": "Head",
+  "LeftShoulder": "Chest",
+  "LeftUpperArm": "LeftShoulder",
+  "LeftLowerArm": "LeftUpperArm",
+  "LeftHand": "LeftLowerArm",
+  "socket_weapon_l": "LeftHand",
+  "RightShoulder": "Chest",
+  "RightUpperArm": "RightShoulder",
+  "RightLowerArm": "RightUpperArm",
+  "RightHand": "RightLowerArm",
+  "socket_weapon_r": "RightHand",
+  "socket_cast": "RightHand",
+  "LeftUpperLeg": "Hips",
+  "LeftLowerLeg": "LeftUpperLeg",
+  "LeftFoot": "LeftLowerLeg",
+  "LeftToes": "LeftFoot",
+  "RightUpperLeg": "Hips",
+  "RightLowerLeg": "RightUpperLeg",
+  "RightFoot": "RightLowerLeg",
+  "RightToes": "RightFoot",
+  "socket_fx_ground": "root"
+ },
+ "head_blender": {
+  "root": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "Hips": [
+   0.0,
+   0.0,
+   0.46
+  ],
+  "Spine": [
+   0.0,
+   0.0,
+   0.56
+  ],
+  "Chest": [
+   0.0,
+   0.0,
+   0.7
+  ],
+  "Neck": [
+   0.0,
+   0.0,
+   0.92
+  ],
+  "Head": [
+   0.0,
+   0.0,
+   1.0
+  ],
+  "socket_head": [
+   0.0,
+   0.0,
+   1.5
+  ],
+  "LeftShoulder": [
+   0.04,
+   0.0,
+   0.86
+  ],
+  "LeftUpperArm": [
+   0.2,
+   0.0,
+   0.86
+  ],
+  "LeftLowerArm": [
+   0.31,
+   0.0,
+   0.66
+  ],
+  "LeftHand": [
+   0.37,
+   -0.03,
+   0.47
+  ],
+  "socket_weapon_l": [
+   0.41,
+   -0.05,
+   0.38
+  ],
+  "RightShoulder": [
+   -0.04,
+   0.0,
+   0.86
+  ],
+  "RightUpperArm": [
+   -0.2,
+   0.0,
+   0.86
+  ],
+  "RightLowerArm": [
+   -0.31,
+   0.0,
+   0.66
+  ],
+  "RightHand": [
+   -0.37,
+   -0.03,
+   0.47
+  ],
+  "socket_weapon_r": [
+   -0.41,
+   -0.05,
+   0.38
+  ],
+  "socket_cast": [
+   -0.43,
+   -0.2,
+   0.45
+  ],
+  "LeftUpperLeg": [
+   0.11,
+   0.0,
+   0.46
+  ],
+  "LeftLowerLeg": [
+   0.11,
+   0.0,
+   0.26
+  ],
+  "LeftFoot": [
+   0.11,
+   0.0,
+   0.08
+  ],
+  "LeftToes": [
+   0.11,
+   -0.1,
+   0.03
+  ],
+  "RightUpperLeg": [
+   -0.11,
+   0.0,
+   0.46
+  ],
+  "RightLowerLeg": [
+   -0.11,
+   0.0,
+   0.26
+  ],
+  "RightFoot": [
+   -0.11,
+   0.0,
+   0.08
+  ],
+  "RightToes": [
+   -0.11,
+   -0.1,
+   0.03
+  ],
+  "socket_fx_ground": [
+   0.0,
+   0.0,
+   0.0
+  ]
+ },
+ "head_unity": {
+  "root": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "Hips": [
+   0.0,
+   0.46,
+   0.0
+  ],
+  "Spine": [
+   0.0,
+   0.56,
+   0.0
+  ],
+  "Chest": [
+   0.0,
+   0.7,
+   0.0
+  ],
+  "Neck": [
+   0.0,
+   0.92,
+   0.0
+  ],
+  "Head": [
+   0.0,
+   1.0,
+   0.0
+  ],
+  "socket_head": [
+   0.0,
+   1.5,
+   0.0
+  ],
+  "LeftShoulder": [
+   -0.04,
+   0.86,
+   0.0
+  ],
+  "LeftUpperArm": [
+   -0.2,
+   0.86,
+   0.0
+  ],
+  "LeftLowerArm": [
+   -0.31,
+   0.66,
+   0.0
+  ],
+  "LeftHand": [
+   -0.37,
+   0.47,
+   0.03
+  ],
+  "socket_weapon_l": [
+   -0.41,
+   0.38,
+   0.05
+  ],
+  "RightShoulder": [
+   0.04,
+   0.86,
+   0.0
+  ],
+  "RightUpperArm": [
+   0.2,
+   0.86,
+   0.0
+  ],
+  "RightLowerArm": [
+   0.31,
+   0.66,
+   0.0
+  ],
+  "RightHand": [
+   0.37,
+   0.47,
+   0.03
+  ],
+  "socket_weapon_r": [
+   0.41,
+   0.38,
+   0.05
+  ],
+  "socket_cast": [
+   0.43,
+   0.45,
+   0.2
+  ],
+  "LeftUpperLeg": [
+   -0.11,
+   0.46,
+   0.0
+  ],
+  "LeftLowerLeg": [
+   -0.11,
+   0.26,
+   0.0
+  ],
+  "LeftFoot": [
+   -0.11,
+   0.08,
+   0.0
+  ],
+  "LeftToes": [
+   -0.11,
+   0.03,
+   0.1
+  ],
+  "RightUpperLeg": [
+   0.11,
+   0.46,
+   0.0
+  ],
+  "RightLowerLeg": [
+   0.11,
+   0.26,
+   0.0
+  ],
+  "RightFoot": [
+   0.11,
+   0.08,
+   0.0
+  ],
+  "RightToes": [
+   0.11,
+   0.03,
+   0.1
+  ],
+  "socket_fx_ground": [
+   0.0,
+   0.0,
+   0.0
+  ]
+ },
+ "humanoid": {
+  "required_missing": [],
+  "optional_present": [
+   "Chest",
+   "Neck",
+   "LeftShoulder",
+   "RightShoulder",
+   "LeftToes",
+   "RightToes"
+  ],
+  "sockets_present": [
+   "socket_weapon_r",
+   "socket_weapon_l",
+   "socket_cast",
+   "socket_head",
+   "socket_fx_ground"
+  ]
+ },
+ "pose": "A (bracos ~60 graus abaixo da horizontal); usar Enforce T-Pose se configurar Humanoid"
+}

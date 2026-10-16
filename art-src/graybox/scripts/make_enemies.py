@@ -1,7 +1,11 @@
-"""Inimigos do Ato I + chefe Guardiao da Cripta (graybox, sem esqueleto). Frente = +Y, pivo nos pes."""
-import bpy, sys, os, json
+"""Inimigos do Ato I + chefe Guardiao da Cripta (graybox, sem esqueleto).
+
+Descritos em espaco do personagem (frente +Y, pivo nos pes); build(turn=True) deixa a frente em -Y no Blender
+(+Z no Unity). Inclui o teste de silhueta do docs/03 secao 3.5 (preto sobre #6A5A55, 64 px de altura).
+"""
+import bpy, sys, os, json, math
 from mathutils import Vector
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gb_lib import *
 
 GOLD = '#D9A441'
@@ -118,9 +122,10 @@ def guardian():
     b.add('sph', (0.55, 0.55, 0.55), (1.75, 0.75, 2.00), dark, seg=6)
     hd = Vector((0, 0.45, -0.89)).normalized()
     hand = Vector((1.75, 0.75, 2.00))
-    b.limb(hand - hd * 0.9, hand + hd * 1.6, 0.11, '#7A5230', seg=6)
-    b.add('box', (1.50, 0.90, 0.90), hand + hd * 1.7 + Vector((0, 0, 0.0)), stone, rot=aim((0, 0, 0), hd))
-    b.add('box', (1.55, 0.30, 0.60), hand + hd * 1.7, GOLD, rot=aim((0, 0, 0), hd))
+    b.limb(hand - hd * 0.9, hand + hd * 1.5, 0.11, '#7A5230', seg=6)
+    # cabeca do martelo apoiada no chao (antes furava o piso em 12 cm)
+    b.add('box', (1.50, 0.90, 0.90), hand + hd * 1.56, stone, rot=aim((0, 0, 0), hd))
+    b.add('box', (1.55, 0.30, 0.60), hand + hd * 1.56, GOLD, rot=aim((0, 0, 0), hd))
     # braco esquerdo + escudo
     b.limb((-1.45, 0, 3.15), (-1.85, 0.55, 2.30), 0.34, steel, seg=6)
     b.add('sph', (0.55, 0.55, 0.55), (-1.85, 0.60, 2.20), dark, seg=6)
@@ -130,13 +135,7 @@ def guardian():
     return b
 
 
-def make(builder_fn, fname, coll=None):
-    b = builder_fn()
-    ob = b.build(coll)
-    return ob
-
-
-report = {}
+report = dict(version=version_info(), enemies={})
 reset()
 items = [(sentinel, "SM_Enemy_HollowSentinel"), (hound, "SM_Enemy_AshHound"),
          (herald, "SM_Enemy_StoneHerald"), (ghost_archer, "SM_Enemy_GhostArcher"),
@@ -144,48 +143,73 @@ items = [(sentinel, "SM_Enemy_HollowSentinel"), (hound, "SM_Enemy_AshHound"),
 objs = {}
 for fn, name in items:
     coll = new_coll(name)
-    ob = make(fn, name, coll)
+    ob = fn().build(coll, turn=True)
     ob.name = name
     mn, mx = bbox([ob])
-    report[name] = dict(h=round(mx.z - mn.z, 3), z0=round(mn.z, 3), w=round(mx.x - mn.x, 3), d=round(mx.y - mn.y, 3),
-                        tris=tris(ob), mats=len(ob.data.materials))
+    report["enemies"][name] = dict(file=f"fbx/{name}.fbx", height=round(mx.z - mn.z, 3), foot_z=round(mn.z, 3) + 0.0,
+                                   unity=unity_bounds(mn, mx), tris=tris(ob),
+                                   materials=[m.name for m in ob.data.materials])
     export_fbx([ob], f"{FBX}/{name}.fbx")
     objs[name] = ob
 save_blend(f"{ROOT}/enemies_graybox.blend")
 
-# previa: inimigos comuns em fila com heroi de referencia; chefe a parte
+# previas: inimigos virados para a camera, com o Guerreiro de referencia; chefe a parte
 fl = Builder("Preview_Floor")
-fl.add('box', (30, 30, 0.05), (0, 0, -0.025), '#6A5A55')
-fl.build()
-setup_render(1600, 800)
-bpy.ops.object.light_add(type='SUN', location=(3, 3, 6))
-with bpy.data.libraries.load(f"{ROOT}/heroes_graybox.blend", link=False) as (src, dst):
-    dst.collections = ["SK_Warrior"]
-wc = dst.collections[0]
-bpy.context.scene.collection.children.link(wc)
-for o in wc.objects:
-    if o.type == 'ARMATURE':
-        o.location = (0, 0, 0)
-S = 0.7071
-row = [("ref", -1.8)] + [(n, x) for (n, x) in (("SM_Enemy_HollowSentinel", 0.0), ("SM_Enemy_AshHound", 1.8),
-                                               ("SM_Enemy_StoneHerald", 3.6), ("SM_Enemy_GhostArcher", 5.6))]
-for n, x in row:
-    o = wc.objects[0] if n == "ref" else objs[n]
-    if n == "ref":
-        o = [q for q in wc.objects if q.type == 'ARMATURE'][0]
-    o.location = (x * S, -x * S, 0)
-objs["SM_Boss_CryptGuardian"].location = (50, 50, 0)
-cam = game_camera((2.0 * S, -2.0 * S, 0.8), 30, ortho_scale=9.0)
+fl.add('box', (40, 40, 0.05), (0, 0, -0.025), '#6A5A55')
+floor = fl.build()
+setup_render(1600, 900)
+
+
+def append_hero(key):
+    with bpy.data.libraries.load(f"{ROOT}/heroes_graybox.blend", link=False) as (src, dst):
+        dst.collections = [f"SK_{key}"]
+    c = dst.collections[0]
+    bpy.context.scene.collection.children.link(c)
+    return [o for o in c.objects if o.type == 'ARMATURE'][0]
+
+
+right = Vector((-0.7071, 0.7071, 0))           # direita da tela com a camera do jogo
+ref = append_hero("Warrior")
+row = [(ref, -1.9), (objs["SM_Enemy_HollowSentinel"], 0.0), (objs["SM_Enemy_AshHound"], 1.9),
+       (objs["SM_Enemy_StoneHerald"], 4.0), (objs["SM_Enemy_GhostArcher"], 6.1)]
+for o, x in row:
+    o.location = right * x
+    o.rotation_euler = (0, 0, math.pi)
+objs["SM_Boss_CryptGuardian"].location = (60, 60, 0)
+center = right * 2.1
+cam = game_camera((center.x, center.y, 0.8), 30, ortho_scale=10.0)
 render(f"{PREV}/enemies_lineup.png")
-# chefe com heroi ao lado
-objs["SM_Boss_CryptGuardian"].location = (0, 0, 0)
-for n in list(objs):
-    if n != "SM_Boss_CryptGuardian":
-        objs[n].location = (50, 50, 0)
-arm = [q for q in wc.objects if q.type == 'ARMATURE'][0]
-arm.location = (4.0 * S, -4.0 * S, 0)
-cam.data.ortho_scale = 11.0
-cam.location = Vector((0.5, 0, 2.2)) + (cam.location - Vector((2.0 * S, -2.0 * S, 0.8)))
+# chefe com o heroi ao lado
+for o, x in row[1:]:
+    o.location = (60, 60, 0)
+g = objs["SM_Boss_CryptGuardian"]
+g.location = (0, 0, 0)
+g.rotation_euler = (0, 0, math.pi)
+ref.location = right * -3.6
+bpy.data.objects.remove(cam)
+cam = game_camera((-0.8, 0.8, 1.5), 30, ortho_scale=13.0)
 render(f"{PREV}/boss_guardian.png")
+bpy.data.objects.remove(cam)
+
+# teste de silhueta (docs/03 secao 3.5): preto sobre #6A5A55, camera do jogo, ~64 px de altura por heroi
+g.location = (60, 60, 0)
+heroes = [ref, append_hero("Archer"), append_hero("Mage")]
+line = heroes + [objs[n] for n in ("SM_Enemy_HollowSentinel", "SM_Enemy_AshHound",
+                                   "SM_Enemy_StoneHerald", "SM_Enemy_GhostArcher")]
+xs = [-6.2, -4.9, -3.6, -1.9, 0.0, 2.1, 4.3]
+for o, x in zip(line, xs):
+    o.location = right * x
+    o.rotation_euler = (0, 0, math.pi)
+sc = bpy.context.scene
+sh = sc.display.shading
+sh.light, sh.color_type, sh.show_shadows, sh.show_object_outline = 'FLAT', 'OBJECT', False, False
+for o in bpy.data.objects:
+    o.color = (0.0, 0.0, 0.0, 1.0)
+floor.color = (0.144, 0.102, 0.091, 1.0)           # #6A5A55 (cor do objeto em linear)
+sh.background_color = (0.144, 0.102, 0.091)         # o mesmo #6A5A55 em linear
+sc.view_settings.exposure = 0.0                     # sem ganho: o fundo tem de sair exatamente #6A5A55
+sc.render.resolution_x, sc.render.resolution_y = 880, 200
+cam = game_camera((right * -0.9).to_tuple()[:2] + (0.6,), 30, ortho_scale=15.0)
+render(f"{PREV}/silhouette_test_64px.png")
 json.dump(report, open(f"{PREV}/_enemies_report.json", "w"), indent=1)
-print("REPORT", json.dumps(report))
+print("REPORT", json.dumps({k: (v["height"], v["foot_z"], v["tris"]) for k, v in report["enemies"].items()}))
