@@ -42,8 +42,11 @@ namespace Echoes.Gameplay
         public SkillInfo CurrentAttackSkill =>
             Brain.CurrentAttack >= 0 && Brain.CurrentAttack < attackSkills.Length ? attackSkills[Brain.CurrentAttack] : null;
 
-        /// <summary>Eventos do último passo (para log de depuração dos 5 estados, RF-20).</summary>
+        /// <summary>Eventos do último passo.</summary>
         public EnemyBrainEvents LastEvents { get; private set; }
+
+        /// <summary>Mudança de estado da IA (de, para), para o log de depuração dos 5 estados (RF-20).</summary>
+        public event Action<EnemyBrainState, EnemyBrainState> StateChanged;
 
         /// <summary>Velocidade de perseguição em m/s (0 se parado ou atordoado).</summary>
         public float ChaseSpeed { get; private set; }
@@ -76,14 +79,17 @@ namespace Echoes.Gameplay
                 CanAct = rules.CanAct(self.Stats),
             };
 
-            if (hasTarget && Brain.CanRotate)
+            // Parado não acompanha o herói com o olhar; gira só depois do aggro.
+            if (hasTarget && Brain.CanRotate && Brain.State != EnemyBrainState.Idle)
             {
                 var maxDegrees = (float)(enemy.TurnRateDegreesPerSecond * dt);
                 self.Forward = PlanarVector.RotateTowards(self.Forward, toTarget, maxDegrees);
             }
 
+            var before = Brain.State;
             var events = Brain.Tick(dt, in input);
             LastEvents = events;
+            if (Brain.State != before) StateChanged?.Invoke(before, Brain.State);
 
             if ((events & EnemyBrainEvents.TelegraphStarted) != 0) BeginTelegraph(combatSystem);
             if ((events & EnemyBrainEvents.AttackImpact) != 0) ResolveImpact(combatSystem);
@@ -112,7 +118,9 @@ namespace Echoes.Gameplay
         public void OnDeath(CombatSystem combatSystem)
         {
             EndTelegraph(combatSystem);
+            var before = Brain.State;
             Brain.Kill();
+            StateChanged?.Invoke(before, Brain.State);
             WantsToMove = false;
             ChaseSpeed = 0f;
         }
