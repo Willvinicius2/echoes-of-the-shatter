@@ -9,13 +9,14 @@ Nenhuma cena, prefab, `.asset` ou `.meta` foi criado fora do editor. Este README
 | Pasta | asmdef / namespace | Conteúdo |
 |---|---|---|
 | `Interop/` | `Echoes.Interop` (sem UnityEngine) | Fachada `IRulesCore` que o jogo usa para pedir regras ao ShatterCore, e tipos espelhados dos headers (`StatId`, `SkillTags`, `HitRequest`, `HitResult`, `RngState`...). |
-| `Interop/Stub/` | `Echoes.Interop` | **`StubRulesCore`: implementação PROVISÓRIA em C# puro.** Lê os mesmos CSV do core e porta `ResolveHit`, `StatBlock`, efeitos e o PCG32 do `rng.h`. Sai quando a DLL chegar. |
+| `Interop/Native/` | `Echoes.Interop` | **`NativeRulesCore`**: `IRulesCore` sobre `shattercore.dll` (API C v1) com P/Invoke (`ShatterNative`), `SafeHandle`, conferência de versão e layout e o padrão de duas chamadas para buffers. É o que o `RulesCoreFactory.CreateDefault()` devolve. |
+| `Interop/Stub/` | `Echoes.Interop` | **`StubRulesCore`: implementação PROVISÓRIA em C# puro.** Lê os mesmos CSV do core e porta `ResolveHit`, `StatBlock`, efeitos e o PCG32 do `rng.h`. Fallback se a DLL não carregar, e dona do que a API C v1 ainda não oferece (seção 8). |
 | `Core/` | `Echoes.Core` | `GameRoot`, `EventBus` sem alocação, `RulesService`, `LocalizationService` (CSV de `Loc/`), `ContentPaths`. |
 | `Gameplay/Logic/` | `Echoes.Gameplay` (sem UnityEngine) | Lógica pura e testável: `CombatSystem` (passo fixo de 60 Hz), `HeroCombatLogic`, `EnemyCombatLogic`, `EnemyBrainLogic`, `DodgeLogic`, `ChargeTimer`, `CooldownTimer`, `ActionTimeline`, `ShapeQuery`, projéteis e eventos. |
 | `Gameplay/` | `Echoes.Gameplay` | Componentes de cena: `CombatSystemHost`, `HeroController`, `EnemyController`, `AttributeComponent`, `PlayerInputHandler`, `CombatFeelSettings`. |
 | `Presentation/` | `Echoes.Presentation` | `FollowCamera` + `RenderSettingsAsset`, `PresentationController`, `SkillPresentationSet`, `TelegraphPresenter`/`TelegraphView`, `ProjectilePresenter`, `VfxPool`. |
 | `UI/` | `Echoes.UI` | `HudView`, `DamageNumberLayer`, `LocLabel` (UI Toolkit). UXML e USS ficam em `Assets/UI/`. |
-| `../Tests/EditMode/` | `Echoes.Tests.EditMode` | 93 testes de lógica pura (esquiva, recargas, máquina de estados, passo fixo, combate com o stub e os CSV reais). |
+| `../Tests/EditMode/` | `Echoes.Tests.EditMode` | testes de lógica pura (stub) e de paridade com a DLL nativa (esquiva, recargas, máquina de estados, passo fixo, combate com o stub e os CSV reais). |
 
 Outros arquivos novos:
 - `Assets/Settings/Echoes.inputactions`: mapa `Gameplay` com `Move`, `Aim`, `BasicAttack`, `Skill1..5`, `Dodge`, `Potion1..2`, `Inventory`, `PassiveTree`, `Map`, `Pause` (teclas do RF-64).
@@ -44,7 +45,7 @@ Crie a pasta `Assets/Data/Presentation/` e, nela:
 
 | Asset | Como criar | Ajustes |
 |---|---|---|
-| `SO_RenderSettings` | Create ▸ Echoes ▸ Render Settings | Nada: os padrões são os da seção 3.2 (pitch 55°, yaw 45°, FOV vertical 14,2°, 42 m, suavização 7). |
+| `SO_RenderSettings` | Create ▸ Echoes ▸ Render Settings | Nada: os padrões são os da seção 3.2 (pitch 55°, yaw 45°, FOV vertical 14,2°, 56 m, suavização 7). Tremor: amplitudes em metros a 42 m (`shakeReferenceDistance`), escaladas por distância/42; raio do fade de oclusão `occlusionFadeRadiusMeters` = 4 m (seção 3.7). |
 | `SO_CombatFeel` | Create ▸ Echoes ▸ Combat Feel Settings | Nada: hitstop 60/80/80/40 ms e knockback 20/6/0 cm dos tokens. A lista de golpes pesados já vem preenchida. |
 | `SO_SkillPresentation_Warrior` | Create ▸ Echoes ▸ Skill Presentation Set | Opcional enquanto não houver Animator Controller (seção 5). |
 
@@ -113,7 +114,7 @@ Movimento, escolha uma das duas opções:
 
 ### 4.5 Câmera 3/4 (docs/04, seção 3.2)
 1. Objeto vazio `CameraRig` → **FollowCamera**: `Target` = Hero, `View Camera` = Main Camera, `Settings` = `SO_RenderSettings`, `Root` = GameRoot, `Shake Enabled` ligado.
-2. Arraste a **Main Camera** (tag MainCamera) para dentro de `CameraRig`. O script põe a câmera a −42 m no Z local, FOV vertical 14,2°, planos 1 a 150 m, e gira o rig para pitch 55° / yaw 45°.
+2. Arraste a **Main Camera** (tag MainCamera) para dentro de `CameraRig`. O script põe a câmera a −56 m (`distance` do asset) no Z local, FOV vertical 14,2°, planos 1 a 150 m, e gira o rig para pitch 55° / yaw 45°.
 3. Não use Cinemachine.
 
 ### 4.6 Checkpoint
@@ -162,11 +163,21 @@ O código foi compilado fora do Unity contra os assemblies de referência do Uni
 5. **`InternalsVisibleTo`** do stub para `Echoes.Tests.EditMode` (`Interop/Stub/StubAssemblyInfo.cs`).
 6. **Project-wide actions**: o template liga o `InputSystem_Actions` como ações do projeto. Não atrapalha (o jogo lê o `Echoes.inputactions`), mas pode ser desligado em Project Settings ▸ Input System Package.
 
-## 8. Trocar o stub pela DLL
-1. Implementar `IRulesCore` sobre `shatter_c.h` (agente de Integração) no próprio `Echoes.Interop`.
-2. Trocar `RulesCoreFactory.CreateDefault()` para devolver a implementação P/Invoke.
-3. Apagar `Interop/Stub/` e ajustar os testes `StubRulesCoreTests` para a nova implementação (os casos valem iguais).
-Nenhum outro assembly muda: o gameplay só conhece a interface.
+## 8. DLL nativa e o que ainda é do stub
+
+`Assets/Plugins/x86_64/shattercore.dll` (Git LFS; `.meta` só para Windows x64, carregada na inicialização). Gerada por `tools\build_core.cmd Release` (saída em `build\Release\shattercore.dll`) e copiada para a pasta do plugin. O editor trava a DLL carregada: feche-o antes de trocar o arquivo.
+
+`RulesCoreFactory.CreateDefault()` devolve o `NativeRulesCore`. Se a DLL não carregar (ausente, ponteiro do LFS, versão ou layout diferentes) cai no `StubRulesCore` e escreve um aviso no Console com o motivo (`RulesCoreFactory.LastFallbackReason`). O `GameRoot` loga `shattercore-native` quando o nativo está em uso.
+
+**Nativo**: carga e validação dos CSV (`shatter_db_load_directory`, erros por `shatter_db_errors_json`), versão do conteúdo, `realtime_step` e `cooldown_min`, atributos do herói (JSON `CharacterState`), do inimigo e vazio, `ResolveHit`, recarga efetiva, RNG por fluxo, efeitos (aplicar, avançar, empilhar, limpar).
+
+**Segue no stub** (`NativeRulesCore.StillInStub`, logada ao iniciar): registros tipados de conteúdo (`FindClass/Skill/Enemy/ItemBase/Potion`, `Potions`; a API só tem `shatter_db_lookup_json` por ID); constantes de combate em tempo real (esquiva, buffer, trava de poção, fora de combate); tempos de ação, custo, velocidade de movimento, `CanAct/CanMove`, vitais e poções; `NextBelow`, `NextUnit` e `PickAttack` (a API só tem `shatter_rng_next_u32`); imunidade a atordoamento por inimigo e tags dos efeitos nos eventos de dano.
+
+**Posse dos handles (A-06)**: `DbHandle`, `StatBlockHandle` e `EffectsHandle` são `SafeHandle`; quem cria descarta (`RulesService` o núcleo, `AttributeComponent`/`Combatant` o statblock e os efeitos). O conjunto de efeitos segura o banco até ser descartado. `NativeLifetime` (Core) descarta os núcleos que sobrarem ao fechar o jogo, ao sair do Play e antes da recarga de domínio; com "Enter Play Mode Options" nenhum static guarda handle entre sessões. Efeitos e statblocks são da main thread.
+
+**Posição no passo fixo (A-04)**: andar, esquiva, Investida, perseguição sem NavMeshAgent e knockback integram `Combatant.Position` dentro do `CombatSystem.Step`. `HeroController`/`EnemyController` só seguem a posição interpolada (`InterpolatedPosition(Clock.Alpha)`) no `LateUpdate`; colisão devolve a posição real à lógica. Com NavMeshAgent, o agente anda e a lógica copia a posição dele.
+
+Testes: `NativeRulesCoreTests` roda os mesmos cenários nos dois motores (atributos, 1000 golpes com a mesma seed, efeitos, combate em passo fixo) e confere `Interop.VersionMatchesSource`.
 
 ## 9. Cena base de escala (`Assets/Scenes/Sandbox/Base_Escala.unity`)
 

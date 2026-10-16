@@ -89,7 +89,7 @@ namespace Echoes.Gameplay
         /// <summary>true se um ataque básico novo sairia agora (para o botão segurado repetir).</summary>
         public bool IsReadyForAction => !self.IsDead && !action.IsActive && !Dodge.IsDodging && drinking == null;
 
-        /// <summary>Velocidade no plano para este quadro (m/s). O HeroController move o CharacterController com ela.</summary>
+        /// <summary>Velocidade no plano deste instante (m/s). Integrada em <see cref="FixedTick"/>; a cena só segue <see cref="Combatant.Position"/>.</summary>
         public PlanarVector CurrentVelocity()
         {
             if (self.IsDead || self.Hitstop.IsActive) return PlanarVector.Zero;
@@ -116,6 +116,8 @@ namespace Echoes.Gameplay
 
         public void FixedTick(CombatSystem combat, double dt)
         {
+            // Deslocamento no passo fixo (A-04): andar, esquiva e Investida integram aqui, nunca por quadro.
+            self.Position += CurrentVelocity() * (float)dt;
             for (var i = 0; i < SlotCount; i++)
             {
                 var slot = slots[i];

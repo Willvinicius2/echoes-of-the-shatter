@@ -96,7 +96,10 @@ namespace Echoes.Presentation
             viewCamera.farClipPlane = s.farClip;
         }
 
-        /// <summary>Tremor aditivo (só translação), limitado pelo teto do RenderSettings.</summary>
+        /// <summary>
+        /// Tremor aditivo (só translação), limitado pelo teto do RenderSettings. A amplitude é em metros na distância
+        /// de referência (42 m); a aplicação escala por distância/42 (<see cref="CameraShakeScale"/>).
+        /// </summary>
         public void AddShake(float amplitudeMeters, float seconds)
         {
             if (!shakeEnabled || amplitudeMeters <= 0f || seconds <= 0f) return;
@@ -121,8 +124,10 @@ namespace Echoes.Presentation
                 shakeTimeLeft -= dt;
                 var decay = shakeDuration > 0f ? Mathf.Clamp01(shakeTimeLeft / shakeDuration) : 0f;
                 var t = Time.time * s.shakeFrequencyHz;
+                var distanceNow = viewCamera != null ? Mathf.Abs(viewCamera.transform.localPosition.z) : s.distance;
+                var scale = CameraShakeScale.Factor(distanceNow, s.shakeReferenceDistance);
                 offset = new Vector3(Mathf.PerlinNoise(shakeSeed, t) - 0.5f, Mathf.PerlinNoise(shakeSeed + 31.7f, t) - 0.5f, 0f)
-                         * (2f * shakeAmplitude * decay);
+                         * (2f * shakeAmplitude * decay * scale);
                 offset = transform.rotation * offset; // tremor no plano da tela
                 if (shakeTimeLeft <= 0f) shakeAmplitude = 0f;
             }

@@ -46,7 +46,36 @@ namespace Echoes.Gameplay
         /// <summary>Quem é dono desta entidade na cena (o MonoBehaviour), para a apresentação achar o objeto.</summary>
         public object Owner { get; set; }
 
+        /// <summary>Posição lógica no plano. Avança só no passo fixo (A-04); a cena segue esta posição.</summary>
         public PlanarVector Position { get; set; }
+
+        /// <summary>Posição no início do último passo fixo: o outro extremo da interpolação visual.</summary>
+        public PlanarVector PreviousPosition
+        {
+            get => hasPrevious ? previousPosition : Position;
+            internal set
+            {
+                previousPosition = value;
+                hasPrevious = true;
+            }
+        }
+
+        PlanarVector previousPosition;
+        bool hasPrevious;
+
+        /// <summary>Posição para desenhar entre o passo anterior e o atual (<paramref name="alpha"/> = FixedStepAccumulator.Alpha).</summary>
+        public PlanarVector InterpolatedPosition(double alpha)
+        {
+            var t = (float)Math.Max(0.0, Math.Min(1.0, alpha));
+            return PreviousPosition + (Position - PreviousPosition) * t;
+        }
+
+        /// <summary>Teletransporte (respawn, troca de zona): sem interpolação entre o ponto antigo e o novo.</summary>
+        public void Teleport(PlanarVector position)
+        {
+            Position = position;
+            PreviousPosition = position;
+        }
         public PlanarVector Forward { get; set; }
 
         public Vitals Vitals => vitals;

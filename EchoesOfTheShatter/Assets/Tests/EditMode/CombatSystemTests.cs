@@ -128,9 +128,9 @@ namespace Echoes.Tests.EditMode
                 Assert.Greater(velocity.Magnitude, 0f, "avança durante o impacto");
                 Assert.AreEqual(0, world.HitsOn(enemy.combatant));
 
-                // A cena move o herói; aqui ele chega ao alvo pela velocidade da lógica.
-                hero.combatant.Position = enemy.combatant.Position - PlanarVector.Forward * 0.8f;
+                // A lógica move o herói no passo fixo (A-04): ele chega ao alvo pela velocidade da Investida.
                 world.Run(skill.Impact);
+                Assert.Less(PlanarVector.Distance(hero.combatant.Position, enemy.combatant.Position), 0.5f, "chegou ao alvo");
                 Assert.AreEqual(1, world.HitsOn(enemy.combatant));
             }
         }
@@ -160,7 +160,15 @@ namespace Echoes.Tests.EditMode
                 world.Run(windup - secondsBeforeImpact - world.Step);
                 hero.logic.Press(HeroCommand.Dodge);
                 var lifeBefore = hero.combatant.Life;
-                world.Run(secondsBeforeImpact + 2 * world.Step);
+                // Este teste isola a janela de invulnerabilidade: o herói fica no lugar (como se uma parede o segurasse),
+                // senão a esquiva o tiraria do alcance do golpe (deslocamento coberto em MovementDodgeAndChargeAreFrameRateIndependent).
+                var home = hero.combatant.Position;
+                var steps = (int)System.Math.Round((secondsBeforeImpact + 2 * world.Step) / world.Step);
+                for (var i = 0; i < steps; i++)
+                {
+                    world.Combat.Step(world.Step);
+                    hero.combatant.Position = home;
+                }
 
                 Assert.IsTrue(hero.logic.Dodge.IsDodging || hero.logic.Dodge.Charges.Charges < hero.logic.Dodge.Charges.MaxCharges, "esquivou");
                 var avoided = world.Avoided.Count > 0;
@@ -200,6 +208,83 @@ namespace Echoes.Tests.EditMode
                 }
                 return total;
             }
+        }
+
+        [Test]
+        public void MovementDodgeAndChargeAreFrameRateIndependent()
+        {
+            // A-04: andar, esquiva, Investida, perseguição e knockback avançam no passo fixo; a posição final
+            // não pode depender do FPS. As ações entram em passos fixos exatos (iguais nas três taxas).
+            var at30 = ScriptedPath(30);
+            var at60 = ScriptedPath(60);
+            var at144 = ScriptedPath(144);
+            Assert.Greater(PlanarVector.Distance(at30.hero, PlanarVector.Zero), 3f, "o herói tem de ter andado");
+            Assert.AreNotEqual(at30.enemy, new PlanarVector(0f, 6f), "o inimigo tem de ter perseguido");
+            AssertSamePosition(at30.hero, at60.hero, "herói 30 x 60");
+            AssertSamePosition(at30.hero, at144.hero, "herói 30 x 144");
+            AssertSamePosition(at30.enemy, at60.enemy, "inimigo 30 x 60");
+            AssertSamePosition(at30.enemy, at144.enemy, "inimigo 30 x 144");
+        }
+
+        [Test]
+        public void ChargeCoversTheSameDistanceAtAnyFrameRate()
+        {
+            // A-04: a distância da Investida é velocidade x duração da fase, não soma de quadros.
+            var distances = new List<float>();
+            foreach (var fps in new[] { 30, 60, 144 })
+            {
+                using (var world = new TestWorld())
+                {
+                    var hero = world.AddHero(PlanarVector.Zero);
+                    world.Combat.GainResource(hero.combatant, 100.0);
+                    hero.logic.AimPoint = new PlanarVector(0f, 6f);
+                    hero.logic.Press(HeroCommand.Skill1);
+                    RunToStep(world, fps, 60, null);
+                    distances.Add(PlanarVector.Distance(hero.combatant.Position, PlanarVector.Zero));
+                }
+            }
+            Assert.Greater(distances[0], 1f, "a Investida precisa deslocar o herói");
+            Assert.AreEqual(distances[0], distances[1], 1e-3f);
+            Assert.AreEqual(distances[0], distances[2], 1e-3f);
+        }
+
+        static (PlanarVector hero, PlanarVector enemy) ScriptedPath(int fps)
+        {
+            using (var world = new TestWorld())
+            {
+                var hero = world.AddHero(PlanarVector.Zero);
+                var enemy = world.AddEnemy(Sentinel, new PlanarVector(0f, 6f));
+                enemy.logic.IntegratesMovement = true;
+                world.Combat.GainResource(hero.combatant, 100.0);
+                hero.logic.MoveInput = new PlanarVector(1f, 0f);
+                hero.logic.AimPoint = new PlanarVector(5f, 3f);
+                bool dodged = false, charged = false, struck = false;
+                RunToStep(world, fps, 240, step =>
+                {
+                    if (step >= 60 && !dodged) { dodged = true; hero.logic.Press(HeroCommand.Dodge); }
+                    if (step >= 120 && !charged) { charged = true; hero.logic.Press(HeroCommand.Skill1); }
+                    if (step >= 180 && !struck) { struck = true; hero.logic.Press(HeroCommand.BasicAttack); }
+                });
+                return (hero.combatant.Position, enemy.combatant.Position);
+            }
+        }
+
+        // Roda quadros de 1/fps até o passo fixo alvo; antes de cada quadro entrega ao roteiro o passo atual,
+        // então a entrada cai no mesmo passo nas três taxas (a 30 FPS o contador avança de 2 em 2: só passos pares).
+        static void RunToStep(TestWorld world, int fps, long targetStep, System.Action<long> script)
+        {
+            var guard = fps * 20;
+            while (world.Combat.StepCount < targetStep && guard-- > 0)
+            {
+                script?.Invoke(world.Combat.StepCount);
+                world.Combat.Tick(1.0 / fps);
+            }
+        }
+
+        static void AssertSamePosition(PlanarVector expected, PlanarVector actual, string label)
+        {
+            Assert.AreEqual(expected.X, actual.X, 1e-3f, label + " X");
+            Assert.AreEqual(expected.Z, actual.Z, 1e-3f, label + " Z");
         }
 
         [Test]

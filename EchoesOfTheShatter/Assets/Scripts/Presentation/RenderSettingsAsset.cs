@@ -28,8 +28,14 @@ namespace Echoes.Presentation
         public float nearClip = 1f;
         public float farClip = 150f;
 
+        [Header("Oclusão (seção 3.7)")]
+        [Tooltip("Raio do buraco no fade de oclusão (_EchoesFadeRadius), em metros: ~4 m a 56 m (era ~3 m a 42 m; escala por 56/42 para cobrir a mesma fração da tela).")]
+        public float occlusionFadeRadiusMeters = 4f;
+
         [Header("Tremor (juice.shake; desligável nas opções)")]
-        [Tooltip("Teto do deslocamento aditivo do rig, em metros.")]
+        [Tooltip("Distância da câmera em que as amplitudes abaixo (em metros) foram definidas: 42 m. A amplitude aplicada é escalada por distância/42, para o tremor ocupar a mesma fração da tela em qualquer zoom.")]
+        public float shakeReferenceDistance = 42f;
+        [Tooltip("Teto do deslocamento aditivo do rig, em metros, medido na distância de referência (42 m).")]
         public float shakeMaxMeters = 0.08f;
         public float shakeHeavyMeters = 0.03f;
         public float shakeBossMeters = 0.05f;

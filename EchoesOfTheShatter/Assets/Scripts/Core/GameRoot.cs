@@ -43,7 +43,7 @@ namespace Echoes.Core
                 : cultureOverride;
             Localization.SetCulture(culture);
 
-            Rules = new RulesService(RulesCoreFactory.CreateDefault());
+            Rules = new RulesService(RulesCoreFactory.CreateDefault(message => Debug.LogWarning(message)));
             if (!Rules.Initialize(dataDirectory))
             {
                 Debug.LogError("[GameRoot] Regras não carregaram; o combate fica desligado. Veja os erros acima.");

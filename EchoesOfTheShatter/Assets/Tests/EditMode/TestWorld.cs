@@ -23,16 +23,16 @@ namespace Echoes.Tests.EditMode
             "skill.warrior.iron_cut", "skill.warrior.charge", "skill.warrior.stone_rift", "skill.warrior.shield_bash", "", "",
         };
 
-        public readonly StubRulesCore Rules;
+        public readonly IRulesCore Rules;
         public readonly EventBus Events = new EventBus();
         public readonly CombatSystem Combat;
         public readonly List<HitEvent> Hits = new List<HitEvent>();
         public readonly List<HitAvoidedEvent> Avoided = new List<HitAvoidedEvent>();
         public readonly List<ActionDeniedEvent> Denied = new List<ActionDeniedEvent>();
 
-        public TestWorld(CombatFeelValues feel = null)
+        public TestWorld(CombatFeelValues feel = null, IRulesCore rules = null)
         {
-            Rules = LoadRules();
+            Rules = rules ?? LoadRules();
             Combat = new CombatSystem(Rules, Events, Seed, feel ?? new CombatFeelValues(), 8);
             Events.Subscribe<HitEvent>(OnHit);
             Events.Subscribe<HitAvoidedEvent>(OnAvoided);

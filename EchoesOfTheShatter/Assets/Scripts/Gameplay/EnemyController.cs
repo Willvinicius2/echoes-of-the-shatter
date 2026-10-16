@@ -66,6 +66,7 @@ namespace Echoes.Gameplay
             var radius = bodyRadius > 0f ? bodyRadius : agent != null ? agent.radius : body != null ? body.radius : 0.5f;
             var combatant = attributes.CreateEnemy(rules, info, level, radius);
             Logic = new EnemyCombatLogic(combatant, rules);
+            Logic.IntegratesMovement = agent == null || !agent.enabled;
             if (logStateChanges) Logic.StateChanged += LogStateChange;
             combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
 
@@ -103,8 +104,11 @@ namespace Echoes.Gameplay
             if (Logic == null) return;
             var combatant = Logic.Self;
             var dt = Time.deltaTime;
-            var knockback = combatant.ConsumeKnockback(dt);
             var dead = combatant.IsDead;
+            // A posição lógica (perseguição sem agente e knockback) avança só no passo fixo (A-04).
+            var wanted = combatant.InterpolatedPosition(combat != null ? combat.Clock.Alpha : 1.0);
+            var delta = wanted - transform.position.ToPlanar();
+            // knockback = tudo o que a lógica deslocou além de onde o agente está
 
             if (agent != null && agent.enabled && agent.isOnNavMesh)
             {
@@ -125,17 +129,20 @@ namespace Echoes.Gameplay
                     agent.velocity = Vector3.zero;
                     repathTimer = 0f;
                 }
-                if (!knockback.IsZero) agent.Move(knockback.ToWorld());
+                // Com agente, só o knockback (vindo da lógica) é deslocamento externo; o resto é do agente.
+                var pushed = combatant.Position - transform.position.ToPlanar();
+                if (pushed.Magnitude > 1e-5f) agent.Move(pushed.ToWorld());
+                combatant.Teleport(transform.position.ToPlanar());
             }
             else
             {
-                var motion = (dead ? PlanarVector.Zero : Logic.DirectVelocity() * dt) + knockback;
-                if (body != null && body.enabled) body.Move(motion.ToWorld(Physics.gravity.y * dt));
-                else transform.position += motion.ToWorld();
+                if (body != null && body.enabled) body.Move(delta.ToWorld(Physics.gravity.y * dt));
+                else transform.position += delta.ToWorld();
+                var actual = transform.position.ToPlanar();
+                if (PlanarVector.Distance(actual, wanted) > 1e-3f) combatant.Teleport(actual);
             }
 
             if (!dead) transform.rotation = combatant.Forward.ToRotation(transform.rotation);
-            combatant.Position = transform.position.ToPlanar();
         }
 
         void LogStateChange(EnemyBrainState from, EnemyBrainState to)
