@@ -1,0 +1,4 @@
+id,rolls,dropChance,rarityWeightNormal,rarityWeightMagic,rarityWeightRare
+loot.crypt.common,1,1,80,18,2
+loot.crypt.area,1,0.5,80,18,2
+loot.crypt.guardian,2,1,60,30,10

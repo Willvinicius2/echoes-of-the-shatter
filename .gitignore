@@ -2,17 +2,31 @@
 *.translation
 /android/
 
-# Unreal Engine (projeto em EchoesOfTheShatter/)
-EchoesOfTheShatter/Binaries/
-EchoesOfTheShatter/Intermediate/
-EchoesOfTheShatter/Saved/
-EchoesOfTheShatter/DerivedDataCache/
+# Unity (projeto em EchoesOfTheShatter/)
+EchoesOfTheShatter/[Ll]ibrary/
+EchoesOfTheShatter/[Tt]emp/
+EchoesOfTheShatter/[Ll]ogs/
+EchoesOfTheShatter/[Oo]bj/
+EchoesOfTheShatter/[Bb]uild/
+EchoesOfTheShatter/[Bb]uilds/
+EchoesOfTheShatter/[Uu]ser[Ss]ettings/
+EchoesOfTheShatter/[Mm]emory[Cc]aptures/
+EchoesOfTheShatter/[Rr]ecordings/
 EchoesOfTheShatter/.vs/
-*.sln
-*.VC.db
-*.opensdf
-*.sdf
-*.suo
+EchoesOfTheShatter/.vscode/
+EchoesOfTheShatter/*.csproj
+EchoesOfTheShatter/*.sln
+EchoesOfTheShatter/*.slnx
+EchoesOfTheShatter/*.user
+EchoesOfTheShatter/*.pidb
+EchoesOfTheShatter/*.booproj
+EchoesOfTheShatter/*.unityproj
+EchoesOfTheShatter/sysinfo.txt
+EchoesOfTheShatter/crashlytics-build.properties
 
 # Build do ShatterCore (CMake)
 /build/
+
+# Backups automáticos do Blender
+*.blend1
+*.blend2

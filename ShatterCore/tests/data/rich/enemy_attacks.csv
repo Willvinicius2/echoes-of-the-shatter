@@ -1,0 +1,4 @@
+enemyId,skillId,weight,telegraphed
+enemy.hollow_sentinel,skill.enemy.sentinel_strike,1,true
+enemy.ash_spitter,skill.enemy.ember_spit,1,false
+enemy.crypt_guardian,skill.enemy.guardian_slam,1,true

@@ -1,0 +1,8 @@
+id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel
+skill.warrior.iron_cut,class.warrior,,attack|melee|physical,melee,,10,,,,1,1.1,1.2,0,0,0.2,0.1,0.2,60,,1,,,true,1,,,,,,100,1
+skill.warrior.cleave,class.warrior,,attack|melee|area|physical,area,,8,,,,1,1.1,1.2,20,3,0.3,0.1,0.3,70,40,1,effect.guard_break,,true,,0.5,0.5,1,0,1,100,1
+skill.warrior.stone_stance,class.warrior,,attack|melee,self,,0,,,,1,1,1,0,8,0.2,0,0.2,0,0,1,,effect.firm_stance|effect.glass_barrier,true,1,,,,,,100,1
+skill.warrior.unsupported_roar,class.warrior,,attack|area,area,,5,,,,1,1,1,0,5,0.3,0.1,0.3,0,40,1,,,false,,,,,,,,1
+skill.enemy.sentinel_strike,,,attack|melee|physical,melee,,8,,,,1,1,1,0,0,0.7,0.1,0.5,50,,1,,,false,,,,,,,,1
+skill.enemy.ember_spit,,,spell|fire,projectile,,,2,,,1,1,1,0,0,0.5,0.1,0.5,200,,1,effect.burn,,false,,,,,,,,1
+skill.enemy.guardian_slam,,,attack|melee|physical,melee,,20,,,,1,1,1,0,0,1,0.2,1,80,,1,,,false,,,,,,,,1

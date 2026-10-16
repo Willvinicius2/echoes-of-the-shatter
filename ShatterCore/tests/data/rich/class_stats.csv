@@ -1,0 +1,5 @@
+classId,stat,base,perLevel
+class.warrior,life,600,40
+class.warrior,resource,100,0
+class.warrior,life_regen,3,0
+class.warrior,armor,50,5

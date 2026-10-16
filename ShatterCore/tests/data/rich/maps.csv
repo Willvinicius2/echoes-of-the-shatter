@@ -1,0 +1,4 @@
+id,monsterLevel,tier,encounters,bossEncounter,areaLootTable,idleAllowed
+map.act1.crypt,4,0,enc.crypt.patrol_a|enc.crypt.patrol_b,enc.crypt.guardian,loot.crypt.area,true
+map.endgame.ossuary,20,1,enc.crypt.patrol_a,,loot.crypt.area,true
+map.endgame.ossuary_deep,24,2,enc.crypt.patrol_b,,loot.crypt.area,true

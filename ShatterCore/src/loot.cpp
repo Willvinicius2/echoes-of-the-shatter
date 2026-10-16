@@ -1,0 +1,225 @@
+// ShatterCore — rolagem de loot (só o fluxo de RNG Loot) e conversão de itens em modificadores.
+#include "shatter/loot.h"
+
+#include <algorithm>
+#include <cmath>
+
+namespace shatter {
+
+namespace {
+
+constexpr int kMaxTableDepth = 8;
+
+bool IsIntegral(double v) { return v == std::floor(v); }
+
+void AddStack(std::vector<StackEntry>& stacks, const ContentId& id, std::int64_t amount) {
+    for (StackEntry& s : stacks) {
+        if (s.id == id) {
+            s.amount += amount;
+            return;
+        }
+    }
+    stacks.push_back({id, amount});
+}
+
+struct RollState {
+    const ContentDB& db;
+    const LootContext& ctx;
+    Pcg32& rng;
+    LootDrop& out;
+    bool idle() const { return ctx.mode == LootMode::Idle; }
+};
+
+bool IsTopTier(LootEntryKind k) {
+    return k == LootEntryKind::Unique || k == LootEntryKind::SpecBook || k == LootEntryKind::MapStone ||
+           k == LootEntryKind::EchoFragment;
+}
+
+void RollTable(RollState& st, const LootTableData& table, int depth) {
+    if (depth > kMaxTableDepth) return;
+    const RulesConstants& rules = st.db.Rules();
+    for (int roll = 0; roll < table.rolls; ++roll) {
+        if (!st.rng.Chance(table.dropChance)) continue;
+
+        // Entradas válidas para o nível de área e o modo (ordem da tabela).
+        std::vector<const LootEntry*> valid;
+        std::vector<double> weights;
+        for (const LootEntry& e : table.entries) {
+            if (st.ctx.areaLevel < e.minAreaLevel || st.ctx.areaLevel > e.maxAreaLevel) continue;
+            if (st.idle() && (e.manualOnly || IsTopTier(e.kind))) continue;  // dupla checagem do idle
+            valid.push_back(&e);
+            weights.push_back(e.weight);
+        }
+        const int pick = PickWeighted(weights, st.rng);
+        if (pick < 0) continue;
+        const LootEntry& e = *valid[static_cast<std::size_t>(pick)];
+
+        switch (e.kind) {
+            case LootEntryKind::Nothing:
+                break;
+            case LootEntryKind::Stack: {
+                const std::int64_t lo = e.minAmount, hi = e.maxAmount < e.minAmount ? e.minAmount : e.maxAmount;
+                const std::int32_t base = st.rng.RangeInt(static_cast<std::int32_t>(std::min<std::int64_t>(lo, 2147483647)),
+                                                          static_cast<std::int32_t>(std::min<std::int64_t>(hi, 2147483647)));
+                double amount = static_cast<double>(base) * st.ctx.quantityMult;
+                if (st.ctx.mode == LootMode::Manual) amount *= rules.fervorGoldMatMult;
+                std::int64_t n = static_cast<std::int64_t>(std::floor(amount));
+                if (n < 1) n = 1;
+                AddStack(st.out.stacks, e.refId, n);
+                break;
+            }
+            case LootEntryKind::SpecBook:
+            case LootEntryKind::MapStone:
+            case LootEntryKind::EchoFragment: {
+                const std::int32_t n = st.rng.RangeInt(static_cast<std::int32_t>(std::min<std::int64_t>(e.minAmount, 2147483647)),
+                                                       static_cast<std::int32_t>(std::min<std::int64_t>(e.maxAmount, 2147483647)));
+                AddStack(st.out.stacks, e.refId, n < 1 ? 1 : n);
+                break;
+            }
+            case LootEntryKind::ItemBase: {
+                const ItemBaseData* base = st.db.FindItemBase(e.refId);
+                if (base == nullptr) break;
+                std::vector<double> rw = {table.rarityWeights[0], table.rarityWeights[1], table.rarityWeights[2]};
+                if (st.ctx.mode == LootMode::Manual) rw[2] *= rules.fervorRareChanceMult;
+                const int ri = PickWeighted(rw, st.rng);
+                Rarity rarity = ri == 2 ? Rarity::Rare : (ri == 1 ? Rarity::Magic : Rarity::Normal);
+                if (rarity == Rarity::Rare && st.idle() && st.ctx.maxRares >= 0 &&
+                    st.ctx.raresAlreadyDropped + st.out.raresDropped >= st.ctx.maxRares) {
+                    rarity = Rarity::Magic;  // teto de Raros: o excedente vira Mágico, sem nova rolagem
+                }
+                ItemInstance item;
+                item.uid = st.ctx.nextItemUid ? (*st.ctx.nextItemUid)++ : 0;
+                item.baseId = base->id;
+                item.rarity = rarity;
+                item.itemLevel = st.ctx.areaLevel < 1 ? 1 : st.ctx.areaLevel;
+                item.affixes = RollAffixes(st.db, *base, rarity, item.itemLevel, st.rng);
+                if (rarity == Rarity::Rare) ++st.out.raresDropped;
+                st.out.items.push_back(std::move(item));
+                break;
+            }
+            case LootEntryKind::Unique: {
+                if (st.idle()) break;  // nunca no idle
+                const UniqueData* u = st.db.FindUnique(e.refId);
+                if (u == nullptr) break;
+                ItemInstance item;
+                item.uid = st.ctx.nextItemUid ? (*st.ctx.nextItemUid)++ : 0;
+                item.baseId = u->baseId;
+                item.rarity = Rarity::Unique;
+                item.uniqueId = u->id;
+                item.itemLevel = st.ctx.areaLevel < 1 ? 1 : st.ctx.areaLevel;
+                st.out.items.push_back(std::move(item));
+                break;
+            }
+            case LootEntryKind::Table: {
+                const LootTableData* sub = st.db.FindLootTable(e.refId);
+                if (sub != nullptr) RollTable(st, *sub, depth + 1);
+                break;
+            }
+        }
+    }
+}
+
+}  // namespace
+
+int PickWeighted(const std::vector<double>& weights, Pcg32& rng) {
+    double sum = 0.0;
+    for (double w : weights) {
+        if (w > 0.0) sum += w;
+    }
+    const double u = rng.NextUnit();  // sempre consome 1 número
+    if (!(sum > 0.0)) return -1;
+    const double target = u * sum;
+    double acc = 0.0;
+    int lastPositive = -1;
+    for (std::size_t i = 0; i < weights.size(); ++i) {
+        if (!(weights[i] > 0.0)) continue;
+        lastPositive = static_cast<int>(i);
+        acc += weights[i];
+        if (target < acc) return static_cast<int>(i);
+    }
+    return lastPositive;  // arredondamento: cai no último com peso
+}
+
+std::vector<RolledAffix> RollAffixes(const ContentDB& db, const ItemBaseData& base, Rarity rarity, int itemLevel,
+                                     Pcg32& lootRng) {
+    std::vector<RolledAffix> result;
+    int count = 0;
+    if (rarity == Rarity::Magic) count = lootRng.RangeInt(1, 2);
+    else if (rarity == Rarity::Rare) count = lootRng.RangeInt(3, 4);
+    if (count == 0) return result;
+
+    std::vector<const AffixData*> chosen;
+    int prefixes = 0, suffixes = 0;
+    for (int n = 0; n < count; ++n) {
+        std::vector<const AffixData*> cands;
+        std::vector<double> weights;
+        for (const AffixData& a : db.Affixes()) {  // ordem do CSV
+            if (a.minItemLevel > itemLevel) continue;
+            if (!a.allowedSlots.empty() &&
+                std::find(a.allowedSlots.begin(), a.allowedSlots.end(), base.slot) == a.allowedSlots.end())
+                continue;
+            if (a.kind == AffixKind::Prefix && prefixes >= 2) continue;
+            if (a.kind == AffixKind::Suffix && suffixes >= 2) continue;
+            bool conflict = false;
+            for (const AffixData* c : chosen) {
+                if (c == &a || (!a.group.empty() && c->group == a.group)) conflict = true;
+            }
+            if (conflict) continue;
+            cands.push_back(&a);
+            weights.push_back(a.weight);
+        }
+        const int pick = PickWeighted(weights, lootRng);
+        if (pick < 0) break;
+        const AffixData* a = cands[static_cast<std::size_t>(pick)];
+        chosen.push_back(a);
+        if (a->kind == AffixKind::Prefix) ++prefixes; else ++suffixes;
+        RolledAffix ra;
+        ra.affixId = a->id;
+        if (IsIntegral(a->minValue) && IsIntegral(a->maxValue)) {
+            ra.value = static_cast<double>(lootRng.RangeInt(static_cast<std::int32_t>(a->minValue),
+                                                            static_cast<std::int32_t>(a->maxValue)));
+        } else {
+            ra.value = lootRng.RangeReal(a->minValue, a->maxValue);
+        }
+        result.push_back(std::move(ra));
+    }
+    // Prefixos antes de sufixos, mantendo a ordem de rolagem dentro de cada grupo.
+    std::stable_partition(result.begin(), result.end(), [&](const RolledAffix& r) {
+        const AffixData* a = db.FindAffix(r.affixId);
+        return a != nullptr && a->kind == AffixKind::Prefix;
+    });
+    return result;
+}
+
+LootDrop RollLootTable(const ContentDB& db, const LootTableData& table, const LootContext& ctx, Pcg32& lootRng) {
+    LootDrop out;
+    RollState st{db, ctx, lootRng, out};
+    RollTable(st, table, 1);
+    return out;
+}
+
+std::vector<Modifier> ItemModifiers(const ContentDB& db, const ItemInstance& item) {
+    std::vector<Modifier> mods;
+    const std::string src = "item:" + std::to_string(item.uid);
+    if (const ItemBaseData* base = db.FindItemBase(item.baseId)) {
+        for (const Modifier& m : base->implicitMods) {
+            Modifier mod = m;
+            mod.source = src;
+            mods.push_back(std::move(mod));
+        }
+    }
+    for (const RolledAffix& ra : item.affixes) {
+        const AffixData* a = db.FindAffix(ra.affixId);
+        if (a == nullptr) continue;
+        Modifier mod;
+        mod.stat = a->stat;
+        mod.kind = a->modKind;
+        mod.value = ra.value;
+        mod.requiredTags = a->requiredTags;
+        mod.source = src;
+        mods.push_back(std::move(mod));
+    }
+    return mods;
+}
+
+}  // namespace shatter

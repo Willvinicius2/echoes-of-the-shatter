@@ -1,0 +1,43 @@
+{
+ "Warrior": {
+  "body_h": 1.5,
+  "body_foot_z": 0.0,
+  "body_w": 0.903,
+  "all_w": 1.123,
+  "all_h": 1.5,
+  "tris": {
+   "SK_Warrior_Body": 496,
+   "SM_Warrior_Sword": 44,
+   "SM_Warrior_Shield": 48
+  },
+  "bones": 27,
+  "mats": 9
+ },
+ "Archer": {
+  "body_h": 1.5,
+  "body_foot_z": 0.0,
+  "body_w": 0.903,
+  "all_w": 0.91,
+  "all_h": 1.511,
+  "tris": {
+   "SK_Archer_Body": 504,
+   "SM_Archer_Bow": 92,
+   "SM_Archer_Quiver": 56
+  },
+  "bones": 27,
+  "mats": 8
+ },
+ "Mage": {
+  "body_h": 1.5,
+  "body_foot_z": 0.0,
+  "body_w": 0.903,
+  "all_w": 0.966,
+  "all_h": 1.87,
+  "tris": {
+   "SK_Mage_Body": 544,
+   "SM_Mage_Staff": 88
+  },
+  "bones": 27,
+  "mats": 9
+ }
+}

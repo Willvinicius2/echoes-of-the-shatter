@@ -1,0 +1,13 @@
+tableId,kind,refId,weight,minAmount,maxAmount,minAreaLevel,maxAreaLevel,manualOnly
+loot.crypt.common,item_base,item_base.bone_helm,6,1,1,1,999,false
+loot.crypt.common,item_base,item_base.leather_vest,6,1,1,1,999,false
+loot.crypt.common,stack,currency.gold,80,5,15,1,999,false
+loot.crypt.common,nothing,,20,1,1,1,999,false
+loot.crypt.area,stack,currency.gold,70,3,8,1,999,false
+loot.crypt.area,stack,material.shard,30,1,3,1,999,false
+loot.crypt.guardian,unique,unique.bell_warden_blade,5,1,1,1,999,true
+loot.crypt.guardian,spec_book,book.spec.warrior_bastion,5,1,1,1,999,true
+loot.crypt.guardian,map_stone,map_stone.ossuary_t1,5,1,1,1,999,true
+loot.crypt.guardian,echo_fragment,material.echo_fragment,5,1,2,1,999,true
+loot.crypt.guardian,item_base,item_base.leather_vest,40,1,1,1,999,false
+loot.crypt.guardian,table,loot.crypt.common,40,1,1,1,999,false

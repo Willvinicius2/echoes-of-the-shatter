@@ -92,6 +92,10 @@ enum class LoadStatus : std::uint8_t {
 // Parse do envelope + checagem de hash + migração até kCurrentSaveVersion + SaveFromJson.
 LoadStatus ParseJson(std::string_view fileText, SaveData& out, std::string* error = nullptr);
 
+// ADIÇÃO (docs/09_mudancas_contrato.md): RNF-10. false se o save foi gravado com um content_version
+// maior que o do jogo (o chamador recusa com aviso e NÃO altera o arquivo).
+bool SaveContentVersionSupported(const SaveData& s, const ContentDB& db);
+
 // ---------------------------------------------------------------------------
 // Migração (opera na árvore JSON de "data")
 // ---------------------------------------------------------------------------
