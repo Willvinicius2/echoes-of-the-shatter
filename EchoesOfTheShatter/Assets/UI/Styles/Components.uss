@@ -1,0 +1,404 @@
+/* Componentes reutilizáveis (docs/03_design_system.md, seção 5). Cores, fontes e tamanhos sempre por
+   var(--...) do Tokens.uss (gerado por tools/gen_tokens.py). Molduras 9-slice entram quando as
+   texturas existirem; até lá, bordas lisas nas cores dos tokens. */
+
+/* ---- Barra (ShatterBar) ---- */
+.shatter-bar {
+    overflow: hidden;
+    background-color: var(--color-semantic-life-dark);
+    border-width: var(--size-border-hairline);
+    border-color: var(--color-border-default);
+}
+
+.shatter-bar__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: var(--color-semantic-life);
+    border-right-width: var(--size-border-hairline);
+    border-right-color: var(--color-semantic-life-highlight);
+}
+
+.shatter-bar--resource {
+    background-color: var(--color-semantic-impeto-dark);
+}
+
+.shatter-bar--resource > .shatter-bar__fill {
+    background-color: var(--color-semantic-impeto);
+    border-right-color: var(--color-base-dourado-claro);
+}
+
+.shatter-bar__value {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: 0;
+    padding: 0;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-primary);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: var(--color-base-pedra-noite);
+}
+
+/* ---- Orbe (ShatterOrb) ---- */
+.shatter-orb {
+    width: var(--size-orb);
+    height: var(--size-orb);
+    overflow: hidden;
+    /* metade de --size-orb (144 px): o USS não calcula */
+    border-top-left-radius: 72px;
+    border-top-right-radius: 72px;
+    border-bottom-left-radius: 72px;
+    border-bottom-right-radius: 72px;
+    border-width: 3px;
+    border-color: var(--color-border-default);
+    background-color: var(--color-surface-slot-inset);
+}
+
+.shatter-orb__fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100%;
+    background-color: var(--color-semantic-life);
+    border-top-width: var(--size-border-hairline);
+    border-top-color: var(--color-semantic-life-highlight);
+}
+
+.shatter-orb--resource > .shatter-orb__fill {
+    background-color: var(--color-semantic-impeto);
+    border-top-color: var(--color-base-dourado-claro);
+}
+
+.shatter-orb__value {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: 0;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-primary);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: var(--color-base-pedra-noite);
+}
+
+.shatter-orb--low {
+    border-color: var(--color-semantic-danger);
+}
+
+/* ---- Slot de habilidade (ShatterSkillSlot) ---- */
+.shatter-skill-slot {
+    width: var(--size-skill-slot);
+    height: var(--size-skill-slot);
+    margin-right: var(--space-s2);
+    overflow: hidden;
+    background-color: var(--color-surface-slot-inset);
+    border-width: var(--size-border-hairline);
+    border-color: var(--color-border-default);
+}
+
+.shatter-skill-slot__icon {
+    position: absolute;
+    left: var(--space-s1);
+    top: var(--space-s1);
+    right: var(--space-s1);
+    bottom: var(--space-s1);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.shatter-skill-slot__name {
+    position: absolute;
+    left: var(--space-s1);
+    right: var(--space-s1);
+    top: var(--space-s1);
+    bottom: var(--space-s4);
+    margin: 0;
+    padding: 0;
+    white-space: normal;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-secondary);
+    -unity-text-align: middle-center;
+}
+
+.shatter-skill-slot--has-icon > .shatter-skill-slot__name {
+    display: none;
+}
+
+.shatter-skill-slot__cooldown {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 0;
+    background-color: var(--color-base-pedra-noite);
+    opacity: 0.6;
+}
+
+.shatter-skill-slot__cooldown-text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: 0;
+    font-size: var(--font-body-size);
+    color: var(--color-text-primary);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: var(--color-base-pedra-noite);
+}
+
+.shatter-skill-slot__key {
+    position: absolute;
+    left: var(--space-s1);
+    bottom: var(--space-s1);
+    margin: 0;
+    padding-left: var(--space-s1);
+    padding-right: var(--space-s1);
+    font-size: var(--font-micro-size);
+    color: var(--color-text-secondary);
+    background-color: var(--color-surface-bg-deep);
+}
+
+.shatter-skill-slot__gem {
+    position: absolute;
+    right: var(--space-s1);
+    bottom: var(--space-s1);
+    width: var(--space-s2);
+    height: var(--space-s2);
+    rotate: 45deg;
+    background-color: var(--color-class-gem-guerreiro);
+}
+
+.shatter-skill-slot--cooling > .shatter-skill-slot__icon,
+.shatter-skill-slot--cooling > .shatter-skill-slot__name {
+    opacity: 0.7;
+}
+
+.shatter-skill-slot--no-resource > .shatter-skill-slot__icon {
+    -unity-background-image-tint-color: var(--color-semantic-impeto-dark);
+}
+
+.shatter-skill-slot--no-resource > .shatter-skill-slot__name {
+    color: var(--color-text-disabled);
+}
+
+.shatter-skill-slot--locked {
+    border-color: var(--color-border-subtle);
+}
+
+.shatter-skill-slot--locked > .shatter-skill-slot__icon,
+.shatter-skill-slot--locked > .shatter-skill-slot__name {
+    opacity: 0.4;
+}
+
+.shatter-skill-slot--empty {
+    border-color: var(--color-border-subtle);
+}
+
+.shatter-skill-slot--empty > .shatter-skill-slot__gem,
+.shatter-skill-slot--empty > .shatter-skill-slot__name,
+.shatter-skill-slot--empty > .shatter-skill-slot__cooldown,
+.shatter-skill-slot--empty > .shatter-skill-slot__cooldown-text {
+    display: none;
+}
+
+/* ---- Poção (slot de 64 x 88) ---- */
+.shatter-potion-slot {
+    width: var(--size-potion-slot-w);
+    height: var(--size-potion-slot-h);
+    overflow: hidden;
+    background-color: var(--color-surface-slot-inset);
+    border-width: var(--size-border-hairline);
+    border-color: var(--color-border-default);
+}
+
+.shatter-potion-slot__flask {
+    position: absolute;
+    left: var(--space-s3);
+    right: var(--space-s3);
+    top: var(--space-s3);
+    bottom: var(--space-s5);
+    border-top-left-radius: var(--space-s2);
+    border-top-right-radius: var(--space-s2);
+    border-bottom-left-radius: var(--space-s3);
+    border-bottom-right-radius: var(--space-s3);
+    background-color: var(--color-semantic-life);
+}
+
+.shatter-potion-slot--ward > .shatter-potion-slot__flask {
+    background-color: var(--color-semantic-warning);
+}
+
+.shatter-potion-slot__recharge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 0;
+    background-color: var(--color-base-pedra-noite);
+    opacity: 0.6;
+}
+
+.shatter-potion-slot__count {
+    position: absolute;
+    right: var(--space-s1);
+    top: var(--space-s1);
+    margin: 0;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-primary);
+    -unity-font-style: bold;
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: var(--color-base-pedra-noite);
+}
+
+.shatter-potion-slot__key {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--space-s1);
+    margin: 0;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-secondary);
+    -unity-text-align: middle-center;
+}
+
+.shatter-potion-slot--empty > .shatter-potion-slot__flask {
+    opacity: 0.4;
+}
+
+.shatter-potion-slot--empty > .shatter-potion-slot__count {
+    color: var(--color-semantic-danger-text);
+}
+
+/* ---- Esquiva (slot de 72 x 88 com os pontos de carga) ---- */
+.shatter-dodge-slot {
+    width: var(--size-dodge-slot-w);
+    height: var(--size-dodge-slot-h);
+    overflow: hidden;
+    background-color: var(--color-surface-slot-inset);
+    border-width: var(--size-border-hairline);
+    border-color: var(--color-border-default);
+}
+
+.shatter-dodge-slot__icon {
+    position: absolute;
+    left: var(--space-s2);
+    right: var(--space-s2);
+    top: var(--space-s1);
+    height: var(--size-icon-sm);
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.shatter-dodge-slot__name {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--space-s1);
+    margin: 0;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-secondary);
+    -unity-text-align: middle-center;
+}
+
+.shatter-dodge-slot__key {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--space-s5);
+    margin: 0;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-muted);
+    -unity-text-align: middle-center;
+}
+
+.shatter-dodge-slot__pips {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: var(--space-s2);
+    flex-direction: row;
+    justify-content: center;
+}
+
+.shatter-dodge-slot__pip {
+    width: var(--space-s3);
+    height: var(--space-s3);
+    margin-left: var(--space-s1);
+    margin-right: var(--space-s1);
+    overflow: hidden;
+    border-top-left-radius: var(--space-s2);
+    border-top-right-radius: var(--space-s2);
+    border-bottom-left-radius: var(--space-s2);
+    border-bottom-right-radius: var(--space-s2);
+    background-color: var(--color-border-subtle);
+}
+
+.shatter-dodge-slot__pip-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background-color: var(--color-semantic-warning);
+    opacity: 0.5;
+}
+
+.shatter-dodge-slot__pip--full > .shatter-dodge-slot__pip-fill {
+    opacity: 1;
+}
+
+/* ---- Números de dano (DamageNumberLayer) ---- */
+.damage-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.damage-number {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    translate: -50% -50%;
+    font-size: var(--font-damage-size);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    -unity-text-outline-width: var(--elevation-world-label-outline);
+    -unity-text-outline-color: var(--color-border-outline-dark);
+    color: var(--color-damage-physical);
+}
+
+.damage-number--fire { color: var(--color-damage-fire); }
+.damage-number--cold { color: var(--color-damage-cold); }
+.damage-number--lightning { color: var(--color-damage-lightning); }
+
+.damage-number--crit {
+    font-size: var(--font-damage-crit-size);
+    color: var(--color-damage-critical);
+}
+
+.damage-number--taken {
+    color: var(--color-damage-player-taken);
+}
+
+.damage-number--heal {
+    color: var(--color-damage-heal);
+}
+
+.damage-number--muted {
+    font-size: var(--font-body-size);
+    color: var(--color-damage-blocked);
+}

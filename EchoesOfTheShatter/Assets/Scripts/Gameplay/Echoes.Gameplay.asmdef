@@ -1,0 +1,19 @@
+{
+    "name": "Echoes.Gameplay",
+    "rootNamespace": "Echoes.Gameplay",
+    "references": [
+        "Echoes.Core",
+        "Echoes.Interop",
+        "Unity.InputSystem",
+        "Unity.AI.Navigation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

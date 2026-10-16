@@ -1,0 +1,16 @@
+{
+    "name": "Echoes.Core",
+    "rootNamespace": "Echoes.Core",
+    "references": [
+        "Echoes.Interop"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
