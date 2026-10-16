@@ -1,0 +1,431 @@
+{
+ "version": {
+  "blender": "5.2.2 LTS",
+  "python": "3.13.16"
+ },
+ "grid_m": 1.0,
+ "module_m": 2.0,
+ "wall_height_m": 3.0,
+ "pieces": {
+  "SM_Cripta_Floor_2x2_A": {
+   "file": "fbx/SM_Cripta_Floor_2x2_A.fbx",
+   "category": "floor",
+   "pivot": "centro do ladrilho, topo em z=0",
+   "snap": "centro em coordenadas impares (2x2 m)",
+   "blender_min": [
+    -1.0,
+    -1.0,
+    -0.18
+   ],
+   "blender_max": [
+    1.0,
+    1.0,
+    0.0
+   ],
+   "unity": {
+    "min": [
+     -1.0,
+     -0.18,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     0.0,
+     1.0
+    ],
+    "size": [
+     2.0,
+     0.18,
+     2.0
+    ]
+   },
+   "tris": 220,
+   "budget_tris": [
+    200,
+    600
+   ],
+   "pct_of_budget_max": 36.7,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_Floor_2x2_B": {
+   "file": "fbx/SM_Cripta_Floor_2x2_B.fbx",
+   "category": "floor",
+   "pivot": "centro do ladrilho, topo em z=0",
+   "snap": "4 pecas giradas 0/90/180/270 em volta de um ponto par formam o anel",
+   "blender_min": [
+    -1.0,
+    -1.0,
+    -0.18
+   ],
+   "blender_max": [
+    1.0,
+    1.0,
+    0.01
+   ],
+   "unity": {
+    "min": [
+     -1.0,
+     -0.18,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     0.01,
+     1.0
+    ],
+    "size": [
+     2.0,
+     0.19,
+     2.0
+    ]
+   },
+   "tris": 572,
+   "budget_tris": [
+    200,
+    600
+   ],
+   "pct_of_budget_max": 95.3,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_Wall_2m_A": {
+   "file": "fbx/SM_Cripta_Wall_2m_A.fbx",
+   "category": "structure",
+   "pivot": "centro da base sobre a linha da grade",
+   "snap": "linha da grade, centro em coordenada impar",
+   "blender_min": [
+    -1.0,
+    -0.325,
+    0.0
+   ],
+   "blender_max": [
+    1.0,
+    0.325,
+    3.0
+   ],
+   "unity": {
+    "min": [
+     -1.0,
+     0.0,
+     -0.325
+    ],
+    "max": [
+     1.0,
+     3.0,
+     0.325
+    ],
+    "size": [
+     2.0,
+     3.0,
+     0.65
+    ]
+   },
+   "tris": 332,
+   "budget_tris": [
+    800,
+    2500
+   ],
+   "pct_of_budget_max": 13.3,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_WallCorner_A": {
+   "file": "fbx/SM_Cripta_WallCorner_A.fbx",
+   "category": "structure",
+   "pivot": "intersecao das linhas da grade, base",
+   "snap": "coordenadas pares",
+   "blender_min": [
+    -0.5,
+    -0.5,
+    0.0
+   ],
+   "blender_max": [
+    0.5,
+    0.5,
+    3.58
+   ],
+   "unity": {
+    "min": [
+     -0.5,
+     0.0,
+     -0.5
+    ],
+    "max": [
+     0.5,
+     3.58,
+     0.5
+    ],
+    "size": [
+     1.0,
+     3.58,
+     1.0
+    ]
+   },
+   "tris": 188,
+   "budget_tris": [
+    800,
+    2500
+   ],
+   "pct_of_budget_max": 7.5,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_Pillar_A": {
+   "file": "fbx/SM_Cripta_Pillar_A.fbx",
+   "category": "structure",
+   "pivot": "centro da base",
+   "snap": "grade de 1 m (cantos de ladrilho)",
+   "blender_min": [
+    -0.4,
+    -0.4,
+    0.0
+   ],
+   "blender_max": [
+    0.4,
+    0.4,
+    3.23
+   ],
+   "unity": {
+    "min": [
+     -0.4,
+     0.0,
+     -0.4
+    ],
+    "max": [
+     0.4,
+     3.23,
+     0.4
+    ],
+    "size": [
+     0.8,
+     3.23,
+     0.8
+    ]
+   },
+   "tris": 244,
+   "budget_tris": [
+    800,
+    2500
+   ],
+   "pct_of_budget_max": 9.8,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_Arch_A": {
+   "file": "fbx/SM_Cripta_Arch_A.fbx",
+   "category": "structure",
+   "pivot": "centro da base sobre a linha da grade",
+   "snap": "linha da grade, centro em coordenada par (ocupa 2 modulos)",
+   "blender_min": [
+    -2.0,
+    -0.37,
+    0.0
+   ],
+   "blender_max": [
+    2.0,
+    0.37,
+    3.4
+   ],
+   "unity": {
+    "min": [
+     -2.0,
+     0.0,
+     -0.37
+    ],
+    "max": [
+     2.0,
+     3.4,
+     0.37
+    ],
+    "size": [
+     4.0,
+     3.4,
+     0.74
+    ]
+   },
+   "tris": 908,
+   "budget_tris": [
+    800,
+    2500
+   ],
+   "pct_of_budget_max": 36.3,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_Stairs_A": {
+   "file": "fbx/SM_Cripta_Stairs_A.fbx",
+   "category": "structure",
+   "pivot": "centro da base 2x2 m; sobe para +Y no Blender (-Z no Unity)",
+   "snap": "centro em coordenadas impares",
+   "blender_min": [
+    -1.0,
+    -1.0,
+    0.0
+   ],
+   "blender_max": [
+    1.0,
+    1.0,
+    1.25
+   ],
+   "unity": {
+    "min": [
+     -1.0,
+     0.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.25,
+     1.0
+    ],
+    "size": [
+     2.0,
+     1.25,
+     2.0
+    ]
+   },
+   "tris": 312,
+   "budget_tris": [
+    800,
+    2500
+   ],
+   "pct_of_budget_max": 12.5,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_Sarcophagus_A": {
+   "file": "fbx/SM_Cripta_Sarcophagus_A.fbx",
+   "category": "prop",
+   "pivot": "centro da base",
+   "snap": "1x2 m",
+   "blender_min": [
+    -0.5,
+    -1.0,
+    0.0
+   ],
+   "blender_max": [
+    0.5,
+    1.0,
+    0.97
+   ],
+   "unity": {
+    "min": [
+     -0.5,
+     0.0,
+     -1.0
+    ],
+    "max": [
+     0.5,
+     0.97,
+     1.0
+    ],
+    "size": [
+     1.0,
+     0.97,
+     2.0
+    ]
+   },
+   "tris": 224,
+   "budget_tris": [
+    100,
+    800
+   ],
+   "pct_of_budget_max": 28.0,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_Brazier_A": {
+   "file": "fbx/SM_Cripta_Brazier_A.fbx",
+   "category": "prop",
+   "pivot": "centro da base",
+   "snap": "1x1 m",
+   "blender_min": [
+    -0.4,
+    -0.4,
+    0.0
+   ],
+   "blender_max": [
+    0.4,
+    0.4,
+    1.54
+   ],
+   "unity": {
+    "min": [
+     -0.4,
+     0.0,
+     -0.4
+    ],
+    "max": [
+     0.4,
+     1.54,
+     0.4
+    ],
+    "size": [
+     0.8,
+     1.54,
+     0.8
+    ]
+   },
+   "tris": 380,
+   "budget_tris": [
+    100,
+    800
+   ],
+   "pct_of_budget_max": 47.5,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  },
+  "SM_Cripta_BonePile_A": {
+   "file": "fbx/SM_Cripta_BonePile_A.fbx",
+   "category": "prop",
+   "pivot": "centro da base",
+   "snap": "livre (decorativo, sem colisor)",
+   "blender_min": [
+    -0.37,
+    -0.353,
+    0.0
+   ],
+   "blender_max": [
+    0.376,
+    0.344,
+    0.19
+   ],
+   "unity": {
+    "min": [
+     -0.376,
+     0.0,
+     -0.344
+    ],
+    "max": [
+     0.37,
+     0.19,
+     0.353
+    ],
+    "size": [
+     0.746,
+     0.19,
+     0.697
+    ]
+   },
+   "tris": 396,
+   "budget_tris": [
+    100,
+    800
+   ],
+   "pct_of_budget_max": 49.5,
+   "materials": [
+    "M_Graybox_Palette"
+   ]
+  }
+ }
+}
