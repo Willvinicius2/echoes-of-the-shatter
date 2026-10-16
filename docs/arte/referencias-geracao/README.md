@@ -1,6 +1,6 @@
 # Referências gráficas aprovadas
 
-Imagens de conceito geradas com o gpt-image (ChatGPT, via Codex CLI). São referência de direção de arte, não assets finais do jogo. O @william aprovou o visual em 16/10/2026 e, no mesmo dia, a rodada de consistência que trouxe o Mago novo e deixou heróis, inimigos e chefes iguais em todas as cenas.
+Imagens de conceito geradas com o gpt-image (ChatGPT, via Codex CLI). São referência de direção de arte, não assets finais do jogo. O @william aprovou o visual em 16/10/2026. No mesmo dia aprovou a rodada de consistência, que trouxe o Mago novo e deixou heróis, inimigos e chefes iguais em todas as cenas, e o complemento (13 a 24) com as áreas e os terrenos que faltavam, o endgame e o chefe do endgame.
 
 ## Direção
 
@@ -20,6 +20,9 @@ Elas são a fonte de verdade de cada personagem. Toda imagem nova em que eles ap
 - **Chefes (06):** Guardião da Cripta, Tecelã de Cascalho, Carrasco do Voto e Vigia do Sino.
 - **Cenários (07 e 08):** a Cripta Partida, a Pedreira dos Ecos e a Ponte do Sino.
 - **Ícones (11):** os ícones de habilidade e de item.
+- **Terrenos (21 e 22):** o chão das 8 áreas do Ato I e dos 3 mapas do endgame, mais as marcas de perigo no chão.
+- **Inimigos do endgame (23):** os 9 inimigos dos mapas do endgame, cada um nas versões normal, elite e corrompida.
+- **Chefe do endgame (24):** o Predador dos Marcos.
 
 ## Imagens (`aprovadas/`)
 
@@ -37,20 +40,36 @@ Elas são a fonte de verdade de cada personagem. Toda imagem nova em que eles ap
 | 10_hud_mockup.png | HUD em combate: o Guerreiro contra o Guardião da Cripta |
 | 11_icones.png | Ícones de habilidades (com o herói de cada classe) e de itens |
 | 12_mapa_mundi.png | Mapa do Ato I e seleção de área com o Vigia do Sino |
+| 13_estrada_lanternas.png | Estrada das Lanternas (tutorial): área com o Guerreiro e kit |
+| 14_armazem_cinzas.png | Armazém de Cinzas (área opcional de saque): área com o Arqueiro e kit |
+| 15_patio_marcos.png | Pátio dos Marcos: arena do Carrasco do Voto com o Mago e kit |
+| 16_tuneis_voto.png | Túneis do Voto: área com o Guerreiro, kit e planta da masmorra |
+| 17_mirante_partido.png | Mirante Partido: arena final do Ato I com o Arqueiro e kit |
+| 18_ossario_marco.png | Endgame, Ossário do Marco: área com o Guerreiro e kit |
+| 19_trilha_cinza.png | Endgame, Trilha de Cinza: área com o Arqueiro, inimigos e kit |
+| 20_salao_martelo.png | Endgame, Salão do Martelo: área com o Mago, inimigos e kit |
+| 21_terrenos_ato1.png | Terrenos das 8 áreas do Ato I (4 texturas por área) |
+| 22_terrenos_endgame.png | Terrenos dos 3 mapas do endgame e marcas de perigo no chão |
+| 23_inimigos_endgame.png | 9 inimigos do endgame (3 por mapa) nas versões normal, elite e corrompida |
+| 24_predador_marcos.png | Predador dos Marcos: vistas, fases, rastros e arena |
 
 ## Prompts e scripts
 
 - **Prompts:**
   - [prompts_spell_brigade.json](prompts_spell_brigade.json) gerou 02, 03 e 05.
-  - [prompts_consistencia.json](prompts_consistencia.json) gerou as outras 9 imagens.
+  - [prompts_consistencia.json](prompts_consistencia.json) gerou 01, 04 e 06 a 12.
+  - [prompts_complemento.json](prompts_complemento.json) gerou 13 a 24.
   - Os caminhos de referência dentro deles apontam para uma pasta temporária. Para gerar de novo, recrie as pranchas e as folhas oficiais.
 - **Scripts:** ficam em `scripts/` e rodam com o Python de um venv que tenha o Pillow (o `pranchas.py` precisa dele).
   1. `pranchas.py <Assets do Spell Brigade> <pasta das pranchas>` monta as pranchas.
   2. `prompts_sb.py <pasta das pranchas> <prompts.json>` gera os prompts de estilo.
-  3. `prompts_herois.py` e `prompts_consistencia.py` acrescentam as folhas oficiais e as regras de consistência. Os parâmetros estão no cabeçalho de cada script.
+  3. `prompts_herois.py` e `prompts_consistencia.py` acrescentam as folhas oficiais e as regras de consistência. `prompts_complemento.py` gera áreas, terrenos, endgame e chefe. Os parâmetros estão no cabeçalho de cada script.
   4. `gerar.py <prompts.json> <pasta de saída> [ids...]` chama o Codex, 4 imagens por vez.
 
 ## Pontos em aberto
 
 - **Inimigos genéricos no HUD (10):** os soldados ao redor do Guardião estão próximos da Sentinela Oca e do Lanceiro Repetido da folha 05, mas não idênticos.
+- **Vigia do Sino diferente (17):** no Mirante Partido ele aparece como um gigante de armadura com corpo de sino. Na folha 06 ele é um sino flutuante com braços de pedra. A folha 06 vale.
+- **Inimigos do Ossário (18):** os inimigos do Ossário estão próximos dos da folha 23, mas não idênticos.
+- **Terrenos do endgame (22):** o acabamento está um pouco mais realista e sujo que o resto do conjunto.
 - **Animações:** as poses das folhas 02 a 04 são quadros-chave de conceito, não animações. As sprites e animações finais ainda precisam ser produzidas a partir dessas folhas.
