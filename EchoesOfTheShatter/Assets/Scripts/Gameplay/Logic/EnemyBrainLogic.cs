@@ -102,6 +102,13 @@ namespace Echoes.Gameplay
         }
 
         /// <summary>Morte: para tudo. Um telegraph em andamento é encerrado por quem chama.</summary>
+        /// <summary>Ordem do core (stun/stagger): cancela o telegraph em andamento. Devolve os eventos (Interrupted) ou None.</summary>
+        public EnemyBrainEvents Interrupt()
+        {
+            if (State != EnemyBrainState.Telegraph) return EnemyBrainEvents.None;
+            return Enter(EnemyBrainState.Recover, 0.0) | EnemyBrainEvents.Interrupted;
+        }
+
         public void Kill()
         {
             PreviousState = State;

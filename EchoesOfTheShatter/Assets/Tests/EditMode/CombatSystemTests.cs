@@ -170,7 +170,7 @@ namespace Echoes.Tests.EditMode
                     hero.combatant.Position = home;
                 }
 
-                Assert.IsTrue(hero.logic.Dodge.IsDodging || hero.logic.Dodge.Charges.Charges < hero.logic.Dodge.Charges.MaxCharges, "esquivou");
+                Assert.IsTrue(hero.logic.Dodge.IsDodging || hero.logic.Dodge.Charges < hero.logic.Dodge.MaxCharges, "esquivou");
                 var avoided = world.Avoided.Count > 0;
                 if (avoided) Assert.AreEqual(lifeBefore, hero.combatant.Life, 1.0, "esquiva perfeita não tira vida");
                 else Assert.Greater(world.HitsOn(hero.combatant), 0);
@@ -363,7 +363,8 @@ namespace Echoes.Tests.EditMode
                 var hero = world.AddHero(PlanarVector.Zero);
                 var potion = hero.logic.GetPotion(0);
                 Assert.IsNotNull(potion);
-                while (potion.Charges.TryConsume()) { }
+                DrainPotion(world, hero.logic, 0);
+                Assert.AreEqual(0, potion.Charges, "o cinto do core esvaziou");
                 hero.logic.Press(HeroCommand.Potion1);
                 world.Run(world.Step);
                 Assert.IsFalse(hero.logic.IsDrinking);
@@ -383,13 +384,13 @@ namespace Echoes.Tests.EditMode
                 world.Combat.Unregister(enemy.combatant);
 
                 var before = hero.combatant.Life;
-                var charges = hero.logic.GetPotion(0).Charges.Charges;
+                var charges = hero.logic.GetPotion(0).Charges;
                 hero.logic.Press(HeroCommand.Potion1);
                 world.Run(world.Step);
                 Assert.IsTrue(hero.logic.IsDrinking);
                 world.Run(hero.logic.GetPotion(0).Potion.UseTime + world.Step);
                 Assert.Greater(hero.combatant.Life, before);
-                Assert.AreEqual(charges - 1, hero.logic.GetPotion(0).Charges.Charges);
+                Assert.AreEqual(charges - 1, hero.logic.GetPotion(0).Charges);
             }
         }
 
@@ -400,10 +401,11 @@ namespace Echoes.Tests.EditMode
             {
                 var hero = world.AddHero(PlanarVector.Zero);
                 var potion = hero.logic.GetPotion(0);
-                potion.Charges.TryConsume();
+                DrainPotion(world, hero.logic, 0);
+                Assert.IsTrue(potion.IsEmpty);
                 world.Combat.Revive(hero.combatant);
                 Assert.AreEqual(hero.combatant.MaxLife, hero.combatant.Life, 1e-9);
-                Assert.IsTrue(potion.Charges.IsFull);
+                Assert.IsTrue(potion.IsFull);
             }
         }
 
@@ -439,10 +441,27 @@ namespace Echoes.Tests.EditMode
             using (var world = new TestWorld())
             {
                 var hero = world.AddHero(PlanarVector.Zero);
-                while (hero.logic.Dodge.Charges.TryConsume()) { }
+                for (var i = 0; i < hero.logic.Dodge.MaxCharges; i++)
+                {
+                    hero.logic.Press(HeroCommand.Dodge);
+                    world.Run(world.Rules.Combat.DodgeDurationSeconds + 0.05);
+                }
+                Assert.IsTrue(hero.logic.Dodge.IsEmpty, "as cargas do core acabaram");
                 hero.logic.Press(HeroCommand.Dodge);
                 world.Run(0.2);
                 Assert.AreEqual(1, world.Denied.FindAll(d => d.Reason == DenyReason.NoDodgeCharges).Count);
+            }
+        }
+
+        /// <summary>Esvazia a poção usando-a pelo comando (cargas, trava e recarga são do core).</summary>
+        static void DrainPotion(TestWorld world, HeroCombatLogic logic, int index)
+        {
+            var command = index == 0 ? HeroCommand.Potion1 : HeroCommand.Potion2;
+            var guard = 20;
+            while (logic.GetPotion(index).Charges > 0 && guard-- > 0)
+            {
+                logic.Press(command);
+                world.Run(logic.GetPotion(index).Potion.UseTime + world.Rules.Combat.PotionLockoutSeconds + 0.1);
             }
         }
 

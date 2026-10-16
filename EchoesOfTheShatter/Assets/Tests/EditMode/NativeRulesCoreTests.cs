@@ -641,27 +641,31 @@ namespace Echoes.Tests.EditMode
                 using (var stats = native.CreateHeroStats(in hero))
                 using (var belt = native.CreatePotionBelt())
                 {
-                    StringAssert.Contains("potion.life", belt.InfoJson());
-                    var vitals = new Vitals { Life = 10.0 };
-                    var used = belt.Use("potion.life", stats, ref vitals);
-                    Assert.AreEqual(PotionUseStatus.Ok, used.Status);
-                    Assert.Greater(vitals.Life, 10.0);
-                    Assert.AreEqual(PotionUseStatus.LockedOut, belt.Use("potion.life", stats, ref vitals).Status, "trava global");
+                    Assert.AreEqual(native.Potions.Count, belt.Count);
+                    Assert.AreEqual(native.Potions[0].MaxCharges, belt.GetEntry(0).Charges);
+                    Assert.AreEqual(PotionUseStatus.Ok, belt.TryUse(0, stats));
+                    Assert.AreEqual(native.Potions[0].MaxCharges - 1, belt.GetEntry(0).Charges);
+                    Assert.Greater(belt.LockoutRemaining, 0.0);
+                    Assert.AreEqual(PotionUseStatus.LockedOut, belt.TryUse(0, stats), "trava global");
                     belt.Tick(native.Combat.PotionLockoutSeconds + 0.1);
-                    Assert.AreEqual(PotionUseStatus.Ok, belt.Use("potion.life", stats, ref vitals).Status);
+                    Assert.AreEqual(PotionUseStatus.Ok, belt.TryUse(0, stats));
                     belt.Refill();
+                    Assert.IsTrue(belt.GetEntry(0).IsFull);
                     Assert.IsFalse(belt.OnEliteKilled(), "tudo cheio: nada a acrescentar");
+                    Assert.AreEqual(PotionUseStatus.Unknown, belt.TryUse(99, stats));
                 }
 
                 using (var dodge = native.CreateDodge())
                 {
                     Assert.AreEqual(native.Combat.DodgeMaxCharges, dodge.Charges);
-                    Assert.AreEqual(DodgeStartStatus.Ok, dodge.Start(0.0));
+                    Assert.AreEqual(DodgeStartStatus.Ok, dodge.TryStart(0.0));
                     Assert.IsTrue(dodge.IsInvulnerable);
                     Assert.AreEqual(native.Combat.DodgeMaxCharges - 1, dodge.Charges);
-                    Assert.AreEqual(DodgeStartStatus.Active, dodge.Start(0.0));
+                    Assert.AreEqual(DodgeStartStatus.Active, dodge.TryStart(0.0));
                     dodge.Tick(native.Combat.DodgeDurationSeconds + 0.01);
-                    Assert.IsFalse(dodge.IsActive);
+                    Assert.IsFalse(dodge.IsDodging);
+                    dodge.Reset();
+                    Assert.IsTrue(dodge.IsFull);
                 }
 
                 var rng = native.CreateRng(5, RngStream.Events, 0);
@@ -686,11 +690,10 @@ namespace Echoes.Tests.EditMode
                     var info = boss.Info;
                     Assert.AreEqual(1, info.Phase);
                     Assert.AreEqual(info.MaxLife, info.Life, 1e-9);
-                    var fx2 = info.FacingX; var fz2 = info.FacingZ;
-                    var front = boss.ApplyDamage(50.0, 0, 0, fx2 * 4.0, fz2 * 4.0);
+                    var front = boss.ApplyDamage(50.0, 0, 0, info.FacingX * 4.0, info.FacingZ * 4.0);
                     Assert.IsTrue(front.ShieldBlocked, "escudo frontal: dano de frente e bloqueado");
                     Assert.AreEqual(0.0, front.Applied);
-                    var back = boss.ApplyDamage(50.0, 0, 0, -fx2 * 4.0, -fz2 * 4.0);
+                    var back = boss.ApplyDamage(50.0, 0, 0, -info.FacingX * 4.0, -info.FacingZ * 4.0);
                     Assert.IsFalse(back.ShieldBlocked);
                     Assert.Greater(back.Applied, 0.0);
                 }

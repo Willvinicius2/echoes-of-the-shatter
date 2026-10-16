@@ -21,6 +21,9 @@ namespace Echoes.Interop
         /// <summary>Resultado do ultimo <see cref="Apply"/> (ordens do core: interromper o telegraph, zerar a barreira). Default no stub.</summary>
         ActorApplyResult LastApply { get; }
 
+        /// <summary>Liga o chefe desta entidade: stun e Guarda Quebrada passam a ser aplicados por ele (escudo, imunidade, stagger).</summary>
+        void BindBoss(IBossController boss);
+
         int StackCount(string effectId);
 
         int ActiveCount { get; }

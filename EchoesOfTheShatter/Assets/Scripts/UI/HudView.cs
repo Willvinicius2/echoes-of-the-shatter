@@ -250,7 +250,7 @@ namespace Echoes.UI
                     view.Key.text = input.GetBindingDisplay(i == 0 ? HeroCommand.Potion1 : HeroCommand.Potion2);
             }
             if (dodgeKey != null && input != null) dodgeKey.text = input.GetBindingDisplay(HeroCommand.Dodge);
-            BuildDodgePips(logic.Dodge.Charges.MaxCharges);
+            BuildDodgePips(logic.Dodge.MaxCharges);
             lastDodgeCharges = -1;
         }
 
@@ -347,17 +347,18 @@ namespace Echoes.UI
 
         void UpdateDodge(HeroCombatLogic logic)
         {
-            var charges = logic.Dodge.Charges;
-            var fill = (float)charges.RechargeFraction;
-            if (charges.Charges == lastDodgeCharges && Mathf.Approximately(fill, lastDodgeFill)) return;
-            lastDodgeCharges = charges.Charges;
+            var dodge = logic.Dodge; // cargas e recarga vêm do core (IDodgeCharges)
+            var count = dodge.Charges;
+            var fill = (float)dodge.RechargeFraction;
+            if (count == lastDodgeCharges && Mathf.Approximately(fill, lastDodgeFill)) return;
+            lastDodgeCharges = count;
             lastDodgeFill = fill;
             for (var i = 0; i < pips.Length; i++)
             {
-                var full = i < charges.Charges;
+                var full = i < count;
                 pips[i].EnableInClassList(PipFullClass, full);
                 // A carga que está recarregando é a primeira vazia (recarga em série).
-                SetWidth(pipFills[i], full ? 1f : i == charges.Charges ? fill : 0f);
+                SetWidth(pipFills[i], full ? 1f : i == count ? fill : 0f);
             }
         }
 
@@ -368,18 +369,18 @@ namespace Echoes.UI
                 var view = potionViews[i];
                 var potion = logic.GetPotion(i);
                 if (view.Root == null || potion == null) continue;
-                var count = potion.Charges.Charges;
+                var count = potion.Charges;
                 if (count != view.LastCount)
                 {
                     view.LastCount = count;
                     if (view.Count != null && localization != null) view.Count.text = localization.FormatInteger(count);
                     view.Root.EnableInClassList(PotionEmptyClass, count == 0);
                 }
-                var recharge = (float)potion.Charges.RechargeFraction;
+                var recharge = (float)potion.RechargeFraction;
                 if (!Mathf.Approximately(recharge, view.LastRecharge))
                 {
                     view.LastRecharge = recharge;
-                    SetHeight(view.Recharge, potion.Charges.IsFull ? 0f : 1f - recharge);
+                    SetHeight(view.Recharge, potion.IsFull ? 0f : 1f - recharge);
                 }
             }
         }

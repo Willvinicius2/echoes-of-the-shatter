@@ -44,6 +44,10 @@ namespace Echoes.Interop
 
         public ActorApplyResult LastApply => default;
 
+        public void BindBoss(IBossController boss)
+        {
+        }
+
         public bool Apply(string effectId, double magnitude, string sourceId)
         {
             // Porte de EffectContainer::Apply (src/effects.cpp) para aplicação direta (TriggerKind::None).

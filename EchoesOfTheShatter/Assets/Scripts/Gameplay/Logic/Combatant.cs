@@ -86,7 +86,18 @@ namespace Echoes.Gameplay
         public double MaxResource => Stats.Get(StatId.Resource);
         public bool IsDead => vitals.Life <= 0.0;
         public bool IsBoss => Enemy != null && Enemy.IsBoss;
-        public bool IsElite => Enemy != null && Enemy.IsElite;
+
+        /// <summary>Elite fixo (enemies.csv) ou sorteado (<see cref="Elite"/>).</summary>
+        public bool IsElite => (Enemy != null && Enemy.IsElite) || Elite.Rolled;
+
+        /// <summary>Elite sorteado pelo fluxo de eventos (multiplicadores já aplicados ao bloco de atributos pelo core).</summary>
+        public EliteProfile Elite { get; internal set; }
+
+        /// <summary>Barreira com que o elite nasce (devolvida pelo core ao aplicar o modificador).</summary>
+        public double InitialBarrier { get; internal set; }
+
+        /// <summary>Máquina de fases do chefe (null fora de chefe ou no stub). Ligada pelo <see cref="EnemyCombatLogic"/>.</summary>
+        public IBossController Boss { get; internal set; }
 
         public bool IsInvulnerable { get; internal set; }
         public HitstopTimer Hitstop { get; } = new HitstopTimer();

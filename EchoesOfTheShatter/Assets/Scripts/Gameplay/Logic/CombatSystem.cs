@@ -19,12 +19,16 @@ namespace Echoes.Gameplay
         /// </summary>
         public const ulong AiAttackStreamIndex = 1UL << 62;
 
+        /// <summary>Índice do fluxo Events reservado ao sorteio de elite (modificador; consome sempre 1 número).</summary>
+        public const ulong EliteStreamIndex = (1UL << 62) + 1UL;
+
         readonly List<Combatant> combatants = new List<Combatant>();
         readonly List<string> orderKeys = new List<string>();
         readonly List<EffectTickEvent> effectEvents = new List<EffectTickEvent>();
         readonly IStatBlock neutralSource;
         RngState combatRng;
         RngState aiRng;
+        RngState eliteRng;
         int nextId = 1;
         int nextTelegraphId = 1;
 
@@ -36,6 +40,7 @@ namespace Echoes.Gameplay
             RunSeed = runSeed;
             combatRng = rules.CreateRng(runSeed, RngStream.Combat, 0);
             aiRng = rules.CreateRng(runSeed, RngStream.Events, AiAttackStreamIndex);
+            eliteRng = rules.CreateRng(runSeed, RngStream.Events, EliteStreamIndex);
             neutralSource = rules.CreateEmptyStats();
             Clock = new FixedStepAccumulator(rules.Combat.FixedStep, Math.Max(1, maxStepsPerFrame));
             Projectiles = new ProjectileSystem();
@@ -75,6 +80,7 @@ namespace Echoes.Gameplay
             combatant.Actor = actor;
             combatant.IsRegistered = true;
             combatant.SetVitals(Rules.CreateVitals(combatant.Stats, combatant.Class));
+            if (combatant.InitialBarrier > 0.0) combatant.vitals.Barrier = combatant.InitialBarrier; // elite: barreira inicial do core
 
             var index = combatants.Count;
             for (var i = 0; i < combatants.Count; i++)
@@ -205,6 +211,20 @@ namespace Echoes.Gameplay
                 DefenderBarrier = target.vitals.Barrier,
             };
             var result = Rules.ResolveHit(in request, ref combatRng);
+            if (target.Boss != null)
+            {
+                // O chefe guarda a própria vida: escudo frontal (ângulo pela posição do atacante), rugido e limiar de fase são do core.
+                var boss = target.Boss.ApplyDamage(result.LifeLost, target.Position.X, target.Position.Z, hitOrigin.X, hitOrigin.Z);
+                if (boss.ShieldBlocked || boss.Invulnerable)
+                {
+                    var blocked = new ShieldBlockedEvent { Attacker = attacker, Target = target, Skill = skill, Invulnerable = boss.Invulnerable };
+                    Events.Publish(in blocked);
+                    return false; // 0 de dano, sem Ímpeto, sem empurrão, sem efeitos
+                }
+                result.LifeLost = boss.Applied;
+                result.DefenderLifeAfter = boss.LifeAfter;
+                result.Killed = boss.Killed;
+            }
             target.vitals.Life = result.DefenderLifeAfter;
             target.vitals.Barrier = result.DefenderBarrierAfter;
 
@@ -212,10 +232,7 @@ namespace Echoes.Gameplay
             if (result.Landed)
             {
                 var onHit = skill.OnHitEffects;
-                if (target.Effects != null)
-                {
-                    for (var i = 0; i < onHit.Count; i++) target.Effects.Apply(onHit[i], 1.0, attacker.ContentId);
-                }
+                for (var i = 0; i < onHit.Count; i++) ApplyEffect(target, onHit[i], 1.0, attacker.ContentId);
                 if (attacker.Class != null)
                     Rules.GainResource(ref attacker.vitals, attacker.Stats, attacker.Class.ResourceOnHit);
 
@@ -249,6 +266,27 @@ namespace Echoes.Gameplay
             if (result.Killed) HandleDeath(target, attacker);
             return result.Landed;
         }
+
+        /// <summary>
+        /// Aplica um efeito pelo core (stun e Guarda Quebrada passam pelo actor/chefe) e cumpre as ordens que ele devolve:
+        /// interromper a preparação em andamento e zerar a barreira (<see cref="ActorApplyResult"/>).
+        /// </summary>
+        public bool ApplyEffect(Combatant target, string effectId, double magnitude, string sourceId)
+        {
+            if (target == null || target.Effects == null || target.IsDead) return false;
+            var applied = target.Effects.Apply(effectId, magnitude, sourceId);
+            var result = target.Effects.LastApply;
+            if (result.RemoveBarrier)
+            {
+                target.vitals.Barrier = 0.0;
+                target.vitals.BarrierSecondsLeft = 0.0;
+            }
+            if (result.Interrupted) (target.Actor as IInterruptible)?.OnInterrupted(this);
+            return applied;
+        }
+
+        /// <summary>Sorteia o modificador de elite no fluxo de eventos (consome sempre 1 número do fluxo).</summary>
+        public EliteProfile RollElite() => Rules.RollElite(ref eliteRng);
 
         /// <summary>Recurso ganho fora do golpe (esquiva perfeita).</summary>
         public void GainResource(Combatant combatant, double amount)

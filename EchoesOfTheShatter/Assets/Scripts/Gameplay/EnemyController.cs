@@ -24,6 +24,8 @@ namespace Echoes.Gameplay
         [SerializeField, Min(0f)] float corpseSeconds = 2.5f;
         [Tooltip("Intervalo de recálculo do caminho do agente, em segundos (técnico, não é balanceamento).")]
         [SerializeField, Min(0.05f)] float repathInterval = 0.2f;
+        [Tooltip("Elite sorteado: o core sorteia o modificador no fluxo de eventos e aplica os multiplicadores (docs/13, item 5).")]
+        [SerializeField] bool rolledElite;
         [Tooltip("Escreve no Console cada troca de estado da IA (roteiro RF-20).")]
         [SerializeField] bool logStateChanges;
 
@@ -64,7 +66,8 @@ namespace Echoes.Gameplay
             }
 
             var radius = bodyRadius > 0f ? bodyRadius : agent != null ? agent.radius : body != null ? body.radius : 0.5f;
-            var combatant = attributes.CreateEnemy(rules, info, level, radius);
+            var elite = rolledElite ? combat.RollElite() : default;
+            var combatant = attributes.CreateEnemy(rules, info, level, radius, elite);
             Logic = new EnemyCombatLogic(combatant, rules);
             Logic.IntegratesMovement = agent == null || !agent.enabled;
             if (logStateChanges) Logic.StateChanged += LogStateChange;
@@ -87,7 +90,9 @@ namespace Echoes.Gameplay
 
         void OnDestroy()
         {
-            if (Logic != null) Logic.StateChanged -= LogStateChange;
+            if (Logic == null) return;
+            Logic.StateChanged -= LogStateChange;
+            Logic.Dispose();
         }
 
         void Update()

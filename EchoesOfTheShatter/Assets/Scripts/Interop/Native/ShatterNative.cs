@@ -246,6 +246,11 @@ namespace Echoes.Interop.Native
         public static extern int shatter_boss_apply_damage(IntPtr boss, double amount, ShatterVec2 bossPos, ShatterVec2 origin, ShatterBossDamage* output);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_boss_apply_effect(IntPtr boss, IntPtr db, byte* effectId, nuint effectIdLen,
+                                                           byte* source, nuint sourceLen, double magnitude, IntPtr fx,
+                                                           IntPtr stats, ShatterActorApply* output);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_boss_events(IntPtr boss, ShatterBossEvent* output, nuint cap, nuint* needed);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]

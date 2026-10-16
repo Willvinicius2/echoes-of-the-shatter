@@ -28,8 +28,7 @@ namespace Echoes.Interop.Native
             "Registros de conteudo tipados (FindClass/FindSkill/FindEnemy/FindItemBase/FindPotion, Potions, ClassInfo/EnemyInfo/SkillInfo/PotionInfo): a API so devolve JSON por ID (shatter_db_lookup_json), sem listas tipadas",
             "NextBelow e NextUnit: a API so tem shatter_rng_next_u32, sem o sorteio limitado nem o unitario",
             "Tags dos efeitos nos eventos de dano de DoT (o evento nativo nao traz tags; vem do conteudo do stub)",
-            "Gameplay (HeroCombatLogic, DodgeLogic, PotionSlot, EnemyBrainLogic, CombatSystem) ainda usa os timers/estados em C# para pocoes, esquiva, elite e fases de chefe: o IRulesCore nao tem metodos para o cinto, a esquiva, o elite nem o chefe; os nativos estao prontos em NativeRulesCore.CreatePotionBelt/CreateDodge/RollElite/CreateBoss",
-            "Consumo de ActorApplyResult (interromper o telegraph, zerar a barreira) pelo CombatSystem",
+            "Sequenciamento de fases do ataque comum (EnemyBrainLogic: Idle/Chase/Telegraph/Attack/Recover) e da ação do herói (ActionTimeline): o C# so avança as fases com os tempos do core; chefe usa o shatter_boss",
             "Salvar/ler (shatter_save_*) e expedicao (_trusted): nao ha camada de save/expedicao no C# ainda",
         };
 
@@ -357,7 +356,9 @@ namespace Echoes.Interop.Native
             return new NativeStatBlock(new StatBlockHandle(raw));
         }
 
-        public unsafe IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull)
+        public IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull) => CreateEffectSet(target, enemyOrNull, false);
+
+        public unsafe IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull, bool rolledElite)
         {
             var handle = RequireDb();
             if (!(target is NativeStatBlock native)) throw new ArgumentException("target must come from this rules core", nameof(target));
@@ -372,7 +373,7 @@ namespace Echoes.Interop.Native
                 handle.DangerousAddRef(ref addRef);
                 IntPtr rawActor = IntPtr.Zero;
                 int status;
-                fixed (byte* p = enemyId) status = ShatterNative.shatter_actor_create(handle.DangerousGetHandle(), p, (nuint)enemyId.Length, 0, &rawActor);
+                fixed (byte* p = enemyId) status = ShatterNative.shatter_actor_create(handle.DangerousGetHandle(), p, (nuint)enemyId.Length, rolledElite ? (byte)1 : (byte)0, &rawActor);
                 if (status != 0)
                 {
                     effects.Dispose();
@@ -514,10 +515,12 @@ namespace Echoes.Interop.Native
 
         public DamageByType GetSkillBaseDamage(SkillInfo skill, ItemBaseInfo weaponOrNull) => stub.GetSkillBaseDamage(skill, weaponOrNull);
 
-        public unsafe ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill)
+        public ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill) => GetActionTiming(stats, skill, null);
+
+        public unsafe ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill, string eliteModifierIdOrNull)
         {
             if (skill == null) return default;
-            var timing = SkillTiming(stats, skill);
+            var timing = SkillTiming(stats, skill, eliteModifierIdOrNull);
             return new ActionTiming(timing.windup, timing.impact, timing.recovery);
         }
 
@@ -527,11 +530,12 @@ namespace Echoes.Interop.Native
             return SkillTiming(stats, skill).cost;
         }
 
-        unsafe ShatterActionTiming SkillTiming(IStatBlock stats, SkillInfo skill)
+        unsafe ShatterActionTiming SkillTiming(IStatBlock stats, SkillInfo skill, string modifierId = null)
         {
             var native = RequireNative(stats);
             var handle = RequireDb();
             var id = NativeBuffers.Utf8(skill.Id);
+            var modifier = NativeBuffers.Utf8(modifierId);
             bool a = false, s2 = false;
             try
             {
@@ -540,7 +544,8 @@ namespace Echoes.Interop.Native
                 ShatterActionTiming timing;
                 int status;
                 fixed (byte* p = id)
-                    status = ShatterNative.shatter_skill_timing(handle.DangerousGetHandle(), p, (nuint)id.Length, native.Handle.DangerousGetHandle(), null, 0, &timing);
+                fixed (byte* m = modifier)
+                    status = ShatterNative.shatter_skill_timing(handle.DangerousGetHandle(), p, (nuint)id.Length, native.Handle.DangerousGetHandle(), m, (nuint)modifier.Length, &timing);
                 NativeCallException.ThrowIfFailed("shatter_skill_timing", status);
                 return timing;
             }
