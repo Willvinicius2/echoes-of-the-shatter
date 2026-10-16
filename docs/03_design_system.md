@@ -39,7 +39,7 @@ Motor: **Unreal Engine 5.8**, Forward Shading com MSAA, interface em **UMG** (wi
 | `base.dourado` | `#D9A441` | Filete e cantos das molduras, selos |
 | `base.dourado_claro` | `#FCD58A` | Brilho do dourado, foco, títulos |
 | `base.carmesim` | `#B82A1E` | Botão primário, preenchimento "lava", pluma do Guerreiro |
-| `base.perigo` | `#E0301E` | Telegraph, avisos de risco (matiz 0–15°, reservado a ameaça) |
+| `base.perigo` | `#E0301E` | Telegraph, avisos de risco. Esta cor como massa opaca ou preenchimento no chão é reservada a ameaça |
 | `base.pergaminho` | `#F0E6D6` | Texto primário |
 
 **Superfícies e bordas:**
@@ -113,7 +113,7 @@ Medidos na folha 09 e nos ícones da 11. **Jogador** (`color.element.*`), usado 
 
 | Elemento | Núcleo | Meio | Borda | Origem na referência |
 |---|---|---|---|---|
-| Fogo | `#FFE9B0` | `#FF9A2E` | `#B8420F` | Golpe e investida do Guerreiro; bola de fogo do Mago (na folha aprovada é vermelho-laranja; âmbar é **proposta pendente de aprovação do dono**, a arte aprovada não muda) |
+| Fogo | `#FFE2B0` | `#F2642C` | `#B8361A` | Golpe e investida do Guerreiro; bola de fogo do Mago (Brasa Errante) em **vermelho-laranja, como na folha aprovada** (matiz medido de 12° a 28° na folha 04; decisão do dono em 16/10/2026) |
 | Gelo | `#D8F6FF` | `#4FA8E8` | `#2B4F92` | Lança e esfera de gelo do Mago |
 | Raio | `#F2F6FF` | `#7FA8FF` | `#3A4FB8` | Corrente do Mago |
 | Ácido | `#E6FF8A` | `#8FD43A` | `#3E7A1E` | Flechas e rede do Arqueiro (verde medido `#BFDC62` núcleo) |
@@ -132,7 +132,10 @@ Medidos na folha 09 e nos ícones da 11. **Jogador** (`color.element.*`), usado 
 | Sombra | `#E58AD8` | `#8C3A9E` | `#2A0F3A` |
 | Físico | `#FFD2A0` | `#E0301E` | `#3A0A0C` |
 
-**Regra de matiz:** a faixa vermelha (matiz 0–15°) é reservada a ameaça. Fogo do jogador fica no âmbar (28–50°). O Guerreiro e o Mago usam âmbar e dourado, nunca vermelho puro, nos efeitos.
+**Regra jogador × ameaça:** o fogo do jogador é vermelho-laranja (matiz de 12° a 28°), como na arte aprovada, então a cor sozinha não separa jogador de ameaça. A separação vem da forma e da opacidade:
+- **Jogador:** efeito aditivo, fino e translúcido (alfa ≤ 0,75), com núcleo claro `#FFE2B0`, faíscas douradas e sem contorno escuro. Nunca vira preenchimento opaco no chão.
+- **Ameaça:** massa opaca com contorno quase preto e, sempre que atinge uma área, telegraph no chão com a faixa `#E0301E`.
+- **Regra dura:** só ameaça usa `#E0301E` como preenchimento ou faixa no chão. A opção "Reduzir efeitos do jogador" e o telegraph alternativo para daltonismo continuam valendo.
 
 ### 2.5 Perigo e telegraph
 
@@ -393,7 +396,7 @@ Niagara; a spec por habilidade fica fora deste documento (esta seção fixa a li
 
 | Elemento | Jogador | Ameaça |
 |---|---|---|
-| **Fogo** | Arco âmbar e dourado, faíscas; faixa de 15 cm | Círculo ou cone de lava vermelho-carmim no chão com borda e brasas; massa opaca |
+| **Fogo** | Arco ou bola vermelho-laranja translúcida com núcleo claro e faíscas douradas; faixa de 15 cm, sem contorno escuro | Círculo ou cone de lava vermelho-carmim no chão com borda escura e brasas; massa opaca |
 | **Gelo** | Cristais finos e translúcidos, lança com núcleo `#D8F6FF` | Cristais sólidos azul-escuro com contorno quase preto, zona no chão com geada |
 | **Raio** | Fio de 5–10 cm com ramificações, núcleo branco | Raio grosso com aviso no chão (círculo vermelho) antes da descarga |
 | **Ácido** | Flechas e rede em verde-limão translúcido | Poça opaca verde-escura com bolhas, borda vermelha de alerta |

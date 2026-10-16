@@ -143,9 +143,9 @@
     },
     "element": {
       "fire": {
-        "core": "#FFE9B0",
-        "mid": "#FF9A2E",
-        "edge": "#B8420F"
+        "core": "#FFE2B0",
+        "mid": "#F2642C",
+        "edge": "#B8361A"
       },
       "ice": {
         "core": "#D8F6FF",
@@ -209,7 +209,7 @@
         "mid": "#E0301E",
         "edge": "#3A0A0C"
       },
-      "red_band_rule": "Toda ameaca ao jogador carrega uma faixa vermelha #E0301E (matiz 0-15 graus), seja qual for o elemento. VFX do jogador nunca usa essa faixa."
+      "red_band_rule": "So ameaca usa #E0301E como preenchimento ou faixa no chao. O fogo do jogador e vermelho-laranja (matiz 12-28 graus, como na arte aprovada), mas sempre aditivo, fino, translucido (alfa <= 0,75), com nucleo claro e sem contorno escuro; a ameaca e opaca com contorno quase preto."
     },
     "telegraph": {
       "fill": {
