@@ -291,6 +291,14 @@ namespace Echoes.Interop.Native
         public int kills, kills_since_unique;
     }
 
+    // Rodada 2 (docs/09 secao 8): rules.csv novas em struct a parte, layout ext2 (3 valores).
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterRulesExt2
+    {
+        public double unarmed_weapon_damage_physical;
+        public double require_on_screen_margin;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     internal struct ShatterForecastEx
     {

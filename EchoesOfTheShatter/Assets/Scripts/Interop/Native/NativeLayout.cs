@@ -201,6 +201,28 @@ namespace Echoes.Interop.Native
             return v.ToArray();
         }
 
+        /// <summary>Lista do layout ext2 (rodada 2): 3 valores.</summary>
+        public static uint[] BuildExt2()
+        {
+            ShatterRulesExt2 r = default;
+            return new[] { (uint)sizeof(ShatterRulesExt2), Off(&r, &r.unarmed_weapon_damage_physical), Off(&r, &r.require_on_screen_margin) };
+        }
+
+        public static bool CheckExt2(out string message)
+        {
+            var values = BuildExt2();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext2(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext2 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
         /// <summary>Confere o layout 1.1 com <c>shatter_layout_check_ext</c>.</summary>
         public static bool CheckExt(out string message)
         {

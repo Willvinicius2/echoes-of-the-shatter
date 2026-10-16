@@ -30,14 +30,24 @@ Shader "Echoes/SG_Character"
         _RimMaskInfluence("Quanto a mascara G controla o rim (0 = rim em tudo)", Range(0, 1)) = 1
         _FresnelSmoothStepRange("Faixa smoothstep (x = borda, y = interior)", Vector) = (0.2, 0.05, 0, 0)
 
-        [Header(Emissao)]
-        [HDR] _EmissionColor("Cor HDR", Color) = (1, 0.6, 0.2, 1)
-        _EmissionIntensity("Intensidade", Float) = 1
-        _AccentEmissive("Acento emissivo (raridade)", Range(0, 4)) = 0
+        _RimIntensity("Intensidade do rim por raridade (base 0,5)", Range(0, 2)) = 0.5
+        _RimTint("Cor do rim da raridade", Color) = (1, 1, 1, 1)
+        _RimTintMix("Mistura do rim da raridade (0 = rim da nevoa)", Range(0, 1)) = 0
 
-        [Header(Variacao por tinta)]
+        [Header(Emissao)]
+        [HDR] _EmissionColor("Cor HDR (multiplica o albedo pintado)", Color) = (1, 1, 1, 1)
+        _EmissionIntensity("Intensidade", Float) = 0.6
+        _AccentEmissive("Acento emissivo da raridade (0 a 1; 1 = intensidade 2,0)", Range(0, 1)) = 0
+        _AccentColor("Cor do acento", Color) = (1, 0.82, 0.29, 1)
+        [Toggle] _AccentPulse("Pulso do acento (Unico; desligado em Reduzir movimento)", Float) = 0
+        _AccentPulsePeriod("Periodo do pulso (s)", Float) = 2.4
+        _AccentPulseVariation("Variacao do pulso", Range(0, 1)) = 0.2
+
+        [Header(Variacao por tinta e raridade)]
         _TintColor("Cor da tinta", Color) = (1, 1, 1, 1)
         _TintStrength("Forca da tinta", Range(0, 1)) = 0
+        _TintDesat("Desbotamento previo (luma) na regiao B", Range(0, 1)) = 0
+        _TintGain("Ganho de luminancia da tinta", Range(0, 3)) = 1
 
         [Header(Feedback)]
         _HitFlash("Flash de acerto (0 ou 1)", Range(0, 1)) = 0
@@ -63,6 +73,15 @@ Shader "Echoes/SG_Character"
             half _ShadeSoftness;
             half4 _ShadowTint;
             half _AmbientStrength;
+            half _RimIntensity;
+            half4 _RimTint;
+            half _RimTintMix;
+            half4 _AccentColor;
+            half _AccentPulse;
+            half _AccentPulsePeriod;
+            half _AccentPulseVariation;
+            half _TintDesat;
+            half _TintGain;
             half4 _RimColor;
             half _FresnelStrength;
             half _FresnelBlend;
@@ -173,8 +192,11 @@ Shader "Echoes/SG_Character"
                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 half4 mask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
                 half3 albedo = baseSample.rgb * _BaseColor.rgb;
-                // Variacao por tinta: so a regiao B da mascara recebe a cor da tinta.
-                albedo = lerp(albedo, albedo * _TintColor.rgb, saturate(mask.b * _TintStrength));
+                // Raridade (docs/03 3.11): base = lerp(albedo, luma, desat*B); rgb = base * lerp(1, tint*gain, strength*B).
+                half luma = dot(albedo, half3(0.2126h, 0.7152h, 0.0722h));
+                half regionB = saturate(mask.b);
+                half3 desaturated = lerp(albedo, half3(luma, luma, luma), _TintDesat * regionB);
+                albedo = desaturated * lerp(half3(1, 1, 1), _TintColor.rgb * _TintGain, _TintStrength * regionB);
 
                 float3 normalWS = normalize(input.normalWS);
                 float3 viewWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
@@ -195,11 +217,15 @@ Shader "Echoes/SG_Character"
                 half ndv = saturate(dot(normalWS, viewWS));
                 half rim = 1.0h - smoothstep(_FresnelSmoothStepRange.y, _FresnelSmoothStepRange.x, ndv);
                 rim *= lerp(1.0h, mask.g, _RimMaskInfluence);
-                color += _RimColor.rgb * (rim * _FresnelStrength * _FresnelBlend);
+                half3 rimColor = lerp(_RimColor.rgb, _RimTint.rgb, _RimTintMix);
+                color += rimColor * (rim * _FresnelStrength * _FresnelBlend * (_RimIntensity / 0.5h));
 
                 // Emissao HDR pela mascara (R) mais o acento da raridade.
-                half emissive = mask.r * (_EmissionIntensity + _AccentEmissive);
-                color += _EmissionColor.rgb * emissive;
+                // Emissao pela mascara R: o detalhe pintado brilha na propria cor do albedo (filete dourado, runa).
+                color += albedo * _EmissionColor.rgb * (mask.r * _EmissionIntensity);
+                // Acento da raridade: _AccentEmissive * _AccentColor pelo canal R (so os detalhes pintados), com pulso lento no Unico.
+                half pulse = lerp(1.0h, 1.0h + _AccentPulseVariation * sin(_Time.y * 6.2831853h / max(_AccentPulsePeriod, 0.01h)), _AccentPulse);
+                color += _AccentColor.rgb * (mask.r * _AccentEmissive * 2.0h * pulse);
 
                 color += _DissolveEdgeColor.rgb * edgeGlow * step(0.001, _Dissolve);
 

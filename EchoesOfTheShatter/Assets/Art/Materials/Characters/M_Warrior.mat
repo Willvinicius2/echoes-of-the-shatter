@@ -34,6 +34,9 @@ Material:
     m_Ints: []
     m_Floats:
     - _AccentEmissive: 0
+    - _AccentPulse: 0
+    - _AccentPulsePeriod: 0
+    - _AccentPulseVariation: 0
     - _AmbientStrength: 1
     - _Dissolve: 0
     - _DissolveEdgeWidth: 0.06
@@ -41,16 +44,22 @@ Material:
     - _FresnelBlend: 0.5
     - _FresnelStrength: 2.5
     - _HitFlash: 0
-    - _RimMaskInfluence: 0
+    - _RimIntensity: 0.5
+    - _RimMaskInfluence: 1
+    - _RimTintMix: 0
     - _ShadeSoftness: 0.6
+    - _TintDesat: 0
+    - _TintGain: 1
     - _TintStrength: 0
     m_Colors:
+    - _AccentColor: {r: 1, g: 1, b: 1, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _DissolveEdgeColor: {r: 1, g: 0.5, b: 0.2, a: 1}
     - _EmissionColor: {r: 1, g: 0.6, b: 0.2, a: 1}
     - _FresnelSmoothStepRange: {r: 0.2, g: 0.05, b: 0, a: 0}
     - _HitColor: {r: 0.6, g: 0.34999996, b: 0.38999996, a: 1}
     - _RimColor: {r: 1, g: 0.82, b: 0.62, a: 1}
+    - _RimTint: {r: 1, g: 1, b: 1, a: 1}
     - _ShadowTint: {r: 0.41999996, g: 0.35999998, b: 0.5, a: 1}
     - _TintColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

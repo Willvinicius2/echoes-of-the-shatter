@@ -548,6 +548,26 @@ namespace Echoes.Interop.Native
             };
         }
 
+        public bool WallHit(IStatBlock stats)
+        {
+            var native = stats as NativeStatBlock ?? throw new ArgumentException("stats must come from this rules core", nameof(stats));
+            byte applied;
+            bool a = false, s2 = false;
+            try
+            {
+                Handle.DangerousAddRef(ref a);
+                native.Handle.DangerousAddRef(ref s2);
+                NativeCallException.ThrowIfFailed("shatter_boss_wall_hit", ShatterNative.shatter_boss_wall_hit(Handle.DangerousGetHandle(), native.Handle.DangerousGetHandle(), &applied));
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+                if (a) Handle.DangerousRelease();
+            }
+            DrainEvents(); // os eventos (PatternInterrupted, StaggerStart, ShieldDown) saem no proximo Step
+            return applied != 0;
+        }
+
         public bool ShieldCovers(double bossX, double bossZ, double originX, double originZ)
         {
             byte value;

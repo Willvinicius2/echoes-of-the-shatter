@@ -88,6 +88,12 @@ namespace Echoes.Gameplay
         /// </summary>
         public bool RequireOnScreen { get; set; }
 
+        /// <summary>
+        /// A investida do chefe (de, para, raio do corpo) bateria em pilar ou parede? Fornecida pela cena (física). Null = nunca bate.
+        /// Quando bate, o core decide o resultado (<see cref="IBossController.WallHit"/>: stagger e escudo caído).
+        /// </summary>
+        public Func<PlanarVector, PlanarVector, float, bool> IsDashBlocked { get; set; }
+
         /// <summary>Posição (plano) dentro da área visível reduzida? Null = sem câmera: sempre dentro.</summary>
         public Func<PlanarVector, bool> IsInsideVisibleArea { get; set; }
 
@@ -189,6 +195,7 @@ namespace Echoes.Gameplay
 
         public void OnRevive(CombatSystem combatSystem)
         {
+            dashing = false;
             Brain.Reset();
             if (boss == null) return;
             boss.Reset(self.Stats);
@@ -336,6 +343,7 @@ namespace Echoes.Gameplay
             var toTarget = hasTarget ? target.Position - self.Position : PlanarVector.Zero;
             var aimAt = hasTarget ? target.Position : self.Position;
 
+            if (dashing) AdvanceDash(combatSystem, dt);
             bossEvents.Clear();
             boss.Step(dt, self.Position.X, self.Position.Z, aimAt.X, aimAt.Z, self.Stats, bossEvents);
             var info = boss.Info;
@@ -366,10 +374,12 @@ namespace Echoes.Gameplay
                     break;
                 }
                 case BossEventKind.PatternImpact:
-                    ResolveImpact(combatSystem, bossSkill);
+                    if (bossSkill != null && bossSkill.Shape == SkillShape.Dash) StartDash(combatSystem, bossSkill, e.Seconds);
+                    else ResolveImpact(combatSystem, bossSkill);
                     break;
                 case BossEventKind.PatternEnd:
                 case BossEventKind.PatternInterrupted:
+                    dashing = false;
                     EndTelegraph(combatSystem);
                     bossSkill = null;
                     break;
@@ -383,6 +393,55 @@ namespace Echoes.Gameplay
         }
 
         SkillInfo bossSkill;
+
+        // Investida do chefe (Escudo da fase 2): anda no passo fixo durante o impacto; bater em pilar chama o core.
+        bool dashing;
+        float dashRemaining;
+        float dashSpeed;
+        PlanarVector dashDirection;
+
+        void StartDash(CombatSystem combatSystem, SkillInfo skill, double impactSeconds)
+        {
+            EndTelegraph(combatSystem);
+            dashDirection = attackDirection;
+            dashRemaining = WorldUnits.ToMeters(skill.RangeUu);
+            dashSpeed = dashRemaining / (float)Math.Max(1e-3, impactSeconds);
+            dashing = dashRemaining > 0f;
+            if (!dashing) DashArrived(combatSystem);
+        }
+
+        void AdvanceDash(CombatSystem combatSystem, double dt)
+        {
+            var step = Math.Min(dashRemaining, dashSpeed * (float)dt);
+            var target = self.Position + dashDirection * step;
+            if (IsDashBlocked != null && IsDashBlocked(self.Position, target, self.RadiusMeters))
+            {
+                dashing = false;
+                boss.WallHit(self.Stats); // stagger, padrão interrompido e escudo caído: decisão do core
+                DashArrived(combatSystem);
+                return;
+            }
+            self.Position = target;
+            dashRemaining -= step;
+            if (dashRemaining > 1e-4f) return;
+            dashing = false;
+            DashArrived(combatSystem);
+        }
+
+        // Dano na chegada (ou na batida), como a Investida do herói: em volta do corpo.
+        void DashArrived(CombatSystem combatSystem)
+        {
+            var skill = bossSkill;
+            if (skill == null) return;
+            var radius = WorldUnits.ToMeters(skill.RadiusUu) + self.RadiusMeters;
+            var targets = combatSystem.Combatants;
+            for (var i = 0; i < targets.Count; i++)
+            {
+                var t = targets[i];
+                if (t.IsDead || !CombatSystem.AreHostile(self, t)) continue;
+                if (ShapeQuery.InCircle(self.Position, radius, t.Position, t.RadiusMeters)) combatSystem.ApplySkillHit(self, t, skill, self.Position);
+            }
+        }
 
         /// <summary>Distância em que o telegraph começa: a mesma da consulta do impacto (o aviso não mente).</summary>
         static float AttackReach(SkillInfo skill)

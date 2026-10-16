@@ -20,6 +20,12 @@ namespace Echoes.Interop
         public double XpPerLevel { get; internal set; }
         public string LootTableId { get; internal set; } = string.Empty;
 
+        /// <summary>Fração da velocidade de perseguição usada na patrulha, em (0,1] (<c>patrolSpeedMult</c> do enemies.csv, lida pelo core).</summary>
+        public double PatrolSpeedMult { get; internal set; } = 1.0;
+
+        /// <summary>R-VIS-1: o atirador só mira dentro da área visível menos a margem (<c>requireOnScreen</c> do enemy_ai.csv, lida pelo core).</summary>
+        public bool RequireOnScreen { get; internal set; }
+
         /// <summary>Elite fixo: modificador de <c>elite_modifiers.csv</c> aplicado sempre (vazio = nenhum). Coluna <c>modifierId</c> do enemies.csv.</summary>
         public string ModifierId { get; internal set; } = string.Empty;
 

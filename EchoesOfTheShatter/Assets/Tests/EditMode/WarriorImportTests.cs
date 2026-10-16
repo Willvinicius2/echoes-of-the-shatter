@@ -77,11 +77,14 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
-        public void HeroPrefabHasNoAnimatorAndUsesTheWarriorMaterial()
+        public void HeroPrefabKeepsTheRestPoseWithAnAnimatorReadyForTheAnimationStage()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_Hero_Warrior.prefab");
-            Assert.IsNotNull(prefab, "rode Echoes/Montar cena base");
-            Assert.IsNull(prefab.GetComponentInChildren<Animator>(true), "sem Animator até a etapa de animação");
+            Assert.IsNotNull(prefab, "rode Echoes/Montar prefabs de personagens");
+            var animator = prefab.GetComponent<Animator>();
+            Assert.IsNotNull(animator, "Animator preparado");
+            Assert.IsNull(animator.runtimeAnimatorController, "sem controlador ate a etapa de animacao");
+            Assert.IsTrue(animator.avatar != null && animator.avatar.isHuman, "avatar Humanoid");
             var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Characters/M_Warrior.mat");
             Assert.IsNotNull(material);
             Assert.AreEqual("Echoes/SG_Character", material.shader.name);

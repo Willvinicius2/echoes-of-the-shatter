@@ -13,15 +13,23 @@ namespace Echoes.EditorTools
     public sealed class CharacterAssetPostprocessor : AssetPostprocessor
     {
         public const string CharactersRoot = "Assets/Art/Characters/";
+        public const string WeaponsRoot = "Assets/Art/Weapons/";
+
+        /// <summary>Modelos sem pernas ou sem o conjunto humanoide: Generic (o avatar Humanoid falharia). O Arqueiro Espectral flutua.</summary>
+        static bool IsGeneric(string path) => path.IndexOf("GhostArcher", System.StringComparison.Ordinal) >= 0;
+
+        static bool IsManaged(string path) =>
+            path.StartsWith(CharactersRoot, System.StringComparison.Ordinal) || path.StartsWith(WeaponsRoot, System.StringComparison.Ordinal);
         public const string RigPath = "Assets/Art/Characters/Rigs/Rig_Humanoid_Chibi.fbx";
 
         // Muda quando as regras abaixo mudam: força a reimportação.
-        public override uint GetVersion() => 2;
+        public override uint GetVersion() => 3;
 
         void OnPreprocessModel()
         {
-            if (!assetPath.StartsWith(CharactersRoot, System.StringComparison.Ordinal)) return;
+            if (!IsManaged(assetPath)) return;
             var importer = (ModelImporter)assetImporter;
+            var isWeapon = assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal);
 
             importer.globalScale = 1f;
             importer.useFileScale = true;           // Convert Units: o FBX vem em cm (fator 100), o Unity converte para 1 unidade = 1 m
@@ -40,9 +48,19 @@ namespace Echoes.EditorTools
             importer.optimizeGameObjects = false;                      // heróis modulares expõem os 55 ossos (17.4)
             importer.materialImportMode = ModelImporterMaterialImportMode.None; // materiais são os M_ do projeto (17.1)
             importer.importAnimation = false;                          // sem clipes até a etapa de animação
-            importer.animationType = ModelImporterAnimationType.Human;
+            if (isWeapon)
+            {
+                // Arma estatica (SM_Weapon_*): pivo na empunhadura, sem esqueleto nem avatar.
+                importer.animationType = ModelImporterAnimationType.None;
+                return;
+            }
+            importer.animationType = IsGeneric(assetPath) ? ModelImporterAnimationType.Generic : ModelImporterAnimationType.Human;
 
-            if (assetPath == RigPath)
+            if (IsGeneric(assetPath))
+            {
+                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            }
+            else if (assetPath == RigPath)
             {
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
             }
@@ -63,7 +81,7 @@ namespace Echoes.EditorTools
 
         void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(CharactersRoot, System.StringComparison.Ordinal)) return;
+            if (!IsManaged(assetPath)) return;
             var importer = (TextureImporter)assetImporter;
             var isMask = System.IO.Path.GetFileNameWithoutExtension(assetPath).EndsWith("_M", System.StringComparison.Ordinal);
 
@@ -84,7 +102,7 @@ namespace Echoes.EditorTools
             AssetDatabase.ImportAsset(RigPath, ImportAssetOptions.ForceUpdate);
             foreach (var filter in new[] { "t:Model", "t:Texture" })
             {
-                foreach (var guid in AssetDatabase.FindAssets(filter, new[] { "Assets/Art/Characters" }))
+                foreach (var guid in AssetDatabase.FindAssets(filter, new[] { "Assets/Art/Characters", "Assets/Art/Weapons" }))
                 {
                     var path = AssetDatabase.GUIDToAssetPath(guid);
                     if (path != RigPath) AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
