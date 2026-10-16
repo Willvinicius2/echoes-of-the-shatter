@@ -1,0 +1,103 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "potions.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Pocoes do jogador (docs/13, item 2): cura ou barreira, cargas e recarga.",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "potion.",
+      "desc": "ID da pocao"
+    },
+    {
+      "name": "kind",
+      "type": "enum",
+      "required": true,
+      "values": [
+        "heal",
+        "barrier"
+      ],
+      "desc": "heal (cura) ou barrier (barreira)"
+    },
+    {
+      "name": "fractionOfMaxLife",
+      "type": "number",
+      "required": true,
+      "min": 0,
+      "max": 1,
+      "desc": "Fracao da vida maxima (cura ou barreira)"
+    },
+    {
+      "name": "duration",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Duracao da barreira (s); vazio = nao se aplica"
+    },
+    {
+      "name": "maxCharges",
+      "type": "int",
+      "required": true,
+      "min": 1,
+      "desc": "Cargas maximas"
+    },
+    {
+      "name": "rechargeSeconds",
+      "type": "number",
+      "required": true,
+      "minExclusive": 0,
+      "desc": "Recarga por carga (s), em serie"
+    },
+    {
+      "name": "useTime",
+      "type": "number",
+      "required": true,
+      "minExclusive": 0,
+      "desc": "Tempo de uso (s)"
+    },
+    {
+      "name": "moveSpeedWhileUsing",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "desc": "Fracao da velocidade de movimento durante o uso"
+    },
+    {
+      "name": "globalLockout",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Trava global entre usos de pocao (s)"
+    },
+    {
+      "name": "refillOnEliteKill",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Matar elite da +1 carga (a pocao com menos cargas)"
+    },
+    {
+      "name": "hotkeySlot",
+      "type": "int",
+      "required": true,
+      "min": 1,
+      "max": 9,
+      "desc": "Tecla (1 a 9)"
+    }
+  ],
+  "checks": [
+    {
+      "check": "potion_rules"
+    }
+  ]
+}

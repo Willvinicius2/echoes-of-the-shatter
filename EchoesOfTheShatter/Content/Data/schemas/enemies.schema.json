@@ -80,6 +80,61 @@
       "default": 0,
       "min": 0,
       "desc": "Alcance de aggro (uu)"
+    },
+    {
+      "name": "stunImmune",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Imune a atordoamento (elite, Arauto e chefe)"
+    },
+    {
+      "name": "shieldArcDegrees",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 360,
+      "desc": "Arco do escudo frontal (graus, total; 0 = sem escudo)"
+    },
+    {
+      "name": "turnRateDegPerSec",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Giro (graus/s) na fase 1 ou fixo"
+    },
+    {
+      "name": "turnRateDegPerSecPhase2",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Giro (graus/s) na fase 2"
+    },
+    {
+      "name": "guardBreakStaggerSeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Atordoamento da Guarda Quebrada (s)"
+    },
+    {
+      "name": "guardBreakImmunitySeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Imunidade a nova Guarda Quebrada (s)"
+    },
+    {
+      "name": "modifierId",
+      "type": "ref",
+      "required": false,
+      "ref": "elite_modifiers.csv",
+      "desc": "Modificador fixo de elite (elite_modifiers.csv)"
     }
   ],
   "checks": [

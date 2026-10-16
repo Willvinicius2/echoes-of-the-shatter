@@ -1,0 +1,95 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "boss_phases.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "bossId",
+    "phase"
+  ],
+  "desc": "Fases do chefe (docs/13, item 4). A fase N comeca quando a vida cai ate lifeThreshold.",
+  "columns": [
+    {
+      "name": "bossId",
+      "type": "ref",
+      "required": true,
+      "ref": "enemies.csv",
+      "desc": "Chefe (enemies.csv, isBoss=true)"
+    },
+    {
+      "name": "phase",
+      "type": "int",
+      "required": true,
+      "min": 1,
+      "desc": "Numero da fase (1, 2, ...)"
+    },
+    {
+      "name": "lifeThreshold",
+      "type": "number",
+      "required": true,
+      "minExclusive": 0,
+      "max": 1,
+      "desc": "Fracao da vida em que a fase comeca (1 = inicio)"
+    },
+    {
+      "name": "transitionSeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Rugido de transicao (s), invulneravel"
+    },
+    {
+      "name": "summonEnemyId",
+      "type": "ref",
+      "required": false,
+      "ref": "enemies.csv",
+      "desc": "Inimigo invocado na transicao (vazio = nenhum)"
+    },
+    {
+      "name": "summonCount",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Quantidade invocada (sem reinvocacao)"
+    },
+    {
+      "name": "shieldSeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Escudo: duracao (s); vazio = nao definido no docs/13"
+    },
+    {
+      "name": "turnRate",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Giro (graus/s) nesta fase"
+    },
+    {
+      "name": "decisionDelayMin",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Atraso minimo entre acoes (s)"
+    },
+    {
+      "name": "decisionDelayMax",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Atraso maximo entre acoes (s)"
+    }
+  ],
+  "checks": [
+    {
+      "check": "boss_phase_rules"
+    }
+  ]
+}

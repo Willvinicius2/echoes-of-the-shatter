@@ -135,6 +135,13 @@
       "type": "tags",
       "required": false,
       "desc": "Tags do dano do efeito"
+    },
+    {
+      "name": "interruptsAction",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Interrompe preparacao/telegraph do alvo"
     }
   ],
   "checks": [

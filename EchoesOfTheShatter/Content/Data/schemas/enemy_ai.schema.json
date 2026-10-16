@@ -1,0 +1,176 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "enemy_ai.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "enemyId"
+  ],
+  "desc": "Estados de IA de inimigos comuns e elites (docs/13, item 6). Distancias em uu, tempos em s.",
+  "columns": [
+    {
+      "name": "enemyId",
+      "type": "ref",
+      "required": true,
+      "ref": "enemies.csv",
+      "desc": "Inimigo (enemies.csv)"
+    },
+    {
+      "name": "aggroRange",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Alcance de aggro (uu); se preenchido, deve ser igual ao de enemies.csv"
+    },
+    {
+      "name": "alertRadius",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Raio de alerta do bando (uu)"
+    },
+    {
+      "name": "leashRange",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Distancia para voltar ao ponto (uu)"
+    },
+    {
+      "name": "leashSeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Tempo alem de leashRange para voltar (s)"
+    },
+    {
+      "name": "preferredMin",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Faixa ideal minima (uu)"
+    },
+    {
+      "name": "preferredMax",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Faixa ideal maxima (uu)"
+    },
+    {
+      "name": "retreatBelow",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recua se o jogador esta abaixo desta distancia (uu)"
+    },
+    {
+      "name": "retreatMaxSeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Tempo maximo de recuo (s)"
+    },
+    {
+      "name": "circleMin",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Cerco: distancia minima (uu)"
+    },
+    {
+      "name": "circleMax",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Cerco: distancia maxima (uu)"
+    },
+    {
+      "name": "circleSpeed",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Cerco: velocidade de giro (uu/s)"
+    },
+    {
+      "name": "attackTokens",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Fichas de ataque simultaneas"
+    },
+    {
+      "name": "tokenIntervalMin",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Intervalo minimo de ficha (s)"
+    },
+    {
+      "name": "tokenIntervalMax",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Intervalo maximo de ficha (s)"
+    },
+    {
+      "name": "fleeLifeFraction",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "desc": "Foge com vida abaixo desta fracao"
+    },
+    {
+      "name": "fleeSeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Duracao da fuga (s)"
+    },
+    {
+      "name": "fleeOncePerLife",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Foge so uma vez por vida"
+    },
+    {
+      "name": "attackCooldown",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recarga entre disparos/ataques (s)"
+    },
+    {
+      "name": "maxSimultaneousShooters",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Atiradores simultaneos"
+    }
+  ],
+  "checks": [
+    {
+      "check": "enemy_ai_rules"
+    }
+  ]
+}

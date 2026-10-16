@@ -41,10 +41,35 @@
       "required": false,
       "default": false,
       "desc": "Tem perfil idle testado"
+    },
+    {
+      "name": "idleParitySampleSize",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Amostra da calibracao idle (encontros medidos)"
+    },
+    {
+      "name": "idleCalibration",
+      "type": "enum",
+      "required": false,
+      "default": "none",
+      "values": [
+        "none",
+        "manual_estimate",
+        "bot_parity"
+      ],
+      "desc": "Calibracao do perfil idle: none / manual_estimate / bot_parity"
     }
   ],
   "locKeys": [
     "{id}.name",
     "{id}.desc"
+  ],
+  "checks": [
+    {
+      "check": "unique_rules"
+    }
   ]
 }
