@@ -352,12 +352,17 @@ TEST(loot_fervor_multiplies_gold_by_1_25_exactly) {
     idle.mode = LootMode::Idle;
     LootContext manual;
     manual.mode = LootMode::Manual;
-    EXPECT_EQ(RollLootTable(db, *t, idle, rng).stacks[0].amount, static_cast<std::int64_t>(8));
-    EXPECT_EQ(RollLootTable(db, *t, manual, rng).stacks[0].amount, static_cast<std::int64_t>(10));  // 8 x 1,25
+    // Quantidade da primeira pilha (cópia: o LootDrop temporário morre no fim da expressão).
+    auto amount = [&](const LootContext& ctx) -> std::int64_t {
+        const LootDrop d = RollLootTable(db, *t, ctx, rng);
+        return d.stacks.empty() ? -1 : d.stacks[0].amount;
+    };
+    EXPECT_EQ(amount(idle), static_cast<std::int64_t>(8));
+    EXPECT_EQ(amount(manual), static_cast<std::int64_t>(10));  // 8 x 1,25
     idle.quantityMult = 1.5;  // Pedra de Rota
-    EXPECT_EQ(RollLootTable(db, *t, idle, rng).stacks[0].amount, static_cast<std::int64_t>(12));
+    EXPECT_EQ(amount(idle), static_cast<std::int64_t>(12));
     idle.quantityMult = 0.01;  // mínimo 1
-    EXPECT_EQ(RollLootTable(db, *t, idle, rng).stacks[0].amount, static_cast<std::int64_t>(1));
+    EXPECT_EQ(amount(idle), static_cast<std::int64_t>(1));
 }
 
 TEST(loot_area_level_filter_uid_and_modifiers) {

@@ -6,12 +6,6 @@ using namespace shatter;
 
 namespace {
 
-// Carrega o fixture rico trocando uma tabela; devolve se Finalize passou. `db` fica com os erros.
-bool FinalizeWith(ContentDB& db, const std::string& table, const std::string& text) {
-    tu::LoadFixture(db, tu::RichDir(), table, text);
-    return db.Finalize();
-}
-
 bool HasError(const ContentDB& db, const std::string& table, int line, const std::string& code) {
     for (const ContentError& e : db.Errors()) {
         if (e.table == table && (line < 0 || e.line == line) && e.message.rfind(code, 0) == 0) return true;
