@@ -245,6 +245,43 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void EffectExpiresOnTheExactFixedStep()
+        {
+            // Tolerância de tempo do core (kTimeEps): 8 s a 1/60 = 480 passos, nem um a mais.
+            using (var rules = TestWorld.LoadRules())
+            {
+                var stats = rules.CreateEnemyStats("enemy.stone_herald", 3);
+                var effects = rules.CreateEffectSet(stats, rules.FindEnemy("enemy.stone_herald"));
+                effects.Apply("effect.guard_break", 1.0, "test");
+                for (var i = 0; i < 479; i++) effects.Tick(1.0 / 60.0, null);
+                Assert.AreEqual(1, effects.StackCount("effect.guard_break"));
+                effects.Tick(1.0 / 60.0, null);
+                Assert.AreEqual(0, effects.StackCount("effect.guard_break"));
+                Assert.AreEqual(1.0, stats.Get(StatId.DamageTaken), 1e-12, "mods saem junto com o efeito");
+            }
+        }
+
+        [Test]
+        public void NegativeResistanceReachesTheFloor()
+        {
+            // RawResist de src/damage.cpp: fraqueza não para no zero do Get; vai até resist_floor (-1).
+            using (var rules = TestWorld.LoadRules())
+            {
+                var attacker = new StubStatBlock();
+                var defender = new StubStatBlock();
+                defender.SetBase(StatId.ResistFire, -2.0);
+                var request = new HitRequest
+                {
+                    Attacker = attacker, Defender = defender, SkillTags = SkillTags.Spell | SkillTags.Fire,
+                    BaseDamage = new DamageByType { Fire = 100 }, Coefficient = 1.0, DefenderLife = 1000,
+                };
+                var rng = rules.CreateRng(3UL, RngStream.Combat, 0);
+                var result = rules.ResolveHit(in request, ref rng);
+                Assert.AreEqual(200.0, result.AfterMitigation.Fire, 1e-9);
+            }
+        }
+
+        [Test]
         public void SameSeedSameSequenceOfHits()
         {
             // Determinismo do stub: mesma seed + mesmos CSV = mesmos golpes.

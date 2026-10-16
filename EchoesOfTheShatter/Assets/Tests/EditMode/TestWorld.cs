@@ -134,6 +134,7 @@ namespace Echoes.Tests.EditMode
                 c.Effects?.Dispose();
                 c.Stats.Dispose();
             }
+            Combat.Dispose();
             Rules.Dispose();
         }
 

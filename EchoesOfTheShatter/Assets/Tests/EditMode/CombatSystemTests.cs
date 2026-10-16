@@ -323,6 +323,45 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void RegistrationOrderIsStableAndHeroesComeFirst()
+        {
+            // A ordem de passo não depende da ordem dos Start: time, depois a chave da hierarquia.
+            using (var world = new TestWorld())
+            {
+                var rules = world.Rules;
+                Combatant Make(string id)
+                {
+                    var info = rules.FindEnemy(id);
+                    var stats = rules.CreateEnemyStats(id, 3);
+                    return new Combatant(CombatTeam.Enemy, id, 3, stats, rules.CreateEffectSet(stats, info), null, info, null, 0.5f);
+                }
+                var b = Make(Sentinel);
+                var a = Make(Herald);
+                world.Combat.Register(b, null, "0002");
+                world.Combat.Register(a, null, "0001");
+                var hero = world.AddHero(PlanarVector.Zero);
+                Assert.AreSame(hero.combatant, world.Combat.Combatants[0]);
+                Assert.AreSame(a, world.Combat.Combatants[1]);
+                Assert.AreSame(b, world.Combat.Combatants[2]);
+                world.Combat.Unregister(a);
+                Assert.AreSame(b, world.Combat.Combatants[1]);
+            }
+        }
+
+        [Test]
+        public void DeniedDodgeIsReportedOnce()
+        {
+            using (var world = new TestWorld())
+            {
+                var hero = world.AddHero(PlanarVector.Zero);
+                while (hero.logic.Dodge.Charges.TryConsume()) { }
+                hero.logic.Press(HeroCommand.Dodge);
+                world.Run(0.2);
+                Assert.AreEqual(1, world.Denied.FindAll(d => d.Reason == DenyReason.NoDodgeCharges).Count);
+            }
+        }
+
+        [Test]
         public void LockedSkillIsDenied()
         {
             using (var world = new TestWorld())

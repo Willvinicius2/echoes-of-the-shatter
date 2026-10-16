@@ -15,14 +15,14 @@ Nenhuma cena, prefab, `.asset` ou `.meta` foi criado fora do editor. Este README
 | `Gameplay/` | `Echoes.Gameplay` | Componentes de cena: `CombatSystemHost`, `HeroController`, `EnemyController`, `AttributeComponent`, `PlayerInputHandler`, `CombatFeelSettings`. |
 | `Presentation/` | `Echoes.Presentation` | `FollowCamera` + `RenderSettingsAsset`, `PresentationController`, `SkillPresentationSet`, `TelegraphPresenter`/`TelegraphView`, `ProjectilePresenter`, `VfxPool`. |
 | `UI/` | `Echoes.UI` | `HudView`, `DamageNumberLayer`, `LocLabel` (UI Toolkit). UXML e USS ficam em `Assets/UI/`. |
-| `../Tests/EditMode/` | `Echoes.Tests.EditMode` | 89 testes de lógica pura (esquiva, recargas, máquina de estados, passo fixo, combate com o stub e os CSV reais). |
+| `../Tests/EditMode/` | `Echoes.Tests.EditMode` | 93 testes de lógica pura (esquiva, recargas, máquina de estados, passo fixo, combate com o stub e os CSV reais). |
 
 Outros arquivos novos:
 - `Assets/Settings/Echoes.inputactions`: mapa `Gameplay` com `Move`, `Aim`, `BasicAttack`, `Skill1..5`, `Dodge`, `Potion1..2`, `Inventory`, `PassiveTree`, `Map`, `Pause` (teclas do RF-64).
 - `Assets/UI/Views/HudView.uxml`, `Assets/UI/Styles/Components.uss`, `Screens.uss` e `Tokens.uss`.
 - `tools/gen_tokens.py`: gera `Tokens.uss` a partir de `docs/03_design_tokens.json`. Não edite o `Tokens.uss` à mão: mude o JSON e rode `python3 tools/gen_tokens.py`.
 
-Direção das dependências: `Interop ← Core ← Gameplay ← Presentation ← UI` (docs/04_arquitetura.md, seção 4.3). A ordem de execução vem de `[DefaultExecutionOrder]` no código (GameRoot −1000, entrada −950, herói −940, inimigos −930, combate −900); não é preciso mexer em Project Settings.
+Direção das dependências: `Interop ← Core ← Gameplay ← Presentation ← UI` (docs/04_arquitetura.md, seção 4.3). A ordem de execução vem de `[DefaultExecutionOrder]` no código (GameRoot −1000, entrada −950, herói −940, inimigos −930, combate −900); não é preciso mexer em Project Settings. A ordem em que as entidades rodam no passo fixo (e consomem o RNG) é: herói, depois inimigos pela posição na hierarquia da cena; com `Fixed Run Seed` fixo, a mesma cena repete a mesma luta.
 
 ## 2. Primeira abertura
 
