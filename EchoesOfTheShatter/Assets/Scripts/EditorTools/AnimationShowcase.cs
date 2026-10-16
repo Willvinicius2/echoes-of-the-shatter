@@ -51,11 +51,11 @@ namespace Echoes.EditorTools
                 var views = new[]
                 {
                     ("anim_1_repouso_56m", 0.0f, 0.0f, 0f, false),
-                    ("anim_2_preparacao_56m", strike.windupEnd * 0.6f, chop.windupEnd * 0.6f, 0f, false),
-                    ("anim_3_impacto_56m", (strike.windupEnd + strike.impactEnd) * 0.5f, chop.impactEnd, 0.25f, false),
+                    ("anim_2_preparacao_56m", strike.windupEnd * 0.9f, chop.windupEnd * 0.9f, 0f, false),
+                    ("anim_3_impacto_56m", strike.impactEnd, chop.impactEnd, 0.25f, false),
                     ("anim_4_recuperacao_56m", Mathf.Min(1f, strike.impactEnd + 0.2f), 0.9f, 0.85f, false),
-                    ("anim_5_preparacao_perto", strike.windupEnd * 0.8f, chop.windupEnd * 0.6f, 0f, true),
-                    ("anim_6_impacto_perto", (strike.windupEnd + strike.impactEnd) * 0.5f, chop.impactEnd, 0.3f, true),
+                    ("anim_5_preparacao_perto", strike.windupEnd * 0.9f, chop.windupEnd * 0.9f, 0f, true),
+                    ("anim_6_impacto_perto", strike.impactEnd, chop.impactEnd, 0.3f, true),
                 };
 
                 var idle = KayKitAnimationImport.FindClip($"{KayKitAnimationImport.Root}/Medium/Rig_Medium_General.fbx", "Idle_A");
@@ -63,36 +63,63 @@ namespace Echoes.EditorTools
                 var chopClip = KayKitAnimationImport.FindClip($"{KayKitAnimationImport.Root}/Medium/Rig_Medium_CombatMelee.fbx", "Melee_1H_Attack_Chop");
                 var hitClip = KayKitAnimationImport.FindClip($"{KayKitAnimationImport.Root}/Medium/Rig_Medium_General.fbx", "Hit_A");
 
-                foreach (var (name, heroT, enemyT, hitT, near) in views)
+                // Um passo por tick do editor: o skinning so atualiza entre quadros (amostra num tick, captura no seguinte).
+                var steps = new System.Collections.Generic.Queue<Action>();
+                foreach (var view in views)
                 {
-                    if (name.EndsWith("repouso_56m"))
+                    var (name, heroT, enemyT, hitT, near) = view;
+                    steps.Enqueue(() =>
                     {
-                        idle.SampleAnimation(heroAnimator.gameObject, 0.3f);
-                        idle.SampleAnimation(sentinelAnimator.gameObject, 0.1f);
-                    }
-                    else
-                    {
-                        slice.SampleAnimation(heroAnimator.gameObject, heroT * slice.length);
-                        if (hitT > 0f) hitClip.SampleAnimation(sentinelAnimator.gameObject, hitT * hitClip.length);
-                        else chopClip.SampleAnimation(sentinelAnimator.gameObject, enemyT * chopClip.length);
-                    }
-                    if (near)
-                    {
-                        follow.transform.position = mid + new Vector3(0f, 1.0f, 0f);
-                        follow.ApplySettings();
-                        cam.transform.localPosition = new Vector3(0f, 0f, -6f);
-                        cam.fieldOfView = 35f;
-                    }
-                    else
-                    {
-                        follow.transform.position = mid + new Vector3(0f, 0.52f, 0f);
-                        follow.ApplySettings();
-                    }
-                    Capture(cam, Path.Combine(dir, name + ".png"), near ? 1280 : 1920, near ? 720 : 1080);
+                        if (name.EndsWith("repouso_56m"))
+                        {
+                            idle.SampleAnimation(heroAnimator.gameObject, 0.3f);
+                            idle.SampleAnimation(sentinelAnimator.gameObject, 0.1f);
+                        }
+                        else
+                        {
+                            slice.SampleAnimation(heroAnimator.gameObject, heroT * slice.length);
+                            if (hitT > 0f) hitClip.SampleAnimation(sentinelAnimator.gameObject, hitT * hitClip.length);
+                            else chopClip.SampleAnimation(sentinelAnimator.gameObject, enemyT * chopClip.length);
+                        }
+                        if (near)
+                        {
+                            follow.transform.position = mid + new Vector3(0f, 1.0f, 0f);
+                            follow.ApplySettings();
+                            cam.transform.localPosition = new Vector3(0f, 0f, -6f);
+                            cam.fieldOfView = 35f;
+                        }
+                        else
+                        {
+                            follow.transform.position = mid + new Vector3(0f, 0.52f, 0f);
+                            follow.ApplySettings();
+                        }
+                    });
+                    steps.Enqueue(() => Capture(cam, Path.Combine(dir, name + ".png"), near ? 1280 : 1920, near ? 720 : 1080));
                 }
 
-                Debug.Log("[AnimationShowcase] Capturas em " + dir);
-                if (Application.isBatchMode) EditorApplication.Exit(0);
+                EditorApplication.CallbackFunction tick = null;
+                tick = () =>
+                {
+                    try
+                    {
+                        if (steps.Count > 0)
+                        {
+                            steps.Dequeue()();
+                            return;
+                        }
+                        EditorApplication.update -= tick;
+                        Debug.Log("[AnimationShowcase] Capturas em " + dir);
+                        if (Application.isBatchMode) EditorApplication.Exit(0);
+                    }
+                    catch (Exception e)
+                    {
+                        EditorApplication.update -= tick;
+                        Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                        if (Application.isBatchMode) EditorApplication.Exit(1);
+                    }
+                };
+                EditorApplication.update += tick;
+                return;
             }
             catch (Exception e)
             {
@@ -100,6 +127,220 @@ namespace Echoes.EditorTools
                 if (Application.isBatchMode) EditorApplication.Exit(1);
             }
         }
+
+
+        // ---------------------------------------------------------------------------------------------
+        // anim2_*: de perto, 3/4 frontal a ~4 m (FOV 35), cada personagem sozinho nos estados Idle, Walk, preparação, impacto e Hit.
+        // ---------------------------------------------------------------------------------------------
+
+        public static void RunClose()
+        {
+            try
+            {
+                CharacterPrefabBuilder.BuildAll();
+                SandboxBuilder.Build();
+                CriptaBuilder.BuildScene();
+                EditorSceneManager.OpenScene(CriptaBuilder.ScenePath, OpenSceneMode.Single);
+                var dir = Environment.GetEnvironmentVariable("ECHOES_CAPTURE_DIR");
+                if (string.IsNullOrEmpty(dir)) dir = @"D:\openclaude\_trabalho-claude\capturas";
+                Directory.CreateDirectory(dir);
+
+                var layout = CriptaLayout.LoadFromDocument();
+                var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
+                var cam = follow.GetComponentInChildren<Camera>();
+                follow.enabled = false;
+                var hero = GameObject.Find("Hero");
+                if (hero != null) hero.SetActive(false);
+                var origin = new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y);
+                // Os inimigos da cena (parados em pe, na pose de repouso) nao podem ficar no quadro.
+                foreach (var enemy in UnityEngine.Object.FindObjectsByType<Echoes.Gameplay.EnemyController>(FindObjectsSortMode.None)) enemy.gameObject.SetActive(false);
+
+                string medium = KayKitAnimationImport.Root + "/Medium/", large = KayKitAnimationImport.Root + "/Large/";
+                AnimationClip M(string fbx, string clip) => KayKitAnimationImport.FindClip($"{medium}Rig_Medium_{fbx}.fbx", clip);
+                AnimationClip L(string fbx, string clip) => KayKitAnimationImport.FindClip($"{large}Rig_Large_{fbx}.fbx", clip);
+                var warriorSet = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.WarriorSkillSetPath);
+                var enemySet = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>($"{AnimatorControllerBuilder.SkillSetDir}/{AnimatorControllerBuilder.EnemyHumanoid.SkillSet}.asset");
+                var bossSet = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>($"{AnimatorControllerBuilder.SkillSetDir}/{AnimatorControllerBuilder.Boss.SkillSet}.asset");
+                warriorSet.TryGet("skill.warrior.iron_cut", out var basic);
+                enemySet.TryGet("skill.enemy.sentinel_strike", out var strike);
+                bossSet.TryGet("skill.enemy.guardian_hammer", out var hammer);
+
+                // Um passo por tick do editor: o skinning so atualiza entre quadros, entao amostra num tick e captura no seguinte.
+                var steps = new System.Collections.Generic.Queue<Action>();
+                void Cast(string prefabName, float distance, float lookHeight, (string, AnimationClip, float)[] poses, float yaw = 35f)
+                {
+                    GameObject go = null;
+                    Animator animator = null;
+                    steps.Enqueue(() =>
+                    {
+                        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/{prefabName}.prefab");
+                        go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                        go.transform.SetPositionAndRotation(origin, Quaternion.identity);
+                        animator = go.GetComponentInChildren<Animator>(true);
+                    });
+                    foreach (var pose in poses)
+                    {
+                        var (label, clip, t) = pose;
+                        steps.Enqueue(() =>
+                        {
+                            clip.SampleAnimation(animator.gameObject, Mathf.Clamp(t, 0f, clip.length));
+                            var target = origin + Vector3.up * lookHeight;
+                            var direction = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                            cam.transform.position = target + direction * distance + Vector3.up * (distance * 0.22f);
+                            cam.transform.LookAt(target);
+                            cam.fieldOfView = 35f;
+                        });
+                        steps.Enqueue(() => Capture(cam, Path.Combine(dir, $"anim2_{label}.png"), 1280, 720));
+                    }
+                    steps.Enqueue(() => UnityEngine.Object.DestroyImmediate(go));
+                }
+
+                Cast("P_Hero_Warrior", 4f, 0.8f, new[]
+                {
+                    ("guerreiro_1_idle", M("General", "Idle_A"), 0.3f),
+                    ("guerreiro_2_walk", M("MovementBasic", "Walking_A"), 0.25f),
+                    ("guerreiro_3_preparacao", M("CombatMelee", "Melee_1H_Attack_Slice_Horizontal"), basic.windupEnd * 0.9f * M("CombatMelee", "Melee_1H_Attack_Slice_Horizontal").length),
+                    ("guerreiro_4_impacto", M("CombatMelee", "Melee_1H_Attack_Slice_Horizontal"), basic.impactEnd * M("CombatMelee", "Melee_1H_Attack_Slice_Horizontal").length),
+                    ("guerreiro_5_hit", M("General", "Hit_A"), 0.25f * M("General", "Hit_A").length),
+                });
+                Cast("P_Enemy_HollowSentinel", 4f, 0.8f, new[]
+                {
+                    ("sentinela_1_idle", M("General", "Idle_A"), 0.3f),
+                    ("sentinela_2_walk", M("MovementBasic", "Walking_A"), 0.25f),
+                    ("sentinela_3_preparacao", M("CombatMelee", "Melee_1H_Attack_Chop"), strike.windupEnd * 0.9f * M("CombatMelee", "Melee_1H_Attack_Chop").length),
+                    ("sentinela_4_impacto", M("CombatMelee", "Melee_1H_Attack_Chop"), strike.impactEnd * M("CombatMelee", "Melee_1H_Attack_Chop").length),
+                    ("sentinela_5_hit", M("General", "Hit_A"), 0.25f * M("General", "Hit_A").length),
+                });
+                Cast("P_Boss_CryptGuardian", 12f, 2.0f, new[]
+                {
+                    ("guardiao_1_idle", L("General", "Idle_A"), 0.3f),
+                    ("guardiao_2_martelo", M("CombatMelee", "Melee_2H_Attack_Chop"), hammer.impactEnd * M("CombatMelee", "Melee_2H_Attack_Chop").length),
+                }, 60f);
+
+                EditorApplication.CallbackFunction tick = null;
+                tick = () =>
+                {
+                    try
+                    {
+                        if (steps.Count > 0)
+                        {
+                            steps.Dequeue()();
+                            return;
+                        }
+                        EditorApplication.update -= tick;
+                        Debug.Log("[AnimationShowcase] Capturas anim2 em " + dir);
+                        if (Application.isBatchMode) EditorApplication.Exit(0);
+                    }
+                    catch (Exception e)
+                    {
+                        EditorApplication.update -= tick;
+                        Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                        if (Application.isBatchMode) EditorApplication.Exit(1);
+                    }
+                };
+                EditorApplication.update += tick;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+            }
+        }
+
+
+        /// <summary>Folha de contato (diagnostico): o clipe amostrado em N instantes, numa grade, para ajustar tempos e musculos.</summary>
+        public static void RunSheet()
+        {
+            try
+            {
+                KayKitAnimationImport.Apply();
+                CriptaBuilder.BuildScene();
+                EditorSceneManager.OpenScene(CriptaBuilder.ScenePath, OpenSceneMode.Single);
+                var dir = Environment.GetEnvironmentVariable("ECHOES_CAPTURE_DIR");
+                if (string.IsNullOrEmpty(dir)) dir = @"D:\openclaude\_trabalho-claude\tmp";
+                var layout = CriptaLayout.LoadFromDocument();
+                var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
+                var cam = follow.GetComponentInChildren<Camera>();
+                follow.enabled = false;
+                var hero = GameObject.Find("Hero");
+                if (hero != null) hero.SetActive(false);
+                var origin = new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y);
+                var prefabName = Environment.GetEnvironmentVariable("SHEET_PREFAB") ?? "P_Hero_Warrior";
+                var fbx = Environment.GetEnvironmentVariable("SHEET_FBX") ?? "Medium/Rig_Medium_CombatMelee";
+                var clipName = Environment.GetEnvironmentVariable("SHEET_CLIP") ?? "Melee_1H_Attack_Slice_Horizontal";
+                var clip = KayKitAnimationImport.FindClip($"{KayKitAnimationImport.Root}/{fbx}.fbx", clipName);
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/{prefabName}.prefab");
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                go.transform.SetPositionAndRotation(origin, Quaternion.identity);
+                var animator = go.GetComponentInChildren<Animator>(true);
+                const int cols = 4, rows = 3, w = 480, h = 360;
+                var sheet = new Texture2D(cols * w, rows * h, TextureFormat.RGB24, false);
+                var distance = prefabName.Contains("Boss") ? 12f : 4f;
+                var look = prefabName.Contains("Boss") ? 2f : 0.8f;
+                var yaw = float.Parse(Environment.GetEnvironmentVariable("SHEET_YAW") ?? "35", System.Globalization.CultureInfo.InvariantCulture);
+                var index = 0;
+                var sampled = false;
+                EditorApplication.CallbackFunction tick = null;
+                tick = () =>
+                {
+                    try
+                    {
+                        if (!sampled)
+                        {
+                            clip.SampleAnimation(animator.gameObject, clip.length * index / (cols * rows - 1));
+                            var target = origin + Vector3.up * look;
+                            var direction = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                            cam.transform.position = target + direction * distance + Vector3.up * (distance * 0.22f);
+                            cam.transform.LookAt(target);
+                            cam.fieldOfView = 35f;
+                            sampled = true;
+                            return;
+                        }
+                        sampled = false;
+                        var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+                        cam.targetTexture = rt;
+                        cam.Render();
+                        cam.Render();
+                        RenderTexture.active = rt;
+                        var tile = new Texture2D(w, h, TextureFormat.RGB24, false);
+                        tile.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+                        sheet.SetPixels((index % cols) * w, (rows - 1 - index / cols) * h, w, h, tile.GetPixels());
+                        cam.targetTexture = null;
+                        RenderTexture.active = null;
+                        UnityEngine.Object.DestroyImmediate(tile);
+                        rt.Release();
+                        UnityEngine.Object.DestroyImmediate(rt);
+                        index++;
+                        if (index < cols * rows) return;
+                        EditorApplication.update -= tick;
+                        File.WriteAllBytes(Path.Combine(dir, $"sheet_{prefabName}_{clipName}.png"), sheet.EncodeToPNG());
+                        Debug.Log($"[AnimationShowcase] folha {clipName}: {clip.length}s");
+                        if (Application.isBatchMode) EditorApplication.Exit(0);
+                    }
+                    catch (Exception e)
+                    {
+                        EditorApplication.update -= tick;
+                        Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                        if (Application.isBatchMode) EditorApplication.Exit(1);
+                    }
+                };
+                EditorApplication.update += tick;
+                return;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+            }
+        }
+
+
+
+
+
+
+
+
 
         static void Capture(Camera cam, string file, int width, int height)
         {

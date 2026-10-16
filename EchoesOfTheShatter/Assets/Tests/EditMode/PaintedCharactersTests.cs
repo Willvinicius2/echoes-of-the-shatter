@@ -45,7 +45,11 @@ namespace Echoes.Tests.EditMode
                 Assert.IsFalse(importer.optimizeGameObjects, path);
                 Assert.AreEqual(ModelImporterTangents.None, importer.importTangents, path + ": sem normal map");
                 Assert.AreEqual(c.humanoid ? ModelImporterAnimationType.Human : ModelImporterAnimationType.Generic, importer.animationType, path);
-                if (c.humanoid) Assert.AreEqual(ModelImporterAvatarSetup.CopyFromOther, importer.avatarSetup, path + ": avatar do Rig_Humanoid_Chibi");
+                if (c.humanoid)
+                {
+                    var own = CharacterAssetPostprocessor.OwnsAvatar(path); // escala propria (Arauto, Guardiao): avatar proprio, senao o corpo afunda
+                    Assert.AreEqual(own ? ModelImporterAvatarSetup.CreateFromThisModel : ModelImporterAvatarSetup.CopyFromOther, importer.avatarSetup, path + ": avatar do Rig_Humanoid_Chibi ou proprio");
+                }
             }
         }
 

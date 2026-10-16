@@ -47,7 +47,7 @@ namespace Echoes.EditorTools
             },
             { Root + "/Large/Rig_Large_General.fbx", new[] { new ClipSpec("Idle_A", true), new ClipSpec("Hit_A"), new ClipSpec("Death_A") } },
             { Root + "/Large/Rig_Large_MovementBasic.fbx", new[] { new ClipSpec("Walking_A", true), new ClipSpec("Running_A", true) } },
-            { Root + "/Large/Rig_Large_CombatMelee.fbx", new[] { new ClipSpec("Melee_2H_Slam"), new ClipSpec("Melee_Block_Attack") } },
+            { Root + "/Large/Rig_Large_CombatMelee.fbx", new[] { new ClipSpec("Melee_Block_Attack") } },
             { Root + "/Large/Rig_Large_Simulation.fbx", new[] { new ClipSpec("Flexing") } },
         };
 
@@ -57,6 +57,13 @@ namespace Echoes.EditorTools
         /// </summary>
         public const float ArmStretch = 0.5f;
         public const float LegStretch = 0.1f;
+
+        /// <summary>
+        /// Limites de musculo (graus, +/-) do tronco, pescoco e cabeca do chibi. Os clipes do KayKit sao de proporcao humana; a cabeca grande
+        /// do chibi entra no corpo quando o tronco inclina tanto. Limite menor = a mesma pose do clipe vira uma rotacao menor no avatar.
+        /// </summary>
+        public const float TorsoLimit = 20f, NeckLimit = 20f, HeadLimit = 20f;
+        static readonly string[] TorsoBones = { "Spine", "Chest", "UpperChest" };
 
         [MenuItem("Echoes/Importar animações KayKit")]
         public static void Apply()
@@ -80,7 +87,7 @@ namespace Echoes.EditorTools
             }
             var wanted = specs.Select(s => s.Take).ToList();
             var current = importer.clipAnimations;
-            if (current != null && current.Length == wanted.Count && current.All(c => wanted.Contains(c.name)) && current.All(c => c.lockRootHeightY && c.heightFromFeet)) return;
+            if (current != null && current.Length == wanted.Count && current.All(c => wanted.Contains(c.name)) && current.All(c => c.lockRootHeightY && c.heightFromFeet && c.keepOriginalOrientation)) return;
 
             var defaults = importer.defaultClipAnimations;
             var clips = new List<ModelImporterClipAnimation>();
@@ -97,7 +104,7 @@ namespace Echoes.EditorTools
                 source.loopPose = spec.Loop;
                 // Sem root motion: a logica move o personagem. Rotacao, altura (pelos pes) e XZ gravadas na pose.
                 source.lockRootRotation = true;
-                source.keepOriginalOrientation = false;
+                source.keepOriginalOrientation = true;  // "Based Upon: Original": a inclinacao do corpo do clipe (golpe com avanco do tronco) fica como foi autorada
                 source.lockRootHeightY = true;
                 source.keepOriginalPositionY = false;
                 source.heightFromFeet = true;
@@ -109,17 +116,61 @@ namespace Echoes.EditorTools
             importer.SaveAndReimport();
         }
 
+        /// <summary>Os modelos que criam o proprio avatar Humanoid (o rig do chibi e os de escala propria, ver OwnsAvatar).</summary>
+        public static System.Collections.Generic.IEnumerable<string> AvatarOwners()
+        {
+            yield return CharacterAssetPostprocessor.RigPath;
+            foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { "Assets/Art/Characters" }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (CharacterAssetPostprocessor.OwnsAvatar(path)) yield return path;
+            }
+        }
+
         static void ConfigureChibiMuscles()
         {
-            var importer = AssetImporter.GetAtPath(CharacterAssetPostprocessor.RigPath) as ModelImporter;
+            foreach (var path in AvatarOwners().ToList()) ConfigureMuscles(path);
+        }
+
+        static void ConfigureMuscles(string path)
+        {
+            var importer = AssetImporter.GetAtPath(path) as ModelImporter;
             if (importer == null) return;
             var description = importer.humanDescription;
             if (description.human == null || description.human.Length == 0) return; // ainda sem mapeamento: reimporta antes
-            if (Mathf.Approximately(description.armStretch, ArmStretch) && Mathf.Approximately(description.legStretch, LegStretch)) return;
-            description.armStretch = ArmStretch;
-            description.legStretch = LegStretch;
+            var changed = false;
+            if (!Mathf.Approximately(description.armStretch, ArmStretch) || !Mathf.Approximately(description.legStretch, LegStretch))
+            {
+                description.armStretch = ArmStretch;
+                description.legStretch = LegStretch;
+                changed = true;
+            }
+            var bones = description.human;
+            for (var i = 0; i < bones.Length; i++)
+            {
+                var limit = LimitFor(bones[i].humanName);
+                if (limit <= 0f) continue;
+                var current = bones[i].limit;
+                if (!current.useDefaultValues && Mathf.Approximately(current.max.x, limit) && Mathf.Approximately(current.min.x, -limit)) continue;
+                current.useDefaultValues = false;
+                current.min = new Vector3(-limit, -limit, -limit);
+                current.max = new Vector3(limit, limit, limit);
+                current.center = Vector3.zero;
+                bones[i].limit = current;
+                changed = true;
+            }
+            if (!changed) return;
+            description.human = bones;
             importer.humanDescription = description;
             importer.SaveAndReimport();
+        }
+
+        static float LimitFor(string humanName)
+        {
+            if (System.Array.IndexOf(TorsoBones, humanName) >= 0) return TorsoLimit;
+            if (humanName == "Neck") return NeckLimit;
+            if (humanName == "Head") return HeadLimit;
+            return 0f;
         }
     }
 }

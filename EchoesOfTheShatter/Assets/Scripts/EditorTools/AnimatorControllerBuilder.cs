@@ -81,7 +81,7 @@ namespace Echoes.EditorTools
             HitClip = "Hit_A", DeathClip = "Death_A", StunClip = "Hit_A", StunPlaceholder = true,
             Actions =
             {
-                new ActionSpec { State = "Hammer", Fbx = Large("CombatMelee"), Clip = "Melee_2H_Slam", SkillId = "skill.enemy.guardian_hammer" },
+                new ActionSpec { State = "Hammer", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Chop", SkillId = "skill.enemy.guardian_hammer", Note = "O Melee_2H_Slam do rig grande mergulha o corpo na horizontal (clipe de bruto curvado); o chop do rig medio, retargetado, mantem o chefe em pe" },
                 new ActionSpec { State = "ShieldBash", Fbx = Large("CombatMelee"), Clip = "Melee_Block_Attack", SkillId = "skill.enemy.guardian_shield_bash" },
                 new ActionSpec { State = "Charge", Fbx = Large("MovementBasic"), Clip = "Running_A", SkillId = "skill.enemy.guardian_shield_charge", Placeholder = true, Note = "Investida do Escudo: o rig grande nao tem avanco com escudo" },
                 new ActionSpec { State = "Roar", Fbx = Large("Simulation"), Clip = "Flexing", SkillId = "", Placeholder = true, Note = "Rugido de fase: nao ha rugido no KayKit" },
