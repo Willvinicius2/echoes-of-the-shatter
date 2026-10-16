@@ -1174,7 +1174,6 @@ def load_save_schemas(schema_dir: str) -> Dict[int, dict]:
 def migrate_1_to_2(data: dict) -> dict:
     """Exemplo documentado em docs/06_dados.md §6.4 (v2 ainda NÃO está ativa no core).
     - characters[].potions (int)  -> characters[].potion_slots = [{potion_id, count}, {..}]
-    - novo campo raiz tutorial_flags = []  (inserido logo após 'books_seen')
     Nada é apagado: o valor antigo de potions vai inteiro para o 1º slot."""
     def conv_char(ch: dict) -> dict:
         out = {}
@@ -1203,10 +1202,6 @@ def migrate_1_to_2(data: dict) -> dict:
             new[k] = exps
         else:
             new[k] = v
-        if k == "books_seen":
-            new["tutorial_flags"] = []
-    if "tutorial_flags" not in new:
-        new["tutorial_flags"] = []
     return new
 
 

@@ -726,7 +726,7 @@ Esquema em `schemas/save_v2.schema.json`, ao lado de `save_v1`. Não é usado pe
 - Novo `characters[].boss_progress`: lista de `{enemy_id, kills, kills_since_unique}` por personagem (contador do Único, RF-55).
 - `ExpeditionRequest.potion_heal_fraction` sai (a cura vem de `potions.csv`). `rules[].ref_id` já existe em v1 e serve para `use_potion`.
 - Cargas e relógios de esquiva não são salvos: reiniciam cheios ao carregar (docs/13 item 11).
-- `tutorial_flags` do exemplo `migrate_1_to_2` NÃO entra na v2 (não aprovado). A função `migrate_1_to_2` do validador e o fixture `migration/v1_to_v2_expected.json` ainda o geram: são do core/fixtures e continuam como estão até decisão.
+- `tutorial_flags` não entra na v2 (não aprovado, docs/13 item 11). A função `migrate_1_to_2` do validador foi ajustada para não gerar o campo. O fixture `migration/v1_to_v2_expected.json` (ShatterCore) ainda o contém e precisa ser alinhado pelo Backend.
 
 
 ## 5. content_version e conteúdo publicado
