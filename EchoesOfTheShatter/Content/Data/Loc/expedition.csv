@@ -15,6 +15,8 @@ ui.exp.rule.default_attack,Senão: ataque básico,Otherwise: basic attack,,regra
 ui.exp.rules_full,Máximo de {n} regras.,Maximum of {n} rules.,,aviso; max=30,
 ui.exp.forecast,Previsão,Forecast,,configuração; max=12,
 ui.exp.forecast.value,{min}–{max} de XP,{min}–{max} XP,,previsão em faixa; max=24,
+ui.exp.estimate.badge,Estimativa,Estimate,,selo na previsão e no relatório; max=12,
+ui.exp.estimate.desc,Número ainda não calibrado. Pode errar.,Number not calibrated yet. It may be off.,,selo; explicação curta; max=44,
 ui.exp.forecast.risk,Risco de recuo: {risk},Retreat risk: {risk},,previsão; max=30,
 ui.exp.risk.low,baixo,low,,nível de risco; max=8,
 ui.exp.risk.medium,médio,medium,,nível de risco; max=8,

@@ -1,0 +1,109 @@
+# CI do núcleo (docs/04_arquitetura.md, seção 14). Só Linux, sem segredos, sem Unity.
+name: core
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "ShatterCore/**"
+      - "EchoesOfTheShatter/Content/Data/**"
+      - "data/**"
+      - "tools/**"
+      - ".github/workflows/core.yml"
+  pull_request:
+    branches: [master]
+    # repetido de propósito: âncoras YAML não são confiáveis em todo runner do Actions
+    paths:
+      - "ShatterCore/**"
+      - "EchoesOfTheShatter/Content/Data/**"
+      - "data/**"
+      - "tools/**"
+      - ".github/workflows/core.yml"
+
+# Uma execução por ref: um push novo cancela a anterior.
+concurrency:
+  group: core-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CCACHE_DIR: ${{ github.workspace }}/.ccache
+  CCACHE_MAXSIZE: 200M
+
+jobs:
+  core-linux:
+    name: core-linux (${{ matrix.compiler }}, ${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        variant: [plain, sanitize]
+        include:
+          - compiler: gcc
+            cc: gcc
+            cxx: g++
+          - compiler: clang
+            cc: clang
+            cxx: clang++
+          - variant: plain
+            sanitize: "OFF"
+            build_type: Release
+          - variant: sanitize
+            sanitize: "ON"
+            build_type: Debug
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false   # o núcleo não usa binários; poupa banda de LFS
+
+      - name: Instalar ccache
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ccache
+
+      - name: Cache do ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: ccache-${{ matrix.compiler }}-${{ matrix.variant }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.compiler }}-${{ matrix.variant }}-
+
+      - name: Configurar
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: >
+          cmake -S ShatterCore -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DSHATTER_WERROR=ON
+          -DSHATTER_SANITIZE=${{ matrix.sanitize }}
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache
+          -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+
+      - name: Compilar
+        run: cmake --build build -j "$(nproc)"
+
+      - name: Testar
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir build --output-on-failure -j "$(nproc)"
+
+  data:
+    name: data
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Validar conteúdo
+        run: python3 tools/validate_data.py
+      - name: Autoteste do validador
+        run: python3 tools/validate_data.py --self-test
