@@ -18,8 +18,8 @@ struct Timed {
 };
 
 struct Arena {
-    const ContentDB& db = tu::RichDb();
-    const EnemyData* boss = db.FindEnemy("enemy.crypt_guardian");
+    const ContentDB& db;
+    const EnemyData* boss;
     StatBlock sb;
     EffectContainer fx;
     std::vector<Timed> log;
@@ -28,7 +28,8 @@ struct Arena {
     Vec2 player{0.0, 1000.0};
     std::unique_ptr<BossFight> fight;
 
-    explicit Arena(std::uint64_t seed) {
+    explicit Arena(std::uint64_t seed, const ContentDB* use = nullptr)
+        : db(use != nullptr ? *use : tu::RichDb()), boss(db.FindEnemy("enemy.crypt_guardian")) {
         BuildEnemyStatBlock(*boss, 4, sb);
         fight = std::make_unique<BossFight>(db, *boss, 4, seed);
     }

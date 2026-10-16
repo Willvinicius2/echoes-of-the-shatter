@@ -627,6 +627,10 @@ def chk_boss_phase(c: Content, table: str, rows: List[dict], rep: Report) -> Non
             rep.err(table, ln, "E_BOSS", "fase > 1 exige transitionSeconds > 0 (rugido de transicao)")
         if r["summonEnemyId"] and r["summonCount"] <= 0:
             rep.err(table, ln, "E_BOSS", "summonEnemyId sem summonCount > 0")
+        if r["summonCount"] > 0 and not (0 < r["summonAtFraction"] < 1):
+            rep.err(table, ln, "E_BOSS", "summonCount > 0 exige summonAtFraction em (0, 1)")
+        if r["summonCount"] <= 0 and r["summonAtFraction"] > 0:
+            rep.err(table, ln, "E_BOSS", "summonAtFraction sem summonCount > 0")
         if r["decisionDelayMin"] > r["decisionDelayMax"]:
             rep.err(table, ln, "E_MINMAX", "decisionDelayMin > decisionDelayMax")
     for boss, ps in by_boss.items():
@@ -1452,6 +1456,12 @@ MUTATIONS = [
      lambda t: t.replace("vset.starter", "starter"), "E_ID"),
     ("calca_com_dano_de_arma", "item_bases.csv",
      lambda t: t.replace("armor:flat:4,,,,,,,f", "armor:flat:4,9,,,,,,f"), "E_WEAPON"),
+    ("invocacao_sem_summonAtFraction", "boss_phases.csv",
+     lambda t: t.replace(",0.6,1.1,0.5", ",0.6,1.1,"), "E_BOSS"),
+    ("patrulha_acima_da_perseguicao", "enemies.csv",
+     lambda t: "\n".join(l[:-3] + "1.5" if l.startswith("enemy.hollow_sentinel,") else l for l in t.split("\n")), "E_RANGE"),
+    ("margem_de_tela_removida", "rules.csv",
+     lambda t: t.replace("require_on_screen_margin,100\n", ""), "E_KEY_MISSING"),
     ("regra_obrigatoria_removida", "rules.csv",
      lambda t: t.replace("potion_lockout,1.0\n", ""), "E_KEY_MISSING"),
 ]

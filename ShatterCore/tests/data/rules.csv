@@ -59,3 +59,5 @@ elite_xp_mult,3.0
 potion_lockout,1.0
 dodge_cancel_recovery_fraction,0.5
 out_of_combat_seconds,3
+unarmed_weapon_damage_physical,3
+require_on_screen_margin,100

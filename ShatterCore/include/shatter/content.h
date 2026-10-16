@@ -90,6 +90,7 @@ struct SkillData {                         // skills.csv
     int projectiles = 1;
     double coneAngle = 0.0;                // graus; forma de cone no tempo real (0 = sem cone)
     double knockback = 0.0;                // uu empurrados no alvo; só tempo real
+    double wallStaggerSeconds = 0.0;       // > 0: stagger do atacante ao bater em pilar/parede na investida (BossFight::OnWallHit)
     double projectileSpeed = 0.0;          // uu/s; só tempo real
     std::vector<ContentId> onHitEffects;   // "effect.burn", "effect.guard_break"
     std::vector<ContentId> selfEffects;    // aplicados em quem usa (Postura Firme, Barreira de Vidro)
@@ -125,6 +126,7 @@ struct EnemyData {                         // enemies.csv + enemy_attacks.csv
     double guardBreakImmunitySeconds = 0.0;// 0 = usa guard_break_immunity_boss (chefe) ou _other (demais) de rules.csv
     ContentId modifierId;                  // elite fixo: modificador já aplicado (modifier.elite.*); vazio = nenhum
     ContentId eliteLootTableId;            // coluna OPCIONAL: tabela do elite sorteado (vazio = a do próprio inimigo)
+    double patrolSpeedMult = 0.0;          // 0 = não patrulha; (0,1] = fração da velocidade de perseguição ao patrulhar
 };
 
 enum class AffixKind : std::uint8_t { Prefix, Suffix };
@@ -274,6 +276,7 @@ struct BossPhaseData {                     // boss_phases.csv (uma linha por bos
     ContentId summonEnemyId;               // invocado no meio da transição (vazio = nada)
     int summonCount = 0;
     double shieldSeconds = 0.0;            // tempo do escudo caído após Guarda Quebrada nesta fase (0 = boss_shield_down_seconds)
+    double summonAtFraction = 0.0;         // (0,1): fração da transição em que surgem os invocados; obrigatória se summonCount > 0
     double turnRate = 0.0;                 // graus/s nesta fase (0 = turnRateDegPerSec[Phase2] do inimigo)
     double decisionDelayMin = 0.0;         // atraso sorteado entre ações
     double decisionDelayMax = 0.0;
@@ -305,6 +308,7 @@ struct EnemyAiData {                       // enemy_ai.csv (IA em tempo real dos
     bool fleeOncePerLife = false;
     double attackCooldown = 0.0;
     int maxSimultaneousShooters = 0;
+    bool requireOnScreen = false;          // R-VIS-1: atirador só mira com o alvo dentro da tela (margem require_on_screen_margin)
 };
 
 // ---------------------------------------------------------------------------

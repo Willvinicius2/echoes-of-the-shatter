@@ -9,6 +9,7 @@
 // Todos os números vêm do ContentDB (CSV). Só + − × ÷ e sqrt nos caminhos que afetam resultado.
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -64,6 +65,10 @@ ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill
 // Velocidade final em uu/s. `baseMoveSpeedUu` > 0 (inimigo: EnemyData::moveSpeed): base × atributo MoveSpeed (multiplicador).
 // `baseMoveSpeedUu` <= 0 (herói): o próprio atributo, que já vem em uu/s de class_stats.csv (move_speed = 450).
 double MoveSpeedUu(const StatBlock& stats, double baseMoveSpeedUu);
+// Dano base por tipo de uma habilidade: o da arma se ela escala com arma (SEM arma: unarmed_weapon_damage_physical de
+// rules.csv, só físico), senão o da própria habilidade. Usado pelo simulador e pelo golpe manual.
+std::array<double, kDamageTypeCount> ComputeSkillBaseDamage(const ContentDB& db, const SkillData& skill,
+                                                            const ItemBaseData* weaponOrNull);
 bool CanAct(const StatBlock& stats);    // AttackSpeed > 0
 bool CanMove(const StatBlock& stats);   // MoveSpeed > 0
 // Índice do próximo ataque do inimigo (escolha ponderada; consome exatamente 1 número). -1 se não houver.
@@ -161,6 +166,9 @@ public:
     // imunidade ativa entra em stagger. allowStagger = false (ex.: chefe no rugido) acumula sem atordoar.
     StatusApply ApplyEffect(const ContentDB& db, const EffectData& effect, std::string_view source, double magnitude,
                             TriggerKind triggeredBy, EffectContainer& fx, StatBlock& target, bool allowStagger = true);
+    // Atordoa o alvo por `seconds` (bônus de dano recebido durante o stagger). false se já estiver em stagger.
+    // Não mexe na imunidade a nova Guarda Quebrada.
+    bool BeginStagger(const ContentDB& db, double seconds, StatBlock& target);
     // Avança os relógios; ao fim do stagger remove o bônus de dano recebido. Devolve true se o stagger acabou agora.
     bool Tick(double dt, StatBlock& target);
 
@@ -275,6 +283,10 @@ public:
     // interrompe o padrão e derruba o escudo). `fx` e `stats` são os do chefe (do chamador).
     StatusApply ApplyEffect(const ContentDB& db, const EffectData& effect, std::string_view source, double magnitude,
                             EffectContainer& fx, StatBlock& stats, std::vector<BossEvent>& out);
+    // A investida bateu em pilar ou parede: se o padrão em curso (impacto) tem wallStaggerSeconds > 0, o chefe entra em
+    // stagger por esse tempo, interrompe o padrão e o escudo cai (fase `shieldSeconds` ou boss_shield_down_seconds).
+    // false (nada muda) fora do impacto, sem padrão em curso ou se já estiver em stagger.
+    bool OnWallHit(StatBlock& stats, std::vector<BossEvent>& out);
     // O ponto de origem está dentro do escudo frontal (e o escudo está de pé)?
     bool ShieldCovers(Vec2 bossPos, Vec2 origin) const;
 
@@ -297,6 +309,7 @@ private:
     void StartTransition(std::vector<BossEvent>& out);
     void PickAndStart(const Context& ctx, std::vector<BossEvent>& out);
     void Rotate(double dt, const Context& ctx);
+    void EnterStagger(double seconds, std::vector<BossEvent>& out);
     double PhaseThresholdLife(int phase) const;
     const BossPhaseData* PhaseData(int phase) const;
 
@@ -324,6 +337,7 @@ private:
     // Transição
     double transitionLength_ = 0.0;
     bool summonMarked_ = false, summonDone_ = false;
+    double summonAtFraction_ = 0.5;
     int summonCount_ = 0;
     ContentId summonEnemy_;
 };

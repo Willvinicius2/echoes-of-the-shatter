@@ -669,6 +669,24 @@ SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext(const uint32_t*
                                                                  shatter_error* err) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_db_rules_ext(const shatter_db* db, shatter_rules_ext* out) SHATTER_NOEXCEPT;
 
+/* Rodada 2 (docs/13, R2): chaves novas de rules.csv, em struct à parte para não mexer no layout de shatter_rules_ext.
+ * Layout próprio: shatter_layout_info_ext2 / shatter_layout_check_ext2. */
+typedef struct shatter_rules_ext2 {
+    double unarmed_weapon_damage_physical;   /* dano físico base quando não há arma (golpes que escalam com arma) */
+    double require_on_screen_margin;         /* uu: margem interna da área visível de R-VIS-1 */
+} shatter_rules_ext2;
+#define SHATTER_LAYOUT_EXT2_COUNT 3u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext2(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext2(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_db_rules_ext2(const shatter_db* db, shatter_rules_ext2* out) SHATTER_NOEXCEPT;
+/* Dano base por tipo [physical, fire, cold, lightning] de uma habilidade: o da arma `weapon_base_id` se a habilidade
+ * escala com arma (base de item vazia/nula = SEM arma: unarmed_weapon_damage_physical só no físico), senão o da própria
+ * habilidade. É a MESMA conta do simulador idle. */
+SHATTER_API shatter_status SHATTER_CALL shatter_skill_base_damage(const shatter_db* db, const char* skill_id,
+                                                                  size_t skill_id_len, const char* weapon_base_id,
+                                                                  size_t weapon_base_id_len, double out[4]) SHATTER_NOEXCEPT;
+
 /* --- Golpe e recarga lendo as constantes do BANCO (docs/11, A-06 item 2): o chamador não manda número de regra. --- */
 SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit_db(const shatter_db* db, const shatter_statblock* attacker,
                                                                const shatter_statblock* defender,
@@ -820,6 +838,11 @@ SHATTER_API shatter_status SHATTER_CALL shatter_boss_apply_effect(shatter_boss* 
                                                                   double magnitude, shatter_effects* fx,
                                                                   shatter_statblock* stats,
                                                                   shatter_actor_apply* out) SHATTER_NOEXCEPT;
+/* A investida bateu em pilar ou parede: se o padrão em impacto tem wallStaggerSeconds > 0, o chefe entra em stagger, o padrão é
+ * interrompido e o escudo cai (eventos PATTERN_INTERRUPTED, STAGGER_START, SHIELD_DOWN). *applied = 0 e nada muda fora do
+ * impacto, sem wallStaggerSeconds ou se já estiver em stagger. */
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_wall_hit(shatter_boss* boss, shatter_statblock* stats,
+                                                              uint8_t* applied) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_boss_events(const shatter_boss* boss, shatter_boss_event* out,
                                                             size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_boss_info_get(const shatter_boss* boss, shatter_boss_info* out) SHATTER_NOEXCEPT;

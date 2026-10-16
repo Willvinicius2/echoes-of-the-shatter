@@ -1432,3 +1432,112 @@ TEST(c_api_11_trusted_start_derives_seed_from_the_core_state) {
     std::int32_t check = 0;
     EXPECT_EQ(shatter_save_start_expedition_trusted(db.db, s.save, params.data(), params.size(), nullptr, &check, &err), SHATTER_INVALID_ARGUMENT);
 }
+
+// =============================================================================================
+// Rodada 2 (docs/13, R2): dano desarmado, chaves novas, stagger de parede, colunas novas no lookup
+// =============================================================================================
+TEST(c_api_r2_rules_ext2_layout_unarmed_base_damage_and_lookup_columns) {
+    DbHandle db(tu::RichDir());
+    shatter_rules_ext2 x{};
+    ASSERT_EQ(shatter_db_rules_ext2(db.db, &x), SHATTER_OK);
+    EXPECT_NEAR(x.unarmed_weapon_damage_physical, 3.0, 0.0);
+    EXPECT_NEAR(x.require_on_screen_margin, 100.0, 0.0);
+    EXPECT_EQ(shatter_db_rules_ext2(db.db, nullptr), SHATTER_INVALID_ARGUMENT);
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_layout_info_ext2(nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(needed, static_cast<std::size_t>(SHATTER_LAYOUT_EXT2_COUNT));
+    std::vector<std::uint32_t> layout(needed);
+    ASSERT_EQ(shatter_layout_info_ext2(layout.data(), layout.size(), &needed), SHATTER_OK);
+    EXPECT_EQ(layout[0], 16u);
+    shatter_error err{};
+    EXPECT_EQ(shatter_layout_check_ext2(layout.data(), layout.size(), &err), SHATTER_OK);
+    layout[2] += 8;
+    EXPECT_EQ(shatter_layout_check_ext2(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
+    EXPECT_EQ(SHATTER_LAYOUT_EXT_COUNT, 37u);          // o layout ext anterior não mudou
+
+    // Dano base: com espada o da arma; SEM arma (id vazio) o desarmado, só físico; golpe que não escala usa o dele.
+    double dmg[4] = {-1, -1, -1, -1};
+    const std::string cut = "skill.warrior.shield_bash", sword = "item_base.iron_sword", strike = "skill.enemy.sentinel_strike";
+    ASSERT_EQ(shatter_skill_base_damage(db.db, cut.data(), cut.size(), sword.data(), sword.size(), dmg), SHATTER_OK);
+    EXPECT_NEAR(dmg[0], tu::RichDb().FindItemBase(sword)->weaponDamage[0], 0.0);
+    ASSERT_EQ(shatter_skill_base_damage(db.db, cut.data(), cut.size(), nullptr, 0, dmg), SHATTER_OK);
+    EXPECT_NEAR(dmg[0], 3.0, 0.0);
+    EXPECT_NEAR(dmg[1] + dmg[2] + dmg[3], 0.0, 0.0);
+    ASSERT_EQ(shatter_skill_base_damage(db.db, strike.data(), strike.size(), nullptr, 0, dmg), SHATTER_OK);
+    EXPECT_NEAR(dmg[0], tu::RichDb().FindSkill(strike)->baseDamage[0], 0.0);
+    EXPECT_EQ(shatter_skill_base_damage(db.db, "skill.nope", 10, nullptr, 0, dmg), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_skill_base_damage(db.db, cut.data(), cut.size(), "item_base.nope", 14, dmg), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_skill_base_damage(db.db, cut.data(), cut.size(), nullptr, 0, nullptr), SHATTER_INVALID_ARGUMENT);
+
+    auto look = [&](const std::string& id) {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_db_lookup_json(db.db, id.data(), id.size(), o, c, n); }));
+    };
+    EXPECT_NEAR(look("skill.enemy.guardian_shield_charge")["wall_stagger_seconds"].AsDouble(), 2.0, 0.0);
+    EXPECT_NEAR(look("enemy.hollow_sentinel")["patrol_speed_mult"].AsDouble(), 0.5, 0.0);
+    EXPECT_TRUE(look("enemy.ash_spitter")["ai"]["require_on_screen"].AsBool());
+    EXPECT_NEAR(look("enemy.crypt_guardian")["phases"].At(1)["summon_at_fraction"].AsDouble(), 0.5, 0.0);
+}
+
+TEST(c_api_r2_boss_wall_hit_staggers_and_swift_timing_ignores_missing_mods) {
+    DbHandle db(tu::RichDir());
+    const std::string id = "enemy.crypt_guardian";
+    StatHandle sb;
+    ASSERT_EQ(shatter_statblock_for_enemy(db.db, id.data(), id.size(), 4, &sb.sb), SHATTER_OK);
+    std::uint8_t applied = 9;
+    bool done = false;
+    for (std::uint64_t seed = 1; seed <= 40 && !done; ++seed) {
+        BossHandle boss;
+        ASSERT_EQ(shatter_boss_create(db.db, id.data(), id.size(), 4, seed, &boss.b), SHATTER_OK);
+        ASSERT_EQ(shatter_boss_wall_hit(boss.b, sb.sb, &applied), SHATTER_OK);
+        EXPECT_EQ(applied, 0);                          // parado: nada acontece
+        ASSERT_EQ(shatter_boss_start(boss.b), SHATTER_OK);
+        shatter_boss_context ctx{};
+        ctx.player = {0.0, 900.0};
+        std::size_t count = 0;
+        shatter_boss_damage dmg{};
+        shatter_boss_info info{};
+        ASSERT_EQ(shatter_boss_step(boss.b, 1.0 / 60.0, &ctx, sb.sb, &count), SHATTER_OK);
+        ASSERT_EQ(shatter_boss_info_get(boss.b, &info), SHATTER_OK);
+        ASSERT_EQ(shatter_boss_apply_damage(boss.b, info.max_life, {0.0, 0.0}, {0.0, -400.0}, &dmg), SHATTER_OK);
+        for (int i = 0; i < 60 * 3; ++i) ASSERT_EQ(shatter_boss_step(boss.b, 1.0 / 60.0, &ctx, sb.sb, &count), SHATTER_OK);
+        for (int i = 0; i < 60 * 100 && !done; ++i) {
+            ASSERT_EQ(shatter_boss_step(boss.b, 1.0 / 60.0, &ctx, sb.sb, &count), SHATTER_OK);
+            std::vector<shatter_boss_event> ev(count);
+            std::size_t needed = 0;
+            if (count > 0) ASSERT_EQ(shatter_boss_events(boss.b, ev.data(), ev.size(), &needed), SHATTER_OK);
+            bool charge = false;
+            for (const auto& e : ev)
+                if (e.kind == SHATTER_BOSS_EVT_PATTERN_IMPACT && std::string(e.pattern_id) == "pattern.guardian.shield_charge") charge = true;
+            if (!charge) continue;
+            ASSERT_EQ(shatter_boss_wall_hit(boss.b, sb.sb, &applied), SHATTER_OK);
+            EXPECT_EQ(applied, 1);
+            ASSERT_EQ(shatter_boss_info_get(boss.b, &info), SHATTER_OK);
+            EXPECT_EQ(info.state, SHATTER_BOSS_STAGGER);
+            EXPECT_EQ(info.shield_up, 0);
+            EXPECT_NEAR(info.stagger_remaining, 2.0, 1e-9);
+            ASSERT_EQ(shatter_boss_wall_hit(boss.b, sb.sb, &applied), SHATTER_OK);
+            EXPECT_EQ(applied, 0);
+            done = true;
+        }
+    }
+    EXPECT_TRUE(done);
+    EXPECT_EQ(shatter_boss_wall_hit(nullptr, sb.sb, &applied), SHATTER_INVALID_ARGUMENT);
+
+    // Cão Veloz: o telegraph fica em 0,3 s mesmo se o chamador não aplicou os mods do modificador no bloco.
+    DbHandle real(tu::ContentDir());
+    const std::string hound = "enemy.swift_ash_hound", bite = "skill.enemy.ash_bite", mod = "modifier.elite.swift";
+    StatHandle houndSb;
+    ASSERT_EQ(shatter_statblock_for_enemy(real.db, hound.data(), hound.size(), 3, &houndSb.sb), SHATTER_OK);
+    shatter_action_timing t{};
+    ASSERT_EQ(shatter_skill_timing(real.db, bite.data(), bite.size(), houndSb.sb, mod.data(), mod.size(), &t), SHATTER_OK);
+    EXPECT_NEAR(t.windup, 0.3, 1e-12);
+    shatter_elite_info info{};
+    double barrier = 0.0;
+    ASSERT_EQ(shatter_elite_profile(real.db, mod.data(), mod.size(), 0, &info), SHATTER_OK);
+    ASSERT_EQ(shatter_elite_apply(real.db, &info, houndSb.sb, &barrier), SHATTER_OK);
+    shatter_action_timing t2{};
+    ASSERT_EQ(shatter_skill_timing(real.db, bite.data(), bite.size(), houndSb.sb, mod.data(), mod.size(), &t2), SHATTER_OK);
+    EXPECT_NEAR(t2.windup, 0.3, 1e-12);
+    EXPECT_NEAR(t2.impact, t.impact, 1e-12);
+    EXPECT_NEAR(t2.recovery, t.recovery, 1e-12);
+}

@@ -166,6 +166,13 @@
       "default": 0,
       "min": 0,
       "desc": "Atiradores simultaneos"
+    },
+    {
+      "name": "requireOnScreen",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "R-VIS-1: atirador so mira com o alvo dentro da tela, menos require_on_screen_margin (docs/13 R2.2)"
     }
   ],
   "checks": [

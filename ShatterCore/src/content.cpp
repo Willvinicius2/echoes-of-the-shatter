@@ -53,7 +53,7 @@ namespace {
 using detail::CsvRow;
 using detail::CsvTable;
 
-constexpr std::size_t kRuleKeyCount = 60;
+constexpr std::size_t kRuleKeyCount = 62;
 
 // --- tabela de chaves de rules.csv (faixas = validação estrutural do 06_dados.md, não balanceamento) ---
 struct RuleDef {
@@ -138,6 +138,10 @@ const RuleDef kRuleDefs[kRuleKeyCount] = {
     {"dodge_cancel_recovery_fraction", 'd', 0, 1, false,
      [](RulesConstants& r, double v) { r.dodgeCancelRecoveryFraction = v; }, true},
     {"out_of_combat_seconds", 'd', 0, 600, false, [](RulesConstants& r, double v) { r.outOfCombatSeconds = v; }, true},
+    // Rodada 2 (docs/13, R2): opcionais no core; o validador de dados as exige.
+    {"unarmed_weapon_damage_physical", 'd', 0, kInf, false,
+     [](RulesConstants& r, double v) { r.unarmedWeaponDamagePhysical = v; }, true},
+    {"require_on_screen_margin", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.requireOnScreenMargin = v; }, true},
 };
 
 // --- leitor de células tipado ----------------------------------------------------------------
@@ -322,7 +326,7 @@ const std::vector<TableDef>& TableDefs() {
           "selfEffects", "idleSupported", "idleAvgTargetsHit", "idleFractionOfGroupHit", "idleApproachTime",
           "idleUptime", "idleDodgeTelegraphedBonus", "idleDamageTakenMult", "idleParitySampleSize",
           "unlockLevel"},
-         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration"}},
+         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration", "wallStaggerSeconds"}},
         {"effects.csv",
          {"id", "duration", "tickInterval", "stackRule", "maxStacks", "damagePerTickPhysical", "damagePerTickFire",
           "damagePerTickCold", "damagePerTickLightning", "modifiers", "barrier", "trigger", "triggerChance",
@@ -332,7 +336,7 @@ const std::vector<TableDef>& TableDefs() {
          {"id", "familyId", "stats", "xpBase", "xpPerLevel", "lootTableId", "isBoss", "isElite", "moveSpeed",
           "aggroRange"},
          {"stunImmune", "shieldArcDegrees", "turnRateDegPerSec", "turnRateDegPerSecPhase2", "guardBreakStaggerSeconds",
-          "guardBreakImmunitySeconds", "modifierId", "eliteLootTableId"}},
+          "guardBreakImmunitySeconds", "modifierId", "eliteLootTableId", "patrolSpeedMult"}},
         {"enemy_attacks.csv", {"enemyId", "skillId", "weight", "telegraphed"}},
         {"affixes.csv",
          {"id", "kind", "stat", "modKind", "requiredTags", "minValue", "maxValue", "minItemLevel", "weight",
@@ -363,7 +367,7 @@ const std::vector<TableDef>& TableDefs() {
         {"boss_phases.csv",
          {"bossId", "phase", "lifeThreshold", "transitionSeconds", "summonEnemyId", "summonCount", "shieldSeconds",
           "turnRate", "decisionDelayMin", "decisionDelayMax"},
-         {}, true},
+         {"summonAtFraction"}, true},
         {"boss_patterns.csv",
          {"id", "bossId", "phase", "skillId", "weight", "telegraphSeconds", "recoverySeconds", "cooldown", "maxRepeat",
           "playerNearWeightMult", "ignoreIfBehind"},
@@ -373,7 +377,7 @@ const std::vector<TableDef>& TableDefs() {
           "retreatBelow", "retreatMaxSeconds", "circleMin", "circleMax", "circleSpeed", "attackTokens",
           "tokenIntervalMin", "tokenIntervalMax", "fleeLifeFraction", "fleeSeconds", "fleeOncePerLife",
           "attackCooldown", "maxSimultaneousShooters"},
-         {}, true},
+         {"requireOnScreen"}, true},
     };
     return defs;
 }
@@ -615,6 +619,7 @@ void LoadSkills(LoadCtx& c) {
         d.projectiles = static_cast<int>(cell.Int("projectiles", 1, 1, 50));
         d.coneAngle = cell.Num("coneAngle", 0.0, 0.0, 360.0);
         d.knockback = cell.Num("knockback", 0.0, 0.0, kInf);
+        d.wallStaggerSeconds = cell.Num("wallStaggerSeconds", 0.0, 0.0, 60.0);
         d.projectileSpeed = cell.Num("projectileSpeed", 0.0, 0.0, kInf);
         d.onHitEffects = cell.IdList("onHitEffects");
         d.selfEffects = cell.IdList("selfEffects");
@@ -697,6 +702,8 @@ void LoadEnemies(LoadCtx& c) {
         d.guardBreakImmunitySeconds = cell.Num("guardBreakImmunitySeconds", 0.0, 0.0, 120.0);
         d.modifierId = cell.Id("modifierId", false);
         d.eliteLootTableId = cell.Id("eliteLootTableId", false);
+        d.patrolSpeedMult = cell.Num("patrolSpeedMult", 0.0, 0.0, 1.0);
+        if (!cell.Empty("patrolSpeedMult") && !(d.patrolSpeedMult > 0.0)) cell.Err("E_RANGE", "patrolSpeedMult must be in (0, 1]");
         if (cell.bad()) continue;
         if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "enemy.")) continue;
         c.impl.enemies.Push(std::move(d), row.line);
@@ -958,6 +965,7 @@ void LoadBossPhases(LoadCtx& c) {
         d.summonEnemyId = cell.Id("summonEnemyId", false);
         d.summonCount = static_cast<int>(cell.Int("summonCount", 0, 0, 20));
         d.shieldSeconds = cell.Num("shieldSeconds", 0.0, 0.0, kInf);
+        d.summonAtFraction = cell.Num("summonAtFraction", 0.0, 0.0, 1.0);
         d.turnRate = cell.Num("turnRate", 0.0, 0.0, kInf);
         d.decisionDelayMin = cell.Num("decisionDelayMin", 0.0, 0.0, kInf);
         d.decisionDelayMax = cell.Num("decisionDelayMax", 0.0, 0.0, kInf);
@@ -1018,6 +1026,7 @@ void LoadEnemyAis(LoadCtx& c) {
         d.fleeOncePerLife = cell.Bool("fleeOncePerLife", false);
         d.attackCooldown = cell.Num("attackCooldown", 0.0, 0.0, kInf);
         d.maxSimultaneousShooters = static_cast<int>(cell.Int("maxSimultaneousShooters", 0, 0, 100));
+        d.requireOnScreen = cell.Bool("requireOnScreen", false);
         if (cell.bad()) continue;
         c.impl.enemyAis.push_back(std::move(d));
         c.impl.enemyAiLines.push_back(row.line);
@@ -1599,6 +1608,8 @@ bool ContentDB::Finalize() {
         if (!ph.summonEnemyId.empty() && im.enemies.Find(ph.summonEnemyId) == nullptr)
             f.E(T, ln, "E_FK", "summonEnemyId '" + ph.summonEnemyId + "' not in enemies.csv");
         if (ph.summonCount > 0 && ph.summonEnemyId.empty()) f.E(T, ln, "E_RULE", "summonCount > 0 requires summonEnemyId");
+        if (ph.summonCount > 0 && !(ph.summonAtFraction > 0.0 && ph.summonAtFraction < 1.0))
+            f.E(T, ln, "E_RULE", "summonCount > 0 requires summonAtFraction in (0, 1)");
         for (std::size_t j = 0; j < i; ++j) {
             if (im.bossPhases[j].bossId == ph.bossId && im.bossPhases[j].phase == ph.phase)
                 f.E(T, ln, "E_DUP_ID", "phase repeated for boss '" + ph.bossId + "'");

@@ -244,6 +244,7 @@ static_assert(sizeof(shatter_boss_info) == 80, "shatter_boss_info");
 static_assert(sizeof(shatter_boss_damage) == 24, "shatter_boss_damage");
 static_assert(sizeof(shatter_boss_progress) == 8, "shatter_boss_progress");
 static_assert(sizeof(shatter_forecast_ex) == 72, "shatter_forecast_ex");
+static_assert(sizeof(shatter_rules_ext2) == 16, "shatter_rules_ext2");
 static_assert(static_cast<int>(BossEvent::Kind::Died) == SHATTER_BOSS_EVT_DIED, "BossEvent::Kind");
 static_assert(static_cast<int>(BossState::Dead) == SHATTER_BOSS_DEAD, "BossState");
 static_assert(static_cast<int>(PotionUseStatus::LockedOut) == SHATTER_POTION_LOCKED_OUT, "PotionUseStatus");
@@ -278,6 +279,11 @@ const std::uint32_t kLayoutExt[] = {
 static_assert(sizeof(kLayoutExt) / sizeof(kLayoutExt[0]) == SHATTER_LAYOUT_EXT_COUNT, "SHATTER_LAYOUT_EXT_COUNT desatualizado");
 #undef SHATTER_LAYOUT_SIZE
 #undef SHATTER_LAYOUT_OFF
+
+const std::uint32_t kLayoutExt2[] = {static_cast<std::uint32_t>(sizeof(shatter_rules_ext2)),
+                                    static_cast<std::uint32_t>(offsetof(shatter_rules_ext2, unarmed_weapon_damage_physical)),
+                                    static_cast<std::uint32_t>(offsetof(shatter_rules_ext2, require_on_screen_margin))};
+static_assert(sizeof(kLayoutExt2) / sizeof(kLayoutExt2[0]) == SHATTER_LAYOUT_EXT2_COUNT, "SHATTER_LAYOUT_EXT2_COUNT desatualizado");
 
 // Copia texto para um campo char[N] (NUL no fim, cortado em fronteira de caractere UTF-8).
 template <std::size_t N>
@@ -613,6 +619,7 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("unlock_level", Value(d->unlockLevel));
         o.Set("cone_angle", Value(d->coneAngle));
         o.Set("knockback", Value(d->knockback));
+        o.Set("wall_stagger_seconds", Value(d->wallStaggerSeconds));
         o.Set("projectile_speed", Value(d->projectileSpeed));
         return true;
     }
@@ -666,6 +673,7 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("guard_break_immunity_seconds", Value(d->guardBreakImmunitySeconds));
         o.Set("modifier_id", Value(d->modifierId));
         o.Set("elite_loot_table_id", Value(d->eliteLootTableId));
+        o.Set("patrol_speed_mult", Value(d->patrolSpeedMult));
         if (const EnemyAiData* ai = db.FindEnemyAi(d->id)) {
             Value a = Value::MakeObject();
             a.Set("aggro_range", Value(ai->aggroRange));
@@ -687,6 +695,7 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
             a.Set("flee_once_per_life", Value(ai->fleeOncePerLife));
             a.Set("attack_cooldown", Value(ai->attackCooldown));
             a.Set("max_simultaneous_shooters", Value(ai->maxSimultaneousShooters));
+            a.Set("require_on_screen", Value(ai->requireOnScreen));
             o.Set("ai", std::move(a));
         }
         Value phases = Value::MakeArray();
@@ -699,6 +708,7 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
             po.Set("summon_enemy_id", Value(ph.summonEnemyId));
             po.Set("summon_count", Value(ph.summonCount));
             po.Set("shield_seconds", Value(ph.shieldSeconds));
+            po.Set("summon_at_fraction", Value(ph.summonAtFraction));
             po.Set("turn_rate", Value(ph.turnRate));
             po.Set("decision_delay_min", Value(ph.decisionDelayMin));
             po.Set("decision_delay_max", Value(ph.decisionDelayMax));
@@ -2160,6 +2170,60 @@ SHATTER_API shatter_status SHATTER_CALL shatter_db_rules_ext(const shatter_db* d
     return SHATTER_OK;
 }
 
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext2(std::uint32_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    if (needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = SHATTER_LAYOUT_EXT2_COUNT;
+    if (cap < SHATTER_LAYOUT_EXT2_COUNT) return SHATTER_BUFFER_TOO_SMALL;
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    std::memcpy(out, kLayoutExt2, sizeof(kLayoutExt2));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext2(const std::uint32_t* values, std::size_t n,
+                                                                shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (values == nullptr && n != 0) return SetError(err, SHATTER_INVALID_ARGUMENT, "values is null");
+    if (n != SHATTER_LAYOUT_EXT2_COUNT) return SetError(err, SHATTER_VERSION_MISMATCH, "ext2 layout count differs");
+    for (std::size_t i = 0; i < n; ++i) {
+        if (values[i] != kLayoutExt2[i])
+            return SetError(err, SHATTER_VERSION_MISMATCH, "ext2 layout entry " + std::to_string(i) + " differs",
+                            static_cast<int>(i) + 1);
+    }
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_db_rules_ext2(const shatter_db* db, shatter_rules_ext2* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    out->unarmed_weapon_damage_physical = d->Rules().unarmedWeaponDamagePhysical;
+    out->require_on_screen_margin = d->Rules().requireOnScreenMargin;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_skill_base_damage(const shatter_db* db, const char* skill_id,
+                                                                std::size_t skill_id_len, const char* weapon_base_id,
+                                                                std::size_t weapon_base_id_len,
+                                                                double out[4]) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view sid, wid;
+    if (out == nullptr || skill_id == nullptr || !Text(skill_id, skill_id_len, sid) ||
+        !Text(weapon_base_id, weapon_base_id_len, wid))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const SkillData* s = d->FindSkill(sid);
+    if (s == nullptr) return SHATTER_NOT_FOUND;
+    const ItemBaseData* w = nullptr;
+    if (!wid.empty()) {
+        w = d->FindItemBase(wid);
+        if (w == nullptr) return SHATTER_NOT_FOUND;
+    }
+    const std::array<double, kDamageTypeCount> dmg = ComputeSkillBaseDamage(*d, *s, w);
+    for (int t = 0; t < kDamageTypeCount; ++t) out[t] = dmg[static_cast<std::size_t>(t)];
+    return SHATTER_OK;
+}
+
 SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit_db(const shatter_db* db, const shatter_statblock* attacker,
                                                              const shatter_statblock* defender,
                                                              const shatter_hit_input* input, shatter_rng* rng,
@@ -2666,6 +2730,13 @@ SHATTER_API shatter_status SHATTER_CALL shatter_boss_apply_effect(shatter_boss* 
     const EffectData* e = d->FindEffect(id);
     if (e == nullptr) return SHATTER_NOT_FOUND;
     ApplyToC(boss->fight.ApplyEffect(*d, *e, src, magnitude, fx->fx, stats->sb, boss->events), *out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_wall_hit(shatter_boss* boss, shatter_statblock* stats,
+                                                            std::uint8_t* applied) SHATTER_NOEXCEPT {
+    if (boss == nullptr || stats == nullptr || applied == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *applied = boss->fight.OnWallHit(stats->sb, boss->events) ? 1 : 0;
     return SHATTER_OK;
 }
 

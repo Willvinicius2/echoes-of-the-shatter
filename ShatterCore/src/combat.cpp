@@ -13,8 +13,6 @@ namespace {
 
 constexpr double kEps = 1e-9;
 constexpr double kPi = 3.14159265358979323846;
-// O rugido invoca no meio da transição (docs/13, item 4: "no 1,0 s do rugido de 2,0 s").
-constexpr double kSummonAtFractionOfTransition = 0.5;
 
 double ClampMin0(double v) { return v > 0.0 ? v : 0.0; }
 
@@ -122,15 +120,22 @@ bool TrySpendResource(Vitals& v, double amount) {
 ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill, const StatBlock& stats,
                                      const EliteProfile* elite) {
     ActionTimingInfo t;
-    double speed = stats.Get(HasTag(skill.tags, Tag::Spell) ? StatId::CastSpeed : StatId::AttackSpeed);
-    if (speed < 0.01) speed = 0.01;
+    const StatId speedStat = HasTag(skill.tags, Tag::Spell) ? StatId::CastSpeed : StatId::AttackSpeed;
+    double speed = stats.Get(speedStat);
     double windupSpeed = speed;
     double recoveryMult = 1.0;
     if (elite != nullptr) {
-        if (elite->attackSpeedMult > 0.0) windupSpeed = speed / elite->attackSpeedMult;  // o telegraph não encurta
-        if (windupSpeed < 0.01) windupSpeed = 0.01;
+        // Elite: o resultado NÃO depende de o bloco já ter os mods "elite" (ApplyEliteToStats) ou não. A velocidade-base é a
+        // do bloco sem eles; o telegraph (windup) usa só ela (o modificador não muda a preparação); impacto e recuperação
+        // usam base × attackSpeedMult; a recuperação ainda × recoveryMult.
+        StatBlock plain = stats;
+        plain.RemoveModifiersFrom("elite");
+        windupSpeed = plain.Get(speedStat);
+        speed = windupSpeed * (elite->attackSpeedMult > 0.0 ? elite->attackSpeedMult : 1.0);
         recoveryMult = elite->recoveryMult;
     }
+    if (speed < 0.01) speed = 0.01;
+    if (windupSpeed < 0.01) windupSpeed = 0.01;
     t.windup = skill.windup / windupSpeed;
     t.impact = skill.impact / speed;
     t.recovery = skill.recovery * recoveryMult / speed;
@@ -144,6 +149,15 @@ double MoveSpeedUu(const StatBlock& stats, double baseMoveSpeedUu) {
     // Inimigo: EnemyData::moveSpeed (uu/s) × atributo (multiplicador, base 1).
     const double mult = stats.Get(StatId::MoveSpeed);
     return ClampMin0(baseMoveSpeedUu > 0.0 ? baseMoveSpeedUu * mult : mult);
+}
+
+std::array<double, kDamageTypeCount> ComputeSkillBaseDamage(const ContentDB& db, const SkillData& skill,
+                                                            const ItemBaseData* weaponOrNull) {
+    if (!skill.scalesWithWeapon) return skill.baseDamage;
+    if (weaponOrNull != nullptr) return weaponOrNull->weaponDamage;
+    std::array<double, kDamageTypeCount> unarmed{};
+    unarmed[static_cast<std::size_t>(Index(DamageType::Physical))] = db.Rules().unarmedWeaponDamagePhysical;
+    return unarmed;
 }
 
 bool CanAct(const StatBlock& stats) { return stats.Get(StatId::AttackSpeed) > 0.0; }
@@ -377,15 +391,9 @@ StatusApply ActionStatus::ApplyEffect(const ContentDB& db, const EffectData& eff
     const int maxStacks = effect.maxStacks < 1 ? 1 : effect.maxStacks;
     if (r.applied && allowStagger && profile_.stunImmune && r.guardBreakStacks >= maxStacks &&
         immunityRemaining_ <= kEps && staggerRemaining_ <= kEps) {
-        staggerRemaining_ = profile_.staggerSeconds;
+        BeginStagger(db, profile_.staggerSeconds, target);
         immunityRemaining_ = profile_.immunitySeconds;
         fx.Remove(effect.id, &effect, target);  // consome os acúmulos
-        Modifier bonus;
-        bonus.stat = StatId::DamageTaken;
-        bonus.kind = ModKind::Increased;
-        bonus.value = rules.guardBreakStaggerDamageTaken;
-        bonus.source = "stagger";
-        target.AddModifier(bonus);
         r.guardBreakStacks = 0;
         r.staggered = true;
         r.interrupted = true;
@@ -393,6 +401,18 @@ StatusApply ActionStatus::ApplyEffect(const ContentDB& db, const EffectData& eff
         r.staggerSeconds = profile_.staggerSeconds;
     }
     return r;
+}
+
+bool ActionStatus::BeginStagger(const ContentDB& db, double seconds, StatBlock& target) {
+    if (staggerRemaining_ > kEps) return false;
+    staggerRemaining_ = seconds;
+    Modifier bonus;
+    bonus.stat = StatId::DamageTaken;
+    bonus.kind = ModKind::Increased;
+    bonus.value = db.Rules().guardBreakStaggerDamageTaken;
+    bonus.source = "stagger";
+    target.AddModifier(bonus);
+    return true;
 }
 
 bool ActionStatus::Tick(double dt, StatBlock& target) {
@@ -606,6 +626,7 @@ void BossFight::StartTransition(std::vector<BossEvent>& out) {
     timer_ = next->transitionSeconds;
     summonCount_ = next->summonCount;
     summonEnemy_ = next->summonEnemyId;
+    summonAtFraction_ = next->summonAtFraction;
     summonMarked_ = summonDone_ = false;
     current_ = nullptr;
     BossEvent ev;
@@ -619,7 +640,7 @@ void BossFight::StartTransition(std::vector<BossEvent>& out) {
         m.phase = phase_;
         m.enemyId = summonEnemy_;
         m.count = summonCount_;
-        m.seconds = transitionLength_ * kSummonAtFractionOfTransition;
+        m.seconds = transitionLength_ * summonAtFraction_;
         out.push_back(m);
         summonMarked_ = true;
     }
@@ -769,7 +790,7 @@ void BossFight::Step(double dt, const Context& ctx, StatBlock& stats, std::vecto
         case BossState::Transition: {
             timer_ -= dt;
             const double elapsed = transitionLength_ - timer_;
-            if (summonMarked_ && !summonDone_ && elapsed + kEps >= transitionLength_ * kSummonAtFractionOfTransition) {
+            if (summonMarked_ && !summonDone_ && elapsed + kEps >= transitionLength_ * summonAtFraction_) {
                 summonDone_ = true;
                 BossEvent ev;
                 ev.kind = BossEvent::Kind::SummonSpawn;
@@ -840,7 +861,11 @@ StatusApply BossFight::ApplyEffect(const ContentDB& db, const EffectData& effect
     const bool allow = state_ == BossState::Waiting || state_ == BossState::Telegraph || state_ == BossState::Impact ||
                        state_ == BossState::Recovery;
     StatusApply r = status_.ApplyEffect(db, effect, source, magnitude, TriggerKind::None, fx, stats, allow);
-    if (!r.staggered) return r;
+    if (r.staggered) EnterStagger(r.staggerSeconds, out);
+    return r;
+}
+
+void BossFight::EnterStagger(double seconds, std::vector<BossEvent>& out) {
     if (state_ == BossState::Telegraph || state_ == BossState::Impact || state_ == BossState::Recovery) {
         BossEvent ev;
         ev.kind = BossEvent::Kind::PatternInterrupted;
@@ -853,16 +878,24 @@ StatusApply BossFight::ApplyEffect(const ContentDB& db, const EffectData& effect
     BossEvent st;
     st.kind = BossEvent::Kind::StaggerStart;
     st.phase = phase_;
-    st.seconds = r.staggerSeconds;
+    st.seconds = seconds;
     out.push_back(st);
     const BossPhaseData* ph = PhaseData(phase_);
-    shieldDown_ = ph != nullptr && ph->shieldSeconds > 0.0 ? ph->shieldSeconds : db.Rules().bossShieldDownSeconds;
+    shieldDown_ = ph != nullptr && ph->shieldSeconds > 0.0 ? ph->shieldSeconds : db_->Rules().bossShieldDownSeconds;
     BossEvent sd;
     sd.kind = BossEvent::Kind::ShieldDown;
     sd.phase = phase_;
     sd.seconds = shieldDown_;
     out.push_back(sd);
-    return r;
+}
+
+bool BossFight::OnWallHit(StatBlock& stats, std::vector<BossEvent>& out) {
+    if (state_ != BossState::Impact || current_ == nullptr) return false;
+    const SkillData* sk = db_->FindSkill(current_->skillId);
+    if (sk == nullptr || !(sk->wallStaggerSeconds > 0.0)) return false;
+    if (!status_.BeginStagger(*db_, sk->wallStaggerSeconds, stats)) return false;
+    EnterStagger(sk->wallStaggerSeconds, out);
+    return true;
 }
 
 // ===============================================================================================

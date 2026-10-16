@@ -1,8 +1,8 @@
-id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId,eliteLootTableId
-enemy.hollow_sentinel,family.soldier_echo,life:60:8|armor:8:1,12,3,loot.crypt.common,false,false,220,900,false,,,,,,,
-enemy.ash_hound,family.altered_fauna,life:40:5,10,2,loot.crypt.common,false,false,380,1100,false,,,,,,,
-enemy.stone_herald,family.construct,life:150:18|armor:30:3,28,5,loot.crypt.common,false,false,130,900,true,,,,1.5,4,,
-enemy.ghost_archer,family.shooter,life:35:5,14,3,loot.crypt.common,false,false,200,1400,false,,,,,,,
-enemy.shielded_sentinel,family.soldier_echo,life:120:16|armor:25:3,40,8,loot.crypt.elite,false,true,200,1000,true,,,,1.5,4,modifier.elite.shield,loot.crypt.elite
-enemy.swift_ash_hound,family.altered_fauna,life:80:10,36,6,loot.crypt.elite,false,true,480,1200,true,,,,1.5,4,modifier.elite.swift,loot.crypt.elite
-enemy.crypt_guardian,family.soldier_echo,life:700:50|armor:30:2,150,30,loot.crypt.guardian,true,false,180,1400,true,120,60,75,1.5,8,,
+id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId,eliteLootTableId,patrolSpeedMult
+enemy.hollow_sentinel,family.soldier_echo,life:60:8|armor:8:1,12,3,loot.crypt.common,false,false,220,900,false,,,,,,,,0.5
+enemy.ash_hound,family.altered_fauna,life:40:5,10,2,loot.crypt.common,false,false,380,1100,false,,,,,,,,
+enemy.stone_herald,family.construct,life:150:18|armor:30:3,28,5,loot.crypt.common,false,false,130,900,true,,,,1.5,4,,,
+enemy.ghost_archer,family.shooter,life:35:5,14,3,loot.crypt.common,false,false,200,1400,false,,,,,,,,
+enemy.shielded_sentinel,family.soldier_echo,life:120:16|armor:25:3,40,8,loot.crypt.elite,false,true,200,1000,true,,,,1.5,4,modifier.elite.shield,loot.crypt.elite,
+enemy.swift_ash_hound,family.altered_fauna,life:80:10,36,6,loot.crypt.elite,false,true,480,1200,true,,,,1.5,4,modifier.elite.swift,loot.crypt.elite,
+enemy.crypt_guardian,family.soldier_echo,life:700:50|armor:30:2,150,30,loot.crypt.guardian,true,false,180,1400,true,120,60,75,1.5,8,,,
