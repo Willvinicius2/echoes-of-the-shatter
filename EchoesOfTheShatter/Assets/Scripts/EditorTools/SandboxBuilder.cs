@@ -34,6 +34,12 @@ namespace Echoes.EditorTools
         const string GeneratedDir = "Assets/Art/Generated/Sandbox";
         const string PrefabDir = "Assets/Art/Prefabs";
         const string UiDir = "Assets/UI";
+        const string WarriorFbx = "Assets/Art/Characters/Warrior/SK_Warrior.fbx";
+        const string WarriorBaseMap = "Assets/Art/Characters/Warrior/T_Warrior_BC.png";
+        const string WarriorMaskMap = "Assets/Art/Characters/Warrior/T_Warrior_M.png";
+        const string CharacterShaderPath = "Assets/Art/Materials/Masters/SG_Character.shader";
+        const string CharacterMaterialDir = "Assets/Art/Materials/Characters";
+        const string WarriorPrefabPath = "Assets/Art/Prefabs/P_Hero_Warrior.prefab";
 
         const float WallHeight = 3f;
         const float WallThickness = 0.6f;
@@ -61,7 +67,7 @@ namespace Echoes.EditorTools
 
         sealed class Mats
         {
-            public Material FloorA, FloorB, Wall, Pillar, Crate, Hero, Enemy, Boss, Checkpoint, Telegraph;
+            public Material FloorA, FloorB, Wall, Pillar, Crate, Hero, Enemy, Boss, Checkpoint, Telegraph, Warrior;
         }
 
         [MenuItem("Echoes/Montar cena base")]
@@ -186,20 +192,12 @@ namespace Echoes.EditorTools
             SetRef(heroController, "aimCamera", cam);
             SetRef(heroController, "checkpoint", checkpoint);
             SetFloat(heroController, "respawnDelay", 1.5f);
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = "Body";
-            Object.DestroyImmediate(body.GetComponent<Collider>());
-            body.transform.SetParent(hero.transform, false);
-            body.transform.localPosition = new Vector3(0f, 0.75f, 0f);
-            body.transform.localScale = new Vector3(0.6f, 0.75f, 0.6f);
-            Apply(body, mats.Hero, true);
-            var nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            nose.name = "Nose";
-            Object.DestroyImmediate(nose.GetComponent<Collider>());
-            nose.transform.SetParent(hero.transform, false);
-            nose.transform.localPosition = new Vector3(0f, 1.1f, 0.35f);
-            nose.transform.localScale = new Vector3(0.15f, 0.15f, 0.3f);
-            Apply(nose, mats.Hero, true);
+            // Visual do herói: P_Hero_Warrior com o SK_Warrior aprovado (substitui a cápsula do graybox).
+            // O CharacterController de 1,5 m acima continua sendo o corpo de jogo; a malha não tem colisor.
+            var heroPrefab = BuildWarriorPrefab(mats.Warrior);
+            var visual = (GameObject)PrefabUtility.InstantiatePrefab(heroPrefab);
+            visual.name = "Body";
+            visual.transform.SetParent(hero.transform, false);
 
             // ---- Câmera (README 4.5) + ferramentas de desenvolvimento
             var rig = new GameObject("CameraRig");
@@ -528,8 +526,60 @@ namespace Echoes.EditorTools
                 Enemy = LitMaterial("M_Graybox_Enemy", Token(tokens, "pergaminho", "#F0E6D6")),
                 Boss = LitMaterial("M_Graybox_Boss", Token(tokens, "perigo", "#E0301E")),
                 Checkpoint = LitMaterial("M_Graybox_Checkpoint", Token(tokens, "dourado_claro", "#FCD58A")),
+                Warrior = WarriorMaterial(),
                 Telegraph = TelegraphMaterial("M_Telegraph_Placeholder", new Color(0.847f, 0.263f, 0.184f, 0.4f)), // #D8432F, token telegraph.fill
             };
+        }
+
+        /// <summary>M_Warrior: SG_Character com o albedo pintado e a máscara (R emissivo, G rim, B tinta) do Guerreiro aprovado.</summary>
+        static Material WarriorMaterial()
+        {
+            EnsureDir(CharacterMaterialDir);
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(CharacterShaderPath);
+            if (shader == null) throw new InvalidOperationException("Shader ausente: " + CharacterShaderPath);
+            var path = CharacterMaterialDir + "/M_Warrior.mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(shader);
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            mat.shader = shader;
+            mat.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(WarriorBaseMap));
+            mat.SetTexture("_MaskMap", AssetDatabase.LoadAssetAtPath<Texture2D>(WarriorMaskMap));
+            mat.SetFloat("_HitFlash", 0f);
+            // A T_Warrior_M entregue tem R ~0,8 e B ~0,7 em quase toda a área e G = 0 (nao segue R emissivo / G rim / B tinta do 04 3.5):
+            // com a regra do contrato o corpo inteiro brilharia e o rim sumiria. Ate o Art Director repintar a mascara:
+            // emissao 0, rim em toda a silhueta e tinta desligada.
+            mat.SetFloat("_EmissionIntensity", 0f);
+            mat.SetFloat("_RimMaskInfluence", 0f);
+            mat.SetFloat("_TintStrength", 0f);
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>
+        /// P_Hero_Warrior: SK_Warrior em pose de repouso (bind pose do FBX), sem Animator.
+        /// TODO(animação): ligar o Animator com o AC_Hero_Warrior e o avatar Humanoid na etapa de animação (docs/04, seção 3.3).
+        /// </summary>
+        static GameObject BuildWarriorPrefab(Material material)
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(WarriorFbx);
+            if (model == null) throw new InvalidOperationException("FBX ausente: " + WarriorFbx);
+            var instance = Object.Instantiate(model);
+            instance.name = "P_Hero_Warrior";
+            var animator = instance.GetComponent<Animator>();
+            if (animator != null) Object.DestroyImmediate(animator); // sem Animator Controller por enquanto
+            foreach (var smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                smr.sharedMaterial = material;
+                smr.shadowCastingMode = ShadowCastingMode.On; // personagens projetam sombra (docs/04, seção 3.6)
+                smr.receiveShadows = true;
+                smr.updateWhenOffscreen = false;
+            }
+            var prefab = PrefabUtility.SaveAsPrefabAsset(instance, WarriorPrefabPath);
+            Object.DestroyImmediate(instance);
+            return prefab;
         }
 
         static string ReadTokens()
