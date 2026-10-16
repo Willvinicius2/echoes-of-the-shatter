@@ -83,6 +83,9 @@ namespace Echoes.Gameplay
             buffer.Push(command);
         }
 
+        /// <summary>Há um comando esperando no buffer de entrada.</summary>
+        public bool HasPendingCommand => buffer.HasPending;
+
         /// <summary>true se um ataque básico novo sairia agora (para o botão segurado repetir).</summary>
         public bool IsReadyForAction => !self.IsDead && !action.IsActive && !Dodge.IsDodging && drinking == null;
 
@@ -161,10 +164,10 @@ namespace Echoes.Gameplay
             for (var i = 0; i < potions.Count; i++)
             {
                 var p = potions[i];
-                if (!p.Potion.RefillOnEliteKill || p.Charges.IsFull) continue;
+                if (p.Potion.EliteKillRefillCharges <= 0 || p.Charges.IsFull) continue;
                 if (best == null || p.Charges.Charges < best.Charges.Charges) best = p;
             }
-            best?.Charges.AddCharges(1);
+            best?.Charges.AddCharges(best.Potion.EliteKillRefillCharges);
         }
 
         public void OnDeath(CombatSystem combat)
@@ -214,11 +217,13 @@ namespace Echoes.Gameplay
             if (!rules.CanMove(self.Stats)) return;
             if (Dodge.Charges.IsEmpty)
             {
+                buffer.Consume();
                 Deny(combat, HeroCommand.Dodge, DenyReason.NoDodgeCharges);
                 return;
             }
             if (combatRules.DodgeResourceCost > 0.0 && !combat.TrySpendResource(self, combatRules.DodgeResourceCost))
             {
+                buffer.Consume();
                 Deny(combat, HeroCommand.Dodge, DenyReason.NoResource);
                 return;
             }

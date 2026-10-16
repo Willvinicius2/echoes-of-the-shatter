@@ -43,14 +43,10 @@ namespace Echoes.Core
 
             Debug.Log($"[Rules] {Core.ImplementationName} carregou content_version {Core.ContentVersion} de '{DataDirectory}'.");
             if (Core.IsProvisional)
-            {
                 Debug.LogWarning("[Rules] Motor de regras PROVISÓRIO (stub em C#). Trocar pela DLL do ShatterCore quando a API C existir.");
-                if (Core is StubRulesCore stub)
-                {
-                    for (var i = 0; i < stub.PendingValuesUsed.Count; i++)
-                        Debug.LogWarning("[Rules] Valor provisório de docs/13 em uso (falta no CSV): " + stub.PendingValuesUsed[i]);
-                }
-            }
+            var warnings = Core.LoadWarnings;
+            for (var i = 0; i < warnings.Count; i++)
+                Debug.LogWarning("[Rules] Valor provisório em uso (falta no CSV): " + warnings[i]);
             return true;
         }
 

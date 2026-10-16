@@ -16,6 +16,7 @@ namespace Echoes.Gameplay
         readonly SkillInfo[] attackSkills;
         CombatSystem combat;
         PlanarVector attackDirection = PlanarVector.Forward;
+        PlanarVector attackOrigin;
         int activeTelegraphId;
 
         public EnemyCombatLogic(Combatant self, IRulesCore rules)
@@ -144,6 +145,7 @@ namespace Echoes.Gameplay
             // A direção é a de onde o inimigo olha agora (ele gira no ritmo do dado): quem contorna um
             // inimigo lento, como o Guardião, fica fora do cone (docs/13, item 4.2).
             attackDirection = self.Forward.NormalizedOr(PlanarVector.Forward);
+            attackOrigin = self.Position; // o golpe sai de onde o aviso foi desenhado (knockback no meio não muda)
             activeTelegraphId = combatSystem.NextTelegraphId();
 
             var attack = enemy.Attacks[Brain.CurrentAttack];
@@ -152,7 +154,7 @@ namespace Echoes.Gameplay
                 TelegraphId = activeTelegraphId,
                 Started = true,
                 Owner = self,
-                Origin = self.Position,
+                Origin = attackOrigin,
                 Direction = attackDirection,
                 DurationSeconds = Brain.CurrentProfile.Windup,
                 ShowOnGround = attack.Telegraphed,
@@ -201,7 +203,7 @@ namespace Echoes.Gameplay
                     var radius = WorldUnits.ToMeters(skill.RadiusUu);
                     var count = Math.Max(1, skill.Projectiles);
                     for (var i = 0; i < count; i++)
-                        combatSystem.Projectiles.Spawn(combatSystem, self, skill, self.Position, attackDirection, speed, range, radius);
+                        combatSystem.Projectiles.Spawn(combatSystem, self, skill, attackOrigin, attackDirection, speed, range, radius);
                     break;
                 }
                 case SkillShape.Area:
@@ -211,8 +213,8 @@ namespace Echoes.Gameplay
                     {
                         var t = targets[i];
                         if (t.IsDead || !CombatSystem.AreHostile(self, t)) continue;
-                        if (ShapeQuery.InCircle(self.Position, radius, t.Position, t.RadiusMeters))
-                            combatSystem.ApplySkillHit(self, t, skill, self.Position);
+                        if (ShapeQuery.InCircle(attackOrigin, radius, t.Position, t.RadiusMeters))
+                            combatSystem.ApplySkillHit(self, t, skill, attackOrigin);
                     }
                     break;
                 }
@@ -224,8 +226,8 @@ namespace Echoes.Gameplay
                     {
                         var t = targets[i];
                         if (t.IsDead || !CombatSystem.AreHostile(self, t)) continue;
-                        if (ShapeQuery.InCone(self.Position, attackDirection, range, half, t.Position, t.RadiusMeters))
-                            combatSystem.ApplySkillHit(self, t, skill, self.Position);
+                        if (ShapeQuery.InCone(attackOrigin, attackDirection, range, half, t.Position, t.RadiusMeters))
+                            combatSystem.ApplySkillHit(self, t, skill, attackOrigin);
                     }
                     break;
                 }

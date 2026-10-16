@@ -42,6 +42,12 @@ namespace Echoes.Gameplay
             Combat?.Tick(Time.deltaTime);
         }
 
+        void OnDestroy()
+        {
+            Combat?.Dispose();
+            Combat = null;
+        }
+
         /// <summary>Procura o host na cena quando a referência não foi ligada no Inspector.</summary>
         public static CombatSystemHost Resolve(CombatSystemHost assigned, Object context)
         {

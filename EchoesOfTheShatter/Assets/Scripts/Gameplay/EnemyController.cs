@@ -67,7 +67,7 @@ namespace Echoes.Gameplay
             var combatant = attributes.CreateEnemy(rules, info, level, radius);
             Logic = new EnemyCombatLogic(combatant, rules);
             if (logStateChanges) Logic.StateChanged += LogStateChange;
-            combat.Register(combatant, Logic);
+            combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
 
             if (agent != null)
             {
@@ -77,20 +77,25 @@ namespace Echoes.Gameplay
             }
         }
 
+        // Sai do combate ao desligar (e antes do OnDestroy de qualquer componente), pela referência própria:
+        // o AttributeComponent pode descartar os handles antes deste script no OnDestroy.
+        void OnDisable()
+        {
+            if (Logic != null && combat != null) combat.Unregister(Logic.Self);
+        }
+
         void OnDestroy()
         {
             if (Logic != null) Logic.StateChanged -= LogStateChange;
-            if (combat != null && Combatant != null) combat.Unregister(Combatant);
         }
 
         void Update()
         {
-            var combatant = Combatant;
+            var combatant = Logic != null ? Logic.Self : null;
             if (combatant == null || !combatant.IsDead) return;
             deadTime += Time.deltaTime;
             if (deadTime < corpseSeconds) return;
-            combat.Unregister(combatant);
-            gameObject.SetActive(false);
+            gameObject.SetActive(false); // OnDisable tira do combate
         }
 
         void LateUpdate()

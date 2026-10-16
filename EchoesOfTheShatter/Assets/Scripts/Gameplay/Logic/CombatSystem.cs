@@ -11,12 +11,20 @@ namespace Echoes.Gameplay
     /// de RNG da sessão (Combat e Events, derivados do runSeed). Classe pura: sem UnityEngine, chamada
     /// pelo <c>CombatSystemHost</c> a cada quadro. Sem alocação por passo.
     /// </summary>
-    public sealed class CombatSystem
+    public sealed class CombatSystem : IDisposable
     {
+        /// <summary>
+        /// Índice do fluxo Events reservado à escolha de ataque da IA. Os índices baixos são das salas
+        /// (eventos de área, docs/04 seção 6.2); este fica longe deles para um não deslocar o outro.
+        /// </summary>
+        public const ulong AiAttackStreamIndex = 1UL << 62;
+
         readonly List<Combatant> combatants = new List<Combatant>();
+        readonly List<string> orderKeys = new List<string>();
         readonly List<EffectTickEvent> effectEvents = new List<EffectTickEvent>();
+        readonly IStatBlock neutralSource;
         RngState combatRng;
-        RngState eventsRng;
+        RngState aiRng;
         int nextId = 1;
         int nextTelegraphId = 1;
 
@@ -27,7 +35,8 @@ namespace Echoes.Gameplay
             Feel = feel ?? new CombatFeelValues();
             RunSeed = runSeed;
             combatRng = rules.CreateRng(runSeed, RngStream.Combat, 0);
-            eventsRng = rules.CreateRng(runSeed, RngStream.Events, 0);
+            aiRng = rules.CreateRng(runSeed, RngStream.Events, AiAttackStreamIndex);
+            neutralSource = rules.CreateEmptyStats();
             Clock = new FixedStepAccumulator(rules.Combat.FixedStep, Math.Max(1, maxStepsPerFrame));
             Projectiles = new ProjectileSystem();
         }
@@ -50,22 +59,63 @@ namespace Echoes.Gameplay
 
         public void Register(Combatant combatant, ICombatActor actor)
         {
+            Register(combatant, actor, null);
+        }
+
+        /// <summary>
+        /// Registra no combate. A ordem de passo (e de consumo do RNG) é: heróis antes de inimigos, depois
+        /// <paramref name="orderKey"/> em ordem ordinal (a cena passa o caminho na hierarquia), depois a ordem
+        /// de registro. Assim a mesma cena e a mesma seed repetem a luta, seja qual for a ordem dos Start.
+        /// </summary>
+        public void Register(Combatant combatant, ICombatActor actor, string orderKey)
+        {
             if (combatant == null) throw new ArgumentNullException(nameof(combatant));
             if (combatant.IsRegistered) return;
             combatant.Id = nextId++;
             combatant.Actor = actor;
             combatant.IsRegistered = true;
             combatant.SetVitals(Rules.CreateVitals(combatant.Stats, combatant.Class));
-            combatants.Add(combatant);
-            if (combatant.Team == CombatTeam.Hero && Hero == null) Hero = combatant;
+
+            var index = combatants.Count;
+            for (var i = 0; i < combatants.Count; i++)
+            {
+                if (ComesBefore(combatant.Team, orderKey, combatants[i].Team, orderKeys[i])) { index = i; break; }
+            }
+            combatants.Insert(index, combatant);
+            orderKeys.Insert(index, orderKey);
+            RefreshHero();
         }
 
         public void Unregister(Combatant combatant)
         {
             if (combatant == null || !combatant.IsRegistered) return;
             combatant.IsRegistered = false;
-            combatants.Remove(combatant);
-            if (ReferenceEquals(Hero, combatant)) Hero = null;
+            var index = combatants.IndexOf(combatant);
+            if (index >= 0)
+            {
+                combatants.RemoveAt(index);
+                orderKeys.RemoveAt(index);
+            }
+            RefreshHero();
+        }
+
+        static bool ComesBefore(CombatTeam team, string key, CombatTeam otherTeam, string otherKey)
+        {
+            if (team != otherTeam) return team < otherTeam;
+            if (key == null) return false;          // sem chave: no fim do time, em ordem de registro
+            if (otherKey == null) return true;
+            return string.CompareOrdinal(key, otherKey) < 0;
+        }
+
+        void RefreshHero()
+        {
+            Hero = null;
+            for (var i = 0; i < combatants.Count; i++)
+            {
+                if (combatants[i].Team != CombatTeam.Hero) continue;
+                Hero = combatants[i];
+                break;
+            }
         }
 
         /// <summary>Tempo real do quadro → N passos fixos. Devolve quantos passos rodou.</summary>
@@ -233,8 +283,14 @@ namespace Echoes.Gameplay
             Events.Publish(in evt);
         }
 
-        /// <summary>Próximo ataque do inimigo, sorteado no fluxo de eventos.</summary>
-        public int PickAttack(EnemyInfo enemy) => Rules.PickAttack(ref eventsRng, enemy);
+        /// <summary>Libera o handle próprio (fonte neutra de DoT). As entidades são dos seus donos.</summary>
+        public void Dispose()
+        {
+            neutralSource.Dispose();
+        }
+
+        /// <summary>Próximo ataque do inimigo, sorteado no fluxo Events reservado à IA.</summary>
+        public int PickAttack(EnemyInfo enemy) => Rules.PickAttack(ref aiRng, enemy);
 
         public int NextTelegraphId() => nextTelegraphId++;
 
@@ -242,7 +298,7 @@ namespace Echoes.Gameplay
         {
             var request = new HitRequest
             {
-                Attacker = target.Stats, // DoT do stub não escala com o atacante (nenhum DoT no protótipo)
+                Attacker = neutralSource, // fonte neutra: os mods de dano da vítima não escalam o DoT
                 Defender = target.Stats,
                 SkillTags = tick.Tags,
                 BaseDamage = tick.Damage,

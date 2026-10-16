@@ -105,12 +105,19 @@ namespace Echoes.Gameplay
             var build = new HeroBuild(classInfo.Id, level, equipped);
             var combatant = attributes.CreateHero(rules, in build, classInfo, weapon, controller.radius);
             Logic = new HeroCombatLogic(combatant, rules, skillBar);
-            combat.Register(combatant, Logic);
+            combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
         }
 
-        void OnDestroy()
+        // Sai do combate ao desligar (e antes do OnDestroy de qualquer componente), pela referência própria:
+        // o AttributeComponent pode descartar os handles antes deste script no OnDestroy.
+        void OnEnable()
         {
-            if (combat != null && Combatant != null) combat.Unregister(Combatant);
+            if (Logic != null && combat != null && !Logic.Self.IsRegistered) combat.Register(Logic.Self, Logic, CombatOrderKey.Of(transform));
+        }
+
+        void OnDisable()
+        {
+            if (Logic != null && combat != null) combat.Unregister(Logic.Self);
         }
 
         void Update()
@@ -129,12 +136,17 @@ namespace Echoes.Gameplay
             Logic.MoveInput = CameraRelative(input.Move);
             if (TryGetAimPoint(out var aimPoint)) Logic.AimPoint = aimPoint;
 
+            var pressedAny = false;
             for (var c = HeroCommand.BasicAttack; c <= HeroCommand.Potion2; c++)
             {
-                if (input.WasPressed(c)) Logic.Press(c);
+                if (!input.WasPressed(c)) continue;
+                Logic.Press(c);
+                pressedAny = true;
             }
-            // Segurar o botão do ataque básico repete o golpe assim que a ação anterior termina.
-            if (Logic.IsReadyForAction && input.IsHeld(HeroCommand.BasicAttack)) Logic.Press(HeroCommand.BasicAttack);
+            // Segurar o botão do ataque básico repete o golpe assim que a ação anterior termina,
+            // sem passar por cima de outro comando pedido neste quadro ou ainda no buffer.
+            if (!pressedAny && !Logic.HasPendingCommand && Logic.IsReadyForAction && input.IsHeld(HeroCommand.BasicAttack))
+                Logic.Press(HeroCommand.BasicAttack);
         }
 
         void LateUpdate()
