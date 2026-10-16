@@ -29,6 +29,7 @@ item_base.iron_helm.name,Elmo de Ferro,Iron Helm,,item base; max=28,m
 item_base.leather_vest.name,Peitoral de Couro,Leather Vest,,item base; max=28,m
 item_base.leather_gloves.name,Luvas de Couro,Leather Gloves,,item base; plural; max=28,f
 item_base.worn_boots.name,Botas Gastas,Worn Boots,,item base; plural; max=28,f
+item_base.worn_trousers.name,Calça Gasta,Worn Trousers,,item base; singular; max=28,f
 affix.sturdy.name,Robusto,Sturdy,,affix prefix; forma m singular,m
 affix.sturdy.name_f,Robusta,Sturdy,,affix prefix; forma f singular,f
 affix.sturdy.name_mp,Robustos,Sturdy,,affix prefix; forma m plural,m
@@ -90,6 +91,7 @@ slot.head.name,Elmo,Helm,,slot; max=14,m
 slot.body.name,Peitoral,Chest,,slot; max=14,m
 slot.hands.name,Luvas,Gloves,,slot; max=14,f
 slot.feet.name,Botas,Boots,,slot; max=14,f
+slot.legs.name,Calça,Legs,,slot; max=14,f
 slot.amulet.name,Amuleto,Amulet,,slot; max=14,m
 slot.ring.name,Anel,Ring,,slot; max=14,m
 slot.ring2.name,Segundo anel,Second ring,,slot; max=14,m
