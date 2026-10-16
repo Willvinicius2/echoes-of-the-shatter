@@ -77,3 +77,9 @@ Elas são a fonte de verdade de cada personagem. Toda imagem nova em que eles ap
 ## Folhas de modelagem (aprovadas em 16/10/2026)
 
 `aprovadas/modelagem/m01..m09`: giro de frente, lado e costas em pose neutra dos 8 personagens do protótipo (Guerreiro, Arqueiro, Mago, Sentinela Oca, Cão de Cinza, Arauto de Pedra, Arqueiro Espectral, Guardião da Cripta) e folha das armas. Foram geradas com `scripts/prompts_modelagem.py` a partir das folhas canônicas 02 a 06. São a entrada da IA de imagem para 3D (TripoSG) e a referência de pintura no Blender. O graybox de `art-src/graybox/` é só provisório: o modelo final segue estas folhas.
+
+## Personagem modular e cenário (aprovados em 16/10/2026)
+
+- `aprovadas/modelagem/mod_b01..b03_*_corpo.png`: corpo base de cada herói, sem equipamento. Os rostos do Guerreiro e do Arqueiro foram aprovados nessa rodada.
+- `aprovadas/modelagem/mod_a01..a03_*_inicial.png`: armadura inicial em 5 peças (head, body, hands, legs, feet), vista de frente na linha de cima e de costas na de baixo. Script: `scripts/prompts_modelagem_modular.py`; contrato técnico em `docs/04_arquitetura.md` §17.4.
+- `aprovadas/modelagem/c01..c06_*.png`: peças do cenário da Cripta (pisos, paredes, pilar e arco, escada e portal, decoração, entulho e abismo). Script: `scripts/prompts_modelagem_cenario.py`.

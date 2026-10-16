@@ -25,6 +25,8 @@ Pilares usados (plano, seção 1): P1 Conquistar pela ação, P2 Build com ident
 
 **Câmera e escala de mapa (dono, 16/10/2026, depois de jogar a cena base `Base_Escala`).** Câmera a 56 m (ver `04_arquitetura.md`, seção 3.2). Escala de mapa da zona A: arena do Guardião de 40 × 40 m com pilares, salas de 24 a 32 m e corredores de 6 m de largura. Todo layout de área parte dessas medidas; distâncias em uu deste documento (1 uu = 1 cm) continuam válidas.
 
+**Checkpoint e arena (dono, 16/10/2026).** Ao voltar ao checkpoint (por morte ou saída), os inimigos já mortos REAPARECEM, no estilo Souls. A porta da arena do Guardião fecha atrás do herói e só reabre quando a luta acaba (vitória ou morte). Ver `14_layout_cripta.md`.
+
 ---
 
 ## 1. Esquiva
