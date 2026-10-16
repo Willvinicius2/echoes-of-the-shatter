@@ -98,9 +98,9 @@ Vida (vermelho) e Ímpeto (âmbar) ficam próximos; por isso o orbe de vida é s
 | Raridade | Token | Hex | Contraste | Feixe no chão |
 |---|---|---|---|---|
 | Comum (Normal) | `rarity.normal` | `#D9D2C8` | 11,5:1 | Nenhum |
-| Mágico | `rarity.magic` | `#6FA8FF` | 7,1:1 | Brilho no item, raio 20 cm |
-| Raro | `rarity.rare` | `#FFD24A` | 11,9:1 | Coluna de raio 15 cm × 250 cm |
-| Único | `rarity.unique` | `#FF8A2E` | 7,3:1 | Coluna de raio 25 cm × 500 cm, pulso de 800 ms + som próprio |
+| Mágico | `rarity.magic` | `#6FA8FF` | 7,1:1 | Brilho no item, raio 25 cm |
+| Raro | `rarity.rare` | `#FFD24A` | 11,9:1 | Coluna de raio 20 cm × 250 cm |
+| Único | `rarity.unique` | `#FF8A2E` | 7,3:1 | Coluna de raio 30 cm × 500 cm, pulso de 800 ms + som próprio |
 
 Raridade **nunca** é só cor: o tooltip escreve a raridade ("Raro · Espada Longa"), a moldura do slot muda de forma (Mágico: cantos simples; Raro: cantos duplos; Único: cantos espinhosos com filete dourado) e o rótulo no chão usa o mesmo padrão. Raro e Único são próximos em matiz (amarelo e laranja); a forma e o som os separam.
 
@@ -143,13 +143,13 @@ Medidos na folha 09 e nos ícones da 11. **Jogador** (`color.element.*`), usado 
 |---|---|---|
 | `telegraph.fill` | `#D8432F` a 40% | Preenchimento da zona no chão (início) |
 | `telegraph.fill_final` | `#E0301E` a 65% | Preenchimento nos últimos 200 ms |
-| `telegraph.edge` | `#FF6A4A` | Borda, largura 12 cm |
+| `telegraph.edge` | `#FF6A4A` | Borda, largura 16 cm (câmera a 56 m: ≈ 9 px em 1080p, ≈ 7 px no Deck; mínimo de 6 px em qualquer resolução) |
 | `telegraph.edge_hot` | `#FFB27A` | Linha interna quente da borda, runas |
-| `telegraph.outline_dark` | `#3A0A0C` | Contorno escuro externo de 8 cm |
+| `telegraph.outline_dark` | `#3A0A0C` | Contorno escuro externo de 10 cm |
 | `telegraph.final_flash` | `#FFFFFF` | Pisca nos últimos 100 ms |
-| `telegraph.alt_colorblind_edge` | `#FFE066` | Opção "Daltonismo": borda amarela com listras (período 40 cm) |
+| `telegraph.alt_colorblind_edge` | `#FFE066` | Opção "Daltonismo": borda amarela com listras (período 56 cm) |
 
-Medido na folha 09: núcleo do círculo `#EF5A43`, meio `#703338` sobre piso escuro. **Variante `dark_outline`:** nas áreas de névoa vermelha ou laranja (Pátio dos Marcos, Ponte do Sino, Trilha de Cinza, Salão do Martelo) o telegraph ganha contorno escuro de 8 cm, alpha de preenchimento +0,15 e a linha `edge_hot` mais larga (16 cm), para não se perder no fundo.
+Medido na folha 09: núcleo do círculo `#EF5A43`, meio `#703338` sobre piso escuro. **Variante `dark_outline`:** nas áreas de névoa vermelha ou laranja (Pátio dos Marcos, Ponte do Sino, Trilha de Cinza, Salão do Martelo) o telegraph ganha contorno escuro de 10 cm, alpha de preenchimento +0,15 e a linha `edge_hot` mais larga (20 cm), para não se perder no fundo.
 
 ### 2.6 Cor-assinatura da névoa por área
 
@@ -316,18 +316,18 @@ Esta seção é a referência de arte (escala, proporções, texel, pintura, cor
 
 ### 3.1 Escala e proporções
 
-Unidade: medidas em cm; 1 unidade Unity = 100 cm (herói = 1,5 unidades). Tile de cenário = 200 cm. Câmera 3/4 fixa (yaw 45°, pitch entre −50° e −60°, FOV estreito; Tech Lead fixa).
+Unidade: medidas em cm; 1 unidade Unity = 100 cm (herói = 1,5 unidades). Tile de cenário = 200 cm. Câmera 3/4 fixa decidida em 16/10/2026: pitch 55°, yaw 45°, FOV vertical 14,2°, distância 56 m (faixa de 48 a 66 m); mostra ≈ 24,8 × 14,0 m e ≈ 17,1 m de profundidade de chão. Escala de tela: herói de 150 cm ≈ 88 px em 1080p e ≈ 65 px no Steam Deck (800p), ou seja, **0,59 px/cm** (1080p) e **0,43 px/cm** (Deck). Toda medida de efeito abaixo foi convertida com esses fatores.
 
 | Tipo | Altura | Proporção | Relativo ao herói |
 |---|---|---|---|
-| **Herói** (Guerreiro, Arqueiro, Mago) | 150 cm | **Chibi, 3 cabeças** (cabeça com elmo/capuz/chapéu ≈ 50 cm; cabeça ≈ 1/3 da altura); mãos e armas ampliadas (arma ≈ 60–70% do tronco) | 1,0 |
+| **Herói** (Guerreiro, Arqueiro, Mago) | 150 cm | **Chibi, 3 cabeças** (cabeça com elmo/capuz ≈ 50 cm; cabeça ≈ 1/3 da altura); mãos e armas ampliadas (arma ≈ 60–70% do tronco) | 1,0 |
 | Inimigo pequeno (corvo, cão) | 90 cm | Mesma linguagem chibi | 0,6 |
 | **Inimigo comum** | 110–195 cm | Humanoides 3–3,5 cabeças; golens e bestas com massa maior | 0,75–1,3 |
 | **Elite** | ×1,15 do comum, mesma malha | Escala uniforme + halo dourado (seção 3.7) | 0,85–1,5 |
 | **Chefe do Ato I** | 450–700 cm | 2,5–3,5 cabeças; massa blocada, chanfros grossos | 3–4,7 |
 | **Chefe do endgame** (Predador dos Marcos) | 600–800 cm | Quadrúpede ou colosso | 4–5,3 |
 
-Largura de silhueta do herói ≈ 0,7 da altura (ombros, escudo e arma contam). A silhueta de chefe deve caber em 1/3 da altura da tela a 8 m de câmera; chefe que passa disso é recortado pela câmera e precisa de versão de enquadramento (Tech Lead).
+Largura de silhueta do herói ≈ 0,7 da altura (ombros, escudo e arma contam). Na câmera de 56 m, um chefe de 700 cm ocupa ≈ 410 px (≈ 38% da altura da tela em 1080p); acima de 700 cm o chefe é recortado e precisa de versão de enquadramento (Tech Lead).
 
 ### 3.2 Orçamento técnico por asset e por cena
 
@@ -335,28 +335,30 @@ O **`docs/04_arquitetura.md` é o dono dos orçamentos técnicos**: triângulos,
 
 | Asset | Tris LOD0 | Ossos | Notas de arte |
 |---|---|---|---|
-| Herói | 7.000 a 10.000 | 55 | Rosto e mãos legíveis; capa e cabelo em malha |
-| Inimigo comum | 3.500 a 5.000 | 35 | |
+| Herói | alvo 4.000 a 6.500 (teto duro 10.000) | 55 | Rosto e mãos legíveis; capa e cabelo em malha |
+| Inimigo comum | alvo 1.500 a 3.500 (teto 5.000) | 35 | Enxame: 500 a 1.500 |
 | Elite | **mesma malha do comum**, com tinta, halo e escala até ×1,15 | 35 | Sem textura nova (3.4, item 8) |
-| Chefe | 15.000 a 25.000 | 100 | 2048² em um slot ou 2 slots de 1024² |
+| Chefe | alvo 10.000 a 16.000 (teto 25.000) | 100 | 2048² em um slot ou 2 slots de 1024² |
 | Props, kits, folhagem | seção 17.3 do 04 | — | Chanfros grossos, sem normal map |
 
 LOD: trocas a 18 m e 32 m. O que fica **aqui** é a escala, as proporções, a densidade de texel e as regras de pintura.
 
 ### 3.3 Texturas e densidade de texel
 
-**Sem normal maps** em personagens, props e kits: a forma vem da malha chanfrada e a luz vem pintada. Cada personagem usa **albedo pintado** + **máscara** (R = rim, G = emissivo, B = AO assada, A = reservado).
+**Sem normal maps** em personagens, props e kits: a forma vem da malha chanfrada e a luz vem pintada. Cada personagem usa **1 material**, com **albedo pintado** + **máscara** (R = rim, G = emissivo, B = AO assada, A = reservado).
+
+Decisão do Tech Lead (04): o herói tem ~88 px a 56 m; 8 texel/cm daria ~13 vezes de sobreamostragem, e cada passo de resolução custa 4 vezes mais memória (teto de 120 MB por área e VRAM do Deck). A pincelada do acabamento (3.10) é pintada nessa resolução. Exceção registrada: prévia 3D de perto no menu pode usar uma variante de herói de 2048² carregada só lá.
 
 | Tipo | Albedo | Máscara | Densidade de texel (mip 0) |
 |---|---|---|---|
-| Herói | 1024² | 512² | **4,0 texel/cm** (≈ 600 texels de altura) |
-| Inimigo | 512² | 256² | **3,0 texel/cm** |
+| Herói | **1024²** | 512² | **~4,0 texel/cm** (~60% de aproveitamento do atlas, a confirmar na pintura) |
+| Inimigo | **512²** | 256² | **~2,5 texel/cm** |
 | Chefe | 2048² | 1024² | **2,5 texel/cm** |
 | Prop | 256² (máx. 512²) | — | **3,0 texel/cm** |
 | Trimsheet de kit | 2048² por kit | — | **2,5 texel/cm** |
 | Terreno (tile de 200 cm) | 512² (tileable) | — | **2,56 texel/cm** |
 
-Tolerância de ±20% entre peças da mesma cena; o auditor usa o checker de densidade no editor. Compressão: albedo BC7 (sRGB), máscara BC1 linear, folhagem BC3. Mipmaps ligados, filtro trilinear com anisotropia 4× (8× em PC), `LODGroup` próprio por tipo. No Deck o Mipmap Streaming usa um mip a menos que no PC; em jogo, o herói a 110 px de altura raramente precisa do mip 0 (ele existe para retrato, galeria e zoom).
+Tolerância de ±20% entre peças da mesma cena; o auditor usa o checker de densidade no editor. Compressão: albedo BC7 (sRGB), máscara BC1 linear, folhagem BC3. Mipmaps ligados, filtro trilinear com anisotropia 4× (8× em PC), `LODGroup` próprio por tipo. No Deck o Mipmap Streaming usa um mip a menos que no PC; em jogo, o herói a 88 px de altura (65 px no Deck) usa mips 3 a 4; o mip 0 serve ao retrato e à conferência do acabamento pintado (3.10); a prévia 3D de menu pode usar variante de 2048².
 Texturas de UI: UserInterface2D (RGBA), sRGB, mipmaps ligados nas molduras 9-slice de 128 e desligados nos ícones de 32.
 
 ### 3.4 Regras de pintura à mão
@@ -366,17 +368,19 @@ Texturas de UI: UserInterface2D (RGBA), sRGB, mipmaps ligados nas molduras 9-sli
 3. **Rim por fresnel.** Todo personagem recebe rim em runtime: potência 3,0, intensidade 0,5, cor = mistura da cor da névoa da área com 25% de branco, modulado pelo canal R da máscara. Props não têm rim, exceto interativos (baú, portal, altar).
 4. **Emissivo para magia e luz.** Chamas, cristais, olhos de inimigo, runas e vidro usam o canal G da máscara com cor de elemento (seção 2.4) e intensidade 2–4; o resto é opaco.
 5. **Saturação por plano:** piso e paredes ≤ 35%; personagens ≤ 70%; VFX até 100%. Isso empurra o olhar do chão para os personagens e dos personagens para a magia.
-6. **Contraste herói × piso.** A luminância média do herói é ≥ 1,25× a do piso sob ele. O topo da silhueta (cabeça, pluma, chapéu) carrega o acento de cor da classe (pluma `#E0301E`, capuz `#5FD04A`, chapéu azul `#4A9CF0`), porque da câmera é a parte mais visível.
+6. **Contraste herói × piso.** A luminância média do herói é ≥ 1,25× a do piso sob ele. O topo da silhueta (cabeça, pluma, capuz) carrega o acento de cor da classe (pluma `#E0301E`, capuz `#5FD04A`, capuz azul `#4A9CF0`), porque da câmera é a parte mais visível.
 7. **Formas grossas e chanfradas.** Chanfro mínimo de 3 cm em blocos de pedra; sem detalhe menor que 1,5 cm; rachaduras grandes pintadas, não modeladas. Listras de ouro (`#D9A441`) marcam o que é "Marco" (pedra do plano), como nas folhas 07, 15 e 17.
 8. **Elite e corrompido por parâmetro.** Elite = tom dourado `#F2B23A` no albedo (lerp de material) + halo; corrompido = tom roxo `#9A4BD6` + chama `#C07BFF`. Nenhuma textura nova; as versões nascem de parâmetros do material (folha 05 e 23 como referência).
-9. **Cada herói reconhecível em 1 bit:** Guerreiro (pluma + martelo de bloco + escudo largo), Arqueiro (capuz com bico de osso + arco), Mago (chapéu pontudo + cajado com anel). Não alterar esses elementos sem aprovar (folhas 02 a 04 são a fonte de verdade).
+9. **Cada herói reconhecível em 1 bit:** Guerreiro (pluma + martelo de bloco + escudo largo), Arqueiro (capuz com bico de osso + arco), Mago (**capuz azul pontudo com o rosto visível** + cajado com **cristal azul num anel dourado**; nunca chapéu de bico e nunca lanterna). Não alterar esses elementos sem aprovar (folhas 02 a 04 são a fonte de verdade).
 
 ### 3.5 Legibilidade da silhueta a partir da câmera
 
-- Herói com altura mínima de tela de **110 px em 1080p** e **80 px em 800p** (zoom mínimo permitido; Tech Lead).
-- **Teste de silhueta:** preencher o personagem de preto sobre piso neutro `#6A5A55`, reduzido a 64 px de altura, em ângulo de câmera de jogo (yaw 45°, pitch −55°). Cada classe e cada arquétipo de inimigo tem de ser identificável. Reprovou: simplificar o interior e exagerar um elemento da silhueta.
+- **Altura de tela do herói (câmera de 56 m):** alvo de **88 px em 1080p** e **65 px em 800p (Steam Deck)**. Mínimo aceito, no zoom mais afastado (66 m): **75 px em 1080p e 55 px em 800p**; abaixo disso o zoom é travado (Tech Lead). O número de 110 px da câmera de 42 m não vale mais. Inimigos seguem a proporção (comum de 110–195 cm: 65–115 px em 1080p; pequeno de 90 cm: 53 px, 39 px no Deck).
+- **Teste de silhueta:** preencher o personagem de preto sobre piso neutro `#6A5A55`, reduzido a **64 px de altura** (≈ o herói no Deck), na câmera de jogo (yaw 45°, pitch 55°). Cada classe e cada arquétipo de inimigo tem de ser identificável; inimigos pequenos (corvo, cão) também a **40 px**. Reprovou: simplificar o interior e exagerar um elemento da silhueta. Como o herói tem só 88 px, três elementos carregam a leitura: topo (pluma, capuz), arma e massa dos ombros; detalhe interno menor que ≈ 4 cm (2 px) não conta para a silhueta.
+- **Linhas e formas mínimas no chão e no ar (em cm, convertidas para px):** linha de telegraph ≥ 16 cm (≈ 9 px em 1080p, 7 px no Deck); anel de seleção sob o inimigo ou alvo: espessura ≥ 10 cm e diâmetro ≈ 1,3 × a largura da silhueta; traço de VFX do jogador ≥ 10 cm de espessura (≥ 6 px em 1080p, 4 px no Deck); projétil do jogador ≥ 20 cm de diâmetro visível (≥ 12 px) e projétil de ameaça ≥ 30 cm (≥ 18 px, sempre maior que o do jogador); faísca e partícula isolada ≥ 8 cm, senão agrupar. Nada com menos de 3 px em 800p carrega informação de jogo.
+- **Anéis de elite e de alvo:** halo de elite com 80–100 cm de diâmetro e tubo de ≥ 10 cm (3.7); halo e anel de seleção com ≥ 6 px de espessura em 800p e contraste ≥ 3:1 com o piso.
 - **Inimigos:** 8 arquétipos do Ato I e 9 do endgame com silhuetas distintas (soldado com escudo, lanceiro, cão, corvo, golem de pedra, aríete/prensa, arqueiro espectral, lanterneiro; folhas 05 e 23). Dois inimigos no mesmo plano nunca compartilham a mesma silhueta.
-- **Outline:** não há contorno global (o estilo pintado depende de bordas limpas por MSAA). Há **contorno seletivo de 2 px (Renderer Feature do URP com Render Objects e teste de profundidade/stencil) só quando o herói do jogador ou um elite está oculto atrás de cenário** (herói `#FCD58A`, elite `#F2B23A`, alpha 0,8), para nunca perder o personagem. Inimigo sob o cursor ganha o mesmo contorno em branco-pergaminho.
+- **Outline:** não há contorno global (o estilo pintado depende de bordas limpas por MSAA). Há **contorno seletivo de 3 px (2 px mínimo no Deck) (Renderer Feature do URP com Render Objects e teste de profundidade/stencil) só quando o herói do jogador ou um elite está oculto atrás de cenário** (herói `#FCD58A`, elite `#F2B23A`, alpha 0,8), para nunca perder o personagem. Inimigo sob o cursor ganha o mesmo contorno em branco-pergaminho.
 - Flash de acerto: lerp do albedo para `#FFFFFF` por 83 ms (parâmetro de material), 50% com "Reduzir flashes".
 
 ### 3.6 Materiais e renderização
@@ -399,7 +403,7 @@ Tinta de área (opcional): uma textura LUT de 16³ por área (override Color Loo
 - **Um kit por área** (11 no total) com a paleta local; blocos de pedra compartilham a trimsheet de pedra para economizar memória, e variam só o material de tinta e os props.
 - Terrenos: 4 texturas por área (folha 21) e 4 por mapa de endgame (folha 22), 512² tileable, com variantes de borda para abismo. Marcas de perigo no chão são decals separados.
 - Pontos de luz: toda área tem 1 luz de acento (tocha, lanterna, lava, cristal) por 6–8 m de caminho jogável. Elementos de ouro de "Marco" (runas, círculos) são emissivos fracos (intensidade 0,6) para guiar o jogador.
-- **Halo de elite:** anel dourado com 2 espinhos, 60–80 cm de diâmetro, 20 cm acima da cabeça, 120 triângulos, material emissivo `#FBD176`, girando 20°/s.
+- **Halo de elite:** anel dourado com 2 espinhos, 80–100 cm de diâmetro, tubo de ≥ 10 cm, 25 cm acima da cabeça, 120 triângulos, material emissivo `#FBD176`, girando 20°/s.
 
 ### 3.8 VFX: jogador versus ameaça
 
@@ -408,7 +412,7 @@ Sistema de partículas da Unity (Shuriken) com Shader Graph; o VFX Graph só ond
 | | **Efeitos do jogador** | **Ameaças inimigas** |
 |---|---|---|
 | Material | Aditivo ou translúcido leve, alpha ≤ 0,75 | Translúcido normal ou opaco, alpha 0,4–1,0, com contorno escuro |
-| Forma | Fina: traços, arcos, feixes de 5–25 cm de espessura | Grossa: massas, zonas, cones e círculos preenchidos |
+| Forma | Fina: traços, arcos, feixes de 10–30 cm de espessura (piso de 10 cm na câmera de 56 m) | Grossa: massas, zonas, cones e círculos preenchidos |
 | Cor | `element.*` com núcleo quase branco, meio saturado, borda fria | `threat.*` com núcleo menos branco, borda quase preta e **faixa vermelha** `#E0301E` |
 | Onde | No ar, na mão, na linha do projétil | **No chão** (telegraph) antes do impacto, e no corpo do inimigo ao carregar |
 | Camadas | 3: núcleo, brilho, partículas (≤ 150) | 4: telegraph no chão, forma opaca, contorno, resíduo (brasa ou crateras) |
@@ -420,16 +424,16 @@ Sistema de partículas da Unity (Shuriken) com Shader Graph; o VFX Graph só ond
 
 | Elemento | Jogador | Ameaça |
 |---|---|---|
-| **Fogo** | Arco ou bola vermelho-laranja translúcida com núcleo claro e faíscas douradas; faixa de 15 cm, sem contorno escuro | Círculo ou cone de lava vermelho-carmim no chão com borda escura e brasas; massa opaca |
+| **Fogo** | Arco ou bola vermelho-laranja translúcida com núcleo claro e faíscas douradas; faixa de 20 cm, sem contorno escuro | Círculo ou cone de lava vermelho-carmim no chão com borda escura e brasas; massa opaca |
 | **Gelo** | Cristais finos e translúcidos, lança com núcleo `#D8F6FF` | Cristais sólidos azul-escuro com contorno quase preto, zona no chão com geada |
-| **Raio** | Fio de 5–10 cm com ramificações, núcleo branco | Raio grosso com aviso no chão (círculo vermelho) antes da descarga |
+| **Raio** | Fio de 10–14 cm com ramificações, núcleo branco | Raio grosso com aviso no chão (círculo vermelho) antes da descarga |
 | **Ácido** | Flechas e rede em verde-limão translúcido | Poça opaca verde-escura com bolhas, borda vermelha de alerta |
 | **Sombra** | Fumaça roxa translúcida, só do Mago | Cristais roxos opacos, chama `#C07BFF` do corrompido, zona escura com anel vermelho |
 
 **Regras de legibilidade:**
 1. Nenhum efeito do jogador cobre o telegraph: se a zona de ameaça e o efeito do jogador se sobrepõem, o telegraph vence na ordem; o efeito do jogador mantém só o núcleo.
 2. Opção de acessibilidade **"Reduzir efeitos do jogador"** (100 / 60 / 30% de alpha e de partículas).
-3. Opção **"Daltonismo"** do telegraph: borda amarela `#FFE066` com listras (40 cm) e hachura interna; a forma do telegraph já distingue cone, círculo, linha e estrela.
+3. Opção **"Daltonismo"** do telegraph: borda amarela `#FFE066` com listras (56 cm) e hachura interna; a forma do telegraph já distingue cone, círculo, linha e estrela.
 4. Orçamento: 300 projéteis ativos no máximo e 150 partículas por efeito; a soma de partículas visíveis ≤ 2.500 (Deck ≤ 1.500). Overdraw: no máximo 4 camadas translúcidas sobrepostas no mesmo ponto de tela.
 5. Hitstop, shake e flash seguem a seção 6.
 
@@ -442,6 +446,28 @@ Sistema de partículas da Unity (Shuriken) com Shader Graph; o VFX Graph só ond
 - **Cursor:** `Cursor.SetCursor` com texturas de 32 × 32 (×1, ×1,5 e ×2 conforme a escala). Variantes: padrão, ataque, coletar, conversar, arrastar item. Estilo: ponta de pedra com filete dourado.
 - **Frame:** 60 fps alvo; animações de UI por `transition` USS e `schedule`, baseadas em tempo.
 - **Rendering do projeto:** sem iluminação global em tempo real; sombras e MSAA conforme 3.6.
+
+### 3.10 Acabamento-alvo dos modelos
+
+Referência: Spell Brigade, medido em `docs/arte/regua_spell_brigade.md` (só referência; nenhum arquivo copiado): heróis de 2,5 a 5,6 mil triângulos, **1 material**, albedo 2048² (o Echoes usa 1024² no herói, ver 3.3), shader com rim de borda dura, emissão e HitFlash, sem contorno e sem rampa de toon. Os modelos finais saem de geração por IA (TripoSG) a partir das folhas aprovadas em `docs/arte/referencias-geracao/aprovadas/modelagem/` (m01 a m09) e depois são limpos e pintados à mão no Blender. Visão do dono: ARPG de PC ou MMO, nada com cara de jogo de celular e nunca "quadradão tipo Lego".
+
+**O que o modelo precisa ter:**
+1. **Volumes esculpidos e arredondados:** corpo, capa, ombreiras e armas com curvatura contínua; a silhueta lê como escultura, não como blocos empilhados.
+2. **Chanfros generosos:** toda aresta que pega luz tem raio visível (≥ 1,5 cm em armadura e armas, ≥ 3 cm em pedra e blocos grandes); arestas vivas só em lâminas e pontas.
+3. **Pintura à mão com pinceladas:** albedo pintado com pincelada visível no mip 0 (luz e sombra assadas, sombra violeta, regras de 3.4) e variação de valor dentro de cada plano; nada de cor chapada.
+4. **Rim de borda dura e emissão** pelo `SG_Character` (3.4 e 3.6), sem contorno e sem rampa de toon.
+5. **1 material por personagem** (1 albedo + 1 máscara), com a UV priorizando rosto, mãos e arma.
+6. Triângulos não são o critério: o acabamento vem de volume, chanfro e pintura. A quantidade segue o 04 (17.3): herói de 4 a 6,5 mil, perto da régua (2,5 a 5,6 mil).
+
+**O que reprova o modelo (qualquer um basta):**
+- Formas de primitiva (cilindro, caixa, esfera) legíveis como tal no corpo, na armadura ou na arma.
+- Cubos aparentes ou blocos empilhados, inclusive em cabeça, mãos e botas.
+- Arestas duras sem chanfro em armadura, cajado, escudo ou pedra.
+- Textura lisa ou gradiente sem pintura, ou cor chapada sem pincelada.
+- Ar de jogo de celular (proporção e brilho de brinquedo, plástico liso, contorno grosso de desenho).
+- Perda do elemento de 1 bit da classe (3.4, item 9) ou desvio da folha aprovada.
+
+Entrega de cada herói e inimigo: captura a 88 px (jogo), 65 px (Deck) e 512 px (mip 0), anexada à revisão do Art Director.
 
 ---
 
@@ -759,8 +785,8 @@ Valores alinhados à seção 5 do plano. Todos configuráveis em dados (Scriptab
 | **Partículas de contato** | Todo acerto | Poeira `#8A7F78` 6–10 e faíscas `#FFE066` 4–8 (metal/pedra); 2–8 cm, vida 300–700 ms. Carne/osso: lascas `#D8381F`/`#D9D2C8` (desligadas com "Reduzir sangue") |
 | **Morte de inimigo** | Ao morrer | Animação de morte curta + corpo que se desfaz em 12–20 estilhaços de pedra e ouro `#FCD58A` subindo 20–40 cm e sumindo em 500 ms (dissolve no material) |
 | **Números de dano** | Todo acerto | 4.1; crítico maior e amarelo |
-| **Telegraph de chefe** | 700–1200 ms antes do golpe | Forma no chão (cone, círculo, linha, estrela) com preenchimento `#D8432F` subindo de 40% a 65%, borda `#FF6A4A` de 12 cm, runas internas e brasas subindo; nos últimos 100 ms a borda pisca branco. Sempre com som |
-| **Drop** | Item cai | Comum: som simples; Mágico: brilho de 20 cm de raio; Raro: coluna `#FFD24A`; Único: coluna `#FF8A2E` com pulso de 800 ms + som próprio |
+| **Telegraph de chefe** | 700–1200 ms antes do golpe | Forma no chão (cone, círculo, linha, estrela) com preenchimento `#D8432F` subindo de 40% a 65%, borda `#FF6A4A` de 16 cm, runas internas e brasas subindo; nos últimos 100 ms a borda pisca branco. Sempre com som |
+| **Drop** | Item cai | Comum: som simples; Mágico: brilho de 25 cm de raio; Raro: coluna `#FFD24A`; Único: coluna `#FF8A2E` com pulso de 800 ms + som próprio |
 | **Fragmento de Eco** | Ganho no jogo manual | Partículas `#4FE0D0` em espiral até o contador do HUD (400 ms) + toast especial + som próprio |
 | **Esquiva** | Espaço | 2 imagens residuais do herói a 50% e 25% de alpha nos primeiros 200 ms (janela de invulnerabilidade) |
 | **Vida baixa** | < 30% | Vinheta 4.1 + batimento sonoro |

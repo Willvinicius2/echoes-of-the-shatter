@@ -17,8 +17,8 @@ namespace Echoes.Presentation
         public float yawDegrees = 45f;
         [Tooltip("Camera.fieldOfView é vertical: 14,2° ≡ 25° horizontal em 16:9.")]
         public float verticalFieldOfView = 14.2f;
-        [Tooltip("Distância da câmera ao alvo (faixa permitida 36 a 50 m).")]
-        [Range(36f, 50f)] public float distance = 42f;
+        [Tooltip("Distância da câmera ao alvo: 56 m por decisão do dono em 16/10/2026 (faixa permitida 48 a 66 m).")]
+        [Range(48f, 66f)] public float distance = 56f;
         [Tooltip("Ponto mirado = posição do herói + este deslocamento (enquadra o tronco).")]
         public Vector3 targetOffset = new Vector3(0f, 0.52f, 0f);
         [Tooltip("Suavização exponencial independente de FPS: Lerp(pos, alvo, 1 − exp(−k·dt)).")]

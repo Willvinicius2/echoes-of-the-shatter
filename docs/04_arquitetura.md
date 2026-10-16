@@ -58,20 +58,24 @@ Fonte das decisões: `docs/08_decisoes_visual_3d.md` (fechadas, não reabertas a
 
 ### 3.2 Câmera
 
-**Decisão:** câmera própria, sem Cinemachine. Uma `FollowCamera` (MonoBehaviour, `LateUpdate`) move uma raiz `CameraRig` com rotação fixa; a `Camera` é filha a −42 m no eixo local Z. Valores num ScriptableObject `RenderSettingsAsset` (apresentação, fora do CSV de balanceamento).
+**Decisão:** câmera própria, sem Cinemachine. Uma `FollowCamera` (MonoBehaviour, `LateUpdate`) move uma raiz `CameraRig` com rotação fixa; a `Camera` é filha a −56 m (padrão; `RenderSettingsAsset.distance`) no eixo local Z. Valores num ScriptableObject `RenderSettingsAsset` (apresentação, fora do CSV de balanceamento).
 
 | Parâmetro | Valor | Observação |
 |---|---|---|
 | Pitch | **55°** (rotação X do rig; olha para baixo) | Meio da faixa decidida (50° a 60°) |
 | Yaw | **45°** fixo | Sem rotação pelo jogador |
 | FOV | **14,2° vertical** (≡ 25° horizontal a 16:9) | O `Camera.fieldOfView` do Unity é vertical, então 16:9 e 16:10 (Deck) mostram a mesma altura |
-| Distância | **42 m** | Mostra ~18,6 × 10,5 m perpendiculares à câmera, ~6,4 módulos de 2 m de profundidade no chão; o herói (1,5 m) ocupa ~14% da altura da tela (~155 px em 1080p). Distância **mantida** em relação ao herói de 1,5 m: é legível; se a F1 mostrar herói pequeno, reduzir para 38 m |
-| Zoom | Padrão 42 m; faixa **36 a 50 m** (passo 2) | Sem zoom do jogador no Acesso Antecipado; a faixa é usada pelo `AreaProfile` (arenas de chefe podem afastar até +15%) |
+| Distância | **56 m** (`RenderSettingsAsset.distance`) | **Decisão do dono em 16/10/2026**, após testar a cena base no Unity: a 42 m a visão tinha "cara de jogo de celular"; ele quer visão de ARPG de PC ou MMO e mapas maiores. Contas a 56 m (pitch 55°, FOV 14,2°): área perpendicular à câmera de ~24,8 × 14,0 m; ~17,1 m de profundidade de chão visível; o chão visível fica a ~52 a 62 m da câmera; o herói (1,5 m) tem ~88 px de altura em 1080p (o graybox mediu 117 px a 42 m; a estimativa antiga de ~155 px estava errada). Herói menor na tela: a legibilidade vem de silhueta, rim e cor, e é item de teste na F1 |
+| Zoom | Padrão 56 m; faixa **48 a 66 m** | Sem zoom do jogador no Acesso Antecipado; a faixa é usada pelo `AreaProfile` (arenas de chefe podem ir até 66 m). O `RenderSettingsAsset` rejeita (clamp + aviso) valor fora da faixa |
 | Alvo | Posição do herói + (0, 0,52, 0) m | Enquadra o tronco |
 | Suavização | Exponencial independente de FPS: `pos = Lerp(pos, alvo, 1 − exp(−7·dt))`, distância máxima de atraso 2 m; **sem** atraso de rotação | A câmera não perde o herói na esquiva |
-| Planos de corte | Near 1 m, far 150 m | |
+| Planos de corte | Near 1 m, far 150 m (inalterado; cobre os 66 m máximos com folga) | |
+| Zoom mínimo de legibilidade | Herói com **≥ 75 px** de altura em 1080p e **≥ 55 px** no Deck (1280×800) no zoom mais afastado | Pedido do Art Director, confirmado. Altura em pixels = 88 × (56 / distância) × (altura da tela / 1080): a 66 m dá ~75 px em 1080p e ~55 px no Deck, então o teto de 66 m já cumpre os dois pisos, sem folga. O `FollowCamera` calcula a distância máxima efetiva `min(66, distância que dá o piso de px na resolução atual)` e trava o zoom e o `AreaProfile` nela; nunca abaixo de 48 m. Em resolução maior o piso é atingido além de 66 m, e o teto de 66 m vale. O valor de 80 m da ferramenta de desenvolvimento só serve para comparar |
 | Colisão da câmera | Nenhuma | Paredes que cobrem o herói são tratadas por fade (3.7) |
-| Tremor | Deslocamento aditivo do rig, máx. 0,08 m, opção de desligar | Só em chefes e impactos grandes |
+
+**Ferramenta de desenvolvimento (cena `Assets/Scenes/Sandbox/Base_Escala.unity`, só editor e Development Build):** `CameraDistanceTuner` (F1 a F4 = 42/56/66/80 m; roda do mouse e PageUp/PageDown de 2 em 2 m; 42 e 80 m ficam fora da faixa de produção e servem só de comparação), `DevZoneTeleport` (F5/F6 alternam as zonas de teste) e `SandboxBuilder` (menu Echoes/Montar cena base, recria a cena). Não entram no build de release.
+
+**Escala de mapa: DECIDIDA pelo dono em 16/10/2026 (zona A).** Arena de **40 × 40 m** (a do Guardião tem pilares), salas de **24 a 32 m** e corredores de **6 m**. A zona B (arena 56 m, salas 32/40 m, corredores 8 m) fica na cena base só como comparação da ferramenta de desenvolvimento e não é escala de produção. Referência: a tela mostra ~24,8 × 14,0 m, então a arena de 40 m cabe em ~1,6 telas de largura; a câmera segue o herói e o jogador nunca vê a arena inteira de uma vez. Os valores alimentam o `NavMeshSurface`, os kits de sala (múltiplos de 2 m, seção 3.1) e a contagem de props por sala.
 
 ### 3.3 Malhas e animação
 
@@ -122,13 +126,13 @@ Propriedades globais (`Shader.SetGlobal*`): `_EchoesHeroPos`, `_EchoesTime` (tre
 
 **Decisão:** sombras da luz direcional principal, **só os personagens projetam**; o cenário não projeta (`ShadowCastingMode = Off`) e só recebe. Motivo: o custo de sombra fica limitado a ~31 malhas de 3,5 a 10 mil triângulos, em vez de todo o cenário; a sombra do herói no chão é o que ancora o personagem na câmera 3/4.
 
-- URP Asset: Max Distance **25 m**, **2 cascatas**, resolução 1024, Soft Shadows desligado no nível Baixo. Luzes adicionais sem sombra. Props altos que precisem de sombra projetada ligam `ShadowCastingMode` por exceção, no checklist da seção 17.3.
+- URP Asset: Max Distance **90 m** (`m_ShadowDistance` em `PC_RPAsset` e `Mobile_RPAsset`; era 25 m), **2 cascatas**, resolução 1024, Soft Shadows desligado no nível Baixo. Luzes adicionais sem sombra. Motivo dos 90 m: a distância é medida a partir da câmera, não do herói; com a câmera em até 66 m (arenas de chefe) a sombra precisa cobrir esse alcance com margem, senão o herói ficaria sem sombra. **Efeito colateral a medir na F1:** a cascata 2 passa a cobrir quase todo o intervalo visível (chão a ~52 a 62 m) e, com resolução 1024 e divisão padrão, a sombra fica borrada. Ajustes previstos, por ordem: divisão da cascata 1 em ~55% (~50 m), resolução 2048 no nível Alto, e blob como padrão no Médio/Deck (1 cascata a 90 m não dá definição). Só os personagens projetam, então o custo de passe de sombra não cresce com a área visível. Props altos que precisem de sombra projetada ligam `ShadowCastingMode` por exceção, no checklist da seção 17.3.
 - **Plano B (nível Baixo, Steam Deck se faltar GPU):** sombra falsa em blob (quad escuro suave sob os pés, material do `SG_VFX`) e sombras do URP desligadas.
 - Sem sombra de contato nem sombras de luzes adicionais (fora do escopo; reavaliar só se a medição pedir).
 
 ### 3.7 Oclusão da câmera
 
-Paredes entre a câmera e o herói não podem esconder o combate. **Decisão:** fade com dither no `SG_Environment` (keyword `OCCLUDER_FADE`), dirigido por `_EchoesHeroPos` e `_EchoesFadeRadius` (~3 m) atualizados por um `OcclusionFadeDriver`: só os materiais de peças marcadas como "occluder" usam a keyword. Sem colisão de câmera. Silhueta do herói atrás de objetos: **Render Objects** (Renderer Feature nativa do URP) na layer do herói, com teste de profundidade "Greater" e material de silhueta de cor sólida; **confirmar na instalação** que funciona em Forward + MSAA. Contorno geral (outline) **não** é adotado: o estilo pintado já traz a borda no albedo; contorno em chefes e elites só se o Art Director pedir, por casco invertido (segundo material), pago só nesses meshes.
+Paredes entre a câmera e o herói não podem esconder o combate. **Decisão:** fade com dither no `SG_Environment` (keyword `OCCLUDER_FADE`), dirigido por `_EchoesHeroPos` e `_EchoesFadeRadius` (~**4 m**, era ~3 m: o herói tem ~75% do tamanho em pixels de antes, e o raio escala por 56/42 para o buraco no fade cobrir a mesma fração da tela) atualizados por um `OcclusionFadeDriver`: só os materiais de peças marcadas como "occluder" usam a keyword. Sem colisão de câmera. Silhueta do herói atrás de objetos: **Render Objects** (Renderer Feature nativa do URP) na layer do herói, com teste de profundidade "Greater" e material de silhueta de cor sólida; **confirmar na instalação** que funciona em Forward + MSAA. Contorno geral (outline) **não** é adotado: o estilo pintado já traz a borda no albedo; contorno em chefes e elites só se o Art Director pedir, por casco invertido (segundo material), pago só nesses meshes.
 
 ### 3.8 Névoa por área
 
@@ -461,7 +465,7 @@ O P/Invoke é validado nos dois backends: EditMode e PlayMode rodam em Mono; um 
 | `SkillBehavior` (+ `Cone`, `Projectile`, `Area`, `Dash`, `Self`, `Channel`, `Trap`) | Gameplay, classe abstrata | Forma espacial escolhida por `SkillShape`; só faz consultas de overlap e entrega alvos |
 | `EnemyBrain` | Gameplay, `MonoBehaviour` | Máquina de estados parado → perseguir → telegraph → atacar → recuperar; chefes com tabela de padrões por fase |
 | `Projectile` | Gameplay, `MonoBehaviour` | Projétil em pool |
-| `FollowCamera` + `RenderSettingsAsset` | Presentation | Câmera 3/4 fixa (pitch 55°, yaw 45°, 42 m, suavização 7), sem rotação do jogador |
+| `FollowCamera` + `RenderSettingsAsset` | Presentation | Câmera 3/4 fixa (pitch 55°, yaw 45°, 56 m padrão e faixa 48 a 66 m, suavização 7), sem rotação do jogador |
 | `PresentationController` | Presentation, `MonoBehaviour` | Reage aos eventos do core: flash (`_HitFlash`), hitstop (`Animator.speed`), morte (`_Dissolve`), toca ações e VFX via `SkillPresentationSet`; nunca decide regra |
 | `SkillPresentationSet` | Presentation, `ScriptableObject` | ID de habilidade → estado do Animator, frações de fase, prefab de VFX, âncora, som (dado de apresentação) |
 | `AreaProfile` + `AreaVisuals` | Presentation, `ScriptableObject` + `MonoBehaviour` | Névoa, luz, ambiente e zoom por área; aplicado ao carregar a cena |
@@ -655,7 +659,7 @@ A estrutura de pastas e os prefixos estão nas seções 4.2 e 4.4. Esta seção 
 | Animação | 30 fps autoral; um FBX por personagem com várias takes (ou um por clipe); sem root motion; frações de fase registradas no `SkillPresentationSet` |
 | UVs | UV0 para o albedo pintado (sem sobreposição em personagens); sem segunda UV (sem lightmaps) |
 | Normais e tangentes | Importar normais; **sem normal map** e sem cálculo de tangentes (economiza memória e tempo de importação) |
-| LODs | `LODGroup` em personagens: LOD0 + LOD1 (≈ 50% dos triângulos) + LOD2 (≈ 25%); trocas a **18 m** e **32 m** do herói (ponto de partida a medir na F1). Como a câmera fica a ~42 m de tudo, o `LODGroup` por tamanho na tela quase não varia: o `LodDriver` usa `LODGroup.ForceLOD` por **distância ao herói**, atualizado a cada ~0,25 s. Cenário: LOD0 só para peças ≤ 1000 tri; LOD1 (≈ 50%) para peças acima de 1500 tri |
+| LODs | `LODGroup` em personagens: LOD0 + LOD1 (≈ 50% dos triângulos) + LOD2 (≈ 25%); trocas a **14 m** e **24 m** do herói (eram 18 e 32 m; escalados por 42/56 porque os modelos aparecem ~25% menores e a tela mostra, no máximo, ~15 m de distância do herói até o canto; ponto de partida a medir na F1, `LodDriver` lê os valores de `SO_ArtBudgets`). Como a câmera fica a ~56 m de tudo, o `LODGroup` por tamanho na tela quase não varia: o `LodDriver` usa `LODGroup.ForceLOD` por **distância ao herói**, atualizado a cada ~0,25 s. Cenário: LOD0 só para peças ≤ 1000 tri; LOD1 (≈ 50%) para peças acima de 1500 tri |
 | Colisão | Cenário: **colisores simples** (`BoxCollider`, `CapsuleCollider`, `MeshCollider` convexo só quando indispensável) no prefab, nunca o mesh visual como colisor; um colisor de piso por sala em vez de um por tile. Personagens: só `CharacterController`; mesh sem colisor. Props decorativos pequenos: sem colisor |
 | Navegação | `NavMeshSurface` (pacote AI Navigation) por cena de área, gerado a partir dos colisores simples; props só visuais não entram (layer própria) |
 | Instâncias | Peças repetidas (chão, parede, pilar) como prefabs com materiais compartilhados e GPU Instancing; peças estáticas marcadas `Static` para Static Batching |
@@ -666,13 +670,15 @@ A estrutura de pastas e os prefixos estão nas seções 4.2 e 4.4. Esta seção 
 
 ### 17.2 Orçamento por tipo de asset
 
-Triângulos (LOD0) e texturas. Os tamanhos máximos assumem a câmera da seção 3.2 (herói com ~155 px de altura em 1080p); a **densidade de texel** vem do `docs/03_design_system.md`. Metas iniciais, revisadas pela medição da F1.
+Triângulos (LOD0) e texturas. Os tamanhos máximos assumem a câmera da seção 3.2 (herói com ~88 px de altura em 1080p a 56 m); a **densidade de texel** vem do `docs/03_design_system.md`. Metas iniciais, revisadas pela medição da F1. **Alvos de produção** vêm da régua medida no Spell Brigade (`docs/arte/regua_spell_brigade.md`); os **tetos duros** são os valores anteriores e a auditoria 17.3 reprova acima deles (abaixo do alvo é só aviso de que a peça passou do alvo). O piso antigo (7.000, 3.500, 15.000) deixa de valer: a 56 m o herói tem ~88 px de altura e o detalhe extra não aparece. **Texturas de personagem: decisão do 04, mantidas em herói 1024² (máscara 512²) e inimigo 512² (máscara 256²); a proposta do 03 (herói 2048² a 8 texel/cm, inimigo 1024² a 5 texel/cm, como o Spell Brigade) não foi adotada.** Motivos: (1) a 56 m o herói tem ~88 px de altura em 1080p (~65 px no Deck) e o inimigo é parecido; 8 texel/cm dão ~1.200 texels de altura para 88 px, ~13 vezes de sobreamostragem, e o mip usado em jogo seria o de 256² a 512²; os mips altos só custam disco, import e VRAM no momento da carga; (2) memória: 2048² em BC7 ocupa ~5,6 MB com mips contra ~1,4 MB do 1024² (4 vezes), e o inimigo 1024² contra 512² também 4 vezes, tanto no build (teto de 120 MB por área) quanto na VRAM do Deck, que divide memória com a CPU; o Mipmap Streaming recupera a VRAM mas não o disco nem a carga, e adiciona tráfego de streaming; (3) o Spell Brigade usa texturas grandes por ter câmera mais próxima e herói maior na tela, o que não é o nosso caso. Exceção a reavaliar: se um dia houver visão de perto do herói (prévia 3D no menu, cena de diálogo), essa visão usa um mip fixo ou uma variante 2048² carregada só nela, não o asset de jogo. O 03 precisa trocar a densidade de texel para a ordem de **~4 texel/cm no herói e ~2,5 texel/cm no inimigo** (1024² e 512² com ~60% de aproveitamento do atlas, a confirmar na pintura) e as máscaras para 512² e 256².
+**Triângulos:** o Art Director apontou que o herói de 7 a 10 mil está acima da régua (2,5 a 5,6 mil no Spell Brigade). Aceito: o alvo de produção do herói é 4.000 a 6.500, o teto duro de 10.000 só serve de folga para o equipamento, e o piso antigo de 7.000 foi removido. Se a pintura mostrar que 6.500 sobra, o 04 reduz o teto depois da medição na F1.
 
-| Tipo | Triângulos | Materiais | Texturas (por asset) | Observação |
+| Tipo | Triângulos LOD0: alvo de produção (teto duro) | Materiais | Texturas (por asset) | Observação |
 |---|---|---|---|---|
-| Herói (corpo + equipamento) | 7.000 a 10.000 | 1 (máx. 2) | 1024² albedo (BC7) + 512² máscara (BC1) | Variantes de cor por material e região B da máscara |
-| Inimigo comum | 3.500 a 5.000 | 1 | 512² albedo + 256² máscara | Fixa o teto de 30 ativos. **Elite não tem malha própria**: usa a malha do comum com tinta (região B da máscara), halo e escala até ×1,15, só por material e parâmetros |
-| Chefe | 15.000 a 25.000 | 1 a 2 | 2048² albedo num material, **ou** 2 materiais de 1024² + 512² máscara | |
+| Herói (corpo + equipamento) | **4.000 a 6.500** (teto 10.000) | 1 (máx. 2) | 1024² albedo (BC7) + 512² máscara (BC1) | Variantes de cor por material e região B da máscara |
+| Inimigo comum | **1.500 a 3.500** (teto 5.000) | 1 | 512² albedo + 256² máscara | Fixa o teto de 30 ativos. **Elite não tem malha própria**: usa a malha do comum com tinta (região B da máscara), halo e escala até ×1,15, só por material e parâmetros |
+| Inimigo de enxame | **500 a 1.500** (teto 5.000, o do comum) | 1 | 256² albedo, máscara opcional | Muitos na tela; é onde mais se ganha em triângulos e ossos |
+| Chefe | **10.000 a 16.000** (teto 25.000) | 1 a 2 | 2048² albedo num material, **ou** 2 materiais de 1024² + 512² máscara | |
 | Peça modular de chão | 200 a 600 | 1 (kit) | Atlas do kit (abaixo) | |
 | Parede, pilar, arco | 800 a 2.500 | 1 (kit) | Atlas do kit | |
 | Estátua / prop de destaque | 3.000 a 5.000 | 1 | 512² a 1024² | Só 1 a 3 por sala |
@@ -693,6 +699,8 @@ Sem normal map em nenhum tipo de asset. Teto de assets de uma área carregada: �
 
 Alvo: 60 FPS estáveis (quadro ≤ 16,6 ms) na Cripta com 30 inimigos ativos, e carga da área < 3 s. **Hardware de referência (P-4 do `docs/02_requisitos.md`, decidido pelo dono em 16/10/2026)**: o "PC de entrada" é uma GPU de 4 GB do nível de uma GTX 1050 Ti/RX 570 (ou GPU integrada moderna), CPU de 4 núcleos, 8 GB de RAM, 1080p. O Steam Deck é medido como alvo próprio. Os números abaixo são **metas iniciais a validar na F1** com Profiler, Frame Debugger e Stats, não resultados medidos.
 
+**Efeito da câmera de 56 m (16/10/2026):** a tela mostra ~24,8 × 14,0 m em vez de ~18,6 × 10,5 m, ou seja ~1,8 vez mais chão e cenário visíveis. Os limites da tabela ficam **mantidos como teto**, mas o cenário passa a ocupar uma fatia maior deles: espere mais batches e triângulos de cenário na mesma sala (props por tela ×~1,8). Orçamento sugerido para a Cripta de 40 m (zona A): 30 inimigos a ~2.500 tri médios (~75 mil) + herói e chefe (~25 mil) deixam quase todo o 1,2 M para cenário, então o freio real é batches (≤ 1.200) e SetPass; mitigação: kits com Static Batching e atlas único, e peças fora da tela cortadas pelo frustum. Inimigos espalhados em área maior reduzem sobreposição e o custo de overdraw de VFX por tela. Medir na F1 com a zona A, tela cheia de inimigos, a 48, 56 e 66 m.
+
 | Recurso (cena de combate, pico) | PC de entrada (1080p, MSAA 4x) | Steam Deck (1280×800, MSAA 2x) |
 |---|---|---|
 | Tempo de quadro | ≤ 16,6 ms | ≤ 16,6 ms (limite de 60 FPS) |
@@ -701,7 +709,7 @@ Alvo: 60 FPS estáveis (quadro ≤ 16,6 ms) na Cripta com 30 inimigos ativos, e 
 | GPU | ≤ 13 ms | ≤ 14 ms |
 | Batches (draw calls, no Frame Debugger) | ≤ 1.200 | ≤ 800 |
 | SetPass calls (com SRP Batcher) | ≤ 200 | ≤ 120 |
-| Triângulos visíveis (passe principal) | ≤ 1,2 M | ≤ 600 mil |
+| Triângulos visíveis (passe principal) | ≤ 1,2 M (limite duro mantido) | ≤ 600 mil |
 | Triângulos no passe de sombra | ≤ 200 mil | ≤ 100 mil (ou blob, sem passe) |
 | `SkinnedMeshRenderer` ativos | ≤ 40 (30 inimigos + herói + chefe/aliados) | ≤ 40, com LOD1 forçado nos inimigos distantes |
 | Ossos atualizados por quadro | ≤ 1.600 | ≤ 1.200 |

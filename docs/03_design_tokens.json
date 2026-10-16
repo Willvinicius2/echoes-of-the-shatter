@@ -621,14 +621,14 @@
     "loot_beam": {
       "normal": null,
       "magic": {
-        "glow_radius_cm": 20
+        "glow_radius_cm": 25
       },
       "rare": {
-        "radius_cm": 15,
+        "radius_cm": 20,
         "height_cm": 250
       },
       "unique": {
-        "radius_cm": 25,
+        "radius_cm": 30,
         "height_cm": 500,
         "pulse_ms": 800
       }
@@ -637,17 +637,20 @@
       "min_ms": 700,
       "max_ms": 1200,
       "final_flash_ms": 100,
-      "edge_width_cm": 12,
-      "stripe_period_cm": 40
+      "edge_width_cm": 16,
+      "stripe_period_cm": 56
     }
   },
   "art3d": {
     "units": "medidas em cm; 1 unidade Unity = 100 cm; tile de cenario = 200 cm",
     "camera_reference": {
       "yaw_deg": 45,
-      "pitch_deg": [
-        -60,
-        -50
+      "pitch_deg": 55,
+      "fov_vertical_deg": 14.2,
+      "distance_m": 56,
+      "distance_range_m": [
+        48,
+        66
       ],
       "note": "numeros finais: Tech Lead (docs/04_arquitetura.md)"
     },
@@ -695,19 +698,26 @@
     },
     "triangles_lod0": {
       "hero": [
-        7000,
-        10000
+        4000,
+        6500
       ],
       "enemy_common": [
-        3500,
-        5000
+        1500,
+        3500
       ],
       "enemy_elite": "mesma malha do comum",
       "boss": [
-        15000,
-        25000
+        10000,
+        16000
       ],
-      "note": "Dono: docs/04_arquitetura.md secao 17.3 (assets) e 18 (cena). Valores aqui so orientam a arte."
+      "note": "Dono: docs/04_arquitetura.md secao 17.3 (assets) e 18 (cena). Valores aqui so orientam a arte.",
+      "hero_hard_cap": 10000,
+      "enemy_cap": 5000,
+      "enemy_swarm": [
+        500,
+        1500
+      ],
+      "boss_cap": 25000
     },
     "lod_ratio": {
       "lod1_distance_cm": 1800,
@@ -725,12 +735,14 @@
       "hero": {
         "albedo_px": 1024,
         "mask_px": 512,
-        "texel_density_px_per_cm": 4.0
+        "texel_density_px_per_cm": 4.0,
+        "atlas_use": "~60% (a confirmar na pintura)",
+        "menu_preview_variant_px": 2048
       },
       "enemy": {
         "albedo_px": 512,
         "mask_px": 256,
-        "texel_density_px_per_cm": 3.0
+        "texel_density_px_per_cm": 2.5
       },
       "boss": {
         "albedo_px": "2048 (1 slot) ou 2x1024",
@@ -772,11 +784,31 @@
     },
     "silhouette": {
       "hero_min_screen_height_px": {
-        "1080p": 110,
-        "steam_deck_800p": 80
+        "1080p": 75,
+        "steam_deck_800p": 55
       },
-      "test": "preenchido em preto sobre piso neutro #6A5A55, a 64 px de altura, deve ser identificavel por classe ou arquetipo",
-      "outline": "sem outline geral; contorno selecionado de 2 px por stencil apenas quando o jogador ou elite estiver ocluido por cenario",
+      "hero_target_screen_height_px": {
+        "1080p": 88,
+        "steam_deck_800p": 65
+      },
+      "px_per_cm": {
+        "1080p": 0.59,
+        "steam_deck_800p": 0.43
+      },
+      "min_vfx_cm": {
+        "telegraph_line": 16,
+        "selection_ring_thickness": 10,
+        "player_stroke": 10,
+        "player_projectile_diameter": 20,
+        "threat_projectile_diameter": 30,
+        "elite_halo_diameter": [
+          80,
+          100
+        ],
+        "elite_halo_tube": 10
+      },
+      "test": "preenchido em preto sobre piso neutro #6A5A55, a 64 px de altura (40 px para inimigos pequenos), deve ser identificavel por classe ou arquetipo",
+      "outline": "sem outline geral; contorno selecionado de 3 px (2 px minimo no Deck) por stencil apenas quando o jogador ou elite estiver ocluido por cenario",
       "outline_player_color": "#FCD58A",
       "outline_elite_color": "#F2B23A"
     },

@@ -23,6 +23,8 @@ Pilares usados (plano, seção 1): P1 Conquistar pela ação, P2 Build com ident
 
 **Respostas do dono (16/10/2026).** Escudada no nível 4 (o dono não teve preferência; vale a recomendação deste documento). Segunda poção = Poção de Resguardo. Arena do Guardião com pilares, então o bônus da investida no item 4 fica. Guardião obrigatório nesta rodada (P-2 do `02_requisitos.md`). Os números continuam provisórios até o playtest.
 
+**Câmera e escala de mapa (dono, 16/10/2026, depois de jogar a cena base `Base_Escala`).** Câmera a 56 m (ver `04_arquitetura.md`, seção 3.2). Escala de mapa da zona A: arena do Guardião de 40 × 40 m com pilares, salas de 24 a 32 m e corredores de 6 m de largura. Todo layout de área parte dessas medidas; distâncias em uu deste documento (1 uu = 1 cm) continuam válidas.
+
 ---
 
 ## 1. Esquiva

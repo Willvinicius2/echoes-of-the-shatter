@@ -15,7 +15,7 @@ MonoBehaviour:
   pitchDegrees: 55
   yawDegrees: 45
   verticalFieldOfView: 14.2
-  distance: 42
+  distance: 56
   targetOffset: {x: 0, y: 0.52, z: 0}
   smoothing: 7
   maxLagMeters: 2
