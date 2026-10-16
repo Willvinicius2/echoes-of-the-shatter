@@ -71,6 +71,8 @@ namespace Echoes.Presentation
 
         void OnValidate()
         {
+            // No editor só aplica com o asset ligado (não cria instância temporária fora do Play).
+            if (settings == null) return;
             if (viewCamera == null) viewCamera = GetComponentInChildren<Camera>();
             ApplySettings();
         }

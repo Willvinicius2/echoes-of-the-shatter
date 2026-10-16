@@ -63,7 +63,7 @@ namespace Echoes.UI
             public Label CooldownText;
             public Label Key;
             public Label Name;
-            public string LastCooldownText = string.Empty;
+            public int LastCooldownKey = int.MinValue;
             public float LastCooldownFraction = -1f;
         }
 
@@ -105,8 +105,10 @@ namespace Echoes.UI
         float toastTimeLeft;
         float lastLifeFraction = -1f;
         float lastResourceFraction = -1f;
-        string lastLifeText = string.Empty;
-        string lastResourceText = string.Empty;
+        long lastLifeShown = long.MinValue;
+        long lastMaxLifeShown = long.MinValue;
+        long lastResourceShown = long.MinValue;
+        long lastMaxResourceShown = long.MinValue;
         int lastDodgeCharges = -1;
         float lastDodgeFill = -1f;
 
@@ -118,6 +120,7 @@ namespace Echoes.UI
 
         void Start()
         {
+            if (hudRoot == null) QueryElements(); // o UIDocument pode montar a árvore depois do nosso OnEnable
             if (root == null) root = FindAnyObjectByType<GameRoot>();
             if (hero == null) hero = FindAnyObjectByType<HeroController>();
             if (worldCamera == null) worldCamera = Camera.main;
@@ -286,18 +289,24 @@ namespace Echoes.UI
             }
 
             if (!alwaysShowValues || localization == null) return;
-            var lifeText = ValueOfMax(self.Life, maxLife);
-            if (lifeText != lastLifeText)
+            // Só monta texto quando o número mostrado muda (sem alocação por quadro).
+            var life = Shown(self.Life);
+            var lifeMax = (long)Math.Round(maxLife);
+            if (life != lastLifeShown || lifeMax != lastMaxLifeShown)
             {
-                lastLifeText = lifeText;
+                lastLifeShown = life;
+                lastMaxLifeShown = lifeMax;
+                var lifeText = ValueOfMax(life, lifeMax);
                 if (lifeValue != null) lifeValue.text = lifeText;
                 if (lifeOrbValue != null) lifeOrbValue.text = lifeText;
             }
-            var resourceText = ValueOfMax(self.Resource, maxResource);
-            if (resourceText != lastResourceText)
+            var resource = Shown(self.Resource);
+            var resourceMax = (long)Math.Round(maxResource);
+            if (resource != lastResourceShown || resourceMax != lastMaxResourceShown)
             {
-                lastResourceText = resourceText;
-                if (resourceOrbValue != null) resourceOrbValue.text = resourceText;
+                lastResourceShown = resource;
+                lastMaxResourceShown = resourceMax;
+                if (resourceOrbValue != null) resourceOrbValue.text = ValueOfMax(resource, resourceMax);
             }
         }
 
@@ -320,11 +329,12 @@ namespace Echoes.UI
                     SetHeight(view.Cooldown, fraction);
                 }
 
-                var text = cooling && localization != null ? FormatCooldown(slot.Cooldown.Remaining) : string.Empty;
-                if (text != view.LastCooldownText)
+                var key = cooling ? CooldownKey(slot.Cooldown.Remaining) : int.MinValue + 1;
+                if (key != view.LastCooldownKey)
                 {
-                    view.LastCooldownText = text;
-                    if (view.CooldownText != null) view.CooldownText.text = text;
+                    view.LastCooldownKey = key;
+                    if (view.CooldownText != null)
+                        view.CooldownText.text = cooling && localization != null ? FormatCooldown(slot.Cooldown.Remaining) : string.Empty;
                 }
             }
         }
@@ -414,11 +424,11 @@ namespace Echoes.UI
         {
             LocLabel.ApplyAll(hudRoot, localization);
             boundLogic = null; // reaplica nomes das habilidades no próximo quadro
-            lastLifeText = string.Empty;
-            lastResourceText = string.Empty;
+            lastLifeShown = long.MinValue;
+            lastResourceShown = long.MinValue;
             for (var i = 0; i < skillViews.Length; i++)
             {
-                if (skillViews[i] != null) skillViews[i].LastCooldownText = null;
+                if (skillViews[i] != null) skillViews[i].LastCooldownKey = int.MinValue;
             }
             for (var i = 0; i < potionViews.Length; i++)
             {
@@ -426,10 +436,18 @@ namespace Echoes.UI
             }
         }
 
-        string ValueOfMax(double value, double max)
+        static long Shown(double value) => (long)Math.Ceiling(value - 1e-9);
+
+        string ValueOfMax(long value, long max)
         {
             // O separador "/" é notação numérica, não texto: "142/180" (docs/03, seção 4.1).
-            return localization.FormatInteger((long)Math.Ceiling(value - 1e-9)) + "/" + localization.FormatInteger((long)Math.Round(max));
+            return localization.FormatInteger(value) + "/" + localization.FormatInteger(max);
+        }
+
+        /// <summary>Muda só quando o texto da recarga muda: segundos inteiros acima de 1 s, décimos abaixo.</summary>
+        static int CooldownKey(double seconds)
+        {
+            return seconds >= 1.0 ? (int)Math.Ceiling(seconds) * 100 : (int)Math.Ceiling(Math.Max(0.1, seconds) * 10.0);
         }
 
         string FormatCooldown(double seconds)
