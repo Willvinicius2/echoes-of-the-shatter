@@ -1,0 +1,2139 @@
+{
+ "version": {
+  "blender": "5.2.2 LTS",
+  "python": "3.13.16"
+ },
+ "preset": {
+  "global_scale": 1.0,
+  "apply_unit_scale": true,
+  "apply_scale_options": "FBX_SCALE_UNITS",
+  "bake_space_transform": true,
+  "axis_forward": "-Z",
+  "axis_up": "Y",
+  "object_types": [
+   "ARMATURE",
+   "MESH"
+  ],
+  "use_mesh_modifiers": true,
+  "mesh_smooth_type": "FACE",
+  "colors_type": "SRGB",
+  "add_leaf_bones": false,
+  "use_armature_deform_only": false,
+  "primary_bone_axis": "Y",
+  "secondary_bone_axis": "X",
+  "bake_anim": false,
+  "path_mode": "RELATIVE",
+  "embed_textures": false
+ },
+ "mapping": "Unity (x, y, z) = (-x_blender, z_blender, -y_blender)",
+ "files": {
+  "Rig_Humanoid_Chibi": {
+   "category": "rig",
+   "file_kb": 33.1,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "Rig_Humanoid_Chibi",
+      "type": "Null",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       -0.0,
+       0.0,
+       0.0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "armature": {
+    "object": "Rig_Humanoid_Chibi",
+    "bones": 27,
+    "under_max": true,
+    "humanoid": {
+     "required_missing": [],
+     "optional_present": [
+      "Chest",
+      "Neck",
+      "LeftShoulder",
+      "RightShoulder",
+      "LeftToes",
+      "RightToes"
+     ],
+     "sockets_present": [
+      "socket_weapon_r",
+      "socket_weapon_l",
+      "socket_cast",
+      "socket_head",
+      "socket_fx_ground"
+     ]
+    },
+    "max_bone_head_error_m": 0.0
+   },
+   "skinning": {},
+   "skinning_rigid_ok": null
+  },
+  "SK_Archer": {
+   "category": "hero",
+   "file_kb": 147.1,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "Rig_Humanoid_Chibi",
+      "type": "Null",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       -0.0,
+       0.0,
+       0.0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "name": "SK_Archer_Body",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "name": "SK_Archer_Bow",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "name": "SK_Archer_Quiver",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.445,
+    -0.335,
+    0.0
+   ],
+   "blender_max": [
+    0.465,
+    0.28,
+    1.5
+   ],
+   "unity": {
+    "min": [
+     -0.465,
+     0.0,
+     -0.28
+    ],
+    "max": [
+     0.445,
+     1.5,
+     0.335
+    ],
+    "size": [
+     0.91,
+     1.5,
+     0.615
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     -0.01,
+     0.027
+    ]
+   },
+   "tris": {
+    "SK_Archer_Body": 776,
+    "SK_Archer_Bow": 104,
+    "SK_Archer_Quiver": 56
+   },
+   "tris_total": 936,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     7000,
+     10000
+    ],
+    "pct_of_max": 9.4,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "armature": {
+    "object": "Rig_Humanoid_Chibi",
+    "bones": 27,
+    "under_max": true,
+    "humanoid": {
+     "required_missing": [],
+     "optional_present": [
+      "Chest",
+      "Neck",
+      "LeftShoulder",
+      "RightShoulder",
+      "LeftToes",
+      "RightToes"
+     ],
+     "sockets_present": [
+      "socket_weapon_r",
+      "socket_weapon_l",
+      "socket_cast",
+      "socket_head",
+      "socket_fx_ground"
+     ]
+    },
+    "max_bone_head_error_m": 0.0
+   },
+   "skinning": {
+    "SK_Archer_Body": {
+     "max_influences": 1,
+     "unweighted": 0,
+     "groups": 19,
+     "bound_to_armature": true
+    },
+    "SK_Archer_Bow": {
+     "max_influences": 1,
+     "unweighted": 0,
+     "groups": 1,
+     "bound_to_armature": true
+    },
+    "SK_Archer_Quiver": {
+     "max_influences": 1,
+     "unweighted": 0,
+     "groups": 1,
+     "bound_to_armature": true
+    }
+   },
+   "skinning_rigid_ok": true,
+   "deform_test": {
+    "head_moved_m": 0.124,
+    "hips_moved_m": 0.0,
+    "ok": true
+   },
+   "matches_source": true
+  },
+  "SK_Mage": {
+   "category": "hero",
+   "file_kb": 122.3,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "Rig_Humanoid_Chibi",
+      "type": "Null",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       -0.0,
+       0.0,
+       0.0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "name": "SK_Mage_Body",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "name": "SK_Mage_Staff",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.602,
+    -0.252,
+    0.0
+   ],
+   "blender_max": [
+    0.445,
+    0.31,
+    1.7
+   ],
+   "unity": {
+    "min": [
+     -0.445,
+     0.0,
+     -0.31
+    ],
+    "max": [
+     0.602,
+     1.7,
+     0.252
+    ],
+    "size": [
+     1.047,
+     1.7,
+     0.562
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.079,
+     -0.029
+    ]
+   },
+   "tris": {
+    "SK_Mage_Body": 844,
+    "SK_Mage_Staff": 280
+   },
+   "tris_total": 1124,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     7000,
+     10000
+    ],
+    "pct_of_max": 11.2,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "armature": {
+    "object": "Rig_Humanoid_Chibi",
+    "bones": 27,
+    "under_max": true,
+    "humanoid": {
+     "required_missing": [],
+     "optional_present": [
+      "Chest",
+      "Neck",
+      "LeftShoulder",
+      "RightShoulder",
+      "LeftToes",
+      "RightToes"
+     ],
+     "sockets_present": [
+      "socket_weapon_r",
+      "socket_weapon_l",
+      "socket_cast",
+      "socket_head",
+      "socket_fx_ground"
+     ]
+    },
+    "max_bone_head_error_m": 0.0
+   },
+   "skinning": {
+    "SK_Mage_Body": {
+     "max_influences": 1,
+     "unweighted": 0,
+     "groups": 19,
+     "bound_to_armature": true
+    },
+    "SK_Mage_Staff": {
+     "max_influences": 1,
+     "unweighted": 0,
+     "groups": 1,
+     "bound_to_armature": true
+    }
+   },
+   "skinning_rigid_ok": true,
+   "deform_test": {
+    "head_moved_m": 0.117,
+    "hips_moved_m": 0.0,
+    "ok": true
+   },
+   "matches_source": true
+  },
+  "SK_Warrior": {
+   "category": "hero",
+   "file_kb": 152.0,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "Rig_Humanoid_Chibi",
+      "type": "Null",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       -0.0,
+       0.0,
+       0.0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "name": "SK_Warrior_Body",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "name": "SK_Warrior_Hammer",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "name": "SK_Warrior_Shield",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.642,
+    -0.307,
+    0.0
+   ],
+   "blender_max": [
+    0.639,
+    0.328,
+    1.5
+   ],
+   "unity": {
+    "min": [
+     -0.639,
+     0.0,
+     -0.328
+    ],
+    "max": [
+     0.642,
+     1.5,
+     0.307
+    ],
+    "size": [
+     1.281,
+     1.5,
+     0.635
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.002,
+     -0.011
+    ]
+   },
+   "tris": {
+    "SK_Warrior_Body": 888,
+    "SK_Warrior_Hammer": 120,
+    "SK_Warrior_Shield": 160
+   },
+   "tris_total": 1168,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     7000,
+     10000
+    ],
+    "pct_of_max": 11.7,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "armature": {
+    "object": "Rig_Humanoid_Chibi",
+    "bones": 27,
+    "under_max": true,
+    "humanoid": {
+     "required_missing": [],
+     "optional_present": [
+      "Chest",
+      "Neck",
+      "LeftShoulder",
+      "RightShoulder",
+      "LeftToes",
+      "RightToes"
+     ],
+     "sockets_present": [
+      "socket_weapon_r",
+      "socket_weapon_l",
+      "socket_cast",
+      "socket_head",
+      "socket_fx_ground"
+     ]
+    },
+    "max_bone_head_error_m": 0.0
+   },
+   "skinning": {
+    "SK_Warrior_Body": {
+     "max_influences": 1,
+     "unweighted": 0,
+     "groups": 21,
+     "bound_to_armature": true
+    },
+    "SK_Warrior_Hammer": {
+     "max_influences": 1,
+     "unweighted": 0,
+     "groups": 1,
+     "bound_to_armature": true
+    },
+    "SK_Warrior_Shield": {
+     "max_influences": 1,
+     "unweighted": 0,
+     "groups": 1,
+     "bound_to_armature": true
+    }
+   },
+   "skinning_rigid_ok": true,
+   "deform_test": {
+    "head_moved_m": 0.147,
+    "hips_moved_m": 0.0,
+    "ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Boss_CryptGuardian": {
+   "category": "boss",
+   "file_kb": 29.7,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Boss_CryptGuardian",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -2.525,
+    -2.059,
+    0.0
+   ],
+   "blender_max": [
+    2.556,
+    0.713,
+    5.025
+   ],
+   "unity": {
+    "min": [
+     -2.556,
+     0.0,
+     -0.713
+    ],
+    "max": [
+     2.525,
+     5.025,
+     2.059
+    ],
+    "size": [
+     5.081,
+     5.025,
+     2.772
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     -0.016,
+     0.673
+    ]
+   },
+   "tris": {
+    "SM_Boss_CryptGuardian": 552
+   },
+   "tris_total": 552,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     15000,
+     25000
+    ],
+    "pct_of_max": 2.2,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_Arch_A": {
+   "category": "structure",
+   "file_kb": 32.6,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_Arch_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -2.0,
+    -0.37,
+    0.0
+   ],
+   "blender_max": [
+    2.0,
+    0.37,
+    3.4
+   ],
+   "unity": {
+    "min": [
+     -2.0,
+     0.0,
+     -0.37
+    ],
+    "max": [
+     2.0,
+     3.4,
+     0.37
+    ],
+    "size": [
+     4.0,
+     3.4,
+     0.74
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_Arch_A": 908
+   },
+   "tris_total": 908,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     800,
+     2500
+    ],
+    "pct_of_max": 36.3,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_BonePile_A": {
+   "category": "prop",
+   "file_kb": 27.3,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_BonePile_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.37,
+    -0.353,
+    0.0
+   ],
+   "blender_max": [
+    0.376,
+    0.344,
+    0.19
+   ],
+   "unity": {
+    "min": [
+     -0.376,
+     0.0,
+     -0.344
+    ],
+    "max": [
+     0.37,
+     0.19,
+     0.353
+    ],
+    "size": [
+     0.746,
+     0.19,
+     0.697
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     -0.003,
+     0.004
+    ]
+   },
+   "tris": {
+    "SM_Cripta_BonePile_A": 396
+   },
+   "tris_total": 396,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     100,
+     800
+    ],
+    "pct_of_max": 49.5,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_Brazier_A": {
+   "category": "prop",
+   "file_kb": 25.4,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_Brazier_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.4,
+    -0.4,
+    0.0
+   ],
+   "blender_max": [
+    0.4,
+    0.4,
+    1.54
+   ],
+   "unity": {
+    "min": [
+     -0.4,
+     0.0,
+     -0.4
+    ],
+    "max": [
+     0.4,
+     1.54,
+     0.4
+    ],
+    "size": [
+     0.8,
+     1.54,
+     0.8
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_Brazier_A": 380
+   },
+   "tris_total": 380,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     100,
+     800
+    ],
+    "pct_of_max": 47.5,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_Floor_2x2_A": {
+   "category": "floor",
+   "file_kb": 22.8,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_Floor_2x2_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -1.0,
+    -1.0,
+    -0.18
+   ],
+   "blender_max": [
+    1.0,
+    1.0,
+    0.0
+   ],
+   "unity": {
+    "min": [
+     -1.0,
+     -0.18,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     0.0,
+     1.0
+    ],
+    "size": [
+     2.0,
+     0.18,
+     2.0
+    ]
+   },
+   "pivot": {
+    "min_height": -0.18,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_Floor_2x2_A": 220
+   },
+   "tris_total": 220,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     200,
+     600
+    ],
+    "pct_of_max": 36.7,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_Floor_2x2_B": {
+   "category": "floor",
+   "file_kb": 29.4,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_Floor_2x2_B",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -1.0,
+    -1.0,
+    -0.18
+   ],
+   "blender_max": [
+    1.0,
+    1.0,
+    0.01
+   ],
+   "unity": {
+    "min": [
+     -1.0,
+     -0.18,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     0.01,
+     1.0
+    ],
+    "size": [
+     2.0,
+     0.19,
+     2.0
+    ]
+   },
+   "pivot": {
+    "min_height": -0.18,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_Floor_2x2_B": 572
+   },
+   "tris_total": 572,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     200,
+     600
+    ],
+    "pct_of_max": 95.3,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_Pillar_A": {
+   "category": "structure",
+   "file_kb": 23.0,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_Pillar_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.4,
+    -0.4,
+    0.0
+   ],
+   "blender_max": [
+    0.4,
+    0.4,
+    3.23
+   ],
+   "unity": {
+    "min": [
+     -0.4,
+     0.0,
+     -0.4
+    ],
+    "max": [
+     0.4,
+     3.23,
+     0.4
+    ],
+    "size": [
+     0.8,
+     3.23,
+     0.8
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_Pillar_A": 244
+   },
+   "tris_total": 244,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     800,
+     2500
+    ],
+    "pct_of_max": 9.8,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_Sarcophagus_A": {
+   "category": "prop",
+   "file_kb": 22.8,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_Sarcophagus_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.5,
+    -1.0,
+    0.0
+   ],
+   "blender_max": [
+    0.5,
+    1.0,
+    0.97
+   ],
+   "unity": {
+    "min": [
+     -0.5,
+     0.0,
+     -1.0
+    ],
+    "max": [
+     0.5,
+     0.97,
+     1.0
+    ],
+    "size": [
+     1.0,
+     0.97,
+     2.0
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_Sarcophagus_A": 224
+   },
+   "tris_total": 224,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     100,
+     800
+    ],
+    "pct_of_max": 28.0,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_Stairs_A": {
+   "category": "structure",
+   "file_kb": 23.9,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_Stairs_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -1.0,
+    -1.0,
+    0.0
+   ],
+   "blender_max": [
+    1.0,
+    1.0,
+    1.25
+   ],
+   "unity": {
+    "min": [
+     -1.0,
+     0.0,
+     -1.0
+    ],
+    "max": [
+     1.0,
+     1.25,
+     1.0
+    ],
+    "size": [
+     2.0,
+     1.25,
+     2.0
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_Stairs_A": 312
+   },
+   "tris_total": 312,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     800,
+     2500
+    ],
+    "pct_of_max": 12.5,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_WallCorner_A": {
+   "category": "structure",
+   "file_kb": 22.3,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_WallCorner_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.5,
+    -0.5,
+    0.0
+   ],
+   "blender_max": [
+    0.5,
+    0.5,
+    3.58
+   ],
+   "unity": {
+    "min": [
+     -0.5,
+     0.0,
+     -0.5
+    ],
+    "max": [
+     0.5,
+     3.58,
+     0.5
+    ],
+    "size": [
+     1.0,
+     3.58,
+     1.0
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_WallCorner_A": 188
+   },
+   "tris_total": 188,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     800,
+     2500
+    ],
+    "pct_of_max": 7.5,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Cripta_Wall_2m_A": {
+   "category": "structure",
+   "file_kb": 24.3,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Cripta_Wall_2m_A",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -1.0,
+    -0.325,
+    0.0
+   ],
+   "blender_max": [
+    1.0,
+    0.325,
+    3.0
+   ],
+   "unity": {
+    "min": [
+     -1.0,
+     0.0,
+     -0.325
+    ],
+    "max": [
+     1.0,
+     3.0,
+     0.325
+    ],
+    "size": [
+     2.0,
+     3.0,
+     0.65
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.0
+    ]
+   },
+   "tris": {
+    "SM_Cripta_Wall_2m_A": 332
+   },
+   "tris_total": 332,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     800,
+     2500
+    ],
+    "pct_of_max": 13.3,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Enemy_AshHound": {
+   "category": "enemy",
+   "file_kb": 23.4,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Enemy_AshHound",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.208,
+    -1.065,
+    0.0
+   ],
+   "blender_max": [
+    0.208,
+    0.792,
+    1.01
+   ],
+   "unity": {
+    "min": [
+     -0.208,
+     0.0,
+     -0.792
+    ],
+    "max": [
+     0.208,
+     1.01,
+     1.065
+    ],
+    "size": [
+     0.416,
+     1.01,
+     1.857
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.136
+    ]
+   },
+   "tris": {
+    "SM_Enemy_AshHound": 244
+   },
+   "tris_total": 244,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     3500,
+     5000
+    ],
+    "pct_of_max": 4.9,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Enemy_GhostArcher": {
+   "category": "enemy",
+   "file_kb": 25.4,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Enemy_GhostArcher",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.4,
+    -0.564,
+    0.02
+   ],
+   "blender_max": [
+    0.4,
+    0.35,
+    1.5
+   ],
+   "unity": {
+    "min": [
+     -0.4,
+     0.02,
+     -0.35
+    ],
+    "max": [
+     0.4,
+     1.5,
+     0.564
+    ],
+    "size": [
+     0.8,
+     1.48,
+     0.914
+    ]
+   },
+   "pivot": {
+    "min_height": 0.02,
+    "center_xz_unity": [
+     0.0,
+     0.107
+    ]
+   },
+   "tris": {
+    "SM_Enemy_GhostArcher": 324
+   },
+   "tris_total": 324,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     3500,
+     5000
+    ],
+    "pct_of_max": 6.5,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Enemy_HollowSentinel": {
+   "category": "enemy",
+   "file_kb": 27.3,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Enemy_HollowSentinel",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -0.46,
+    -0.52,
+    0.0
+   ],
+   "blender_max": [
+    0.525,
+    0.22,
+    1.64
+   ],
+   "unity": {
+    "min": [
+     -0.525,
+     0.0,
+     -0.22
+    ],
+    "max": [
+     0.46,
+     1.64,
+     0.52
+    ],
+    "size": [
+     0.985,
+     1.64,
+     0.74
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     -0.032,
+     0.15
+    ]
+   },
+   "tris": {
+    "SM_Enemy_HollowSentinel": 432
+   },
+   "tris_total": 432,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     3500,
+     5000
+    ],
+    "pct_of_max": 8.6,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  },
+  "SM_Enemy_StoneHerald": {
+   "category": "enemy",
+   "file_kb": 23.6,
+   "raw": {
+    "fbx_version": 7400,
+    "global_settings": {
+     "UpAxis": 1,
+     "UpAxisSign": 1,
+     "FrontAxis": 2,
+     "FrontAxisSign": 1,
+     "CoordAxis": 0,
+     "CoordAxisSign": 1,
+     "UnitScaleFactor": 100.0,
+     "OriginalUnitScaleFactor": 100.0
+    },
+    "axis_system_canonical_y_up": true,
+    "top_nodes": [
+     {
+      "name": "SM_Enemy_StoneHerald",
+      "type": "Mesh",
+      "lcl_translation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_rotation": [
+       0,
+       0,
+       0
+      ],
+      "lcl_scaling": [
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "top_nodes_rotation_0_scale_1": true
+   },
+   "blender_min": [
+    -1.282,
+    -0.532,
+    0.0
+   ],
+   "blender_max": [
+    1.282,
+    0.4,
+    1.96
+   ],
+   "unity": {
+    "min": [
+     -1.282,
+     0.0,
+     -0.4
+    ],
+    "max": [
+     1.282,
+     1.96,
+     0.532
+    ],
+    "size": [
+     2.564,
+     1.96,
+     0.932
+    ]
+   },
+   "pivot": {
+    "min_height": 0.0,
+    "center_xz_unity": [
+     0.0,
+     0.066
+    ]
+   },
+   "tris": {
+    "SM_Enemy_StoneHerald": 220
+   },
+   "tris_total": 220,
+   "materials": [
+    "M_Graybox_Palette"
+   ],
+   "textures": [
+    "T_Graybox_Palette_BC.png",
+    "T_Graybox_Palette_E.png"
+   ],
+   "uv_and_vertex_color": true,
+   "budget": {
+    "tris_range": [
+     3500,
+     5000
+    ],
+    "pct_of_max": 4.4,
+    "under_max": true,
+    "materials_ok": true
+   },
+   "matches_source": true
+  }
+ },
+ "summary": {
+  "files": 19,
+  "all_axis_canonical": true,
+  "all_top_nodes_rotation_0_scale_1": true,
+  "all_unit_scale_factor_100": true,
+  "all_under_tris_max": true,
+  "all_materials_ok": true,
+  "all_match_source": true,
+  "all_rigid_skinning": true,
+  "all_deform_tests_ok": true,
+  "humanoid_required_missing": [],
+  "max_bone_head_error_m": 0.0
+ }
+}
