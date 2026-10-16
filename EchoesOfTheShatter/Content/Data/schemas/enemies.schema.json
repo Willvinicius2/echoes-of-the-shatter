@@ -142,6 +142,15 @@
       "required": false,
       "ref": "loot_tables.csv",
       "desc": "Tabela de loot de elite (vazio = usa lootTableId); so em elite fixa"
+    },
+    {
+      "name": "patrolSpeedMult",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "desc": "Velocidade de patrulha como fracao da perseguicao, em (0,1] (docs/13 R2.2); vazio = nao patrulha"
     }
   ],
   "checks": [

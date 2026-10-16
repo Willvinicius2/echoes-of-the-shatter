@@ -85,6 +85,15 @@
       "default": 0,
       "min": 0,
       "desc": "Atraso maximo entre acoes (s)"
+    },
+    {
+      "name": "summonAtFraction",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "desc": "Fracao da transicao em que surgem os invocados, em (0,1); obrigatoria se summonCount > 0 (docs/13 R2.2)"
     }
   ],
   "checks": [

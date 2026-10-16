@@ -1,6 +1,6 @@
 # 06 — Dados: esquemas, tabelas CSV e save
 
-Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (58 chaves: as 41 de `constants.h` e as 17 de docs/13), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
+Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (62 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds` e as 2 da rodada 2), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
 
 ## 1. Fontes e escopo
 
@@ -58,7 +58,7 @@ Os exemplos de cada tabela vêm do fixture em `ShatterCore/tests/data/` (uma lin
 
 ### `rules.csv` (constantes de regra)
 
-Chaves de `RulesConstants` (`constants.h`). O validador exige as 58, nomes exatos, sem chave extra. Valores com a fonte de cada um. Os marcados PROVISÓRIO são números que o plano não fecha (pendência, seção 9).
+Chaves de `RulesConstants` (`constants.h`). O validador exige as 62, nomes exatos, sem chave extra. Valores com a fonte de cada um. Os marcados PROVISÓRIO são números que o plano não fecha (pendência, seção 9).
 
 - Chave primária: `key`.
 - Formato key-value (`key,value`). Todas as chaves são obrigatórias.
@@ -123,6 +123,8 @@ Chaves de `RulesConstants` (`constants.h`). O validador exige as 58, nomes exato
 | `elite_damage_mult` | number | ≥ 1 | 1.2 | docs/13 item 5: Elite sorteada: multiplicador de dano |
 | `elite_xp_mult` | number | ≥ 1 | 3.0 | docs/13 item 5: Elite sorteada: multiplicador de XP |
 | `potion_lockout` | number | ≥ 0 | 1.0 | docs/13 item 2: Trava global entre usos de pocao (s) |
+| `unarmed_weapon_damage_physical` | number | ≥ 0 | 3 | docs/13 R2.5 item 1 [HIPÓTESE]: dano físico base da "arma" quando não há arma equipada (idle e golpe manual) |
+| `require_on_screen_margin` | number | ≥ 0 | 100 | docs/13 R2.2: margem interna (uu) da área visível de R-VIS-1 |
 
 Regras de conteúdo:
 
@@ -216,7 +218,7 @@ class.warrior,resource,100,0
 ### `skills.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel,coneAngle,knockback,projectileSpeed,idleCalibration`.
+- Cabeçalho exato: `id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel,coneAngle,knockback,projectileSpeed,idleCalibration,wallStaggerSeconds`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -256,6 +258,7 @@ class.warrior,resource,100,0
 | `knockback` | número | não | ≥ 0 | 0 | Empurrao ao acertar (uu) |
 | `projectileSpeed` | número | não | ≥ 0 | 0 | Velocidade do projetil (uu/s) |
 | `idleCalibration` | enum: `none`, `manual_estimate`, `bot_parity` | não | — | none | Calibracao do perfil idle: none / manual_estimate / bot_parity |
+| `wallStaggerSeconds` | número | não | ≥ 0 | 0 | Stagger (s) do atacante ao bater em pilar ou parede na investida (docs/13 R2.2); só `skill.enemy.guardian_shield_charge` = 2,0 |
 
 Regras de conteúdo:
 
@@ -313,7 +316,7 @@ effect.burn,4,1,refresh,1,,3,,,,0,none,1,0,fire
 ### `enemies.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId,eliteLootTableId`.
+- Cabeçalho exato: `id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId,eliteLootTableId,patrolSpeedMult`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -335,6 +338,7 @@ effect.burn,4,1,refresh,1,,3,,,,0,none,1,0,fire
 | `guardBreakImmunitySeconds` | número | não | ≥ 0 | 0 | Imunidade a nova Guarda Quebrada (s) |
 | `modifierId` | ref `elite_modifiers.csv` | não | — | — | Modificador fixo de elite (elite_modifiers.csv) |
 | `eliteLootTableId` | ref `loot_tables.csv` | não | — | — | Tabela de loot de elite (vazio = usa lootTableId); só em elite fixa (pendência 7.2 do Backend) |
+| `patrolSpeedMult` | número | não | > 0, ≤ 1 | — | Velocidade de patrulha como fração da perseguição (docs/13 R2.2); vazio = não patrulha. Só `enemy.hollow_sentinel` = 0,5 |
 
 Regras de conteúdo:
 
@@ -638,7 +642,7 @@ Checagens do validador: `modifier_rules`.
 Fases do Guardião (docs/13 item 4). Chave: bossId + phase.
 
 - Chave primária: `bossId`, `phase`.
-- Cabeçalho exato: `bossId,phase,lifeThreshold,transitionSeconds,summonEnemyId,summonCount,shieldSeconds,turnRate,decisionDelayMin,decisionDelayMax`.
+- Cabeçalho exato: `bossId,phase,lifeThreshold,transitionSeconds,summonEnemyId,summonCount,shieldSeconds,turnRate,decisionDelayMin,decisionDelayMax,summonAtFraction`.
 - `lifeThreshold` é a fração da vida em que a fase começa (fase 1 = 1,0; fase 2 = 0,5). `shieldSeconds` ficou vazio: o docs/13 não dá valor por fase (a queda do escudo de 5 s está em `rules.csv`, `boss_shield_down_seconds`).
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
@@ -653,6 +657,7 @@ Fases do Guardião (docs/13 item 4). Chave: bossId + phase.
 | `turnRate` | número | não | ≥ 0 | 0 | Giro (graus/s) nesta fase |
 | `decisionDelayMin` | número | não | ≥ 0 | 0 | Atraso minimo entre acoes (s) |
 | `decisionDelayMax` | número | não | ≥ 0 | 0 | Atraso maximo entre acoes (s) |
+| `summonAtFraction` | número | não | > 0, < 1 | — | Fração da transição em que surgem os invocados (docs/13 R2.2). **Obrigatória se `summonCount` > 0** (erro `E_BOSS`); proibida sem `summonCount`. Fase 2 do Guardião = 0,5 |
 
 Checagens do validador: `boss_phase_rules`.
 
@@ -685,7 +690,7 @@ Checagens do validador: `boss_pattern_rules`.
 IA de Cão-de-Cinza, Cão Veloz e Arqueiro (docs/13 item 6). O Cão Veloz tem intervalo de ficha x0,8 do comum, já calculado.
 
 - Chave primária: `enemyId`.
-- Cabeçalho exato: `enemyId,aggroRange,alertRadius,leashRange,leashSeconds,preferredMin,preferredMax,retreatBelow,retreatMaxSeconds,circleMin,circleMax,circleSpeed,attackTokens,tokenIntervalMin,tokenIntervalMax,fleeLifeFraction,fleeSeconds,fleeOncePerLife,attackCooldown,maxSimultaneousShooters`.
+- Cabeçalho exato: `enemyId,aggroRange,alertRadius,leashRange,leashSeconds,preferredMin,preferredMax,retreatBelow,retreatMaxSeconds,circleMin,circleMax,circleSpeed,attackTokens,tokenIntervalMin,tokenIntervalMax,fleeLifeFraction,fleeSeconds,fleeOncePerLife,attackCooldown,maxSimultaneousShooters,requireOnScreen`.
 - `aggroRange` repete `enemies.csv`; o validador exige igualdade quando preenchido. Sem valor no docs/13 para `alertRadius` do Arqueiro, `leashRange` e `leashSeconds` dele: vazios.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
@@ -710,6 +715,7 @@ IA de Cão-de-Cinza, Cão Veloz e Arqueiro (docs/13 item 6). O Cão Veloz tem in
 | `fleeOncePerLife` | bool | não | — | false | Foge so uma vez por vida |
 | `attackCooldown` | número | não | ≥ 0 | 0 | Recarga entre disparos/ataques (s) |
 | `maxSimultaneousShooters` | inteiro | não | ≥ 0 | 0 | Atiradores simultaneos |
+| `requireOnScreen` | booleano | não | — | false | R-VIS-1: o atirador só mira com o alvo dentro da tela, menos `require_on_screen_margin` (docs/13 R2.2). Só `enemy.ghost_archer` = true |
 
 Checagens do validador: `enemy_ai_rules`.
 

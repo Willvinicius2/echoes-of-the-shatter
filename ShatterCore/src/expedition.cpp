@@ -43,7 +43,7 @@ struct Setup {
     StatBlock playerStats;
     std::vector<const SkillData*> bar;      // habilidades da barra (posições não vazias, em ordem)
     std::vector<int> ranks;                 // rank de cada uma (1..3)
-    std::array<double, kDamageTypeCount> weaponDamage{};
+    const ItemBaseData* weapon = nullptr;   // arma equipada; nullptr = desarmado (unarmed_weapon_damage_physical)
     std::vector<const EffectData*> triggerEffects;  // ruleEffect dos Únicos equipados com gatilho
     std::vector<const EncounterTemplate*> encounters;
     std::vector<double> encounterWeights;
@@ -74,7 +74,7 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
     }
     const auto& mh = ch.equipment[static_cast<std::size_t>(ItemSlot::MainHand)];
     if (mh) {
-        if (const ItemBaseData* b = db.FindItemBase(mh->baseId)) su.weaponDamage = b->weaponDamage;
+        su.weapon = db.FindItemBase(mh->baseId);
     }
     for (const auto& item : ch.equipment) {
         if (!item || item->uniqueId.empty()) continue;
@@ -120,6 +120,8 @@ struct EnemyInst {
     double life = 0.0;
     double barrier = 0.0;            // barreira do elite (modificador Escudo)
     double attackTimer = 0.0;
+    bool hasToken = false;           // ficha de ataque (enemy_ai.csv attackTokens) em uso: ciclo de ataque em curso
+    std::int64_t lastAct = -1;       // ordem do último ataque (rodízio das fichas)
 };
 
 struct PendingExplosion {  // Volátil: marca de fusível e explosão (docs/13, item 5)
@@ -427,7 +429,7 @@ private:
         if (n < 1) n = 1;
         if (n > alive) n = alive;
 
-        DamageArray base = s.scalesWithWeapon ? su_.weaponDamage : s.baseDamage;
+        const DamageArray base = ComputeSkillBaseDamage(db_, s, su_.weapon);
         const double coef = s.coefficientByRank[static_cast<std::size_t>(rank - 1)];
         const double maxRes = ps_.Get(StatId::Resource);
 
@@ -641,11 +643,42 @@ private:
         if (playerTimer_ <= kEps) PlayerAct(dt);
 
         // Inimigos, em ordem.
+        // Fichas de ataque (enemy_ai.csv attackTokens): no máximo N inimigos do MESMO tipo com o ciclo de ataque em curso
+        // (paridade com o combate real: os outros circulam). Quem termina o ciclo devolve a ficha; quem quer atacar pega
+        // uma livre, o mais antigo sem atacar primeiro (rodízio); sem ficha livre, espera.
+        std::vector<std::size_t> ready;
         for (std::size_t i = 0; i < enemies_.size(); ++i) {
             EnemyInst& e = enemies_[i];
             if (!e.alive) continue;
             e.attackTimer -= dt;
-            if (e.attackTimer <= kEps) EnemyAct(e, dt);
+            if (e.attackTimer <= kEps) {
+                e.hasToken = false;
+                ready.push_back(i);
+            }
+        }
+        bool anyLimited = false;
+        for (std::size_t i : ready) {
+            const EnemyAiData* ai = db_.FindEnemyAi(enemies_[i].data->id);
+            anyLimited = anyLimited || (ai != nullptr && ai->attackTokens > 0);
+        }
+        if (anyLimited)  // sem fichas em jogo a ordem continua a do encontro (índice)
+            std::stable_sort(ready.begin(), ready.end(),
+                             [&](std::size_t a, std::size_t b) { return enemies_[a].lastAct < enemies_[b].lastAct; });
+        for (std::size_t i : ready) {
+            EnemyInst& e = enemies_[i];
+            const EnemyAiData* ai = db_.FindEnemyAi(e.data->id);
+            const int limit = ai != nullptr ? ai->attackTokens : 0;
+            if (limit > 0) {
+                int holders = 0;
+                for (const EnemyInst& o : enemies_) holders += (o.alive && o.hasToken && o.data->id == e.data->id) ? 1 : 0;
+                if (holders >= limit) {
+                    e.attackTimer = 0.0;  // espera a ficha sem acumular atraso
+                    continue;
+                }
+                e.hasToken = true;
+            }
+            e.lastAct = actSeq_++;
+            EnemyAct(e, dt);
             if (life_ <= 0.0) break;
         }
     }
@@ -676,6 +709,7 @@ private:
     DodgeState dodge_;
     double wardAmount_ = 0.0, wardRemaining_ = 0.0;
     std::vector<PendingExplosion> explosions_;
+    std::int64_t actSeq_ = 0;
     bool potionFailing_ = false;
 
     int kills_ = 0, elites_ = 0, potionsUsed_ = 0, healFailures_ = 0, dodgesUsed_ = 0;

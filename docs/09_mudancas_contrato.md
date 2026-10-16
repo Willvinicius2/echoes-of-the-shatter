@@ -160,3 +160,56 @@ Retiradas (comportamento): `shatter_save_start_expedition` e `shatter_save_colle
 - **Balanceamento.** Com o conteúdo real, o Guerreiro nível 4 sem equipamento recua em ~1 min no idle (3 cargas de Vida, bandos de Cães): o Game Designer deve olhar `idleDamageTakenMult`/perfis antes do playtest. O teste de ponta a ponta usa nível 20.
 - **Unity/C#.** `shatter_move_speed` com base <= 0 para o herói; chamar `shatter_potions_to_save` e gravar o save quando mudar de cena; o `IRulesCore.CanAct/CanMove` vira `shatter_can_act/_move` com o `shatter_actor`; Guarda Quebrada e stun passam por `shatter_actor_apply_effect` / `shatter_boss_apply_effect` (não por `shatter_effects_apply`); `remove_barrier` e `interrupted` são ordens do core ao C#.
 - **Revisão do orquestrador.** Tudo que toca confiança de save e de resultado (7.3) e a derivação da seed. Nenhum segredo, credencial ou dado pessoal foi tocado.
+
+
+---
+
+## 8. Rodada 2: balanceamento e dados (Backend + Dados, 16/10/2026, `etapa2/backend`)
+
+Origem: `13_design_pendencias.md`, "Balanceamento e dados — rodada 2". Core, CSV, esquemas, validador e `06_dados.md` no mesmo branch.
+
+### 8.1 Mudanças
+
+| # | Onde | Mudança |
+|---|---|---|
+| C-21 | `constants.h`, `rules.csv` | `unarmed_weapon_damage_physical` = 3 e `require_on_screen_margin` = 100 (opcionais no core, obrigatórias no validador) |
+| C-22 | `combat.h` | `ComputeSkillBaseDamage(db, skill, weaponOrNull)`: golpe que escala com arma usa a arma; **sem arma, o desarmado (só físico)**; o simulador (antes: 0 de dano sem arma) e o golpe manual usam a mesma conta. API: `shatter_skill_base_damage`, `shatter_db_rules_ext2` |
+| C-23 | `expedition.cpp` | **Fichas de ataque** (`enemy_ai.csv` `attackTokens`): no máximo N inimigos do MESMO tipo (`enemyId`) com o ciclo de ataque em curso; quem termina devolve a ficha, a livre vai para o mais antigo sem atacar (rodízio determinístico), sem ficha espera sem acumular atraso. Sem linha em `enemy_ai.csv` ou com 0: sem limite (a ordem de ataque continua a do encontro). **Não simulado:** o intervalo sorteado `tokenIntervalMin/Max` entre ataques de cada Cão (só o limite de simultâneos) |
+| C-24 | `combat.cpp` | **Bug do Veloz corrigido:** `ComputeActionTiming` com `EliteProfile` não depende mais de o bloco já ter os mods `source = "elite"`: velocidade-base = a do bloco SEM eles; telegraph = `windup / base` (0,3 s do Cão Veloz fica 0,3 s; antes 0,375 s se o bloco não tinha os mods); impacto e recuperação = `/ (base × attackSpeedMult)`, recuperação ainda `× recoveryMult`. Ciclo do Cão Veloz = 0,3 + (0,1 + 0,4×0,8)/1,25 = 0,636 s |
+| C-25 | `boss_phases.csv` `summonAtFraction` | sai a constante `kSummonAtFractionOfTransition`; obrigatória (0 < x < 1) se `summonCount` > 0; marcador e surgimento em `transição × fração` |
+| C-26 | `skills.csv` `wallStaggerSeconds` | `BossFight::OnWallHit(stats, eventos)`: a investida em **impacto** com `wallStaggerSeconds` > 0 atordoa o chefe por esse tempo (+30% de dano recebido como no stagger), interrompe o padrão e derruba o escudo (`boss_shield_down_seconds`); não dá imunidade à Guarda Quebrada. API: `shatter_boss_wall_hit` |
+| C-27 | `enemies.csv` `patrolSpeedMult`, `enemy_ai.csv` `requireOnScreen` | lidos, validados (`patrolSpeedMult` em (0,1]) e expostos no `lookup_json` (`patrol_speed_mult`, `ai.require_on_screen`); quem usa é o cliente (patrulha e R-VIS-1 com o frustum e a margem) |
+| C-28 | `shatter_c.h` | aditivo: `shatter_rules_ext2` (+ `shatter_layout_info_ext2/_check_ext2`, `SHATTER_LAYOUT_EXT2_COUNT` 3; o layout ext anterior, 37, não mudou), `shatter_skill_base_damage`, `shatter_boss_wall_hit`; `lookup_json` com `wall_stagger_seconds`, `phases[].summon_at_fraction` |
+
+Dados: `rules.csv` (+2 chaves, 62), `skills.csv` (`wallStaggerSeconds`; `idleDamageTakenMult` 0,85 nas 4 habilidades do Guerreiro), `enemies.csv` (`patrolSpeedMult`), `enemy_ai.csv` (`requireOnScreen`), `boss_phases.csv` (`summonAtFraction`), os 5 esquemas, `validate_data.py` (`E_BOSS` para `summonAtFraction`; 3 mutações novas no `--self-test`) e `06_dados.md`. Fixtures de `tests/data` alinhadas; golden regravado.
+
+### 8.2 Medição (item 2): 20 sementes de 12 h, Guerreiro nível 4, conteúdo real, `ShatterCore/tests/test_balance_probe.cpp`
+
+Rodar com `SHATTER_BALANCE_PROBE=1 shattercore_tests balance_probe`. Regras de IA: poção de Vida abaixo de 35%, Fenda de Pedra com 3+ inimigos, Escudada em elite, Corte de Ferro. Barra com as 4 habilidades. "Fervor por hora" = a taxa do idle: **XP bruto por hora simulada** (antes do Vigor e do teto de nível, que satura em nível 5) e abates por hora. Tempo em minutos.
+
+| Cenário | Variante | Recuaram em 12 h | Recuo em até 1 h | Tempo até recuar min / mediana / máx | XP bruto/h | Abates/h |
+|---|---|---|---|---|---|---|
+| só espada | **antes** (m = 1, sem fichas) | 20/20 | 20/20 | 0,7 / 2,6 / 9,0 | 10 888 | 504 |
+| só espada | fichas, m = 1 | 20/20 | 20/20 | 1,0 / 4,2 / 14,5 | 11 311 | 527 |
+| só espada | fichas, m = 0,92 | 20/20 | 20/20 | 1,1 / 5,5 / 22,6 | 11 425 | 532 |
+| só espada | **fichas, m = 0,85** | 20/20 | 20/20 | 1,8 / 7,4 / 42,4 | 11 546 | 545 |
+| só espada | fichas, m = 0,80 | 20/20 | 17/20 | 5,6 / 31,0 / 123,2 | 11 709 | 552 |
+| só espada | fichas, m = 0,75 | 20/20 | 6/20 | 17,7 / 83,5 / 620,6 | 11 804 | 554 |
+| só espada | fichas, m = 0,70 | 9/20 | 1/20 | 52,5 / sem recuo / sem recuo | 11 823 | 553 |
+| kit completo | **antes** (m = 1, sem fichas) | 20/20 | 20/20 | 1,6 / 6,0 / 15,4 | 11 590 | 540 |
+| kit completo | fichas, m = 1 | 20/20 | 20/20 | 1,8 / 12,6 / 41,7 | 11 943 | 567 |
+| kit completo | fichas, m = 0,92 | 20/20 | 14/20 | 4,3 / 35,6 / 347,5 | 11 965 | 567 |
+| kit completo | **fichas, m = 0,85** | 18/20 | 3/20 | 17,4 / 197,0 / 719,8 | 12 058 | 565 |
+| kit completo | fichas, m = 0,80 | 4/20 | 1/20 | 25,8 / sem recuo / sem recuo | 12 076 | 564 |
+| kit completo | fichas, m = 0,75 | 0/20 | 0/20 | sem recuo | 12 089 | 564 |
+| kit completo | fichas, m = 0,70 | 0/20 | 0/20 | sem recuo | 12 105 | 565 |
+
+(Kit completo = espada, elmo, peitoral, luvas, calça e botas bases, nenhum afixo; "sem recuo" = 720 min.) Leitura: o ritmo de abates e o XP/h mal mudam entre as variantes (+/- 10%), então a meta de 30 a 40% do manual (RF-32) não se mexe. As fichas sozinhas dobram o tempo até recuar, mas não bastam. Critério do R2.1.5 (kit: recuo em 1 h <= 10% e mediana sem recuo; só espada: mediana >= 30 min): **m = 0,85 NÃO atende** (kit: 3/20 em 1 h e a mediana recua; só espada: mediana 7,4 min). **m = 0,80 atende** (kit: 1/20 em 1 h e 16/20 sem recuo em 12 h; só espada: mediana 31 min); m = 0,75 deixa o kit sem nenhum recuo em 12 h (margem grande demais para o pilar P3). O `skills.csv` ficou em **0,85** como pedido; trocar para 0,80 é uma célula nas 4 linhas. A estimativa de 0,92 do Designer (com fichas) também não atende; as contas à mão do docs/13 (6 min e 48 min) ficaram otimistas: o simulador tem o Cão sem esquiva, o Arauto e a Elite Escudada tiram 60 a 96% da vida, e a vida do herói de nível 4 é 156.
+
+### 8.3 Câmera
+
+`SO_RenderSettings.asset`: `yawDegrees: 45` (e `RenderSettingsAsset.yawDegrees = 45f`): yaw **+45°**. O core não usa o ângulo (R-VIS-1 é do cliente, com `require_on_screen_margin`).
+
+### 8.4 Testes
+
+`shattercore_tests` 155 (eram 146) e `shattercore_c_api_tests` 23 (eram 21): `test_round2.cpp` (desarmado, fichas, Veloz, colunas novas lidas e validadas, momento da invocação, stagger de parede) e `c_api_r2_*`. `validate_data.py` e `--self-test` OK.

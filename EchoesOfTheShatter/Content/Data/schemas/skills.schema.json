@@ -297,6 +297,14 @@
         "bot_parity"
       ],
       "desc": "Calibracao do perfil idle: none / manual_estimate / bot_parity"
+    },
+    {
+      "name": "wallStaggerSeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Stagger (s) do atacante ao bater em pilar ou parede na investida (docs/13 R2.2); vazio = nao tem"
     }
   ],
   "checks": [

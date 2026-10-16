@@ -456,6 +456,20 @@
       "default": 3,
       "desc": "Tempo fora de combate (s) [HIPOTESE]",
       "min": 0
+    },
+    {
+      "name": "unarmed_weapon_damage_physical",
+      "type": "number",
+      "default": 3,
+      "min": 0,
+      "desc": "Dano fisico base da arma quando nao ha arma equipada (docs/13 R2.5 item 1) [HIPOTESE]"
+    },
+    {
+      "name": "require_on_screen_margin",
+      "type": "number",
+      "default": 100,
+      "min": 0,
+      "desc": "Margem interna (uu) da area visivel de R-VIS-1 (docs/13 R2.2)"
     }
   ]
 }

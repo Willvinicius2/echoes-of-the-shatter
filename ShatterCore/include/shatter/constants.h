@@ -63,6 +63,9 @@ struct RulesConstants {
     double outOfCombatSeconds = 3.0;             // out_of_combat_seconds: sem dar nem levar golpe = fora de combate (RF-14)
     // Poções (item 2)
     double potionLockout = 1.0;            // potion_lockout: trava global entre usos (s)
+    // Rodada 2 (docs/13, R2): dano base físico da "arma" sem arma equipada; margem da área visível de R-VIS-1.
+    double unarmedWeaponDamagePhysical = 3.0;  // unarmed_weapon_damage_physical
+    double requireOnScreenMargin = 100.0;      // require_on_screen_margin (uu)
 
     // --- Fervor (jogo manual). O idle é a taxa base = 1. ---
     double fervorXpMult = 3.0;             // fervor_xp_mult
