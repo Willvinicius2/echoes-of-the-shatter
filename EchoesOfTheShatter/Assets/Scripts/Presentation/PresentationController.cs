@@ -38,6 +38,7 @@ namespace Echoes.Presentation
         [SerializeField, Min(0.01f)] float dissolveSeconds = 0.5f;
 
         AttributeComponent attributes;
+        readonly List<Material> ownedMaterials = new List<Material>();
         readonly List<Material> flashMaterials = new List<Material>();
         readonly List<Material> dissolveMaterials = new List<Material>();
         ParticleSystem[] attachedParticles;
@@ -49,6 +50,10 @@ namespace Echoes.Presentation
         Vector3 lastPosition;
         int actionLayerIndex = -1;
         int hitLayerIndex = -1;
+        bool hasSpeed;
+        bool hasIsDead;
+        bool hasIsStaggered;
+        bool hasActionSpeed;
         bool subscribed;
 
         Combatant Self => attributes != null ? attributes.Combatant : null;
@@ -67,10 +72,23 @@ namespace Echoes.Presentation
         {
             if (root == null) root = FindAnyObjectByType<GameRoot>();
             if (vfxPool == null) vfxPool = FindAnyObjectByType<VfxPool>();
-            if (animator != null && skillSet != null)
+            if (HasAnimator)
             {
-                actionLayerIndex = animator.GetLayerIndex(skillSet.actionLayer);
-                hitLayerIndex = animator.GetLayerIndex(skillSet.hitLayer);
+                if (skillSet != null)
+                {
+                    actionLayerIndex = animator.GetLayerIndex(skillSet.actionLayer);
+                    hitLayerIndex = animator.GetLayerIndex(skillSet.hitLayer);
+                }
+                // Só escreve parâmetros que existem (o Animator avisa no Console a cada chamada sem parâmetro).
+                var parameters = animator.parameters;
+                for (var i = 0; i < parameters.Length; i++)
+                {
+                    var hash = parameters[i].nameHash;
+                    if (hash == SpeedParam) hasSpeed = true;
+                    else if (hash == IsDeadParam) hasIsDead = true;
+                    else if (hash == IsStaggeredParam) hasIsStaggered = true;
+                    else if (hash == ActionSpeedParam) hasActionSpeed = true;
+                }
             }
             var events = root != null ? root.Events : null;
             if (events == null) return;
@@ -84,6 +102,11 @@ namespace Echoes.Presentation
 
         void OnDestroy()
         {
+            for (var i = 0; i < ownedMaterials.Count; i++)
+            {
+                if (ownedMaterials[i] != null) Destroy(ownedMaterials[i]);
+            }
+            ownedMaterials.Clear();
             if (!subscribed || root == null || root.Events == null) return;
             var events = root.Events;
             events.Unsubscribe<HitEvent>(OnHit);
@@ -116,10 +139,13 @@ namespace Echoes.Presentation
                 animator.speed = frozen ? 0f : 1f;
                 var moved = (transform.position - lastPosition) / Mathf.Max(dt, 1e-5f);
                 moved.y = 0f;
-                animator.SetFloat(SpeedParam, frozen ? 0f : moved.magnitude);
-                animator.SetFloat(ActionSpeedParam, actionSpeed);
-                var rules = root != null && root.Rules != null ? root.Rules.Core : null;
-                animator.SetBool(IsStaggeredParam, rules != null && !self.IsDead && !rules.CanAct(self.Stats));
+                if (hasSpeed) animator.SetFloat(SpeedParam, frozen ? 0f : moved.magnitude);
+                if (hasActionSpeed) animator.SetFloat(ActionSpeedParam, actionSpeed);
+                if (hasIsStaggered)
+                {
+                    var rules = root != null && root.Rules != null ? root.Rules.Core : null;
+                    animator.SetBool(IsStaggeredParam, rules != null && !self.IsDead && !rules.CanAct(self.Stats));
+                }
             }
             lastPosition = transform.position;
 
@@ -211,14 +237,14 @@ namespace Echoes.Presentation
             if (!ReferenceEquals(evt.Target, Self)) return;
             flashTimeLeft = 0f;
             actionSpeed = 1f;
-            if (HasAnimator) animator.SetBool(IsDeadParam, true);
+            if (HasAnimator && hasIsDead) animator.SetBool(IsDeadParam, true);
             dissolveProgress = dissolveMaterials.Count > 0 ? 0f : -1f;
         }
 
         void OnRevived(in CombatantRevivedEvent evt)
         {
             if (!ReferenceEquals(evt.Target, Self)) return;
-            if (HasAnimator) animator.SetBool(IsDeadParam, false);
+            if (HasAnimator && hasIsDead) animator.SetBool(IsDeadParam, false);
             dissolveProgress = -1f;
             for (var i = 0; i < dissolveMaterials.Count; i++) dissolveMaterials[i].SetFloat(DissolveId, 0f);
         }
@@ -255,12 +281,13 @@ namespace Echoes.Presentation
             {
                 var renderer = renderers[r];
                 if (renderer == null || renderer is ParticleSystemRenderer) continue;
-                // .materials cria UMA instância por renderer (uma vez), não por golpe.
+                // .materials cria UMA instância por renderer (uma vez), não por golpe; destruídas no OnDestroy.
                 var materials = renderer.materials;
                 for (var m = 0; m < materials.Length; m++)
                 {
                     var material = materials[m];
                     if (material == null) continue;
+                    ownedMaterials.Add(material);
                     if (material.HasProperty(HitFlashId)) flashMaterials.Add(material);
                     if (material.HasProperty(DissolveId)) dissolveMaterials.Add(material);
                 }

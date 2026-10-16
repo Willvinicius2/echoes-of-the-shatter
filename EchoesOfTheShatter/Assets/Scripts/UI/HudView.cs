@@ -147,8 +147,14 @@ namespace Echoes.UI
 
         void Update()
         {
+            if (hudRoot == null)
+            {
+                QueryElements();
+                if (hudRoot == null) return;
+                LocLabel.ApplyAll(hudRoot, localization);
+            }
             var logic = hero != null ? hero.Logic : null;
-            if (logic == null || hudRoot == null) return;
+            if (logic == null) return;
             if (!ReferenceEquals(boundLogic, logic)) Bind(logic);
 
             var self = logic.Self;
@@ -171,7 +177,7 @@ namespace Echoes.UI
         {
             var r = document != null ? document.rootVisualElement : null;
             if (r == null) return;
-            hudRoot = r.Q<VisualElement>("hud-root") ?? r;
+            hudRoot = r.Q<VisualElement>("hud-root"); // null enquanto o UIDocument não montou a árvore
             lifeFill = r.Q<VisualElement>("life-fill");
             resourceFill = r.Q<VisualElement>("resource-fill");
             lifeValue = r.Q<Label>("life-value");

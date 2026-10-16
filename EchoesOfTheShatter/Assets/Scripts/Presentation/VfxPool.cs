@@ -19,6 +19,7 @@ namespace Echoes.Presentation
         }
 
         readonly Dictionary<GameObject, ObjectPool<GameObject>> pools = new Dictionary<GameObject, ObjectPool<GameObject>>();
+        readonly Dictionary<GameObject, ParticleSystem[]> systemsByInstance = new Dictionary<GameObject, ParticleSystem[]>();
         readonly List<Live> live = new List<Live>(32);
 
         public void Play(GameObject prefab, Vector3 position, Quaternion rotation, float seconds)
@@ -37,7 +38,11 @@ namespace Echoes.Presentation
             }
             var instance = pool.Get();
             instance.transform.SetPositionAndRotation(position, rotation);
-            var systems = instance.GetComponentsInChildren<ParticleSystem>();
+            if (!systemsByInstance.TryGetValue(instance, out var systems))
+            {
+                systems = instance.GetComponentsInChildren<ParticleSystem>(true); // uma vez por instância do pool
+                systemsByInstance.Add(instance, systems);
+            }
             for (var i = 0; i < systems.Length; i++) systems[i].Play(true);
             live.Add(new Live { Instance = instance, Pool = pool, TimeLeft = seconds });
         }
@@ -63,6 +68,7 @@ namespace Echoes.Presentation
         {
             foreach (var pool in pools.Values) pool.Clear();
             pools.Clear();
+            systemsByInstance.Clear();
             live.Clear();
         }
     }
