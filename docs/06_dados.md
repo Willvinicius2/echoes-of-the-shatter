@@ -313,7 +313,7 @@ effect.burn,4,1,refresh,1,,3,,,,0,none,1,0,fire
 ### `enemies.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId`.
+- Cabeçalho exato: `id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId,eliteLootTableId`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -334,6 +334,7 @@ effect.burn,4,1,refresh,1,,3,,,,0,none,1,0,fire
 | `guardBreakStaggerSeconds` | número | não | ≥ 0 | 0 | Atordoamento da Guarda Quebrada (s) |
 | `guardBreakImmunitySeconds` | número | não | ≥ 0 | 0 | Imunidade a nova Guarda Quebrada (s) |
 | `modifierId` | ref `elite_modifiers.csv` | não | — | — | Modificador fixo de elite (elite_modifiers.csv) |
+| `eliteLootTableId` | ref `loot_tables.csv` | não | — | — | Tabela de loot de elite (vazio = usa lootTableId); só em elite fixa (pendência 7.2 do Backend) |
 
 Regras de conteúdo:
 
@@ -741,6 +742,8 @@ Esquema em `schemas/save_v2.schema.json`, ao lado de `save_v1`. Não é usado pe
 - Migração `1→2` (`migrate_1_to_2` do validador, espelho da migração do core): `potions` vira `potion_slots` com `charges` = o antigo valor no 1º slot (Vida) e o máximo de `potions.csv` nos demais, `recharge_remaining` = 0; `equipment.legs = null`; `boss_progress = []`; `potion_heal_fraction` sai de cada pedido de expedição. O resultado valida contra `save_v2` (conferido com o save_v1 do fixture do core).
 - Nomes de Loc que a base e o slot precisam (já estão no master, `Loc/content.csv`: `item_base.worn_trousers.name`, `slot.legs.name`). Esta worktree ainda não tem essas linhas: a validação de conteúdo só passa depois de unir o master.
 
+
+- Pendências 7 do Backend (docs/09): `rules.csv` ganhou `dodge_cancel_recovery_fraction` (0,5, cancelamento na metade final da recuperação) e `out_of_combat_seconds` (3, [HIPÓTESE]); `enemies.eliteLootTableId` = `loot.crypt.elite` nos elites fixos; `boss_phases` fase 1 com `transitionSeconds` 1.5 (primeira ação 1,5 s após a entrada).
 
 ## 5. content_version e conteúdo publicado
 

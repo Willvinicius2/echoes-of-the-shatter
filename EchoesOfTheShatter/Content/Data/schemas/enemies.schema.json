@@ -135,6 +135,13 @@
       "required": false,
       "ref": "elite_modifiers.csv",
       "desc": "Modificador fixo de elite (elite_modifiers.csv)"
+    },
+    {
+      "name": "eliteLootTableId",
+      "type": "ref",
+      "required": false,
+      "ref": "loot_tables.csv",
+      "desc": "Tabela de loot de elite (vazio = usa lootTableId); so em elite fixa"
     }
   ],
   "checks": [

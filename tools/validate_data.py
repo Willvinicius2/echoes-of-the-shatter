@@ -710,6 +710,8 @@ def chk_enemy(c: Content, table: str, rows: List[dict], rep: Report) -> None:
             rep.warn(table, ln, "W_ENEMY", "isBoss e isElite ao mesmo tempo")
         if r["modifierId"] and not r["isElite"]:
             rep.err(table, ln, "E_ENEMY", "modifierId so vale para elite fixa (isElite=true)")
+        if r["eliteLootTableId"] and not r["isElite"]:
+            rep.err(table, ln, "E_ENEMY", "eliteLootTableId so vale para elite fixa (isElite=true)")
 
 
 def chk_item_base(c: Content, table: str, rows: List[dict], rep: Report) -> None:
