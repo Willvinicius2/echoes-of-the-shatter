@@ -1,0 +1,106 @@
+"""Etapa 4 (Blender): ajusta o Rig_Humanoid_Chibi a malha por marcos e calcula os pesos automaticos.
+
+Os marcos (cfg["markers"], em metros, espaco do Blender, lado ESQUERDO do personagem = +X, frente -Y) fixam as
+juntas; os ossos mantem os nomes e a hierarquia do esqueleto compartilhado (gb_rig). Pesos: automaticos por calor
+do Blender, limitados a 4 influencias por vertice e normalizados; vertice sem peso recebe o osso mais proximo.
+Grava work/game_rig.blend, work/rig_report.json e prévias de conferencia dos ossos (work/rig_overlay_*.png).
+"""
+import bpy, bmesh, math, numpy as np, sys, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mdl_common import *
+from mdl_blender import *
+from mathutils import Vector
+
+cfg = load_cfg()
+gb_lib, gb_rig = import_graybox()
+bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game.blend"))
+ob = bpy.data.objects["game"]
+# modo por peca: o esqueleto e ajustado uma vez ao corpo base; as pecas apontam para o mesmo json de marcos
+markers = load_json(cfg["markers_from"])["markers"] if cfg.get("markers_from") else cfg["markers"]
+M = {k: Vector(v) for k, v in markers.items()}
+
+
+def mir(v):
+    return Vector((-v.x, v.y, v.z))
+
+
+def bone_defs():
+    """(nome, pai, cabeca, cauda, deforma) em espaco do Blender; esquerda = +X."""
+    B = []
+    add = lambda n, p, h, t, d=True: B.append((n, p, tuple(h), tuple(t), d))
+    add("root", None, (0, 0, 0), (0, 0, 0.15), False)
+    add("Hips", "root", M["hips"], M["spine"])
+    add("Spine", "Hips", M["spine"], M["chest"])
+    add("Chest", "Spine", M["chest"], M["neck"])
+    add("Neck", "Chest", M["neck"], M["head"])
+    add("Head", "Neck", M["head"], M["head_top"])
+    for side, f in (("Left", lambda v: v), ("Right", mir)):
+        add(f"{side}Shoulder", "Chest", f(M["shoulder"]), f(M["upperarm"]))
+        add(f"{side}UpperArm", f"{side}Shoulder", f(M["upperarm"]), f(M["lowerarm"]))
+        add(f"{side}LowerArm", f"{side}UpperArm", f(M["lowerarm"]), f(M["hand"]))
+        add(f"{side}Hand", f"{side}LowerArm", f(M["hand"]), f(M["hand_tip"]))
+        add(f"{side}UpperLeg", "Hips", f(M["upperleg"]), f(M["lowerleg"]))
+        add(f"{side}LowerLeg", f"{side}UpperLeg", f(M["lowerleg"]), f(M["foot"]))
+        add(f"{side}Foot", f"{side}LowerLeg", f(M["foot"]), f(M["toes"]))
+        add(f"{side}Toes", f"{side}Foot", f(M["toes"]), f(M["toe_tip"]))
+    hr, hl = mir(M["hand"]), M["hand"]
+    add("socket_weapon_r", "RightHand", hr, hr + Vector((0, -0.05, 0)), False)
+    add("socket_weapon_l", "LeftHand", hl, hl + Vector((0, -0.05, 0)), False)
+    add("socket_cast", "RightHand", hr + Vector((0, -0.15, 0.07)), hr + Vector((0, -0.20, 0.07)), False)
+    add("socket_head", "Head", M["head_top"], M["head_top"] + Vector((0, 0, 0.05)), False)
+    add("socket_fx_ground", "root", (0, 0, 0), (0, -0.10, 0), False)
+    return B
+
+
+gb_rig.bone_defs = bone_defs
+coll = bpy.context.scene.collection
+arm = gb_rig.make_armature(coll, turn=False)
+arm.name = gb_rig.RIG_NAME
+arm.data.name = gb_rig.RIG_NAME
+
+# pesos automaticos
+bpy.ops.object.select_all(action='DESELECT')
+ob.select_set(True); arm.select_set(True)
+bpy.context.view_layer.objects.active = arm
+bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+bpy.context.view_layer.objects.active = ob
+bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True)
+deform = {b.name for b in arm.data.bones if b.use_deform}
+for vg in list(ob.vertex_groups):
+    if vg.name not in deform:
+        ob.vertex_groups.remove(vg)
+bpy.ops.object.vertex_group_limit_total(group_select_mode='ALL', limit=4)
+bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
+
+# vertices sem peso: osso deformante mais proximo (distancia ate o segmento)
+me = ob.data
+segs = {b.name: (b.head_local.copy(), b.tail_local.copy()) for b in arm.data.bones if b.use_deform}
+def dist_seg(p, a, b):
+    ab = b - a
+    t = max(0.0, min(1.0, (p - a).dot(ab) / max(ab.length_squared, 1e-9)))
+    return (p - (a + ab * t)).length
+unw = 0
+for v in me.vertices:
+    if not any(g.weight > 1e-6 for g in v.groups):
+        unw += 1
+        n = min(segs, key=lambda k: dist_seg(v.co, *segs[k]))
+        (ob.vertex_groups.get(n) or ob.vertex_groups.new(name=n)).add([v.index], 1.0, 'REPLACE')
+for n in deform:
+    if n not in ob.vertex_groups:
+        ob.vertex_groups.new(name=n)
+
+# relatorio de pesos
+maxinf, counts = 0, []
+for v in me.vertices:
+    c = sum(1 for g in v.groups if g.weight > 1e-6)
+    counts.append(c); maxinf = max(maxinf, c)
+dom = {}
+for v in me.vertices:
+    g = max(v.groups, key=lambda g: g.weight)
+    n = ob.vertex_groups[g.group].name
+    dom[n] = dom.get(n, 0) + 1
+rep = dict(bones=len(arm.data.bones), deform_bones=len(deform), max_influences=maxinf, unweighted_fixed=unw,
+           dominant_bone_vertices=dom, humanoid=gb_rig.humanoid_check([b.name for b in arm.data.bones]))
+save_json(wpath(cfg, "rig_report.json"), rep)
+bpy.ops.wm.save_as_mainfile(filepath=wpath(cfg, "game_rig.blend"), compress=True)
+print("S4", rep)
