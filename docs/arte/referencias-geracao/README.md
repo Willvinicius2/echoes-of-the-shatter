@@ -60,7 +60,7 @@ Elas são a fonte de verdade de cada personagem. Toda imagem nova em que eles ap
   - [prompts_consistencia.json](prompts_consistencia.json) gerou 01, 04 e 06 a 12.
   - [prompts_complemento.json](prompts_complemento.json) gerou 13 a 24.
   - Os caminhos de referência dentro deles apontam para uma pasta temporária. Para gerar de novo, recrie as pranchas e as folhas oficiais.
-- **Scripts:** ficam em `scripts/` e rodam com o Python de um venv que tenha o Pillow (o `pranchas.py` precisa dele).
+- **Scripts:** ficam em `scripts/` e rodam com o Python do venv `D:\openclaude\_trabalho-claude\venv`, que já tem o Pillow (o `pranchas.py` precisa dele). Pranchas, imagens geradas e arquivos temporários vão sempre para `D:\openclaude\_trabalho-claude`, nunca para o disco C. O `gerar.py` move cada imagem da pasta do Codex para a pasta de saída.
   1. `pranchas.py <Assets do Spell Brigade> <pasta das pranchas>` monta as pranchas.
   2. `prompts_sb.py <pasta das pranchas> <prompts.json>` gera os prompts de estilo.
   3. `prompts_herois.py` e `prompts_consistencia.py` acrescentam as folhas oficiais e as regras de consistência. `prompts_complemento.py` gera áreas, terrenos, endgame e chefe. Os parâmetros estão no cabeçalho de cada script.

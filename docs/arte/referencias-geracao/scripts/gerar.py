@@ -37,7 +37,11 @@ def run(item):
         return iid, "nenhuma imagem gerada", p.returncode
     for k, src in enumerate(pngs):
         dst = os.path.join(OUT, f"{iid}.png" if k == len(pngs) - 1 else f"{iid}_alt{k}.png")
-        shutil.copy2(src, dst)
+        shutil.move(src, dst)  # o disco C está cheio: nada fica na pasta do Codex
+    try:
+        os.rmdir(os.path.join(GEN, m.group(1)))
+    except OSError:
+        pass
     return iid, f"ok ({len(pngs)} png)", p.returncode
 
 items = json.load(open(PROMPTS, encoding="utf-8"))
