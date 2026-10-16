@@ -15,7 +15,13 @@ PROG = RAIZ / "docs" / "progresso"
 THUMBS = PROG / "thumbs"
 APROV = RAIZ / "docs" / "arte" / "referencias-geracao" / "aprovadas"
 PREVIAS = RAIZ / "art-src" / "graybox" / "previews"
+VOTACAO = RAIZ / "tools" / "votacao"
+ROTEIRO_URL = "https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8"
 LARGURA, QUALIDADE = 480, 80
+# Cores da votação (tools/votacao/votacao.css) a partir dos tokens do painel.
+CSS_VOTACAO = (".votacao{--v-fundo:var(--media);--v-borda:var(--clara);--v-texto:var(--perg);--v-mut:var(--clara);"
+               "--v-nome:var(--ouro-claro);--v-destaque:var(--ouro);--v-campo:var(--noite);--v-botao:var(--ouro);--v-botao-txt:var(--noite)}"
+               ".v-tit{font-family:var(--f-txt)}.topo a{color:var(--ouro-claro)}")
 
 e = html.escape
 
@@ -161,11 +167,13 @@ def main() -> None:
     o = []
     o.append("<title>Painel Echoes of the Shatter</title>")
     o.append('<meta name="claude:viewport-fit-sides" content="cover">')
-    o.append("<style>" + CSS % tokens + "</style>")
+    o.append("<style>" + CSS % tokens + (VOTACAO / "votacao.css").read_text(encoding="utf-8") + CSS_VOTACAO + "</style>")
     o.append("<main>")
     # Topo + faixa
     o.append('<section class="topo"><h1>Echoes of the Shatter</h1>')
     o.append(f'<p class="sub">{e(estado["meta"]["marco_atual"])}. Atualizado em {e(estado["meta"]["atualizado_em"][8:10])}/{e(estado["meta"]["atualizado_em"][5:7])}/{e(estado["meta"]["atualizado_em"][:4])}.</p>')
+    o.append(f'<p class="sub"><a href="#aguardando">Votar nas perguntas</a> · '
+             f'<a href="{ROTEIRO_URL}" target="_blank" rel="noopener">Roteiro completo: documentos e artes ↗</a></p>')
     o.append('<div class="faixa">')
     for s in setores:
         o.append(f'<a class="{e(s["estado"])}" href="#s-{e(s["id"])}"><b>{e(s["nome"])}</b>{e(leg[s["estado"]])}</a>')
@@ -182,10 +190,10 @@ def main() -> None:
     o.append("</div></section>")
 
     # Aguardando
-    o.append("<h2>Aguardando você</h2>")
-    # votação e comentários ficam no roteiro do sócio (banco do artifact, coleção "votos")
-    o.append("<p class='nota'>Para votar e deixar comentário em cada pergunta, use o "
-             "<a href='https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8' target='_blank' rel='noopener'>roteiro do sócio</a>.</p>")
+    o.append('<h2 id="aguardando">Aguardando você</h2>')
+    # votos e comentários: tools/votacao, banco deste artifact (coleção "votos")
+    o.append("<p class='nota'>Clique numa opção para votar e deixe um comentário em cada pergunta. "
+             "Os votos de todos aparecem aqui.</p>")
     o.append("<div class='grade'>")
     for p in estado["pendencias_dono"]:
         h = f'<article class="card alerta pend"><h3>{e(p["titulo"])}</h3>'
@@ -195,10 +203,13 @@ def main() -> None:
             h += f'<p>{e(p["detalhe"])}</p>'
         if p.get("contexto"):
             h += '<details open><summary>Contexto</summary>' + "".join(f"<p>{e(c)}</p>" for c in p["contexto"]) + "</details>"
-        if p.get("opcoes"):
+        if p.get("id") and p.get("opcoes"):
+            h += f'<div class="votacao" data-q="{e(p["id"])}"></div>'
+        elif p.get("opcoes"):
             h += '<div class="opcs">' + "".join(f'<div class="opc"><b>{e(op["nome"])}</b>{e(op["efeito"])}</div>' for op in p["opcoes"]) + "</div>"
         o.append(h + f'<span class="arq">{e(p["origem"])}</span></article>')
     o.append("</div>")
+    votaveis = [{"id": p["id"], "opcoes": p["opcoes"]} for p in estado["pendencias_dono"] if p.get("id") and p.get("opcoes")]
 
     # Marcos
     o.append("<h2>Marcos</h2><ul class='marcos'>")
@@ -259,6 +270,10 @@ def main() -> None:
         o.append(f'<tr><td>{e(i["item"])}</td><td>{e(i["detalhe"])}</td></tr>')
     o.append("</table></div></main>")
     o.append("<script>" + JS + "</script>")
+    if votaveis:
+        dados = json.dumps(votaveis, ensure_ascii=False).replace("</", "<\\/")
+        o.append(f'<script type="application/json" id="votacao-dados">{dados}</script>')
+        o.append("<script>" + (VOTACAO / "votacao.js").read_text(encoding="utf-8") + "</script>")
 
     (PROG / "painel.html").write_text("\n".join(o), encoding="utf-8")
     print(f"painel.html: {len(setores)} setores, {len(commits)} commits, {len(itens)} imagens na galeria")

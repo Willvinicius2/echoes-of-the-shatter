@@ -62,10 +62,44 @@ p{margin:4px 0}.mut{color:var(--clara)}.peq{font-size:.85rem}
 table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--media);vertical-align:top}th{color:var(--ouro)}
 [hidden]{display:none!important}
 @media (max-width:420px){.grade{grid-template-columns:1fr}.gal{grid-template-columns:1fr 1fr}}
-</style>
+/* Votação: a página define --v-fundo, --v-borda, --v-texto, --v-mut, --v-nome, --v-destaque, --v-campo, --v-botao e --v-botao-txt. */
+.votacao{display:grid;gap:10px;margin-top:10px}
+.v-tit{margin:0;font:600 .72rem/1.3 inherit;letter-spacing:.1em;text-transform:uppercase;color:var(--v-mut)}
+.v-opcoes{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.v-op{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:grid;grid-template-columns:minmax(0,14rem) minmax(0,1fr) auto;align-items:start;gap:4px 14px;padding:10px 12px;border-radius:6px;background:var(--v-fundo);border:1px solid var(--v-borda);color:var(--v-texto);font-size:.92rem;line-height:1.45}
+.v-op:hover{border-color:var(--v-destaque)}
+.v-op:focus-visible{outline:2px solid var(--v-destaque);outline-offset:2px}
+.v-op[aria-pressed="true"]{border-color:var(--v-destaque);box-shadow:inset 4px 0 0 var(--v-destaque)}
+.v-op.v-bloq{cursor:default}
+.v-op b{color:var(--v-nome);font-weight:600}
+.v-quem{display:flex;align-items:center;gap:6px;justify-content:flex-end;min-width:5.5rem}
+.v-n{font-size:.78rem;color:var(--v-mut);white-space:nowrap;font-variant-numeric:tabular-nums}
+.v-op[aria-pressed="true"] .v-n{color:var(--v-destaque);font-weight:600}
+.v-rostos{display:flex}
+.v-rosto{width:22px;height:22px;border-radius:50%;border:2px solid var(--v-fundo);margin-left:-6px;background:var(--v-borda);object-fit:cover}
+.v-rostos .v-rosto:first-child,.v-cab .v-rosto{margin-left:0}
+.v-conversa{display:grid;gap:8px;border-top:1px dashed var(--v-borda);padding-top:10px}
+.v-coms{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.v-coms li{display:grid;gap:2px}
+.v-vazio{color:var(--v-mut);font-size:.85rem}
+.v-cab{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.85rem}
+.v-cab b{color:var(--v-nome)}
+.v-cab span{color:var(--v-mut);font-size:.78rem}
+.v-coms p{margin:0 0 0 30px;white-space:pre-wrap;overflow-wrap:anywhere}
+.v-rotulo{font-size:.78rem;color:var(--v-mut)}
+.v-meu{width:100%;box-sizing:border-box;font:inherit;font-size:.92rem;color:var(--v-texto);background:var(--v-campo);border:1px solid var(--v-borda);border-radius:6px;padding:8px 10px;resize:vertical;min-height:2.6em}
+.v-meu:focus-visible{outline:2px solid var(--v-destaque);outline-offset:1px}
+.v-meu:disabled{opacity:.6}
+.v-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.v-salvar{font:inherit;font-size:.85rem;font-weight:600;color:var(--v-botao-txt);background:var(--v-botao);border:0;border-radius:6px;padding:7px 14px;cursor:pointer}
+.v-salvar:disabled{opacity:.45;cursor:default}
+.v-status{font-size:.85rem;color:var(--v-mut)}
+@media (max-width:640px){.v-op{grid-template-columns:minmax(0,1fr)}.v-quem{justify-content:flex-start}}
+.votacao{--v-fundo:var(--media);--v-borda:var(--clara);--v-texto:var(--perg);--v-mut:var(--clara);--v-nome:var(--ouro-claro);--v-destaque:var(--ouro);--v-campo:var(--noite);--v-botao:var(--ouro);--v-botao-txt:var(--noite)}.v-tit{font-family:var(--f-txt)}.topo a{color:var(--ouro-claro)}</style>
 <main>
 <section class="topo"><h1>Echoes of the Shatter</h1>
 <p class="sub">Etapa 2: fatia jogável da Cripta. Atualizado em 16/10/2026.</p>
+<p class="sub"><a href="#aguardando">Votar nas perguntas</a> · <a href="https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8" target="_blank" rel="noopener">Roteiro completo: documentos e artes ↗</a></p>
 <div class="faixa">
 <a class="andamento" href="#s-arte"><b>Direção de arte</b>Em andamento</a>
 <a class="andamento" href="#s-design"><b>Game Design</b>Em andamento</a>
@@ -92,18 +126,18 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <div class="etapa pendente"><b>Etapa 4</b>Elenco e Ato I<br><span class="pil pendente"><i></i>Pendente</span></div>
 <div class="etapa pendente"><b>Etapa 5</b>Acesso Antecipado<br><span class="pil pendente"><i></i>Pendente</span></div>
 </div></section>
-<h2>Aguardando você</h2>
-<p class='nota'>Para votar e deixar comentário em cada pergunta, use o <a href='https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8' target='_blank' rel='noopener'>roteiro do sócio</a>.</p>
+<h2 id="aguardando">Aguardando você</h2>
+<p class='nota'>Clique numa opção para votar e deixe um comentário em cada pergunta. Os votos de todos aparecem aqui.</p>
 <div class='grade'>
-<article class="card alerta pend"><h3>Endgame: na etapa 4 ou numa etapa própria?</h3><p class="perg">O endgame inicial (Carta dos Marcos, os 3 mapas de endgame e o chefe Predador dos Marcos) entra junto na etapa 4 (Elenco e Ato I) ou vira uma etapa própria depois do Ato I, antes do Acesso Antecipado?</p><details open><summary>Contexto</summary><p>O plano do jogo promete o endgame já no lançamento em Acesso Antecipado.</p><p>A etapa 4 hoje já é grande: Arqueiro e Mago, os inimigos e os 3 chefes que faltam do Ato I, 7 áreas novas, livros, Sigilos, crafting com o Bram e a árvore passiva, para 8 a 12 horas de campanha.</p><p>Por isso o docs/15 deixou o endgame FORA da etapa 4 até você decidir. As artes do endgame (Ossário do Marco, Trilha de Cinza, Salão do Martelo, terrenos, inimigos e o Predador) já estão aprovadas.</p></details><div class="opcs"><div class="opc"><b>A. Junto na etapa 4</b>Uma etapa só, maior e mais longa. O Acesso Antecipado só começa depois que tudo estiver pronto e testado de uma vez.</div><div class="opc"><b>B. Etapa própria depois do Ato I</b>O Ato I fecha e é testado primeiro; o endgame é balanceado em cima de um Ato I estável. Ganha um portão de teste a mais e o Acesso Antecipado vira a etapa 6.</div><div class="opc"><b>C. Fora do Acesso Antecipado</b>O endgame entra como atualização depois do lançamento. Lança mais cedo, mas muda o que o plano promete e o lançamento sai com menos conteúdo.</div></div><span class="arq">docs/15_etapas.md</span></article>
-<article class="card alerta pend"><h3>Vencer o Guardião sem loot na etapa 2?</h3><p class="perg">Na etapa 2 (fatia jogável da Cripta), vencer o Guardião não vai entregar nenhum item na tela, porque o Único do Guardião e o inventário só chegam na etapa 3. Está certo assim?</p><details open><summary>Contexto</summary><p>A etapa 2 serve para provar o combate: você joga a Cripta inteira com o Guerreiro final e vence o Guardião. O que conta é o teste de fogo de 30 segundos contra as Sentinelas.</p><p>Save, inventário, loot e o Único do Guardião estão marcados como FORA da etapa 2 e DENTRO da etapa 3.</p><p>Na prática, ao derrotar o Guardião aparece só a vitória (o domínio da Cripta), sem item caindo no chão.</p></details><div class="opcs"><div class="opc"><b>A. Sim, fica assim</b>A etapa 2 fecha mais rápido e o teste foca só no combate. A recompensa chega na etapa 3.</div><div class="opc"><b>B. Só o efeito do Único na etapa 2</b>O Guardião deixa cair o Único como efeito visual (coluna de luz e som), sem inventário. Dá a sensação de recompensa no teste, mas puxa trabalho de arte e efeito para antes.</div><div class="opc"><b>C. Loot e inventário inteiros na etapa 2</b>A etapa 2 fica bem maior e parte da etapa 3 vem antes.</div></div><span class="arq">docs/15_etapas.md</span></article>
-<article class="card alerta pend"><h3>Fazer uma demo para o Steam Next Fest?</h3><p class="perg">Vamos fazer uma demo para o Steam Next Fest? Se sim, ela vira uma etapa própria, entra dentro da etapa 3 ou fica para depois?</p><details open><summary>Contexto</summary><p>O Next Fest é o festival de demos da Steam. Acontece em fevereiro, junho e outubro, e os jogos que participam ganham visibilidade e wishlists.</p><p>O plano original previa uma demo com a Estrada das Lanternas e a Cripta, só com o Guerreiro e 4 habilidades. Era a fase decisiva: a reação do público à demo diria se vale investir os 6 a 9 meses seguintes. A meta era ter 2 mil wishlists antes do festival.</p><p>Hoje nenhuma das 5 etapas cobre a demo. Para publicá-la é preciso ter conta de desenvolvedor na Steam (Steam Direct), a página &#x27;Em breve&#x27; no ar, a classificação indicativa e a declaração de uso de IA. O plano pede CNPJ antes disso.</p></details><div class="opcs"><div class="opc"><b>A. Etapa própria entre a 3 e a 4</b>Segue o plano: mede o interesse do público antes da parte mais cara. Obriga a adiantar CNPJ, Steam Direct e página da loja.</div><div class="opc"><b>B. Dentro da etapa 3</b>A etapa 3 cresce: além do ciclo completo, precisa da Estrada das Lanternas, da página da loja e de um build para a Steam.</div><div class="opc"><b>C. Sem demo por enquanto</b>Foco total em chegar ao Acesso Antecipado. Perde o termômetro de wishlists e a vitrine do festival. Dá para decidir de novo ao fim da etapa 3.</div></div><span class="arq">docs/15_etapas.md</span></article>
-<article class="card alerta pend"><h3>Calibrar o idle na etapa 4 ou antes?</h3><p class="perg">A calibração do modo idle (os IdleProfiles e o teste de paridade, adiados na decisão P-3) fica na etapa 4, como está planejado, ou vem antes, na etapa 3, para a expedição já sair sem o selo &#x27;Estimativa&#x27;?</p><details open><summary>Contexto</summary><p>Na expedição idle, o herói &#x27;joga sozinho&#x27; enquanto você está fora, e o jogo calcula o resultado. Para isso, cada habilidade tem um IdleProfile: números que dizem, por exemplo, quantos inimigos a Fenda de Pedra acerta em média ou quantos ataques a IA consegue esquivar.</p><p>O teste de paridade é um robô que joga a cena real e compara com o cálculo da expedição. A diferença precisa ficar abaixo de 10% (meta de 5% no Acesso Antecipado). É ele que calibra os números.</p><p>Na decisão P-3 (16/10), esse teste foi adiado. Até lá, os números são estimados à mão e a tela mostra o selo &#x27;Estimativa&#x27;. A etapa 3 entrega a expedição com o selo; o critério de paridade está na etapa 4.</p></details><div class="opcs"><div class="opc"><b>A. Mantém na etapa 4</b>A etapa 3 fica mais curta e o teste do ciclo usa números estimados com selo. A calibração é feita uma vez só, quando as 3 classes já existirem.</div><div class="opc"><b>B. Antecipa para a etapa 3</b>A expedição já sai confiável no teste do ciclo, mas calibra só o Guerreiro. Arqueiro e Mago precisarão de nova calibração na etapa 4, e o robô de teste vira trabalho extra mais cedo.</div></div><span class="arq">docs/15_etapas.md</span></article>
-<article class="card alerta pend"><h3>Quem faz a capa e as cápsulas da Steam?</h3><p class="perg">A arte final da capa e das cápsulas da página da Steam (as imagens que aparecem na loja, na busca e na biblioteca) será feita por um artista contratado, por IA (declarada na Steam) ou de forma mista (IA como base e artista finalizando)?</p><details open><summary>Contexto</summary><p>A cápsula é a imagem que mais pesa para alguém clicar no jogo. O plano diz que, se houver menos de 2 mil wishlists antes do Next Fest, a primeira coisa a trocar é a cápsula.</p><p>A política de IA do plano diz que capa e cápsulas &#x27;de preferência não&#x27; devem ser feitas por IA.</p><p>Hoje as referências de arte aprovadas foram geradas com IA (gpt-image) e os modelos 3D com o TripoSG. Então o jogo já terá de declarar uso de IA generativa no questionário da Steam, seja qual for a escolha da cápsula.</p></details><div class="opcs"><div class="opc"><b>A. Artista contratado</b>Segue a política do plano e evita críticas a cápsula feita por IA. Tem custo e prazo, e exige contrato de cessão de direitos com o artista.</div><div class="opc"><b>B. IA declarada</b>Rápido, barato e coerente com o resto da arte. Parte do público reage mal a cápsulas feitas por IA.</div><div class="opc"><b>C. Mista</b>IA para compor a cena e artista pintando por cima. Custo intermediário; o uso de IA continua tendo de ser declarado.</div></div><span class="arq">docs/15_etapas.md</span></article>
-<article class="card alerta pend"><h3>CNPJ, Steam Direct e registros: quem cuida?</h3><p class="perg">Quem cuida das providências fora do código: abrir CNPJ, pagar o Steam Direct, preencher o formulário fiscal, registrar a marca e falar com contador e advogado?</p><details open><summary>Contexto</summary><p>Essas providências não travam o desenvolvimento, mas travam a publicação. Sem elas, não há página na Steam nem venda.</p><p>CNPJ: o plano sugere MEI, ME ou EPP no Simples, com a CNAE de jogos confirmada por um contador. Ele é necessário para editais de fomento e contratos com freelancers, e facilita receber da Steam.</p><p>Steam Direct: US$ 100 por jogo, que voltam depois de US$ 1.000 em vendas. Formulário fiscal dos EUA: W-8BEN-E (empresa) ou W-8BEN (pessoa física), para evitar retenção maior.</p><p>Marca: registrar Echoes of the Shatter no INPI (e no USPTO, se o mercado americano importar). O programa também pode ser registrado no INPI como prova de autoria.</p><p>O plano pede contrato de cessão de direitos com toda pessoa que contribuir com arte, áudio ou código. Agora que há um sócio, isso vale também para o que ele produzir.</p><p>Quando começar é a pergunta seguinte.</p></details><div class="opcs"><div class="opc"><b>A. Você cuida de tudo</b>Concentra as decisões, mas divide seu tempo com a produção do jogo.</div><div class="opc"><b>B. Seu sócio assume a parte burocrática</b>Você acompanha a produção e ele toca CNPJ, Steam e registros.</div><div class="opc"><b>C. Contador e advogado</b>Contador para CNPJ e impostos; advogado só para marca e contratos. Tem custo, mas reduz o risco de erro.</div></div><span class="arq">docs/15_etapas.md</span></article>
-<article class="card alerta pend"><h3>CNPJ e página na Steam: quando começar?</h3><p class="perg">Quando começamos as providências fora do código (CNPJ, Steam Direct e a página &#x27;Em breve&#x27; na Steam): já, durante o desenvolvimento, ou só na etapa 5, perto do lançamento em Acesso Antecipado?</p><details open><summary>Contexto</summary><p>A página &#x27;Em breve&#x27; só pode ir ao ar depois que a conta de desenvolvedor existe (Steam Direct pago) e o formulário fiscal e a classificação indicativa estão preenchidos. O plano pede CNPJ antes de pagar o Steam Direct.</p><p>O plano manda pôr a página no ar cedo, no começo da fase da demo, porque as wishlists se acumulam com o tempo e pesam no destaque que a Steam dá no lançamento.</p><p>Isso não trava o código: a equipe continua produzindo o jogo seja qual for a escolha.</p></details><div class="opcs"><div class="opc"><b>A. Começar já</b>A página entra no ar mais cedo e as wishlists se acumulam por mais tempo. O gasto com CNPJ e Steam Direct vem antes de haver jogo pronto.</div><div class="opc"><b>B. Junto com a demo</b>Segue o plano: CNPJ e conta na Steam no começo da fase da demo, com a página no ar antes do Next Fest. Depende da decisão sobre a demo.</div><div class="opc"><b>C. Só na etapa 5</b>Adia o gasto e a burocracia para quando o jogo estiver quase pronto. A página entra tarde e o lançamento sai com menos wishlists.</div></div><span class="arq">docs/15_etapas.md</span></article>
-<article class="card alerta pend"><h3>Mover a memória virtual do Windows para o D:</h3><p class="perg">Você pode mover o arquivo de paginação do Windows (a memória virtual) do disco C: para o disco D:?</p><details open><summary>Contexto</summary><p>O Windows usa um arquivo no C: (pagefile.sys, que ocupa vários GB) como extensão da memória RAM. Com o C: cheio, a Unity, o Blender e o gerador de modelos 3D podem travar ou fechar sozinhos por falta de memória.</p><p>Por ser uma configuração do sistema, a equipe do Claude não pode alterá-la. Só você pode.</p><p>Como fazer: Iniciar, digite &#x27;Exibir configurações avançadas do sistema&#x27;, depois Desempenho &gt; Configurações &gt; aba Avançado &gt; Memória virtual &gt; Alterar. Desmarque &#x27;Gerenciar automaticamente&#x27;, escolha C: e marque &#x27;Sem arquivo de paginação&#x27; &gt; Definir. Escolha D:, marque &#x27;Tamanho gerenciado pelo sistema&#x27; &gt; Definir &gt; OK e reinicie o PC.</p></details><div class="opcs"><div class="opc"><b>A. Tudo para o D:</b>Libera todo o espaço do arquivo no C:. O D: precisa ter espaço livre sobrando.</div><div class="opc"><b>B. Pequeno no C: e o resto no D:</b>Deixa 2 a 4 GB no C: (o Windows usa para relatórios de travamento) e coloca o principal no D:.</div><div class="opc"><b>C. Não mexer agora</b>Libera espaço no C: de outra forma. O risco de travar por falta de memória continua.</div></div><span class="arq">infraestrutura</span></article>
-<article class="card alerta pend"><h3>História do jogo</h3><p class="perg">Como fica a criação da história do jogo: você continua escrevendo sozinho, divide com seu sócio ou quer que o agente de narrativa prepare uma proposta a partir do que já existe para vocês ajustarem?</p><details open><summary>Contexto</summary><p>Você está criando a história. O plano e o docs/05 já trazem nomes e premissas (o Arquivo Vivo, os Marcos, a Ilsa, o Tico, o Bram, a Irmã Odete) que podem mudar.</p><p>A etapa 2 precisa só dos textos de combate e HUD. A etapa 3 precisa das falas da Ilsa e do relatório do Tico. A etapa 4 precisa da história do Ato I inteiro: falas, livros, Sigilos e os 4 chefes.</p><p>Por isso a história não trava nada agora, mas precisa estar definida antes da etapa 4 começar.</p></details><div class="opcs"><div class="opc"><b>A. Você escreve sozinho</b>A história fica inteira na sua mão. A equipe só adapta os textos ao formato do jogo.</div><div class="opc"><b>B. Você e seu sócio</b>Divide o trabalho. Vale combinar quem tem a palavra final.</div><div class="opc"><b>C. Proposta do agente de narrativa</b>O agente escreve uma versão a partir do que existe, e vocês cortam e ajustam. É mais rápido, mas a voz final depende da revisão de vocês.</div></div><span class="arq">decisão do dono</span></article>
+<article class="card alerta pend"><h3>Endgame: na etapa 4 ou numa etapa própria?</h3><p class="perg">O endgame inicial (Carta dos Marcos, os 3 mapas de endgame e o chefe Predador dos Marcos) entra junto na etapa 4 (Elenco e Ato I) ou vira uma etapa própria depois do Ato I, antes do Acesso Antecipado?</p><details open><summary>Contexto</summary><p>O plano do jogo promete o endgame já no lançamento em Acesso Antecipado.</p><p>A etapa 4 hoje já é grande: Arqueiro e Mago, os inimigos e os 3 chefes que faltam do Ato I, 7 áreas novas, livros, Sigilos, crafting com o Bram e a árvore passiva, para 8 a 12 horas de campanha.</p><p>Por isso o docs/15 deixou o endgame FORA da etapa 4 até você decidir. As artes do endgame (Ossário do Marco, Trilha de Cinza, Salão do Martelo, terrenos, inimigos e o Predador) já estão aprovadas.</p></details><div class="votacao" data-q="endgame-etapa"></div><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta pend"><h3>Vencer o Guardião sem loot na etapa 2?</h3><p class="perg">Na etapa 2 (fatia jogável da Cripta), vencer o Guardião não vai entregar nenhum item na tela, porque o Único do Guardião e o inventário só chegam na etapa 3. Está certo assim?</p><details open><summary>Contexto</summary><p>A etapa 2 serve para provar o combate: você joga a Cripta inteira com o Guerreiro final e vence o Guardião. O que conta é o teste de fogo de 30 segundos contra as Sentinelas.</p><p>Save, inventário, loot e o Único do Guardião estão marcados como FORA da etapa 2 e DENTRO da etapa 3.</p><p>Na prática, ao derrotar o Guardião aparece só a vitória (o domínio da Cripta), sem item caindo no chão.</p></details><div class="votacao" data-q="guardiao-sem-loot"></div><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta pend"><h3>Fazer uma demo para o Steam Next Fest?</h3><p class="perg">Vamos fazer uma demo para o Steam Next Fest? Se sim, ela vira uma etapa própria, entra dentro da etapa 3 ou fica para depois?</p><details open><summary>Contexto</summary><p>O Next Fest é o festival de demos da Steam. Acontece em fevereiro, junho e outubro, e os jogos que participam ganham visibilidade e wishlists.</p><p>O plano original previa uma demo com a Estrada das Lanternas e a Cripta, só com o Guerreiro e 4 habilidades. Era a fase decisiva: a reação do público à demo diria se vale investir os 6 a 9 meses seguintes. A meta era ter 2 mil wishlists antes do festival.</p><p>Hoje nenhuma das 5 etapas cobre a demo. Para publicá-la é preciso ter conta de desenvolvedor na Steam (Steam Direct), a página &#x27;Em breve&#x27; no ar, a classificação indicativa e a declaração de uso de IA. O plano pede CNPJ antes disso.</p></details><div class="votacao" data-q="demo-next-fest"></div><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta pend"><h3>Calibrar o idle na etapa 4 ou antes?</h3><p class="perg">A calibração do modo idle (os IdleProfiles e o teste de paridade, adiados na decisão P-3) fica na etapa 4, como está planejado, ou vem antes, na etapa 3, para a expedição já sair sem o selo &#x27;Estimativa&#x27;?</p><details open><summary>Contexto</summary><p>Na expedição idle, o herói &#x27;joga sozinho&#x27; enquanto você está fora, e o jogo calcula o resultado. Para isso, cada habilidade tem um IdleProfile: números que dizem, por exemplo, quantos inimigos a Fenda de Pedra acerta em média ou quantos ataques a IA consegue esquivar.</p><p>O teste de paridade é um robô que joga a cena real e compara com o cálculo da expedição. A diferença precisa ficar abaixo de 10% (meta de 5% no Acesso Antecipado). É ele que calibra os números.</p><p>Na decisão P-3 (16/10), esse teste foi adiado. Até lá, os números são estimados à mão e a tela mostra o selo &#x27;Estimativa&#x27;. A etapa 3 entrega a expedição com o selo; o critério de paridade está na etapa 4.</p></details><div class="votacao" data-q="calibracao-idle"></div><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta pend"><h3>Quem faz a capa e as cápsulas da Steam?</h3><p class="perg">A arte final da capa e das cápsulas da página da Steam (as imagens que aparecem na loja, na busca e na biblioteca) será feita por um artista contratado, por IA (declarada na Steam) ou de forma mista (IA como base e artista finalizando)?</p><details open><summary>Contexto</summary><p>A cápsula é a imagem que mais pesa para alguém clicar no jogo. O plano diz que, se houver menos de 2 mil wishlists antes do Next Fest, a primeira coisa a trocar é a cápsula.</p><p>A política de IA do plano diz que capa e cápsulas &#x27;de preferência não&#x27; devem ser feitas por IA.</p><p>Hoje as referências de arte aprovadas foram geradas com IA (gpt-image) e os modelos 3D com o TripoSG. Então o jogo já terá de declarar uso de IA generativa no questionário da Steam, seja qual for a escolha da cápsula.</p></details><div class="votacao" data-q="capsulas-steam"></div><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta pend"><h3>CNPJ, Steam Direct e registros: quem cuida?</h3><p class="perg">Quem cuida das providências fora do código: abrir CNPJ, pagar o Steam Direct, preencher o formulário fiscal, registrar a marca e falar com contador e advogado?</p><details open><summary>Contexto</summary><p>Essas providências não travam o desenvolvimento, mas travam a publicação. Sem elas, não há página na Steam nem venda.</p><p>CNPJ: o plano sugere MEI, ME ou EPP no Simples, com a CNAE de jogos confirmada por um contador. Ele é necessário para editais de fomento e contratos com freelancers, e facilita receber da Steam.</p><p>Steam Direct: US$ 100 por jogo, que voltam depois de US$ 1.000 em vendas. Formulário fiscal dos EUA: W-8BEN-E (empresa) ou W-8BEN (pessoa física), para evitar retenção maior.</p><p>Marca: registrar Echoes of the Shatter no INPI (e no USPTO, se o mercado americano importar). O programa também pode ser registrado no INPI como prova de autoria.</p><p>O plano pede contrato de cessão de direitos com toda pessoa que contribuir com arte, áudio ou código. Agora que há um sócio, isso vale também para o que ele produzir.</p><p>Quando começar é a pergunta seguinte.</p></details><div class="votacao" data-q="registros-quem"></div><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta pend"><h3>CNPJ e página na Steam: quando começar?</h3><p class="perg">Quando começamos as providências fora do código (CNPJ, Steam Direct e a página &#x27;Em breve&#x27; na Steam): já, durante o desenvolvimento, ou só na etapa 5, perto do lançamento em Acesso Antecipado?</p><details open><summary>Contexto</summary><p>A página &#x27;Em breve&#x27; só pode ir ao ar depois que a conta de desenvolvedor existe (Steam Direct pago) e o formulário fiscal e a classificação indicativa estão preenchidos. O plano pede CNPJ antes de pagar o Steam Direct.</p><p>O plano manda pôr a página no ar cedo, no começo da fase da demo, porque as wishlists se acumulam com o tempo e pesam no destaque que a Steam dá no lançamento.</p><p>Isso não trava o código: a equipe continua produzindo o jogo seja qual for a escolha.</p></details><div class="votacao" data-q="registros-quando"></div><span class="arq">docs/15_etapas.md</span></article>
+<article class="card alerta pend"><h3>Mover a memória virtual do Windows para o D:</h3><p class="perg">Você pode mover o arquivo de paginação do Windows (a memória virtual) do disco C: para o disco D:?</p><details open><summary>Contexto</summary><p>O Windows usa um arquivo no C: (pagefile.sys, que ocupa vários GB) como extensão da memória RAM. Com o C: cheio, a Unity, o Blender e o gerador de modelos 3D podem travar ou fechar sozinhos por falta de memória.</p><p>Por ser uma configuração do sistema, a equipe do Claude não pode alterá-la. Só você pode.</p><p>Como fazer: Iniciar, digite &#x27;Exibir configurações avançadas do sistema&#x27;, depois Desempenho &gt; Configurações &gt; aba Avançado &gt; Memória virtual &gt; Alterar. Desmarque &#x27;Gerenciar automaticamente&#x27;, escolha C: e marque &#x27;Sem arquivo de paginação&#x27; &gt; Definir. Escolha D:, marque &#x27;Tamanho gerenciado pelo sistema&#x27; &gt; Definir &gt; OK e reinicie o PC.</p></details><div class="votacao" data-q="paginacao-windows"></div><span class="arq">infraestrutura</span></article>
+<article class="card alerta pend"><h3>História do jogo</h3><p class="perg">Como fica a criação da história do jogo: você continua escrevendo sozinho, divide com seu sócio ou quer que o agente de narrativa prepare uma proposta a partir do que já existe para vocês ajustarem?</p><details open><summary>Contexto</summary><p>Você está criando a história. O plano e o docs/05 já trazem nomes e premissas (o Arquivo Vivo, os Marcos, a Ilsa, o Tico, o Bram, a Irmã Odete) que podem mudar.</p><p>A etapa 2 precisa só dos textos de combate e HUD. A etapa 3 precisa das falas da Ilsa e do relatório do Tico. A etapa 4 precisa da história do Ato I inteiro: falas, livros, Sigilos e os 4 chefes.</p><p>Por isso a história não trava nada agora, mas precisa estar definida antes da etapa 4 começar.</p></details><div class="votacao" data-q="historia"></div><span class="arq">decisão do dono</span></article>
 </div>
 <h2>Marcos</h2><ul class='marcos'>
 <li class="ok"><i></i><span>Visual e arquitetura definidos</span><span class="mut peq">feito</span></li>
@@ -183,6 +217,9 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </ul><p class="prox"><b>Próximo passo:</b> Fechar a Etapa 2 e preparar a Etapa 3.</p></article>
 </div>
 <h2>Linha do tempo</h2><ul class='linha'>
+<li><code>95c7172</code><span class="dt">16/10/2026</span><br>chore(painel): painel.html regerado com as 9 perguntas com id</li>
+<li><code>3ad87b9</code><span class="dt">16/10/2026</span><br>feat(roteiro): perguntas ao dono completas, com votação e comentários</li>
+<li><code>2e3e30d</code><span class="dt">16/10/2026</span><br>feat(painel): link para votar e comentar as perguntas no roteiro do sócio</li>
 <li><code>33522c9</code><span class="dt">16/10/2026</span><br>feat(painel): perguntas ao dono completas (pergunta, contexto e opções) e Guerreiro na Unity</li>
 <li><code>7c1dbb6</code><span class="dt">16/10/2026</span><br>Merge etapa2/frontend: Guerreiro pintado na Unity (SK_Warrior, SG_Character com rim) e captura a 56 m</li>
 <li><code>65af242</code><span class="dt">16/10/2026</span><br>feat(roteiro): gerador do HTML do roteiro para o sócio</li>
@@ -356,4 +393,141 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 b.forEach(function(x){x.addEventListener('click',function(){var k=x.dataset.f;
 b.forEach(function(y){y.setAttribute('aria-pressed',y===x)});
 f.forEach(function(g){g.hidden=!(k==='todas'||g.dataset.k===k)})})})})();
+</script>
+<script type="application/json" id="votacao-dados">[{"id": "endgame-etapa", "opcoes": [{"id": "A", "nome": "A. Junto na etapa 4", "efeito": "Uma etapa só, maior e mais longa. O Acesso Antecipado só começa depois que tudo estiver pronto e testado de uma vez."}, {"id": "B", "nome": "B. Etapa própria depois do Ato I", "efeito": "O Ato I fecha e é testado primeiro; o endgame é balanceado em cima de um Ato I estável. Ganha um portão de teste a mais e o Acesso Antecipado vira a etapa 6."}, {"id": "C", "nome": "C. Fora do Acesso Antecipado", "efeito": "O endgame entra como atualização depois do lançamento. Lança mais cedo, mas muda o que o plano promete e o lançamento sai com menos conteúdo."}]}, {"id": "guardiao-sem-loot", "opcoes": [{"id": "A", "nome": "A. Sim, fica assim", "efeito": "A etapa 2 fecha mais rápido e o teste foca só no combate. A recompensa chega na etapa 3."}, {"id": "B", "nome": "B. Só o efeito do Único na etapa 2", "efeito": "O Guardião deixa cair o Único como efeito visual (coluna de luz e som), sem inventário. Dá a sensação de recompensa no teste, mas puxa trabalho de arte e efeito para antes."}, {"id": "C", "nome": "C. Loot e inventário inteiros na etapa 2", "efeito": "A etapa 2 fica bem maior e parte da etapa 3 vem antes."}]}, {"id": "demo-next-fest", "opcoes": [{"id": "A", "nome": "A. Etapa própria entre a 3 e a 4", "efeito": "Segue o plano: mede o interesse do público antes da parte mais cara. Obriga a adiantar CNPJ, Steam Direct e página da loja."}, {"id": "B", "nome": "B. Dentro da etapa 3", "efeito": "A etapa 3 cresce: além do ciclo completo, precisa da Estrada das Lanternas, da página da loja e de um build para a Steam."}, {"id": "C", "nome": "C. Sem demo por enquanto", "efeito": "Foco total em chegar ao Acesso Antecipado. Perde o termômetro de wishlists e a vitrine do festival. Dá para decidir de novo ao fim da etapa 3."}]}, {"id": "calibracao-idle", "opcoes": [{"id": "A", "nome": "A. Mantém na etapa 4", "efeito": "A etapa 3 fica mais curta e o teste do ciclo usa números estimados com selo. A calibração é feita uma vez só, quando as 3 classes já existirem."}, {"id": "B", "nome": "B. Antecipa para a etapa 3", "efeito": "A expedição já sai confiável no teste do ciclo, mas calibra só o Guerreiro. Arqueiro e Mago precisarão de nova calibração na etapa 4, e o robô de teste vira trabalho extra mais cedo."}]}, {"id": "capsulas-steam", "opcoes": [{"id": "A", "nome": "A. Artista contratado", "efeito": "Segue a política do plano e evita críticas a cápsula feita por IA. Tem custo e prazo, e exige contrato de cessão de direitos com o artista."}, {"id": "B", "nome": "B. IA declarada", "efeito": "Rápido, barato e coerente com o resto da arte. Parte do público reage mal a cápsulas feitas por IA."}, {"id": "C", "nome": "C. Mista", "efeito": "IA para compor a cena e artista pintando por cima. Custo intermediário; o uso de IA continua tendo de ser declarado."}]}, {"id": "registros-quem", "opcoes": [{"id": "A", "nome": "A. Você cuida de tudo", "efeito": "Concentra as decisões, mas divide seu tempo com a produção do jogo."}, {"id": "B", "nome": "B. Seu sócio assume a parte burocrática", "efeito": "Você acompanha a produção e ele toca CNPJ, Steam e registros."}, {"id": "C", "nome": "C. Contador e advogado", "efeito": "Contador para CNPJ e impostos; advogado só para marca e contratos. Tem custo, mas reduz o risco de erro."}]}, {"id": "registros-quando", "opcoes": [{"id": "A", "nome": "A. Começar já", "efeito": "A página entra no ar mais cedo e as wishlists se acumulam por mais tempo. O gasto com CNPJ e Steam Direct vem antes de haver jogo pronto."}, {"id": "B", "nome": "B. Junto com a demo", "efeito": "Segue o plano: CNPJ e conta na Steam no começo da fase da demo, com a página no ar antes do Next Fest. Depende da decisão sobre a demo."}, {"id": "C", "nome": "C. Só na etapa 5", "efeito": "Adia o gasto e a burocracia para quando o jogo estiver quase pronto. A página entra tarde e o lançamento sai com menos wishlists."}]}, {"id": "paginacao-windows", "opcoes": [{"id": "A", "nome": "A. Tudo para o D:", "efeito": "Libera todo o espaço do arquivo no C:. O D: precisa ter espaço livre sobrando."}, {"id": "B", "nome": "B. Pequeno no C: e o resto no D:", "efeito": "Deixa 2 a 4 GB no C: (o Windows usa para relatórios de travamento) e coloca o principal no D:."}, {"id": "C", "nome": "C. Não mexer agora", "efeito": "Libera espaço no C: de outra forma. O risco de travar por falta de memória continua."}]}, {"id": "historia", "opcoes": [{"id": "A", "nome": "A. Você escreve sozinho", "efeito": "A história fica inteira na sua mão. A equipe só adapta os textos ao formato do jogo."}, {"id": "B", "nome": "B. Você e seu sócio", "efeito": "Divide o trabalho. Vale combinar quem tem a palavra final."}, {"id": "C", "nome": "C. Proposta do agente de narrativa", "efeito": "O agente escreve uma versão a partir do que existe, e vocês cortam e ajustam. É mais rápido, mas a voz final depende da revisão de vocês."}]}]</script>
+<script>/* Votação e comentários por pergunta, gravados no banco do artifact.
+ * Um documento por pessoa em votos/<id>, com respostas[<id da pergunta>] = {opcao, comentario, em}.
+ * A página traz <script type="application/json" id="votacao-dados"> com [{id, opcoes: [{id, nome, efeito}]}]
+ * e um <div class="votacao" data-q="<id da pergunta>"> onde cada pergunta deve aparecer.
+ * Capabilities do artifact: db (regras em tools/votacao/README.md) e user com scope "profile". */
+(function () {
+  const dadosEl = document.getElementById('votacao-dados');
+  if (!dadosEl) return;
+  const PERGUNTAS = JSON.parse(dadosEl.textContent);
+  const porId = Object.fromEntries(PERGUNTAS.map(p => [p.id, p]));
+  const V = {db: null, user: null, eu: null, pode: false, votos: {}, meu: {}, fila: Promise.resolve(), salvando: false, aviso: 'Carregando votos…'};
+
+  const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+  const nomeOpcao = (q, o) => (porId[q]?.opcoes || []).find(x => x.id === o)?.nome || o;
+  const quando = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}) + ' ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}); };
+
+  function montar(caixa) {
+    const q = caixa.dataset.q, p = porId[q];
+    if (!p) return;
+    const ul = el('ul', 'v-opcoes');
+    for (const o of p.opcoes || []) {
+      const b = el('button', 'v-op'); b.type = 'button'; b.dataset.q = q; b.dataset.o = o.id; b.setAttribute('aria-pressed', 'false');
+      const quem = el('span', 'v-quem'); quem.append(el('span', 'v-n', '0 votos'), el('span', 'v-rostos'));
+      b.append(el('b', null, o.nome), el('span', 'v-ef', o.efeito || ''), quem);
+      const li = el('li'); li.append(b); ul.append(li);
+    }
+    const conversa = el('div', 'v-conversa');
+    const ta = el('textarea', 'v-meu'); ta.id = 'vc-' + q; ta.rows = 2; ta.dataset.q = q;
+    ta.placeholder = 'Explique seu voto, faça uma pergunta ou sugira outra opção';
+    const rot = el('label', 'v-rotulo', 'Seu comentário'); rot.htmlFor = ta.id;
+    const salvarBtn = el('button', 'v-salvar', 'Salvar comentário'); salvarBtn.type = 'button'; salvarBtn.dataset.q = q;
+    const st = el('span', 'v-status'); st.setAttribute('role', 'status'); st.setAttribute('aria-live', 'polite');
+    const acoes = el('div', 'v-acoes'); acoes.append(salvarBtn, st);
+    conversa.append(el('h4', 'v-tit', 'Comentários'), el('ul', 'v-coms'), rot, ta, acoes);
+    caixa.replaceChildren(el('h4', 'v-tit', 'Opções · clique para votar'), ul, conversa);
+  }
+
+  async function pintar() {
+    const ids = Object.keys(V.votos);
+    const ps = V.user && ids.length ? await V.user.profiles(ids) : {};
+    const nome = id => id === V.eu ? 'Você' : (ps[id]?.name || 'Alguém');
+    const rosto = id => { const i = el('img', 'v-rosto'); i.src = ps[id]?.avatarUrl || ''; i.alt = ''; i.title = nome(id); return i; };
+    document.querySelectorAll('.v-op').forEach(b => {
+      const {q, o} = b.dataset;
+      const quem = ids.filter(id => V.votos[id]?.[q]?.opcao === o);
+      b.setAttribute('aria-pressed', String(V.meu[q]?.opcao === o));
+      b.classList.toggle('v-bloq', !V.pode);
+      b.querySelector('.v-n').textContent = quem.length === 1 ? '1 voto' : quem.length + ' votos';
+      b.querySelector('.v-rostos').replaceChildren(...quem.map(rosto));
+    });
+    document.querySelectorAll('.votacao').forEach(cx => {
+      const q = cx.dataset.q, lista = cx.querySelector('.v-coms');
+      if (!lista) return;
+      const coms = ids.filter(id => (V.votos[id]?.[q]?.comentario || '').trim())
+        .sort((a, b) => String(V.votos[a][q].em || '').localeCompare(String(V.votos[b][q].em || '')));
+      lista.replaceChildren(...coms.map(id => {
+        const r = V.votos[id][q], li = el('li'), cab = el('div', 'v-cab');
+        cab.append(rosto(id), el('b', null, nome(id)), el('span', null, (r.opcao ? 'votou ' + nomeOpcao(q, r.opcao) + ' · ' : '') + quando(r.em)));
+        li.append(cab, el('p', null, r.comentario));
+        return li;
+      }));
+      if (!coms.length) lista.append(el('li', 'v-vazio', 'Nenhum comentário ainda.'));
+      const ta = cx.querySelector('.v-meu');
+      if (!ta.dataset.mexido && document.activeElement !== ta) ta.value = V.meu[q]?.comentario || '';
+      ta.disabled = cx.querySelector('.v-salvar').disabled = !V.pode;
+      const st = cx.querySelector('.v-status');
+      if (!st.dataset.fixo) st.textContent = V.aviso;
+    });
+  }
+
+  function salvar(q, msgOk) {
+    const st = document.querySelector('.votacao[data-q="' + q + '"] .v-status');
+    const r = V.meu[q];
+    if (r) { r.em = new Date().toISOString(); if (!r.opcao && !(r.comentario || '').trim()) delete V.meu[q]; }
+    const corpo = {respostas: JSON.parse(JSON.stringify(V.meu))};
+    V.salvando = true;
+    if (st) { st.dataset.fixo = '1'; st.textContent = 'Salvando…'; }
+    V.fila = V.fila.then(async () => {
+      try {
+        await V.db.doc('votos/' + V.eu).set(corpo);
+        if (st) st.textContent = msgOk;
+      } catch (e) {
+        if (e?.code === 'invalid_argument') { V.pode = false; V.aviso = 'Seu acesso não permite votar. Peça ao dono um convite de Editor por e-mail.'; }
+        if (st) st.textContent = e?.code === 'quota_exceeded' ? 'O espaço de votos encheu. Avise o dono.'
+          : e?.code === 'invalid_argument' ? V.aviso : 'Não foi possível salvar. Tente de novo.';
+      } finally { V.salvando = false; pintar(); }
+    });
+  }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.v-op');
+    if (b) {
+      const {q, o} = b.dataset;
+      if (!V.pode) {
+        const st = document.querySelector('.votacao[data-q="' + q + '"] .v-status');
+        if (st) { st.dataset.fixo = '1'; st.textContent = V.aviso; }
+        return;
+      }
+      const r = V.meu[q] || (V.meu[q] = {});
+      r.opcao = r.opcao === o ? '' : o;
+      pintar();
+      salvar(q, r.opcao ? 'Voto salvo.' : 'Voto retirado.');
+      return;
+    }
+    const s = e.target.closest('.v-salvar');
+    if (s && V.pode) {
+      const q = s.dataset.q, ta = document.querySelector('.v-meu[data-q="' + q + '"]');
+      const r = V.meu[q] || (V.meu[q] = {});
+      r.comentario = ta.value.trim().slice(0, 4000);
+      delete ta.dataset.mexido;
+      salvar(q, r.comentario ? 'Comentário salvo.' : 'Comentário apagado.');
+    }
+  });
+  document.addEventListener('input', e => { if (e.target.classList?.contains('v-meu')) e.target.dataset.mexido = '1'; });
+
+  async function iniciar() {
+    document.querySelectorAll('.votacao').forEach(montar);
+    const c = window.claude;
+    if (!c || typeof c.use !== 'function') { V.aviso = 'Abra esta página pelo link do claude.ai para votar e comentar.'; return pintar(); }
+    [V.user, V.db] = await Promise.all([c.use('user'), c.use('db')]);
+    if (!V.db) { V.aviso = 'Para votar e comentar, entre no claude.ai com o convite de Editor que o dono enviou por e-mail.'; return pintar(); }
+    V.eu = V.user ? await V.user.id() : null;
+    const pode = V.user ? await V.user.can('data.write') : null;
+    V.pode = !!V.eu && pode !== false;
+    V.aviso = V.pode ? '' : 'Você pode ver os votos, mas não votar. Para votar, peça ao dono um convite de Editor por e-mail.';
+    V.db.collection('votos').onSnapshot(snap => {
+      const novo = {};
+      for (const d of snap.docs) { const r = d.data()?.respostas; if (r && typeof r === 'object') novo[d.id] = r; }
+      V.votos = novo;
+      if (V.eu && !V.salvando) V.meu = JSON.parse(JSON.stringify(novo[V.eu] || {}));
+      pintar();
+    }, () => { V.aviso = 'Não foi possível carregar os votos agora. Recarregue a página.'; pintar(); });
+  }
+  iniciar();
+})();
 </script>
