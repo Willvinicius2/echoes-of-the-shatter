@@ -86,8 +86,7 @@ SaveHandle MakeSave(const shatter_db* db) {
     return h;
 }
 
-std::string StartParams(int hours, std::uint64_t seed, const char* extraSkill = nullptr) {
-    (void)extraSkill;
+std::string StartParams(int hours, std::uint64_t seed) {
     std::ostringstream os;
     os << R"({"character_index":0,"map_id":"map.act1.crypt","objective":"xp","rules":[)"
        << R"({"condition":"life_below","param":0.35,"action":"use_potion","ref_id":""},)"
