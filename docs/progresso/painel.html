@@ -1,0 +1,227 @@
+<title>Painel Echoes of the Shatter</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lilita+One&family=Source+Sans+3:wght@400;600&display=swap');
+:root{--noite:#0F0B14;--escura:#161117;--media:#2A222F;--clara:#6A606E;--ouro:#D9A441;--ouro-claro:#FCD58A;--carm:#B82A1E;--lava:#E0301E;--perg:#F0E6D6;--verde:#6FB36A;--azul:#6A9BD9;
+--f-tit:'Cinzel',Georgia,serif;--f-txt:'Source Sans 3',system-ui,sans-serif;--f-num:'Lilita One','Cinzel',sans-serif}
+*{box-sizing:border-box}
+:root{color-scheme:dark}
+body{margin:0;background:var(--noite);color:var(--perg);font:16px/1.5 var(--f-txt);
+padding:24px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+main{max-width:1080px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-tit);color:var(--ouro-claro);margin:0;line-height:1.2}
+h1{font-size:clamp(1.6rem,5vw,2.4rem)}
+h2{font-size:1.3rem;margin:36px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--media)}
+h3{font-size:1.05rem;color:var(--perg)}
+p{margin:4px 0}.mut{color:var(--clara)}.peq{font-size:.85rem}
+.topo{border:2px solid var(--ouro);border-radius:6px 18px 6px 18px;background:var(--escura);padding:18px 20px}
+.topo .sub{color:var(--perg);margin-top:6px}
+.faixa{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:14px}
+.faixa a{display:block;text-decoration:none;color:var(--perg);background:var(--media);border-left:5px solid var(--clara);border-radius:4px;padding:8px 10px;font-size:.9rem}
+.faixa a.concluido{border-color:var(--verde)}.faixa a.nuvem{border-color:var(--azul)}.faixa a.andamento{border-color:var(--ouro)}
+.faixa a.aguardando_dono{border-color:var(--lava)}.faixa a.bloqueado{border-color:var(--carm)}
+.faixa b{display:block;font-family:var(--f-tit);font-size:.85rem}
+.cont{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px}
+.cont div{font-family:var(--f-num);font-size:1.7rem;color:var(--ouro-claro)}.cont span{display:block;font:.8rem var(--f-txt);color:var(--clara)}
+.pil{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:2px 10px 2px 8px;border-radius:99px;background:var(--media);border:1px solid var(--clara);white-space:nowrap}
+.pil i{width:10px;height:10px;background:var(--clara);display:inline-block}
+.pil.concluido i{background:var(--verde);border-radius:50%}
+.pil.nuvem i{background:var(--azul);border-radius:50% 50% 50% 0}
+.pil.andamento i{background:var(--ouro);clip-path:polygon(0 0,100% 50%,0 100%)}
+.pil.aguardando_dono{border-color:var(--lava);color:var(--lava)}.pil.aguardando_dono i{background:var(--lava);transform:rotate(45deg)}
+.pil.pendente i{background:transparent;border:2px solid var(--clara);border-radius:50%}
+.pil.bloqueado{border-color:var(--carm)}.pil.bloqueado i{background:var(--carm)}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{background:var(--escura);border:1px solid var(--media);border-radius:4px 14px 4px 14px;padding:14px 16px}
+.card.alerta{border-color:var(--lava)}
+.card header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.card ul{margin:8px 0 0;padding-left:18px}.card li{margin:2px 0}
+.arq{display:block;color:var(--clara);font-size:.78rem;overflow-wrap:anywhere}
+.prox{margin-top:10px;padding-top:8px;border-top:1px dashed var(--media);font-size:.9rem}.prox b{color:var(--ouro)}
+.marcos{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.marcos li{display:flex;gap:10px;align-items:center;background:var(--escura);border:1px solid var(--media);border-radius:4px;padding:8px 12px}
+.marcos li i{flex:none;width:14px;height:14px;border:2px solid var(--clara);border-radius:50%}
+.marcos li.ok i{background:var(--verde);border-color:var(--verde)}
+.linha{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid var(--media)}
+.linha li{position:relative;padding:4px 0 8px 14px}.linha li:before{content:"";position:absolute;left:-21px;top:12px;width:10px;height:10px;background:var(--ouro);transform:rotate(45deg)}
+.linha code{color:var(--ouro);font-size:.8rem}.linha .dt{color:var(--clara);font-size:.8rem;margin-left:6px}
+.abas{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.abas button{font:600 .9rem var(--f-txt);color:var(--perg);background:var(--media);border:1px solid var(--clara);border-radius:99px;padding:6px 14px;cursor:pointer}
+.abas button[aria-pressed=true]{background:var(--ouro);color:var(--noite);border-color:var(--ouro)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.gal figure{margin:0;background:var(--escura);border:1px solid var(--media);border-radius:4px;overflow:hidden}
+.gal img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:var(--media)}
+.gal figcaption{padding:8px 10px;font-size:.85rem}.gal figcaption b{display:block;color:var(--ouro-claro)}
+.gal figure.ag{border-color:var(--ouro)}
+.tab{overflow-x:auto}
+table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px;border-bottom:1px solid var(--media);vertical-align:top}th{color:var(--ouro)}
+[hidden]{display:none!important}
+@media (max-width:420px){.grade{grid-template-columns:1fr}.gal{grid-template-columns:1fr 1fr}}
+</style>
+<main>
+<section class="topo"><h1>Echoes of the Shatter</h1>
+<p class="sub">Protótipo jogável do Guerreiro na Cripta Partida. Atualizado em 16/10/2026.</p>
+<div class="faixa">
+<a class="concluido" href="#s-arte"><b>Direção de arte</b>Concluído</a>
+<a class="aguardando_dono" href="#s-design"><b>Game Design</b>Aguardando você</a>
+<a class="concluido" href="#s-dados"><b>Dados</b>Concluído</a>
+<a class="concluido" href="#s-conteudo"><b>Conteúdo e textos</b>Concluído</a>
+<a class="concluido" href="#s-arquitetura"><b>Arquitetura</b>Concluído</a>
+<a class="nuvem" href="#s-backend"><b>Backend ShatterCore</b>Na nuvem</a>
+<a class="nuvem" href="#s-frontend"><b>Frontend Unity</b>Na nuvem</a>
+<a class="nuvem" href="#s-arte_tecnica"><b>Arte técnica</b>Na nuvem</a>
+<a class="andamento" href="#s-qa"><b>QA</b>Em andamento</a>
+<a class="concluido" href="#s-pesquisa"><b>Pesquisa</b>Concluído</a>
+<a class="andamento" href="#s-producao"><b>Produção</b>Em andamento</a>
+</div>
+<div class="cont">
+<div>6<span>aguardando você</span></div>
+<div>3<span>sessões na nuvem</span></div>
+<div>5/11<span>setores concluídos</span></div>
+<div>3/7<span>marcos</span></div>
+</div></section>
+<h2>Aguardando você</h2><div class='grade'>
+<article class="card alerta"><h3>Escudada já no nível 4?</h3><p>Pergunta do Game Designer sobre quando liberar a habilidade do escudo.</p><span class="arq">docs/13_design_pendencias.md</span></article>
+<article class="card alerta"><h3>Segunda poção &quot;Resguardo&quot; como barreira?</h3><p>Pergunta do Game Designer sobre a segunda poção.</p><span class="arq">docs/13_design_pendencias.md</span></article>
+<article class="card alerta"><h3>Arena do Guardião com pilares para a investida?</h3><p>Pergunta do Game Designer sobre a arena do chefe.</p><span class="arq">docs/13_design_pendencias.md</span></article>
+<article class="card alerta"><h3>Qual é o PC de referência?</h3><p>Máquina para medir desempenho (60 FPS e tempos de simulação).</p><span class="arq">docs/02_requisitos.md (P-4)</span></article>
+<article class="card alerta"><h3>Aprovar as prévias de graybox</h3><p>Quando o pull request da arte técnica chegar.</p><span class="arq">art-src/graybox/previews/</span></article>
+<article class="card alerta"><h3>História do jogo</h3><p>Em criação por você.</p><span class="arq">decisão do dono</span></article>
+</div>
+<h2>Marcos</h2><ul class='marcos'>
+<li class="ok"><i></i><span>Visual e arquitetura definidos</span><span class="mut peq">feito</span></li>
+<li class="ok"><i></i><span>Dados e textos do protótipo</span><span class="mut peq">feito</span></li>
+<li class="ok"><i></i><span>Infraestrutura de desenvolvimento</span><span class="mut peq">feito</span></li>
+<li class=""><i></i><span>ShatterCore completo com API C</span><span class="mut peq">falta</span></li>
+<li class=""><i></i><span>Graybox da Cripta e dos personagens aprovado</span><span class="mut peq">falta</span></li>
+<li class=""><i></i><span>Gameplay do Guerreiro compilando na Unity</span><span class="mut peq">falta</span></li>
+<li class=""><i></i><span>Protótipo jogável do Guerreiro na Cripta Partida</span><span class="mut peq">falta</span></li>
+</ul>
+<h2>Setores</h2><div class='grade'>
+<article class="card" id="s-arte"><header><div><h3>Direção de arte</h3><span class="mut peq">Art Director</span></div><span class="pil concluido"><i></i>Concluído</span></header>
+<p>Visual do Spell Brigade aprovado, com 24 imagens de referência e design system.</p><ul>
+<li>24 referências de arte aprovadas<span class="arq">docs/arte/referencias-geracao/aprovadas/</span></li>
+<li>Design system e tokens de cor da interface<span class="arq">docs/03_design_system.md, docs/03_design_tokens.json</span></li>
+<li>Decisões de visual 3D e motor<span class="arq">docs/08_decisoes_visual_3d.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Aprovar as prévias de graybox quando chegarem (depende de você).</p></article>
+<article class="card" id="s-design"><header><div><h3>Game Design</h3><span class="mut peq">Game Designer</span></div><span class="pil aguardando_dono"><i></i>Aguardando você</span></header>
+<p>Decisões do protótipo escritas (esquiva, poções, Guardião, elites, IA); três perguntas esperam sua resposta.</p><ul>
+<li>Decisões que travavam o protótipo (10 itens)<span class="arq">docs/13_design_pendencias.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Responder às perguntas do Game Designer.</p></article>
+<article class="card" id="s-dados"><header><div><h3>Dados</h3><span class="mut peq">Data Engineer</span></div><span class="pil concluido"><i></i>Concluído</span></header>
+<p>Tabelas CSV, esquemas, validador e documento de dados prontos.</p><ul>
+<li>Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)<span class="arq">EchoesOfTheShatter/Content/Data/*.csv</span></li>
+<li>Esquemas JSON e validador<span class="arq">EchoesOfTheShatter/Content/Data/schemas/, tools/validate_data.py</span></li>
+<li>Documento de dados<span class="arq">docs/06_dados.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Ajustar os CSVs conforme as respostas do Game Designer.</p></article>
+<article class="card" id="s-conteudo"><header><div><h3>Conteúdo e textos</h3><span class="mut peq">Narrative</span></div><span class="pil concluido"><i></i>Concluído</span></header>
+<p>Conteúdo do protótipo e textos em português e inglês escritos. A história é do dono.</p><ul>
+<li>Resumo do conteúdo e do tom<span class="arq">docs/05_conteudo.md</span></li>
+<li>Textos pt_BR e en (interface, conteúdo, diálogos, expedição)<span class="arq">EchoesOfTheShatter/Content/Data/Loc/*.csv</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Aguardar a história em criação pelo dono.</p></article>
+<article class="card" id="s-arquitetura"><header><div><h3>Arquitetura</h3><span class="mut peq">Tech Lead</span></div><span class="pil concluido"><i></i>Concluído</span></header>
+<p>Arquitetura em Unity 6 + URP com o ShatterCore como DLL nativa.</p><ul>
+<li>Documento de arquitetura (cliente, núcleo, interop, testes)<span class="arq">docs/04_arquitetura.md</span></li>
+<li>Interfaces do ShatterCore em C++<span class="arq">ShatterCore/include/shatter/*.h</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Revisar o contrato da API C quando o Backend entregar.</p></article>
+<article class="card" id="s-backend"><header><div><h3>Backend ShatterCore</h3><span class="mut peq">Backend Engineer</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
+<p>Sessão na nuvem terminando motor, testes e API C; vai abrir um pull request em rascunho.</p><ul>
+<li>Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)<span class="arq">ShatterCore/src/*.cpp</span></li>
+<li>Testes do núcleo já no repositório<span class="arq">ShatterCore/tests/*.cpp</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Revisar o pull request quando chegar.</p></article>
+<article class="card" id="s-frontend"><header><div><h3>Frontend Unity</h3><span class="mut peq">Frontend Engineer</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
+<p>Sessão na nuvem escrevendo o gameplay em C#; a compilação será feita no PC depois.</p><ul>
+<li>Projeto Unity 6.3 URP criado<span class="arq">EchoesOfTheShatter/</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Compilar e testar no PC quando o pull request chegar.</p></article>
+<article class="card" id="s-arte_tecnica"><header><div><h3>Arte técnica</h3><span class="mut peq">Artista técnico (Blender)</span></div><span class="pil nuvem"><i></i>Na nuvem</span></header>
+<p>Graybox dos heróis e inimigos no repositório; a sessão na nuvem termina o kit da Cripta, a cena de teste e o esqueleto humanoide.</p><ul>
+<li>Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)<span class="arq">art-src/graybox/</span></li>
+<li>Prévias em imagem<span class="arq">art-src/graybox/previews/</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Mostrar as prévias para sua aprovação.</p></article>
+<article class="card" id="s-qa"><header><div><h3>QA</h3><span class="mut peq">QA Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
+<p>Plano de testes escrito; a execução depende do código das sessões na nuvem.</p><ul>
+<li>Plano de QA (matriz de requisitos e casos)<span class="arq">docs/10_qa.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Rodar a suíte quando o ShatterCore e o gameplay chegarem.</p></article>
+<article class="card" id="s-pesquisa"><header><div><h3>Pesquisa</h3><span class="mut peq">Pesquisador de referências</span></div><span class="pil concluido"><i></i>Concluído</span></header>
+<p>Pesquisa do canal @stefan_3d_ai feita com acesso limitado ao YouTube.</p><ul>
+<li>Pesquisa do canal @stefan_3d_ai<span class="arq">docs/pesquisa/stefan_3d_ai.md</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Nenhum; a lista de vídeos do canal não pôde ser obtida.</p></article>
+<article class="card" id="s-producao"><header><div><h3>Produção</h3><span class="mut peq">Orquestrador</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
+<p>Coordena os setores, mantém este painel e o plano de execução.</p><ul>
+<li>Plano de execução e próximos passos<span class="arq">docs/01_plano_execucao.md, docs/07_proximos_passos.md</span></li>
+<li>Este painel<span class="arq">docs/progresso/estado.json, tools/painel/gerar_painel.py</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Integrar os três pull requests quando chegarem.</p></article>
+</div>
+<h2>Linha do tempo</h2><ul class='linha'>
+<li><code>e12db47</code><span class="dt">16/10/2026</span><br>feat: projeto Unity 6.3 URP, ShatterCore em andamento, graybox e docs da equipe</li>
+<li><code>e24fcdf</code><span class="dt">16/10/2026</span><br>docs(arquitetura): apresentação em Unity 6 LTS + URP</li>
+<li><code>295165f</code><span class="dt">16/10/2026</span><br>docs: troca o motor para Unity 6 LTS com URP</li>
+<li><code>80fc3b8</code><span class="dt">16/10/2026</span><br>feat(content): conteúdo do protótipo e localização pt_BR/en</li>
+<li><code>d5cbf8c</code><span class="dt">16/10/2026</span><br>docs(arte): gerador move as imagens do Codex para o disco D</li>
+<li><code>64ee00a</code><span class="dt">16/10/2026</span><br>chore: fixa LF em CSV e JSON para bytes estáveis</li>
+<li><code>e9b9328</code><span class="dt">16/10/2026</span><br>feat(data): esquemas, CSVs, fixtures e script de build do ShatterCore</li>
+<li><code>72a9fe3</code><span class="dt">16/10/2026</span><br>docs(design): mantém o fogo do Mago vermelho-laranja da arte aprovada</li>
+<li><code>3303722</code><span class="dt">16/10/2026</span><br>docs: troca a apresentação de pixel art para 3D estilizado no UE 5.8</li>
+<li><code>256007f</code><span class="dt">16/10/2026</span><br>docs(arte): adiciona áreas, terrenos e endgame aprovados</li>
+<li><code>3e7e532</code><span class="dt">16/10/2026</span><br>chore: base do Echoes of the Shatter em UE 5.8 com a direção de arte aprovada</li>
+</ul>
+<h2>Decisões tomadas</h2><div class='grade'>
+<article class="card"><h3>Visual no estilo Spell Brigade</h3><p>3D pintado à mão, personagens chibi, no lugar da pixel art.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Motor: Unity 6 + URP</h3><p>Antes Godot 4, depois Unreal 5.8.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Mago com capuz e cajado de cristal</h3><p>Sem lanterna.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Fogo do Mago vermelho-laranja</h3><p>Como na arte aprovada.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Tudo do projeto no disco D</h3><p>O disco C está cheio.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Agentes por setor</h3><p>Trabalho pesado roda na nuvem.</p><span class="arq">16/10/2026</span></article>
+</div>
+<h2>Galeria de arte</h2>
+<div class="abas"><button data-f="todas" aria-pressed="true">Todas (28)</button><button data-f="aprovada" aria-pressed="false">Aprovada (24)</button><button data-f="aguardando" aria-pressed="false">Aguardando aprovação (4)</button></div><div class="gal">
+<figure class="ag" data-k="aguardando"><img src="thumbs/graybox_heroes_lineup.jpg" alt="Graybox dos heróis (fila)" loading="lazy"><figcaption><b>Graybox dos heróis (fila)</b>Prévia de graybox.<br><span class="pil aguardando_dono"><i></i>Aguardando aprovação</span></figcaption></figure>
+<figure class="ag" data-k="aguardando"><img src="thumbs/graybox_heroes_front.jpg" alt="Graybox dos heróis (frente)" loading="lazy"><figcaption><b>Graybox dos heróis (frente)</b>Prévia de graybox.<br><span class="pil aguardando_dono"><i></i>Aguardando aprovação</span></figcaption></figure>
+<figure class="ag" data-k="aguardando"><img src="thumbs/graybox_enemies_lineup.jpg" alt="Graybox dos inimigos" loading="lazy"><figcaption><b>Graybox dos inimigos</b>Prévia de graybox.<br><span class="pil aguardando_dono"><i></i>Aguardando aprovação</span></figcaption></figure>
+<figure class="ag" data-k="aguardando"><img src="thumbs/graybox_boss_guardian.jpg" alt="Graybox do Guardião da Cripta" loading="lazy"><figcaption><b>Graybox do Guardião da Cripta</b>Prévia de graybox.<br><span class="pil aguardando_dono"><i></i>Aguardando aprovação</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/01_key_art.jpg" alt="Key art com os 3 heróis e uma faixa de estilo" loading="lazy"><figcaption><b>Key art com os 3 heróis e uma faixa de estilo</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/02_guerreiro.jpg" alt="Guerreiro" loading="lazy"><figcaption><b>Guerreiro</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/03_arqueiro.jpg" alt="Arqueiro" loading="lazy"><figcaption><b>Arqueiro</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/04_mago.jpg" alt="Mago" loading="lazy"><figcaption><b>Mago</b>turnaround, poses de habilidade e skins<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/05_inimigos_ato1.jpg" alt="8 inimigos do Ato I nas versões normal, elite e corrompida" loading="lazy"><figcaption><b>8 inimigos do Ato I nas versões normal, elite e corrompida</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/06_chefes_ato1.jpg" alt="Os 4 chefes do Ato I, cada um enfrentando um herói" loading="lazy"><figcaption><b>Os 4 chefes do Ato I, cada um enfrentando um herói</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/07_cripta_tileset.jpg" alt="Cripta Partida" loading="lazy"><figcaption><b>Cripta Partida</b>arena com o Guerreiro e kit modular<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/08_pedreira_ponte.jpg" alt="Pedreira dos Ecos com o Arqueiro e Ponte do Sino com o Mago" loading="lazy"><figcaption><b>Pedreira dos Ecos com o Arqueiro e Ponte do Sino com o Mago</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/09_vfx_habilidades.jpg" alt="Efeitos das habilidades das 3 classes contra inimigos do Ato I e os telegraphs dos inimigos" loading="lazy"><figcaption><b>Efeitos das habilidades das 3 classes contra inimigos do Ato I e os telegraphs dos inimigos</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/10_hud_mockup.jpg" alt="HUD em combate" loading="lazy"><figcaption><b>HUD em combate</b>o Guerreiro contra o Guardião da Cripta<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/11_icones.jpg" alt="Ícones de habilidades (com o herói de cada classe) e de itens" loading="lazy"><figcaption><b>Ícones de habilidades (com o herói de cada classe) e de itens</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/12_mapa_mundi.jpg" alt="Mapa do Ato I e seleção de área com o Vigia do Sino" loading="lazy"><figcaption><b>Mapa do Ato I e seleção de área com o Vigia do Sino</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/13_estrada_lanternas.jpg" alt="Estrada das Lanternas (tutorial)" loading="lazy"><figcaption><b>Estrada das Lanternas (tutorial)</b>área com o Guerreiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/14_armazem_cinzas.jpg" alt="Armazém de Cinzas (área opcional de saque)" loading="lazy"><figcaption><b>Armazém de Cinzas (área opcional de saque)</b>área com o Arqueiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/15_patio_marcos.jpg" alt="Pátio dos Marcos" loading="lazy"><figcaption><b>Pátio dos Marcos</b>arena do Carrasco do Voto com o Mago e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/16_tuneis_voto.jpg" alt="Túneis do Voto" loading="lazy"><figcaption><b>Túneis do Voto</b>área com o Guerreiro, kit e planta da masmorra<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/17_mirante_partido.jpg" alt="Mirante Partido" loading="lazy"><figcaption><b>Mirante Partido</b>arena final do Ato I com o Arqueiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/18_ossario_marco.jpg" alt="Endgame, Ossário do Marco" loading="lazy"><figcaption><b>Endgame, Ossário do Marco</b>área com o Guerreiro e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/19_trilha_cinza.jpg" alt="Endgame, Trilha de Cinza" loading="lazy"><figcaption><b>Endgame, Trilha de Cinza</b>área com o Arqueiro, inimigos e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/20_salao_martelo.jpg" alt="Endgame, Salão do Martelo" loading="lazy"><figcaption><b>Endgame, Salão do Martelo</b>área com o Mago, inimigos e kit<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/21_terrenos_ato1.jpg" alt="Terrenos das 8 áreas do Ato I (4 texturas por área)" loading="lazy"><figcaption><b>Terrenos das 8 áreas do Ato I (4 texturas por área)</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/22_terrenos_endgame.jpg" alt="Terrenos dos 3 mapas do endgame e marcas de perigo no chão" loading="lazy"><figcaption><b>Terrenos dos 3 mapas do endgame e marcas de perigo no chão</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/23_inimigos_endgame.jpg" alt="9 inimigos do endgame (3 por mapa) nas versões normal, elite e corrompida" loading="lazy"><figcaption><b>9 inimigos do endgame (3 por mapa) nas versões normal, elite e corrompida</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure data-k="aprovada"><img src="thumbs/24_predador_marcos.jpg" alt="Predador dos Marcos" loading="lazy"><figcaption><b>Predador dos Marcos</b>vistas, fases, rastros e arena<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+</div>
+<h2>Sessões na nuvem</h2><div class='grade'>
+<article class="card"><header><h3>1. ShatterCore: terminar motor, testes e API C</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Backend - iniciada em 16/10/2026</p><p class="prox"><b>Resultado:</b> Pull request em rascunho no GitHub</p></article>
+<article class="card"><header><h3>2. Arte técnica: terminar graybox no Blender</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Arte técnica - iniciada em 16/10/2026</p><p>Kit da Cripta, cena de teste e esqueleto humanoide.</p><p class="prox"><b>Resultado:</b> Pull request em rascunho no GitHub</p></article>
+<article class="card"><header><h3>3. Frontend: gameplay C# do protótipo na Unity</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Frontend - iniciada em 16/10/2026</p><p>Movimento, câmera, esquiva, habilidades do Guerreiro, IA do inimigo e HUD em UI Toolkit. A compilação será feita no PC depois.</p><p class="prox"><b>Resultado:</b> Pull request em rascunho no GitHub</p></article>
+</div>
+<h2>Infraestrutura</h2><div class='tab'><table><tr><th>Item</th><th>Detalhe</th></tr>
+<tr><td>Unity 6.3 LTS (6000.3.26f1)</td><td>D:\Unity\Editors, com módulo IL2CPP</td></tr>
+<tr><td>Unity CLI</td><td>D:\Unity\cli</td></tr>
+<tr><td>Licença Unity Personal</td><td>ativa</td></tr>
+<tr><td>Projeto URP</td><td>EchoesOfTheShatter/, com o pacote Pipeline</td></tr>
+<tr><td>Plugin da Unity no Claude Code</td><td>instalado</td></tr>
+<tr><td>Repositório privado no GitHub</td><td>github.com/Willvinicius2/echoes-of-the-shatter, com Git LFS</td></tr>
+<tr><td>Visual Studio Build Tools</td><td>MSVC 14.50</td></tr>
+<tr><td>Blender 5.1</td><td>graybox e arte técnica</td></tr>
+</table></div></main>
+<script>
+(function(){var b=document.querySelectorAll('.abas button'),f=document.querySelectorAll('.gal figure');
+b.forEach(function(x){x.addEventListener('click',function(){var k=x.dataset.f;
+b.forEach(function(y){y.setAttribute('aria-pressed',y===x)});
+f.forEach(function(g){g.hidden=!(k==='todas'||g.dataset.k===k)})})})})();
+</script>
