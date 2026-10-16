@@ -260,6 +260,43 @@
       "min": 1,
       "max": 100,
       "desc": "Nível de liberação"
+    },
+    {
+      "name": "coneAngle",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 360,
+      "desc": "Angulo do cone (graus, total)"
+    },
+    {
+      "name": "knockback",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Empurrao ao acertar (uu)"
+    },
+    {
+      "name": "projectileSpeed",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Velocidade do projetil (uu/s)"
+    },
+    {
+      "name": "idleCalibration",
+      "type": "enum",
+      "required": false,
+      "default": "none",
+      "values": [
+        "none",
+        "manual_estimate",
+        "bot_parity"
+      ],
+      "desc": "Calibracao do perfil idle: none / manual_estimate / bot_parity"
     }
   ],
   "checks": [

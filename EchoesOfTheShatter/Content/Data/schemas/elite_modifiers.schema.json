@@ -1,0 +1,113 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "elite_modifiers.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Modificadores de elite (docs/13, item 5). Peso 0 = fora do sorteio do prototipo.",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "modifier.elite.",
+      "desc": "ID do modificador"
+    },
+    {
+      "name": "weightPrototype",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Peso de sorteio no prototipo (0 = desligado)"
+    },
+    {
+      "name": "lifeMult",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Multiplicador de vida extra (1 = nenhum)"
+    },
+    {
+      "name": "damageMult",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Multiplicador de dano extra (1 = nenhum)"
+    },
+    {
+      "name": "xpMult",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Multiplicador de XP extra (1 = nenhum)"
+    },
+    {
+      "name": "barrierFractionOfLife",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "desc": "Barreira, fracao da vida maxima (0 = nenhuma)"
+    },
+    {
+      "name": "moveSpeedMult",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Multiplicador de velocidade de movimento"
+    },
+    {
+      "name": "attackSpeedMult",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Multiplicador de velocidade de ataque"
+    },
+    {
+      "name": "recoveryMult",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Multiplicador de recuperacao"
+    },
+    {
+      "name": "deathExplosionRadius",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Explosao ao morrer: raio (uu); 0 = nenhuma"
+    },
+    {
+      "name": "deathExplosionDamage",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Explosao ao morrer: dano fisico"
+    },
+    {
+      "name": "deathExplosionFuse",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Explosao ao morrer: marca antes do disparo (s)"
+    }
+  ],
+  "checks": [
+    {
+      "check": "modifier_rules"
+    }
+  ]
+}
