@@ -1,0 +1,148 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "effects.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Efeitos temporários (EffectData).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "effect.",
+      "desc": "ID do efeito"
+    },
+    {
+      "name": "duration",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Duração (s); 0 = instantâneo"
+    },
+    {
+      "name": "tickInterval",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Intervalo de tick (s); 0 = sem tick"
+    },
+    {
+      "name": "stackRule",
+      "type": "enum",
+      "required": false,
+      "values": [
+        "refresh",
+        "stack_n",
+        "strongest_only"
+      ],
+      "default": "refresh",
+      "desc": "Regra de acúmulo"
+    },
+    {
+      "name": "maxStacks",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 100,
+      "desc": "Máx. instâncias (stack_n)"
+    },
+    {
+      "name": "damagePerTickPhysical",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano por tick (physical)"
+    },
+    {
+      "name": "damagePerTickFire",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano por tick (fire)"
+    },
+    {
+      "name": "damagePerTickCold",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano por tick (cold)"
+    },
+    {
+      "name": "damagePerTickLightning",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano por tick (lightning)"
+    },
+    {
+      "name": "modifiers",
+      "type": "mods",
+      "required": false,
+      "desc": "Mods enquanto ativo"
+    },
+    {
+      "name": "barrier",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Barreira concedida"
+    },
+    {
+      "name": "trigger",
+      "type": "enum",
+      "required": false,
+      "values": [
+        "none",
+        "on_hit",
+        "on_crit",
+        "on_block",
+        "on_kill",
+        "on_take_damage"
+      ],
+      "default": "none",
+      "desc": "Gatilho automático"
+    },
+    {
+      "name": "triggerChance",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "desc": "Chance do gatilho"
+    },
+    {
+      "name": "internalCooldown",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recarga interna (s); efetivo = max(valor, trigger_icd_min)"
+    },
+    {
+      "name": "tags",
+      "type": "tags",
+      "required": false,
+      "desc": "Tags do dano do efeito"
+    }
+  ],
+  "checks": [
+    {
+      "check": "effect_rules"
+    }
+  ],
+  "locKeys": [
+    "{id}.name"
+  ]
+}

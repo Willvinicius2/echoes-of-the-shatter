@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="EffectData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/data/effect_data.gd" id="1_s"]
+
+[resource]
+script = ExtResource("1_s")
+id = "effect.burn"
+display_name = "Queimadura"
+duration = 3.0
+stack_rule = 1
+max_stacks = 3
+magnitude = 1.0
+tick_interval = 0.5
+tick_damage = 4.0
+damage_type = 1

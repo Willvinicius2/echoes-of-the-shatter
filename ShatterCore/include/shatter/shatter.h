@@ -1,0 +1,18 @@
+// ShatterCore — header guarda-chuva (inclui toda a API pública).
+#pragma once
+
+#include "shatter/types.h"
+#include "shatter/rng.h"
+#include "shatter/constants.h"
+#include "shatter/stats.h"
+#include "shatter/damage.h"
+#include "shatter/effects.h"
+#include "shatter/item.h"
+#include "shatter/content.h"
+#include "shatter/character.h"
+#include "shatter/loot.h"
+#include "shatter/expedition.h"
+#include "shatter/clock.h"
+#include "shatter/json.h"
+#include "shatter/sha256.h"
+#include "shatter/save.h"

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/data/skill_data.gd" id="1_s"]
+
+[resource]
+script = ExtResource("1_s")
+id = "skill.warrior.stone_rift"
+display_name = "Fenda de Pedra"
+short_name = "FP"
+tags = PackedStringArray("ataque", "área")
+damage_type = 0
+is_attack = true
+coefficient = 2.2
+shape = 2
+range_px = 280.0
+arc_degrees = 70.0
+windup = 1.0
+recovery = 0.4
+cooldown = 14.0
+impeto_cost = 50.0
+impeto_gain = 6.0
+guard_break = 25.0
+knockback = 120.0
+hitstop_ms = 80.0
+shake = 5.0
+heavy = true
+color = Color(0.84, 0.27, 0.22, 1)

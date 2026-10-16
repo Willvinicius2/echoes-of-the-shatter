@@ -1,0 +1,42 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "enemy_attacks.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "enemyId",
+    "skillId"
+  ],
+  "desc": "Ataques dos inimigos (EnemyData::attacks), ordem = ordem do CSV.",
+  "columns": [
+    {
+      "name": "enemyId",
+      "type": "ref",
+      "required": true,
+      "ref": "enemies.csv",
+      "desc": "Inimigo"
+    },
+    {
+      "name": "skillId",
+      "type": "ref",
+      "required": true,
+      "ref": "skills.csv",
+      "desc": "Habilidade usada"
+    },
+    {
+      "name": "weight",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Peso de escolha (> 0)"
+    },
+    {
+      "name": "telegraphed",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Telegrafado (IA pode esquivar)"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "classes.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Classes jogáveis (ClassData, parte 1).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "class.",
+      "desc": "ID da classe"
+    },
+    {
+      "name": "resourceId",
+      "type": "enum",
+      "required": true,
+      "values": [
+        "resource.momentum",
+        "resource.focus",
+        "resource.mana"
+      ],
+      "desc": "Recurso da classe"
+    },
+    {
+      "name": "startingSkill",
+      "type": "ref",
+      "required": true,
+      "ref": "skills.csv",
+      "desc": "Habilidade inicial"
+    },
+    {
+      "name": "specializations",
+      "type": "list",
+      "required": false,
+      "itemType": "id",
+      "prefix": "spec.",
+      "desc": "Especializações (IDs, sem tabela no protótipo)"
+    },
+    {
+      "name": "resourceOnHit",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recurso ganho ao acertar"
+    },
+    {
+      "name": "resourceOnBlock",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recurso ganho ao bloquear"
+    },
+    {
+      "name": "resourceDecayOutOfCombat",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recurso perdido por s fora de combate"
+    },
+    {
+      "name": "regenMultWhileMoving",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "desc": "Multiplicador de regen andando (Foco: 0.3)"
+    }
+  ],
+  "locKeys": [
+    "{id}.name",
+    "{id}.desc",
+    "{resourceId}.name"
+  ]
+}

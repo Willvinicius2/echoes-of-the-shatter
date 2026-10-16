@@ -1,0 +1,93 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "enemies.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Inimigos (EnemyData, parte 1).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "enemy.",
+      "desc": "ID do inimigo"
+    },
+    {
+      "name": "familyId",
+      "type": "id",
+      "required": true,
+      "prefix": "family.",
+      "desc": "Família"
+    },
+    {
+      "name": "stats",
+      "type": "growths",
+      "required": true,
+      "desc": "Atributos por nível: stat:base:perLevel|..."
+    },
+    {
+      "name": "xpBase",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "XP no nível 1"
+    },
+    {
+      "name": "xpPerLevel",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "XP extra por nível"
+    },
+    {
+      "name": "lootTableId",
+      "type": "ref",
+      "required": false,
+      "ref": "loot_tables.csv",
+      "desc": "Tabela de loot"
+    },
+    {
+      "name": "isBoss",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Chefe"
+    },
+    {
+      "name": "isElite",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Elite fixa"
+    },
+    {
+      "name": "moveSpeed",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Velocidade (uu/s)"
+    },
+    {
+      "name": "aggroRange",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Alcance de aggro (uu)"
+    }
+  ],
+  "checks": [
+    {
+      "check": "enemy_rules"
+    }
+  ],
+  "locKeys": [
+    "{id}.name"
+  ]
+}

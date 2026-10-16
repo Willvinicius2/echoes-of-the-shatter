@@ -1,0 +1,17 @@
+class_name Palette
+extends RefCounted
+## Paleta oficial do jogo (placeholders desenhados em código).
+
+const CARVAO: Color = Color8(0x16, 0x13, 0x0F)
+const OCRE: Color = Color8(0x9B, 0x71, 0x3E)
+const DOURADO: Color = Color8(0xC7, 0x96, 0x3C)
+const CARMESIM: Color = Color8(0x8C, 0x23, 0x26)
+const PERIGO: Color = Color8(0xD7, 0x44, 0x37)
+const PERGAMINHO: Color = Color8(0xEA, 0xD9, 0xB5)
+
+# Derivadas
+const CHAO: Color = Color8(0x2A, 0x22, 0x19)
+const CHAO_LINHA: Color = Color8(0x38, 0x2D, 0x20)
+const PAREDE: Color = Color8(0x0D, 0x0B, 0x08)
+const PAREDE_TOPO: Color = Color8(0x4A, 0x39, 0x26)
+const TELEGRAPH: Color = Color8(0xE0, 0x7B, 0x2A)

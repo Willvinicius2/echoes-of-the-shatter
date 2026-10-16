@@ -1,0 +1,53 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "encounters.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Modelos de encontro (EncounterTemplate).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "enc.",
+      "desc": "ID do encontro"
+    },
+    {
+      "name": "groups",
+      "type": "groups",
+      "required": true,
+      "desc": "enemyId:countMin:countMax:eliteChance|..."
+    },
+    {
+      "name": "weight",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Peso de escolha (> 0)"
+    },
+    {
+      "name": "travelTime",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Travessia até o próximo grupo (s)"
+    },
+    {
+      "name": "isBoss",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Encontro de chefe"
+    }
+  ],
+  "checks": [
+    {
+      "check": "encounter_rules"
+    }
+  ]
+}

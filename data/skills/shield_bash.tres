@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/data/skill_data.gd" id="1_s"]
+
+[resource]
+script = ExtResource("1_s")
+id = "skill.warrior.shield_bash"
+display_name = "Escudada"
+short_name = "ES"
+tags = PackedStringArray("ataque", "corpo_a_corpo")
+damage_type = 0
+is_attack = true
+coefficient = 0.8
+shape = 0
+range_px = 56.0
+arc_degrees = 80.0
+windup = 0.18
+recovery = 0.35
+cooldown = 8.0
+impeto_cost = 15.0
+impeto_gain = 10.0
+guard_break = 70.0
+knockback = 200.0
+hitstop_ms = 60.0
+shake = 2.0
+heavy = true
+color = Color(0.61, 0.44, 0.24, 1)

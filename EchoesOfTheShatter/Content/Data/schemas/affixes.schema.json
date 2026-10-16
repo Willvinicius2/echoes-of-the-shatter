@@ -1,0 +1,110 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "affixes.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Afixos (AffixData).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "affix.",
+      "desc": "ID do afixo"
+    },
+    {
+      "name": "kind",
+      "type": "enum",
+      "required": true,
+      "values": [
+        "prefix",
+        "suffix"
+      ],
+      "desc": "Prefixo/sufixo"
+    },
+    {
+      "name": "stat",
+      "type": "enum",
+      "required": true,
+      "values": "@stats",
+      "desc": "Atributo"
+    },
+    {
+      "name": "modKind",
+      "type": "enum",
+      "required": true,
+      "values": "@modKinds",
+      "desc": "Tipo de modificador"
+    },
+    {
+      "name": "requiredTags",
+      "type": "tags",
+      "required": false,
+      "desc": "Tags exigidas do mod gerado"
+    },
+    {
+      "name": "minValue",
+      "type": "number",
+      "required": true,
+      "desc": "Valor mínimo"
+    },
+    {
+      "name": "maxValue",
+      "type": "number",
+      "required": true,
+      "desc": "Valor máximo (>= min)"
+    },
+    {
+      "name": "minItemLevel",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 100,
+      "desc": "Nível mínimo de item"
+    },
+    {
+      "name": "weight",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Peso de sorteio (> 0)"
+    },
+    {
+      "name": "allowedSlots",
+      "type": "list",
+      "required": false,
+      "itemType": "enum",
+      "values": "@slots",
+      "desc": "Posições permitidas (vazio = todas)"
+    },
+    {
+      "name": "group",
+      "type": "string",
+      "required": false,
+      "pattern": "^[a-z0-9_]+$",
+      "desc": "Grupo exclusivo"
+    },
+    {
+      "name": "craftInscription",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Disponível em Fixar Inscrição"
+    }
+  ],
+  "checks": [
+    {
+      "check": "lte",
+      "a": "minValue",
+      "b": "maxValue"
+    }
+  ],
+  "locKeys": [
+    "{id}.name"
+  ]
+}

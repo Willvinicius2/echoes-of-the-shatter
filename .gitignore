@@ -1,0 +1,18 @@
+.godot/
+*.translation
+/android/
+
+# Unreal Engine (projeto em EchoesOfTheShatter/)
+EchoesOfTheShatter/Binaries/
+EchoesOfTheShatter/Intermediate/
+EchoesOfTheShatter/Saved/
+EchoesOfTheShatter/DerivedDataCache/
+EchoesOfTheShatter/.vs/
+*.sln
+*.VC.db
+*.opensdf
+*.sdf
+*.suo
+
+# Build do ShatterCore (CMake)
+/build/

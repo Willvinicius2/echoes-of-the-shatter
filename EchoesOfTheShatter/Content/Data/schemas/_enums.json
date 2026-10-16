@@ -1,0 +1,67 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "enums": {
+    "stats": [
+      "life",
+      "life_regen",
+      "resource",
+      "resource_regen",
+      "armor",
+      "evasion_chance",
+      "block_chance",
+      "resist_fire",
+      "resist_cold",
+      "resist_lightning",
+      "damage",
+      "attack_speed",
+      "cast_speed",
+      "crit_chance",
+      "crit_multiplier",
+      "move_speed",
+      "cooldown_recovery",
+      "area_of_effect",
+      "projectile_count",
+      "damage_taken",
+      "potion_effect"
+    ],
+    "modKinds": [
+      "flat",
+      "increased",
+      "more"
+    ],
+    "shapes": [
+      "melee",
+      "cone",
+      "projectile",
+      "area",
+      "dash",
+      "self",
+      "channel",
+      "trap"
+    ],
+    "slots": [
+      "main_hand",
+      "off_hand",
+      "head",
+      "body",
+      "hands",
+      "feet",
+      "amulet",
+      "ring",
+      "ring2",
+      "belt"
+    ],
+    "tags": [
+      "attack",
+      "spell",
+      "melee",
+      "projectile",
+      "area",
+      "fire",
+      "cold",
+      "lightning",
+      "physical"
+    ]
+  }
+}

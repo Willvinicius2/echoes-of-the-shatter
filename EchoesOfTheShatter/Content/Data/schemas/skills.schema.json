@@ -1,0 +1,280 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "skills.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Habilidades de jogadores e inimigos (SkillData + IdleProfile).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "skill.",
+      "desc": "skill.<classe>.<nome> ou skill.enemy.<nome>"
+    },
+    {
+      "name": "classId",
+      "type": "ref",
+      "required": false,
+      "ref": "classes.csv",
+      "desc": "Classe dona (vazio = qualquer/inimigo)"
+    },
+    {
+      "name": "specId",
+      "type": "id",
+      "required": false,
+      "prefix": "spec.",
+      "desc": "Especialização (vazio = básica)"
+    },
+    {
+      "name": "tags",
+      "type": "tags",
+      "required": true,
+      "desc": "Tags da habilidade"
+    },
+    {
+      "name": "shape",
+      "type": "enum",
+      "required": true,
+      "values": "@shapes",
+      "desc": "Forma espacial"
+    },
+    {
+      "name": "scalesWithWeapon",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Dano base vem da arma"
+    },
+    {
+      "name": "baseDamagePhysical",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano base (physical)"
+    },
+    {
+      "name": "baseDamageFire",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano base (fire)"
+    },
+    {
+      "name": "baseDamageCold",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano base (cold)"
+    },
+    {
+      "name": "baseDamageLightning",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano base (lightning)"
+    },
+    {
+      "name": "coefficientRank1",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "desc": "Coeficiente rank 1"
+    },
+    {
+      "name": "coefficientRank2",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "desc": "Coeficiente rank 2"
+    },
+    {
+      "name": "coefficientRank3",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "desc": "Coeficiente rank 3"
+    },
+    {
+      "name": "cost",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Custo de recurso"
+    },
+    {
+      "name": "cooldown",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recarga (s); 0 ou >= cooldown_min"
+    },
+    {
+      "name": "windup",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Preparação (s)"
+    },
+    {
+      "name": "impact",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Até o impacto após windup (s)"
+    },
+    {
+      "name": "recovery",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recuperação (s)"
+    },
+    {
+      "name": "range",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Alcance (uu)"
+    },
+    {
+      "name": "radius",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Raio (uu)"
+    },
+    {
+      "name": "projectiles",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 50,
+      "desc": "Projéteis"
+    },
+    {
+      "name": "onHitEffects",
+      "type": "list",
+      "required": false,
+      "itemType": "ref",
+      "ref": "effects.csv",
+      "desc": "Efeitos ao acertar"
+    },
+    {
+      "name": "selfEffects",
+      "type": "list",
+      "required": false,
+      "itemType": "ref",
+      "ref": "effects.csv",
+      "desc": "Efeitos em quem usa"
+    },
+    {
+      "name": "idleSupported",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Tem IdleProfile validado"
+    },
+    {
+      "name": "idleAvgTargetsHit",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "desc": "Alvos médios atingidos"
+    },
+    {
+      "name": "idleFractionOfGroupHit",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "desc": "Fração do grupo atingida (0 = usar avg)"
+    },
+    {
+      "name": "idleApproachTime",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "s para alcançar alvos"
+    },
+    {
+      "name": "idleUptime",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "desc": "Fração do tempo usável"
+    },
+    {
+      "name": "idleDodgeTelegraphedBonus",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "desc": "Soma à esquiva base da IA"
+    },
+    {
+      "name": "idleDamageTakenMult",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "desc": "Multiplicador de dano recebido"
+    },
+    {
+      "name": "idleParitySampleSize",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Nº de encontros da calibração (0 = não calibrado)"
+    },
+    {
+      "name": "unlockLevel",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 100,
+      "desc": "Nível de liberação"
+    }
+  ],
+  "checks": [
+    {
+      "check": "skill_rules"
+    }
+  ],
+  "locKeys": [
+    {
+      "key": "{id}.name",
+      "when": "classId"
+    },
+    {
+      "key": "{id}.desc",
+      "when": "classId"
+    }
+  ]
+}

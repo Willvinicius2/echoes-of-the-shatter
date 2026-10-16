@@ -1,0 +1,109 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "loot_entries.csv",
+  "kind": "rows",
+  "primaryKey": [],
+  "desc": "Entradas das tabelas de loot (LootEntry), ordem = ordem do CSV.",
+  "columns": [
+    {
+      "name": "tableId",
+      "type": "ref",
+      "required": true,
+      "ref": "loot_tables.csv",
+      "desc": "Tabela dona"
+    },
+    {
+      "name": "kind",
+      "type": "enum",
+      "required": true,
+      "values": [
+        "item_base",
+        "unique",
+        "stack",
+        "spec_book",
+        "map_stone",
+        "echo_fragment",
+        "table",
+        "nothing"
+      ],
+      "desc": "Tipo de entrada"
+    },
+    {
+      "name": "refId",
+      "type": "id",
+      "required": false,
+      "desc": "Alvo (depende de kind; vazio só em nothing)"
+    },
+    {
+      "name": "weight",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "minExclusive": 0,
+      "desc": "Peso (> 0)"
+    },
+    {
+      "name": "minAmount",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "desc": "Quantidade mínima (stack)"
+    },
+    {
+      "name": "maxAmount",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "desc": "Quantidade máxima (stack)"
+    },
+    {
+      "name": "minAreaLevel",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 999,
+      "desc": "Nível de área mínimo"
+    },
+    {
+      "name": "maxAreaLevel",
+      "type": "int",
+      "required": false,
+      "default": 999,
+      "min": 1,
+      "max": 999,
+      "desc": "Nível de área máximo"
+    },
+    {
+      "name": "manualOnly",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Nunca cai no idle"
+    }
+  ],
+  "checks": [
+    {
+      "check": "lte",
+      "a": "minAmount",
+      "b": "maxAmount"
+    },
+    {
+      "check": "lte",
+      "a": "minAreaLevel",
+      "b": "maxAreaLevel"
+    },
+    {
+      "check": "loot_entry_rules"
+    }
+  ],
+  "locKeys": [
+    {
+      "key": "{refId}.name",
+      "when": "kind=stack"
+    }
+  ]
+}

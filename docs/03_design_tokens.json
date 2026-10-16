@@ -1,0 +1,213 @@
+{
+  "meta": {
+    "name": "Echoes of the Shatter — design tokens",
+    "version": "0.1.0",
+    "date": "2026-10-15",
+    "owner": "Art Director",
+    "source": "docs/03_design_system.md",
+    "units": "Todas as medidas em pixels do viewport interno 960x540 (escala 1). Multiplicar pela escala inteira N em tempo de execucao.",
+    "color_format": "#RRGGBB em sRGB; alpha separado em 'alpha' (0-1) quando houver",
+    "naming": "Chaves em snake_case; sugestao C++: namespace ShatterTokens { constexpr FColor Color_Text_Primary = ...; }"
+  },
+  "viewport": {
+    "internal_width": 960,
+    "internal_height": 540,
+    "safe_margin": 8,
+    "integer_scales": [1, 2, 3, 4],
+    "scale_rule": "N = max(1, floor(min(W/960, H/540)))"
+  },
+  "color": {
+    "base": {
+      "carvao": "#16130F",
+      "ocre": "#9B713E",
+      "dourado": "#C7963C",
+      "carmesim": "#8C2326",
+      "perigo": "#D74437",
+      "pergaminho": "#EAD9B5"
+    },
+    "surface": {
+      "bg_deep": "#0E0C0A",
+      "bg_base": "#16130F",
+      "panel": "#211B15",
+      "panel_raised": "#2C241B",
+      "panel_hover": "#3A2F23",
+      "slot_inset": "#110E0B",
+      "scrim": { "hex": "#0E0C0A", "alpha": 0.75 }
+    },
+    "border": {
+      "subtle": "#4A3D2E",
+      "default": "#9B713E",
+      "gold": "#C7963C",
+      "gold_highlight": "#E8C06A",
+      "focus": "#E8C06A",
+      "outline_dark": "#0E0C0A"
+    },
+    "text": {
+      "primary": "#EAD9B5",
+      "secondary": "#B8A583",
+      "muted": "#9A8A6E",
+      "disabled": "#6B5E4B",
+      "on_primary_button": "#EAD9B5",
+      "on_gold": "#16130F",
+      "title": "#E8C06A",
+      "link_key": "#E8C06A"
+    },
+    "action": {
+      "primary": "#8C2326",
+      "primary_hover": "#A63036",
+      "primary_pressed": "#5E171A",
+      "secondary": "#2C241B",
+      "secondary_hover": "#3A2F23",
+      "secondary_pressed": "#16130F"
+    },
+    "semantic": {
+      "life": "#C8323A",
+      "life_dark": "#6E1418",
+      "life_highlight": "#E86A5C",
+      "mana": "#5B8FD6",
+      "mana_dark": "#23406E",
+      "impeto": "#E07B33",
+      "impeto_dark": "#6E3412",
+      "foco": "#5FB08A",
+      "foco_dark": "#22513C",
+      "xp": "#A78BE0",
+      "xp_dark": "#3E2E66",
+      "vigor": "#9CBF6A",
+      "vigor_dark": "#3F5226",
+      "fervor": "#E8C06A",
+      "eco": "#6FD6C8",
+      "danger": "#D74437",
+      "danger_text": "#E86A5C",
+      "success": "#7DB356",
+      "warning": "#E8A33D",
+      "info": "#9FC9E0",
+      "gold_currency": "#E8C06A",
+      "marco_charge": "#6FD6C8"
+    },
+    "rarity": {
+      "normal": "#D8CDB6",
+      "magic": "#7FA6F0",
+      "rare": "#EBD25A",
+      "unique": "#E5822E"
+    },
+    "item_text": {
+      "affix": "#8FB0F0",
+      "unique_effect": "#E5822E",
+      "unique_drawback": "#E86A5C",
+      "base_property": "#EAD9B5",
+      "requirement_unmet": "#E86A5C",
+      "compare_better": "#7DB356",
+      "compare_worse": "#E86A5C"
+    },
+    "damage": {
+      "physical": "#E6E0D4",
+      "fire": "#F0782E",
+      "cold": "#8FD3F0",
+      "lightning": "#B9C8FF",
+      "critical": "#F2E266",
+      "player_taken": "#E86A5C",
+      "heal": "#7DB356",
+      "blocked": "#9A8A6E"
+    },
+    "fx": {
+      "hit_flash": "#FFFFFF",
+      "telegraph_fill": { "hex": "#D74437", "alpha": 0.35 },
+      "telegraph_fill_final": { "hex": "#D74437", "alpha": 0.6 },
+      "telegraph_edge": "#F0782E",
+      "ember": "#F0782E",
+      "dust": "#9B713E",
+      "spark": "#F2E266",
+      "shatter_gold": "#E8C06A",
+      "low_life_vignette": { "hex": "#8C2326", "alpha": 0.25 }
+    }
+  },
+  "font": {
+    "families": {
+      "body": { "name": "Pixel Operator", "license": "CC0 1.0", "grid_px": 16, "fallback": "Pixelify Sans (OFL 1.1)" },
+      "micro": { "name": "Pixel Operator 8", "license": "CC0 1.0", "grid_px": 8, "fallback": "Pixel Operator (16) em 16px" },
+      "title": { "name": "Jacquard 12", "license": "OFL 1.1", "grid_px": 12, "fallback": "Pixel Operator Bold 16" }
+    },
+    "required_glyphs": "ç Ç ã Ã õ Õ á Á à â Â é É ê Ê í Í ó Ó ô Ô ú Ú ü ñ Ñ ¿ ¡ º ª « » – — … · × ÷ % + − ▲ ▼",
+    "slate_pt_per_px": 0.75,
+    "styles": {
+      "micro":        { "family": "micro", "size_px": 8,  "slate_pt": 6,  "line_height_px": 10, "use": "teclas nos slots, contadores, versao" },
+      "body":         { "family": "body",  "size_px": 16, "slate_pt": 12, "line_height_px": 16, "use": "texto padrao, tooltips, botoes, listas" },
+      "body_bold":    { "family": "body",  "size_px": 16, "slate_pt": 12, "weight": "bold", "line_height_px": 16, "use": "nome de item, cabecalho de secao" },
+      "title":        { "family": "title", "size_px": 24, "slate_pt": 18, "line_height_px": 28, "use": "titulo de tela, faixa da area" },
+      "display":      { "family": "title", "size_px": 48, "slate_pt": 36, "line_height_px": 52, "use": "nome de chefe ao entrar, tela de morte" },
+      "damage":       { "family": "body",  "size_px": 16, "slate_pt": 12, "use": "numero de dano normal" },
+      "damage_crit":  { "family": "body",  "size_px": 32, "slate_pt": 24, "use": "numero de dano critico" }
+    }
+  },
+  "space": {
+    "s0": 0, "s1": 2, "s2": 4, "s3": 8, "s4": 12, "s5": 16, "s6": 24, "s7": 32, "s8": 48
+  },
+  "size": {
+    "icon_sm": 16,
+    "icon_md": 24,
+    "icon_lg": 32,
+    "item_slot": 36,
+    "skill_slot": 36,
+    "potion_slot_w": 28,
+    "potion_slot_h": 36,
+    "dodge_slot_w": 24,
+    "dodge_slot_h": 36,
+    "orb": 56,
+    "portrait": 40,
+    "button_h": 24,
+    "button_min_w": 96,
+    "row_h": 24,
+    "tab_h": 20,
+    "bar_xp_h": 4,
+    "bar_boss_h": 8,
+    "bar_thin_h": 6,
+    "tooltip_max_w": 224,
+    "tooltip_max_w_large_text": 288,
+    "toast_w": 240,
+    "toast_h": 28,
+    "minimap_w": 128,
+    "minimap_h": 96,
+    "border_hairline": 1,
+    "focus_ring": 1,
+    "scrollbar_w": 6
+  },
+  "nine_slice": {
+    "panel_ornate": { "texture_px": 24, "margin_px": 8 },
+    "panel_plain":  { "texture_px": 12, "margin_px": 4 },
+    "button":       { "texture_px": 16, "margin_px": 4 },
+    "slot":         { "texture_px": 36, "margin_px": 3 },
+    "tooltip":      { "texture_px": 16, "margin_px": 4 },
+    "bar_frame":    { "texture_px": 12, "margin_px": 3 },
+    "toast":        { "texture_px": 12, "margin_px": 4 }
+  },
+  "elevation": {
+    "text_shadow": { "offset_x": 1, "offset_y": 1, "color": "#0E0C0A" },
+    "world_label_outline_px": 1,
+    "panel_drop_shadow": { "offset_x": 2, "offset_y": 2, "color": "#0E0C0A", "alpha": 0.6 },
+    "blur": 0
+  },
+  "z_order": {
+    "world_labels": 0, "hud": 10, "toasts": 20, "panels": 30, "tooltip": 40, "modal_scrim": 50, "modal": 60, "cursor_drag": 70, "debug": 90
+  },
+  "motion": {
+    "ui_fade_ms": 120,
+    "ui_slide_px": 8,
+    "ui_slide_ms": 120,
+    "toast_visible_ms": 3000,
+    "toast_fade_ms": 200,
+    "tooltip_delay_ms": 150,
+    "area_banner_ms": 3000,
+    "sprite_fps": 12,
+    "interpolation": "Constant (degrau inteiro) para posicao; Linear so para alpha"
+  },
+  "juice": {
+    "hitstop_ms":   { "light": 0, "heavy": 60, "critical": 80, "boss_heavy": 80, "player_hit": 40 },
+    "hit_flash_ms": 83,
+    "knockback_px": { "common": 12, "elite": 4, "boss": 0, "duration_ms": 100 },
+    "shake":        { "heavy_px": 2, "boss_px": 3, "max_px": 4, "duration_ms_min": 120, "duration_ms_max": 250, "frequency_hz": 30, "options": ["normal", "reduced_50", "off"] },
+    "damage_number": { "rise_px": 12, "life_ms": 600, "fade_ms": 200, "pool": 64, "merge_window_ms": 100, "crit_hold_ms": 120 },
+    "particles":    { "dust_count": [4, 6], "spark_count": [3, 5], "shatter_count": [12, 20], "life_ms": [300, 600], "size_px": [1, 2] },
+    "loot_beam":    { "normal": null, "magic": { "glow_px": 2 }, "rare": { "w": 6, "h": 64 }, "unique": { "w": 10, "h": 128, "pulse_ms": 800 } },
+    "telegraph":    { "min_ms": 700, "max_ms": 1200, "final_flash_ms": 100, "grid_px": 4 }
+  }
+}

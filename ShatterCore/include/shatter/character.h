@@ -1,0 +1,58 @@
+// ShatterCore — estado persistente do personagem e snapshot congelado.
+// O mesmo builder (BuildStatBlock) monta os atributos no UE e no simulador idle.
+#pragma once
+
+#include <array>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "shatter/content.h"
+#include "shatter/item.h"
+#include "shatter/stats.h"
+#include "shatter/types.h"
+
+namespace shatter {
+
+struct LearnedSkill {
+    ContentId skillId;
+    int rank = 1;                        // 1..3 no AA
+    std::vector<ContentId> sigils;       // Sigilos encaixados (máx. por nível: 1/2/3)
+};
+
+// Personagem como fica no save.
+struct CharacterState {
+    std::string name;                    // nome escolhido pelo jogador (UTF-8)
+    ContentId classId;
+    ContentId specId;                    // vazio antes do nível 10
+    int level = 1;
+    double xp = 0.0;                     // XP dentro do nível atual
+    std::vector<ContentId> passives;     // nós da árvore
+    std::vector<LearnedSkill> skills;
+    std::array<ContentId, 6> skillBar{}; // 6 no AA (4 no demo)
+    std::array<std::optional<ItemInstance>, kItemSlotCount> equipment{};
+    std::vector<ContentId> conqueredMaps;// domínio manual (início ao fim + chefe)
+    int highestTierCleared = 0;
+    std::int64_t potions = 0;            // poções de vida em estoque (AA: 1 tipo; 2ª tecla reservada)
+    double playTimeSeconds = 0.0;
+};
+
+// Snapshot congelado no início da expedição (build + regras de IA ficam fixas).
+// É uma CÓPIA autocontida do personagem: o simulador não lê o save vivo.
+struct CharacterSnapshot {
+    CharacterState character;
+    std::uint32_t contentVersion = 0;    // conteúdo com o qual o snapshot foi feito
+};
+
+// Monta o StatBlock: bases da classe por nível + implícitos e afixos dos itens +
+// passivas + Sigilos/Únicos. Ordem fixa de inserção dos mods (determinismo):
+// classe → itens por ItemSlot crescente (implícito, afixos na ordem) → únicos → passivas na ordem do vetor.
+// Implementação: src/character.cpp. Retorna false (e preenche error) se algum ID não existir.
+bool BuildStatBlock(const ContentDB& db, const CharacterState& c, StatBlock& out, std::string* error = nullptr);
+
+// Verifica se todas as habilidades da barra, Sigilos e Únicos equipados têm IdleProfile
+// suportado. Preenche `blockingIds` com o que bloqueia (UI: "X ainda não funciona em patrulha").
+bool IsIdleCompatible(const ContentDB& db, const CharacterState& c, std::vector<ContentId>* blockingIds);
+
+}  // namespace shatter

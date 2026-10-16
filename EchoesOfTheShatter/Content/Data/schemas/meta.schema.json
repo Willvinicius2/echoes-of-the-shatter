@@ -1,0 +1,15 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "meta.csv",
+  "kind": "key_value",
+  "desc": "Metadados do pacote de conteúdo.",
+  "keys": [
+    {
+      "name": "content_version",
+      "type": "int",
+      "min": 1,
+      "desc": "Versão do conteúdo; sobe a cada release que muda dados. Gravada em todo save e expedição."
+    }
+  ]
+}

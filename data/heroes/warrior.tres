@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/data/class_data.gd" id="1_s"]
+
+[resource]
+script = ExtResource("1_s")
+id = "class.warrior"
+display_name = "Guerreiro"
+skill_ids = PackedStringArray("skill.warrior.iron_cut", "skill.warrior.charge", "skill.warrior.shield_bash", "skill.warrior.stone_rift")
+max_life = 220.0
+damage = 18.0
+armour = 60.0
+evasion = 5.0
+block = 15.0
+block_reduction = 60.0
+crit_chance = 8.0
+crit_multiplier = 150.0
+move_speed = 150.0
+action_move_mult = 0.35
+kb_decay = 900.0
+radius = 9.0
+max_impeto = 100.0
+impeto_decay_delay = 3.0
+impeto_decay_rate = 8.0
+impeto_on_block = 12.0
+impeto_damage_per_point = 0.004
+dodge_duration = 0.35
+dodge_invuln = 0.2
+dodge_charges = 3
+dodge_recharge = 1.5
+dodge_distance = 110.0

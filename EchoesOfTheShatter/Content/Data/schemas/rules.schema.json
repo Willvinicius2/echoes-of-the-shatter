@@ -1,0 +1,327 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "rules.csv",
+  "kind": "key_value",
+  "desc": "Constantes de regra (RulesConstants, constants.h). Todas as chaves obrigatórias; chave desconhecida é erro.",
+  "keys": [
+    {
+      "name": "crit_multiplier_base",
+      "type": "number",
+      "default": 1.5,
+      "desc": "Multiplicador base do crítico",
+      "min": 1
+    },
+    {
+      "name": "evasion_cap",
+      "type": "number",
+      "default": 0.7,
+      "desc": "Teto de evasão",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "block_cap",
+      "type": "number",
+      "default": 0.5,
+      "desc": "Teto de bloqueio",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "block_mitigation",
+      "type": "number",
+      "default": 1.0,
+      "desc": "Fração do golpe anulada no bloqueio (PROVISÓRIO)",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "resist_cap",
+      "type": "number",
+      "default": 0.75,
+      "desc": "Teto de resistência elemental",
+      "min": 0,
+      "max": 0.95
+    },
+    {
+      "name": "resist_floor",
+      "type": "number",
+      "default": -1.0,
+      "desc": "Resistência negativa mínima",
+      "min": -5,
+      "max": 0
+    },
+    {
+      "name": "armor_damage_factor",
+      "type": "number",
+      "default": 5.0,
+      "desc": "k da fórmula A/(A+k·D)",
+      "minExclusive": 0
+    },
+    {
+      "name": "armor_max_reduction",
+      "type": "number",
+      "default": 0.9,
+      "desc": "Teto da redução por armadura",
+      "min": 0,
+      "max": 0.99
+    },
+    {
+      "name": "trigger_icd_min",
+      "type": "number",
+      "default": 0.25,
+      "desc": "Recarga interna mínima de gatilhos (s)",
+      "min": 0.25,
+      "max": 10
+    },
+    {
+      "name": "cooldown_min",
+      "type": "number",
+      "default": 0.1,
+      "desc": "Recarga mínima de habilidade (s)",
+      "min": 0.1,
+      "max": 10
+    },
+    {
+      "name": "realtime_step",
+      "type": "number",
+      "default": 0.016666666666666666,
+      "desc": "Passo fixo do combate em tempo real (s)",
+      "minExclusive": 0,
+      "max": 0.1
+    },
+    {
+      "name": "sim_step",
+      "type": "number",
+      "default": 0.1,
+      "desc": "Passo do simulador idle (s)",
+      "minExclusive": 0,
+      "max": 1
+    },
+    {
+      "name": "sim_step_fast",
+      "type": "number",
+      "default": 0.25,
+      "desc": "Passo rápido em encontros sem chefe (s)",
+      "minExclusive": 0,
+      "max": 1
+    },
+    {
+      "name": "sim_fast_enabled",
+      "type": "bool",
+      "default": false,
+      "desc": "Liga o passo rápido (só se o bench estourar 2 s)"
+    },
+    {
+      "name": "max_offline_hours",
+      "type": "number",
+      "default": 12.0,
+      "desc": "Teto de tempo offline simulado (h)",
+      "minExclusive": 0,
+      "max": 48
+    },
+    {
+      "name": "max_expedition_hours",
+      "type": "number",
+      "default": 12.0,
+      "desc": "Duração máxima de expedição (h)",
+      "minExclusive": 0,
+      "max": 48
+    },
+    {
+      "name": "min_expedition_hours",
+      "type": "number",
+      "default": 1.0,
+      "desc": "Duração mínima de expedição (h)",
+      "minExclusive": 0,
+      "max": 48
+    },
+    {
+      "name": "max_ai_rules",
+      "type": "int",
+      "default": 6,
+      "desc": "Máximo de regras de IA",
+      "min": 1,
+      "max": 16
+    },
+    {
+      "name": "max_rares_per_expedition",
+      "type": "int",
+      "default": 4,
+      "desc": "Teto de Raros por expedição",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "name": "xp_cap_levels_above_area",
+      "type": "int",
+      "default": 2,
+      "desc": "Teto de XP do idle: níveis acima do nível da área",
+      "min": 0,
+      "max": 10
+    },
+    {
+      "name": "ai_base_dodge",
+      "type": "number",
+      "default": 0.5,
+      "desc": "Fração de golpes telegrafados esquivados pela IA",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "retreat_life_fraction",
+      "type": "number",
+      "default": 0.2,
+      "desc": "Recua se vida abaixo desta fração e sem poção (PROVISÓRIO)",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "vigor_h1_4",
+      "type": "number",
+      "default": 1.0,
+      "desc": "Vigor nas horas 1–4",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "vigor_h5_8",
+      "type": "number",
+      "default": 0.7,
+      "desc": "Vigor nas horas 5–8",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "vigor_h9_12",
+      "type": "number",
+      "default": 0.4,
+      "desc": "Vigor nas horas 9–12",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "vigor_band_hours",
+      "type": "number",
+      "default": 4.0,
+      "desc": "Horas por faixa de Vigor",
+      "minExclusive": 0,
+      "max": 12
+    },
+    {
+      "name": "fervor_xp_mult",
+      "type": "number",
+      "default": 3.0,
+      "desc": "Fervor: multiplicador de XP",
+      "min": 1
+    },
+    {
+      "name": "fervor_gold_mat_mult",
+      "type": "number",
+      "default": 1.25,
+      "desc": "Fervor: multiplicador de ouro e materiais",
+      "min": 1
+    },
+    {
+      "name": "fervor_rare_mult",
+      "type": "number",
+      "default": 2.0,
+      "desc": "Fervor: multiplicador da chance de Raro",
+      "min": 1
+    },
+    {
+      "name": "charges_max",
+      "type": "int",
+      "default": 12,
+      "desc": "Cargas do Marco: máximo guardado",
+      "min": 1,
+      "max": 100
+    },
+    {
+      "name": "charges_per_hour",
+      "type": "int",
+      "default": 1,
+      "desc": "Cargas gastas por hora de expedição",
+      "min": 1,
+      "max": 12
+    },
+    {
+      "name": "charges_clear_area",
+      "type": "int",
+      "default": 1,
+      "desc": "Cargas por limpar área na mão",
+      "min": 0,
+      "max": 12
+    },
+    {
+      "name": "charges_boss",
+      "type": "int",
+      "default": 2,
+      "desc": "Cargas por vencer chefe",
+      "min": 0,
+      "max": 12
+    },
+    {
+      "name": "charges_new_area",
+      "type": "int",
+      "default": 3,
+      "desc": "Cargas por conquistar área nova",
+      "min": 0,
+      "max": 12
+    },
+    {
+      "name": "charges_daily_rest",
+      "type": "int",
+      "default": 4,
+      "desc": "Cargas do descanso diário (UTC)",
+      "min": 0,
+      "max": 12
+    },
+    {
+      "name": "clock_rollback_tolerance_s",
+      "type": "number",
+      "default": 300.0,
+      "desc": "Tolerância de relógio voltando (s)",
+      "min": 0
+    },
+    {
+      "name": "steam_clock_max_skew_s",
+      "type": "number",
+      "default": 600.0,
+      "desc": "Diferença máx. local × Steam antes de usar a Steam (s)",
+      "min": 0
+    },
+    {
+      "name": "xp_base",
+      "type": "number",
+      "default": 100.0,
+      "desc": "XP: termo base",
+      "minExclusive": 0
+    },
+    {
+      "name": "xp_scale",
+      "type": "number",
+      "default": 60.0,
+      "desc": "XP: escala",
+      "min": 0
+    },
+    {
+      "name": "xp_exponent",
+      "type": "number",
+      "default": 1.5,
+      "desc": "XP: expoente (só múltiplos de 0.5: sem pow no core)",
+      "min": 0,
+      "max": 3,
+      "multipleOf": 0.5
+    },
+    {
+      "name": "max_level",
+      "type": "int",
+      "default": 30,
+      "desc": "Nível máximo (default do core = 30, plano AA; o protótipo usa 6 no rules.csv)",
+      "min": 1,
+      "max": 100
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "class_stats.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "classId",
+    "stat"
+  ],
+  "desc": "Atributos base por classe e nível (ClassData::stats). valor = base + perLevel × (nível − 1).",
+  "columns": [
+    {
+      "name": "classId",
+      "type": "ref",
+      "required": true,
+      "ref": "classes.csv",
+      "desc": "Classe"
+    },
+    {
+      "name": "stat",
+      "type": "enum",
+      "required": true,
+      "values": "@stats",
+      "desc": "Atributo (StatId)"
+    },
+    {
+      "name": "base",
+      "type": "number",
+      "required": true,
+      "desc": "Valor no nível 1"
+    },
+    {
+      "name": "perLevel",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "desc": "Ganho por nível"
+    }
+  ]
+}

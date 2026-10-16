@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/data/encounter_data.gd" id="1_s"]
+
+[resource]
+script = ExtResource("1_s")
+id = "encounter.crypt"
+waves = PackedInt32Array(3, 4)
+wave_enemy_id = "enemy.hollow_sentinel"
+boss_id = "enemy.crypt_guardian"
+wave_start_delay = 1.0
+between_waves_delay = 1.5
+heal_on_wave_clear = 0.4
+respawn_delay = 1.5

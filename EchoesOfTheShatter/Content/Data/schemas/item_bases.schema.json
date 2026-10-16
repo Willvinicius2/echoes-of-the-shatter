@@ -1,0 +1,106 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "item_bases.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Bases de item (ItemBaseData).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "item_base.",
+      "desc": "ID da base"
+    },
+    {
+      "name": "slot",
+      "type": "enum",
+      "required": true,
+      "values": "@slots",
+      "desc": "Posição"
+    },
+    {
+      "name": "itemLevel",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 100,
+      "desc": "Nível do item"
+    },
+    {
+      "name": "implicitMods",
+      "type": "mods",
+      "required": false,
+      "desc": "Propriedade da base"
+    },
+    {
+      "name": "weaponDamagePhysical",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano da arma (physical)"
+    },
+    {
+      "name": "weaponDamageFire",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano da arma (fire)"
+    },
+    {
+      "name": "weaponDamageCold",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano da arma (cold)"
+    },
+    {
+      "name": "weaponDamageLightning",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Dano da arma (lightning)"
+    },
+    {
+      "name": "attackTime",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "s por ataque (armas)"
+    },
+    {
+      "name": "weaponTags",
+      "type": "tags",
+      "required": false,
+      "desc": "melee ou projectile (armas)"
+    },
+    {
+      "name": "grammaticalGender",
+      "type": "enum",
+      "required": false,
+      "values": [
+        "m",
+        "f"
+      ],
+      "default": "m",
+      "desc": "Gênero gramatical"
+    }
+  ],
+  "checks": [
+    {
+      "check": "item_base_rules"
+    }
+  ],
+  "locKeys": [
+    "{id}.name"
+  ]
+}

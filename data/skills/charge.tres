@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/data/skill_data.gd" id="1_s"]
+
+[resource]
+script = ExtResource("1_s")
+id = "skill.warrior.charge"
+display_name = "Investida"
+short_name = "IN"
+tags = PackedStringArray("ataque", "corpo_a_corpo", "área")
+damage_type = 0
+is_attack = true
+coefficient = 1.4
+shape = 3
+radius_px = 64.0
+dash_distance = 220.0
+dash_min = 70.0
+dash_time = 0.22
+windup = 0.1
+recovery = 0.3
+cooldown = 6.0
+impeto_cost = 30.0
+impeto_gain = 12.0
+guard_break = 20.0
+knockback = 260.0
+hitstop_ms = 70.0
+shake = 3.0
+heavy = true
+color = Color(0.78, 0.59, 0.24, 1)

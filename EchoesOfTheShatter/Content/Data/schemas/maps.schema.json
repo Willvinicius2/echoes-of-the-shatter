@@ -1,0 +1,73 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "maps.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Mapas/áreas (MapData).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "map.",
+      "desc": "ID do mapa"
+    },
+    {
+      "name": "monsterLevel",
+      "type": "int",
+      "required": true,
+      "min": 1,
+      "max": 100,
+      "desc": "Nível de monstro"
+    },
+    {
+      "name": "tier",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 5,
+      "desc": "0 = campanha; 1..5 endgame"
+    },
+    {
+      "name": "encounters",
+      "type": "list",
+      "required": true,
+      "itemType": "ref",
+      "ref": "encounters.csv",
+      "desc": "Encontros da rota"
+    },
+    {
+      "name": "bossEncounter",
+      "type": "ref",
+      "required": false,
+      "ref": "encounters.csv",
+      "desc": "Encontro do chefe"
+    },
+    {
+      "name": "areaLootTable",
+      "type": "ref",
+      "required": false,
+      "ref": "loot_tables.csv",
+      "desc": "Loot extra por encontro"
+    },
+    {
+      "name": "idleAllowed",
+      "type": "bool",
+      "required": false,
+      "default": true,
+      "desc": "Pode ser rota de expedição"
+    }
+  ],
+  "checks": [
+    {
+      "check": "map_rules"
+    }
+  ],
+  "locKeys": [
+    "{id}.name"
+  ]
+}

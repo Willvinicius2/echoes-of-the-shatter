@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://core/data/skill_data.gd" id="1_s"]
+
+[resource]
+script = ExtResource("1_s")
+id = "skill.warrior.iron_cut"
+display_name = "Corte de Ferro"
+short_name = "CF"
+tags = PackedStringArray("ataque", "corpo_a_corpo")
+damage_type = 0
+is_attack = true
+coefficient = 1.0
+shape = 0
+range_px = 66.0
+arc_degrees = 110.0
+windup = 0.14
+recovery = 0.32
+cooldown = 0.0
+impeto_cost = 0.0
+impeto_gain = 9.0
+guard_break = 8.0
+knockback = 140.0
+hitstop_ms = 40.0
+shake = 0.0
+heavy = false
+color = Color(0.92, 0.85, 0.71, 1)

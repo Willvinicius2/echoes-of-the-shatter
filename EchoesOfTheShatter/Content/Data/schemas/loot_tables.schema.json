@@ -1,0 +1,74 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "loot_tables.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Tabelas de loot (LootTableData, parte 1).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "loot.",
+      "desc": "ID da tabela"
+    },
+    {
+      "name": "rolls",
+      "type": "int",
+      "required": false,
+      "default": 1,
+      "min": 1,
+      "max": 100,
+      "desc": "Sorteios por chamada"
+    },
+    {
+      "name": "dropChance",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "max": 1,
+      "desc": "Chance de cada sorteio cair"
+    },
+    {
+      "name": "rarityWeightNormal",
+      "type": "number",
+      "required": false,
+      "default": 80,
+      "min": 0,
+      "desc": "Peso Normal"
+    },
+    {
+      "name": "rarityWeightMagic",
+      "type": "number",
+      "required": false,
+      "default": 18,
+      "min": 0,
+      "desc": "Peso Mágico"
+    },
+    {
+      "name": "rarityWeightRare",
+      "type": "number",
+      "required": false,
+      "default": 2,
+      "min": 0,
+      "desc": "Peso Raro"
+    }
+  ],
+  "checks": [
+    {
+      "check": "sum_positive",
+      "cols": [
+        "rarityWeightNormal",
+        "rarityWeightMagic",
+        "rarityWeightRare"
+      ]
+    },
+    {
+      "check": "loot_rules"
+    }
+  ]
+}

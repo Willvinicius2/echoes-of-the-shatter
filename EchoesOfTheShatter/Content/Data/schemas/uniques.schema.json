@@ -1,0 +1,50 @@
+{
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "format": "shatter-table-schema/1",
+  "table": "uniques.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Itens Únicos (UniqueData).",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "unique.",
+      "desc": "ID do Único"
+    },
+    {
+      "name": "baseId",
+      "type": "ref",
+      "required": true,
+      "ref": "item_bases.csv",
+      "desc": "Base"
+    },
+    {
+      "name": "fixedMods",
+      "type": "mods",
+      "required": false,
+      "desc": "Atributos fixos"
+    },
+    {
+      "name": "ruleEffectId",
+      "type": "ref",
+      "required": false,
+      "ref": "effects.csv",
+      "desc": "Efeito que muda a build"
+    },
+    {
+      "name": "idleSupported",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Tem perfil idle testado"
+    }
+  ],
+  "locKeys": [
+    "{id}.name",
+    "{id}.desc"
+  ]
+}
