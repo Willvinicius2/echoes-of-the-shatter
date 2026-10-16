@@ -10,6 +10,12 @@ namespace Echoes.Interop.Native
     {
         internal readonly StatBlockHandle Handle;
 
+        /// <summary>Stun/Guarda Quebrada desta entidade (<c>shatter_actor</c>), ligado pelo <see cref="NativeEffectSet"/>; nulo sem efeitos.</summary>
+        internal ActorHandle Actor;
+
+        /// <summary>Herói: a velocidade de movimento do atributo já é uu/s (<c>shatter_move_speed</c> com base &lt;= 0).</summary>
+        internal bool IsHero;
+
         public NativeStatBlock(StatBlockHandle handle)
         {
             Handle = handle ?? throw new ArgumentNullException(nameof(handle));

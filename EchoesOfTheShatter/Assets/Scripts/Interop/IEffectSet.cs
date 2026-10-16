@@ -18,6 +18,9 @@ namespace Echoes.Interop
         /// <summary>Avança <paramref name="dt"/> segundos (sempre o passo fixo) e acrescenta os eventos à lista.</summary>
         void Tick(double dt, List<EffectTickEvent> outEvents);
 
+        /// <summary>Resultado do ultimo <see cref="Apply"/> (ordens do core: interromper o telegraph, zerar a barreira). Default no stub.</summary>
+        ActorApplyResult LastApply { get; }
+
         int StackCount(string effectId);
 
         int ActiveCount { get; }

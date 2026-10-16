@@ -220,7 +220,7 @@ namespace Echoes.Tests.EditMode
                     using (var a = native.CreateHeroStats(in build))
                     using (var b = stub.CreateHeroStats(in build))
                     {
-                        AssertStatsEqual(b, a, $"heroi nivel {level}");
+                        AssertStatsEqual(b, a, $"heroi nivel {level}", skipMoveSpeed: true);
                     }
                 }
             }
@@ -368,10 +368,15 @@ namespace Echoes.Tests.EditMode
                     using (var nFx = native.CreateEffectSet(nStats, info))
                     using (var sFx = stub.CreateEffectSet(sStats, info))
                     {
-                        for (var i = 0; i < 5; i++)
-                            Assert.AreEqual(sFx.Apply("effect.guard_break", 1.0, "hero"), nFx.Apply("effect.guard_break", 1.0, "hero"), $"{enemyId} guard_break {i}");
-                        Assert.AreEqual(sFx.StackCount("effect.guard_break"), nFx.StackCount("effect.guard_break"), enemyId);
-                        Assert.AreEqual(sStats.Get(StatId.DamageTaken), nStats.Get(StatId.DamageTaken), Tolerance, enemyId);
+                        // Guarda Quebrada no limite de acumulos vira stagger e consome os acumulos SO no core (alvo imune ao stun):
+                        // a paridade vale so para o alvo comum, ate o stub ganhar a regra (ou sair).
+                        if (!info.IsElite && !info.IsBoss)
+                        {
+                            for (var i = 0; i < 2; i++)
+                                Assert.AreEqual(sFx.Apply("effect.guard_break", 1.0, "hero"), nFx.Apply("effect.guard_break", 1.0, "hero"), $"{enemyId} guard_break {i}");
+                            Assert.AreEqual(sFx.StackCount("effect.guard_break"), nFx.StackCount("effect.guard_break"), enemyId);
+                            Assert.AreEqual(sStats.Get(StatId.DamageTaken), nStats.Get(StatId.DamageTaken), Tolerance, enemyId);
+                        }
 
                         Assert.AreEqual(sFx.Apply("effect.stun", 1.0, "hero"), nFx.Apply("effect.stun", 1.0, "hero"), enemyId + " stun");
                         Assert.AreEqual(sFx.ActiveCount, nFx.ActiveCount, enemyId);
@@ -488,12 +493,222 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
-        public void StillInStubListNamesTheBackendPendingItems()
+        public void StillInStubListNoLongerHoldsTheBackendItems()
         {
-            Assert.That(NativeRulesCore.StillInStub, Has.Some.Contains("TickVitals"));
-            Assert.That(NativeRulesCore.StillInStub, Has.Some.Contains("ResolvePotion"));
-            Assert.That(NativeRulesCore.StillInStub, Has.Some.Contains("GetActionTiming"));
-            Assert.That(NativeRulesCore.StillInStub, Has.Some.Contains("PickAttack"));
+            // A-01: o que a API 1.1 entrega saiu do stub; a lista so tem o que ainda falta.
+            foreach (var wired in new[] { "TickVitals", "ResolvePotion", "GetActionTiming", "PickAttack", "dodge" })
+                Assert.That(NativeRulesCore.StillInStub, Has.None.Contains(wired + " e"), wired);
+            Assert.That(NativeRulesCore.StillInStub, Has.Some.Contains("NextBelow"));
+            Assert.That(NativeRulesCore.StillInStub, Has.Some.Contains("FindClass"));
+            Assert.That(NativeRulesCore.StillInStub.Count, Is.LessThanOrEqualTo(8));
+        }
+
+        [Test]
+        public void ExtLayoutAndMinorVersionAreChecked()
+        {
+            LoadNative().Dispose();
+            Assert.IsTrue(NativeLayout.CheckExt(out var message), message);
+            Assert.AreEqual(37, NativeLayout.BuildExt().Length);
+        }
+
+        [Test]
+        public void CombatRulesComeFromTheDatabaseExtension()
+        {
+            using (var native = LoadNative())
+            using (var stub = TestWorld.LoadRules())
+            {
+                var n = native.Combat;
+                var c = stub.Combat;
+                Assert.AreEqual(c.DodgeMaxCharges, n.DodgeMaxCharges);
+                Assert.AreEqual(c.DodgeRechargeSeconds, n.DodgeRechargeSeconds, Tolerance);
+                Assert.AreEqual(c.DodgeDurationSeconds, n.DodgeDurationSeconds, Tolerance);
+                Assert.AreEqual(c.DodgeInvulnerableSeconds, n.DodgeInvulnerableSeconds, Tolerance);
+                Assert.AreEqual(c.OutOfCombatSeconds, n.OutOfCombatSeconds, Tolerance);
+                Assert.AreEqual(c.PotionLockoutSeconds, n.PotionLockoutSeconds, Tolerance);
+                Assert.IsEmpty(native.LoadWarnings, "nenhum valor provisorio: tudo vem da DLL");
+            }
+        }
+
+        [Test]
+        public void TimingCostMoveSpeedAndVitalsMatchTheStub()
+        {
+            using (var native = LoadNative())
+            using (var stub = TestWorld.LoadRules())
+            {
+                var hero = new HeroBuild("class.warrior", 5, new[] { Sword });
+                var cls = stub.FindClass("class.warrior");
+                using (var a = native.CreateHeroStats(in hero))
+                using (var b = stub.CreateHeroStats(in hero))
+                {
+                    foreach (var id in new[] { "skill.warrior.iron_cut", "skill.warrior.charge", "skill.warrior.stone_rift", "skill.warrior.shield_bash" })
+                    {
+                        var skill = stub.FindSkill(id);
+                        var tn = native.GetActionTiming(a, skill);
+                        var ts = stub.GetActionTiming(b, skill);
+                        Assert.AreEqual(ts.Windup, tn.Windup, Tolerance, id);
+                        Assert.AreEqual(ts.Impact, tn.Impact, Tolerance, id);
+                        Assert.AreEqual(ts.Recovery, tn.Recovery, Tolerance, id);
+                        Assert.AreEqual(stub.GetEffectiveCost(b, skill), native.GetEffectiveCost(a, skill), Tolerance, id);
+                    }
+                    Assert.AreEqual(stub.GetMoveSpeedUu(b, cls.MoveSpeedUu), native.GetMoveSpeedUu(a, cls.MoveSpeedUu), Tolerance, "heroi");
+
+                    var vn = native.CreateVitals(a, cls);
+                    var vs = stub.CreateVitals(b, cls);
+                    Assert.AreEqual(vs.Life, vn.Life, Tolerance);
+                    Assert.AreEqual(vs.Resource, vn.Resource, Tolerance);
+                    native.TickVitals(ref vn, a, cls, 1.0, false);
+                    stub.TickVitals(ref vs, b, cls, 1.0, false);
+                    Assert.AreEqual(vs.Life, vn.Life, Tolerance);
+                    native.GainResource(ref vn, a, 30.0);
+                    stub.GainResource(ref vs, b, 30.0);
+                    Assert.AreEqual(vs.Resource, vn.Resource, Tolerance);
+                    Assert.AreEqual(stub.TrySpendResource(ref vs, 10.0), native.TrySpendResource(ref vn, 10.0));
+                    Assert.AreEqual(vs.Resource, vn.Resource, Tolerance);
+                    Assert.IsFalse(native.TrySpendResource(ref vn, 99999.0));
+                    vn.Life = 10.0;
+                    vs.Life = 10.0;
+                    foreach (var potion in stub.Potions)
+                    {
+                        var on = native.ResolvePotion(potion, a, in vn);
+                        var os = stub.ResolvePotion(potion, b, in vs);
+                        Assert.AreEqual(os.LifeAfter, on.LifeAfter, Tolerance, potion.Id);
+                        Assert.AreEqual(os.BarrierAfter, on.BarrierAfter, Tolerance, potion.Id);
+                        Assert.AreEqual(os.BarrierSeconds, on.BarrierSeconds, Tolerance, potion.Id);
+                        Assert.AreEqual(os.LifeGained, on.LifeGained, Tolerance, potion.Id);
+                    }
+                }
+                var sentinel = stub.FindEnemy(Sentinel);
+                using (var a = native.CreateEnemyStats(Sentinel, 3))
+                using (var b = stub.CreateEnemyStats(Sentinel, 3))
+                    Assert.AreEqual(stub.GetMoveSpeedUu(b, sentinel.MoveSpeedUu), native.GetMoveSpeedUu(a, sentinel.MoveSpeedUu), Tolerance, "inimigo");
+            }
+        }
+
+        [Test]
+        public void StunAndGuardBreakGoThroughTheActor()
+        {
+            using (var native = LoadNative())
+            {
+                var common = native.FindEnemy(Sentinel);
+                using (var stats = native.CreateEnemyStats(Sentinel, 3))
+                using (var fx = native.CreateEffectSet(stats, common))
+                {
+                    Assert.IsTrue(native.CanAct(stats));
+                    Assert.IsTrue(fx.Apply("effect.stun", 1.0, "hero"));
+                    Assert.IsTrue(fx.LastApply.Stunned);
+                    Assert.IsFalse(native.CanAct(stats), "atordoado nao age");
+                    Assert.IsFalse(native.CanMove(stats));
+                    var events = new List<EffectTickEvent>();
+                    for (var i = 0; i < 70; i++) fx.Tick(native.Combat.FixedStep, events);
+                    Assert.IsTrue(native.CanAct(stats), "o atordoamento acabou");
+                }
+
+                var elite = native.FindEnemy("enemy.shielded_sentinel");
+                using (var stats = native.CreateEnemyStats(elite.Id, 3))
+                using (var fx = native.CreateEffectSet(stats, elite))
+                {
+                    Assert.IsFalse(fx.Apply("effect.stun", 1.0, "hero"));
+                    Assert.IsTrue(fx.LastApply.StunBlocked, "elite fixo e imune ao stun");
+                    for (var i = 0; i < 2; i++) Assert.IsTrue(fx.Apply("effect.guard_break", 1.0, "hero"));
+                    Assert.IsTrue(native.CanAct(stats));
+                    Assert.IsTrue(fx.Apply("effect.guard_break", 1.0, "hero"));
+                    Assert.IsTrue(fx.LastApply.Staggered, "no 3o acumulo o alvo imune entra em stagger");
+                    Assert.IsFalse(native.CanAct(stats));
+                }
+            }
+        }
+
+        [Test]
+        public void PickAttackUsesTheCoreAndTheEventsStream()
+        {
+            using (var native = LoadNative())
+            {
+                var rng = native.CreateRng(5, RngStream.Events, 0);
+                var before = rng.State;
+                var index = native.PickAttack(ref rng, native.FindEnemy(Sentinel));
+                Assert.GreaterOrEqual(index, 0);
+                Assert.AreNotEqual(before, rng.State, "consome 1 numero do fluxo");
+                Assert.AreEqual(-1, native.PickAttack(ref rng, null));
+            }
+        }
+
+        [Test]
+        public void PotionBeltDodgeEliteAndBossRunNatively()
+        {
+            using (var native = LoadNative())
+            {
+                var hero = new HeroBuild("class.warrior", 5, new[] { Sword });
+                using (var stats = native.CreateHeroStats(in hero))
+                using (var belt = native.CreatePotionBelt())
+                {
+                    StringAssert.Contains("potion.life", belt.InfoJson());
+                    var vitals = new Vitals { Life = 10.0 };
+                    var used = belt.Use("potion.life", stats, ref vitals);
+                    Assert.AreEqual(PotionUseStatus.Ok, used.Status);
+                    Assert.Greater(vitals.Life, 10.0);
+                    Assert.AreEqual(PotionUseStatus.LockedOut, belt.Use("potion.life", stats, ref vitals).Status, "trava global");
+                    belt.Tick(native.Combat.PotionLockoutSeconds + 0.1);
+                    Assert.AreEqual(PotionUseStatus.Ok, belt.Use("potion.life", stats, ref vitals).Status);
+                    belt.Refill();
+                    Assert.IsFalse(belt.OnEliteKilled(), "tudo cheio: nada a acrescentar");
+                }
+
+                using (var dodge = native.CreateDodge())
+                {
+                    Assert.AreEqual(native.Combat.DodgeMaxCharges, dodge.Charges);
+                    Assert.AreEqual(DodgeStartStatus.Ok, dodge.Start(0.0));
+                    Assert.IsTrue(dodge.IsInvulnerable);
+                    Assert.AreEqual(native.Combat.DodgeMaxCharges - 1, dodge.Charges);
+                    Assert.AreEqual(DodgeStartStatus.Active, dodge.Start(0.0));
+                    dodge.Tick(native.Combat.DodgeDurationSeconds + 0.01);
+                    Assert.IsFalse(dodge.IsActive);
+                }
+
+                var rng = native.CreateRng(5, RngStream.Events, 0);
+                var roll = native.RollElite(ref rng);
+                Assert.IsTrue(roll.Rolled);
+                Assert.IsNotEmpty(roll.ModifierId);
+                using (var enemy = native.CreateEnemyStats(Sentinel, 3))
+                {
+                    var life = enemy.Get(StatId.Life);
+                    native.ApplyElite(enemy, in roll);
+                    Assert.AreEqual(life * roll.LifeMult, enemy.Get(StatId.Life), 1e-6, "elite sorteado multiplica a vida");
+                }
+
+                using (var bossStats = native.CreateEnemyStats("enemy.crypt_guardian", 5))
+                using (var boss = native.CreateBoss("enemy.crypt_guardian", 5, 7))
+                {
+                    boss.Start();
+                    var events = new List<BossEvent>();
+                    for (var i = 0; i < 300; i++) boss.Step(native.Combat.FixedStep, 0, 0, 0, 4, bossStats, events);
+                    Assert.IsNotEmpty(events);
+                    Assert.AreEqual(BossEventKind.PatternStart, events[0].Kind);
+                    var info = boss.Info;
+                    Assert.AreEqual(1, info.Phase);
+                    Assert.AreEqual(info.MaxLife, info.Life, 1e-9);
+                    var fx2 = info.FacingX; var fz2 = info.FacingZ;
+                    var front = boss.ApplyDamage(50.0, 0, 0, fx2 * 4.0, fz2 * 4.0);
+                    Assert.IsTrue(front.ShieldBlocked, "escudo frontal: dano de frente e bloqueado");
+                    Assert.AreEqual(0.0, front.Applied);
+                    var back = boss.ApplyDamage(50.0, 0, 0, -fx2 * 4.0, -fz2 * 4.0);
+                    Assert.IsFalse(back.ShieldBlocked);
+                    Assert.Greater(back.Applied, 0.0);
+                }
+            }
+        }
+
+        [Test]
+        public void LegsSlotEquipsThroughTheNativeCharacterBuilder()
+        {
+            // C-18: ItemSlot ganhou Legs no fim; o C# so manda o nome do slot (item_bases.csv), sem enum espelhado.
+            using (var native = LoadNative())
+            {
+                var bare = new HeroBuild("class.warrior", 5, new[] { Sword });
+                var dressed = new HeroBuild("class.warrior", 5, new[] { Sword, "item_base.worn_trousers" });
+                using (var a = native.CreateHeroStats(in bare))
+                using (var b = native.CreateHeroStats(in dressed))
+                    Assert.Greater(b.Get(StatId.Armor), a.Get(StatId.Armor), "a calca soma armadura (armor:flat:4)");
+            }
         }
 
         [Test]
@@ -544,7 +759,7 @@ namespace Echoes.Tests.EditMode
             };
         }
 
-        static void AssertStatsEqual(IStatBlock expected, IStatBlock actual, string label)
+        static void AssertStatsEqual(IStatBlock expected, IStatBlock actual, string label, bool skipMoveSpeed = false)
         {
             var contexts = new[]
             {
@@ -555,6 +770,8 @@ namespace Echoes.Tests.EditMode
             };
             for (var s = 0; s < (int)StatId.Count; s++)
             {
+                // Heroi: o core guarda MoveSpeed em uu/s (class_stats.csv, 450); o stub segue com multiplicador. Comparado por GetMoveSpeedUu.
+                if (skipMoveSpeed && (StatId)s == StatId.MoveSpeed) continue;
                 foreach (var tags in contexts)
                     Assert.AreEqual(expected.GetTagged((StatId)s, tags), actual.GetTagged((StatId)s, tags), Tolerance, $"{label}: {(StatId)s} / {tags}");
             }

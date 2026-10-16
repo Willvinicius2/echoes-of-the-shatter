@@ -42,6 +42,8 @@ namespace Echoes.Interop
 
         public int ActiveCount => active.Count;
 
+        public ActorApplyResult LastApply => default;
+
         public bool Apply(string effectId, double magnitude, string sourceId)
         {
             // Porte de EffectContainer::Apply (src/effects.cpp) para aplicação direta (TriggerKind::None).
