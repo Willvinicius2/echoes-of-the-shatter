@@ -441,6 +441,21 @@
       "default": 1.0,
       "desc": "Trava global entre usos de pocao (s)",
       "min": 0
+    },
+    {
+      "name": "dodge_cancel_recovery_fraction",
+      "type": "number",
+      "default": 0.5,
+      "desc": "Esquiva: cancelamento so na metade final da recuperacao (fracao) [HIPOTESE]",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "out_of_combat_seconds",
+      "type": "number",
+      "default": 3,
+      "desc": "Tempo fora de combate (s) [HIPOTESE]",
+      "min": 0
     }
   ]
 }

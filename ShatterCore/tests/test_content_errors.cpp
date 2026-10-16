@@ -1,6 +1,8 @@
 // ContentDB — catálogo de erros (RNF-07), decisões de pendências (P3, P8) e conteúdo real.
 #include "test_util.h"
 
+#include <algorithm>
+
 using namespace shatter;
 
 namespace {
@@ -69,7 +71,9 @@ TEST(content_rnf07_error_catalog) {
     ExpectFail("chefe sem isBoss", "encounters.csv", Replace(Table("encounters.csv"), "enemy.crypt_guardian:1:1:0,1,10,true", "enemy.crypt_guardian:1:1:0,1,10,false"), "encounters.csv", 4, "E_RULE");
     ExpectFail("mapa com encontro inexistente", "maps.csv", Replace(maps, "enc.crypt.patrol_a|enc.crypt.patrol_b", "enc.crypt.patrol_a|enc.crypt.nope"), "maps.csv", 2, "E_FK");
     ExpectFail("arma sem dano", "item_bases.csv", Replace(Table("item_bases.csv"), "main_hand,1,,10,,,,1.0,melee,m", "main_hand,1,,,,,,1.0,melee,m"), "item_bases.csv", 2, "E_RULE");
-    ExpectFail("regra desconhecida", "rules.csv", rules + "bogus_key,1\n", "rules.csv", 60, "E_UNKNOWN_KEY");
+    // A chave estranha fica na linha seguinte à última da fixture; não fixar o número, porque a fixture cresce.
+    ExpectFail("regra desconhecida", "rules.csv", rules + "bogus_key,1\n", "rules.csv",
+               static_cast<int>(std::count(rules.begin(), rules.end(), '\n')) + 1, "E_UNKNOWN_KEY");
     ExpectFail("regra faltando", "rules.csv", Replace(rules, "max_level,30\n", ""), "rules.csv", 0, "E_REQUIRED");
     ExpectFail("regra fora da faixa", "rules.csv", Replace(rules, "block_cap,0.5", "block_cap,-0.1"), "rules.csv", 4, "E_RANGE");
     ExpectFail("expoente de XP", "rules.csv", Replace(rules, "xp_exponent,1.5", "xp_exponent,1.3"), "rules.csv", -1, "E_RANGE");
