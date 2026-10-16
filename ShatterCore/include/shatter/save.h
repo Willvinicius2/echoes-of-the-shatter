@@ -141,6 +141,44 @@ inline std::string SaveTmpPath(const std::string& base) { return base + ".tmp"; 
 inline std::string SaveBackupPath(const std::string& base, int n) { return base + ".bak" + std::to_string(n); }
 
 // ---------------------------------------------------------------------------
+// ADIÇÃO (docs/09_mudancas_contrato.md): progresso manual e início de expedição.
+// O jogo informa o que aconteceu; as regras de cargas e domínio ficam aqui, não no C#.
+// ---------------------------------------------------------------------------
+struct AreaRunOutcome {
+    bool reachedEnd = false;    // percorreu a área até o fim nesta corrida
+    bool bossDefeated = false;  // venceu o chefe da área nesta MESMA corrida
+};
+struct AreaRunReward {
+    int chargesGained = 0;      // cargas que entraram de fato (depois do teto charges_max)
+    bool newConquest = false;   // o domínio foi gravado agora (libera a expedição na Ilsa)
+};
+// Fim de uma corrida manual numa área (RF-35, RF-50):
+//  - domínio = chegar ao fim E vencer o chefe na mesma corrida (mapa sem bossEncounter: só chegar ao fim);
+//    a primeira vez grava o mapa em conquered_maps (e highest_tier_cleared, se o tier for maior);
+//  - cargas: o maior entre limpar a área (+charges_clear_area) e vencer o chefe (+charges_boss), mais
+//    +charges_new_area na primeira conquista (Cripta: 2 + 3 = +5); o total respeita charges_max.
+// Devolve false (sem alterar nada) se o personagem ou o mapa não existirem.
+bool RecordAreaRun(const ContentDB& db, SaveData& s, std::size_t characterIndex, const ContentId& mapId,
+                   const AreaRunOutcome& run, AreaRunReward* reward = nullptr);
+
+struct ExpeditionStartParams {
+    std::size_t characterIndex = 0;
+    ContentId mapId;
+    ExpeditionObjective objective = ExpeditionObjective::Xp;
+    std::vector<AiRule> rules;
+    int durationHours = 1;
+    std::uint64_t seed = 0;     // gerado pelo jogo (o core não tem fonte de entropia)
+    UnixSeconds startUtc = 0;   // ResolveNow(...).now no momento da partida
+};
+// Inicia a expedição no save (RF-31, RF-35, RF-37, RF-39, RF-43): confere CanStartExpedition com as
+// cargas do save e "outra em andamento" entre TODOS os personagens; se Ok, congela o snapshot do
+// personagem (RF-38), grava a expedição Running (reaproveita uma vaga None/Collected ou acrescenta até
+// expeditionSlots) e desconta durationHours × charges_per_hour cargas. Não grava em disco.
+// Personagem inexistente: UnknownContent. Sem vaga livre: AnotherExpeditionRunning.
+StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionStartParams& p,
+                           std::vector<ContentId>* blockingIds = nullptr);
+
+// ---------------------------------------------------------------------------
 // Coleta de expedição sem duplicar (plano, seção 10 "Coleta sem duplicar").
 // ---------------------------------------------------------------------------
 // Adiciona itens (com uid novos) e stacks do resultado ao baú, aplica XP ao personagem

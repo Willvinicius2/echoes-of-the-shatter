@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "shatter/character.h"
+#include "shatter/clock.h"
 #include "shatter/content.h"
 #include "shatter/loot.h"
 #include "shatter/types.h"
@@ -133,9 +134,21 @@ struct ExpeditionResult {
     std::vector<StackEntry> stacks;      // ouro, materiais, páginas — após Vigor
     int raresDropped = 0;
     std::vector<EncounterReceipt> receipts;
-    std::vector<std::string> tipKeys;    // chaves de localização de dicas ("tip.expedition.raise_potion_threshold")
+    std::vector<std::string> tipKeys;    // UMA chave de dica do relatório (kTip* abaixo; RF-44)
     std::uint64_t resultHash = 0;        // hash canônico do resultado (detecção de divergência/duplicação)
 };
+
+// ADIÇÃO (docs/09_mudancas_contrato.md): chaves de localização das dicas do relatório do Tico.
+// Existem em Content/Data/Loc/expedition.csv (pt_BR e en); o core só devolve a chave (RF-61).
+// FinalizeExpedition escolhe exatamente uma, nesta prioridade:
+//   recuo com poções sobrando (morreu antes de beber) → kTipLowLife;
+//   recuo sem poções, ou quis curar sem ter poção     → kTipMorePotions;
+//   nada a corrigir                                    → kTipAllGood.
+// kTipRaisePotion ("tente subir o limiar para {pct}%") fica para quando o core souber sugerir o {pct}.
+inline constexpr const char* kTipRaisePotion = "report.tip.raise_potion";
+inline constexpr const char* kTipMorePotions = "report.tip.more_potions";
+inline constexpr const char* kTipLowLife = "report.tip.low_life";
+inline constexpr const char* kTipAllGood = "report.tip.all_good";
 
 // ---------------------------------------------------------------------------
 // API
@@ -167,6 +180,12 @@ ExpeditionResult SimulateExpedition(const ContentDB& db, const ExpeditionRequest
 ExpeditionProgress SimulateRange(const ContentDB& db, const ExpeditionRequest& req,
                                  const ExpeditionProgress& start,
                                  std::uint32_t firstEncounter, std::uint32_t count);
+
+// ADIÇÃO (docs/09_mudancas_contrato.md), RF-48: se a janela offline (clock.h) terminou porque o
+// relógio do PC voltou, a parada por tempo vira StopReason::ClockRollback ("o relógio voltou"; a
+// expedição encerra no último ponto conhecido). Chamar sobre o progresso final, ANTES de
+// FinalizeExpedition (o resultHash inclui o motivo). Recuo e outras paradas reais não mudam.
+void ApplyWindowStop(ExpeditionProgress& progress, const OfflineWindow& window);
 
 // Aplica as regras da seção 7 UMA vez sobre os recibos, em ordem:
 //   Vigor por faixa (XP e Stacks; itens não) → teto de nível (XP para quando o personagem

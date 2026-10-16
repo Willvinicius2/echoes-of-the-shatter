@@ -104,6 +104,15 @@ public:
     }
 
     std::uint64_t State() const { return state_; }
+    // ADIÇÃO (docs/09_mudancas_contrato.md): estado bruto para atravessar a API C (shatter_rng é uma
+    // struct de 2 uint64_t do chamador). FromRaw(State(), Increment()) continua exatamente do mesmo ponto.
+    std::uint64_t Increment() const { return inc_; }
+    static Pcg32 FromRaw(std::uint64_t state, std::uint64_t increment) {
+        Pcg32 r;
+        r.state_ = state;
+        r.inc_ = increment | 1u;  // o incremento do PCG é sempre ímpar
+        return r;
+    }
 
 private:
     std::uint64_t state_ = 0;

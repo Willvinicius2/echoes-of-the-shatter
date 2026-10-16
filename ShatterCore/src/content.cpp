@@ -877,7 +877,7 @@ bool ContentDB::LoadDirectory(const std::string& path) {
     // *.csv desconhecido na raiz da pasta também é erro (subpastas, como Loc/, são ignoradas).
     for (fs::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
         if (!it->is_regular_file(ec)) continue;
-        const std::string name = it->path().filename().string();
+        const std::string name = it->path().filename().u8string();  // UTF-8 (string() usa a página de código no Windows)
         if (it->path().extension() != ".csv") continue;
         bool known = false;
         for (const TableDef& def : TableDefs()) known = known || name == def.name;
@@ -1242,6 +1242,8 @@ bool ContentDB::Finalize() {
             if (en == nullptr) f.E("encounters.csv", ln, "E_FK", "groups: '" + g.enemyId + "' not in enemies.csv");
             else hasBoss = hasBoss || en->isBoss;
             if (g.countMin > g.countMax) f.E("encounters.csv", ln, "E_RANGE", "groups: min > max");
+            if (g.countMin < 1) f.E("encounters.csv", ln, "E_RANGE", "groups: min must be >= 1");
+            if (g.eliteChance < 0.0 || g.eliteChance > 1.0) f.E("encounters.csv", ln, "E_RANGE", "groups: elite chance out of [0,1]");
         }
         if (e.isBoss != hasBoss && !e.groups.empty() &&
             std::all_of(e.groups.begin(), e.groups.end(), [&](const EncounterGroup& g) { return im.enemies.Find(g.enemyId) != nullptr; }))

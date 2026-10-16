@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "shatter/constants.h"
@@ -93,7 +94,8 @@ public:
 
 private:
     std::vector<ActiveEffect> active_;
-    std::unordered_map<ContentId, double> internalCooldowns_;  // effectId → s restantes
+    // effectId → s restantes, em ordem de inserção (vetor, não unordered_map: o Tick itera esta lista).
+    std::vector<std::pair<ContentId, double>> internalCooldowns_;
     std::uint32_t nextApplyOrder_ = 0;
 };
 

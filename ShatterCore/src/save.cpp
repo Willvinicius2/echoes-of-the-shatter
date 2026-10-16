@@ -451,6 +451,84 @@ LoadReport ReadSaveFile(IFileIO& io, const std::string& basePath, SaveData& out)
 }
 
 // ---------------------------------------------------------------------------
+// Progresso manual e início de expedição
+// ---------------------------------------------------------------------------
+bool RecordAreaRun(const ContentDB& db, SaveData& s, std::size_t characterIndex, const ContentId& mapId,
+                   const AreaRunOutcome& run, AreaRunReward* reward) {
+    if (reward) *reward = AreaRunReward();
+    if (characterIndex >= s.characters.size()) return false;
+    const MapData* map = db.FindMap(mapId);
+    if (map == nullptr) return false;
+    const RulesConstants& r = db.Rules();
+    CharacterState& ch = s.characters[characterIndex];
+
+    const bool hasBoss = !map->bossEncounter.empty();
+    const bool conquest = run.reachedEnd && (!hasBoss || run.bossDefeated);
+    const bool already = std::find(ch.conqueredMaps.begin(), ch.conqueredMaps.end(), mapId) != ch.conqueredMaps.end();
+
+    int gain = 0;
+    if (run.bossDefeated && hasBoss) gain = std::max(gain, r.chargesBoss);
+    if (run.reachedEnd) gain = std::max(gain, r.chargesClearArea);
+    const bool newConquest = conquest && !already;
+    if (newConquest) {
+        gain += r.chargesNewArea;
+        ch.conqueredMaps.push_back(mapId);
+        if (map->tier > ch.highestTierCleared) ch.highestTierCleared = map->tier;
+    }
+    const int before = s.markerCharges;
+    const int after = std::min(r.chargesMax, std::max(0, before) + gain);
+    s.markerCharges = std::max(before, after);  // o teto nunca tira cargas que já estavam lá
+    if (reward) {
+        reward->chargesGained = s.markerCharges - before;
+        reward->newConquest = newConquest;
+    }
+    return true;
+}
+
+StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionStartParams& p,
+                           std::vector<ContentId>* blockingIds) {
+    if (blockingIds) blockingIds->clear();
+    if (p.characterIndex >= s.characters.size()) return StartCheck::UnknownContent;
+    const CharacterState& ch = s.characters[p.characterIndex];
+    bool running = false;
+    for (const SavedExpedition& e : s.expeditions) running = running || e.status == ExpeditionStatus::Running;
+    const StartCheck check =
+        CanStartExpedition(db, ch, p.mapId, p.durationHours, s.markerCharges, running, p.rules.size(), blockingIds);
+    if (check != StartCheck::Ok) return check;
+
+    // Vaga: a primeira None/Collected; senão acrescenta, até expeditionSlots.
+    std::size_t slot = s.expeditions.size();
+    for (std::size_t i = 0; i < s.expeditions.size(); ++i) {
+        if (s.expeditions[i].status != ExpeditionStatus::Running) {
+            slot = i;
+            break;
+        }
+    }
+    const std::size_t maxSlots = s.expeditionSlots < 1 ? 1 : static_cast<std::size_t>(s.expeditionSlots);
+    if (slot == s.expeditions.size() && slot >= maxSlots) return StartCheck::AnotherExpeditionRunning;
+
+    SavedExpedition e;
+    e.status = ExpeditionStatus::Running;
+    e.characterIndex = static_cast<int>(p.characterIndex);
+    e.request.snapshot.character = ch;  // cópia congelada (RF-38)
+    e.request.snapshot.contentVersion = db.ContentVersion();
+    e.request.mapId = p.mapId;
+    e.request.objective = p.objective;
+    e.request.rules = p.rules;
+    e.request.seed = p.seed;
+    e.request.startUtc = p.startUtc;
+    e.request.durationHours = p.durationHours;
+    e.request.effectiveSeconds = 0.0;  // calculado ao abrir o jogo (clock.h)
+    e.request.contentVersion = db.ContentVersion();
+    e.collectedResultHash = 0;
+    if (slot == s.expeditions.size()) s.expeditions.push_back(std::move(e));
+    else s.expeditions[slot] = std::move(e);
+    s.markerCharges -= p.durationHours * db.Rules().chargesPerHour;
+    if (s.markerCharges < 0) s.markerCharges = 0;
+    return StartCheck::Ok;
+}
+
+// ---------------------------------------------------------------------------
 // Coleta sem duplicar
 // ---------------------------------------------------------------------------
 bool CollectExpedition(const ContentDB& db, SaveData& s, std::size_t expeditionIndex, const ExpeditionResult& r) {

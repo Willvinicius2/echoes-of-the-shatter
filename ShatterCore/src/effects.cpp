@@ -47,8 +47,9 @@ bool EffectContainer::Apply(const EffectData& data, std::string_view sourceEntit
 
     const bool gated = data.trigger != TriggerKind::None || triggeredBy != TriggerKind::None;
     if (gated) {
-        const auto it = internalCooldowns_.find(data.id);
-        if (it != internalCooldowns_.end() && it->second > kTimeEps) return false;
+        for (const auto& cd : internalCooldowns_) {
+            if (cd.first == data.id && cd.second > kTimeEps) return false;
+        }
     }
 
     bool applied = true;
@@ -114,7 +115,15 @@ bool EffectContainer::Apply(const EffectData& data, std::string_view sourceEntit
 
     if (applied && gated) {
         const double icd = std::max(data.internalCooldown, rules.triggerInternalCooldown);
-        internalCooldowns_[data.id] = icd;
+        bool found = false;
+        for (auto& cd : internalCooldowns_) {
+            if (cd.first == data.id) {
+                cd.second = icd;
+                found = true;
+                break;
+            }
+        }
+        if (!found) internalCooldowns_.emplace_back(data.id, icd);
     }
     return applied;
 }
@@ -166,12 +175,11 @@ void EffectContainer::Tick(double dt, const std::unordered_map<ContentId, const 
         RebuildMods(active_, id, it != lookup.end() ? it->second : nullptr, target);
         if (it == lookup.end()) target.RemoveModifiersFrom(FxSource(id));
     }
-    // 3) recargas internas (cada entrada é independente: a ordem de iteração não afeta o resultado).
-    for (auto it = internalCooldowns_.begin(); it != internalCooldowns_.end();) {
-        it->second -= dt;
-        if (it->second <= kTimeEps) it = internalCooldowns_.erase(it);
-        else ++it;
-    }
+    // 3) recargas internas (em ordem de inserção).
+    for (auto& cd : internalCooldowns_) cd.second -= dt;
+    internalCooldowns_.erase(std::remove_if(internalCooldowns_.begin(), internalCooldowns_.end(),
+                                            [](const std::pair<ContentId, double>& cd) { return cd.second <= kTimeEps; }),
+                             internalCooldowns_.end());
 }
 
 bool EffectContainer::Has(std::string_view effectId) const {
