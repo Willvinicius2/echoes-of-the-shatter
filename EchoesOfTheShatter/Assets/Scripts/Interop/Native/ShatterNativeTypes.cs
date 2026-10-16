@@ -164,4 +164,138 @@ namespace Echoes.Interop.Native
         public int worst_resist_gap;
         public int reserved;
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // API C 1.1 (SHATTER_C_API_MINOR 1): layout conferido por shatter_layout_check_ext (37 valores).
+    // ---------------------------------------------------------------------------------------------
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterRulesExt
+    {
+        public double dodge_recharge, dodge_duration, dodge_iframes, dodge_distance, dodge_cost_resource, dodge_buffer;
+        public double dodge_perfect_resource, dodge_cancel_recovery_fraction;
+        public double guard_break_stagger_seconds, guard_break_stagger_damage_taken;
+        public double guard_break_immunity_boss, guard_break_immunity_other, boss_shield_down_seconds;
+        public double elite_life_mult, elite_damage_mult, elite_xp_mult;
+        public double potion_lockout, out_of_combat_seconds;
+        public int dodge_max_charges;
+        public int reserved;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterVitals
+    {
+        public double life, resource, barrier;
+        public double barrier_seconds_left;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterActionTiming
+    {
+        public double windup, impact, recovery, cooldown, cost;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterPotionOutcome
+    {
+        public double heal_amount, barrier_amount, barrier_seconds, use_time, move_speed_while_using, lockout;
+        public int status;
+        public int reserved;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterDodgeState
+    {
+        public double recharge_remaining;
+        public double elapsed;
+        public int charges;
+        public byte active;
+        public fixed byte reserved[3];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterActorApply
+    {
+        public double stun_seconds, stagger_seconds;
+        public int guard_break_stacks;
+        public byte applied, stunned, stun_blocked, interrupted, staggered, remove_barrier;
+        public fixed byte reserved[2];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterActorInfo
+    {
+        public double stun_remaining, stagger_remaining, immunity_remaining;
+        public byte can_act, stun_immune;
+        public fixed byte reserved[6];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterEliteInfo
+    {
+        public double life_mult, damage_mult, xp_mult, barrier_fraction_of_life;
+        public double move_speed_mult, attack_speed_mult, recovery_mult;
+        public double death_explosion_radius, death_explosion_damage, death_explosion_fuse;
+        public fixed byte modifier_id[64];
+        public byte rolled;
+        public fixed byte reserved[7];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterVec2
+    {
+        public double x, z;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterBossContext
+    {
+        public ShatterVec2 boss, player;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterBossEvent
+    {
+        public double seconds;
+        public uint kind;
+        public int phase;
+        public int count;
+        public int reserved;
+        public fixed byte pattern_id[64];
+        public fixed byte skill_id[64];
+        public fixed byte enemy_id[64];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterBossInfo
+    {
+        public double life, max_life, shield_down_remaining, turn_rate_deg_per_sec, facing_x, facing_z;
+        public double stagger_remaining, stun_remaining;
+        public int phase;
+        public int state;
+        public byte shield_up, invulnerable;
+        public fixed byte reserved[6];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterBossDamage
+    {
+        public double applied, life_after;
+        public byte shield_blocked, invulnerable, clamped_by_phase, killed;
+        public fixed byte reserved[4];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterBossProgress
+    {
+        public int kills, kills_since_unique;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterForecastEx
+    {
+        public ShatterForecast baseForecast;
+        public int calibration;
+        public int reserved;
+    }
 }

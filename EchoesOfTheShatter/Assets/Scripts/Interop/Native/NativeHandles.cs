@@ -49,6 +49,48 @@ namespace Echoes.Interop.Native
         }
     }
 
+    /// <summary><c>shatter_actor</c>: stun, imunidades e Guarda Quebrada de uma entidade (main thread).</summary>
+    internal sealed class ActorHandle : SafeHandleZeroOrMinusOneIsInvalid
+    {
+        public ActorHandle() : base(true) { }
+
+        public ActorHandle(IntPtr raw) : base(true) { SetHandle(raw); }
+
+        protected override bool ReleaseHandle()
+        {
+            ShatterNative.shatter_actor_destroy(handle);
+            return true;
+        }
+    }
+
+    /// <summary><c>shatter_potions</c>: cinto de pocoes de um personagem (main thread).</summary>
+    internal sealed class PotionsHandle : SafeHandleZeroOrMinusOneIsInvalid
+    {
+        public PotionsHandle() : base(true) { }
+
+        public PotionsHandle(IntPtr raw) : base(true) { SetHandle(raw); }
+
+        protected override bool ReleaseHandle()
+        {
+            ShatterNative.shatter_potions_destroy(handle);
+            return true;
+        }
+    }
+
+    /// <summary><c>shatter_boss</c>: maquina de fases do chefe; guarda o banco que o criou (destruir o boss ANTES do banco).</summary>
+    internal sealed class BossHandle : SafeHandleZeroOrMinusOneIsInvalid
+    {
+        public BossHandle() : base(true) { }
+
+        public BossHandle(IntPtr raw) : base(true) { SetHandle(raw); }
+
+        protected override bool ReleaseHandle()
+        {
+            ShatterNative.shatter_boss_destroy(handle);
+            return true;
+        }
+    }
+
     /// <summary>Falha de uma chamada nativa que o chamador nao previu (bug ou uso fora do contrato).</summary>
     public sealed class NativeCallException : InvalidOperationException
     {

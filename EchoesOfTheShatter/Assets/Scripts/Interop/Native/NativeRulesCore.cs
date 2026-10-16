@@ -5,31 +5,32 @@ using System.Text;
 namespace Echoes.Interop.Native
 {
     /// <summary>
-    /// <see cref="IRulesCore"/> sobre a DLL <c>shattercore</c> (API C v1, shatter_c.h): P/Invoke, SafeHandle e o
+    /// <see cref="IRulesCore"/> sobre a DLL <c>shattercore</c> (API C 1.1, shatter_c.h): P/Invoke, SafeHandle e o
     /// padrao de duas chamadas para buffers (docs/04_arquitetura.md, secao 9).
     ///
-    /// Roda NATIVO: carga e validacao do conteudo, versao do conteudo, constantes de regra usadas no passo
-    /// fixo, atributos (heroi, inimigo, vazio), resolucao do golpe, recarga efetiva, RNG por fluxo e os
-    /// efeitos (aplicar, avancar, empilhar, limpar).
+    /// Roda NATIVO: carga e validacao do conteudo, versao do conteudo, constantes de regra (rules.csv e as chaves novas por
+    /// <c>shatter_db_rules_ext</c>: esquiva, buffer, trava de pocao, fora de combate), atributos (heroi, inimigo, vazio),
+    /// golpe e recarga lendo as constantes do BANCO (<c>_db</c>, A-06), vida/recurso/barreira, tempos de acao, custo,
+    /// velocidade de movimento, CanAct/CanMove (com o <c>shatter_actor</c>), PickAttack, pocoes (<c>shatter_potion_resolve</c>),
+    /// RNG por fluxo e efeitos (stun e Guarda Quebrada pelo actor). Tambem expoe, alem do IRulesCore, o cinto de pocoes, a
+    /// esquiva, o elite e o chefe nativos (<see cref="CreatePotionBelt"/>, <see cref="CreateDodge"/>, <see cref="RollElite"/>,
+    /// <see cref="CreateBoss"/>).
     ///
-    /// Segue no STUB (<see cref="StillInStub"/>) o que o v1 da API C ainda nao oferece. O stub e
-    /// carregado junto, dos mesmos CSV, e responde so por isso.
+    /// Segue no STUB (<see cref="StillInStub"/>) so o que o core ainda nao tem. O stub e carregado junto, dos mesmos CSV.
     /// </summary>
-    public sealed class NativeRulesCore : IRulesCore
+    public sealed partial class NativeRulesCore : IRulesCore
     {
         public const string Name = "shattercore-native";
 
-        /// <summary>O que o v1 da API C ainda nao entrega e continua no <see cref="StubRulesCore"/> (lista para o log e o relatorio).</summary>
+        /// <summary>O que a API C 1.1 ainda nao entrega e continua no <see cref="StubRulesCore"/> (lista para o log e o relatorio).</summary>
         public static readonly IReadOnlyList<string> StillInStub = new[]
         {
-            "Registros de conteudo tipados (FindClass/FindSkill/FindEnemy/FindItemBase/FindPotion, Potions): a API so devolve JSON por ID (shatter_db_lookup_json), sem lista de classes, habilidades, inimigos nem pocoes",
-            "[A-01, Backend etapa2] Constantes de combate em tempo real (esquiva, buffer de entrada, trava de pocao, fora de combate): nao ha em shatter_rules; so realtime_step e cooldown_min vem da DLL",
-            "[A-01, Backend etapa2] GetActionTiming (tempos de acao com velocidade de ataque/conjuracao)",
-            "[A-01, Backend etapa2] CreateVitals/TickVitals/GainResource/TrySpendResource e ResolvePotion",
-            "[A-01, Backend etapa2] PickAttack (sorteio ponderado do ataque do inimigo)",
-            "GetEffectiveCost, GetMoveSpeedUu, CanAct/CanMove: o core nao expoe (formulas de uma linha sobre StatBlock.Get)",
+            "Registros de conteudo tipados (FindClass/FindSkill/FindEnemy/FindItemBase/FindPotion, Potions, ClassInfo/EnemyInfo/SkillInfo/PotionInfo): a API so devolve JSON por ID (shatter_db_lookup_json), sem listas tipadas",
             "NextBelow e NextUnit: a API so tem shatter_rng_next_u32, sem o sorteio limitado nem o unitario",
-            "Imunidade a atordoamento por inimigo (elite, chefe, familia construct) e as tags dos efeitos nos eventos de dano: shatter_effects_apply nao recebe o inimigo e o evento nao traz tags",
+            "Tags dos efeitos nos eventos de dano de DoT (o evento nativo nao traz tags; vem do conteudo do stub)",
+            "Gameplay (HeroCombatLogic, DodgeLogic, PotionSlot, EnemyBrainLogic, CombatSystem) ainda usa os timers/estados em C# para pocoes, esquiva, elite e fases de chefe: o IRulesCore nao tem metodos para o cinto, a esquiva, o elite nem o chefe; os nativos estao prontos em NativeRulesCore.CreatePotionBelt/CreateDodge/RollElite/CreateBoss",
+            "Consumo de ActorApplyResult (interromper o telegraph, zerar a barreira) pelo CombatSystem",
+            "Salvar/ler (shatter_save_*) e expedicao (_trusted): nao ha camada de save/expedicao no C# ainda",
         };
 
         // Registro dos nucleos vivos (A-06): o editor/jogo descarta todos ao sair do Play, recarregar o dominio ou fechar,
@@ -76,6 +77,7 @@ namespace Echoes.Interop.Native
         ShatterRules rules;
         bool rulesLoaded;
         uint apiVersion;
+        ShatterRulesExt rulesExt;
 
         NativeRulesCore(uint apiVersion)
         {
@@ -107,6 +109,17 @@ namespace Echoes.Interop.Native
                     reason = "layout das structs diverge da DLL: " + layoutMessage;
                     return false;
                 }
+                var minor = ShatterNative.shatter_api_minor();
+                if (minor < ShatterNative.ExpectedApiMinor)
+                {
+                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (vitals, timing, actor, pocoes)";
+                    return false;
+                }
+                if (!NativeLayout.CheckExt(out var extMessage))
+                {
+                    reason = "layout 1.1 das structs diverge da DLL: " + extMessage;
+                    return false;
+                }
                 core = new NativeRulesCore(version);
                 reason = string.Empty;
                 return true;
@@ -136,7 +149,8 @@ namespace Echoes.Interop.Native
         public string ImplementationName => Name;
         public bool IsProvisional => false;
         public bool IsLoaded => db != null && !db.IsInvalid && stub.IsLoaded;
-        public IReadOnlyList<string> LoadWarnings => stub.LoadWarnings;
+        // Constantes de combate vem da DLL (rules_ext), nao dos valores provisorios do stub: nada a avisar.
+        public IReadOnlyList<string> LoadWarnings => Array.Empty<string>();
         public CombatRules Combat => stub.Combat;
         public IReadOnlyList<PotionInfo> Potions => stub.Potions;
 
@@ -216,6 +230,15 @@ namespace Echoes.Interop.Native
                 return (RulesStatus)rulesStatus;
             }
 
+            ShatterRulesExt ext = default;
+            var extStatus = ShatterNative.shatter_db_rules_ext(raw, &ext);
+            if (extStatus != 0)
+            {
+                handle.Dispose();
+                errors.Add(new RulesError((RulesStatus)extStatus, "rules.csv", 0, "shatter_db_rules_ext failed"));
+                return (RulesStatus)extStatus;
+            }
+
             var stubErrors = new List<RulesError>();
             var stubStatus = stub.LoadContent(dataDirectory, stubErrors);
             if (stubStatus != RulesStatus.Ok)
@@ -228,8 +251,21 @@ namespace Echoes.Interop.Native
             db = handle;
             rules = loaded;
             rulesLoaded = true;
-            stub.Combat.FixedStep = loaded.realtime_step;
-            stub.Combat.MinCooldown = loaded.cooldown_min;
+            rulesExt = ext;
+            var combat = stub.Combat;
+            combat.FixedStep = loaded.realtime_step;
+            combat.MinCooldown = loaded.cooldown_min;
+            combat.DodgeMaxCharges = ext.dodge_max_charges;
+            combat.DodgeRechargeSeconds = ext.dodge_recharge;
+            combat.DodgeDurationSeconds = ext.dodge_duration;
+            combat.DodgeInvulnerableSeconds = ext.dodge_iframes;
+            combat.DodgeDistanceUu = ext.dodge_distance;
+            combat.DodgeResourceCost = ext.dodge_cost_resource;
+            combat.DodgePerfectResource = ext.dodge_perfect_resource;
+            combat.InputBufferSeconds = ext.dodge_buffer;
+            combat.DodgeCancelRecoveryFraction = ext.dodge_cancel_recovery_fraction;
+            combat.OutOfCombatSeconds = ext.out_of_combat_seconds;
+            combat.PotionLockoutSeconds = ext.potion_lockout;
             return RulesStatus.Ok;
         }
 
@@ -286,7 +322,7 @@ namespace Echoes.Interop.Native
                 fixed (byte* p = json) status = ShatterNative.shatter_statblock_from_character_json(handle.DangerousGetHandle(), p, (nuint)json.Length, &raw, &err);
                 if (status != 0)
                     throw new ArgumentException($"hero stats failed ({(RulesStatus)status}): {NativeBuffers.ErrorMessage(ref err)}");
-                return new NativeStatBlock(new StatBlockHandle(raw));
+                return new NativeStatBlock(new StatBlockHandle(raw)) { IsHero = true };
             }
             finally
             {
@@ -325,9 +361,29 @@ namespace Echoes.Interop.Native
         {
             var handle = RequireDb();
             if (!(target is NativeStatBlock native)) throw new ArgumentException("target must come from this rules core", nameof(target));
-            IntPtr raw = IntPtr.Zero;
-            NativeCallException.ThrowIfFailed("shatter_effects_create", ShatterNative.shatter_effects_create(&raw));
-            return new NativeEffectSet(new EffectsHandle(raw), handle, native, stub.ContentOrNull, StubRulesCore.IsStunImmune(enemyOrNull));
+            IntPtr fx = IntPtr.Zero;
+            NativeCallException.ThrowIfFailed("shatter_effects_create", ShatterNative.shatter_effects_create(&fx));
+            var effects = new EffectsHandle(fx);
+            // Imunidade a atordoamento (stunImmune, chefe, elite) vem do core pelo actor; enemy_id vazio = alvo comum (heroi).
+            var enemyId = NativeBuffers.Utf8(enemyOrNull?.Id);
+            var addRef = false;
+            try
+            {
+                handle.DangerousAddRef(ref addRef);
+                IntPtr rawActor = IntPtr.Zero;
+                int status;
+                fixed (byte* p = enemyId) status = ShatterNative.shatter_actor_create(handle.DangerousGetHandle(), p, (nuint)enemyId.Length, 0, &rawActor);
+                if (status != 0)
+                {
+                    effects.Dispose();
+                    throw new NativeCallException("shatter_actor_create", status);
+                }
+                return new NativeEffectSet(effects, handle, native, stub.ContentOrNull, new ActorHandle(rawActor));
+            }
+            finally
+            {
+                if (addRef) handle.DangerousRelease();
+            }
         }
 
         // --- RNG ---------------------------------------------------------------------------------------
@@ -339,10 +395,32 @@ namespace Echoes.Interop.Native
             return new RngState { State = r.state, Increment = r.inc };
         }
 
-        // A API v1 so tem next_u32: o sorteio limitado, o unitario e o ponderado seguem no stub, que usa o mesmo PCG32.
+        // A API so tem next_u32: o sorteio limitado e o unitario seguem no stub, que usa o mesmo PCG32.
         public uint NextBelow(ref RngState rng, uint bound) => stub.NextBelow(ref rng, bound);
         public double NextUnit(ref RngState rng) => stub.NextUnit(ref rng);
-        public int PickAttack(ref RngState rng, EnemyInfo enemy) => stub.PickAttack(ref rng, enemy);
+        public unsafe int PickAttack(ref RngState rng, EnemyInfo enemy)
+        {
+            if (enemy == null) return -1;
+            var handle = RequireDb();
+            var id = NativeBuffers.Utf8(enemy.Id);
+            var native = new ShatterRng { state = rng.State, inc = rng.Increment };
+            var addRef = false;
+            try
+            {
+                handle.DangerousAddRef(ref addRef);
+                int index;
+                int status;
+                fixed (byte* p = id) status = ShatterNative.shatter_pick_attack(handle.DangerousGetHandle(), p, (nuint)id.Length, &native, &index);
+                if (status == (int)RulesStatus.NotFound) return -1;
+                NativeCallException.ThrowIfFailed("shatter_pick_attack", status);
+                rng = new RngState { State = native.state, Increment = native.inc };
+                return index;
+            }
+            finally
+            {
+                if (addRef) handle.DangerousRelease();
+            }
+        }
 
         // --- Golpe e recarga -------------------------------------------------------------------------
 
@@ -371,10 +449,20 @@ namespace Echoes.Interop.Native
             {
                 attacker.Handle.DangerousAddRef(ref a);
                 defender.Handle.DangerousAddRef(ref d);
-                int status;
-                fixed (ShatterRules* r = &rules)
-                    status = ShatterNative.shatter_resolve_hit(attacker.Handle.DangerousGetHandle(), defender.Handle.DangerousGetHandle(), &input, r, &rng, &output);
-                NativeCallException.ThrowIfFailed("shatter_resolve_hit", status);
+                var database = RequireDb();
+                bool b = false;
+                try
+                {
+                    database.DangerousAddRef(ref b);
+                    // Constantes de regra vem do BANCO (A-06): o C# nao manda numero de balanceamento.
+                    var status = ShatterNative.shatter_resolve_hit_db(database.DangerousGetHandle(), attacker.Handle.DangerousGetHandle(),
+                        defender.Handle.DangerousGetHandle(), &input, &rng, &output);
+                    NativeCallException.ThrowIfFailed("shatter_resolve_hit_db", status);
+                }
+                finally
+                {
+                    if (b) database.DangerousRelease();
+                }
             }
             finally
             {
@@ -404,29 +492,226 @@ namespace Echoes.Interop.Native
         {
             // Habilidade sem recarga fica sem recarga (o core aplicaria o piso cooldown_min): mesma regra do stub.
             if (skill == null || skill.Cooldown <= 0.0) return 0.0;
-            if (!rulesLoaded) throw new InvalidOperationException("rules content not loaded (call LoadContent first)");
+            var handle = RequireDb();
             var recovery = stats != null ? stats.Get(StatId.CooldownRecovery) : 1.0;
             if (recovery <= 0.0) recovery = 1.0;
-            double value;
-            int status;
-            fixed (ShatterRules* r = &rules) status = ShatterNative.shatter_effective_cooldown(skill.Cooldown, recovery, r, &value);
-            NativeCallException.ThrowIfFailed("shatter_effective_cooldown", status);
-            return value;
+            var addRef = false;
+            try
+            {
+                handle.DangerousAddRef(ref addRef);
+                double value;
+                var status = ShatterNative.shatter_effective_cooldown_db(handle.DangerousGetHandle(), skill.Cooldown, recovery, &value);
+                NativeCallException.ThrowIfFailed("shatter_effective_cooldown_db", status);
+                return value;
+            }
+            finally
+            {
+                if (addRef) handle.DangerousRelease();
+            }
         }
 
-        // --- Ainda no stub (ver StillInStub) -----------------------------------------------------------
+        // --- Tempos, custo, velocidade, CanAct/CanMove (core) -------------------------------------------
 
         public DamageByType GetSkillBaseDamage(SkillInfo skill, ItemBaseInfo weaponOrNull) => stub.GetSkillBaseDamage(skill, weaponOrNull);
-        public ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill) => stub.GetActionTiming(stats, skill);
-        public double GetEffectiveCost(IStatBlock stats, SkillInfo skill) => stub.GetEffectiveCost(stats, skill);
-        public double GetMoveSpeedUu(IStatBlock stats, double baseMoveSpeedUu) => stub.GetMoveSpeedUu(stats, baseMoveSpeedUu);
-        public bool CanAct(IStatBlock stats) => stub.CanAct(stats);
-        public bool CanMove(IStatBlock stats) => stub.CanMove(stats);
-        public Vitals CreateVitals(IStatBlock stats, ClassInfo classOrNull) => stub.CreateVitals(stats, classOrNull);
-        public void TickVitals(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull, double dt, bool inCombat) => stub.TickVitals(ref vitals, stats, classOrNull, dt, inCombat);
-        public void GainResource(ref Vitals vitals, IStatBlock stats, double amount) => stub.GainResource(ref vitals, stats, amount);
-        public bool TrySpendResource(ref Vitals vitals, double amount) => stub.TrySpendResource(ref vitals, amount);
-        public PotionOutcome ResolvePotion(PotionInfo potion, IStatBlock stats, in Vitals vitals) => stub.ResolvePotion(potion, stats, in vitals);
+
+        public unsafe ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill)
+        {
+            if (skill == null) return default;
+            var timing = SkillTiming(stats, skill);
+            return new ActionTiming(timing.windup, timing.impact, timing.recovery);
+        }
+
+        public double GetEffectiveCost(IStatBlock stats, SkillInfo skill)
+        {
+            if (skill == null) return 0.0;
+            return SkillTiming(stats, skill).cost;
+        }
+
+        unsafe ShatterActionTiming SkillTiming(IStatBlock stats, SkillInfo skill)
+        {
+            var native = RequireNative(stats);
+            var handle = RequireDb();
+            var id = NativeBuffers.Utf8(skill.Id);
+            bool a = false, s2 = false;
+            try
+            {
+                handle.DangerousAddRef(ref a);
+                native.Handle.DangerousAddRef(ref s2);
+                ShatterActionTiming timing;
+                int status;
+                fixed (byte* p = id)
+                    status = ShatterNative.shatter_skill_timing(handle.DangerousGetHandle(), p, (nuint)id.Length, native.Handle.DangerousGetHandle(), null, 0, &timing);
+                NativeCallException.ThrowIfFailed("shatter_skill_timing", status);
+                return timing;
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+                if (a) handle.DangerousRelease();
+            }
+        }
+
+        public unsafe double GetMoveSpeedUu(IStatBlock stats, double baseMoveSpeedUu)
+        {
+            var native = RequireNative(stats);
+            // Heroi: o atributo ja vem em uu/s (class_stats.csv); inimigo: base do enemies.csv x atributo.
+            var baseUu = native.IsHero ? 0.0 : baseMoveSpeedUu;
+            bool s2 = false;
+            try
+            {
+                native.Handle.DangerousAddRef(ref s2);
+                double value;
+                NativeCallException.ThrowIfFailed("shatter_move_speed", ShatterNative.shatter_move_speed(native.Handle.DangerousGetHandle(), baseUu, &value));
+                return value;
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+            }
+        }
+
+        public bool CanAct(IStatBlock stats) => stats == null || Can(stats, true);
+        public bool CanMove(IStatBlock stats) => stats == null || Can(stats, false);
+
+        unsafe bool Can(IStatBlock stats, bool act)
+        {
+            var native = RequireNative(stats);
+            bool s2 = false, a = false;
+            var actor = native.Actor;
+            try
+            {
+                native.Handle.DangerousAddRef(ref s2);
+                if (actor != null && !actor.IsClosed) actor.DangerousAddRef(ref a); else actor = null;
+                var raw = actor != null ? actor.DangerousGetHandle() : IntPtr.Zero;
+                byte value;
+                var status = act
+                    ? ShatterNative.shatter_can_act(native.Handle.DangerousGetHandle(), raw, &value)
+                    : ShatterNative.shatter_can_move(native.Handle.DangerousGetHandle(), raw, &value);
+                NativeCallException.ThrowIfFailed(act ? "shatter_can_act" : "shatter_can_move", status);
+                return value != 0;
+            }
+            finally
+            {
+                if (a) actor.DangerousRelease();
+                if (s2) native.Handle.DangerousRelease();
+            }
+        }
+
+        // --- Vida, recurso, barreira e pocoes (core) ---------------------------------------------------
+
+        public unsafe Vitals CreateVitals(IStatBlock stats, ClassInfo classOrNull)
+        {
+            var native = RequireNative(stats);
+            var handle = RequireDb();
+            var classId = NativeBuffers.Utf8(classOrNull?.Id);
+            bool a = false, s2 = false;
+            try
+            {
+                handle.DangerousAddRef(ref a);
+                native.Handle.DangerousAddRef(ref s2);
+                ShatterVitals v;
+                int status;
+                fixed (byte* p = classId)
+                    status = ShatterNative.shatter_vitals_create(handle.DangerousGetHandle(), native.Handle.DangerousGetHandle(), p, (nuint)classId.Length, &v);
+                NativeCallException.ThrowIfFailed("shatter_vitals_create", status);
+                return FromNative(v);
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+                if (a) handle.DangerousRelease();
+            }
+        }
+
+        public unsafe void TickVitals(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull, double dt, bool inCombat)
+        {
+            var native = RequireNative(stats);
+            var handle = RequireDb();
+            var classId = NativeBuffers.Utf8(classOrNull?.Id);
+            var v = ToNative(vitals);
+            bool a = false, s2 = false;
+            try
+            {
+                handle.DangerousAddRef(ref a);
+                native.Handle.DangerousAddRef(ref s2);
+                int status;
+                fixed (byte* p = classId)
+                    status = ShatterNative.shatter_vitals_tick(handle.DangerousGetHandle(), &v, native.Handle.DangerousGetHandle(), p, (nuint)classId.Length, dt, inCombat ? (byte)1 : (byte)0);
+                NativeCallException.ThrowIfFailed("shatter_vitals_tick", status);
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+                if (a) handle.DangerousRelease();
+            }
+            vitals = FromNative(v);
+        }
+
+        public unsafe void GainResource(ref Vitals vitals, IStatBlock stats, double amount)
+        {
+            if (amount <= 0.0) return;
+            var native = RequireNative(stats);
+            var v = ToNative(vitals);
+            bool s2 = false;
+            try
+            {
+                native.Handle.DangerousAddRef(ref s2);
+                NativeCallException.ThrowIfFailed("shatter_vitals_gain_resource", ShatterNative.shatter_vitals_gain_resource(&v, native.Handle.DangerousGetHandle(), amount));
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+            }
+            vitals = FromNative(v);
+        }
+
+        public unsafe bool TrySpendResource(ref Vitals vitals, double amount)
+        {
+            if (amount <= 0.0) return true;
+            var v = ToNative(vitals);
+            byte ok;
+            NativeCallException.ThrowIfFailed("shatter_vitals_spend_resource", ShatterNative.shatter_vitals_spend_resource(&v, amount, &ok));
+            vitals = FromNative(v);
+            return ok != 0;
+        }
+
+        public unsafe PotionOutcome ResolvePotion(PotionInfo potion, IStatBlock stats, in Vitals vitals)
+        {
+            if (potion == null) return new PotionOutcome(vitals.Life, vitals.Barrier, vitals.BarrierSecondsLeft, 0.0);
+            var native = RequireNative(stats);
+            var handle = RequireDb();
+            var id = NativeBuffers.Utf8(potion.Id);
+            var v = ToNative(vitals);
+            ShatterPotionOutcome outcome;
+            bool a = false, s2 = false;
+            try
+            {
+                handle.DangerousAddRef(ref a);
+                native.Handle.DangerousAddRef(ref s2);
+                int status;
+                fixed (byte* p = id)
+                    status = ShatterNative.shatter_potion_resolve(handle.DangerousGetHandle(), p, (nuint)id.Length, native.Handle.DangerousGetHandle(), &v, &outcome);
+                NativeCallException.ThrowIfFailed("shatter_potion_resolve", status);
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+                if (a) handle.DangerousRelease();
+            }
+            if (outcome.status != 0) return new PotionOutcome(vitals.Life, vitals.Barrier, vitals.BarrierSecondsLeft, 0.0);
+            var seconds = outcome.barrier_amount > 0.0 ? outcome.barrier_seconds : vitals.BarrierSecondsLeft;
+            return new PotionOutcome(v.life, v.barrier, seconds, outcome.heal_amount);
+        }
+
+        static Vitals FromNative(in ShatterVitals v) => new Vitals { Life = v.life, Resource = v.resource, Barrier = v.barrier, BarrierSecondsLeft = v.barrier_seconds_left };
+
+        static ShatterVitals ToNative(in Vitals v) => new ShatterVitals { life = v.Life, resource = v.Resource, barrier = v.Barrier, barrier_seconds_left = v.BarrierSecondsLeft };
+
+        static NativeStatBlock RequireNative(IStatBlock stats)
+        {
+            if (stats is NativeStatBlock native) return native;
+            throw new ArgumentException("stats must come from this rules core", nameof(stats));
+        }
 
         /// <summary>
         /// Libera o banco nativo. StatBlocks e efeitos criados continuam sendo dos seus donos; o banco so e

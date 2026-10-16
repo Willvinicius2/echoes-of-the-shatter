@@ -19,17 +19,19 @@ namespace Echoes.Interop.Native
         readonly DbHandle db;
         readonly NativeStatBlock target;
         readonly StubContent stubContent;
-        readonly bool stunImmune;
+        readonly ActorHandle actor;
+        ActorApplyResult lastApply;
         ShatterEffectEvent[] eventBuffer = new ShatterEffectEvent[8];
         bool holdsDb;
 
-        public NativeEffectSet(EffectsHandle handle, DbHandle db, NativeStatBlock target, StubContent stubContent, bool stunImmune)
+        public NativeEffectSet(EffectsHandle handle, DbHandle db, NativeStatBlock target, StubContent stubContent, ActorHandle actor)
         {
             this.handle = handle;
             this.db = db;
             this.target = target;
             this.stubContent = stubContent;
-            this.stunImmune = stunImmune;
+            this.actor = actor;
+            target.Actor = actor; // CanAct/CanMove do IRulesCore consideram stun e stagger
             // O conjunto de efeitos segura o banco ate ser descartado: descartar o NativeRulesCore antes nao o libera.
             db.DangerousAddRef(ref holdsDb);
         }
@@ -65,36 +67,52 @@ namespace Echoes.Interop.Native
         public bool Apply(string effectId, double magnitude, string sourceId)
         {
             if (string.IsNullOrEmpty(effectId)) return false;
-            if (stunImmune && stubContent != null && stubContent.Effects.TryGetValue(effectId, out var data) && data.IsStun) return false;
-
             var id = NativeBuffers.Utf8(effectId);
             var source = NativeBuffers.Utf8(sourceId);
-            bool a = false, d = false, t = false;
+            bool a = false, d = false, t = false, c = false;
             try
             {
                 handle.DangerousAddRef(ref a);
                 db.DangerousAddRef(ref d);
                 target.Handle.DangerousAddRef(ref t);
-                byte applied = 0;
+                actor.DangerousAddRef(ref c);
+                ShatterActorApply result = default;
                 int status;
                 fixed (byte* pId = id)
                 fixed (byte* pSource = source)
                 {
-                    status = ShatterNative.shatter_effects_apply(handle.DangerousGetHandle(), db.DangerousGetHandle(),
-                        pId, (nuint)id.Length, pSource, (nuint)source.Length, magnitude, TriggerNone,
-                        target.Handle.DangerousGetHandle(), &applied);
+                    // Stun e Guarda Quebrada passam pelo actor (imunidade por inimigo, stagger, timer unico) em vez de effects_apply.
+                    status = ShatterNative.shatter_actor_apply_effect(actor.DangerousGetHandle(), db.DangerousGetHandle(),
+                        pId, (nuint)id.Length, pSource, (nuint)source.Length, magnitude, handle.DangerousGetHandle(),
+                        target.Handle.DangerousGetHandle(), &result);
                 }
+                lastApply = default;
                 if (status == (int)RulesStatus.NotFound || status == (int)RulesStatus.ContentInvalid) return false;
-                NativeCallException.ThrowIfFailed("shatter_effects_apply", status);
-                return applied != 0;
+                NativeCallException.ThrowIfFailed("shatter_actor_apply_effect", status);
+                lastApply = new ActorApplyResult
+                {
+                    Applied = result.applied != 0,
+                    Stunned = result.stunned != 0,
+                    StunBlocked = result.stun_blocked != 0,
+                    Interrupted = result.interrupted != 0,
+                    Staggered = result.staggered != 0,
+                    RemoveBarrier = result.remove_barrier != 0,
+                    StunSeconds = result.stun_seconds,
+                    StaggerSeconds = result.stagger_seconds,
+                    GuardBreakStacks = result.guard_break_stacks,
+                };
+                return lastApply.Applied;
             }
             finally
             {
+                if (c) actor.DangerousRelease();
                 if (t) target.Handle.DangerousRelease();
                 if (d) db.DangerousRelease();
                 if (a) handle.DangerousRelease();
             }
         }
+
+        public ActorApplyResult LastApply => lastApply;
 
         public void Tick(double dt, List<EffectTickEvent> outEvents)
         {
@@ -108,6 +126,18 @@ namespace Echoes.Interop.Native
                 nuint count = 0;
                 var status = ShatterNative.shatter_effects_tick(raw, db.DangerousGetHandle(), dt, target.Handle.DangerousGetHandle(), &count);
                 NativeCallException.ThrowIfFailed("shatter_effects_tick", status);
+                byte staggerEnded;
+                bool c = false;
+                try
+                {
+                    actor.DangerousAddRef(ref c);
+                    NativeCallException.ThrowIfFailed("shatter_actor_tick",
+                        ShatterNative.shatter_actor_tick(actor.DangerousGetHandle(), dt, target.Handle.DangerousGetHandle(), &staggerEnded));
+                }
+                finally
+                {
+                    if (c) actor.DangerousRelease();
+                }
                 if (count == 0 || outEvents == null) return;
 
                 var n = checked((int)count);
@@ -185,6 +215,8 @@ namespace Echoes.Interop.Native
 
         public void Dispose()
         {
+            if (ReferenceEquals(target.Actor, actor)) target.Actor = null;
+            actor.Dispose();
             handle.Dispose();
             if (holdsDb)
             {
