@@ -160,7 +160,7 @@
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
       "estado": "andamento",
-      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131.",
+      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137).",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
@@ -171,14 +171,14 @@
           "arquivo": "EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity"
         }
       ],
-      "proximo": "Guerreiro dentro da Unity com o shader de rim."
+      "proximo": "Integrar os demais modelos conforme saírem do acabamento."
     },
     {
       "id": "arte_tecnica",
       "nome": "Arte técnica",
       "agente": "Artista técnico (Blender)",
       "estado": "andamento",
-      "resumo": "PR #1 no master. Caminho do acabamento aprovado: Guerreiro com 6 mil triângulos, pintado e com esqueleto. Em andamento: acabamento dos inimigos e das armas; TripoSG gerando armas, corpos, peças e cenário.",
+      "resumo": "PR #1 no master. Guerreiro pintado já está na Unity com o shader de rim. Em andamento: acabamento dos inimigos e das armas; o lote do TripoSG com corpos, peças e cenário está rodando.",
       "entregas": [
         {
           "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
@@ -197,7 +197,7 @@
           "arquivo": "docs/pesquisa/modelos_3d_gratis.md"
         }
       ],
-      "proximo": "Acabamento dos inimigos e das armas; Guerreiro na Unity com o shader de rim."
+      "proximo": "Acabamento dos inimigos e das armas; receber o lote do TripoSG (corpos, peças, cenário)."
     },
     {
       "id": "qa",
@@ -248,38 +248,206 @@
   ],
   "pendencias_dono": [
     {
-      "titulo": "Endgame numa etapa própria?",
-      "detalhe": "Pergunta aberta no fim do docs/15.",
+      "titulo": "Endgame: na etapa 4 ou numa etapa própria?",
+      "detalhe": "Decidir se o endgame inicial entra junto com o Ato I ou depois dele.",
+      "pergunta": "O endgame inicial (Carta dos Marcos, os 3 mapas de endgame e o chefe Predador dos Marcos) entra junto na etapa 4 (Elenco e Ato I) ou vira uma etapa própria depois do Ato I, antes do Acesso Antecipado?",
+      "contexto": [
+        "O plano do jogo promete o endgame já no lançamento em Acesso Antecipado.",
+        "A etapa 4 hoje já é grande: Arqueiro e Mago, os inimigos e os 3 chefes que faltam do Ato I, 7 áreas novas, livros, Sigilos, crafting com o Bram e a árvore passiva, para 8 a 12 horas de campanha.",
+        "Por isso o docs/15 deixou o endgame FORA da etapa 4 até você decidir. As artes do endgame (Ossário do Marco, Trilha de Cinza, Salão do Martelo, terrenos, inimigos e o Predador) já estão aprovadas."
+      ],
+      "opcoes": [
+        {
+          "nome": "A. Junto na etapa 4",
+          "efeito": "Uma etapa só, maior e mais longa. O Acesso Antecipado só começa depois que tudo estiver pronto e testado de uma vez."
+        },
+        {
+          "nome": "B. Etapa própria depois do Ato I",
+          "efeito": "O Ato I fecha e é testado primeiro; o endgame é balanceado em cima de um Ato I estável. Ganha um portão de teste a mais e o Acesso Antecipado vira a etapa 6."
+        },
+        {
+          "nome": "C. Fora do Acesso Antecipado",
+          "efeito": "O endgame entra como atualização depois do lançamento. Lança mais cedo, mas muda o que o plano promete e o lançamento sai com menos conteúdo."
+        }
+      ],
       "origem": "docs/15_etapas.md"
     },
     {
-      "titulo": "Demo do Next Fest",
-      "detalhe": "Pergunta aberta: fazer uma demo para o Next Fest?",
+      "titulo": "Vencer o Guardião sem loot na etapa 2?",
+      "detalhe": "Confirmar que a fatia da Cripta termina sem recompensa na tela.",
+      "pergunta": "Na etapa 2 (fatia jogável da Cripta), vencer o Guardião não vai entregar nenhum item na tela, porque o Único do Guardião e o inventário só chegam na etapa 3. Está certo assim?",
+      "contexto": [
+        "A etapa 2 serve para provar o combate: você joga a Cripta inteira com o Guerreiro final e vence o Guardião. O que conta é o teste de fogo de 30 segundos contra as Sentinelas.",
+        "Save, inventário, loot e o Único do Guardião estão marcados como FORA da etapa 2 e DENTRO da etapa 3.",
+        "Na prática, ao derrotar o Guardião aparece só a vitória (o domínio da Cripta), sem item caindo no chão."
+      ],
+      "opcoes": [
+        {
+          "nome": "A. Sim, fica assim",
+          "efeito": "A etapa 2 fecha mais rápido e o teste foca só no combate. A recompensa chega na etapa 3."
+        },
+        {
+          "nome": "B. Só o efeito do Único na etapa 2",
+          "efeito": "O Guardião deixa cair o Único como efeito visual (coluna de luz e som), sem inventário. Dá a sensação de recompensa no teste, mas puxa trabalho de arte e efeito para antes."
+        },
+        {
+          "nome": "C. Loot e inventário inteiros na etapa 2",
+          "efeito": "A etapa 2 fica bem maior e parte da etapa 3 vem antes."
+        }
+      ],
       "origem": "docs/15_etapas.md"
     },
     {
-      "titulo": "Calibração do idle na etapa 4",
-      "detalhe": "Pergunta aberta: confirmar que a calibração fica na etapa 4.",
+      "titulo": "Fazer uma demo para o Steam Next Fest?",
+      "detalhe": "Decidir se haverá demo e em que etapa ela entra.",
+      "pergunta": "Vamos fazer uma demo para o Steam Next Fest? Se sim, ela vira uma etapa própria, entra dentro da etapa 3 ou fica para depois?",
+      "contexto": [
+        "O Next Fest é o festival de demos da Steam. Acontece em fevereiro, junho e outubro, e os jogos que participam ganham visibilidade e wishlists.",
+        "O plano original previa uma demo com a Estrada das Lanternas e a Cripta, só com o Guerreiro e 4 habilidades. Era a fase decisiva: a reação do público à demo diria se vale investir os 6 a 9 meses seguintes. A meta era ter 2 mil wishlists antes do festival.",
+        "Hoje nenhuma das 5 etapas cobre a demo. Para publicá-la é preciso ter conta de desenvolvedor na Steam (Steam Direct), a página 'Em breve' no ar, a classificação indicativa e a declaração de uso de IA. O plano pede CNPJ antes disso."
+      ],
+      "opcoes": [
+        {
+          "nome": "A. Etapa própria entre a 3 e a 4",
+          "efeito": "Segue o plano: mede o interesse do público antes da parte mais cara. Obriga a adiantar CNPJ, Steam Direct e página da loja."
+        },
+        {
+          "nome": "B. Dentro da etapa 3",
+          "efeito": "A etapa 3 cresce: além do ciclo completo, precisa da Estrada das Lanternas, da página da loja e de um build para a Steam."
+        },
+        {
+          "nome": "C. Sem demo por enquanto",
+          "efeito": "Foco total em chegar ao Acesso Antecipado. Perde o termômetro de wishlists e a vitrine do festival. Dá para decidir de novo ao fim da etapa 3."
+        }
+      ],
       "origem": "docs/15_etapas.md"
     },
     {
-      "titulo": "Arte da cápsula da Steam",
-      "detalhe": "Pergunta aberta sobre a arte da cápsula da loja.",
+      "titulo": "Calibrar o idle na etapa 4 ou antes?",
+      "detalhe": "Decidir quando a expedição perde o selo 'Estimativa'.",
+      "pergunta": "A calibração do modo idle (os IdleProfiles e o teste de paridade, adiados na decisão P-3) fica na etapa 4, como está planejado, ou vem antes, na etapa 3, para a expedição já sair sem o selo 'Estimativa'?",
+      "contexto": [
+        "Na expedição idle, o herói 'joga sozinho' enquanto você está fora, e o jogo calcula o resultado. Para isso, cada habilidade tem um IdleProfile: números que dizem, por exemplo, quantos inimigos a Fenda de Pedra acerta em média ou quantos ataques a IA consegue esquivar.",
+        "O teste de paridade é um robô que joga a cena real e compara com o cálculo da expedição. A diferença precisa ficar abaixo de 10% (meta de 5% no Acesso Antecipado). É ele que calibra os números.",
+        "Na decisão P-3 (16/10), esse teste foi adiado. Até lá, os números são estimados à mão e a tela mostra o selo 'Estimativa'. A etapa 3 entrega a expedição com o selo; o critério de paridade está na etapa 4."
+      ],
+      "opcoes": [
+        {
+          "nome": "A. Mantém na etapa 4",
+          "efeito": "A etapa 3 fica mais curta e o teste do ciclo usa números estimados com selo. A calibração é feita uma vez só, quando as 3 classes já existirem."
+        },
+        {
+          "nome": "B. Antecipa para a etapa 3",
+          "efeito": "A expedição já sai confiável no teste do ciclo, mas calibra só o Guerreiro. Arqueiro e Mago precisarão de nova calibração na etapa 4, e o robô de teste vira trabalho extra mais cedo."
+        }
+      ],
       "origem": "docs/15_etapas.md"
     },
     {
-      "titulo": "Itens externos: CNPJ e Steam Direct",
-      "detalhe": "Providências fora do código, que dependem de você.",
+      "titulo": "Quem faz a capa e as cápsulas da Steam?",
+      "detalhe": "Artista, IA declarada ou mista.",
+      "pergunta": "A arte final da capa e das cápsulas da página da Steam (as imagens que aparecem na loja, na busca e na biblioteca) será feita por um artista contratado, por IA (declarada na Steam) ou de forma mista (IA como base e artista finalizando)?",
+      "contexto": [
+        "A cápsula é a imagem que mais pesa para alguém clicar no jogo. O plano diz que, se houver menos de 2 mil wishlists antes do Next Fest, a primeira coisa a trocar é a cápsula.",
+        "A política de IA do plano diz que capa e cápsulas 'de preferência não' devem ser feitas por IA.",
+        "Hoje as referências de arte aprovadas foram geradas com IA (gpt-image) e os modelos 3D com o TripoSG. Então o jogo já terá de declarar uso de IA generativa no questionário da Steam, seja qual for a escolha da cápsula."
+      ],
+      "opcoes": [
+        {
+          "nome": "A. Artista contratado",
+          "efeito": "Segue a política do plano e evita críticas a cápsula feita por IA. Tem custo e prazo, e exige contrato de cessão de direitos com o artista."
+        },
+        {
+          "nome": "B. IA declarada",
+          "efeito": "Rápido, barato e coerente com o resto da arte. Parte do público reage mal a cápsulas feitas por IA."
+        },
+        {
+          "nome": "C. Mista",
+          "efeito": "IA para compor a cena e artista pintando por cima. Custo intermediário; o uso de IA continua tendo de ser declarado."
+        }
+      ],
       "origem": "docs/15_etapas.md"
     },
     {
-      "titulo": "Mover o arquivo de paginação do Windows para o D:",
-      "detalhe": "O disco C está cheio; a paginação precisa sair dele.",
+      "titulo": "CNPJ, Steam Direct e registros: quem faz e quando?",
+      "detalhe": "Providências fora do código que bloqueiam a publicação.",
+      "pergunta": "Quem cuida das providências fora do código (abrir CNPJ, pagar o Steam Direct, preencher o formulário fiscal, registrar a marca e falar com contador e advogado) e quando isso começa?",
+      "contexto": [
+        "Essas providências não travam o desenvolvimento, mas travam a publicação. Sem elas, não há página na Steam nem venda.",
+        "CNPJ: o plano sugere MEI, ME ou EPP no Simples, com a CNAE de jogos confirmada por um contador. Ele é necessário para editais de fomento e contratos com freelancers, e facilita receber da Steam.",
+        "Steam Direct: US$ 100 por jogo, que voltam depois de US$ 1.000 em vendas. Formulário fiscal dos EUA: W-8BEN-E (empresa) ou W-8BEN (pessoa física), para evitar retenção maior.",
+        "Marca: registrar Echoes of the Shatter no INPI (e no USPTO, se o mercado americano importar). O programa também pode ser registrado no INPI como prova de autoria.",
+        "O plano pede contrato de cessão de direitos com toda pessoa que contribuir com arte, áudio ou código. Agora que há um sócio, isso vale também para o que ele produzir.",
+        "O plano manda abrir a conta e pôr a página 'Em breve' no ar cedo, porque as wishlists se acumulam com o tempo."
+      ],
+      "opcoes": [
+        {
+          "nome": "A. Você cuida de tudo",
+          "efeito": "Concentra as decisões, mas divide seu tempo com a produção do jogo."
+        },
+        {
+          "nome": "B. Seu sócio assume a parte burocrática",
+          "efeito": "Você acompanha a produção e ele toca CNPJ, Steam e registros."
+        },
+        {
+          "nome": "C. Contador e advogado",
+          "efeito": "Contador para CNPJ e impostos; advogado só para marca e contratos. Tem custo, mas reduz o risco de erro."
+        },
+        {
+          "nome": "Quando: começar já ou só na etapa 5",
+          "efeito": "Começar já põe a página no ar mais cedo e acumula wishlists. Deixar para a etapa 5 adia o gasto, mas a página entra tarde."
+        }
+      ],
+      "origem": "docs/15_etapas.md"
+    },
+    {
+      "titulo": "Mover a memória virtual do Windows para o D:",
+      "detalhe": "O C: está cheio; só você pode mudar essa configuração.",
+      "pergunta": "Você pode mover o arquivo de paginação do Windows (a memória virtual) do disco C: para o disco D:?",
+      "contexto": [
+        "O Windows usa um arquivo no C: (pagefile.sys, que ocupa vários GB) como extensão da memória RAM. Com o C: cheio, a Unity, o Blender e o gerador de modelos 3D podem travar ou fechar sozinhos por falta de memória.",
+        "Por ser uma configuração do sistema, a equipe do Claude não pode alterá-la. Só você pode.",
+        "Como fazer: Iniciar, digite 'Exibir configurações avançadas do sistema', depois Desempenho > Configurações > aba Avançado > Memória virtual > Alterar. Desmarque 'Gerenciar automaticamente', escolha C: e marque 'Sem arquivo de paginação' > Definir. Escolha D:, marque 'Tamanho gerenciado pelo sistema' > Definir > OK e reinicie o PC."
+      ],
+      "opcoes": [
+        {
+          "nome": "A. Tudo para o D:",
+          "efeito": "Libera todo o espaço do arquivo no C:. O D: precisa ter espaço livre sobrando."
+        },
+        {
+          "nome": "B. Pequeno no C: e o resto no D:",
+          "efeito": "Deixa 2 a 4 GB no C: (o Windows usa para relatórios de travamento) e coloca o principal no D:."
+        },
+        {
+          "nome": "C. Não mexer agora",
+          "efeito": "Libera espaço no C: de outra forma. O risco de travar por falta de memória continua."
+        }
+      ],
       "origem": "infraestrutura"
     },
     {
       "titulo": "História do jogo",
-      "detalhe": "Em criação por você.",
+      "detalhe": "Em criação por você; decidir como e até quando.",
+      "pergunta": "Como fica a criação da história do jogo: você continua escrevendo sozinho, divide com seu sócio ou quer que o agente de narrativa prepare uma proposta a partir do que já existe para vocês ajustarem?",
+      "contexto": [
+        "Você está criando a história. O plano e o docs/05 já trazem nomes e premissas (o Arquivo Vivo, os Marcos, a Ilsa, o Tico, o Bram, a Irmã Odete) que podem mudar.",
+        "A etapa 2 precisa só dos textos de combate e HUD. A etapa 3 precisa das falas da Ilsa e do relatório do Tico. A etapa 4 precisa da história do Ato I inteiro: falas, livros, Sigilos e os 4 chefes.",
+        "Por isso a história não trava nada agora, mas precisa estar definida antes da etapa 4 começar."
+      ],
+      "opcoes": [
+        {
+          "nome": "A. Você escreve sozinho",
+          "efeito": "A história fica inteira na sua mão. A equipe só adapta os textos ao formato do jogo."
+        },
+        {
+          "nome": "B. Você e seu sócio",
+          "efeito": "Divide o trabalho. Vale combinar quem tem a palavra final."
+        },
+        {
+          "nome": "C. Proposta do agente de narrativa",
+          "efeito": "O agente escreve uma versão a partir do que existe, e vocês cortam e ajustam. É mais rápido, mas a voz final depende da revisão de vocês."
+        }
+      ],
       "origem": "decisão do dono"
     }
   ],
@@ -476,8 +644,8 @@
       "feito": true
     },
     {
-      "titulo": "Guerreiro 3D final (caminho aprovado; falta integrar na Unity)",
-      "feito": false
+      "titulo": "Guerreiro 3D final na Unity com shader de rim",
+      "feito": true
     },
     {
       "titulo": "Fatia jogável da Cripta (Etapa 2)",

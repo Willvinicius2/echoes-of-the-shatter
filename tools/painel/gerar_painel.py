@@ -77,6 +77,9 @@ p{margin:4px 0}.mut{color:var(--clara)}.peq{font-size:.85rem}
 .faixa b{display:block;font-family:var(--f-tit);font-size:.85rem}
 .etapas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:14px}
 .etapa{background:var(--media);border-radius:4px;padding:8px 10px;font-size:.85rem}.etapa b{display:block;font-family:var(--f-tit);color:var(--ouro-claro)}.etapa.concluido{border-top:4px solid var(--verde)}.etapa.andamento{border-top:4px solid var(--ouro)}.etapa.pendente{border-top:4px dashed var(--clara)}
+.pend{grid-column:1/-1}.perg{font-weight:600;font-size:1.05rem;color:var(--ouro-claro);border-left:4px solid var(--lava);padding-left:10px;margin:8px 0}
+.pend summary{cursor:pointer;color:var(--ouro);font-size:.9rem}.pend details p{margin:6px 0}
+.opcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:10px 0}.opc{background:var(--media);border:1px solid var(--clara);border-radius:4px;padding:8px 10px;font-size:.9rem}.opc b{display:block;color:var(--ouro-claro);margin-bottom:2px}
 .cont{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px}
 .cont div{font-family:var(--f-num);font-size:1.7rem;color:var(--ouro-claro)}.cont span{display:block;font:.8rem var(--f-txt);color:var(--clara)}
 .pil{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;padding:2px 10px 2px 8px;border-radius:99px;background:var(--media);border:1px solid var(--clara);white-space:nowrap}
@@ -181,7 +184,16 @@ def main() -> None:
     # Aguardando
     o.append("<h2>Aguardando você</h2><div class='grade'>")
     for p in estado["pendencias_dono"]:
-        o.append(f'<article class="card alerta"><h3>{e(p["titulo"])}</h3><p>{e(p["detalhe"])}</p><span class="arq">{e(p["origem"])}</span></article>')
+        h = f'<article class="card alerta pend"><h3>{e(p["titulo"])}</h3>'
+        if p.get("pergunta"):
+            h += f'<p class="perg">{e(p["pergunta"])}</p>'
+        else:
+            h += f'<p>{e(p["detalhe"])}</p>'
+        if p.get("contexto"):
+            h += '<details open><summary>Contexto</summary>' + "".join(f"<p>{e(c)}</p>" for c in p["contexto"]) + "</details>"
+        if p.get("opcoes"):
+            h += '<div class="opcs">' + "".join(f'<div class="opc"><b>{e(op["nome"])}</b>{e(op["efeito"])}</div>' for op in p["opcoes"]) + "</div>"
+        o.append(h + f'<span class="arq">{e(p["origem"])}</span></article>')
     o.append("</div>")
 
     # Marcos
