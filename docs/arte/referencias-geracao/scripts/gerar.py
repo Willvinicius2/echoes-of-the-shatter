@@ -1,7 +1,8 @@
 import json, os, re, shutil, subprocess, sys, glob
 from concurrent.futures import ThreadPoolExecutor
 
-CODEX = os.path.expandvars(r"%LOCALAPPDATA%\OpenAI\Codex\bin\9614f1d9b40d9c4f\codex.exe")
+# o Codex se atualiza sozinho e troca a pasta do hash: usa o executavel mais novo
+CODEX = max(glob.glob(os.path.expandvars(r"%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe")), key=os.path.getmtime)
 PROMPTS = sys.argv[1]
 OUT = sys.argv[2]
 ONLY = set(sys.argv[3:])

@@ -1,0 +1,128 @@
+[
+ {
+  "id": "m01_guerreiro",
+  "titulo": "Folha de modelagem: guerreiro",
+  "tamanho": "1536x1024",
+  "prompt": "MODEL SHEET for 3D modeling (character turnaround) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the canonical, owner-approved design sheet of OUR game: copy the Warrior (golden visor helmet with red plume, red tabard over grey plate armor, brown boots and gloves) from it exactly (same silhouette, proportions, colors, materials, outfit). The other attached images are texture contact sheets of the style reference game: use them only for the finish quality. The character must look like a finished in-game 3D model of a polished stylized game: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes and soft baked light, chibi proportions as in the design sheet. It must NOT look like blocky primitives, cubes or a graybox. LAYOUT: three full-body views of the same character side by side in three equal-width columns, left to right: FRONT view, RIGHT SIDE profile view, BACK view. Orthographic look, camera at mid-body height, no perspective distortion; all three views at the same scale, aligned on the same ground line, whole body inside each column with a clear margin, feet visible. Neutral A-pose for rigging: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart, neutral face. Hands empty and open: do NOT hold weapons or shields (they are modeled separately). Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no grid, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, with only soft painted shading. Do not reproduce any existing character from the reference game one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/02_guerreiro.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/emissao_01.png"
+  ]
+ },
+ {
+  "id": "m02_arqueiro",
+  "titulo": "Folha de modelagem: arqueiro",
+  "tamanho": "1536x1024",
+  "prompt": "MODEL SHEET for 3D modeling (character turnaround) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the canonical, owner-approved design sheet of OUR game: copy the Archer (green hood with bone beak mask, feathered green cloak, leather outfit) from it exactly (same silhouette, proportions, colors, materials, outfit). The other attached images are texture contact sheets of the style reference game: use them only for the finish quality. The character must look like a finished in-game 3D model of a polished stylized game: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes and soft baked light, chibi proportions as in the design sheet. It must NOT look like blocky primitives, cubes or a graybox. LAYOUT: three full-body views of the same character side by side in three equal-width columns, left to right: FRONT view, RIGHT SIDE profile view, BACK view. Orthographic look, camera at mid-body height, no perspective distortion; all three views at the same scale, aligned on the same ground line, whole body inside each column with a clear margin, feet visible. Neutral A-pose for rigging: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart, neutral face. Hands empty and open: do NOT hold weapons or shields (they are modeled separately). Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no grid, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, with only soft painted shading. Do not reproduce any existing character from the reference game one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/03_arqueiro.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/emissao_01.png"
+  ]
+ },
+ {
+  "id": "m03_mago",
+  "titulo": "Folha de modelagem: mago",
+  "tamanho": "1536x1024",
+  "prompt": "MODEL SHEET for 3D modeling (character turnaround) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the canonical, owner-approved design sheet of OUR game: copy the Mage (ink-blue pointed hood with visible face, blue robe with gold trims; never a lantern) from it exactly (same silhouette, proportions, colors, materials, outfit). The other attached images are texture contact sheets of the style reference game: use them only for the finish quality. The character must look like a finished in-game 3D model of a polished stylized game: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes and soft baked light, chibi proportions as in the design sheet. It must NOT look like blocky primitives, cubes or a graybox. LAYOUT: three full-body views of the same character side by side in three equal-width columns, left to right: FRONT view, RIGHT SIDE profile view, BACK view. Orthographic look, camera at mid-body height, no perspective distortion; all three views at the same scale, aligned on the same ground line, whole body inside each column with a clear margin, feet visible. Neutral A-pose for rigging: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart, neutral face. Hands empty and open: do NOT hold weapons or shields (they are modeled separately). Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no grid, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, with only soft painted shading. Do not reproduce any existing character from the reference game one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/04_mago.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/emissao_01.png"
+  ]
+ },
+ {
+  "id": "m04_sentinela_oca",
+  "titulo": "Folha de modelagem: sentinela oca",
+  "tamanho": "1536x1024",
+  "prompt": "MODEL SHEET for 3D modeling (character turnaround) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the canonical, owner-approved design sheet of OUR game: copy the Sentinela Oca, the hollow armored knight in the top-left panel of the enemy sheet, normal variant only (leftmost figure: empty dark visor with two golden eyes, worn ivory plate armor, red cloth; no gold halo, no purple corruption) from it exactly (same silhouette, proportions, colors, materials, outfit). The other attached images are texture contact sheets of the style reference game: use them only for the finish quality. The character must look like a finished in-game 3D model of a polished stylized game: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes and soft baked light, chibi proportions as in the design sheet. It must NOT look like blocky primitives, cubes or a graybox. LAYOUT: three full-body views of the same character side by side in three equal-width columns, left to right: FRONT view, RIGHT SIDE profile view, BACK view. Orthographic look, camera at mid-body height, no perspective distortion; all three views at the same scale, aligned on the same ground line, whole body inside each column with a clear margin, feet visible. Neutral A-pose for rigging: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart, neutral face. Hands empty and open: do NOT hold weapons or shields (they are modeled separately). Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no grid, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, with only soft painted shading. Do not reproduce any existing character from the reference game one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/emissao_01.png"
+  ]
+ },
+ {
+  "id": "m05_cao_de_cinza",
+  "titulo": "Folha de modelagem: cao de cinza",
+  "tamanho": "1536x1024",
+  "prompt": "MODEL SHEET for 3D modeling (character turnaround) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the canonical, owner-approved design sheet of OUR game: copy the Cao-de-Cinza, the armored hound in the third panel of the top row of the enemy sheet, normal variant only (leftmost figure: pale grey hide, red and stone back plates, horned head; no gold, no purple) from it exactly (same silhouette, proportions, colors, materials, outfit). The other attached images are texture contact sheets of the style reference game: use them only for the finish quality. The character must look like a finished in-game 3D model of a polished stylized game: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes and soft baked light, chibi proportions as in the design sheet. It must NOT look like blocky primitives, cubes or a graybox. LAYOUT: three full-body views of the same character side by side in three equal-width columns, left to right: FRONT view, RIGHT SIDE profile view, BACK view. Orthographic look, camera at mid-body height, no perspective distortion; all three views at the same scale, aligned on the same ground line, whole body inside each column with a clear margin, feet visible. Neutral standing pose for rigging: four legs straight under the body, head forward, mouth closed, tail relaxed. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no grid, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, with only soft painted shading. Do not reproduce any existing character from the reference game one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/emissao_01.png"
+  ]
+ },
+ {
+  "id": "m06_arauto_de_pedra",
+  "titulo": "Folha de modelagem: arauto de pedra",
+  "tamanho": "1536x1024",
+  "prompt": "MODEL SHEET for 3D modeling (character turnaround) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the canonical, owner-approved design sheet of OUR game: copy the Arauto de Pedra, the stone golem construct in the first panel of the bottom row of the enemy sheet, normal variant only (leftmost figure: chunky ivory stone blocks with moss, one glowing orange eye in the chest-head; no gold halo, no purple) from it exactly (same silhouette, proportions, colors, materials, outfit). The other attached images are texture contact sheets of the style reference game: use them only for the finish quality. The character must look like a finished in-game 3D model of a polished stylized game: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes and soft baked light, chibi proportions as in the design sheet. It must NOT look like blocky primitives, cubes or a graybox. LAYOUT: three full-body views of the same character side by side in three equal-width columns, left to right: FRONT view, RIGHT SIDE profile view, BACK view. Orthographic look, camera at mid-body height, no perspective distortion; all three views at the same scale, aligned on the same ground line, whole body inside each column with a clear margin, feet visible. Neutral A-pose for rigging: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart, single glowing orange eye. Hands empty and open: do NOT hold weapons or shields (they are modeled separately). Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no grid, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, with only soft painted shading. Do not reproduce any existing character from the reference game one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/emissao_01.png"
+  ]
+ },
+ {
+  "id": "m07_arqueiro_espectral",
+  "titulo": "Folha de modelagem: arqueiro espectral",
+  "tamanho": "1536x1024",
+  "prompt": "MODEL SHEET for 3D modeling (character turnaround) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the canonical, owner-approved design sheet of OUR game: copy the Arqueiro Espectral, the teal hooded ghost archer in the third panel of the bottom row of the enemy sheet, normal variant only (leftmost figure: translucent teal tattered robe, glowing cyan eyes under the hood, wispy lower body) from it exactly (same silhouette, proportions, colors, materials, outfit). The other attached images are texture contact sheets of the style reference game: use them only for the finish quality. The character must look like a finished in-game 3D model of a polished stylized game: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes and soft baked light, chibi proportions as in the design sheet. It must NOT look like blocky primitives, cubes or a graybox. LAYOUT: three full-body views of the same character side by side in three equal-width columns, left to right: FRONT view, RIGHT SIDE profile view, BACK view. Orthographic look, camera at mid-body height, no perspective distortion; all three views at the same scale, aligned on the same ground line, whole body inside each column with a clear margin, feet visible. Neutral A-pose for rigging: floating upright a little above the ground line, arms angled about 40 degrees away from the body, palms down, neutral face. Hands empty and open: do NOT hold the bow (it is modeled separately). Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no grid, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, with only soft painted shading. Do not reproduce any existing character from the reference game one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/emissao_01.png"
+  ]
+ },
+ {
+  "id": "m08_guardiao_cripta",
+  "titulo": "Folha de modelagem: guardiao cripta",
+  "tamanho": "1536x1024",
+  "prompt": "MODEL SHEET for 3D modeling (character turnaround) for the action-RPG \"Echoes of the Shatter\". Attached image 1 is the canonical, owner-approved design sheet of OUR game: copy the boss Guardiao da Cripta in the top-left panel of the boss sheet (giant armored knight: cracked ivory stone plate armor with gold trims, golden visor with glowing yellow eye slit, big red plume and tattered red cape); it is about three times the height of a hero from it exactly (same silhouette, proportions, colors, materials, outfit). The other attached images are texture contact sheets of the style reference game: use them only for the finish quality. The character must look like a finished in-game 3D model of a polished stylized game: sculpted, rounded, chunky bevelled volumes with smooth silhouettes and hand-painted textures with visible brush strokes and soft baked light, chibi proportions as in the design sheet. It must NOT look like blocky primitives, cubes or a graybox. LAYOUT: three full-body views of the same character side by side in three equal-width columns, left to right: FRONT view, RIGHT SIDE profile view, BACK view. Orthographic look, camera at mid-body height, no perspective distortion; all three views at the same scale, aligned on the same ground line, whole body inside each column with a clear margin, feet visible. Neutral A-pose for rigging: standing straight, arms angled about 40 degrees away from the body, palms down, legs slightly apart, neutral face. Hands empty and open: do NOT hold the stone hammer or the shield (they are modeled separately). Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no grid, no frame, no UI, no VFX. Even neutral lighting so the colors read as albedo, with only soft painted shading. Do not reproduce any existing character from the reference game one-to-one.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/06_chefes_ato1.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_02.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_03.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/normais_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/emissao_01.png"
+  ]
+ },
+ {
+  "id": "m09_armas",
+  "titulo": "Folha de modelagem: armas e escudos",
+  "tamanho": "1536x1024",
+  "prompt": "PROP MODEL SHEET for 3D modeling for the action-RPG \"Echoes of the Shatter\". Attached images 1 to 4 are the canonical, owner-approved design sheets of OUR game (1 Warrior, 2 Archer, 3 Mage, 4 Act I bosses). Copy these weapons exactly from them and lay them out separately, each one isolated and fully visible, in a clean grid, each shown from the front and from the side: the Warrior's stone block hammer and stone-inlay kite shield; the Archer's bone recurve bow and quiver; the Mage's wooden staff with a floating blue crystal in a gold ring (never a lantern); the boss Guardiao da Cripta's giant cracked stone hammer and tall red shield with a gold sun emblem. Finished stylized game props: sculpted chunky bevelled forms with hand-painted textures and visible brush strokes, not blocky primitives. Orthographic look, plain flat uniform light grey background (#C8C8C8), no cast shadow, no text, no labels, no grid lines, no frame, even neutral lighting.",
+  "referencias": [
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/02_guerreiro.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/03_arqueiro.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/04_mago.png",
+   "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/06_chefes_ato1.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/magos_01.png",
+   "D:/openclaude/_trabalho-claude/echoes-arte/pranchas/inimigos_01.png"
+  ]
+ }
+]
