@@ -125,7 +125,12 @@ TEST(save_rf51_rf56_v1_sample_loads_with_matching_checksum) {
     EXPECT_EQ(s.characters[0].skillBar[0], std::string("skill.warrior.iron_cut"));
     EXPECT_EQ(s.characters[0].equipment[0]->baseId, std::string("item_base.iron_sword"));
     EXPECT_FALSE(s.characters[0].equipment[1].has_value());
-    EXPECT_EQ(s.characters[0].potions, static_cast<std::int64_t>(2));
+    // v1 -> v2: o antigo "potions" vira o slot da Vida; a Resguardo entra cheia ao normalizar.
+    ASSERT_TRUE(s.characters[0].potionSlots.size() == 1);
+    EXPECT_EQ(s.characters[0].potionSlots[0].potionId, std::string("potion.life"));
+    EXPECT_EQ(s.characters[0].potionSlots[0].charges, 2);
+    EXPECT_TRUE(s.characters[0].bossProgress.empty());
+    EXPECT_FALSE(s.characters[0].equipment[static_cast<std::size_t>(ItemSlot::Legs)].has_value());
     EXPECT_EQ(s.currencies[0].amount, static_cast<std::int64_t>(120));
     EXPECT_EQ(s.markerCharges, 3);
     EXPECT_EQ(s.nextItemUid, static_cast<std::uint64_t>(2));
@@ -135,13 +140,20 @@ TEST(save_rf51_rf56_v1_sample_loads_with_matching_checksum) {
     EXPECT_EQ(s.expeditions[0].request.rules.size(), static_cast<std::size_t>(2));
     EXPECT_ENUM_EQ(s.expeditions[0].request.rules[0].action, AiAction::UsePotion);
     EXPECT_NEAR(s.expeditions[0].request.rules[0].param, 0.35, 0.0);
-    // Sem perda: re-serializar dá o MESMO hash do arquivo (mesma forma canônica do validador Python).
-    json::Value orig, again;
-    ASSERT_TRUE(json::Parse(text, orig));
-    ASSERT_TRUE(json::Parse(SerializeJson(s, false), again));
-    EXPECT_EQ(again["sha256"].AsString(), orig["sha256"].AsString());
-    EXPECT_EQ(json::Serialize(again["data"], false), json::Serialize(orig["data"], false));
     EXPECT_TRUE(text.find("/Game/") == std::string::npos);  // só IDs
+    // O v1 migrado, regravado, é exatamente o save_v2.json publicado (forma canônica do core), e ele não perde nada.
+    const std::string v2Text = tu::ReadFile(tu::DataDir() + "/saves/save_v2.json");
+    ASSERT_TRUE(!v2Text.empty());
+    json::Value v2File, again;
+    ASSERT_TRUE(json::Parse(v2Text, v2File));
+    NormalizeSavePotions(tu::RichDb(), s);  // o v1 só tinha a Vida: a Resguardo entra cheia (o esquema v2 exige todos os slots)
+    ASSERT_TRUE(json::Parse(SerializeJson(s, true), again));
+    EXPECT_EQ(again["sha256"].AsString(), v2File["sha256"].AsString());
+    EXPECT_EQ(json::Serialize(again["data"], false), json::Serialize(v2File["data"], false));
+    SaveData v2;
+    ASSERT_TRUE(ParseJson(v2Text, v2, &err) == LoadStatus::Ok);
+    EXPECT_EQ(Canon(v2), Canon(s));
+    EXPECT_EQ(v2File["save_version"].AsInt(), static_cast<std::int64_t>(2));
     // A expedição gravada roda no simulador (pedido completo basta).
     const ContentDB& db = tu::RichDb();
     ExpeditionRequest req = s.expeditions[0].request;
@@ -173,7 +185,7 @@ TEST(save_rf52_altered_byte_fails_checksum_and_invalid_inputs) {
     ASSERT_TRUE(json::Parse(text, badData));
     json::Value env = json::Value::MakeObject();
     env.Set("format", json::Value(kSaveFormatTag));
-    env.Set("save_version", json::Value(1));
+    env.Set("save_version", json::Value(kCurrentSaveVersion));
     env.Set("sha256", json::Value(Sha256::HexDigest(json::Serialize(badData, false))));
     env.Set("data", badData);
     EXPECT_ENUM_EQ(ParseJson(json::Serialize(env, false), out, &err), LoadStatus::BadData);
@@ -181,7 +193,7 @@ TEST(save_rf52_altered_byte_fails_checksum_and_invalid_inputs) {
 
 TEST(save_future_version_is_refused_without_touching_the_file) {
     std::string text = SerializeJson(SampleSave(), true);
-    text = tu::Replace(text, "\"save_version\": 1,", "\"save_version\": 2,");
+    text = tu::Replace(text, "\"save_version\": 2,", "\"save_version\": 3,");
     SaveData out;
     EXPECT_ENUM_EQ(ParseJson(text, out), LoadStatus::TooNew);
     MemIO io;
@@ -207,13 +219,13 @@ TEST(save_rnf10_content_version_newer_than_game_is_refused) {
 }
 
 TEST(save_migration_machinery_and_registry) {
-    // Só existe a v1: nenhuma migração registrada (o exemplo potion_slots do 06_dados.md e ilustrativo, P10).
+    // Uma migração por versão publicada: v1 -> v2 (potion_slots, boss_progress, legs).
     EXPECT_EQ(Migrations().size(), static_cast<std::size_t>(kCurrentSaveVersion - 1));
     json::Value d = json::Value::MakeObject();
     d.Set("x", json::Value(1));
     std::string err;
     EXPECT_TRUE(Migrate(d, 1, 1, &err));
-    EXPECT_FALSE(Migrate(d, 1, 2, &err));  // falta o passo 1->2
+    EXPECT_FALSE(Migrate(d, kCurrentSaveVersion, kCurrentSaveVersion + 1, &err));  // falta o passo seguinte
     EXPECT_TRUE(err.find("missing migration") != std::string::npos);
     EXPECT_FALSE(Migrate(d, 2, 1, &err));
     EXPECT_FALSE(Migrate(d, 0, 2, &err));
@@ -223,9 +235,39 @@ TEST(save_migration_machinery_and_registry) {
         const std::string path = tu::DataDir() + "/saves/save_v" + std::to_string(v) + ".json";
         EXPECT_ENUM_EQ(ParseJson(tu::ReadFile(path), s, &err), LoadStatus::Ok);
     }
-    // Ferramenta de migração entre versões: o JSON do exemplo v1->v2 existe e é JSON válido (referência do Data Engineer).
+    // O resultado esperado do Data Engineer (migration/v1_to_v2_expected.json) tem o mesmo conteúdo da migração do core,
+    // campo a campo (a ordem das chaves do arquivo de referência pode diferir; comparamos o conteúdo).
     json::Value expected;
-    EXPECT_TRUE(json::Parse(tu::ReadFile(tu::DataDir() + "/saves/migration/v1_to_v2_expected.json"), expected));
+    ASSERT_TRUE(json::Parse(tu::ReadFile(tu::DataDir() + "/saves/migration/v1_to_v2_expected.json"), expected));
+    json::Value v1File;
+    ASSERT_TRUE(json::Parse(tu::ReadFile(tu::DataDir() + "/saves/save_v1.json"), v1File));
+    json::Value data = v1File["data"];
+    ASSERT_TRUE(Migrate(data, 1, 2, &err));
+    const json::Value& mc = data["characters"].At(0);
+    const json::Value& ec = expected["characters"].At(0);
+    EXPECT_EQ(mc["potion_slots"].At(0)["potion_id"].AsString(), ec["potion_slots"].At(0)["potion_id"].AsString());
+    EXPECT_EQ(mc["potion_slots"].At(0)["charges"].AsInt(), ec["potion_slots"].At(0)["charges"].AsInt());
+    EXPECT_EQ(mc["boss_progress"].Size(), ec["boss_progress"].Size());
+    EXPECT_TRUE(mc["equipment"].Has("legs") && mc["equipment"]["legs"].IsNull());
+    EXPECT_FALSE(mc.Has("potions"));
+    EXPECT_FALSE(data["expeditions"].At(0)["request"].Has("potion_heal_fraction"));
+    EXPECT_EQ(json::Serialize(mc["skills"], false), json::Serialize(ec["skills"], false));
+    EXPECT_EQ(json::Serialize(data["currencies"], false), json::Serialize(expected["currencies"], false));
+    // Migrar o pedido da expedição: o snapshot também ganha potion_slots e legs.
+    const json::Value& snapChar = data["expeditions"].At(0)["request"]["snapshot"]["character"];
+    EXPECT_TRUE(snapChar.Has("potion_slots") && snapChar.Has("boss_progress") && !snapChar.Has("potions"));
+    EXPECT_TRUE(snapChar["equipment"].Has("legs"));
+}
+
+// Regrava saves/save_v2.json (só ao mudar o formato de propósito): SHATTER_UPDATE_GOLDEN=1.
+TEST(save_update_v2_sample_when_requested) {
+    if (tu::GetEnv("SHATTER_UPDATE_GOLDEN").empty()) return;
+    SaveData s;
+    std::string err;
+    ASSERT_TRUE(ParseJson(tu::ReadFile(tu::DataDir() + "/saves/save_v1.json"), s, &err) == LoadStatus::Ok);
+    NormalizeSavePotions(tu::RichDb(), s);
+    std::ofstream out(std::filesystem::u8path(tu::DataDir() + "/saves/save_v2.json"), std::ios::binary | std::ios::trunc);
+    out << SerializeJson(s, true);
 }
 
 TEST(save_rf52_safe_write_keeps_exactly_three_backups) {

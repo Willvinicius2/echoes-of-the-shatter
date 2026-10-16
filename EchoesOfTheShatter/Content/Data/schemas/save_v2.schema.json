@@ -542,7 +542,7 @@
       ],
       "properties": {
         "save_version": {
-          "const": 1
+          "const": 2
         },
         "content_version": {
           "type": "integer",

@@ -1756,6 +1756,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_read(const shatter_db* db, 
                         "save content_version " + std::to_string(box->data.contentVersion) +
                             " is newer than the game content " + std::to_string(db->db.ContentVersion()));
     }
+    if (db != nullptr && db->ok) NormalizeSavePotions(db->db, box->data);  // save v1 migrado: completa os slots de poção
     *out = box.release();
     return SHATTER_OK;
 }

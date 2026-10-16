@@ -52,7 +52,12 @@ std::unique_ptr<ContentDB> FlatDb() {
 std::unique_ptr<ContentDB> HardDb() {
     std::string skills = tu::ReadFile(tu::RichDir() + "/skills.csv");
     skills = tu::Replace(skills, "skill.enemy.sentinel_strike,,,attack|melee|physical,melee,,8,", "skill.enemy.sentinel_strike,,,attack|melee|physical,melee,,30,");
-    return MakeDb({{"skills.csv", skills}});
+    // Poções que NÃO recarregam por tempo: "sem poção" continua sem poção durante toda a expedição.
+    const std::string potions =
+        "id,kind,fractionOfMaxLife,duration,maxCharges,rechargeSeconds,useTime,moveSpeedWhileUsing,globalLockout,refillOnEliteKill,hotkeySlot\n"
+        "potion.life,heal,0.4,,3,1000000,0.4,0.5,1.0,false,1\n"
+        "potion.ward,barrier,0.3,6,2,1000000,0.4,0.5,1.0,false,2\n";
+    return MakeDb({{"skills.csv", skills}, {"potions.csv", potions}});
 }
 
 ExpeditionProgress RunChunks(const ContentDB& db, const ExpeditionRequest& req, std::uint32_t chunk) {

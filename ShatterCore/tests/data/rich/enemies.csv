@@ -1,4 +1,5 @@
-id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange
-enemy.hollow_sentinel,family.soldier_echo,life:80:8|armor:10:0,10,2,loot.crypt.common,false,false,2,6
-enemy.ash_spitter,family.ash,life:50:5,12,2,loot.crypt.common,false,false,2,9
-enemy.crypt_guardian,family.boss,life:600:60|armor:30:0,100,10,loot.crypt.guardian,true,false,2,10
+id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId
+enemy.hollow_sentinel,family.soldier_echo,life:80:8|armor:10:0,10,2,loot.crypt.common,false,false,2,6,,,,,,,
+enemy.ash_spitter,family.ash,life:50:5,12,2,loot.crypt.common,false,false,2,9,,,,,,,
+enemy.crypt_guardian,family.boss,life:600:60|armor:30:0,100,10,loot.crypt.guardian,true,false,2,10,true,120,60,75,1.5,8,
+enemy.shielded_sentinel,family.soldier_echo,life:120:16|armor:10:0,30,4,loot.crypt.common,false,true,2,6,true,,,,1.5,4,modifier.elite.shield

@@ -197,6 +197,11 @@ struct ExpeditionStartParams {
 StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionStartParams& p,
                            std::vector<ContentId>* blockingIds = nullptr);
 
+// ADIÇÃO (save v2): completa os espaços de poção de cada personagem (e do snapshot de cada expedição) com os do
+// potions.csv, na ordem do CSV: poção ausente entra cheia, ID que não existe mais sai, cargas acima do máximo são cortadas.
+// Um save migrado do v1 só tem o slot da Vida até passar por aqui (shatter_save_read chama quando recebe o banco).
+void NormalizeSavePotions(const ContentDB& db, SaveData& s);
+
 // ADIÇÃO (docs/11, M-03): a seed da expedição nasce no core, derivada do estado do save (contador de uid, último ponto
 // visto, personagem, nº de expedições) e do início; o chamador não escolhe a seed (não dá para "provar" seeds).
 std::uint64_t DeriveExpeditionSeed(const SaveData& s, std::size_t characterIndex, UnixSeconds startUtc);

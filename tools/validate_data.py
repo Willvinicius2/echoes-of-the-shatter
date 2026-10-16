@@ -1229,6 +1229,8 @@ def migrate_1_to_2(data: dict) -> dict:
                 e2["request"] = req
                 exps.append(e2)
             new[k] = exps
+        elif k == "save_version":
+            new[k] = 2
         else:
             new[k] = v
     return new

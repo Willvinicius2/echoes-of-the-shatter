@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "shatter/combat.h"
 #include "shatter/sha256.h"
 
 namespace shatter {
@@ -601,6 +602,15 @@ StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionSta
 // ---------------------------------------------------------------------------
 // Coleta sem duplicar
 // ---------------------------------------------------------------------------
+void NormalizeSavePotions(const ContentDB& db, SaveData& s) {
+    if (db.Potions().empty()) return;
+    for (CharacterState& c : s.characters) c.potionSlots = MakePotionBelt(db, c.potionSlots).slots;
+    for (SavedExpedition& e : s.expeditions) {
+        CharacterState& c = e.request.snapshot.character;
+        c.potionSlots = MakePotionBelt(db, c.potionSlots).slots;
+    }
+}
+
 std::uint64_t DeriveExpeditionSeed(const SaveData& s, std::size_t characterIndex, UnixSeconds startUtc) {
     std::uint64_t h = Mix64(0x45434F53454544ull ^ s.nextItemUid);
     h = Mix64(h ^ static_cast<std::uint64_t>(startUtc));

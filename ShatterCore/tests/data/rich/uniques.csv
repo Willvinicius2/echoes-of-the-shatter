@@ -1,3 +1,3 @@
-id,baseId,fixedMods,ruleEffectId,idleSupported
-unique.bell_warden_blade,item_base.iron_sword,damage:increased:0.2:melee,effect.block_spark,false
-unique.idle_ready_helm,item_base.bone_helm,armor:flat:20,,true
+id,baseId,fixedMods,ruleEffectId,idleSupported,idleParitySampleSize,idleCalibration,visualSetId
+unique.bell_warden_blade,item_base.iron_sword,damage:increased:0.2:melee,effect.block_spark,false,,,
+unique.idle_ready_helm,item_base.bone_helm,armor:flat:20,,true,20,manual_estimate,
