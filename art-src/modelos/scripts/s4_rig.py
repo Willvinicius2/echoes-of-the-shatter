@@ -15,6 +15,10 @@ cfg = load_cfg()
 gb_lib, gb_rig = import_graybox()
 bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game.blend"))
 ob = bpy.data.objects["game"]
+if cfg["kind"] == "static":          # arma: malha estatica, sem esqueleto
+    bpy.ops.wm.save_as_mainfile(filepath=wpath(cfg, "game_rig.blend"), compress=True)
+    print("S4 static: sem esqueleto")
+    raise SystemExit(0)
 # modo por peca: o esqueleto e ajustado uma vez ao corpo base; as pecas apontam para o mesmo json de marcos
 markers = load_json(cfg["markers_from"])["markers"] if cfg.get("markers_from") else cfg["markers"]
 M = {k: Vector(v) for k, v in markers.items()}
@@ -22,6 +26,30 @@ M = {k: Vector(v) for k, v in markers.items()}
 
 def mir(v):
     return Vector((-v.x, v.y, v.z))
+
+
+def bone_defs_quad():
+    """Quadrupede simples (~22 ossos, sem Humanoid): root, Pelvis, Spine, Chest, Neck, Head, Tail1-3, 4 pernas de 3 ossos."""
+    B = []
+    add = lambda n, p, h, t, d=True: B.append((n, p, tuple(h), tuple(t), d))
+    add("root", None, (0, 0, 0), (0, 0, 0.1), False)
+    add("Pelvis", "root", M["pelvis"], M["spine"])
+    add("Spine", "Pelvis", M["spine"], M["chest"])
+    add("Chest", "Spine", M["chest"], M["neck"])
+    add("Neck", "Chest", M["neck"], M["head"])
+    add("Head", "Neck", M["head"], M["head_tip"])
+    add("Tail1", "Pelvis", M["tail0"], M["tail1"])
+    add("Tail2", "Tail1", M["tail1"], M["tail2"])
+    add("Tail3", "Tail2", M["tail2"], M["tail_tip"])
+    for side, f in (("Left", lambda v: v), ("Right", mir)):
+        add(f"{side}FrontUpperLeg", "Chest", f(M["f_shoulder"]), f(M["f_elbow"]))
+        add(f"{side}FrontLowerLeg", f"{side}FrontUpperLeg", f(M["f_elbow"]), f(M["f_paw"]))
+        add(f"{side}FrontPaw", f"{side}FrontLowerLeg", f(M["f_paw"]), f(M["f_toe"]))
+        add(f"{side}HindUpperLeg", "Pelvis", f(M["h_hip"]), f(M["h_knee"]))
+        add(f"{side}HindLowerLeg", f"{side}HindUpperLeg", f(M["h_knee"]), f(M["h_paw"]))
+        add(f"{side}HindPaw", f"{side}HindLowerLeg", f(M["h_paw"]), f(M["h_toe"]))
+    add("socket_fx_ground", "root", (0, 0, 0), (0, -0.10, 0), False)
+    return B
 
 
 def bone_defs():
@@ -52,11 +80,22 @@ def bone_defs():
     return B
 
 
-gb_rig.bone_defs = bone_defs
+if cfg["kind"] == "quadruped":
+    gb_rig.bone_defs = bone_defs_quad
+else:
+    _full = bone_defs
+    def _no_legs():
+        d = _full()
+        if not cfg.get("no_legs"):
+            return d
+        drop = {"UpperLeg", "LowerLeg", "Foot", "Toes"}
+        return [b for b in d if not any(b[0].endswith(x) for x in drop)]
+    gb_rig.bone_defs = _no_legs
 coll = bpy.context.scene.collection
 arm = gb_rig.make_armature(coll, turn=False)
-arm.name = gb_rig.RIG_NAME
-arm.data.name = gb_rig.RIG_NAME
+rig_name = "Rig_Quadruped_Simple" if cfg["kind"] == "quadruped" else gb_rig.RIG_NAME
+arm.name = rig_name
+arm.data.name = rig_name
 
 # pesos automaticos
 bpy.ops.object.select_all(action='DESELECT')
@@ -100,7 +139,7 @@ for v in me.vertices:
     n = ob.vertex_groups[g.group].name
     dom[n] = dom.get(n, 0) + 1
 rep = dict(bones=len(arm.data.bones), deform_bones=len(deform), max_influences=maxinf, unweighted_fixed=unw,
-           dominant_bone_vertices=dom, humanoid=gb_rig.humanoid_check([b.name for b in arm.data.bones]))
+           dominant_bone_vertices=dom, humanoid=(gb_rig.humanoid_check([b.name for b in arm.data.bones]) if cfg["kind"] == "humanoid" else None))
 save_json(wpath(cfg, "rig_report.json"), rep)
 bpy.ops.wm.save_as_mainfile(filepath=wpath(cfg, "game_rig.blend"), compress=True)
 print("S4", rep)

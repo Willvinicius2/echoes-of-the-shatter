@@ -1,0 +1,44 @@
+{
+  "id": "escudo_guardiao",
+  "asset": "SM_Weapon_GuardianShield",
+  "kind": "static",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/escudo_guardiao/escudo_guardiao.glb",
+  "single_view": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/escudo_guardiao/escudo_guardiao_entrada_rgba.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/escudo_guardiao/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/escudo_guardiao/final",
+  "body_height_m": 1.8,
+  "pivot_frac": 0.5,
+  "tris_target": 1200,
+  "tex_size": 512,
+  "tris_range": [
+    300,
+    1200
+  ],
+  "min_component_ratio": 0.05,
+  "mesh_name": "SM_Weapon_GuardianShield",
+  "bake_shards": 1,
+  "sat_keep_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      35,
+      55
+    ]
+  ],
+  "tint_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ]
+}

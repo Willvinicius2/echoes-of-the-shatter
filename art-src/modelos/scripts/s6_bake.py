@@ -19,43 +19,11 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 cfg = load_cfg()
-SIZE = 1024
-NSH = int(cfg.get("bake_shards", 3))
+SIZE = cfg["tex_size"]
+NSH = int(cfg.get("bake_shards", 1))
 shard = os.environ.get("MDL_SHARD")
 
-if shard is None:
-    # --- processo principal: lanca os fragmentos e junta
-    t0 = time.time()
-    procs = []
-    for i in range(NSH):
-        env = dict(os.environ, MDL_SHARD=f"{i}/{NSH}")
-        procs.append(subprocess.Popen([bpy.app.binary_path, "-b", "--factory-startup", "--python-exit-code", "1", "-P",
-                                       os.path.abspath(__file__), "--", cfg["_cfg_path"]], env=env,
-                                      stdout=open(wpath(cfg, f"_shard_{i}.log"), "w"), stderr=subprocess.STDOUT))
-    bad = [i for i, p in enumerate(procs) if p.wait() != 0]
-    if bad:
-        print(open(wpath(cfg, f"_shard_{bad[0]}.log")).read()[-1500:])
-        raise SystemExit(f"fragmentos com erro: {bad}")
-    bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game_uv.blend"))
-    g = texel_geometry(bpy.data.objects["game"], SIZE)
-    valid = g["valid"]
-    ys, xs = np.where(valid)
-    ao = np.ones((SIZE, SIZE), np.float32); cav = np.full((SIZE, SIZE), 0.5, np.float32)
-    for i in range(NSH):
-        with np.load(wpath(cfg, f"_shard_{i}.npz")) as d:
-            sel = np.arange(len(ys))[i::NSH]
-            ao[ys[sel], xs[sel]] = d["ao"]; cav[ys[sel], xs[sel]] = d["cav"]
-        os.remove(wpath(cfg, f"_shard_{i}.npz")); os.remove(wpath(cfg, f"_shard_{i}.log"))
-    ao3, _ = dilate(np.repeat(ao[..., None], 3, -1), valid, 16)
-    cav3, _ = dilate(np.repeat(cav[..., None], 3, -1), valid, 16)
-    save_png(np.clip(ao3, 0, 1).astype(np.float32), wpath(cfg, "bake_ao.png"))
-    save_png(np.clip(cav3, 0, 1).astype(np.float32), wpath(cfg, "bake_cavity.png"))
-    rep = dict(ao_mean=float(ao[valid].mean()), ao_min=float(ao[valid].min()), cav_mean=float(cav[valid].mean()),
-               cav_std=float(cav[valid].std()), texels=int(valid.sum()), seconds=round(time.time() - t0))
-    save_json(wpath(cfg, "bake_report.json"), rep)
-    print("S6", rep)
-else:
-    si, sn = (int(x) for x in shard.split("/"))
+def run_shard(si, sn):
     bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game_uv.blend"))
     low = bpy.data.objects["game"]
     g = texel_geometry(low, SIZE)
@@ -65,8 +33,9 @@ else:
     ys, xs = np.where(g["valid"])
     sel = np.arange(len(ys))[si::sn]
     NR = cfg.get("ao_rays", 24)
-    dist = cfg.get("ao_distance", 0.25)
-    rad = cfg.get("cav_radius", 0.012)
+    K = cfg["size_scale"]
+    dist = cfg.get("ao_distance", 0.25) * K
+    rad = cfg.get("cav_radius", 0.012) * K
     NC = 8
     rng = np.random.default_rng(100 + si)
     # hemisferio com distribuicao de cosseno (espiral de Fibonacci), em espaco tangente
@@ -79,9 +48,9 @@ else:
     for m, s in enumerate(sel):
         y, x = ys[s], xs[s]
         p, n = Vector(g["pos"][y, x]), Vector(g["nrm"][y, x])
-        h = bvh.ray_cast(p + n * 0.05, -n, 0.12)
+        h = bvh.ray_cast(p + n * 0.05 * K, -n, 0.12 * K)
         if h[0] is None:
-            h = bvh.find_nearest(p, 0.08)
+            h = bvh.find_nearest(p, 0.08 * K)
         if h[0] is None:
             ao[m] = 1.0; cav[m] = 0.5
             continue
@@ -89,7 +58,7 @@ else:
         if hn.dot(n) < 0:
             hn = -hn
         o0 = o
-        o = o + hn * 0.0015
+        o = o + hn * 0.0015 * K
         t = hn.cross(Vector((0, 0, 1)) if abs(hn.z) < 0.9 else Vector((1, 0, 0))).normalized()
         b = hn.cross(t)
         a = rng.uniform(0, 2 * math.pi); ca, sa = math.cos(a), math.sin(a)
@@ -101,8 +70,45 @@ else:
         ao[m] = 1.0 - hit / NR
         hs = 0.0
         for cx, cy in ring:
-            q = o + (t * cx + b * cy) * rad + hn * 0.01
-            r = bvh.ray_cast(q, -hn, 0.04)
-            hs += (r[0] - o0).dot(hn) if r[0] is not None else -0.01
+            q = o + (t * cx + b * cy) * rad + hn * 0.01 * K
+            r = bvh.ray_cast(q, -hn, 0.04 * K)
+            hs += (r[0] - o0).dot(hn) if r[0] is not None else -0.01 * K
         cav[m] = min(1.0, max(0.0, 0.5 + 0.5 * (hs / NC) / (rad * 0.5)))
     np.savez(wpath(cfg, f"_shard_{si}.npz"), ao=ao, cav=cav)
+
+if shard is not None:
+    run_shard(*[int(x) for x in shard.split("/")])
+else:
+    # processo principal = fragmento 0; lanca os demais (no maximo 2 processos do Blender ao mesmo tempo)
+    wait_free_virtual(6.0)
+    t0 = time.time()
+    procs = []
+    for i in range(1, NSH):
+        env = dict(os.environ, MDL_SHARD=f"{i}/{NSH}")
+        procs.append(subprocess.Popen([bpy.app.binary_path, "-b", "--factory-startup", "--python-exit-code", "1", "-P",
+                                       os.path.abspath(__file__), "--", cfg["_cfg_path"]], env=env,
+                                      stdout=open(wpath(cfg, f"_shard_{i}.log"), "w"), stderr=subprocess.STDOUT))
+    run_shard(0, NSH)
+    bad = [i + 1 for i, p in enumerate(procs) if p.wait() != 0]
+    if bad:
+        print(open(wpath(cfg, f"_shard_{bad[0]}.log")).read()[-1500:])
+        raise SystemExit(f"fragmentos com erro: {bad}")
+    bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game_uv.blend"))
+    g = texel_geometry(bpy.data.objects["game"], SIZE)
+    valid = g["valid"]
+    ys, xs = np.where(valid)
+    ao = np.ones((SIZE, SIZE), np.float32); cav = np.full((SIZE, SIZE), 0.5, np.float32)
+    for i in range(NSH):
+        with np.load(wpath(cfg, f"_shard_{i}.npz")) as d:
+            sel = np.arange(len(ys))[i::NSH]
+            ao[ys[sel], xs[sel]] = d["ao"]; cav[ys[sel], xs[sel]] = d["cav"]
+        os.remove(wpath(cfg, f"_shard_{i}.npz"))
+        if i: os.remove(wpath(cfg, f"_shard_{i}.log"))
+    ao3, _ = dilate(np.repeat(ao[..., None], 3, -1), valid, 16)
+    cav3, _ = dilate(np.repeat(cav[..., None], 3, -1), valid, 16)
+    save_png(np.clip(ao3, 0, 1).astype(np.float32), wpath(cfg, "bake_ao.png"))
+    save_png(np.clip(cav3, 0, 1).astype(np.float32), wpath(cfg, "bake_cavity.png"))
+    rep = dict(ao_mean=float(ao[valid].mean()), ao_min=float(ao[valid].min()), cav_mean=float(cav[valid].mean()),
+               cav_std=float(cav[valid].std()), texels=int(valid.sum()), seconds=round(time.time() - t0))
+    save_json(wpath(cfg, "bake_report.json"), rep)
+    print("S6", rep)

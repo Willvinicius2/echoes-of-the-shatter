@@ -1,0 +1,109 @@
+{
+  "id": "m06_arauto_de_pedra",
+  "asset": "SK_Enemy_StoneHerald",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/m06_arauto_de_pedra/m06_arauto_de_pedra.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m06_arauto_de_pedra.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/m06_arauto_de_pedra/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/m06_arauto_de_pedra/final",
+  "height_ref": "bbox",
+  "min_component_ratio": 0.005,
+  "mesh_name": "SK_Enemy_StoneHerald_Body",
+  "body_height_m": 1.9,
+  "tris_target": 3200,
+  "tex_size": 512,
+  "tris_range": [
+    1500,
+    3500
+  ],
+  "tint_hues": [],
+  "cloth_hues": [],
+  "bake_shards": 1,
+  "emissive_hues": [
+    [
+      20,
+      45
+    ]
+  ],
+  "markers": {
+    "hips": [
+      0,
+      0.02,
+      0.7
+    ],
+    "spine": [
+      0,
+      0.02,
+      0.92
+    ],
+    "chest": [
+      0,
+      0.02,
+      1.2
+    ],
+    "neck": [
+      0,
+      0.0,
+      1.55
+    ],
+    "head": [
+      0,
+      -0.02,
+      1.62
+    ],
+    "head_top": [
+      0,
+      -0.02,
+      1.9
+    ],
+    "shoulder": [
+      0.15,
+      0.0,
+      1.4
+    ],
+    "upperarm": [
+      0.52,
+      0.0,
+      1.46
+    ],
+    "lowerarm": [
+      0.81,
+      -0.15,
+      0.95
+    ],
+    "hand": [
+      0.92,
+      -0.3,
+      0.71
+    ],
+    "hand_tip": [
+      0.92,
+      -0.33,
+      0.5
+    ],
+    "upperleg": [
+      0.34,
+      0.08,
+      0.62
+    ],
+    "lowerleg": [
+      0.36,
+      0.08,
+      0.36
+    ],
+    "foot": [
+      0.36,
+      0.1,
+      0.12
+    ],
+    "toes": [
+      0.36,
+      -0.08,
+      0.06
+    ],
+    "toe_tip": [
+      0.36,
+      -0.28,
+      0.02
+    ]
+  }
+}

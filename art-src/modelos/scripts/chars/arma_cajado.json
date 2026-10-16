@@ -1,0 +1,41 @@
+{
+  "id": "cajado",
+  "asset": "SM_Weapon_Staff",
+  "kind": "static",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/cajado/cajado.glb",
+  "single_view": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/cajado/cajado_entrada_rgba.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/cajado/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/cajado/final",
+  "body_height_m": 1.5,
+  "pivot_frac": 0.4,
+  "tris_target": 900,
+  "tex_size": 256,
+  "tris_range": [
+    300,
+    1200
+  ],
+  "min_component_ratio": 0.005,
+  "mesh_name": "SM_Weapon_Staff",
+  "bake_shards": 1,
+  "sat_keep_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      35,
+      55
+    ]
+  ],
+  "emissive_hues": [
+    [
+      190,
+      230
+    ]
+  ],
+  "emissive_v": 0.8
+}

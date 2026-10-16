@@ -18,6 +18,9 @@ def load_cfg(argv=None):
     cfg = json.load(open(path, encoding="utf-8"))
     cfg["_cfg_path"] = path
     cfg.update(json.loads(os.environ.get("MDL_OVERRIDE", "{}")))   # ajuste pontual sem editar o json
+    cfg.setdefault("kind", "humanoid")          # humanoid | quadruped | static (arma)
+    cfg.setdefault("tex_size", 1024)
+    cfg.setdefault("size_scale", cfg["body_height_m"] / 1.5)   # distancias em metros foram afinadas para o heroi de 1,50 m
     for k in ("work_dir", "final_dir"):
         os.makedirs(cfg[k], exist_ok=True)
     return cfg
@@ -52,3 +55,23 @@ def import_graybox():
         sys.path.insert(0, GRAYBOX_SCRIPTS)
     import gb_lib, gb_rig
     return gb_lib, gb_rig
+
+
+def wait_free_virtual(gb, timeout_s=3600):
+    """Espera a memoria virtual livre (commit disponivel = FreeVirtualMemory do WMI) passar de gb GB (Windows)."""
+    import ctypes, time
+    class MS(ctypes.Structure):
+        _fields_ = [("dwLength", ctypes.c_ulong), ("load", ctypes.c_ulong)] + [
+            (n, ctypes.c_ulonglong) for n in ("totPhys", "availPhys", "totPage", "availPage", "totVirt", "availVirt", "ext")]
+    t0 = time.time()
+    while True:
+        m = MS(); m.dwLength = ctypes.sizeof(MS)
+        try:
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m))
+        except Exception:
+            return
+        free = (m.availPage & 0xFFFFFFFFFFFFFFFF) / 2**30
+        if free >= gb or time.time() - t0 > timeout_s:
+            return free
+        print(f"aguardando memoria virtual livre {free:.1f} GB < {gb} GB", flush=True)
+        time.sleep(20)

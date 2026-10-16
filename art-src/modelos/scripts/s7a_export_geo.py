@@ -11,7 +11,7 @@ cfg = load_cfg()
 bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game_uv.blend"))
 ob = bpy.data.objects["game"]
 v, f = mesh_arrays(ob)
-g = texel_geometry(ob, 1024)
+g = texel_geometry(ob, cfg["tex_size"])
 np.savez_compressed(wpath(cfg, "game_geo.npz"), verts=v.astype(np.float32), faces=f, valid=g["valid"],
                     pos=g["pos"].astype(np.float32), nrm=g["nrm"].astype(np.float32), tri=g["tri"].astype(np.int32))
 print("S7a ok", v.shape, f.shape, int(g["valid"].sum()))

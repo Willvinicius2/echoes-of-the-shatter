@@ -14,7 +14,6 @@ cfg = load_cfg()
 gb_lib, gb_rig = import_graybox()
 bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game_uv.blend"))
 ob = bpy.data.objects["game"]
-arm = bpy.data.objects[gb_rig.RIG_NAME]
 ob.name = cfg.get("mesh_name", cfg["asset"] + "_Body"); ob.data.name = ob.name
 tex = cfg["asset"][3:]
 
@@ -30,25 +29,28 @@ nt.links.new(node.outputs['Color'], bsdf.inputs['Base Color'])
 bsdf.inputs['Roughness'].default_value = 1.0
 ob.data.materials.clear(); ob.data.materials.append(mat)
 
-# teste de pose
-rest = evaluated_coords(ob)
-apply_test_pose(arm)
-pos = evaluated_coords(ob)
+# teste de pose (so com esqueleto)
+pose = None
+arm = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
+if arm is not None:
+    rest = evaluated_coords(ob)
+    test_pose(arm, cfg["kind"])
+    pos = evaluated_coords(ob)
+    me = ob.data
+    e = np.empty(len(me.edges) * 2, dtype=np.int64); me.edges.foreach_get('vertices', e); e = e.reshape(-1, 2)
+    r = np.linalg.norm(pos[e[:, 0]] - pos[e[:, 1]], axis=1) / np.maximum(np.linalg.norm(rest[e[:, 0]] - rest[e[:, 1]], axis=1), 1e-6)
+    pose = dict(edge_stretch_max=round(float(r.max()), 3), edge_stretch_p99=round(float(np.percentile(r, 99)), 3),
+                edges_over_1_5=int((r > 1.5).sum()), edges_over_2=int((r > 2).sum()), edges=int(len(r)),
+                note="1 = sem esticar; aresta acima de 2 = possivel rasgo")
+    save_json(wpath(cfg, "pose_report.json"), pose)
+    clear_pose(arm)
 me = ob.data
-e = np.empty(len(me.edges) * 2, dtype=np.int64); me.edges.foreach_get('vertices', e); e = e.reshape(-1, 2)
-r = np.linalg.norm(pos[e[:, 0]] - pos[e[:, 1]], axis=1) / np.maximum(np.linalg.norm(rest[e[:, 0]] - rest[e[:, 1]], axis=1), 1e-6)
-pose = dict(edge_stretch_max=round(float(r.max()), 3), edge_stretch_p99=round(float(np.percentile(r, 99)), 3),
-            edges_over_1_5=int((r > 1.5).sum()), edges_over_2=int((r > 2).sum()), edges=int(len(r)),
-            note="1 = sem esticar; aresta acima de 2 = possivel rasgo")
-# comprimento medio de aresta (esticamento absoluto numa regiao de dobra pode vir de aresta muito curta)
-save_json(wpath(cfg, "pose_report.json"), pose)
-clear_pose(arm)
 
 # FBX
 for o in bpy.context.scene.objects:
     o.select_set(False)
 fbx = fpath(cfg, cfg["asset"] + ".fbx")
-gb_rig.export_fbx_rigged(arm, [ob], fbx)
+(gb_rig.export_fbx_rigged(arm, [ob], fbx) if arm is not None else gb_lib.export_fbx([ob], fbx))
 bpy.ops.wm.save_as_mainfile(filepath=fpath(cfg, cfg["asset"] + ".blend"), compress=True)
 save_json(wpath(cfg, "export_report.json"), dict(fbx=fbx, pose=pose, tris=len(me.polygons)))
-print("S8", pose)
+print("S8", pose, len(me.polygons))

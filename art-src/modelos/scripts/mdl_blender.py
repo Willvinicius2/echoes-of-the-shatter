@@ -117,8 +117,10 @@ def load_png(path):
 
 
 def rot_bone_world(arm, name, axis, deg):
-    """Gira o osso em torno do eixo do mundo, pelo pivo na cabeca do osso (filhos acompanham)."""
+    """Gira o osso em torno do eixo do mundo, pelo pivo na cabeca do osso (filhos acompanham). Osso ausente: ignora."""
     import mathutils
+    if name not in arm.pose.bones:
+        return
     pb = arm.pose.bones[name]
     h = arm.matrix_world @ pb.head
     R = mathutils.Matrix.Translation(h) @ mathutils.Matrix.Rotation(math.radians(deg), 4, Vector(axis)) \
@@ -142,6 +144,28 @@ def apply_test_pose(arm):
     rot_bone_world(arm, "RightUpperLeg", X, 22)
     rot_bone_world(arm, "RightLowerLeg", X, 35)
     rot_bone_world(arm, "RightFoot", X, -20)
+
+
+def apply_test_pose_quad(arm):
+    """Pose de teste do quadrupede: cabeca virada e abaixada, rabo para o lado, passo (perna da frente esquerda e traseira direita avancam)."""
+    X, Y, Z = (1, 0, 0), (0, 1, 0), (0, 0, 1)
+    rot_bone_world(arm, "Neck", Z, 20)
+    rot_bone_world(arm, "Head", Z, 20)
+    rot_bone_world(arm, "Head", X, 15)
+    rot_bone_world(arm, "Tail1", Z, 30)
+    rot_bone_world(arm, "Tail2", Z, 25)
+    rot_bone_world(arm, "Spine", Z, -6)
+    rot_bone_world(arm, "LeftFrontUpperLeg", X, -28)
+    rot_bone_world(arm, "LeftFrontLowerLeg", X, 20)
+    rot_bone_world(arm, "RightFrontUpperLeg", X, 22)
+    rot_bone_world(arm, "RightHindUpperLeg", X, -25)
+    rot_bone_world(arm, "RightHindLowerLeg", X, 20)
+    rot_bone_world(arm, "LeftHindUpperLeg", X, 22)
+    rot_bone_world(arm, "LeftHindLowerLeg", X, -15)
+
+
+def test_pose(arm, kind):
+    (apply_test_pose_quad if kind == "quadruped" else apply_test_pose)(arm)
 
 
 def clear_pose(arm):

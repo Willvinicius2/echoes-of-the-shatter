@@ -1,0 +1,44 @@
+{
+  "id": "escudo_guerreiro",
+  "asset": "SM_Weapon_WarriorShield",
+  "kind": "static",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/escudo_guerreiro/escudo_guerreiro.glb",
+  "single_view": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/escudo_guerreiro/escudo_guerreiro_entrada_rgba.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/escudo_guerreiro/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/escudo_guerreiro/final",
+  "body_height_m": 0.65,
+  "pivot_frac": 0.5,
+  "tris_target": 1000,
+  "tex_size": 256,
+  "tris_range": [
+    300,
+    1200
+  ],
+  "min_component_ratio": 0.005,
+  "mesh_name": "SM_Weapon_WarriorShield",
+  "bake_shards": 1,
+  "sat_keep_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      35,
+      55
+    ]
+  ],
+  "tint_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ]
+}

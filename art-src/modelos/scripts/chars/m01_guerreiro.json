@@ -100,5 +100,31 @@
   },
   "disc_thr": 0.4,
   "min_weight": 0.001,
-  "mesh_name": "SK_Warrior_Body"
+  "mesh_name": "SK_Warrior_Body",
+  "tris_range": [
+    5500,
+    6500
+  ],
+  "height_ref": "crown",
+  "tint_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ],
+  "cloth_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ],
+  "bake_shards": 1
 }

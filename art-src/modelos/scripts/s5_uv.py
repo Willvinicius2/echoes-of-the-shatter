@@ -1,4 +1,4 @@
-"""Etapa 5 (Blender): UV 1024 da malha de jogo, ilhas por regiao do corpo e direcao da normal.
+"""Etapa 5 (Blender): UV (tex_size) da malha de jogo, ilhas por regiao do corpo e direcao da normal.
 
 Regiao = osso dominante de cada vertice (cabeca, torso com ombros, braco, mao, perna, pe; esquerda e direita).
 Dentro da regiao as faces se agrupam pelo eixo mais proximo da normal (+-X, +-Y, +-Z), com filtro de maioria e
@@ -16,6 +16,7 @@ cfg = load_cfg()
 bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game_rig.blend"))
 ob = bpy.data.objects["game"]
 me = ob.data
+TS = cfg["tex_size"]
 
 REGION = {"Head": "head", "Neck": "head", "Hips": "torso", "Spine": "torso", "Chest": "torso",
           "LeftShoulder": "torso", "RightShoulder": "torso",
@@ -23,12 +24,29 @@ REGION = {"Head": "head", "Neck": "head", "Hips": "torso", "Spine": "torso", "Ch
           "RightUpperArm": "armR", "RightLowerArm": "armR", "RightHand": "handR",
           "LeftUpperLeg": "legL", "LeftLowerLeg": "legL", "LeftFoot": "footL", "LeftToes": "footL",
           "RightUpperLeg": "legR", "RightLowerLeg": "legR", "RightFoot": "footR", "RightToes": "footR"}
-regions = sorted(set(REGION.values()))
-vreg = []
-for v in me.vertices:
-    g = max(v.groups, key=lambda g: g.weight)
-    vreg.append(regions.index(REGION[ob.vertex_groups[g.group].name]))
-vreg = np.array(vreg)
+def quad_region(n):
+    if n in ("Head", "Neck"):
+        return "head"
+    if n.startswith("Tail"):
+        return "tail"
+    if "Leg" in n or "Paw" in n:
+        return n.replace("UpperLeg", "").replace("LowerLeg", "").replace("Paw", "")    # LeftFront, RightHind...
+    return "torso"
+
+
+if cfg["kind"] == "static":
+    REGION = None
+    regions = ["all"]
+    vreg = np.zeros(len(me.vertices), int)
+else:
+    if cfg["kind"] == "quadruped":
+        REGION = {vg.name: quad_region(vg.name) for vg in ob.vertex_groups}
+    regions = sorted(set(REGION.values()))
+    vreg = []
+    for v in me.vertices:
+        g = max(v.groups, key=lambda g: g.weight)
+        vreg.append(regions.index(REGION[ob.vertex_groups[g.group].name]))
+    vreg = np.array(vreg)
 
 bm = bmesh.new(); bm.from_mesh(me)
 bm.faces.ensure_lookup_table(); bm.edges.ensure_lookup_table()
@@ -189,8 +207,9 @@ me.uv_layers[0].data.foreach_get('uv', uv.ravel())
 
 # conferencia: aproveitamento, sobreposicao, triangulos invertidos, densidade
 uvt, _ = uv_triangles(ob)
-cnt = np.zeros((1024, 1024), np.int32)
-idx, _ = raster_tris(uvt * 1024, 1024, cnt)
+TS = cfg["tex_size"]
+cnt = np.zeros((TS, TS), np.int32)
+idx, _ = raster_tris(uvt * TS, TS, cnt)
 cov = cnt > 0
 area2 = 0.5 * ((uvt[:, 1, 0] - uvt[:, 0, 0]) * (uvt[:, 2, 1] - uvt[:, 0, 1]) - (uvt[:, 2, 0] - uvt[:, 0, 0]) * (uvt[:, 1, 1] - uvt[:, 0, 1]))
 # orientacao por ilha: invertido = sinal oposto ao da maioria (ponderado) da ilha
