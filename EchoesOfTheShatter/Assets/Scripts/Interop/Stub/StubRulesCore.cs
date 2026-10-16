@@ -17,6 +17,9 @@ namespace Echoes.Interop
     {
         public const string Name = "stub-csharp";
 
+        /// <summary>Piso da velocidade de ação, o mesmo de src/expedition.cpp (técnico, evita divisão por zero).</summary>
+        const double MinActionSpeed = 0.01;
+
         StubContent content;
         static readonly PotionInfo[] NoPotions = Array.Empty<PotionInfo>();
 
@@ -28,7 +31,7 @@ namespace Echoes.Interop
         public CombatRules Combat => RequireContent().Combat;
 
         /// <summary>Valores de docs/13 usados porque a chave ou coluna ainda não existe no CSV.</summary>
-        public IReadOnlyList<string> PendingValuesUsed => content?.PendingValuesUsed ?? (IReadOnlyList<string>)Array.Empty<string>();
+        public IReadOnlyList<string> LoadWarnings => content?.PendingValuesUsed ?? (IReadOnlyList<string>)Array.Empty<string>();
 
         public IReadOnlyList<PotionInfo> Potions => content != null ? (IReadOnlyList<PotionInfo>)content.Potions : NoPotions;
 
@@ -83,6 +86,11 @@ namespace Echoes.Interop
                 }
             }
             return stats;
+        }
+
+        public IStatBlock CreateEmptyStats()
+        {
+            return new StubStatBlock();
         }
 
         public IStatBlock CreateEnemyStats(string enemyId, int level)
@@ -141,20 +149,19 @@ namespace Echoes.Interop
         public ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill)
         {
             if (skill == null) return default;
-            var speed = 1.0;
-            if (stats != null)
-            {
-                if ((skill.Tags & SkillTags.Attack) != 0) speed = stats.GetTagged(StatId.AttackSpeed, skill.Tags);
-                else if ((skill.Tags & SkillTags.Spell) != 0) speed = stats.GetTagged(StatId.CastSpeed, skill.Tags);
-            }
-            if (speed <= 0.0) speed = 1.0; // sem velocidade = não age (CanAct); o tempo fica o do CSV
+            // Como src/expedition.cpp (UseSkill): velocidade sem tags, conjuração para feitiço, piso de 0,01.
+            var speed = stats != null
+                ? stats.Get((skill.Tags & SkillTags.Spell) != 0 ? StatId.CastSpeed : StatId.AttackSpeed)
+                : 1.0;
+            if (speed < MinActionSpeed) speed = MinActionSpeed;
             return new ActionTiming(skill.Windup / speed, skill.Impact / speed, skill.Recovery / speed);
         }
 
         public double GetEffectiveCooldown(IStatBlock stats, SkillInfo skill)
         {
+            // EffectiveCooldown do effects.h com CooldownRecovery sem tags (como src/expedition.cpp).
             if (skill == null || skill.Cooldown <= 0.0) return 0.0;
-            var recovery = stats != null ? stats.GetTagged(StatId.CooldownRecovery, skill.Tags) : 1.0;
+            var recovery = stats != null ? stats.Get(StatId.CooldownRecovery) : 1.0;
             if (recovery <= 0.0) recovery = 1.0;
             var cd = skill.Cooldown / recovery;
             var min = RequireContent().Rules.MinCooldown;

@@ -37,6 +37,7 @@ namespace Echoes.Interop
         public static StubContent Load(string directory, List<RulesError> errors)
         {
             var content = new StubContent();
+            var errorsAtEntry = errors.Count;
             var tables = new Dictionary<string, StubCsvTable>(StringComparer.Ordinal);
             for (var i = 0; i < RequiredTables.Length; i++)
             {
@@ -50,7 +51,7 @@ namespace Echoes.Interop
                 var text = File.ReadAllText(path, Encoding.UTF8);
                 tables[name] = StubCsvTable.Parse(name, text, errors);
             }
-            if (errors.Count > 0) return content;
+            if (errors.Count > errorsAtEntry) return content;
 
             content.LoadMeta(tables["meta.csv"], errors);
             content.LoadRules(tables["rules.csv"], errors);
@@ -428,7 +429,7 @@ namespace Echoes.Interop
                         RechargeSeconds = table.GetDouble(row, "rechargeSeconds", 0, errors),
                         UseTime = table.GetDouble(row, "useTime", 0, errors),
                         MoveSpeedWhileUsing = table.GetDouble(row, "moveSpeedWhileUsing", 1, errors),
-                        RefillOnEliteKill = table.GetBool(row, "refillOnEliteKill", false, errors),
+                        EliteKillRefillCharges = table.GetBool(row, "refillOnEliteKill", false, errors) ? 1 : 0,
                         HotkeySlot = table.GetInt(row, "hotkeySlot", 0, errors),
                     };
                     PotionsById.Add(id, potion);

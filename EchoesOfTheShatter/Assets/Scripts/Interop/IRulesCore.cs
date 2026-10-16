@@ -35,6 +35,12 @@ namespace Echoes.Interop
 
         bool IsLoaded { get; }
 
+        /// <summary>
+        /// Avisos da última carga que não impedem o jogo (no stub: valores provisórios de docs/13 em uso
+        /// porque a chave ou coluna ainda não existe no CSV). O RulesService manda para o log.
+        /// </summary>
+        IReadOnlyList<string> LoadWarnings { get; }
+
         uint ContentVersion { get; }
 
         CombatRules Combat { get; }
@@ -50,6 +56,9 @@ namespace Echoes.Interop
 
         IStatBlock CreateHeroStats(in HeroBuild build);
         IStatBlock CreateEnemyStats(string enemyId, int level);
+
+        /// <summary>Atributos sem base nem modificador: fonte neutra para dano de efeito (DoT) e de terreno.</summary>
+        IStatBlock CreateEmptyStats();
 
         /// <summary>Contêiner de efeitos de uma entidade; <paramref name="enemyOrNull"/> define imunidades.</summary>
         IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull);

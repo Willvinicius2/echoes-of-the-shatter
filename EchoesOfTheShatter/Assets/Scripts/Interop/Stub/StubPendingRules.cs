@@ -7,7 +7,7 @@ namespace Echoes.Interop
     /// PROVISÓRIO (stub). Valores que o design já decidiu mas que AINDA NÃO ESTÃO nos CSV
     /// (pedidos ao Data Engineer em docs/13_design_pendencias.md). Regra: o CSV sempre vence; estes
     /// números só preenchem chave ou coluna ausente, e cada uso é registrado em
-    /// <see cref="StubRulesCore.PendingValuesUsed"/> para aparecer no log.
+    /// <see cref="StubRulesCore.LoadWarnings"/> para aparecer no log.
     ///
     /// Este é o único arquivo do C# com números de balanceamento, e existe só porque os dados
     /// ainda não chegaram. Quando as chaves entrarem em rules.csv, potions.csv, skills.csv,
@@ -77,13 +77,13 @@ namespace Echoes.Interop
                 {
                     Id = "potion.life", Kind = PotionKind.Heal, FractionOfMaxLife = 0.4, Duration = 0,
                     MaxCharges = 3, RechargeSeconds = 40, UseTime = 0.4, MoveSpeedWhileUsing = 0.5,
-                    RefillOnEliteKill = true, HotkeySlot = 1,
+                    EliteKillRefillCharges = 1, HotkeySlot = 1,
                 },
                 new PotionInfo
                 {
                     Id = "potion.ward", Kind = PotionKind.Barrier, FractionOfMaxLife = 0.3, Duration = 6,
                     MaxCharges = 2, RechargeSeconds = 60, UseTime = 0.4, MoveSpeedWhileUsing = 0.5,
-                    RefillOnEliteKill = true, HotkeySlot = 2,
+                    EliteKillRefillCharges = 1, HotkeySlot = 2,
                 },
             };
         }

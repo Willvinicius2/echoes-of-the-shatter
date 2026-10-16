@@ -3,7 +3,7 @@ using System;
 namespace Echoes.Interop
 {
     /// <summary>
-    /// PROVISÓRIO (stub). Porte do <c>shatter::ResolveHit</c> na ordem do damage.h e da seção 11 do
+    /// PROVISÓRIO (stub). Porte do <c>shatter::ResolveHit</c> (src/damage.cpp) na ordem do damage.h e da seção 11 do
     /// docs/04_arquitetura.md. Consome SEMPRE 3 números do RNG (crítico, evasão, bloqueio), exceto DoT.
     /// Quando a DLL existir, esta classe sai e o golpe passa a ser <c>shatter_resolve_hit</c>.
     /// </summary>
@@ -38,7 +38,7 @@ namespace Echoes.Interop
                 var evadeRoll = StubPcg32.NextUnit(ref rng);
                 var blockRoll = StubPcg32.NextUnit(ref rng);
 
-                if (critRoll < attacker.GetTagged(StatId.CritChance, tags))
+                if (critRoll < Clamp01(attacker.GetTagged(StatId.CritChance, tags)))
                 {
                     result.Critical = true;
                     var mult = attacker.ApplyTagged(StatId.CritMultiplier, tags, rules.CritMultiplierBase);
@@ -47,13 +47,13 @@ namespace Echoes.Interop
 
                 if ((tags & SkillTags.Attack) != 0)
                 {
-                    var evasion = Math.Min(defender.Get(StatId.EvasionChance), rules.EvasionCap);
+                    var evasion = Math.Min(Clamp01(defender.Get(StatId.EvasionChance)), rules.EvasionCap);
                     evaded = evadeRoll < evasion;
                 }
 
                 if (!evaded && input.CanBeBlocked)
                 {
-                    var block = Math.Min(defender.Get(StatId.BlockChance), rules.BlockCap);
+                    var block = Math.Min(Clamp01(defender.Get(StatId.BlockChance)), rules.BlockCap);
                     blocked = blockRoll < block;
                 }
             }
@@ -84,10 +84,10 @@ namespace Echoes.Interop
                 mitigated.Physical = physical * (1.0 - ArmorReduction(armor, physical, rules));
             }
 
-            // 7. resistência por elemento.
-            mitigated.Fire = mitigated.Fire * (1.0 - ClampResistance(defender.Get(StatId.ResistFire), rules));
-            mitigated.Cold = mitigated.Cold * (1.0 - ClampResistance(defender.Get(StatId.ResistCold), rules));
-            mitigated.Lightning = mitigated.Lightning * (1.0 - ClampResistance(defender.Get(StatId.ResistLightning), rules));
+            // 7. resistência por elemento, sem o piso em zero do Get (fraqueza chega ao resist_floor).
+            mitigated.Fire = mitigated.Fire * (1.0 - ClampResistance(defender.GetRaw(StatId.ResistFire), rules));
+            mitigated.Cold = mitigated.Cold * (1.0 - ClampResistance(defender.GetRaw(StatId.ResistCold), rules));
+            mitigated.Lightning = mitigated.Lightning * (1.0 - ClampResistance(defender.GetRaw(StatId.ResistLightning), rules));
 
             // 8. dano recebido do defensor.
             var taken = defender.Get(StatId.DamageTaken);
@@ -98,18 +98,19 @@ namespace Echoes.Interop
             result.TotalDamage = total;
 
             // 9. barreira primeiro, depois vida (mínimo 0).
-            var barrier = input.DefenderBarrier;
+            var barrier = input.DefenderBarrier > 0.0 ? input.DefenderBarrier : 0.0;
             var absorbed = Math.Min(barrier, total);
             var rest = total - absorbed;
-            var lifeBefore = input.DefenderLife;
-            var lifeAfter = Math.Max(0.0, lifeBefore - rest);
+            var lifeBefore = input.DefenderLife > 0.0 ? input.DefenderLife : 0.0;
             result.AbsorbedByBarrier = absorbed;
             result.DefenderBarrierAfter = barrier - absorbed;
-            result.LifeLost = lifeBefore - lifeAfter;
-            result.DefenderLifeAfter = lifeAfter;
-            result.Killed = lifeBefore > 0.0 && lifeAfter <= 0.0;
+            result.LifeLost = Math.Min(lifeBefore, rest);
+            result.DefenderLifeAfter = lifeBefore - result.LifeLost;
+            result.Killed = lifeBefore > 0.0 && result.DefenderLifeAfter <= 0.0;
             return result;
         }
+
+        static double Clamp01(double v) => v < 0.0 ? 0.0 : (v > 1.0 ? 1.0 : v);
 
         public static double ArmorReduction(double armor, double physicalDamage, StubRulesConstants rules)
         {

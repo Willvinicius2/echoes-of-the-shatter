@@ -15,7 +15,8 @@ namespace Echoes.Interop
         public double RechargeSeconds { get; internal set; }
         public double UseTime { get; internal set; }
         public double MoveSpeedWhileUsing { get; internal set; } = 1.0;
-        public bool RefillOnEliteKill { get; internal set; }
+        /// <summary>Cargas devolvidas ao matar uma elite (docs/13, item 2: +1 na poção com menos cargas; 0 = não enche).</summary>
+        public int EliteKillRefillCharges { get; internal set; }
         /// <summary>1 = tecla Potion1, 2 = tecla Potion2.</summary>
         public int HotkeySlot { get; internal set; }
 

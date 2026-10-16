@@ -81,6 +81,14 @@ namespace Echoes.Interop
             return Compute(stat, contextTags, baseOverride);
         }
 
+        /// <summary>Valor sem o piso em zero (RawResist de src/damage.cpp: fraqueza chega ao resist_floor).</summary>
+        public double GetRaw(StatId stat)
+        {
+            ThrowIfDisposed();
+            Sums(stat, SkillTags.None, out var sumFlat, out var sumIncreased, out var productMore);
+            return (bases[(int)stat] + sumFlat) * (1.0 + sumIncreased) * productMore;
+        }
+
         public static double ComputeStatValue(double baseValue, double sumFlat, double sumIncreased, double productMore)
         {
             var v = (baseValue + sumFlat) * (1.0 + sumIncreased) * productMore;
@@ -90,9 +98,15 @@ namespace Echoes.Interop
         double Compute(StatId stat, SkillTags contextTags, double baseValue)
         {
             RecomputeCount++;
-            var sumFlat = 0.0;
-            var sumIncreased = 0.0;
-            var productMore = 1.0;
+            Sums(stat, contextTags, out var sumFlat, out var sumIncreased, out var productMore);
+            return ComputeStatValue(baseValue, sumFlat, sumIncreased, productMore);
+        }
+
+        void Sums(StatId stat, SkillTags contextTags, out double sumFlat, out double sumIncreased, out double productMore)
+        {
+            sumFlat = 0.0;
+            sumIncreased = 0.0;
+            productMore = 1.0;
             for (var i = 0; i < modifiers.Count; i++)
             {
                 var mod = modifiers[i];
@@ -105,7 +119,6 @@ namespace Echoes.Interop
                     case StubModKind.More: productMore *= 1.0 + mod.Value; break;
                 }
             }
-            return ComputeStatValue(baseValue, sumFlat, sumIncreased, productMore);
         }
 
         void Invalidate()

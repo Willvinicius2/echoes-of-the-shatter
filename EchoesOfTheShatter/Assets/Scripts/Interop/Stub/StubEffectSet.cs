@@ -4,9 +4,9 @@ using System.Collections.Generic;
 namespace Echoes.Interop
 {
     /// <summary>
-    /// PROVISÓRIO (stub). Porte simplificado do <c>shatter::EffectContainer</c> (effects.h): regras de
-    /// acúmulo Refresh / StackN / StrongestOnly, recarga interna mínima para efeitos disparados,
-    /// modificadores escritos no StatBlock com source <c>fx:&lt;id&gt;</c> e removidos ao expirar.
+    /// PROVISÓRIO (stub). Porte do <c>shatter::EffectContainer</c> (effects.h, src/effects.cpp) para
+    /// aplicação direta: Refresh / StackN / StrongestOnly, recarga interna só para efeitos disparados,
+    /// tolerância de tempo do core, modificadores no StatBlock com source <c>fx:&lt;id&gt;</c>.
     /// Barreira concedida por efeito ainda não é aplicada (nenhum efeito do protótipo usa).
     /// </summary>
     internal sealed class StubEffectSet : IEffectSet
@@ -20,6 +20,9 @@ namespace Echoes.Interop
             public uint ApplyOrder;
             public string Source;
         }
+
+        /// <summary>Tolerância de tempo do core (kTimeEps em src/effects.cpp): passos de 1/60 não são exatos em binário.</summary>
+        const double TimeEps = 1e-9;
 
         readonly StubContent content;
         readonly StubStatBlock target;
@@ -41,78 +44,104 @@ namespace Echoes.Interop
 
         public bool Apply(string effectId, double magnitude, string sourceId)
         {
+            // Porte de EffectContainer::Apply (src/effects.cpp) para aplicação direta (TriggerKind::None).
             if (!content.Effects.TryGetValue(effectId, out var data)) return false;
-            if (data.IsStun && stunImmune) return false;
-            if (internalCooldowns.TryGetValue(effectId, out var cd) && cd > 0.0) return false;
-            if (data.Duration <= 0.0) return true; // instantâneo: nada a manter ativo
+            if (data.IsStun && stunImmune) return false; // imunidade pendente no core (docs/13, item 3)
 
-            switch (data.StackRule)
+            var gated = data.Triggered;
+            if (gated && internalCooldowns.TryGetValue(effectId, out var cd) && cd > TimeEps) return false;
+
+            var applied = true;
+            if (data.Duration > 0.0)
             {
-                case StubStackRule.Refresh:
+                Active existing = null;
+                Active oldest = null;
+                var count = 0;
+                for (var i = 0; i < active.Count; i++)
                 {
-                    var existing = Find(effectId);
-                    if (existing != null)
-                    {
-                        existing.Remaining = data.Duration;
-                        existing.Magnitude = magnitude;
-                    }
-                    else
-                    {
+                    var a = active[i];
+                    if (!string.Equals(a.Data.Id, effectId, StringComparison.Ordinal)) continue;
+                    count++;
+                    if (existing == null) existing = a;
+                    if (oldest == null || a.ApplyOrder < oldest.ApplyOrder) oldest = a;
+                }
+
+                switch (data.StackRule)
+                {
+                    case StubStackRule.Refresh:
+                        if (existing != null)
+                        {
+                            existing.Magnitude = magnitude;
+                            existing.Remaining = data.Duration;
+                            existing.Source = sourceId;
+                        }
+                        else
+                        {
+                            Add(data, magnitude, sourceId);
+                        }
+                        break;
+                    case StubStackRule.StackN:
+                        if (count >= Math.Max(1, data.MaxStacks) && oldest != null)
+                        {
+                            active.Remove(oldest);
+                            pool.Add(oldest);
+                        }
                         Add(data, magnitude, sourceId);
-                    }
-                    break;
+                        break;
+                    case StubStackRule.StrongestOnly:
+                        if (existing == null)
+                        {
+                            Add(data, magnitude, sourceId);
+                        }
+                        else if (magnitude > existing.Magnitude)
+                        {
+                            existing.Magnitude = magnitude;
+                            existing.Remaining = data.Duration;
+                            existing.Source = sourceId;
+                        }
+                        else if (magnitude == existing.Magnitude)
+                        {
+                            existing.Remaining = data.Duration; // empate renova a duração
+                        }
+                        else
+                        {
+                            applied = false; // mais fraco que o ativo: ignorado
+                        }
+                        break;
                 }
-                case StubStackRule.StackN:
-                {
-                    var count = StackCount(effectId);
-                    if (count >= Math.Max(1, data.MaxStacks)) RemoveOldest(effectId);
-                    Add(data, magnitude, sourceId);
-                    break;
-                }
-                case StubStackRule.StrongestOnly:
-                {
-                    var existing = Find(effectId);
-                    if (existing == null)
-                    {
-                        Add(data, magnitude, sourceId);
-                    }
-                    else if (magnitude > existing.Magnitude)
-                    {
-                        existing.Magnitude = magnitude;
-                        existing.Remaining = data.Duration;
-                        existing.Source = sourceId;
-                    }
-                    else if (magnitude == existing.Magnitude)
-                    {
-                        existing.Remaining = data.Duration;
-                    }
-                    break;
-                }
+                if (applied) RebuildModifiers(data);
             }
 
-            if (data.Triggered || data.InternalCooldown > 0.0)
-            {
-                var icd = Math.Max(data.InternalCooldown, content.Rules.TriggerInternalCooldown);
-                internalCooldowns[effectId] = icd;
-            }
-            RebuildModifiers(data);
-            return true;
+            if (applied && gated)
+                internalCooldowns[effectId] = Math.Max(data.InternalCooldown, content.Rules.TriggerInternalCooldown);
+            return applied;
         }
 
         public void Tick(double dt, List<EffectTickEvent> outEvents)
         {
-            // 1) ticks de dano, na ordem de aplicação.
+            // Porte de EffectContainer::Tick (src/effects.cpp).
+            if (dt <= 0.0) return;
+
+            // 1) ticks de dano, na ordem de aplicação; o passo do DoT não passa do tempo restante.
             for (var i = 0; i < active.Count; i++)
             {
                 var a = active[i];
-                if (a.Data.TickInterval <= 0.0 || a.Data.DamagePerTick.IsZero) continue;
-                a.TickAccumulator += dt;
-                while (a.TickAccumulator >= a.Data.TickInterval)
+                var data = a.Data;
+                var step = Math.Min(dt, a.Remaining > 0.0 ? a.Remaining : 0.0);
+                a.Remaining -= dt;
+                if (data.TickInterval <= 0.0 || step <= 0.0) continue;
+                a.TickAccumulator += step;
+                while (a.TickAccumulator + TimeEps >= data.TickInterval)
                 {
-                    a.TickAccumulator -= a.Data.TickInterval;
-                    var dmg = a.Data.DamagePerTick;
-                    for (var t = 0; t < DamageByType.Count; t++) dmg[t] = dmg[t] * a.Magnitude;
-                    outEvents?.Add(new EffectTickEvent { Expired = false, EffectId = a.Data.Id, Damage = dmg, Tags = a.Data.Tags });
+                    a.TickAccumulator -= data.TickInterval;
+                    var dmg = data.DamagePerTick;
+                    var any = false;
+                    for (var t = 0; t < DamageByType.Count; t++)
+                    {
+                        dmg[t] = dmg[t] * a.Magnitude;
+                        any = any || dmg[t] > 0.0;
+                    }
+                    if (any) outEvents?.Add(new EffectTickEvent { Expired = false, EffectId = data.Id, Damage = dmg, Tags = data.Tags });
                 }
             }
 
@@ -120,8 +149,7 @@ namespace Echoes.Interop
             for (var i = 0; i < active.Count; i++)
             {
                 var a = active[i];
-                a.Remaining -= dt;
-                if (a.Remaining > 0.0) continue;
+                if (a.Remaining > TimeEps) continue;
                 var data = a.Data;
                 active.RemoveAt(i);
                 pool.Add(a);
@@ -132,14 +160,13 @@ namespace Echoes.Interop
 
             // 3) recargas internas (chaves em lista reaproveitada: sem alocação por passo).
             cooldownKeys.Clear();
-            foreach (var pair in internalCooldowns)
-            {
-                if (pair.Value > 0.0) cooldownKeys.Add(pair.Key);
-            }
+            foreach (var pair in internalCooldowns) cooldownKeys.Add(pair.Key);
             for (var i = 0; i < cooldownKeys.Count; i++)
             {
                 var key = cooldownKeys[i];
-                internalCooldowns[key] = Math.Max(0.0, internalCooldowns[key] - dt);
+                var left = internalCooldowns[key] - dt;
+                if (left <= TimeEps) internalCooldowns.Remove(key);
+                else internalCooldowns[key] = left;
             }
         }
 
@@ -198,17 +225,6 @@ namespace Echoes.Interop
             a.ApplyOrder = nextApplyOrder++;
             a.Source = sourceId;
             active.Add(a);
-        }
-
-        void RemoveOldest(string effectId)
-        {
-            for (var i = 0; i < active.Count; i++)
-            {
-                if (!string.Equals(active[i].Data.Id, effectId, StringComparison.Ordinal)) continue;
-                pool.Add(active[i]);
-                active.RemoveAt(i);
-                return;
-            }
         }
 
         void RebuildModifiers(StubEffectData data)
