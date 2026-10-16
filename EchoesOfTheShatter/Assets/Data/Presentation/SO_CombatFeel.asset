@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28c36de615ef88641ae68d0f27943ce1, type: 3}
+  m_Name: SO_CombatFeel
+  m_EditorClassIdentifier: Echoes.Gameplay::Echoes.Gameplay.CombatFeelSettings
+  hitstopHeavyMs: 60
+  hitstopCriticalMs: 80
+  hitstopBossHeavyMs: 80
+  hitstopPlayerHitMs: 40
+  knockbackCommonCm: 20
+  knockbackEliteCm: 6
+  knockbackBossCm: 0
+  knockbackDurationMs: 100
+  heavySkills:
+  - skill.warrior.charge
+  - skill.warrior.stone_rift
+  - skill.warrior.shield_bash
+  - skill.enemy.herald_slam
+  - skill.enemy.guardian_hammer
+  - skill.enemy.guardian_shield_bash

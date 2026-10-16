@@ -1,0 +1,24 @@
+{
+    "name": "Echoes.EditorTools",
+    "rootNamespace": "Echoes.EditorTools",
+    "references": [
+        "Echoes.Interop",
+        "Echoes.Core",
+        "Echoes.Gameplay",
+        "Echoes.Presentation",
+        "Echoes.UI",
+        "Unity.AI.Navigation",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

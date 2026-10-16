@@ -167,3 +167,22 @@ O código foi compilado fora do Unity contra os assemblies de referência do Uni
 2. Trocar `RulesCoreFactory.CreateDefault()` para devolver a implementação P/Invoke.
 3. Apagar `Interop/Stub/` e ajustar os testes `StubRulesCoreTests` para a nova implementação (os casos valem iguais).
 Nenhum outro assembly muda: o gameplay só conhece a interface.
+
+## 9. Cena base de escala (`Assets/Scenes/Sandbox/Base_Escala.unity`)
+
+Cena jogável para comparar distância da câmera e tamanho de mapa. Gerada por código: menu **Echoes ▸ Montar cena base** (ou `-executeMethod Echoes.EditorTools.SandboxBuilder.BuildFromCommandLine`). Pode rodar de novo a qualquer momento: recria a cena e atualiza materiais e assets pelos mesmos caminhos. Só primitivas da Unity (nada de FBX ou de assets do Spell Brigade).
+
+- **Zona A (ARPG de PC)**, origem (0, 0, 0): sala 24 × 24, corredor de 6 m × 20 m, sala 32 × 32, corredor, arena do Guardião 40 × 40 com 8 pilares.
+- **Zona B (MMO)**, origem (300, 0, 0): sala 32 × 32, corredor de 8 m × 20 m, sala 40 × 40, corredor, arena 56 × 56 com 8 pilares. Fica a mais de 160 m da zona A.
+- Paredes de 3 m × 0,6 m, piso xadrez de 2 m (`M_Graybox_Floor_A/B`) e caixas de 1 × 1 × 2 m (sarcófago) para escala. Por zona: 3 cães, 2 sentinelas, 2 arqueiros e o Guardião (`enemy.crypt_guardian`, cápsula grande). O herói nasce na zona A, na sala 1.
+- NavMesh assada nas duas zonas (asset em `Assets/Art/Generated/Sandbox/`). Dados de apresentação em `Assets/Data/Presentation/` (`SO_RenderSettings`, `SO_CombatFeel`, `SO_CameraDistancePresets`).
+
+Teclas de desenvolvimento (não colidem com o `Echoes.inputactions`, que usa WASD, mouse, Q/E/R/F, 1/2, Espaço, I/P/M e Esc):
+
+| Tecla | Ação |
+|---|---|
+| F1 / F2 / F3 / F4 | Câmera a 42 m (atual) / 56 m / 66 m / 80 m (começa em 56 m) |
+| Roda do mouse, PageUp / PageDown | Afasta/aproxima 2 m por passo, entre 30 e 100 m |
+| F5 / F6 | Teleporta o herói para a zona A / B (o checkpoint vai junto) |
+
+O painel no canto superior esquerdo (abaixo do bloco de vida do HUD) mostra a distância, a largura × profundidade de chão visíveis e a altura do herói em pixels. FOV vertical fixo em 14,2°; o plano de corte distante é a distância + 80 m. Código em `Presentation/Dev/` (`CameraDistanceTuner`, `DevZoneTeleport`, `CameraFootprint`); a conta tem teste em `CameraFootprintTests`. Distância de sombra dos URP Assets (`PC_RPAsset`, `Mobile_RPAsset`) subiu de 50 para 120 m para cobrir o preset de 80 m (a seção 3.6 do docs/04 ainda diz 25 m).

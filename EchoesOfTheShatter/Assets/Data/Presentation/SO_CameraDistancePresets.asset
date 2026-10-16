@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 717b69166ef88fa498546a84cc36462b, type: 3}
+  m_Name: SO_CameraDistancePresets
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.CameraDistancePresetsAsset
+  presets:
+  - label: atual
+    distance: 42
+  - label: mais longe
+    distance: 56
+  - label: ARPG de PC
+    distance: 66
+  - label: MMO
+    distance: 80
+  initialPreset: 1
+  minDistance: 30
+  maxDistance: 100
+  step: 2
+  verticalFieldOfView: 14.2
+  farClipMargin: 80

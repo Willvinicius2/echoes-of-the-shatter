@@ -4,7 +4,8 @@
     "references": [
         "Echoes.Core",
         "Echoes.Gameplay",
-        "Echoes.Interop"
+        "Echoes.Interop",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
