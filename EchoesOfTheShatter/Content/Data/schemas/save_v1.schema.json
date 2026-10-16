@@ -1,0 +1,185 @@
+{
+  "$comment": "Esquema do save JSON, versao 1 (save.h, character.h, expedition.h). Subconjunto de JSON Schema 2020-12 aceito por tools/validate_data.py: type, enum, const, pattern, minimum, maximum, exclusiveMinimum, minItems, maxItems, items, required, properties, additionalProperties false, oneOf, $ref para #/$defs. Ver docs/06_dados.md, secao 6.",
+  "x-save-version": 1,
+  "title": "Echoes of the Shatter - save v1",
+  "type": "object",
+  "required": ["format", "save_version", "sha256", "data"],
+  "additionalProperties": false,
+  "properties": {
+    "format": {"const": "echoes-of-the-shatter-save"},
+    "save_version": {"const": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "data": {"$ref": "#/$defs/SaveData"}
+  },
+  "$defs": {
+    "Id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+(\\.[a-z0-9_]+)+$"
+    },
+    "OptId": {
+      "type": "string",
+      "pattern": "^($|[a-z0-9_]+(\\.[a-z0-9_]+)+$)"
+    },
+    "DecimalU64": {
+      "$comment": "uint64 como texto decimal (arquitetura, secao 8). Sem zeros a esquerda.",
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "ItemSlotKey": {
+      "$comment": "Todas as posicoes de ItemSlot (item.h). Ring2 e Belt sao reservadas para 1.0.",
+      "type": "string",
+      "enum": ["main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt"]
+    },
+    "RolledAffix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["affix_id", "value"],
+      "properties": {
+        "affix_id": {"$ref": "#/$defs/Id"},
+        "value": {"type": "number"}
+      }
+    },
+    "ItemInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uid", "base_id", "rarity", "item_level", "unique_id", "affixes", "has_inscription"],
+      "properties": {
+        "uid": {"$ref": "#/$defs/DecimalU64"},
+        "base_id": {"$ref": "#/$defs/Id"},
+        "rarity": {"type": "string", "enum": ["normal", "magic", "rare", "unique"]},
+        "item_level": {"type": "integer", "minimum": 1, "maximum": 100},
+        "unique_id": {"$ref": "#/$defs/OptId"},
+        "affixes": {"type": "array", "items": {"$ref": "#/$defs/RolledAffix"}},
+        "has_inscription": {"type": "boolean"}
+      }
+    },
+    "StackEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "amount"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Id"},
+        "amount": {"type": "integer", "minimum": 0}
+      }
+    },
+    "LearnedSkill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["skill_id", "rank", "sigils"],
+      "properties": {
+        "skill_id": {"$ref": "#/$defs/Id"},
+        "rank": {"type": "integer", "minimum": 1, "maximum": 3},
+        "sigils": {"type": "array", "items": {"$ref": "#/$defs/Id"}}
+      }
+    },
+    "CharacterState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "class_id", "spec_id", "level", "xp", "passives", "skills", "skill_bar",
+                   "equipment", "conquered_maps", "highest_tier_cleared", "potions", "play_time_seconds"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "class_id": {"$ref": "#/$defs/Id"},
+        "spec_id": {"$ref": "#/$defs/OptId"},
+        "level": {"type": "integer", "minimum": 1},
+        "xp": {"type": "number", "minimum": 0},
+        "passives": {"type": "array", "items": {"$ref": "#/$defs/Id"}},
+        "skills": {"type": "array", "items": {"$ref": "#/$defs/LearnedSkill"}},
+        "skill_bar": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"$ref": "#/$defs/OptId"}},
+        "equipment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt"],
+          "properties": {
+            "main_hand": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "off_hand": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "head": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "body": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "hands": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "feet": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "amulet": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "ring": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "ring2": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]},
+            "belt": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/ItemInstance"}]}
+          }
+        },
+        "conquered_maps": {"type": "array", "items": {"$ref": "#/$defs/Id"}},
+        "highest_tier_cleared": {"type": "integer", "minimum": 0, "maximum": 5},
+        "potions": {"type": "integer", "minimum": 0},
+        "play_time_seconds": {"type": "number", "minimum": 0}
+      }
+    },
+    "CharacterSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["character", "content_version"],
+      "properties": {
+        "character": {"$ref": "#/$defs/CharacterState"},
+        "content_version": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+      }
+    },
+    "AiRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition", "param", "action", "ref_id"],
+      "properties": {
+        "condition": {"type": "string", "enum": ["always", "life_below", "resource_above", "resource_below",
+                                                 "enemies_at_least", "target_is_elite", "target_is_boss", "effect_missing"]},
+        "param": {"type": "number"},
+        "action": {"type": "string", "enum": ["use_potion", "use_skill"]},
+        "ref_id": {"$ref": "#/$defs/OptId"}
+      }
+    },
+    "ExpeditionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot", "map_id", "objective", "rules", "potion_heal_fraction", "seed", "start_utc",
+                   "duration_hours", "effective_seconds", "content_version"],
+      "properties": {
+        "snapshot": {"$ref": "#/$defs/CharacterSnapshot"},
+        "map_id": {"$ref": "#/$defs/OptId"},
+        "objective": {"type": "string", "enum": ["xp", "gold", "materials"]},
+        "rules": {"type": "array", "maxItems": 6, "items": {"$ref": "#/$defs/AiRule"}},
+        "potion_heal_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "seed": {"$ref": "#/$defs/DecimalU64"},
+        "start_utc": {"type": "integer"},
+        "duration_hours": {"type": "integer", "minimum": 1, "maximum": 12},
+        "effective_seconds": {"type": "number", "minimum": 0},
+        "content_version": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+      }
+    },
+    "SavedExpedition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "character_index", "request", "collected_result_hash"],
+      "properties": {
+        "status": {"type": "string", "enum": ["none", "running", "collected"]},
+        "character_index": {"type": "integer", "minimum": -1},
+        "request": {"$ref": "#/$defs/ExpeditionRequest"},
+        "collected_result_hash": {"$ref": "#/$defs/DecimalU64"}
+      }
+    },
+    "SaveData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["save_version", "content_version", "characters", "stash", "currencies", "marker_charges",
+                   "last_rest_day", "last_seen_utc", "next_item_uid", "expedition_slots", "expeditions",
+                   "codex_seen_uniques", "books_seen"],
+      "properties": {
+        "save_version": {"const": 1},
+        "content_version": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "characters": {"type": "array", "items": {"$ref": "#/$defs/CharacterState"}},
+        "stash": {"type": "array", "items": {"$ref": "#/$defs/ItemInstance"}},
+        "currencies": {"type": "array", "items": {"$ref": "#/$defs/StackEntry"}},
+        "marker_charges": {"type": "integer", "minimum": 0},
+        "last_rest_day": {"type": "integer"},
+        "last_seen_utc": {"type": "integer", "minimum": 0},
+        "next_item_uid": {"$ref": "#/$defs/DecimalU64"},
+        "expedition_slots": {"type": "integer", "minimum": 1, "maximum": 2},
+        "expeditions": {"type": "array", "maxItems": 2, "items": {"$ref": "#/$defs/SavedExpedition"}},
+        "codex_seen_uniques": {"type": "array", "items": {"$ref": "#/$defs/Id"}},
+        "books_seen": {"type": "array", "items": {"$ref": "#/$defs/Id"}}
+      }
+    }
+  }
+}

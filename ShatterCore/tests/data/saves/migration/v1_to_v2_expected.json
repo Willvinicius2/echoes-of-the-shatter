@@ -1,0 +1,171 @@
+{
+  "save_version": 1,
+  "content_version": 1,
+  "characters": [
+    {
+      "name": "Teste",
+      "class_id": "class.warrior",
+      "spec_id": "",
+      "level": 1,
+      "xp": 0.0,
+      "passives": [],
+      "skills": [
+        {
+          "skill_id": "skill.warrior.iron_cut",
+          "rank": 1,
+          "sigils": []
+        }
+      ],
+      "skill_bar": [
+        "skill.warrior.iron_cut",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "equipment": {
+        "main_hand": {
+          "uid": "1",
+          "base_id": "item_base.iron_sword",
+          "rarity": "normal",
+          "item_level": 1,
+          "unique_id": "",
+          "affixes": [],
+          "has_inscription": false
+        },
+        "off_hand": null,
+        "head": null,
+        "body": null,
+        "hands": null,
+        "feet": null,
+        "amulet": null,
+        "ring": null,
+        "ring2": null,
+        "belt": null
+      },
+      "conquered_maps": [
+        "map.act1.crypt"
+      ],
+      "highest_tier_cleared": 0,
+      "potion_slots": [
+        {
+          "potion_id": "potion.life",
+          "count": 2
+        },
+        {
+          "potion_id": "",
+          "count": 0
+        }
+      ],
+      "play_time_seconds": 3600.0
+    }
+  ],
+  "stash": [],
+  "currencies": [
+    {
+      "id": "currency.gold",
+      "amount": 120
+    }
+  ],
+  "marker_charges": 3,
+  "last_rest_day": 20000,
+  "last_seen_utc": 1781600000,
+  "next_item_uid": "2",
+  "expedition_slots": 1,
+  "expeditions": [
+    {
+      "status": "running",
+      "character_index": 0,
+      "request": {
+        "snapshot": {
+          "character": {
+            "name": "Teste",
+            "class_id": "class.warrior",
+            "spec_id": "",
+            "level": 1,
+            "xp": 0.0,
+            "passives": [],
+            "skills": [
+              {
+                "skill_id": "skill.warrior.iron_cut",
+                "rank": 1,
+                "sigils": []
+              }
+            ],
+            "skill_bar": [
+              "skill.warrior.iron_cut",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "equipment": {
+              "main_hand": {
+                "uid": "1",
+                "base_id": "item_base.iron_sword",
+                "rarity": "normal",
+                "item_level": 1,
+                "unique_id": "",
+                "affixes": [],
+                "has_inscription": false
+              },
+              "off_hand": null,
+              "head": null,
+              "body": null,
+              "hands": null,
+              "feet": null,
+              "amulet": null,
+              "ring": null,
+              "ring2": null,
+              "belt": null
+            },
+            "conquered_maps": [
+              "map.act1.crypt"
+            ],
+            "highest_tier_cleared": 0,
+            "potion_slots": [
+              {
+                "potion_id": "potion.life",
+                "count": 2
+              },
+              {
+                "potion_id": "",
+                "count": 0
+              }
+            ],
+            "play_time_seconds": 3600.0
+          },
+          "content_version": 1
+        },
+        "map_id": "map.act1.crypt",
+        "objective": "xp",
+        "rules": [
+          {
+            "condition": "life_below",
+            "param": 0.35,
+            "action": "use_potion",
+            "ref_id": ""
+          },
+          {
+            "condition": "always",
+            "param": 0.0,
+            "action": "use_skill",
+            "ref_id": "skill.warrior.iron_cut"
+          }
+        ],
+        "potion_heal_fraction": 0.35,
+        "seed": "9007199254740993",
+        "start_utc": 1781600000,
+        "duration_hours": 1,
+        "effective_seconds": 3600.0,
+        "content_version": 1
+      },
+      "collected_result_hash": "0"
+    }
+  ],
+  "codex_seen_uniques": [],
+  "books_seen": [],
+  "tutorial_flags": []
+}

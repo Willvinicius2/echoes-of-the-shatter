@@ -1,0 +1,2 @@
+id,groups,weight,travelTime,isBoss
+enc.crypt.patrol_a,enemy.missing_sentinel:1:2:0.1,1,5,false

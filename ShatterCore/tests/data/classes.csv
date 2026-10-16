@@ -1,0 +1,2 @@
+id,resourceId,startingSkill,specializations,resourceOnHit,resourceOnBlock,resourceDecayOutOfCombat,regenMultWhileMoving
+class.warrior,resource.momentum,skill.warrior.iron_cut,,10,10,5,1

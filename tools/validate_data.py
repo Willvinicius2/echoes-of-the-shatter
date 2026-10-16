@@ -1341,14 +1341,15 @@ def self_test(schema_dir: str, quiet: bool) -> int:
                         print("   ok: falhou como esperado")
                 else:
                     failures += 0 if rep.ok else 1
-        # 5. migração de referência v1 -> v2 bate com o fixture futuro
+        # 5. migração de referência v1 -> v2: o resultado bate com o objeto "data" esperado
+        #    (v2 ainda não está ativa no core; por isso o esperado é só dado, sem esquema de v2)
         v1 = os.path.join(saves, "save_v1.json")
-        v2 = os.path.join(saves, "future", "save_v2.json")
+        v2 = os.path.join(saves, "migration", "v1_to_v2_expected.json")
         if os.path.isfile(v1) and os.path.isfile(v2):
             d1 = json_load_text(open(v1, encoding="utf-8").read())["data"]
-            d2 = json_load_text(open(v2, encoding="utf-8").read())["data"]
+            d2 = json_load_text(open(v2, encoding="utf-8").read())
             same = canonical(migrate(d1, 1, 2)) == canonical(d2)
-            print(f"== migração de referência v1->v2: {'OK (igual a future/save_v2.json)' if same else 'FALHOU (difere)'}")
+            print(f"== migração de referência v1->v2: {'OK (igual a migration/v1_to_v2_expected.json)' if same else 'FALHOU (difere)'}")
             failures += 0 if same else 1
     print(f"### resultado: {'OK' if failures == 0 else f'{failures} falha(s)'}")
     return 0 if failures == 0 else 1

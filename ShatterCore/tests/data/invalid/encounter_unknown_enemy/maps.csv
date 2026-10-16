@@ -1,0 +1,2 @@
+id,monsterLevel,tier,encounters,bossEncounter,areaLootTable,idleAllowed
+map.act1.crypt,1,0,enc.crypt.patrol_a,,loot.crypt.common,true

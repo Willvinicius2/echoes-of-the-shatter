@@ -1,0 +1,2 @@
+enemyId,skillId,weight,telegraphed
+enemy.hollow_sentinel,skill.enemy.sentinel_strike,1,true

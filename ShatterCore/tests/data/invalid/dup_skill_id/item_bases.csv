@@ -1,0 +1,2 @@
+id,slot,itemLevel,implicitMods,weaponDamagePhysical,weaponDamageFire,weaponDamageCold,weaponDamageLightning,attackTime,weaponTags,grammaticalGender
+item_base.iron_sword,main_hand,1,,10,,,,1.0,melee,m
