@@ -1,2 +1,2 @@
-id,baseId,fixedMods,ruleEffectId,idleSupported,idleParitySampleSize,idleCalibration
-unique.empty_throne_maul,item_base.stone_maul,damage:increased:0.25:melee|move_speed:increased:-0.1,effect.empty_throne_resolve,true,20,manual_estimate
+id,baseId,fixedMods,ruleEffectId,idleSupported,idleParitySampleSize,idleCalibration,visualSetId
+unique.empty_throne_maul,item_base.stone_maul,damage:increased:0.25:melee|move_speed:increased:-0.1,effect.empty_throne_resolve,true,20,manual_estimate,

@@ -61,6 +61,13 @@
         "bot_parity"
       ],
       "desc": "Calibracao do perfil idle: none / manual_estimate / bot_parity"
+    },
+    {
+      "name": "visualSetId",
+      "type": "id",
+      "required": false,
+      "prefix": "vset.",
+      "desc": "Conjunto visual proprio do Unico (prevalece sobre a da base)"
     }
   ],
   "locKeys": [

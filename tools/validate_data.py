@@ -1171,18 +1171,46 @@ def load_save_schemas(schema_dir: str) -> Dict[int, dict]:
 # ---------------------------------------------------------------------------
 # Migrações de referência (espelho do que o core implementa em src/save_migrations.cpp)
 # ---------------------------------------------------------------------------
+def _potion_slot_defaults() -> List[dict]:
+    """Um slot por linha de potions.csv, na ordem do arquivo: (potion_id, máximo de cargas)."""
+    import csv
+    path = os.path.join(DEFAULT_DATA, "potions.csv")
+    with open(path, encoding="utf-8", newline="") as fh:
+        return [{"potion_id": r["id"], "max": int(r["maxCharges"])} for r in csv.DictReader(fh)]
+
+
 def migrate_1_to_2(data: dict) -> dict:
-    """Exemplo documentado em docs/06_dados.md §6.4 (v2 ainda NÃO está ativa no core).
-    - characters[].potions (int)  -> characters[].potion_slots = [{potion_id, count}, {..}]
-    Nada é apagado: o valor antigo de potions vai inteiro para o 1º slot."""
+    """Migração v1 -> v2 (save_v2.schema.json; docs/06 seção 6a).
+    - characters[].potions (int) -> potion_slots: um slot por linha de potions.csv, com
+      charges = o antigo 'potions' no 1º slot (Vida) e o máximo de cargas nos demais; recharge_remaining = 0.
+    - characters[].boss_progress = [] (contador do Único por chefe).
+    - characters[].equipment.legs = null (11 posições, C-10c).
+    - expeditions[].request.potion_heal_fraction sai (a cura vem de potions.csv).
+    Nada mais é apagado."""
+    slot_defaults = _potion_slot_defaults()
+
     def conv_char(ch: dict) -> dict:
         out = {}
+        old_potions = ch.get("potions", 0)
         for k, v in ch.items():
             if k == "potions":
-                out["potion_slots"] = [{"potion_id": "potion.life", "count": v},
-                                       {"potion_id": "", "count": 0}]
+                slots = []
+                for i, d in enumerate(slot_defaults):
+                    charges = old_potions if i == 0 else d["max"]
+                    slots.append({"potion_id": d["potion_id"], "charges": charges, "recharge_remaining": 0})
+                out["potion_slots"] = slots
+            elif k == "equipment":
+                eq = {}
+                for slot, it in v.items():
+                    eq[slot] = it
+                    if slot == "hands":
+                        eq["legs"] = None
+                if "legs" not in eq:
+                    eq["legs"] = None
+                out[k] = eq
             else:
                 out[k] = v
+        out.setdefault("boss_progress", [])
         return out
 
     new = {}
@@ -1194,6 +1222,7 @@ def migrate_1_to_2(data: dict) -> dict:
             for e in v:
                 e2 = dict(e)
                 req = dict(e2["request"])
+                req.pop("potion_heal_fraction", None)
                 snap = dict(req["snapshot"])
                 snap["character"] = conv_char(snap["character"])
                 req["snapshot"] = snap
@@ -1219,7 +1248,7 @@ def migrate(data: dict, frm: int, to: int) -> dict:
 # ---------------------------------------------------------------------------
 # Validação de save
 # ---------------------------------------------------------------------------
-SLOTS = ["main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt"]
+SLOTS = ["main_hand", "off_hand", "head", "body", "hands", "legs", "feet", "amulet", "ring", "ring2", "belt"]
 
 
 def _items_of_character(ch: dict):
@@ -1415,6 +1444,10 @@ MUTATIONS = [
      lambda t: t.replace("enemy.crypt_guardian,2,0.5", "enemy.crypt_guardian,2,1.0"), "E_BOSS"),
     ("ia_aggro_diferente_do_inimigo", "enemy_ai.csv",
      lambda t: t.replace("enemy.ash_hound,1100", "enemy.ash_hound,900"), "E_ENEMY_AI"),
+    ("visual_set_sem_prefixo_vset", "item_bases.csv",
+     lambda t: t.replace("vset.starter", "starter"), "E_ID"),
+    ("calca_com_dano_de_arma", "item_bases.csv",
+     lambda t: t.replace("armor:flat:4,,,,,,,f", "armor:flat:4,9,,,,,,f"), "E_WEAPON"),
     ("regra_obrigatoria_removida", "rules.csv",
      lambda t: t.replace("potion_lockout,1.0\n", ""), "E_KEY_MISSING"),
 ]

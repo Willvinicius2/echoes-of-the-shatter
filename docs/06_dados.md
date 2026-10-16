@@ -405,7 +405,7 @@ affix.life_flat,prefix,life,flat,,10,20,1,10,body|head,life,false
 ### `item_bases.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,slot,itemLevel,implicitMods,weaponDamagePhysical,weaponDamageFire,weaponDamageCold,weaponDamageLightning,attackTime,weaponTags,grammaticalGender`.
+- Cabeçalho exato: `id,slot,itemLevel,implicitMods,weaponDamagePhysical,weaponDamageFire,weaponDamageCold,weaponDamageLightning,attackTime,weaponTags,grammaticalGender,visualSetId`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -420,6 +420,7 @@ affix.life_flat,prefix,life,flat,,10,20,1,10,body|head,life,false
 | `attackTime` | número (ponto decimal) | não | ≥ 0 | 0 | s por ataque (armas) |
 | `weaponTags` | tags (`\|`): `attack`, `spell`, `melee`, `projectile`, `area`, `fire`, `cold`, `lightning`, `physical` | não | — | — | melee ou projectile (armas) |
 | `grammaticalGender` | enum: `m`, `f` | não | — | m | Gênero gramatical |
+| `visualSetId` | ID `vset.*` | não | — | — | Conjunto visual (vazio = fallback `vset.starter`); só vale em head, body, hands, legs, feet (C-10d) |
 
 Regras de conteúdo:
 
@@ -436,7 +437,7 @@ item_base.iron_sword,main_hand,1,,10,,,,1.0,melee,m
 ### `uniques.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,baseId,fixedMods,ruleEffectId,idleSupported,idleParitySampleSize,idleCalibration`.
+- Cabeçalho exato: `id,baseId,fixedMods,ruleEffectId,idleSupported,idleParitySampleSize,idleCalibration,visualSetId`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -447,6 +448,7 @@ item_base.iron_sword,main_hand,1,,10,,,,1.0,melee,m
 | `idleSupported` | bool (`true`/`false`) | não | — | false | Tem perfil idle testado |
 | `idleParitySampleSize` | inteiro | não | ≥ 0 | 0 | Amostra da calibracao idle (encontros medidos) |
 | `idleCalibration` | enum: `none`, `manual_estimate`, `bot_parity` | não | — | none | Calibracao do perfil idle: none / manual_estimate / bot_parity |
+| `visualSetId` | ID `vset.*` | não | — | — | Conjunto visual próprio do Único; prevalece sobre o da base (C-10d) |
 
 Regras de conteúdo:
 
@@ -727,6 +729,17 @@ Esquema em `schemas/save_v2.schema.json`, ao lado de `save_v1`. Não é usado pe
 - `ExpeditionRequest.potion_heal_fraction` sai (a cura vem de `potions.csv`). `rules[].ref_id` já existe em v1 e serve para `use_potion`.
 - Cargas e relógios de esquiva não são salvos: reiniciam cheios ao carregar (docs/13 item 11).
 - `tutorial_flags` não entra na v2 (não aprovado, docs/13 item 11). A função `migrate_1_to_2` do validador foi ajustada para não gerar o campo. O fixture `migration/v1_to_v2_expected.json` (ShatterCore) ainda o contém e precisa ser alinhado pelo Backend.
+
+
+## 5b. Espaço `legs`, `visualSetId` e save v2 (C-10, decisão do dono 16/10/2026)
+
+- `@slots` (`schemas/_enums.json`) ganhou `legs` no fim da lista. `item_bases.slot` e `affixes.allowedSlots` aceitam `legs`.
+- Afixos de armadura `affix.sturdy`, `affix.plated`, `affix.of_mending` e `affix.of_the_furnace` passaram a valer em `legs`. Afixos com `allowedSlots` vazio também passam a valer em `legs`: precisam de revisão do Game Designer (C-10e).
+- Base inicial de calça: `item_base.worn_trousers`, slot `legs`, itemLevel 1, implícito `armor:flat:4` **[HIPÓTESE]** (coerente com o elmo `armor:flat:8` e com o peitoral `life:flat:12`), gênero `f`, `visualSetId` `vset.starter`. Ela ainda não está em nenhuma tabela de loot, então não cai.
+- Coluna opcional `visualSetId` (`vset.*`) em `item_bases.csv` e `uniques.csv`. Vazio = fallback `vset.starter`. As bases de armadura iniciais (`iron_helm`, `leather_vest`, `leather_gloves`, `worn_boots`, `worn_trousers`) usam `vset.starter`. É dado de apresentação: fora do `resultHash`, do simulador e do save.
+- `save_v2` (proposta, `schemas/save_v2.schema.json`) reúne três mudanças numa versão só: `equipment` com 11 posições (inclui `legs`, `null` ou item), `potion_slots` (lista de `{potion_id, charges, recharge_remaining}`, uma por linha de `potions.csv`) e `boss_progress`. Sem `potion_heal_fraction` no pedido e sem `tutorial_flags`.
+- Migração `1→2` (`migrate_1_to_2` do validador, espelho da migração do core): `potions` vira `potion_slots` com `charges` = o antigo valor no 1º slot (Vida) e o máximo de `potions.csv` nos demais, `recharge_remaining` = 0; `equipment.legs = null`; `boss_progress = []`; `potion_heal_fraction` sai de cada pedido de expedição. O resultado valida contra `save_v2` (conferido com o save_v1 do fixture do core).
+- Nomes de Loc que a base e o slot precisam (já estão no master, `Loc/content.csv`: `item_base.worn_trousers.name`, `slot.legs.name`). Esta worktree ainda não tem essas linhas: a validação de conteúdo só passa depois de unir o master.
 
 
 ## 5. content_version e conteúdo publicado
