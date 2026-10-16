@@ -103,10 +103,10 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <div class="faixa">
 <a class="andamento" href="#s-arte"><b>Direção de arte</b>Em andamento</a>
 <a class="andamento" href="#s-design"><b>Game Design</b>Em andamento</a>
-<a class="andamento" href="#s-dados"><b>Dados</b>Em andamento</a>
+<a class="concluido" href="#s-dados"><b>Dados</b>Concluído</a>
 <a class="concluido" href="#s-conteudo"><b>Conteúdo e textos</b>Concluído</a>
 <a class="concluido" href="#s-arquitetura"><b>Arquitetura</b>Concluído</a>
-<a class="andamento" href="#s-backend"><b>Backend ShatterCore</b>Em andamento</a>
+<a class="concluido" href="#s-backend"><b>Backend ShatterCore</b>Concluído</a>
 <a class="andamento" href="#s-frontend"><b>Frontend Unity</b>Em andamento</a>
 <a class="andamento" href="#s-arte_tecnica"><b>Arte técnica</b>Em andamento</a>
 <a class="andamento" href="#s-qa"><b>QA</b>Em andamento</a>
@@ -116,7 +116,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <div class="cont">
 <div>9<span>aguardando você</span></div>
 <div>0<span>sessões na nuvem</span></div>
-<div>3/11<span>setores concluídos</span></div>
+<div>5/11<span>setores concluídos</span></div>
 <div>8/10<span>marcos</span></div>
 </div>
 <div class="etapas">
@@ -165,13 +165,13 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li>Decisões que travavam o protótipo (10 itens)<span class="arq">docs/13_design_pendencias.md</span></li>
 <li>Layout da Cripta na escala da zona A<span class="arq">docs/14_layout_cripta.md</span></li>
 <li>Etapas do jogo (5 etapas)<span class="arq">docs/15_etapas.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Responder as perguntas abertas do docs/15 (com você).</p></article>
-<article class="card" id="s-dados"><header><div><h3>Dados</h3><span class="mut peq">Data Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>etapa2/dados terminou: 5 tabelas novas, slot legs, visualSetId e save v2. Aguarda o merge com o backend.</p><ul>
+</ul><p class="prox"><b>Próximo passo:</b> Rever o balanceamento do idle: com o conteúdo real, o Guerreiro nível 4 sem equipamento recua em cerca de 1 min. Depois, as perguntas abertas do docs/15 (com você).</p></article>
+<article class="card" id="s-dados"><header><div><h3>Dados</h3><span class="mut peq">Data Engineer</span></div><span class="pil concluido"><i></i>Concluído</span></header>
+<p>Etapa 2 entregue: etapa2/dados no master (merge bcf7864) com 5 tabelas novas, slot legs, visualSetId, save v2, chaves de esquiva e de combate, loot de elite e transição do Guardião.</p><ul>
 <li>Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)<span class="arq">EchoesOfTheShatter/Content/Data/*.csv</span></li>
 <li>Esquemas JSON e validador<span class="arq">EchoesOfTheShatter/Content/Data/schemas/, tools/validate_data.py</span></li>
 <li>Documento de dados<span class="arq">docs/06_dados.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Merge com o backend (etapa2/backend).</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Ajustar números quando o Game Designer rever o balanceamento do idle.</p></article>
 <article class="card" id="s-conteudo"><header><div><h3>Conteúdo e textos</h3><span class="mut peq">Narrative</span></div><span class="pil concluido"><i></i>Concluído</span></header>
 <p>Textos pt_BR e en; 35 chaves novas da Etapa 2 (incluindo o slot Calça).</p><ul>
 <li>Resumo do conteúdo e do tom<span class="arq">docs/05_conteudo.md</span></li>
@@ -184,24 +184,25 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li>Personagem modular (04 §17.4) e proposta C-10 do slot legs<span class="arq">docs/04_arquitetura.md</span></li>
 <li>Revisão de código: 0 crítico, 6 alto, 11 médio, 26 baixo<span class="arq">docs/11_revisao_codigo.md</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Revisar o contrato da API C ampliada.</p></article>
-<article class="card" id="s-backend"><header><div><h3>Backend ShatterCore</h3><span class="mut peq">Backend Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>PR #3 no master. etapa2/backend segue: regras novas, legs, save v2, API C ampliada e achados A-01, A-05 e A-06 da revisão.</p><ul>
+<article class="card" id="s-backend"><header><div><h3>Backend ShatterCore</h3><span class="mut peq">Backend Engineer</span></div><span class="pil concluido"><i></i>Concluído</span></header>
+<p>Etapa 2 entregue: etapa2/backend no master (merge d9b8eb3) com as 11 regras do docs/13 (poções, esquiva, stun e Guarda Quebrada, escudo e fases do Guardião, elites, Único com garantia, recuo a 0,25), slot legs, save v2 e API C 1.1 com início e coleta de expedição confiáveis. Testes: 146 do core e 21 da API C, mais o validador. Revisão de segurança ok. Falta só a fuga do Cão no simulador.</p><ul>
 <li>Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)<span class="arq">ShatterCore/src/*.cpp</span></li>
 <li>Testes do núcleo já no repositório<span class="arq">ShatterCore/tests/*.cpp</span></li>
 <li>CI do núcleo em Linux<span class="arq">.github/workflows/core.yml, manual.yml</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Terminar a etapa2/backend e fazer o merge com os dados.</p></article>
+<li>CI roda a cada push no núcleo (último sucesso em 3ad87b9)<span class="arq">.github/workflows/core.yml</span></li>
+</ul><p class="prox"><b>Próximo passo:</b> Fuga do Cão-de-Cinza no simulador.</p></article>
 <article class="card" id="s-frontend"><header><div><h3>Frontend Unity</h3><span class="mut peq">Frontend Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
 <p>PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137).</p><ul>
 <li>Projeto Unity 6.3 URP criado<span class="arq">EchoesOfTheShatter/</span></li>
 <li>Cena base na escala 56 m<span class="arq">EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Integrar os demais modelos conforme saírem do acabamento.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Ligar a API C 1.1 na Unity, trocar para as chamadas confiáveis e regravar o golden.</p></article>
 <article class="card" id="s-arte_tecnica"><header><div><h3>Arte técnica</h3><span class="mut peq">Artista técnico (Blender)</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
 <p>PR #1 no master. Guerreiro pintado já está na Unity com o shader de rim. Em andamento: acabamento dos inimigos e das armas; o lote do TripoSG com corpos, peças e cenário está rodando.</p><ul>
 <li>Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)<span class="arq">art-src/graybox/</span></li>
 <li>Prévias em imagem<span class="arq">art-src/graybox/previews/</span></li>
 <li>Forma 3D do Guerreiro (TripoSG)<span class="arq">D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/</span></li>
 <li>Pesquisa de modelos 3D grátis<span class="arq">docs/pesquisa/modelos_3d_gratis.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Acabamento dos inimigos e das armas; receber o lote do TripoSG (corpos, peças, cenário).</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Acabamento dos inimigos e das armas no Blender; receber o lote do TripoSG (corpos, peças, cenário).</p></article>
 <article class="card" id="s-qa"><header><div><h3>QA</h3><span class="mut peq">QA Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
 <p>77 casos novos para a Etapa 2 no plano de QA.</p><ul>
 <li>Plano de QA (matriz de requisitos e casos)<span class="arq">docs/10_qa.md</span></li>
@@ -217,22 +218,36 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </ul><p class="prox"><b>Próximo passo:</b> Fechar a Etapa 2 e preparar a Etapa 3.</p></article>
 </div>
 <h2>Linha do tempo</h2><ul class='linha'>
+<li><code>bcf7864</code><span class="dt">16/10/2026</span><br>Merge etapa2/dados: chaves de esquiva e combate, loot de elite e transição do Guardião</li>
+<li><code>a862073</code><span class="dt">16/10/2026</span><br>test(core): fixtures com dodge_cancel_recovery_fraction, out_of_combat_seconds e eliteLootTableId; linha da chave estranha calculada</li>
+<li><code>d4de7c8</code><span class="dt">16/10/2026</span><br>feat(painel): votação e comentários nas perguntas ao dono</li>
+<li><code>1f12f84</code><span class="dt">16/10/2026</span><br>feat(dados): pendencias 7 do Backend (esquiva, fora de combate, loot de elite, fase 1 do chefe)</li>
+<li><code>d9b8eb3</code><span class="dt">16/10/2026</span><br>Merge etapa2/backend (inclui etapa2/dados): regras novas do protótipo, slot legs, save v2 e API C 1.1</li>
+<li><code>cb5a08a</code><span class="dt">16/10/2026</span><br>feat(core): regras novas do protótipo (poções, esquiva, stun, Guarda Quebrada, chefe, elite, Único), API C 1.1 e save v2</li>
 <li><code>95c7172</code><span class="dt">16/10/2026</span><br>chore(painel): painel.html regerado com as 9 perguntas com id</li>
 <li><code>3ad87b9</code><span class="dt">16/10/2026</span><br>feat(roteiro): perguntas ao dono completas, com votação e comentários</li>
 <li><code>2e3e30d</code><span class="dt">16/10/2026</span><br>feat(painel): link para votar e comentar as perguntas no roteiro do sócio</li>
 <li><code>33522c9</code><span class="dt">16/10/2026</span><br>feat(painel): perguntas ao dono completas (pergunta, contexto e opções) e Guerreiro na Unity</li>
+<li><code>8a62f1b</code><span class="dt">16/10/2026</span><br>test(c_api): início e coleta confiáveis, save v2</li>
 <li><code>7c1dbb6</code><span class="dt">16/10/2026</span><br>Merge etapa2/frontend: Guerreiro pintado na Unity (SK_Warrior, SG_Character com rim) e captura a 56 m</li>
 <li><code>65af242</code><span class="dt">16/10/2026</span><br>feat(roteiro): gerador do HTML do roteiro para o sócio</li>
 <li><code>321ecbf</code><span class="dt">16/10/2026</span><br>feat(art): Guerreiro aprovado no jogo com SG_Character e P_Hero_Warrior</li>
+<li><code>275d8c9</code><span class="dt">16/10/2026</span><br>test(core): fixtures no esquema novo, save v2 e golden regravado</li>
 <li><code>4624ab2</code><span class="dt">16/10/2026</span><br>feat(painel): Guerreiro final, DLL nativa no master e link do roteiro do sócio</li>
+<li><code>7327959</code><span class="dt">16/10/2026</span><br>merge: etapa2/dados no etapa2/backend</li>
+<li><code>ae11d33</code><span class="dt">16/10/2026</span><br>wip(core): regras novas do protótipo (poções, esquiva, stun, chefe, elite, Único), API C 1.1</li>
 <li><code>8f210d7</code><span class="dt">16/10/2026</span><br>Merge etapa2/frontend: DLL real do ShatterCore na Unity e movimento no passo fixo</li>
 <li><code>55e0867</code><span class="dt">16/10/2026</span><br>feat(arte): pipeline de acabamento dos personagens (art-src/modelos)</li>
 <li><code>ec60b4c</code><span class="dt">16/10/2026</span><br>feat(unity): integra shattercore.dll via P/Invoke e move o deslocamento para o passo fixo</li>
 <li><code>10f8c67</code><span class="dt">16/10/2026</span><br>feat(painel): galeria por grupo (modelagem, modulares, cenário, modelos 3D), faixa das 5 etapas e decisões de 16/10</li>
 <li><code>493bf7b</code><span class="dt">16/10/2026</span><br>art+design: heróis modulares e cenário da Cripta aprovados; respawn no checkpoint e porta da arena</li>
+<li><code>5f823a5</code><span class="dt">16/10/2026</span><br>docs(dados): lista de slots com legs</li>
+<li><code>76895b6</code><span class="dt">16/10/2026</span><br>feat(dados): slot legs, visualSetId e save v2 com equipment de 11 posicoes</li>
 <li><code>53813d1</code><span class="dt">16/10/2026</span><br>loc: slot Calça (legs) e base Calça Gasta</li>
 <li><code>fd2e9d3</code><span class="dt">16/10/2026</span><br>docs(arquitetura): personagem modular (04 §17.4) e proposta C-10 do slot legs</li>
+<li><code>54f35f6</code><span class="dt">16/10/2026</span><br>fix(dados): migrate_1_to_2 nao gera tutorial_flags</li>
 <li><code>5e9c313</code><span class="dt">16/10/2026</span><br>docs: revisão de código do C# do protótipo e da API C (docs/11): 0 crítico, 6 alto, 11 médio, 26 baixo</li>
+<li><code>6d196a0</code><span class="dt">16/10/2026</span><br>feat(dados): aplica itens 1 a 11 do docs/13 no ContentDB</li>
 <li><code>5858d38</code><span class="dt">16/10/2026</span><br>docs: layout da Cripta na escala da zona A (docs/14)</li>
 <li><code>8cf0b03</code><span class="dt">16/10/2026</span><br>docs(qa)+art: QA da Etapa 2 e folhas do personagem modular</li>
 <li><code>b6ac25b</code><span class="dt">16/10/2026</span><br>docs: etapas do jogo (docs/15_etapas.md) e CLAUDE.md apontando para a Etapa 2</li>

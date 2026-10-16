@@ -65,14 +65,14 @@
           "arquivo": "docs/15_etapas.md"
         }
       ],
-      "proximo": "Responder as perguntas abertas do docs/15 (com você)."
+      "proximo": "Rever o balanceamento do idle: com o conteúdo real, o Guerreiro nível 4 sem equipamento recua em cerca de 1 min. Depois, as perguntas abertas do docs/15 (com você)."
     },
     {
       "id": "dados",
       "nome": "Dados",
       "agente": "Data Engineer",
-      "estado": "andamento",
-      "resumo": "etapa2/dados terminou: 5 tabelas novas, slot legs, visualSetId e save v2. Aguarda o merge com o backend.",
+      "estado": "concluido",
+      "resumo": "Etapa 2 entregue: etapa2/dados no master (merge bcf7864) com 5 tabelas novas, slot legs, visualSetId, save v2, chaves de esquiva e de combate, loot de elite e transição do Guardião.",
       "entregas": [
         {
           "titulo": "Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)",
@@ -87,7 +87,7 @@
           "arquivo": "docs/06_dados.md"
         }
       ],
-      "proximo": "Merge com o backend (etapa2/backend)."
+      "proximo": "Ajustar números quando o Game Designer rever o balanceamento do idle."
     },
     {
       "id": "conteudo",
@@ -137,8 +137,8 @@
       "id": "backend",
       "nome": "Backend ShatterCore",
       "agente": "Backend Engineer",
-      "estado": "andamento",
-      "resumo": "PR #3 no master. etapa2/backend segue: regras novas, legs, save v2, API C ampliada e achados A-01, A-05 e A-06 da revisão.",
+      "estado": "concluido",
+      "resumo": "Etapa 2 entregue: etapa2/backend no master (merge d9b8eb3) com as 11 regras do docs/13 (poções, esquiva, stun e Guarda Quebrada, escudo e fases do Guardião, elites, Único com garantia, recuo a 0,25), slot legs, save v2 e API C 1.1 com início e coleta de expedição confiáveis. Testes: 146 do core e 21 da API C, mais o validador. Revisão de segurança ok. Falta só a fuga do Cão no simulador.",
       "entregas": [
         {
           "titulo": "Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)",
@@ -151,9 +151,13 @@
         {
           "titulo": "CI do núcleo em Linux",
           "arquivo": ".github/workflows/core.yml, manual.yml"
+        },
+        {
+          "titulo": "CI roda a cada push no núcleo (último sucesso em 3ad87b9)",
+          "arquivo": ".github/workflows/core.yml"
         }
       ],
-      "proximo": "Terminar a etapa2/backend e fazer o merge com os dados."
+      "proximo": "Fuga do Cão-de-Cinza no simulador."
     },
     {
       "id": "frontend",
@@ -171,7 +175,7 @@
           "arquivo": "EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity"
         }
       ],
-      "proximo": "Integrar os demais modelos conforme saírem do acabamento."
+      "proximo": "Ligar a API C 1.1 na Unity, trocar para as chamadas confiáveis e regravar o golden."
     },
     {
       "id": "arte_tecnica",
@@ -197,7 +201,7 @@
           "arquivo": "docs/pesquisa/modelos_3d_gratis.md"
         }
       ],
-      "proximo": "Acabamento dos inimigos e das armas; receber o lote do TripoSG (corpos, peças, cenário)."
+      "proximo": "Acabamento dos inimigos e das armas no Blender; receber o lote do TripoSG (corpos, peças, cenário)."
     },
     {
       "id": "qa",
