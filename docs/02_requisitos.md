@@ -13,7 +13,7 @@ Legenda de verificação usada em todo o documento:
 
 ## 1. Visão do produto
 
-Echoes of the Shatter é um ARPG single-player em pixel art isométrica 3/4, vendido na Steam por preço fechado (Acesso Antecipado, PC Windows, offline, sem conta e sem servidor), no qual o jogador conquista cada área e cada chefe jogando na mão e depois manda o personagem farmar essas rotas sozinho enquanto o jogo está fechado. O idle é complemento, nunca substituto: ele rende a taxa base, nunca abre conteúdo e nunca entrega os itens de topo; jogar na mão ativa o Fervor do Recuperador. Pitch: *"Conquiste na mão. Domine a rota. Deixe seu herói farmar enquanto você vive."*
+Echoes of the Shatter é um ARPG single-player em 3D estilizado pintado à mão, com câmera fixa em 3/4, vendido na Steam por preço fechado (Acesso Antecipado, PC Windows, offline, sem conta e sem servidor), no qual o jogador conquista cada área e cada chefe jogando na mão e depois manda o personagem farmar essas rotas sozinho enquanto o jogo está fechado. O idle é complemento, nunca substituto: ele rende a taxa base, nunca abre conteúdo e nunca entrega os itens de topo; jogar na mão ativa o Fervor do Recuperador. Pitch: *"Conquiste na mão. Domine a rota. Deixe seu herói farmar enquanto você vive."*
 
 ### Os 4 pilares
 
@@ -144,7 +144,7 @@ Corte vertical mínimo, menor que o demo do Next Fest (que tem Estrada + Cripta 
 ### 3.10 UI e HUD
 - **RF-57** HUD: retrato com moldura, barras de Vida e Ímpeto, faixa com nome da área, Ouro e Cargas do Marco no canto, barra inferior (habilidades, esquiva com cargas, 2 poções), números de dano.
 - **RF-58** Telas: menu principal (Novo jogo / Continuar / Opções / Sair, versão visível no canto), inventário, configuração de expedição, relatório da expedição, opções (idioma, remapeamento, tremor de tela).
-- **RF-59** Resolução interna 960 × 540 com escala inteira (×2 em 1080p) e filtro nearest; paleta do plano (Carvão, Ocre, Dourado, Carmesim, Perigo, Pergaminho).
+- **RF-59** Visual 3D estilizado conforme `docs/03_design_system.md` e as folhas oficiais de `docs/arte/referencias-geracao/`. A UI é renderizada na resolução nativa com escala de DPI, e as cores da UI, das raridades, dos elementos e da névoa de cada área vêm de `docs/03_design_tokens.json`.
 - **RF-60** Ao abrir o jogo com expedição vencida, mostrar "o Tico está voltando..." enquanto o simulador roda, sem travar a interface.
 
 ### 3.11 Localização
@@ -266,7 +266,7 @@ Formato: checklist objetivo. A coluna "Ver." indica onde se verifica.
 |---|---|---|
 | RF-57 | Checklist do HUD com os 7 elementos presentes em 1080p, sem sobreposição | UE |
 | RF-58 | Cada tela abre, fecha e volta à anterior por mouse e por Esc; a versão aparece no menu | UE |
-| RF-59 | Captura em 1920×1080 mostra pixels nítidos (escala ×2, sem borrão); cores da UI batem com os hex da paleta | UE |
+| RF-59 | Capturas em 1920×1080 e 1280×800 (Steam Deck) mostram a UI nítida e legível; as cores da UI batem com os tokens; o Guerreiro e os inimigos da Cripta são reconhecíveis pelas folhas oficiais | UE |
 | RF-60 | Simulação de 12 h ao abrir o jogo não congela a tela (animação continua) | UE |
 | RF-61 | Busca no código do módulo UE e do ShatterCore: 0 literais de texto visível; todas as chaves usadas existem nas colunas pt_BR e en (validador) | SC |
 | RF-62 | Trocar o idioma no menu atualiza todas as telas sem reiniciar e persiste após reabrir | UE |
@@ -302,7 +302,7 @@ Formato: checklist objetivo. A coluna "Ver." indica onde se verifica.
 
 | # | Plano (Godot 4) | Agora (UE5) | Impacto no produto |
 |---|---|---|---|
-| D-1 | Godot 4 com renderer Compatibility, foco em PCs fracos | UE5 com o renderer mais leve viável para 2D (decisão do Tech Lead; Paper2D/sprites em mundo isométrico) | Requisito mínimo de hardware sobe; a meta "60 FPS com GPU integrada" vira risco a medir cedo (RNF-04) |
+| D-1 | Godot 4 2D em pixel art, renderer Compatibility, foco em PCs fracos | UE 5.8 em 3D estilizado pintado à mão: Forward Shading com MSAA, sem Lumen, Nanite nem Virtual Shadow Maps (`docs/08_decisoes_visual_3d.md` e `docs/04_arquitetura.md`) | Requisito mínimo de hardware sobe; a meta "60 FPS com GPU integrada" vira risco a medir cedo (RNF-04) |
 | D-2 | Build < 500 MB | Build UE5 base é maior; meta mantida, mas sob vigilância | Pode exigir corte de módulos do motor; afeta download e Steam Deck no 1.0 |
 | D-3 | Regras em GDScript RefCounted, um único motor | Regras em **ShatterCore** C++17 puro, usado pelo módulo UE e pelo simulador | Fortalece o princípio "um único motor de regras"; testes rodam sem o editor |
 | D-4 | Testes GUT, parity bot em Godot headless | `ctest` no ShatterCore + Automation do UE; parity bot adiado | Nesta rodada não há prova de paridade combate × simulador; IdleProfiles ficam com valores provisórios marcados como "não calibrados" |
@@ -321,8 +321,8 @@ Simplificações de escopo desta rodada que **não** são causadas pelo UE5 (reg
 
 ## 7. Perguntas em aberto para o dono do projeto
 
-1. **P-1 Visual 2D no UE5:** confirma pixel art 2D (sprites em câmera isométrica, Paper2D ou equivalente) em vez de 3D estilizado com filtro de pixel? Isso define arte, câmera e desempenho.
+1. **P-1 Visual 2D no UE5:** respondida em 16/10/2026. O dono escolheu 3D estilizado pintado à mão, no estilo das referências aprovadas, e não pixel art (ver `docs/08_decisoes_visual_3d.md`).
 2. **P-2 Chefe e domínio:** o Guardião entra como obrigatório desta rodada? Se for cortado por prazo, aceita que o domínio da Cripta seja "área limpa até o fim" provisoriamente (contrariando a Regra 1)?
 3. **P-3 Paridade:** aceita adiar o teste de paridade (bot no UE headless) para a próxima rodada, com IdleProfiles provisórios marcados como não calibrados?
 4. **P-4 PC de referência:** qual máquina é o "PC de entrada" para medir RNF-04 (60 FPS) e RNF-03 (< 2 s)?
-5. **P-5 Versão e licença do UE5:** qual versão exata fixar (ex.: 5.5.x ou 5.6.x) e está ciente do royalty da Epic no modelo de receita do Acesso Antecipado?
+5. **P-5 Versão e licença do UE5:** versão fixada em 16/10/2026 no UE 5.8. Continua em aberto: o dono está ciente do royalty da Epic no modelo de receita do Acesso Antecipado?

@@ -1,7 +1,10 @@
 
 
 # Echoes of the Shatter — Plano Steam v2.0
+
 2026-10-13 · @william
+
+> **Atualização de 16/10/2026:** o visual e o motor deste plano foram substituídos. O jogo agora é 3D estilizado pintado à mão no Unreal Engine 5.8 (ver `docs/08_decisoes_visual_3d.md`, `docs/04_arquitetura.md`, `docs/03_design_system.md` e `docs/arte/referencias-geracao/`). As partes sobre pixel art e Godot ficam como histórico: o pitch da Steam ("dark pixel-art ARPG"), a ficha técnica, as especificações de arte da seção 9 e a parte técnica da seção 10. O pitch em inglês precisa ser reescrito antes da página da Steam. As regras de jogo, o conteúdo e o escopo continuam valendo.
 
 ## 1. Visão geral
 Echoes of the Shatter é um ARPG single-player em pixel art, vendido na Steam por preço fechado, no qual você conquista cada área jogando e depois manda o personagem farmá-la sozinho enquanto o jogo está fechado. Esta versão 2.0 substitui o plano 1.1: sai a Solana, o marketplace em USDC e o servidor obrigatório; o lançamento é em Acesso Antecipado com 3 classes e 1 ato.
@@ -928,6 +931,8 @@ Desafios semanais offline: uma seed fixa de mapa com modificadores, igual para t
 Atualizações de conteúdo: Assassino, Necromante e Ato II.
 
 ## 9. Arte, áudio e uso de IA
+
+> **Substituído em 16/10/2026:** a direção visual e as especificações de arte desta seção valem só como histórico. O que vale está em `docs/03_design_system.md` e `docs/arte/referencias-geracao/`. A regra de declarar à Steam o uso de IA continua valendo.
 A direção visual do plano 1.1 continua (pixel art oblíqua em ocre, carmesim, dourado e preto carvão), mas os assets finais são feitos ou refeitos à mão. Qualquer conteúdo gerado por IA que entre no jogo ou na página da Steam precisa ser declarado no questionário de conteúdo da Steam.
 
 ### Especificações de arte

@@ -1,6 +1,6 @@
 # 01 — Plano de execução (Orchestrator)
 
-Projeto: **Echoes of the Shatter** — ARPG single-player em pixel art com expedições idle.
+Projeto: **Echoes of the Shatter** — ARPG single-player em 3D estilizado pintado à mão (decisão visual de 16/10/2026) com expedições idle.
 Fonte de verdade de design: `docs/00_plano_existente.md` (Plano Steam v2.0, 13/10/2026).
 Decisão do usuário em 15/10/2026: **motor Unreal Engine 5** (substitui Godot 4 do plano), entrega = **documento + protótipo**.
 

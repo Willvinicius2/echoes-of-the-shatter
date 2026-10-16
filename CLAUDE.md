@@ -1,20 +1,21 @@
 # Echoes of the Shatter — instruções para o Claude Code
 
-ARPG single-player isométrico com expedições idle, para Steam (Acesso Antecipado).
+ARPG single-player em 3D estilizado (câmera fixa 3/4) com expedições idle, para Steam (Acesso Antecipado).
 Motor: **Unreal Engine 5.8, C++** (UE5 decidido em 15/10/2026 e versão 5.8 em 16/10/2026; o plano original dizia Godot 4).
 
 ## Direção de arte (aprovada em 16/10/2026)
-- O visual segue o estilo do Spell Brigade: 3D estilizado pintado à mão, heróis chibi, magia em neon e UI de pedra escura. A pixel art e a paleta ocre do `docs/03_design_system.md` não valem mais para o visual.
+- O visual segue o estilo do Spell Brigade: 3D estilizado pintado à mão, heróis chibi, magia em neon e UI de pedra escura. As decisões de renderização estão em `docs/08_decisoes_visual_3d.md`.
 - As referências aprovadas e as folhas oficiais de heróis, inimigos, chefes, cenários e ícones estão em `docs/arte/referencias-geracao/` (ver o README dessa pasta). Todo personagem novo deve seguir essas folhas.
 - Os assets extraídos do Spell Brigade (`D:\openclaude\spell-brigade-re`) servem só de referência de estilo. Nunca entram no projeto nem no build.
 - O Mago usa capuz e cajado com cristal, e nunca lanterna.
 
 ## Onde está cada coisa
-- `docs/00_plano_existente.md` — plano de design aprovado (Plano Steam v2.0). Fonte de verdade de design.
+- `docs/00_plano_existente.md` — plano de design aprovado (Plano Steam v2.0). Fonte de verdade de regras, conteúdo e escopo; as partes de pixel art e Godot ficaram como histórico.
 - `docs/01_plano_execucao.md` — equipe de 12 agentes, fases e quem é dono de cada arquivo.
 - `docs/02_requisitos.md` — escopo do protótipo, RF-01..RF-65, RNF, critérios de aceite ([SC] = teste automático, [UE] = manual no editor).
-- `docs/03_design_system.md` + `docs/03_design_tokens.json` — telas e componentes UMG. A paleta e o estilo pixel art estão superados pela direção de arte acima.
-- `docs/04_arquitetura.md` — arquitetura UE5, contratos, Build.cs, regras de determinismo.
+- `docs/03_design_system.md` + `docs/03_design_tokens.json` — especificação de arte 3D (proporções, texel, pintura), paleta, tokens, telas e componentes UMG.
+- `docs/04_arquitetura.md` — arquitetura UE 5.8, renderização 3D (câmera, materiais, sombras, Niagara), pipeline Blender → UE, orçamentos por asset e por cena, contratos, Build.cs, determinismo.
+- `docs/08_decisoes_visual_3d.md` — decisões de renderização e quem é dono de cada número (03 = arte, 04 = orçamentos técnicos).
 - `ShatterCore/` — motor de regras em C++17 puro, sem Unreal. Headers prontos em `include/shatter/`; `src/` ainda vazio.
 - `EchoesOfTheShatter/Content/Data/schemas/` — esquemas das tabelas CSV (parcial).
 - `tools/validate_data.py` — validador de dados (parcial, não testado contra CSV reais).
@@ -38,7 +39,9 @@ ctest --test-dir build --output-on-failure
 ```
 
 ## Pendências de decisão
-- A seção 3 do `docs/04_arquitetura.md` (sprites Paper2D pixel-perfect, materiais Unlit + Masked, texturas sem filtro) e o `docs/03_design_system.md` foram escritos para pixel art. O visual aprovado é 3D pintado à mão. Antes de o Frontend começar, o Tech Lead e o Art Director precisam revisar a renderização (malhas 3D x Paper2D), a câmera, os materiais e os tokens.
+- Itens "confirmar no 5.8" do `docs/04_arquitetura.md`: conferir na instalação do motor antes de o Frontend depender deles.
+- PC de entrada para medir a RNF-04 (pergunta P-4) ainda não definido; a seção 18 do `04` usa um placeholder.
+- O `04` prevê Git LFS para arte e `.uasset`; o repositório ainda não tem LFS nem remoto, e as referências PNG já commitadas estão no Git comum.
 - O protótipo Godot F1 continua na raiz (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo UE.
 
 ## Próximo passo
