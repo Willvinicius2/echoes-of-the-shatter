@@ -90,9 +90,25 @@ if(SHATTER_BUILD_TESTS)
     # Dados de teste (CSV de exemplo, saves de cada versão publicada).
     target_compile_definitions(shattercore_tests PRIVATE
       SHATTER_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data"
-      SHATTER_CONTENT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../EchoesOfTheShatter/Content/Data")
+      SHATTER_CONTENT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../EchoesOfTheShatter/Content/Data"
+      SHATTER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+      SHATTER_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/test_tmp")
     shatter_set_warnings(shattercore_tests)
     add_test(NAME shattercore_tests COMMAND shattercore_tests)
+
+    # RF-51: um save gravado pelo core passa no validador de esquema do Data Engineer (Python).
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+    if(Python3_Interpreter_FOUND)
+      add_test(NAME save_rf51_python_validator
+               COMMAND ${CMAKE_COMMAND}
+                       -DTEST_BIN=$<TARGET_FILE:shattercore_tests>
+                       -DPYTHON=${Python3_EXECUTABLE}
+                       -DREPO=${CMAKE_CURRENT_SOURCE_DIR}/..
+                       -DOUT=${CMAKE_CURRENT_BINARY_DIR}/test_tmp/rf51_python/slot_1
+                       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_save_validator.cmake)
+    else()
+      message(STATUS "ShatterCore: Python 3 não encontrado — teste save_rf51_python_validator omitido")
+    endif()
   else()
     message(STATUS "ShatterCore: tests/*.cpp ainda não existe — alvo de testes omitido")
   endif()
