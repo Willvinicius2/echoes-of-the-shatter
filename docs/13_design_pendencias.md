@@ -346,3 +346,95 @@ Sem isso a expedição fica bloqueada (RF-43), o que mata o pilar P3 do protóti
 9. **Drop do Único:** primeira vitória garantida, 20% depois, garantido na 5ª vitória seguida sem drop; contador por chefe no save; usa o fluxo de RNG de loot. Persistir o contador antes de entregar o item (coleta sem duplicar, RF-55).
 10. **Recuo do idle:** `retreat_life_fraction` 0,25, avaliado depois das regras de poção no mesmo passo de 0,1 s.
 11. **Perfil de fuga do Cão:** o simulador soma ~4 s por cão que fugiu (via `idleApproachTime` da habilidade que o finaliza ou o `fleeSeconds` de `enemy_ai`), sem simular posição.
+
+---
+
+## Balanceamento e dados — rodada 2 (16/10/2026)
+
+Origem: `09_mudancas_contrato.md` seção 7 (7.2 item 5, 7.6) e os pedidos do Frontend. Base: CSV de `Content/Data/` e a leitura de `ShatterCore/src/expedition.cpp`, `damage.cpp`, `combat.cpp`. **Não rodei o simulador**: as contas abaixo são à mão e todo número derivado é **[HIPÓTESE]** até o Backend rodar as sementes pedidas em R2.1.4.
+
+### R2.1 Por que o Guerreiro nível 4 sem equipamento recua em cerca de 1 minuto
+
+**R2.1.1 O que o código e os CSV dizem (lido, não estimado).**
+
+1. **Sem arma o herói causa 0 de dano.** `expedition.cpp` (linhas 75 a 78) só preenche `weaponDamage` se existir item em `equipment[MainHand]`. Os 4 golpes têm `scalesWithWeapon=true` e `baseDamage*` vazio; `ResolveHit` ignora tipos com base 0. Nenhum inimigo morre, o encontro só termina por recuo ou por estourar o orçamento. Com 156 de vida e 3 poções (3 x 62 = 187 de cura) o herói tem ~340 de "vida total" contra 2 a 16 de dano por segundo dos grupos (conta em R2.1.3): dá de 20 s a ~80 s, que é o "cerca de 1 minuto" do Backend. **Este caso não se resolve com número de balanceamento**: é falta de dano base desarmado (ver R2.5, pergunta ao Tech Lead). O resto desta seção trata do herói com a Espada de Ferro (`item_base.iron_sword`, 9 de dano), que é o mínimo para existir expedição.
+2. **No idle todo inimigo do encontro ataca ao mesmo tempo, sem pausa.** O ciclo de cada inimigo é `windup+impact+recovery` e recomeça na hora (`EnemyAct`). O `attackTokens`=2 e o cerco de `enemy_ai.csv` não existem no simulador: 5 Cães mordem juntos, quando no jogo manual só 2 mordem por vez (docs/13 item 6.1).
+3. **O Cão não é esquivável no idle** (`enemy_attacks.csv`: `telegraphed=false`), então `ai_base_dodge` 0,5 e as 3 cargas de esquiva só protegem contra Sentinela, Arauto e Arqueiro. O encontro de Cães é o de maior dano médio depois do Arauto e da Elite Escudada.
+4. **`idleDamageTakenMult` é 1 nas 4 habilidades**, ou seja, o idle não tem nenhuma folga sobre o humano, e o humano esquiva mais que 50% e fica atrás de pilar. É a alavanca prevista em docs/13 item 8.2 (passo 3).
+5. **A armadura agrava o problema pelo jeito que é calculada:** `redução = armadura / (armadura + 5 x dano)` aplicada ao dano do golpe. Sem elmo e calça o herói tem 26 de armadura (20 + 2 x 3 níveis; com elmo e calça, 38) e o golpe de 8 da Sentinela perde só 39% (4,85 de dano líquido).
+
+**R2.1.2 Premissas da conta (todas [HIPÓTESE]).** Herói nível 4: vida 156 (120 + 12 x 3), regen 1,3/s, armadura 26, crítico 7% (5% base + 2% da espada), barra com os 4 golpes e a regra "poção de Vida se vida < 35%". Dano do Corte: 9 x 1,035 (crítico) = 9,3 bruto, ciclo de 0,53 s (0,45 s / `idleUptime` 0,85), 1,3 alvos por golpe, ~22 dps bruto; golpe de área e Investida dão a mesma ordem de grandeza e não mudam o resultado. Inimigos no nível 3 da Cripta (`maps.csv` `monsterLevel`=3): Sentinela vida 76 / armadura 10; Cão 50 / 0; Arauto 186 / 36; Arqueiro 45 / 0; Sentinela Escudada 152 / 31 + barreira 61; Cão Veloz 80 / 0. Esquiva efetiva contra golpes telegrafados ~40% (a IA acerta o sorteio de 50%, mas a recarga em série de 1,5 s limita a 0,67 esquivas por segundo). Ciclo de expedição: travessia média 6,2 s (pesos 3,2,2,1,2,1,1 de `encounters.csv`) + luta média 11,5 s = **17,7 s por encontro**.
+
+**R2.1.3 Dano médio por encontro (herói com espada, sem armadura de equipamento).**
+
+| Encontro | Peso | Luta | Dano recebido | % da vida (156) | O que pesa |
+|---|---|---|---|---|---|
+| `enc.crypt.patrol_a` | 3 | ~9,5 s | ~40 | 26% | 2 a 3 Sentinelas, 40% esquivadas |
+| `enc.crypt.patrol_b` | 2 | ~9 s | ~27 | 17% | |
+| `enc.crypt.hounds` | 2 | ~9 s | ~91 (3 Cães 53, 4 Cães 88, 5 Cães 132) | 58% (85% com 5) | todos mordem juntos, sem esquiva |
+| `enc.crypt.herald` | 1 | ~19 s | ~150 | 96% | Arauto 186 de vida e armadura 36, golpe de 22; as Sentinelas ficam vivas até o fim |
+| `enc.crypt.firing_line` | 2 | ~11,5 s | ~50 | 32% | |
+| `enc.crypt.elite_shield` | 1 | ~20 s | ~100 | 64% | barreira 61 + vida 152 |
+| `enc.crypt.elite_swift` | 1 | ~12 s | ~89 | 57% | |
+| **Média ponderada** | 12 | 11,5 s | **~66** | 42% | |
+
+**R2.1.4 Equilíbrio por ciclo de 17,7 s e tempo até o recuo.**
+
+Ganho por ciclo = regen 1,3 x 17,7 = 23 + poção de Vida (62,4 / 40 s x 17,7 = 27,6) = **~51**. Dano médio = **~66**. Saldo = -15 por ciclo. Reserva antes de recuar = (156 - 39) de vida acima de 25% + 3 poções (187) = ~304. Tempo médio até recuar = reserva / |saldo| (passeio com deriva, conta grosseira):
+
+| Caso | Dano/ciclo | Ganho/ciclo | Saldo | Tempo até recuar (antes) | Depois de m = 0,85 |
+|---|---|---|---|---|---|
+| Sem arma (0 de dano) | n/a | 51 | n/a | **20 a 80 s** (bate com o relato) | 30 a 110 s (não se resolve por número) |
+| Espada, sem equipamento | 66 | 51 | -15 | **~6 min** | dano 52 (saldo -2): **~43 min** |
+| Kit inicial (espada, elmo, peitoral, luvas, calça, botas: vida 168, armadura 38) | 55 | 53 | -2 | ~48 min | dano 43 (saldo +10): probabilidade de algum dia recuar ~1% |
+
+Leitura: o problema real com o conteúdo atual é uma margem de ~0 (dano ≈ ganho), com variância alta (Arauto, bando de 5 Cães, Elite Escudada tiram 60 a 96% da vida de uma vez). Um encontro ruim sem poção disponível faz o herói recuar. Para uma expedição de 1 a 12 h (`min/max_expedition_hours`) o saldo precisa ser claramente positivo com o kit inicial.
+
+**R2.1.5 Ajuste mínimo (uma mudança de dado, quatro células).**
+
+`skills.csv`, coluna `idleDamageTakenMult`: **1 -> 0,85** em `skill.warrior.iron_cut`, `charge`, `stone_rift` e `shield_bash` (o simulador usa o multiplicador da habilidade em execução, então as 4 têm que ter o mesmo valor). Pela fórmula da armadura o dano líquido cai ~20% (não 15%): Sentinela 4,85 -> 3,85; Cão 3,21 -> 2,53; Arauto 17,8 -> 14,6. Justificativa de design, não de ajuste de sorte: (a) o simulador não aplica o limite de 2 atacantes dos Cães (vale ~8% do dano total); (b) o humano esquiva golpes que o idle chama de não esquiváveis (agacho do Cão de 0,3 s); (c) é o passo 3 já previsto em 8.2. Não toca o ritmo de abates, então a meta de 30 a 40% do manual (RF-32) não muda. **Critério de pronto (Backend roda 20 sementes de 1 h, antes e depois):** kit inicial, probabilidade de recuo em 1 h <= 10% e mediana sem recuo; só espada, mediana >= 30 min; sem arma, ver R2.5. Se o Kit inicial ficar sem nenhum recuo em 20 sementes de 4 h, a margem ficou grande demais para o pilar P3 e `m` sobe para 0,9.
+
+**Alavancas descartadas.** `potion.life.fractionOfMaxLife` ou `rechargeSeconds`: são compartilhadas com a luta do Guardião (item 2 deste documento). `retreat_life_fraction` menor: só adia o recuo e passa a matar o herói no idle. Vida ou dano de inimigos: mexem no jogo manual e no chefe. Armadura do herói: é decisão de equipamento.
+
+**Quando o simulador respeitar `attackTokens`** (pedido ao Tech Lead em R2.5), `m` pode subir para 0,92.
+
+### R2.2 Números que estavam no código e passam a ser dado
+
+| Número | Onde estava | Tabela | Coluna ou chave | Valor | Observação |
+|---|---|---|---|---|---|
+| Momento da invocação do Guardião (fração do rugido) | `kSummonAtFractionOfTransition` em `combat.cpp` | `boss_phases.csv` | `summonAtFraction` (nova, 0 < x < 1) | fase 2: **0,5** (1,0 s de 2,0 s, docs/13 item 4.4); fase 1: vazio | obrigatória quando `summonCount` > 0 |
+| Stagger da Investida do Escudo que bate em pilar ou parede | só no texto (docs/13 item 4.3, [HIPÓTESE]) | `skills.csv` | `wallStaggerSeconds` (nova, s) | `skill.enemy.guardian_shield_charge`: **2,0**; vazio nas demais | a queda do escudo por 5 s já é `rules.csv` `boss_shield_down_seconds` (5). O valor sai do JSON de `14_layout_cripta.md` (`arenaCharge.wallStaggerSeconds`) para ter um dono só |
+| Velocidade de patrulha | 0,5 da perseguição, no código | `enemies.csv` | `patrolSpeedMult` (nova) | `enemy.hollow_sentinel`: **0,5** (110 uu/s = 1,1 m/s, docs/14); vazio nos demais = não patrulha | só as Sentinelas patrulham (`patrol_a`, `patrol_b`); Sentinela Escudada fica parada |
+| R-VIS-1: atirador só mira dentro da tela | só no texto (docs/14 8.2) | `enemy_ai.csv` | `requireOnScreen` (nova, bool) | `enemy.ghost_archer`: **true**; Cães: vazio (false) | |
+| Margem interna da área visível de R-VIS-1 | 1 m no texto | `rules.csv` | `require_on_screen_margin` (nova, uu) | **100** | margem sobre o retângulo do frustum, medida na tela (ver docs/14 seção 8.2) |
+
+### R2.3 Câmera com yaw de 45 graus (docs/14)
+
+Correção em `14_layout_cripta.md`: seção 1 (eixos e retângulo visível), 8.2 (R-VIS-1 e R-VIS-3), 9 (itens 1 e 4), 10 (itens 1 e 3) e o bloco JSON. Resumo: o retângulo visível (±12,4 m na horizontal da tela, ±8,5 m na vertical) está **girado 45 graus em relação aos eixos do mundo**, então o limite no mundo é `|dx+dz| <= 12,0` e `|dx-dz| <= 17,5` (ou os dois trocados, conforme o sinal do yaw). Um critério que vale para os dois sinais: **`|dx| + |dz| <= 12,0 m`** cabe sempre na tela. Os arqueiros continuam a +-7,5 m da linha de chegada, mas deixam de ser posicionados para "acordar visíveis" (impossível com aggro 14 m); a garantia passa a ser só R-VIS-1.
+
+### R2.4 Voltar ao checkpoint: reset total (confirmação da interpretação do Frontend)
+
+**Confirmado, com um esclarecimento de escopo.** O dono decidiu "estilo Souls" (bloco "Checkpoint e arena" no topo deste documento). Em Souls o descanso na fogueira restaura todos os inimigos, mortos e vivos. A regra de design, que vale para voltar por morte, por saída e pelo portal:
+
+1. **Todos os inimigos comuns e elites do mapa voltam ao estado de nascimento**, não só os da sala: vivos, com vida cheia, na posição de espaço (ou ponta inicial da patrulha), sem aggro e sem efeitos. O reset acontece durante o fade do teletransporte, fora da vista do jogador.
+2. **A composição não é sorteada de novo:** mesma quantidade, mesmos elites e mesmos modificadores da primeira vez nesta visita ao mapa (evita jogar de novo só para sortear elite). Ela só muda ao sair do mapa e entrar de novo.
+3. **Não reaparecem nem voltam:** o chefe vencido (fica morto até sair do mapa), baús abertos, o segredo aberto e o atalho A aberto. XP e itens nunca se perdem (plano seção 3).
+4. **O chefe não vencido** volta à fase 1 com vida cheia (regra já existente de reset da luta) e a porta da arena reabre.
+5. **XP:** os inimigos que reaparecem dão XP, sujeito ao limite `xp_cap_levels_above_area`. É o custo de uma regra simples e o motivo de o dono ter escolhido esse estilo; vigiar no playtest se vira farm fácil.
+
+Efeito de design: os checkpoints passam a valer como pontos de poção cheia e de segurança, não como "limpar o mapa por partes". Isso aumenta o valor do atalho A e de CP3 (docs/14 seção 5). Não há número novo; é regra de estado do jogo manual (Tech Lead). O idle não usa checkpoint.
+
+### R2.5 Pedidos fora de CSV
+
+- **Tech Lead / Backend:** (1) decidir o dano desarmado. Proposta mínima: `rules.csv` `unarmed_weapon_damage_physical` = 3 e o core usar quando não houver arma; ou o fixture e o cliente nunca iniciam expedição sem arma. (2) Rodar as 20 sementes de R2.1.5 antes e depois. (3) Respeitar `attackTokens` do `enemy_ai.csv` no simulador (no máximo N atacantes de cada família por vez); então `m` = 0,92. (4) **Possível erro:** em `combat.cpp` `ComputeActionTiming`, `windupSpeed = speed / attackSpeedMult` ALONGA o telegraph do elite Veloz (0,3 s -> 0,375 s) em vez de mantê-lo; com `recoveryMult` 0,8 o ciclo do Cão Veloz fica igual ao do Cão comum (0,80 s). O texto do item 5 pede telegraph inalterado: usar `windup / speed`. (5) Ler as colunas novas de R2.2 e a regra de reset de R2.4. (6) Confirmar o sinal do yaw da câmera (+45 ou -45).
+- **Frontend:** R-VIS-1 usa o frustum real da câmera (retângulo na tela menos `require_on_screen_margin`), não números fixos.
+
+### Para o Data Engineer
+
+1. `skills.csv`: `idleDamageTakenMult` = 0,85 em `skill.warrior.iron_cut`, `skill.warrior.charge`, `skill.warrior.stone_rift`, `skill.warrior.shield_bash` (era 1 nas quatro).
+2. `skills.csv`: coluna nova `wallStaggerSeconds` (número, s, opcional); `skill.enemy.guardian_shield_charge` = 2,0; as demais linhas vazias.
+3. `boss_phases.csv`: coluna nova `summonAtFraction` (0 < x < 1; obrigatória se `summonCount` > 0); `enemy.crypt_guardian` fase 2 = 0,5; fase 1 vazia. Validador: erro se `summonCount` > 0 e a coluna estiver vazia.
+4. `enemies.csv`: coluna nova `patrolSpeedMult` (0 < x <= 1, opcional); `enemy.hollow_sentinel` = 0,5; todas as outras linhas vazias.
+5. `enemy_ai.csv`: coluna nova `requireOnScreen` (bool, opcional); `enemy.ghost_archer` = true; Cães vazios.
+6. `rules.csv`: chave nova `require_on_screen_margin` = 100 (uu).
+7. Nada mais muda. Não mexer em `potions.csv`, `class_stats.csv` nem `retreat_life_fraction` (0,25). `unarmed_weapon_damage_physical` só entra se o Tech Lead aprovar R2.5 (1).

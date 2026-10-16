@@ -10,9 +10,9 @@ Valores marcados **[HIPÓTESE]** precisam de playtest. Pilares usados (plano, se
 |---|---|---|
 | Unidade | metro (1 uu = 1 cm, então 900 uu = 9 m) | `13`, cabeçalho |
 | Origem | porta de entrada da Cripta, no centro da parede sul do Átrio: `(X=0, Z=0)` | pedido |
-| Eixos | X = direita na tela, Z = "para cima" na tela (norte). O herói entra olhando para +Z | **[HIPÓTESE]**: confirmar com o Tech Lead que a câmera não tem rotação (yaw) própria |
-| Câmera | 56 m; chão visível ≈ 24,8 m (X) × 17 m (Z) | dono, 16/10/2026 |
-| Retângulo visível | centrado no herói: ±12,4 m em X e ±8,5 m em Z; diagonal até o canto ≈ 15,0 m | **[HIPÓTESE]** herói no centro da tela |
+| Eixos | Eixos do **mundo**: X = leste, Z = norte; o herói entra olhando para +Z. A câmera tem **yaw de 45°**, então na tela X e Z são diagonais (nenhum eixo do mundo é "direita" ou "para cima") | corrigido na rodada 2 (`13`, R2.3); o sinal do yaw (+45 ou -45) é confirmação pendente do Tech Lead |
+| Câmera | 56 m, yaw 45°; chão visível ≈ 24,8 m (horizontal da tela) × 17 m (vertical da tela) | dono, 16/10/2026 |
+| Retângulo visível | **alinhado à tela, não ao mundo**, centrado no herói: ±12,4 m na horizontal da tela (u) e ±8,5 m na vertical (v); diagonal até o canto ≈ 15,0 m. Em coordenadas do mundo (dx, dz relativos ao herói), com yaw +45°: `u = (dx − dz)/√2`, `v = (dx + dz)/√2`, logo é visível se `|dx − dz| ≤ 17,5` e `|dx + dz| ≤ 12,0`; com yaw −45° os dois limites se trocam. Critério que vale para os dois sinais: `|dx| + |dz| ≤ 12,0` | **[HIPÓTESE]** herói no centro da tela, sem trapézio de perspectiva |
 | Herói | 4,5 m/s; esquiva 4 m em 0,35 s | `13` itens 1 e 12 |
 | Velocidades de inimigo | Sentinela 2,2 · Cão 3,8 · Cão Veloz 4,8 · Arqueiro 2,0 · Arauto 1,3 · Guardião 1,8 m/s | `enemies.csv` / `13` item 12 |
 | Aggro | Sentinela e Arauto 9 · Elite Escudada 10 · Cão 11 · Cão Veloz 12 · Arqueiro 14 m | `enemies.csv` |
@@ -20,7 +20,7 @@ Valores marcados **[HIPÓTESE]** precisam de playtest. Pilares usados (plano, se
 | Largura de porta | 6 m (igual ao corredor) | pedido |
 | Comprimento de corredor | 12 m entre salas; o do atalho tem 16 m | **[HIPÓTESE]**: o pedido só fixa a largura |
 
-Consequência de design da câmera: o jogador só enxerga 8,5 m à frente (para cima) e 12,4 m para os lados. Nada além disso aparece na tela. Por isso as "vistas" são verticais e próximas (seção 6), e o perigo é lido por forma no chão, não por distância.
+Consequência de design da câmera: o jogador só enxerga 8,5 m para cima/baixo da tela e 12,4 m para os lados da tela (na diagonal do mundo). Nada além disso aparece. Por isso as "vistas" são verticais e próximas (seção 7.2), e o perigo é lido por forma no chão, não por distância. Como o yaw é 45°, os corredores (alinhados ao mundo) aparecem como diagonais na tela; o lado curto da área visível (8,5 m) é o que limita quem vem pela diagonal "para cima" da tela.
 
 ## 2. Mapa geral (esquemático, sem escala)
 
@@ -105,7 +105,7 @@ Regra para pesos e idle: o simulador sorteia pelos pesos do CSV, sem posição. 
 | `marker.crypt.return` | (76,139) | centro da arena, aparece ao vencer o Guardião | n/a | Marco de Retorno (plano seção 3) |
 | `portal.crypt.exit` | (76,149) | arena, aparece junto do Marco | n/a | portal ao Refúgio depois do chefe |
 
-Inimigos já vencidos ficam mortos depois de morrer e voltar a um checkpoint **[HIPÓTESE]** (o plano só diz "volta ao último checkpoint sem perder itens nem XP"). Se o dono preferir respawn, o atalho A e CP2 passam a valer mais.
+Ao voltar a um checkpoint (por morte ou saída), **todos** os inimigos comuns e elites do mapa voltam ao estado de nascimento (vivos, vida cheia, posição de espaço, sem aggro), estilo Souls, decisão do dono em 16/10/2026; regra completa em `13`, R2.4. O atalho A e CP2 valem mais por isso. O chefe vencido, os baús abertos e os segredos abertos não voltam.
 
 ### 5.2 Baús
 
@@ -217,11 +217,13 @@ Com salas de 24–32 m e só 7 encontros, a caminhada vazia seria de cerca de 25
 
 ## 8. Leitura na câmera de 56 m
 
-Retângulo visível (centrado no herói **[HIPÓTESE]**): ±12,4 m em X, ±8,5 m em Z, canto a ~15,0 m. O raio de aggro (círculo) só cabe inteiro na tela se for menor que 8,5 m. Nenhum inimigo cabe nessa condição, então a regra tem que ser de geometria mais regra de IA.
+Retângulo visível (centrado no herói **[HIPÓTESE]**): ±12,4 m na horizontal da tela e ±8,5 m na vertical da tela, canto a ~15,0 m. Ele é alinhado à tela e, com o yaw de 45°, aparece girado 45° em relação aos eixos do mundo (seção 1). O raio de aggro (círculo) só cabe inteiro na tela se for menor que 8,5 m, e isso vale para qualquer orientação. Nenhum inimigo cabe nessa condição, então a regra tem que ser de geometria mais regra de IA.
 
 ### 8.1 Alcance de aggro contra a área visível
 
-| Inimigo | Aggro | Cabe em X (12,4)? | Cabe em Z (8,5)? | Primeiro dano real | Risco de "ataque fora da tela" |
+(Colunas em eixos **da tela**: horizontal 12,4 e vertical 8,5. Os alcances comparados são distâncias, então não dependem do yaw.)
+
+| Inimigo | Aggro | Cabe na horizontal da tela (12,4)? | Cabe na vertical da tela (8,5)? | Primeiro dano real | Risco de "ataque fora da tela" |
 |---|---|---|---|---|---|
 | Sentinela Oca / Arauto | 9 m | sim | excede em 0,5 m | golpe corpo a corpo de ≤ 2 m | nenhum: o ataque ocorre perto do herói |
 | Elite Escudada | 10 m | sim | excede 1,5 m | corpo a corpo | nenhum |
@@ -232,29 +234,31 @@ Retângulo visível (centrado no herói **[HIPÓTESE]**): ±12,4 m em X, ±8,5 m
 
 ### 8.2 Regras para garantir "nenhum inimigo ataca de fora da tela"
 
-R-VIS-1 (regra de IA, pedido ao Tech Lead e ao Data Engineer, **[HIPÓTESE]**): atirador só inicia a mira (Telegraph) se o próprio atirador estiver dentro do retângulo visível do herói reduzido em 1 m (|dx| ≤ 11,4 e |dz| ≤ 7,5). Fora disso fica em Posicionar andando para dentro dele. O retângulo deve vir do frustum da câmera (não de números fixos), para continuar certo se o FOV ou a altura mudarem. Como o retângulo é convexo e a flecha vai ao herói no centro, uma flecha disparada desta posição nunca atravessa a tela vinda de fora. Isto é um atributo novo do `enemy_ai.csv` (coluna sugerida `requireOnScreen`, para o Data Engineer decidir o nome).
+R-VIS-1 (regra de IA, **[HIPÓTESE]**; dados fechados na rodada 2, `13` R2.2): atirador só inicia a mira (Telegraph) se o próprio atirador estiver dentro do retângulo visível do herói **medido nos eixos da tela** e reduzido em 1 m: |u| ≤ 11,4 e |v| ≤ 7,5. Com o yaw de 45°, isso é um retângulo girado no mundo (yaw +45°: |dx − dz| ≤ 16,1 e |dx + dz| ≤ 10,6; yaw −45°: os dois limites se trocam). **Não usar `|dx| ≤ 11,4 e |dz| ≤ 7,5` do mundo: está errado com yaw.** Fora do retângulo o arqueiro fica em Posicionar andando para dentro dele. O retângulo vem do frustum da câmera (não de números fixos), para continuar certo se o FOV, a altura ou o yaw mudarem. Como o retângulo é convexo e a flecha vai ao herói no centro, uma flecha disparada desta posição nunca atravessa a tela vinda de fora. Dados: `enemy_ai.csv` coluna `requireOnScreen` = true para `enemy.ghost_archer`; a margem de 1 m é `rules.csv` `require_on_screen_margin` = 100 (uu).
 
 R-VIS-2: nenhuma habilidade de chefe começa com o chefe fora da tela. Na fase 1 isso é automático (martelo 3,8 m, Golpe de Escudo 2 m). A Investida só é escolhida com o herói entre 3 e 7,5 m (seção 6.2).
 
-R-VIS-3 (geometria, esta seção): cada espaço de inimigo está posto de modo que, na rota principal, o **primeiro aggro aconteça com o inimigo visível**. Para a chegada ao longo de uma linha, o primeiro aggro ocorre no deslocamento ao longo da linha `d = sqrt(R² − o²)`, onde `o` é a distância do inimigo à linha. O inimigo está visível quando `d` ≤ 12,4 (chegada em X) ou ≤ 8,5 (chegada em Z), e `o` ≤ 8,5 (X) ou ≤ 12,4 (Z). Arqueiros ficam a **o = 7,5 m** da linha de chegada em X: `d = sqrt(14² − 7,5²) = 11,8 m`, dentro de 12,4 com folga de 0,6 m em X e de 1,0 m em Z. Linha de visão: parede bloqueia aggro (um arqueiro atrás da parede de um corredor não acorda).
+R-VIS-3 (geometria, **reescrita na rodada 2 por causa do yaw de 45°**): na versão anterior, o critério era "o primeiro aggro acontece com o inimigo visível", calculado com a tela alinhada ao mundo. Com o yaw isso deixou de valer para alguns inimigos, e para os atiradores é impossível (aggro de 14 m passa de qualquer meia-diagonal útil). A regra nova é: **nenhum inimigo causa dano estando fora da tela.** Atiradores: R-VIS-1. Corpo a corpo e Cães: podem acordar até ~5 m fora do retângulo (medido na soma `|dx + dz|` ou `|dx − dz|`, ver tabela), desde que o tempo na tela antes de ferir continue ≥ 0,9 s (tabela de tempos abaixo, que depende só de distância e velocidade e por isso não muda com o yaw).
 
-Resultado por encontro (rota principal, herói centrado):
+Método da tabela: para a chegada em linha reta, o primeiro aggro ocorre com o inimigo à frente `d = sqrt(R² − o²)` e ao lado `o`; `(dx, dz)` são relativos ao herói naquele instante. Margem = quanto falta para sair do retângulo (positiva = visível), no pior dos dois eixos da tela, em metros na unidade da soma/diferença (÷ √2 para metros na tela). Duas colunas, uma por sinal do yaw.
 
-| Encontro | Inimigo crítico (espaço) | Aggro | Linha | `o` (m) | `d` (m) | Margem em X | Margem em Z | Primeiro a acordar |
-|---|---|---|---|---|---|---|---|---|
-| 1 | Sentinela (43,21) | 9 | z=13 | 8,0 | 4,1 | 8,3 | 0,5 | Sentinela (40,19), herói em x=33,3 |
-| 2 | Cão (87,5) | 11 | z=13 | 8,0 | 7,6 | 4,8 | 0,5 | Cão (84,6), herói em x=75,5 |
-| 3 | Sentinela (88,49) | 9 | x=80 | 8,0 | 4,1 | 4,4 | 4,4 | Sentinela (88,49), herói em z=44,9 |
-| 3 | Arauto (87,55) | 9 | x=80 | 7,0 | 5,7 | 5,4 | 2,8 | depois da Sentinela |
-| 4 | Arqueiro (34,61.5) | 14 | z=54 | 7,5 | 11,8 | 0,6 | 1,0 | herói em x=45,8 |
-| 4 | Arqueiro (42,46.5) | 14 | z=54 | 7,5 | 11,8 | 0,6 | 1,0 | herói em x=53,8, na linha de visão da abertura de C04 |
-| 5 | Arqueiros (-2,61.5) e (-2,46.5) | 14 | z=54 | 7,5 | 11,8 | 0,6 | 1,0 | herói em x=9,8 |
-| 6 | Sentinela (1,100) | 9 | x=-4 | 5,0 | 7,5 | 4,9 | 1,0 | herói em z=92,5 |
-| 6 | Elite Escudada (4,99) | 10 | x=-4 | 8,0 | 6,0 | 6,4 | 2,5 | depois da Sentinela |
-| 7 | Cão Veloz (45,101) | 12 | z=94 | 7,0 | 9,7 | 2,7 | 1,5 | herói em x=35,3 |
-| 7 | Cão (44,102) | 11 | z=94 | 8,0 | 7,6 | 4,8 | 0,5 | herói em x=36,5; o mais cedo é o Cão (41,101), em x=32,5 |
+| Encontro | Primeiro inimigo a acordar (espaço) | Aggro | (dx, dz) ao acordar | Margem yaw +45° | Margem yaw −45° | Herói em |
+|---|---|---|---|---|---|---|
+| 1 | Sentinela (40,19) | 9 | (6,7; 6,0) | **−0,7** | 4,8 | x=33,3, z=13 |
+| 2 | Cão (84,6) | 11 | (8,5; −7,0) | 2,0 | **−3,5** | x=75,5, z=13 |
+| 3 | Sentinela (88,49) | 9 | (8,0; 4,1) | **−0,1** | 5,4 | x=80, z=44,9 |
+| 3 | Arauto (87,55) | 9 | (7,0; 5,7) | **−0,7** | 4,8 | x=80, z=49,3 (depois da Sentinela) |
+| 4 | Sentinela (38,53) | 9 | (−8,9; −1,0) | 2,1 | 4,1 | z=54, vindo de leste |
+| 4 | Sentinela (36,56) | 9 | (−8,8; 2,0) | 5,2 | 1,2 | idem |
+| 5 | Sentinela (−6,55) | 9 | (−8,9; 1,0) | 4,1 | 2,1 | z=54, vindo de leste |
+| 6 | Sentinela (1,100) | 9 | (5,0; 7,5) | **−0,5** | 5,0 | x=−4, z=92,5 |
+| 6 | Elite Escudada (4,99) | 10 | (8,0; 6,0) | **−2,0** | 3,5 | x=−4, z=93,0 |
+| 7 | Cão (41,101) | 11 | (8,5; 7,0) | **−3,5** | 2,0 | x=32,5, z=94 |
+| 7 | Cão Veloz (45,101) | 12 | (9,8; 7,0) | **−4,8** | 0,8 | x=35,3, z=94 |
 
-Todas as margens são positivas, então na rota central nenhum inimigo acorda fora da tela. Margens de 0,5 m (Z) são apertadas: o herói que anda rente a uma parede muda `o` e pode acordar o inimigo fora da tela. Para isso valem R-VIS-1 (atiradores) e a tabela de tempos abaixo (melee).
+Leitura: com yaw +45° os inimigos a nordeste do herói (chegada para leste com o inimigo ao norte da linha, ou para norte com o inimigo a leste) acordam até 4,8 m fora da tela; com yaw −45° o pior é o encontro 2 (−3,5). Nenhum valor passa de 5 m, e o tempo de ~0,9 s na tela antes da mordida do Cão Veloz continua verdadeiro (ele precisa vencer pelo menos 3,5 m até a faixa de cerco de 3,5 a 5 m, a 4,8 m/s, mais 0,24 s de agacho). Por isso **não movo os espaços de inimigo**: o layout fica como está. Se o playtest mostrar "dano que vem do nada" nos encontros 6 e 7, a ação é encurtar o aggro do Cão Veloz de 1200 para 1000 (`enemy_ai.csv`/`enemies.csv`), não mexer na geometria.
+
+**Margens dos arqueiros (mudaram).** Os arqueiros continuam a **o = 7,5 m** da linha de chegada (o uso agora é o fogo cruzado, não "acordar visível"). Ao acordar, a 11,8 m à frente e 7,5 m ao lado, eles ficam **fora da tela**: ~1,2 m (yaw +45°, arqueiro de um lado) ou ~5,1 m (yaw −45° ou o arqueiro do outro lado), medidos na tela. Para entrar no retângulo reduzido de R-VIS-1 faltam ~2,2 a ~6,1 m, o que leva de ~0,7 s a ~2 s com o herói avançando a 4,5 m/s e o arqueiro andando a 2 m/s em Posicionar **[HIPÓTESE]**; a primeira flecha sai ≥ 0,6 s depois (mira), sempre com o arqueiro à vista. A folga antiga de "0,6 m em X e 1,0 m em Z" não vale mais e foi retirada. Linha de visão: parede bloqueia aggro (um arqueiro atrás da parede de um corredor não acorda).
 
 Tempo entre "acordar" e "primeiro dano" (herói parado, pior caso) **[HIPÓTESE]**:
 
@@ -269,22 +273,22 @@ Guardião: usa volume de gatilho (`trigger.arena.start`), não o aggro de 14 m, 
 
 ## 9. Hipóteses que precisam de playtest
 
-1. Herói centrado na tela (sem deslocamento do enquadramento) e câmera sem yaw. Se o retângulo for um trapézio por causa da perspectiva (mais largo ao fundo), as margens de Z crescem para cima e diminuem para baixo.
+1. Herói centrado na tela (sem deslocamento do enquadramento) e **câmera com yaw de 45°** (a hipótese anterior de "sem yaw" foi corrigida na rodada 2). Falta confirmar o sinal do yaw (+45 ou −45) com o Tech Lead; as tabelas da seção 8.2 trazem os dois. Se o retângulo for um trapézio por causa da perspectiva (mais largo ao fundo), as margens da vertical da tela crescem para cima e diminuem para baixo.
 2. Comprimento de corredor de 12 m (e 16 m no atalho). Mais curto deixa o jogo apertado em 24–32 m de sala; mais longo aumenta a caminhada vazia.
 3. Tempos de combate por encontro (18–32 s) e o total de ~5 min até a porta (seção 7).
-4. Mortos continuam mortos após morrer, fora do chefe.
+4. ~~Mortos continuam mortos após morrer~~ Substituído pela decisão do dono (16/10/2026): ao voltar ao checkpoint, todos os inimigos comuns e elites do mapa voltam ao estado de nascimento (`13`, R2.4). A hipótese que sobra é de ritmo: o reset total pode tornar a rota longa demais em quem morre cedo; medir.
 5. Pilares: diâmetro 2,5 m, altura 4 m, 8 pilares na arena; taxa de Investida que bate (alvo 30–50%).
 6. Raio do corpo do Guardião (1,2 m) e distância de seleção da Investida (3–7,5 m).
-7. Patrulha a 1,1 m/s (metade da velocidade de perseguição).
+7. Patrulha a 1,1 m/s (metade da velocidade de perseguição; agora dado: `enemies.csv` `patrolSpeedMult` = 0,5).
 8. Baús de elite com `loot.crypt.elite`.
 9. Porta da arena fechando atrás do herói.
 10. Nível esperado ao chegar ao chefe: 4 (`13` item 7), com XP dos 7 encontros (~12–40 por inimigo); a conferir.
 
 ## 10. Perguntas abertas
 
-1. **Tech Lead:** a regra R-VIS-1 (atirador exige estar na tela) é viável com `enemy_ai.csv` e o frustum da câmera do protótipo? Há yaw na câmera?
+1. **Tech Lead:** a regra R-VIS-1 (atirador exige estar na tela) é viável com `enemy_ai.csv` e o frustum da câmera do protótipo? O yaw é 45° (resposta do Frontend); falta só o sinal (+45 ou −45). Alternativa registrada: girar a raiz do nível em 45° no Unity deixaria o layout alinhado à tela e voltaria às margens da versão anterior, ao custo de corredores diagonais no mundo; não adotada.
 2. **Data Engineer:** onde colocar posições de espaço (`x,z`) e geometria: em tabela nova (`layouts.csv`/JSON) ou em cena? O bloco JSON abaixo é uma proposta e não impõe formato.
-3. **Dono:** inimigos mortos reaparecem depois de voltar ao checkpoint? E a porta do chefe fecha atrás do herói?
+3. ~~**Dono:** inimigos mortos reaparecem depois de voltar ao checkpoint? E a porta do chefe fecha atrás do herói?~~ Respondido em 16/10/2026: reaparecem (reset total, `13` R2.4) e a porta fecha.
 4. **Art Director:** o fade de pilar e a altura de 4 m são aceitáveis? A colunata de 12 m é viável no orçamento de malha?
 5. **Game Designer (próxima rodada):** se a Investida bater demais, reduzir o bônus (stagger de 2,0 s para 1,5 s) em vez de mexer na geometria?
 
@@ -298,8 +302,8 @@ Proposta de formato para um gerador de cena. Unidades em metros, `rect = [x0, z0
   "mapId": "map.act1.crypt",
   "units": "m",
   "origin": "entrance door, south wall of room.crypt.r00_entry",
-  "axes": { "x": "screen right", "z": "screen up (north)" },
-  "camera": { "heightMeters": 56, "visibleHalfX": 12.4, "visibleHalfZ": 8.5, "centeredOnHero": true },
+  "axes": { "x": "world east", "z": "world north", "note": "camera yaw 45 deg: world axes are diagonals on screen" },
+  "camera": { "heightMeters": 56, "yawDegrees": 45, "visibleHalfScreenH": 12.4, "visibleHalfScreenV": 8.5, "centeredOnHero": true, "note": "visible rectangle is screen-aligned; derive it from the frustum, not from world axes" },
   "hero": { "speed": 4.5, "spawn": [0, 3], "facing": "+z" },
   "corridorWidth": 6,
   "rooms": [
@@ -451,7 +455,7 @@ Proposta de formato para um gerador de cena. Unidades em metros, `rect = [x0, z0
     { "id": "vista.crypt.colonnade", "rect": [-18, 82, -16, 106], "walkable": false },
     { "id": "vista.crypt.gate", "rect": [73, 104, 79, 107], "walkable": false }
   ],
-  "arenaCharge": { "chargeLengthMeters": 7, "stopDistanceToPillarCenter": 9.45, "selectDistanceMeters": [3, 7.5], "wallStaggerSeconds": 2.0 }
+  "arenaCharge": { "chargeLengthMeters": 7, "stopDistanceToPillarCenter": 9.45, "selectDistanceMeters": [3, 7.5] }
 }
 ```
 
