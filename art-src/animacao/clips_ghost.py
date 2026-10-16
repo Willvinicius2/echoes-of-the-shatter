@@ -103,6 +103,6 @@ def build(A, arm):
                     events={"draw_start": 5, "aim_end": 19, "release": SHOOT_RELEASE}, note="Mira 0,6 s (0-19), disparo no quadro 20, recuperacao 0,8 s (20-44)"))
     a, l = mk("AN_GhostArcher_Hit", hit())
     out.append(dict(action=a, last=l, loop=False, preview=[0, 3, 8, 12], note="Hit 0,4 s"))
-    a, l = mk("AN_GhostArcher_Death", death())
+    a, l = A.make_action(arm, "AN_GhostArcher_Death", death(), allow_scale=True)
     out.append(dict(action=a, last=l, loop=False, preview=[0, 4, 12, 20, 36], note="Morte 1,2 s: afunda e encolhe"))
     return out

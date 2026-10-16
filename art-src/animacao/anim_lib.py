@@ -18,6 +18,8 @@ A rotacao e aplicada nos eixos de repouso do esqueleto (nao nos eixos locais do 
     LowerLeg              : rx > 0 dobra o joelho
 
 Entrada completa de um osso: tupla (rx, ry, rz) ou dict {'rot': (..), 'loc': (x, y, z), 'scale': s}.
+`scale` so vale na morte (allow_scale=True em make_action) e e multiplicador relativo a 1; fora disso e ignorado
+e nenhuma curva de escala e exportada.
 `loc` e deslocamento em metros no espaco do personagem (multiplicado por loc_scale; use so em Hips, e so em
 esqueletos cujo repouso seja o do proprio modelo, porque o FBX grava a posicao absoluta).
 
@@ -146,8 +148,10 @@ def _channelbags(action):
     return out
 
 
-def make_action(arm, name, keys, loop=False, loc_scale=1.0, mirror_all=False, default_i='BEZIER'):
-    """Cria a acao `name` no esqueleto. Devolve (acao, ultimo_quadro)."""
+def make_action(arm, name, keys, loop=False, loc_scale=1.0, mirror_all=False, default_i='BEZIER', allow_scale=False):
+    """Cria a acao `name` no esqueleto. Devolve (acao, ultimo_quadro).
+    Escala: so e gravada com allow_scale=True (use apenas na morte). O valor e um MULTIPLICADOR sobre a escala de
+    repouso do osso (1.0 = sem mudar; 0.12 = 12% do tamanho do modelo), nunca um valor absoluto do armature."""
     keys = dict(keys)
     frames = sorted(keys)
     first = frames[0]
@@ -200,7 +204,7 @@ def make_action(arm, name, keys, loop=False, loc_scale=1.0, mirror_all=False, de
             if loc is not None:
                 b.location = loc * loc_scale
                 b.keyframe_insert("location", frame=f, group=n)
-            if "scale" in d:
+            if allow_scale and "scale" in d:
                 s = d["scale"]
                 b.scale = (s, s, s)
                 b.keyframe_insert("scale", frame=f, group=n)
