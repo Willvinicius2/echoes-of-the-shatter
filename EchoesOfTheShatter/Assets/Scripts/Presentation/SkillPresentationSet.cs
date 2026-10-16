@@ -21,6 +21,11 @@ namespace Echoes.Presentation
         public string hitLayer = "Hit";
         public string hitState = "Hit";
 
+        [Header("Chefe: rugido de fase (BossStateEvent.PhaseStart)")]
+        public string roarState = "Roar";
+        [Tooltip("Duração autoral do clipe de rugido; a velocidade é ajustada ao rugido do core (transitionSeconds).")]
+        [Min(0.01f)] public float roarClipSeconds = 1f;
+
         [Header("Clipe genérico (quando a habilidade não tem entrada)")]
         [Min(0.01f)] public float fallbackClipSeconds = 1f;
         [Range(0f, 1f)] public float fallbackWindupEnd = 0.3f;

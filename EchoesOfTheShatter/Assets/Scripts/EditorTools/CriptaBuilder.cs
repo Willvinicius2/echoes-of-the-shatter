@@ -437,6 +437,7 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetBool(inputHandler, "loadSavedBindings", true);
             var presentation = hero.AddComponent<PresentationController>();
             SandboxBuilder.SetRef(presentation, "root", ctx.GameRoot);
+            SandboxBuilder.SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.WarriorSkillSetPath));
             SandboxBuilder.SetRef(heroController, "combatHost", ctx.Host);
             SandboxBuilder.SetRef(heroController, "input", inputHandler);
             SandboxBuilder.SetRef(heroController, "aimCamera", cam);
@@ -721,6 +722,8 @@ namespace Echoes.EditorTools
             }
             var presentation = go.AddComponent<PresentationController>();
             SandboxBuilder.SetRef(presentation, "root", ctx.GameRoot);
+            var skillSetPath = AnimatorControllerBuilder.SkillSetPathFor(g.EnemyId);
+            if (skillSetPath != null) SandboxBuilder.SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(skillSetPath));
             BuildEnemyVisual(ctx, go.transform, g.EnemyId, boss);
             return controller;
         }

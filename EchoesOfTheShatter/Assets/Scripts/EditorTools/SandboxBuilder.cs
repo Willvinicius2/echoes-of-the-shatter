@@ -187,6 +187,7 @@ namespace Echoes.EditorTools
             SetBool(inputHandler, "loadSavedBindings", true);
             var heroPresentation = hero.AddComponent<PresentationController>();
             SetRef(heroPresentation, "root", gameRoot);
+            SetRef(heroPresentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.WarriorSkillSetPath));
             SetRef(heroController, "combatHost", combatHost);
             SetRef(heroController, "input", inputHandler);
             SetRef(heroController, "aimCamera", cam);
@@ -501,6 +502,8 @@ namespace Echoes.EditorTools
             if (boss) SetFloat(controller, "bodyRadius", 1f);
             var presentation = go.AddComponent<PresentationController>();
             SetRef(presentation, "root", gameRoot);
+            var skillSetPath = AnimatorControllerBuilder.SkillSetPathFor(enemyId);
+            if (skillSetPath != null) SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(skillSetPath));
             var painted = CharacterPrefabBuilder.PrefabForEnemy(enemyId);
             if (painted != null)
             {

@@ -23,10 +23,15 @@ namespace Echoes.EditorTools
         public const string RigPath = "Assets/Art/Characters/Rigs/Rig_Humanoid_Chibi.fbx";
 
         // Muda quando as regras abaixo mudam: força a reimportação.
-        public override uint GetVersion() => 3;
+        public override uint GetVersion() => 4;
 
         void OnPreprocessModel()
         {
+            if (assetPath.StartsWith(KayKitAnimationImport.Root, System.StringComparison.Ordinal))
+            {
+                ConfigureAnimationSource((ModelImporter)assetImporter);
+                return;
+            }
             if (!IsManaged(assetPath)) return;
             var importer = (ModelImporter)assetImporter;
             var isWeapon = assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal);
@@ -77,6 +82,25 @@ namespace Echoes.EditorTools
                     importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
                 }
             }
+        }
+
+        // Fonte de clipes (KayKit, CC0): Humanoid com o avatar do proprio FBX; os clipes, o loop e o "sem root motion" saem de
+        // KayKitAnimationImport (so os clipes necessarios). Nenhuma malha dessas fontes entra no jogo.
+        static void ConfigureAnimationSource(ModelImporter importer)
+        {
+            importer.globalScale = 1f;
+            importer.useFileScale = true;
+            importer.importAnimation = true;
+            importer.animationType = ModelImporterAnimationType.Human;
+            importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            importer.importBlendShapes = false;
+            importer.importCameras = false;
+            importer.importLights = false;
+            importer.isReadable = false;
+            importer.optimizeGameObjects = false;
+            importer.importTangents = ModelImporterTangents.None;
+            importer.generateSecondaryUV = false;
         }
 
         void OnPreprocessTexture()

@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1da0256305728e489ab62075eff0c00, type: 3}
+  m_Name: SO_SkillPresentation_Boss
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.SkillPresentationSet
+  actionLayer: Action
+  emptyState: Empty
+  strikeFallbackState: SkillStrike
+  castFallbackState: SkillCast
+  dodgeState: Dodge
+  hitLayer: Hit
+  hitState: Hit
+  roarState: Roar
+  roarClipSeconds: 4.3
+  fallbackClipSeconds: 1
+  fallbackWindupEnd: 0.3
+  fallbackImpactEnd: 0.5
+  entries:
+  - skillId: skill.enemy.guardian_hammer
+    animatorState: Hammer
+    clipSeconds: 2.8333335
+    windupEnd: 0.05
+    impactEnd: 0.32748538
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.enemy.guardian_shield_bash
+    animatorState: ShieldBash
+    clipSeconds: 1.0333334
+    windupEnd: 0.23809524
+    impactEnd: 0.41269842
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.enemy.guardian_shield_charge
+    animatorState: Charge
+    clipSeconds: 1.0666667
+    windupEnd: 0.05
+    impactEnd: 0.96875
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
