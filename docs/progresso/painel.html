@@ -107,7 +107,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li class="ok"><i></i><span>Gameplay do Guerreiro compilando na Unity</span><span class="mut peq">feito</span></li>
 <li class=""><i></i><span>Protótipo jogável do Guerreiro na Cripta Partida</span><span class="mut peq">falta</span></li>
 <li class="ok"><i></i><span>Folhas de modelagem, heróis modulares e cenário aprovados</span><span class="mut peq">feito</span></li>
-<li class=""><i></i><span>Guerreiro 3D final (pintura, esqueleto, FBX)</span><span class="mut peq">falta</span></li>
+<li class=""><i></i><span>Guerreiro 3D final (caminho aprovado; falta integrar na Unity)</span><span class="mut peq">falta</span></li>
 <li class=""><i></i><span>Fatia jogável da Cripta (Etapa 2)</span><span class="mut peq">falta</span></li>
 </ul>
 <h2>Setores</h2><div class='grade'>
@@ -126,7 +126,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li>Etapas do jogo (5 etapas)<span class="arq">docs/15_etapas.md</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Responder as perguntas abertas do docs/15 (com você).</p></article>
 <article class="card" id="s-dados"><header><div><h3>Dados</h3><span class="mut peq">Data Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>Branch etapa2/dados pronto: 5 tabelas novas, slot legs, visualSetId e save v2.</p><ul>
+<p>etapa2/dados terminou: 5 tabelas novas, slot legs, visualSetId e save v2. Aguarda o merge com o backend.</p><ul>
 <li>Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)<span class="arq">EchoesOfTheShatter/Content/Data/*.csv</span></li>
 <li>Esquemas JSON e validador<span class="arq">EchoesOfTheShatter/Content/Data/schemas/, tools/validate_data.py</span></li>
 <li>Documento de dados<span class="arq">docs/06_dados.md</span></li>
@@ -144,23 +144,23 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li>Revisão de código: 0 crítico, 6 alto, 11 médio, 26 baixo<span class="arq">docs/11_revisao_codigo.md</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Revisar o contrato da API C ampliada.</p></article>
 <article class="card" id="s-backend"><header><div><h3>Backend ShatterCore</h3><span class="mut peq">Backend Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>PR #3 integrado no master (ShatterCore e API C v1). Branch etapa2/backend: regras novas, slot legs, save v2 e API C ampliada.</p><ul>
+<p>PR #3 no master. etapa2/backend segue: regras novas, legs, save v2, API C ampliada e achados A-01, A-05 e A-06 da revisão.</p><ul>
 <li>Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)<span class="arq">ShatterCore/src/*.cpp</span></li>
 <li>Testes do núcleo já no repositório<span class="arq">ShatterCore/tests/*.cpp</span></li>
 <li>CI do núcleo em Linux<span class="arq">.github/workflows/core.yml, manual.yml</span></li>
 </ul><p class="prox"><b>Próximo passo:</b> Terminar a etapa2/backend e fazer o merge com os dados.</p></article>
 <article class="card" id="s-frontend"><header><div><h3>Frontend Unity</h3><span class="mut peq">Frontend Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>PR #2 integrado no master. Cena base com F1 a F6 e 101 testes EditMode passando. Branch etapa2/frontend: DLL real e movimento no passo fixo.</p><ul>
+<p>PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131.</p><ul>
 <li>Projeto Unity 6.3 URP criado<span class="arq">EchoesOfTheShatter/</span></li>
 <li>Cena base na escala 56 m<span class="arq">EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Terminar a etapa2/frontend.</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Guerreiro dentro da Unity com o shader de rim.</p></article>
 <article class="card" id="s-arte_tecnica"><header><div><h3>Arte técnica</h3><span class="mut peq">Artista técnico (Blender)</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
-<p>PR #1 integrado no master. TripoSG gerando os modelos 3D: Sentinela, Cão, Arauto e Guardião prontos; Arqueiro Espectral sendo refeito.</p><ul>
+<p>PR #1 no master. Caminho do acabamento aprovado: Guerreiro com 6 mil triângulos, pintado e com esqueleto. Em andamento: acabamento dos inimigos e das armas; TripoSG gerando armas, corpos, peças e cenário.</p><ul>
 <li>Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)<span class="arq">art-src/graybox/</span></li>
 <li>Prévias em imagem<span class="arq">art-src/graybox/previews/</span></li>
 <li>Forma 3D do Guerreiro (TripoSG)<span class="arq">D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/</span></li>
 <li>Pesquisa de modelos 3D grátis<span class="arq">docs/pesquisa/modelos_3d_gratis.md</span></li>
-</ul><p class="prox"><b>Próximo passo:</b> Acabamento do Guerreiro no Blender (pintura, esqueleto, FBX) e fila do TripoSG (7 armas, 3 corpos, 15 peças, cenário).</p></article>
+</ul><p class="prox"><b>Próximo passo:</b> Acabamento dos inimigos e das armas; Guerreiro na Unity com o shader de rim.</p></article>
 <article class="card" id="s-qa"><header><div><h3>QA</h3><span class="mut peq">QA Engineer</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
 <p>77 casos novos para a Etapa 2 no plano de QA.</p><ul>
 <li>Plano de QA (matriz de requisitos e casos)<span class="arq">docs/10_qa.md</span></li>
@@ -176,6 +176,10 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </ul><p class="prox"><b>Próximo passo:</b> Fechar a Etapa 2 e preparar a Etapa 3.</p></article>
 </div>
 <h2>Linha do tempo</h2><ul class='linha'>
+<li><code>8f210d7</code><span class="dt">16/10/2026</span><br>Merge etapa2/frontend: DLL real do ShatterCore na Unity e movimento no passo fixo</li>
+<li><code>55e0867</code><span class="dt">16/10/2026</span><br>feat(arte): pipeline de acabamento dos personagens (art-src/modelos)</li>
+<li><code>ec60b4c</code><span class="dt">16/10/2026</span><br>feat(unity): integra shattercore.dll via P/Invoke e move o deslocamento para o passo fixo</li>
+<li><code>10f8c67</code><span class="dt">16/10/2026</span><br>feat(painel): galeria por grupo (modelagem, modulares, cenário, modelos 3D), faixa das 5 etapas e decisões de 16/10</li>
 <li><code>493bf7b</code><span class="dt">16/10/2026</span><br>art+design: heróis modulares e cenário da Cripta aprovados; respawn no checkpoint e porta da arena</li>
 <li><code>53813d1</code><span class="dt">16/10/2026</span><br>loc: slot Calça (legs) e base Calça Gasta</li>
 <li><code>fd2e9d3</code><span class="dt">16/10/2026</span><br>docs(arquitetura): personagem modular (04 §17.4) e proposta C-10 do slot legs</li>
@@ -257,12 +261,12 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <article class="card"><h3>Graybox aprovado só como provisório</h3><p>Será trocado pelos modelos 3D finais.</p><span class="arq">16/10/2026</span></article>
 </div>
 <h2>Galeria de arte</h2>
-<div class="abas"><button data-f="todas" aria-pressed="true">Todas (52)</button>
+<div class="abas"><button data-f="todas" aria-pressed="true">Todas (56)</button>
 <button data-f="referencias" aria-pressed="false">Referências (24)</button>
 <button data-f="modelagem" aria-pressed="false">Modelagem (9)</button>
 <button data-f="modulares" aria-pressed="false">Heróis modulares (6)</button>
 <button data-f="cenario" aria-pressed="false">Cenário da Cripta (6)</button>
-<button data-f="modelos3d" aria-pressed="false">Modelos 3D (3)</button>
+<button data-f="modelos3d" aria-pressed="false">Modelos 3D (7)</button>
 <button data-f="graybox" aria-pressed="false">Graybox (4)</button>
 </div><div class="gal">
 <figure class="" data-k="referencias"><img src="thumbs/01_key_art.jpg" alt="Key art com os 3 heróis e uma faixa de estilo" loading="lazy"><figcaption><b>Key art com os 3 heróis e uma faixa de estilo</b><br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
@@ -317,6 +321,10 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <figure class="ag" data-k="graybox"><img src="thumbs/graybox_heroes_front.jpg" alt="Graybox: Heróis (frente)" loading="lazy"><figcaption><b>Graybox: Heróis (frente)</b>Aprovado só como provisório.<br><span class="pil andamento"><i></i>Provisório</span></figcaption></figure>
 <figure class="ag" data-k="graybox"><img src="thumbs/graybox_enemies_lineup.jpg" alt="Graybox: Inimigos" loading="lazy"><figcaption><b>Graybox: Inimigos</b>Aprovado só como provisório.<br><span class="pil andamento"><i></i>Provisório</span></figcaption></figure>
 <figure class="ag" data-k="graybox"><img src="thumbs/graybox_boss_guardian.jpg" alt="Graybox: Guardião da Cripta" loading="lazy"><figcaption><b>Graybox: Guardião da Cripta</b>Aprovado só como provisório.<br><span class="pil andamento"><i></i>Provisório</span></figcaption></figure>
+<figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_SK_Warrior_frente.jpg" alt="Guerreiro final (frente)" loading="lazy"><figcaption><b>Guerreiro final (frente)</b>Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_SK_Warrior_3-4.jpg" alt="Guerreiro final (três quartos)" loading="lazy"><figcaption><b>Guerreiro final (três quartos)</b>Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_SK_Warrior_costas.jpg" alt="Guerreiro final (costas)" loading="lazy"><figcaption><b>Guerreiro final (costas)</b>Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
+<figure class="" data-k="modelos3d"><img src="thumbs/modelos3d_SK_Warrior_pose.jpg" alt="Guerreiro final (pose)" loading="lazy"><figcaption><b>Guerreiro final (pose)</b>Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.<br><span class="pil concluido"><i></i>Aprovada</span></figcaption></figure>
 </div>
 <h2>Infraestrutura</h2><div class='tab'><table><tr><th>Item</th><th>Detalhe</th></tr>
 <tr><td>Unity 6.3 LTS (6000.3.26f1)</td><td>D:\Unity\Editors, com módulo IL2CPP</td></tr>
@@ -329,6 +337,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <tr><td>Blender 5.1</td><td>graybox e arte técnica</td></tr>
 <tr><td>TripoSG (licença MIT)</td><td>Geração de modelos 3D a partir das folhas aprovadas</td></tr>
 <tr><td>CI do núcleo</td><td>.github/workflows/core.yml e manual.yml</td></tr>
+<tr><td>Roteiro do sócio (Artifact)</td><td>https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8</td></tr>
 </table></div></main>
 <script>
 (function(){var b=document.querySelectorAll('.abas button'),f=document.querySelectorAll('.gal figure');

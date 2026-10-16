@@ -72,7 +72,7 @@
       "nome": "Dados",
       "agente": "Data Engineer",
       "estado": "andamento",
-      "resumo": "Branch etapa2/dados pronto: 5 tabelas novas, slot legs, visualSetId e save v2.",
+      "resumo": "etapa2/dados terminou: 5 tabelas novas, slot legs, visualSetId e save v2. Aguarda o merge com o backend.",
       "entregas": [
         {
           "titulo": "Tabelas CSV do conteúdo (habilidades, inimigos, itens, mapas, regras)",
@@ -138,7 +138,7 @@
       "nome": "Backend ShatterCore",
       "agente": "Backend Engineer",
       "estado": "andamento",
-      "resumo": "PR #3 integrado no master (ShatterCore e API C v1). Branch etapa2/backend: regras novas, slot legs, save v2 e API C ampliada.",
+      "resumo": "PR #3 no master. etapa2/backend segue: regras novas, legs, save v2, API C ampliada e achados A-01, A-05 e A-06 da revisão.",
       "entregas": [
         {
           "titulo": "Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)",
@@ -160,7 +160,7 @@
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
       "estado": "andamento",
-      "resumo": "PR #2 integrado no master. Cena base com F1 a F6 e 101 testes EditMode passando. Branch etapa2/frontend: DLL real e movimento no passo fixo.",
+      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131.",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
@@ -171,14 +171,14 @@
           "arquivo": "EchoesOfTheShatter/Assets/Scenes/Sandbox/Base_Escala.unity"
         }
       ],
-      "proximo": "Terminar a etapa2/frontend."
+      "proximo": "Guerreiro dentro da Unity com o shader de rim."
     },
     {
       "id": "arte_tecnica",
       "nome": "Arte técnica",
       "agente": "Artista técnico (Blender)",
       "estado": "andamento",
-      "resumo": "PR #1 integrado no master. TripoSG gerando os modelos 3D: Sentinela, Cão, Arauto e Guardião prontos; Arqueiro Espectral sendo refeito.",
+      "resumo": "PR #1 no master. Caminho do acabamento aprovado: Guerreiro com 6 mil triângulos, pintado e com esqueleto. Em andamento: acabamento dos inimigos e das armas; TripoSG gerando armas, corpos, peças e cenário.",
       "entregas": [
         {
           "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
@@ -197,7 +197,7 @@
           "arquivo": "docs/pesquisa/modelos_3d_gratis.md"
         }
       ],
-      "proximo": "Acabamento do Guerreiro no Blender (pintura, esqueleto, FBX) e fila do TripoSG (7 armas, 3 corpos, 15 peças, cenário)."
+      "proximo": "Acabamento dos inimigos e das armas; Guerreiro na Unity com o shader de rim."
     },
     {
       "id": "qa",
@@ -436,6 +436,10 @@
     {
       "item": "CI do núcleo",
       "detalhe": ".github/workflows/core.yml e manual.yml"
+    },
+    {
+      "item": "Roteiro do sócio (Artifact)",
+      "detalhe": "https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8"
     }
   ],
   "marcos": [
@@ -472,7 +476,7 @@
       "feito": true
     },
     {
-      "titulo": "Guerreiro 3D final (pintura, esqueleto, FBX)",
+      "titulo": "Guerreiro 3D final (caminho aprovado; falta integrar na Unity)",
       "feito": false
     },
     {
@@ -676,6 +680,34 @@
       "titulo": "Graybox: Guardião da Cripta",
       "detalhe": "Aprovado só como provisório.",
       "estado": "provisoria"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/final/previews/SK_Warrior_frente.png",
+      "titulo": "Guerreiro final (frente)",
+      "detalhe": "Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/final/previews/SK_Warrior_3-4.png",
+      "titulo": "Guerreiro final (três quartos)",
+      "detalhe": "Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/final/previews/SK_Warrior_costas.png",
+      "titulo": "Guerreiro final (costas)",
+      "detalhe": "Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/final/previews/SK_Warrior_pose.png",
+      "titulo": "Guerreiro final (pose)",
+      "detalhe": "Acabamento aprovado: 6 mil triângulos, pintado e com esqueleto.",
+      "estado": "aprovada"
     }
   ],
   "etapas": [
