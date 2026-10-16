@@ -24,6 +24,7 @@ Motor: **Unity 6.3 LTS (6000.3.26f1) com URP, C#** (decisão do dono em 16/10/20
 - `docs/05_conteudo.md`, `docs/06_dados.md` — conteúdo do protótipo e formato das tabelas.
 - `docs/08_decisoes_visual_3d.md` — decisões de motor e renderização e quem é dono de cada número (03 = arte, 04 = orçamentos técnicos).
 - `docs/10_qa.md` — matriz de rastreabilidade, roteiros de playtest e testes planejados.
+- `docs/15_etapas.md` — as 5 etapas do jogo (base técnica, fatia jogável da Cripta, ciclo do protótipo, elenco e Ato I, Acesso Antecipado) com critérios de aceite.
 - `docs/pesquisa/` — pesquisas de referência externas.
 - `ShatterCore/` — motor de regras em C++17 puro, sem Unity. Headers em `include/shatter/`; `src/` e testes em andamento.
 - `EchoesOfTheShatter/Content/Data/` — CSV de conteúdo, `Loc/` e esquemas (destino previsto: `Assets/StreamingAssets/Data`, ver 04 seção 4.2).
@@ -56,4 +57,4 @@ ctest --test-dir build --output-on-failure
 - O protótipo Godot F1 continua na raiz (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity.
 
 ## Próximo passo
-Fase 2 (ver `docs/07_proximos_passos.md`): Backend termina o ShatterCore e a API C; Frontend implementa o gameplay no projeto Unity; Arte técnica completa o graybox; integração ShatterCore ↔ Unity.
+Etapa 2, fatia jogável da Cripta (ver `docs/15_etapas.md`): regras novas no core, tabelas novas, DLL real na Unity, layout da Cripta na escala A (`docs/14_layout_cripta.md`), modelos 3D gerados pelo TripoSG a partir de `docs/arte/referencias-geracao/aprovadas/modelagem/` e cenário da Cripta.
