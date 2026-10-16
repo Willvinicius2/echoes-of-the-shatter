@@ -260,9 +260,12 @@ Página da loja (textos, capturas, cápsulas, trailer), preço final, declaraç�
 
 ## Perguntas abertas para o dono
 
-1. O endgame inicial (Carta dos Marcos, 3 mapas, Predador dos Marcos) entra na etapa 4 ou fica numa etapa própria depois do Ato I? O plano o inclui no Acesso Antecipado.
-2. O Único do Guardião e o inventário ficam na etapa 3 como definido. Isso significa que, na etapa 2, vencer o Guardião não entrega loot na tela. Está certo?
-3. O demo para o Next Fest (Estrada + Cripta) é uma etapa, entra na 3 ou não existe agora? O plano o trata como decisão do roadmap e hoje nenhuma das 5 etapas o cobre.
-4. A calibragem dos IdleProfiles e o teste de paridade, adiados em P-3, ficam na etapa 4 (como acima) ou vêm antes, para tirar o selo "Estimativa" já na etapa 3?
-5. Arte final de capa e cápsulas: feita por artista, por IA declarada ou mista? A política de IA do plano diz "de preferência não" e exige declaração na Steam.
-6. Quem executa os itens externos da etapa 5 (CNPJ, Steam Direct, formulários, marca, advogado) e quando a abertura de conta começa, já que o plano pede página no ar antes do fim do desenvolvimento?
+As perguntas deste documento, cada uma com o contexto completo e as opções, ficam em `pendencias_dono` de `docs/progresso/estado.json`. Elas aparecem em "Perguntas para decidir" no roteiro e em "Aguardando você" no painel:
+
+1. Endgame na etapa 4 ou numa etapa própria.
+2. Vencer o Guardião sem loot na etapa 2.
+3. Demo para o Steam Next Fest.
+4. Calibração do idle na etapa 4 ou antes.
+5. Quem faz a capa e as cápsulas da Steam.
+6. CNPJ, Steam Direct e registros: quem cuida.
+7. CNPJ e página na Steam: quando começar.

@@ -59,10 +59,50 @@ main{min-width:0;padding-block:28px 64px;padding-left:max(16px,clamp(16px,4vw,48
 .estado code{font:12px var(--mono);color:var(--gold)}
 .botao{display:inline-flex;align-items:center;gap:8px;margin-top:22px;padding:10px 16px;border-radius:6px;background:var(--ember);color:#1a0d05;font-weight:600;text-decoration:none}
 .botao:hover{filter:brightness(1.08)}
+.botoes{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.botoes .botao{margin-top:0}
+.botao.sec{background:transparent;color:var(--fg);border:1px solid var(--line)}
 
 .secao{margin-top:52px;max-width:1180px}
 .secao>h2{font:600 30px/1.1 var(--display);margin:0 0 4px}
 .secao>p{color:var(--mut);margin:0 0 18px}
+.perguntas{display:grid;gap:16px}
+.pergunta{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding-block:18px 16px;padding-inline:20px;display:grid;gap:12px;min-width:0}
+.pergunta h3{margin:0;font:600 22px/1.15 var(--display);color:var(--ember);text-wrap:balance}
+.pergunta .enunciado{margin:0;font-size:16px;font-weight:600;max-width:75ch}
+.pergunta h4{margin:0 0 4px;font:600 11px/1.3 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+.pergunta .ctx p{margin:0 0 6px;max-width:80ch;color:var(--fg)}
+.pergunta h4 small{font-weight:400;letter-spacing:.04em;text-transform:none;color:var(--mut);margin-left:6px}
+.opcoes{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.op{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:grid;grid-template-columns:minmax(0,15rem) minmax(0,1fr) auto;align-items:start;gap:4px 16px;padding:10px 12px;border-radius:6px;background:var(--raise);border:1px solid transparent}
+.op:hover{border-color:var(--line)}
+.op:focus-visible{outline:2px solid var(--arcane);outline-offset:2px}
+.op[aria-pressed="true"]{border-color:var(--ember);box-shadow:inset 3px 0 0 var(--ember)}
+.op.bloq{cursor:default}
+.op b{color:var(--arcane);font-weight:600}
+.op .quem{display:flex;align-items:center;gap:6px;justify-content:flex-end;min-width:5.5rem}
+.op .n{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+.op[aria-pressed="true"] .n{color:var(--ember);font-weight:600}
+.rostos{display:flex}
+.rosto{width:22px;height:22px;border-radius:50%;border:2px solid var(--raise);margin-left:-6px;background:var(--line);object-fit:cover}
+.rostos .rosto:first-child{margin-left:0}
+.conversa{display:grid;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.comentarios{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.comentarios li{display:grid;gap:2px}
+.comentarios .vazio{color:var(--mut);font-size:13px}
+.cab-com{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.cab-com .rosto{margin:0}
+.cab-com span{color:var(--mut);font-size:12px}
+.comentarios p{margin:0 0 0 30px;max-width:75ch;white-space:pre-wrap}
+.rotulo{font-size:12px;color:var(--mut)}
+.meu-com{width:100%;font:inherit;font-size:14px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;resize:vertical;min-height:2.6em}
+.meu-com:disabled{opacity:.6}
+.acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}
+.salvar{font:inherit;font-size:13px;font-weight:600;color:#1a0d05;background:var(--ember);border:0;border-radius:6px;padding:7px 14px;cursor:pointer}
+.salvar:disabled{opacity:.45;cursor:default}
+.status{font-size:13px;color:var(--mut)}
+.fonte{margin:0;font-size:12px;color:var(--mut)}
+@media (max-width:640px){.op{grid-template-columns:minmax(0,1fr)}.op .quem{justify-content:flex-start}}
 .sub{font:600 11px/1.3 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:26px 0 12px}
 .sub small{color:var(--mut);font-size:11px;margin-left:6px;font-variant-numeric:tabular-nums}
 .galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
@@ -191,10 +231,18 @@ function inicio() {
           <span>Página gerada em <b>${esc(D.gerado)}</b></span>
         </div>
         <div class="estado"><span>${esc(msg)}</span></div>
-        <a class="botao" href="${D.painel}" target="_blank" rel="noopener">Abrir o painel de produção ↗</a>
+        <div class="botoes">
+          ${D.perguntas.length ? `<a class="botao" href="#perguntas">Votar nas ${D.perguntas.length} perguntas</a>` : ''}
+          <a class="botao sec" href="${D.painel}" target="_blank" rel="noopener">Abrir o painel de produção ↗</a>
+        </div>
       </div>
       ${capa ? `<img src="${capa.src}" alt="${esc(capa.legenda)}" data-zoom="0">` : ''}
     </section>
+    ${D.perguntas.length ? `<section class="secao" id="perguntas">
+      <h2>Perguntas para decidir</h2>
+      <p>${D.perguntas.length} decisões esperando o dono. Cada uma traz a pergunta inteira, o contexto e as opções.</p>
+      <div class="perguntas">${D.perguntas.map(pergunta).join('')}</div>
+    </section>` : ''}
     <section class="secao" id="arte">
       <h2>Artes aprovadas</h2>
       <p>${D.arte.length} imagens aprovadas, das pranchas de referência aos modelos 3D. Clique para ampliar.</p>
@@ -206,6 +254,131 @@ function inicio() {
       <div class="indice">${indice}</div>
     </section>`;
 }
+
+function pergunta(p) {
+  const ctx = [].concat(p.contexto || []).map(c => `<p>${esc(c)}</p>`).join('');
+  const qid = esc(p.id || '');
+  const ops = (p.opcoes || []).map(o => `<li><button type="button" class="op" data-q="${qid}" data-o="${esc(o.id || '')}" aria-pressed="false">
+      <b>${esc(o.nome)}</b><span class="efeito">${esc(o.efeito)}</span>
+      <span class="quem"><span class="n">0 votos</span><span class="rostos"></span></span></button></li>`).join('');
+  const origem = porArquivo[(p.origem || '').split('/').pop()];
+  const fonte = origem ? `<a href="#${origem}">${esc(p.origem)}</a>` : esc(p.origem || '');
+  return `<article class="pergunta" id="q-${qid}">
+    <h3>${esc(p.titulo)}</h3>
+    <p class="enunciado">${esc(p.pergunta || p.detalhe || '')}</p>
+    ${ctx ? `<div class="ctx"><h4>Contexto</h4>${ctx}</div>` : ''}
+    ${ops ? `<div><h4>Opções <small>clique para votar</small></h4><ul class="opcoes">${ops}</ul></div>` : ''}
+    ${p.id ? `<div class="conversa" data-q="${qid}">
+      <h4>Comentários</h4>
+      <ul class="comentarios"></ul>
+      <label class="rotulo" for="c-${qid}">Seu comentário</label>
+      <textarea id="c-${qid}" class="meu-com" data-q="${qid}" rows="2" placeholder="Explique seu voto, faça uma pergunta ou sugira outra opção"></textarea>
+      <div class="acoes"><button type="button" class="salvar" data-q="${qid}">Salvar comentário</button><span class="status" role="status" aria-live="polite"></span></div>
+    </div>` : ''}
+    ${fonte ? `<p class="fonte">Fonte: ${fonte}</p>` : ''}
+  </article>`;
+}
+
+/* Votação: um documento por pessoa em votos/<id>, com respostas[pergunta] = {opcao, comentario, em}. */
+const V = {db: null, user: null, eu: null, pode: false, votos: {}, meu: {}, fila: Promise.resolve(), aviso: 'Carregando votos…'};
+const nomeOpcao = (q, o) => (D.perguntas.find(p => p.id === q)?.opcoes || []).find(x => x.id === o)?.nome || o;
+const dataCurta = iso => { try { return new Date(iso).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}) + ' ' + new Date(iso).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}); } catch (_) { return ''; } };
+
+async function iniciarVotos() {
+  const c = window.claude;
+  if (!c || typeof c.use !== 'function') { V.aviso = 'Abra esta página pelo link do claude.ai para votar e comentar.'; return pintarVotos(); }
+  [V.user, V.db] = await Promise.all([c.use('user'), c.use('db')]);
+  if (!V.db) { V.aviso = 'Para votar e comentar, entre no claude.ai com o convite de Editor que o dono enviou por e-mail.'; return pintarVotos(); }
+  V.eu = V.user ? await V.user.id() : null;
+  const pode = V.user ? await V.user.can('data.write') : null;
+  V.pode = !!V.eu && pode !== false;
+  V.aviso = V.pode ? '' : 'Você pode ver os votos, mas não votar. Para votar, peça ao dono um convite de Editor por e-mail.';
+  V.db.collection('votos').onSnapshot(snap => {
+    const novo = {};
+    for (const d of snap.docs) { const r = d.data()?.respostas; if (r && typeof r === 'object') novo[d.id] = r; }
+    V.votos = novo;
+    if (V.eu && !V.salvando) V.meu = JSON.parse(JSON.stringify(novo[V.eu] || {}));
+    pintarVotos();
+  }, () => { V.aviso = 'Não foi possível carregar os votos agora. Recarregue a página.'; pintarVotos(); });
+}
+
+async function pintarVotos() {
+  const caixas = document.querySelectorAll('.conversa');
+  if (!caixas.length) return;
+  const ids = Object.keys(V.votos);
+  const ps = V.user && ids.length ? await V.user.profiles(ids) : {};
+  const nome = id => id === V.eu ? 'Você' : (ps[id]?.name || 'Alguém');
+  const rosto = id => { const i = document.createElement('img'); i.src = ps[id]?.avatarUrl || ''; i.alt = ''; i.title = nome(id); i.className = 'rosto'; return i; };
+  document.querySelectorAll('.op').forEach(b => {
+    const {q, o} = b.dataset;
+    const quem = ids.filter(id => V.votos[id]?.[q]?.opcao === o);
+    b.setAttribute('aria-pressed', String(V.meu[q]?.opcao === o));
+    b.classList.toggle('bloq', !V.pode);
+    b.querySelector('.n').textContent = quem.length === 1 ? '1 voto' : `${quem.length} votos`;
+    const r = b.querySelector('.rostos'); r.replaceChildren(...quem.map(rosto));
+  });
+  caixas.forEach(cx => {
+    const q = cx.dataset.q;
+    const lista = cx.querySelector('.comentarios');
+    const coms = ids.filter(id => (V.votos[id]?.[q]?.comentario || '').trim())
+      .sort((a, b) => String(V.votos[a][q].em || '').localeCompare(String(V.votos[b][q].em || '')));
+    lista.replaceChildren(...coms.map(id => {
+      const r = V.votos[id][q], li = document.createElement('li');
+      const cab = document.createElement('div'); cab.className = 'cab-com';
+      const n = document.createElement('b'); n.textContent = nome(id);
+      const meta = document.createElement('span'); meta.textContent = (r.opcao ? 'votou ' + nomeOpcao(q, r.opcao) + ' · ' : '') + dataCurta(r.em);
+      cab.append(rosto(id), n, meta);
+      const t = document.createElement('p'); t.textContent = r.comentario;
+      li.append(cab, t); return li;
+    }));
+    if (!coms.length) { const li = document.createElement('li'); li.className = 'vazio'; li.textContent = 'Nenhum comentário ainda.'; lista.append(li); }
+    const ta = cx.querySelector('.meu-com');
+    if (!ta.dataset.mexido && document.activeElement !== ta) ta.value = V.meu[q]?.comentario || '';
+    ta.disabled = cx.querySelector('.salvar').disabled = !V.pode;
+    const st = cx.querySelector('.status');
+    if (!st.dataset.fixo) st.textContent = V.aviso;
+  });
+}
+
+function salvar(q, msgOk) {
+  const st = document.querySelector(`.conversa[data-q="${q}"] .status`);
+  const r = V.meu[q];
+  if (r) { r.em = new Date().toISOString(); if (!r.opcao && !(r.comentario || '').trim()) delete V.meu[q]; }
+  const corpo = {respostas: JSON.parse(JSON.stringify(V.meu))};
+  V.salvando = true;
+  if (st) { st.dataset.fixo = '1'; st.textContent = 'Salvando…'; }
+  V.fila = V.fila.then(async () => {
+    try {
+      await V.db.doc('votos/' + V.eu).set(corpo);
+      if (st) st.textContent = msgOk;
+    } catch (e) {
+      if (e?.code === 'invalid_argument') { V.pode = false; V.aviso = 'Seu acesso não permite votar. Peça ao dono um convite de Editor por e-mail.'; }
+      if (st) st.textContent = e?.code === 'quota_exceeded' ? 'O espaço de votos encheu. Avise o dono.' : e?.code === 'invalid_argument' ? V.aviso : 'Não foi possível salvar. Tente de novo.';
+    } finally { V.salvando = false; pintarVotos(); }
+  });
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('.op');
+  if (b) {
+    const {q, o} = b.dataset;
+    if (!V.pode) { const st = document.querySelector(`.conversa[data-q="${q}"] .status`); if (st) { st.dataset.fixo = '1'; st.textContent = V.aviso; } return; }
+    const r = V.meu[q] || (V.meu[q] = {});
+    r.opcao = r.opcao === o ? '' : o;
+    pintarVotos();
+    salvar(q, r.opcao ? 'Voto salvo.' : 'Voto retirado.');
+    return;
+  }
+  const s = e.target.closest('.salvar');
+  if (s && V.pode) {
+    const q = s.dataset.q, ta = document.querySelector(`.meu-com[data-q="${q}"]`);
+    const r = V.meu[q] || (V.meu[q] = {});
+    r.comentario = ta.value.trim().slice(0, 4000);
+    delete ta.dataset.mexido;
+    salvar(q, r.comentario ? 'Comentário salvo.' : 'Comentário apagado.');
+  }
+});
+document.addEventListener('input', e => { if (e.target.classList?.contains('meu-com')) e.target.dataset.mexido = '1'; });
 
 function slug(t) {
   return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
@@ -248,7 +421,8 @@ function documento(id) {
 function rota() {
   const id = location.hash.slice(1);
   if (porId[id]) documento(id); else inicio();
-  if (id === 'arte') document.getElementById('arte').scrollIntoView(); else window.scrollTo(0, 0);
+  if (id === 'arte' || id === 'perguntas') document.getElementById(id)?.scrollIntoView(); else window.scrollTo(0, 0);
+  pintarVotos();
   desenharMenu(document.getElementById('busca').value);
   nav.classList.remove('aberto');
   document.getElementById('abrir').setAttribute('aria-expanded', 'false');
@@ -275,4 +449,5 @@ document.getElementById('abrir').addEventListener('click', e => {
 });
 window.addEventListener('hashchange', rota);
 rota();
+iniciarVotos();
 </script>

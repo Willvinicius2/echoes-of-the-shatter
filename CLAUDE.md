@@ -52,6 +52,12 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+## Perguntas ao dono
+- Toda pergunta ou dúvida para o dono, em `docs/` ou nas `pendencias_dono` de `docs/progresso/estado.json`, traz: a pergunta inteira (não um título), o contexto completo para entender sem abrir outro arquivo, e as opções com o efeito de cada uma. Quem lê pode ser o dono ou o sócio dele.
+- Em `estado.json`, cada pendência tem `id` (fixo, nunca reaproveitado), `titulo`, `detalhe` (resumo de uma linha), `pergunta`, `contexto` (lista de parágrafos), `opcoes` (`id` = letra, `nome` e `efeito`) e `origem`. Uma pergunta = uma escolha; dois assuntos viram duas pendências. O painel e o roteiro (`tools/roteiro/gerar_roteiro.py`) mostram esses campos.
+- O roteiro tem votação e comentários por pergunta, gravados no banco do artifact (coleção `votos`, um documento por pessoa com `respostas.<id da pergunta>` = `{opcao, comentario, em}`). Para ler: ArtifactData `list` em `votos` no link do roteiro. Ao decidir, a pendência sai do `estado.json` e entra em `decisoes`.
+- Depois de mudar docs, artes aprovadas ou pendências, regerar e republicar o roteiro do sócio no mesmo link: https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8
+
 ## Pendências de decisão
 - Itens "confirmar na instalação" do `docs/04_arquitetura.md`: conferir na Unity 6.3 instalada antes de o Frontend depender deles.
 - O protótipo Godot F1 continua na raiz (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity.

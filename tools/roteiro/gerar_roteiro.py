@@ -86,7 +86,7 @@ def converter(origem: Path, destino: Path) -> None:
         im.save(destino, "JPEG", quality=QUALIDADE, optimize=True, progressive=True)
 
 
-def imagens(saida: Path) -> list:
+def imagens(saida: Path, estado: dict) -> list:
     """Pranchas de referência (legenda no README) e a galeria aprovada do painel (docs/progresso/estado.json)."""
     pasta = saida / "img"
     pasta.mkdir(parents=True, exist_ok=True)
@@ -94,7 +94,6 @@ def imagens(saida: Path) -> list:
     for png, legenda in sorted(titulos_aprovadas().items()):
         if (APROV / png).exists():
             lista.append(("referencias", APROV / png, legenda, ""))
-    estado = json.loads((RAIZ / "docs" / "progresso" / "estado.json").read_text(encoding="utf-8"))
     for it in estado.get("galeria", []):
         origem = RAIZ / it["arquivo"]
         if it.get("estado") == "aprovada" and origem.exists():
@@ -138,10 +137,12 @@ def main() -> None:
     saida.mkdir(parents=True, exist_ok=True)
 
     grupos, textos = carregar_docs()
+    estado = json.loads((RAIZ / "docs" / "progresso" / "estado.json").read_text(encoding="utf-8"))
     dados = {
         "grupos": grupos,
         "textos": textos,
-        "arte": imagens(saida),
+        "perguntas": estado.get("pendencias_dono", []),
+        "arte": imagens(saida, estado),
         "commit": git("log", "-1", "--format=%h|%cs|%s").split("|", 2),
         "gerado": datetime.now().strftime("%d/%m/%Y %H:%M"),
         "painel": PAINEL_URL,

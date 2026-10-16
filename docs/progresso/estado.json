@@ -248,6 +248,7 @@
   ],
   "pendencias_dono": [
     {
+      "id": "endgame-etapa",
       "titulo": "Endgame: na etapa 4 ou numa etapa própria?",
       "detalhe": "Decidir se o endgame inicial entra junto com o Ato I ou depois dele.",
       "pergunta": "O endgame inicial (Carta dos Marcos, os 3 mapas de endgame e o chefe Predador dos Marcos) entra junto na etapa 4 (Elenco e Ato I) ou vira uma etapa própria depois do Ato I, antes do Acesso Antecipado?",
@@ -258,14 +259,17 @@
       ],
       "opcoes": [
         {
+          "id": "A",
           "nome": "A. Junto na etapa 4",
           "efeito": "Uma etapa só, maior e mais longa. O Acesso Antecipado só começa depois que tudo estiver pronto e testado de uma vez."
         },
         {
+          "id": "B",
           "nome": "B. Etapa própria depois do Ato I",
           "efeito": "O Ato I fecha e é testado primeiro; o endgame é balanceado em cima de um Ato I estável. Ganha um portão de teste a mais e o Acesso Antecipado vira a etapa 6."
         },
         {
+          "id": "C",
           "nome": "C. Fora do Acesso Antecipado",
           "efeito": "O endgame entra como atualização depois do lançamento. Lança mais cedo, mas muda o que o plano promete e o lançamento sai com menos conteúdo."
         }
@@ -273,6 +277,7 @@
       "origem": "docs/15_etapas.md"
     },
     {
+      "id": "guardiao-sem-loot",
       "titulo": "Vencer o Guardião sem loot na etapa 2?",
       "detalhe": "Confirmar que a fatia da Cripta termina sem recompensa na tela.",
       "pergunta": "Na etapa 2 (fatia jogável da Cripta), vencer o Guardião não vai entregar nenhum item na tela, porque o Único do Guardião e o inventário só chegam na etapa 3. Está certo assim?",
@@ -283,14 +288,17 @@
       ],
       "opcoes": [
         {
+          "id": "A",
           "nome": "A. Sim, fica assim",
           "efeito": "A etapa 2 fecha mais rápido e o teste foca só no combate. A recompensa chega na etapa 3."
         },
         {
+          "id": "B",
           "nome": "B. Só o efeito do Único na etapa 2",
           "efeito": "O Guardião deixa cair o Único como efeito visual (coluna de luz e som), sem inventário. Dá a sensação de recompensa no teste, mas puxa trabalho de arte e efeito para antes."
         },
         {
+          "id": "C",
           "nome": "C. Loot e inventário inteiros na etapa 2",
           "efeito": "A etapa 2 fica bem maior e parte da etapa 3 vem antes."
         }
@@ -298,6 +306,7 @@
       "origem": "docs/15_etapas.md"
     },
     {
+      "id": "demo-next-fest",
       "titulo": "Fazer uma demo para o Steam Next Fest?",
       "detalhe": "Decidir se haverá demo e em que etapa ela entra.",
       "pergunta": "Vamos fazer uma demo para o Steam Next Fest? Se sim, ela vira uma etapa própria, entra dentro da etapa 3 ou fica para depois?",
@@ -308,14 +317,17 @@
       ],
       "opcoes": [
         {
+          "id": "A",
           "nome": "A. Etapa própria entre a 3 e a 4",
           "efeito": "Segue o plano: mede o interesse do público antes da parte mais cara. Obriga a adiantar CNPJ, Steam Direct e página da loja."
         },
         {
+          "id": "B",
           "nome": "B. Dentro da etapa 3",
           "efeito": "A etapa 3 cresce: além do ciclo completo, precisa da Estrada das Lanternas, da página da loja e de um build para a Steam."
         },
         {
+          "id": "C",
           "nome": "C. Sem demo por enquanto",
           "efeito": "Foco total em chegar ao Acesso Antecipado. Perde o termômetro de wishlists e a vitrine do festival. Dá para decidir de novo ao fim da etapa 3."
         }
@@ -323,6 +335,7 @@
       "origem": "docs/15_etapas.md"
     },
     {
+      "id": "calibracao-idle",
       "titulo": "Calibrar o idle na etapa 4 ou antes?",
       "detalhe": "Decidir quando a expedição perde o selo 'Estimativa'.",
       "pergunta": "A calibração do modo idle (os IdleProfiles e o teste de paridade, adiados na decisão P-3) fica na etapa 4, como está planejado, ou vem antes, na etapa 3, para a expedição já sair sem o selo 'Estimativa'?",
@@ -333,10 +346,12 @@
       ],
       "opcoes": [
         {
+          "id": "A",
           "nome": "A. Mantém na etapa 4",
           "efeito": "A etapa 3 fica mais curta e o teste do ciclo usa números estimados com selo. A calibração é feita uma vez só, quando as 3 classes já existirem."
         },
         {
+          "id": "B",
           "nome": "B. Antecipa para a etapa 3",
           "efeito": "A expedição já sai confiável no teste do ciclo, mas calibra só o Guerreiro. Arqueiro e Mago precisarão de nova calibração na etapa 4, e o robô de teste vira trabalho extra mais cedo."
         }
@@ -344,6 +359,7 @@
       "origem": "docs/15_etapas.md"
     },
     {
+      "id": "capsulas-steam",
       "titulo": "Quem faz a capa e as cápsulas da Steam?",
       "detalhe": "Artista, IA declarada ou mista.",
       "pergunta": "A arte final da capa e das cápsulas da página da Steam (as imagens que aparecem na loja, na busca e na biblioteca) será feita por um artista contratado, por IA (declarada na Steam) ou de forma mista (IA como base e artista finalizando)?",
@@ -354,14 +370,17 @@
       ],
       "opcoes": [
         {
+          "id": "A",
           "nome": "A. Artista contratado",
           "efeito": "Segue a política do plano e evita críticas a cápsula feita por IA. Tem custo e prazo, e exige contrato de cessão de direitos com o artista."
         },
         {
+          "id": "B",
           "nome": "B. IA declarada",
           "efeito": "Rápido, barato e coerente com o resto da arte. Parte do público reage mal a cápsulas feitas por IA."
         },
         {
+          "id": "C",
           "nome": "C. Mista",
           "efeito": "IA para compor a cena e artista pintando por cima. Custo intermediário; o uso de IA continua tendo de ser declarado."
         }
@@ -369,38 +388,68 @@
       "origem": "docs/15_etapas.md"
     },
     {
-      "titulo": "CNPJ, Steam Direct e registros: quem faz e quando?",
+      "id": "registros-quem",
+      "titulo": "CNPJ, Steam Direct e registros: quem cuida?",
       "detalhe": "Providências fora do código que bloqueiam a publicação.",
-      "pergunta": "Quem cuida das providências fora do código (abrir CNPJ, pagar o Steam Direct, preencher o formulário fiscal, registrar a marca e falar com contador e advogado) e quando isso começa?",
+      "pergunta": "Quem cuida das providências fora do código: abrir CNPJ, pagar o Steam Direct, preencher o formulário fiscal, registrar a marca e falar com contador e advogado?",
       "contexto": [
         "Essas providências não travam o desenvolvimento, mas travam a publicação. Sem elas, não há página na Steam nem venda.",
         "CNPJ: o plano sugere MEI, ME ou EPP no Simples, com a CNAE de jogos confirmada por um contador. Ele é necessário para editais de fomento e contratos com freelancers, e facilita receber da Steam.",
         "Steam Direct: US$ 100 por jogo, que voltam depois de US$ 1.000 em vendas. Formulário fiscal dos EUA: W-8BEN-E (empresa) ou W-8BEN (pessoa física), para evitar retenção maior.",
         "Marca: registrar Echoes of the Shatter no INPI (e no USPTO, se o mercado americano importar). O programa também pode ser registrado no INPI como prova de autoria.",
         "O plano pede contrato de cessão de direitos com toda pessoa que contribuir com arte, áudio ou código. Agora que há um sócio, isso vale também para o que ele produzir.",
-        "O plano manda abrir a conta e pôr a página 'Em breve' no ar cedo, porque as wishlists se acumulam com o tempo."
+        "Quando começar é a pergunta seguinte."
       ],
       "opcoes": [
         {
+          "id": "A",
           "nome": "A. Você cuida de tudo",
           "efeito": "Concentra as decisões, mas divide seu tempo com a produção do jogo."
         },
         {
+          "id": "B",
           "nome": "B. Seu sócio assume a parte burocrática",
           "efeito": "Você acompanha a produção e ele toca CNPJ, Steam e registros."
         },
         {
+          "id": "C",
           "nome": "C. Contador e advogado",
           "efeito": "Contador para CNPJ e impostos; advogado só para marca e contratos. Tem custo, mas reduz o risco de erro."
-        },
-        {
-          "nome": "Quando: começar já ou só na etapa 5",
-          "efeito": "Começar já põe a página no ar mais cedo e acumula wishlists. Deixar para a etapa 5 adia o gasto, mas a página entra tarde."
         }
       ],
       "origem": "docs/15_etapas.md"
     },
     {
+      "id": "registros-quando",
+      "titulo": "CNPJ e página na Steam: quando começar?",
+      "detalhe": "Começar já ou só perto do lançamento.",
+      "pergunta": "Quando começamos as providências fora do código (CNPJ, Steam Direct e a página 'Em breve' na Steam): já, durante o desenvolvimento, ou só na etapa 5, perto do lançamento em Acesso Antecipado?",
+      "contexto": [
+        "A página 'Em breve' só pode ir ao ar depois que a conta de desenvolvedor existe (Steam Direct pago) e o formulário fiscal e a classificação indicativa estão preenchidos. O plano pede CNPJ antes de pagar o Steam Direct.",
+        "O plano manda pôr a página no ar cedo, no começo da fase da demo, porque as wishlists se acumulam com o tempo e pesam no destaque que a Steam dá no lançamento.",
+        "Isso não trava o código: a equipe continua produzindo o jogo seja qual for a escolha."
+      ],
+      "opcoes": [
+        {
+          "id": "A",
+          "nome": "A. Começar já",
+          "efeito": "A página entra no ar mais cedo e as wishlists se acumulam por mais tempo. O gasto com CNPJ e Steam Direct vem antes de haver jogo pronto."
+        },
+        {
+          "id": "B",
+          "nome": "B. Junto com a demo",
+          "efeito": "Segue o plano: CNPJ e conta na Steam no começo da fase da demo, com a página no ar antes do Next Fest. Depende da decisão sobre a demo."
+        },
+        {
+          "id": "C",
+          "nome": "C. Só na etapa 5",
+          "efeito": "Adia o gasto e a burocracia para quando o jogo estiver quase pronto. A página entra tarde e o lançamento sai com menos wishlists."
+        }
+      ],
+      "origem": "docs/15_etapas.md"
+    },
+    {
+      "id": "paginacao-windows",
       "titulo": "Mover a memória virtual do Windows para o D:",
       "detalhe": "O C: está cheio; só você pode mudar essa configuração.",
       "pergunta": "Você pode mover o arquivo de paginação do Windows (a memória virtual) do disco C: para o disco D:?",
@@ -411,14 +460,17 @@
       ],
       "opcoes": [
         {
+          "id": "A",
           "nome": "A. Tudo para o D:",
           "efeito": "Libera todo o espaço do arquivo no C:. O D: precisa ter espaço livre sobrando."
         },
         {
+          "id": "B",
           "nome": "B. Pequeno no C: e o resto no D:",
           "efeito": "Deixa 2 a 4 GB no C: (o Windows usa para relatórios de travamento) e coloca o principal no D:."
         },
         {
+          "id": "C",
           "nome": "C. Não mexer agora",
           "efeito": "Libera espaço no C: de outra forma. O risco de travar por falta de memória continua."
         }
@@ -426,6 +478,7 @@
       "origem": "infraestrutura"
     },
     {
+      "id": "historia",
       "titulo": "História do jogo",
       "detalhe": "Em criação por você; decidir como e até quando.",
       "pergunta": "Como fica a criação da história do jogo: você continua escrevendo sozinho, divide com seu sócio ou quer que o agente de narrativa prepare uma proposta a partir do que já existe para vocês ajustarem?",
@@ -436,14 +489,17 @@
       ],
       "opcoes": [
         {
+          "id": "A",
           "nome": "A. Você escreve sozinho",
           "efeito": "A história fica inteira na sua mão. A equipe só adapta os textos ao formato do jogo."
         },
         {
+          "id": "B",
           "nome": "B. Você e seu sócio",
           "efeito": "Divide o trabalho. Vale combinar quem tem a palavra final."
         },
         {
+          "id": "C",
           "nome": "C. Proposta do agente de narrativa",
           "efeito": "O agente escreve uma versão a partir do que existe, e vocês cortam e ajustam. É mais rápido, mas a voz final depende da revisão de vocês."
         }
