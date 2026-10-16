@@ -59,13 +59,21 @@ inline std::string TmpDir(const std::string& name) {
 inline const char* const kTableNames[] = {
     "rules.csv",   "meta.csv",         "classes.csv", "class_stats.csv", "skills.csv",
     "effects.csv", "enemies.csv",      "enemy_attacks.csv", "affixes.csv", "item_bases.csv",
-    "uniques.csv", "loot_tables.csv",  "loot_entries.csv",  "encounters.csv", "maps.csv"};
+    "uniques.csv", "loot_tables.csv",  "loot_entries.csv",  "encounters.csv", "maps.csv",
+    // Opcionais (docs/13): a pasta de fixtures pode não ter o arquivo.
+    "potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv"};
+
+inline bool IsOptionalTable(const std::string& t) {
+    return t == "potions.csv" || t == "elite_modifiers.csv" || t == "boss_phases.csv" || t == "boss_patterns.csv" ||
+           t == "enemy_ai.csv";
+}
 
 // Carrega as 15 tabelas de uma pasta de fixtures, permitindo trocar o texto de UMA tabela.
 inline bool LoadFixture(shatter::ContentDB& db, const std::string& dir, const std::string& overrideTable = "",
                         const std::string& overrideText = "") {
     bool ok = true;
     for (const char* t : kTableNames) {
+        if (IsOptionalTable(t) && overrideTable != t && !std::filesystem::exists(std::filesystem::u8path(dir + "/" + t))) continue;
         const std::string text = (overrideTable == t) ? overrideText : ReadFile(dir + "/" + t);
         ok = db.LoadTableCsv(t, text) && ok;
     }
@@ -104,7 +112,8 @@ inline shatter::CharacterState MakeWarrior(const shatter::ContentDB& db, int lev
     c.name = "Teste";
     c.classId = "class.warrior";
     c.level = level;
-    c.potions = potions;
+    // Save v2: espaços de poção (Vida com `potions` cargas, Resguardo cheio). Sem recarga pendente.
+    c.potionSlots = {{"potion.life", static_cast<int>(potions), 0.0}, {"potion.ward", 2, 0.0}};
     c.skills = {{"skill.warrior.iron_cut", 1, {}}, {"skill.warrior.cleave", 1, {}}, {"skill.warrior.stone_stance", 1, {}}};
     c.skillBar[0] = "skill.warrior.iron_cut";
     c.skillBar[1] = "skill.warrior.cleave";

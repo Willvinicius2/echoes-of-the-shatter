@@ -43,7 +43,12 @@ TEST(content_rnf07_error_catalog) {
     ExpectFail("peso 0", "affixes.csv", Replace(affixes, "1,10,body|head,life,false", "1,0,body|head,life,false"), "affixes.csv", 2, "E_RANGE");
     ExpectFail("efeito inexistente", "skills.csv", Replace(skills, "effect.guard_break", "effect.nope"), "skills.csv", 3, "E_FK");
     ExpectFail("idle sem amostra de paridade", "skills.csv",
-               Replace(skills, "false,,,,,,,,1\nskill.enemy.sentinel_strike", "true,1,,,,,,0,1\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_RULE");
+               Replace(skills, "false,,,,,,,,1,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,0,1,,,,\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_RULE");
+    ExpectFail("idle sem selo de calibracao", "skills.csv",
+               Replace(skills, "false,,,,,,,,1,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,20,1,,,,none\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_RULE");
+    ExpectFail("selo de calibracao desconhecido", "skills.csv",
+               Replace(skills, "false,,,,,,,,1,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,20,1,,,,guess\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_ENUM");
+    ExpectFail("unico idle sem amostra", "uniques.csv", Replace(Table("uniques.csv"), "damage:increased:0.2:melee,effect.block_spark,false,,,", "damage:increased:0.2:melee,effect.block_spark,true,,,"), "uniques.csv", 2, "E_RULE");
     ExpectFail("recarga abaixo do minimo", "skills.csv", Replace(skills, ",0,8,0.2,0,0.2,", ",0,0.05,0.2,0,0.2,"), "skills.csv", 4, "E_RANGE");
     ExpectFail("tipo invalido", "skills.csv", Replace(skills, "10,,,,1,1.1", "ten,,,,1,1.1"), "skills.csv", 2, "E_TYPE");
     ExpectFail("tags obrigatorias (P8)", "skills.csv", Replace(skills, "attack|melee|physical,melee,,10,,,,1,1.1", ",melee,,10,,,,1,1.1"), "skills.csv", 2, "E_REQUIRED");
@@ -55,16 +60,16 @@ TEST(content_rnf07_error_catalog) {
     ExpectFail("classe sem vida", "class_stats.csv", "classId,stat,base,perLevel\nclass.warrior,resource,100,0\n", "classes.csv", 2, "E_RULE");
     ExpectFail("classe desconhecida em class_stats", "class_stats.csv", Table("class_stats.csv") + "class.ghost,life,1,1\n", "class_stats.csv", 6, "E_FK");
     ExpectFail("startingSkill inexistente", "classes.csv", Replace(Table("classes.csv"), "skill.warrior.iron_cut", "skill.warrior.nope"), "classes.csv", 2, "E_FK");
-    ExpectFail("unico sem manualOnly", "loot_entries.csv", Replace(loot, "unique.bell_warden_blade,5,1,1,1,999,true", "unique.bell_warden_blade,5,1,1,1,999,false"), "loot_entries.csv", 8, "E_RULE");
+    ExpectFail("unico sem manualOnly", "loot_entries.csv", Replace(loot, "unique.bell_warden_blade,,1,1,1,999,true", "unique.bell_warden_blade,,1,1,1,999,false"), "loot_entries.csv", 8, "E_RULE");
     ExpectFail("booleano invalido", "loot_entries.csv", Replace(loot, "1,1,1,999,true", "1,1,1,999,yes"), "loot_entries.csv", 8, "E_TYPE");
-    ExpectFail("echo_fragment como stack", "loot_entries.csv", loot + "loot.crypt.area,stack,material.echo_fragment,1,1,1,1,999,false\n", "loot_entries.csv", 14, "E_RULE");
-    ExpectFail("ciclo de subtabelas", "loot_entries.csv", loot + "loot.crypt.common,table,loot.crypt.guardian,5,1,1,1,999,false\n", "loot_tables.csv", -1, "E_RULE");
+    ExpectFail("echo_fragment como stack", "loot_entries.csv", loot + "loot.crypt.area,stack,material.echo_fragment,1,1,1,1,999,false,,,\n", "loot_entries.csv", 14, "E_RULE");
+    ExpectFail("ciclo de subtabelas", "loot_entries.csv", loot + "loot.crypt.common,table,loot.crypt.guardian,5,1,1,1,999,false,,,\n", "loot_tables.csv", -1, "E_RULE");
     ExpectFail("ataque com habilidade inexistente", "enemy_attacks.csv", Replace(Table("enemy_attacks.csv"), "skill.enemy.ember_spit", "skill.enemy.nope"), "enemy_attacks.csv", 3, "E_FK");
     ExpectFail("inimigo sem ataques", "enemy_attacks.csv", "enemyId,skillId,weight,telegraphed\nenemy.hollow_sentinel,skill.enemy.sentinel_strike,1,true\n", "enemies.csv", -1, "E_RULE");
     ExpectFail("chefe sem isBoss", "encounters.csv", Replace(Table("encounters.csv"), "enemy.crypt_guardian:1:1:0,1,10,true", "enemy.crypt_guardian:1:1:0,1,10,false"), "encounters.csv", 4, "E_RULE");
     ExpectFail("mapa com encontro inexistente", "maps.csv", Replace(maps, "enc.crypt.patrol_a|enc.crypt.patrol_b", "enc.crypt.patrol_a|enc.crypt.nope"), "maps.csv", 2, "E_FK");
     ExpectFail("arma sem dano", "item_bases.csv", Replace(Table("item_bases.csv"), "main_hand,1,,10,,,,1.0,melee,m", "main_hand,1,,,,,,1.0,melee,m"), "item_bases.csv", 2, "E_RULE");
-    ExpectFail("regra desconhecida", "rules.csv", rules + "bogus_key,1\n", "rules.csv", 43, "E_UNKNOWN_KEY");
+    ExpectFail("regra desconhecida", "rules.csv", rules + "bogus_key,1\n", "rules.csv", 60, "E_UNKNOWN_KEY");
     ExpectFail("regra faltando", "rules.csv", Replace(rules, "max_level,30\n", ""), "rules.csv", 0, "E_REQUIRED");
     ExpectFail("regra fora da faixa", "rules.csv", Replace(rules, "block_cap,0.5", "block_cap,-0.1"), "rules.csv", 4, "E_RANGE");
     ExpectFail("expoente de XP", "rules.csv", Replace(rules, "xp_exponent,1.5", "xp_exponent,1.3"), "rules.csv", -1, "E_RANGE");

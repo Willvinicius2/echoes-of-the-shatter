@@ -551,6 +551,7 @@ def chk_skill(c: Content, table: str, rows: List[dict], rep: Report) -> None:
             rep.err(table, ln, "E_RANGE", f"cooldown {r['cooldown']} > 0 e < cooldown_min ({cd_min})")
         if r["idleSupported"] and r["idleParitySampleSize"] <= 0:
             rep.err(table, ln, "E_IDLE", "idleSupported=true exige idleParitySampleSize > 0 (perfil calibrado pelo teste de paridade)")
+        check_idle_calibration(table, ln, r, rep)
         if r["classId"]:
             seg = r["classId"].split(".", 1)[1]
             if not r["id"].startswith(f"skill.{seg}."):
@@ -567,6 +568,113 @@ def chk_skill(c: Content, table: str, rows: List[dict], rep: Report) -> None:
             rep.warn(table, ln, "W_TIMING", "windup+impact+recovery = 0")
         if r["idleFractionOfGroupHit"] == 0 and r["idleAvgTargetsHit"] <= 0 and r["idleSupported"]:
             rep.err(table, ln, "E_IDLE", "perfil idle sem alvos (idleAvgTargetsHit e idleFractionOfGroupHit = 0)")
+
+
+def check_idle_calibration(table: str, ln: int, r: dict, rep: Report) -> None:
+    """docs/13 item 8: manual_estimate (ou bot_parity) exige amostra > 0; idleSupported exige calibracao."""
+    cal = r["idleCalibration"]
+    sample = r["idleParitySampleSize"]
+    if cal in ("manual_estimate", "bot_parity") and sample <= 0:
+        rep.err(table, ln, "E_IDLE", f"idleCalibration={cal} exige idleParitySampleSize > 0")
+    if r["idleSupported"] and cal == "none":
+        rep.err(table, ln, "E_IDLE", "idleSupported=true exige idleCalibration manual_estimate ou bot_parity")
+
+
+def chk_unique(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    for r in rows:
+        ln = r["__line__"]
+        if r["idleSupported"] and r["idleParitySampleSize"] <= 0:
+            rep.err(table, ln, "E_IDLE", "idleSupported=true exige idleParitySampleSize > 0 (docs/13 item 8)")
+        check_idle_calibration(table, ln, r, rep)
+
+
+def chk_potion(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    slots: Dict[int, int] = {}
+    pot_rule = c.rules.get("potion_lockout")
+    for r in rows:
+        ln = r["__line__"]
+        if r["kind"] == "barrier" and r["duration"] <= 0:
+            rep.err(table, ln, "E_POTION", "kind=barrier exige duration > 0")
+        if r["kind"] == "heal" and r["duration"] > 0:
+            rep.err(table, ln, "E_POTION", "kind=heal nao usa duration")
+        if r["hotkeySlot"] in slots:
+            rep.err(table, ln, "E_POTION", f"hotkeySlot {r['hotkeySlot']} repetido (primeiro na linha {slots[r['hotkeySlot']]})")
+        slots[r["hotkeySlot"]] = ln
+        if pot_rule is not None and r["globalLockout"] != pot_rule:
+            rep.warn(table, ln, "W_POTION", f"globalLockout {r['globalLockout']} difere de rules.csv potion_lockout ({pot_rule})")
+
+
+def chk_modifier(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    if rows and sum(r["weightPrototype"] for r in rows) <= 0:
+        rep.err(table, rows[0]["__line__"], "E_WEIGHT", "a soma de weightPrototype deve ser > 0 (ao menos um modificador sorteavel)")
+    for r in rows:
+        ln = r["__line__"]
+        if r["deathExplosionRadius"] > 0 and (r["deathExplosionDamage"] <= 0 or r["deathExplosionFuse"] <= 0):
+            rep.err(table, ln, "E_MODIFIER", "explosao (deathExplosionRadius > 0) exige dano e fuse > 0")
+        if r["deathExplosionRadius"] == 0 and (r["deathExplosionDamage"] > 0 or r["deathExplosionFuse"] > 0):
+            rep.err(table, ln, "E_MODIFIER", "deathExplosionDamage/Fuse sem deathExplosionRadius")
+
+
+def chk_boss_phase(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    enemies = c.ids("enemies.csv")
+    by_boss: Dict[str, List[dict]] = {}
+    for r in rows:
+        ln = r["__line__"]
+        by_boss.setdefault(r["bossId"], []).append(r)
+        if r["bossId"] in enemies and not enemies[r["bossId"]]["isBoss"]:
+            rep.err(table, ln, "E_BOSS", f"bossId '{r['bossId']}' nao e isBoss=true em enemies.csv")
+        if r["phase"] > 1 and r["transitionSeconds"] <= 0:
+            rep.err(table, ln, "E_BOSS", "fase > 1 exige transitionSeconds > 0 (rugido de transicao)")
+        if r["summonEnemyId"] and r["summonCount"] <= 0:
+            rep.err(table, ln, "E_BOSS", "summonEnemyId sem summonCount > 0")
+        if r["decisionDelayMin"] > r["decisionDelayMax"]:
+            rep.err(table, ln, "E_MINMAX", "decisionDelayMin > decisionDelayMax")
+    for boss, ps in by_boss.items():
+        ps = sorted(ps, key=lambda r: r["phase"])
+        if [r["phase"] for r in ps] != list(range(1, len(ps) + 1)):
+            rep.err(table, ps[0]["__line__"], "E_BOSS", f"fases de '{boss}' devem ser 1..N sem buracos")
+        if ps[0]["lifeThreshold"] != 1.0:
+            rep.err(table, ps[0]["__line__"], "E_BOSS", "a fase 1 comeca com lifeThreshold 1.0")
+        for a, b in zip(ps, ps[1:]):
+            if not b["lifeThreshold"] < a["lifeThreshold"]:
+                rep.err(table, b["__line__"], "E_BOSS", "lifeThreshold deve cair a cada fase")
+
+
+def chk_boss_pattern(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    phases = {(p["bossId"], p["phase"]) for p in c.tables.get("boss_phases.csv", [])}
+    attacks = {(a["enemyId"], a["skillId"]) for a in c.tables.get("enemy_attacks.csv", [])}
+    for r in rows:
+        ln = r["__line__"]
+        if (r["bossId"], r["phase"]) not in phases:
+            rep.err(table, ln, "E_FK", f"bossId/phase '{r['bossId']}/{r['phase']}' nao existe em boss_phases.csv")
+        if (r["bossId"], r["skillId"]) not in attacks:
+            rep.err(table, ln, "E_FK", f"skillId '{r['skillId']}' nao esta em enemy_attacks.csv para '{r['bossId']}'")
+        if 0 < r["cooldown"] < c.rules.get("cooldown_min", 0.1):
+            rep.err(table, ln, "E_RANGE", "cooldown > 0 e < cooldown_min")
+
+
+def chk_enemy_ai(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    enemies = c.ids("enemies.csv")
+    for r in rows:
+        ln = r["__line__"]
+        e = enemies.get(r["enemyId"])
+        if e is not None:
+            if e["isBoss"]:
+                rep.err(table, ln, "E_ENEMY_AI", "chefe nao usa enemy_ai.csv (fases em boss_phases.csv)")
+            if r["aggroRange"] and r["aggroRange"] != e["aggroRange"]:
+                rep.err(table, ln, "E_ENEMY_AI", f"aggroRange {r['aggroRange']} difere de enemies.csv ({e['aggroRange']})")
+        if r["circleMin"] > r["circleMax"]:
+            rep.err(table, ln, "E_MINMAX", "circleMin > circleMax")
+        if r["preferredMin"] > r["preferredMax"]:
+            rep.err(table, ln, "E_MINMAX", "preferredMin > preferredMax")
+        if r["tokenIntervalMin"] > r["tokenIntervalMax"]:
+            rep.err(table, ln, "E_MINMAX", "tokenIntervalMin > tokenIntervalMax")
+        if r["circleMax"] > 0 and r["attackTokens"] < 1:
+            rep.err(table, ln, "E_ENEMY_AI", "cerco (circleMax > 0) exige attackTokens >= 1")
+
+
+def boss_tables(c: Content) -> set:
+    return {e["lootTableId"] for e in c.tables.get("enemies.csv", []) if e["isBoss"] and e["lootTableId"]}
 
 
 def chk_effect(c: Content, table: str, rows: List[dict], rep: Report) -> None:
@@ -600,6 +708,8 @@ def chk_enemy(c: Content, table: str, rows: List[dict], rep: Report) -> None:
             rep.err(table, ln, "E_ENEMY", "inimigo sem nenhuma linha em enemy_attacks.csv")
         if r["isBoss"] and r["isElite"]:
             rep.warn(table, ln, "W_ENEMY", "isBoss e isElite ao mesmo tempo")
+        if r["modifierId"] and not r["isElite"]:
+            rep.err(table, ln, "E_ENEMY", "modifierId so vale para elite fixa (isElite=true)")
 
 
 def chk_item_base(c: Content, table: str, rows: List[dict], rep: Report) -> None:
@@ -683,6 +793,10 @@ def chk_loot_entry(c: Content, table: str, rows: List[dict], rep: Report) -> Non
                 rep.err(table, ln, "E_LOOT", f"kind={kind} exige refId '{prefix}*'")
             if tbl and ref not in c.ids(tbl):
                 rep.err(table, ln, "E_FK", f"refId: '{ref}' não existe em {tbl}")
+        if r["weight"] <= 0 and r["fixedChance"] <= 0:
+            rep.err(table, ln, "E_WEIGHT", "peso vazio/0 so e valido com fixedChance > 0")
+        if kind == "unique" and r["tableId"] not in boss_tables(c):
+            rep.err(table, ln, "E_UNIQUE_TABLE", f"Unico so pode estar em tabela de chefe (lootTableId de enemies.csv com isBoss=true); '{r['tableId']}' nao e")
         if kind in MANUAL_ONLY_KINDS and not r["manualOnly"]:
             rep.err(table, ln, "E_IDLE_TOP", f"kind={kind} é item de topo: manualOnly deve ser true (regra 4 do idle)")
         if kind != "stack" and (r["minAmount"] != 1 or r["maxAmount"] != 1):
@@ -734,6 +848,12 @@ CHECKS = {
     "loot_entry_rules": chk_loot_entry,
     "encounter_rules": chk_encounter,
     "map_rules": chk_map,
+    "unique_rules": chk_unique,
+    "potion_rules": chk_potion,
+    "modifier_rules": chk_modifier,
+    "boss_phase_rules": chk_boss_phase,
+    "boss_pattern_rules": chk_boss_pattern,
+    "enemy_ai_rules": chk_enemy_ai,
 }
 
 
@@ -1051,19 +1171,46 @@ def load_save_schemas(schema_dir: str) -> Dict[int, dict]:
 # ---------------------------------------------------------------------------
 # Migrações de referência (espelho do que o core implementa em src/save_migrations.cpp)
 # ---------------------------------------------------------------------------
+def _potion_slot_defaults() -> List[dict]:
+    """Um slot por linha de potions.csv, na ordem do arquivo: (potion_id, máximo de cargas)."""
+    import csv
+    path = os.path.join(DEFAULT_DATA, "potions.csv")
+    with open(path, encoding="utf-8", newline="") as fh:
+        return [{"potion_id": r["id"], "max": int(r["maxCharges"])} for r in csv.DictReader(fh)]
+
+
 def migrate_1_to_2(data: dict) -> dict:
-    """Exemplo documentado em docs/06_dados.md §6.4 (v2 ainda NÃO está ativa no core).
-    - characters[].potions (int)  -> characters[].potion_slots = [{potion_id, count}, {..}]
-    - novo campo raiz tutorial_flags = []  (inserido logo após 'books_seen')
-    Nada é apagado: o valor antigo de potions vai inteiro para o 1º slot."""
+    """Migração v1 -> v2 (save_v2.schema.json; docs/06 seção 6a).
+    - characters[].potions (int) -> potion_slots: um slot por linha de potions.csv, com
+      charges = o antigo 'potions' no 1º slot (Vida) e o máximo de cargas nos demais; recharge_remaining = 0.
+    - characters[].boss_progress = [] (contador do Único por chefe).
+    - characters[].equipment.legs = null (11 posições, C-10c).
+    - expeditions[].request.potion_heal_fraction sai (a cura vem de potions.csv).
+    Nada mais é apagado."""
+    slot_defaults = _potion_slot_defaults()
+
     def conv_char(ch: dict) -> dict:
         out = {}
+        old_potions = ch.get("potions", 0)
         for k, v in ch.items():
             if k == "potions":
-                out["potion_slots"] = [{"potion_id": "potion.life", "count": v},
-                                       {"potion_id": "", "count": 0}]
+                slots = []
+                for i, d in enumerate(slot_defaults):
+                    charges = old_potions if i == 0 else d["max"]
+                    slots.append({"potion_id": d["potion_id"], "charges": charges, "recharge_remaining": 0})
+                out["potion_slots"] = slots
+            elif k == "equipment":
+                eq = {}
+                for slot, it in v.items():
+                    eq[slot] = it
+                    if slot == "hands":
+                        eq["legs"] = None
+                if "legs" not in eq:
+                    eq["legs"] = None
+                out[k] = eq
             else:
                 out[k] = v
+        out.setdefault("boss_progress", [])
         return out
 
     new = {}
@@ -1075,18 +1222,17 @@ def migrate_1_to_2(data: dict) -> dict:
             for e in v:
                 e2 = dict(e)
                 req = dict(e2["request"])
+                req.pop("potion_heal_fraction", None)
                 snap = dict(req["snapshot"])
                 snap["character"] = conv_char(snap["character"])
                 req["snapshot"] = snap
                 e2["request"] = req
                 exps.append(e2)
             new[k] = exps
+        elif k == "save_version":
+            new[k] = 2
         else:
             new[k] = v
-        if k == "books_seen":
-            new["tutorial_flags"] = []
-    if "tutorial_flags" not in new:
-        new["tutorial_flags"] = []
     return new
 
 
@@ -1104,7 +1250,7 @@ def migrate(data: dict, frm: int, to: int) -> dict:
 # ---------------------------------------------------------------------------
 # Validação de save
 # ---------------------------------------------------------------------------
-SLOTS = ["main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt"]
+SLOTS = ["main_hand", "off_hand", "head", "body", "hands", "legs", "feet", "amulet", "ring", "ring2", "belt"]
 
 
 def _items_of_character(ch: dict):
@@ -1280,6 +1426,69 @@ def save_semantics(fname: str, d: dict, ver: int, rep: Report, content: Optional
 # ---------------------------------------------------------------------------
 # Auto-teste (CI): Content/Data + fixtures válidos + inválidos + saves
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Mutações negativas do conteúdo real (docs/13): cada cópia com um defeito DEVE falhar com o código esperado
+# ---------------------------------------------------------------------------
+MUTATIONS = [
+    ("unico_fora_de_tabela_de_chefe", "loot_entries.csv",
+     lambda t: t + "loot.crypt.common,unique,unique.empty_throne_maul,5,1,1,1,999,true,,,\n", "E_UNIQUE_TABLE"),
+    ("unico_sem_peso_e_sem_chance", "loot_entries.csv",
+     lambda t: t.replace("unique.empty_throne_maul,,1,1,1,999,true,0.2,true,5", "unique.empty_throne_maul,,1,1,1,999,true,,,"), "E_WEIGHT"),
+    ("idle_manual_sem_amostra", "uniques.csv",
+     lambda t: t.replace(",20,manual_estimate", ",0,manual_estimate"), "E_IDLE"),
+    ("pocao_barreira_sem_duracao", "potions.csv",
+     lambda t: t.replace("barrier,0.3,6,", "barrier,0.3,,"), "E_POTION"),
+    ("modificadores_sem_peso", "elite_modifiers.csv",
+     lambda t: t.replace("modifier.elite.shield,50", "modifier.elite.shield,0").replace("modifier.elite.swift,50", "modifier.elite.swift,0"), "E_WEIGHT"),
+    ("padrao_do_chefe_com_skill_inexistente", "boss_patterns.csv",
+     lambda t: t.replace("skill.enemy.guardian_shield_charge", "skill.enemy.guardian_nope"), "E_FK"),
+    ("fase_do_chefe_com_limiar_nao_decrescente", "boss_phases.csv",
+     lambda t: t.replace("enemy.crypt_guardian,2,0.5", "enemy.crypt_guardian,2,1.0"), "E_BOSS"),
+    ("ia_aggro_diferente_do_inimigo", "enemy_ai.csv",
+     lambda t: t.replace("enemy.ash_hound,1100", "enemy.ash_hound,900"), "E_ENEMY_AI"),
+    ("visual_set_sem_prefixo_vset", "item_bases.csv",
+     lambda t: t.replace("vset.starter", "starter"), "E_ID"),
+    ("calca_com_dano_de_arma", "item_bases.csv",
+     lambda t: t.replace("armor:flat:4,,,,,,,f", "armor:flat:4,9,,,,,,f"), "E_WEAPON"),
+    ("regra_obrigatoria_removida", "rules.csv",
+     lambda t: t.replace("potion_lockout,1.0\n", ""), "E_KEY_MISSING"),
+]
+
+
+def mutation_self_test(schema_dir: str, quiet: bool) -> int:
+    import shutil
+    import tempfile
+    print("== mutações negativas do conteúdo real (cada uma deve falhar com o código esperado)")
+    failures = 0
+    for name, fname, mutate, code in MUTATIONS:
+        tmp = tempfile.mkdtemp(prefix="mut_")
+        try:
+            dst = os.path.join(tmp, "Data")
+            shutil.copytree(DEFAULT_DATA, dst)
+            path = os.path.join(dst, fname)
+            with open(path, encoding="utf-8", newline="") as fh:
+                before = fh.read()
+            after = mutate(before)
+            if after == before:
+                print(f"   !! mutação '{name}' não alterou {fname}")
+                failures += 1
+                continue
+            with open(path, "w", encoding="utf-8", newline="") as fh:
+                fh.write(after)
+            rep = Report(f"mutação {name}")
+            validate_content(dst, schema_dir, rep)
+            hit = [e for e in rep.errors if e[2] == code]
+            if hit:
+                if not quiet:
+                    print(f"   ok: {name} falhou como esperado [{code}]")
+            else:
+                print(f"   !! {name}: esperado [{code}], veio {sorted({e[2] for e in rep.errors})}")
+                failures += 1
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    return failures
+
+
 def self_test(schema_dir: str, quiet: bool) -> int:
     failures = 0
     print("### validate_data.py --self-test")
@@ -1351,6 +1560,7 @@ def self_test(schema_dir: str, quiet: bool) -> int:
             same = canonical(migrate(d1, 1, 2)) == canonical(d2)
             print(f"== migração de referência v1->v2: {'OK (igual a migration/v1_to_v2_expected.json)' if same else 'FALHOU (difere)'}")
             failures += 0 if same else 1
+    failures += mutation_self_test(schema_dir, quiet)
     print(f"### resultado: {'OK' if failures == 0 else f'{failures} falha(s)'}")
     return 0 if failures == 0 else 1
 

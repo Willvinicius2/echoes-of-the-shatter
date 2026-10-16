@@ -1,6 +1,6 @@
 # 06 — Dados: esquemas, tabelas CSV e save
 
-Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (41 chaves, todas de `constants.h`) e `meta.csv` (`content_version = 1`) completos. As outras 13 tabelas têm só cabeçalho, para o agente de conteúdo preencher. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
+Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (58 chaves: as 41 de `constants.h` e as 17 de docs/13), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
 
 ## 1. Fontes e escopo
 
@@ -58,7 +58,7 @@ Os exemplos de cada tabela vêm do fixture em `ShatterCore/tests/data/` (uma lin
 
 ### `rules.csv` (constantes de regra)
 
-Chaves de `RulesConstants` (`constants.h`). O validador exige as 41, nomes exatos, sem chave extra. Valores com a fonte de cada um. Os marcados PROVISÓRIO são números que o plano não fecha (pendência, seção 9).
+Chaves de `RulesConstants` (`constants.h`). O validador exige as 58, nomes exatos, sem chave extra. Valores com a fonte de cada um. Os marcados PROVISÓRIO são números que o plano não fecha (pendência, seção 9).
 
 - Chave primária: `key`.
 - Formato key-value (`key,value`). Todas as chaves são obrigatórias.
@@ -86,7 +86,7 @@ Chaves de `RulesConstants` (`constants.h`). O validador exige as 41, nomes exato
 | `max_rares_per_expedition` | int | ≥ 0, ≤ 100 | 4 | RF-34 (4 Raros) |
 | `xp_cap_levels_above_area` | int | ≥ 0, ≤ 10 | 2 | RF-33 (2 níveis acima da área) |
 | `ai_base_dodge` | number | ≥ 0, ≤ 1 | 0.5 | PROVISÓRIO. Não definido no plano nem nos requisitos. Arquitetura 04 §12 usa como premissa |
-| `retreat_life_fraction` | number | ≥ 0, ≤ 1 | 0.2 | PROVISÓRIO. Arquitetura 04 §12 e §15 (20%) |
+| `retreat_life_fraction` | number | ≥ 0, ≤ 1 | 0.25 | PROVISÓRIO. Arquitetura 04 §12 e §15 (20%) |
 | `vigor_h1_4` | number | ≥ 0, ≤ 1 | 1.0 | RF-36 (100%) |
 | `vigor_h5_8` | number | ≥ 0, ≤ 1 | 0.7 | RF-36 (70%) |
 | `vigor_h9_12` | number | ≥ 0, ≤ 1 | 0.4 | RF-36 (40%) |
@@ -106,6 +106,23 @@ Chaves de `RulesConstants` (`constants.h`). O validador exige as 41, nomes exato
 | `xp_scale` | number | ≥ 0 | 60.0 | plano, Progressão e RF-05 (60) |
 | `xp_exponent` | number | ≥ 0, ≤ 3, múltiplo de 0.5 | 1.5 | plano, Progressão e RF-05 (1,5) |
 | `max_level` | int | ≥ 1, ≤ 100 | 30 | plano (nível 30) |
+| `dodge_max_charges` | int | ≥ 1 | 3 | docs/13 item 1: Esquiva: cargas maximas |
+| `dodge_recharge` | number | ≥ 0 | 1.5 | docs/13 item 1: Esquiva: recarga por carga (s), em serie |
+| `dodge_duration` | number | ≥ 0 | 0.35 | docs/13 item 1: Esquiva: duracao total (s) |
+| `dodge_iframes` | number | ≥ 0 | 0.2 | docs/13 item 1: Esquiva: invulnerabilidade (s), dentro da duracao |
+| `dodge_distance` | number | ≥ 0 | 400 | docs/13 item 1 [HIPÓTESE]: Esquiva: distancia (uu) [HIPOTESE] |
+| `dodge_cost_resource` | number | ≥ 0 | 0 | docs/13 item 1: Esquiva: custo de Impeto (0; o custo e uma carga) |
+| `dodge_buffer` | number | ≥ 0 | 0.1 | docs/13 item 1 [HIPÓTESE]: Esquiva: buffer de entrada (s) [HIPOTESE] |
+| `dodge_perfect_resource` | number | ≥ 0 | 10 | docs/13 item 1 [HIPÓTESE]: Esquiva perfeita: Impeto ganho (opcional) [HIPOTESE] |
+| `guard_break_stagger_seconds` | number | ≥ 0 | 1.5 | docs/13 item 3: Guarda Quebrada: atordoamento (stagger, s) |
+| `guard_break_stagger_damage_taken` | number | ≥ 0 | 0.3 | docs/13 item 3: Guarda Quebrada: dano recebido extra durante o stagger |
+| `guard_break_immunity_boss` | number | ≥ 0 | 8 | docs/13 item 3: Guarda Quebrada: imunidade a nova quebra no chefe (s) |
+| `guard_break_immunity_other` | number | ≥ 0 | 4 | docs/13 item 3: Guarda Quebrada: imunidade em elite e Arauto (s) |
+| `boss_shield_down_seconds` | number | ≥ 0 | 5 | docs/13 item 3: Escudo do chefe caido apos Guarda Quebrada (s) |
+| `elite_life_mult` | number | ≥ 1 | 2.0 | docs/13 item 5: Elite sorteada: multiplicador de vida |
+| `elite_damage_mult` | number | ≥ 1 | 1.2 | docs/13 item 5: Elite sorteada: multiplicador de dano |
+| `elite_xp_mult` | number | ≥ 1 | 3.0 | docs/13 item 5: Elite sorteada: multiplicador de XP |
+| `potion_lockout` | number | ≥ 0 | 1.0 | docs/13 item 2: Trava global entre usos de pocao (s) |
 
 Regras de conteúdo:
 
@@ -199,7 +216,7 @@ class.warrior,resource,100,0
 ### `skills.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel`.
+- Cabeçalho exato: `id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel,coneAngle,knockback,projectileSpeed,idleCalibration`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -235,6 +252,10 @@ class.warrior,resource,100,0
 | `idleDamageTakenMult` | número (ponto decimal) | não | ≥ 0 | 1 | Multiplicador de dano recebido |
 | `idleParitySampleSize` | inteiro | não | ≥ 0 | 0 | Nº de encontros da calibração (0 = não calibrado) |
 | `unlockLevel` | inteiro | não | ≥ 1, ≤ 100 | 1 | Nível de liberação |
+| `coneAngle` | número | não | ≥ 0, ≤ 360 | 0 | Angulo do cone (graus, total) |
+| `knockback` | número | não | ≥ 0 | 0 | Empurrao ao acertar (uu) |
+| `projectileSpeed` | número | não | ≥ 0 | 0 | Velocidade do projetil (uu/s) |
+| `idleCalibration` | enum: `none`, `manual_estimate`, `bot_parity` | não | — | none | Calibracao do perfil idle: none / manual_estimate / bot_parity |
 
 Regras de conteúdo:
 
@@ -255,7 +276,7 @@ skill.enemy.sentinel_strike,,,attack|melee|physical,melee,,8,,,,,,,0,0,0.7,0.1,0
 ### `effects.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,duration,tickInterval,stackRule,maxStacks,damagePerTickPhysical,damagePerTickFire,damagePerTickCold,damagePerTickLightning,modifiers,barrier,trigger,triggerChance,internalCooldown,tags`.
+- Cabeçalho exato: `id,duration,tickInterval,stackRule,maxStacks,damagePerTickPhysical,damagePerTickFire,damagePerTickCold,damagePerTickLightning,modifiers,barrier,trigger,triggerChance,internalCooldown,tags,interruptsAction`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -274,6 +295,7 @@ skill.enemy.sentinel_strike,,,attack|melee|physical,melee,,8,,,,,,,0,0,0.7,0.1,0
 | `triggerChance` | número (ponto decimal) | não | ≥ 0, ≤ 1 | 1 | Chance do gatilho |
 | `internalCooldown` | número (ponto decimal) | não | ≥ 0 | 0 | Recarga interna (s); efetivo = max(valor, trigger_icd_min) |
 | `tags` | tags (`\|`): `attack`, `spell`, `melee`, `projectile`, `area`, `fire`, `cold`, `lightning`, `physical` | não | — | — | Tags do dano do efeito |
+| `interruptsAction` | bool | não | — | false | Interrompe preparacao/telegraph do alvo |
 
 Regras de conteúdo:
 
@@ -291,7 +313,7 @@ effect.burn,4,1,refresh,1,,3,,,,0,none,1,0,fire
 ### `enemies.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange`.
+- Cabeçalho exato: `id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -305,6 +327,13 @@ effect.burn,4,1,refresh,1,,3,,,,0,none,1,0,fire
 | `isElite` | bool (`true`/`false`) | não | — | false | Elite fixa |
 | `moveSpeed` | número (ponto decimal) | não | ≥ 0 | 0 | Velocidade (uu/s) |
 | `aggroRange` | número (ponto decimal) | não | ≥ 0 | 0 | Alcance de aggro (uu) |
+| `stunImmune` | bool | não | — | false | Imune a atordoamento (elite, Arauto e chefe) |
+| `shieldArcDegrees` | número | não | ≥ 0, ≤ 360 | 0 | Arco do escudo frontal (graus, total; 0 = sem escudo) |
+| `turnRateDegPerSec` | número | não | ≥ 0 | 0 | Giro (graus/s) na fase 1 ou fixo |
+| `turnRateDegPerSecPhase2` | número | não | ≥ 0 | 0 | Giro (graus/s) na fase 2 |
+| `guardBreakStaggerSeconds` | número | não | ≥ 0 | 0 | Atordoamento da Guarda Quebrada (s) |
+| `guardBreakImmunitySeconds` | número | não | ≥ 0 | 0 | Imunidade a nova Guarda Quebrada (s) |
+| `modifierId` | ref `elite_modifiers.csv` | não | — | — | Modificador fixo de elite (elite_modifiers.csv) |
 
 Regras de conteúdo:
 
@@ -358,7 +387,7 @@ enemy.hollow_sentinel,skill.enemy.sentinel_strike,1,true
 | `maxValue` | número (ponto decimal) | sim | — | — | Valor máximo (>= min) |
 | `minItemLevel` | inteiro | não | ≥ 1, ≤ 100 | 1 | Nível mínimo de item |
 | `weight` | número (ponto decimal) | não | > 0 | 1 | Peso de sorteio (> 0) |
-| `allowedSlots` | lista (`\|`) de enum: `main_hand`, `off_hand`, `head`, `body`, `hands`, `feet`, `amulet`, `ring`, `ring2`, `belt` | não | — | — | Posições permitidas (vazio = todas) |
+| `allowedSlots` | lista (`\|`) de enum: `main_hand`, `off_hand`, `head`, `body`, `hands`, `legs`, `feet`, `amulet`, `ring`, `ring2`, `belt` | não | — | — | Posições permitidas (vazio = todas) |
 | `group` | texto (regex `^[a-z0-9_]+$`) | não | — | — | Grupo exclusivo |
 | `craftInscription` | bool (`true`/`false`) | não | — | false | Disponível em Fixar Inscrição |
 
@@ -376,12 +405,12 @@ affix.life_flat,prefix,life,flat,,10,20,1,10,body|head,life,false
 ### `item_bases.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,slot,itemLevel,implicitMods,weaponDamagePhysical,weaponDamageFire,weaponDamageCold,weaponDamageLightning,attackTime,weaponTags,grammaticalGender`.
+- Cabeçalho exato: `id,slot,itemLevel,implicitMods,weaponDamagePhysical,weaponDamageFire,weaponDamageCold,weaponDamageLightning,attackTime,weaponTags,grammaticalGender,visualSetId`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
 | `id` | ID `item_base.*` | sim | — | — | ID da base |
-| `slot` | enum slots: `main_hand`, `off_hand`, `head`, `body`, `hands`, `feet`, `amulet`, `ring`, `ring2`, `belt` | sim | — | — | Posição |
+| `slot` | enum slots: `main_hand`, `off_hand`, `head`, `body`, `hands`, `legs`, `feet`, `amulet`, `ring`, `ring2`, `belt` | sim | — | — | Posição |
 | `itemLevel` | inteiro | não | ≥ 1, ≤ 100 | 1 | Nível do item |
 | `implicitMods` | modificadores (`\|`) `stat:kind:valor[:tag+tag]` | não | — | — | Propriedade da base |
 | `weaponDamagePhysical` | número (ponto decimal) | não | ≥ 0 | 0 | Dano da arma (physical) |
@@ -391,6 +420,7 @@ affix.life_flat,prefix,life,flat,,10,20,1,10,body|head,life,false
 | `attackTime` | número (ponto decimal) | não | ≥ 0 | 0 | s por ataque (armas) |
 | `weaponTags` | tags (`\|`): `attack`, `spell`, `melee`, `projectile`, `area`, `fire`, `cold`, `lightning`, `physical` | não | — | — | melee ou projectile (armas) |
 | `grammaticalGender` | enum: `m`, `f` | não | — | m | Gênero gramatical |
+| `visualSetId` | ID `vset.*` | não | — | — | Conjunto visual (vazio = fallback `vset.starter`); só vale em head, body, hands, legs, feet (C-10d) |
 
 Regras de conteúdo:
 
@@ -407,7 +437,7 @@ item_base.iron_sword,main_hand,1,,10,,,,1.0,melee,m
 ### `uniques.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,baseId,fixedMods,ruleEffectId,idleSupported`.
+- Cabeçalho exato: `id,baseId,fixedMods,ruleEffectId,idleSupported,idleParitySampleSize,idleCalibration,visualSetId`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -416,6 +446,9 @@ item_base.iron_sword,main_hand,1,,10,,,,1.0,melee,m
 | `fixedMods` | modificadores (`\|`) `stat:kind:valor[:tag+tag]` | não | — | — | Atributos fixos |
 | `ruleEffectId` | ID → `effects.csv` | não | — | — | Efeito que muda a build |
 | `idleSupported` | bool (`true`/`false`) | não | — | false | Tem perfil idle testado |
+| `idleParitySampleSize` | inteiro | não | ≥ 0 | 0 | Amostra da calibracao idle (encontros medidos) |
+| `idleCalibration` | enum: `none`, `manual_estimate`, `bot_parity` | não | — | none | Calibracao do perfil idle: none / manual_estimate / bot_parity |
+| `visualSetId` | ID `vset.*` | não | — | — | Conjunto visual próprio do Único; prevalece sobre o da base (C-10d) |
 
 Regras de conteúdo:
 
@@ -458,7 +491,7 @@ loot.crypt.common,1,1,80,18,2
 ### `loot_entries.csv`
 
 - Chave primária: nenhuma (a ordem é a do CSV).
-- Cabeçalho exato: `tableId,kind,refId,weight,minAmount,maxAmount,minAreaLevel,maxAreaLevel,manualOnly`.
+- Cabeçalho exato: `tableId,kind,refId,weight,minAmount,maxAmount,minAreaLevel,maxAreaLevel,manualOnly,fixedChance,guaranteeFirstKill,pityKills`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -471,6 +504,9 @@ loot.crypt.common,1,1,80,18,2
 | `minAreaLevel` | inteiro | não | ≥ 1, ≤ 999 | 1 | Nível de área mínimo |
 | `maxAreaLevel` | inteiro | não | ≥ 1, ≤ 999 | 999 | Nível de área máximo |
 | `manualOnly` | bool (`true`/`false`) | não | — | false | Nunca cai no idle |
+| `fixedChance` | número | não | ≥ 0, ≤ 1 | 0 | Chance fixa de cair, independe do peso (0 a 1) |
+| `guaranteeFirstKill` | bool | não | — | false | Garante a 1a vitoria sobre o chefe |
+| `pityKills` | inteiro | não | ≥ 0 | 0 | Vitorias seguidas sem drop que garantem o item (0 = sem protecao) |
 
 Regras de conteúdo:
 
@@ -539,6 +575,171 @@ Exemplo (`ShatterCore/tests/data/maps.csv`):
 id,monsterLevel,tier,encounters,bossEncounter,areaLootTable,idleAllowed
 map.act1.crypt,1,0,enc.crypt.patrol_a,,loot.crypt.common,true
 ```
+
+
+## 5a. Tabelas e colunas acrescidas (docs/13, itens 1 a 9)
+
+Fonte: `docs/13_design_pendencias.md`, seção 'Para o Data Engineer'. Nomes de tabela, coluna e chave são os do docs/13. Tabelas novas: `potions`, `elite_modifiers`, `boss_phases`, `boss_patterns`, `enemy_ai`. Colunas novas: as das seções 'Cabeçalho exato' das tabelas `skills`, `enemies`, `effects`, `uniques` e `loot_entries` (acima, já atualizadas), e `class_stats` (linha nova `class.warrior,move_speed,450,0`).
+
+Vazio numa célula = padrão do esquema. Um peso vazio em `loot_entries` só vale com `fixedChance` > 0 (Único do Guardião, item 9).
+
+### `potions.csv`
+
+Poções do jogador (docs/13 item 2). Vida (tecla 1) e Resguardo (tecla 2).
+
+- Chave primária: `id`.
+- Cabeçalho exato: `id,kind,fractionOfMaxLife,duration,maxCharges,rechargeSeconds,useTime,moveSpeedWhileUsing,globalLockout,refillOnEliteKill,hotkeySlot`.
+- Cura e barreira no mesmo esquema. Vazio em `duration` para cura. `moveSpeedWhileUsing` 0,5 nas duas (docs/13 diz 'igual' à Vida; ver relatório).
+
+| Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
+|---|---|---|---|---|---|
+| `id` | ID `potion.*` | sim | — | — | ID da pocao |
+| `kind` | enum: `heal`, `barrier` | sim | — | — | heal (cura) ou barrier (barreira) |
+| `fractionOfMaxLife` | número | sim | ≥ 0, ≤ 1 | — | Fracao da vida maxima (cura ou barreira) |
+| `duration` | número | não | ≥ 0 | 0 | Duracao da barreira (s); vazio = nao se aplica |
+| `maxCharges` | inteiro | sim | ≥ 1 | — | Cargas maximas |
+| `rechargeSeconds` | número | sim | > 0 | — | Recarga por carga (s), em serie |
+| `useTime` | número | sim | > 0 | — | Tempo de uso (s) |
+| `moveSpeedWhileUsing` | número | não | ≥ 0, ≤ 1 | 1 | Fracao da velocidade de movimento durante o uso |
+| `globalLockout` | número | não | ≥ 0 | 0 | Trava global entre usos de pocao (s) |
+| `refillOnEliteKill` | bool | não | — | false | Matar elite da +1 carga (a pocao com menos cargas) |
+| `hotkeySlot` | inteiro | sim | ≥ 1, ≤ 9 | — | Tecla (1 a 9) |
+
+Checagens do validador: `potion_rules`.
+
+### `elite_modifiers.csv`
+
+Modificadores de elite (docs/13 item 5). Volátil fica com peso 0 (desligado no protótipo).
+
+- Chave primária: `id`.
+- Cabeçalho exato: `id,weightPrototype,lifeMult,damageMult,xpMult,barrierFractionOfLife,moveSpeedMult,attackSpeedMult,recoveryMult,deathExplosionRadius,deathExplosionDamage,deathExplosionFuse`.
+- Vazio em `lifeMult`, `damageMult`, `xpMult`, `moveSpeedMult`, `attackSpeedMult` e `recoveryMult` = 1 (sem efeito). Os multiplicadores base de elite estão em `rules.csv`.
+
+| Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
+|---|---|---|---|---|---|
+| `id` | ID `modifier.elite.*` | sim | — | — | ID do modificador |
+| `weightPrototype` | número | não | ≥ 0 | 0 | Peso de sorteio no prototipo (0 = desligado) |
+| `lifeMult` | número | não | > 0 | 1 | Multiplicador de vida extra (1 = nenhum) |
+| `damageMult` | número | não | > 0 | 1 | Multiplicador de dano extra (1 = nenhum) |
+| `xpMult` | número | não | > 0 | 1 | Multiplicador de XP extra (1 = nenhum) |
+| `barrierFractionOfLife` | número | não | ≥ 0, ≤ 1 | 0 | Barreira, fracao da vida maxima (0 = nenhuma) |
+| `moveSpeedMult` | número | não | > 0 | 1 | Multiplicador de velocidade de movimento |
+| `attackSpeedMult` | número | não | > 0 | 1 | Multiplicador de velocidade de ataque |
+| `recoveryMult` | número | não | > 0 | 1 | Multiplicador de recuperacao |
+| `deathExplosionRadius` | número | não | ≥ 0 | 0 | Explosao ao morrer: raio (uu); 0 = nenhuma |
+| `deathExplosionDamage` | número | não | ≥ 0 | 0 | Explosao ao morrer: dano fisico |
+| `deathExplosionFuse` | número | não | ≥ 0 | 0 | Explosao ao morrer: marca antes do disparo (s) |
+
+Checagens do validador: `modifier_rules`.
+
+### `boss_phases.csv`
+
+Fases do Guardião (docs/13 item 4). Chave: bossId + phase.
+
+- Chave primária: `bossId`, `phase`.
+- Cabeçalho exato: `bossId,phase,lifeThreshold,transitionSeconds,summonEnemyId,summonCount,shieldSeconds,turnRate,decisionDelayMin,decisionDelayMax`.
+- `lifeThreshold` é a fração da vida em que a fase começa (fase 1 = 1,0; fase 2 = 0,5). `shieldSeconds` ficou vazio: o docs/13 não dá valor por fase (a queda do escudo de 5 s está em `rules.csv`, `boss_shield_down_seconds`).
+
+| Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
+|---|---|---|---|---|---|
+| `bossId` | ref `enemies.csv` | sim | — | — | Chefe (enemies.csv, isBoss=true) |
+| `phase` | inteiro | sim | ≥ 1 | — | Numero da fase (1, 2, ...) |
+| `lifeThreshold` | número | sim | > 0, ≤ 1 | — | Fracao da vida em que a fase comeca (1 = inicio) |
+| `transitionSeconds` | número | não | ≥ 0 | 0 | Rugido de transicao (s), invulneravel |
+| `summonEnemyId` | ref `enemies.csv` | não | — | — | Inimigo invocado na transicao (vazio = nenhum) |
+| `summonCount` | inteiro | não | ≥ 0 | 0 | Quantidade invocada (sem reinvocacao) |
+| `shieldSeconds` | número | não | ≥ 0 | 0 | Escudo: duracao (s); vazio = nao definido no docs/13 |
+| `turnRate` | número | não | ≥ 0 | 0 | Giro (graus/s) nesta fase |
+| `decisionDelayMin` | número | não | ≥ 0 | 0 | Atraso minimo entre acoes (s) |
+| `decisionDelayMax` | número | não | ≥ 0 | 0 | Atraso maximo entre acoes (s) |
+
+Checagens do validador: `boss_phase_rules`.
+
+### `boss_patterns.csv`
+
+Padrões do Guardião por fase (docs/13 item 4). Chave: id + phase (o mesmo id aparece na fase 1 e na 2, com telegraph diferente).
+
+- Chave primária: `id`, `phase`.
+- Cabeçalho exato: `id,bossId,phase,skillId,weight,telegraphSeconds,recoverySeconds,cooldown,maxRepeat,playerNearWeightMult,ignoreIfBehind`.
+- `playerNearWeightMult` 2 e `ignoreIfBehind` true só no escudo (docs/13 item 4.3). `maxRepeat` 2 em todos (regra de repetição).
+
+| Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
+|---|---|---|---|---|---|
+| `id` | ID `pattern.*` | sim | — | — | ID do padrao |
+| `bossId` | ref `enemies.csv` | sim | — | — | Chefe dono |
+| `phase` | inteiro | sim | ≥ 1 | — | Fase em que o padrao vale |
+| `skillId` | ref `skills.csv` | sim | — | — | Habilidade executada |
+| `weight` | número | sim | > 0 | — | Peso de sorteio (> 0) |
+| `telegraphSeconds` | número | não | ≥ 0 | 0 | Telegraph (s) |
+| `recoverySeconds` | número | não | ≥ 0 | 0 | Recuperacao (s) |
+| `cooldown` | número | não | ≥ 0 | 0 | Recarga propria (s); vazio = nenhuma |
+| `maxRepeat` | inteiro | não | ≥ 0 | 0 | Maximo de repeticoes seguidas (0 = sem limite) |
+| `playerNearWeightMult` | número | não | ≥ 0 | 1 | Multiplicador de peso se o jogador esta perto e na frente |
+| `ignoreIfBehind` | bool | não | — | false | Nao sorteia se o jogador esta atras |
+
+Checagens do validador: `boss_pattern_rules`.
+
+### `enemy_ai.csv`
+
+IA de Cão-de-Cinza, Cão Veloz e Arqueiro (docs/13 item 6). O Cão Veloz tem intervalo de ficha x0,8 do comum, já calculado.
+
+- Chave primária: `enemyId`.
+- Cabeçalho exato: `enemyId,aggroRange,alertRadius,leashRange,leashSeconds,preferredMin,preferredMax,retreatBelow,retreatMaxSeconds,circleMin,circleMax,circleSpeed,attackTokens,tokenIntervalMin,tokenIntervalMax,fleeLifeFraction,fleeSeconds,fleeOncePerLife,attackCooldown,maxSimultaneousShooters`.
+- `aggroRange` repete `enemies.csv`; o validador exige igualdade quando preenchido. Sem valor no docs/13 para `alertRadius` do Arqueiro, `leashRange` e `leashSeconds` dele: vazios.
+
+| Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
+|---|---|---|---|---|---|
+| `enemyId` | ref `enemies.csv` | sim | — | — | Inimigo (enemies.csv) |
+| `aggroRange` | número | não | ≥ 0 | 0 | Alcance de aggro (uu); se preenchido, deve ser igual ao de enemies.csv |
+| `alertRadius` | número | não | ≥ 0 | 0 | Raio de alerta do bando (uu) |
+| `leashRange` | número | não | ≥ 0 | 0 | Distancia para voltar ao ponto (uu) |
+| `leashSeconds` | número | não | ≥ 0 | 0 | Tempo alem de leashRange para voltar (s) |
+| `preferredMin` | número | não | ≥ 0 | 0 | Faixa ideal minima (uu) |
+| `preferredMax` | número | não | ≥ 0 | 0 | Faixa ideal maxima (uu) |
+| `retreatBelow` | número | não | ≥ 0 | 0 | Recua se o jogador esta abaixo desta distancia (uu) |
+| `retreatMaxSeconds` | número | não | ≥ 0 | 0 | Tempo maximo de recuo (s) |
+| `circleMin` | número | não | ≥ 0 | 0 | Cerco: distancia minima (uu) |
+| `circleMax` | número | não | ≥ 0 | 0 | Cerco: distancia maxima (uu) |
+| `circleSpeed` | número | não | ≥ 0 | 0 | Cerco: velocidade de giro (uu/s) |
+| `attackTokens` | inteiro | não | ≥ 0 | 0 | Fichas de ataque simultaneas |
+| `tokenIntervalMin` | número | não | ≥ 0 | 0 | Intervalo minimo de ficha (s) |
+| `tokenIntervalMax` | número | não | ≥ 0 | 0 | Intervalo maximo de ficha (s) |
+| `fleeLifeFraction` | número | não | ≥ 0, ≤ 1 | 0 | Foge com vida abaixo desta fracao |
+| `fleeSeconds` | número | não | ≥ 0 | 0 | Duracao da fuga (s) |
+| `fleeOncePerLife` | bool | não | — | false | Foge so uma vez por vida |
+| `attackCooldown` | número | não | ≥ 0 | 0 | Recarga entre disparos/ataques (s) |
+| `maxSimultaneousShooters` | inteiro | não | ≥ 0 | 0 | Atiradores simultaneos |
+
+Checagens do validador: `enemy_ai_rules`.
+
+### Nota sobre o Único do Guardião (`loot_entries.csv`)
+
+A linha `loot.crypt.guardian,unique,unique.empty_throne_maul` ficou sem peso (sai do sorteio ponderado), com `fixedChance` 0,2, `guaranteeFirstKill` true e `pityKills` 5. O validador exige que `unique` esteja só em tabela ligada a chefe (`isBoss=true` em `enemies.csv`) e que peso vazio venha com `fixedChance` > 0.
+
+### Calibração do idle (`idleCalibration`)
+
+`none` (padrão), `manual_estimate` ou `bot_parity`. `idleSupported=true` exige calibração diferente de `none` e `idleParitySampleSize` > 0. As 4 habilidades do Guerreiro e o Único estão em `manual_estimate` com amostra 20 (estimativa, selo na tela de previsão).
+
+### Save v2 (proposta, não ativa)
+
+Esquema em `schemas/save_v2.schema.json`, ao lado de `save_v1`. Não é usado pelo core até aprovação.
+
+- `characters[].potions` (inteiro) sai e vira `potion_slots`: lista de exatamente 2 `{potion_id, charges, recharge_remaining}` (Vida e Resguardo).
+- Novo `characters[].boss_progress`: lista de `{enemy_id, kills, kills_since_unique}` por personagem (contador do Único, RF-55).
+- `ExpeditionRequest.potion_heal_fraction` sai (a cura vem de `potions.csv`). `rules[].ref_id` já existe em v1 e serve para `use_potion`.
+- Cargas e relógios de esquiva não são salvos: reiniciam cheios ao carregar (docs/13 item 11).
+- `tutorial_flags` não entra na v2 (não aprovado, docs/13 item 11). A função `migrate_1_to_2` do validador foi ajustada para não gerar o campo. O fixture `migration/v1_to_v2_expected.json` (ShatterCore) ainda o contém e precisa ser alinhado pelo Backend.
+
+
+## 5b. Espaço `legs`, `visualSetId` e save v2 (C-10, decisão do dono 16/10/2026)
+
+- `@slots` (`schemas/_enums.json`) ganhou `legs` no fim da lista. `item_bases.slot` e `affixes.allowedSlots` aceitam `legs`.
+- Afixos de armadura `affix.sturdy`, `affix.plated`, `affix.of_mending` e `affix.of_the_furnace` passaram a valer em `legs`. Afixos com `allowedSlots` vazio também passam a valer em `legs`: precisam de revisão do Game Designer (C-10e).
+- Base inicial de calça: `item_base.worn_trousers`, slot `legs`, itemLevel 1, implícito `armor:flat:4` **[HIPÓTESE]** (coerente com o elmo `armor:flat:8` e com o peitoral `life:flat:12`), gênero `f`, `visualSetId` `vset.starter`. Ela ainda não está em nenhuma tabela de loot, então não cai.
+- Coluna opcional `visualSetId` (`vset.*`) em `item_bases.csv` e `uniques.csv`. Vazio = fallback `vset.starter`. As bases de armadura iniciais (`iron_helm`, `leather_vest`, `leather_gloves`, `worn_boots`, `worn_trousers`) usam `vset.starter`. É dado de apresentação: fora do `resultHash`, do simulador e do save.
+- `save_v2` (proposta, `schemas/save_v2.schema.json`) reúne três mudanças numa versão só: `equipment` com 11 posições (inclui `legs`, `null` ou item), `potion_slots` (lista de `{potion_id, charges, recharge_remaining}`, uma por linha de `potions.csv`) e `boss_progress`. Sem `potion_heal_fraction` no pedido e sem `tutorial_flags`.
+- Migração `1→2` (`migrate_1_to_2` do validador, espelho da migração do core): `potions` vira `potion_slots` com `charges` = o antigo valor no 1º slot (Vida) e o máximo de `potions.csv` nos demais, `recharge_remaining` = 0; `equipment.legs = null`; `boss_progress = []`; `potion_heal_fraction` sai de cada pedido de expedição. O resultado valida contra `save_v2` (conferido com o save_v1 do fixture do core).
+- Nomes de Loc que a base e o slot precisam (já estão no master, `Loc/content.csv`: `item_base.worn_trousers.name`, `slot.legs.name`). Esta worktree ainda não tem essas linhas: a validação de conteúdo só passa depois de unir o master.
 
 
 ## 5. content_version e conteúdo publicado

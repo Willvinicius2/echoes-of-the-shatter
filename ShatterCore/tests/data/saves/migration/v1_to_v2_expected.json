@@ -1,5 +1,5 @@
 {
-  "save_version": 1,
+  "save_version": 2,
   "content_version": 1,
   "characters": [
     {
@@ -38,6 +38,7 @@
         "head": null,
         "body": null,
         "hands": null,
+        "legs": null,
         "feet": null,
         "amulet": null,
         "ring": null,
@@ -51,14 +52,17 @@
       "potion_slots": [
         {
           "potion_id": "potion.life",
-          "count": 2
+          "charges": 2,
+          "recharge_remaining": 0
         },
         {
-          "potion_id": "",
-          "count": 0
+          "potion_id": "potion.ward",
+          "charges": 2,
+          "recharge_remaining": 0
         }
       ],
-      "play_time_seconds": 3600.0
+      "play_time_seconds": 3600.0,
+      "boss_progress": []
     }
   ],
   "stash": [],
@@ -115,6 +119,7 @@
               "head": null,
               "body": null,
               "hands": null,
+              "legs": null,
               "feet": null,
               "amulet": null,
               "ring": null,
@@ -128,14 +133,17 @@
             "potion_slots": [
               {
                 "potion_id": "potion.life",
-                "count": 2
+                "charges": 2,
+                "recharge_remaining": 0
               },
               {
-                "potion_id": "",
-                "count": 0
+                "potion_id": "potion.ward",
+                "charges": 2,
+                "recharge_remaining": 0
               }
             ],
-            "play_time_seconds": 3600.0
+            "play_time_seconds": 3600.0,
+            "boss_progress": []
           },
           "content_version": 1
         },
@@ -155,7 +163,6 @@
             "ref_id": "skill.warrior.iron_cut"
           }
         ],
-        "potion_heal_fraction": 0.35,
         "seed": "9007199254740993",
         "start_utc": 1781600000,
         "duration_hours": 1,
@@ -166,6 +173,5 @@
     }
   ],
   "codex_seen_uniques": [],
-  "books_seen": [],
-  "tutorial_flags": []
+  "books_seen": []
 }

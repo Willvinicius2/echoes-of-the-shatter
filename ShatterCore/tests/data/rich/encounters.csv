@@ -2,3 +2,4 @@ id,groups,weight,travelTime,isBoss
 enc.crypt.patrol_a,enemy.hollow_sentinel:1:2:0.1,1,5,false
 enc.crypt.patrol_b,enemy.hollow_sentinel:1:1:0|enemy.ash_spitter:1:2:0.2,2,6,false
 enc.crypt.guardian,enemy.crypt_guardian:1:1:0,1,10,true
+enc.crypt.elite_shield,enemy.shielded_sentinel:1:1:0,1,8,false

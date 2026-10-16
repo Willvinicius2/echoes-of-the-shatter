@@ -1,5 +1,6 @@
-id,slot,itemLevel,implicitMods,weaponDamagePhysical,weaponDamageFire,weaponDamageCold,weaponDamageLightning,attackTime,weaponTags,grammaticalGender
-item_base.iron_sword,main_hand,1,,10,,,,1.0,melee,m
-item_base.bone_helm,head,1,armor:flat:5,,,,,,,m
-item_base.leather_vest,body,1,life:flat:10,,,,,,,m
-item_base.iron_boots,feet,1,,,,,,,,f
+id,slot,itemLevel,implicitMods,weaponDamagePhysical,weaponDamageFire,weaponDamageCold,weaponDamageLightning,attackTime,weaponTags,grammaticalGender,visualSetId
+item_base.iron_sword,main_hand,1,,10,,,,1.0,melee,m,
+item_base.bone_helm,head,1,armor:flat:5,,,,,,,m,
+item_base.leather_vest,body,1,life:flat:10,,,,,,,m,
+item_base.iron_boots,feet,1,,,,,,,,f,
+item_base.worn_trousers,legs,1,armor:flat:4,,,,,,,f,vset.starter

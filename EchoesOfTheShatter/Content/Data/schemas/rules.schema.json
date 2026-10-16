@@ -172,7 +172,7 @@
     {
       "name": "retreat_life_fraction",
       "type": "number",
-      "default": 0.2,
+      "default": 0.25,
       "desc": "Recua se vida abaixo desta fração e sem poção (PROVISÓRIO)",
       "min": 0,
       "max": 1
@@ -322,6 +322,125 @@
       "desc": "Nível máximo (default do core = 30, plano AA; o protótipo usa 6 no rules.csv)",
       "min": 1,
       "max": 100
+    },
+    {
+      "name": "dodge_max_charges",
+      "type": "int",
+      "default": 3,
+      "desc": "Esquiva: cargas maximas",
+      "min": 1
+    },
+    {
+      "name": "dodge_recharge",
+      "type": "number",
+      "default": 1.5,
+      "desc": "Esquiva: recarga por carga (s), em serie",
+      "min": 0
+    },
+    {
+      "name": "dodge_duration",
+      "type": "number",
+      "default": 0.35,
+      "desc": "Esquiva: duracao total (s)",
+      "min": 0
+    },
+    {
+      "name": "dodge_iframes",
+      "type": "number",
+      "default": 0.2,
+      "desc": "Esquiva: invulnerabilidade (s), dentro da duracao",
+      "min": 0
+    },
+    {
+      "name": "dodge_distance",
+      "type": "number",
+      "default": 400,
+      "desc": "Esquiva: distancia (uu) [HIPOTESE]",
+      "min": 0
+    },
+    {
+      "name": "dodge_cost_resource",
+      "type": "number",
+      "default": 0,
+      "desc": "Esquiva: custo de Impeto (0; o custo e uma carga)",
+      "min": 0
+    },
+    {
+      "name": "dodge_buffer",
+      "type": "number",
+      "default": 0.1,
+      "desc": "Esquiva: buffer de entrada (s) [HIPOTESE]",
+      "min": 0
+    },
+    {
+      "name": "dodge_perfect_resource",
+      "type": "number",
+      "default": 10,
+      "desc": "Esquiva perfeita: Impeto ganho (opcional) [HIPOTESE]",
+      "min": 0
+    },
+    {
+      "name": "guard_break_stagger_seconds",
+      "type": "number",
+      "default": 1.5,
+      "desc": "Guarda Quebrada: atordoamento (stagger, s)",
+      "min": 0
+    },
+    {
+      "name": "guard_break_stagger_damage_taken",
+      "type": "number",
+      "default": 0.3,
+      "desc": "Guarda Quebrada: dano recebido extra durante o stagger",
+      "min": 0
+    },
+    {
+      "name": "guard_break_immunity_boss",
+      "type": "number",
+      "default": 8,
+      "desc": "Guarda Quebrada: imunidade a nova quebra no chefe (s)",
+      "min": 0
+    },
+    {
+      "name": "guard_break_immunity_other",
+      "type": "number",
+      "default": 4,
+      "desc": "Guarda Quebrada: imunidade em elite e Arauto (s)",
+      "min": 0
+    },
+    {
+      "name": "boss_shield_down_seconds",
+      "type": "number",
+      "default": 5,
+      "desc": "Escudo do chefe caido apos Guarda Quebrada (s)",
+      "min": 0
+    },
+    {
+      "name": "elite_life_mult",
+      "type": "number",
+      "default": 2.0,
+      "desc": "Elite sorteada: multiplicador de vida",
+      "min": 1
+    },
+    {
+      "name": "elite_damage_mult",
+      "type": "number",
+      "default": 1.2,
+      "desc": "Elite sorteada: multiplicador de dano",
+      "min": 1
+    },
+    {
+      "name": "elite_xp_mult",
+      "type": "number",
+      "default": 3.0,
+      "desc": "Elite sorteada: multiplicador de XP",
+      "min": 1
+    },
+    {
+      "name": "potion_lockout",
+      "type": "number",
+      "default": 1.0,
+      "desc": "Trava global entre usos de pocao (s)",
+      "min": 0
     }
   ]
 }

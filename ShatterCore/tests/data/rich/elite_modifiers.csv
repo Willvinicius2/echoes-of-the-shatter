@@ -1,0 +1,4 @@
+id,weightPrototype,lifeMult,damageMult,xpMult,barrierFractionOfLife,moveSpeedMult,attackSpeedMult,recoveryMult,deathExplosionRadius,deathExplosionDamage,deathExplosionFuse
+modifier.elite.shield,50,,,,0.4,,,,,,
+modifier.elite.swift,50,,,,,1.3,1.25,0.8,,,
+modifier.elite.volatile,0,,,,,,,,250,25,0.8

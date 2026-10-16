@@ -1,0 +1,6 @@
+id,bossId,phase,skillId,weight,telegraphSeconds,recoverySeconds,cooldown,maxRepeat,playerNearWeightMult,ignoreIfBehind
+pattern.guardian.hammer,enemy.crypt_guardian,1,skill.enemy.guardian_hammer,3,1.1,1.0,,2,,false
+pattern.guardian.shield_bash,enemy.crypt_guardian,1,skill.enemy.guardian_shield_bash,2,0.7,0.6,,2,2,true
+pattern.guardian.hammer,enemy.crypt_guardian,2,skill.enemy.guardian_hammer,3,0.9,0.8,,2,,false
+pattern.guardian.shield_bash,enemy.crypt_guardian,2,skill.enemy.guardian_shield_bash,2,0.7,0.6,,2,2,true
+pattern.guardian.shield_charge,enemy.crypt_guardian,2,skill.enemy.guardian_shield_charge,2,0.9,1.0,12,2,,false

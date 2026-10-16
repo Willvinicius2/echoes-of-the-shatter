@@ -1,0 +1,4 @@
+enemyId,aggroRange,alertRadius,leashRange,leashSeconds,preferredMin,preferredMax,retreatBelow,retreatMaxSeconds,circleMin,circleMax,circleSpeed,attackTokens,tokenIntervalMin,tokenIntervalMax,fleeLifeFraction,fleeSeconds,fleeOncePerLife,attackCooldown,maxSimultaneousShooters
+enemy.ash_hound,1100,1500,2000,5,,,,,350,500,300,2,1.8,2.8,0.25,4,true,,
+enemy.swift_ash_hound,1200,1500,2000,5,,,,,350,500,300,2,1.44,2.24,0.25,4,true,,
+enemy.ghost_archer,1400,,,,700,1100,500,1.5,,,,,,,,,,2.0,2

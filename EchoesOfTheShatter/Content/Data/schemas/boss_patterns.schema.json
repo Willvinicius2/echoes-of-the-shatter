@@ -1,0 +1,100 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "boss_patterns.csv",
+  "kind": "rows",
+  "primaryKey": [
+    "id",
+    "phase"
+  ],
+  "desc": "Padroes de ataque do chefe por fase (docs/13, item 4). Chave: id + phase.",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "pattern.",
+      "desc": "ID do padrao"
+    },
+    {
+      "name": "bossId",
+      "type": "ref",
+      "required": true,
+      "ref": "enemies.csv",
+      "desc": "Chefe dono"
+    },
+    {
+      "name": "phase",
+      "type": "int",
+      "required": true,
+      "min": 1,
+      "desc": "Fase em que o padrao vale"
+    },
+    {
+      "name": "skillId",
+      "type": "ref",
+      "required": true,
+      "ref": "skills.csv",
+      "desc": "Habilidade executada"
+    },
+    {
+      "name": "weight",
+      "type": "number",
+      "required": true,
+      "minExclusive": 0,
+      "desc": "Peso de sorteio (> 0)"
+    },
+    {
+      "name": "telegraphSeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Telegraph (s)"
+    },
+    {
+      "name": "recoverySeconds",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recuperacao (s)"
+    },
+    {
+      "name": "cooldown",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recarga propria (s); vazio = nenhuma"
+    },
+    {
+      "name": "maxRepeat",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Maximo de repeticoes seguidas (0 = sem limite)"
+    },
+    {
+      "name": "playerNearWeightMult",
+      "type": "number",
+      "required": false,
+      "default": 1,
+      "min": 0,
+      "desc": "Multiplicador de peso se o jogador esta perto e na frente"
+    },
+    {
+      "name": "ignoreIfBehind",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Nao sorteia se o jogador esta atras"
+    }
+  ],
+  "checks": [
+    {
+      "check": "boss_pattern_rules"
+    }
+  ]
+}

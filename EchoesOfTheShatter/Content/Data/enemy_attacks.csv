@@ -7,3 +7,4 @@ enemy.shielded_sentinel,skill.enemy.sentinel_strike,1,true
 enemy.swift_ash_hound,skill.enemy.ash_bite,1,false
 enemy.crypt_guardian,skill.enemy.guardian_hammer,3,true
 enemy.crypt_guardian,skill.enemy.guardian_shield_bash,2,true
+enemy.crypt_guardian,skill.enemy.guardian_shield_charge,2,true

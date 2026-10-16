@@ -35,25 +35,12 @@ bool IsTopTier(LootEntryKind k) {
            k == LootEntryKind::EchoFragment;
 }
 
-void RollTable(RollState& st, const LootTableData& table, int depth) {
-    if (depth > kMaxTableDepth) return;
+void RollTable(RollState& st, const LootTableData& table, int depth);
+
+// Efetiva UMA entrada (a escolhida no sorteio ponderado ou uma entrada fixa que caiu).
+void EmitEntry(RollState& st, const LootTableData& table, const LootEntry& e, int depth) {
     const RulesConstants& rules = st.db.Rules();
-    for (int roll = 0; roll < table.rolls; ++roll) {
-        if (!st.rng.Chance(table.dropChance)) continue;
-
-        // Entradas válidas para o nível de área e o modo (ordem da tabela).
-        std::vector<const LootEntry*> valid;
-        std::vector<double> weights;
-        for (const LootEntry& e : table.entries) {
-            if (st.ctx.areaLevel < e.minAreaLevel || st.ctx.areaLevel > e.maxAreaLevel) continue;
-            if (st.idle() && (e.manualOnly || IsTopTier(e.kind))) continue;  // dupla checagem do idle
-            valid.push_back(&e);
-            weights.push_back(e.weight);
-        }
-        const int pick = PickWeighted(weights, st.rng);
-        if (pick < 0) continue;
-        const LootEntry& e = *valid[static_cast<std::size_t>(pick)];
-
+    {
         switch (e.kind) {
             case LootEntryKind::Nothing:
                 break;
@@ -116,6 +103,53 @@ void RollTable(RollState& st, const LootTableData& table, int depth) {
                 break;
             }
         }
+    }
+}
+
+void RollTable(RollState& st, const LootTableData& table, int depth) {
+    if (depth > kMaxTableDepth) return;
+
+    // Entradas FIXAS (docs/13, item 9): só no Manual, só na tabela de topo, fora do sorteio ponderado.
+    // Cada entrada fixa consome exatamente 1 número do fluxo Loot, tenha caído ou não (posição do fluxo estável).
+    if (depth == 1 && !st.idle()) {
+        bool uniqueDropped = false;
+        bool anyFixed = false;
+        for (const LootEntry& e : table.entries) {
+            if (!e.IsFixed()) continue;
+            if (st.ctx.areaLevel < e.minAreaLevel || st.ctx.areaLevel > e.maxAreaLevel) continue;
+            anyFixed = true;
+            bool drop = st.rng.Chance(e.fixedChance);
+            if (st.ctx.bossProgress != nullptr) {
+                if (e.guaranteeFirstKill && st.ctx.bossProgress->kills == 0) drop = true;
+                if (e.pityKills > 0 && st.ctx.bossProgress->killsSinceUnique + 1 >= e.pityKills) drop = true;
+            }
+            if (!drop) continue;
+            uniqueDropped = true;
+            EmitEntry(st, table, e, depth);
+        }
+        if (st.ctx.bossProgress != nullptr) {
+            ++st.ctx.bossProgress->kills;
+            if (anyFixed && uniqueDropped) st.ctx.bossProgress->killsSinceUnique = 0;
+            else ++st.ctx.bossProgress->killsSinceUnique;
+        }
+    }
+
+    for (int roll = 0; roll < table.rolls; ++roll) {
+        if (!st.rng.Chance(table.dropChance)) continue;
+
+        // Entradas válidas para o nível de área e o modo (ordem da tabela).
+        std::vector<const LootEntry*> valid;
+        std::vector<double> weights;
+        for (const LootEntry& e : table.entries) {
+            if (e.IsFixed()) continue;
+            if (st.ctx.areaLevel < e.minAreaLevel || st.ctx.areaLevel > e.maxAreaLevel) continue;
+            if (st.idle() && (e.manualOnly || IsTopTier(e.kind))) continue;  // dupla checagem do idle
+            valid.push_back(&e);
+            weights.push_back(e.weight);
+        }
+        const int pick = PickWeighted(weights, st.rng);
+        if (pick < 0) continue;
+        EmitEntry(st, table, *valid[static_cast<std::size_t>(pick)], depth);
     }
 }
 

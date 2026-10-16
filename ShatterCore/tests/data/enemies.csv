@@ -1,2 +1,2 @@
-id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange
-enemy.hollow_sentinel,family.soldier_echo,life:80:8|armor:10:0,10,2,loot.crypt.common,false,false,2,6
+id,familyId,stats,xpBase,xpPerLevel,lootTableId,isBoss,isElite,moveSpeed,aggroRange,stunImmune,shieldArcDegrees,turnRateDegPerSec,turnRateDegPerSecPhase2,guardBreakStaggerSeconds,guardBreakImmunitySeconds,modifierId
+enemy.hollow_sentinel,family.soldier_echo,life:80:8|armor:10:0,10,2,loot.crypt.common,false,false,2,6,,,,,,,

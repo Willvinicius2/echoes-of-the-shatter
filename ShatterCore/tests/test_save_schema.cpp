@@ -140,7 +140,7 @@ SaveData FullSave() {
 
 json::Value Schema() {
     json::Value schema;
-    const std::string path = tu::ContentDir() + "/schemas/save_v1.schema.json";
+    const std::string path = tu::ContentDir() + "/schemas/save_v2.schema.json";
     if (!json::Parse(tu::ReadFile(path), schema)) FAIL("esquema ilegivel: " + path);
     return schema;
 }

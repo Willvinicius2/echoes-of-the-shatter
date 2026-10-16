@@ -46,6 +46,17 @@ struct ClassData {                         // classes.csv + class_stats.csv
 enum class SkillShape : std::uint8_t { Melee, Cone, Projectile, Area, Dash, Self, Channel, Trap };
 bool ParseSkillShape(std::string_view text, SkillShape& out);
 
+// Selo de calibração do perfil idle (docs/13, item 8). `ManualEstimate` = estimativa manual (amostra jogada e medida
+// pelo dono): a previsão e o relatório mostram "estimativa". `BotParity` = calibrado pelo teste de paridade.
+// `None` = não calibrado (nunca pode ser idleSupported).
+enum class IdleCalibration : std::uint8_t { None = 0, ManualEstimate = 1, BotParity = 2 };
+bool ParseIdleCalibration(std::string_view text, IdleCalibration& out);  // "none" | "manual_estimate" | "bot_parity"
+const char* ToString(IdleCalibration c);
+// O pior selo entre dois (None < ManualEstimate < BotParity): a previsão mostra o mais fraco da build.
+inline IdleCalibration WeakestCalibration(IdleCalibration a, IdleCalibration b) {
+    return static_cast<std::uint8_t>(a) <= static_cast<std::uint8_t>(b) ? a : b;
+}
+
 // Tradução do espacial para números, usada só pelo simulador idle.
 // Calibrado pelo teste de paridade, nunca chutado. Sem IdleProfile validado → expedição bloqueada.
 struct IdleProfile {
@@ -57,6 +68,7 @@ struct IdleProfile {
     double dodgeTelegraphedBonus = 0.0;    // soma à esquiva base da IA (Recuo Ágil, Passagem Arcana)
     double damageTakenMult = 1.0;          // distância/posicionamento (arqueiro leva menos)
     std::uint32_t paritySampleSize = 0;    // nº de encontros usados na calibração (0 = não calibrado)
+    IdleCalibration calibration = IdleCalibration::None;  // selo: manual_estimate | bot_parity (supported exige != none)
 };
 
 struct SkillData {                         // skills.csv
@@ -76,6 +88,9 @@ struct SkillData {                         // skills.csv
     double range = 0.0;                    // unidades de mundo (px da arte); só tempo real
     double radius = 0.0;
     int projectiles = 1;
+    double coneAngle = 0.0;                // graus; forma de cone no tempo real (0 = sem cone)
+    double knockback = 0.0;                // uu empurrados no alvo; só tempo real
+    double projectileSpeed = 0.0;          // uu/s; só tempo real
     std::vector<ContentId> onHitEffects;   // "effect.burn", "effect.guard_break"
     std::vector<ContentId> selfEffects;    // aplicados em quem usa (Postura Firme, Barreira de Vidro)
     IdleProfile idle;
@@ -101,6 +116,15 @@ struct EnemyData {                         // enemies.csv + enemy_attacks.csv
     bool isElite = false;
     double moveSpeed = 0.0;                // tempo real
     double aggroRange = 0.0;               // tempo real
+    // ADIÇÃO (docs/09, docs/13 itens 3 a 5): stun, Guarda Quebrada, escudo frontal e elite fixo.
+    bool stunImmune = false;               // imune a effect.stun (elite, Arauto, chefe); sofre Guarda Quebrada
+    double shieldArcDegrees = 0.0;         // escudo frontal: arco TOTAL em graus (120 = ±60° em torno da frente); 0 = sem escudo
+    double turnRateDegPerSec = 0.0;        // giro (fase 1)
+    double turnRateDegPerSecPhase2 = 0.0;  // giro (fase 2); 0 = igual ao da fase 1
+    double guardBreakStaggerSeconds = 0.0; // 0 = usa guard_break_stagger_seconds de rules.csv
+    double guardBreakImmunitySeconds = 0.0;// 0 = usa guard_break_immunity_boss (chefe) ou _other (demais) de rules.csv
+    ContentId modifierId;                  // elite fixo: modificador já aplicado (modifier.elite.*); vazio = nenhum
+    ContentId eliteLootTableId;            // coluna OPCIONAL: tabela do elite sorteado (vazio = a do próprio inimigo)
 };
 
 enum class AffixKind : std::uint8_t { Prefix, Suffix };
@@ -129,6 +153,7 @@ struct ItemBaseData {                      // item_bases.csv
     double attackTime = 0.0;               // s por ataque (só armas)
     TagMask weaponTags = 0;                // Melee ou Projectile
     char grammaticalGender = 'm';          // 'm' | 'f' — nomes gerados em pt-BR/es
+    ContentId visualSetId;                 // ADIÇÃO (C-10d): vset.* para a Unity escolher o visual; vazio = vset.starter. Fora do resultHash
 };
 
 struct UniqueData {                        // uniques.csv
@@ -137,6 +162,9 @@ struct UniqueData {                        // uniques.csv
     std::vector<Modifier> fixedMods;
     ContentId ruleEffectId;                // efeito que muda a build
     bool idleSupported = false;            // sem perfil testado → bloqueia expedição
+    std::uint32_t idleParitySampleSize = 0;               // amostra da calibração (supported exige > 0)
+    IdleCalibration idleCalibration = IdleCalibration::None;  // selo (supported exige != none)
+    ContentId visualSetId;                 // ADIÇÃO (C-10d): prevalece sobre a da base; vazio = usa a da base. Fora do resultHash
 };
 
 // Entrada de tabela de loot. Uma entrada sorteia UMA coisa.
@@ -160,6 +188,11 @@ struct LootEntry {
     int minAreaLevel = 1;                  // fora do tier não cai
     int maxAreaLevel = 999;
     bool manualOnly = false;               // nunca cai no idle (Únicos, livros de spec, pedras, fragmentos)
+    // ADIÇÃO (docs/13, item 9): entrada "fixa", fora do sorteio ponderado (o peso não dilui as outras).
+    double fixedChance = 0.0;              // 0..1: chance própria a cada vitória
+    bool guaranteeFirstKill = false;       // cai na 1ª vitória sobre o chefe
+    int pityKills = 0;                     // > 0: garantida na N-ésima vitória seguida sem cair (0 = sem proteção)
+    bool IsFixed() const { return fixedChance > 0.0 || guaranteeFirstKill || pityKills > 0; }
 };
 
 struct LootTableData {                     // loot_tables.csv
@@ -197,6 +230,83 @@ struct MapData {                           // maps.csv
     bool idleAllowed = true;               // o mapa pode ser rota de expedição (se dominado)
 };
 
+
+// ---------------------------------------------------------------------------
+// ADIÇÃO (docs/09, docs/13): poções, modificadores de elite, fases e padrões do chefe, IA dos comuns.
+// ---------------------------------------------------------------------------
+enum class PotionKind : std::uint8_t { Heal = 0, Barrier = 1 };
+bool ParsePotionKind(std::string_view text, PotionKind& out);  // "heal" | "barrier"
+
+struct PotionData {                        // potions.csv
+    ContentId id;                          // "potion.life" | "potion.ward"
+    PotionKind kind = PotionKind::Heal;
+    double fractionOfMaxLife = 0.0;        // cura (heal) ou barreira (barrier), como fração da vida máxima
+    double duration = 0.0;                 // s; só barrier (a barreira some ao fim)
+    int maxCharges = 1;
+    double rechargeSeconds = 0.0;          // por carga, em série (um relógio só)
+    double useTime = 0.0;                  // s bebendo
+    double moveSpeedWhileUsing = 1.0;      // fração da velocidade durante o uso (tempo real)
+    double globalLockout = 0.0;            // s; 0 = usa potion_lockout de rules.csv
+    bool refillOnEliteKill = false;        // entra na regra "+1 carga ao matar elite"
+    int hotkeySlot = 1;                    // 1..9 (tecla)
+};
+
+struct EliteModifierData {                 // elite_modifiers.csv
+    ContentId id;                          // "modifier.elite.shield"
+    double weightPrototype = 0.0;          // peso de sorteio no protótipo (0 = desligado)
+    double lifeMult = 1.0;                 // multiplica elite_life_mult (elite sorteado) ou a vida do elite fixo
+    double damageMult = 1.0;
+    double xpMult = 1.0;
+    double barrierFractionOfLife = 0.0;    // barreira inicial = fração × vida máxima
+    double moveSpeedMult = 1.0;
+    double attackSpeedMult = 1.0;          // não encurta o telegraph (só impacto + recuperação)
+    double recoveryMult = 1.0;
+    double deathExplosionRadius = 0.0;     // > 0: explode ao morrer
+    double deathExplosionDamage = 0.0;
+    double deathExplosionFuse = 0.0;       // s entre a marca e a explosão
+};
+
+struct BossPhaseData {                     // boss_phases.csv (uma linha por bossId + phase)
+    ContentId bossId;
+    int phase = 1;                         // 1, 2, ...
+    double lifeThreshold = 1.0;            // a fase começa quando vida/vida máx <= limiar (fase 1: 1.0)
+    double transitionSeconds = 0.0;        // ao ENTRAR na fase: espera (fase 1: abertura) ou rugido invulnerável (fase >= 2)
+    ContentId summonEnemyId;               // invocado no meio da transição (vazio = nada)
+    int summonCount = 0;
+    double shieldSeconds = 0.0;            // tempo do escudo caído após Guarda Quebrada nesta fase (0 = boss_shield_down_seconds)
+    double turnRate = 0.0;                 // graus/s nesta fase (0 = turnRateDegPerSec[Phase2] do inimigo)
+    double decisionDelayMin = 0.0;         // atraso sorteado entre ações
+    double decisionDelayMax = 0.0;
+};
+
+struct BossPatternData {                   // boss_patterns.csv
+    ContentId id;                          // "pattern.guardian.hammer" (repete por fase: chave = id + phase)
+    ContentId bossId;
+    int phase = 1;                         // fase em que o padrão vale
+    ContentId skillId;                     // skill.enemy.* (dano, impacto, alcance, cone)
+    double weight = 1.0;
+    double telegraphSeconds = 0.0;         // substitui windup da skill neste padrão
+    double recoverySeconds = 0.0;          // substitui recovery da skill neste padrão
+    double cooldown = 0.0;                 // recarga própria do padrão (s)
+    int maxRepeat = 0;                     // máx. de vezes SEGUIDAS (0 = sem limite)
+    double playerNearWeightMult = 1.0;     // multiplica o peso se o jogador está perto E na frente (alcance da skill)
+    bool ignoreIfBehind = false;           // peso 0 se o jogador está atrás do chefe
+};
+
+struct EnemyAiData {                       // enemy_ai.csv (IA em tempo real dos comuns; o core guarda e valida)
+    ContentId enemyId;
+    double aggroRange = 0.0, alertRadius = 0.0, leashRange = 0.0, leashSeconds = 0.0;
+    double preferredMin = 0.0, preferredMax = 0.0, retreatBelow = 0.0, retreatMaxSeconds = 0.0;
+    double circleMin = 0.0, circleMax = 0.0, circleSpeed = 0.0;
+    int attackTokens = 0;
+    double tokenIntervalMin = 0.0, tokenIntervalMax = 0.0;
+    double fleeLifeFraction = 0.0;         // > 0: foge abaixo desta fração de vida
+    double fleeSeconds = 0.0;
+    bool fleeOncePerLife = false;
+    double attackCooldown = 0.0;
+    int maxSimultaneousShooters = 0;
+};
+
 // ---------------------------------------------------------------------------
 // Banco de conteúdo. Carregado uma vez; depois é imutável e pode ser lido de
 // várias threads (o simulador roda fora da game thread).
@@ -219,7 +329,8 @@ public:
     // Carrega uma tabela a partir do texto CSV. tableName = nome do arquivo
     // ("rules.csv", "classes.csv", "class_stats.csv", "skills.csv", "effects.csv",
     //  "enemies.csv", "enemy_attacks.csv", "affixes.csv", "item_bases.csv", "uniques.csv",
-    //  "loot_tables.csv", "loot_entries.csv", "encounters.csv", "maps.csv", "meta.csv").
+    //  "loot_tables.csv", "loot_entries.csv", "encounters.csv", "maps.csv", "meta.csv";
+    //  ADIÇÃO, opcionais: "potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv").
     // Erros são acumulados; retorna false se houve algum nesta tabela.
     bool LoadTableCsv(std::string_view tableName, std::string_view csvText);
     // Conveniência fora do UE (testes, bench, ferramentas): lê todos os *.csv de uma pasta.
@@ -246,11 +357,22 @@ public:
     const LootTableData* FindLootTable(std::string_view id) const;
     const EncounterTemplate* FindEncounter(std::string_view id) const;
     const MapData* FindMap(std::string_view id) const;
+    const PotionData* FindPotion(std::string_view id) const;
+    const EliteModifierData* FindEliteModifier(std::string_view id) const;
+    const BossPatternData* FindBossPattern(std::string_view id, int phase) const;  // chave = id + phase
+    const EnemyAiData* FindEnemyAi(std::string_view enemyId) const;
+    // Fase `phase` do chefe (nullptr se não existir).
+    const BossPhaseData* FindBossPhase(std::string_view bossId, int phase) const;
 
     // Listas em ordem estável (ordem do CSV) — iteração determinística.
     const std::vector<AffixData>& Affixes() const;
     const std::vector<ItemBaseData>& ItemBases() const;
     const std::vector<MapData>& Maps() const;
+    const std::vector<PotionData>& Potions() const;                 // ordem do CSV (a 1ª de kind heal é a "Vida")
+    const std::vector<EliteModifierData>& EliteModifiers() const;
+    const std::vector<BossPhaseData>& BossPhases() const;
+    const std::vector<BossPatternData>& BossPatterns() const;
+    const std::vector<EnemyAiData>& EnemyAis() const;
     // Mapa de efeitos para EffectContainer::Tick.
     const std::unordered_map<ContentId, const EffectData*>& EffectLookup() const;
 
@@ -270,6 +392,11 @@ public:
     void Add(LootTableData d);
     void Add(EncounterTemplate d);
     void Add(MapData d);
+    void Add(PotionData d);
+    void Add(EliteModifierData d);
+    void Add(BossPhaseData d);
+    void Add(BossPatternData d);
+    void Add(EnemyAiData d);
 
 private:
     struct Impl;                       // tabelas e índices; definido em src/content.cpp

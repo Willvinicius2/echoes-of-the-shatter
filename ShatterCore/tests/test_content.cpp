@@ -68,7 +68,7 @@ TEST(content_rich_fixture_passes_and_exposes_everything) {
     EXPECT_EQ(db.Maps().size(), static_cast<std::size_t>(3));
     const MapData* crypt = db.FindMap("map.act1.crypt");
     ASSERT_TRUE(crypt != nullptr);
-    EXPECT_EQ(crypt->encounters.size(), static_cast<std::size_t>(2));
+    EXPECT_EQ(crypt->encounters.size(), static_cast<std::size_t>(3));
     const LootTableData* t = db.FindLootTable("loot.crypt.guardian");
     ASSERT_TRUE(t != nullptr);
     EXPECT_EQ(t->entries.size(), static_cast<std::size_t>(6));

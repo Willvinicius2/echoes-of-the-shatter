@@ -51,6 +51,9 @@ struct EffectData {
     // Recarga interna. O valor efetivo é max(internalCooldown, RulesConstants::triggerInternalCooldown) = mín. 0,25 s.
     double internalCooldown = 0.0;
     TagMask tags = 0;                     // tags do dano do efeito (Fire para queimadura...)
+    // ADIÇÃO (docs/13, item 3): atordoamento real. Ao aplicar, interrompe a preparação (telegraph) em andamento;
+    // alvos com stunImmune ignoram o efeito (ver combat.h, ActionStatus). Os mods do efeito continuam valendo.
+    bool interruptsAction = false;
 };
 
 // Instância ativa.
@@ -86,6 +89,12 @@ public:
     // Avança dt segundos (sempre o passo fixo). Ordem: ticks de dano → expiração → recargas.
     void Tick(double dt, const std::unordered_map<ContentId, const EffectData*>& lookup,
               StatBlock& target, std::vector<EffectEvent>& outEvents);
+
+    // ADIÇÃO: "timer único" do acúmulo (Guarda Quebrada): renova a duração de TODAS as instâncias ativas do efeito
+    // (os acúmulos expiram juntos). Não altera magnitude nem a ordem. Devolve quantas renovou.
+    int RefreshAll(std::string_view effectId, double duration);
+    // ADIÇÃO: remove todas as instâncias do efeito (consumo dos acúmulos) e seus mods. Devolve quantas removeu.
+    int Remove(std::string_view effectId, const EffectData* data, StatBlock& target);
 
     bool Has(std::string_view effectId) const;
     int StackCount(std::string_view effectId) const;

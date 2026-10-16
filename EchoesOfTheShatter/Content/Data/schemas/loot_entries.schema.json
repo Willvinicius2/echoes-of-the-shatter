@@ -39,9 +39,9 @@
       "name": "weight",
       "type": "number",
       "required": false,
-      "default": 1,
+      "default": 0,
       "minExclusive": 0,
-      "desc": "Peso (> 0)"
+      "desc": "Peso (> 0). Vazio = 0, so valido com fixedChance > 0 (Unico do Guardiao)"
     },
     {
       "name": "minAmount",
@@ -83,6 +83,30 @@
       "required": false,
       "default": false,
       "desc": "Nunca cai no idle"
+    },
+    {
+      "name": "fixedChance",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 1,
+      "desc": "Chance fixa de cair, independe do peso (0 a 1)"
+    },
+    {
+      "name": "guaranteeFirstKill",
+      "type": "bool",
+      "required": false,
+      "default": false,
+      "desc": "Garante a 1a vitoria sobre o chefe"
+    },
+    {
+      "name": "pityKills",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Vitorias seguidas sem drop que garantem o item (0 = sem protecao)"
     }
   ],
   "checks": [

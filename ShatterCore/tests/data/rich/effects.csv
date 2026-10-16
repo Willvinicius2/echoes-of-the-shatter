@@ -1,8 +1,9 @@
-id,duration,tickInterval,stackRule,maxStacks,damagePerTickPhysical,damagePerTickFire,damagePerTickCold,damagePerTickLightning,modifiers,barrier,trigger,triggerChance,internalCooldown,tags
-effect.burn,4,1,refresh,1,,1,,,,0,none,1,0,fire
-effect.slow,3,0,refresh,1,,,,,move_speed:more:-0.3,0,none,1,0,
-effect.guard_break,5,0,strongest_only,1,,,,,armor:more:-0.5,0,none,1,0,
-effect.firm_stance,6,0,refresh,1,,,,,damage_taken:more:-0.3,0,none,1,0,
-effect.glass_barrier,0,0,refresh,1,,,,,,30,none,1,0,
-effect.block_spark,2,0,refresh,1,,,,,damage:increased:0.2,0,on_block,1,0,
-effect.poison_stack,5,1,stack_n,3,2,,,,,0,none,1,0,physical
+id,duration,tickInterval,stackRule,maxStacks,damagePerTickPhysical,damagePerTickFire,damagePerTickCold,damagePerTickLightning,modifiers,barrier,trigger,triggerChance,internalCooldown,tags,interruptsAction
+effect.burn,4,1,refresh,1,,1,,,,0,none,1,0,fire,
+effect.slow,3,0,refresh,1,,,,,move_speed:more:-0.3,0,none,1,0,,
+effect.guard_break,8,0,stack_n,3,,,,,damage_taken:increased:0.1,0,none,1,0,,false
+effect.firm_stance,6,0,refresh,1,,,,,damage_taken:more:-0.3,0,none,1,0,,
+effect.glass_barrier,0,0,refresh,1,,,,,,30,none,1,0,,
+effect.block_spark,2,0,refresh,1,,,,,damage:increased:0.2,0,on_block,1,0,,
+effect.poison_stack,5,1,stack_n,3,2,,,,,0,none,1,0,physical,
+effect.stun,0.8,0,refresh,1,,,,,move_speed:more:-1|attack_speed:more:-1,0,none,1,0,,true

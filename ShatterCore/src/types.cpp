@@ -17,7 +17,7 @@ constexpr TagName kTagNames[kTagCount] = {
 };
 
 constexpr const char* kSlotNames[kItemSlotCount] = {
-    "main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt",
+    "main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt", "legs",
 };
 
 }  // namespace

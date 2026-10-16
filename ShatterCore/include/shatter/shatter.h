@@ -10,6 +10,7 @@
 #include "shatter/item.h"
 #include "shatter/content.h"
 #include "shatter/character.h"
+#include "shatter/combat.h"
 #include "shatter/loot.h"
 #include "shatter/expedition.h"
 #include "shatter/clock.h"

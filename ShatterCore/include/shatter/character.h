@@ -10,6 +10,7 @@
 
 #include "shatter/content.h"
 #include "shatter/item.h"
+#include "shatter/progress.h"
 #include "shatter/stats.h"
 #include "shatter/types.h"
 
@@ -34,7 +35,9 @@ struct CharacterState {
     std::array<std::optional<ItemInstance>, kItemSlotCount> equipment{};
     std::vector<ContentId> conqueredMaps;// domínio manual (início ao fim + chefe)
     int highestTierCleared = 0;
-    std::int64_t potions = 0;            // poções de vida em estoque (AA: 1 tipo; 2ª tecla reservada)
+    // Save v2 (docs/13, itens 2 e 9): espaços de poção (um por potions.csv, normalizados ao usar) e vitórias por chefe.
+    std::vector<PotionSlotState> potionSlots;
+    std::vector<BossProgressEntry> bossProgress;
     double playTimeSeconds = 0.0;
 };
 
