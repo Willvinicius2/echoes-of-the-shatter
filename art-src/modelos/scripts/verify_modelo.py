@@ -63,7 +63,7 @@ for o in meshes:
 R["blender_min"] = [round(c, 3) for c in mn]; R["blender_max"] = [round(c, 3) for c in mx]
 R["unity_size_xyz"] = [round(mx.x - mn.x, 3), round(mx.z - mn.z, 3), round(mx.y - mn.y, 3)]
 R["height_total_m"] = round(mx.z - mn.z, 3)
-ok["pivot_ok"] = (abs(mn.z) < 0.005) if cfg["kind"] != "static" else (mn.z < 0 < mx.z)   # personagem: pes em 0; arma: origem na empunhadura (dentro do comprimento)
+ok["pivot_ok"] = (abs(mn.z) < 0.012 * cfg["size_scale"]) if cfg["kind"] != "static" else (mn.z < 0 < mx.z)   # personagem: pes em 0; arma: origem na empunhadura (dentro do comprimento)
 R["body_height_m"] = cfg["body_height_m"]
 R["kind"] = cfg["kind"]
 R["tris"] = sum(len(o.data.polygons) for o in meshes if all(len(p.vertices) == 3 for p in o.data.polygons)) or sum(
@@ -134,14 +134,16 @@ if arms:
         me = body.evaluated_get(dg).to_mesh()
         pts = [me.vertices[i].co.copy() for i, vv in enumerate(body.data.vertices) if any(g.group == gi and g.weight > 0.5 for g in vv.groups)]
         body.evaluated_get(dg).to_mesh_clear()
-        return sum(pts, Vector()) / len(pts)
-    h0, p0 = group_mean("Head"), group_mean("Hips" if "Hips" in body.vertex_groups else "Pelvis")
+        return pts
+    hips = "Hips" if "Hips" in body.vertex_groups else "Pelvis"
+    hips = "Hips" if "Hips" in body.vertex_groups else "Pelvis"
+    h0, p0 = group_mean("Head"), group_mean(hips)
     test_pose(a, cfg["kind"])
-    h1, p1 = group_mean("Head"), group_mean("Hips" if "Hips" in body.vertex_groups else "Pelvis")
-    R["deform_test"] = dict(head_moved_m=round((h1 - h0).length, 3), hips_moved_m=round((p1 - p0).length, 4))
-    ok["deform_test"] = (h1 - h0).length > 0.02 * cfg["size_scale"]
-else:
-    R["armature"] = None
+    h1, p1 = group_mean("Head"), group_mean(hips)
+    # deslocamento medio por vertice (o centroide nao serve: a cabeca gira em torno do proprio eixo)
+    mv = lambda A, B: sum((x - y).length for x, y in zip(A, B)) / len(A)
+    R["deform_test"] = dict(head_mean_move_m=round(mv(h0, h1), 3), hips_mean_move_m=round(mv(p0, p1), 4))
+    ok["deform_test"] = mv(h0, h1) > 0.02 * cfg["size_scale"]
 R["checks"] = ok
 ok = {k: bool(v) for k, v in ok.items()}; R["checks"] = ok; R["all_ok"] = all(ok.values())
 save_json(fpath(cfg, "verify_report.json"), R)

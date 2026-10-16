@@ -27,7 +27,7 @@ def run_shard(si, sn):
     bpy.ops.wm.open_mainfile(filepath=wpath(cfg, "game_uv.blend"))
     low = bpy.data.objects["game"]
     g = texel_geometry(low, SIZE)
-    high = load_ply_obj(wpath(cfg, "high.ply"), "high")
+    high = load_ply_obj(wpath(cfg, "high_ao.ply" if os.path.exists(wpath(cfg, "high_ao.ply")) else "high.ply"), "high")
     hv, hf = mesh_arrays(high)
     bvh = BVHTree.FromPolygons([tuple(v) for v in hv], [tuple(f) for f in hf])
     ys, xs = np.where(g["valid"])
@@ -80,7 +80,7 @@ if shard is not None:
     run_shard(*[int(x) for x in shard.split("/")])
 else:
     # processo principal = fragmento 0; lanca os demais (no maximo 2 processos do Blender ao mesmo tempo)
-    wait_free_virtual(6.0)
+    wait_free_virtual(2.0)
     t0 = time.time()
     procs = []
     for i in range(1, NSH):

@@ -53,7 +53,7 @@ ms.meshing_decimation_quadric_edge_collapse(targetfacenum=min(80000, ms.current_
                                             planarquadric=True, preservenormal=True, qualitythr=0.4, optimalplacement=True)
 print("meio:", ms.current_mesh().face_number(), round(time.time() - t0))
 ms.apply_coord_taubin_smoothing(lambda_=0.5, mu=-0.53, stepsmoothnum=cfg.get("taubin_pre", 3))
-ms.meshing_decimation_quadric_edge_collapse(targetfacenum=cfg["tris_target"], preservetopology=True, planarquadric=True,
+ms.meshing_decimation_quadric_edge_collapse(targetfacenum=cfg["tris_target"], preservetopology=cfg.get("preserve_topology", True), planarquadric=True,
                                             preservenormal=True, qualitythr=0.5, optimalplacement=True)
 ms.apply_coord_taubin_smoothing(lambda_=0.5, mu=-0.53, stepsmoothnum=cfg.get("taubin_post", 2))
 ms.meshing_remove_duplicate_vertices()

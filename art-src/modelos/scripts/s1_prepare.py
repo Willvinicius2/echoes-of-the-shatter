@@ -34,6 +34,34 @@ if cfg.get("delete_boxes_frac"):
     bmesh.ops.delete(bm, geom=dead, context='FACES')
     bm.to_mesh(me); bm.free()
 
+if cfg.get("mask_from_image"):
+    # arco: a corda saiu como membrana. A imagem de entrada traz a membrana em cinza claro sem cor: o que nao cai no
+    # arco (imagem sem o cinza, dilatada) sai da malha. Mapeia a caixa da malha na caixa do alfa da imagem (vista de frente).
+    mi = cfg["mask_from_image"]
+    img = bpy.data.images.load(cfg["single_view"])
+    W_, H_ = img.size
+    px_ = np.empty(W_ * H_ * 4, np.float32); img.pixels.foreach_get(px_)
+    px_ = px_.reshape(H_, W_, 4)[::-1]                      # linha 0 em cima
+    al = px_[..., 3] > 0.5
+    gray = ((px_[..., :3].max(-1) - px_[..., :3].min(-1)) < 0.07) & (px_[..., :3].min(-1) > 0.58)
+    bow = al & ~gray
+    for _ in range(mi.get("dilate_px", 5)):
+        bow = bow | np.roll(bow, 1, 0) | np.roll(bow, -1, 0) | np.roll(bow, 1, 1) | np.roll(bow, -1, 1)
+    ys_, xs_ = np.where(al)
+    x0, x1, y0, y1 = xs_.min(), xs_.max(), ys_.min(), ys_.max()
+    lo, hi = v0.min(0), v0.max(0)
+    bm = bmesh.new(); bm.from_mesh(me)
+    dead = []
+    for f in bm.faces:
+        c = f.calc_center_median()
+        u = x0 + (c.x - lo[0]) / (hi[0] - lo[0]) * (x1 - x0)
+        w = y0 + (1 - (c.z - lo[2]) / (hi[2] - lo[2])) * (y1 - y0)
+        ui, wi = int(np.clip(u, 0, W_ - 1)), int(np.clip(w, 0, H_ - 1))
+        if not bow[wi, ui]:
+            dead.append(f)
+    bmesh.ops.delete(bm, geom=dead, context='FACES')
+    bm.to_mesh(me); bm.free()
+
 # componentes conexos; descarta os pequenos
 bm = bmesh.new(); bm.from_mesh(me)
 seen, comps = set(), []

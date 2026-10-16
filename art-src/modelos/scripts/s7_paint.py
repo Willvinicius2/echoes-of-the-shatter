@@ -141,8 +141,11 @@ def align(M, img, Sp):
 report = {}
 if cfg.get("single_view"):
     raw = cv2.imread(cfg["single_view"], cv2.IMREAD_UNCHANGED)
-    alpha = raw[..., 3] if raw.shape[2] == 4 else None
+    alpha = raw[..., 3].copy() if raw.shape[2] == 4 else None
     rgb = cv2.cvtColor(raw[..., :3], cv2.COLOR_BGR2RGB)
+    if alpha is not None and cfg.get("drop_light_gray_alpha"):     # membrana da corda do arco (cinza claro sem cor)
+        gray = (rgb.max(-1).astype(int) - rgb.min(-1).astype(int) < 18) & (rgb.min(-1) > 150)
+        alpha[gray] = 0
     panel = {"front": (rgb, figure_mask(rgb, alpha)), "back": (rgb[:, ::-1].copy(), figure_mask(rgb, alpha)[:, ::-1].copy())}
     if alpha is not None:
         panel["back"] = (rgb[:, ::-1].copy(), figure_mask(rgb[:, ::-1], alpha[:, ::-1].copy()))

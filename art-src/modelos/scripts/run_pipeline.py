@@ -14,6 +14,7 @@ TMPDIR = os.environ.get("MDL_TMP", r"D:\openclaude\_trabalho-claude\tmp")
 STAGES = [  # (id, script, interprete)
     ("s1", "s1_prepare.py", "blender"),      # limpa e normaliza a malha alta
     ("s2", "s2_decimate.py", "venv"),        # malha de jogo (pymeshlab)
+    ("s2b", "s2b_ao_mesh.py", "venv"),      # malha alta reduzida para o AO
     ("s3", "s3_game_prep.py", "blender"),    # normais, sombreamento
     ("s4", "s4_rig.py", "blender"),          # esqueleto por marcos + pesos
     ("s5", "s5_uv.py", "blender"),           # UV 1024 por regiao
@@ -55,7 +56,7 @@ def main():
         if sid in ("s1", "s2", "s6"):
             sys.path.insert(0, HERE)
             from mdl_common import wait_free_virtual
-            wait_free_virtual(6.0 if sid == "s6" else 3.0, timeout_s=7200)         # o PC ja ficou sem memoria: so comeca etapa pesada com >= 6 GB de memoria virtual livre
+            wait_free_virtual(2.0 if sid == "s6" else 3.0, timeout_s=7200)         # o PC ja ficou sem memoria: so comeca etapa pesada com >= 6 GB de memoria virtual livre
         print(f"== {sid} {script}", flush=True)
         r = subprocess.run(cmd, env=env, capture_output=True, text=True)
         lines = [l for l in (r.stdout + r.stderr).splitlines() if l.startswith(("S", "VERIFY", "{", "jogo", "Traceback", "Error", "  File"))
