@@ -10,7 +10,7 @@ namespace Echoes.Gameplay
     /// Pura (sem UnityEngine): o <c>HeroController</c> entrega a entrada e aplica o movimento.
     /// Faz o papel do <c>SkillComponent</c> previsto em docs/04_arquitetura.md, seção 10.4.
     /// </summary>
-    public sealed class HeroCombatLogic : ICombatActor
+    public sealed class HeroCombatLogic : ICombatActor, IInterruptible, IDisposable
     {
         public const int SlotCount = 6;
 
@@ -19,9 +19,9 @@ namespace Echoes.Gameplay
         readonly CombatRules combatRules;
         readonly SkillSlot[] slots = new SkillSlot[SlotCount];
         readonly List<PotionSlot> potions = new List<PotionSlot>(2);
+        readonly IPotionBelt belt;
         readonly ActionTimeline action = new ActionTimeline();
         readonly InputBuffer buffer;
-        readonly CooldownTimer potionLockout = new CooldownTimer();
         readonly List<int> hitThisSwing = new List<int>(8);
 
         SkillSlot currentSlot;
@@ -38,8 +38,9 @@ namespace Echoes.Gameplay
             this.rules = rules ?? throw new ArgumentNullException(nameof(rules));
             combatRules = rules.Combat;
             buffer = new InputBuffer(combatRules.InputBufferSeconds);
-            Dodge = new DodgeLogic(combatRules.DodgeMaxCharges, combatRules.DodgeRechargeSeconds,
-                combatRules.DodgeDurationSeconds, combatRules.DodgeInvulnerableSeconds);
+            // Cargas, recarga em série, trava de poção e i-frames da esquiva vêm do core (shatter_potions_*, shatter_dodge_*).
+            Dodge = rules.CreateDodge();
+            belt = rules.CreatePotionBelt();
 
             for (var i = 0; i < SlotCount; i++)
             {
@@ -50,17 +51,17 @@ namespace Echoes.Gameplay
             }
 
             var potionInfos = rules.Potions;
-            for (var i = 0; i < potionInfos.Count; i++) potions.Add(new PotionSlot(potionInfos[i]));
+            for (var i = 0; i < potionInfos.Count; i++) potions.Add(new PotionSlot(potionInfos[i], belt, i));
         }
 
         public Combatant Self => self;
-        public DodgeLogic Dodge { get; }
+        public IDodgeCharges Dodge { get; }
         public ActionTimeline Action => action;
         public SkillInfo CurrentSkill => currentSlot?.Skill;
         public bool IsCasting => action.IsActive;
         public bool IsDrinking => drinking != null;
         public PotionSlot DrinkingPotion => drinking;
-        public double PotionLockoutRemaining => potionLockout.Remaining;
+        public double PotionLockoutRemaining => belt.LockoutRemaining;
         public int PotionCount => potions.Count;
         public PotionSlot GetPotion(int index) => index >= 0 && index < potions.Count ? potions[index] : null;
         public SkillSlot GetSlot(int index) => index >= 0 && index < SlotCount ? slots[index] : null;
@@ -125,8 +126,7 @@ namespace Echoes.Gameplay
                 if (slot.Skill != null) slot.EffectiveCost = rules.GetEffectiveCost(self.Stats, slot.Skill);
             }
             Dodge.Tick(dt);
-            for (var i = 0; i < potions.Count; i++) potions[i].Charges.Tick(dt);
-            potionLockout.Tick(dt);
+            belt.Tick(dt);
             buffer.Tick(dt);
 
             if (drinking != null)
@@ -153,29 +153,34 @@ namespace Echoes.Gameplay
 
         public void OnIncomingHitAvoided(CombatSystem combat, Combatant attacker)
         {
-            if (!Dodge.IsDodging || Dodge.PerfectGranted) return;
-            Dodge.PerfectGranted = true;
-            combat.GainResource(self, combatRules.DodgePerfectResource);
+            // Esquiva perfeita: o core diz quanto de recurso vale um golpe que chegou nos i-frames (0 fora deles).
+            var reward = Dodge.PerfectReward;
+            if (reward > 0.0) combat.GainResource(self, reward);
         }
 
         public void OnKilled(CombatSystem combat, Combatant victim)
         {
-            // docs/13, item 2: matar elite dá +1 carga na poção com menos cargas (empate: a de tecla menor).
+            // docs/13, item 2: matar elite dá +1 carga na poção com menos cargas (o core escolhe; empate: a Vida).
             if (victim == null || !victim.IsElite) return;
-            PotionSlot best = null;
-            for (var i = 0; i < potions.Count; i++)
-            {
-                var p = potions[i];
-                if (p.Potion.EliteKillRefillCharges <= 0 || p.Charges.IsFull) continue;
-                if (best == null || p.Charges.Charges < best.Charges.Charges) best = p;
-            }
-            best?.Charges.AddCharges(best.Potion.EliteKillRefillCharges);
+            belt.OnEliteKilled();
+        }
+
+        /// <summary>Stun ou stagger em cima da preparação: cancela a ação (o core manda; o C# só cumpre).</summary>
+        public void OnInterrupted(CombatSystem combat)
+        {
+            if (action.IsActive && action.Phase == ActionPhase.Windup) EndAction(combat);
+        }
+
+        public void Dispose()
+        {
+            Dodge.Dispose();
+            belt.Dispose();
         }
 
         public void OnDeath(CombatSystem combat)
         {
             if (action.IsActive) EndAction(combat);
-            Dodge.Stop();
+            Dodge.Reset();
             drinking = null;
             buffer.Consume();
             self.IsInvulnerable = false;
@@ -184,10 +189,9 @@ namespace Echoes.Gameplay
         public void OnRevive(CombatSystem combat)
         {
             // docs/13, item 2: poções enchem no checkpoint e no reinício da luta.
-            for (var i = 0; i < potions.Count; i++) potions[i].Charges.Refill();
+            belt.Refill();
             for (var i = 0; i < SlotCount; i++) slots[i].Cooldown.Reset();
-            Dodge.Refill();
-            potionLockout.Reset();
+            Dodge.Reset();
             buffer.Consume();
         }
 
@@ -217,20 +221,23 @@ namespace Echoes.Gameplay
             if (Dodge.IsDodging || drinking != null) return; // espera no buffer
             if (action.IsActive && !CanCancelIntoDodge()) return;
             if (!rules.CanMove(self.Stats)) return;
-            if (Dodge.Charges.IsEmpty)
+            // Cargas, recurso e esquiva em andamento: o core decide (shatter_dodge_start); só a carga é gasta com Ok.
+            var status = Dodge.TryStart(self.Resource);
+            if (status == DodgeStartStatus.Active) return; // espera no buffer
+            if (status == DodgeStartStatus.NoCharges)
             {
                 buffer.Consume();
                 Deny(combat, HeroCommand.Dodge, DenyReason.NoDodgeCharges);
                 return;
             }
-            if (combatRules.DodgeResourceCost > 0.0 && !combat.TrySpendResource(self, combatRules.DodgeResourceCost))
+            if (status == DodgeStartStatus.NotEnoughResource)
             {
                 buffer.Consume();
                 Deny(combat, HeroCommand.Dodge, DenyReason.NoResource);
                 return;
             }
+            if (combatRules.DodgeResourceCost > 0.0) combat.TrySpendResource(self, combatRules.DodgeResourceCost);
             if (action.IsActive) EndAction(combat);
-            Dodge.TryStart();
             buffer.Consume();
 
             // Direção do movimento; parado, para trás da mira (docs/13, item 1).
@@ -312,15 +319,17 @@ namespace Echoes.Gameplay
                 Deny(combat, command, DenyReason.EmptySlot);
                 return;
             }
-            if (action.IsActive || Dodge.IsDodging || drinking != null || !potionLockout.IsReady) return; // espera no buffer
-            if (!slot.Charges.TryConsume())
+            if (action.IsActive || Dodge.IsDodging || drinking != null) return; // espera no buffer
+            // Trava global, cargas e gasto da carga: o core (shatter_potions_use).
+            var status = belt.TryUse(index, self.Stats);
+            if (status == PotionUseStatus.LockedOut) return; // espera no buffer
+            if (status != PotionUseStatus.Ok)
             {
                 buffer.Consume();
-                Deny(combat, command, DenyReason.PotionEmpty); // RF-19: não faz nada e avisa
+                Deny(combat, command, status == PotionUseStatus.NoCharges ? DenyReason.PotionEmpty : DenyReason.EmptySlot); // RF-19: não faz nada e avisa
                 return;
             }
             buffer.Consume();
-            potionLockout.Start(combatRules.PotionLockoutSeconds);
             drinking = slot;
             drinkRemaining = slot.Potion.UseTime;
             var evt = new PotionUsedEvent { Owner = self, Potion = slot.Potion, Applied = false };
@@ -346,7 +355,7 @@ namespace Echoes.Gameplay
             if ((events & ActionTimelineEvents.ImpactStarted) != 0)
             {
                 PublishPhase(combat, ActionPhase.Impact, action.Timing.Impact);
-                ApplySelfEffects(skill);
+                ApplySelfEffects(combat, skill);
                 switch (skill.Shape)
                 {
                     case SkillShape.Melee:
@@ -440,11 +449,11 @@ namespace Echoes.Gameplay
             combat.ApplySkillHit(self, target, skill, origin);
         }
 
-        void ApplySelfEffects(SkillInfo skill)
+        void ApplySelfEffects(CombatSystem combat, SkillInfo skill)
         {
             if (self.Effects == null) return;
             var effects = skill.SelfEffects;
-            for (var i = 0; i < effects.Count; i++) self.Effects.Apply(effects[i], 1.0, self.ContentId);
+            for (var i = 0; i < effects.Count; i++) combat.ApplyEffect(self, effects[i], 1.0, self.ContentId);
         }
 
         void EndAction(CombatSystem combat)

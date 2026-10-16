@@ -63,6 +63,30 @@ namespace Echoes.Interop
         /// <summary>Contêiner de efeitos de uma entidade; <paramref name="enemyOrNull"/> define imunidades.</summary>
         IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull);
 
+        /// <summary><paramref name="rolledElite"/>: elite sorteado (<see cref="RollElite"/>), imune ao stun como o chefe e o elite fixo.</summary>
+        IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull, bool rolledElite);
+
+        /// <summary>Cinto de poções do herói (cargas, recarga em série, trava global, carga por elite). Descartar com Dispose.</summary>
+        IPotionBelt CreatePotionBelt();
+
+        /// <summary>Cargas e i-frames da esquiva do herói. Descartar com Dispose.</summary>
+        IDodgeCharges CreateDodge();
+
+        /// <summary>Sorteia o modificador de elite (consome SEMPRE 1 número do fluxo de eventos <paramref name="eventsRng"/>).</summary>
+        EliteProfile RollElite(ref RngState eventsRng);
+
+        /// <summary>Elite com modificador conhecido (elite fixo: o <c>modifierId</c> do enemies.csv); vazio = só os multiplicadores base.</summary>
+        EliteProfile GetEliteProfile(string modifierId, bool rolled);
+
+        /// <summary>Escreve os multiplicadores do elite no bloco do inimigo e devolve a barreira inicial.</summary>
+        double ApplyElite(IStatBlock enemyStats, in EliteProfile profile);
+
+        /// <summary>Máquina de fases do chefe (escudo frontal, rugido, invocação, padrões). O stub não tem: lança NotSupportedException.</summary>
+        IBossController CreateBoss(string enemyId, int level, ulong seed);
+
+        /// <summary>false no stub: o gameplay usa a IA comum no lugar do <see cref="IBossController"/>.</summary>
+        bool SupportsBoss { get; }
+
         /// <summary>Gerador já posicionado no fluxo (<c>Pcg32::ForStream</c>).</summary>
         RngState CreateRng(ulong seed, RngStream stream, ulong index);
         uint NextBelow(ref RngState rng, uint bound);
@@ -79,6 +103,12 @@ namespace Echoes.Interop
 
         /// <summary>Tempos das 3 fases com a velocidade de ataque/conjuração aplicada.</summary>
         ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill);
+
+        /// <summary>
+        /// Como <see cref="GetActionTiming(IStatBlock, SkillInfo)"/> para um elite com modificador: o telegraph não encurta com a velocidade
+        /// de ataque do modificador (Veloz) e a recuperação usa o <c>recoveryMult</c> dele. <paramref name="eliteModifierIdOrNull"/> vazio = comum.
+        /// </summary>
+        ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill, string eliteModifierIdOrNull);
 
         /// <summary><c>EffectiveCooldown</c> do effects.h (mínimo <c>cooldown_min</c>).</summary>
         double GetEffectiveCooldown(IStatBlock stats, SkillInfo skill);

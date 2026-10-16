@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Echoes.Interop;
 
 namespace Echoes.Gameplay
@@ -8,7 +9,7 @@ namespace Echoes.Gameplay
     /// percepção do herói, publica o telegraph, resolve o impacto pela forma do ataque e gira no
     /// ritmo do dado. Pura: o <c>EnemyController</c> aplica o movimento (NavMeshAgent ou direto).
     /// </summary>
-    public sealed class EnemyCombatLogic : ICombatActor, IAttackSelector
+    public sealed class EnemyCombatLogic : ICombatActor, IAttackSelector, IInterruptible, IDisposable
     {
         readonly Combatant self;
         readonly IRulesCore rules;
@@ -18,6 +19,12 @@ namespace Echoes.Gameplay
         PlanarVector attackDirection = PlanarVector.Forward;
         PlanarVector attackOrigin;
         int activeTelegraphId;
+
+        // Chefe (core): fases, escudo frontal, rugido, invocação e padrões por seed. Sem chefe nativo (stub), vale a IA comum (Brain).
+        readonly List<BossEvent> bossEvents = new List<BossEvent>(8);
+        IBossController boss;
+        bool bossResolved;
+        float bossStopDistance;
 
         public EnemyCombatLogic(Combatant self, IRulesCore rules)
         {
@@ -32,7 +39,8 @@ namespace Echoes.Gameplay
             {
                 var skill = attacks[i].Skill;
                 attackSkills[i] = skill;
-                var timing = rules.GetActionTiming(self.Stats, skill);
+                // Elite (Veloz): o telegraph não encurta e a recuperação usa o recoveryMult; o core calcula pelo modificador.
+                var timing = rules.GetActionTiming(self.Stats, skill, self.Elite.ModifierId);
                 profiles[i] = new EnemyAttackProfile(AttackReach(skill), timing.Windup, timing.Impact, timing.Recovery);
             }
             Brain = new EnemyBrainLogic(WorldUnits.ToMeters(enemy.AggroRangeUu), profiles, this);
@@ -59,7 +67,10 @@ namespace Echoes.Gameplay
         public PlanarVector MoveTarget { get; private set; }
 
         /// <summary>Distância (até a borda do alvo) em que a perseguição para: o alcance do ataque escolhido.</summary>
-        public float StopDistance => Brain.CurrentAttack >= 0 ? Brain.CurrentProfile.RangeMeters : 0f;
+        public float StopDistance => boss != null ? bossStopDistance : Brain.CurrentAttack >= 0 ? Brain.CurrentProfile.RangeMeters : 0f;
+
+        /// <summary>Máquina de fases do chefe (null fora de chefe ou no stub).</summary>
+        public IBossController Boss => boss;
 
         int IAttackSelector.SelectAttack()
         {
@@ -77,6 +88,12 @@ namespace Echoes.Gameplay
         {
             if (IntegratesMovement) self.Position += DirectVelocity() * (float)dt;
             combat = combatSystem;
+            EnsureBoss(combatSystem);
+            if (boss != null)
+            {
+                BossTick(combatSystem, dt);
+                return;
+            }
             var target = combatSystem.Hero;
             var hasTarget = target != null && !target.IsDead;
             var toTarget = hasTarget ? target.Position - self.Position : PlanarVector.Zero;
@@ -123,6 +140,20 @@ namespace Echoes.Gameplay
         {
         }
 
+        /// <summary>Stun ou stagger em cima do telegraph (ordem do core): cancela o aviso e o golpe. Chefe: o core manda PatternInterrupted no passo.</summary>
+        public void OnInterrupted(CombatSystem combatSystem)
+        {
+            if (boss != null) return;
+            if ((Brain.Interrupt() & EnemyBrainEvents.Interrupted) != 0) EndTelegraph(combatSystem);
+        }
+
+        public void Dispose()
+        {
+            boss?.Dispose();
+            boss = null;
+            self.Boss = null;
+        }
+
         public void OnDeath(CombatSystem combatSystem)
         {
             EndTelegraph(combatSystem);
@@ -136,6 +167,9 @@ namespace Echoes.Gameplay
         public void OnRevive(CombatSystem combatSystem)
         {
             Brain.Reset();
+            if (boss == null) return;
+            boss.Reset(self.Stats);
+            boss.Start();
         }
 
         /// <summary>Velocidade de perseguição no plano quando não há NavMeshAgent (m/s); integrada em <see cref="FixedTick"/> se <see cref="IntegratesMovement"/>.</summary>
@@ -149,13 +183,17 @@ namespace Echoes.Gameplay
         {
             var skill = CurrentAttackSkill;
             if (skill == null) return;
+            BeginTelegraph(combatSystem, skill, Brain.CurrentProfile.Windup, enemy.Attacks[Brain.CurrentAttack].Telegraphed);
+        }
+
+        void BeginTelegraph(CombatSystem combatSystem, SkillInfo skill, double windupSeconds, bool showOnGround)
+        {
             // A direção é a de onde o inimigo olha agora (ele gira no ritmo do dado): quem contorna um
             // inimigo lento, como o Guardião, fica fora do cone (docs/13, item 4.2).
             attackDirection = self.Forward.NormalizedOr(PlanarVector.Forward);
             attackOrigin = self.Position; // o golpe sai de onde o aviso foi desenhado (knockback no meio não muda)
             activeTelegraphId = combatSystem.NextTelegraphId();
 
-            var attack = enemy.Attacks[Brain.CurrentAttack];
             var evt = new TelegraphEvent
             {
                 TelegraphId = activeTelegraphId,
@@ -163,8 +201,8 @@ namespace Echoes.Gameplay
                 Owner = self,
                 Origin = attackOrigin,
                 Direction = attackDirection,
-                DurationSeconds = Brain.CurrentProfile.Windup,
-                ShowOnGround = attack.Telegraphed,
+                DurationSeconds = windupSeconds,
+                ShowOnGround = showOnGround,
             };
             switch (skill.Shape)
             {
@@ -196,8 +234,12 @@ namespace Echoes.Gameplay
 
         void ResolveImpact(CombatSystem combatSystem)
         {
+            ResolveImpact(combatSystem, CurrentAttackSkill);
+        }
+
+        void ResolveImpact(CombatSystem combatSystem, SkillInfo skill)
+        {
             EndTelegraph(combatSystem);
-            var skill = CurrentAttackSkill;
             if (skill == null) return;
 
             var targets = combatSystem.Combatants;
@@ -240,6 +282,84 @@ namespace Echoes.Gameplay
                 }
             }
         }
+
+        // --- Chefe (shatter_boss): o core decide fase, escudo, rugido, invocação e o próximo padrão; o C# só entrega posições e reage ---
+
+        void EnsureBoss(CombatSystem combatSystem)
+        {
+            if (bossResolved) return;
+            bossResolved = true;
+            if (!enemy.IsBoss || !rules.SupportsBoss) return;
+            try
+            {
+                boss = rules.CreateBoss(enemy.Id, self.Level, combatSystem.RunSeed + (ulong)self.Id);
+            }
+            catch (ArgumentException)
+            {
+                return; // sem fases em boss_phases.csv: IA comum
+            }
+            self.Boss = boss;
+            self.Effects?.BindBoss(boss);
+            var reach = float.MaxValue;
+            for (var i = 0; i < attackSkills.Length; i++) reach = Math.Min(reach, AttackReach(attackSkills[i]));
+            bossStopDistance = reach == float.MaxValue ? 0f : reach;
+            boss.Start();
+        }
+
+        void BossTick(CombatSystem combatSystem, double dt)
+        {
+            var target = combatSystem.Hero;
+            var hasTarget = target != null && !target.IsDead;
+            var toTarget = hasTarget ? target.Position - self.Position : PlanarVector.Zero;
+            var aimAt = hasTarget ? target.Position : self.Position;
+
+            bossEvents.Clear();
+            boss.Step(dt, self.Position.X, self.Position.Z, aimAt.X, aimAt.Z, self.Stats, bossEvents);
+            var info = boss.Info;
+            self.vitals.Life = info.Life; // o chefe guarda a própria vida (limiar de fase, escudo): o core é a fonte
+
+            // Direção: o core gira no ritmo da fase e a trava da preparação ao fim do impacto; o escudo frontal usa essa mesma direção.
+            var facing = new PlanarVector((float)info.FacingX, (float)info.FacingZ);
+            if (facing.SqrMagnitude > 1e-8f) self.Forward = facing.NormalizedOr(self.Forward);
+
+            for (var i = 0; i < bossEvents.Count; i++) HandleBossEvent(combatSystem, bossEvents[i]);
+
+            var distance = hasTarget ? Math.Max(0f, toTarget.Magnitude - target.RadiusMeters) : float.MaxValue;
+            WantsToMove = hasTarget && info.State == BossState.Waiting && rules.CanMove(self.Stats) && distance > bossStopDistance;
+            MoveTarget = hasTarget ? target.Position : self.Position;
+            ChaseSpeed = WantsToMove ? WorldUnits.ToMeters(rules.GetMoveSpeedUu(self.Stats, enemy.MoveSpeedUu)) : 0f;
+        }
+
+        void HandleBossEvent(CombatSystem combatSystem, in BossEvent e)
+        {
+            switch (e.Kind)
+            {
+                case BossEventKind.PatternStart:
+                {
+                    var skill = rules.FindSkill(e.SkillId);
+                    if (skill == null) break;
+                    bossSkill = skill;
+                    BeginTelegraph(combatSystem, skill, e.Seconds, true);
+                    break;
+                }
+                case BossEventKind.PatternImpact:
+                    ResolveImpact(combatSystem, bossSkill);
+                    break;
+                case BossEventKind.PatternEnd:
+                case BossEventKind.PatternInterrupted:
+                    EndTelegraph(combatSystem);
+                    bossSkill = null;
+                    break;
+                default:
+                {
+                    var evt = new BossStateEvent { Owner = self, Kind = e.Kind, Phase = e.Phase, Seconds = e.Seconds, Count = e.Count, EnemyId = e.EnemyId };
+                    combatSystem.Events.Publish(in evt);
+                    break;
+                }
+            }
+        }
+
+        SkillInfo bossSkill;
 
         /// <summary>Distância em que o telegraph começa: a mesma da consulta do impacto (o aviso não mente).</summary>
         static float AttackReach(SkillInfo skill)

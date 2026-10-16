@@ -104,11 +104,35 @@ namespace Echoes.Interop
             return stats;
         }
 
-        public IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull)
+        public IPotionBelt CreatePotionBelt() => new StubPotionBelt(Potions, RequireContent().Combat.PotionLockoutSeconds);
+
+        public IDodgeCharges CreateDodge() => new StubDodge(RequireContent().Combat);
+
+        // Elite e chefe só existem no core: o stub devolve "sem elite" e não tem chefe.
+        public EliteProfile RollElite(ref RngState eventsRng)
+        {
+            StubPcg32.NextUnit(ref eventsRng); // consome 1 número, como o core
+            return default;
+        }
+
+        public EliteProfile GetEliteProfile(string modifierId, bool rolled) => default;
+
+        public double ApplyElite(IStatBlock enemyStats, in EliteProfile profile) => 0.0;
+
+        public bool SupportsBoss => false;
+
+        public IBossController CreateBoss(string enemyId, int level, ulong seed)
+        {
+            throw new NotSupportedException("the stub has no boss state machine; use the native core (shatter_boss_*)");
+        }
+
+        public IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull) => CreateEffectSet(target, enemyOrNull, false);
+
+        public IEffectSet CreateEffectSet(IStatBlock target, EnemyInfo enemyOrNull, bool rolledElite)
         {
             var c = RequireContent();
             if (!(target is StubStatBlock stub)) throw new ArgumentException("target must come from this rules core");
-            return new StubEffectSet(c, stub, IsStunImmune(enemyOrNull));
+            return new StubEffectSet(c, stub, IsStunImmune(enemyOrNull) || rolledElite);
         }
 
         /// <summary>Conteudo carregado (usado pelo NativeRulesCore para o que a API C v1 ainda nao traz); nulo antes de LoadContent.</summary>
@@ -153,6 +177,8 @@ namespace Echoes.Interop
             if (skill.ScalesWithWeapon && weaponOrNull != null) return weaponOrNull.WeaponDamage;
             return skill.BaseDamage;
         }
+
+        public ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill, string eliteModifierIdOrNull) => GetActionTiming(stats, skill);
 
         public ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill)
         {

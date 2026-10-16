@@ -94,16 +94,29 @@ namespace Echoes.Tests.EditMode
             return (combatant, logic);
         }
 
-        public (Combatant combatant, EnemyCombatLogic logic) AddEnemy(string enemyId, PlanarVector position, int level = 3, float radius = 0.5f)
+        /// <summary>O core nativo carregado com os CSV reais; sem a DLL o teste fica ignorado com o motivo.</summary>
+        public static IRulesCore LoadNativeRules()
+        {
+            if (!Echoes.Interop.Native.NativeRulesCore.TryCreate(out var core, out var reason)) Assert.Ignore("shattercore.dll nao carregou: " + reason);
+            var errors = new List<RulesError>();
+            var status = core.LoadContent(DataDirectory, errors);
+            Assert.AreEqual(RulesStatus.Ok, status, "CSV nao carregou no nativo: " + string.Join(" | ", errors));
+            return core;
+        }
+
+        public (Combatant combatant, EnemyCombatLogic logic) AddEnemy(string enemyId, PlanarVector position, int level = 3, float radius = 0.5f, EliteProfile elite = default)
         {
             var info = Rules.FindEnemy(enemyId);
             Assert.IsNotNull(info, enemyId);
             var stats = Rules.CreateEnemyStats(enemyId, level);
-            var effects = Rules.CreateEffectSet(stats, info);
+            var barrier = elite.Rolled ? Rules.ApplyElite(stats, in elite) : 0.0;
+            var effects = Rules.CreateEffectSet(stats, info, elite.Rolled);
             var combatant = new Combatant(CombatTeam.Enemy, enemyId, level, stats, effects, null, info, null, radius)
             {
                 Position = position,
                 Forward = -PlanarVector.Forward,
+                Elite = elite,
+                InitialBarrier = barrier,
             };
             var logic = new EnemyCombatLogic(combatant, Rules);
             Combat.Register(combatant, logic);
@@ -131,6 +144,7 @@ namespace Echoes.Tests.EditMode
         {
             foreach (var c in Combat.Combatants)
             {
+                (c.Actor as IDisposable)?.Dispose();
                 c.Effects?.Dispose();
                 c.Stats.Dispose();
             }

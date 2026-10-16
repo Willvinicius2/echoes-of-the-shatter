@@ -118,6 +118,11 @@ namespace Echoes.Gameplay
             if (Logic != null && combat != null && !Logic.Self.IsRegistered) combat.Register(Logic.Self, Logic, CombatOrderKey.Of(transform));
         }
 
+        void OnDestroy()
+        {
+            Logic?.Dispose();
+        }
+
         void OnDisable()
         {
             if (Logic != null && combat != null) combat.Unregister(Logic.Self);

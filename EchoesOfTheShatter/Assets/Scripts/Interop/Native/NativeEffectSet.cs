@@ -20,6 +20,7 @@ namespace Echoes.Interop.Native
         readonly NativeStatBlock target;
         readonly StubContent stubContent;
         readonly ActorHandle actor;
+        NativeBoss boss;
         ActorApplyResult lastApply;
         ShatterEffectEvent[] eventBuffer = new ShatterEffectEvent[8];
         bool holdsDb;
@@ -78,14 +79,29 @@ namespace Echoes.Interop.Native
                 actor.DangerousAddRef(ref c);
                 ShatterActorApply result = default;
                 int status;
-                fixed (byte* pId = id)
-                fixed (byte* pSource = source)
+                var bossRef = boss;
+                var b = false;
+                try
                 {
-                    // Stun e Guarda Quebrada passam pelo actor (imunidade por inimigo, stagger, timer unico) em vez de effects_apply.
-                    status = ShatterNative.shatter_actor_apply_effect(actor.DangerousGetHandle(), db.DangerousGetHandle(),
-                        pId, (nuint)id.Length, pSource, (nuint)source.Length, magnitude, handle.DangerousGetHandle(),
-                        target.Handle.DangerousGetHandle(), &result);
+                    if (bossRef != null) bossRef.Handle.DangerousAddRef(ref b);
+                    fixed (byte* pId = id)
+                    fixed (byte* pSource = source)
+                    {
+                        // Stun e Guarda Quebrada passam pelo actor (ou pelo chefe: escudo, imunidade, stagger) em vez de effects_apply.
+                        status = bossRef != null
+                            ? ShatterNative.shatter_boss_apply_effect(bossRef.Handle.DangerousGetHandle(), db.DangerousGetHandle(),
+                                pId, (nuint)id.Length, pSource, (nuint)source.Length, magnitude, handle.DangerousGetHandle(),
+                                target.Handle.DangerousGetHandle(), &result)
+                            : ShatterNative.shatter_actor_apply_effect(actor.DangerousGetHandle(), db.DangerousGetHandle(),
+                                pId, (nuint)id.Length, pSource, (nuint)source.Length, magnitude, handle.DangerousGetHandle(),
+                                target.Handle.DangerousGetHandle(), &result);
+                    }
                 }
+                finally
+                {
+                    if (b) bossRef.Handle.DangerousRelease();
+                }
+                bossRef?.DrainEvents();
                 lastApply = default;
                 if (status == (int)RulesStatus.NotFound || status == (int)RulesStatus.ContentInvalid) return false;
                 NativeCallException.ThrowIfFailed("shatter_actor_apply_effect", status);
@@ -113,6 +129,11 @@ namespace Echoes.Interop.Native
         }
 
         public ActorApplyResult LastApply => lastApply;
+
+        public void BindBoss(IBossController bossController)
+        {
+            boss = bossController as NativeBoss;
+        }
 
         public void Tick(double dt, List<EffectTickEvent> outEvents)
         {

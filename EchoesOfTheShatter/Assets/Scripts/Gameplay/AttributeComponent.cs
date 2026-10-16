@@ -45,14 +45,26 @@ namespace Echoes.Gameplay
 
         public Combatant CreateEnemy(IRulesCore rules, EnemyInfo enemy, int level, float radiusMeters)
         {
+            return CreateEnemy(rules, enemy, level, radiusMeters, default);
+        }
+
+        /// <summary>
+        /// Inimigo; com <paramref name="elite"/> sorteado (<see cref="CombatSystem.RollElite"/>) o core escreve os multiplicadores no bloco
+        /// de atributos e devolve a barreira inicial, e o alvo passa a ser imune ao stun.
+        /// </summary>
+        public Combatant CreateEnemy(IRulesCore rules, EnemyInfo enemy, int level, float radiusMeters, EliteProfile elite)
+        {
             ReleaseHandles();
             var stats = rules.CreateEnemyStats(enemy.Id, level);
-            var effects = rules.CreateEffectSet(stats, enemy);
+            var barrier = elite.Rolled ? rules.ApplyElite(stats, in elite) : 0.0;
+            var effects = rules.CreateEffectSet(stats, enemy, elite.Rolled);
             Combatant = new Combatant(CombatTeam.Enemy, enemy.Id, level, stats, effects, null, enemy, null, radiusMeters)
             {
                 Owner = this,
                 Position = transform.position.ToPlanar(),
                 Forward = transform.forward.ToPlanar().NormalizedOr(PlanarVector.Forward),
+                Elite = elite,
+                InitialBarrier = barrier,
             };
             return Combatant;
         }
