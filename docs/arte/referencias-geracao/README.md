@@ -73,3 +73,7 @@ Elas são a fonte de verdade de cada personagem. Toda imagem nova em que eles ap
 - **Inimigos do Ossário (18):** os inimigos do Ossário estão próximos dos da folha 23, mas não idênticos.
 - **Terrenos do endgame (22):** o acabamento está um pouco mais realista e sujo que o resto do conjunto.
 - **Animações:** as poses das folhas 02 a 04 são quadros-chave de conceito, não animações. As sprites e animações finais ainda precisam ser produzidas a partir dessas folhas.
+
+## Folhas de modelagem (aprovadas em 16/10/2026)
+
+`aprovadas/modelagem/m01..m09`: giro de frente, lado e costas em pose neutra dos 8 personagens do protótipo (Guerreiro, Arqueiro, Mago, Sentinela Oca, Cão de Cinza, Arauto de Pedra, Arqueiro Espectral, Guardião da Cripta) e folha das armas. Foram geradas com `scripts/prompts_modelagem.py` a partir das folhas canônicas 02 a 06. São a entrada da IA de imagem para 3D (TripoSG) e a referência de pintura no Blender. O graybox de `art-src/graybox/` é só provisório: o modelo final segue estas folhas.
