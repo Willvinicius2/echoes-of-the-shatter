@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 #include "shatter/sha256.h"
 
@@ -143,7 +144,24 @@ Value CharacterToJson(const CharacterState& c) {
     o.Set("equipment", std::move(eq));
     o.Set("conquered_maps", StrList(c.conqueredMaps));
     o.Set("highest_tier_cleared", Value(c.highestTierCleared));
-    o.Set("potions", Value(c.potions));
+    Value slots = Value::MakeArray();
+    for (const PotionSlotState& s : c.potionSlots) {
+        Value so = Value::MakeObject();
+        so.Set("potion_id", Value(s.potionId));
+        so.Set("charges", Value(s.charges));
+        so.Set("recharge_remaining", Value(s.rechargeRemaining));
+        slots.Push(std::move(so));
+    }
+    o.Set("potion_slots", std::move(slots));
+    Value bosses = Value::MakeArray();
+    for (const BossProgressEntry& b : c.bossProgress) {
+        Value bo = Value::MakeObject();
+        bo.Set("enemy_id", Value(b.enemyId));
+        bo.Set("kills", Value(b.kills));
+        bo.Set("kills_since_unique", Value(b.killsSinceUnique));
+        bosses.Push(std::move(bo));
+    }
+    o.Set("boss_progress", std::move(bosses));
     o.Set("play_time_seconds", Value(c.playTimeSeconds));
     return o;
 }
@@ -166,7 +184,6 @@ Value ExpeditionRequestToJson(const ExpeditionRequest& r) {
         rules.Push(std::move(ro));
     }
     o.Set("rules", std::move(rules));
-    o.Set("potion_heal_fraction", Value(r.potionHealFraction));
     o.Set("seed", json::FromUInt64(r.seed));
     o.Set("start_utc", Value(static_cast<std::int64_t>(r.startUtc)));
     o.Set("duration_hours", Value(r.durationHours));
@@ -225,7 +242,20 @@ bool CharacterFromJson(const Value& o, CharacterState& c, std::string* err) {
     }
     c.conqueredMaps = ReadStrList(o["conquered_maps"]);
     c.highestTierCleared = static_cast<int>(o["highest_tier_cleared"].AsInt(0));
-    c.potions = o["potions"].AsInt(0);
+    for (const Value& s : o["potion_slots"].Items()) {
+        PotionSlotState ps;
+        ps.potionId = s["potion_id"].AsString();
+        ps.charges = static_cast<int>(s["charges"].AsInt(0));
+        ps.rechargeRemaining = s["recharge_remaining"].AsDouble(0.0);
+        c.potionSlots.push_back(std::move(ps));
+    }
+    for (const Value& b : o["boss_progress"].Items()) {
+        BossProgressEntry be;
+        be.enemyId = b["enemy_id"].AsString();
+        be.kills = static_cast<int>(b["kills"].AsInt(0));
+        be.killsSinceUnique = static_cast<int>(b["kills_since_unique"].AsInt(0));
+        c.bossProgress.push_back(std::move(be));
+    }
     c.playTimeSeconds = o["play_time_seconds"].AsDouble(0.0);
     return true;
 }
@@ -246,7 +276,6 @@ bool ExpeditionRequestFromJson(const Value& o, ExpeditionRequest& r, std::string
         ar.refId = rv["ref_id"].AsString();
         r.rules.push_back(std::move(ar));
     }
-    r.potionHealFraction = o["potion_heal_fraction"].AsDouble(0.35);
     r.seed = o["seed"].AsUInt64(0);
     r.startUtc = o["start_utc"].AsInt(0);
     r.durationHours = static_cast<int>(o["duration_hours"].AsInt(1));
@@ -572,6 +601,21 @@ StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionSta
 // ---------------------------------------------------------------------------
 // Coleta sem duplicar
 // ---------------------------------------------------------------------------
+std::uint64_t DeriveExpeditionSeed(const SaveData& s, std::size_t characterIndex, UnixSeconds startUtc) {
+    std::uint64_t h = Mix64(0x45434F53454544ull ^ s.nextItemUid);
+    h = Mix64(h ^ static_cast<std::uint64_t>(startUtc));
+    h = Mix64(h ^ static_cast<std::uint64_t>(s.lastSeenUtc));
+    h = Mix64(h ^ (static_cast<std::uint64_t>(characterIndex) << 32) ^ static_cast<std::uint64_t>(s.expeditions.size()));
+    if (characterIndex < s.characters.size()) {
+        const CharacterState& c = s.characters[characterIndex];
+        std::uint64_t bits = 0;
+        const double t = c.playTimeSeconds + c.xp;
+        std::memcpy(&bits, &t, sizeof(bits));
+        h = Mix64(h ^ bits ^ static_cast<std::uint64_t>(c.level));
+    }
+    return h;
+}
+
 bool CollectExpedition(const ContentDB& db, SaveData& s, std::size_t expeditionIndex, const ExpeditionResult& r) {
     if (expeditionIndex >= s.expeditions.size()) return false;
     SavedExpedition& e = s.expeditions[expeditionIndex];

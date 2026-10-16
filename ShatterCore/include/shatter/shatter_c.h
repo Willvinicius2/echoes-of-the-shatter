@@ -516,6 +516,353 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
                                                                        size_t len, uint8_t* collected,
                                                                        shatter_error* err) SHATTER_NOEXCEPT;
 
+/* ================================================================================================
+ * API C 1.1 (SHATTER_C_API_MINOR 1) — ADIÇÃO sobre a v1 (docs/09_mudancas_contrato.md, seção 7).
+ * Regras novas do protótipo (docs/13): poções, esquiva, stun e Guarda Quebrada, elite, chefe, Único, e o que o
+ * IRulesCore do C# precisa para não calcular regra (docs/11, A-01). As structs e funções da v1 não mudaram.
+ * As structs novas têm layout próprio, conferido por shatter_layout_info_ext/shatter_layout_check_ext (o layout da
+ * v1, SHATTER_LAYOUT_COUNT, continua o mesmo).
+ *
+ * POSSE (docs/11, A-06) — vale para TODA a API, v1 e 1.1:
+ *  - Quem cria destrói: cada handle (shatter_db, shatter_save, shatter_statblock, shatter_effects, shatter_potions,
+ *    shatter_actor, shatter_boss) é do chamador (SafeHandle no C#); a DLL nunca guarda ponteiro do chamador depois
+ *    de a função voltar, exceto os vínculos abaixo.
+ *  - Vínculos que EXIGEM ordem de destruição: shatter_boss guarda o shatter_db que o criou; o shatter_db tem que
+ *    sobreviver a todo handle criado a partir dele (destrua o boss e os demais ANTES do db). shatter_statblock,
+ *    shatter_effects e shatter_actor NÃO guardam o db: o db é passado a cada chamada.
+ *  - shatter_effects_* e shatter_actor_* recebem o shatter_statblock da entidade a cada chamada: o chamador DEVE passar
+ *    sempre o MESMO bloco para o mesmo contêiner (os mods "fx:<id>" e "stagger" ficam no bloco que recebeu a chamada).
+ *  - Buffers de saída são do chamador; a DLL só escreve até `cap` e informa *needed. Eventos (efeitos e chefe) ficam
+ *    no handle até o próximo tick/step, e são lidos por cópia.
+ *  - Strings de entrada: UTF-8 com comprimento; a DLL copia o que precisa. Strings de saída em struct: terminadas
+ *    em NUL, cortadas em fronteira de caractere.
+ *  - Thread: shatter_db finalizado é imutável (leitura concorrente); TODO o resto é de uma thread só.
+ *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
+ *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
+ * ============================================================================================== */
+#define SHATTER_C_API_MINOR 1u
+
+typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
+typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
+typedef struct shatter_boss shatter_boss;         /* máquina de fases do chefe (guarda o shatter_db que a criou) */
+
+typedef struct shatter_rules_ext {   /* chaves novas de rules.csv (docs/13); o C# não guarda número de balanceamento */
+    double dodge_recharge, dodge_duration, dodge_iframes, dodge_distance, dodge_cost_resource, dodge_buffer;
+    double dodge_perfect_resource, dodge_cancel_recovery_fraction;
+    double guard_break_stagger_seconds, guard_break_stagger_damage_taken;
+    double guard_break_immunity_boss, guard_break_immunity_other, boss_shield_down_seconds;
+    double elite_life_mult, elite_damage_mult, elite_xp_mult;
+    double potion_lockout, out_of_combat_seconds;
+    int32_t dodge_max_charges;
+    int32_t reserved;
+} shatter_rules_ext;
+
+typedef struct shatter_vitals {      /* vida, recurso e barreira de uma entidade (o C# guarda; o core calcula) */
+    double life, resource, barrier;
+    double barrier_seconds_left;     /* > 0: a barreira (de poção) some ao chegar a 0 */
+} shatter_vitals;
+
+typedef struct shatter_action_timing {   /* tempos das 3 fases com a velocidade aplicada, recarga e custo */
+    double windup, impact, recovery, cooldown, cost;
+} shatter_action_timing;
+
+enum { SHATTER_POTION_OK = 0, SHATTER_POTION_UNKNOWN = 1, SHATTER_POTION_NO_CHARGES = 2, SHATTER_POTION_LOCKED_OUT = 3 };
+typedef struct shatter_potion_outcome {
+    double heal_amount;              /* vida que de fato entrou (já limitada à vida máxima) */
+    double barrier_amount;           /* barreira nova (substitui a anterior da poção) */
+    double barrier_seconds;
+    double use_time;                 /* s bebendo */
+    double move_speed_while_using;   /* fração da velocidade durante o uso */
+    double lockout;                  /* trava global iniciada (s) */
+    int32_t status;                  /* SHATTER_POTION_* (diferente de OK: nada mudou) */
+    int32_t reserved;
+} shatter_potion_outcome;
+
+typedef struct shatter_dodge_state {   /* cargas NÃO são salvas; charges < 0 = cheia (use shatter_dodge_init) */
+    double recharge_remaining;
+    double elapsed;
+    int32_t charges;
+    uint8_t active;
+    uint8_t reserved[3];
+} shatter_dodge_state;
+enum { SHATTER_DODGE_OK = 0, SHATTER_DODGE_NO_CHARGES = 1, SHATTER_DODGE_ACTIVE = 2, SHATTER_DODGE_NOT_ENOUGH_RESOURCE = 3 };
+
+typedef struct shatter_actor_apply {   /* resultado de aplicar um efeito (stun / Guarda Quebrada) */
+    double stun_seconds, stagger_seconds;
+    int32_t guard_break_stacks;
+    uint8_t applied;            /* o efeito entrou no contêiner */
+    uint8_t stunned;            /* stun começou */
+    uint8_t stun_blocked;       /* alvo imune ao stun: nada aplicado */
+    uint8_t interrupted;        /* cancele a preparação (telegraph) em andamento */
+    uint8_t staggered;          /* Guarda Quebrada: acúmulos consumidos, alvo atordoado */
+    uint8_t remove_barrier;     /* zere a barreira/escudo do alvo */
+    uint8_t reserved[2];
+} shatter_actor_apply;
+typedef struct shatter_actor_info {
+    double stun_remaining, stagger_remaining, immunity_remaining;
+    uint8_t can_act, stun_immune, reserved[6];
+} shatter_actor_info;
+
+typedef struct shatter_elite_info {    /* multiplicadores finais de um elite (base de rules.csv × modificador) */
+    double life_mult, damage_mult, xp_mult, barrier_fraction_of_life;
+    double move_speed_mult, attack_speed_mult, recovery_mult;
+    double death_explosion_radius, death_explosion_damage, death_explosion_fuse;
+    char modifier_id[64];            /* vazio = só os multiplicadores base */
+    uint8_t rolled;                  /* 1 = elite sorteado (multiplicadores base valem) */
+    uint8_t reserved[7];
+} shatter_elite_info;
+
+typedef struct shatter_vec2 { double x, z; } shatter_vec2;
+typedef struct shatter_boss_context { shatter_vec2 boss, player; } shatter_boss_context;
+enum {
+    SHATTER_BOSS_EVT_PATTERN_START = 0, SHATTER_BOSS_EVT_PATTERN_IMPACT, SHATTER_BOSS_EVT_PATTERN_END,
+    SHATTER_BOSS_EVT_PATTERN_INTERRUPTED, SHATTER_BOSS_EVT_PHASE_START, SHATTER_BOSS_EVT_SUMMON_MARKER,
+    SHATTER_BOSS_EVT_SUMMON_SPAWN, SHATTER_BOSS_EVT_PHASE_END, SHATTER_BOSS_EVT_STAGGER_START,
+    SHATTER_BOSS_EVT_STAGGER_END, SHATTER_BOSS_EVT_SHIELD_DOWN, SHATTER_BOSS_EVT_SHIELD_UP, SHATTER_BOSS_EVT_DIED
+};
+typedef struct shatter_boss_event {
+    double seconds;                  /* PATTERN_START: telegraph; PATTERN_IMPACT: duração do impacto; PHASE_START: rugido;
+                                        SUMMON_MARKER: tempo até surgirem; STAGGER_START e SHIELD_DOWN: duração */
+    uint32_t kind;                   /* SHATTER_BOSS_EVT_* */
+    int32_t phase;
+    int32_t count;                   /* SUMMON_*: quantos */
+    int32_t reserved;
+    char pattern_id[64];
+    char skill_id[64];
+    char enemy_id[64];               /* SUMMON_*: o invocado (sem XP e sem loot; morre com o chefe) */
+} shatter_boss_event;
+enum { SHATTER_BOSS_IDLE = 0, SHATTER_BOSS_WAITING, SHATTER_BOSS_TELEGRAPH, SHATTER_BOSS_IMPACT, SHATTER_BOSS_RECOVERY,
+       SHATTER_BOSS_STAGGER, SHATTER_BOSS_TRANSITION, SHATTER_BOSS_DEAD };
+typedef struct shatter_boss_info {
+    double life, max_life, shield_down_remaining, turn_rate_deg_per_sec, facing_x, facing_z;
+    double stagger_remaining, stun_remaining;
+    int32_t phase;
+    int32_t state;                   /* SHATTER_BOSS_* */
+    uint8_t shield_up, invulnerable, reserved[6];
+} shatter_boss_info;
+typedef struct shatter_boss_damage {
+    double applied, life_after;
+    uint8_t shield_blocked;          /* escudo frontal: 0 de dano, sem Ímpeto, sem knockback */
+    uint8_t invulnerable;            /* rugido da transição */
+    uint8_t clamped_by_phase;        /* dano excedente cortado no limiar da próxima fase */
+    uint8_t killed;
+    uint8_t reserved[4];
+} shatter_boss_damage;
+typedef struct shatter_boss_progress { int32_t kills, kills_since_unique; } shatter_boss_progress;
+
+typedef struct shatter_forecast_ex {
+    shatter_forecast base;
+    int32_t calibration;             /* SHATTER_CALIBRATION_*: a previsão mostra "estimativa" se MANUAL_ESTIMATE */
+    int32_t reserved;
+} shatter_forecast_ex;
+enum { SHATTER_CALIBRATION_NONE = 0, SHATTER_CALIBRATION_MANUAL_ESTIMATE = 1, SHATTER_CALIBRATION_BOT_PARITY = 2 };
+
+/* Resultado de shatter_save_collect_expedition_trusted. */
+enum { SHATTER_COLLECT_COLLECTED = 0, SHATTER_COLLECT_ALREADY = 1, SHATTER_COLLECT_NOT_FINISHED = 2 };
+
+#define SHATTER_LAYOUT_EXT_COUNT 37u
+SHATTER_API uint32_t SHATTER_CALL shatter_api_minor(void) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext(const uint32_t* values, size_t n,
+                                                                 shatter_error* err) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_db_rules_ext(const shatter_db* db, shatter_rules_ext* out) SHATTER_NOEXCEPT;
+
+/* --- Golpe e recarga lendo as constantes do BANCO (docs/11, A-06 item 2): o chamador não manda número de regra. --- */
+SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit_db(const shatter_db* db, const shatter_statblock* attacker,
+                                                               const shatter_statblock* defender,
+                                                               const shatter_hit_input* input, shatter_rng* rng,
+                                                               shatter_hit_result* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_effective_cooldown_db(const shatter_db* db, double base_cooldown,
+                                                                      double cooldown_recovery,
+                                                                      double* out) SHATTER_NOEXCEPT;
+
+/* --- Vida, recurso e barreira (IRulesCore: CreateVitals, TickVitals, Gain/TrySpendResource) --- */
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_create(const shatter_db* db, const shatter_statblock* stats,
+                                                              const char* class_id, size_t class_id_len,
+                                                              shatter_vitals* out) SHATTER_NOEXCEPT;
+/* Regeneração de vida e recurso, decaimento do recurso fora de combate (da classe) e fim da barreira temporária.
+ * class_id pode ser nulo (alvo sem classe). */
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_tick(const shatter_db* db, shatter_vitals* vitals,
+                                                            const shatter_statblock* stats, const char* class_id,
+                                                            size_t class_id_len, double dt,
+                                                            uint8_t in_combat) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_gain_resource(shatter_vitals* vitals,
+                                                                     const shatter_statblock* stats,
+                                                                     double amount) SHATTER_NOEXCEPT;
+/* *ok = 0 (sem gastar) se faltar recurso. */
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_spend_resource(shatter_vitals* vitals, double amount,
+                                                                      uint8_t* ok) SHATTER_NOEXCEPT;
+
+/* --- Tempos de ação, velocidade e ataque de inimigo (IRulesCore: GetActionTiming, GetEffectiveCost, GetMoveSpeedUu,
+ *     CanAct, CanMove, PickAttack) --- */
+/* modifier_id (opcional, elite): o telegraph não encurta com a velocidade de ataque do modificador e a recuperação usa
+ * o recoveryMult dele. */
+SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing(const shatter_db* db, const char* skill_id,
+                                                             size_t skill_id_len, const shatter_statblock* stats,
+                                                             const char* modifier_id, size_t modifier_id_len,
+                                                             shatter_action_timing* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_move_speed(const shatter_statblock* stats, double base_uu_per_sec,
+                                                           double* out) SHATTER_NOEXCEPT;
+/* `actor` (opcional): stun e stagger também impedem. */
+SHATTER_API shatter_status SHATTER_CALL shatter_can_act(const shatter_statblock* stats, const shatter_actor* actor,
+                                                        uint8_t* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_can_move(const shatter_statblock* stats, const shatter_actor* actor,
+                                                         uint8_t* out) SHATTER_NOEXCEPT;
+/* Índice do ataque do inimigo (escolha ponderada, consome 1 número do rng — use o fluxo de eventos). */
+SHATTER_API shatter_status SHATTER_CALL shatter_pick_attack(const shatter_db* db, const char* enemy_id,
+                                                            size_t enemy_id_len, shatter_rng* rng,
+                                                            int32_t* out) SHATTER_NOEXCEPT;
+
+/* --- Poções (docs/13, item 2) --- */
+/* Aplica a poção SEM cinto (pura): cura limitada à vida máxima, ou barreira nova. Altera `vitals`. */
+SHATTER_API shatter_status SHATTER_CALL shatter_potion_resolve(const shatter_db* db, const char* potion_id,
+                                                               size_t potion_id_len, const shatter_statblock* stats,
+                                                               shatter_vitals* vitals,
+                                                               shatter_potion_outcome* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_create(const shatter_db* db, shatter_potions** out) SHATTER_NOEXCEPT;
+/* Cinto do personagem `character_index` do save (normalizado pelo potions.csv; poção ausente entra cheia). */
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_from_save(const shatter_db* db, const shatter_save* save,
+                                                                  size_t character_index,
+                                                                  shatter_potions** out) SHATTER_NOEXCEPT;
+/* Grava as cargas e a recarga de volta no save (a trava global não é salva). */
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_to_save(const shatter_potions* potions, shatter_save* save,
+                                                                size_t character_index) SHATTER_NOEXCEPT;
+SHATTER_API void SHATTER_CALL shatter_potions_destroy(shatter_potions* potions) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_tick(const shatter_db* db, shatter_potions* potions,
+                                                             double dt) SHATTER_NOEXCEPT;
+/* Usa a poção: confere trava e cargas, gasta 1 carga e inicia a trava; com OK aplica cura/barreira em `vitals`.
+ * out->status != OK: nada mudou. */
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_use(const shatter_db* db, shatter_potions* potions,
+                                                            const char* potion_id, size_t potion_id_len,
+                                                            const shatter_statblock* stats, shatter_vitals* vitals,
+                                                            shatter_potion_outcome* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_refill(const shatter_db* db, shatter_potions* potions) SHATTER_NOEXCEPT;
+/* +1 carga na poção refillOnEliteKill com menos cargas. *added = 0 se todas estavam cheias. */
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_on_elite_killed(const shatter_db* db, shatter_potions* potions,
+                                                                        uint8_t* added) SHATTER_NOEXCEPT;
+/* [{"potion_id","kind","charges","max_charges","recharge_remaining","hotkey_slot"}], ordem do potions.csv;
+ * o objeto inclui "lockout_remaining": {"lockout_remaining":0,"slots":[...]}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_info_json(const shatter_db* db, const shatter_potions* potions,
+                                                                  uint8_t* out, size_t cap,
+                                                                  size_t* needed) SHATTER_NOEXCEPT;
+
+/* --- Esquiva (docs/13, item 1). Estado POD do chamador. --- */
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_init(const shatter_db* db, shatter_dodge_state* state) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_tick(const shatter_db* db, shatter_dodge_state* state,
+                                                           double dt) SHATTER_NOEXCEPT;
+/* *status = SHATTER_DODGE_*; só com OK gasta a carga. */
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_start(const shatter_db* db, shatter_dodge_state* state,
+                                                            double resource_available,
+                                                            int32_t* status) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_invulnerable(const shatter_db* db, const shatter_dodge_state* state,
+                                                                   uint8_t* out) SHATTER_NOEXCEPT;
+/* Recurso da esquiva perfeita se um golpe chegou durante os i-frames (senão 0). */
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_perfect_reward(const shatter_db* db,
+                                                                     const shatter_dodge_state* state,
+                                                                     double* out) SHATTER_NOEXCEPT;
+
+/* --- Stun, imunidades e Guarda Quebrada (docs/13, item 3). Uma shatter_actor por entidade. --- */
+/* enemy_id vazio = alvo comum (herói). elite != 0: elite sorteado (imune ao stun). */
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_create(const shatter_db* db, const char* enemy_id,
+                                                             size_t enemy_id_len, uint8_t elite,
+                                                             shatter_actor** out) SHATTER_NOEXCEPT;
+SHATTER_API void SHATTER_CALL shatter_actor_destroy(shatter_actor* actor) SHATTER_NOEXCEPT;
+/* Aplica um efeito no alvo (contêiner + bloco DELE). Efeito com interruptsAction vira stun real; a Guarda Quebrada
+ * usa timer único e, no limite de acúmulos, atordoa alvos imunes ao stun (stagger). */
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_apply_effect(shatter_actor* actor, const shatter_db* db,
+                                                                   const char* effect_id, size_t effect_id_len,
+                                                                   const char* source, size_t source_len,
+                                                                   double magnitude, shatter_effects* fx,
+                                                                   shatter_statblock* target,
+                                                                   shatter_actor_apply* out) SHATTER_NOEXCEPT;
+/* Avança stun, stagger e imunidade. *stagger_ended = 1 quando o stagger acabou neste passo. */
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_tick(shatter_actor* actor, double dt, shatter_statblock* target,
+                                                           uint8_t* stagger_ended) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_info_get(const shatter_actor* actor,
+                                                               shatter_actor_info* out) SHATTER_NOEXCEPT;
+
+/* --- Elite (docs/13, item 5) --- */
+/* Sorteia o modificador (consome SEMPRE 1 número do rng de eventos) e devolve os multiplicadores de um elite sorteado. */
+SHATTER_API shatter_status SHATTER_CALL shatter_elite_roll(const shatter_db* db, shatter_rng* events_rng,
+                                                           shatter_elite_info* out) SHATTER_NOEXCEPT;
+/* Elite com modificador conhecido (elite fixo: o modifierId do enemies.csv; rolled = 0). modifier_id vazio = nenhum. */
+SHATTER_API shatter_status SHATTER_CALL shatter_elite_profile(const shatter_db* db, const char* modifier_id,
+                                                              size_t modifier_id_len, uint8_t rolled,
+                                                              shatter_elite_info* out) SHATTER_NOEXCEPT;
+/* Escreve os multiplicadores no bloco do inimigo (Life/Damage/MoveSpeed/AttackSpeed More; fonte "elite") e devolve a
+ * barreira inicial. Chame depois de shatter_statblock_for_enemy. */
+SHATTER_API shatter_status SHATTER_CALL shatter_elite_apply(const shatter_db* db, const shatter_elite_info* info,
+                                                            shatter_statblock* stats, double* barrier) SHATTER_NOEXCEPT;
+
+/* --- Chefe: fases, escudo frontal, rugido, invocação e padrões por seed (docs/13, itens 4 e 6) --- */
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_create(const shatter_db* db, const char* enemy_id,
+                                                            size_t enemy_id_len, int32_t level, uint64_t seed,
+                                                            shatter_boss** out) SHATTER_NOEXCEPT;
+SHATTER_API void SHATTER_CALL shatter_boss_destroy(shatter_boss* boss) SHATTER_NOEXCEPT;
+/* Reinício total (morte do jogador). `stats` (opcional) perde o bônus de dano do stagger. As invocadas saem no chamador. */
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_reset(shatter_boss* boss, shatter_statblock* stats) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_start(shatter_boss* boss) SHATTER_NOEXCEPT;
+/* Passo fixo. Os eventos ficam no handle até o próximo step/apply (leia com shatter_boss_events). */
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_step(shatter_boss* boss, double dt,
+                                                          const shatter_boss_context* ctx, shatter_statblock* stats,
+                                                          size_t* event_count) SHATTER_NOEXCEPT;
+/* Dano já calculado por shatter_resolve_hit_db (defender_life = life do chefe): aplica escudo frontal, rugido e limiar. */
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_apply_damage(shatter_boss* boss, double amount, shatter_vec2 boss_pos,
+                                                                  shatter_vec2 origin,
+                                                                  shatter_boss_damage* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_apply_effect(shatter_boss* boss, const shatter_db* db,
+                                                                  const char* effect_id, size_t effect_id_len,
+                                                                  const char* source, size_t source_len,
+                                                                  double magnitude, shatter_effects* fx,
+                                                                  shatter_statblock* stats,
+                                                                  shatter_actor_apply* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_events(const shatter_boss* boss, shatter_boss_event* out,
+                                                            size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_info_get(const shatter_boss* boss, shatter_boss_info* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_shield_covers(const shatter_boss* boss, shatter_vec2 boss_pos,
+                                                                   shatter_vec2 origin, uint8_t* out) SHATTER_NOEXCEPT;
+
+/* --- Único do chefe (docs/13, item 9) --- */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_boss_progress_get(const shatter_save* save, size_t character_index,
+                                                                       const char* enemy_id, size_t enemy_id_len,
+                                                                       shatter_boss_progress* out) SHATTER_NOEXCEPT;
+/* Rola o loot do chefe no modo manual com o contador do personagem (1ª vitória garantida, chance fixa, garantido no
+ * pityKills) e AVANÇA o contador no save. Saída = loot no formato de shatter_loot_roll (os uids vêm do save).
+ * ORDEM (RF-55): grave o save (shatter_save_write) ANTES de entregar o item com shatter_save_add_loot. Se o buffer for
+ * pequeno, nada muda (nem rng, nem contador, nem uid). */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_roll_boss_loot(const shatter_db* db, shatter_save* save,
+                                                                    size_t character_index, const char* enemy_id,
+                                                                    size_t enemy_id_len, int32_t area_level,
+                                                                    shatter_rng* loot_rng, uint8_t* out, size_t cap,
+                                                                    size_t* needed, shatter_error* err) SHATTER_NOEXCEPT;
+
+/* --- Expedição confiável (docs/11, A-05 e M-03) --- */
+/* Previsão com o selo de calibração. */
+SHATTER_API shatter_status SHATTER_CALL shatter_expedition_forecast_ex(const shatter_db* db, const char* request_json,
+                                                                       size_t len, uint64_t base_seed, int32_t samples,
+                                                                       shatter_forecast_ex* out,
+                                                                       shatter_error* err) SHATTER_NOEXCEPT;
+/* Inicia a expedição: start_utc = now->now (relógio confiável) e a seed é derivada pelo core do estado do save. Os
+ * campos "seed" e "start_utc" do JSON de parâmetros são PROIBIDOS (INVALID_ARGUMENT). Substitui
+ * shatter_save_start_expedition (que passa a recusar com INVALID_ARGUMENT). */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition_trusted(const shatter_db* db, shatter_save* save,
+                                                                              const char* params_json, size_t len,
+                                                                              const shatter_trusted_now* now,
+                                                                              int32_t* start_check,
+                                                                              shatter_error* err) SHATTER_NOEXCEPT;
+/* Coleta: o core RECALCULA o resultado pelo pedido salvo (snapshot, seed, início) e pelo relógio confiável; nada do
+ * resultado vem do chamador. *collect_status = SHATTER_COLLECT_*: NOT_FINISHED (a janela ainda não acabou: nada
+ * muda), ALREADY (já coletada) ou COLLECTED (itens, pilhas e XP entram no save e o status vira collected).
+ * Saída = ExpeditionResult em JSON (como shatter_expedition_simulate; flags SHATTER_RESULT_RECEIPTS). Buffer pequeno:
+ * nada muda. Substitui shatter_save_collect_expedition (que passa a recusar com INVALID_ARGUMENT). */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition_trusted(const shatter_db* db, shatter_save* save,
+                                                                                size_t index,
+                                                                                const shatter_clock_input* clock,
+                                                                                uint32_t flags, int32_t* collect_status,
+                                                                                uint8_t* out, size_t cap,
+                                                                                size_t* needed,
+                                                                                shatter_error* err) SHATTER_NOEXCEPT;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

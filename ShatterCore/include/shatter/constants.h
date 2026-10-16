@@ -33,11 +33,36 @@ struct RulesConstants {
     int    maxRaresPerExpedition = 4;      // max_rares_per_expedition
     int    xpLevelCapAboveArea = 2;        // xp_cap_levels_above_area
     double aiBaseDodgeTelegraphed = 0.5;   // ai_base_dodge (fração de golpes telegrafados que a IA esquiva)
-    double retreatLifeFraction = 0.20;     // retreat_life_fraction: recua se vida < 20% e sem poção utilizável
+    double retreatLifeFraction = 0.25;     // retreat_life_fraction: recua se vida < 25% e sem poção de cura (docs/13, item 10)
     // Vigor: multiplicador de XP/ouro/materiais por faixa de hora da expedição.
     // vigor_h1_4, vigor_h5_8, vigor_h9_12
     std::array<double, 3> vigorByBand = {1.0, 0.7, 0.4};
     double vigorBandHours = 4.0;           // vigor_band_hours
+
+    // --- ADIÇÃO (docs/13): valores padrão = os do design; os CSV (rules.csv) sempre sobrescrevem. Chaves opcionais. ---
+    // Esquiva (item 1)
+    int    dodgeMaxCharges = 3;            // dodge_max_charges
+    double dodgeRecharge = 1.5;            // dodge_recharge (s por carga, em série)
+    double dodgeDuration = 0.35;           // dodge_duration (s)
+    double dodgeIframes = 0.2;             // dodge_iframes: invulnerável em [0, iframes)
+    double dodgeDistance = 400.0;          // dodge_distance (uu)
+    double dodgeCostResource = 0.0;        // dodge_cost_resource
+    double dodgeBuffer = 0.1;              // dodge_buffer (s de buffer de entrada; o C# aplica)
+    double dodgePerfectResource = 10.0;    // dodge_perfect_resource: recurso ao ser invulnerável no golpe
+    // Guarda Quebrada (item 3)
+    double guardBreakStaggerSeconds = 1.5;       // guard_break_stagger_seconds
+    double guardBreakStaggerDamageTaken = 0.30;  // guard_break_stagger_damage_taken (fração a mais de dano recebido)
+    double guardBreakImmunityBoss = 8.0;         // guard_break_immunity_boss (s)
+    double guardBreakImmunityOther = 4.0;        // guard_break_immunity_other (s)
+    double bossShieldDownSeconds = 5.0;          // boss_shield_down_seconds
+    // Elite sorteado (item 5)
+    double eliteLifeMult = 2.0;            // elite_life_mult
+    double eliteDamageMult = 1.2;          // elite_damage_mult
+    double eliteXpMult = 3.0;              // elite_xp_mult
+    double dodgeCancelRecoveryFraction = 0.5;    // dodge_cancel_recovery_fraction: a esquiva cancela a partir desta fração da recuperação
+    double outOfCombatSeconds = 3.0;             // out_of_combat_seconds: sem dar nem levar golpe = fora de combate (RF-14)
+    // Poções (item 2)
+    double potionLockout = 1.0;            // potion_lockout: trava global entre usos (s)
 
     // --- Fervor (jogo manual). O idle é a taxa base = 1. ---
     double fervorXpMult = 3.0;             // fervor_xp_mult

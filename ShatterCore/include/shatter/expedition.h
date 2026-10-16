@@ -21,6 +21,7 @@
 #include "shatter/clock.h"
 #include "shatter/content.h"
 #include "shatter/loot.h"
+#include "shatter/progress.h"
 #include "shatter/types.h"
 
 namespace shatter {
@@ -44,7 +45,7 @@ enum class AiCondition : std::uint8_t {
 };
 
 enum class AiAction : std::uint8_t {
-    UsePotion = 0,      // cura de poção; falha (e conta healFailures) se potions == 0
+    UsePotion = 0,      // usa a poção `refId` (potions.csv; vazio = a primeira de cura, a "Vida"); falha (e conta healFailures) sem cargas
     UseSkill,           // refId = skill id; precisa estar na barra, fora de recarga e com recurso
 };
 
@@ -52,7 +53,7 @@ struct AiRule {
     AiCondition condition = AiCondition::Always;
     double param = 0.0;
     AiAction action = AiAction::UseSkill;
-    ContentId refId;    // skill ou efeito, conforme acima
+    ContentId refId;    // skill, efeito ou poção (potion.life, potion.ward), conforme acima
 };
 
 // ---------------------------------------------------------------------------
@@ -63,7 +64,6 @@ struct ExpeditionRequest {
     ContentId mapId;                     // área dominada (validada por CanStartExpedition)
     ExpeditionObjective objective = ExpeditionObjective::Xp;
     std::vector<AiRule> rules;           // máx. RulesConstants::maxAiRules (6)
-    double potionHealFraction = 0.35;    // cura da poção como fração da vida máx. (vem de dados; copiado aqui)
     std::uint64_t seed = 0;              // seed da expedição (gerada no início; fluxo independente do jogo)
     UnixSeconds startUtc = 0;
     int durationHours = 1;               // 1..12, limitado pelas Cargas do Marco
@@ -99,6 +99,7 @@ struct EncounterReceipt {
     int elitesKilled = 0;
     int potionsUsed = 0;
     int healFailures = 0;                // quis curar e não tinha poção (dica do relatório)
+    int dodgesUsed = 0;                  // esquivas da IA que gastaram carga (ADIÇÃO, docs/13 item 1)
     double damageTaken = 0.0;
     double damageDealt = 0.0;
     double xpRaw = 0.0;
@@ -114,7 +115,13 @@ struct ExpeditionProgress {
     double life = -1.0;                  // < 0 = cheia (ainda não iniciada)
     double resource = -1.0;
     double barrier = 0.0;
-    std::int64_t potionsLeft = -1;       // < 0 = pegar do snapshot
+    // ADIÇÃO (docs/13, itens 1 e 2): poções (cargas e recarga em série por slot; vazio = pegar do snapshot), cargas da
+    // esquiva (< 0 = cheia) e a barreira da Poção de Resguardo (valor restante e tempo restante).
+    std::vector<PotionSlotState> potionSlots;
+    int dodgeCharges = -1;
+    double dodgeRecharge = 0.0;
+    double wardAmount = 0.0;
+    double wardRemaining = 0.0;
     int raresDropped = 0;
     StopReason stop = StopReason::None;
     std::vector<EncounterReceipt> receipts;  // acumulados, em ordem de índice
@@ -135,6 +142,9 @@ struct ExpeditionResult {
     int raresDropped = 0;
     std::vector<EncounterReceipt> receipts;
     std::vector<std::string> tipKeys;    // UMA chave de dica do relatório (kTip* abaixo; RF-44)
+    // ADIÇÃO (docs/13, item 8): o selo mais fraco entre as habilidades da barra e os Únicos equipados. ManualEstimate
+    // = o relatório mostra "estimativa". Entra no resultHash.
+    IdleCalibration calibration = IdleCalibration::BotParity;
     std::uint64_t resultHash = 0;        // hash canônico do resultado (detecção de divergência/duplicação)
 };
 
@@ -169,6 +179,10 @@ StartCheck CanStartExpedition(const ContentDB& db, const CharacterState& c, cons
                               int durationHours, int chargesAvailable, bool anotherRunning,
                               std::size_t ruleCount, std::vector<ContentId>* blockingIds);
 
+// ADIÇÃO (docs/13, item 8): o selo de calibração mais fraco entre as habilidades da barra e os Únicos equipados.
+// Só olha o que o simulador usa de fato (barra e equipamento); sem nenhum, BotParity.
+IdleCalibration BuildIdleCalibration(const ContentDB& db, const CharacterState& c);
+
 // Simula tudo de uma vez = SimulateRange(0, ∞) + FinalizeExpedition.
 ExpeditionResult SimulateExpedition(const ContentDB& db, const ExpeditionRequest& req);
 
@@ -200,6 +214,7 @@ struct ExpeditionForecast {
     double xpP10 = 0, xpP50 = 0, xpP90 = 0;
     double goldP10 = 0, goldP50 = 0, goldP90 = 0;
     double retreatProbability = 0;      // fração das amostras com StopReason::Retreat
+    IdleCalibration calibration = IdleCalibration::BotParity;  // ADIÇÃO: selo da previsão ("estimativa" se ManualEstimate)
     DamageType worstResistGap = DamageType::Physical;  // maior fonte de dano recebido (dica de risco)
 };
 ExpeditionForecast ForecastExpedition(const ContentDB& db, const ExpeditionRequest& req,

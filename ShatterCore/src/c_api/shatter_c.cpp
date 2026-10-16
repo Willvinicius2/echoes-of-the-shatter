@@ -31,6 +31,18 @@ struct shatter_effects {
     shatter::EffectContainer fx;
     std::vector<shatter::EffectEvent> events;  // eventos do último tick
 };
+struct shatter_potions {
+    shatter::PotionBelt belt;
+};
+struct shatter_actor {
+    shatter::ActionStatus st;
+};
+struct shatter_boss {
+    shatter::BossFight fight;
+    std::vector<shatter::BossEvent> events;  // desde o último step (apply_damage/apply_effect anexam)
+    shatter_boss(const shatter::ContentDB& d, const shatter::EnemyData& e, int level, std::uint64_t seed)
+        : fight(d, e, level, seed) {}
+};
 
 namespace {
 
@@ -211,6 +223,180 @@ bool ParseJsonText(const char* s, std::size_t len, Value& out, shatter_error* er
         return false;
     }
     return true;
+}
+
+// ---------------------------------------------------------------------------------------------
+// API C 1.1: layout das structs novas, conversões e auxiliares
+// ---------------------------------------------------------------------------------------------
+static_assert(sizeof(shatter_rules_ext) == 152, "shatter_rules_ext");
+static_assert(sizeof(shatter_vitals) == 32, "shatter_vitals");
+static_assert(sizeof(shatter_action_timing) == 40, "shatter_action_timing");
+static_assert(sizeof(shatter_potion_outcome) == 56, "shatter_potion_outcome");
+static_assert(sizeof(shatter_dodge_state) == 24, "shatter_dodge_state");
+static_assert(sizeof(shatter_actor_apply) == 32, "shatter_actor_apply");
+static_assert(sizeof(shatter_actor_info) == 32, "shatter_actor_info");
+static_assert(sizeof(shatter_elite_info) == 152, "shatter_elite_info");
+static_assert(sizeof(shatter_vec2) == 16, "shatter_vec2");
+static_assert(sizeof(shatter_boss_context) == 32, "shatter_boss_context");
+static_assert(sizeof(shatter_boss_event) == 216, "shatter_boss_event");
+static_assert(sizeof(shatter_boss_info) == 80, "shatter_boss_info");
+static_assert(sizeof(shatter_boss_damage) == 24, "shatter_boss_damage");
+static_assert(sizeof(shatter_boss_progress) == 8, "shatter_boss_progress");
+static_assert(sizeof(shatter_forecast_ex) == 72, "shatter_forecast_ex");
+static_assert(static_cast<int>(BossEvent::Kind::Died) == SHATTER_BOSS_EVT_DIED, "BossEvent::Kind");
+static_assert(static_cast<int>(BossState::Dead) == SHATTER_BOSS_DEAD, "BossState");
+static_assert(static_cast<int>(PotionUseStatus::LockedOut) == SHATTER_POTION_LOCKED_OUT, "PotionUseStatus");
+static_assert(static_cast<int>(DodgeStartStatus::NotEnoughResource) == SHATTER_DODGE_NOT_ENOUGH_RESOURCE, "DodgeStartStatus");
+static_assert(static_cast<int>(IdleCalibration::BotParity) == SHATTER_CALIBRATION_BOT_PARITY, "IdleCalibration");
+
+#define SHATTER_LAYOUT_SIZE(T) static_cast<std::uint32_t>(sizeof(T))
+#define SHATTER_LAYOUT_OFF(T, f) static_cast<std::uint32_t>(offsetof(T, f))
+const std::uint32_t kLayoutExt[] = {
+    SHATTER_LAYOUT_SIZE(shatter_rules_ext), SHATTER_LAYOUT_OFF(shatter_rules_ext, guard_break_stagger_seconds),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, potion_lockout), SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_max_charges),
+    SHATTER_LAYOUT_SIZE(shatter_vitals), SHATTER_LAYOUT_OFF(shatter_vitals, barrier_seconds_left),
+    SHATTER_LAYOUT_SIZE(shatter_action_timing), SHATTER_LAYOUT_OFF(shatter_action_timing, cost),
+    SHATTER_LAYOUT_SIZE(shatter_potion_outcome), SHATTER_LAYOUT_OFF(shatter_potion_outcome, status),
+    SHATTER_LAYOUT_SIZE(shatter_dodge_state), SHATTER_LAYOUT_OFF(shatter_dodge_state, charges),
+    SHATTER_LAYOUT_OFF(shatter_dodge_state, active),
+    SHATTER_LAYOUT_SIZE(shatter_actor_apply), SHATTER_LAYOUT_OFF(shatter_actor_apply, guard_break_stacks),
+    SHATTER_LAYOUT_OFF(shatter_actor_apply, applied), SHATTER_LAYOUT_OFF(shatter_actor_apply, remove_barrier),
+    SHATTER_LAYOUT_SIZE(shatter_actor_info), SHATTER_LAYOUT_OFF(shatter_actor_info, can_act),
+    SHATTER_LAYOUT_SIZE(shatter_elite_info), SHATTER_LAYOUT_OFF(shatter_elite_info, modifier_id),
+    SHATTER_LAYOUT_OFF(shatter_elite_info, rolled),
+    SHATTER_LAYOUT_SIZE(shatter_vec2), SHATTER_LAYOUT_SIZE(shatter_boss_context),
+    SHATTER_LAYOUT_SIZE(shatter_boss_event), SHATTER_LAYOUT_OFF(shatter_boss_event, kind),
+    SHATTER_LAYOUT_OFF(shatter_boss_event, pattern_id), SHATTER_LAYOUT_OFF(shatter_boss_event, skill_id),
+    SHATTER_LAYOUT_OFF(shatter_boss_event, enemy_id),
+    SHATTER_LAYOUT_SIZE(shatter_boss_info), SHATTER_LAYOUT_OFF(shatter_boss_info, phase),
+    SHATTER_LAYOUT_OFF(shatter_boss_info, shield_up),
+    SHATTER_LAYOUT_SIZE(shatter_boss_damage), SHATTER_LAYOUT_OFF(shatter_boss_damage, shield_blocked),
+    SHATTER_LAYOUT_SIZE(shatter_boss_progress),
+    SHATTER_LAYOUT_SIZE(shatter_forecast_ex), SHATTER_LAYOUT_OFF(shatter_forecast_ex, calibration),
+};
+static_assert(sizeof(kLayoutExt) / sizeof(kLayoutExt[0]) == SHATTER_LAYOUT_EXT_COUNT, "SHATTER_LAYOUT_EXT_COUNT desatualizado");
+#undef SHATTER_LAYOUT_SIZE
+#undef SHATTER_LAYOUT_OFF
+
+// Copia texto para um campo char[N] (NUL no fim, cortado em fronteira de caractere UTF-8).
+template <std::size_t N>
+void CopyText(char (&dst)[N], const std::string& s) {
+    std::size_t n = s.size() < N - 1 ? s.size() : N - 1;
+    while (n > 0 && n < s.size() && (static_cast<unsigned char>(s[n]) & 0xC0u) == 0x80u) --n;
+    if (n > 0) std::memcpy(dst, s.data(), n);
+    dst[n] = '\0';
+}
+
+bool FindClassArg(const ContentDB& d, const char* id, std::size_t len, const ClassData*& cls) {
+    std::string_view s;
+    if (!Text(id, len, s)) return false;
+    cls = s.empty() ? nullptr : d.FindClass(s);
+    return s.empty() || cls != nullptr;
+}
+
+void VitalsToC(const Vitals& v, shatter_vitals& o) {
+    o.life = v.life;
+    o.resource = v.resource;
+    o.barrier = v.barrier;
+    o.barrier_seconds_left = v.barrierSecondsLeft;
+}
+Vitals VitalsFromC(const shatter_vitals& c) {
+    Vitals v;
+    v.life = c.life;
+    v.resource = c.resource;
+    v.barrier = c.barrier;
+    v.barrierSecondsLeft = c.barrier_seconds_left;
+    return v;
+}
+
+// Aplica o resultado de uma poção em `vitals` e preenche a saída C (cura já limitada à vida máxima).
+void ApplyPotionToVitals(const PotionOutcome& po, double maxLife, shatter_vitals& vitals, shatter_potion_outcome& out) {
+    out.status = SHATTER_POTION_OK;
+    out.use_time = po.useTime;
+    out.move_speed_while_using = po.moveSpeedWhileUsing;
+    if (po.healAmount > 0.0) {
+        const double after = vitals.life + po.healAmount < maxLife ? vitals.life + po.healAmount : maxLife;
+        out.heal_amount = after > vitals.life ? after - vitals.life : 0.0;
+        vitals.life = after > vitals.life ? after : vitals.life;
+    }
+    if (po.barrierAmount > 0.0) {
+        vitals.barrier = po.barrierAmount;  // não acumula: reaplicar renova
+        vitals.barrier_seconds_left = po.barrierSeconds;
+        out.barrier_amount = po.barrierAmount;
+        out.barrier_seconds = po.barrierSeconds;
+    }
+}
+
+void DodgeToC(const DodgeState& s, shatter_dodge_state& o) {
+    std::memset(&o, 0, sizeof(o));
+    o.charges = s.charges;
+    o.recharge_remaining = s.rechargeRemaining;
+    o.elapsed = s.elapsed;
+    o.active = s.active ? 1 : 0;
+}
+DodgeState DodgeFromC(const shatter_dodge_state& c) {
+    DodgeState s;
+    s.charges = c.charges;
+    s.rechargeRemaining = c.recharge_remaining;
+    s.elapsed = c.elapsed;
+    s.active = c.active != 0;
+    return s;
+}
+
+void ApplyToC(const StatusApply& r, shatter_actor_apply& o) {
+    std::memset(&o, 0, sizeof(o));
+    o.stun_seconds = r.stunSeconds;
+    o.stagger_seconds = r.staggerSeconds;
+    o.guard_break_stacks = r.guardBreakStacks;
+    o.applied = r.applied ? 1 : 0;
+    o.stunned = r.stunned ? 1 : 0;
+    o.stun_blocked = r.stunBlocked ? 1 : 0;
+    o.interrupted = r.interrupted ? 1 : 0;
+    o.staggered = r.staggered ? 1 : 0;
+    o.remove_barrier = r.removeBarrier ? 1 : 0;
+}
+
+void EliteToC(const EliteProfile& p, shatter_elite_info& o) {
+    std::memset(&o, 0, sizeof(o));
+    o.life_mult = p.lifeMult;
+    o.damage_mult = p.damageMult;
+    o.xp_mult = p.xpMult;
+    o.barrier_fraction_of_life = p.barrierFractionOfLife;
+    o.move_speed_mult = p.moveSpeedMult;
+    o.attack_speed_mult = p.attackSpeedMult;
+    o.recovery_mult = p.recoveryMult;
+    o.death_explosion_radius = p.deathExplosionRadius;
+    o.death_explosion_damage = p.deathExplosionDamage;
+    o.death_explosion_fuse = p.deathExplosionFuse;
+    CopyText(o.modifier_id, p.modifierId);
+    o.rolled = p.rolled ? 1 : 0;
+}
+EliteProfile EliteFromC(const shatter_elite_info& c) {
+    EliteProfile p;
+    p.modifierId = std::string(c.modifier_id, strnlen(c.modifier_id, sizeof(c.modifier_id)));
+    p.rolled = c.rolled != 0;
+    p.lifeMult = c.life_mult;
+    p.damageMult = c.damage_mult;
+    p.xpMult = c.xp_mult;
+    p.barrierFractionOfLife = c.barrier_fraction_of_life;
+    p.moveSpeedMult = c.move_speed_mult;
+    p.attackSpeedMult = c.attack_speed_mult;
+    p.recoveryMult = c.recovery_mult;
+    p.deathExplosionRadius = c.death_explosion_radius;
+    p.deathExplosionDamage = c.death_explosion_damage;
+    p.deathExplosionFuse = c.death_explosion_fuse;
+    return p;
+}
+
+void BossEventToC(const BossEvent& e, shatter_boss_event& o) {
+    std::memset(&o, 0, sizeof(o));
+    o.seconds = e.seconds;
+    o.kind = static_cast<std::uint32_t>(e.kind);
+    o.phase = e.phase;
+    o.count = e.count;
+    CopyText(o.pattern_id, e.patternId);
+    CopyText(o.skill_id, e.skillId);
+    CopyText(o.enemy_id, e.enemyId);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -421,8 +607,12 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         idle.Set("dodge_telegraphed_bonus", Value(d->idle.dodgeTelegraphedBonus));
         idle.Set("damage_taken_mult", Value(d->idle.damageTakenMult));
         idle.Set("parity_sample_size", Value(d->idle.paritySampleSize));
+        idle.Set("calibration", Value(ToString(d->idle.calibration)));
         o.Set("idle", std::move(idle));
         o.Set("unlock_level", Value(d->unlockLevel));
+        o.Set("cone_angle", Value(d->coneAngle));
+        o.Set("knockback", Value(d->knockback));
+        o.Set("projectile_speed", Value(d->projectileSpeed));
         return true;
     }
     if (StartsWith(id, "effect.")) {
@@ -441,6 +631,7 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("trigger_chance", Value(d->triggerChance));
         o.Set("internal_cooldown", Value(d->internalCooldown));
         o.Set("tags", Tags(d->tags));
+        o.Set("interrupts_action", Value(d->interruptsAction));
         return true;
     }
     if (StartsWith(id, "enemy.")) {
@@ -466,6 +657,70 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("is_elite", Value(d->isElite));
         o.Set("move_speed", Value(d->moveSpeed));
         o.Set("aggro_range", Value(d->aggroRange));
+        o.Set("stun_immune", Value(d->stunImmune));
+        o.Set("shield_arc_degrees", Value(d->shieldArcDegrees));
+        o.Set("turn_rate_deg_per_sec", Value(d->turnRateDegPerSec));
+        o.Set("turn_rate_deg_per_sec_phase2", Value(d->turnRateDegPerSecPhase2));
+        o.Set("guard_break_stagger_seconds", Value(d->guardBreakStaggerSeconds));
+        o.Set("guard_break_immunity_seconds", Value(d->guardBreakImmunitySeconds));
+        o.Set("modifier_id", Value(d->modifierId));
+        o.Set("elite_loot_table_id", Value(d->eliteLootTableId));
+        if (const EnemyAiData* ai = db.FindEnemyAi(d->id)) {
+            Value a = Value::MakeObject();
+            a.Set("aggro_range", Value(ai->aggroRange));
+            a.Set("alert_radius", Value(ai->alertRadius));
+            a.Set("leash_range", Value(ai->leashRange));
+            a.Set("leash_seconds", Value(ai->leashSeconds));
+            a.Set("preferred_min", Value(ai->preferredMin));
+            a.Set("preferred_max", Value(ai->preferredMax));
+            a.Set("retreat_below", Value(ai->retreatBelow));
+            a.Set("retreat_max_seconds", Value(ai->retreatMaxSeconds));
+            a.Set("circle_min", Value(ai->circleMin));
+            a.Set("circle_max", Value(ai->circleMax));
+            a.Set("circle_speed", Value(ai->circleSpeed));
+            a.Set("attack_tokens", Value(ai->attackTokens));
+            a.Set("token_interval_min", Value(ai->tokenIntervalMin));
+            a.Set("token_interval_max", Value(ai->tokenIntervalMax));
+            a.Set("flee_life_fraction", Value(ai->fleeLifeFraction));
+            a.Set("flee_seconds", Value(ai->fleeSeconds));
+            a.Set("flee_once_per_life", Value(ai->fleeOncePerLife));
+            a.Set("attack_cooldown", Value(ai->attackCooldown));
+            a.Set("max_simultaneous_shooters", Value(ai->maxSimultaneousShooters));
+            o.Set("ai", std::move(a));
+        }
+        Value phases = Value::MakeArray();
+        for (const BossPhaseData& ph : db.BossPhases()) {
+            if (ph.bossId != d->id) continue;
+            Value po = Value::MakeObject();
+            po.Set("phase", Value(ph.phase));
+            po.Set("life_threshold", Value(ph.lifeThreshold));
+            po.Set("transition_seconds", Value(ph.transitionSeconds));
+            po.Set("summon_enemy_id", Value(ph.summonEnemyId));
+            po.Set("summon_count", Value(ph.summonCount));
+            po.Set("shield_seconds", Value(ph.shieldSeconds));
+            po.Set("turn_rate", Value(ph.turnRate));
+            po.Set("decision_delay_min", Value(ph.decisionDelayMin));
+            po.Set("decision_delay_max", Value(ph.decisionDelayMax));
+            phases.Push(std::move(po));
+        }
+        o.Set("phases", std::move(phases));
+        Value patterns = Value::MakeArray();
+        for (const BossPatternData& pt : db.BossPatterns()) {
+            if (pt.bossId != d->id) continue;
+            Value po = Value::MakeObject();
+            po.Set("id", Value(pt.id));
+            po.Set("phase", Value(pt.phase));
+            po.Set("skill_id", Value(pt.skillId));
+            po.Set("weight", Value(pt.weight));
+            po.Set("telegraph_seconds", Value(pt.telegraphSeconds));
+            po.Set("recovery_seconds", Value(pt.recoverySeconds));
+            po.Set("cooldown", Value(pt.cooldown));
+            po.Set("max_repeat", Value(pt.maxRepeat));
+            po.Set("player_near_weight_mult", Value(pt.playerNearWeightMult));
+            po.Set("ignore_if_behind", Value(pt.ignoreIfBehind));
+            patterns.Push(std::move(po));
+        }
+        o.Set("patterns", std::move(patterns));
         return true;
     }
     if (StartsWith(id, "affix.")) {
@@ -500,6 +755,7 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("attack_time", Value(d->attackTime));
         o.Set("weapon_tags", Tags(d->weaponTags));
         o.Set("grammatical_gender", Value(std::string(1, d->grammaticalGender)));
+        o.Set("visual_set_id", Value(d->visualSetId));
         return true;
     }
     if (StartsWith(id, "unique.")) {
@@ -511,6 +767,9 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("fixed_mods", Mods(d->fixedMods));
         o.Set("rule_effect_id", Value(d->ruleEffectId));
         o.Set("idle_supported", Value(d->idleSupported));
+        o.Set("idle_parity_sample_size", Value(d->idleParitySampleSize));
+        o.Set("idle_calibration", Value(ToString(d->idleCalibration)));
+        o.Set("visual_set_id", Value(d->visualSetId));
         return true;
     }
     if (StartsWith(id, "loot.")) {
@@ -532,6 +791,9 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
             eo.Set("min_area_level", Value(e.minAreaLevel));
             eo.Set("max_area_level", Value(e.maxAreaLevel));
             eo.Set("manual_only", Value(e.manualOnly));
+            eo.Set("fixed_chance", Value(e.fixedChance));
+            eo.Set("guarantee_first_kill", Value(e.guaranteeFirstKill));
+            eo.Set("pity_kills", Value(e.pityKills));
             entries.Push(std::move(eo));
         }
         o.Set("entries", std::move(entries));
@@ -555,6 +817,41 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("weight", Value(d->weight));
         o.Set("travel_time", Value(d->travelTime));
         o.Set("is_boss", Value(d->isBoss));
+        return true;
+    }
+    if (StartsWith(id, "potion.")) {
+        const PotionData* d = db.FindPotion(id);
+        if (d == nullptr) return false;
+        o.Set("type", Value("potion"));
+        o.Set("id", Value(d->id));
+        o.Set("kind", Value(d->kind == PotionKind::Heal ? "heal" : "barrier"));
+        o.Set("fraction_of_max_life", Value(d->fractionOfMaxLife));
+        o.Set("duration", Value(d->duration));
+        o.Set("max_charges", Value(d->maxCharges));
+        o.Set("recharge_seconds", Value(d->rechargeSeconds));
+        o.Set("use_time", Value(d->useTime));
+        o.Set("move_speed_while_using", Value(d->moveSpeedWhileUsing));
+        o.Set("global_lockout", Value(d->globalLockout > 0.0 ? d->globalLockout : db.Rules().potionLockout));
+        o.Set("refill_on_elite_kill", Value(d->refillOnEliteKill));
+        o.Set("hotkey_slot", Value(d->hotkeySlot));
+        return true;
+    }
+    if (StartsWith(id, "modifier.elite.")) {
+        const EliteModifierData* d = db.FindEliteModifier(id);
+        if (d == nullptr) return false;
+        o.Set("type", Value("elite_modifier"));
+        o.Set("id", Value(d->id));
+        o.Set("weight_prototype", Value(d->weightPrototype));
+        o.Set("life_mult", Value(d->lifeMult));
+        o.Set("damage_mult", Value(d->damageMult));
+        o.Set("xp_mult", Value(d->xpMult));
+        o.Set("barrier_fraction_of_life", Value(d->barrierFractionOfLife));
+        o.Set("move_speed_mult", Value(d->moveSpeedMult));
+        o.Set("attack_speed_mult", Value(d->attackSpeedMult));
+        o.Set("recovery_mult", Value(d->recoveryMult));
+        o.Set("death_explosion_radius", Value(d->deathExplosionRadius));
+        o.Set("death_explosion_damage", Value(d->deathExplosionDamage));
+        o.Set("death_explosion_fuse", Value(d->deathExplosionFuse));
         return true;
     }
     if (StartsWith(id, "map.")) {
@@ -636,6 +933,7 @@ Value ReceiptToJson(const EncounterReceipt& rc) {
     o.Set("elites_killed", Value(rc.elitesKilled));
     o.Set("potions_used", Value(rc.potionsUsed));
     o.Set("heal_failures", Value(rc.healFailures));
+    o.Set("dodges_used", Value(rc.dodgesUsed));
     o.Set("damage_taken", Value(rc.damageTaken));
     o.Set("damage_dealt", Value(rc.damageDealt));
     o.Set("xp_raw", Value(rc.xpRaw));
@@ -666,6 +964,7 @@ bool ReceiptFromJson(const Value& o, EncounterReceipt& rc, std::string* err) {
     rc.elitesKilled = static_cast<int>(o["elites_killed"].AsInt(0));
     rc.potionsUsed = static_cast<int>(o["potions_used"].AsInt(0));
     rc.healFailures = static_cast<int>(o["heal_failures"].AsInt(0));
+    rc.dodgesUsed = static_cast<int>(o["dodges_used"].AsInt(0));
     rc.damageTaken = o["damage_taken"].AsDouble(0.0);
     rc.damageDealt = o["damage_dealt"].AsDouble(0.0);
     rc.xpRaw = o["xp_raw"].AsDouble(0.0);
@@ -684,7 +983,19 @@ Value ProgressToJson(const ExpeditionProgress& p) {
     o.Set("life", Value(p.life));
     o.Set("resource", Value(p.resource));
     o.Set("barrier", Value(p.barrier));
-    o.Set("potions_left", Value(p.potionsLeft));
+    Value slots = Value::MakeArray();
+    for (const PotionSlotState& s : p.potionSlots) {
+        Value so = Value::MakeObject();
+        so.Set("potion_id", Value(s.potionId));
+        so.Set("charges", Value(s.charges));
+        so.Set("recharge_remaining", Value(s.rechargeRemaining));
+        slots.Push(std::move(so));
+    }
+    o.Set("potion_slots", std::move(slots));
+    o.Set("dodge_charges", Value(p.dodgeCharges));
+    o.Set("dodge_recharge", Value(p.dodgeRecharge));
+    o.Set("ward_amount", Value(p.wardAmount));
+    o.Set("ward_remaining", Value(p.wardRemaining));
     o.Set("rares_dropped", Value(p.raresDropped));
     o.Set("stop", Value(ToString(p.stop)));
     Value receipts = Value::MakeArray();
@@ -709,7 +1020,17 @@ bool ProgressFromJson(const Value& o, ExpeditionProgress& p, std::string* err) {
     p.life = o["life"].AsDouble(-1.0);
     p.resource = o["resource"].AsDouble(-1.0);
     p.barrier = o["barrier"].AsDouble(0.0);
-    p.potionsLeft = o["potions_left"].AsInt(-1);
+    for (const Value& s : o["potion_slots"].Items()) {
+        PotionSlotState ps;
+        ps.potionId = s["potion_id"].AsString();
+        ps.charges = static_cast<int>(s["charges"].AsInt(0));
+        ps.rechargeRemaining = s["recharge_remaining"].AsDouble(0.0);
+        p.potionSlots.push_back(std::move(ps));
+    }
+    p.dodgeCharges = static_cast<int>(o["dodge_charges"].AsInt(-1));
+    p.dodgeRecharge = o["dodge_recharge"].AsDouble(0.0);
+    p.wardAmount = o["ward_amount"].AsDouble(0.0);
+    p.wardRemaining = o["ward_remaining"].AsDouble(0.0);
     p.raresDropped = static_cast<int>(o["rares_dropped"].AsInt(0));
     if (!ParseStopReason(o["stop"].AsString(), p.stop)) {
         if (err) *err = "progress: bad stop";
@@ -741,6 +1062,7 @@ Value ResultToJson(const ExpeditionResult& r, std::uint32_t flags) {
     Value tips = Value::MakeArray();
     for (const std::string& k : r.tipKeys) tips.Push(Value(k));
     o.Set("tip_keys", std::move(tips));
+    o.Set("calibration", Value(ToString(r.calibration)));  // "manual_estimate": mostrar o selo "estimativa"
     o.Set("result_hash", json::FromUInt64(r.resultHash));
     o.Set("receipt_count", Value(static_cast<std::int64_t>(r.receipts.size())));
     if ((flags & SHATTER_RESULT_RECEIPTS) != 0) {
@@ -749,33 +1071,6 @@ Value ResultToJson(const ExpeditionResult& r, std::uint32_t flags) {
         o.Set("receipts", std::move(receipts));
     }
     return o;
-}
-
-// Parte do resultado que a coleta usa (itens, pilhas, XP e hash).
-bool CollectableFromJson(const Value& o, ExpeditionResult& r, std::string* err) {
-    if (o.type() != json::Type::Object) {
-        if (err) *err = "result is not an object";
-        return false;
-    }
-    r = ExpeditionResult();
-    const Value* hash = o.Find("result_hash");
-    if (hash == nullptr || hash->type() != json::Type::String) {
-        if (err) *err = "result: result_hash must be a decimal string";
-        return false;
-    }
-    r.resultHash = hash->AsUInt64(0);
-    if (!ParseStopReason(o["stop"].AsString(), r.stop)) {
-        if (err) *err = "result: bad stop";
-        return false;
-    }
-    for (const Value& iv : o["items"].Items()) {
-        ItemInstance it;
-        if (!ItemFromJson(iv, it, err)) return false;
-        r.items.push_back(std::move(it));
-    }
-    if (!StacksFromJson(o["stacks"], r.stacks, err)) return false;
-    r.xpGained = o["xp_gained"].AsDouble(0.0);
-    return true;
 }
 
 // Pedido de expedição + marca opcional "ended_by_rollback" (posta por shatter_save_expedition_request).
@@ -1646,11 +1941,13 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition(const shat
         return SetError(err, SHATTER_INVALID_ARGUMENT, "save or start_check is null");
     const ContentDB* d = UsableDb(db);
     if (d == nullptr) return DbError(db, err);
-    ExpeditionStartParams p;
-    shatter_status st = SHATTER_OK;
-    if (!StartParamsFromText(params_json, len, p, err, st)) return st;
-    *start_check = static_cast<std::int32_t>(StartExpedition(*d, save->data, p, nullptr));
-    return SHATTER_OK;
+    (void)d;
+    (void)params_json;
+    (void)len;
+    *start_check = 0;
+    // Retirada na API 1.1 (docs/11, M-03): start_utc e seed vinham do chamador.
+    return SetError(err, SHATTER_INVALID_ARGUMENT,
+                    "removed in API 1.1: use shatter_save_start_expedition_trusted (start_utc and seed come from the core)");
 }
 
 SHATTER_API shatter_status SHATTER_CALL shatter_save_expedition_request(const shatter_db* db, const shatter_save* save,
@@ -1792,14 +2089,764 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
     *collected = 0;
     const ContentDB* d = UsableDb(db);
     if (d == nullptr) return DbError(db, err);
-    if (index >= save->data.expeditions.size()) return SetError(err, SHATTER_INVALID_ARGUMENT, "expedition index out of range");
+    (void)d;
+    (void)index;
+    (void)result_json;
+    (void)len;
+    // Retirada na API 1.1 (docs/11, A-05): o resultado vinha do chamador.
+    return SetError(err, SHATTER_INVALID_ARGUMENT,
+                    "removed in API 1.1: use shatter_save_collect_expedition_trusted (the core recomputes the result)");
+}
+
+// =============================================================================================
+// API C 1.1 (shatter_c.h, "API C 1.1") — regras novas do protótipo e correções de confiança
+// =============================================================================================
+SHATTER_API std::uint32_t SHATTER_CALL shatter_api_minor(void) SHATTER_NOEXCEPT { return SHATTER_C_API_MINOR; }
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext(std::uint32_t* out, std::size_t cap,
+                                                              std::size_t* needed) SHATTER_NOEXCEPT {
+    if (needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = SHATTER_LAYOUT_EXT_COUNT;
+    if (cap < SHATTER_LAYOUT_EXT_COUNT) return SHATTER_BUFFER_TOO_SMALL;
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    std::memcpy(out, kLayoutExt, sizeof(kLayoutExt));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext(const std::uint32_t* values, std::size_t n,
+                                                               shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (values == nullptr && n != 0) return SetError(err, SHATTER_INVALID_ARGUMENT, "values is null");
+    if (n != SHATTER_LAYOUT_EXT_COUNT)
+        return SetError(err, SHATTER_VERSION_MISMATCH,
+                        "ext layout count " + std::to_string(n) + " != " + std::to_string(SHATTER_LAYOUT_EXT_COUNT));
+    for (std::size_t i = 0; i < n; ++i) {
+        if (values[i] != kLayoutExt[i])
+            return SetError(err, SHATTER_VERSION_MISMATCH,
+                            "ext layout entry " + std::to_string(i) + ": caller " + std::to_string(values[i]) +
+                                " != native " + std::to_string(kLayoutExt[i]),
+                            static_cast<int>(i) + 1);
+    }
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_db_rules_ext(const shatter_db* db, shatter_rules_ext* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const RulesConstants& r = d->Rules();
+    std::memset(out, 0, sizeof(*out));
+    out->dodge_recharge = r.dodgeRecharge;
+    out->dodge_duration = r.dodgeDuration;
+    out->dodge_iframes = r.dodgeIframes;
+    out->dodge_distance = r.dodgeDistance;
+    out->dodge_cost_resource = r.dodgeCostResource;
+    out->dodge_buffer = r.dodgeBuffer;
+    out->dodge_perfect_resource = r.dodgePerfectResource;
+    out->dodge_cancel_recovery_fraction = r.dodgeCancelRecoveryFraction;
+    out->guard_break_stagger_seconds = r.guardBreakStaggerSeconds;
+    out->guard_break_stagger_damage_taken = r.guardBreakStaggerDamageTaken;
+    out->guard_break_immunity_boss = r.guardBreakImmunityBoss;
+    out->guard_break_immunity_other = r.guardBreakImmunityOther;
+    out->boss_shield_down_seconds = r.bossShieldDownSeconds;
+    out->elite_life_mult = r.eliteLifeMult;
+    out->elite_damage_mult = r.eliteDamageMult;
+    out->elite_xp_mult = r.eliteXpMult;
+    out->potion_lockout = r.potionLockout;
+    out->out_of_combat_seconds = r.outOfCombatSeconds;
+    out->dodge_max_charges = r.dodgeMaxCharges;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit_db(const shatter_db* db, const shatter_statblock* attacker,
+                                                             const shatter_statblock* defender,
+                                                             const shatter_hit_input* input, shatter_rng* rng,
+                                                             shatter_hit_result* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    shatter_rules rules;
+    ToC(d->Rules(), rules);
+    return shatter_resolve_hit(attacker, defender, input, &rules, rng, out);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_effective_cooldown_db(const shatter_db* db, double base_cooldown,
+                                                                    double cooldown_recovery,
+                                                                    double* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    *out = EffectiveCooldown(base_cooldown, cooldown_recovery, d->Rules());
+    return SHATTER_OK;
+}
+
+// --- Vitals ---------------------------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_create(const shatter_db* db, const shatter_statblock* stats,
+                                                            const char* class_id, std::size_t class_id_len,
+                                                            shatter_vitals* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (stats == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const ClassData* cls = nullptr;
+    if (!FindClassArg(*d, class_id, class_id_len, cls)) return SHATTER_INVALID_ARGUMENT;
+    VitalsToC(CreateVitals(stats->sb, cls), *out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_tick(const shatter_db* db, shatter_vitals* vitals,
+                                                          const shatter_statblock* stats, const char* class_id,
+                                                          std::size_t class_id_len, double dt,
+                                                          std::uint8_t in_combat) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (vitals == nullptr || stats == nullptr || !std::isfinite(dt)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const ClassData* cls = nullptr;
+    if (!FindClassArg(*d, class_id, class_id_len, cls)) return SHATTER_INVALID_ARGUMENT;
+    Vitals v = VitalsFromC(*vitals);
+    TickVitals(v, stats->sb, cls, dt, in_combat != 0);
+    VitalsToC(v, *vitals);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_gain_resource(shatter_vitals* vitals,
+                                                                   const shatter_statblock* stats,
+                                                                   double amount) SHATTER_NOEXCEPT {
+    if (vitals == nullptr || stats == nullptr || !std::isfinite(amount)) return SHATTER_INVALID_ARGUMENT;
+    Vitals v = VitalsFromC(*vitals);
+    GainResource(v, stats->sb, amount);
+    VitalsToC(v, *vitals);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_spend_resource(shatter_vitals* vitals, double amount,
+                                                                    std::uint8_t* ok) SHATTER_NOEXCEPT {
+    if (vitals == nullptr || ok == nullptr || !std::isfinite(amount)) return SHATTER_INVALID_ARGUMENT;
+    Vitals v = VitalsFromC(*vitals);
+    *ok = TrySpendResource(v, amount) ? 1 : 0;
+    VitalsToC(v, *vitals);
+    return SHATTER_OK;
+}
+
+// --- Tempos, velocidade, ataque ---------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing(const shatter_db* db, const char* skill_id,
+                                                           std::size_t skill_id_len, const shatter_statblock* stats,
+                                                           const char* modifier_id, std::size_t modifier_id_len,
+                                                           shatter_action_timing* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view sid, mid;
+    if (stats == nullptr || out == nullptr || skill_id == nullptr || !Text(skill_id, skill_id_len, sid) ||
+        !Text(modifier_id, modifier_id_len, mid))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const SkillData* s = d->FindSkill(sid);
+    if (s == nullptr) return SHATTER_NOT_FOUND;
+    EliteProfile elite;
+    const EliteProfile* ep = nullptr;
+    if (!mid.empty()) {
+        const EliteModifierData* m = d->FindEliteModifier(mid);
+        if (m == nullptr) return SHATTER_NOT_FOUND;
+        elite = MakeEliteProfile(*d, m, false);
+        ep = &elite;
+    }
+    const ActionTimingInfo t = ComputeActionTiming(*d, *s, stats->sb, ep);
+    out->windup = t.windup;
+    out->impact = t.impact;
+    out->recovery = t.recovery;
+    out->cooldown = t.cooldown;
+    out->cost = t.cost;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_move_speed(const shatter_statblock* stats, double base_uu_per_sec,
+                                                         double* out) SHATTER_NOEXCEPT {
+    if (stats == nullptr || out == nullptr || !std::isfinite(base_uu_per_sec)) return SHATTER_INVALID_ARGUMENT;
+    *out = MoveSpeedUu(stats->sb, base_uu_per_sec);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_can_act(const shatter_statblock* stats, const shatter_actor* actor,
+                                                      std::uint8_t* out) SHATTER_NOEXCEPT {
+    if (stats == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *out = (CanAct(stats->sb) && (actor == nullptr || actor->st.CanAct())) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_can_move(const shatter_statblock* stats, const shatter_actor* actor,
+                                                       std::uint8_t* out) SHATTER_NOEXCEPT {
+    if (stats == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *out = (CanMove(stats->sb) && (actor == nullptr || actor->st.CanAct())) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_pick_attack(const shatter_db* db, const char* enemy_id,
+                                                          std::size_t enemy_id_len, shatter_rng* rng,
+                                                          std::int32_t* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view id;
+    if (rng == nullptr || out == nullptr || enemy_id == nullptr || !Text(enemy_id, enemy_id_len, id))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const EnemyData* e = d->FindEnemy(id);
+    if (e == nullptr) return SHATTER_NOT_FOUND;
+    Pcg32 r = Pcg32::FromRaw(rng->state, rng->inc);
+    *out = PickEnemyAttack(*e, r);
+    rng->state = r.State();
+    rng->inc = r.Increment();
+    return SHATTER_OK;
+}
+
+// --- Poções ------------------------------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_potion_resolve(const shatter_db* db, const char* potion_id,
+                                                             std::size_t potion_id_len, const shatter_statblock* stats,
+                                                             shatter_vitals* vitals,
+                                                             shatter_potion_outcome* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view id;
+    if (stats == nullptr || vitals == nullptr || out == nullptr || potion_id == nullptr ||
+        !Text(potion_id, potion_id_len, id))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const PotionData* p = d->FindPotion(id);
+    std::memset(out, 0, sizeof(*out));
+    if (p == nullptr) {
+        out->status = SHATTER_POTION_UNKNOWN;
+        return SHATTER_NOT_FOUND;
+    }
+    const double maxLife = stats->sb.Get(StatId::Life);
+    ApplyPotionToVitals(ResolvePotion(*p, maxLife, stats->sb.Get(StatId::PotionEffect)), maxLife, *vitals, *out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_create(const shatter_db* db, shatter_potions** out) SHATTER_NOEXCEPT {
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *out = nullptr;
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    std::unique_ptr<shatter_potions> box(new (std::nothrow) shatter_potions());
+    if (!box) return SHATTER_INTERNAL;
+    box->belt = MakeFullPotionBelt(*d);
+    *out = box.release();
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_from_save(const shatter_db* db, const shatter_save* save,
+                                                                std::size_t character_index,
+                                                                shatter_potions** out) SHATTER_NOEXCEPT {
+    if (out == nullptr || save == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *out = nullptr;
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    if (character_index >= save->data.characters.size()) return SHATTER_INVALID_ARGUMENT;
+    std::unique_ptr<shatter_potions> box(new (std::nothrow) shatter_potions());
+    if (!box) return SHATTER_INTERNAL;
+    box->belt = MakePotionBelt(*d, save->data.characters[character_index].potionSlots);
+    *out = box.release();
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_to_save(const shatter_potions* potions, shatter_save* save,
+                                                              std::size_t character_index) SHATTER_NOEXCEPT {
+    if (potions == nullptr || save == nullptr || character_index >= save->data.characters.size())
+        return SHATTER_INVALID_ARGUMENT;
+    save->data.characters[character_index].potionSlots = potions->belt.slots;
+    return SHATTER_OK;
+}
+
+SHATTER_API void SHATTER_CALL shatter_potions_destroy(shatter_potions* potions) SHATTER_NOEXCEPT { delete potions; }
+
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_tick(const shatter_db* db, shatter_potions* potions,
+                                                           double dt) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (potions == nullptr || !std::isfinite(dt)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    TickPotions(*d, potions->belt, dt);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_use(const shatter_db* db, shatter_potions* potions,
+                                                          const char* potion_id, std::size_t potion_id_len,
+                                                          const shatter_statblock* stats, shatter_vitals* vitals,
+                                                          shatter_potion_outcome* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view id;
+    if (potions == nullptr || stats == nullptr || vitals == nullptr || out == nullptr || potion_id == nullptr ||
+        !Text(potion_id, potion_id_len, id))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    std::memset(out, 0, sizeof(*out));
+    const double maxLife = stats->sb.Get(StatId::Life);
+    PotionOutcome po;
+    const PotionUseStatus st = UsePotion(*d, potions->belt, id, maxLife, stats->sb.Get(StatId::PotionEffect), &po);
+    out->status = static_cast<std::int32_t>(st);
+    if (st != PotionUseStatus::Ok) return SHATTER_OK;
+    ApplyPotionToVitals(po, maxLife, *vitals, *out);
+    out->lockout = po.lockout;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_refill(const shatter_db* db, shatter_potions* potions) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (potions == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    RefillPotions(*d, potions->belt);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_on_elite_killed(const shatter_db* db, shatter_potions* potions,
+                                                                      std::uint8_t* added) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (potions == nullptr || added == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    *added = AddChargeOnEliteKill(*d, potions->belt) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_potions_info_json(const shatter_db* db, const shatter_potions* potions,
+                                                                std::uint8_t* out, std::size_t cap,
+                                                                std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (potions == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    Value root = Value::MakeObject();
+    root.Set("lockout_remaining", Value(potions->belt.lockoutRemaining));
+    Value arr = Value::MakeArray();
+    for (const PotionSlotState& s : potions->belt.slots) {
+        const PotionData* p = d->FindPotion(s.potionId);
+        if (p == nullptr) continue;
+        Value o = Value::MakeObject();
+        o.Set("potion_id", Value(s.potionId));
+        o.Set("kind", Value(p->kind == PotionKind::Heal ? "heal" : "barrier"));
+        o.Set("charges", Value(s.charges));
+        o.Set("max_charges", Value(p->maxCharges));
+        o.Set("recharge_remaining", Value(s.rechargeRemaining));
+        o.Set("hotkey_slot", Value(p->hotkeySlot));
+        arr.Push(std::move(o));
+    }
+    root.Set("slots", std::move(arr));
+    return WriteJson(root, false, out, cap, needed);
+}
+
+// --- Esquiva -----------------------------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_init(const shatter_db* db, shatter_dodge_state* state) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (state == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    DodgeState s;
+    NormalizeDodge(d->Rules(), s);
+    DodgeToC(s, *state);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_tick(const shatter_db* db, shatter_dodge_state* state,
+                                                         double dt) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (state == nullptr || !std::isfinite(dt)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    DodgeState s = DodgeFromC(*state);
+    TickDodge(d->Rules(), s, dt);
+    DodgeToC(s, *state);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_start(const shatter_db* db, shatter_dodge_state* state,
+                                                          double resource_available,
+                                                          std::int32_t* status) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (state == nullptr || status == nullptr || !std::isfinite(resource_available)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    DodgeState s = DodgeFromC(*state);
+    *status = static_cast<std::int32_t>(TryStartDodge(d->Rules(), s, resource_available));
+    DodgeToC(s, *state);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_invulnerable(const shatter_db* db,
+                                                                 const shatter_dodge_state* state,
+                                                                 std::uint8_t* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (state == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    *out = DodgeInvulnerable(d->Rules(), DodgeFromC(*state)) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_dodge_perfect_reward(const shatter_db* db,
+                                                                   const shatter_dodge_state* state,
+                                                                   double* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (state == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    *out = DodgePerfectReward(d->Rules(), DodgeFromC(*state));
+    return SHATTER_OK;
+}
+
+// --- Stun e Guarda Quebrada --------------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_create(const shatter_db* db, const char* enemy_id,
+                                                           std::size_t enemy_id_len, std::uint8_t elite,
+                                                           shatter_actor** out) SHATTER_NOEXCEPT {
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *out = nullptr;
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    std::string_view id;
+    if (!Text(enemy_id, enemy_id_len, id)) return SHATTER_INVALID_ARGUMENT;
+    const EnemyData* e = nullptr;
+    if (!id.empty()) {
+        e = d->FindEnemy(id);
+        if (e == nullptr) return SHATTER_NOT_FOUND;
+    }
+    std::unique_ptr<shatter_actor> box(new (std::nothrow) shatter_actor());
+    if (!box) return SHATTER_INTERNAL;
+    box->st.Init(MakeStatusProfile(*d, e, elite != 0));
+    *out = box.release();
+    return SHATTER_OK;
+}
+
+SHATTER_API void SHATTER_CALL shatter_actor_destroy(shatter_actor* actor) SHATTER_NOEXCEPT { delete actor; }
+
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_apply_effect(shatter_actor* actor, const shatter_db* db,
+                                                                 const char* effect_id, std::size_t effect_id_len,
+                                                                 const char* source, std::size_t source_len,
+                                                                 double magnitude, shatter_effects* fx,
+                                                                 shatter_statblock* target,
+                                                                 shatter_actor_apply* out) SHATTER_NOEXCEPT {
+    std::string_view id, src;
+    if (actor == nullptr || fx == nullptr || target == nullptr || out == nullptr || effect_id == nullptr ||
+        !Text(effect_id, effect_id_len, id) || !Text(source, source_len, src) || !std::isfinite(magnitude))
+        return SHATTER_INVALID_ARGUMENT;
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const EffectData* e = d->FindEffect(id);
+    if (e == nullptr) return SHATTER_NOT_FOUND;
+    ApplyToC(actor->st.ApplyEffect(*d, *e, src, magnitude, TriggerKind::None, fx->fx, target->sb, true), *out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_tick(shatter_actor* actor, double dt, shatter_statblock* target,
+                                                         std::uint8_t* stagger_ended) SHATTER_NOEXCEPT {
+    if (actor == nullptr || target == nullptr || stagger_ended == nullptr || !std::isfinite(dt))
+        return SHATTER_INVALID_ARGUMENT;
+    *stagger_ended = actor->st.Tick(dt, target->sb) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_info_get(const shatter_actor* actor,
+                                                             shatter_actor_info* out) SHATTER_NOEXCEPT {
+    if (actor == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    std::memset(out, 0, sizeof(*out));
+    out->stun_remaining = actor->st.StunRemaining();
+    out->stagger_remaining = actor->st.StaggerRemaining();
+    out->immunity_remaining = actor->st.ImmunityRemaining();
+    out->can_act = actor->st.CanAct() ? 1 : 0;
+    out->stun_immune = actor->st.Profile().stunImmune ? 1 : 0;
+    return SHATTER_OK;
+}
+
+// --- Elite --------------------------------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_elite_roll(const shatter_db* db, shatter_rng* events_rng,
+                                                         shatter_elite_info* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (events_rng == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    Pcg32 r = Pcg32::FromRaw(events_rng->state, events_rng->inc);
+    const EliteModifierData* mod = RollEliteModifier(*d, r);
+    events_rng->state = r.State();
+    events_rng->inc = r.Increment();
+    EliteToC(MakeEliteProfile(*d, mod, true), *out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_elite_profile(const shatter_db* db, const char* modifier_id,
+                                                            std::size_t modifier_id_len, std::uint8_t rolled,
+                                                            shatter_elite_info* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view id;
+    if (out == nullptr || !Text(modifier_id, modifier_id_len, id)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const EliteModifierData* mod = nullptr;
+    if (!id.empty()) {
+        mod = d->FindEliteModifier(id);
+        if (mod == nullptr) return SHATTER_NOT_FOUND;
+    }
+    EliteToC(MakeEliteProfile(*d, mod, rolled != 0), *out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_elite_apply(const shatter_db* db, const shatter_elite_info* info,
+                                                          shatter_statblock* stats, double* barrier) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (info == nullptr || stats == nullptr || barrier == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const EliteProfile p = EliteFromC(*info);
+    ApplyEliteToStats(p, stats->sb);
+    *barrier = EliteBarrier(p, stats->sb.Get(StatId::Life));
+    return SHATTER_OK;
+}
+
+// --- Chefe --------------------------------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_create(const shatter_db* db, const char* enemy_id,
+                                                          std::size_t enemy_id_len, std::int32_t level,
+                                                          std::uint64_t seed, shatter_boss** out) SHATTER_NOEXCEPT {
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *out = nullptr;
+    const ContentDB* d = UsableDb(db);
+    std::string_view id;
+    if (enemy_id == nullptr || !Text(enemy_id, enemy_id_len, id)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const EnemyData* e = d->FindEnemy(id);
+    if (e == nullptr) return SHATTER_NOT_FOUND;
+    std::unique_ptr<shatter_boss> box(new (std::nothrow) shatter_boss(*d, *e, level, seed));
+    if (!box) return SHATTER_INTERNAL;
+    if (!box->fight.Valid()) return SHATTER_CONTENT_INVALID;  // sem linhas em boss_phases.csv
+    *out = box.release();
+    return SHATTER_OK;
+}
+
+SHATTER_API void SHATTER_CALL shatter_boss_destroy(shatter_boss* boss) SHATTER_NOEXCEPT { delete boss; }
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_reset(shatter_boss* boss, shatter_statblock* stats) SHATTER_NOEXCEPT {
+    if (boss == nullptr) return SHATTER_INVALID_ARGUMENT;
+    boss->events.clear();
+    boss->fight.Reset(stats != nullptr ? &stats->sb : nullptr);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_start(shatter_boss* boss) SHATTER_NOEXCEPT {
+    if (boss == nullptr) return SHATTER_INVALID_ARGUMENT;
+    boss->fight.Start();
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_step(shatter_boss* boss, double dt, const shatter_boss_context* ctx,
+                                                        shatter_statblock* stats, std::size_t* event_count) SHATTER_NOEXCEPT {
+    if (boss == nullptr || ctx == nullptr || stats == nullptr || event_count == nullptr || !std::isfinite(dt) ||
+        !std::isfinite(ctx->boss.x) || !std::isfinite(ctx->boss.z) || !std::isfinite(ctx->player.x) ||
+        !std::isfinite(ctx->player.z))
+        return SHATTER_INVALID_ARGUMENT;
+    boss->events.clear();
+    BossFight::Context c;
+    c.boss = {ctx->boss.x, ctx->boss.z};
+    c.player = {ctx->player.x, ctx->player.z};
+    boss->fight.Step(dt, c, stats->sb, boss->events);
+    *event_count = boss->events.size();
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_apply_damage(shatter_boss* boss, double amount,
+                                                                shatter_vec2 boss_pos, shatter_vec2 origin,
+                                                                shatter_boss_damage* out) SHATTER_NOEXCEPT {
+    if (boss == nullptr || out == nullptr || !std::isfinite(amount) || !std::isfinite(boss_pos.x) ||
+        !std::isfinite(boss_pos.z) || !std::isfinite(origin.x) || !std::isfinite(origin.z))
+        return SHATTER_INVALID_ARGUMENT;
+    const BossFight::DamageResult r =
+        boss->fight.ApplyDamage(amount, Vec2{boss_pos.x, boss_pos.z}, Vec2{origin.x, origin.z}, boss->events);
+    std::memset(out, 0, sizeof(*out));
+    out->applied = r.applied;
+    out->life_after = r.lifeAfter;
+    out->shield_blocked = r.shieldBlocked ? 1 : 0;
+    out->invulnerable = r.invulnerable ? 1 : 0;
+    out->clamped_by_phase = r.clampedByPhase ? 1 : 0;
+    out->killed = r.killed ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_apply_effect(shatter_boss* boss, const shatter_db* db,
+                                                                const char* effect_id, std::size_t effect_id_len,
+                                                                const char* source, std::size_t source_len,
+                                                                double magnitude, shatter_effects* fx,
+                                                                shatter_statblock* stats,
+                                                                shatter_actor_apply* out) SHATTER_NOEXCEPT {
+    std::string_view id, src;
+    if (boss == nullptr || fx == nullptr || stats == nullptr || out == nullptr || effect_id == nullptr ||
+        !Text(effect_id, effect_id_len, id) || !Text(source, source_len, src) || !std::isfinite(magnitude))
+        return SHATTER_INVALID_ARGUMENT;
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const EffectData* e = d->FindEffect(id);
+    if (e == nullptr) return SHATTER_NOT_FOUND;
+    ApplyToC(boss->fight.ApplyEffect(*d, *e, src, magnitude, fx->fx, stats->sb, boss->events), *out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_events(const shatter_boss* boss, shatter_boss_event* out,
+                                                          std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    if (boss == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = boss->events.size();
+    if (cap < boss->events.size()) return SHATTER_BUFFER_TOO_SMALL;
+    if (!boss->events.empty() && out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    for (std::size_t i = 0; i < boss->events.size(); ++i) BossEventToC(boss->events[i], out[i]);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_info_get(const shatter_boss* boss, shatter_boss_info* out) SHATTER_NOEXCEPT {
+    if (boss == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    const BossFight& f = boss->fight;
+    std::memset(out, 0, sizeof(*out));
+    out->life = f.Life();
+    out->max_life = f.MaxLife();
+    out->shield_down_remaining = f.ShieldDownRemaining();
+    out->turn_rate_deg_per_sec = f.TurnRateDegPerSec();
+    out->facing_x = f.Facing().x;
+    out->facing_z = f.Facing().z;
+    out->stagger_remaining = f.Status().StaggerRemaining();
+    out->stun_remaining = f.Status().StunRemaining();
+    out->phase = f.Phase();
+    out->state = static_cast<std::int32_t>(f.State());
+    out->shield_up = f.ShieldUp() ? 1 : 0;
+    out->invulnerable = f.Invulnerable() ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_boss_shield_covers(const shatter_boss* boss, shatter_vec2 boss_pos,
+                                                                 shatter_vec2 origin, std::uint8_t* out) SHATTER_NOEXCEPT {
+    if (boss == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *out = boss->fight.ShieldCovers(Vec2{boss_pos.x, boss_pos.z}, Vec2{origin.x, origin.z}) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+// --- Único do chefe -----------------------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_save_boss_progress_get(const shatter_save* save,
+                                                                     std::size_t character_index,
+                                                                     const char* enemy_id, std::size_t enemy_id_len,
+                                                                     shatter_boss_progress* out) SHATTER_NOEXCEPT {
+    std::string_view id;
+    if (save == nullptr || out == nullptr || enemy_id == nullptr || !Text(enemy_id, enemy_id_len, id) ||
+        character_index >= save->data.characters.size())
+        return SHATTER_INVALID_ARGUMENT;
+    out->kills = 0;
+    out->kills_since_unique = 0;
+    for (const BossProgressEntry& b : save->data.characters[character_index].bossProgress) {
+        if (b.enemyId == id) {
+            out->kills = b.kills;
+            out->kills_since_unique = b.killsSinceUnique;
+        }
+    }
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_roll_boss_loot(const shatter_db* db, shatter_save* save,
+                                                                  std::size_t character_index, const char* enemy_id,
+                                                                  std::size_t enemy_id_len, std::int32_t area_level,
+                                                                  shatter_rng* loot_rng, std::uint8_t* out,
+                                                                  std::size_t cap, std::size_t* needed,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    std::string_view id;
+    if (save == nullptr || loot_rng == nullptr || needed == nullptr || enemy_id == nullptr ||
+        !Text(enemy_id, enemy_id_len, id) || character_index >= save->data.characters.size())
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "bad argument");
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return DbError(db, err);
+    const EnemyData* e = d->FindEnemy(id);
+    if (e == nullptr) return SetError(err, SHATTER_NOT_FOUND, "enemy not found");
+    // Trabalha em cópias e só confirma se a saída couber (nada muda com BUFFER_TOO_SMALL).
+    CharacterState& ch = save->data.characters[character_index];
+    BossProgressEntry prog;
+    prog.enemyId = e->id;
+    for (const BossProgressEntry& b : ch.bossProgress) {
+        if (b.enemyId == e->id) prog = b;
+    }
+    std::uint64_t uid = save->data.nextItemUid;
+    Pcg32 r = Pcg32::FromRaw(loot_rng->state, loot_rng->inc);
+    const LootDrop drop = RollBossLoot(*d, *e, area_level < 1 ? 1 : area_level, prog, &uid, r);
+    const std::string text = json::Serialize(LootToJson(drop), false);
+    *needed = text.size();
+    if (cap < text.size()) return SetError(err, SHATTER_BUFFER_TOO_SMALL, "buffer too small");
+    if (!text.empty() && out == nullptr) return SetError(err, SHATTER_INVALID_ARGUMENT, "out is null");
+    FindOrAddBossProgress(ch.bossProgress, e->id) = prog;
+    save->data.nextItemUid = uid;
+    loot_rng->state = r.State();
+    loot_rng->inc = r.Increment();
+    if (!text.empty()) std::memcpy(out, text.data(), text.size());
+    return SHATTER_OK;
+}
+
+// --- Expedição confiável ---------------------------------------------------------------------------------
+SHATTER_API shatter_status SHATTER_CALL shatter_expedition_forecast_ex(const shatter_db* db, const char* request_json,
+                                                                     std::size_t len, std::uint64_t base_seed,
+                                                                     std::int32_t samples, shatter_forecast_ex* out,
+                                                                     shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (out == nullptr) return SetError(err, SHATTER_INVALID_ARGUMENT, "out is null");
+    shatter_forecast base;
+    const shatter_status st = shatter_expedition_forecast(db, request_json, len, base_seed, samples, &base, err);
+    if (st != SHATTER_OK) return st;
+    // O selo vem do pedido (barra e equipamento do snapshot), não do resultado das amostras.
+    ExpeditionRequest req;
+    OfflineWindow w;
+    shatter_status st2 = SHATTER_OK;
+    if (!RequestFromText(request_json, len, req, w, err, st2)) return st2;
+    std::memset(out, 0, sizeof(*out));
+    out->base = base;
+    out->calibration = static_cast<std::int32_t>(BuildIdleCalibration(*UsableDb(db), req.snapshot.character));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition_trusted(const shatter_db* db, shatter_save* save,
+                                                                            const char* params_json, std::size_t len,
+                                                                            const shatter_trusted_now* now,
+                                                                            std::int32_t* start_check,
+                                                                            shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (save == nullptr || now == nullptr || start_check == nullptr)
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "save, now or start_check is null");
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return DbError(db, err);
     Value v;
     shatter_status st = SHATTER_OK;
-    if (!ParseJsonText(result_json, len, v, err, st)) return st;
-    ExpeditionResult r;
-    std::string msg;
-    if (!CollectableFromJson(v, r, &msg)) return SetError(err, SHATTER_PARSE_ERROR, msg);
-    *collected = CollectExpedition(*d, save->data, index, r) ? 1 : 0;
+    if (!ParseJsonText(params_json, len, v, err, st)) return st;
+    if (v.Has("seed") || v.Has("start_utc"))
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "seed and start_utc come from the core, not from the caller");
+    ExpeditionStartParams p;
+    if (!StartParamsFromText(params_json, len, p, err, st)) return st;
+    p.startUtc = now->now;
+    p.seed = DeriveExpeditionSeed(save->data, p.characterIndex, p.startUtc);
+    *start_check = static_cast<std::int32_t>(StartExpedition(*d, save->data, p, nullptr));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition_trusted(
+    const shatter_db* db, shatter_save* save, std::size_t index, const shatter_clock_input* clock, std::uint32_t flags,
+    std::int32_t* collect_status, std::uint8_t* out, std::size_t cap, std::size_t* needed,
+    shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (save == nullptr || clock == nullptr || collect_status == nullptr || needed == nullptr)
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "save, clock, collect_status or needed is null");
+    *needed = 0;
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return DbError(db, err);
+    if (index >= save->data.expeditions.size())
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "expedition index out of range");
+    const SavedExpedition& e = save->data.expeditions[index];
+    if (e.status == ExpeditionStatus::Collected) {
+        *collect_status = SHATTER_COLLECT_ALREADY;
+        return SHATTER_OK;
+    }
+    if (e.status != ExpeditionStatus::Running) return SetError(err, SHATTER_INVALID_ARGUMENT, "expedition is not running");
+    // Relógio confiável + último ponto conhecido do SAVE (o last_seen do clock é ignorado).
+    ClockInput ci;
+    ci.localNowUtc = clock->local_now_utc;
+    ci.hasSteamTime = clock->has_steam_time != 0;
+    ci.steamNowUtc = clock->steam_now_utc;
+    ci.lastSeenUtc = save->data.lastSeenUtc;
+    const TrustedNow now = ResolveNow(ci, d->Rules());
+    const OfflineWindow w =
+        ComputeExpeditionWindow(e.request.startUtc, e.request.durationHours, now, save->data.lastSeenUtc, d->Rules());
+    if (!w.finished) {
+        *collect_status = SHATTER_COLLECT_NOT_FINISHED;
+        return SHATTER_OK;
+    }
+    ExpeditionRequest req = e.request;
+    req.effectiveSeconds = w.effectiveSeconds;
+    ExpeditionProgress p = SimulateRange(*d, req, ExpeditionProgress(), 0, std::numeric_limits<std::uint32_t>::max());
+    ApplyWindowStop(p, w);
+    const ExpeditionResult result = FinalizeExpedition(*d, req, p);
+    const std::string text = json::Serialize(ResultToJson(result, flags), false);
+    *needed = text.size();
+    if (cap < text.size()) return SetError(err, SHATTER_BUFFER_TOO_SMALL, "buffer too small");
+    if (!text.empty() && out == nullptr) return SetError(err, SHATTER_INVALID_ARGUMENT, "out is null");
+    const bool collected = CollectExpedition(*d, save->data, index, result);
+    *collect_status = collected ? SHATTER_COLLECT_COLLECTED : SHATTER_COLLECT_ALREADY;
+    if (!text.empty()) std::memcpy(out, text.data(), text.size());
     return SHATTER_OK;
 }
 

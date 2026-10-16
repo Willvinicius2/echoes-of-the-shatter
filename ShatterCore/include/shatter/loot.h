@@ -7,6 +7,7 @@
 
 #include "shatter/content.h"
 #include "shatter/item.h"
+#include "shatter/progress.h"
 #include "shatter/rng.h"
 #include "shatter/types.h"
 
@@ -24,6 +25,10 @@ struct LootContext {
     int raresAlreadyDropped = 0;     // idle: Raros já obtidos na expedição
     int maxRares = -1;               // idle: teto (RulesConstants::maxRaresPerExpedition); -1 = sem teto
     std::uint64_t* nextItemUid = nullptr;  // contador do save; se nulo, uid = 0 (o chamador atribui depois)
+    // ADIÇÃO (docs/13, item 9): progresso do chefe que acabou de morrer (só Manual). Com ele, as entradas FIXAS da tabela
+    // (fixedChance / guaranteeFirstKill / pityKills) são avaliadas e o contador é atualizado NESTA chamada
+    // (kills + 1; killsSinceUnique zera se a entrada fixa caiu, senão + 1). Sem ele, entradas fixas só rolam fixedChance.
+    BossProgressEntry* bossProgress = nullptr;
 };
 
 struct LootDrop {

@@ -10,6 +10,7 @@
 #include <cstring>
 #include <limits>
 
+#include "shatter/combat.h"
 #include "shatter/damage.h"
 #include "shatter/effects.h"
 
@@ -47,7 +48,7 @@ struct Setup {
     std::vector<const EncounterTemplate*> encounters;
     std::vector<double> encounterWeights;
     double limit = 0.0;
-    std::int64_t startPotions = 0;
+    std::vector<PotionSlotState> snapshotPotions;   // slots do snapshot (normalizados na criação de cada encontro)
 };
 
 StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& su) {
@@ -101,7 +102,7 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
     lim = std::min(lim, static_cast<double>(req.durationHours) * 3600.0);
     lim = std::min(lim, r.maxOfflineHours * 3600.0);
     su.limit = lim < 0.0 ? 0.0 : lim;
-    su.startPotions = ch.potions;
+    su.snapshotPotions = ch.potionSlots;
     return StopReason::None;
 }
 
@@ -111,18 +112,31 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
 struct EnemyInst {
     const EnemyData* data = nullptr;
     bool elite = false;
+    bool rolledElite = false;
+    EliteProfile profile;
     bool alive = true;
     StatBlock stats;
     EffectContainer fx;
     double life = 0.0;
+    double barrier = 0.0;            // barreira do elite (modificador Escudo)
     double attackTimer = 0.0;
+};
+
+struct PendingExplosion {  // Volátil: marca de fusível e explosão (docs/13, item 5)
+    double remaining = 0.0;
+    double damage = 0.0;
+    std::size_t source = 0;  // índice do inimigo que explodiu (seus atributos dão o dano)
 };
 
 struct CarryState {  // o que atravessa encontros (espelho de ExpeditionProgress)
     double life = -1.0;
     double resource = -1.0;
     double barrier = 0.0;
-    std::int64_t potions = -1;
+    std::vector<PotionSlotState> potionSlots;  // vazio = pegar do snapshot
+    int dodgeCharges = -1;
+    double dodgeRecharge = 0.0;
+    double wardAmount = 0.0;
+    double wardRemaining = 0.0;
     int raresDropped = 0;
 };
 
@@ -172,9 +186,20 @@ public:
             for (int k = 0; k < n; ++k) {
                 EnemyInst e;
                 e.data = ed;
-                e.elite = events_.Chance(g.eliteChance) || ed->isElite;
+                const bool chanceHit = events_.Chance(g.eliteChance);  // sempre 1 número (fluxo Events)
+                e.rolledElite = chanceHit && !ed->isElite;
+                e.elite = chanceHit || ed->isElite;
                 BuildEnemyStatBlock(*ed, level_, e.stats);
+                if (e.elite) {
+                    // Elite sorteado: modificador sorteado no fluxo Events (1 número). Elite fixo: o modificadorId da linha.
+                    const EliteModifierData* mod = nullptr;
+                    if (e.rolledElite) mod = RollEliteModifier(db_, events_);
+                    else if (!ed->modifierId.empty()) mod = db_.FindEliteModifier(ed->modifierId);
+                    e.profile = MakeEliteProfile(db_, mod, e.rolledElite);
+                    ApplyEliteToStats(e.profile, e.stats);
+                }
                 e.life = e.stats.Get(StatId::Life);
+                e.barrier = e.elite ? EliteBarrier(e.profile, e.life) : 0.0;
                 enemies_.push_back(std::move(e));
             }
         }
@@ -187,11 +212,20 @@ public:
         life_ = in_.life < 0.0 ? maxLife : std::min(in_.life, maxLife);
         resource_ = in_.resource < 0.0 ? maxRes : std::min(in_.resource, maxRes);
         barrier_ = in_.barrier;
-        potions_ = in_.potions < 0 ? su_.startPotions : in_.potions;
+        belt_ = MakePotionBelt(db_, in_.potionSlots.empty() ? su_.snapshotPotions : in_.potionSlots);
+        dodge_.charges = in_.dodgeCharges;
+        dodge_.rechargeRemaining = in_.dodgeRecharge;
+        NormalizeDodge(rules_, dodge_);
+        wardAmount_ = in_.wardAmount;
+        wardRemaining_ = in_.wardRemaining;
+        healPotion_ = DefaultHealPotion(db_);
 
         // Travessia até o grupo: regeneração e decaimento fora de combate.
         const double travel = tmpl.travelTime;
         if (travel > budget_ + kEps) { out.fits = false; return out; }
+        TickPotions(db_, belt_, travel);
+        TickDodge(rules_, dodge_, travel);
+        TickWard(travel);
         life_ = std::min(maxLife, life_ + ps_.Get(StatId::LifeRegen) * travel);
         resource_ += ps_.Get(StatId::ResourceRegen) * travel;
         resource_ -= su_.cls->resourceDecayOutOfCombat * travel;
@@ -205,7 +239,7 @@ public:
 
         double combatTime = 0.0;
         bool retreated = false;
-        while (aliveCount() > 0) {
+        while (aliveCount() > 0 || !explosions_.empty()) {
             combatTime += dt;
             if (travel + combatTime > budget_ + kEps) { out.fits = false; return out; }
             Step(dt);
@@ -213,7 +247,7 @@ public:
             maxRes = ps_.Get(StatId::Resource);
             if (life_ > maxLife) life_ = maxLife;
             if (resource_ > maxRes) resource_ = maxRes;
-            if (life_ <= 0.0 || (life_ < rules_.retreatLifeFraction * maxLife && potions_ <= 0)) {
+            if (life_ <= 0.0 || (life_ < rules_.retreatLifeFraction * maxLife && !HasHealCharge())) {
                 retreated = true;
                 break;
             }
@@ -225,6 +259,7 @@ public:
         rc.elitesKilled = elites_;
         rc.potionsUsed = potionsUsed_;
         rc.healFailures = healFailures_;
+        rc.dodgesUsed = dodgesUsed_;
         rc.damageTaken = damageTaken_;
         rc.damageDealt = damageDealt_;
         rc.lifeFractionAtEnd = maxLife > 0.0 ? life_ / maxLife : 0.0;
@@ -242,17 +277,34 @@ public:
                 if (const LootTableData* t = db_.FindLootTable(su_.map->areaLootTable)) RollInto(*t);
             }
             rc.loot = std::move(drop_);
-            out.stopRetreat = life_ < rules_.retreatLifeFraction * maxLife && potions_ <= 0;
+            out.stopRetreat = life_ < rules_.retreatLifeFraction * maxLife && !HasHealCharge();
         }
         out.after.life = life_;
         out.after.resource = resource_;
         out.after.barrier = barrier_;
-        out.after.potions = potions_;
+        out.after.potionSlots = belt_.slots;
+        out.after.dodgeCharges = dodge_.charges;
+        out.after.dodgeRecharge = dodge_.rechargeRemaining;
+        out.after.wardAmount = wardAmount_;
+        out.after.wardRemaining = wardRemaining_;
         out.after.raresDropped = in_.raresDropped + rc.loot.raresDropped;
         return out;
     }
 
 private:
+    bool HasHealCharge() const { return healPotion_ != nullptr && PotionCharges(belt_, healPotion_->id) > 0; }
+
+    // A barreira da Poção de Resguardo some ao fim do tempo (a parte de outras fontes fica).
+    void TickWard(double dt) {
+        if (wardRemaining_ <= 0.0) return;
+        wardRemaining_ -= dt;
+        if (wardRemaining_ <= kEps) {
+            barrier_ = std::max(0.0, barrier_ - wardAmount_);
+            wardAmount_ = 0.0;
+            wardRemaining_ = 0.0;
+        }
+    }
+
     int aliveCount() const {
         int n = 0;
         for (const EnemyInst& e : enemies_) n += e.alive ? 1 : 0;
@@ -273,6 +325,7 @@ private:
     void ApplyPlayerHit(const HitResult& r) {
         life_ = r.defenderLifeAfter;
         barrier_ = r.defenderBarrierAfter;
+        wardAmount_ = std::min(wardAmount_, barrier_);
         damageTaken_ += r.totalDamage;
         if (takenByType_) {
             for (int t = 0; t < kDamageTypeCount; ++t)
@@ -293,10 +346,16 @@ private:
         if (!e.alive) return;
         e.alive = false;
         ++kills_;
-        if (e.elite) ++elites_;
-        xp_ += e.data->xpBase + e.data->xpPerLevel * static_cast<double>(level_ - 1);
-        if (!e.data->lootTableId.empty()) {
-            if (const LootTableData* t = db_.FindLootTable(e.data->lootTableId)) RollInto(*t);
+        if (e.elite) {
+            ++elites_;
+            AddChargeOnEliteKill(db_, belt_);  // +1 carga na poção com menos cargas (docs/13, item 2)
+            if (e.profile.deathExplosionRadius > 0.0 && e.profile.deathExplosionDamage > 0.0)
+                explosions_.push_back({e.profile.deathExplosionFuse, e.profile.deathExplosionDamage, i});
+        }
+        xp_ += (e.data->xpBase + e.data->xpPerLevel * static_cast<double>(level_ - 1)) * e.profile.xpMult;
+        const ContentId& lootId = EliteLootTable(*e.data, e.rolledElite);
+        if (!lootId.empty()) {
+            if (const LootTableData* t = db_.FindLootTable(lootId)) RollInto(*t);
         }
         FireTrigger(TriggerKind::OnKill);
     }
@@ -340,9 +399,8 @@ private:
         const int rank = su_.ranks[static_cast<std::size_t>(slot)];
         activeSlot_ = slot;
 
-        double speed = ps_.Get(HasTag(s.tags, Tag::Spell) ? StatId::CastSpeed : StatId::AttackSpeed);
-        if (speed < 0.01) speed = 0.01;
-        double d = (s.windup + s.impact + s.recovery) / speed;
+        const ActionTimingInfo tm = ComputeActionTiming(db_, s, ps_);
+        double d = tm.windup + tm.impact + tm.recovery;
         const double uptime = prof.uptime > 0.0 ? prof.uptime : 1.0;
         d /= uptime;
         if (d < dt) d = dt;
@@ -385,9 +443,10 @@ private:
             in.baseDamage = base;
             in.coefficient = coef;
             in.defenderLife = e.life;
-            in.defenderBarrier = 0.0;
+            in.defenderBarrier = e.barrier;
             const HitResult r = ResolveHit(in, rules_, combat_);
             e.life = r.defenderLifeAfter;
+            e.barrier = r.defenderBarrierAfter;
             damageDealt_ += r.totalDamage;
             if (r.landed) {
                 resource_ = std::min(maxRes, resource_ + su_.cls->resourceOnHit);
@@ -410,17 +469,28 @@ private:
             const AiRule& r = rules[i];
             if (!ConditionHolds(r)) continue;
             if (r.action == AiAction::UsePotion) {
-                if (potions_ <= 0) {
+                const PotionData* pd = r.refId.empty() ? healPotion_ : db_.FindPotion(r.refId);
+                const double maxLife = ps_.Get(StatId::Life);
+                PotionOutcome po;
+                const PotionUseStatus st = pd == nullptr
+                    ? PotionUseStatus::UnknownPotion
+                    : UsePotion(db_, belt_, pd->id, maxLife, ps_.Get(StatId::PotionEffect), &po);
+                if (st == PotionUseStatus::LockedOut) continue;  // trava global: tenta de novo nos próximos passos
+                if (st != PotionUseStatus::Ok) {
                     potionFailedThisStep = true;
                     if (!potionFailing_) ++healFailures_;  // conta uma vez por episódio de falha
                     potionFailing_ = true;
                     continue;  // regra inválida: segue para a próxima
                 }
-                const double maxLife = ps_.Get(StatId::Life);
-                life_ = std::min(maxLife, life_ + su_.req->potionHealFraction * maxLife * ps_.Get(StatId::PotionEffect));
-                --potions_;
+                life_ = std::min(maxLife, life_ + po.healAmount);
+                if (po.barrierAmount > 0.0) {
+                    // Não acumula: reaplicar renova (troca a barreira anterior da poção pela nova).
+                    barrier_ = std::max(0.0, barrier_ - wardAmount_) + po.barrierAmount;
+                    wardAmount_ = po.barrierAmount;
+                    wardRemaining_ = po.barrierSeconds;
+                }
                 ++potionsUsed_;
-                playerTimer_ += dt;  // beber consome um passo
+                playerTimer_ += std::max(po.useTime, dt);  // beber leva useTime
                 potionFailing_ = false;
                 return;
             }
@@ -451,16 +521,19 @@ private:
         const EnemyAttack& atk = ed.attacks[static_cast<std::size_t>(pick)];
         const SkillData* s = db_.FindSkill(atk.skillId);
         if (s == nullptr) return;
-        double speed = e.stats.Get(StatId::AttackSpeed);
-        if (speed < 0.01) speed = 0.01;
-        double d = (s->windup + s->impact + s->recovery) / speed;
+        const ActionTimingInfo tm = ComputeActionTiming(db_, *s, e.stats, e.elite ? &e.profile : nullptr);
+        double d = tm.windup + tm.impact + tm.recovery;
         if (d < dt) d = dt;
         e.attackTimer += d;
 
         const IdleProfile& prof = su_.bar[static_cast<std::size_t>(activeSlot_)]->idle;
         if (atk.telegraphed) {
             const double p = Clamp01(rules_.aiBaseDodgeTelegraphed + prof.dodgeTelegraphedBonus);
-            if (combat_.Chance(p)) return;  // a IA esquivou
+            const bool roll = combat_.Chance(p);  // sempre 1 número, com ou sem carga
+            if (roll && DodgeSpendCharge(rules_, dodge_)) {  // a IA esquivou: gasta uma carga (docs/13, item 3 do Tech Lead)
+                ++dodgesUsed_;
+                return;
+            }
         }
         HitInput in;
         in.attacker = &e.stats;
@@ -485,8 +558,38 @@ private:
         }
     }
 
+    // Volátil: a explosão acerta o jogador no fim do fusível; a IA esquiva como de um golpe telegrafado, com carga.
+    void TickExplosions(double dt) {
+        for (std::size_t k = 0; k < explosions_.size();) {
+            PendingExplosion& x = explosions_[k];
+            x.remaining -= dt;
+            if (x.remaining > kEps) { ++k; continue; }
+            const PendingExplosion fire = x;
+            explosions_.erase(explosions_.begin() + static_cast<std::ptrdiff_t>(k));
+            const IdleProfile& prof = su_.bar[static_cast<std::size_t>(activeSlot_)]->idle;
+            const double p = Clamp01(rules_.aiBaseDodgeTelegraphed + prof.dodgeTelegraphedBonus);
+            if (combat_.Chance(p) && DodgeSpendCharge(rules_, dodge_)) {
+                ++dodgesUsed_;
+                continue;
+            }
+            HitInput in;
+            in.attacker = &enemies_[fire.source].stats;
+            in.defender = &ps_;
+            in.skillTags = Mask(Tag::Area) | Tag::Physical;  // não é "ataque": sem evasão
+            in.baseDamage[0] = fire.damage;
+            in.coefficient = 1.0;
+            in.canBeBlocked = false;
+            in.defenderLife = life_;
+            in.defenderBarrier = barrier_;
+            ApplyPlayerHit(ResolveHit(in, rules_, combat_));
+        }
+    }
+
     void Step(double dt) {
         const auto& lookup = db_.EffectLookup();
+        TickPotions(db_, belt_, dt);
+        TickDodge(rules_, dodge_, dt);
+        TickWard(dt);
         // Regeneração.
         life_ = std::min(ps_.Get(StatId::Life), life_ + ps_.Get(StatId::LifeRegen) * dt);
         resource_ = std::min(ps_.Get(StatId::Resource), resource_ + ps_.Get(StatId::ResourceRegen) * dt);
@@ -529,6 +632,7 @@ private:
                 if (r.killed) KillEnemy(i);
             }
         }
+        TickExplosions(dt);
         if (aliveCount() == 0) return;
 
         // Jogador.
@@ -567,10 +671,14 @@ private:
     int activeSlot_ = 0;
     double targetAcc_ = 0.0;
     double life_ = 0.0, resource_ = 0.0, barrier_ = 0.0;
-    std::int64_t potions_ = 0;
+    PotionBelt belt_;
+    const PotionData* healPotion_ = nullptr;
+    DodgeState dodge_;
+    double wardAmount_ = 0.0, wardRemaining_ = 0.0;
+    std::vector<PendingExplosion> explosions_;
     bool potionFailing_ = false;
 
-    int kills_ = 0, elites_ = 0, potionsUsed_ = 0, healFailures_ = 0;
+    int kills_ = 0, elites_ = 0, potionsUsed_ = 0, healFailures_ = 0, dodgesUsed_ = 0;
     double damageTaken_ = 0.0, damageDealt_ = 0.0, xp_ = 0.0;
     LootDrop drop_;
 };
@@ -597,7 +705,11 @@ ExpeditionProgress RunRange(const ContentDB& db, const ExpeditionRequest& req, c
         carry.life = p.life;
         carry.resource = p.resource;
         carry.barrier = p.barrier;
-        carry.potions = p.potionsLeft;
+        carry.potionSlots = p.potionSlots;
+        carry.dodgeCharges = p.dodgeCharges;
+        carry.dodgeRecharge = p.dodgeRecharge;
+        carry.wardAmount = p.wardAmount;
+        carry.wardRemaining = p.wardRemaining;
         carry.raresDropped = p.raresDropped;
         EncounterSim sim(su, p.nextEncounter, carry, p.elapsed, su.limit - p.elapsed, takenByType);
         EncounterRun run = sim.Run();
@@ -609,7 +721,11 @@ ExpeditionProgress RunRange(const ContentDB& db, const ExpeditionRequest& req, c
         p.life = run.after.life;
         p.resource = run.after.resource;
         p.barrier = run.after.barrier;
-        p.potionsLeft = run.after.potions;
+        p.potionSlots = run.after.potionSlots;
+        p.dodgeCharges = run.after.dodgeCharges;
+        p.dodgeRecharge = run.after.dodgeRecharge;
+        p.wardAmount = run.after.wardAmount;
+        p.wardRemaining = run.after.wardRemaining;
         p.raresDropped = run.after.raresDropped;
         p.receipts.push_back(std::move(run.receipt));
         ++p.nextEncounter;
@@ -683,6 +799,19 @@ StartCheck CanStartExpedition(const ContentDB& db, const CharacterState& c, cons
     if (chargesAvailable < durationHours * r.chargesPerHour) return StartCheck::NotEnoughCharges;
     if (!IsIdleCompatible(db, c, blockingIds)) return StartCheck::IdleIncompatible;
     return StartCheck::Ok;
+}
+
+IdleCalibration BuildIdleCalibration(const ContentDB& db, const CharacterState& c) {
+    IdleCalibration cal = IdleCalibration::BotParity;
+    for (const ContentId& id : c.skillBar) {
+        if (id.empty()) continue;
+        if (const SkillData* s = db.FindSkill(id)) cal = WeakestCalibration(cal, s->idle.calibration);
+    }
+    for (const auto& item : c.equipment) {
+        if (!item || item->uniqueId.empty()) continue;
+        if (const UniqueData* u = db.FindUnique(item->uniqueId)) cal = WeakestCalibration(cal, u->idleCalibration);
+    }
+    return cal;
 }
 
 ExpeditionProgress SimulateRange(const ContentDB& db, const ExpeditionRequest& req, const ExpeditionProgress& start,
@@ -769,7 +898,10 @@ ExpeditionResult FinalizeExpedition(const ContentDB& db, const ExpeditionRequest
     }
 
     // Dica (uma chave de localização; prioridade em expedition.h).
-    const std::int64_t potionsLeft = progress.potionsLeft < 0 ? req.snapshot.character.potions : progress.potionsLeft;
+    res.calibration = BuildIdleCalibration(db, req.snapshot.character);
+    const PotionBelt endBelt = MakePotionBelt(db, progress.potionSlots.empty() ? req.snapshot.character.potionSlots : progress.potionSlots);
+    const PotionData* heal = DefaultHealPotion(db);
+    const std::int64_t potionsLeft = heal != nullptr ? PotionCharges(endBelt, heal->id) : 0;
     if (res.stop == StopReason::Retreat && potionsLeft > 0) res.tipKeys.push_back(kTipLowLife);
     else if (res.stop == StopReason::Retreat || res.healFailures > 0) res.tipKeys.push_back(kTipMorePotions);
     else res.tipKeys.push_back(kTipAllGood);
@@ -782,6 +914,7 @@ ExpeditionResult FinalizeExpedition(const ContentDB& db, const ExpeditionRequest
     h.I64(res.kills);
     h.I64(res.potionsUsed);
     h.I64(res.healFailures);
+    h.U64(static_cast<std::uint64_t>(res.calibration));
     h.Dbl(res.xpGained);
     h.U64(res.xpCapped ? 1 : 0);
     h.I64(res.raresDropped);
@@ -803,6 +936,7 @@ ExpeditionResult FinalizeExpedition(const ContentDB& db, const ExpeditionRequest
         h.I64(rc.elitesKilled);
         h.I64(rc.potionsUsed);
         h.I64(rc.healFailures);
+        h.I64(rc.dodgesUsed);
         h.Dbl(rc.damageTaken);
         h.Dbl(rc.damageDealt);
         h.Dbl(rc.xpRaw);
@@ -852,6 +986,7 @@ ExpeditionForecast ForecastExpedition(const ContentDB& db, const ExpeditionReque
     f.xpP10 = xp[lo]; f.xpP50 = xp[mid]; f.xpP90 = xp[hi];
     f.goldP10 = gold[lo]; f.goldP50 = gold[mid]; f.goldP90 = gold[hi];
     f.retreatProbability = static_cast<double>(retreats) / static_cast<double>(samples);
+    f.calibration = BuildIdleCalibration(db, req.snapshot.character);
     int worst = 0;
     for (int t = 1; t < kDamageTypeCount; ++t)
         if (taken[static_cast<std::size_t>(t)] > taken[static_cast<std::size_t>(worst)]) worst = t;

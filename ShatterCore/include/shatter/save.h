@@ -34,7 +34,7 @@
 
 namespace shatter {
 
-inline constexpr int kCurrentSaveVersion = 1;
+inline constexpr int kCurrentSaveVersion = 2;   // v2: potion_slots, boss_progress, equipment.legs (docs/09)
 inline constexpr int kSaveBackupCount = 3;
 inline constexpr const char* kSaveFormatTag = "echoes-of-the-shatter-save";
 
@@ -196,6 +196,10 @@ struct ExpeditionStartParams {
 // Personagem inexistente: UnknownContent. Sem vaga livre: AnotherExpeditionRunning.
 StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionStartParams& p,
                            std::vector<ContentId>* blockingIds = nullptr);
+
+// ADIÇÃO (docs/11, M-03): a seed da expedição nasce no core, derivada do estado do save (contador de uid, último ponto
+// visto, personagem, nº de expedições) e do início; o chamador não escolhe a seed (não dá para "provar" seeds).
+std::uint64_t DeriveExpeditionSeed(const SaveData& s, std::size_t characterIndex, UnixSeconds startUtc);
 
 // ---------------------------------------------------------------------------
 // Coleta de expedição sem duplicar (plano, seção 10 "Coleta sem duplicar").

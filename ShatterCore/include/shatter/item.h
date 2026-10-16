@@ -9,7 +9,7 @@
 
 namespace shatter {
 
-// Posições de equipamento. AA usa as 8 primeiras; Ring2 e Belt ficam reservadas para o 1.0.
+// Posições de equipamento (11). AA usa as 8 primeiras mais Legs; Ring2 e Belt ficam reservadas para o 1.0.
 enum class ItemSlot : std::uint8_t {
     MainHand = 0,
     OffHand,
@@ -21,10 +21,11 @@ enum class ItemSlot : std::uint8_t {
     Ring,
     Ring2,   // 1.0
     Belt,    // 1.0
+    Legs,    // ADIÇÃO (C-10, docs/04 17.4): calça; no FIM do enum para não deslocar índices da API C nem do save
     Count
 };
 inline constexpr int kItemSlotCount = static_cast<int>(ItemSlot::Count);
-bool ParseItemSlot(std::string_view text, ItemSlot& out);  // "main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt"
+bool ParseItemSlot(std::string_view text, ItemSlot& out);  // "main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt", "legs"
 const char* ToString(ItemSlot s);
 
 // Afixo rolado: valor já sorteado dentro da faixa [min,max] do AffixData.

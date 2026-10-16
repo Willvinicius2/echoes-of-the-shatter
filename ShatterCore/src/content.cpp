@@ -26,12 +26,34 @@ bool ParseSkillShape(std::string_view text, SkillShape& out) {
     return false;
 }
 
+bool ParseIdleCalibration(std::string_view text, IdleCalibration& out) {
+    if (text == "none") { out = IdleCalibration::None; return true; }
+    if (text == "manual_estimate") { out = IdleCalibration::ManualEstimate; return true; }
+    if (text == "bot_parity") { out = IdleCalibration::BotParity; return true; }
+    return false;
+}
+
+const char* ToString(IdleCalibration c) {
+    switch (c) {
+        case IdleCalibration::None: return "none";
+        case IdleCalibration::ManualEstimate: return "manual_estimate";
+        case IdleCalibration::BotParity: return "bot_parity";
+    }
+    return "none";
+}
+
+bool ParsePotionKind(std::string_view text, PotionKind& out) {
+    if (text == "heal") { out = PotionKind::Heal; return true; }
+    if (text == "barrier") { out = PotionKind::Barrier; return true; }
+    return false;
+}
+
 namespace {
 
 using detail::CsvRow;
 using detail::CsvTable;
 
-constexpr std::size_t kRuleKeyCount = 41;
+constexpr std::size_t kRuleKeyCount = 60;
 
 // --- tabela de chaves de rules.csv (faixas = validação estrutural do 06_dados.md, não balanceamento) ---
 struct RuleDef {
@@ -41,6 +63,7 @@ struct RuleDef {
     double hi;
     bool loExclusive;
     void (*set)(RulesConstants&, double);
+    bool optional = false;  // chave de docs/13: ausente = valor padrão do RulesConstants
 };
 
 constexpr double kInf = 1e300;
@@ -92,6 +115,29 @@ const RuleDef kRuleDefs[kRuleKeyCount] = {
     {"xp_scale", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.xpScale = v; }},
     {"xp_exponent", 'd', 0, 3, false, [](RulesConstants& r, double v) { r.xpExponent = v; }},
     {"max_level", 'i', 1, 100, false, [](RulesConstants& r, double v) { r.maxLevel = static_cast<int>(v); }},
+    // --- ADIÇÃO (docs/13): opcionais; o validador de dados do merge exige todas. ---
+    {"dodge_max_charges", 'i', 1, 10, false, [](RulesConstants& r, double v) { r.dodgeMaxCharges = static_cast<int>(v); }, true},
+    {"dodge_recharge", 'd', 0, 60, true, [](RulesConstants& r, double v) { r.dodgeRecharge = v; }, true},
+    {"dodge_duration", 'd', 0, 5, true, [](RulesConstants& r, double v) { r.dodgeDuration = v; }, true},
+    {"dodge_iframes", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.dodgeIframes = v; }, true},
+    {"dodge_distance", 'd', 0, 5000, false, [](RulesConstants& r, double v) { r.dodgeDistance = v; }, true},
+    {"dodge_cost_resource", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.dodgeCostResource = v; }, true},
+    {"dodge_buffer", 'd', 0, 1, false, [](RulesConstants& r, double v) { r.dodgeBuffer = v; }, true},
+    {"dodge_perfect_resource", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.dodgePerfectResource = v; }, true},
+    {"guard_break_stagger_seconds", 'd', 0, 60, false, [](RulesConstants& r, double v) { r.guardBreakStaggerSeconds = v; }, true},
+    {"guard_break_stagger_damage_taken", 'd', 0, 5, false,
+     [](RulesConstants& r, double v) { r.guardBreakStaggerDamageTaken = v; }, true},
+    {"guard_break_immunity_boss", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.guardBreakImmunityBoss = v; }, true},
+    {"guard_break_immunity_other", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.guardBreakImmunityOther = v; }, true},
+    {"boss_shield_down_seconds", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.bossShieldDownSeconds = v; }, true},
+    {"elite_life_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteLifeMult = v; }, true},
+    {"elite_damage_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteDamageMult = v; }, true},
+    {"elite_xp_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteXpMult = v; }, true},
+    {"potion_lockout", 'd', 0, 60, false, [](RulesConstants& r, double v) { r.potionLockout = v; }, true},
+    // Pedidas pelo IRulesCore do C# (docs/11, A-01); ainda não estão em rules.csv: opcionais.
+    {"dodge_cancel_recovery_fraction", 'd', 0, 1, false,
+     [](RulesConstants& r, double v) { r.dodgeCancelRecoveryFraction = v; }, true},
+    {"out_of_combat_seconds", 'd', 0, 600, false, [](RulesConstants& r, double v) { r.outOfCombatSeconds = v; }, true},
 };
 
 // --- leitor de células tipado ----------------------------------------------------------------
@@ -256,7 +302,9 @@ bool StartsWith(std::string_view s, std::string_view p) { return s.substr(0, p.s
 // --- colunas esperadas por tabela (cabeçalho exato, em qualquer ordem) -------------------------
 struct TableDef {
     const char* name;
-    std::vector<const char*> columns;
+    std::vector<const char*> columns;          // obrigatórias
+    std::vector<const char*> optionalColumns;  // ADIÇÃO: podem faltar no cabeçalho (valor padrão)
+    bool optionalTable = false;                // ADIÇÃO: o arquivo pode não existir (tabela vazia)
 };
 
 const std::vector<TableDef>& TableDefs() {
@@ -273,29 +321,59 @@ const std::vector<TableDef>& TableDefs() {
           "cooldown", "windup", "impact", "recovery", "range", "radius", "projectiles", "onHitEffects",
           "selfEffects", "idleSupported", "idleAvgTargetsHit", "idleFractionOfGroupHit", "idleApproachTime",
           "idleUptime", "idleDodgeTelegraphedBonus", "idleDamageTakenMult", "idleParitySampleSize",
-          "unlockLevel"}},
+          "unlockLevel"},
+         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration"}},
         {"effects.csv",
          {"id", "duration", "tickInterval", "stackRule", "maxStacks", "damagePerTickPhysical", "damagePerTickFire",
           "damagePerTickCold", "damagePerTickLightning", "modifiers", "barrier", "trigger", "triggerChance",
-          "internalCooldown", "tags"}},
+          "internalCooldown", "tags"},
+         {"interruptsAction"}},
         {"enemies.csv",
          {"id", "familyId", "stats", "xpBase", "xpPerLevel", "lootTableId", "isBoss", "isElite", "moveSpeed",
-          "aggroRange"}},
+          "aggroRange"},
+         {"stunImmune", "shieldArcDegrees", "turnRateDegPerSec", "turnRateDegPerSecPhase2", "guardBreakStaggerSeconds",
+          "guardBreakImmunitySeconds", "modifierId", "eliteLootTableId"}},
         {"enemy_attacks.csv", {"enemyId", "skillId", "weight", "telegraphed"}},
         {"affixes.csv",
          {"id", "kind", "stat", "modKind", "requiredTags", "minValue", "maxValue", "minItemLevel", "weight",
           "allowedSlots", "group", "craftInscription"}},
         {"item_bases.csv",
          {"id", "slot", "itemLevel", "implicitMods", "weaponDamagePhysical", "weaponDamageFire", "weaponDamageCold",
-          "weaponDamageLightning", "attackTime", "weaponTags", "grammaticalGender"}},
-        {"uniques.csv", {"id", "baseId", "fixedMods", "ruleEffectId", "idleSupported"}},
+          "weaponDamageLightning", "attackTime", "weaponTags", "grammaticalGender"},
+         {"visualSetId"}},
+        {"uniques.csv", {"id", "baseId", "fixedMods", "ruleEffectId", "idleSupported"},
+         {"idleParitySampleSize", "idleCalibration", "visualSetId"}},
         {"loot_tables.csv",
          {"id", "rolls", "dropChance", "rarityWeightNormal", "rarityWeightMagic", "rarityWeightRare"}},
         {"loot_entries.csv",
          {"tableId", "kind", "refId", "weight", "minAmount", "maxAmount", "minAreaLevel", "maxAreaLevel",
-          "manualOnly"}},
+          "manualOnly"},
+         {"fixedChance", "guaranteeFirstKill", "pityKills"}},
         {"encounters.csv", {"id", "groups", "weight", "travelTime", "isBoss"}},
         {"maps.csv", {"id", "monsterLevel", "tier", "encounters", "bossEncounter", "areaLootTable", "idleAllowed"}},
+        // ADIÇÃO (docs/13, "Para o Data Engineer"): tabelas opcionais até o merge com os dados.
+        {"potions.csv",
+         {"id", "kind", "fractionOfMaxLife", "duration", "maxCharges", "rechargeSeconds", "useTime",
+          "moveSpeedWhileUsing", "globalLockout", "refillOnEliteKill", "hotkeySlot"},
+         {}, true},
+        {"elite_modifiers.csv",
+         {"id", "weightPrototype", "lifeMult", "damageMult", "xpMult", "barrierFractionOfLife", "moveSpeedMult",
+          "attackSpeedMult", "recoveryMult", "deathExplosionRadius", "deathExplosionDamage", "deathExplosionFuse"},
+         {}, true},
+        {"boss_phases.csv",
+         {"bossId", "phase", "lifeThreshold", "transitionSeconds", "summonEnemyId", "summonCount", "shieldSeconds",
+          "turnRate", "decisionDelayMin", "decisionDelayMax"},
+         {}, true},
+        {"boss_patterns.csv",
+         {"id", "bossId", "phase", "skillId", "weight", "telegraphSeconds", "recoverySeconds", "cooldown", "maxRepeat",
+          "playerNearWeightMult", "ignoreIfBehind"},
+         {}, true},
+        {"enemy_ai.csv",
+         {"enemyId", "aggroRange", "alertRadius", "leashRange", "leashSeconds", "preferredMin", "preferredMax",
+          "retreatBelow", "retreatMaxSeconds", "circleMin", "circleMax", "circleSpeed", "attackTokens",
+          "tokenIntervalMin", "tokenIntervalMax", "fleeLifeFraction", "fleeSeconds", "fleeOncePerLife",
+          "attackCooldown", "maxSimultaneousShooters"},
+         {}, true},
     };
     return defs;
 }
@@ -332,6 +410,14 @@ struct ContentImpl {
     Registry<LootTableData> loot;
     Registry<EncounterTemplate> encounters;
     Registry<MapData> maps;
+    Registry<PotionData> potions;
+    Registry<EliteModifierData> eliteModifiers;
+    std::vector<BossPatternData> bossPatterns;
+    std::vector<int> bossPatternLines;
+    std::vector<BossPhaseData> bossPhases;
+    std::vector<int> bossPhaseLines;
+    std::vector<EnemyAiData> enemyAis;
+    std::vector<int> enemyAiLines;
 
     struct ClassStatRow { ContentId classId; StatGrowth g; int line = 0; };
     struct EnemyAttackRow { ContentId enemyId; EnemyAttack a; int line = 0; };
@@ -527,6 +613,9 @@ void LoadSkills(LoadCtx& c) {
         d.range = cell.Num("range", 0.0, 0.0, kInf);
         d.radius = cell.Num("radius", 0.0, 0.0, kInf);
         d.projectiles = static_cast<int>(cell.Int("projectiles", 1, 1, 50));
+        d.coneAngle = cell.Num("coneAngle", 0.0, 0.0, 360.0);
+        d.knockback = cell.Num("knockback", 0.0, 0.0, kInf);
+        d.projectileSpeed = cell.Num("projectileSpeed", 0.0, 0.0, kInf);
         d.onHitEffects = cell.IdList("onHitEffects");
         d.selfEffects = cell.IdList("selfEffects");
         d.idle.supported = cell.Bool("idleSupported", false);
@@ -537,6 +626,12 @@ void LoadSkills(LoadCtx& c) {
         d.idle.dodgeTelegraphedBonus = cell.Num("idleDodgeTelegraphedBonus", 0.0, 0.0, 1.0);
         d.idle.damageTakenMult = cell.Num("idleDamageTakenMult", 1.0, 0.0, kInf);
         d.idle.paritySampleSize = static_cast<std::uint32_t>(cell.Int("idleParitySampleSize", 0, 0, 4294967295LL));
+        {
+            // Coluna ausente/vazia: amostra > 0 vale como paridade (comportamento anterior); amostra 0 = sem selo.
+            const std::string_view cal = cell.Raw("idleCalibration");
+            if (cal.empty()) d.idle.calibration = d.idle.paritySampleSize > 0 ? IdleCalibration::BotParity : IdleCalibration::None;
+            else if (!ParseIdleCalibration(cal, d.idle.calibration)) cell.Err("E_ENUM", "idleCalibration: unknown '" + std::string(cal) + "'");
+        }
         d.unlockLevel = static_cast<int>(cell.Int("unlockLevel", 1, 1, 100));
         if (cell.bad()) continue;
         if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "skill.")) continue;
@@ -571,6 +666,7 @@ void LoadEffects(LoadCtx& c) {
         d.triggerChance = cell.Num("triggerChance", 1.0, 0.0, 1.0);
         d.internalCooldown = cell.Num("internalCooldown", 0.0, 0.0, kInf);
         d.tags = cell.Tags("tags", false);
+        d.interruptsAction = cell.Bool("interruptsAction", false);
         if (cell.bad()) continue;
         if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "effect.")) continue;
         c.impl.effects.Push(std::move(d), row.line);
@@ -593,6 +689,14 @@ void LoadEnemies(LoadCtx& c) {
         d.isElite = cell.Bool("isElite", false);
         d.moveSpeed = cell.Num("moveSpeed", 0.0, 0.0, kInf);
         d.aggroRange = cell.Num("aggroRange", 0.0, 0.0, kInf);
+        d.stunImmune = cell.Bool("stunImmune", false);
+        d.shieldArcDegrees = cell.Num("shieldArcDegrees", 0.0, 0.0, 360.0);
+        d.turnRateDegPerSec = cell.Num("turnRateDegPerSec", 0.0, 0.0, kInf);
+        d.turnRateDegPerSecPhase2 = cell.Num("turnRateDegPerSecPhase2", 0.0, 0.0, kInf);
+        d.guardBreakStaggerSeconds = cell.Num("guardBreakStaggerSeconds", 0.0, 0.0, 60.0);
+        d.guardBreakImmunitySeconds = cell.Num("guardBreakImmunitySeconds", 0.0, 0.0, 120.0);
+        d.modifierId = cell.Id("modifierId", false);
+        d.eliteLootTableId = cell.Id("eliteLootTableId", false);
         if (cell.bad()) continue;
         if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "enemy.")) continue;
         c.impl.enemies.Push(std::move(d), row.line);
@@ -665,6 +769,8 @@ void LoadItemBases(LoadCtx& c) {
         if (g.empty() || g == "m") d.grammaticalGender = 'm';
         else if (g == "f") d.grammaticalGender = 'f';
         else cell.Err("E_ENUM", "grammaticalGender: m or f expected");
+        d.visualSetId = cell.Id("visualSetId", false);
+        if (!d.visualSetId.empty() && !StartsWith(d.visualSetId, "vset.")) cell.Err("E_ID_PREFIX", "visualSetId must start with 'vset.'");
         if (cell.bad()) continue;
         if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "item_base.")) continue;
         c.impl.bases.Push(std::move(d), row.line);
@@ -680,6 +786,14 @@ void LoadUniques(LoadCtx& c) {
         d.fixedMods = cell.Mods("fixedMods");
         d.ruleEffectId = cell.Id("ruleEffectId", false);
         d.idleSupported = cell.Bool("idleSupported", false);
+        d.visualSetId = cell.Id("visualSetId", false);
+        if (!d.visualSetId.empty() && !StartsWith(d.visualSetId, "vset.")) cell.Err("E_ID_PREFIX", "visualSetId must start with 'vset.'");
+        d.idleParitySampleSize = static_cast<std::uint32_t>(cell.Int("idleParitySampleSize", 0, 0, 4294967295LL));
+        {
+            const std::string_view cal = cell.Raw("idleCalibration");
+            if (cal.empty()) d.idleCalibration = d.idleParitySampleSize > 0 ? IdleCalibration::BotParity : IdleCalibration::None;
+            else if (!ParseIdleCalibration(cal, d.idleCalibration)) cell.Err("E_ENUM", "idleCalibration: unknown '" + std::string(cal) + "'");
+        }
         if (cell.bad()) continue;
         if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "unique.")) continue;
         c.impl.uniques.Push(std::move(d), row.line);
@@ -720,7 +834,10 @@ void LoadLootEntries(LoadCtx& c) {
         }
         if (!found) cell.Err(kind.empty() ? "E_REQUIRED" : "E_ENUM", "kind: unknown '" + std::string(kind) + "'");
         r.e.refId = cell.Id("refId", false);
-        r.e.weight = cell.Num("weight", 1.0, 0.0, kInf, true);
+        r.e.weight = cell.Num("weight", 1.0, 0.0, kInf);  // > 0 exigido no Finalize, menos nas entradas fixas
+        r.e.fixedChance = cell.Num("fixedChance", 0.0, 0.0, 1.0);
+        r.e.guaranteeFirstKill = cell.Bool("guaranteeFirstKill", false);
+        r.e.pityKills = static_cast<int>(cell.Int("pityKills", 0, 0, 1000));
         r.e.minAmount = cell.Int("minAmount", 1, 1, INT64_MAX);
         r.e.maxAmount = cell.Int("maxAmount", 1, 1, INT64_MAX);
         r.e.minAreaLevel = static_cast<int>(cell.Int("minAreaLevel", 1, 1, 999));
@@ -784,6 +901,129 @@ void LoadMaps(LoadCtx& c) {
     }
 }
 
+
+void LoadPotions(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        PotionData d;
+        d.id = cell.Id("id", true);
+        const std::string_view kind = cell.Raw("kind");
+        if (!ParsePotionKind(kind, d.kind)) cell.Err(kind.empty() ? "E_REQUIRED" : "E_ENUM", "kind: heal or barrier expected");
+        d.fractionOfMaxLife = cell.Num("fractionOfMaxLife", 0.0, 0.0, 1.0);
+        d.duration = cell.Num("duration", 0.0, 0.0, kInf);
+        d.maxCharges = static_cast<int>(cell.Int("maxCharges", 1, 1, 20));
+        d.rechargeSeconds = cell.Num("rechargeSeconds", 0.0, 0.0, kInf);
+        d.useTime = cell.Num("useTime", 0.0, 0.0, kInf);
+        d.moveSpeedWhileUsing = cell.Num("moveSpeedWhileUsing", 1.0, 0.0, 1.0);
+        d.globalLockout = cell.Num("globalLockout", 0.0, 0.0, 60.0);
+        d.refillOnEliteKill = cell.Bool("refillOnEliteKill", false);
+        d.hotkeySlot = static_cast<int>(cell.Int("hotkeySlot", 1, 1, 9));
+        if (cell.bad()) continue;
+        if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "potion.")) continue;
+        c.impl.potions.Push(std::move(d), row.line);
+    }
+}
+
+void LoadEliteModifiers(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        EliteModifierData d;
+        d.id = cell.Id("id", true);
+        d.weightPrototype = cell.Num("weightPrototype", 0.0, 0.0, kInf);
+        d.lifeMult = cell.Num("lifeMult", 1.0, 0.0, kInf, true);
+        d.damageMult = cell.Num("damageMult", 1.0, 0.0, kInf, true);
+        d.xpMult = cell.Num("xpMult", 1.0, 0.0, kInf, true);
+        d.barrierFractionOfLife = cell.Num("barrierFractionOfLife", 0.0, 0.0, 5.0);
+        d.moveSpeedMult = cell.Num("moveSpeedMult", 1.0, 0.0, kInf, true);
+        d.attackSpeedMult = cell.Num("attackSpeedMult", 1.0, 0.0, kInf, true);
+        d.recoveryMult = cell.Num("recoveryMult", 1.0, 0.0, kInf, true);
+        d.deathExplosionRadius = cell.Num("deathExplosionRadius", 0.0, 0.0, kInf);
+        d.deathExplosionDamage = cell.Num("deathExplosionDamage", 0.0, 0.0, kInf);
+        d.deathExplosionFuse = cell.Num("deathExplosionFuse", 0.0, 0.0, kInf);
+        if (cell.bad()) continue;
+        if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "modifier.elite.")) continue;
+        c.impl.eliteModifiers.Push(std::move(d), row.line);
+    }
+}
+
+void LoadBossPhases(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        BossPhaseData d;
+        d.bossId = cell.Id("bossId", true);
+        d.phase = static_cast<int>(cell.Int("phase", 1, 1, 9));
+        if (cell.Empty("phase")) cell.Err("E_REQUIRED", "phase is required");
+        d.lifeThreshold = cell.Num("lifeThreshold", 1.0, 0.0, 1.0);
+        d.transitionSeconds = cell.Num("transitionSeconds", 0.0, 0.0, kInf);
+        d.summonEnemyId = cell.Id("summonEnemyId", false);
+        d.summonCount = static_cast<int>(cell.Int("summonCount", 0, 0, 20));
+        d.shieldSeconds = cell.Num("shieldSeconds", 0.0, 0.0, kInf);
+        d.turnRate = cell.Num("turnRate", 0.0, 0.0, kInf);
+        d.decisionDelayMin = cell.Num("decisionDelayMin", 0.0, 0.0, kInf);
+        d.decisionDelayMax = cell.Num("decisionDelayMax", 0.0, 0.0, kInf);
+        if (cell.bad()) continue;
+        c.impl.bossPhases.push_back(std::move(d));
+        c.impl.bossPhaseLines.push_back(row.line);
+    }
+}
+
+void LoadBossPatterns(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        BossPatternData d;
+        d.id = cell.Id("id", true);
+        d.bossId = cell.Id("bossId", true);
+        d.phase = static_cast<int>(cell.Int("phase", 1, 1, 9));
+        if (cell.Empty("phase")) cell.Err("E_REQUIRED", "phase is required");
+        d.skillId = cell.Id("skillId", true);
+        d.weight = cell.Num("weight", 1.0, 0.0, kInf);
+        d.telegraphSeconds = cell.Num("telegraphSeconds", 0.0, 0.0, kInf);
+        d.recoverySeconds = cell.Num("recoverySeconds", 0.0, 0.0, kInf);
+        d.cooldown = cell.Num("cooldown", 0.0, 0.0, kInf);
+        d.maxRepeat = static_cast<int>(cell.Int("maxRepeat", 0, 0, 100));
+        d.playerNearWeightMult = cell.Num("playerNearWeightMult", 1.0, 0.0, kInf);
+        d.ignoreIfBehind = cell.Bool("ignoreIfBehind", false);
+        if (cell.bad()) continue;
+        // O mesmo id repete por fase: a chave é id + phase (docs/06, seção 5a).
+        bool dup = false;
+        for (const BossPatternData& q : c.impl.bossPatterns) dup = dup || (q.id == d.id && q.phase == d.phase);
+        if (dup) { cell.Err("E_DUP_ID", "pattern '" + d.id + "' repeated for phase " + std::to_string(d.phase)); continue; }
+        if (!StartsWith(d.id, "pattern.")) { cell.Err("E_ID_PREFIX", "id must start with 'pattern.'"); continue; }
+        c.impl.bossPatterns.push_back(std::move(d));
+        c.impl.bossPatternLines.push_back(row.line);
+    }
+}
+
+void LoadEnemyAis(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        EnemyAiData d;
+        d.enemyId = cell.Id("enemyId", true);
+        d.aggroRange = cell.Num("aggroRange", 0.0, 0.0, kInf);
+        d.alertRadius = cell.Num("alertRadius", 0.0, 0.0, kInf);
+        d.leashRange = cell.Num("leashRange", 0.0, 0.0, kInf);
+        d.leashSeconds = cell.Num("leashSeconds", 0.0, 0.0, kInf);
+        d.preferredMin = cell.Num("preferredMin", 0.0, 0.0, kInf);
+        d.preferredMax = cell.Num("preferredMax", 0.0, 0.0, kInf);
+        d.retreatBelow = cell.Num("retreatBelow", 0.0, 0.0, kInf);
+        d.retreatMaxSeconds = cell.Num("retreatMaxSeconds", 0.0, 0.0, kInf);
+        d.circleMin = cell.Num("circleMin", 0.0, 0.0, kInf);
+        d.circleMax = cell.Num("circleMax", 0.0, 0.0, kInf);
+        d.circleSpeed = cell.Num("circleSpeed", 0.0, 0.0, kInf);
+        d.attackTokens = static_cast<int>(cell.Int("attackTokens", 0, 0, 100));
+        d.tokenIntervalMin = cell.Num("tokenIntervalMin", 0.0, 0.0, kInf);
+        d.tokenIntervalMax = cell.Num("tokenIntervalMax", 0.0, 0.0, kInf);
+        d.fleeLifeFraction = cell.Num("fleeLifeFraction", 0.0, 0.0, 1.0);
+        d.fleeSeconds = cell.Num("fleeSeconds", 0.0, 0.0, kInf);
+        d.fleeOncePerLife = cell.Bool("fleeOncePerLife", false);
+        d.attackCooldown = cell.Num("attackCooldown", 0.0, 0.0, kInf);
+        d.maxSimultaneousShooters = static_cast<int>(cell.Int("maxSimultaneousShooters", 0, 0, 100));
+        if (cell.bad()) continue;
+        c.impl.enemyAis.push_back(std::move(d));
+        c.impl.enemyAiLines.push_back(row.line);
+    }
+}
+
 }  // namespace
 
 bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvText) {
@@ -819,6 +1059,7 @@ bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvTex
     for (std::size_t i = 0; i < csv.header.size(); ++i) {
         bool known = false;
         for (const char* col : def->columns) known = known || csv.header[i] == col;
+        for (const char* col : def->optionalColumns) known = known || csv.header[i] == col;
         if (!known) {
             PushErr(errors_, table, csv.headerLine, "E_HEADER", "unknown column '" + std::string(csv.header[i]) + "'");
             headerOk = false;
@@ -847,6 +1088,11 @@ bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvTex
     else if (table == "loot_entries.csv") LoadLootEntries(ctx);
     else if (table == "encounters.csv") LoadEncounters(ctx);
     else if (table == "maps.csv") LoadMaps(ctx);
+    else if (table == "potions.csv") LoadPotions(ctx);
+    else if (table == "elite_modifiers.csv") LoadEliteModifiers(ctx);
+    else if (table == "boss_phases.csv") LoadBossPhases(ctx);
+    else if (table == "boss_patterns.csv") LoadBossPatterns(ctx);
+    else if (table == "enemy_ai.csv") LoadEnemyAis(ctx);
     return errors_.size() == before;
 }
 
@@ -863,7 +1109,7 @@ bool ContentDB::LoadDirectory(const std::string& path) {
     for (const TableDef& def : TableDefs()) {
         const fs::path file = dir / def.name;
         if (!fs::is_regular_file(file, ec)) {
-            PushErr(errors_, def.name, 0, "E_IO", "table file missing");
+            if (!def.optionalTable) PushErr(errors_, def.name, 0, "E_IO", "table file missing");
             continue;
         }
         std::ifstream in(file, std::ios::binary);
@@ -905,7 +1151,27 @@ SHATTER_DEFINE_ADD(UniqueData, uniques, "unique.")
 SHATTER_DEFINE_ADD(LootTableData, loot, "loot.")
 SHATTER_DEFINE_ADD(EncounterTemplate, encounters, "enc.")
 SHATTER_DEFINE_ADD(MapData, maps, "map.")
+SHATTER_DEFINE_ADD(PotionData, potions, "potion.")
+SHATTER_DEFINE_ADD(EliteModifierData, eliteModifiers, "modifier.elite.")
 #undef SHATTER_DEFINE_ADD
+
+void ContentDB::Add(BossPatternData d) {
+    if (impl_->finalized) { PushErr(errors_, "bossPatterns", 0, "E_STATE", "Add after Finalize"); return; }
+    impl_->bossPatterns.push_back(std::move(d));
+    impl_->bossPatternLines.push_back(0);
+}
+
+void ContentDB::Add(BossPhaseData d) {
+    if (impl_->finalized) { PushErr(errors_, "bossPhases", 0, "E_STATE", "Add after Finalize"); return; }
+    impl_->bossPhases.push_back(std::move(d));
+    impl_->bossPhaseLines.push_back(0);
+}
+
+void ContentDB::Add(EnemyAiData d) {
+    if (impl_->finalized) { PushErr(errors_, "enemyAis", 0, "E_STATE", "Add after Finalize"); return; }
+    impl_->enemyAis.push_back(std::move(d));
+    impl_->enemyAiLines.push_back(0);
+}
 
 // ===============================================================================================
 // Lookups
@@ -920,6 +1186,31 @@ const UniqueData* ContentDB::FindUnique(std::string_view id) const { return impl
 const LootTableData* ContentDB::FindLootTable(std::string_view id) const { return impl_->loot.Find(id); }
 const EncounterTemplate* ContentDB::FindEncounter(std::string_view id) const { return impl_->encounters.Find(id); }
 const MapData* ContentDB::FindMap(std::string_view id) const { return impl_->maps.Find(id); }
+const PotionData* ContentDB::FindPotion(std::string_view id) const { return impl_->potions.Find(id); }
+const EliteModifierData* ContentDB::FindEliteModifier(std::string_view id) const { return impl_->eliteModifiers.Find(id); }
+const BossPatternData* ContentDB::FindBossPattern(std::string_view id, int phase) const {
+    for (const BossPatternData& p : impl_->bossPatterns) {
+        if (p.id == id && p.phase == phase) return &p;
+    }
+    return nullptr;
+}
+const EnemyAiData* ContentDB::FindEnemyAi(std::string_view enemyId) const {
+    for (const EnemyAiData& a : impl_->enemyAis) {
+        if (a.enemyId == enemyId) return &a;
+    }
+    return nullptr;
+}
+const BossPhaseData* ContentDB::FindBossPhase(std::string_view bossId, int phase) const {
+    for (const BossPhaseData& p : impl_->bossPhases) {
+        if (p.bossId == bossId && p.phase == phase) return &p;
+    }
+    return nullptr;
+}
+const std::vector<PotionData>& ContentDB::Potions() const { return impl_->potions.items; }
+const std::vector<EliteModifierData>& ContentDB::EliteModifiers() const { return impl_->eliteModifiers.items; }
+const std::vector<BossPhaseData>& ContentDB::BossPhases() const { return impl_->bossPhases; }
+const std::vector<BossPatternData>& ContentDB::BossPatterns() const { return impl_->bossPatterns; }
+const std::vector<EnemyAiData>& ContentDB::EnemyAis() const { return impl_->enemyAis; }
 const std::vector<AffixData>& ContentDB::Affixes() const { return impl_->affixes.items; }
 const std::vector<ItemBaseData>& ContentDB::ItemBases() const { return impl_->bases.items; }
 const std::vector<MapData>& ContentDB::Maps() const { return impl_->maps.items; }
@@ -986,8 +1277,10 @@ bool ContentDB::Finalize() {
     // --- regras globais ---
     if (im.rulesLoaded) {
         for (std::size_t i = 0; i < kRuleKeyCount; ++i) {
-            if (!im.ruleSeen[i]) f.E("rules.csv", 0, "E_REQUIRED", std::string("rule '") + kRuleDefs[i].key + "' missing");
+            if (!im.ruleSeen[i] && !kRuleDefs[i].optional)
+                f.E("rules.csv", 0, "E_REQUIRED", std::string("rule '") + kRuleDefs[i].key + "' missing");
         }
+        if (rules_.dodgeIframes > rules_.dodgeDuration) f.E("rules.csv", 0, "E_RULE", "dodge_iframes > dodge_duration");
         if (rules_.minExpeditionHours > rules_.maxExpeditionHours)
             f.E("rules.csv", 0, "E_RULE", "min_expedition_hours > max_expedition_hours");
         if (rules_.simStepFastNonBoss < rules_.simStep) f.E("rules.csv", 0, "E_RULE", "sim_step_fast < sim_step");
@@ -1074,6 +1367,8 @@ bool ContentDB::Finalize() {
             if (s.idle.paritySampleSize == 0) f.E("skills.csv", ln, "E_RULE", "idleSupported requires idleParitySampleSize > 0");
             if (s.idle.avgTargetsHit <= 0.0 && s.idle.fractionOfGroupHit <= 0.0)
                 f.E("skills.csv", ln, "E_RULE", "idleSupported requires idle targets");
+            if (s.idle.calibration == IdleCalibration::None)
+                f.E("skills.csv", ln, "E_RULE", "idleSupported requires idleCalibration manual_estimate or bot_parity");
         }
     }
 
@@ -1141,6 +1436,11 @@ bool ContentDB::Finalize() {
         if (im.bases.Find(u.baseId) == nullptr) f.E("uniques.csv", ln, "E_FK", "baseId '" + u.baseId + "' not in item_bases.csv");
         if (!u.ruleEffectId.empty() && im.effects.Find(u.ruleEffectId) == nullptr)
             f.E("uniques.csv", ln, "E_FK", "ruleEffectId '" + u.ruleEffectId + "' not in effects.csv");
+        if (u.idleSupported) {
+            if (u.idleParitySampleSize == 0) f.E("uniques.csv", ln, "E_RULE", "idleSupported requires idleParitySampleSize > 0");
+            if (u.idleCalibration == IdleCalibration::None)
+                f.E("uniques.csv", ln, "E_RULE", "idleSupported requires idleCalibration manual_estimate or bot_parity");
+        }
     }
 
     // --- tabelas de loot e entradas ---
@@ -1182,7 +1482,9 @@ bool ContentDB::Finalize() {
                 const LootEntry& e = entries[ei];
                 const int ln = entryLine(ti, ei);
                 const char* T = "loot_entries.csv";
-                if (!(e.weight > 0.0)) f.E(T, ln, "E_RANGE", "weight must be > 0");
+                if (!(e.weight > 0.0) && !e.IsFixed()) f.E(T, ln, "E_RANGE", "weight must be > 0");
+                if (e.IsFixed() && !e.manualOnly) f.E(T, ln, "E_RULE", "fixed entries (fixedChance/guaranteeFirstKill/pityKills) require manualOnly = true");
+                if (e.IsFixed() && e.kind == LootEntryKind::Nothing) f.E(T, ln, "E_RULE", "fixed entry cannot be 'nothing'");
                 if (e.minAmount > e.maxAmount) f.E(T, ln, "E_RANGE", "minAmount > maxAmount");
                 if (e.minAreaLevel > e.maxAreaLevel) f.E(T, ln, "E_RANGE", "minAreaLevel > maxAreaLevel");
                 switch (e.kind) {
@@ -1267,6 +1569,102 @@ bool ContentDB::Finalize() {
         }
         if (!m.areaLootTable.empty() && im.loot.Find(m.areaLootTable) == nullptr)
             f.E("maps.csv", ln, "E_FK", "areaLootTable '" + m.areaLootTable + "' not in loot_tables.csv");
+    }
+
+    // --- ADIÇÃO (docs/13): poções, modificadores, fases, padrões, IA ---
+    for (std::size_t i = 0; i < im.potions.items.size(); ++i) {
+        const PotionData& p = im.potions.items[i];
+        const int ln = im.potions.lines[i];
+        if (!(p.fractionOfMaxLife > 0.0)) f.E("potions.csv", ln, "E_RANGE", "fractionOfMaxLife must be > 0");
+        if (p.kind == PotionKind::Barrier && !(p.duration > 0.0)) f.E("potions.csv", ln, "E_RULE", "barrier potion requires duration > 0");
+        if (!(p.rechargeSeconds > 0.0)) f.E("potions.csv", ln, "E_RANGE", "rechargeSeconds must be > 0");
+        for (std::size_t j = 0; j < i; ++j) {
+            if (im.potions.items[j].hotkeySlot == p.hotkeySlot) f.E("potions.csv", ln, "E_DUP_ID", "hotkeySlot repeated");
+        }
+    }
+    for (std::size_t i = 0; i < im.eliteModifiers.items.size(); ++i) {
+        const EliteModifierData& m = im.eliteModifiers.items[i];
+        const int ln = im.eliteModifiers.lines[i];
+        if (m.deathExplosionRadius > 0.0 && !(m.deathExplosionDamage > 0.0))
+            f.E("elite_modifiers.csv", ln, "E_RULE", "deathExplosionRadius > 0 requires deathExplosionDamage > 0");
+    }
+    for (std::size_t i = 0; i < im.bossPhases.size(); ++i) {
+        const BossPhaseData& ph = im.bossPhases[i];
+        const int ln = im.bossPhaseLines[i];
+        const char* T = "boss_phases.csv";
+        const EnemyData* boss = im.enemies.Find(ph.bossId);
+        if (boss == nullptr) f.E(T, ln, "E_FK", "bossId '" + ph.bossId + "' not in enemies.csv");
+        else if (!boss->isBoss) f.E(T, ln, "E_RULE", "bossId '" + ph.bossId + "' is not a boss (isBoss = true)");
+        if (ph.decisionDelayMin > ph.decisionDelayMax) f.E(T, ln, "E_RANGE", "decisionDelayMin > decisionDelayMax");
+        if (!ph.summonEnemyId.empty() && im.enemies.Find(ph.summonEnemyId) == nullptr)
+            f.E(T, ln, "E_FK", "summonEnemyId '" + ph.summonEnemyId + "' not in enemies.csv");
+        if (ph.summonCount > 0 && ph.summonEnemyId.empty()) f.E(T, ln, "E_RULE", "summonCount > 0 requires summonEnemyId");
+        for (std::size_t j = 0; j < i; ++j) {
+            if (im.bossPhases[j].bossId == ph.bossId && im.bossPhases[j].phase == ph.phase)
+                f.E(T, ln, "E_DUP_ID", "phase repeated for boss '" + ph.bossId + "'");
+        }
+    }
+    {
+        // Fases de cada chefe: 1..N sem buracos e com limiares estritamente decrescentes.
+        std::vector<ContentId> seen;
+        for (const BossPhaseData& ph : im.bossPhases) {
+            if (std::find(seen.begin(), seen.end(), ph.bossId) != seen.end()) continue;
+            seen.push_back(ph.bossId);
+            int n = 0;
+            for (const BossPhaseData& q : im.bossPhases) n += q.bossId == ph.bossId ? 1 : 0;
+            double prev = 2.0;
+            for (int k = 1; k <= n; ++k) {
+                const BossPhaseData* q = nullptr;
+                for (const BossPhaseData& x : im.bossPhases) {
+                    if (x.bossId == ph.bossId && x.phase == k) q = &x;
+                }
+                if (q == nullptr) { f.E("boss_phases.csv", 0, "E_RULE", "boss '" + ph.bossId + "' phases must be 1..N without gaps"); break; }
+                if (!(q->lifeThreshold < prev)) f.E("boss_phases.csv", 0, "E_RULE", "boss '" + ph.bossId + "' lifeThreshold must decrease with phase");
+                prev = q->lifeThreshold;
+            }
+        }
+    }
+    for (std::size_t i = 0; i < im.bossPatterns.size(); ++i) {
+        const BossPatternData& pt = im.bossPatterns[i];
+        const int ln = im.bossPatternLines[i];
+        const char* T = "boss_patterns.csv";
+        const EnemyData* boss = im.enemies.Find(pt.bossId);
+        if (boss == nullptr) f.E(T, ln, "E_FK", "bossId '" + pt.bossId + "' not in enemies.csv");
+        else if (!boss->isBoss) f.E(T, ln, "E_RULE", "bossId '" + pt.bossId + "' is not a boss (isBoss = true)");
+        if (im.skills.Find(pt.skillId) == nullptr) f.E(T, ln, "E_FK", "skillId '" + pt.skillId + "' not in skills.csv");
+        bool hasPhase = false;
+        bool bossHasPhases = false;
+        for (const BossPhaseData& ph : im.bossPhases) {
+            if (ph.bossId != pt.bossId) continue;
+            bossHasPhases = true;
+            hasPhase = hasPhase || ph.phase == pt.phase;
+        }
+        if (bossHasPhases && !hasPhase) f.E(T, ln, "E_FK", "phase " + std::to_string(pt.phase) + " not in boss_phases.csv");
+    }
+    for (const BossPhaseData& ph : im.bossPhases) {
+        bool any = false;
+        for (const BossPatternData& pt : im.bossPatterns) any = any || (pt.bossId == ph.bossId && pt.phase == ph.phase && pt.weight > 0.0);
+        if (!any) f.E("boss_patterns.csv", 0, "E_RULE", "boss '" + ph.bossId + "' phase " + std::to_string(ph.phase) + " needs a pattern with weight > 0");
+    }
+    for (std::size_t i = 0; i < im.enemyAis.size(); ++i) {
+        const EnemyAiData& a = im.enemyAis[i];
+        const int ln = im.enemyAiLines[i];
+        const char* T = "enemy_ai.csv";
+        if (im.enemies.Find(a.enemyId) == nullptr) f.E(T, ln, "E_FK", "enemyId '" + a.enemyId + "' not in enemies.csv");
+        if (a.preferredMin > a.preferredMax) f.E(T, ln, "E_RANGE", "preferredMin > preferredMax");
+        if (a.circleMin > a.circleMax) f.E(T, ln, "E_RANGE", "circleMin > circleMax");
+        if (a.tokenIntervalMin > a.tokenIntervalMax) f.E(T, ln, "E_RANGE", "tokenIntervalMin > tokenIntervalMax");
+        for (std::size_t j = 0; j < i; ++j) {
+            if (im.enemyAis[j].enemyId == a.enemyId) f.E(T, ln, "E_DUP_ID", "enemy repeated in enemy_ai.csv");
+        }
+    }
+    for (std::size_t i = 0; i < im.enemies.items.size(); ++i) {
+        const EnemyData& e = im.enemies.items[i];
+        const int ln = im.enemies.lines[i];
+        if (!e.modifierId.empty() && im.eliteModifiers.Find(e.modifierId) == nullptr)
+            f.E("enemies.csv", ln, "E_FK", "modifierId '" + e.modifierId + "' not in elite_modifiers.csv");
+        if (!e.eliteLootTableId.empty() && im.loot.Find(e.eliteLootTableId) == nullptr)
+            f.E("enemies.csv", ln, "E_FK", "eliteLootTableId '" + e.eliteLootTableId + "' not in loot_tables.csv");
     }
 
     // --- lookup de efeitos ---

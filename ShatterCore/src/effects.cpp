@@ -182,6 +182,30 @@ void EffectContainer::Tick(double dt, const std::unordered_map<ContentId, const 
                              internalCooldowns_.end());
 }
 
+int EffectContainer::RefreshAll(std::string_view effectId, double duration) {
+    int n = 0;
+    for (ActiveEffect& a : active_) {
+        if (a.effectId != effectId) continue;
+        a.remaining = duration;
+        ++n;
+    }
+    return n;
+}
+
+int EffectContainer::Remove(std::string_view effectId, const EffectData* data, StatBlock& target) {
+    int n = 0;
+    for (auto it = active_.begin(); it != active_.end();) {
+        if (it->effectId == effectId) {
+            it = active_.erase(it);
+            ++n;
+        } else {
+            ++it;
+        }
+    }
+    if (n > 0) RebuildMods(active_, ContentId(effectId), data, target);
+    return n;
+}
+
 bool EffectContainer::Has(std::string_view effectId) const {
     for (const ActiveEffect& a : active_) {
         if (a.effectId == effectId) return true;
