@@ -387,7 +387,7 @@ enemy.hollow_sentinel,skill.enemy.sentinel_strike,1,true
 | `maxValue` | número (ponto decimal) | sim | — | — | Valor máximo (>= min) |
 | `minItemLevel` | inteiro | não | ≥ 1, ≤ 100 | 1 | Nível mínimo de item |
 | `weight` | número (ponto decimal) | não | > 0 | 1 | Peso de sorteio (> 0) |
-| `allowedSlots` | lista (`\|`) de enum: `main_hand`, `off_hand`, `head`, `body`, `hands`, `feet`, `amulet`, `ring`, `ring2`, `belt` | não | — | — | Posições permitidas (vazio = todas) |
+| `allowedSlots` | lista (`\|`) de enum: `main_hand`, `off_hand`, `head`, `body`, `hands`, `legs`, `feet`, `amulet`, `ring`, `ring2`, `belt` | não | — | — | Posições permitidas (vazio = todas) |
 | `group` | texto (regex `^[a-z0-9_]+$`) | não | — | — | Grupo exclusivo |
 | `craftInscription` | bool (`true`/`false`) | não | — | false | Disponível em Fixar Inscrição |
 
@@ -410,7 +410,7 @@ affix.life_flat,prefix,life,flat,,10,20,1,10,body|head,life,false
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
 | `id` | ID `item_base.*` | sim | — | — | ID da base |
-| `slot` | enum slots: `main_hand`, `off_hand`, `head`, `body`, `hands`, `feet`, `amulet`, `ring`, `ring2`, `belt` | sim | — | — | Posição |
+| `slot` | enum slots: `main_hand`, `off_hand`, `head`, `body`, `hands`, `legs`, `feet`, `amulet`, `ring`, `ring2`, `belt` | sim | — | — | Posição |
 | `itemLevel` | inteiro | não | ≥ 1, ≤ 100 | 1 | Nível do item |
 | `implicitMods` | modificadores (`\|`) `stat:kind:valor[:tag+tag]` | não | — | — | Propriedade da base |
 | `weaponDamagePhysical` | número (ponto decimal) | não | ≥ 0 | 0 | Dano da arma (physical) |
