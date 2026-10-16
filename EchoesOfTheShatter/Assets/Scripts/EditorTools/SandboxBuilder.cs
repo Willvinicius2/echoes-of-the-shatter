@@ -501,6 +501,14 @@ namespace Echoes.EditorTools
             if (boss) SetFloat(controller, "bodyRadius", 1f);
             var presentation = go.AddComponent<PresentationController>();
             SetRef(presentation, "root", gameRoot);
+            var painted = CharacterPrefabBuilder.PrefabForEnemy(enemyId);
+            if (painted != null)
+            {
+                var visual = (GameObject)PrefabUtility.InstantiatePrefab(painted);
+                visual.name = "Body";
+                visual.transform.SetParent(go.transform, false);
+                return;
+            }
             var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             body.name = "Body";
             Object.DestroyImmediate(body.GetComponent<Collider>());
@@ -531,55 +539,19 @@ namespace Echoes.EditorTools
             };
         }
 
-        /// <summary>M_Warrior: SG_Character com o albedo pintado e a máscara (R emissivo, G rim, B tinta) do Guerreiro aprovado.</summary>
+        /// <summary>M_Warrior: SG_Character com o albedo pintado e a mascara (R emissao, G rim, B tinta) do Guerreiro aprovado.</summary>
         internal static Material WarriorMaterial()
         {
-            EnsureDir(CharacterMaterialDir);
-            var shader = AssetDatabase.LoadAssetAtPath<Shader>(CharacterShaderPath);
-            if (shader == null) throw new InvalidOperationException("Shader ausente: " + CharacterShaderPath);
-            var path = CharacterMaterialDir + "/M_Warrior.mat";
-            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (mat == null)
-            {
-                mat = new Material(shader);
-                AssetDatabase.CreateAsset(mat, path);
-            }
-            mat.shader = shader;
-            mat.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(WarriorBaseMap));
-            mat.SetTexture("_MaskMap", AssetDatabase.LoadAssetAtPath<Texture2D>(WarriorMaskMap));
-            mat.SetFloat("_HitFlash", 0f);
-            // A T_Warrior_M entregue tem R ~0,8 e B ~0,7 em quase toda a área e G = 0 (nao segue R emissivo / G rim / B tinta do 04 3.5):
-            // com a regra do contrato o corpo inteiro brilharia e o rim sumiria. Ate o Art Director repintar a mascara:
-            // emissao 0, rim em toda a silhueta e tinta desligada.
-            mat.SetFloat("_EmissionIntensity", 0f);
-            mat.SetFloat("_RimMaskInfluence", 0f);
-            mat.SetFloat("_TintStrength", 0f);
-            EditorUtility.SetDirty(mat);
-            return mat;
+            return CharacterPrefabBuilder.EnsureMaterial("M_Warrior", WarriorBaseMap, WarriorMaskMap);
         }
 
         /// <summary>
-        /// P_Hero_Warrior: SK_Warrior em pose de repouso (bind pose do FBX), sem Animator.
-        /// TODO(animação): ligar o Animator com o AC_Hero_Warrior e o avatar Humanoid na etapa de animação (docs/04, seção 3.3).
+        /// P_Hero_Warrior: SK_Warrior refeito em pose de repouso, com martelo e escudo nos sockets das maos (CharacterPrefabBuilder).
+        /// TODO(animacao): ligar o Animator com o AC_Hero_Warrior na etapa de animacao (docs/04, secao 3.3); o avatar Humanoid ja esta ligado.
         /// </summary>
         internal static GameObject BuildWarriorPrefab(Material material)
         {
-            var model = AssetDatabase.LoadAssetAtPath<GameObject>(WarriorFbx);
-            if (model == null) throw new InvalidOperationException("FBX ausente: " + WarriorFbx);
-            var instance = Object.Instantiate(model);
-            instance.name = "P_Hero_Warrior";
-            var animator = instance.GetComponent<Animator>();
-            if (animator != null) Object.DestroyImmediate(animator); // sem Animator Controller por enquanto
-            foreach (var smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-            {
-                smr.sharedMaterial = material;
-                smr.shadowCastingMode = ShadowCastingMode.On; // personagens projetam sombra (docs/04, seção 3.6)
-                smr.receiveShadows = true;
-                smr.updateWhenOffscreen = false;
-            }
-            var prefab = PrefabUtility.SaveAsPrefabAsset(instance, WarriorPrefabPath);
-            Object.DestroyImmediate(instance);
-            return prefab;
+            return CharacterPrefabBuilder.BuildWarrior();
         }
 
         internal static string ReadTokens()

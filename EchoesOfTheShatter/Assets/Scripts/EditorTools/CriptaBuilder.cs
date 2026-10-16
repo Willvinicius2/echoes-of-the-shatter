@@ -34,8 +34,7 @@ namespace Echoes.EditorTools
         static readonly string[] KitFiles =
         {
             "SM_Cripta_Pillar_A.fbx", "SM_Cripta_Wall_2m_A.fbx", "SM_Cripta_Brazier_A.fbx", "SM_Cripta_Sarcophagus_A.fbx",
-            "SM_Enemy_HollowSentinel.fbx", "SM_Enemy_AshHound.fbx", "SM_Enemy_StoneHerald.fbx", "SM_Enemy_GhostArcher.fbx",
-            "SM_Boss_CryptGuardian.fbx", "T_Graybox_Palette_BC.png", "T_Graybox_Palette_E.png",
+            "SM_Enemy_AshHound.fbx", "T_Graybox_Palette_BC.png", "T_Graybox_Palette_E.png",
         };
 
         static readonly Dictionary<string, string> EnemyModels = new Dictionary<string, string>
@@ -714,7 +713,6 @@ namespace Echoes.EditorTools
                 SandboxBuilder.SetFloat(controller, "bodyRadius", 1f);
                 SandboxBuilder.SetBool(controller, "startDormant", true); // so acorda no gatilho da arena
             }
-            if (g.RequireOnScreen) SandboxBuilder.SetBool(controller, "requireOnScreen", true);
             if (g.Patrol.Count > 1)
             {
                 var points = new List<Vector3>();
@@ -750,6 +748,14 @@ namespace Echoes.EditorTools
 
         static void BuildEnemyVisual(Context ctx, Transform parent, string enemyId, bool boss)
         {
+            var painted = CharacterPrefabBuilder.PrefabForEnemy(enemyId); // modelo pintado aprovado (Sentinela, Arauto, Espectro, Guardiao)
+            if (painted != null)
+            {
+                var paintedBody = (GameObject)PrefabUtility.InstantiatePrefab(painted);
+                paintedBody.name = "Body";
+                paintedBody.transform.SetParent(parent, false);
+                return;
+            }
             GameObject model = null;
             if (EnemyModels.TryGetValue(enemyId, out var file)) model = AssetDatabase.LoadAssetAtPath<GameObject>(KitDir + "/" + file);
             if (model != null)

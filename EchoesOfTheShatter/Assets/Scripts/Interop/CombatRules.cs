@@ -27,6 +27,12 @@ namespace Echoes.Interop
 
         /// <summary>Segundos sem dar nem levar golpe para contar como "fora de combate" (RF-14).</summary>
         public double OutOfCombatSeconds { get; internal set; }
+        /// <summary>R-VIS-1 (docs/14 8.2): margem interna (uu) da área visível do atirador (<c>require_on_screen_margin</c>, rules.csv).</summary>
+        public double RequireOnScreenMarginUu { get; internal set; }
+
+        /// <summary>Dano físico base sem arma (<c>unarmed_weapon_damage_physical</c>); o golpe desarmado vem do core.</summary>
+        public double UnarmedWeaponDamagePhysical { get; internal set; }
+
         /// <summary>Trava global entre usos de poção.</summary>
         public double PotionLockoutSeconds { get; internal set; }
     }

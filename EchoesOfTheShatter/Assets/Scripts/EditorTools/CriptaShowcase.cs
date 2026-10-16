@@ -20,6 +20,12 @@ namespace Echoes.EditorTools
         {
             try
             {
+                // Atualiza os modelos pintados e remonta as duas cenas (Base_Escala e Cripta) com os prefabs novos.
+                CharacterAssetPostprocessor.ReimportAll();
+                CharacterPrefabBuilder.BuildAll();
+                SandboxBuilder.Build();
+                CriptaBuilder.BuildScene();
+
                 var layout = CriptaLayout.LoadFromDocument();
                 EditorSceneManager.OpenScene(CriptaBuilder.ScenePath, OpenSceneMode.Single);
                 var dir = Environment.GetEnvironmentVariable("ECHOES_CAPTURE_DIR");
@@ -30,11 +36,22 @@ namespace Echoes.EditorTools
                 var cam = follow.GetComponentInChildren<Camera>();
                 var hero = GameObject.Find("Hero");
 
-                Shot(follow, cam, hero, new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y), Path.Combine(dir, "cripta_entrada.png"));
+                Shot(follow, cam, hero, new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y), Path.Combine(dir, "cripta2_entrada.png"));
+                // Encontro 4 (Sentinelas e Arqueiros Espectrais): o heroi chega de leste.
+                var e4 = layout.Encounters.First(e => e.Id == "enc.crypt.patrol_b");
+                var slot = e4.Groups[0].Slots[0];
+                Shot(follow, cam, hero, new Vector3(slot.x + 8f, 0f, slot.y), Path.Combine(dir, "cripta2_encontro_sentinelas_arqueiros.png"));
                 var arena = layout.Room("room.crypt.r09_arena").Rect;
-                Shot(follow, cam, hero, new Vector3(arena.center.x, 0f, arena.center.y + 3f), Path.Combine(dir, "cripta_arena.png"));
-                var antechamber = layout.Room("room.crypt.r01_patrol_a").Rect;
-                Shot(follow, cam, hero, new Vector3(antechamber.center.x - 6f, 0f, antechamber.center.y), Path.Combine(dir, "cripta_encontro1.png"));
+                Shot(follow, cam, hero, new Vector3(arena.center.x, 0f, arena.center.y + 2f), Path.Combine(dir, "cripta2_arena_guardiao.png"));
+
+                // De perto (10 m): o Guardiao com martelo e escudo, camera aberta so para caber os 4,5 m do chefe.
+                var boss = layout.Encounters.First(e => e.IsBoss).Groups[0].Slots[0];
+                hero.transform.position = new Vector3(boss.x, 0f, boss.y - 6f);
+                follow.transform.position = new Vector3(boss.x, 2.2f, boss.y);
+                follow.ApplySettings();
+                cam.transform.localPosition = new Vector3(0f, 0f, -10f);
+                cam.fieldOfView = 35f;
+                Capture(cam, Path.Combine(dir, "cripta2_guardiao_10m.png"), 1280, 720);
 
                 Debug.Log("[CriptaShowcase] Capturas em " + dir);
                 if (Application.isBatchMode) EditorApplication.Exit(0);
@@ -51,8 +68,11 @@ namespace Echoes.EditorTools
             hero.transform.position = heroPosition;
             follow.transform.position = heroPosition + new Vector3(0f, 0.52f, 0f);
             follow.ApplySettings();
-            const int width = 1920;
-            const int height = 1080;
+            Capture(cam, file, 1920, 1080);
+        }
+
+        static void Capture(Camera cam, string file, int width, int height)
+        {
             var rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             var previous = RenderTexture.active;
             cam.targetTexture = rt;

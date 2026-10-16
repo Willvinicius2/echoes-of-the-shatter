@@ -119,6 +119,11 @@ namespace Echoes.Interop.Native
                     reason = "layout 1.1 das structs diverge da DLL: " + extMessage;
                     return false;
                 }
+                if (!NativeLayout.CheckExt2(out var ext2Message))
+                {
+                    reason = "layout ext2 (rodada 2) das structs diverge da DLL: " + ext2Message;
+                    return false;
+                }
                 core = new NativeRulesCore(version);
                 reason = string.Empty;
                 return true;
@@ -229,6 +234,15 @@ namespace Echoes.Interop.Native
                 return (RulesStatus)rulesStatus;
             }
 
+            ShatterRulesExt2 ext2 = default;
+            var ext2Status = ShatterNative.shatter_db_rules_ext2(raw, &ext2);
+            if (ext2Status != 0)
+            {
+                handle.Dispose();
+                errors.Add(new RulesError((RulesStatus)ext2Status, "rules.csv", 0, "shatter_db_rules_ext2 failed"));
+                return (RulesStatus)ext2Status;
+            }
+
             ShatterRulesExt ext = default;
             var extStatus = ShatterNative.shatter_db_rules_ext(raw, &ext);
             if (extStatus != 0)
@@ -265,6 +279,9 @@ namespace Echoes.Interop.Native
             combat.DodgeCancelRecoveryFraction = ext.dodge_cancel_recovery_fraction;
             combat.OutOfCombatSeconds = ext.out_of_combat_seconds;
             combat.PotionLockoutSeconds = ext.potion_lockout;
+            combat.RequireOnScreenMarginUu = ext2.require_on_screen_margin;
+            combat.UnarmedWeaponDamagePhysical = ext2.unarmed_weapon_damage_physical;
+            ApplyCoreEnemyData();
             return RulesStatus.Ok;
         }
 
@@ -513,7 +530,55 @@ namespace Echoes.Interop.Native
 
         // --- Tempos, custo, velocidade, CanAct/CanMove (core) -------------------------------------------
 
-        public DamageByType GetSkillBaseDamage(SkillInfo skill, ItemBaseInfo weaponOrNull) => stub.GetSkillBaseDamage(skill, weaponOrNull);
+        /// <summary>Dano base por tipo: arma, desarmado ou o da habilidade; a MESMA conta do simulador (<c>shatter_skill_base_damage</c>).</summary>
+        public unsafe DamageByType GetSkillBaseDamage(SkillInfo skill, ItemBaseInfo weaponOrNull)
+        {
+            if (skill == null) return default;
+            var handle = RequireDb();
+            var id = NativeBuffers.Utf8(skill.Id);
+            var weapon = NativeBuffers.Utf8(weaponOrNull?.Id);
+            var addRef = false;
+            try
+            {
+                handle.DangerousAddRef(ref addRef);
+                var d = stackalloc double[4];
+                int status;
+                fixed (byte* p = id)
+                fixed (byte* w = weapon)
+                    status = ShatterNative.shatter_skill_base_damage(handle.DangerousGetHandle(), p, (nuint)id.Length, w, (nuint)weapon.Length, d);
+                NativeCallException.ThrowIfFailed("shatter_skill_base_damage", status);
+                return new DamageByType { Physical = d[0], Fire = d[1], Cold = d[2], Lightning = d[3] };
+            }
+            finally
+            {
+                if (addRef) handle.DangerousRelease();
+            }
+        }
+
+        // Colunas que so o cliente usa e o core valida e expoe no lookup_json (docs/09 C-27): patrolSpeedMult e requireOnScreen.
+        void ApplyCoreEnemyData()
+        {
+            var content = stub.ContentOrNull;
+            if (content == null) return;
+            foreach (var pair in content.Enemies)
+            {
+                var json = LookupJson(pair.Key, 2048);
+                if (json == null) continue;
+                var patrol = JsonNumber(json, "\"patrol_speed_mult\":");
+                if (patrol > 0.0) pair.Value.PatrolSpeedMult = patrol;
+                pair.Value.RequireOnScreen = json.IndexOf("\"require_on_screen\":true", StringComparison.Ordinal) >= 0;
+            }
+        }
+
+        static double JsonNumber(string json, string key)
+        {
+            var at = json.IndexOf(key, StringComparison.Ordinal);
+            if (at < 0) return 0.0;
+            at += key.Length;
+            var end = at;
+            while (end < json.Length && (char.IsDigit(json[end]) || json[end] == '.' || json[end] == '-' || json[end] == 'e' || json[end] == 'E' || json[end] == '+')) end++;
+            return double.TryParse(json.Substring(at, end - at), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0.0;
+        }
 
         public ActionTiming GetActionTiming(IStatBlock stats, SkillInfo skill) => GetActionTiming(stats, skill, null);
 

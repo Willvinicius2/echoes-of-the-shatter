@@ -129,9 +129,12 @@ namespace Echoes.Tests.EditMode
 
             var guardian = enemies.Single(e => e.EnemyId == "enemy.crypt_guardian");
             Assert.IsTrue(new SerializedObject(guardian).FindProperty("startDormant").boolValue, "o Guardiao so acorda no gatilho");
-            var archers = enemies.Where(e => e.EnemyId == "enemy.ghost_archer").ToList();
-            Assert.IsNotEmpty(archers);
-            foreach (var a in archers) Assert.IsTrue(new SerializedObject(a).FindProperty("requireOnScreen").boolValue, "R-VIS-1 vem do layout");
+            Assert.IsNotEmpty(enemies.Where(e => e.EnemyId == "enemy.ghost_archer"));
+            foreach (var e in enemies.Where(e => e.GetComponentInChildren<SkinnedMeshRenderer>() != null && e.EnemyId != "enemy.ash_hound" && e.EnemyId != "enemy.swift_ash_hound"))
+                Assert.IsNotNull(e.GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterial, e.name + ": material do SG_Character");
+            var painted = new[] { "enemy.hollow_sentinel", "enemy.shielded_sentinel", "enemy.stone_herald", "enemy.ghost_archer", "enemy.crypt_guardian" };
+            foreach (var e in enemies.Where(e => painted.Contains(e.EnemyId)))
+                Assert.IsNotNull(e.GetComponentInChildren<SkinnedMeshRenderer>(), e.EnemyId + ": prefab pintado aprovado");
 
             Assert.AreEqual(l.Chests.Count, Object.FindObjectsByType<ChestPickup>(FindObjectsSortMode.None).Length);
             Assert.AreEqual(l.Checkpoints.Count, Object.FindObjectsByType<CheckpointZone>(FindObjectsSortMode.None).Length);
@@ -196,6 +199,20 @@ namespace Echoes.Tests.EditMode
                 world.Run(6.0);
                 Assert.IsNotNull(boss.logic.Boss);
                 Assert.Greater(telegraphs, 0);
+            }
+        }
+
+        [Test]
+        public void PatrolAndOnScreenDataComeFromTheCoreNotFromTheLayout()
+        {
+            using (var rules = TestWorld.LoadNativeRules())
+            {
+                Assert.IsTrue(rules.FindEnemy("enemy.ghost_archer").RequireOnScreen, "requireOnScreen do enemy_ai.csv");
+                Assert.IsFalse(rules.FindEnemy("enemy.hollow_sentinel").RequireOnScreen);
+                var csv = ReadCsv(Path.Combine(TestWorld.DataDirectory, "enemies.csv"));
+                foreach (var row in csv.Where(r => !string.IsNullOrEmpty(r["patrolSpeedMult"])))
+                    Assert.AreEqual(double.Parse(row["patrolSpeedMult"], System.Globalization.CultureInfo.InvariantCulture), rules.FindEnemy(row["id"]).PatrolSpeedMult, 1e-9, row["id"]);
+                Assert.Greater(rules.Combat.RequireOnScreenMarginUu, 0.0, "require_on_screen_margin do rules.csv");
             }
         }
 

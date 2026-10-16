@@ -118,6 +118,19 @@ namespace Echoes.Interop.Native
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_db_rules_ext(IntPtr db, ShatterRulesExt* output);
 
+        // Rodada 2
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_layout_check_ext2(uint* values, nuint n, ShatterError* err);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_db_rules_ext2(IntPtr db, ShatterRulesExt2* output);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_skill_base_damage(IntPtr db, byte* skillId, nuint skillIdLen, byte* weaponBaseId, nuint weaponBaseIdLen, double* output4);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_boss_wall_hit(IntPtr boss, IntPtr stats, byte* applied);
+
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_resolve_hit_db(IntPtr db, IntPtr attacker, IntPtr defender, ShatterHitInput* input,
                                                         ShatterRng* rng, ShatterHitResult* output);

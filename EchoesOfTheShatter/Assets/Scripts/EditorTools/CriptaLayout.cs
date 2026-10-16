@@ -80,7 +80,7 @@ namespace Echoes.EditorTools
         public string MapId;
         public Vector2 HeroSpawn;
         public float CorridorWidth;
-        public float CameraHeight, VisibleHalfX, VisibleHalfZ;
+        public float CameraHeight, VisibleHalfX, VisibleHalfZ, CameraYawDegrees;
         public readonly List<RoomData> Rooms = new List<RoomData>();
         public readonly List<CorridorData> Corridors = new List<CorridorData>();
         public readonly List<Vector2> Route = new List<Vector2>();
@@ -123,8 +123,10 @@ namespace Echoes.EditorTools
 
             var camera = Obj(root, "camera");
             layout.CameraHeight = Num(camera, "heightMeters");
-            layout.VisibleHalfX = Num(camera, "visibleHalfX");
-            layout.VisibleHalfZ = Num(camera, "visibleHalfZ");
+            // O retangulo visivel e alinhado a TELA (direita/cima), nao aos eixos do mundo: a camera tem yaw (docs/14, bloco JSON).
+            layout.VisibleHalfX = Num(camera, "visibleHalfScreenH") > 0f ? Num(camera, "visibleHalfScreenH") : Num(camera, "visibleHalfX");
+            layout.VisibleHalfZ = Num(camera, "visibleHalfScreenV") > 0f ? Num(camera, "visibleHalfScreenV") : Num(camera, "visibleHalfZ");
+            layout.CameraYawDegrees = Num(camera, "yawDegrees");
             layout.HeroSpawn = Vec(Arr(Obj(root, "hero"), "spawn"));
             layout.CorridorWidth = Num(root, "corridorWidth");
 

@@ -61,5 +61,11 @@ namespace Echoes.Interop
         BossDamageResult ApplyDamage(double amount, double bossX, double bossZ, double originX, double originZ);
 
         bool ShieldCovers(double bossX, double bossZ, double originX, double originZ);
+
+        /// <summary>
+        /// A investida bateu em pilar ou parede (<c>shatter_boss_wall_hit</c>): com <c>wallStaggerSeconds</c> na habilidade o chefe entra em
+        /// stagger, o padrão é interrompido e o escudo cai. false se nada mudou (fora do impacto, sem tempo de stagger, já em stagger).
+        /// </summary>
+        bool WallHit(IStatBlock stats);
     }
 }

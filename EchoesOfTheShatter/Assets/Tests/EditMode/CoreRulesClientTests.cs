@@ -464,5 +464,51 @@ namespace Echoes.Tests.EditMode
                 }
             }
         }
+
+        // ---------------------------------------------------------------------------------------
+        // Rodada 2 (docs/09 secao 8): dano desarmado pelo core e batida da Investida do Guardiao
+        // ---------------------------------------------------------------------------------------
+
+        [Test]
+        public void UnarmedDamageComesFromTheCore()
+        {
+            using (var rules = TestWorld.LoadNativeRules())
+            {
+                var skill = rules.FindSkill("skill.warrior.iron_cut");
+                var unarmed = rules.GetSkillBaseDamage(skill, null);
+                Assert.Greater(rules.Combat.UnarmedWeaponDamagePhysical, 0.0, "unarmed_weapon_damage_physical do rules.csv");
+                Assert.AreEqual(rules.Combat.UnarmedWeaponDamagePhysical, unarmed.Physical, Tol, "sem arma: o desarmado, so fisico");
+                Assert.AreEqual(0.0, unarmed.Fire + unarmed.Cold + unarmed.Lightning, Tol);
+                var armed = rules.GetSkillBaseDamage(skill, rules.FindItemBase("item_base.iron_sword"));
+                Assert.Greater(armed.Physical, unarmed.Physical, "com a espada o dano e o da arma");
+            }
+        }
+
+        [Test]
+        public void ChargeHittingAPillarStaggersTheBossAndDropsItsShield()
+        {
+            using (var world = new TestWorld(null, TestWorld.LoadNativeRules()))
+            {
+                var hero = world.AddHero(new PlanarVector(0f, 0f));
+                var boss = world.AddEnemy(Guardian, new PlanarVector(0f, 16f), 5, 1f);
+                boss.logic.IsDashBlocked = (from, to, radius) => true; // um pilar em toda a trajetoria
+                var events = new List<BossStateEvent>();
+                world.Events.Subscribe<BossStateEvent>((in BossStateEvent e) => events.Add(e));
+                world.Run(1.0);
+                // Fase 2: so ela tem a Investida do Escudo.
+                var info = boss.logic.Boss.Info;
+                var bx = boss.combatant.Position.X;
+                var bz = boss.combatant.Position.Z;
+                boss.logic.Boss.ApplyDamage(info.Life - info.MaxLife * 0.5, bx, bz, bx - info.FacingX * 4.0, bz - info.FacingZ * 4.0);
+                var staggered = false;
+                for (var i = 0; i < 60 * 90 && !staggered; i++)
+                {
+                    world.Combat.Step(world.Step);
+                    staggered = events.Exists(e => e.Kind == BossEventKind.ShieldDown) && events.Exists(e => e.Kind == BossEventKind.StaggerStart);
+                }
+                Assert.IsTrue(staggered, "a batida da Investida num pilar derruba o escudo e atordoa o chefe (shatter_boss_wall_hit)");
+                Assert.IsTrue(world.Hits.Count == 0 || world.Hits.TrueForAll(h => !ReferenceEquals(h.Target, hero.combatant)), "o heroi longe nao foi atingido");
+            }
+        }
     }
 }

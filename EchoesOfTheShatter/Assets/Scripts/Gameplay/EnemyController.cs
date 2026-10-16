@@ -29,14 +29,8 @@ namespace Echoes.Gameplay
         [Header("Cripta (docs/14)")]
         [Tooltip("Parado e sem IA até alguém ativar (o Guardião antes do gatilho da arena).")]
         [SerializeField] bool startDormant;
-        [Tooltip("R-VIS-1 (docs/14 8.2): atirador só mira dentro da área visível do herói menos 1 m. A coluna requireOnScreen do enemy_ai.csv ainda não existe; vem do layout.")]
-        [SerializeField] bool requireOnScreen;
-        [Tooltip("Margem (m) tirada da área visível para o atirador (R-VIS-1: 1 m).")]
-        [SerializeField, Min(0f)] float onScreenMargin = 1f;
         [Tooltip("Pontos da patrulha (mundo); vazio = parado. Vai e volta enquanto a IA está em Idle.")]
         [SerializeField] Vector3[] patrolPoints;
-        [Tooltip("Fração da velocidade de perseguição usada na patrulha (docs/14 hipótese 7: metade). TODO(dados): mover para o enemy_ai.csv.")]
-        [SerializeField, Range(0.1f, 1f)] float patrolSpeedFraction = 0.5f;
         [Tooltip("Escreve no Console cada troca de estado da IA (roteiro RF-20).")]
         [SerializeField] bool logStateChanges;
 
@@ -49,6 +43,8 @@ namespace Echoes.Gameplay
         Vector3 spawnPosition;
         Quaternion spawnRotation;
         int patrolIndex;
+        float patrolSpeedMult = 1f;
+        float onScreenMarginMeters;
         Camera visibleAreaCamera;
 
         public EnemyCombatLogic Logic { get; private set; }
@@ -89,8 +85,13 @@ namespace Echoes.Gameplay
             Logic = new EnemyCombatLogic(combatant, rules);
             Logic.IntegratesMovement = agent == null || !agent.enabled;
             Logic.Dormant = startDormant;
-            Logic.RequireOnScreen = requireOnScreen;
-            if (requireOnScreen) Logic.IsInsideVisibleArea = IsInsideVisibleArea;
+            // R-VIS-1 e patrulha vêm dos dados pelo core (requireOnScreen do enemy_ai.csv, patrolSpeedMult do enemies.csv e
+            // require_on_screen_margin do rules.csv); a área visível sai do frustum da câmera.
+            patrolSpeedMult = (float)info.PatrolSpeedMult;
+            onScreenMarginMeters = WorldUnits.ToMeters(rules.Combat.RequireOnScreenMarginUu);
+            Logic.RequireOnScreen = info.RequireOnScreen;
+            if (info.RequireOnScreen) Logic.IsInsideVisibleArea = IsInsideVisibleArea;
+            Logic.IsDashBlocked = IsDashBlocked;
             spawnPosition = transform.position;
             spawnRotation = transform.rotation;
             if (logStateChanges) Logic.StateChanged += LogStateChange;
@@ -150,7 +151,25 @@ namespace Echoes.Gameplay
             if (heroCombatant == null) return true;
             if (visibleAreaCamera == null) visibleAreaCamera = Camera.main;
             if (visibleAreaCamera == null) return true;
-            return VisibleArea.Contains(visibleAreaCamera, heroCombatant.Position, position, onScreenMargin);
+            return VisibleArea.Contains(visibleAreaCamera, heroCombatant.Position, position, onScreenMarginMeters);
+        }
+
+        // A investida do chefe bateria em pilar ou parede? Varre uma esfera do corpo ao longo do passo, ignorando personagens.
+        bool IsDashBlocked(PlanarVector from, PlanarVector to, float radius)
+        {
+            var delta = to - from;
+            var distance = delta.Magnitude;
+            if (distance < 1e-4f) return false;
+            var direction = new Vector3(delta.X / distance, 0f, delta.Z / distance);
+            var origin = new Vector3(from.X, radius + 0.6f, from.Z); // acima do piso
+            var hits = Physics.SphereCastAll(origin, radius, direction, distance, ~0, QueryTriggerInteraction.Ignore);
+            for (var i = 0; i < hits.Length; i++)
+            {
+                var c = hits[i].collider;
+                if (c.GetComponentInParent<CharacterController>() != null || c.transform.IsChildOf(transform)) continue;
+                return true;
+            }
+            return false;
         }
 
         // Sai do combate ao desligar (e antes do OnDestroy de qualquer componente), pela referência própria:
@@ -230,7 +249,7 @@ namespace Echoes.Gameplay
         void Patrol(float dt)
         {
             agent.isStopped = false;
-            agent.speed = Logic.FullMoveSpeedMeters * patrolSpeedFraction;
+            agent.speed = Logic.FullMoveSpeedMeters * patrolSpeedMult;
             var target = patrolPoints[patrolIndex];
             repathTimer -= dt;
             if (repathTimer <= 0f)
