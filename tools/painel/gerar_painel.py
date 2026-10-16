@@ -182,7 +182,11 @@ def main() -> None:
     o.append("</div></section>")
 
     # Aguardando
-    o.append("<h2>Aguardando você</h2><div class='grade'>")
+    o.append("<h2>Aguardando você</h2>")
+    # votação e comentários ficam no roteiro do sócio (banco do artifact, coleção "votos")
+    o.append("<p class='nota'>Para votar e deixar comentário em cada pergunta, use o "
+             "<a href='https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8' target='_blank' rel='noopener'>roteiro do sócio</a>.</p>")
+    o.append("<div class='grade'>")
     for p in estado["pendencias_dono"]:
         h = f'<article class="card alerta pend"><h3>{e(p["titulo"])}</h3>'
         if p.get("pergunta"):
