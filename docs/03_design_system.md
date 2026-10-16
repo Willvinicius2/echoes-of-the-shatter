@@ -345,7 +345,7 @@ LOD: trocas a 18 m e 32 m. O que fica **aqui** é a escala, as proporções, a d
 
 ### 3.3 Texturas e densidade de texel
 
-**Sem normal maps** em personagens, props e kits: a forma vem da malha chanfrada e a luz vem pintada. Cada personagem usa **1 material**, com **albedo pintado** + **máscara** (R = rim, G = emissivo, B = AO assada, A = reservado).
+**Sem normal maps** em personagens, props e kits: a forma vem da malha chanfrada e a luz vem pintada. Cada personagem usa **1 material**, com **albedo pintado** + **máscara** (R = emissão, G = rim, B = região de tinta, A = reservado; a AO fica assada no albedo, ver 3.11).
 
 Decisão do Tech Lead (04): o herói tem ~88 px a 56 m; 8 texel/cm daria ~13 vezes de sobreamostragem, e cada passo de resolução custa 4 vezes mais memória (teto de 120 MB por área e VRAM do Deck). A pincelada do acabamento (3.10) é pintada nessa resolução. Exceção registrada: prévia 3D de perto no menu pode usar uma variante de herói de 2048² carregada só lá.
 
@@ -365,8 +365,8 @@ Texturas de UI: UserInterface2D (RGBA), sRGB, mipmaps ligados nas molduras 9-sli
 
 1. **Luz assada.** O albedo já traz a luz e a sombra pintadas, com a **luz principal vinda do alto-esquerda da tela** (cor quente `#FFB86B`) e a sombra com matiz **violeta-azulado** (`#2C2A4A`). Sombra não é só mais escura: muda de matiz.
 2. **Sem preto puro.** O valor mais escuro de qualquer textura é `#0F0B14`; contorno interno de armadura e fendas usam `#161117`. Branco puro só no núcleo de VFX e no flash de acerto.
-3. **Rim por fresnel.** Todo personagem recebe rim em runtime: potência 3,0, intensidade 0,5, cor = mistura da cor da névoa da área com 25% de branco, modulado pelo canal R da máscara. Props não têm rim, exceto interativos (baú, portal, altar).
-4. **Emissivo para magia e luz.** Chamas, cristais, olhos de inimigo, runas e vidro usam o canal G da máscara com cor de elemento (seção 2.4) e intensidade 2–4; o resto é opaco.
+3. **Rim por fresnel.** Todo personagem recebe rim em runtime: potência 3,0, intensidade 0,5, cor = mistura da cor da névoa da área com 25% de branco, modulado pelo canal G da máscara. Props não têm rim, exceto interativos (baú, portal, altar).
+4. **Emissivo para magia e luz.** Chamas, cristais, olhos de inimigo, runas e vidro usam o canal R da máscara com cor de elemento (seção 2.4) e intensidade 2–4; o resto é opaco.
 5. **Saturação por plano:** piso e paredes ≤ 35%; personagens ≤ 70%; VFX até 100%. Isso empurra o olhar do chão para os personagens e dos personagens para a magia.
 6. **Contraste herói × piso.** A luminância média do herói é ≥ 1,25× a do piso sob ele. O topo da silhueta (cabeça, pluma, capuz) carrega o acento de cor da classe (pluma `#E0301E`, capuz `#5FD04A`, capuz azul `#4A9CF0`), porque da câmera é a parte mais visível.
 7. **Formas grossas e chanfradas.** Chanfro mínimo de 3 cm em blocos de pedra; sem detalhe menor que 1,5 cm; rachaduras grandes pintadas, não modeladas. Listras de ouro (`#D9A441`) marcam o que é "Marco" (pedra do plano), como nas folhas 07, 15 e 17.
@@ -468,6 +468,84 @@ Referência: Spell Brigade, medido em `docs/arte/regua_spell_brigade.md` (só re
 - Perda do elemento de 1 bit da classe (3.4, item 9) ou desvio da folha aprovada.
 
 Entrega de cada herói e inimigo: captura a 88 px (jogo), 65 px (Deck) e 512 px (mip 0), anexada à revisão do Art Director.
+
+### 3.11 Raridade no equipamento modular
+
+Dono dos valores: Art Director (esta seção e `art3d.rarity_tint` em `03_design_tokens.json`); o mecanismo está em `04_arquitetura.md` 17.4. Mágico e Raro são **variação de material** das peças do conjunto (sem malha nova); o Único tem **malha e textura próprias**. Cores: as de raridade da 2.3 (Mágico azul `#6FA8FF`, Raro dourado `#FFD24A`). Nenhuma raridade usa o vermelho `#E0301E` (só ameaça) nem laranja-vermelho de fogo do jogador; o laranja `#FF8A2E` é exclusivo do Único.
+
+**Canais da máscara nas peças de herói (e no elite do inimigo):** R = emissão, G = rim (alto por padrão no metal e na pele), **B = região de tinta** (onde a raridade age), A = reservado. A AO fica assada no albedo (3.4, item 1); isso corrige a linha "B = AO" da primeira versão da 3.3. A máscara B é pintada em **degradê de 0 a 1 com borda suave de 2 a 3 texels** (nunca serrilhada) e só em **tecido**.
+
+**Fórmula (`SG_Character`, por peça).** Com `m` = máscara B: `base = lerp(albedo, luma(albedo), _TintDesat * m)`; `rgb = base * lerp(1, _TintColor * _TintGain, _TintStrength * m)`. O desbotamento prévio existe porque multiplicar azul ou amarelo sobre pano vermelho ou verde dá quase preto; `_TintGain` recompõe a luminância. Rim: `RimColor = lerp(rim da névoa, _RimTint, _RimTintMix)` e `RimIntensity` por raridade. Emissão de acento: `_AccentEmissive * _AccentColor` multiplicada pelo canal R (só os detalhes pintados em R). Propriedades novas além das da 17.4: `_TintDesat`, `_TintGain`, `_RimTint`, `_RimTintMix`, `_AccentColor` (pedir ao Tech Lead).
+
+**1. Valores do `SO_RarityTint`** (iguais em todos os heróis e slots; tokens em `art3d.rarity_tint`)
+
+| Parâmetro | Normal | Mágico | Raro |
+|---|---|---|---|
+| `_TintColor` | `#FFFFFF` | `#6FA8FF` | `#FFD24A` |
+| `_TintStrength` | 0 | 0,70 | 0,85 |
+| `_TintDesat` | 0 | 0,70 | 0,75 |
+| `_TintGain` (inicial; calibrar na pintura) | 1,0 | 1,5 | 1,2 |
+| `_RimTint` · `_RimTintMix` | (rim da névoa) · 0 | `#A9CBFF` · 0,6 | `#FFE493` · 0,6 |
+| `RimIntensity` (base 0,5) | 0,5 | 0,65 | 0,80 |
+| `_AccentEmissive` (0 a 1; 1 = intensidade 2,0 da 3.4 item 4) | 0 | 0 | 0,35 |
+| `_AccentColor` | — | — | `#FFD24A` |
+
+- `_TintGain` é calibrado para que a **luminância média das áreas B** fique a ±15% da do Normal: uma peça Mágica ou Rara nunca vira mancha escura nem estoura. Bloom não é acionado (0,35 fica abaixo do limiar).
+- Mágico não emite: a leitura é tinta azul + rim mais claro. Raro soma emissão suave só onde a máscara R marca ouro ou runa. Contraste azul × amarelo funciona nas três daltonias; a forma e a emissão (não só a cor) separam Raro de Único, como na 2.3.
+- Ponto de partida a 88 px: o herói com 2 ou mais peças Raras deve ser distinguível de um Normal no teste do dono (captura lado a lado, como na entrega da 3.10). Ajustar `_TintStrength` e `RimIntensity` antes de mexer em cor.
+
+**2. Único (malha própria)**
+- **Silhueta nova em um (e só um) dos três elementos de leitura** da 3.5 (topo, arma/volume lateral, massa dos ombros) por peça. O envelope da peça fica a ±10% da altura e da largura da peça inicial do mesmo slot.
+- **Um traço de emissão:** um único detalhe emissivo `#FF8A2E` (canal R), ≤ 4% da área da peça, intensidade 0,6 (escala do `_AccentEmissive`) com pulso lento de 2400 ms (±20%); sem pulso e fixo com "Reduzir movimento". Nunca vermelho `#E0301E`, nunca branco puro. Os 800 ms são do feixe no chão, não do herói.
+- Mesmo shader, 1 material, texel de ~4 texel/cm, chanfro e pincelada da 3.10; não usa tinta de raridade (`_TintStrength` = 0), mas mantém rim base 0,65.
+- **Regra de leitura a 88 px (o Único continua do mesmo herói):**
+  1. O **elemento de 1 bit da classe** (3.4, item 9: pluma, capuz com bico de osso, capuz azul pontudo com rosto visível) não muda de posição, altura (±10%) nem identidade. Um Único de `head` pode redesenhar a pluma ou o capuz, nunca trocá-los.
+  2. A **matiz dominante** (maior massa de cor) fica a ±20° da peça inicial: Guerreiro aço, vermelho e ouro; Arqueiro verde-musgo e couro; Mago azul e creme. O laranja da emissão é o único acento estranho.
+  3. Teste obrigatório: silhueta preta a 64 px (3.5) **e** a 88 px colorido, com o Único isolado e com 3 ou mais Únicos juntos no mesmo herói; a classe tem de ser identificada nos dois. Reprovou: simplificar o interior e voltar a silhueta ao envelope da peça inicial.
+  4. Proporção do herói (3 cabeças, 150 cm) e o corpo base não mudam.
+
+**3. Regras do conjunto modular (peças de raridades diferentes no mesmo herói)**
+
+| Pode variar por peça | Fica fixo no herói |
+|---|---|
+| Raridade (tinta, rim, emissão de acento) | **Corpo base inteiro**: tom de pele, cabelo, olhos, orelhas; material `M_<Heroi>_Body` nunca recebe tinta |
+| Forma e pintura do conjunto (`visualSetId`) | Pele visível numa peça (dedos da luva sem ponta, abertura do elmo): copia o tom do corpo e **fica fora da máscara B** |
+| Malha própria (só Único) | Elemento de 1 bit da classe (3.4, item 9) e a matiz dominante da classe em todos os conjuntos não únicos (±30°) |
+| Qual detalhe emite (máscara R pintada) | Rig, ossos, escala, proporção e texel (~4 texel/cm, ±20%) |
+| | Valores de `SO_RarityTint` (os mesmos em qualquer herói e slot) |
+| | Metal e couro: **não recebem tinta** (mantêm o tom de aço, ouro e couro); luz alto-esquerda e sombra violeta (3.4) |
+
+- Só existem 3 tintas possíveis (nenhuma, azul, dourada); misturar peças Normal, Mágica e Rara no mesmo herói deve parecer pano tingido em cores diferentes sobre o mesmo metal e couro, nunca um estilo diferente.
+- Tinta só em **tecido** e a **no máximo 40% da área visível de cada peça**; o resto (metal, couro, pele, plumas e capuz de classe) é fixo. Toda peça de conjunto novo declara a sua máscara B; peça sem B é válida (lê por rim e emissão), mas cada conjunto precisa de B em pelo menos uma das peças `head`, `body` ou `legs`.
+- A emissão somada de todas as peças vestidas fica ≤ 6% da silhueta do herói, mesmo com 5 peças Raras.
+- Tinta de raridade e tinta de elite/corrompido (3.4, item 8) nunca atuam no mesmo material: o herói do jogador não é elite.
+
+**4. O que pintar na máscara B (e G) das peças iniciais** (folhas `mod_a01` a `mod_a03`, em `aprovadas/modelagem/`)
+
+Na lista abaixo, "B" = tinta e "R" = emissão de acento; o G (rim) fica alto por padrão no metal e na pele de todas as peças.
+
+Guerreiro (`mod_a01`): a pluma vermelha, o aço, o ouro e o couro **não** entram na B.
+- Head: B vazia (elmo de metal; a pluma é o bit da classe e fica vermelha fixa). R: filete dourado do aro e rebite do olho.
+- Chest: B = lenço/gola vermelho, tabardo frontal e traseiro (a faixa vermelha inteira) e os panos vermelhos sob as ombreiras. R: argolas das ombreiras e emblema dourado da ponta do tabardo.
+- Hands: B vazia (couro e aço). R: filete dourado do punho.
+- Legs: B = faixa vermelha do tabardo (frente e costas) e panos vermelhos laterais. R: ornamento dourado da ponta.
+- Feet: B vazia. R: anel/fivela dourada lateral.
+
+Arqueiro (`mod_a02`): couro, fivelas, osso do bico e o corpo do capuz verde **não** entram na B.
+- Head: B = franja de folhas da barra do capuz e fitas/penas pendentes. R: nenhum (só couro e osso).
+- Chest: B = folhas da capa, pano verde sob o cinto e o lenço. R: broche redondo do ombro (fivelas pequenas).
+- Hands: B = folha/pena verde da braçadeira. R: nenhum.
+- Legs: B vazia (calça de couro). R: fivela do cinto.
+- Feet: B vazia. R: fivelas das botas.
+
+Mago (`mod_a03`): o azul do capuz e da túnica, o ouro e o couro **não** entram na B (o azul é o bit da classe).
+- Head: B = pontas e bainha de pergaminho creme do lenço e da borda do capuz. R: estrela e emblema dourado do capuz.
+- Chest: B = bainha creme rasgada da túnica, punhos creme das mangas e o forro cru entre as saias. R: glifo central dourado (frente e costas) e estrelas.
+- Hands: B = faixa de pano da bandagem do punho (leitura Mágica baixa, o rim carrega). R: filete dourado do punho.
+- Legs: B = bainha/bandagem de pano das canelas (a calça marrom é fixa). R: losango dourado do cinto.
+- Feet: B vazia. R: estrelas douradas das botas.
+
+Critério de pronto: captura de cada peça nos 3 estados (Normal, Mágico, Raro) a 512 px e o herói completo a 88 px, anexadas à revisão do Art Director; a luminância das áreas B a ±15% do Normal e nenhum pixel de pele, metal ou couro tingido.
 
 ---
 

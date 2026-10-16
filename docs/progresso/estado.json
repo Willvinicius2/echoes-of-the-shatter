@@ -256,6 +256,36 @@
   ],
   "pendencias_dono": [
     {
+      "id": "tinta-classe-capuz",
+      "titulo": "Raridade na capa do Arqueiro e do Mago",
+      "detalhe": "Como a cor da raridade aparece nas peças de tecido dos heróis.",
+      "origem": "docs/03_design_system.md §3.11",
+      "pergunta": "No Arqueiro e no Mago, a cor da raridade (azul no Mágico, dourado no Raro) pode tingir a capa e as bainhas, deixando a cor da classe só no capuz?",
+      "contexto": [
+        "Os heróis agora são modulares: cada peça (elmo, peitoral, luvas, calça, botas) é trocada pelo item equipado.",
+        "Itens Mágicos e Raros mudam só o material das peças: a cor de raridade é aplicada nas áreas de tecido (máscara de tinta), nunca no metal, no couro, na pele ou no cabelo.",
+        "No Guerreiro isso tinge o tabardo vermelho. No Arqueiro, a capa verde; no Mago, as bainhas creme e partes do manto azul.",
+        "O capuz é o que identifica a classe à distância (herói com ~88 px na tela), por isso o Art Director propôs manter o capuz sempre na cor da classe."
+      ],
+      "opcoes": [
+        {
+          "id": "a",
+          "nome": "Sim: raridade na capa, classe no capuz (proposta)",
+          "efeito": "A raridade aparece bem de longe; a classe continua reconhecível pelo capuz, que nunca muda de cor."
+        },
+        {
+          "id": "b",
+          "nome": "Raridade só no brilho e nos detalhes",
+          "efeito": "Capa e manto ficam sempre na cor da classe; a raridade aparece só no brilho da borda e em pequenos detalhes, mais discreta."
+        },
+        {
+          "id": "c",
+          "nome": "Raridade em tudo que é tecido, inclusive o capuz",
+          "efeito": "Máxima leitura da raridade, mas a classe passa a ser lida só pela silhueta."
+        }
+      ]
+    },
+    {
       "id": "endgame-etapa",
       "titulo": "Endgame: na etapa 4 ou numa etapa própria?",
       "detalhe": "Decidir se o endgame inicial entra junto com o Ato I ou depois dele.",

@@ -762,7 +762,63 @@
         "texel_density_px_per_cm": 2.56
       },
       "normal_maps": "nao usar em personagens, props e kits; a forma vem da malha chanfrada",
-      "mask_channels": "R=rim, G=emissivo, B=AO assada, A=reservado"
+      "mask_channels": "R=emissao, G=rim, B=regiao de tinta, A=reservado (AO assada no albedo)"
+    },
+    "rarity_tint": {
+      "source": "docs/03_design_system.md secao 3.11; consumido pelo SO_RarityTint (04, 17.4)",
+      "formula": "base = lerp(albedo, luma, desat*B); rgb = base * lerp(1, tint*gain, strength*B)",
+      "gain_note": "valores iniciais; calibrar para luminancia da area B a +-15% do Normal",
+      "normal": {
+        "tint_color": "#FFFFFF",
+        "tint_strength": 0,
+        "tint_desat": 0,
+        "tint_gain": 1.0,
+        "rim_tint": null,
+        "rim_tint_mix": 0,
+        "rim_intensity": 0.5,
+        "accent_emissive": 0,
+        "accent_color": null
+      },
+      "magic": {
+        "tint_color": "#6FA8FF",
+        "tint_strength": 0.7,
+        "tint_desat": 0.7,
+        "tint_gain": 1.5,
+        "rim_tint": "#A9CBFF",
+        "rim_tint_mix": 0.6,
+        "rim_intensity": 0.65,
+        "accent_emissive": 0,
+        "accent_color": null
+      },
+      "rare": {
+        "tint_color": "#FFD24A",
+        "tint_strength": 0.85,
+        "tint_desat": 0.75,
+        "tint_gain": 1.2,
+        "rim_tint": "#FFE493",
+        "rim_tint_mix": 0.6,
+        "rim_intensity": 0.8,
+        "accent_emissive": 0.35,
+        "accent_color": "#FFD24A"
+      },
+      "unique": {
+        "tint_strength": 0,
+        "rim_intensity": 0.65,
+        "accent_emissive": 0.6,
+        "accent_color": "#FF8A2E",
+        "accent_area_max_pct": 4,
+        "pulse_ms": 2400,
+        "pulse_variation": 0.2,
+        "reduced_motion": "fixo, sem pulso",
+        "envelope_tolerance_pct": 10,
+        "dominant_hue_tolerance_deg": 20
+      },
+      "limits": {
+        "tint_area_max_pct_of_piece": 40,
+        "total_emission_max_pct_of_silhouette": 6,
+        "area_b_luma_tolerance_pct": 15,
+        "set_hue_tolerance_deg": 30
+      }
     },
     "paint_rules": {
       "min_value_black": "#0F0B14",
