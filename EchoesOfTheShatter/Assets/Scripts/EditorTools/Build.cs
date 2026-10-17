@@ -102,41 +102,48 @@ namespace Echoes.EditorTools
         static void WriteReadme(string output)
         {
             const string text =
-@"ECHOES OF THE SHATTER - build de desenvolvimento (Refugio e Cripta; Cao de Cinza animado)
+@"ECHOES OF THE SHATTER - build de desenvolvimento (menu, Refugio, Cripta e Guardiao)
 
-Abra EchoesOfTheShatter.exe. Tela inicial: Jogar (escolhe o save; sem save, pede o nome do heroi), Resolucao e Janela/Tela cheia
-(ficam salvas) e Sair. Jogar leva ao Refugio; o portal vermelho a direita leva a Cripta e o da Cripta traz de volta.
+Abra EchoesOfTheShatter.exe. O que da para testar hoje:
+
+1. MENU
+   Jogar (escolhe o save; sem save, pede o nome do heroi), Resolucao e Janela/Tela cheia (ficam salvas), Previa visual do heroi e Sair.
+   Previa visual do heroi: o botao alterna Guerreiro, Arqueiro e Mago (ou abra com -hero warrior|archer|mage). E so uma PREVIA VISUAL:
+   apenas o Guerreiro tem kit de habilidades; o Arqueiro (arco na mao esquerda, em pe) e o Mago (cajado na mao direita) usam o mesmo
+   kit de teste do Guerreiro ate o design deles existir. Os tres vestem o conjunto de armadura inicial.
+
+2. REFUGIO (Jogar leva para ca)
+   Ilsa (esquerda, em cima): configura a rota da Cripta (objetivo, ate 6 regras de IA, duracao 1 a 12 h, limitada pelas Cargas do Marco) e inicia.
+   Tico (esquerda, embaixo): mostra quanto falta e, quando acabar, entrega o relatorio (coleta uma vez so; selo Estimativa enquanto as
+   habilidades nao forem calibradas). Fale com eles com F, chegando perto.
+   Com a expedicao em andamento o heroi esta em rota: o portal da Cripta (a direita) fica fechado e a Ilsa avisa.
+   A Ilsa so abre a rota depois da Cripta dominada (vencer o Guardiao). Para testar sem lutar:
+   F8 domina a Cripta (+5 cargas); F9 avanca o relogio 1 h; F10 avanca 12 h (acelerador de debug, so no Refugio).
+   Fluxo curto: F8, falar com a Ilsa, iniciar, F10, falar com o Tico e ver o relatorio.
+
+3. CRIPTA (portal do Refugio) E GUARDIAO
+   Cripta pintada com 9 salas, corredores, baus, checkpoints (braseiros), atalho e segredo (parede rachada: abre com Investida, Fenda de Pedra
+   ou Escudada). Luzes e chamas de fogo acendem so perto do heroi. A arena do Guardiao fica no fim (porta fecha atras de voce, barra do chefe no topo).
 
 CONTROLES
-  WASD ........................ mover
-  Mouse ....................... mirar (o heroi olha para o ponteiro)
-  Botao esquerdo .............. ataque basico
-  Botao direito / Q / E ....... habilidades
-  Espaco ...................... esquiva
-  1 e 2 ....................... pocoes
-  F ........................... falar com a Ilsa e o Tico (no Refugio, perto deles)
-  Esc ......................... pausa (Continuar, opcoes, Voltar ao inicio; o jogo e salvo ao voltar)
-  Dev: F1 a F5 tiram e poem as pecas da armadura (so em Development Build)
+  WASD mover | mouse mira | botao esquerdo ataque basico | botao direito, Q, E habilidades | Espaco esquiva | 1 e 2 pocoes | F falar/interagir
+  Esc ......... pausa (Continuar, opcoes, Voltar ao inicio; o jogo e salvo ao voltar)
 
-EXPEDICAO (Refugio)
-  Ilsa: configura a rota da Cripta (objetivo, ate 6 regras de IA, duracao 1 a 12 h; a duracao e limitada pelas Cargas do Marco) e inicia.
-  Enquanto a expedicao roda o heroi esta em rota: o portal da Cripta fica fechado (a Ilsa avisa).
-  Tico: mostra quanto falta e, quando acabar, entrega o relatorio (coleta uma vez so). O selo Estimativa aparece enquanto as habilidades nao forem calibradas.
-  A Ilsa so abre a rota depois de a Cripta estar dominada (vencer o Guardiao). Para testar sem lutar:
-  F8 domina a Cripta (+5 cargas); F9 avanca o relogio 1 h; F10 avanca 12 h (acelerador de debug, so no Refugio).
-
-PREVIA VISUAL DOS HEROIS (modo de desenvolvimento)
-  Na tela inicial o botao Previa visual do heroi alterna Guerreiro, Arqueiro e Mago (ou abra com -hero warrior|archer|mage).
-  E so uma PREVIA VISUAL: apenas o Guerreiro tem kit de habilidades; o Arqueiro (arco na mao esquerda) e o Mago (cajado na mao direita)
-  usam o mesmo kit de teste do Guerreiro (animacoes e habilidades dele) ate o design deles existir. Pecas modulares: F1 a F5 so em Development Build.
+PECAS DA ARMADURA (teclas de desenvolvimento, DESLIGADAS na build de release)
+  Ligue abrindo com o argumento -devkeys (ex.: EchoesOfTheShatter.exe -devkeys, ou crie um atalho com isso no destino).
+  F1 a F5 tiram e poem Head, Chest, Hands, Legs e Feet; F6 veste tudo; F7 tira tudo (corpo nu).
 
 SAVE
   O jogo salva ao trocar de area, a cada 5 min, ao coletar e ao sair. O core mantem 3 backups (slot_1.bak1 a .bak3).
   Pasta dos saves: %USERPROFILE%\AppData\LocalLow\DefaultCompany\Echoes of the Shatter\saves
   Numero de slots: 1 (variavel de ambiente ECHOES_SAVE_SLOTS=3 para 3 slots).
 
-Log do jogo: %USERPROFILE%\AppData\LocalLow\DefaultCompany\Echoes of the Shatter\Player.log
-Teste de fumaca: EchoesOfTheShatter.exe -autostart -smoke 1 -savedir pasta -logFile player.log (entra, domina, expede, coleta e registra no log).
+DIAGNOSTICO
+  Log: %USERPROFILE%\AppData\LocalLow\DefaultCompany\Echoes of the Shatter\Player.log
+  -autostart | -smoke 1 | -savedir pasta | -logFile arquivo: entra sozinho, domina, expede, coleta e registra no log.
+  -shots pasta: captura em runtime o Refugio, a entrada da Cripta, uma sala com encontro, a arena e o heroi de perto, e fecha.
+  -bossshot arquivo.png: leva o heroi a arena e salva a captura com a barra do chefe.
+  -perf arquivo.txt: mede o tempo de quadro (media e p95 de 10 s) com o heroi na arena.
 ";
             File.WriteAllText(Path.Combine(output, "LEIA-ME.txt"), text.Replace("\r\n", "\n").Replace("\n", "\r\n"), new System.Text.UTF8Encoding(false));
         }

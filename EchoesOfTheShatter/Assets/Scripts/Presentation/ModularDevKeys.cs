@@ -5,7 +5,7 @@ namespace Echoes.Presentation
 {
     /// <summary>
     /// Atalho de desenvolvimento para testar as pecas do heroi modular: F1 a F5 tiram e poem Head, Chest, Hands, Legs e Feet;
-    /// F6 veste tudo (starter); F7 tira tudo (corpo nu). So no editor e em Development Build.
+    /// F6 veste tudo (starter); F7 tira tudo (corpo nu). So no editor, em Development Build ou com o argumento -devkeys.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ModularDevKeys : MonoBehaviour
@@ -17,7 +17,15 @@ namespace Echoes.Presentation
         void Awake()
         {
             if (modular == null) modular = GetComponentInChildren<ModularCharacter>();
-            if (!Application.isEditor && !Debug.isDebugBuild) enabled = false;
+            if (!Application.isEditor && !Debug.isDebugBuild && !DevKeysRequested()) enabled = false;
+        }
+
+        /// <summary>Na build de release as teclas ficam desligadas; o argumento -devkeys liga (para o dono testar as pecas sem Development Build).</summary>
+        static bool DevKeysRequested()
+        {
+            foreach (var arg in System.Environment.GetCommandLineArgs())
+                if (string.Equals(arg, "-devkeys", System.StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
 
         void Update()
