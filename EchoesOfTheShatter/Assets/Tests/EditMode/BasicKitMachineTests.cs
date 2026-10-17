@@ -169,7 +169,7 @@ namespace Echoes.Tests.EditMode
                 rig.Logic.ButtonUp(HeroCommand.BasicAttack);
                 rig.Ticks(1);
                 Assert.IsTrue(rig.Logic.IsCasting, "soltar na carga mínima já lança o forte");
-                Assert.AreEqual(1.0, rig.Basic.Find(e => e.Kind == BasicInputKind.HeavyReleased).Value, 1e-9);
+                Assert.AreEqual(0.0, rig.Basic.Find(e => e.Kind == BasicInputKind.HeavyReleased).Value, 1e-9, "carga mínima");
             }
             using (var rig = new Rig())
             {
@@ -177,7 +177,7 @@ namespace Echoes.Tests.EditMode
                 rig.Ticks(21 + 27); // metade da carga (0,9 s = 54 ticks)
                 rig.Logic.ButtonUp(HeroCommand.BasicAttack);
                 rig.Ticks(1);
-                Assert.AreEqual(1.5, rig.Basic.Find(e => e.Kind == BasicInputKind.HeavyReleased).Value, 1e-9, "1 + (2 - 1) * 0,5");
+                Assert.AreEqual(0.5, rig.Basic.Find(e => e.Kind == BasicInputKind.HeavyReleased).Value, 1e-9, "metade da carga (o multiplicador é do core)");
             }
         }
 
@@ -190,7 +190,7 @@ namespace Echoes.Tests.EditMode
                 rig.Ticks(21 + 54 + 2);
                 Assert.AreEqual(1, rig.Count(BasicInputKind.ChargeFull));
                 Assert.AreEqual(1, rig.Count(BasicInputKind.HeavyReleased));
-                Assert.AreEqual(2.0, rig.Basic.Find(e => e.Kind == BasicInputKind.HeavyReleased).Value, 1e-9);
+                Assert.AreEqual(1.0, rig.Basic.Find(e => e.Kind == BasicInputKind.HeavyReleased).Value, 1e-9, "carga cheia");
                 rig.Until(() => !rig.Logic.IsCasting);
                 rig.Ticks(60);
                 Assert.IsFalse(rig.Logic.IsCharging, "o botão ainda está apertado e não recarrega sozinho");
@@ -235,23 +235,52 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
-        public void HeavyMultiplierScalesTheDamageOfTheHit()
+        public void CoreAppliesTheChargeMultiplierOfTheKitToTheHeavyHit()
         {
-            double Damage(double multiplier)
+            double Damage(bool heavy, double fraction)
             {
-                using (var world = new TestWorld())
+                using (var world = new TestWorld(null, TestWorld.LoadNativeRules()))
                 {
                     var hero = world.AddHero(PlanarVector.Zero);
                     var enemy = world.AddEnemy("enemy.hollow_sentinel", new PlanarVector(0f, 1f));
                     var skill = world.Rules.FindSkill(Cut);
-                    world.Combat.ApplySkillHit(hero.combatant, enemy.combatant, skill, hero.combatant.Position, multiplier);
+                    world.Combat.ApplySkillHit(hero.combatant, enemy.combatant, skill, hero.combatant.Position, heavy, fraction);
                     return world.Hits[0].Result.TotalDamage;
                 }
             }
-            var one = Damage(1.0);
-            var two = Damage(2.0);
-            Assert.Greater(one, 0.0);
-            Assert.Greater(two, one * 1.5, "o multiplicador entra no coeficiente do golpe");
+            var min = Damage(true, 0.0);
+            var max = Damage(true, 1.0);
+            var light = Damage(false, 0.0);
+            Assert.AreEqual(light, min, 1e-6, "carga mínima = multiplicador 1");
+            Assert.Greater(max, min * 1.5, "carga cheia: heavyMaxMult do kit (2), aplicado pelo core");
+        }
+
+        [Test]
+        public void HitKnockbackFollowsTheSkillValueAndTheTargetKind()
+        {
+            using (var world = new TestWorld())
+            {
+                var feel = world.Combat.Feel;
+                var hero = world.AddHero(PlanarVector.Zero);
+                var skill = world.Rules.FindSkill(Cut);
+                skill.KnockbackUu = 100.0; // 1 m
+                var enemy = world.AddEnemy("enemy.hollow_sentinel", new PlanarVector(0f, 1f));
+                var before = enemy.combatant.Position;
+                world.Combat.ApplySkillHit(hero.combatant, enemy.combatant, skill, hero.combatant.Position);
+                world.Combat.Step(world.Step);
+                Assert.AreEqual(1.0f, PlanarVector.Distance(before, enemy.combatant.Position), 0.35f, "empurra o knockback da habilidade (comum, inteiro)");
+                Assert.AreEqual(0f, feel.KnockbackFor(enemy.combatant, 0f), "sem valor na habilidade e sem token: nada");
+            }
+            var values = new CombatFeelValues { KnockbackCommonMeters = 0.2f, KnockbackEliteMeters = 0.06f, KnockbackBossMeters = 0f };
+            using (var world = new TestWorld(values))
+            {
+                var boss = world.AddEnemy("enemy.crypt_guardian", new PlanarVector(0f, 3f), 3, 1f);
+                Assert.IsTrue(boss.combatant.IsBoss);
+                Assert.AreEqual(0f, values.KnockbackFor(boss.combatant, 1.2f), "chefe não é empurrado");
+                var common = world.AddEnemy("enemy.hollow_sentinel", new PlanarVector(3f, 3f));
+                Assert.AreEqual(1.2f, values.KnockbackFor(common.combatant, 1.2f), 1e-5f, "comum: o valor inteiro");
+                Assert.AreEqual(0.2f, values.KnockbackFor(common.combatant, 0f), 1e-5f, "sem valor na habilidade: o token do alvo");
+            }
         }
 
         // ---------------------------------------------------------------------------------------------------------- combo

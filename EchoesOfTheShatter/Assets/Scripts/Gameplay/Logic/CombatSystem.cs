@@ -182,11 +182,10 @@ namespace Echoes.Gameplay
         /// monta o pedido, chama o motor de regras, aplica vida/barreira, efeitos ao acertar, recurso,
         /// hitstop e knockback, e publica os eventos. Devolve true se o golpe acertou (não evadido).
         /// Quem chama garante "no máximo 1 vez por golpe por alvo" (RF-16).
-        /// <paramref name="damageMultiplier"/>: multiplicador do golpe forte carregado (docs/18, seção 1.4: 1 + (heavyMaxMult - 1) * carga),
-        /// vindo da máquina de entrada; 1 em todo outro golpe. Entra como fator do coeficiente da habilidade.
-        /// TODO(backend): trocar por HitRequest.ChargeFraction (o core aplica o multiplicador) e remover este parâmetro quando o merge chegar.
+        /// <paramref name="isHeavy"/> e <paramref name="chargeFraction"/>: golpe forte e progresso da carga (0 a 1) vindos da máquina de entrada; o core
+        /// aplica o multiplicador do kit da classe do atacante (docs/18, 1.4). Em todo outro golpe, false e 0.
         /// </summary>
-        public bool ApplySkillHit(Combatant attacker, Combatant target, SkillInfo skill, PlanarVector hitOrigin, double damageMultiplier = 1.0)
+        public bool ApplySkillHit(Combatant attacker, Combatant target, SkillInfo skill, PlanarVector hitOrigin, bool isHeavy = false, double chargeFraction = 0.0)
         {
             if (attacker == null || target == null || skill == null) return false;
             if (target.IsDead || ReferenceEquals(attacker, target) || !target.IsRegistered) return false;
@@ -218,12 +217,15 @@ namespace Echoes.Gameplay
                 Defender = target.Stats,
                 SkillTags = skill.Tags,
                 BaseDamage = Rules.GetSkillBaseDamage(skill, attacker.Weapon),
-                Coefficient = skill.Coefficient(1) * damageMultiplier,
+                Coefficient = skill.Coefficient(1),
                 IsDamageOverTime = false,
                 CanBeBlocked = true,
                 DefenderLife = target.vitals.Life,
                 DefenderBarrier = target.vitals.Barrier,
                 FromGuardArc = fromGuardArc,
+                IsHeavy = isHeavy,
+                ChargeFraction = isHeavy ? chargeFraction : 0.0,
+                ClassId = isHeavy ? attacker.ContentId : null,
             };
             // Dano evitado pela defesa = o mesmo golpe fora do arco menos o de dentro, numa cópia do fluxo (o real consome uma vez só).
             var avoidedDamage = 0.0;
@@ -270,7 +272,7 @@ namespace Echoes.Gameplay
 
                 if (target.Team == CombatTeam.Enemy && !result.Killed)
                 {
-                    var distance = Feel.KnockbackFor(target);
+                    var distance = Feel.KnockbackFor(target, WorldUnits.ToMeters(skill.KnockbackUu));
                     if (distance > 0f)
                         target.StartKnockback((target.Position - hitOrigin).NormalizedOr(attacker.Forward), distance, Feel.KnockbackSeconds);
                 }

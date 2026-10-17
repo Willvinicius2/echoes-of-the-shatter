@@ -36,6 +36,18 @@ namespace Echoes.Gameplay
             return seconds;
         }
 
+        /// <summary>
+        /// Empurrão de um golpe (docs/18, 2.1): o <c>knockback</c> da habilidade, na proporção do tipo de alvo (comum inteiro; elite e chefe na razão dos
+        /// tokens de juice: 6/20 e 0). Habilidade sem empurrão próprio usa o do token do alvo.
+        /// </summary>
+        public float KnockbackFor(Combatant target, float skillKnockbackMeters)
+        {
+            if (skillKnockbackMeters <= 0f) return KnockbackFor(target);
+            if (target.IsBoss) return skillKnockbackMeters * (KnockbackCommonMeters > 0f ? KnockbackBossMeters / KnockbackCommonMeters : 0f);
+            if (target.IsElite) return skillKnockbackMeters * (KnockbackCommonMeters > 0f ? KnockbackEliteMeters / KnockbackCommonMeters : 0f);
+            return skillKnockbackMeters;
+        }
+
         public float KnockbackFor(Combatant target)
         {
             if (target.IsBoss) return KnockbackBossMeters;

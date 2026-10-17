@@ -26,7 +26,7 @@ namespace Echoes.Gameplay
 
         SkillSlot currentSlot;
         BasicActionKind basicKind;
-        double hitMultiplier = 1.0;
+        double chargeFraction;
         PlanarVector castDirection = PlanarVector.Forward;
         PlanarVector dodgeDirection = PlanarVector.Forward;
         float dodgeSpeed;
@@ -343,12 +343,12 @@ namespace Echoes.Gameplay
         }
 
         /// <summary>Começa uma ação: recarga, mira travada, fases do core e o primeiro passo (fases de duração zero resolvem no mesmo passo).</summary>
-        void BeginAction(CombatSystem combat, SkillSlot slot, double creditSeconds, double hitMult, BasicActionKind kind)
+        void BeginAction(CombatSystem combat, SkillSlot slot, double creditSeconds, double chargeFract, BasicActionKind kind)
         {
             var skill = slot.Skill;
             currentSlot = slot;
             basicKind = kind;
-            hitMultiplier = hitMult;
+            chargeFraction = chargeFract;
             slot.Cooldown.Start(rules.GetEffectiveCooldown(self.Stats, skill));
             castDirection = (AimPoint - self.Position).NormalizedOr(self.Forward);
             self.Forward = castDirection;
@@ -517,7 +517,7 @@ namespace Echoes.Gameplay
             for (var i = 0; i < count; i++)
             {
                 var direction = fan ? Rotated(castDirection, (float)(-skill.ConeAngleDegrees * 0.5 + skill.ConeAngleDegrees * i / (count - 1))) : castDirection;
-                combat.Projectiles.Spawn(combat, self, skill, self.Position, direction, speed, range, radius, hitMultiplier);
+                combat.Projectiles.Spawn(combat, self, skill, self.Position, direction, speed, range, radius, basicKind == BasicActionKind.Heavy, chargeFraction);
             }
         }
 
@@ -526,7 +526,7 @@ namespace Echoes.Gameplay
         {
             var speed = WorldUnits.ToMeters(skill.ProjectileSpeedUu);
             var range = WorldUnits.ToMeters(combatRules.DashShotRangeUu);
-            combat.Projectiles.Spawn(combat, self, skill, self.Position, castDirection, speed, range, ProjectileSystem.BodyRadiusMeters(skill), hitMultiplier);
+            combat.Projectiles.Spawn(combat, self, skill, self.Position, castDirection, speed, range, ProjectileSystem.BodyRadiusMeters(skill), basicKind == BasicActionKind.Heavy, chargeFraction);
         }
 
         static PlanarVector Rotated(PlanarVector v, float degrees)
@@ -545,7 +545,7 @@ namespace Echoes.Gameplay
         void Strike(CombatSystem combat, Combatant target, SkillInfo skill, PlanarVector origin)
         {
             hitThisSwing.Add(target.Id); // RF-16: no máximo 1 acerto por golpe em cada alvo
-            combat.ApplySkillHit(self, target, skill, origin, hitMultiplier);
+            combat.ApplySkillHit(self, target, skill, origin, basicKind == BasicActionKind.Heavy, chargeFraction);
         }
 
         void ApplySelfEffects(CombatSystem combat, SkillInfo skill)
@@ -563,7 +563,7 @@ namespace Echoes.Gameplay
             currentSlot = null;
             dashSpeed = 0f;
             basicKind = BasicActionKind.None;
-            hitMultiplier = 1.0;
+            chargeFraction = 0.0;
             if (kit != null) OnActionEnded(combat, endedKind, completed);
             if (skill == null) return;
             var evt = new SkillPhaseEvent { Owner = self, Skill = skill, Phase = ActionPhase.None, PhaseSeconds = 0.0, Direction = castDirection };

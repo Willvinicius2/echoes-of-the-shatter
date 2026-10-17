@@ -16,16 +16,14 @@ namespace Echoes.Gameplay
 
         public IReadOnlyList<ProjectileState> Active => active;
 
-        /// <summary>
-        /// Meia largura do corredor do projétil: o raio do CSV, exceto em quem explode (ali o raio é o da explosão, e o corpo do projétil é um ponto).
-        /// </summary>
+        /// <summary>Meia largura do corredor do projétil: o <c>radius</c> do CSV. O raio da explosão é outra coluna (<c>explosionRadius</c>).</summary>
         public static float BodyRadiusMeters(Echoes.Interop.SkillInfo skill)
         {
-            return skill.Behavior.Explodes ? 0f : WorldUnits.ToMeters(skill.RadiusUu);
+            return WorldUnits.ToMeters(skill.RadiusUu);
         }
 
         public ProjectileState Spawn(CombatSystem combat, Combatant owner, Echoes.Interop.SkillInfo skill, PlanarVector origin,
-            PlanarVector direction, float speed, float rangeMeters, float radiusMeters, double hitMultiplier = 1.0)
+            PlanarVector direction, float speed, float rangeMeters, float radiusMeters, bool isHeavy = false, double chargeFraction = 0.0)
         {
             if (active.Count >= MaxActive || speed <= 0f || rangeMeters <= 0f) return null;
             var p = pool.Count > 0 ? pool.Pop() : new ProjectileState();
@@ -37,12 +35,12 @@ namespace Echoes.Gameplay
             p.SpeedMetersPerSecond = speed;
             p.RemainingMeters = rangeMeters;
             p.RadiusMeters = radiusMeters;
-            p.HitMultiplier = hitMultiplier;
+            p.IsHeavy = isHeavy;
+            p.ChargeFraction = chargeFraction;
             p.HitTargets.Clear();
             // Perfuração (SkillInfo.Pierce): N alvos além do primeiro; 99 atravessa todos. Explosão (Behavior.Explodes): dano em área onde o projétil acaba.
-            // TODO(backend): o raio da explosão virá de SkillInfo.ExplosionRadiusUu; até lá é o radius do CSV, que nas habilidades que explodem já é o da explosão.
             p.MaxHits = skill.Pierce <= 0 ? 1 : skill.Pierce >= Echoes.Interop.SkillInfo.PierceAll ? int.MaxValue : skill.Pierce + 1;
-            p.ExplosionRadiusMeters = skill.Behavior.Explodes ? WorldUnits.ToMeters(skill.RadiusUu) : 0f;
+            p.ExplosionRadiusMeters = skill.Behavior.Explodes ? WorldUnits.ToMeters(skill.ExplosionRadiusUu) : 0f;
             p.Active = true;
             active.Add(p);
             var evt = new ProjectileEvent { ProjectileId = p.Id, Spawned = true, Owner = owner, Position = origin, Direction = p.Direction };
@@ -98,7 +96,7 @@ namespace Echoes.Gameplay
                         break;
                     }
                     p.HitTargets.Add(target.Id);
-                    combat.ApplySkillHit(p.Owner, target, p.Skill, start, p.HitMultiplier);
+                    combat.ApplySkillHit(p.Owner, target, p.Skill, start, p.IsHeavy, p.ChargeFraction);
                     if (p.HitTargets.Count >= p.MaxHits)
                     {
                         p.Position = contact;
@@ -120,7 +118,7 @@ namespace Echoes.Gameplay
                 if (target.IsDead || !CombatSystem.AreHostile(p.Owner, target) || p.HitTargets.Contains(target.Id)) continue;
                 if (!ShapeQuery.InCircle(center, p.ExplosionRadiusMeters, target.Position, target.RadiusMeters)) continue;
                 p.HitTargets.Add(target.Id);
-                combat.ApplySkillHit(p.Owner, target, p.Skill, center, p.HitMultiplier);
+                combat.ApplySkillHit(p.Owner, target, p.Skill, center, p.IsHeavy, p.ChargeFraction);
             }
         }
 

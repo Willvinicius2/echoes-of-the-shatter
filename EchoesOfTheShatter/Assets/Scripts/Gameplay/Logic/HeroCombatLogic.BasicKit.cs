@@ -322,9 +322,9 @@ namespace Echoes.Gameplay
                 return;
             }
             ResetCombo(combat);
-            var mult = 1.0 + (kit.HeavyMaxMult - 1.0) * progress;
-            PublishBasic(combat, BasicInputKind.HeavyReleased, heavySlot.Skill, mult);
-            BeginAction(combat, heavySlot, 0.0, mult, BasicActionKind.Heavy);
+            // O multiplicador de dano da carga é do core (HitRequest.ChargeFraction); aqui só o progresso, 0 a 1.
+            PublishBasic(combat, BasicInputKind.HeavyReleased, heavySlot.Skill, progress);
+            BeginAction(combat, heavySlot, 0.0, progress, BasicActionKind.Heavy);
         }
 
         void StartLight(CombatSystem combat, long heldTicks)

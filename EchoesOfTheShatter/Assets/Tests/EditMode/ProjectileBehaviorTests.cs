@@ -177,13 +177,14 @@ namespace Echoes.Tests.EditMode
                 Assert.AreEqual(1, rig.World.HitsOn(splash), "dano em área no ponto do impacto, um acerto por alvo");
                 Assert.AreEqual(0, rig.World.HitsOn(outside));
                 Assert.AreEqual(1, ends.Count);
-                Assert.AreEqual(WorldUnits.ToMeters(rig.Skill.RadiusUu), ends[0].ExplosionRadiusMeters, 1e-4f, "o VFX lê o raio no evento de fim do projétil");
+                Assert.AreEqual(WorldUnits.ToMeters(rig.Skill.ExplosionRadiusUu), ends[0].ExplosionRadiusMeters, 1e-4f, "o VFX lê o raio da explosão no evento de fim do projétil");
+                Assert.Greater(rig.Skill.ExplosionRadiusUu, rig.Skill.RadiusUu, "o radius é só a largura do corredor");
                 Assert.Less(ends[0].Position.Z, 4f, "o ponto do impacto é onde o projétil tocou o alvo, não o centro dele");
             }
         }
 
         [Test]
-        public void ProjectileThatDoesNotExplodeIgnoresTheRadiusAsABody()
+        public void BodyRadiusIsTheCsvRadiusAndNeverTheExplosion()
         {
             using (var rig = new Rig(Orb))
             {
@@ -191,18 +192,9 @@ namespace Echoes.Tests.EditMode
                 Freeze(near);
                 rig.Cast();
                 rig.Seconds(1.0);
-                // Sem o flag (stub), o radius do CSV segue sendo a meia largura do corredor: comportamento antigo.
-                Assert.AreEqual(1, rig.World.HitsOn(near));
+                Assert.AreEqual(0, rig.World.HitsOn(near), "sem explosão, o projétil só acerta o que toca o corredor (radius), não a área da explosão");
+                Assert.AreEqual(WorldUnits.ToMeters(rig.Skill.RadiusUu), ProjectileSystem.BodyRadiusMeters(rig.Skill), 1e-6f);
             }
-            Assert.AreEqual(0f, ProjectileSystem.BodyRadiusMeters(MarkExplodes(Orb)), "quem explode voa como um ponto");
-        }
-
-        static SkillInfo MarkExplodes(string id)
-        {
-            var rules = TestWorld.LoadRules();
-            var skill = rules.FindSkill(id);
-            skill.Behavior = new SkillBehavior(true, false, false, false, false);
-            return skill;
         }
 
         // ---------------------------------------------------------------------------------------------------------- área no cursor e em quem usa

@@ -10,7 +10,7 @@ namespace Echoes.Gameplay
         ChargeFull = 2,
         /// <summary>Esquiva, defesa, habilidade, atordoamento ou morte cancelaram a carga (sem custo, sem recarga).</summary>
         ChargeCancelled = 3,
-        /// <summary>Soltou o golpe forte; <see cref="BasicInputEvent.Value"/> = multiplicador de dano da carga.</summary>
+        /// <summary>Soltou o golpe forte; <see cref="BasicInputEvent.Value"/> = progresso da carga, 0 a 1 (o multiplicador de dano é do core).</summary>
         HeavyReleased = 4,
         /// <summary>Levantou a defesa.</summary>
         GuardUp = 5,
