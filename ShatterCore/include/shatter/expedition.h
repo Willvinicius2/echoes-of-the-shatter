@@ -174,6 +174,7 @@ enum class StartCheck : std::uint8_t {
     TooManyRules,         // > 6
     IdleIncompatible,     // ver blockingIds
     UnknownContent,
+    ClockRollback,        // ADIÇÃO (docs/17, A2): o relógio voltou (RF-48); só a API de início confiável devolve (nada muda)
 };
 StartCheck CanStartExpedition(const ContentDB& db, const CharacterState& c, const ContentId& mapId,
                               int durationHours, int chargesAvailable, bool anotherRunning,

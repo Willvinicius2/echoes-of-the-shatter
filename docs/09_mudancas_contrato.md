@@ -213,3 +213,26 @@ Rodar com `SHATTER_BALANCE_PROBE=1 shattercore_tests balance_probe`. Regras de I
 ### 8.4 Testes
 
 `shattercore_tests` 155 (eram 146) e `shattercore_c_api_tests` 23 (eram 21): `test_round2.cpp` (desarmado, fichas, Veloz, colunas novas lidas e validadas, momento da invocação, stagger de parede) e `c_api_r2_*`. `validate_data.py` e `--self-test` OK.
+
+## 9. Rodada 3: correções da revisão do core (docs/17, Backend, 17/10/2026, `etapa2/backend`)
+
+API C: `SHATTER_C_API_MINOR` vai de 1 para **2** (só adições; o C# deve exigir `shatter_api_minor() >= 2` para usar o que está abaixo).
+
+| Mudança | Detalhe |
+|---|---|
+| `shatter_vitals` ganhou `double potion_barrier` | A parte da barreira que veio da poção (tamanho 32 -> 40). Quem guarda `shatter_vitals` no cliente deve copiar o campo; zero = sem barreira de poção. |
+| `shatter_save_start_expedition_clock` (nova) | Recebe o relógio cru (`shatter_clock_input`), resolve o "agora" por dentro com o `last_seen` do SAVE (como a coleta) e inicia. Preferida ao `_trusted`. |
+| `SHATTER_START_CLOCK_ROLLBACK` (novo valor de `start_check`) | O início confiável recusa com o relógio voltando (RF-48): nada muda. Vale para `_clock` e `_trusted`. No `_trusted` o core também confere `now` contra o `last_seen` do save e a tolerância (o chamador não escolhe o início). Início aceito: `start_utc = max(now, last_seen)` e `last_seen` sobe. |
+| `shatter_save_start_expedition_trusted` | Mesmo comportamento acima; JSON com `seed` ou `start_utc` continua INVALID_ARGUMENT. `shatter_save_collect_expedition_trusted` recusa expedição sem `character_index` válido. |
+| `shatter_elite_apply` | Não recebe mais multiplicadores do chamador: monta o perfil pelo `modifier_id` + valores sorteados (`rolled`) e o banco; id desconhecido = NOT_FOUND. Reaplicar no mesmo bloco é idempotente (remove os modificadores de origem `elite` antes). |
+| Layout 1.1 completo | `kLayoutExt` confere TODOS os campos das 15 structs de extensão (`SHATTER_LAYOUT_EXT_COUNT` = 114). Um espelho C# com campos trocados é recusado por `shatter_layout_check_ext`. |
+| `shatter_boss` x `shatter_db` | Cada chefe vivo segura uma referência do banco: `shatter_db_destroy` com chefes vivos só marca o banco para destruição e libera quando o último chefe sai (sem uso de memória liberada). Contrato single-thread (sem `<atomic>` no core). |
+
+Save v2 (leitura recusa com `BadData`, sem migração; saves honestos nunca caem aqui):
+- `boss_progress`: `enemy_id` vazio, repetido, `kills` fora de 0..1.000.000 (`kMaxBossCounter`) ou `kills_since_unique` fora de 0..`kills`.
+- `potion_slots`: `charges` fora de 0..1000, `recharge_remaining` fora de 0..1e9 s, `potion_id` repetido. Na carga, `recharge_remaining` é limitado a `rechargeSeconds` da poção.
+- Expedição: `start_utc` fora de 0..253402300799; `character_index` fora da faixa ou inexistente quando o status não é `none`.
+
+Conteúdo (CSV): as **62 chaves** de `rules.csv` agora são obrigatórias quando o conteúdo vem de CSV (chave faltando = erro de validação `E_REQUIRED`); `constants.h` guarda só 0 neutro, nenhum número de balanceamento escondido. `potions.csv`, `elite_modifiers.csv`, `boss_phases.csv`, `boss_patterns.csv` e `enemy_ai.csv` são obrigatórias (arquivo ausente em `LoadDirectory` = E_IO; carregar regras sem uma delas = `E_REQUIRED` no `Finalize`). Entrada de loot fixa só vale na tabela de topo de um chefe (fora disso `E_RULE`); `tools/validate_data.py` aceita peso vazio em entrada fixa por `fixedChance`, `guaranteeFirstKill` ou `pityKills`, e rejeita entrada fixa fora da tabela de topo (`E_FIXED_TABLE`).
+
+Regras: barreira da poção igual no manual e no idle (`ApplyPotionBarrier`/`TickPotionBarrier`, uma só implementação); poção cheia não é gasta ao ganhar carga de elite e a carga vai para a poção com `refillOnEliteKill` que não estava cheia; DoT do herói no idle respeita a barreira do elite; explosão do Volátil e DoT recebido no idle usam `idleDamageTakenMult`; `ComputeExpeditionWindow` usa `double` na janela (sem estouro com `start_utc` extremo).

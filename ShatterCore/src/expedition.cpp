@@ -296,16 +296,8 @@ public:
 private:
     bool HasHealCharge() const { return healPotion_ != nullptr && PotionCharges(belt_, healPotion_->id) > 0; }
 
-    // A barreira da Poção de Resguardo some ao fim do tempo (a parte de outras fontes fica).
-    void TickWard(double dt) {
-        if (wardRemaining_ <= 0.0) return;
-        wardRemaining_ -= dt;
-        if (wardRemaining_ <= kEps) {
-            barrier_ = std::max(0.0, barrier_ - wardAmount_);
-            wardAmount_ = 0.0;
-            wardRemaining_ = 0.0;
-        }
-    }
+    // A barreira da Poção de Resguardo some ao fim do tempo (a parte de outras fontes fica): mesma regra do manual.
+    void TickWard(double dt) { TickPotionBarrier(barrier_, wardAmount_, wardRemaining_, dt); }
 
     int aliveCount() const {
         int n = 0;
@@ -487,9 +479,7 @@ private:
                 life_ = std::min(maxLife, life_ + po.healAmount);
                 if (po.barrierAmount > 0.0) {
                     // Não acumula: reaplicar renova (troca a barreira anterior da poção pela nova).
-                    barrier_ = std::max(0.0, barrier_ - wardAmount_) + po.barrierAmount;
-                    wardAmount_ = po.barrierAmount;
-                    wardRemaining_ = po.barrierSeconds;
+                    ApplyPotionBarrier(barrier_, wardAmount_, wardRemaining_, po.barrierAmount, po.barrierSeconds);
                 }
                 ++potionsUsed_;
                 playerTimer_ += std::max(po.useTime, dt);  // beber leva useTime
@@ -579,7 +569,7 @@ private:
             in.defender = &ps_;
             in.skillTags = Mask(Tag::Area) | Tag::Physical;  // não é "ataque": sem evasão
             in.baseDamage[0] = fire.damage;
-            in.coefficient = 1.0;
+            in.coefficient = prof.damageTakenMult;  // a alavanca de calibração do idle vale para toda fonte de dano ao herói
             in.canBeBlocked = false;
             in.defenderLife = life_;
             in.defenderBarrier = barrier_;
@@ -607,6 +597,7 @@ private:
             in.defender = &ps_;
             in.skillTags = ed ? ed->tags : 0;
             in.baseDamage = ev.damage;
+            in.coefficient = su_.bar[static_cast<std::size_t>(activeSlot_)]->idle.damageTakenMult;
             in.isDamageOverTime = true;
             in.defenderLife = life_;
             in.defenderBarrier = barrier_;
@@ -628,8 +619,10 @@ private:
                 in.baseDamage = ev.damage;
                 in.isDamageOverTime = true;
                 in.defenderLife = e.life;
+                in.defenderBarrier = e.barrier;
                 const HitResult r = ResolveHit(in, rules_, combat_);
                 e.life = r.defenderLifeAfter;
+                e.barrier = r.defenderBarrierAfter;
                 damageDealt_ += r.totalDamage;
                 if (r.killed) KillEnemy(i);
             }

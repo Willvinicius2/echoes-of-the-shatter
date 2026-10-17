@@ -432,20 +432,23 @@ TEST(content_real_prototype_tables_load_and_validate) {
     std::string all;
     for (const ContentError& e : real.Errors()) all += e.table + ":" + std::to_string(e.line) + " " + e.message + "\n";
     ASSERT_TRUE(real.Finalize());
-    EXPECT_EQ(real.Potions().size(), static_cast<std::size_t>(2));
-    EXPECT_EQ(real.EliteModifiers().size(), static_cast<std::size_t>(3));
-    EXPECT_EQ(real.BossPhases().size(), static_cast<std::size_t>(2));
-    EXPECT_EQ(real.BossPatterns().size(), static_cast<std::size_t>(5));
-    EXPECT_EQ(real.EnemyAis().size(), static_cast<std::size_t>(3));
-    EXPECT_NEAR(real.Rules().retreatLifeFraction, 0.25, 0.0);
-    EXPECT_NEAR(real.Rules().dodgeRecharge, 1.5, 0.0);
-    EXPECT_NEAR(real.Rules().potionLockout, 1.0, 0.0);
-    EXPECT_NEAR(real.FindEnemy("enemy.crypt_guardian")->shieldArcDegrees, 120.0, 0.0);
-    EXPECT_ENUM_EQ(real.FindUnique("unique.empty_throne_maul")->idleCalibration, IdleCalibration::ManualEstimate);
+    // Só invariantes (carrega, coluna lida, faixa, coerência): os NÚMEROS são do Game Designer e mudam no CSV sem tocar em C++.
+    EXPECT_TRUE(!real.Potions().empty());
+    EXPECT_TRUE(!real.EliteModifiers().empty());
+    EXPECT_TRUE(real.BossPhases().size() >= 2);
+    EXPECT_TRUE(!real.BossPatterns().empty());
+    EXPECT_TRUE(!real.EnemyAis().empty());
+    EXPECT_TRUE(real.Rules().retreatLifeFraction > 0.0 && real.Rules().retreatLifeFraction < 1.0);
+    EXPECT_TRUE(real.Rules().dodgeRecharge > 0.0 && real.Rules().dodgeMaxCharges >= 1);
+    EXPECT_TRUE(real.Rules().dodgeIframes <= real.Rules().dodgeDuration);
+    EXPECT_TRUE(real.Rules().potionLockout >= 0.0);
+    const double arc = real.FindEnemy("enemy.crypt_guardian")->shieldArcDegrees;
+    EXPECT_TRUE(arc > 0.0 && arc <= 360.0);
     EXPECT_TRUE(real.FindUnique("unique.empty_throne_maul")->idleSupported);
-    EXPECT_EQ(real.FindSkill("skill.warrior.shield_bash")->unlockLevel, 4);
+    EXPECT_TRUE(real.FindUnique("unique.empty_throne_maul")->idleCalibration != IdleCalibration::None);
+    EXPECT_TRUE(real.FindSkill("skill.warrior.shield_bash")->unlockLevel >= 1);
     EXPECT_TRUE(real.FindEffect("effect.stun")->interruptsAction);
-    // O Único do Guardião é uma entrada fixa: 1ª vitória, 20%, garantido na 5ª.
+    // O Único do Guardião é uma entrada fixa (garantia da 1ª vitória, chance própria e proteção).
     const LootTableData* t = real.FindLootTable("loot.crypt.guardian");
     ASSERT_TRUE(t != nullptr);
     int fixed = 0;
@@ -454,14 +457,16 @@ TEST(content_real_prototype_tables_load_and_validate) {
         ++fixed;
         EXPECT_EQ(e.refId, std::string("unique.empty_throne_maul"));
         EXPECT_TRUE(e.guaranteeFirstKill);
-        EXPECT_NEAR(e.fixedChance, 0.2, 0.0);
-        EXPECT_EQ(e.pityKills, 5);
+        EXPECT_TRUE(e.fixedChance > 0.0 && e.fixedChance <= 1.0);
+        EXPECT_TRUE(e.pityKills > 0);
     }
     EXPECT_EQ(fixed, 1);
     // A luta inteira roda no conteúdo real: chefe, fases e padrões.
     BossFight fight(real, *real.FindEnemy("enemy.crypt_guardian"), 3, 99);
     EXPECT_TRUE(fight.Valid());
-    EXPECT_NEAR(fight.MaxLife(), 700.0 + 50.0 * 2.0, 1e-9);
+    StatBlock bossStats;
+    BuildEnemyStatBlock(*real.FindEnemy("enemy.crypt_guardian"), 3, bossStats);
+    EXPECT_NEAR(fight.MaxLife(), bossStats.Get(StatId::Life), 1e-9);
 }
 
 TEST(content_real_idle_expedition_runs_the_new_rules_end_to_end) {

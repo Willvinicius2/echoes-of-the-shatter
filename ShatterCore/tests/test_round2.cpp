@@ -74,18 +74,19 @@ ExpeditionRequest BareHero(const ContentDB& db, int level, bool sword) {
 TEST(r2_unarmed_weapon_damage_comes_from_rules_and_is_used_by_idle_and_manual) {
     const std::unique_ptr<ContentDB> real = RealDb();
     ASSERT_TRUE(real->Errors().empty());
-    EXPECT_NEAR(real->Rules().unarmedWeaponDamagePhysical, 3.0, 0.0);
-    EXPECT_NEAR(real->Rules().requireOnScreenMargin, 100.0, 0.0);
+    const double unarmed = real->Rules().unarmedWeaponDamagePhysical;
+    EXPECT_TRUE(unarmed > 0.0);
+    EXPECT_TRUE(real->Rules().requireOnScreenMargin >= 0.0);
     const SkillData* cut = real->FindSkill("skill.warrior.iron_cut");
     ASSERT_TRUE(cut != nullptr && cut->scalesWithWeapon);
     // Sem arma: só físico, o valor da regra. Com arma: o dano da arma. Golpe que não escala: o dele.
     const auto bare = ComputeSkillBaseDamage(*real, *cut, nullptr);
-    EXPECT_NEAR(bare[0], 3.0, 0.0);
+    EXPECT_NEAR(bare[0], unarmed, 0.0);
     EXPECT_NEAR(bare[1] + bare[2] + bare[3], 0.0, 0.0);
     const ItemBaseData* sword = real->FindItemBase("item_base.iron_sword");
-    EXPECT_NEAR(ComputeSkillBaseDamage(*real, *cut, sword)[0], 9.0, 0.0);
+    EXPECT_NEAR(ComputeSkillBaseDamage(*real, *cut, sword)[0], sword->weaponDamage[0], 0.0);
     const SkillData* strike = real->FindSkill("skill.enemy.sentinel_strike");
-    EXPECT_NEAR(ComputeSkillBaseDamage(*real, *strike, nullptr)[0], 8.0, 0.0);
+    EXPECT_NEAR(ComputeSkillBaseDamage(*real, *strike, nullptr)[0], strike->baseDamage[0], 0.0);
     // Idle: o herói desarmado mata (antes causava 0 de dano e o encontro só terminava por recuo).
     ExpeditionRequest req = BareHero(*real, 20, false);
     const ExpeditionResult r = SimulateExpedition(*real, req);
@@ -94,8 +95,12 @@ TEST(r2_unarmed_weapon_damage_comes_from_rules_and_is_used_by_idle_and_manual) {
     for (const EncounterReceipt& rc : r.receipts) dealt += rc.damageDealt;
     EXPECT_TRUE(dealt > 0.0);
     // O dano vem da regra: com 0 o herói desarmado volta a não causar dano.
-    const std::unique_ptr<ContentDB> zero = RealDb({{"rules.csv", tu::Replace(tu::ReadFile(tu::ContentDir() + "/rules.csv"),
-                                                                              "unarmed_weapon_damage_physical,3", "unarmed_weapon_damage_physical,0")}});
+    std::string rulesText = tu::ReadFile(tu::ContentDir() + "/rules.csv");
+    const std::size_t at = rulesText.find("unarmed_weapon_damage_physical,");
+    ASSERT_TRUE(at != std::string::npos);
+    const std::size_t eol = rulesText.find_first_of("\r\n", at);
+    rulesText.replace(at, eol - at, "unarmed_weapon_damage_physical,0");
+    const std::unique_ptr<ContentDB> zero = RealDb({{"rules.csv", rulesText}});
     ASSERT_TRUE(zero->Errors().empty());
     const ExpeditionResult none = SimulateExpedition(*zero, BareHero(*zero, 20, false));
     EXPECT_EQ(none.kills, 0);
@@ -153,10 +158,10 @@ TEST(r2_attack_tokens_limit_simultaneous_attackers_of_the_same_enemy_in_idle) {
 TEST(r2_attack_tokens_in_real_content_exist_for_hounds_and_do_not_apply_to_enemies_without_ai_row) {
     const std::unique_ptr<ContentDB> real = RealDb();
     ASSERT_TRUE(real->FindEnemyAi("enemy.ash_hound") != nullptr);
-    EXPECT_EQ(real->FindEnemyAi("enemy.ash_hound")->attackTokens, 2);
-    EXPECT_EQ(real->FindEnemyAi("enemy.swift_ash_hound")->attackTokens, 2);
+    EXPECT_TRUE(real->FindEnemyAi("enemy.ash_hound")->attackTokens > 0);
+    EXPECT_TRUE(real->FindEnemyAi("enemy.swift_ash_hound")->attackTokens > 0);
     EXPECT_TRUE(real->FindEnemyAi("enemy.hollow_sentinel") == nullptr);   // sem linha: sem limite
-    EXPECT_EQ(real->FindEnemyAi("enemy.ghost_archer")->maxSimultaneousShooters, 2);
+    EXPECT_TRUE(real->FindEnemyAi("enemy.ghost_archer")->maxSimultaneousShooters > 0);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -167,31 +172,32 @@ TEST(r2_swift_elite_keeps_the_telegraph_with_or_without_the_modifier_stats) {
     const EnemyData* hound = real->FindEnemy("enemy.swift_ash_hound");
     const SkillData* bite = real->FindSkill("skill.enemy.ash_bite");
     ASSERT_TRUE(hound != nullptr && bite != nullptr);
-    EXPECT_NEAR(bite->windup, 0.3, 0.0);
+    const double windup = bite->windup;
     const EliteModifierData* swift = real->FindEliteModifier(hound->modifierId);
     ASSERT_TRUE(swift != nullptr);
+    const double atk = swift->attackSpeedMult, rec = swift->recoveryMult;
+    EXPECT_TRUE(atk > 0.0);
     const EliteProfile prof = MakeEliteProfile(*real, swift, false);
     StatBlock plain;
     BuildEnemyStatBlock(*hound, 3, plain);
     const ActionTimingInfo common = ComputeActionTiming(*real, *bite, plain);
-    EXPECT_NEAR(common.windup, 0.3, 1e-12);
+    EXPECT_NEAR(common.windup, windup, 1e-12);
     // (a) bloco SEM os mods do modificador (o caso do bug: 0,3 virava 0,375)
     const ActionTimingInfo noMods = ComputeActionTiming(*real, *bite, plain, &prof);
-    EXPECT_NEAR(noMods.windup, 0.3, 1e-12);
+    EXPECT_NEAR(noMods.windup, windup, 1e-12);
     // (b) bloco COM os mods
     StatBlock withMods = plain;
     ApplyEliteToStats(prof, withMods);
     const ActionTimingInfo withEliteMods = ComputeActionTiming(*real, *bite, withMods, &prof);
-    EXPECT_NEAR(withEliteMods.windup, 0.3, 1e-12);
-    // O resultado é o mesmo nos dois casos: impacto ÷ 1,25 e recuperação × 0,8 ÷ 1,25.
+    EXPECT_NEAR(withEliteMods.windup, windup, 1e-12);
+    // O resultado é o mesmo nos dois casos: impacto ÷ attackSpeedMult e recuperação × recoveryMult ÷ attackSpeedMult.
     EXPECT_NEAR(noMods.impact, withEliteMods.impact, 1e-12);
     EXPECT_NEAR(noMods.recovery, withEliteMods.recovery, 1e-12);
-    EXPECT_NEAR(withEliteMods.impact, bite->impact / 1.25, 1e-12);
-    EXPECT_NEAR(withEliteMods.recovery, bite->recovery * 0.8 / 1.25, 1e-12);
-    // Ciclo do Cão Veloz < ciclo do Cão comum (o telegraph igual, o resto mais curto).
+    EXPECT_NEAR(withEliteMods.impact, bite->impact / atk, 1e-12);
+    EXPECT_NEAR(withEliteMods.recovery, bite->recovery * rec / atk, 1e-12);
+    // O telegraph nunca encurta nem alonga com o modificador; o ciclo muda só por impacto e recuperação.
     const double swiftCycle = withEliteMods.windup + withEliteMods.impact + withEliteMods.recovery;
-    EXPECT_TRUE(swiftCycle < common.windup + common.impact + common.recovery);
-    EXPECT_NEAR(swiftCycle, 0.3 + (0.1 + 0.4 * 0.8) / 1.25, 1e-12);
+    EXPECT_NEAR(swiftCycle, windup + (bite->impact + bite->recovery * rec) / atk, 1e-12);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -200,11 +206,13 @@ TEST(r2_swift_elite_keeps_the_telegraph_with_or_without_the_modifier_stats) {
 TEST(r2_new_columns_are_read_from_the_real_content) {
     const std::unique_ptr<ContentDB> real = RealDb();
     ASSERT_TRUE(real->Errors().empty());
-    EXPECT_NEAR(real->FindBossPhase("enemy.crypt_guardian", 2)->summonAtFraction, 0.5, 0.0);
+    const double frac = real->FindBossPhase("enemy.crypt_guardian", 2)->summonAtFraction;
+    EXPECT_TRUE(frac > 0.0 && frac < 1.0);
     EXPECT_NEAR(real->FindBossPhase("enemy.crypt_guardian", 1)->summonAtFraction, 0.0, 0.0);
-    EXPECT_NEAR(real->FindSkill("skill.enemy.guardian_shield_charge")->wallStaggerSeconds, 2.0, 0.0);
+    EXPECT_TRUE(real->FindSkill("skill.enemy.guardian_shield_charge")->wallStaggerSeconds > 0.0);
     EXPECT_NEAR(real->FindSkill("skill.enemy.guardian_hammer")->wallStaggerSeconds, 0.0, 0.0);
-    EXPECT_NEAR(real->FindEnemy("enemy.hollow_sentinel")->patrolSpeedMult, 0.5, 0.0);
+    const double patrol = real->FindEnemy("enemy.hollow_sentinel")->patrolSpeedMult;
+    EXPECT_TRUE(patrol > 0.0 && patrol <= 1.0);
     EXPECT_NEAR(real->FindEnemy("enemy.ash_hound")->patrolSpeedMult, 0.0, 0.0);
     EXPECT_TRUE(real->FindEnemyAi("enemy.ghost_archer")->requireOnScreen);
     EXPECT_FALSE(real->FindEnemyAi("enemy.ash_hound")->requireOnScreen);

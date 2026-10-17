@@ -279,3 +279,33 @@ Sem teste: C1 (o próprio build reproduz), A1 (o `test_c_api.cpp` existente repr
 3. M1, B6 (validação do save na leitura), M3 e M4 (obrigatoriedade de chaves e tabelas).
 4. M5, B1, B2 e B3 (paridade manual × idle), M6 (layout), M7 (testes que fixam CSV).
 5. O resto (B4, B5, B7, B8, B9).
+
+---
+
+## 10. Estado das correções (Backend, 17/10/2026, `etapa2/backend`)
+
+Os 16 testes `test_revisao_*` foram LIGADOS (sem variável de ambiente) e passam, mais 2 testes novos (A2 estrito, paridade da barreira M5). Contrato novo em docs/09, seção 9.
+
+| Achado | Estado | Como |
+|---|---|---|
+| C1 | corrigido | `optionalColumns{}`; conferidos à mão os demais agregados do core (todos completos ou com inicializador padrão). GCC/Clang não existem na máquina local: confirmar no CI. |
+| A1 | corrigido | handle `shatter_potions` liberado em `test_c_api.cpp`. |
+| A2 | corrigido | `_trusted` e a nova `shatter_save_start_expedition_clock` usam o `last_seen` do save, recusam com `SHATTER_START_CLOCK_ROLLBACK` (nada muda) e sobem o `last_seen`; teste novo. |
+| M1 | corrigido | leitura do save recusa (`BadData`); roll satura e trata negativo como 0; `FindBossProgress` primeira ocorrência. |
+| M2 | corrigido | `start_utc` e `character_index` validados; janela em `double`. |
+| M3 | corrigido | 62 chaves obrigatórias; `constants.h` com 0 neutro. |
+| M4 | corrigido | 5 tabelas obrigatórias (E_IO / `E_REQUIRED`). |
+| M5 | corrigido | `ApplyPotionBarrier`/`TickPotionBarrier` únicos; `shatter_vitals.potion_barrier`. |
+| M6 | corrigido | `kLayoutExt` completo (114 valores). |
+| M7 | corrigido | testes do CSV real checam invariantes ou leem o valor do banco, sem literais de balanceamento (`test_elite_unique.cpp`, `test_round2.cpp`, `test_c_api.cpp`). |
+| M8 | parcial | cobertos: barreira, rollback do relógio, saves adulterados, elite idempotente, ordem de destruição do banco. Adiado: testes dedicados de rodízio de fichas de ataque e da explosão do Volátil no idle (a regra foi corrigida em B3 e passa nos testes existentes; falta um teste que a isole). |
+| B1 | corrigido | carga de elite vai para a poção que não está cheia. |
+| B2 | corrigido | DoT do herói no idle passa pela barreira. |
+| B3 | corrigido | explosão do Volátil e DoT recebido usam `idleDamageTakenMult`. |
+| B4 | corrigido | `Finalize` (E_RULE) e `validate_data.py` (`E_FIXED_TABLE`). |
+| B5 | corrigido | validador alinhado ao core (peso vazio em entrada fixa por chance, 1ª vitória ou pity). |
+| B6 | corrigido | teto no save; na carga a recarga é limitada ao período da poção. |
+| B7 | corrigido | `shatter_elite_apply` monta o perfil pelo banco; reaplicar é idempotente. |
+| B8 | corrigido | contagem de referências do banco pelos chefes (single-thread, sem `<atomic>`). |
+| B9 | adiado | `SHATTER_C_API_VERSION` fica em 1 (mudar a major quebra o wrapper C# e o `VersionMatchesSource`; decisão do Tech Lead/Frontend); o minor foi para 2 e o C# deve exigir `shatter_api_minor() >= 2`. O aviso do `<regex>` no GCC Release + sanitizer fica fora da matriz do CI. |
+| docs/11 M-04, M-02, B-12, B-22 | fora do escopo | pertencem ao cliente/dados, não ao core. |

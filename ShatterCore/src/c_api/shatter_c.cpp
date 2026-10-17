@@ -21,6 +21,10 @@ struct shatter_db {
     shatter::ContentDB db;
     bool finalized = false;
     bool ok = false;
+    // Dono do banco (docs/17, B8): cada shatter_boss vivo segura uma referência; shatter_db_destroy com chefes vivos só
+    // marca o pedido e o banco é liberado quando o último chefe sai (sem uso de memória liberada).
+    mutable int bossRefs = 0;  // handles de chefe e destroy são da main thread (contrato do header)
+    bool destroyRequested = false;
 };
 struct shatter_save {
     shatter::SaveData data;
@@ -39,6 +43,7 @@ struct shatter_actor {
     shatter::ActionStatus st;
 };
 struct shatter_boss {
+    const shatter_db* owner = nullptr;  // banco que o criou (referência contada)
     shatter::BossFight fight;
     std::vector<shatter::BossEvent> events;  // desde o último step (apply_damage/apply_effect anexam)
     shatter_boss(const shatter::ContentDB& d, const shatter::EnemyData& e, int level, std::uint64_t seed)
@@ -230,7 +235,7 @@ bool ParseJsonText(const char* s, std::size_t len, Value& out, shatter_error* er
 // API C 1.1: layout das structs novas, conversões e auxiliares
 // ---------------------------------------------------------------------------------------------
 static_assert(sizeof(shatter_rules_ext) == 152, "shatter_rules_ext");
-static_assert(sizeof(shatter_vitals) == 32, "shatter_vitals");
+static_assert(sizeof(shatter_vitals) == 40, "shatter_vitals");
 static_assert(sizeof(shatter_action_timing) == 40, "shatter_action_timing");
 static_assert(sizeof(shatter_potion_outcome) == 56, "shatter_potion_outcome");
 static_assert(sizeof(shatter_dodge_state) == 24, "shatter_dodge_state");
@@ -254,27 +259,82 @@ static_assert(static_cast<int>(IdleCalibration::BotParity) == SHATTER_CALIBRATIO
 #define SHATTER_LAYOUT_SIZE(T) static_cast<std::uint32_t>(sizeof(T))
 #define SHATTER_LAYOUT_OFF(T, f) static_cast<std::uint32_t>(offsetof(T, f))
 const std::uint32_t kLayoutExt[] = {
-    SHATTER_LAYOUT_SIZE(shatter_rules_ext), SHATTER_LAYOUT_OFF(shatter_rules_ext, guard_break_stagger_seconds),
-    SHATTER_LAYOUT_OFF(shatter_rules_ext, potion_lockout), SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_max_charges),
-    SHATTER_LAYOUT_SIZE(shatter_vitals), SHATTER_LAYOUT_OFF(shatter_vitals, barrier_seconds_left),
-    SHATTER_LAYOUT_SIZE(shatter_action_timing), SHATTER_LAYOUT_OFF(shatter_action_timing, cost),
-    SHATTER_LAYOUT_SIZE(shatter_potion_outcome), SHATTER_LAYOUT_OFF(shatter_potion_outcome, status),
-    SHATTER_LAYOUT_SIZE(shatter_dodge_state), SHATTER_LAYOUT_OFF(shatter_dodge_state, charges),
-    SHATTER_LAYOUT_OFF(shatter_dodge_state, active),
-    SHATTER_LAYOUT_SIZE(shatter_actor_apply), SHATTER_LAYOUT_OFF(shatter_actor_apply, guard_break_stacks),
-    SHATTER_LAYOUT_OFF(shatter_actor_apply, applied), SHATTER_LAYOUT_OFF(shatter_actor_apply, remove_barrier),
-    SHATTER_LAYOUT_SIZE(shatter_actor_info), SHATTER_LAYOUT_OFF(shatter_actor_info, can_act),
-    SHATTER_LAYOUT_SIZE(shatter_elite_info), SHATTER_LAYOUT_OFF(shatter_elite_info, modifier_id),
+    SHATTER_LAYOUT_SIZE(shatter_rules_ext),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_recharge), SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_duration),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_iframes), SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_distance),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_cost_resource), SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_buffer),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_perfect_resource),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_cancel_recovery_fraction),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, guard_break_stagger_seconds),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, guard_break_stagger_damage_taken),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, guard_break_immunity_boss),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, guard_break_immunity_other),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, boss_shield_down_seconds),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, elite_life_mult), SHATTER_LAYOUT_OFF(shatter_rules_ext, elite_damage_mult),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, elite_xp_mult), SHATTER_LAYOUT_OFF(shatter_rules_ext, potion_lockout),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, out_of_combat_seconds),
+    SHATTER_LAYOUT_OFF(shatter_rules_ext, dodge_max_charges),
+    SHATTER_LAYOUT_SIZE(shatter_vitals),
+    SHATTER_LAYOUT_OFF(shatter_vitals, life), SHATTER_LAYOUT_OFF(shatter_vitals, resource),
+    SHATTER_LAYOUT_OFF(shatter_vitals, barrier), SHATTER_LAYOUT_OFF(shatter_vitals, barrier_seconds_left),
+    SHATTER_LAYOUT_OFF(shatter_vitals, potion_barrier),
+    SHATTER_LAYOUT_SIZE(shatter_action_timing),
+    SHATTER_LAYOUT_OFF(shatter_action_timing, windup), SHATTER_LAYOUT_OFF(shatter_action_timing, impact),
+    SHATTER_LAYOUT_OFF(shatter_action_timing, recovery), SHATTER_LAYOUT_OFF(shatter_action_timing, cooldown),
+    SHATTER_LAYOUT_OFF(shatter_action_timing, cost),
+    SHATTER_LAYOUT_SIZE(shatter_potion_outcome),
+    SHATTER_LAYOUT_OFF(shatter_potion_outcome, heal_amount),
+    SHATTER_LAYOUT_OFF(shatter_potion_outcome, barrier_amount),
+    SHATTER_LAYOUT_OFF(shatter_potion_outcome, barrier_seconds), SHATTER_LAYOUT_OFF(shatter_potion_outcome, use_time),
+    SHATTER_LAYOUT_OFF(shatter_potion_outcome, move_speed_while_using),
+    SHATTER_LAYOUT_OFF(shatter_potion_outcome, lockout), SHATTER_LAYOUT_OFF(shatter_potion_outcome, status),
+    SHATTER_LAYOUT_SIZE(shatter_dodge_state),
+    SHATTER_LAYOUT_OFF(shatter_dodge_state, recharge_remaining), SHATTER_LAYOUT_OFF(shatter_dodge_state, elapsed),
+    SHATTER_LAYOUT_OFF(shatter_dodge_state, charges), SHATTER_LAYOUT_OFF(shatter_dodge_state, active),
+    SHATTER_LAYOUT_SIZE(shatter_actor_apply),
+    SHATTER_LAYOUT_OFF(shatter_actor_apply, stun_seconds), SHATTER_LAYOUT_OFF(shatter_actor_apply, stagger_seconds),
+    SHATTER_LAYOUT_OFF(shatter_actor_apply, guard_break_stacks), SHATTER_LAYOUT_OFF(shatter_actor_apply, applied),
+    SHATTER_LAYOUT_OFF(shatter_actor_apply, stunned), SHATTER_LAYOUT_OFF(shatter_actor_apply, stun_blocked),
+    SHATTER_LAYOUT_OFF(shatter_actor_apply, interrupted), SHATTER_LAYOUT_OFF(shatter_actor_apply, staggered),
+    SHATTER_LAYOUT_OFF(shatter_actor_apply, remove_barrier),
+    SHATTER_LAYOUT_SIZE(shatter_actor_info),
+    SHATTER_LAYOUT_OFF(shatter_actor_info, stun_remaining), SHATTER_LAYOUT_OFF(shatter_actor_info, stagger_remaining),
+    SHATTER_LAYOUT_OFF(shatter_actor_info, immunity_remaining), SHATTER_LAYOUT_OFF(shatter_actor_info, can_act),
+    SHATTER_LAYOUT_OFF(shatter_actor_info, stun_immune),
+    SHATTER_LAYOUT_SIZE(shatter_elite_info),
+    SHATTER_LAYOUT_OFF(shatter_elite_info, life_mult), SHATTER_LAYOUT_OFF(shatter_elite_info, damage_mult),
+    SHATTER_LAYOUT_OFF(shatter_elite_info, xp_mult), SHATTER_LAYOUT_OFF(shatter_elite_info, barrier_fraction_of_life),
+    SHATTER_LAYOUT_OFF(shatter_elite_info, move_speed_mult),
+    SHATTER_LAYOUT_OFF(shatter_elite_info, attack_speed_mult), SHATTER_LAYOUT_OFF(shatter_elite_info, recovery_mult),
+    SHATTER_LAYOUT_OFF(shatter_elite_info, death_explosion_radius),
+    SHATTER_LAYOUT_OFF(shatter_elite_info, death_explosion_damage),
+    SHATTER_LAYOUT_OFF(shatter_elite_info, death_explosion_fuse), SHATTER_LAYOUT_OFF(shatter_elite_info, modifier_id),
     SHATTER_LAYOUT_OFF(shatter_elite_info, rolled),
-    SHATTER_LAYOUT_SIZE(shatter_vec2), SHATTER_LAYOUT_SIZE(shatter_boss_context),
-    SHATTER_LAYOUT_SIZE(shatter_boss_event), SHATTER_LAYOUT_OFF(shatter_boss_event, kind),
+    SHATTER_LAYOUT_SIZE(shatter_vec2),
+    SHATTER_LAYOUT_OFF(shatter_vec2, x), SHATTER_LAYOUT_OFF(shatter_vec2, z),
+    SHATTER_LAYOUT_SIZE(shatter_boss_context),
+    SHATTER_LAYOUT_OFF(shatter_boss_context, boss), SHATTER_LAYOUT_OFF(shatter_boss_context, player),
+    SHATTER_LAYOUT_SIZE(shatter_boss_event),
+    SHATTER_LAYOUT_OFF(shatter_boss_event, seconds), SHATTER_LAYOUT_OFF(shatter_boss_event, kind),
+    SHATTER_LAYOUT_OFF(shatter_boss_event, phase), SHATTER_LAYOUT_OFF(shatter_boss_event, count),
     SHATTER_LAYOUT_OFF(shatter_boss_event, pattern_id), SHATTER_LAYOUT_OFF(shatter_boss_event, skill_id),
     SHATTER_LAYOUT_OFF(shatter_boss_event, enemy_id),
-    SHATTER_LAYOUT_SIZE(shatter_boss_info), SHATTER_LAYOUT_OFF(shatter_boss_info, phase),
-    SHATTER_LAYOUT_OFF(shatter_boss_info, shield_up),
-    SHATTER_LAYOUT_SIZE(shatter_boss_damage), SHATTER_LAYOUT_OFF(shatter_boss_damage, shield_blocked),
+    SHATTER_LAYOUT_SIZE(shatter_boss_info),
+    SHATTER_LAYOUT_OFF(shatter_boss_info, life), SHATTER_LAYOUT_OFF(shatter_boss_info, max_life),
+    SHATTER_LAYOUT_OFF(shatter_boss_info, shield_down_remaining),
+    SHATTER_LAYOUT_OFF(shatter_boss_info, turn_rate_deg_per_sec), SHATTER_LAYOUT_OFF(shatter_boss_info, facing_x),
+    SHATTER_LAYOUT_OFF(shatter_boss_info, facing_z), SHATTER_LAYOUT_OFF(shatter_boss_info, stagger_remaining),
+    SHATTER_LAYOUT_OFF(shatter_boss_info, stun_remaining), SHATTER_LAYOUT_OFF(shatter_boss_info, phase),
+    SHATTER_LAYOUT_OFF(shatter_boss_info, state), SHATTER_LAYOUT_OFF(shatter_boss_info, shield_up),
+    SHATTER_LAYOUT_OFF(shatter_boss_info, invulnerable),
+    SHATTER_LAYOUT_SIZE(shatter_boss_damage),
+    SHATTER_LAYOUT_OFF(shatter_boss_damage, applied), SHATTER_LAYOUT_OFF(shatter_boss_damage, life_after),
+    SHATTER_LAYOUT_OFF(shatter_boss_damage, shield_blocked), SHATTER_LAYOUT_OFF(shatter_boss_damage, invulnerable),
+    SHATTER_LAYOUT_OFF(shatter_boss_damage, clamped_by_phase), SHATTER_LAYOUT_OFF(shatter_boss_damage, killed),
     SHATTER_LAYOUT_SIZE(shatter_boss_progress),
-    SHATTER_LAYOUT_SIZE(shatter_forecast_ex), SHATTER_LAYOUT_OFF(shatter_forecast_ex, calibration),
+    SHATTER_LAYOUT_OFF(shatter_boss_progress, kills), SHATTER_LAYOUT_OFF(shatter_boss_progress, kills_since_unique),
+    SHATTER_LAYOUT_SIZE(shatter_forecast_ex),
+    SHATTER_LAYOUT_OFF(shatter_forecast_ex, base), SHATTER_LAYOUT_OFF(shatter_forecast_ex, calibration),
 };
 static_assert(sizeof(kLayoutExt) / sizeof(kLayoutExt[0]) == SHATTER_LAYOUT_EXT_COUNT, "SHATTER_LAYOUT_EXT_COUNT desatualizado");
 #undef SHATTER_LAYOUT_SIZE
@@ -306,6 +366,7 @@ void VitalsToC(const Vitals& v, shatter_vitals& o) {
     o.resource = v.resource;
     o.barrier = v.barrier;
     o.barrier_seconds_left = v.barrierSecondsLeft;
+    o.potion_barrier = v.potionBarrier;
 }
 Vitals VitalsFromC(const shatter_vitals& c) {
     Vitals v;
@@ -313,6 +374,7 @@ Vitals VitalsFromC(const shatter_vitals& c) {
     v.resource = c.resource;
     v.barrier = c.barrier;
     v.barrierSecondsLeft = c.barrier_seconds_left;
+    v.potionBarrier = c.potion_barrier;
     return v;
 }
 
@@ -321,14 +383,11 @@ void ApplyPotionToVitals(const PotionOutcome& po, double maxLife, shatter_vitals
     out.status = SHATTER_POTION_OK;
     out.use_time = po.useTime;
     out.move_speed_while_using = po.moveSpeedWhileUsing;
-    if (po.healAmount > 0.0) {
-        const double after = vitals.life + po.healAmount < maxLife ? vitals.life + po.healAmount : maxLife;
-        out.heal_amount = after > vitals.life ? after - vitals.life : 0.0;
-        vitals.life = after > vitals.life ? after : vitals.life;
-    }
+    // A regra (teto da cura, renovação da barreira só na parte da poção) é do core e a mesma do simulador idle.
+    Vitals v = VitalsFromC(vitals);
+    out.heal_amount = ApplyPotionOutcome(v, po, maxLife);
+    VitalsToC(v, vitals);
     if (po.barrierAmount > 0.0) {
-        vitals.barrier = po.barrierAmount;  // não acumula: reaplicar renova
-        vitals.barrier_seconds_left = po.barrierSeconds;
         out.barrier_amount = po.barrierAmount;
         out.barrier_seconds = po.barrierSeconds;
     }
@@ -378,23 +437,6 @@ void EliteToC(const EliteProfile& p, shatter_elite_info& o) {
     CopyText(o.modifier_id, p.modifierId);
     o.rolled = p.rolled ? 1 : 0;
 }
-EliteProfile EliteFromC(const shatter_elite_info& c) {
-    EliteProfile p;
-    p.modifierId = std::string(c.modifier_id, strnlen(c.modifier_id, sizeof(c.modifier_id)));
-    p.rolled = c.rolled != 0;
-    p.lifeMult = c.life_mult;
-    p.damageMult = c.damage_mult;
-    p.xpMult = c.xp_mult;
-    p.barrierFractionOfLife = c.barrier_fraction_of_life;
-    p.moveSpeedMult = c.move_speed_mult;
-    p.attackSpeedMult = c.attack_speed_mult;
-    p.recoveryMult = c.recovery_mult;
-    p.deathExplosionRadius = c.death_explosion_radius;
-    p.deathExplosionDamage = c.death_explosion_damage;
-    p.deathExplosionFuse = c.death_explosion_fuse;
-    return p;
-}
-
 void BossEventToC(const BossEvent& e, shatter_boss_event& o) {
     std::memset(&o, 0, sizeof(o));
     o.seconds = e.seconds;
@@ -1280,7 +1322,14 @@ SHATTER_API shatter_status SHATTER_CALL shatter_db_finalize(shatter_db* db, shat
     return SetError(err, SHATTER_CONTENT_INVALID, e.table + ": " + e.message, e.line);
 }
 
-SHATTER_API void SHATTER_CALL shatter_db_destroy(shatter_db* db) SHATTER_NOEXCEPT { delete db; }
+SHATTER_API void SHATTER_CALL shatter_db_destroy(shatter_db* db) SHATTER_NOEXCEPT {
+    if (db == nullptr) return;
+    if (db->bossRefs > 0) {
+        db->destroyRequested = true;  // há chefes vivos: o último a sair libera
+        return;
+    }
+    delete db;
+}
 
 SHATTER_API shatter_status SHATTER_CALL shatter_db_errors_json(const shatter_db* db, std::uint8_t* out,
                                                               std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
@@ -2642,7 +2691,14 @@ SHATTER_API shatter_status SHATTER_CALL shatter_elite_apply(const shatter_db* db
     const ContentDB* d = UsableDb(db);
     if (info == nullptr || stats == nullptr || barrier == nullptr) return SHATTER_INVALID_ARGUMENT;
     if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
-    const EliteProfile p = EliteFromC(*info);
+    // O perfil sai do BANCO (modifier_id + rolled); os multiplicadores da struct do chamador não valem (A-06).
+    const std::string_view mid(info->modifier_id, strnlen(info->modifier_id, sizeof(info->modifier_id)));
+    const EliteModifierData* mod = nullptr;
+    if (!mid.empty()) {
+        mod = d->FindEliteModifier(mid);
+        if (mod == nullptr) return SHATTER_NOT_FOUND;
+    }
+    const EliteProfile p = MakeEliteProfile(*d, mod, info->rolled != 0);
     ApplyEliteToStats(p, stats->sb);
     *barrier = EliteBarrier(p, stats->sb.Get(StatId::Life));
     return SHATTER_OK;
@@ -2663,11 +2719,19 @@ SHATTER_API shatter_status SHATTER_CALL shatter_boss_create(const shatter_db* db
     std::unique_ptr<shatter_boss> box(new (std::nothrow) shatter_boss(*d, *e, level, seed));
     if (!box) return SHATTER_INTERNAL;
     if (!box->fight.Valid()) return SHATTER_CONTENT_INVALID;  // sem linhas em boss_phases.csv
+    box->owner = db;
+    ++db->bossRefs;
     *out = box.release();
     return SHATTER_OK;
 }
 
-SHATTER_API void SHATTER_CALL shatter_boss_destroy(shatter_boss* boss) SHATTER_NOEXCEPT { delete boss; }
+SHATTER_API void SHATTER_CALL shatter_boss_destroy(shatter_boss* boss) SHATTER_NOEXCEPT {
+    if (boss == nullptr) return;
+    const shatter_db* owner = boss->owner;
+    delete boss;
+    if (owner != nullptr && --owner->bossRefs == 0 && owner->destroyRequested)
+        delete const_cast<shatter_db*>(owner);  // o banco foi destruído antes do último chefe
+}
 
 SHATTER_API shatter_status SHATTER_CALL shatter_boss_reset(shatter_boss* boss, shatter_statblock* stats) SHATTER_NOEXCEPT {
     if (boss == nullptr) return SHATTER_INVALID_ARGUMENT;
@@ -2787,11 +2851,9 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_boss_progress_get(const sha
         return SHATTER_INVALID_ARGUMENT;
     out->kills = 0;
     out->kills_since_unique = 0;
-    for (const BossProgressEntry& b : save->data.characters[character_index].bossProgress) {
-        if (b.enemyId == id) {
-            out->kills = b.kills;
-            out->kills_since_unique = b.killsSinceUnique;
-        }
+    if (const BossProgressEntry* b = FindBossProgress(save->data.characters[character_index].bossProgress, ContentId(id))) {
+        out->kills = b->kills;
+        out->kills_since_unique = b->killsSinceUnique;
     }
     return SHATTER_OK;
 }
@@ -2815,9 +2877,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_roll_boss_loot(const shatte
     CharacterState& ch = save->data.characters[character_index];
     BossProgressEntry prog;
     prog.enemyId = e->id;
-    for (const BossProgressEntry& b : ch.bossProgress) {
-        if (b.enemyId == e->id) prog = b;
-    }
+    if (const BossProgressEntry* found = FindBossProgress(ch.bossProgress, e->id)) prog = *found;
     std::uint64_t uid = save->data.nextItemUid;
     Pcg32 r = Pcg32::FromRaw(loot_rng->state, loot_rng->inc);
     const LootDrop drop = RollBossLoot(*d, *e, area_level < 1 ? 1 : area_level, prog, &uid, r);
@@ -2854,6 +2914,35 @@ SHATTER_API shatter_status SHATTER_CALL shatter_expedition_forecast_ex(const sha
     return SHATTER_OK;
 }
 
+namespace {
+
+// Núcleo do início confiável: o "agora" já foi resolvido pelo core (ou conferido contra o last_seen do SAVE).
+shatter_status StartTrustedCommon(const ContentDB& d, shatter_save* save, const char* params_json, std::size_t len,
+                                  UnixSeconds nowUtc, bool rollback, std::int32_t* start_check, shatter_error* err) {
+    Value v;
+    shatter_status st = SHATTER_OK;
+    if (!ParseJsonText(params_json, len, v, err, st)) return st;
+    if (v.Has("seed") || v.Has("start_utc"))
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "seed and start_utc come from the core, not from the caller");
+    ExpeditionStartParams p;
+    if (!StartParamsFromText(params_json, len, p, err, st)) return st;
+    if (rollback) {  // RF-48: relógio voltando não inicia expedição (nada muda)
+        *start_check = SHATTER_START_CLOCK_ROLLBACK;
+        return SHATTER_OK;
+    }
+    // O início nunca fica antes do último ponto visto do save.
+    const UnixSeconds start = std::max(nowUtc, save->data.lastSeenUtc);
+    if (start <= 0 || start > kMaxSaveUtc) return SetError(err, SHATTER_INVALID_ARGUMENT, "now is out of range");
+    p.startUtc = start;
+    p.seed = DeriveExpeditionSeed(save->data, p.characterIndex, p.startUtc);
+    const StartCheck check = StartExpedition(d, save->data, p, nullptr);
+    if (check == StartCheck::Ok) save->data.lastSeenUtc = std::max(save->data.lastSeenUtc, start);  // mesmo passo
+    *start_check = static_cast<std::int32_t>(check);
+    return SHATTER_OK;
+}
+
+}  // namespace
+
 SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition_trusted(const shatter_db* db, shatter_save* save,
                                                                             const char* params_json, std::size_t len,
                                                                             const shatter_trusted_now* now,
@@ -2864,17 +2953,30 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition_trusted(co
         return SetError(err, SHATTER_INVALID_ARGUMENT, "save, now or start_check is null");
     const ContentDB* d = UsableDb(db);
     if (d == nullptr) return DbError(db, err);
-    Value v;
-    shatter_status st = SHATTER_OK;
-    if (!ParseJsonText(params_json, len, v, err, st)) return st;
-    if (v.Has("seed") || v.Has("start_utc"))
-        return SetError(err, SHATTER_INVALID_ARGUMENT, "seed and start_utc come from the core, not from the caller");
-    ExpeditionStartParams p;
-    if (!StartParamsFromText(params_json, len, p, err, st)) return st;
-    p.startUtc = now->now;
-    p.seed = DeriveExpeditionSeed(save->data, p.characterIndex, p.startUtc);
-    *start_check = static_cast<std::int32_t>(StartExpedition(*d, save->data, p, nullptr));
-    return SHATTER_OK;
+    // Não confia na flag do chamador: confere o "agora" contra o last_seen do SAVE e a tolerância do banco.
+    const bool rollback = now->rollback_detected != 0 ||
+                          (save->data.lastSeenUtc > 0 && static_cast<double>(now->now) <
+                                                              static_cast<double>(save->data.lastSeenUtc) - d->Rules().clockRollbackToleranceSec);
+    return StartTrustedCommon(*d, save, params_json, len, now->now, rollback, start_check, err);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition_clock(const shatter_db* db, shatter_save* save,
+                                                                          const char* params_json, std::size_t len,
+                                                                          const shatter_clock_input* clock,
+                                                                          std::int32_t* start_check,
+                                                                          shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (save == nullptr || clock == nullptr || start_check == nullptr)
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "save, clock or start_check is null");
+    const ContentDB* d = UsableDb(db);
+    if (d == nullptr) return DbError(db, err);
+    ClockInput ci;  // mesmo ResolveNow da coleta, com o last_seen do SAVE (o do clock é ignorado)
+    ci.localNowUtc = clock->local_now_utc;
+    ci.hasSteamTime = clock->has_steam_time != 0;
+    ci.steamNowUtc = clock->steam_now_utc;
+    ci.lastSeenUtc = save->data.lastSeenUtc;
+    const TrustedNow now = ResolveNow(ci, d->Rules());
+    return StartTrustedCommon(*d, save, params_json, len, now.now, now.rollbackDetected, start_check, err);
 }
 
 SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition_trusted(
@@ -2895,6 +2997,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition_trusted(
         return SHATTER_OK;
     }
     if (e.status != ExpeditionStatus::Running) return SetError(err, SHATTER_INVALID_ARGUMENT, "expedition is not running");
+    if (e.characterIndex < 0 || static_cast<std::size_t>(e.characterIndex) >= save->data.characters.size())
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "expedition character_index does not exist");
     // Relógio confiável + último ponto conhecido do SAVE (o last_seen do clock é ignorado).
     ClockInput ci;
     ci.localNowUtc = clock->local_now_utc;

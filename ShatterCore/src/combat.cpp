@@ -93,12 +93,27 @@ void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double 
         v.resource = std::max(0.0, v.resource - cls->resourceDecayOutOfCombat * dt);
     if (v.resource > maxRes) v.resource = maxRes;
 
-    if (v.barrierSecondsLeft > 0.0) {
-        v.barrierSecondsLeft -= dt;
-        if (v.barrierSecondsLeft <= 0.0) {
-            v.barrierSecondsLeft = 0.0;
-            v.barrier = 0.0;
-        }
+    TickPotionBarrier(v.barrier, v.potionBarrier, v.barrierSecondsLeft, dt);
+}
+
+void ApplyPotionBarrier(double& barrier, double& potionAmount, double& remaining, double newAmount, double seconds) {
+    barrier = std::max(0.0, barrier - potionAmount) + newAmount;
+    potionAmount = newAmount;
+    remaining = seconds;
+}
+
+void TickPotionBarrier(double& barrier, double& potionAmount, double& remaining, double dt) {
+    if (remaining > 0.0 && potionAmount <= 0.0) potionAmount = barrier;  // sem divisão informada: tudo é da poção
+    if (potionAmount > barrier) potionAmount = barrier;                   // o dano gastou a parte da poção
+    if (remaining <= 0.0) {
+        potionAmount = 0.0;
+        return;
+    }
+    remaining -= dt;
+    if (remaining <= kEps) {
+        barrier = std::max(0.0, barrier - potionAmount);
+        potionAmount = 0.0;
+        remaining = 0.0;
     }
 }
 
@@ -193,7 +208,8 @@ PotionBelt MakePotionBelt(const ContentDB& db, const std::vector<PotionSlotState
         for (const PotionSlotState& q : saved) {
             if (q.potionId != p.id) continue;
             s.charges = std::max(0, std::min(q.charges, p.maxCharges));
-            s.rechargeRemaining = q.rechargeRemaining > 0.0 ? q.rechargeRemaining : 0.0;
+            // Recarga salva maior que o período (save adulterado) é cortada: a carga volta em no máximo rechargeSeconds.
+            s.rechargeRemaining = q.rechargeRemaining > 0.0 ? std::min(q.rechargeRemaining, p.rechargeSeconds) : 0.0;
             break;
         }
         if (s.charges >= p.maxCharges) s.rechargeRemaining = 0.0;
@@ -232,13 +248,13 @@ bool AddChargeOnEliteKill(const ContentDB& db, PotionBelt& belt) {
     const PotionData* bestData = nullptr;
     for (PotionSlotState& s : belt.slots) {
         const PotionData* p = db.FindPotion(s.potionId);
-        if (p == nullptr || !p->refillOnEliteKill) continue;
+        if (p == nullptr || !p->refillOnEliteKill || s.charges >= p->maxCharges) continue;  // cheia não conta
         if (best == nullptr || s.charges < best->charges) {  // empate: a primeira do CSV
             best = &s;
             bestData = p;
         }
     }
-    if (best == nullptr || best->charges >= bestData->maxCharges) return false;
+    if (best == nullptr) return false;
     ++best->charges;
     if (best->charges >= bestData->maxCharges) best->rechargeRemaining = 0.0;
     return true;
@@ -270,6 +286,20 @@ PotionOutcome ResolvePotion(const PotionData& potion, double maxLife, double pot
     o.useTime = potion.useTime;
     o.moveSpeedWhileUsing = potion.moveSpeedWhileUsing;
     return o;
+}
+
+double ApplyPotionOutcome(Vitals& v, const PotionOutcome& po, double maxLife) {
+    double healed = 0.0;
+    if (po.healAmount > 0.0) {
+        const double after = std::min(maxLife, v.life + po.healAmount);
+        if (after > v.life) {
+            healed = after - v.life;
+            v.life = after;
+        }
+    }
+    if (po.barrierAmount > 0.0)
+        ApplyPotionBarrier(v.barrier, v.potionBarrier, v.barrierSecondsLeft, po.barrierAmount, po.barrierSeconds);
+    return healed;
 }
 
 PotionUseStatus UsePotion(const ContentDB& db, PotionBelt& belt, std::string_view potionId, double maxLife,
@@ -475,6 +505,7 @@ EliteProfile MakeEliteProfile(const ContentDB& db, const EliteModifierData* mod,
 }
 
 void ApplyEliteToStats(const EliteProfile& p, StatBlock& stats) {
+    stats.RemoveModifiersFrom("elite");  // idempotente: reaplicar no mesmo bloco (reinício no checkpoint) não multiplica de novo
     auto addMore = [&](StatId stat, double mult) {
         if (mult == 1.0) return;
         Modifier m;

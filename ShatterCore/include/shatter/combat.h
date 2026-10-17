@@ -41,7 +41,15 @@ struct Vitals {
     double resource = 0.0;
     double barrier = 0.0;
     double barrierSecondsLeft = 0.0;   // > 0: a barreira (de poção) some ao chegar a 0
+    double potionBarrier = 0.0;        // parte de `barrier` que veio da poção (a das outras fontes não expira junto)
 };
+
+// Barreira da Poção de Resguardo (docs/13 item 2): UMA regra para o manual (Vitals, pela API C) e para o simulador idle.
+// Reaplicar renova (não acumula): troca só a parte da poção; a de outras fontes fica.
+void ApplyPotionBarrier(double& barrier, double& potionAmount, double& remaining, double newAmount, double seconds);
+// Avança o tempo da barreira da poção: a parte da poção que o dano já gastou sai da conta; ao fim do tempo sai só a parte
+// da poção. Barreira temporária sem divisão informada (potionAmount = 0 com tempo correndo) conta inteira como da poção.
+void TickPotionBarrier(double& barrier, double& potionAmount, double& remaining, double dt);
 // Vida cheia; recurso no repouso da classe (vazio se decai fora de combate, senão cheio).
 Vitals CreateVitals(const StatBlock& stats, const ClassData* cls);
 // Regeneração de vida e recurso, decaimento do recurso fora de combate e fim da barreira temporária.
@@ -103,6 +111,9 @@ struct PotionOutcome {
     double moveSpeedWhileUsing = 1.0;
     double lockout = 0.0;           // trava global iniciada
 };
+// Aplica o resultado de uma poção em `v`: cura limitada à vida máxima (devolve o que de fato curou) e barreira renovada.
+double ApplyPotionOutcome(Vitals& v, const PotionOutcome& po, double maxLife);
+
 // Resultado puro da poção (sem cargas nem trava): cura = fração × vida máx. × PotionEffect; barreira idem.
 PotionOutcome ResolvePotion(const PotionData& potion, double maxLife, double potionEffect);
 // Usa a poção do belt: confere trava e cargas, gasta 1 carga (inicia a recarga em série se estava cheia) e inicia a trava.

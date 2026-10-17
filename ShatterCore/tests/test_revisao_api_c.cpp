@@ -6,12 +6,7 @@
 // shattercore_tests pode fazer este #include (senão as funções shatter_* ficam definidas duas vezes no link): junte
 // aqui todo teste novo da API C.
 //
-// Cada teste afirma o comportamento CORRETO e falha no master atual. Ficam DESLIGADOS por padrão (saem cedo e passam)
-// e só rodam com SHATTER_REVISAO_BUGS=1, no mesmo padrão de SHATTER_BALANCE_PROBE:
-//   SHATTER_REVISAO_BUGS=1 shattercore_tests revisao_
-// O nome de cada teste traz o ID do achado no docs/17. Quando o achado for corrigido, apague a guarda do teste.
-// Os testes com "UB" no nome dependem de comportamento indefinido (o UBSan acusa e, no Clang, aborta; o ASan aborta
-// no B8, que derruba até o Release): rodam só com SHATTER_REVISAO_UB=1, um de cada vez (shattercore_tests <nome>).
+// Cada teste afirma o comportamento CORRETO do achado do docs/17 (todos corrigidos e LIGADOS; sem variável de ambiente).
 #define SHATTER_C_STATIC
 #include "../src/c_api/shatter_c.cpp"
 
@@ -26,9 +21,6 @@ namespace revisao_api_c {
 
 using namespace shatter;
 
-bool BugsOn() { return !tu::GetEnv("SHATTER_REVISAO_BUGS").empty(); }
-// Variável própria para os testes de UB: SHATTER_REVISAO_BUGS=1 roda os demais até o fim sem abortar.
-bool UbOn() { return !tu::GetEnv("SHATTER_REVISAO_UB").empty(); }
 
 struct Db {
     shatter_db* db = nullptr;
@@ -106,7 +98,6 @@ using namespace revisao_api_c;
 // (contorna o RF-48). Esperado: o início recusa (ou usa max(now, last_seen)) e a coleta 60 s depois diz NOT_FINISHED.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_A2_inicio_confiavel_aceita_relogio_atrasado_e_coleta_na_hora) {
-    if (!BugsOn()) return;  // DESLIGADO: A2
     Db db;
     ASSERT_TRUE(db.db != nullptr);
     Save save;
@@ -144,13 +135,12 @@ TEST(revisao_A2_inicio_confiavel_aceita_relogio_atrasado_e_coleta_na_hora) {
 // garantida em TODA vitória.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_M1_boss_progress_duplicado_congela_o_contador) {
-    if (!BugsOn()) return;  // DESLIGADO: M1
     CharacterState c = tu::MakeWarrior(tu::RichDb(), 3);
     c.bossProgress = {{"enemy.crypt_guardian", 0, 0}, {"enemy.crypt_guardian", 10, 3}};
     SaveData s;
     s.characters.push_back(c);
     Save save;
-    ASSERT_TRUE(LoadSave(s, save));
+    if (!LoadSave(s, save)) return;  // o save v2 recusa boss_progress repetido na leitura (comportamento correto, docs/17 M1)
     Db db;
     ASSERT_TRUE(db.db != nullptr);
     const std::string id = "enemy.crypt_guardian";
@@ -176,7 +166,6 @@ TEST(revisao_M1_boss_progress_duplicado_congela_o_contador) {
 //     (shatter_c.cpp:2920-2921), mas a expedição fica Running para sempre e bloqueia novos inícios.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_M2_start_utc_extremo_no_save_estoura_a_janela_UB) {
-    if (!UbOn()) return;  // DESLIGADO: M2 (UB: o UBSan acusa clock.h:66)
     Db db;
     ASSERT_TRUE(db.db != nullptr);
     SaveData s = BaseSave();
@@ -199,7 +188,6 @@ TEST(revisao_M2_start_utc_extremo_no_save_estoura_a_janela_UB) {
 }
 
 TEST(revisao_M2_coleta_diz_already_com_expedicao_ainda_running) {
-    if (!BugsOn()) return;  // DESLIGADO: M2
     Db db;
     ASSERT_TRUE(db.db != nullptr);
     SaveData s = BaseSave();
@@ -232,15 +220,15 @@ TEST(revisao_M2_coleta_diz_already_com_expedicao_ainda_running) {
 // conferidos: shatter_layout_check_ext aceita e o jogo usa a duração da esquiva como janela de invulnerabilidade.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_M6_layout_ext_aceita_campos_trocados) {
-    if (!BugsOn()) return;  // DESLIGADO: M6
     std::uint32_t values[SHATTER_LAYOUT_EXT_COUNT];
     std::size_t needed = 0;
     ASSERT_EQ(shatter_layout_info_ext(values, SHATTER_LAYOUT_EXT_COUNT, &needed), SHATTER_OK);
     // O que o C# monta para shatter_rules_ext (as 4 primeiras entradas da lista), a partir do espelho errado.
+    // Layout completo: [0] = tamanho; depois o offset de CADA campo na ordem da struct (dodge_recharge, dodge_duration, ...).
     values[0] = static_cast<std::uint32_t>(sizeof(RulesExtTrocado));
-    values[1] = static_cast<std::uint32_t>(offsetof(RulesExtTrocado, guard_break_stagger_seconds));
-    values[2] = static_cast<std::uint32_t>(offsetof(RulesExtTrocado, potion_lockout));
-    values[3] = static_cast<std::uint32_t>(offsetof(RulesExtTrocado, dodge_max_charges));
+    values[1] = static_cast<std::uint32_t>(offsetof(RulesExtTrocado, dodge_recharge));
+    values[2] = static_cast<std::uint32_t>(offsetof(RulesExtTrocado, dodge_duration));
+    values[3] = static_cast<std::uint32_t>(offsetof(RulesExtTrocado, dodge_iframes));
     shatter_error err{};
     EXPECT_EQ(shatter_layout_check_ext(values, SHATTER_LAYOUT_EXT_COUNT, &err), SHATTER_VERSION_MISMATCH);  // hoje: OK
 }
@@ -250,7 +238,6 @@ TEST(revisao_M6_layout_ext_aceita_campos_trocados) {
 // (reinício no checkpoint com bloco reaproveitado, docs/13 R2.4) multiplica a vida outra vez.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_B7_elite_apply_duas_vezes_multiplica_de_novo) {
-    if (!BugsOn()) return;  // DESLIGADO: B7
     Db db;
     ASSERT_TRUE(db.db != nullptr);
     const std::string enemy = "enemy.hollow_sentinel";
@@ -278,7 +265,6 @@ TEST(revisao_B7_elite_apply_duas_vezes_multiplica_de_novo) {
 // heap-use-after-free em BossFight::PickAndStart; em Release, falha de segmentação ou lixo.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_B8_boss_depois_do_db_destruido_usa_memoria_liberada_UB) {
-    if (!UbOn()) return;  // DESLIGADO: B8 (UB: sob ASan aborta com heap-use-after-free)
     shatter_db* db = nullptr;
     {
         const std::string dir = tu::RichDir();
@@ -298,4 +284,89 @@ TEST(revisao_B8_boss_depois_do_db_destruido_usa_memoria_liberada_UB) {
     for (int i = 0; i < 200; ++i) shatter_boss_step(b, 0.1, &ctx, sb, &n);  // usa db_ e phases_ liberados
     shatter_boss_destroy(b);
     shatter_statblock_destroy(sb);
+}
+
+// ---------------------------------------------------------------------------------------------
+// A2 (estrito) — início confiável com o relógio voltando (RF-48): recusa com CLOCK_ROLLBACK e NADA muda; dentro da
+// tolerância o início usa max(now, last_seen); início aceito sobe o last_seen do save.
+// ---------------------------------------------------------------------------------------------
+TEST(revisao_A2_inicio_com_relogio_voltando_recusa_e_nada_muda) {
+    Db db;
+    ASSERT_TRUE(db.db != nullptr);
+    const std::string params = StartParams(4);
+    shatter_error err{};
+    const shatter_rules rules = Rules(db.db);
+
+    {   // _trusted com rollback_detected do chamador
+        Save save;
+        ASSERT_TRUE(LoadSave(BaseSave(), save));
+        shatter_trusted_now now{};
+        now.now = kLastSeen + 10;
+        now.rollback_detected = 1;
+        std::int32_t check = -1;
+        ASSERT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, params.data(), params.size(), &now, &check, &err), SHATTER_OK);
+        EXPECT_EQ(check, SHATTER_START_CLOCK_ROLLBACK);
+        shatter_save_summary sm{};
+        shatter_save_summary_get(save.save, &sm);
+        EXPECT_EQ(sm.expedition_count, 0);
+        EXPECT_EQ(sm.last_seen_utc, kLastSeen);
+        EXPECT_EQ(sm.marker_charges, 12);
+    }
+    {   // _trusted: "agora" muito antes do last_seen DO SAVE, sem flag (o chamador mentiu)
+        Save save;
+        ASSERT_TRUE(LoadSave(BaseSave(), save));
+        shatter_trusted_now now{};
+        now.now = kLastSeen - 7 * 86400;
+        std::int32_t check = -1;
+        ASSERT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, params.data(), params.size(), &now, &check, &err), SHATTER_OK);
+        EXPECT_EQ(check, SHATTER_START_CLOCK_ROLLBACK);
+        shatter_save_summary sm{};
+        shatter_save_summary_get(save.save, &sm);
+        EXPECT_EQ(sm.expedition_count, 0);
+    }
+    {   // _clock: resolve por dentro com o last_seen do save (o campo do chamador é ignorado)
+        Save save;
+        ASSERT_TRUE(LoadSave(BaseSave(), save));
+        shatter_clock_input in{};
+        in.local_now_utc = kLastSeen - 7 * 86400;
+        in.last_seen_utc = 0;
+        std::int32_t check = -1;
+        ASSERT_EQ(shatter_save_start_expedition_clock(db.db, save.save, params.data(), params.size(), &in, &check, &err), SHATTER_OK);
+        EXPECT_EQ(check, SHATTER_START_CLOCK_ROLLBACK);
+        shatter_save_summary sm{};
+        shatter_save_summary_get(save.save, &sm);
+        EXPECT_EQ(sm.expedition_count, 0);
+        EXPECT_EQ(sm.last_seen_utc, kLastSeen);
+    }
+    {   // dentro da tolerância: aceita, início = last_seen (nunca para trás) e last_seen não desce
+        Save save;
+        ASSERT_TRUE(LoadSave(BaseSave(), save));
+        shatter_clock_input in{};
+        in.local_now_utc = kLastSeen - static_cast<std::int64_t>(rules.clock_rollback_tolerance_s / 2.0);
+        std::int32_t check = -1;
+        ASSERT_EQ(shatter_save_start_expedition_clock(db.db, save.save, params.data(), params.size(), &in, &check, &err), SHATTER_OK);
+        EXPECT_EQ(check, SHATTER_START_OK);
+        shatter_save_summary sm{};
+        shatter_save_summary_get(save.save, &sm);
+        EXPECT_EQ(sm.expedition_count, 1);
+        EXPECT_EQ(sm.last_seen_utc, kLastSeen);
+    }
+    {   // relógio normal: last_seen sobe para o início e a coleta 60 s depois diz NOT_FINISHED
+        Save save;
+        ASSERT_TRUE(LoadSave(BaseSave(), save));
+        shatter_clock_input in{};
+        in.local_now_utc = kLastSeen + 100;
+        std::int32_t check = -1;
+        ASSERT_EQ(shatter_save_start_expedition_clock(db.db, save.save, params.data(), params.size(), &in, &check, &err), SHATTER_OK);
+        EXPECT_EQ(check, SHATTER_START_OK);
+        shatter_save_summary sm{};
+        shatter_save_summary_get(save.save, &sm);
+        EXPECT_EQ(sm.last_seen_utc, kLastSeen + 100);
+        shatter_clock_input later{};
+        later.local_now_utc = kLastSeen + 160;
+        std::int32_t collect = -1;
+        std::size_t needed = 0;
+        EXPECT_EQ(shatter_save_collect_expedition_trusted(db.db, save.save, 0, &later, 0, &collect, nullptr, 0, &needed, &err), SHATTER_OK);
+        EXPECT_EQ(collect, SHATTER_COLLECT_NOT_FINISHED);
+    }
 }
