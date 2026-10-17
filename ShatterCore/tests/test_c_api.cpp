@@ -1612,3 +1612,272 @@ TEST(c_api_13_enemy_flee_is_decided_by_the_core_from_enemy_ai_csv) {
     layout[2] += 1;
     EXPECT_EQ(shatter_layout_check_ext3(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
 }
+
+// =============================================================================================
+// API 1.4: inventário, equipamento, venda e loot no chão
+// =============================================================================================
+namespace {
+
+std::string LootJsonOf(const std::vector<ItemInstance>& items) {
+    json::Value o = json::Value::MakeObject();
+    json::Value a = json::Value::MakeArray();
+    for (const ItemInstance& it : items) a.Push(ItemToJson(it));
+    o.Set("items", std::move(a));
+    o.Set("stacks", json::Value::MakeArray());
+    return json::Serialize(o, false);
+}
+
+ItemInstance InvItem(std::uint64_t uid, const char* base, Rarity r = Rarity::Normal, int lvl = 1) {
+    ItemInstance it;
+    it.uid = uid;
+    it.baseId = base;
+    it.rarity = r;
+    it.itemLevel = lvl;
+    return it;
+}
+
+json::Value Ground(const shatter_save* s) {
+    return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_ground_list(s, o, c, n); }));
+}
+
+json::Value Box(const shatter_save* s, int container) {
+    return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_inventory_list_json(s, 0, container, o, c, n); }));
+}
+
+json::Value SaveFile(const shatter_save* s) {
+    return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_to_json(s, 0, o, c, n); }));
+}
+
+std::int64_t Gold(const json::Value& file) {
+    std::int64_t g = 0;
+    for (const json::Value& cur : file["data"]["currencies"].Items())
+        if (cur["id"].AsString() == "currency.gold") g = cur["amount"].AsInt();
+    return g;
+}
+
+}  // namespace
+
+TEST(c_api_14_drop_loot_goes_to_the_ground_with_uids_banks_stacks_and_is_deterministic) {
+    DbHandle db(tu::RichDir());
+    const std::string table = "loot.crypt.guardian";
+    shatter_loot_context ctx{};
+    ctx.quantity_mult = 1.0;
+    ctx.mode = SHATTER_LOOT_MANUAL;
+    ctx.area_level = 4;
+    ctx.max_rares = -1;
+    auto run = [&](std::uint64_t seed, std::string* groundText, std::string* lootText, std::int64_t* gold) {
+        SaveHandle save = MakeSave(db.db);
+        shatter_rng rng{};
+        shatter_rng_for_stream(seed, SHATTER_RNG_LOOT, 0, &rng);
+        std::size_t needed = 0;
+        shatter_error err{};
+        // Buffer pequeno: nada muda (nem rng, nem uid, nem chão).
+        const shatter_rng start = rng;
+        EXPECT_EQ(shatter_save_drop_loot(db.db, save.save, table.data(), table.size(), &ctx, &rng, nullptr, 0, &needed, &err),
+                  SHATTER_BUFFER_TOO_SMALL);
+        EXPECT_EQ(rng.state, start.state);
+        EXPECT_EQ(Ground(save.save)["items"].Size(), static_cast<std::size_t>(0));
+        std::vector<std::uint8_t> buf(needed);
+        ASSERT_EQ(shatter_save_drop_loot(db.db, save.save, table.data(), table.size(), &ctx, &rng, buf.data(), buf.size(), &needed, &err),
+                  SHATTER_OK);
+        *lootText = std::string(buf.begin(), buf.end());
+        const json::Value loot = Parse(*lootText);
+        const json::Value ground = Ground(save.save);
+        EXPECT_EQ(ground["items"].Size(), loot["items"].Size());   // itens no chão, na ordem da queda
+        for (std::size_t i = 0; i < ground["items"].Size(); ++i) EXPECT_TRUE(ground["items"].At(i)["uid"].AsString() != "0");
+        EXPECT_EQ(Box(save.save, SHATTER_CONTAINER_BACKPACK).Size(), static_cast<std::size_t>(0));   // nada vai à Mochila sozinho
+        std::int64_t g = 0;
+        for (const json::Value& st : loot["stacks"].Items())
+            if (st["id"].AsString() == "currency.gold") g = st["amount"].AsInt();
+        *gold = g;
+        EXPECT_EQ(Gold(SaveFile(save.save)), g);                  // Ouro entra direto no save (ímã)
+        *groundText = S(ground);
+    };
+    std::string g1, g2, l1, l2;
+    std::int64_t gold1 = 0, gold2 = 0;
+    run(11, &g1, &l1, &gold1);
+    run(11, &g2, &l2, &gold2);
+    EXPECT_EQ(g1, g2);
+    EXPECT_EQ(l1, l2);
+    EXPECT_EQ(gold1, gold2);
+    std::string g3, l3;
+    std::int64_t gold3 = 0;
+    bool differs = false;
+    for (std::uint64_t seed = 12; seed < 40 && !differs; ++seed) {
+        run(seed, &g3, &l3, &gold3);
+        differs = l3 != l1;
+    }
+    EXPECT_TRUE(differs);                                         // outra seed, outro drop
+    SaveHandle save = MakeSave(db.db);
+    shatter_rng rng{};
+    shatter_rng_for_stream(11, SHATTER_RNG_LOOT, 0, &rng);
+    std::size_t needed = 0;
+    shatter_error err{};
+    std::vector<std::uint8_t> buf(8192);
+    EXPECT_EQ(shatter_save_drop_loot(db.db, save.save, "loot.none", 9, &ctx, &rng, buf.data(), buf.size(), &needed, &err), SHATTER_NOT_FOUND);
+}
+
+TEST(c_api_14_pickup_respects_capacity_unique_overflows_to_stash_and_ground_is_not_saved) {
+    DbHandle db(tu::RichDir());
+    SaveHandle save = MakeSave(db.db);
+    shatter_inventory_info info{};
+    ASSERT_EQ(shatter_inventory_info_get(db.db, save.save, 0, &info), SHATTER_OK);
+    ASSERT_TRUE(info.backpack_capacity > 0 && info.stash_capacity > 0);
+    EXPECT_EQ(info.backpack_used, 0);
+    std::vector<ItemInstance> drops;
+    const int total = info.backpack_capacity + 2;
+    for (int i = 0; i < total; ++i) drops.push_back(InvItem(100 + static_cast<std::uint64_t>(i), "item_base.bone_helm"));
+    ItemInstance unique = InvItem(900, "item_base.bone_helm", Rarity::Unique);
+    unique.uniqueId = "unique.idle_ready_helm";
+    drops.push_back(unique);
+    const std::string loot = LootJsonOf(drops);
+    shatter_error err{};
+    ASSERT_EQ(shatter_save_ground_add_loot(save.save, loot.data(), loot.size(), &err), SHATTER_OK);
+    EXPECT_EQ(Ground(save.save)["items"].Size(), drops.size());
+    std::int32_t dest = -1;
+    for (int i = 0; i < info.backpack_capacity; ++i) {
+        ASSERT_EQ(shatter_save_pickup(db.db, save.save, 0, 100 + static_cast<std::uint64_t>(i), &dest), SHATTER_OK);
+        EXPECT_EQ(dest, SHATTER_PICKUP_BACKPACK);
+    }
+    ASSERT_EQ(shatter_inventory_info_get(db.db, save.save, 0, &info), SHATTER_OK);
+    EXPECT_EQ(info.backpack_used, info.backpack_capacity);
+    // Cheia: item comum fica no chão; o Único vai para o Baú.
+    const std::uint64_t extra = 100 + static_cast<std::uint64_t>(info.backpack_capacity);
+    ASSERT_EQ(shatter_save_pickup(db.db, save.save, 0, extra, &dest), SHATTER_OK);
+    EXPECT_EQ(dest, SHATTER_PICKUP_FULL);
+    EXPECT_EQ(Ground(save.save)["items"].Size(), static_cast<std::size_t>(3));
+    ASSERT_EQ(shatter_save_pickup(db.db, save.save, 0, 900, &dest), SHATTER_OK);
+    EXPECT_EQ(dest, SHATTER_PICKUP_STASH);
+    ASSERT_EQ(shatter_save_pickup(db.db, save.save, 0, 424242, &dest), SHATTER_OK);
+    EXPECT_EQ(dest, SHATTER_PICKUP_NOT_FOUND);
+    ASSERT_EQ(shatter_inventory_info_get(db.db, save.save, 0, &info), SHATTER_OK);
+    EXPECT_EQ(info.stash_used, 1);
+    // Libera espaço (descarta um) e pega o que ficou.
+    std::int32_t res = -1;
+    ASSERT_EQ(shatter_inventory_discard(save.save, 0, SHATTER_CONTAINER_BACKPACK, 100, &res), SHATTER_OK);
+    EXPECT_EQ(res, SHATTER_INV_OK);
+    ASSERT_EQ(shatter_save_pickup(db.db, save.save, 0, extra, &dest), SHATTER_OK);
+    EXPECT_EQ(dest, SHATTER_PICKUP_BACKPACK);
+    // O chão não é salvo; Mochila e Baú sim.
+    const json::Value file = SaveFile(save.save);
+    EXPECT_EQ(file["data"]["characters"].At(0)["backpack"].Size(), static_cast<std::size_t>(info.backpack_capacity));
+    EXPECT_EQ(file["data"]["stash"].Size(), static_cast<std::size_t>(1));
+    const std::string text = TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_to_json(save.save, 0, o, c, n); });
+    SaveHandle reloaded;
+    std::int32_t load = -1;
+    ASSERT_EQ(shatter_save_from_json(text.data(), text.size(), &reloaded.save, &load, &err), SHATTER_OK);
+    EXPECT_EQ(Box(reloaded.save, SHATTER_CONTAINER_BACKPACK).Size(), static_cast<std::size_t>(info.backpack_capacity));
+    EXPECT_EQ(Ground(reloaded.save)["items"].Size(), static_cast<std::size_t>(0));
+    ASSERT_EQ(shatter_save_ground_clear(save.save), SHATTER_OK);
+    EXPECT_EQ(Ground(save.save)["items"].Size(), static_cast<std::size_t>(0));
+    EXPECT_EQ(shatter_save_pickup(db.db, nullptr, 0, 1, &dest), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_save_pickup(db.db, save.save, 5, 1, &dest), SHATTER_INVALID_ARGUMENT);
+}
+
+TEST(c_api_14_equip_compare_sell_sort_move_and_visual_set_through_the_api) {
+    DbHandle db(tu::RichDir());
+    SaveHandle save = MakeSave(db.db);
+    const std::string loot = LootJsonOf({InvItem(11, "item_base.bone_helm"), InvItem(12, "item_base.bone_helm", Rarity::Rare, 3),
+                                         InvItem(13, "item_base.worn_trousers"), InvItem(14, "item_base.iron_boots", Rarity::Magic)});
+    shatter_error err{};
+    ASSERT_EQ(shatter_save_ground_add_loot(save.save, loot.data(), loot.size(), &err), SHATTER_OK);
+    std::int32_t dest = -1, res = -1;
+    for (std::uint64_t uid : {14ull, 11ull, 13ull, 12ull}) ASSERT_EQ(shatter_save_pickup(db.db, save.save, 0, uid, &dest), SHATTER_OK);
+    // Ordenar: posição, depois raridade: cabeça (Raro 12, Comum 11), pés (14), pernas (13).
+    ASSERT_EQ(shatter_inventory_sort(db.db, save.save, 0), SHATTER_OK);
+    const json::Value sorted = Box(save.save, SHATTER_CONTAINER_BACKPACK);
+    ASSERT_EQ(sorted.Size(), static_cast<std::size_t>(4));
+    EXPECT_EQ(sorted.At(0)["uid"].AsString(), std::string("12"));
+    EXPECT_EQ(sorted.At(1)["uid"].AsString(), std::string("11"));
+    EXPECT_EQ(sorted.At(2)["uid"].AsString(), std::string("14"));
+    EXPECT_EQ(sorted.At(3)["uid"].AsString(), std::string("13"));
+
+    // Comparação (tooltip): capacete contra a posição vazia.
+    const json::Value cmp = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_inventory_compare(db.db, save.save, 0, 11, -1, o, c, n);
+    }));
+    EXPECT_EQ(cmp["result"].AsInt(), static_cast<std::int64_t>(SHATTER_INV_OK));
+    EXPECT_EQ(cmp["slot"].AsString(), std::string("head"));
+    ASSERT_EQ(cmp["deltas"].Size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(cmp["deltas"].At(0)["stat"].AsString(), std::string("armor"));
+    const json::Value missing = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_inventory_compare(db.db, save.save, 0, 777, -1, o, c, n);
+    }));
+    EXPECT_EQ(missing["result"].AsInt(), static_cast<std::int64_t>(SHATTER_INV_NOT_FOUND));
+
+    // Equipar atualiza o StatBlock do herói sem refazer o resto.
+    StatHandle sb;
+    ASSERT_EQ(shatter_statblock_from_save(db.db, save.save, 0, &sb.sb, &err), SHATTER_OK);
+    const std::uint32_t kArmor = static_cast<std::uint32_t>(StatId::Armor);
+    double armor0 = 0.0;
+    ASSERT_EQ(shatter_statblock_get(sb.sb, kArmor, 0, &armor0), SHATTER_OK);
+    shatter_equip_result eq{};
+    ASSERT_EQ(shatter_inventory_equip(db.db, save.save, 0, 11, -1, sb.sb, &eq), SHATTER_OK);
+    EXPECT_EQ(eq.result, SHATTER_INV_OK);
+    EXPECT_EQ(eq.slot, static_cast<std::int32_t>(ItemSlot::Head));
+    double armor1 = 0.0;
+    ASSERT_EQ(shatter_statblock_get(sb.sb, kArmor, 0, &armor1), SHATTER_OK);
+    EXPECT_NEAR(armor1, armor0 + 5.0, 1e-9);
+    ASSERT_EQ(shatter_inventory_equip(db.db, save.save, 0, 12, static_cast<std::int32_t>(ItemSlot::Head), sb.sb, &eq), SHATTER_OK);   // troca
+    EXPECT_TRUE(eq.displaced == 1 && eq.displaced_uid == 11);
+    StatHandle rebuilt;
+    ASSERT_EQ(shatter_statblock_from_save(db.db, save.save, 0, &rebuilt.sb, &err), SHATTER_OK);
+    double a2 = 0.0, a3 = 0.0;
+    shatter_statblock_get(sb.sb, kArmor, 0, &a2);
+    shatter_statblock_get(rebuilt.sb, kArmor, 0, &a3);
+    EXPECT_NEAR(a2, a3, 1e-9);
+    // Recusas: posição errada, posição vazia, item inexistente, posição fora da faixa.
+    ASSERT_EQ(shatter_inventory_equip(db.db, save.save, 0, 13, static_cast<std::int32_t>(ItemSlot::Body), sb.sb, &eq), SHATTER_OK);
+    EXPECT_EQ(eq.result, SHATTER_INV_SLOT_MISMATCH);
+    ASSERT_EQ(shatter_inventory_equip(db.db, save.save, 0, 999, -1, nullptr, &eq), SHATTER_OK);
+    EXPECT_EQ(eq.result, SHATTER_INV_NOT_FOUND);
+    ASSERT_EQ(shatter_inventory_unequip(db.db, save.save, 0, static_cast<std::int32_t>(ItemSlot::Body), nullptr, &eq), SHATTER_OK);
+    EXPECT_EQ(eq.result, SHATTER_INV_SLOT_EMPTY);
+    EXPECT_EQ(shatter_inventory_equip(db.db, save.save, 0, 13, 99, nullptr, &eq), SHATTER_INVALID_ARGUMENT);
+    std::uint8_t on = 9;
+    ASSERT_EQ(shatter_inventory_slot_enabled(db.db, static_cast<std::int32_t>(ItemSlot::Head), &on), SHATTER_OK);
+    EXPECT_EQ(on, 1);
+    ASSERT_EQ(shatter_inventory_slot_enabled(db.db, static_cast<std::int32_t>(ItemSlot::Amulet), &on), SHATTER_OK);
+    EXPECT_EQ(on, 0);
+
+    // Valor de venda (sem vendedor), Baú, venda idempotente e descarte.
+    std::int64_t value = -1, gold = -1;
+    ASSERT_EQ(shatter_inventory_sell_value(db.db, save.save, 0, 14, &value), SHATTER_OK);
+    EXPECT_TRUE(value > 0);
+    EXPECT_EQ(shatter_inventory_sell_value(db.db, save.save, 0, 4040, &value), SHATTER_NOT_FOUND);
+    ASSERT_EQ(shatter_inventory_move(db.db, save.save, 0, 14, SHATTER_CONTAINER_STASH, &res), SHATTER_OK);
+    EXPECT_EQ(res, SHATTER_INV_OK);
+    EXPECT_EQ(Box(save.save, SHATTER_CONTAINER_STASH).Size(), static_cast<std::size_t>(1));
+    ASSERT_EQ(shatter_inventory_sell(db.db, save.save, 0, SHATTER_CONTAINER_STASH, 14, &gold, &res), SHATTER_OK);
+    EXPECT_TRUE(res == SHATTER_INV_OK && gold == value);
+    ASSERT_EQ(shatter_inventory_sell(db.db, save.save, 0, SHATTER_CONTAINER_STASH, 14, &gold, &res), SHATTER_OK);
+    EXPECT_TRUE(res == SHATTER_INV_NOT_FOUND && gold == 0);
+    EXPECT_EQ(Gold(SaveFile(save.save)), value);                  // pagou uma vez só
+    EXPECT_EQ(shatter_inventory_sell(db.db, save.save, 0, 5, 1, &gold, &res), SHATTER_INVALID_ARGUMENT);
+
+    // visualSetId: Único, base, fallback.
+    auto vset = [&](const std::string& base, const std::string& uni) {
+        std::size_t n = 0;
+        const shatter_status st = shatter_item_visual_set_id(db.db, base.data(), base.size(), uni.data(), uni.size(), nullptr, 0, &n);
+        if (st != SHATTER_BUFFER_TOO_SMALL) return std::string("<") + shatter_status_name(st) + ">";
+        std::string out(n, 'x');
+        shatter_item_visual_set_id(db.db, base.data(), base.size(), uni.data(), uni.size(), reinterpret_cast<std::uint8_t*>(&out[0]), n, &n);
+        return out;
+    };
+    EXPECT_EQ(vset("item_base.worn_trousers", ""), std::string("vset.starter"));
+    EXPECT_EQ(vset("item_base.bone_helm", ""), std::string("vset.starter"));
+    EXPECT_EQ(vset("item_base.nope", ""), std::string("<not_found>"));
+    EXPECT_EQ(vset("item_base.bone_helm", "unique.nope"), std::string("<not_found>"));
+
+    // Layout.
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_layout_info_ext4(nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(needed, static_cast<std::size_t>(SHATTER_LAYOUT_EXT4_COUNT));
+    std::vector<std::uint32_t> layout(needed);
+    ASSERT_EQ(shatter_layout_info_ext4(layout.data(), layout.size(), &needed), SHATTER_OK);
+    EXPECT_EQ(layout[0], static_cast<std::uint32_t>(sizeof(shatter_inventory_info)));
+    EXPECT_EQ(shatter_layout_check_ext4(layout.data(), layout.size(), &err), SHATTER_OK);
+    layout[3] += 4;
+    EXPECT_EQ(shatter_layout_check_ext4(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
+    EXPECT_TRUE(shatter_api_minor() >= 4u);
+}

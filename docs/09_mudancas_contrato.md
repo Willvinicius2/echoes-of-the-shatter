@@ -251,3 +251,36 @@ Regras: barreira da poção igual no manual e no idle (`ApplyPotionBarrier`/`Tic
 Ao `started`, o cliente cancela o telegraph e o golpe em curso (o core não controla a animação). O C# deve exigir `shatter_api_minor() >= 3`. No core: `FleeProfile`/`FleeState`/`FleeStep` em `combat.h`.
 
 Paridade: o simulador idle NÃO modela fuga de inimigo (eles lutam até morrer; só o herói recua, `retreatLifeFraction`), então não existe lógica idle de fuga para igualar. A regra única fica no core (`FleeState`) e os testes (`test_flee.cpp`, `c_api_13_*`) fixam o comportamento do `UpdateFlee` anterior (limite estrito, tempo, sem alvo, uma vez por vida, revive) lendo os números do CSV real.
+
+## 11. API C 1.4: inventário, equipamento, venda e loot no chão (Backend, 17/10/2026, `etapa2/backend`)
+
+`SHATTER_C_API_MINOR` vai para **4** (só adições; o C# deve exigir `shatter_api_minor() >= 4`). Regra de docs/16 seção 4 e docs/09 9.2 (itens 1 a 3) no core, em `inventory.h`/`inventory.cpp`; o cliente só mostra. Sem RNG nas operações de inventário (mesmo estado, mesmo resultado).
+
+**Dados novos** (`rules.csv`, 18 chaves obrigatórias, todas [HIPÓTESE] de docs/16): `inventory_capacity` (40), `stash_capacity` (100), `sell_price_normal/magic/rare/unique` (4/12/35/100), `sell_level_factor` (0.1) e `equip_slot_<slot>` x 11 (liberadas: main_hand, head, body, hands, feet, legs; bloqueadas: off_hand, amulet, ring, ring2, belt). Esquema, validador (`E_SLOT_LOCKED`, `E_RULES` e três mutações no `--self-test`) e docs/06 atualizados. **Save**: `characters[].backpack` opcional (ver docs/06); sem migração.
+
+**Resultados** (`*result`, a função devolve OK; INVALID_ARGUMENT só para ponteiro nulo ou personagem fora da faixa; recusa não muda nada): `SHATTER_INV_OK, NOT_FOUND, FULL, SLOT_MISMATCH, SLOT_LOCKED, SLOT_EMPTY, UNKNOWN_CONTENT`. Contêineres: `SHATTER_CONTAINER_BACKPACK = 0`, `SHATTER_CONTAINER_STASH = 1`. Itens são achados por `uid` (uint64).
+
+| Função | Contrato |
+|---|---|
+| `shatter_inventory_info_get(db, save, ci, shatter_inventory_info*)` | `{backpack_capacity, backpack_used, stash_capacity, stash_used}` (int32 x 4) |
+| `shatter_inventory_slot_enabled(db, slot, uint8* enabled)` | posição liberada em `equip_slot_*` (slot na ordem de `ItemSlot`, 0..10) |
+| `shatter_inventory_list_json(save, ci, container, buf...)` | array JSON de `ItemInstance` da Mochila ou do Baú; o equipamento vem em `shatter_save_character_json` |
+| `shatter_inventory_sort(db, save, ci)` | ordena a Mochila por posição, raridade (Único primeiro), itemLevel (maior primeiro), base e uid |
+| `shatter_inventory_move(db, save, ci, uid, to, *result)` | Mochila <-> Baú; destino cheio = `FULL` |
+| `shatter_inventory_equip(db, save, ci, uid, slot, shatter_statblock* stats, shatter_equip_result*)` | equipa o item da Mochila (`slot = -1`: posição padrão; anel: a primeira livre entre ring e ring2). Valida posição liberada e compatível. O antigo volta à Mochila (`displaced`, `displaced_uid`). Com `stats`, só os modificadores dos itens trocados saem/entram (o resto do bloco fica) |
+| `shatter_inventory_unequip(db, save, ci, slot, stats, *out)` | para a Mochila; `FULL` ou `SLOT_EMPTY` sem mudar nada |
+| `shatter_inventory_compare(db, save, ci, uid, slot, buf...)` | tooltip: `{"result","slot","equipped_uid","is_weapon","weapon_dps_before","weapon_dps_after","deltas":[{"stat","before","after"}]}`; só os atributos que mudam; DPS da arma = dano x velocidade de ataque, com implícito e afixos (docs/16 4.3). O item pode estar na Mochila, no Baú ou no chão. Nada é alterado |
+| `shatter_inventory_sell_value(db, save, ci, uid, int64* value)` | valor em Ouro, sem vendedor: `preço da raridade x (1 + fator x (itemLevel − 1))`, arredondado |
+| `shatter_inventory_sell(db, save, ci, container, uid, int64* gold, *result)` | vende da Mochila ou do Baú; o valor entra em `currency.gold` no mesmo save. Idempotente (repetir o uid dá `NOT_FOUND` e `gold = 0`). Equipado não vende |
+| `shatter_inventory_discard(save, ci, container, uid, *result)` | destrói o item |
+| `shatter_item_visual_set_id(db, base_id, len, unique_id, len, buf...)` | `uniques.visualSetId`, depois `item_bases.visualSetId`, depois `vset.starter` (texto UTF-8 sem NUL, duas chamadas); id desconhecido = `NOT_FOUND`. A Unity não lê mais o CSV |
+| `shatter_save_drop_loot(db, save, table, ctx, rng, buf..., err)` | rola a tabela (como `shatter_loot_roll`, mesmo RNG de loot e contexto, uids do save) e põe os itens **no chão**; Ouro e Lascas entram direto no save. Devolve o mesmo JSON de `shatter_loot_roll`. Buffer pequeno: nada muda |
+| `shatter_save_ground_add_loot(save, loot_json, len, err)` | põe no chão um loot já rolado (ex.: `shatter_save_roll_boss_loot`, com o Único do chefe) |
+| `shatter_save_ground_list(save, buf...)` | `{"items":[ItemInstance...]}` na ordem de queda |
+| `shatter_save_pickup(db, save, ci, uid, *dest)` | chão -> Mochila (`SHATTER_PICKUP_BACKPACK`); Mochila cheia e item Único -> Baú (`..._STASH`, nunca fica sem dono, docs/16 fluxo do chefe); senão `..._FULL` e o item FICA no chão; uid desconhecido = `..._NOT_FOUND` |
+| `shatter_save_ground_discard(save, uid, *result)` / `shatter_save_ground_clear(save)` | destrói um item do chão / limpa o chão (ao sair da Cripta) |
+| `shatter_layout_info_ext4` / `shatter_layout_check_ext4` (`SHATTER_LAYOUT_EXT4_COUNT` = 10) | `[tamanho de shatter_inventory_info, 4 offsets, tamanho de shatter_equip_result, 4 offsets]` |
+
+`shatter_equip_result`: `{int32 result; int32 slot; uint64 displaced_uid; uint8 displaced; uint8 reserved[7]}` (24 bytes). Ordem do Refúgio para o chefe: grave o save (`shatter_save_write`) antes de `ground_add_loot` do Único (RF-55); o chão não é salvo, então o Único só pode ficar no chão se o contador já foi gravado.
+
+Fora do escopo desta rodada (decisão do dono ou UI): requisito de nível do item, "Vender Comuns ao coletar" (a coleta atômica da expedição continua entregando ao Baú), confirmações e desfazer 5 s (UI), uso do Ouro (docs/16 Q3-3).

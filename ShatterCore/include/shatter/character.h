@@ -33,6 +33,8 @@ struct CharacterState {
     std::vector<LearnedSkill> skills;
     std::array<ContentId, 6> skillBar{}; // 6 no AA (4 no demo)
     std::array<std::optional<ItemInstance>, kItemSlotCount> equipment{};
+    // Mochila (docs/16 4.1): capacidade em rules.csv (inventory_capacity). Etapa 3; no save só aparece se não estiver vazia.
+    std::vector<ItemInstance> backpack;
     std::vector<ContentId> conqueredMaps;// domínio manual (início ao fim + chefe)
     int highestTierCleared = 0;
     // Save v2 (docs/13, itens 2 e 9): espaços de poção (um por potions.csv, normalizados ao usar) e vitórias por chefe.

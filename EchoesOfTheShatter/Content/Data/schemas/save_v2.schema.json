@@ -218,6 +218,13 @@
             "$ref": "#/$defs/OptId"
           }
         },
+        "backpack": {
+          "type": "array",
+          "description": "Mochila (Etapa 3, docs/16 4.1). Opcional: ausente = vazia; so e gravada quando tem itens. Capacidade: rules.csv inventory_capacity.",
+          "items": {
+            "$ref": "#/$defs/ItemInstance"
+          }
+        },
         "equipment": {
           "type": "object",
           "additionalProperties": false,

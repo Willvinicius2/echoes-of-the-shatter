@@ -28,6 +28,7 @@ struct shatter_db {
 };
 struct shatter_save {
     shatter::SaveData data;
+    std::vector<shatter::ItemInstance> ground;  // loot no chão: transitório, NÃO vai para o arquivo (docs/16 4.2)
 };
 struct shatter_statblock {
     shatter::StatBlock sb;
@@ -2713,6 +2714,339 @@ SHATTER_API shatter_status SHATTER_CALL shatter_actor_flee_step(shatter_actor* a
 SHATTER_API shatter_status SHATTER_CALL shatter_actor_flee_reset(shatter_actor* actor) SHATTER_NOEXCEPT {
     if (actor == nullptr) return SHATTER_INVALID_ARGUMENT;
     actor->flee.Reset();
+    return SHATTER_OK;
+}
+
+// --- Inventário, equipamento, venda e loot no chão (API 1.4) -----------------------------------------
+namespace {
+
+std::int32_t ToC(InvResult r) { return static_cast<std::int32_t>(r); }
+
+const ItemInstance* FindAnywhere(const shatter_save& s, std::size_t ci, std::uint64_t uid) {
+    if (const ItemInstance* it = FindInContainer(s.data, ci, Container::Backpack, uid)) return it;
+    if (const ItemInstance* it = FindInContainer(s.data, ci, Container::Stash, uid)) return it;
+    for (const ItemInstance& g : s.ground)
+        if (g.uid == uid) return &g;
+    if (ci < s.data.characters.size())
+        for (const auto& e : s.data.characters[ci].equipment)
+            if (e && e->uid == uid) return &*e;
+    return nullptr;
+}
+
+bool ContainerOk(std::int32_t c) { return c == SHATTER_CONTAINER_BACKPACK || c == SHATTER_CONTAINER_STASH; }
+
+void FillEquip(const EquipOutcome& o, shatter_equip_result* out) {
+    std::memset(out, 0, sizeof(*out));
+    out->result = ToC(o.result);
+    out->slot = o.slot == ItemSlot::Count ? -1 : static_cast<std::int32_t>(o.slot);
+    out->displaced_uid = o.displacedUid;
+    out->displaced = o.displaced ? 1 : 0;
+}
+
+// Coloca o loot no chão (itens com uid) e soma as pilhas ao save.
+void GroundAdd(shatter_save& save, LootDrop&& drop) {
+    SaveData& s = save.data;
+    for (ItemInstance& it : drop.items) {
+        if (it.uid == 0) it.uid = s.nextItemUid++;
+        if (it.uid >= s.nextItemUid) s.nextItemUid = it.uid + 1;
+        save.ground.push_back(std::move(it));
+    }
+    for (const StackEntry& e : drop.stacks) {
+        bool found = false;
+        for (StackEntry& c : s.currencies) {
+            if (c.id == e.id) {
+                c.amount += e.amount;
+                found = true;
+                break;
+            }
+        }
+        if (!found) s.currencies.push_back(e);
+    }
+}
+
+const std::uint32_t kLayoutExt4[] = {
+    static_cast<std::uint32_t>(sizeof(shatter_inventory_info)),
+    static_cast<std::uint32_t>(offsetof(shatter_inventory_info, backpack_capacity)),
+    static_cast<std::uint32_t>(offsetof(shatter_inventory_info, backpack_used)),
+    static_cast<std::uint32_t>(offsetof(shatter_inventory_info, stash_capacity)),
+    static_cast<std::uint32_t>(offsetof(shatter_inventory_info, stash_used)),
+    static_cast<std::uint32_t>(sizeof(shatter_equip_result)),
+    static_cast<std::uint32_t>(offsetof(shatter_equip_result, result)),
+    static_cast<std::uint32_t>(offsetof(shatter_equip_result, slot)),
+    static_cast<std::uint32_t>(offsetof(shatter_equip_result, displaced_uid)),
+    static_cast<std::uint32_t>(offsetof(shatter_equip_result, displaced))
+    };
+static_assert(sizeof(kLayoutExt4) / sizeof(kLayoutExt4[0]) == SHATTER_LAYOUT_EXT4_COUNT, "SHATTER_LAYOUT_EXT4_COUNT desatualizado");
+
+}  // namespace
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_info_get(const shatter_db* db, const shatter_save* save,
+                                                                 std::size_t character_index,
+                                                                 shatter_inventory_info* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || out == nullptr || character_index >= save->data.characters.size()) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const InventoryInfo i = GetInventoryInfo(*d, save->data, character_index);
+    out->backpack_capacity = i.backpackCapacity;
+    out->backpack_used = i.backpackUsed;
+    out->stash_capacity = i.stashCapacity;
+    out->stash_used = i.stashUsed;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_slot_enabled(const shatter_db* db, std::int32_t slot,
+                                                                     std::uint8_t* enabled) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (enabled == nullptr || slot < 0 || slot >= kItemSlotCount) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    *enabled = d->Rules().equipSlotEnabled[static_cast<std::size_t>(slot)] ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_list_json(const shatter_save* save, std::size_t character_index,
+                                                                  std::int32_t container, std::uint8_t* out,
+                                                                  std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    if (save == nullptr || needed == nullptr || character_index >= save->data.characters.size() || !ContainerOk(container))
+        return SHATTER_INVALID_ARGUMENT;
+    const std::vector<ItemInstance>& v = container == SHATTER_CONTAINER_STASH ? save->data.stash
+                                                                              : save->data.characters[character_index].backpack;
+    Value a = Value::MakeArray();
+    for (const ItemInstance& it : v) a.Push(ItemToJson(it));
+    return WriteJson(a, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_sort(const shatter_db* db, shatter_save* save,
+                                                             std::size_t character_index) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || character_index >= save->data.characters.size()) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    return SortBackpack(*d, save->data, character_index) == InvResult::Ok ? SHATTER_OK : SHATTER_INTERNAL;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_move(const shatter_db* db, shatter_save* save,
+                                                             std::size_t character_index, std::uint64_t uid,
+                                                             std::int32_t to, std::int32_t* result) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || result == nullptr || character_index >= save->data.characters.size() || !ContainerOk(to))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    *result = ToC(MoveItem(*d, save->data, character_index, uid, static_cast<Container>(to)));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_equip(const shatter_db* db, shatter_save* save,
+                                                              std::size_t character_index, std::uint64_t uid,
+                                                              std::int32_t slot, shatter_statblock* stats,
+                                                              shatter_equip_result* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || out == nullptr || character_index >= save->data.characters.size() || slot < -1 ||
+        slot >= kItemSlotCount)
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const ItemSlot target = slot < 0 ? ItemSlot::Count : static_cast<ItemSlot>(slot);
+    FillEquip(Equip(*d, save->data, character_index, uid, target, stats != nullptr ? &stats->sb : nullptr), out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_unequip(const shatter_db* db, shatter_save* save,
+                                                                std::size_t character_index, std::int32_t slot,
+                                                                shatter_statblock* stats,
+                                                                shatter_equip_result* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || out == nullptr || character_index >= save->data.characters.size() || slot < 0 ||
+        slot >= kItemSlotCount)
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    FillEquip(Unequip(*d, save->data, character_index, static_cast<ItemSlot>(slot), stats != nullptr ? &stats->sb : nullptr), out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_compare(const shatter_db* db, const shatter_save* save,
+                                                                std::size_t character_index, std::uint64_t uid,
+                                                                std::int32_t slot, std::uint8_t* out, std::size_t cap,
+                                                                std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || needed == nullptr || character_index >= save->data.characters.size() || slot < -1 ||
+        slot >= kItemSlotCount)
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    ItemComparison cmp;
+    const ItemInstance* it = FindAnywhere(*save, character_index, uid);
+    if (it == nullptr) cmp.result = InvResult::NotFound;
+    else cmp = CompareItem(*d, save->data.characters[character_index], *it, slot < 0 ? ItemSlot::Count : static_cast<ItemSlot>(slot));
+    Value o = Value::MakeObject();
+    o.Set("result", Value(static_cast<std::int64_t>(ToC(cmp.result))));
+    o.Set("slot", Value(cmp.slot == ItemSlot::Count ? std::string() : std::string(ToString(cmp.slot))));
+    o.Set("equipped_uid", json::FromUInt64(cmp.equippedUid));
+    o.Set("is_weapon", Value(cmp.isWeapon));
+    o.Set("weapon_dps_before", Value(cmp.weaponDpsBefore));
+    o.Set("weapon_dps_after", Value(cmp.weaponDpsAfter));
+    Value deltas = Value::MakeArray();
+    for (const StatDelta& dl : cmp.deltas) {
+        Value e = Value::MakeObject();
+        e.Set("stat", Value(ToString(dl.stat)));
+        e.Set("before", Value(dl.before));
+        e.Set("after", Value(dl.after));
+        deltas.Push(std::move(e));
+    }
+    o.Set("deltas", std::move(deltas));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_sell_value(const shatter_db* db, const shatter_save* save,
+                                                                   std::size_t character_index, std::uint64_t uid,
+                                                                   std::int64_t* value) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || value == nullptr || character_index >= save->data.characters.size()) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const ItemInstance* it = FindAnywhere(*save, character_index, uid);
+    if (it == nullptr) return SHATTER_NOT_FOUND;
+    *value = SellValue(*d, *it);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_sell(const shatter_db* db, shatter_save* save,
+                                                             std::size_t character_index, std::int32_t container,
+                                                             std::uint64_t uid, std::int64_t* gold,
+                                                             std::int32_t* result) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || result == nullptr || character_index >= save->data.characters.size() || !ContainerOk(container))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    std::int64_t paid = 0;
+    *result = ToC(SellItem(*d, save->data, character_index, static_cast<Container>(container), uid, &paid));
+    if (gold != nullptr) *gold = *result == SHATTER_INV_OK ? paid : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_discard(shatter_save* save, std::size_t character_index,
+                                                                std::int32_t container, std::uint64_t uid,
+                                                                std::int32_t* result) SHATTER_NOEXCEPT {
+    if (save == nullptr || result == nullptr || character_index >= save->data.characters.size() || !ContainerOk(container))
+        return SHATTER_INVALID_ARGUMENT;
+    *result = ToC(DiscardItem(save->data, character_index, static_cast<Container>(container), uid));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_item_visual_set_id(const shatter_db* db, const char* base_id,
+                                                                 std::size_t base_id_len, const char* unique_id,
+                                                                 std::size_t unique_id_len, std::uint8_t* out,
+                                                                 std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view base, uni;
+    if (needed == nullptr || !Text(base_id, base_id_len, base) || !Text(unique_id, unique_id_len, uni)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    if (d->FindItemBase(base) == nullptr) return SHATTER_NOT_FOUND;
+    if (!uni.empty() && d->FindUnique(uni) == nullptr) return SHATTER_NOT_FOUND;
+    ItemInstance probe;
+    probe.baseId = ContentId(base);
+    probe.uniqueId = ContentId(uni);
+    return WriteOut(ItemVisualSetId(*d, probe), out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_drop_loot(const shatter_db* db, shatter_save* save,
+                                                             const char* table_id, std::size_t table_id_len,
+                                                             const shatter_loot_context* ctx, shatter_rng* rng,
+                                                             std::uint8_t* out, std::size_t cap, std::size_t* needed,
+                                                             shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (save == nullptr) return SetError(err, SHATTER_INVALID_ARGUMENT, "save is null");
+    // shatter_loot_roll só confirma uid e rng se a saída couber: aqui nada muda se ela falhar.
+    const shatter_status st = shatter_loot_roll(db, save, table_id, table_id_len, ctx, rng, out, cap, needed, err);
+    if (st != SHATTER_OK) return st;
+    Value v;
+    json::ParseError pe;
+    LootDrop drop;
+    std::string msg;
+    if (!json::Parse(std::string_view(reinterpret_cast<const char*>(out), *needed), v, &pe) || !LootFromJson(v, drop, &msg))
+        return SetError(err, SHATTER_INTERNAL, "drop_loot: " + msg);
+    GroundAdd(*save, std::move(drop));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_add_loot(shatter_save* save, const char* loot_json,
+                                                                   std::size_t len, shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (save == nullptr) return SetError(err, SHATTER_INVALID_ARGUMENT, "save is null");
+    Value v;
+    shatter_status st = SHATTER_OK;
+    if (!ParseJsonText(loot_json, len, v, err, st)) return st;
+    LootDrop drop;
+    std::string msg;
+    if (!LootFromJson(v, drop, &msg)) return SetError(err, SHATTER_PARSE_ERROR, "loot: " + msg);
+    GroundAdd(*save, std::move(drop));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_list(const shatter_save* save, std::uint8_t* out,
+                                                               std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    if (save == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    Value o = Value::MakeObject();
+    Value items = Value::MakeArray();
+    for (const ItemInstance& it : save->ground) items.Push(ItemToJson(it));
+    o.Set("items", std::move(items));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_pickup(const shatter_db* db, shatter_save* save,
+                                                          std::size_t character_index, std::uint64_t uid,
+                                                          std::int32_t* dest) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || dest == nullptr || character_index >= save->data.characters.size()) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    for (std::size_t i = 0; i < save->ground.size(); ++i) {
+        if (save->ground[i].uid != uid) continue;
+        const PickupDest r = PickupItem(*d, save->data, character_index, save->ground[i]);
+        if (r != PickupDest::Full) save->ground.erase(save->ground.begin() + static_cast<std::ptrdiff_t>(i));
+        *dest = r == PickupDest::Backpack ? SHATTER_PICKUP_BACKPACK
+                : r == PickupDest::Stash  ? SHATTER_PICKUP_STASH
+                                          : SHATTER_PICKUP_FULL;
+        return SHATTER_OK;
+    }
+    *dest = SHATTER_PICKUP_NOT_FOUND;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_discard(shatter_save* save, std::uint64_t uid,
+                                                                  std::int32_t* result) SHATTER_NOEXCEPT {
+    if (save == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    for (std::size_t i = 0; i < save->ground.size(); ++i) {
+        if (save->ground[i].uid == uid) {
+            save->ground.erase(save->ground.begin() + static_cast<std::ptrdiff_t>(i));
+            *result = SHATTER_INV_OK;
+            return SHATTER_OK;
+        }
+    }
+    *result = SHATTER_INV_NOT_FOUND;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_clear(shatter_save* save) SHATTER_NOEXCEPT {
+    if (save == nullptr) return SHATTER_INVALID_ARGUMENT;
+    save->ground.clear();
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext4(std::uint32_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    if (needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = SHATTER_LAYOUT_EXT4_COUNT;
+    if (cap < SHATTER_LAYOUT_EXT4_COUNT) return SHATTER_BUFFER_TOO_SMALL;
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    std::memcpy(out, kLayoutExt4, sizeof(kLayoutExt4));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext4(const std::uint32_t* values, std::size_t n,
+                                                                shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (values == nullptr && n != 0) return SetError(err, SHATTER_INVALID_ARGUMENT, "values is null");
+    if (n != SHATTER_LAYOUT_EXT4_COUNT) return SetError(err, SHATTER_VERSION_MISMATCH, "ext4 layout count differs");
+    for (std::size_t i = 0; i < n; ++i) {
+        if (values[i] != kLayoutExt4[i])
+            return SetError(err, SHATTER_VERSION_MISMATCH, "ext4 layout entry " + std::to_string(i) + " differs",
+                            static_cast<int>(i) + 1);
+    }
     return SHATTER_OK;
 }
 

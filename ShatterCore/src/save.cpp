@@ -143,6 +143,11 @@ Value CharacterToJson(const CharacterState& c) {
         eq.Set(ToString(static_cast<ItemSlot>(s)), item ? ItemToJson(*item) : Value());
     }
     o.Set("equipment", std::move(eq));
+    if (!c.backpack.empty()) {   // Etapa 3: campo opcional (ausente = vazia); saves sem Mochila mantêm os mesmos bytes e hash
+        Value bp = Value::MakeArray();
+        for (const ItemInstance& it : c.backpack) bp.Push(ItemToJson(it));
+        o.Set("backpack", std::move(bp));
+    }
     o.Set("conquered_maps", StrList(c.conqueredMaps));
     o.Set("highest_tier_cleared", Value(c.highestTierCleared));
     Value slots = Value::MakeArray();
@@ -240,6 +245,15 @@ bool CharacterFromJson(const Value& o, CharacterState& c, std::string* err) {
         ItemInstance it;
         if (!ItemFromJson(*slotV, it, err)) return false;
         c.equipment[static_cast<std::size_t>(s)] = std::move(it);
+    }
+    {
+        const auto& bp = o["backpack"].Items();
+        if (bp.size() > kMaxSavedItems) return Fail(err, "character: backpack has too many items");
+        for (const Value& iv : bp) {
+            ItemInstance it;
+            if (!ItemFromJson(iv, it, err)) return false;
+            c.backpack.push_back(std::move(it));
+        }
     }
     c.conqueredMaps = ReadStrList(o["conquered_maps"]);
     c.highestTierCleared = static_cast<int>(o["highest_tier_cleared"].AsInt(0));
@@ -382,6 +396,7 @@ bool SaveFromJson(const Value& data, SaveData& out, std::string* error) {
         if (!ItemFromJson(iv, it, error)) return false;
         s.stash.push_back(std::move(it));
     }
+    if (s.stash.size() > kMaxSavedItems) return Fail(error, "stash has too many items");
     for (const Value& e : data["currencies"].Items()) s.currencies.push_back({e["id"].AsString(), e["amount"].AsInt(0)});
     s.markerCharges = static_cast<int>(data["marker_charges"].AsInt(0));
     s.lastRestDay = data["last_rest_day"].AsInt(0);
@@ -602,6 +617,7 @@ StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionSta
     e.status = ExpeditionStatus::Running;
     e.characterIndex = static_cast<int>(p.characterIndex);
     e.request.snapshot.character = ch;  // cópia congelada (RF-38)
+    e.request.snapshot.character.backpack.clear();  // a Mochila não entra na simulação (e não infla o pedido salvo)
     e.request.snapshot.contentVersion = db.ContentVersion();
     e.request.mapId = p.mapId;
     e.request.objective = p.objective;

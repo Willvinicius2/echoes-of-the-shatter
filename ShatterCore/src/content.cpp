@@ -53,7 +53,7 @@ namespace {
 using detail::CsvRow;
 using detail::CsvTable;
 
-constexpr std::size_t kRuleKeyCount = 62;
+constexpr std::size_t kRuleKeyCount = 62 + 18;
 
 // --- tabela de chaves de rules.csv (faixas = validação estrutural do 06_dados.md, não balanceamento) ---
 struct RuleDef {
@@ -141,6 +141,25 @@ const RuleDef kRuleDefs[kRuleKeyCount] = {
     {"unarmed_weapon_damage_physical", 'd', 0, kInf, false,
      [](RulesConstants& r, double v) { r.unarmedWeaponDamagePhysical = v; }},
     {"require_on_screen_margin", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.requireOnScreenMargin = v; }},
+    // Etapa 3 (docs/16): inventário, equipamento e venda.
+    {"inventory_capacity", 'i', 1, 1000, false, [](RulesConstants& r, double v) { r.inventoryCapacity = static_cast<int>(v); }},
+    {"stash_capacity", 'i', 0, 10000, false, [](RulesConstants& r, double v) { r.stashCapacity = static_cast<int>(v); }},
+    {"sell_price_normal", 'i', 0, 1000000000, false, [](RulesConstants& r, double v) { r.sellPrice[0] = static_cast<int>(v); }},
+    {"sell_price_magic", 'i', 0, 1000000000, false, [](RulesConstants& r, double v) { r.sellPrice[1] = static_cast<int>(v); }},
+    {"sell_price_rare", 'i', 0, 1000000000, false, [](RulesConstants& r, double v) { r.sellPrice[2] = static_cast<int>(v); }},
+    {"sell_price_unique", 'i', 0, 1000000000, false, [](RulesConstants& r, double v) { r.sellPrice[3] = static_cast<int>(v); }},
+    {"sell_level_factor", 'd', 0, 10, false, [](RulesConstants& r, double v) { r.sellLevelFactor = v; }},
+    {"equip_slot_main_hand", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[0] = v != 0.0; }},
+    {"equip_slot_off_hand", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[1] = v != 0.0; }},
+    {"equip_slot_head", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[2] = v != 0.0; }},
+    {"equip_slot_body", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[3] = v != 0.0; }},
+    {"equip_slot_hands", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[4] = v != 0.0; }},
+    {"equip_slot_feet", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[5] = v != 0.0; }},
+    {"equip_slot_amulet", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[6] = v != 0.0; }},
+    {"equip_slot_ring", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[7] = v != 0.0; }},
+    {"equip_slot_ring2", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[8] = v != 0.0; }},
+    {"equip_slot_belt", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[9] = v != 0.0; }},
+    {"equip_slot_legs", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[10] = v != 0.0; }},
 };
 
 // --- leitor de células tipado ----------------------------------------------------------------

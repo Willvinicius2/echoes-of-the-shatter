@@ -68,6 +68,14 @@ struct RulesConstants {
     double unarmedWeaponDamagePhysical = 0.0;  // unarmed_weapon_damage_physical
     double requireOnScreenMargin = 0.0;        // require_on_screen_margin (uu)
 
+
+    // Inventário e equipamento (docs/16 4.1 e 4.4; valores [HIPÓTESE] em rules.csv, todas as chaves obrigatórias)
+    int inventoryCapacity = 0;                 // inventory_capacity: posições da Mochila
+    int stashCapacity = 0;                     // stash_capacity: posições do Baú compartilhado
+    int sellPrice[4] = {0, 0, 0, 0};           // sell_price_normal/magic/rare/unique: Ouro por raridade (nível 1)
+    double sellLevelFactor = 0.0;              // sell_level_factor: +fração do preço por itemLevel acima de 1
+    bool equipSlotEnabled[11] = {};            // equip_slot_<slot>: posição liberada no protótipo (ordem de ItemSlot)
+
     // --- Fervor (jogo manual). O idle é a taxa base = 1. ---
     double fervorXpMult = 3.0;             // fervor_xp_mult
     double fervorGoldMatMult = 1.25;       // fervor_gold_mat_mult

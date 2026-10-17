@@ -40,6 +40,7 @@ inline constexpr int kSaveBackupCount = 3;
 inline constexpr std::int64_t kMaxSaveUtc = 253402300799;       // 9999-12-31T23:59:59Z
 inline constexpr std::int64_t kMaxSavedPotionCharges = 1000;
 inline constexpr double kMaxSavedRechargeSeconds = 1.0e9;
+inline constexpr std::size_t kMaxSavedItems = 10000;             // itens por contêiner (Mochila ou Baú) lidos de um save
 inline constexpr const char* kSaveFormatTag = "echoes-of-the-shatter-save";
 
 enum class ExpeditionStatus : std::uint8_t {

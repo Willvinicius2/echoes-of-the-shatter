@@ -543,7 +543,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 3u   /* 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 4u   /* 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -828,6 +828,115 @@ SHATTER_API shatter_status SHATTER_CALL shatter_actor_flee_reset(shatter_actor* 
 #define SHATTER_LAYOUT_EXT3_COUNT 6u
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext3(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext3(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+
+/* --- Inventário, equipamento, venda e loot no chão (API 1.4; docs/16 seção 4, docs/09 seção 11) ---
+ * Tudo é regra do core. Capacidades, preços e posições liberadas vêm de rules.csv (inventory_capacity, stash_capacity,
+ * sell_price_*, sell_level_factor, equip_slot_*). Itens são achados por uid (uint64). Os códigos de resultado abaixo
+ * voltam em *result (a função devolve OK; INVALID_ARGUMENT só para ponteiro nulo ou personagem fora da faixa).
+ * Uma operação que não dá certo (resultado != OK) não muda nada. Sem RNG: mesmo estado, mesmo resultado. */
+enum {
+    SHATTER_INV_OK = 0, SHATTER_INV_NOT_FOUND, SHATTER_INV_FULL, SHATTER_INV_SLOT_MISMATCH, SHATTER_INV_SLOT_LOCKED,
+    SHATTER_INV_SLOT_EMPTY, SHATTER_INV_UNKNOWN_CONTENT
+};
+enum { SHATTER_CONTAINER_BACKPACK = 0, SHATTER_CONTAINER_STASH = 1 };
+enum { SHATTER_PICKUP_BACKPACK = 0, SHATTER_PICKUP_STASH = 1, SHATTER_PICKUP_FULL = 2, SHATTER_PICKUP_NOT_FOUND = 3 };
+typedef struct shatter_inventory_info {
+    int32_t backpack_capacity, backpack_used, stash_capacity, stash_used;
+} shatter_inventory_info;
+typedef struct shatter_equip_result {
+    int32_t result;            /* SHATTER_INV_* */
+    int32_t slot;              /* posição usada (ordem de ItemSlot; -1 se nenhuma) */
+    uint64_t displaced_uid;    /* item que estava na posição e voltou para a Mochila (0 = nenhum) */
+    uint8_t displaced;
+    uint8_t reserved[7];
+} shatter_equip_result;
+
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_info_get(const shatter_db* db, const shatter_save* save,
+                                                                   size_t character_index,
+                                                                   shatter_inventory_info* out) SHATTER_NOEXCEPT;
+/* Posição de equipamento liberada no protótipo? (rules.csv equip_slot_*). slot na ordem de ItemSlot (0..10). */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_slot_enabled(const shatter_db* db, int32_t slot,
+                                                                       uint8_t* enabled) SHATTER_NOEXCEPT;
+/* Itens do contêiner (SHATTER_CONTAINER_*) como array JSON de ItemInstance, na ordem atual. O Baú é compartilhado
+ * (character_index só precisa existir). O equipamento vem em shatter_save_character_json ("equipment"). */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_list_json(const shatter_save* save, size_t character_index,
+                                                                    int32_t container, uint8_t* out, size_t cap,
+                                                                    size_t* needed) SHATTER_NOEXCEPT;
+/* Ordena a Mochila por posição, raridade (Único primeiro), itemLevel (maior primeiro), base e uid. */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_sort(const shatter_db* db, shatter_save* save,
+                                                               size_t character_index) SHATTER_NOEXCEPT;
+/* Move entre Mochila e Baú (to = SHATTER_CONTAINER_*). Destino cheio = INV_FULL. */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_move(const shatter_db* db, shatter_save* save,
+                                                               size_t character_index, uint64_t uid, int32_t to,
+                                                               int32_t* result) SHATTER_NOEXCEPT;
+/* Equipa o item da Mochila. slot = -1: posição padrão da base (anel: a primeira livre). Valida a posição (liberada e
+ * compatível; ring serve em ring2). O antigo volta para a Mochila. Com `stats` (opcional, o bloco do herói), só os
+ * modificadores dos itens trocados saem/entram: o resto do bloco (buffs, efeitos) fica. */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_equip(const shatter_db* db, shatter_save* save,
+                                                                size_t character_index, uint64_t uid, int32_t slot,
+                                                                shatter_statblock* stats,
+                                                                shatter_equip_result* out) SHATTER_NOEXCEPT;
+/* Desequipa para a Mochila (INV_FULL se não houver espaço; INV_SLOT_EMPTY se a posição está vazia). */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_unequip(const shatter_db* db, shatter_save* save,
+                                                                  size_t character_index, int32_t slot,
+                                                                  shatter_statblock* stats,
+                                                                  shatter_equip_result* out) SHATTER_NOEXCEPT;
+/* Comparação para o tooltip: o item `uid` (Mochila, Baú ou chão) contra o equipado em `slot` (-1 = padrão). JSON:
+ * {"result":n,"slot":"head","equipped_uid":"0","is_weapon":false,"weapon_dps_before":0,"weapon_dps_after":0,
+ *  "deltas":[{"stat":"armor","before":8,"after":13}]} (só os atributos que mudam). Nada é alterado. */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_compare(const shatter_db* db, const shatter_save* save,
+                                                                  size_t character_index, uint64_t uid, int32_t slot,
+                                                                  uint8_t* out, size_t cap,
+                                                                  size_t* needed) SHATTER_NOEXCEPT;
+/* Valor de venda (Ouro) do item `uid` achado na Mochila, no Baú, no chão ou equipado. Sem vendedor obrigatório. */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_sell_value(const shatter_db* db, const shatter_save* save,
+                                                                     size_t character_index, uint64_t uid,
+                                                                     int64_t* value) SHATTER_NOEXCEPT;
+/* Vende da Mochila ou do Baú: o item some e o valor entra em currency.gold, no mesmo salvamento. Idempotente: repetir
+ * o uid dá INV_NOT_FOUND e não paga de novo. Equipado não vende (desequipe antes). *gold = valor pago. */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_sell(const shatter_db* db, shatter_save* save,
+                                                               size_t character_index, int32_t container, uint64_t uid,
+                                                               int64_t* gold, int32_t* result) SHATTER_NOEXCEPT;
+/* Destrói o item da Mochila ou do Baú. */
+SHATTER_API shatter_status SHATTER_CALL shatter_inventory_discard(shatter_save* save, size_t character_index,
+                                                                  int32_t container, uint64_t uid,
+                                                                  int32_t* result) SHATTER_NOEXCEPT;
+/* Conjunto visual (docs/04 17.4): uniques.visualSetId, depois item_bases.visualSetId, depois "vset.starter".
+ * unique_id pode ser nulo/vazio. Saída: texto UTF-8 sem NUL (duas chamadas). Base inexistente: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_item_visual_set_id(const shatter_db* db, const char* base_id,
+                                                                   size_t base_id_len, const char* unique_id,
+                                                                   size_t unique_id_len, uint8_t* out, size_t cap,
+                                                                   size_t* needed) SHATTER_NOEXCEPT;
+
+/* Loot no chão. O chão NÃO é salvo (vale até sair da Cripta; o cliente chama shatter_save_ground_clear). Ouro e Lascas
+ * (pilhas) entram direto no save ("ímã"); itens ficam no chão com uid. */
+/* Rola a tabela como shatter_loot_roll (mesmo contexto e RNG de loot), coloca os itens no chão e devolve o mesmo JSON
+ * {"items":[...],"stacks":[...],"rares_dropped":n}. Buffer pequeno: nada muda (nem rng, nem uid, nem chão). */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_drop_loot(const shatter_db* db, shatter_save* save,
+                                                               const char* table_id, size_t table_id_len,
+                                                               const shatter_loot_context* ctx, shatter_rng* rng,
+                                                               uint8_t* out, size_t cap, size_t* needed,
+                                                               shatter_error* err) SHATTER_NOEXCEPT;
+/* Coloca no chão um loot já rolado (ex.: saída de shatter_save_roll_boss_loot, com o Único). Pilhas entram no save. */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_add_loot(shatter_save* save, const char* loot_json,
+                                                                     size_t len, shatter_error* err) SHATTER_NOEXCEPT;
+/* Itens no chão: {"items":[ItemInstance...]} em ordem de queda. */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_list(const shatter_save* save, uint8_t* out, size_t cap,
+                                                                 size_t* needed) SHATTER_NOEXCEPT;
+/* Pegar: chão -> Mochila; Mochila cheia e item Único -> Baú; senão SHATTER_PICKUP_FULL e o item FICA no chão. */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_pickup(const shatter_db* db, shatter_save* save,
+                                                            size_t character_index, uint64_t uid,
+                                                            int32_t* dest) SHATTER_NOEXCEPT;
+/* Some com um item do chão (destruir) ou limpa o chão todo. */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_discard(shatter_save* save, uint64_t uid,
+                                                                    int32_t* result) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_clear(shatter_save* save) SHATTER_NOEXCEPT;
+
+/* Layout de shatter_inventory_info e shatter_equip_result: [tamanho de info, 4 offsets, tamanho de equip_result, 4 offsets]. */
+#define SHATTER_LAYOUT_EXT4_COUNT 10u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext4(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext4(const uint32_t* values, size_t n,
                                                                   shatter_error* err) SHATTER_NOEXCEPT;
 
 /* --- Elite (docs/13, item 5) --- */

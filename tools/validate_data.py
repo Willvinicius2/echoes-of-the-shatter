@@ -524,6 +524,20 @@ def check_rules(c: Content, rep: Report) -> None:
     if g("charges_per_hour") is not None and g("charges_max") is not None and g("max_expedition_hours") is not None:
         if g("charges_per_hour") * g("max_expedition_hours") > g("charges_max"):
             rep.warn("rules.csv", ln.get("charges_max", 0), "W_RULES", "charges_max não paga uma expedição de duração máxima")
+    # Inventário e equipamento (docs/16 4.1 e 4.4)
+    prices = [g("sell_price_normal"), g("sell_price_magic"), g("sell_price_rare"), g("sell_price_unique")]
+    if None not in prices and not (prices[0] <= prices[1] <= prices[2] <= prices[3]):
+        rep.warn("rules.csv", ln.get("sell_price_magic", 0), "W_RULES", "preço de venda deveria crescer com a raridade (Comum <= Mágico <= Raro <= Único)")
+    if g("equip_slot_main_hand") is False:
+        rep.err("rules.csv", ln.get("equip_slot_main_hand", 0), "E_RULES", "equip_slot_main_hand = false: o herói não poderia equipar arma")
+    slots = ["main_hand", "off_hand", "head", "body", "hands", "feet", "amulet", "ring", "ring2", "belt", "legs"]
+    enabled = {s: g("equip_slot_" + s) for s in slots}
+    for base in c.tables.get("item_bases.csv", []):
+        s = base["slot"]
+        ok = enabled.get(s) is not False and (s != "ring" and s != "ring2" or enabled.get("ring") is not False or enabled.get("ring2") is not False)
+        if not ok:
+            rep.err("item_bases.csv", base["__line__"], "E_SLOT_LOCKED",
+                    f"{base['id']}: a posição '{s}' está bloqueada em rules.csv (equip_slot_{s} = false); a peça nunca poderia ser equipada")
 
 
 def run_checks(c: Content, schemas: Dict[str, dict], rep: Report) -> None:
@@ -1469,6 +1483,12 @@ MUTATIONS = [
      lambda t: t.replace("require_on_screen_margin,100\n", ""), "E_KEY_MISSING"),
     ("regra_obrigatoria_removida", "rules.csv",
      lambda t: t.replace("potion_lockout,1.0\n", ""), "E_KEY_MISSING"),
+    ("capacidade_da_mochila_removida", "rules.csv",
+     lambda t: t.replace("inventory_capacity,40\n", ""), "E_KEY_MISSING"),
+    ("arma_bloqueada", "rules.csv",
+     lambda t: t.replace("equip_slot_main_hand,true", "equip_slot_main_hand,false"), "E_RULES"),
+    ("base_em_posicao_bloqueada", "rules.csv",
+     lambda t: t.replace("equip_slot_head,true", "equip_slot_head,false"), "E_SLOT_LOCKED"),
 ]
 
 
