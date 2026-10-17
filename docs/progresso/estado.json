@@ -321,35 +321,6 @@
       "origem": "docs/15_etapas.md"
     },
     {
-      "id": "guardiao-sem-loot",
-      "titulo": "Vencer o Guardião sem loot na etapa 2?",
-      "detalhe": "Confirmar que a fatia da Cripta termina sem recompensa na tela.",
-      "pergunta": "Na etapa 2 (fatia jogável da Cripta), vencer o Guardião não vai entregar nenhum item na tela, porque o Único do Guardião e o inventário só chegam na etapa 3. Está certo assim?",
-      "contexto": [
-        "A etapa 2 serve para provar o combate: você joga a Cripta inteira com o Guerreiro final e vence o Guardião. O que conta é o teste de fogo de 30 segundos contra as Sentinelas.",
-        "Save, inventário, loot e o Único do Guardião estão marcados como FORA da etapa 2 e DENTRO da etapa 3.",
-        "Na prática, ao derrotar o Guardião aparece só a vitória (o domínio da Cripta), sem item caindo no chão."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Sim, fica assim",
-          "efeito": "A etapa 2 fecha mais rápido e o teste foca só no combate. A recompensa chega na etapa 3."
-        },
-        {
-          "id": "B",
-          "nome": "B. Só o efeito do Único na etapa 2",
-          "efeito": "O Guardião deixa cair o Único como efeito visual (coluna de luz e som), sem inventário. Dá a sensação de recompensa no teste, mas puxa trabalho de arte e efeito para antes."
-        },
-        {
-          "id": "C",
-          "nome": "C. Loot e inventário inteiros na etapa 2",
-          "efeito": "A etapa 2 fica bem maior e parte da etapa 3 vem antes."
-        }
-      ],
-      "origem": "docs/15_etapas.md"
-    },
-    {
       "id": "demo-next-fest",
       "titulo": "Fazer uma demo para o Steam Next Fest?",
       "detalhe": "Decidir se haverá demo e em que etapa ela entra.",
@@ -520,162 +491,6 @@
         }
       ],
       "origem": "infraestrutura"
-    },
-    {
-      "id": "historia",
-      "titulo": "História do jogo",
-      "detalhe": "Em criação por você; decidir como e até quando.",
-      "pergunta": "Como fica a criação da história do jogo: você continua escrevendo sozinho, divide com seu sócio ou quer que o agente de narrativa prepare uma proposta a partir do que já existe para vocês ajustarem?",
-      "contexto": [
-        "Você está criando a história. O plano e o docs/05 já trazem nomes e premissas (o Arquivo Vivo, os Marcos, a Ilsa, o Tico, o Bram, a Irmã Odete) que podem mudar.",
-        "A etapa 2 precisa só dos textos de combate e HUD. A etapa 3 precisa das falas da Ilsa e do relatório do Tico. A etapa 4 precisa da história do Ato I inteiro: falas, livros, Sigilos e os 4 chefes.",
-        "Por isso a história não trava nada agora, mas precisa estar definida antes da etapa 4 começar."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Você escreve sozinho",
-          "efeito": "A história fica inteira na sua mão. A equipe só adapta os textos ao formato do jogo."
-        },
-        {
-          "id": "B",
-          "nome": "B. Você e seu sócio",
-          "efeito": "Divide o trabalho. Vale combinar quem tem a palavra final."
-        },
-        {
-          "id": "C",
-          "nome": "C. Proposta do agente de narrativa",
-          "efeito": "O agente escreve uma versão a partir do que existe, e vocês cortam e ajustam. É mais rápido, mas a voz final depende da revisão de vocês."
-        }
-      ],
-      "origem": "decisão do dono"
-    },
-    {
-      "id": "save-slots",
-      "titulo": "Quantos slots de save",
-      "detalhe": "Quantas partidas separadas o jogador pode ter.",
-      "origem": "docs/16_etapa3_fluxo.md (Q3-1)",
-      "pergunta": "O protótipo deve ter 1 slot de save ou 3 slots?",
-      "contexto": [
-        "O docs/02 e o docs/15 falam em 1 slot; o docs/03 (§4.5, tela de saves) desenhou 3.",
-        "O save já tem backups automáticos e verificação de integridade no core; o número de slots muda só a tela de seleção e onde os arquivos ficam."
-      ],
-      "opcoes": [
-        {
-          "id": "a",
-          "nome": "1 slot",
-          "efeito": "Mais simples: o jogo abre direto na partida. Menos tela para fazer na Etapa 3."
-        },
-        {
-          "id": "b",
-          "nome": "3 slots",
-          "efeito": "Permite partidas separadas (por exemplo, testar classes). Precisa da tela de seleção de save."
-        }
-      ]
-    },
-    {
-      "id": "jogar-durante-expedicao",
-      "titulo": "Jogar enquanto a expedição roda",
-      "detalhe": "O que o herói faz enquanto está na expedição idle.",
-      "origem": "docs/16_etapa3_fluxo.md (Q3-2)",
-      "pergunta": "Enquanto o herói está em uma expedição idle, o jogador pode jogar com ele?",
-      "contexto": [
-        "A expedição idle simula o herói explorando a rota por horas e devolve loot e XP com o selo \"Estimativa\".",
-        "Já existe a fala da Ilsa: \"Seu herói ainda está na rota. Fale com o Tico depois.\"",
-        "Se o herói pudesse jogar ao mesmo tempo, ele ganharia em dobro (idle + manual)."
-      ],
-      "opcoes": [
-        {
-          "id": "a",
-          "nome": "Não: herói ocupado (proposta)",
-          "efeito": "Enquanto a expedição roda, a Cripta fica bloqueada para esse herói; o jogador volta depois para coletar."
-        },
-        {
-          "id": "b",
-          "nome": "Sim, com outro herói",
-          "efeito": "O jogador pode jogar com outro personagem (Arqueiro, Mago). Exige ter mais de um herói já no protótipo."
-        },
-        {
-          "id": "c",
-          "nome": "Sim, o mesmo herói",
-          "efeito": "A expedição vira só tempo fora do jogo; mais liberdade, mas risco de ganho em dobro."
-        }
-      ]
-    },
-    {
-      "id": "uso-do-ouro",
-      "titulo": "Para que serve o Ouro",
-      "detalhe": "O Ouro cai dos baús e inimigos, mas ainda não tem uso.",
-      "origem": "docs/16_etapa3_fluxo.md (Q3-3)",
-      "pergunta": "No protótipo, para que serve o Ouro?",
-      "contexto": [
-        "Baús e inimigos já dão Ouro, mas o protótipo não tem onde gastar.",
-        "Itens de raridade sobem de valor de venda; o core vai calcular o valor de venda por nível e raridade."
-      ],
-      "opcoes": [
-        {
-          "id": "a",
-          "nome": "Vendedor no Refúgio (proposta)",
-          "efeito": "Um vendedor compra os itens que você não quer e vende poções; o loop de loot fica completo."
-        },
-        {
-          "id": "b",
-          "nome": "Só melhorias",
-          "efeito": "O Ouro serve para melhorar o equipamento (reforjar afixos) no ferreiro; sem compra e venda."
-        },
-        {
-          "id": "c",
-          "nome": "Sem uso por enquanto",
-          "efeito": "O Ouro só acumula no protótipo; o uso entra na versão 1.0."
-        }
-      ]
-    },
-    {
-      "id": "segundo-conjunto",
-      "titulo": "Segundo visual de armadura",
-      "detalhe": "Hoje só existe o visual inicial de cada herói.",
-      "origem": "docs/16_etapa3_fluxo.md (Q3-4)",
-      "pergunta": "Fazemos já um segundo conjunto de armadura do Guerreiro (por exemplo, o de raridade Rara) para ver o equipamento mudando o visual no protótipo?",
-      "contexto": [
-        "Os heróis são modulares: cada peça troca com o item equipado.",
-        "Hoje só existe o conjunto inicial; itens Mágicos e Raros mudam só a tinta do tecido.",
-        "Um conjunto novo segue o mesmo caminho: folha do herói vestido no gpt-image, modelo 3D, acabamento e corte em 5 peças. Você aprova a arte antes."
-      ],
-      "opcoes": [
-        {
-          "id": "a",
-          "nome": "Sim, um conjunto novo do Guerreiro",
-          "efeito": "No protótipo dá para ver a armadura realmente mudando de forma ao equipar um item raro."
-        },
-        {
-          "id": "b",
-          "nome": "Não, só a tinta por enquanto",
-          "efeito": "Economiza tempo agora; conjuntos novos entram na Etapa 4."
-        }
-      ]
-    },
-    {
-      "id": "mixamo-download",
-      "titulo": "Baixar as animações do Mixamo",
-      "detalhe": "Lista em docs/arte/animacao_mixamo.md.",
-      "origem": "docs/arte/animacao_mixamo.md",
-      "pergunta": "Você baixa agora as animações do Mixamo da lista em docs/arte/animacao_mixamo.md?",
-      "contexto": [
-        "Precisa da sua conta Adobe.",
-        "Não bloqueia nada: o pacote CC0 e o Blender por script já cobrem o básico."
-      ],
-      "opcoes": [
-        {
-          "id": "a",
-          "nome": "Baixo agora",
-          "efeito": "Mais variedade de golpes já nesta etapa."
-        },
-        {
-          "id": "b",
-          "nome": "Depois",
-          "efeito": "Seguimos só com o CC0 e o Blender."
-        }
-      ]
     }
   ],
   "decisoes": [
@@ -808,6 +623,46 @@
       "data": "2026-10-17",
       "titulo": "Peças modulares cortadas do herói vestido",
       "detalhe": "As peças geradas isoladas pela IA não serviram; o corte do modelo vestido aprovado funcionou."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Mockups das telas da Etapa 3 aprovados",
+      "detalhe": "Tela inicial, inventário com boneco modular, tooltip, expedição e relatório viram a arte final das telas."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Arte feita durante a noite confirmada",
+      "detalhe": "Cenário pintado da Cripta, Cão, arco, Mago modular e golpes do Blender ficam no jogo."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "1 slot de save no protótipo",
+      "detalhe": "O jogo abre direto na partida."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Herói ocupado durante a expedição",
+      "detalhe": "A Cripta fica bloqueada para o herói até coletar a expedição."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Ouro: vendedor e melhorias",
+      "detalhe": "Vendedor no Refúgio (compra e vende) e melhorias de equipamento com encantamentos."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Segundo conjunto de armadura do Guerreiro",
+      "detalhe": "Um conjunto novo (Raro) para ver a armadura mudar de forma ao equipar."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Mixamo: o dono baixa agora",
+      "detalhe": "Animações do Mixamo pela lista em docs/arte/animacao_mixamo.md."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "História escrita pelo dono",
+      "detalhe": "A equipe só adapta os textos ao formato do jogo."
     }
   ],
   "nuvem": [
