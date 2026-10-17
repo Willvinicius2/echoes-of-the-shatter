@@ -105,7 +105,8 @@ Medidas em 1920 × 1080, estilo UI de pedra escura e tokens de `docs/03` (`nine_
   1. **Portal da Cripta** (entrada).
   2. **Ilsa** (expedição, abre S-08).
   3. **Tico** (relatório e entrega, abre S-09; se não há expedição: `dlg.tico.nothing`; se em curso: `dlg.tico.waiting`).
-  4. **Baú compartilhado e mesa de troca** (abre S-05 na aba Baú; é onde se vende; ver Q3-3 sobre quem compra).
+  4. **Baú compartilhado** (abre S-05 na aba Baú).
+  5. **Vendedor** (abre S-14) e 6. **Encantador** (abre S-15), funções com nome provisório (seção 11). A venda sai da mesa de troca e passa ao Vendedor.
   Bram e Irmã Odete: ausentes ou só cenário sem interação (`docs/05`; sem função no protótipo).
 - **HUD no Refúgio:** retrato, barras, Ouro, Cargas do Marco `n/12`; sem barra de chefe, sem Fervor; ataque e habilidades desligados (a barra fica visível e sem recarga, como em `docs/03` 4.1). Poções enchem ao entrar.
 - **Ações:** andar, interagir, `I` inventário, `Esc` pausa. **Interagir** = ação nova `Interact` (padrão `F`, remapeável, RF-65); conflito futuro com Habilidade 5 em `F` fica para a Etapa 4 (mapas de ação separados por cena) [ver 9.3].
@@ -241,7 +242,7 @@ Preço de venda por raridade (valores em `rules.csv`, proposta no 9.1), **[HIPÓ
 | Raro | 35 | Raro é ~2% a 4% dos itens: precisa pesar |
 | Único | 100 | Só para tirar duplicatas; protegido |
 
-**O Ouro não tem uso no protótipo** (sem Bram, sem Odete, sem respec pago, poção grátis). Ele é contador até a Etapa 4. Isso torna "vender" uma ação de gestão de espaço, não de economia. Ver **Q3-3**.
+**Atualização de 17/10/2026 (decisão do dono):** o Ouro passa a ter dois usos no protótipo, um Vendedor no Refúgio (compra itens, vende frascos de recarga) e Melhorias de equipamento com um Encantador. A mesa de troca abaixo vira o Vendedor. Ver a seção 11; ela substitui a versão anterior deste parágrafo ("o Ouro não tem uso") e fecha **Q3-3**.
 
 ### 4.5 O que cai de cada inimigo (tabelas existentes)
 
@@ -416,7 +417,7 @@ Formato de `CLAUDE.md`: pergunta inteira, contexto completo, opções com efeito
 - **B. Livre para jogar.** Efeito: nenhum tempo morto; precisa de regra nova que impeça somar XP (por exemplo, o XP manual não conta enquanto houver expedição) e quebra a premissa de "congelar".
 - **C. Bloqueado, com "Chamar de volta".** Efeito: o jogador encerra a expedição quando quiser e recebe só o simulado até agora; as cargas gastas não voltam; exige confirmar no Backend se o core aceita coleta parcial (RF-47 já define `min(agora − início, duração)`).
 
-### Q3-3 — Para que serve o Ouro na Etapa 3 e quem compra os itens?
+### Q3-3 — Para que serve o Ouro na Etapa 3 e quem compra os itens? (RESOLVIDA em 17/10/2026: Vendedor e Melhorias, ver seção 11; texto original abaixo mantido como histórico)
 **Pergunta:** Como o Ouro entra no ciclo, já que Bram (crafting) e Irmã Odete (livros) estão fora do protótipo, e quem fica com a função de comprar os itens que o jogador vende?
 **Contexto:** Hoje o Ouro só entra (drops, venda) e não sai: poções são grátis, respec é grátis até o nível 10, não há loja. Para vender é preciso alguém ou algo que compre; `docs/05` diz que Bram e Odete aparecem "sem função". Não quero criar personagem ou lore, então a decisão é sua.
 **Opções:**
@@ -469,3 +470,327 @@ Formato de `CLAUDE.md`: pergunta inteira, contexto completo, opções com efeito
 | Idle games: coletar ao abrir | Expedição só em área dominada, com cargas ganhas jogando, e o relatório empurra de volta para "Jogar esta rota agora" | P1 e P3; o idle nunca substitui o jogo |
 
 O **twist** que muda decisões: a expedição só existe depois de o jogador vencer o Guardião na mão; as cargas vêm de jogar; o relatório sugere uma troca de item ou de regra. Quem pula a Cripta não tem o que configurar.
+
+---
+
+## 11. Economia do protótipo: vendedor e encantamentos
+
+Criada em 17/10/2026 a partir da decisão do dono: no protótipo o Ouro serve para (1) um **Vendedor** no Refúgio, que compra itens e vende frascos de recarga, e (2) **Melhorias** de equipamento feitas por um **Encantador**. A história é do dono: o Vendedor e o Encantador são **funções**, sem nome próprio, sem fala nova e sem lore. Aparecem só por chave de Loc provisória (`npc.vendor.name` = "Vendedor", `npc.enchanter.name` = "Encantador"); trocar nome ou rosto depois é trocar a chave. Bram e Irmã Odete continuam sem função (docs/05). Todo número daqui é **[HIPÓTESE]**.
+
+**Pilares.** P2 (build com identidade): o Ouro e as Lascas viram escolhas sobre o *seu* equipamento, não só números maiores. P3 (planejar o retorno): a expedição rende o material, e o jogador decide em que peça gastá-lo antes da próxima. P4 (respeitar o tempo): uma corrida de 8 minutos já paga uma melhoria; nada exige farm. P1 (conquistar pela ação): o frasco de recarga não funciona na arena do Guardião nem na expedição, e a melhoria nunca cria Único (o item de topo continua vindo só do chefe).
+
+### 11.1 O que o plano já previa (e o que o core já tem)
+
+| Fonte | O que diz | Como entra aqui |
+|---|---|---|
+| `docs/00` seção 6, "Crafting com o Bram" | Refinar (Comum + Lascas vira Mágico), Reforjar (sorteia os afixos de novo; usa Cinzas de Memória), Fixar Inscrição (Raro + Inscrição, 1 por item), Lapidar (Item + Ouro melhora valores dentro da faixa), Reciclar (devolve Lascas e Cinzas). "Crafting nunca destrói o item; a tela avisa antes." "O Ouro vira poder só por crafting e escolhas." | Cinco operações do protótipo, com as trocas da tabela 11.4 |
+| `ItemInstance.hasInscription` | Já existe: "Fixar Inscrição, no máximo 1 por item" | Reaproveitado como trava de **Adicionar afixo** (1 por item) |
+| `affixes.csv`, coluna `craftInscription` | Existe e está `false` em todos os 8 afixos | Define a lista de candidatos de Adicionar afixo (pedido ao Data em 11.8) |
+| `RollAffixes` | Mágico 1 a 2, Raro 3 a 4, no máximo 2 prefixos e 2 sufixos, grupos exclusivos, `allowedSlots`, `minItemLevel` | Toda melhoria que sorteia afixo obedece às mesmas regras |
+| `RngStream` | Só `Combat`, `Loot`, `Events`; **não há fluxo de crafting** | Fluxo novo `Crafting = 4` (pedido ao Backend em 11.9) |
+| Materiais | Só **Lascas** (`material.shards`) existem nos dados. **Cinzas de Memória e Inscrições não existem** | Nenhum material novo: Lascas fazem o papel de todos |
+
+### 11.2 Vendedor
+
+**Compra: qualquer item da Mochila ou do Baú, não equipado**, pelo valor do core (`shatter_inventory_sell_value`: preço da raridade x (1 + `sell_level_factor` x (itemLevel − 1)), arredondado; hoje 4/12/35/100). Sem número novo de compra: um único preço evita que o jogador compare Vendedor com "mesa de troca". As confirmações da S-07 (Raro simples, Único segurar 1 s, desfazer 5 s para Comum e Mágico) continuam valendo. Equipado não vende (core).
+
+**Vende: um item, o Frasco de Recarga (`consumable.refill_flask`). Não vende poção extra.** Motivo: `docs/13` item 2 fixa Vida em 3 cargas e Resguardo em 2, calibradas para a luta do Guardião ("3 + ~3 curas") e para o idle; as poções já enchem de graça ao entrar no Refúgio, ao passar num checkpoint e ao reiniciar a luta. Vender mais carga no Refúgio seria comprar o que já é de graça, e vender carga máxima estouraria o limite. O frasco **não aumenta o máximo**: é um consumível que o jogador leva na Cripta e usa para restaurar **1 carga** da poção com menos cargas (empate: Vida), respeitando o máximo e a trava global de 1 s. Regras:
+- Carrega no máximo **3** (`carry cap`); Pilha sem ocupar espaço, como Ouro e Lascas.
+- **Bloqueado na arena do Guardião** (a luta continua testando as cargas do `docs/13`) e **fora do idle** (a expedição não usa frasco; as regras de IA continuam só com as poções).
+- Não vira Fervor, não conta como poção em `refillOnEliteKill`.
+- Preço 50 Ouro [HIPÓTESE H3-17]: com ~200 Ouro por corrida, 4 frascos por corrida é o teto, e o limite de 3 evita estocar.
+- Serve ao P4: errar num trecho longo entre checkpoints custa 50 Ouro, não 5 minutos.
+
+**Recompra: sim.** O Vendedor guarda os **10 últimos itens comprados do jogador** (`vendor_buyback_slots`); recomprar custa 1,25 x o valor pago ao jogador, arredondado para cima [H3-18]. Motivo: o desfazer de 5 s da S-07 cobre o clique errado; a recompra cobre o "vendi o Raro e só vi no relatório" sem tornar a venda grátis de desfazer. A lista é gravada no save (não some ao fechar o jogo). O 11º item vendido expulsa o mais antigo (que deixa de existir); se o mais antigo é Raro ou Único, a venda do 11º pede confirmação extra com aviso. Único vendido não sai da recompra a não ser por expulsão ou recompra.
+
+### 11.3 S-14 Vendedor (`VendorView`, falar com o Vendedor no Refúgio)
+
+- **Objetivo:** esvaziar a Mochila e abastecer frascos em menos de 30 s.
+- **Layout:** à esquerda a Mochila (a mesma grade 8 x 5 da S-05), à direita três abas: **Vender**, **Recomprar**, **Frascos**. Rodapé: Ouro atual e Lascas.
+- **Aba Vender:** clicar em um item mostra "Vale N Ouro" e o botão "Vender"; `Alt+Clique` marca como "lixo" e o botão "Vender marcados" mostra o total e a contagem por raridade (Raro e Único listados à parte, exigem confirmar). Equipado aparece cinza com tooltip "Equipado".
+- **Aba Recomprar:** os 10 itens com o preço de recompra; "Recomprar" se há Mochila livre e Ouro; senão botão cinza com o motivo.
+- **Aba Frascos:** o Frasco de Recarga, preço, quantos o jogador tem (`n/3`), botão "Comprar 1" e "Encher até 3".
+- **Estados:** Mochila vazia ("Nada a vender"); sem Ouro (botão cinza `semantic.warning`); frasco no máximo (botão cinza); recompra vazia.
+- **Teclado:** `Esc` fecha; `Enter` confirma; tooltip S-06 em todos os itens.
+- **Texto:** todo por chave `ui.vendor.*` (11.10). Nenhuma fala de personagem; só rótulos.
+
+### 11.4 Encantamentos (Melhorias)
+
+Cinco operações, todas no Refúgio, todas em item que o jogador possui (Mochila, Baú ou equipado; o chão não). Cada uma tem o custo em Ouro e Lascas da tabela 11.6, **cobrado e aplicado de forma atômica** (se não há Ouro ou Lascas, nada muda). Nenhuma operação destrói o item (exceto Desmontar, que é explícita e pede confirmação).
+
+| ID | Operação | Entrada | Resultado | Pilar | Diferença do plano |
+|---|---|---|---|---|---|
+| `craft.refine` | **Refinar** | Item **Comum** | Vira **Mágico** com 1 a 2 afixos sorteados (mesma regra de `RollAffixes`) | P4 | Igual ao plano |
+| `craft.reforge` | **Reforjar** | Item Mágico ou Raro | **Sorteia de novo todos os afixos, mantendo a quantidade** que o item já tem e o `hasInscription`; zera a lapidação dos afixos novos. Opcional: **travar 1 afixo** (ele fica como está, com valor e lapidação; os outros são sorteados). Travar custa mais Lascas | P2 | O plano usa Cinzas de Memória (não existem); aqui só Lascas. A trava é nova (ver o twist abaixo) |
+| `craft.add` | **Adicionar afixo** | Item Mágico com 1 afixo, ou Raro com menos de 4, **sem** `hasInscription` | O sistema sorteia até **3 candidatos** elegíveis (`craftInscription = true`, respeitando slot, grupo, nível e o limite 2 prefixos + 2 sufixos); o jogador **escolhe 1**; entra um afixo com valor sorteado; `hasInscription = true` | P2 | O plano usa Inscrição como item e lista fixa; aqui o custo é Lascas e a lista é sorteada. "1 por item" mantido |
+| `craft.polish` | **Lapidar** | Um afixo de um item Mágico ou Raro | Sobe o valor 25% da faixa em direção ao máximo (`valor = min(máx, valor + 0,25 x (máx − mín))`; inteiros arredondados); até **3 passos por afixo**; **sem sorteio** | P2 | Igual ao plano; determinístico para o jogador poder planejar |
+| `craft.dismantle` | **Desmontar** | Item Comum, Mágico ou Raro (não equipado) | Some e devolve Lascas (2 / 5 / 12) | P4 | Plano: "Reciclar" (Lascas e Cinzas) |
+
+**"Encantar com Lascas"** não é uma operação a mais: as Lascas são o **custo** de Refinar, Reforjar, Adicionar afixo e a **receita** de Desmontar. Isso evita um quinto botão que repetiria Reforjar.
+
+**Twist (decisão que muda por causa da mecânica).** Reforjar com trava transforma "joga fora tudo" em "protege o que presta": o jogador decide qual afixo é a coluna da peça e paga para guardá-lo. A referência (Path of Exile, Last Epoch) deixa travar afixos em fluxos de crafting; aqui o limite é **1 afixo travado**, o custo de Lascas dobra, e o preço sobe a cada Reforjar da mesma peça (11.6), então "reforjar até acertar" tem teto de gasto razoável, não infinito.
+
+| No jogo de referência | No nosso | Por quê |
+|---|---|---|
+| Path of Exile: orbes de crafting dão resultado totalmente aleatório e há mercado/stash de itens para refazer | 5 operações, **um só material** (Lascas) mais Ouro; preço sobe a cada Reforjar da peça; travar 1 afixo; lapidar sem sorteio | O protótipo prova que Ouro e Lascas viram *escolha*, não que existe um jogo de crafting inteiro. Menos operações, mais clareza |
+| Last Epoch: afixos têm "tiers" e o jogador sobe a qualidade com material | Lapidar sobe a qualidade em 3 passos até o máximo da faixa | Mesma decisão ("vale a pena investir nesta peça?") sem tabela de tiers nova |
+| Diablo 3/4 (Encantadora, Ocultista): rerrola 1 propriedade | Reforjar com 1 afixo travado = o inverso (guarda 1, rerrola o resto) | O Guerreiro tem poucos afixos (8): rerrolar 1 só dá pouca variação; guardar o bom e rerrolar o resto muda mais a peça |
+
+### 11.5 Limites e o que nunca pode acontecer
+
+**Limites de uso**
+
+1. **Raridade só sobe uma vez e só por Refinar:** Comum vira Mágico. Mágico **nunca** vira Raro e Raro **nunca** vira Único (nenhuma operação muda a raridade além de Refinar).
+2. **Único é intocável:** nenhuma operação de melhoria aceita Único (nem Desmontar). Pode vender (segurar 1 s) e descartar.
+3. **Limite de afixos por raridade:** Mágico até 2, Raro até 4, Comum 0 (`docs/06`). Adicionar afixo recusa quando o item já está no limite ou quando `hasInscription` é verdadeiro.
+4. **1 Adicionar por item** (`hasInscription`).
+5. **Lapidar:** máximo 3 passos por afixo (`polish_max_steps`); recusa se o valor já está no máximo da faixa.
+6. **Reforjar:** sem limite de vezes, mas o preço sobe (11.6, teto de 3 x).
+7. Só no Refúgio. Equipado pode ser melhorado, mas com expedição `Running` aparece o aviso "Vale a partir da próxima expedição" (a build está congelada no snapshot).
+8. A pool de afixos do protótipo é pequena (**armas: 3; botas: 5; elmo, peitoral, luvas, calça: 4 a 5**). Raro de arma tem 3 e **não tem o que adicionar**; Raro com 4 afixos só existe em armadura. A UI explica o motivo do botão cinza: "Sem afixo disponível". Ver **Q3-5**.
+
+**Nunca pode acontecer (cada item tem teste [SC])**
+
+- Subir raridade além da regra de cima; criar Único; mudar `uniqueId`; mudar `baseId`, `itemLevel` ou `uid`.
+- Afixo repetido ou do mesmo `group`; afixo fora de `allowedSlots` ou com `minItemLevel` maior que o do item; valor fora de [`minValue`, `maxValue`] do afixo; mais de 2 prefixos ou 2 sufixos.
+- Gastar Ouro ou Lascas que o jogador não tem (saldo nunca negativo); cobrar sem aplicar, ou aplicar sem cobrar; aplicar duas vezes se o jogo cair depois de gravar.
+- Perder o item por falha (queda, buffer pequeno, erro): a operação é tudo ou nada no mesmo salvamento (como RF-55).
+- Qualquer sorteio fora do fluxo `Crafting` (mexer em melhoria nunca desloca o loot nem o combate).
+- Reforjar mudar a quantidade de afixos do item.
+- O C# decidir, calcular ou sortear custo, resultado ou candidato.
+
+### 11.6 Determinismo
+
+- **Fluxo próprio:** `RngStream::Crafting` (novo), separado de `Loot`, `Combat` e `Events`.
+- **Semente por operação:** função pura de (`craft_seed` do save, `uid` do item, `craft_steps` do item, tipo da operação). Nenhum "contador global": o mesmo item, no mesmo estado, na mesma etapa, dá o mesmo resultado. Consequência: **recarregar o save antes de confirmar não muda o sorteio**; o jogador não ganha nada com "salvar e recarregar até sair bom". `craft_seed` nasce no "Novo jogo" a partir da semente do personagem; `craft_steps` (uint16) sobe a cada Refinar, Reforjar e Adicionar da peça, na gravação.
+- **Prévia sem custo:** a UI mostra faixa e custo antes de confirmar, **nunca o resultado**. Os candidatos de Adicionar afixo só são sorteados ao abrir a escolha e são os mesmos se o jogador fechar e reabrir (mesma semente). Escolher um dos 3 consome o passo.
+- **Brecha aceita [H3-19]:** o resultado de uma peça depende do seu `craft_steps`, então a ordem das operações *nessa peça* muda o resultado (Adicionar antes de Reforjar não sorteia o mesmo que o inverso). Operações em outras peças não mudam nada. Como cada passo custa Lascas e Ouro, o jogador não vê o futuro sem pagar. Documentado, sem mitigação extra.
+- **Lapidar** não tem sorteio e não consome o fluxo.
+- **Testes [SC]:** mesmo save + mesma operação = mesmo resultado byte a byte; 1 milhão de Reforjar em itens de cada raridade e slot sem violar nenhuma regra de "Nunca pode acontecer"; operação interrompida no meio (injeção de falha) deixa o save igual ao de antes.
+
+**Fórmula de custo (resumo, números na 11.8):** custo final = custo base x (1 + `craft_cost_level_factor` x (itemLevel − 1)), arredondado para cima; Reforjar multiplica por `1 + reforge_step_mult x (reforges anteriores da peça)`, com teto `reforge_mult_cap`; travar 1 afixo multiplica **só as Lascas** por `reforge_lock_cost_mult`.
+
+### 11.7 S-15 Encantador (`EnchantView`, falar com o Encantador no Refúgio)
+
+- **Objetivo:** escolher uma peça, ver o que cada melhoria custa e o que ela pode fazer, e decidir sem medo de clicar errado.
+- **Layout:** à esquerda a Mochila e o equipamento (a grade da S-05) e o boneco; ao centro o **item escolhido** com seus afixos (cada afixo mostra barra de qualidade `valor entre mín e máx` e os passos de lapidação `●●○`); à direita uma lista vertical das 5 operações; rodapé: Ouro e Lascas.
+- **Fluxo:** (1) clicar no item; (2) clicar na operação; (3) o painel central troca para a **confirmação**: custo em Ouro e Lascas (com o que o jogador tem; vermelho `semantic.warning` se falta), faixa do resultado, aviso quando perde algo; (4) Confirmar (segurar 0,5 s para Reforjar e Desmontar; clique simples nas outras) ou Voltar.
+- **Reforjar:** lista os afixos atuais com um **cadeado** por afixo (1 no máximo); o botão mostra o custo com e sem trava. Aviso fixo: "Todos os afixos não travados serão sorteados de novo. Não dá para desfazer." (Q3-6).
+- **Adicionar afixo:** abre 3 cartões (nome, faixa); o jogador escolhe 1 e confirma. Se não há candidato: botão cinza com "Sem afixo disponível".
+- **Lapidar:** o jogador clica no afixo; a tela mostra "valor atual → valor novo" e o custo do passo (1º, 2º, 3º).
+- **Desmontar:** modal com as Lascas devolvidas; Raro pede segurar 1 s; Único não aparece (botão cinza com "Item único não pode ser melhorado").
+- **Resultado:** o item muda no mesmo quadro com um destaque no afixo alterado (cor `item_text.affix` mais brilho, sem som novo); toast "Item melhorado"; **auto-save** (RF-54: "ao crafting").
+- **Estados e botões cinza com motivo:** item Único; limite de afixos; já lapidado no máximo; sem Ouro ou Lascas; sem afixo elegível; `hasInscription`.
+- **Teclado:** setas, `Enter`, `Esc` volta; `Tab` troca de coluna.
+- **Texto:** chaves `ui.enchant.*`. Nenhum nome de personagem, nenhuma fala.
+- **Pausa e tempo real:** é tela de Refúgio; nada a pausar.
+
+### 11.8 Tabelas de dados e chaves novas
+
+IDs `craft.*` e chaves são estáveis depois de publicados. **Todos os números são [HIPÓTESE]**.
+
+**`rules.csv`: chaves novas** (tipo `number`, exceto onde dito).
+
+| Chave | Valor | Intenção |
+|---|---|---|
+| `vendor_buyback_slots` | 10 | Recompra cobre o erro de uma sessão sem virar estoque |
+| `vendor_buyback_price_factor` | 1.25 | Recomprar custa um pouco mais do que se recebeu: o erro dói pouco, mas a venda não é grátis de desfazer |
+| `refill_flask_carry_cap` | 3 | Teto de frascos levados; evita estocar para a arena |
+| `refill_flask_charges` | 1 | Cada frasco restaura 1 carga |
+| `craft_cost_level_factor` | 0.1 | Custo cresce 10% por nível de item acima de 1 (mesma ideia de `sell_level_factor`) |
+| `reforge_step_mult` | 0.5 | Cada Reforjar da mesma peça soma 50% do custo-base ao próximo |
+| `reforge_mult_cap` | 3.0 | Teto do multiplicador: o gasto não sobe para sempre |
+| `reforge_lock_cost_mult` | 2.0 | Travar 1 afixo dobra só as Lascas |
+| `reforge_lock_max` | 1 | Só 1 afixo travado por Reforjar |
+| `add_affix_candidates` | 3 | Quantidade de cartões de Adicionar afixo |
+| `polish_step_fraction` | 0.25 | Cada passo de Lapidar sobe 25% da faixa |
+| `polish_max_steps` | 3 | Máximo de passos por afixo |
+| `dismantle_shards_normal` | 2 | Receita do Comum (menos que Refinar custa: sem ciclo infinito) |
+| `dismantle_shards_magic` | 5 | Receita do Mágico |
+| `dismantle_shards_rare` | 12 | Receita do Raro |
+
+**Tabela nova `craft_costs.csv`**
+
+- Cabeçalho exato: `id,op,rarity,step,goldCost,shardCost`
+- Esquema/validador: o Data Engineer ajusta. Propostas de regra: `id` com prefixo `craft.`; `op` em `refine|reforge|add|polish`; `rarity` em `normal|magic|rare|any`; `step` inteiro ≥ 0 (só a Lapidar usa 1 a 3; as outras usam 0); `goldCost` e `shardCost` inteiros ≥ 0; par (`op`, `rarity`, `step`) único; toda operação de 11.4 tem pelo menos uma linha (Desmontar não tem custo).
+
+| id | op | rarity | step | goldCost | shardCost | Intenção |
+|---|---|---|---|---|---|---|
+| `craft.refine.normal` | refine | normal | 0 | 40 | 10 | Barato: o Comum é abundante; ~1 corrida para uma peça Mágica |
+| `craft.reforge.magic` | reforge | magic | 0 | 60 | 12 | Rerrolar Mágico é decisão leve |
+| `craft.reforge.rare` | reforge | rare | 0 | 120 | 20 | Raro é a coluna da build: custa claramente mais |
+| `craft.add.magic` | add | magic | 0 | 90 | 15 | Sobe a peça de 1 para 2 afixos |
+| `craft.add.rare` | add | rare | 0 | 200 | 25 | Sobe o Raro para o 4º afixo (só armadura) |
+| `craft.polish.1` | polish | any | 1 | 60 | 0 | 1º passo: sumidouro de Ouro, sem Lascas |
+| `craft.polish.2` | polish | any | 2 | 120 | 0 | Dobra |
+| `craft.polish.3` | polish | any | 3 | 240 | 0 | Dobra de novo: fechar o afixo no máximo é caro |
+
+**Tabela nova `vendor_stock.csv`**
+
+- Cabeçalho exato: `id,refId,kind,priceGold,carryCap`
+- Regras propostas: `kind` em `stack`; `refId` aponta para um ID de material ou consumível já cadastrado; `priceGold` inteiro ≥ 0; `carryCap` inteiro ≥ 1.
+
+| id | refId | kind | priceGold | carryCap |
+|---|---|---|---|---|
+| `vendor.refill_flask` | `consumable.refill_flask` | stack | 50 | 3 |
+
+**Mudança em `affixes.csv`:** coluna `craftInscription` = `true` nos 8 afixos do protótipo (hoje todos `false`). Quando houver mais afixos, o Data decide quais ficam disponíveis. **Pedido ao Data:** pelo menos 2 afixos novos de `main_hand` (ex.: dano de elemento, vida por acerto, escolha do Data) para que o Raro de arma possa chegar a 4 afixos e Reforjar tenha variação real (Q3-5).
+
+**Mudança em `item_bases.csv`/`ItemInstance`:** nenhuma coluna; campos novos de save na 11.9.
+
+### 11.9 Conta do ritmo: quanto Ouro e Lascas o jogador ganha
+
+Fontes: `loot_entries.csv`, `encounters.csv`, `maps.csv` e a seção 4.5. Fervor no jogo manual: Ouro e Lascas x 1,25. Todas as contas são **esperanças** [H3-20] e foram feitas à mão; a medição fica para o `tools/batch_sim`.
+
+**Corrida manual completa** (7 encontros, ~20 inimigos comuns, 2 elites, Guardião, 5 baús):
+
+| Origem | Ouro | Lascas | Itens |
+|---|---|---|---|
+| ~20 comuns (35% x 55/100 x 10 de Ouro; 35% x 25/100 x 2 de Lascas) | 38,5 | 3,5 | 1,4 |
+| 2 elites (2 sorteios x 60% x 40/93 x 25; idem Lascas 25/93 x 3,5) | 25,8 | 2,3 | 0,7 |
+| Guardião (2 sorteios x 40/89 x 45; Lascas 25/89 x 6) | 40,4 | 3,4 | 0,5 |
+| 7 encontros de área + 3 baús de área | 3,9 | 0,4 | 0 |
+| 2 baús de elite | 25,8 | 2,3 | 0,7 |
+| **Subtotal** | **134** | **11,9** | **3,4** |
+| **x 1,25 (Fervor)** | **168** | **14,9** | |
+| Venda dos ~3,4 itens (~2 Comuns x 4, ~1 Mágico x 12, ~0,4 Raro x 35, ~0,1 por Único) | ~35 | | |
+| **Total por corrida** | **~200 Ouro** | **~15 Lascas** | |
+
+Tempo: primeira vitória 8 a 12 min (`docs/14`), depois ~6 a 8 min. **Em 10 min de jogo manual: ~200 Ouro e ~15 Lascas.**
+
+**Expedição** (idle: sem Fervor; ~3,0 comuns e 0,17 elite por encontro; ~8,3 Ouro e ~0,76 Lascas por encontro; ~0,27 item por encontro; **60 encontros por hora** [H3-20]: 6 s de viagem + ~25 s de luta (`docs/14`) cortados por recuperação e poções):
+
+| Duração | Vigor efetivo (`vigor_h1_4` 1,0; 5 a 8 h 0,7) | Ouro (inclui Comuns vendidos na coleta) | Lascas |
+|---|---|---|---|
+| 1 h | 1,0 h | ~560 | ~46 |
+| 5 h (o primeiro ciclo) | 4,7 h | ~2.630 | ~216 |
+| 12 h (futuro, com 12 cargas) | 4 + 2,8 + 1,6 = 8,4 h | ~4.700 | ~385 |
+
+Relação: 1 h de expedição ~ 2,8 corridas em Ouro e ~3 corridas em Lascas. Isso é coerente com o plano (a expedição rende cerca de 35% do jogo manual; aqui o Ouro por hora é ~28% do manual, 560 contra ~2.000 em 10 corridas/h): **o jogo manual rende mais por hora e o idle rende enquanto o jogador está fora.** Se o `batch_sim` mostrar mais que ~800 Ouro/h de idle, subir os custos ou baixar `drop` em vez de cortar o idle.
+
+**Os custos contra a renda** (tabela 11.8, itemLevel 1):
+
+| Meta do jogador | Custo | Em corridas | Em horas de expedição | Leitura |
+|---|---|---|---|---|
+| 1 Refinar (Comum vira Mágico) | 40 Ouro, 10 Lascas | 0,7 (Lascas) | 0,2 | A primeira melhoria sai de **uma corrida** |
+| 1 Reforjar de Mágico | 60 Ouro, 12 Lascas | 0,8 | 0,3 | Uma corrida paga uma rerrolagem |
+| 1 Reforjar de Raro | 120 Ouro, 20 Lascas | 1,3 | 0,4 | |
+| Reforjar um Raro até acertar: 4 tentativas (multiplicador 1 + 1,5 + 2 + 2,5 = 7) | 840 Ouro, 140 Lascas | 9,3 (Lascas) | 3,0 | Meio dia de expedição por uma peça-chave |
+| Reforjar com trava (Lascas x 2) 3 tentativas (mult. 1 + 1,5 + 2 = 4,5) | 540 Ouro, 180 Lascas | 12 | 3,9 | Mais caro em Lascas: o preço de proteger o bom afixo |
+| Adicionar afixo a um Mágico | 90 Ouro, 15 Lascas | 1,0 | 0,3 | |
+| Adicionar afixo a um Raro | 200 Ouro, 25 Lascas | 1,7 | 0,5 | |
+| Lapidar 1 afixo até o máximo (3 passos) | 420 Ouro | 2,1 | 0,75 | Sumidouro de Ouro puro |
+| **Projeto Mágico** (Refinar + Adicionar + Lapidar 2 passos) | 40 + 90 + 180 = 310 Ouro, 25 Lascas | 1,7 | 0,55 | Um Comum vira uma peça decente em ~2 corridas |
+| **Projeto Raro** (4 Reforjar + Lapidar 1 afixo) | 840 + 420 = 1.260 Ouro, 140 Lascas | 9,3 | 3,0 | |
+| Equipar as 6 peças (1 projeto Mágico cada) | 1.860 Ouro, 150 Lascas | 10 | 3,3 | Cabe nas **primeiras 5 h de expedição**, mas só vira Raro bom com tempo |
+| Frasco de Recarga | 50 Ouro | 0,25 | 0,09 | 4 frascos por corrida é o teto |
+
+**Leitura de ritmo (por que faz sentido):**
+- Cada operação cabe em **uma corrida** de 8 a 10 min, então o P4 se cumpre: sessão curta rende uma melhoria.
+- As **Lascas** limitam Refinar, Reforjar e Adicionar (custos na razão ~5 Ouro por Lascas; a renda é ~13 Ouro por Lascas), e o **Ouro** sobrante vai para Lapidar e frascos. Duas moedas, dois sumidouros: nenhum acumula sem uso.
+- O primeiro ciclo (1 corrida + 5 cargas ~ 5 h de expedição + corridas intermediárias) dá ~2.800 Ouro e ~230 Lascas: dá para fazer o Projeto Mágico em 3 a 4 peças **ou** 1 Projeto Raro e sobra. O dono tem que **escolher onde investir**, que é o objetivo de P2.
+- O teto é fixo: Lapidar fecha o afixo no máximo da faixa, Adicionar é 1 por item e Reforjar tem preço teto 3 x. A melhoria nunca ultrapassa o que um bom drop de Raro já pode dar; o objetivo é **aproximar** o loot comum do ótimo, não superá-lo.
+- Venda e Desmontar competem: um Comum vale 4 Ouro ou 2 Lascas; um Mágico vale 12 Ouro ou 5 Lascas; um Raro, 35 Ouro ou 12 Lascas. Com 1 Lasca ~ 13 Ouro de renda, desmontar vale mais quando o jogador está travado em Lascas (esperado).
+- Sem ciclo infinito: Refinar custa 10 Lascas, e Desmontar o Mágico devolve 5.
+
+### 11.10 Chaves de Loc novas (provisórias, funcionais, sem lore)
+
+| Chave | pt_BR (provisório) |
+|---|---|
+| `npc.vendor.name` | Vendedor |
+| `npc.enchanter.name` | Encantador |
+| `ui.vendor.title`, `ui.vendor.tab.sell`, `.tab.buyback`, `.tab.flasks` | Vendedor, Vender, Recomprar, Frascos |
+| `ui.vendor.sell`, `ui.vendor.sell_marked`, `ui.vendor.buyback`, `ui.vendor.buy_flask`, `ui.vendor.fill_flasks` | Vender, Vender marcados, Recomprar, Comprar 1, Encher até 3 |
+| `ui.vendor.value`, `ui.vendor.empty`, `ui.vendor.no_gold`, `ui.vendor.flask_max` | Vale {0} Ouro, Nada a vender, Ouro insuficiente, Já tem o máximo |
+| `ui.vendor.buyback_warn_evict` | Esta venda expulsa da recompra um item {0}. Continuar? |
+| `consumable.refill_flask.name` / `.desc` | Frasco de Recarga / Restaura 1 carga de poção. Não funciona na arena do Guardião |
+| `ui.enchant.title`, `ui.enchant.op.refine/.reforge/.add/.polish/.dismantle` | Encantador, Refinar, Reforjar, Adicionar afixo, Lapidar, Desmontar |
+| `ui.enchant.cost`, `ui.enchant.confirm`, `ui.enchant.lock`, `ui.enchant.step`, `ui.enchant.result` | Custo, Confirmar, Travar, Passo {0} de {1}, Item melhorado |
+| `ui.enchant.warn_reforge` | Todos os afixos não travados serão sorteados de novo. Não dá para desfazer. |
+| `ui.enchant.err.unique`, `.err.max_affixes`, `.err.max_polish`, `.err.no_gold`, `.err.no_shards`, `.err.no_candidate`, `.err.inscribed`, `.err.expedition_running` | Item único não pode ser melhorado; Limite de afixos; Já no máximo; Ouro insuficiente; Lascas insuficientes; Sem afixo disponível; Já recebeu um afixo adicionado; Vale a partir da próxima expedição |
+
+Máximo de 12 caracteres em rótulos de moeda (regra `max=12` de `content.csv`).
+
+### 11.11 Para o Backend (API C nova e dados de save)
+
+Proposta; o contrato final é do Backend e do Tech Lead. Padrão da seção 11 do docs/09: o resultado vai em `*result`, a função devolve OK, recusa não muda nada, itens achados por `uid`. Sugestão de versão: `SHATTER_C_API_MINOR` 5 (só adições).
+
+1. **Fluxo de RNG:** `RngStream::Crafting = 4` em `rng.h`; semente por operação = função pura de (`craft_seed`, `uid`, `craft_steps`, op). Nenhum consumo de `Loot`.
+2. **Save** (sem quebrar a v2 se couber como opcional): `SaveData.craft_seed` (uint64), `ItemInstance.craft_steps` (uint16), `RolledAffix.polish` (uint8, 0 a 3), lista `vendor_buyback` (até 10 `{ItemInstance, valor pago}`), pilha `consumable.refill_flask` em `currency`/`stacks`.
+3. **Funções de Encantador:**
+   - `shatter_craft_quote(db, save, ci, uid, op, arg, shatter_craft_quote*)`: custo em Ouro e Lascas, flags de bloqueio por motivo (código estável) e faixa do resultado; **não altera**.
+   - `shatter_craft_refine(db, save, ci, uid, *result)`
+   - `shatter_craft_reforge(db, save, ci, uid, locked_affix_index (-1 = nenhum), *result)`
+   - `shatter_craft_add_affix_offer(db, save, ci, uid, buf...)`: JSON com até 3 candidatos `{affix_id, min, max}`; **não altera**, mesma saída se repetida.
+   - `shatter_craft_add_affix_apply(db, save, ci, uid, candidate_index, *result)`
+   - `shatter_craft_polish(db, save, ci, uid, affix_index, *result)`
+   - `shatter_craft_dismantle(db, save, ci, uid, *shards, *result)`
+   - Resultados: `SHATTER_CRAFT_OK, NOT_FOUND, UNIQUE, WRONG_RARITY, AFFIX_LIMIT, ALREADY_INSCRIBED, POLISH_MAX, NO_CANDIDATE, NO_GOLD, NO_SHARDS, EQUIPPED_DISMANTLE, UNKNOWN_CONTENT`.
+   - Atomicidade: cobra e aplica no mesmo estado do save; falha não muda nada; `RollAffixes` ganha variante que aceita **quantidade fixa** e **afixo travado**.
+4. **Funções de Vendedor:** `shatter_vendor_sell` já é `shatter_inventory_sell` (docs/09); acrescentar `shatter_vendor_buyback_list_json`, `shatter_vendor_buyback(db, save, ci, index, int64* paid, *result)` (cobra e põe na Mochila; `FULL`, `NO_GOLD`), `shatter_vendor_buy(db, save, ci, stock_id, qty, *result)` (checa `carryCap`) e `shatter_vendor_sell` passa a gravar na lista de recompra (expulsa o mais antigo). `shatter_inventory_sell` continua como está para vendas sem Vendedor (ex.: "Vender Comuns ao coletar").
+5. **Frasco:** `shatter_potion_use_flask(save, ci, *result)` restaura 1 carga da poção com menos cargas (empate: Vida), respeita o máximo e a trava de 1 s; recusa na arena do Guardião (`ARENA_LOCKED`) e fora do jogo manual (`IDLE_FORBIDDEN`).
+6. **Dados:** carregar `craft_costs.csv`, `vendor_stock.csv` e as chaves novas de `rules.csv` no `ContentDB`, validar (prefixos, `op` e `rarity` válidos, todas as operações com linha). Nenhum número no código.
+7. **Testes [SC]:** a lista de "Nunca pode acontecer" (11.5) como testes de propriedade (1 milhão de operações aleatórias, sem violar nenhuma regra); determinismo (mesmo estado, mesma saída; 1000 ciclos salvar/carregar no meio); atomicidade com falha injetada; idempotência do `uid` (repetir não cobra de novo).
+8. `shatter_inventory_info_get`/`compare` já cobrem o tooltip; **nada de fórmula de custo no C#**.
+
+### 11.12 Para o Frontend (telas)
+
+1. **S-14 Vendedor** (`VendorView`) e **S-15 Encantador** (`EnchantView`) em UI Toolkit, tokens de `docs/03` (`nine_panel_ornate`), com todos os estados da 11.3 e da 11.7.
+2. **Refúgio (S-04):** dois pontos de interação novos (Vendedor e Encantador), a no máximo 12 m do portal, de Ilsa e do Tico [H3-03]; marcador provisório (silhueta graybox) e rótulo `npc.vendor.name`/`npc.enchanter.name`; usar a ação `Interact`. Sem diálogo.
+3. **Tooltip (S-06):** em Refúgio, mostrar "Vale N Ouro" (já previsto) e, no Encantador, a barra de qualidade e os passos `●●○` por afixo.
+4. **HUD:** contador do Frasco de Recarga `n/3` ao lado das poções (só na Cripta, não na arena) e tecla nova `UseFlask` (padrão `3`, remapeável).
+5. **Inventário (S-05):** as ações "Vender" e "Vender marcados" apontam para o Vendedor; no inventário, o menu de contexto ganha "Melhorar" (abre S-15 com o item).
+6. **Camada C#** `VendorService` e `CraftingService` só chamam a API C (11.11); nenhuma fórmula, custo, sorteio ou regra no C#.
+7. **Arte:** só marcadores graybox para o Vendedor e o Encantador; qualquer modelo de personagem novo passa pelo dono antes de entrar (CLAUDE.md).
+
+### 11.13 Critérios de aceite
+
+| ID | Critério | Verificação |
+|---|---|---|
+| A3-28 | O Vendedor compra qualquer item não equipado pelo valor do core; Raro pede confirmação; Único, segurar 1 s; equipado fica cinza | [SC] + [Unity] |
+| A3-29 | Frasco de Recarga: máx. 3 carregados; restaura 1 carga sem passar do máximo; recusado na arena do Guardião e no idle | [SC] + [Unity] |
+| A3-30 | Recompra: os 10 últimos itens vendidos persistem após fechar o jogo; recomprar custa 1,25 x o valor pago; o 11º expulsa o mais antigo | [SC] + [Unity] |
+| A3-31 | Refinar só aceita Comum e entrega Mágico com 1 a 2 afixos válidos; Único, Mágico e Raro recusam | [SC] |
+| A3-32 | Reforjar mantém a quantidade de afixos, não muda a raridade e respeita a trava de 1 afixo; o custo sobe 50% por Reforjar até 3 x | [SC] |
+| A3-33 | Adicionar afixo oferece até 3 candidatos válidos, respeita o limite da raridade e `hasInscription`; fechar e reabrir mostra os mesmos candidatos | [SC] + [Unity] |
+| A3-34 | Lapidar sobe 25% da faixa, no máximo 3 passos, sem sair da faixa; não consome o fluxo `Crafting` | [SC] |
+| A3-35 | Em 1 milhão de operações aleatórias nenhuma regra de "Nunca pode acontecer" (11.5) é violada; nenhum Único é criado; saldo nunca fica negativo | [SC] |
+| A3-36 | Mesmo save, mesmo item, mesma operação: mesmo resultado; recarregar antes de confirmar não muda o sorteio; falha injetada não cobra nem aplica | [SC] |
+| A3-37 | O ritmo mede perto da conta da 11.9: em 10 corridas, 200 Ouro e 15 Lascas por corrida (±40%); 1 h de acelerador de debug dá Ouro e Lascas da faixa da expedição | [Manual] + `batch_sim` |
+| A3-38 | O dono faz um Projeto Mágico (Refinar, Adicionar, Lapidar) com os recursos do primeiro ciclo e diz o que ganhou; anota o que não entendeu | [Manual] |
+
+### 11.14 Hipóteses novas
+
+| ID | Hipótese | Como medir |
+|---|---|---|
+| H3-17 | Frasco a 50 Ouro, máximo 3, não afrouxa a Cripta nem o Guardião | Quantos frascos por corrida; mortes antes e depois |
+| H3-18 | Recompra de 10 itens a 1,25 x cobre o erro sem virar loja | Quantas recompras por sessão; o dono se sente seguro vendendo |
+| H3-19 | Semente por (`uid`, `craft_steps`) impede "salvar e recarregar" e a brecha de trocar a ordem das operações é tolerável | O dono reclama de "azar fixo" ou tenta forçar |
+| H3-20 | ~200 Ouro e ~15 Lascas por corrida; ~560 Ouro e ~46 Lascas por hora de expedição (60 encontros/h) | `batch_sim` 10 mil expedições e 10 corridas reais do dono |
+| H3-21 | Os custos da tabela 11.8 dão uma melhoria por corrida e um projeto de peça por ~3 h de expedição | Quantas melhorias o dono faz até a 3ª expedição; Ouro/Lascas parados |
+| H3-22 | Travar 1 afixo (Lascas x 2) mantém Reforjar como decisão e não como jogo de azar | O dono usa a trava; quantas Reforjar por peça |
+| H3-23 | Lapidar em 25% da faixa e 3 passos fecha o afixo no máximo sem tornar o Raro de drop obsoleto | Valor dos Raros de drop vs. peças melhoradas |
+| H3-24 | Desmontar (2 / 5 / 12 Lascas) compete bem com vender | Proporção de itens desmontados e vendidos |
+
+### 11.15 Perguntas abertas para o dono
+
+### Q3-5 — Podemos acrescentar afixos novos para arma?
+**Pergunta:** Os 8 afixos atuais só dão 3 opções para arma (dano aumentado, crítico, velocidade de ataque); posso pedir ao Data Engineer pelo menos 2 afixos novos de arma para as melhorias fazerem sentido?
+**Contexto:** `RollAffixes` sorteia Mágico com 1 a 2 e Raro com 3 a 4 afixos. Como a arma só tem 3 afixos possíveis, o Raro de arma sempre tem os 3 e não pode receber "Adicionar afixo"; Reforjar de arma só embaralha valores, sem trocar afixos. Armadura tem 4 a 5 e funciona bem. Não é lore: são só números e rótulos.
+**Opções:**
+- **A (recomendada). Pedir 2 afixos novos de arma agora.** Efeito: Reforjar e Adicionar afixo viram decisões reais na arma; custo: 2 linhas de dados e 2 chaves de Loc para o Data.
+- **B. Aceitar a limitação.** Efeito: zero dado novo; a arma só se melhora por Lapidar; o Encantador parece pobre para quem foca em arma.
+
+### Q3-6 — Reforjar tem "desfazer"?
+**Pergunta:** Quando o jogador reforja uma peça e o resultado é pior, ele pode voltar ao estado anterior ou não?
+**Contexto:** O plano diz que o crafting nunca destrói o item e que "o risco é perder uma combinação boa, e a tela avisa antes". Um desfazer de 1 passo (guardar a versão anterior até o próximo Reforjar) tira o risco; sem desfazer o risco é real, e a trava de 1 afixo existe para esse medo. Como o sorteio é determinístico por peça e passo, recarregar o save não ajuda.
+**Opções:**
+- **A (recomendada). Sem desfazer, com trava e aviso.** Efeito: a decisão pesa; a trava dá controle; zero estado novo no save.
+- **B. Desfazer o último Reforjar, grátis.** Efeito: menos medo, mas o jogador reforja sempre e desfaz até acertar, o que quebra o custo crescente; exige guardar a versão anterior no item.
+- **C. Desfazer pagando metade do custo.** Efeito: meio-termo; ainda guarda estado e precisa de regra de custo e de tela.
+
+### 11.16 Resumo das mudanças em seções anteriores
+- 4.4: o parágrafo "O Ouro não tem uso" foi substituído por uma nota que aponta esta seção.
+- S-04 (Refúgio): os pontos de interação 4 a 6 (Baú, Vendedor, Encantador) substituem "Baú e mesa de troca".
+- Q3-3: marcada como resolvida.
+- Pendência para outros documentos (não editados aqui): `docs/02` (RF para Vendedor e Melhorias), `docs/05` (nomes provisórios), `docs/06` (`craft_costs.csv`, `vendor_stock.csv`, chaves novas de `rules.csv`), `docs/09` (nova seção de API C 1.5).
