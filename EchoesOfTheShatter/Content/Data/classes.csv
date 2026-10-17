@@ -1,2 +1,4 @@
 id,resourceId,startingSkill,specializations,resourceOnHit,resourceOnBlock,resourceDecayOutOfCombat,regenMultWhileMoving
 class.warrior,resource.momentum,skill.warrior.iron_cut,,10,15,5,1
+class.archer,resource.focus,skill.archer.quick_shot,,0,0,0,0.3
+class.mage,resource.mana,skill.mage.arcane_dart,,0,0,0,1

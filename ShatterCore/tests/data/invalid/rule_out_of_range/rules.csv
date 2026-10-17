@@ -79,3 +79,10 @@ equip_slot_ring,false
 equip_slot_ring2,false
 equip_slot_belt,false
 equip_slot_legs,true
+combo_window,0.4
+combo_window_after_dodge,0.3
+attack_buffer,0.15
+heavy_hold_threshold,0.35
+light_windup_credit_max,0.7
+guard_lower_time,0.1
+dash_shot_range,1000

@@ -282,9 +282,13 @@ def parse_cell(spec: dict, text: str, enums) -> Any:
                 vals = enum_values(spec["values"], enums)
                 if it not in vals:
                     raise CellError("E_ENUM", f"'{it}' não é valor válido (válidos: {', '.join(vals)})")
-            if it in out:
+            if it in out and not spec.get("allowRepeat"):
                 raise CellError("E_LIST", f"item repetido '{it}'")
             out.append(it)
+        if "minItems" in spec and len(out) < spec["minItems"]:
+            raise CellError("E_LIST", f"{len(out)} item(ns); mínimo {spec['minItems']}")
+        if "maxItems" in spec and len(out) > spec["maxItems"]:
+            raise CellError("E_LIST", f"{len(out)} item(ns); máximo {spec['maxItems']}")
         return out
     if t == "mods":
         return [parse_mod(it, enums) for it in text.split("|")] if text else []
@@ -439,7 +443,7 @@ def validate_content(data_dir: str, schema_dir: str, rep: Report, check_loc: boo
     for f in sorted(present - set(schemas)):
         rep.err(f, 0, "E_UNKNOWN_TABLE", "CSV sem esquema (o ContentDB não conhece esta tabela)")
     for table in sorted(schemas):
-        if table not in present:
+        if table not in present and not schemas[table].get("optional"):
             rep.err(table, 0, "E_MISSING_TABLE", "tabela obrigatória ausente (crie ao menos com o cabeçalho)")
     # 1) leitura e tipos
     for table, schema in sorted(schemas.items()):
@@ -582,6 +586,15 @@ def chk_skill(c: Content, table: str, rows: List[dict], rep: Report) -> None:
             rep.warn(table, ln, "W_TIMING", "windup+impact+recovery = 0")
         if r["idleFractionOfGroupHit"] == 0 and r["idleAvgTargetsHit"] <= 0 and r["idleSupported"]:
             rep.err(table, ln, "E_IDLE", "perfil idle sem alvos (idleAvgTargetsHit e idleFractionOfGroupHit = 0)")
+        # docs/18 8.2 e 8.3: semântica de forma no tempo real
+        if r["pierce"] > 0 and r["shape"] != "projectile":
+            rep.err(table, ln, "E_PIERCE", "pierce > 0 só vale para shape=projectile")
+        if r["shape"] == "projectile" and r["projectiles"] > 1 and r["coneAngle"] <= 0:
+            rep.err(table, ln, "E_FAN", "projectile com projectiles > 1 exige coneAngle > 0 (leque)")
+        if r["shape"] == "area" and r["radius"] <= 0:
+            rep.err(table, ln, "E_AREA", "shape=area exige radius > 0")
+        if r["shape"] == "dash" and "projectile" in r["tags"] and "dash_shot_range" not in c.rules:
+            rep.err(table, ln, "E_DASH_SHOT", "dash com tag projectile exige dash_shot_range em rules.csv")
 
 
 def check_idle_calibration(table: str, ln: int, r: dict, rep: Report) -> None:
@@ -616,6 +629,28 @@ def chk_potion(c: Content, table: str, rows: List[dict], rep: Report) -> None:
         slots[r["hotkeySlot"]] = ln
         if pot_rule is not None and r["globalLockout"] != pot_rule:
             rep.warn(table, ln, "W_POTION", f"globalLockout {r['globalLockout']} difere de rules.csv potion_lockout ({pot_rule})")
+
+
+def chk_basic_kit(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    skills = c.ids("skills.csv")
+    effects = c.ids("effects.csv")
+    classes = c.ids("classes.csv")
+    for r in rows:
+        ln = r["__line__"]
+        cid = r["classId"]
+        for sid in list(r["lightChain"]) + [r["heavySkill"]]:
+            s = skills.get(sid)
+            if s is not None and s["classId"] != cid:
+                rep.err(table, ln, "E_KIT", f"{sid} não pertence a {cid} (classId da habilidade = '{s['classId']}')")
+        first = skills.get(r["lightChain"][0]) if r["lightChain"] else None
+        cls = classes.get(cid)
+        if first is not None and cls is not None and cls["startingSkill"] != r["lightChain"][0]:
+            rep.warn(table, ln, "W_KIT", f"lightChain[0] ({r['lightChain'][0]}) difere de startingSkill ({cls['startingSkill']}) em classes.csv")
+        ge = effects.get(r["guardEffect"])
+        if ge is not None and "guard" not in ge["tags"]:
+            rep.err(table, ln, "E_KIT", f"guardEffect {r['guardEffect']} deve ter a tag 'guard' (o dano recebido só cai se o golpe vem de dentro do arco)")
+        if r["guardPerfectWindow"] > 0 and r["guardPerfectCooldown"] < r["guardPerfectWindow"]:
+            rep.warn(table, ln, "W_KIT", "guardPerfectCooldown menor que guardPerfectWindow: a janela perfeita reabriria dentro de si mesma")
 
 
 def chk_modifier(c: Content, table: str, rows: List[dict], rep: Report) -> None:
@@ -875,6 +910,7 @@ CHECKS = {
     "map_rules": chk_map,
     "unique_rules": chk_unique,
     "potion_rules": chk_potion,
+    "basic_kit_rules": chk_basic_kit,
     "modifier_rules": chk_modifier,
     "boss_phase_rules": chk_boss_phase,
     "boss_pattern_rules": chk_boss_pattern,
@@ -1487,6 +1523,22 @@ MUTATIONS = [
      lambda t: t.replace("inventory_capacity,40\n", ""), "E_KEY_MISSING"),
     ("arma_bloqueada", "rules.csv",
      lambda t: t.replace("equip_slot_main_hand,true", "equip_slot_main_hand,false"), "E_RULES"),
+    ("chave_do_combo_removida", "rules.csv",
+     lambda t: t.replace("combo_window,0.4" + chr(10), ""), "E_KEY_MISSING"),
+    ("janela_do_combo_fora_da_faixa", "rules.csv",
+     lambda t: t.replace("attack_buffer,0.15", "attack_buffer,9"), "E_RANGE"),
+    ("kit_com_golpe_de_outra_classe", "basic_kits.csv",
+     lambda t: t.replace("class.archer,skill.archer.quick_shot|skill.archer.quick_shot|skill.archer.fan_shot", "class.archer,skill.archer.quick_shot|skill.mage.arcane_dart|skill.archer.fan_shot"), "E_KIT"),
+    ("kit_com_defesa_sem_tag_guard", "basic_kits.csv",
+     lambda t: t.replace("effect.guarding.archer", "effect.charging.archer"), "E_KIT"),
+    ("kit_com_corrente_de_4_golpes", "basic_kits.csv",
+     lambda t: t.replace("skill.mage.arcane_dart|skill.mage.arcane_dart|skill.mage.arcane_orb", "skill.mage.arcane_dart|skill.mage.arcane_dart|skill.mage.arcane_orb|skill.mage.arcane_dart"), "E_LIST"),
+    ("kit_com_arco_acima_de_360", "basic_kits.csv",
+     lambda t: t.replace(",360,0,0.4,", ",400,0,0.4,"), "E_RANGE"),
+    ("perfuracao_em_golpe_que_nao_e_projetil", "skills.csv",
+     lambda t: t.replace("skill.archer.arrow_rain,class.archer,,attack|projectile|area|physical,area,true,,,,,1.8,2,2.2,35,8,0.25,0.7,0.25,1100,300,1,,,false,,,,,,,,3,,,,,,", "skill.archer.arrow_rain,class.archer,,attack|projectile|area|physical,area,true,,,,,1.8,2,2.2,35,8,0.25,0.7,0.25,1100,300,1,,,false,,,,,,,,3,,,,,,5"), "E_PIERCE"),
+    ("leque_sem_angulo", "skills.csv",
+     lambda t: t.replace("1100,,3,,,false,,,,,,,,1,28,", "1100,,3,,,false,,,,,,,,1,,"), "E_FAN"),
     ("base_em_posicao_bloqueada", "rules.csv",
      lambda t: t.replace("equip_slot_head,true", "equip_slot_head,false"), "E_SLOT_LOCKED"),
 ]
