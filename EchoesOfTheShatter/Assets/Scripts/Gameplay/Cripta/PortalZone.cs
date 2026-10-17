@@ -14,11 +14,16 @@ namespace Echoes.Gameplay
         [SerializeField] string targetArea = "area.refuge";
         [SerializeField, Min(0.5f)] float radius = 2f;
         [SerializeField] bool active = true;
+        [Tooltip("true = o portal so avisa (PortalUsedEvent) e o AreaTravel troca a cena; false = devolve ao checkpoint (comportamento antigo).")]
+        [SerializeField] bool travels;
 
         bool heroInside;
+        bool primed;
 
         public bool IsActive => active;
         public string PortalId => portalId;
+        public bool Travels { get => travels; set => travels = value; }
+        public string TargetArea { get => targetArea; set => targetArea = value; }
 
         public void SetActive(bool value)
         {
@@ -32,11 +37,18 @@ namespace Echoes.Gameplay
             var d = hero.transform.position - transform.position;
             d.y = 0f;
             var inside = d.sqrMagnitude <= radius * radius;
+            if (!primed)
+            {
+                // O heroi pode nascer dentro do portal (entrada da Cripta): so conta quem entra depois.
+                primed = true;
+                heroInside = inside;
+                return;
+            }
             if (inside && !heroInside)
             {
                 var evt = new PortalUsedEvent { PortalId = portalId, TargetArea = targetArea };
                 combatHost?.Events?.Publish(in evt);
-                hero.ReturnToCheckpoint();
+                if (!travels) hero.ReturnToCheckpoint();
             }
             heroInside = inside;
         }

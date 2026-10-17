@@ -236,6 +236,9 @@ namespace Echoes.Core
 
         public static SaveService Save => save ?? (save = new SaveService(System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "saves"), new SystemGameClock()));
 
+        /// <summary>Aviso para a proxima tela (ex.: LoadedFromBackup lido no menu, mostrado no Refugio).</summary>
+        public static string PendingToastKey;
+
         public static ExpeditionService Expedition => expedition ?? (expedition = new ExpeditionService(Save));
 
         /// <summary>Troca o servico de save (testes: pasta temporaria e relogio falso).</summary>

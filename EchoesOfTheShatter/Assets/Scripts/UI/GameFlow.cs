@@ -9,6 +9,7 @@ namespace Echoes.UI
     {
         public const string MainMenuScene = "MainMenu";
         public const string CriptaScene = "Cripta";
+        public const string RefugeScene = "Refugio";
         public const string AutoStartArg = "-autostart";
 
         /// <summary>Argumento de teste (-autostart): a tela inicial entra sozinha na Cripta, para o teste de fumaça do player.</summary>
@@ -33,6 +34,13 @@ namespace Echoes.UI
                 if (string.Equals(args[i], name, StringComparison.OrdinalIgnoreCase)) return args[i + 1];
             }
             return null;
+        }
+
+        /// <summary>Entra no Refugio (depois de carregar ou criar o save). A Cripta fica pelo portal do Refugio.</summary>
+        public static void StartRefuge()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(RefugeScene, LoadSceneMode.Single);
         }
 
         public static void StartGame()

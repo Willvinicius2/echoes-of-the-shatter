@@ -36,6 +36,7 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(controller, "root", gameRoot);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
+            Build.AddSceneToBuildSettings(ScenePath);
             Debug.Log("[MenuBuilder] Cena salva em " + ScenePath);
         }
     }

@@ -20,7 +20,7 @@ namespace Echoes.EditorTools
         public const string ExeName = "EchoesOfTheShatter.exe";
         public const string ActionsPath = "Assets/Settings/Echoes.inputactions";
 
-        public static readonly string[] Scenes = { MenuBuilder.ScenePath, CriptaBuilder.ScenePath };
+        public static readonly string[] Scenes = { MenuBuilder.ScenePath, RefugioBuilder.ScenePath, CriptaBuilder.ScenePath };
 
         [MenuItem("Echoes/Build Windows (jogavel)")]
         public static void Windows()
@@ -32,6 +32,7 @@ namespace Echoes.EditorTools
                 var exe = Path.Combine(output, ExeName);
 
                 MenuBuilder.BuildScene();
+                RefugioBuilder.BuildScene();
                 CriptaBuilder.BuildScene();
                 ConfigurePlayerSettings();
                 EnsureBuildScenes();
@@ -80,6 +81,15 @@ namespace Echoes.EditorTools
             preloaded.RemoveAll(o => o == null);
             if (!preloaded.Contains(actions)) preloaded.Add(actions);
             PlayerSettings.SetPreloadedAssets(preloaded.ToArray());
+        }
+
+        /// <summary>Acrescenta a cena aos Build Settings se faltar (os testes de Play e o jogo carregam por nome).</summary>
+        public static void AddSceneToBuildSettings(string path)
+        {
+            var list = new System.Collections.Generic.List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            if (list.Exists(s => s.path == path)) return;
+            list.Add(new EditorBuildSettingsScene(path, true));
+            EditorBuildSettings.scenes = list.ToArray();
         }
 
         static void EnsureBuildScenes()
