@@ -21,6 +21,12 @@ namespace Echoes.Interop
         /// <summary>Resultado do ultimo <see cref="Apply"/> (ordens do core: interromper o telegraph, zerar a barreira). Default no stub.</summary>
         ActorApplyResult LastApply { get; }
 
+        /// <summary>Um passo da fuga do inimigo (uma vez por tick de IA). A decisao (fracao de vida, duracao, uma vez por vida) e do core.</summary>
+        FleeResult FleeStep(double dt, double life, double maxLife, bool hasTarget, bool dead);
+
+        /// <summary>Revive: zera a fuga em curso e libera o uma-vez-por-vida.</summary>
+        void FleeReset();
+
         /// <summary>Liga o chefe desta entidade: stun e Guarda Quebrada passam a ser aplicados por ele (escudo, imunidade, stagger).</summary>
         void BindBoss(IBossController boss);
 

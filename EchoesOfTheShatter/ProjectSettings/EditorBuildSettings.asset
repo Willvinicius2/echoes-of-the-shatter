@@ -6,9 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/Sandbox/Base_Escala.unity
-    guid: 50f1f75fbafcd07488e5159319272d93
-  - enabled: 1
     path: Assets/Scenes/MainMenu.unity
     guid: e54a21e1aa8b5ea41b80bb36893d3c39
   - enabled: 1

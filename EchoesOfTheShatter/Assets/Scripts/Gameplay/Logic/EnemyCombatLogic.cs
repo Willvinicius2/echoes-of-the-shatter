@@ -126,7 +126,7 @@ namespace Echoes.Gameplay
             var hasTarget = target != null && !target.IsDead;
             var toTarget = hasTarget ? target.Position - self.Position : PlanarVector.Zero;
 
-            // Fuga pela fracao de vida do core (enemy_ai.csv: fleeLifeFraction, fleeSeconds, fleeOncePerLife): foge do heroi e depois volta a lutar.
+            // Fuga decidida pelo core (shatter_actor_flee_step, uma vez por tick de IA): foge do heroi e depois volta a lutar.
             if (UpdateFlee(combatSystem, dt, hasTarget, toTarget)) return;
 
             var input = new EnemyBrainInput
@@ -179,30 +179,16 @@ namespace Echoes.Gameplay
         /// <summary>O inimigo esta fugindo (a apresentacao toca a animacao de fuga).</summary>
         public bool IsFleeing { get; private set; }
 
-        float fleeLeft;
-        bool hasFled;
-
-        /// <summary>Devolve true enquanto foge (o passo de IA normal e pulado e o movimento e para longe do heroi).</summary>
+        /// <summary>
+        /// Um passo da fuga, decidido pelo core (shatter_actor_flee_step: fracao de vida, duracao e uma-vez-por-vida de enemy_ai.csv).
+        /// Aqui so o movimento: devolve true enquanto foge (o passo de IA normal e pulado e o inimigo corre para longe do heroi).
+        /// </summary>
         bool UpdateFlee(CombatSystem combatSystem, double dt, bool hasTarget, PlanarVector toTarget)
         {
-            var fraction = enemy.FleeLifeFraction;
-            if (fraction <= 0.0 || self.IsDead) return false;
-            if (IsFleeing)
-            {
-                fleeLeft -= (float)dt;
-                if (fleeLeft <= 0f || !hasTarget)
-                {
-                    IsFleeing = false;
-                    return false;
-                }
-            }
-            else if (hasTarget && !(enemy.FleeOncePerLife && hasFled) && self.MaxLife > 0.0 && self.Life / self.MaxLife < fraction)
-            {
-                IsFleeing = true;
-                hasFled = true;
-                fleeLeft = (float)enemy.FleeSeconds;
-                OnInterrupted(combatSystem); // cancela o telegraph e o golpe em curso
-            }
+            if (self.Effects == null) return false;
+            var step = self.Effects.FleeStep(dt, self.Life, self.MaxLife, hasTarget, self.IsDead);
+            if (step.Started) OnInterrupted(combatSystem); // cancela o telegraph e o golpe em curso
+            IsFleeing = step.Fleeing;
             if (!IsFleeing) return false;
             var away = (-toTarget).NormalizedOr(self.Forward);
             self.Forward = away;
@@ -253,7 +239,7 @@ namespace Echoes.Gameplay
         public void OnRevive(CombatSystem combatSystem)
         {
             IsFleeing = false;
-            hasFled = false;
+            self.Effects?.FleeReset();
             dashing = false;
             Brain.Reset();
             if (boss == null) return;

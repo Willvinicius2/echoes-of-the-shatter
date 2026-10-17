@@ -275,6 +275,28 @@ namespace Echoes.Interop.Native
             return new[] { (uint)sizeof(ShatterRulesExt2), Off(&r, &r.unarmed_weapon_damage_physical), Off(&r, &r.require_on_screen_margin) };
         }
 
+        /// <summary>Lista do layout ext3 (API 1.3, fuga): tamanho de shatter_flee_result e os offsets de remaining, fleeing, started, ended, can_flee.</summary>
+        public static uint[] BuildExt3()
+        {
+            ShatterFleeResult r = default;
+            return new[] { (uint)sizeof(ShatterFleeResult), Off(&r, &r.remaining), Off(&r, &r.fleeing), Off(&r, &r.started), Off(&r, &r.ended), Off(&r, &r.can_flee) };
+        }
+
+        public static bool CheckExt3(out string message)
+        {
+            var values = BuildExt3();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext3(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext3 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
         public static bool CheckExt2(out string message)
         {
             var values = BuildExt2();

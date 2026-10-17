@@ -107,7 +107,7 @@ namespace Echoes.Interop.Native
         // =============================================================================================
         // API C 1.1 (minor 1)
         // =============================================================================================
-        public const uint ExpectedApiMinor = 2u;
+        public const uint ExpectedApiMinor = 3u;
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint shatter_api_minor();
@@ -228,6 +228,16 @@ namespace Echoes.Interop.Native
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_actor_info_get(IntPtr actor, ShatterActorInfo* output);
+
+        // API 1.3: fuga do inimigo decidida pelo core
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_actor_flee_step(IntPtr actor, double dt, double life, double maxLife, byte hasTarget, byte dead, ShatterFleeResult* output);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_actor_flee_reset(IntPtr actor);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_layout_check_ext3(uint* values, nuint n, ShatterError* err);
 
         // --- Elite
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]

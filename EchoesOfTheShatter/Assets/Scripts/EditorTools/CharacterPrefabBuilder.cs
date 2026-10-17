@@ -236,9 +236,7 @@ namespace Echoes.EditorTools
             var go = UnityEngine.Object.Instantiate(model);
             go.name = "Weapon_" + weapon.Name;
             go.transform.SetParent(socket, false);
-            go.transform.localPosition = Vector3.zero; // pivo na empunhadura (m09)
-            go.transform.localRotation = Quaternion.identity;
-            go.transform.localScale = Vector3.one;
+            WeaponOffsetBuilder.Get(weapon.Name).Apply(go.transform); // offset de apresentacao por arma (SO_WeaponOffset_<Arma>)
             foreach (var c in go.GetComponentsInChildren<Collider>()) UnityEngine.Object.DestroyImmediate(c);
             foreach (var r in go.GetComponentsInChildren<Renderer>())
             {

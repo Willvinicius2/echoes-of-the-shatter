@@ -232,6 +232,14 @@ namespace Echoes.Interop.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterFleeResult
+    {
+        public double remaining;
+        public byte fleeing, started, ended, can_flee;
+        public fixed byte reserved[4];
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     internal unsafe struct ShatterEliteInfo
     {
         public double life_mult, damage_mult, xp_mult, barrier_fraction_of_life;

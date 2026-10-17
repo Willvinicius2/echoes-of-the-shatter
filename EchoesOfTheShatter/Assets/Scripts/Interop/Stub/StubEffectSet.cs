@@ -44,6 +44,12 @@ namespace Echoes.Interop
 
         public ActorApplyResult LastApply => default;
 
+        public FleeResult FleeStep(double dt, double life, double maxLife, bool hasTarget, bool dead) => default; // o stub nunca foge
+
+        public void FleeReset()
+        {
+        }
+
         public void BindBoss(IBossController boss)
         {
         }
