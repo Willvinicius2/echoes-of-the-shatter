@@ -294,6 +294,43 @@ namespace Echoes.Interop.Native
             };
         }
 
+        /// <summary>
+        /// Lista do layout ext5 (API 1.5, combate basico): [offset de from_guard_arc em shatter_hit_input; tamanho de shatter_combat_rules e 7 offsets;
+        /// tamanho de shatter_basic_kit, os offsets dos 9 doubles, light_chain_count, guard_perfect_effect_count, light_chain, heavy_skill,
+        /// charge_effect, guard_effect e guard_perfect_effects] = 26 valores.
+        /// </summary>
+        public static uint[] BuildExt5()
+        {
+            ShatterHitInput h = default;
+            ShatterCombatRules c = default;
+            ShatterBasicKit k = default;
+            return new[]
+            {
+                Off(&h, &h.from_guard_arc),
+                (uint)sizeof(ShatterCombatRules), Off(&c, &c.combo_window), Off(&c, &c.combo_window_after_dodge), Off(&c, &c.attack_buffer),
+                Off(&c, &c.heavy_hold_threshold), Off(&c, &c.light_windup_credit_max), Off(&c, &c.guard_lower_time), Off(&c, &c.dash_shot_range),
+                (uint)sizeof(ShatterBasicKit), Off(&k, &k.heavy_charge_time), Off(&k, &k.heavy_max_mult), Off(&k, &k.guard_arc), Off(&k, &k.guard_max_hold),
+                Off(&k, &k.guard_cooldown), Off(&k, &k.guard_perfect_window), Off(&k, &k.guard_perfect_cooldown), Off(&k, &k.guard_perfect_resource),
+                Off(&k, &k.guard_drain_per_damage), Off(&k, &k.light_chain_count), Off(&k, &k.guard_perfect_effect_count), Off(&k, k.light_chain),
+                Off(&k, k.heavy_skill), Off(&k, k.charge_effect), Off(&k, k.guard_effect), Off(&k, k.guard_perfect_effects),
+            };
+        }
+
+        public static bool CheckExt5(out string message)
+        {
+            var values = BuildExt5();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext5(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext5 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
         public static bool CheckExt4(out string message)
         {
             var values = BuildExt4();

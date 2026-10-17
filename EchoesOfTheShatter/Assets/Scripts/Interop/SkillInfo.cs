@@ -33,6 +33,19 @@ namespace Echoes.Interop
         /// <summary>Velocidade do projétil em uu/s (forma Projectile).</summary>
         public double ProjectileSpeedUu { get; internal set; }
         public int Projectiles { get; internal set; } = 1;
+
+        /// <summary>Valor de <see cref="Pierce"/> que atravessa todos os alvos (<c>shatter::kPierceAll</c>).</summary>
+        public const int PierceAll = 99;
+
+        /// <summary>
+        /// Perfuração do projétil (coluna <c>pierce</c>, docs/18 8.2): 0 = nenhuma; N = atravessa N alvos além do primeiro;
+        /// <see cref="PierceAll"/> = todos. Cada projétil acerta o mesmo alvo uma vez (RF-16); vários projéteis do mesmo leque
+        /// podem acertar o mesmo alvo.
+        /// </summary>
+        public int Pierce { get; internal set; }
+
+        /// <summary>Comportamento determinado pelos dados (explosão, leque, área, dash com tiro), classificado pelo core. Só o núcleo nativo preenche.</summary>
+        public SkillBehavior Behavior { get; internal set; }
         public IReadOnlyList<string> OnHitEffects { get; internal set; } = NoEffects;
         public IReadOnlyList<string> SelfEffects { get; internal set; } = NoEffects;
         public int UnlockLevel { get; internal set; } = 1;

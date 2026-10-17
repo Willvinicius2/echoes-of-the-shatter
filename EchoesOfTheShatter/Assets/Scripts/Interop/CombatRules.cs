@@ -35,5 +35,28 @@ namespace Echoes.Interop
 
         /// <summary>Trava global entre usos de poção.</summary>
         public double PotionLockoutSeconds { get; internal set; }
+
+        // --- Combate básico (docs/18 1.2, API C 1.5): as máquinas de combo, carga e defesa rodam no C#; os números vêm do rules.csv. ---
+
+        /// <summary><c>combo_window</c>: segundos depois do fim da recuperação de um golpe em que um clique ainda continua o combo.</summary>
+        public double ComboWindowSeconds { get; internal set; }
+
+        /// <summary><c>combo_window_after_dodge</c>: janela que reabre ao fim da esquiva.</summary>
+        public double ComboWindowAfterDodgeSeconds { get; internal set; }
+
+        /// <summary><c>attack_buffer</c>: um clique nos últimos segundos da recuperação (ou depois) entra na fila.</summary>
+        public double AttackBufferSeconds { get; internal set; }
+
+        /// <summary><c>heavy_hold_threshold</c>: botão apertado por mais que isto vira ataque forte carregado.</summary>
+        public double HeavyHoldThresholdSeconds { get; internal set; }
+
+        /// <summary><c>light_windup_credit_max</c>: fração máxima (0 a 1) da preparação do golpe leve descontada pelo tempo apertado.</summary>
+        public double LightWindupCreditMax { get; internal set; }
+
+        /// <summary><c>guard_lower_time</c>: segundos sem atacar depois de soltar a defesa.</summary>
+        public double GuardLowerTimeSeconds { get; internal set; }
+
+        /// <summary><c>dash_shot_range</c>: alcance em uu do tiro de uma habilidade dash com tag projétil (Salto do Arqueiro).</summary>
+        public double DashShotRangeUu { get; internal set; }
     }
 }

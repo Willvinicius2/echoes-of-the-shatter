@@ -76,6 +76,8 @@ namespace Echoes.Interop.Native
         bool rulesLoaded;
         uint apiVersion;
         ShatterRulesExt rulesExt;
+        // Kits basicos por classe (basic_kits.csv), lidos do core na carga. Classe sem kit nao tem entrada.
+        readonly Dictionary<string, BasicKitInfo> kits = new Dictionary<string, BasicKitInfo>(StringComparer.Ordinal);
 
         NativeRulesCore(uint apiVersion)
         {
@@ -110,7 +112,7 @@ namespace Echoes.Interop.Native
                 var minor = ShatterNative.shatter_api_minor();
                 if (minor < ShatterNative.ExpectedApiMinor)
                 {
-                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (fuga do inimigo no core, vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
+                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (combate basico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento; fuga do inimigo, vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
                     return false;
                 }
                 if (!NativeLayout.CheckExt(out var extMessage))
@@ -131,6 +133,11 @@ namespace Echoes.Interop.Native
                 if (!NativeLayout.CheckExt3(out var ext3Message))
                 {
                     reason = "layout ext3 (fuga) das structs diverge da DLL: " + ext3Message;
+                    return false;
+                }
+                if (!NativeLayout.CheckExt5(out var ext5Message))
+                {
+                    reason = "layout ext5 (combate basico) das structs diverge da DLL: " + ext5Message;
                     return false;
                 }
                 core = new NativeRulesCore(version);
@@ -199,6 +206,7 @@ namespace Echoes.Interop.Native
             db?.Dispose();
             db = null;
             rulesLoaded = false;
+            kits.Clear();
 
             var path = NativeBuffers.Utf8(dataDirectory);
             IntPtr raw = IntPtr.Zero;
@@ -261,6 +269,15 @@ namespace Echoes.Interop.Native
                 return (RulesStatus)extStatus;
             }
 
+            ShatterCombatRules combatRules = default;
+            var combatRulesStatus = ShatterNative.shatter_db_combat_rules(raw, &combatRules);
+            if (combatRulesStatus != 0)
+            {
+                handle.Dispose();
+                errors.Add(new RulesError((RulesStatus)combatRulesStatus, "rules.csv", 0, "shatter_db_combat_rules failed"));
+                return (RulesStatus)combatRulesStatus;
+            }
+
             var stubErrors = new List<RulesError>();
             var stubStatus = stub.LoadContent(dataDirectory, stubErrors);
             if (stubStatus != RulesStatus.Ok)
@@ -290,7 +307,16 @@ namespace Echoes.Interop.Native
             combat.PotionLockoutSeconds = ext.potion_lockout;
             combat.RequireOnScreenMarginUu = ext2.require_on_screen_margin;
             combat.UnarmedWeaponDamagePhysical = ext2.unarmed_weapon_damage_physical;
+            combat.ComboWindowSeconds = combatRules.combo_window;
+            combat.ComboWindowAfterDodgeSeconds = combatRules.combo_window_after_dodge;
+            combat.AttackBufferSeconds = combatRules.attack_buffer;
+            combat.HeavyHoldThresholdSeconds = combatRules.heavy_hold_threshold;
+            combat.LightWindupCreditMax = combatRules.light_windup_credit_max;
+            combat.GuardLowerTimeSeconds = combatRules.guard_lower_time;
+            combat.DashShotRangeUu = combatRules.dash_shot_range;
             ApplyCoreEnemyData();
+            ApplyCoreSkillData();
+            ApplyCoreBasicKits();
             return RulesStatus.Ok;
         }
 
@@ -472,6 +498,7 @@ namespace Echoes.Interop.Native
             input.skill_tags = (uint)request.SkillTags;
             input.is_damage_over_time = request.IsDamageOverTime ? (byte)1 : (byte)0;
             input.can_be_blocked = request.CanBeBlocked ? (byte)1 : (byte)0;
+            input.from_guard_arc = request.FromGuardArc ? (byte)1 : (byte)0;
 
             var rng = new ShatterRng { state = combatRng.State, inc = combatRng.Increment };
             ShatterHitResult output = default;
@@ -585,6 +612,86 @@ namespace Echoes.Interop.Native
                 pair.Value.FleeOncePerLife = json.IndexOf("\"flee_once_per_life\":false", StringComparison.Ordinal) < 0;
             }
         }
+
+        // Perfuracao e comportamento de forma (docs/18 8.2 e 8.3): o core valida, classifica e expoe no lookup_json (pierce, behavior).
+        void ApplyCoreSkillData()
+        {
+            var content = stub.ContentOrNull;
+            if (content == null) return;
+            foreach (var pair in content.Skills)
+            {
+                var json = LookupJson(pair.Key, 2048);
+                if (json == null) continue;
+                var skill = pair.Value;
+                skill.Pierce = (int)JsonNumber(json, "\"pierce\":");
+                skill.Behavior = new SkillBehavior(
+                    json.IndexOf("\"explodes\":true", StringComparison.Ordinal) >= 0,
+                    json.IndexOf("\"fan\":true", StringComparison.Ordinal) >= 0,
+                    json.IndexOf("\"self_centered\":true", StringComparison.Ordinal) >= 0,
+                    json.IndexOf("\"ground_targeted\":true", StringComparison.Ordinal) >= 0,
+                    json.IndexOf("\"dash_back_shot\":true", StringComparison.Ordinal) >= 0);
+            }
+        }
+
+        // Kit basico de cada classe (shatter_basic_kit_get). Classe sem linha em basic_kits.csv: NOT_FOUND, sem kit.
+        unsafe void ApplyCoreBasicKits()
+        {
+            kits.Clear();
+            var content = stub.ContentOrNull;
+            if (content == null) return;
+            var handle = RequireDb();
+            var addRef = false;
+            try
+            {
+                handle.DangerousAddRef(ref addRef);
+                var raw = handle.DangerousGetHandle();
+                foreach (var classId in content.Classes.Keys)
+                {
+                    var id = NativeBuffers.Utf8(classId);
+                    ShatterBasicKit kit = default;
+                    int status;
+                    fixed (byte* p = id) status = ShatterNative.shatter_basic_kit_get(raw, p, (nuint)id.Length, &kit);
+                    if (status == (int)RulesStatus.NotFound) continue;
+                    NativeCallException.ThrowIfFailed("shatter_basic_kit_get", status);
+                    var chain = new string[Math.Max(0, Math.Min(kit.light_chain_count, 3))];
+                    for (var i = 0; i < chain.Length; i++) chain[i] = FixedId(kit.light_chain + i * 64, 64);
+                    var perfect = new string[Math.Max(0, Math.Min(kit.guard_perfect_effect_count, 4))];
+                    for (var i = 0; i < perfect.Length; i++) perfect[i] = FixedId(kit.guard_perfect_effects + i * 64, 64);
+                    kits[classId] = new BasicKitInfo
+                    {
+                        ClassId = classId,
+                        LightChain = chain,
+                        HeavySkill = FixedId(kit.heavy_skill, 64),
+                        HeavyChargeSeconds = kit.heavy_charge_time,
+                        HeavyMaxMultiplier = kit.heavy_max_mult,
+                        ChargeEffect = FixedId(kit.charge_effect, 64),
+                        GuardEffect = FixedId(kit.guard_effect, 64),
+                        GuardArcDegrees = kit.guard_arc,
+                        GuardMaxHoldSeconds = kit.guard_max_hold,
+                        GuardCooldownSeconds = kit.guard_cooldown,
+                        GuardPerfectWindowSeconds = kit.guard_perfect_window,
+                        GuardPerfectCooldownSeconds = kit.guard_perfect_cooldown,
+                        GuardPerfectEffects = perfect,
+                        GuardPerfectResource = kit.guard_perfect_resource,
+                        GuardDrainPerDamage = kit.guard_drain_per_damage,
+                    };
+                }
+            }
+            finally
+            {
+                if (addRef) handle.DangerousRelease();
+            }
+        }
+
+        static unsafe string FixedId(byte* p, int max)
+        {
+            var n = 0;
+            while (n < max && p[n] != 0) n++;
+            return Encoding.UTF8.GetString(p, n);
+        }
+
+        /// <summary>Kit basico da classe (combo, golpe forte e defesa), lido do core na carga; null se a classe nao tem kit.</summary>
+        public BasicKitInfo FindBasicKit(string classId) => classId != null && kits.TryGetValue(classId, out var kit) ? kit : null;
 
         static double JsonNumber(string json, string key)
         {
@@ -724,6 +831,72 @@ namespace Echoes.Interop.Native
                 fixed (byte* p = classId)
                     status = ShatterNative.shatter_vitals_tick(handle.DangerousGetHandle(), &v, native.Handle.DangerousGetHandle(), p, (nuint)classId.Length, dt, inCombat ? (byte)1 : (byte)0);
                 NativeCallException.ThrowIfFailed("shatter_vitals_tick", status);
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+                if (a) handle.DangerousRelease();
+            }
+            vitals = FromNative(v);
+        }
+
+        /// <summary>
+        /// Como <see cref="TickVitals(ref Vitals, IStatBlock, ClassInfo, double, bool)"/>, com o herói andando ou parado: o recurso regenera
+        /// pela fração <c>regen_mult_while_moving</c> da classe (Foco 0,3) quando <paramref name="moving"/> (<c>shatter_vitals_tick_ex</c>).
+        /// </summary>
+        public unsafe void TickVitals(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull, double dt, bool inCombat, bool moving)
+        {
+            var native = RequireNative(stats);
+            var handle = RequireDb();
+            var classId = NativeBuffers.Utf8(classOrNull?.Id);
+            var v = ToNative(vitals);
+            bool a = false, s2 = false;
+            try
+            {
+                handle.DangerousAddRef(ref a);
+                native.Handle.DangerousAddRef(ref s2);
+                int status;
+                fixed (byte* p = classId)
+                    status = ShatterNative.shatter_vitals_tick_ex(handle.DangerousGetHandle(), &v, native.Handle.DangerousGetHandle(), p, (nuint)classId.Length, dt,
+                        inCombat ? (byte)1 : (byte)0, moving ? (byte)1 : (byte)0);
+                NativeCallException.ThrowIfFailed("shatter_vitals_tick_ex", status);
+            }
+            finally
+            {
+                if (s2) native.Handle.DangerousRelease();
+                if (a) handle.DangerousRelease();
+            }
+            vitals = FromNative(v);
+        }
+
+        /// <summary>Recurso por golpe que acerta (<c>shatter_vitals_gain_on_hit</c>): o valor do classes.csv, limitado ao maximo.</summary>
+        public unsafe void GainResourceOnHit(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull)
+            => GainResourceFromClass(ref vitals, stats, classOrNull, onBlock: false);
+
+        /// <summary>Recurso por bloqueio (<c>shatter_vitals_gain_on_block</c>).</summary>
+        public unsafe void GainResourceOnBlock(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull)
+            => GainResourceFromClass(ref vitals, stats, classOrNull, onBlock: true);
+
+        unsafe void GainResourceFromClass(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull, bool onBlock)
+        {
+            if (classOrNull == null) return;
+            var native = RequireNative(stats);
+            var handle = RequireDb();
+            var classId = NativeBuffers.Utf8(classOrNull.Id);
+            var v = ToNative(vitals);
+            bool a = false, s2 = false;
+            try
+            {
+                handle.DangerousAddRef(ref a);
+                native.Handle.DangerousAddRef(ref s2);
+                int status;
+                fixed (byte* p = classId)
+                {
+                    status = onBlock
+                        ? ShatterNative.shatter_vitals_gain_on_block(handle.DangerousGetHandle(), &v, native.Handle.DangerousGetHandle(), p, (nuint)classId.Length)
+                        : ShatterNative.shatter_vitals_gain_on_hit(handle.DangerousGetHandle(), &v, native.Handle.DangerousGetHandle(), p, (nuint)classId.Length);
+                }
+                NativeCallException.ThrowIfFailed(onBlock ? "shatter_vitals_gain_on_block" : "shatter_vitals_gain_on_hit", status);
             }
             finally
             {

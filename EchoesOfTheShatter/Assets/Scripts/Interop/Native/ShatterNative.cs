@@ -107,7 +107,7 @@ namespace Echoes.Interop.Native
         // =============================================================================================
         // API C 1.1 (minor 1)
         // =============================================================================================
-        public const uint ExpectedApiMinor = 4u;
+        public const uint ExpectedApiMinor = 5u;
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint shatter_api_minor();
@@ -148,6 +148,26 @@ namespace Echoes.Interop.Native
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_vitals_gain_resource(ShatterVitals* vitals, IntPtr stats, double amount);
+
+        // API C 1.5 (combate basico, docs/09 secao 12)
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_layout_check_ext5(uint* values, nuint n, ShatterError* err);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_db_combat_rules(IntPtr db, ShatterCombatRules* output);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_basic_kit_get(IntPtr db, byte* classId, nuint classIdLen, ShatterBasicKit* output);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_vitals_tick_ex(IntPtr db, ShatterVitals* vitals, IntPtr stats, byte* classId, nuint classIdLen,
+                                                        double dt, byte inCombat, byte moving);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_vitals_gain_on_hit(IntPtr db, ShatterVitals* vitals, IntPtr stats, byte* classId, nuint classIdLen);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_vitals_gain_on_block(IntPtr db, ShatterVitals* vitals, IntPtr stats, byte* classId, nuint classIdLen);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_vitals_spend_resource(ShatterVitals* vitals, double amount, byte* ok);
