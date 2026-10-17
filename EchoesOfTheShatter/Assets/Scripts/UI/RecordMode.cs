@@ -1,4 +1,6 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Echoes.Gameplay;
@@ -14,6 +16,9 @@ namespace Echoes.UI
     /// <c>-record PASTA</c> grava PNGs a 30 fps (Time.captureFramerate) de uma entrada roteirizada na Cripta (andar em círculo e em zigue-zague,
     /// parar, virar, aproximar de um inimigo e atacar 3 vezes) e escreve stats.txt (ressincronizações do corpo).
     /// <c>-closeup ARQUIVO.png</c> tira uma foto de perto do herói; <c>-rimold</c> devolve o rim de borda dura de antes do polimento (comparação).
+    /// <c>-scenario warrior|archer|mage</c> (com <c>-record PASTA</c> e <c>-hero</c> da classe) roda um roteiro de combate perto de inimigos que não morrem
+    /// (docs/18: combo, forte carregado, defesa, defesa perfeita, esquiva retomando o combo; leque, tiro carregado e Chuva; dardos, orbe, Bola de Fogo e Nova)
+    /// e junta os quadros num MP4 com o ffmpeg (<c>-videoname NOME</c>). Sem <c>-scenario</c> grava a locomoção (corrida em círculo e zigue-zague).
     /// </summary>
     public sealed class RecordMode : MonoBehaviour, IScriptedInput
     {
@@ -25,14 +30,19 @@ namespace Echoes.UI
 
         string folder;
         string closeup;
+        string scenario;
+        string videoName;
         bool rimOld;
 
         // IScriptedInput
         public Vector2 Move { get; private set; }
         public Vector2 Aim { get; private set; }
         int pressFrame = -10;
-        public bool WasPressed(HeroCommand command) => command == HeroCommand.BasicAttack && Time.frameCount == pressFrame;
-        public bool IsHeld(HeroCommand command) => false;
+        readonly Dictionary<HeroCommand, int> pressedAt = new Dictionary<HeroCommand, int>();
+        readonly HashSet<HeroCommand> held = new HashSet<HeroCommand>();
+        public bool WasPressed(HeroCommand command) => (command == HeroCommand.BasicAttack && Time.frameCount == pressFrame)
+            || (pressedAt.TryGetValue(command, out var frame) && frame == Time.frameCount);
+        public bool IsHeld(HeroCommand command) => held.Contains(command);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
@@ -46,6 +56,8 @@ namespace Echoes.UI
             mode.folder = record;
             mode.closeup = closeupArg;
             mode.rimOld = HasFlag("-rimold");
+            mode.scenario = GameFlow.ArgValue("-scenario");
+            mode.videoName = GameFlow.ArgValue("-videoname");
         }
 
         static bool HasFlag(string name)
@@ -80,6 +92,7 @@ namespace Echoes.UI
                 TestSettings.HeroSpeedOverrideMetersPerSecond = devSpeed;
             input.Script = this;
             if (closeup != null) yield return RunCloseup(hero);
+            else if (!string.IsNullOrEmpty(scenario) && !string.Equals(scenario, "run", StringComparison.OrdinalIgnoreCase)) yield return RunScenario(hero, scenario.ToLowerInvariant());
             else yield return RunRecord(hero);
             Application.Quit();
         }
@@ -188,6 +201,225 @@ namespace Echoes.UI
             text.AppendLine($"resyncs={HeroController.ResyncCount}");
             File.WriteAllText(Path.Combine(folder, "stats.txt"), text.ToString());
             Debug.Log("[Record] gravado em " + folder + "\n" + text);
+        }
+
+        // ============================================================================================ roteiros de combate (docs/18)
+
+        int frame;
+        bool perfectArmed;
+        float perfectAt;
+
+        // Entrada: apertar (por 'frames' quadros), segurar e soltar. O PumpButton do herói vê o aperto no quadro seguinte.
+        void Hold(HeroCommand command)
+        {
+            held.Add(command);
+            pressedAt[command] = Time.frameCount + 1;
+        }
+
+        void Release(HeroCommand command) => held.Remove(command);
+
+        Func<bool> Frames(int count)
+        {
+            var end = frame + Mathf.Max(1, count);
+            return () => frame >= end;
+        }
+
+        Func<bool> Sec(float seconds) => Frames(Mathf.RoundToInt(seconds * Fps));
+
+        static Func<bool> Until(Func<bool> condition) => condition;
+
+        void Tap(HeroCommand command)
+        {
+            Hold(command);
+            tapRelease.Add((command, frame + 3));
+        }
+
+        readonly List<(HeroCommand command, int frame)> tapRelease = new List<(HeroCommand, int)>();
+
+        IEnumerator<Func<bool>> Strike(HeroController hero)
+        {
+            // Um golpe: toca o botão, espera começar e acabar. Dá o tempo de a janela do combo (combo_window) continuar aberta.
+            Tap(HeroCommand.BasicAttack);
+            yield return Until(() => hero.Logic.IsCasting);
+            yield return Until(() => !hero.Logic.IsCasting);
+        }
+
+        IEnumerator<Func<bool>> Charge(HeroController hero, float seconds)
+        {
+            Hold(HeroCommand.BasicAttack);
+            yield return Sec(seconds);
+            Release(HeroCommand.BasicAttack);
+            yield return Frames(2);
+            yield return Until(() => !hero.Logic.IsCasting);
+        }
+
+        IEnumerator<Func<bool>> Cast(HeroController hero, HeroCommand slot)
+        {
+            Tap(slot);
+            yield return Until(() => hero.Logic.IsCasting);
+            yield return Until(() => !hero.Logic.IsCasting);
+        }
+
+        IEnumerator<Func<bool>> ScenarioSteps(HeroController hero, string name)
+        {
+            var logic = hero.Logic;
+            yield return Sec(1.0f);
+            switch (name)
+            {
+                case "warrior":
+                    for (var i = 0; i < 3; i++)
+                    {
+                        var s = Strike(hero);
+                        while (s.MoveNext()) yield return s.Current;
+                    }
+                    yield return Sec(0.8f);
+                    var heavy = Charge(hero, 1.5f); // carga cheia: solta sozinho em 1,25 s
+                    while (heavy.MoveNext()) yield return heavy.Current;
+                    yield return Sec(0.6f);
+                    Hold(HeroCombatLogic.GuardButton); // defesa recebendo golpe
+                    yield return Sec(3.0f);
+                    Release(HeroCombatLogic.GuardButton);
+                    yield return Sec(0.6f);
+                    perfectArmed = true; // defesa perfeita: aperta perto do impacto do telegraph do inimigo
+                    yield return Until(() => Time.time >= perfectAt && perfectAt > 0f);
+                    Hold(HeroCombatLogic.GuardButton);
+                    yield return Sec(0.8f);
+                    Release(HeroCombatLogic.GuardButton);
+                    perfectArmed = false;
+                    yield return Sec(0.8f);
+                    // esquiva retomando o combo: golpe 1, esquiva na metade final da recuperação, golpe 2 dentro da janela
+                    Tap(HeroCommand.BasicAttack);
+                    yield return Until(() => logic.IsCasting);
+                    yield return Until(() => logic.Action.Phase == ActionPhase.Recovery && logic.Action.RecoveryFraction >= 0.5);
+                    Tap(HeroCommand.Dodge);
+                    yield return Until(() => logic.Dodge.IsDodging);
+                    yield return Until(() => !logic.Dodge.IsDodging);
+                    yield return Sec(0.1f);
+                    var resumed = Strike(hero);
+                    while (resumed.MoveNext()) yield return resumed.Current;
+                    break;
+                case "archer":
+                    for (var i = 0; i < 3; i++) // Disparo Reto, Disparo Reto, Flechas em Leque
+                    {
+                        var s = Strike(hero);
+                        while (s.MoveNext()) yield return s.Current;
+                    }
+                    yield return Sec(0.8f);
+                    var piercing = Charge(hero, 1.4f);
+                    while (piercing.MoveNext()) yield return piercing.Current;
+                    yield return Sec(0.6f);
+                    var rain = Cast(hero, HeroCommand.Skill3); // E: Chuva de Flechas
+                    while (rain.MoveNext()) yield return rain.Current;
+                    break;
+                case "mage":
+                    for (var i = 0; i < 3; i++) // Dardo, Dardo, Orbe
+                    {
+                        var s = Strike(hero);
+                        while (s.MoveNext()) yield return s.Current;
+                    }
+                    yield return Sec(0.8f);
+                    var fireball = Charge(hero, 1.6f);
+                    while (fireball.MoveNext()) yield return fireball.Current;
+                    yield return Sec(0.6f);
+                    var nova = Cast(hero, HeroCommand.Skill2); // Q: Nova de Gelo
+                    while (nova.MoveNext()) yield return nova.Current;
+                    break;
+                default:
+                    Debug.LogWarning("[Record] Roteiro desconhecido: " + name);
+                    break;
+            }
+            yield return Sec(1.2f);
+        }
+
+        IEnumerator RunScenario(HeroController hero, string name)
+        {
+            Directory.CreateDirectory(folder);
+            var cam = Camera.main;
+            TestSettings.EnemyGodMode = true;
+            var host = FindAnyObjectByType<CombatSystemHost>();
+            host.Events.Subscribe<SkillPhaseEvent>(OnPhase);
+            var first = NearestEnemy(hero.transform.position);
+            if (first != null) PlaceHeroAtDistance(hero, first.transform.position, name == "warrior" ? 1.5f : 5f);
+            for (var i = 0; i < 30; i++) yield return null;
+            if (!hero.Logic.HasKit) Debug.LogError("[Record] O herói não tem kit básico (o roteiro precisa do core nativo).");
+
+            Time.captureFramerate = Fps;
+            var script = ScenarioSteps(hero, name);
+            Func<bool> wait = null;
+            var done = false;
+            var tail = 0;
+            for (frame = 0; frame < ScenarioMaxFrames; frame++)
+            {
+                for (var i = tapRelease.Count - 1; i >= 0; i--)
+                {
+                    if (frame < tapRelease[i].frame) continue;
+                    Release(tapRelease[i].command);
+                    tapRelease.RemoveAt(i);
+                }
+                if (!done && (wait == null || wait()))
+                {
+                    if (script.MoveNext()) wait = script.Current;
+                    else done = true;
+                }
+                if (done && ++tail > 15) break;
+
+                var target = NearestEnemy(hero.transform.position);
+                var aimWorld = target != null ? target.transform.position : hero.transform.position + hero.transform.forward * 3f;
+                var screen = cam.WorldToScreenPoint(aimWorld);
+                Aim = new Vector2(screen.x, screen.y);
+                Move = Vector2.zero;
+
+                yield return new WaitForEndOfFrame();
+                SaveFrame(frame);
+            }
+            Time.captureFramerate = 0;
+            host.Events.Unsubscribe<SkillPhaseEvent>(OnPhase);
+            var heroId = Echoes.Core.HeroChoice.Id;
+            var file = (string.IsNullOrEmpty(videoName) ? name + "_" + heroId : videoName) + ".mp4";
+            Encode(Path.Combine(folder, file));
+            Debug.Log("[Record] roteiro " + name + ": " + frame + " quadros, " + file);
+        }
+
+        void OnPhase(in SkillPhaseEvent evt)
+        {
+            // Armar a defesa perfeita: o telegraph do inimigo (preparação) termina no impacto; o aperto cai 0,1 s antes (janela de 0,2 s).
+            if (!perfectArmed || evt.Owner == null || evt.Owner.Team != CombatTeam.Enemy || evt.Phase != ActionPhase.Windup || evt.PhaseSeconds < 0.3) return;
+            perfectAt = Time.time + (float)evt.PhaseSeconds - 0.1f;
+        }
+
+        const int ScenarioMaxFrames = 900;
+
+        void SaveFrame(int index)
+        {
+            var texture = ScreenCapture.CaptureScreenshotAsTexture();
+            File.WriteAllBytes(Path.Combine(folder, $"frame_{index:D5}.png"), texture.EncodeToPNG());
+            Destroy(texture);
+        }
+
+        // Junta os quadros num MP4 (ffmpeg no PATH) e apaga os PNG se deu certo.
+        void Encode(string output)
+        {
+            try
+            {
+                var info = new System.Diagnostics.ProcessStartInfo("ffmpeg", $"-y -loglevel error -framerate {Fps} -i \"{Path.Combine(folder, "frame_%05d.png")}\" -c:v libx264 -pix_fmt yuv420p -crf 20 \"{output}\"")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+                using (var process = System.Diagnostics.Process.Start(info))
+                {
+                    process.WaitForExit();
+                    if (process.ExitCode == 0 && File.Exists(output))
+                    {
+                        foreach (var png in Directory.GetFiles(folder, "frame_*.png")) File.Delete(png);
+                    }
+                    else Debug.LogWarning("[Record] ffmpeg saiu com " + process.ExitCode + "; os PNG ficam em " + folder);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[Record] Sem ffmpeg (" + e.Message + "); os PNG ficam em " + folder);
+            }
         }
 
         static EnemyController NearestEnemy(Vector3 from)

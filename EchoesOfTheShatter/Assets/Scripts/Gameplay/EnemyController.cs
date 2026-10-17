@@ -189,6 +189,12 @@ namespace Echoes.Gameplay
         void Update()
         {
             var combatant = Logic != null ? Logic.Self : null;
+            if (combatant != null && TestSettings.EnemyGodMode && !combatant.IsDead)
+            {
+                var vitals = combatant.Vitals;
+                vitals.Life = combatant.MaxLife; // so teste (gravacao): nunca vem do CSV
+                combatant.SetVitals(in vitals);
+            }
             if (combatant == null || !combatant.IsDead) return;
             deadTime += Time.deltaTime;
             if (deadTime < corpseSeconds) return;
