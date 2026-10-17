@@ -23,6 +23,10 @@ namespace Echoes.Presentation
         static readonly int ActionSpeedParam = Animator.StringToHash("ActionSpeed");
         static readonly int PhaseParam = Animator.StringToHash("Phase");
         static readonly int IsFleeingParam = Animator.StringToHash("IsFleeing");
+        static readonly int HoldAtParam = Animator.StringToHash("HoldAt");
+        static readonly int AimingParam = Animator.StringToHash("Aiming");
+        static readonly int MoveXParam = Animator.StringToHash("MoveX");
+        static readonly int MoveYParam = Animator.StringToHash("MoveY");
         static readonly int HitFlashId = Shader.PropertyToID("_HitFlash");
         static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
 
@@ -54,6 +58,9 @@ namespace Echoes.Presentation
         Vector3 lastPosition;
         int actionLayerIndex = -1;
         int hitLayerIndex = -1;
+        int upperLayerIndex = -1;
+        bool hasHoldAt;
+        bool hasAiming;
         bool hasSpeed;
         bool hasIsDead;
         bool hasIsStaggered;
@@ -91,6 +98,7 @@ namespace Echoes.Presentation
                 {
                     actionLayerIndex = animator.GetLayerIndex(skillSet.actionLayer);
                     hitLayerIndex = animator.GetLayerIndex(skillSet.hitLayer);
+                    if (!string.IsNullOrEmpty(skillSet.upperLayer)) upperLayerIndex = animator.GetLayerIndex(skillSet.upperLayer);
                 }
                 // Só escreve parâmetros que existem (o Animator avisa no Console a cada chamada sem parâmetro).
                 var parameters = animator.parameters;
@@ -103,6 +111,8 @@ namespace Echoes.Presentation
                     else if (hash == ActionSpeedParam) hasActionSpeed = true;
                     else if (hash == PhaseParam) hasPhase = true;
                     else if (hash == IsFleeingParam) hasFleeing = true;
+                    else if (hash == HoldAtParam) hasHoldAt = true;
+                    else if (hash == AimingParam) hasAiming = true;
                 }
             }
             var events = root != null ? root.Events : null;
@@ -113,6 +123,7 @@ namespace Echoes.Presentation
             events.Subscribe<CombatantDiedEvent>(OnDied);
             events.Subscribe<CombatantRevivedEvent>(OnRevived);
             events.Subscribe<BossStateEvent>(OnBossState);
+            events.Subscribe<BasicInputEvent>(OnBasicInput);
             subscribed = true;
         }
 
@@ -131,6 +142,7 @@ namespace Echoes.Presentation
             events.Unsubscribe<CombatantDiedEvent>(OnDied);
             events.Unsubscribe<CombatantRevivedEvent>(OnRevived);
             events.Unsubscribe<BossStateEvent>(OnBossState);
+            events.Unsubscribe<BasicInputEvent>(OnBasicInput);
         }
 
         void Update()
@@ -169,6 +181,7 @@ namespace Echoes.Presentation
                     else animator.SetFloat(SpeedParam, speed, speedDampSeconds, dt);
                 }
                 if (hasActionSpeed) animator.SetFloat(ActionSpeedParam, actionSpeed);
+                if (hasAiming && heroController != null && heroController.Logic != null) UpdateAiming(heroController.Logic, frozen, dt);
                 if (hasFleeing && enemyController != null && enemyController.Logic != null) animator.SetBool(IsFleeingParam, enemyController.Logic.IsFleeing);
                 if (hasIsStaggered)
                 {
@@ -197,12 +210,61 @@ namespace Echoes.Presentation
 
         bool HasAnimator => animator != null && animator.runtimeAnimatorController != null;
 
+        // Defendendo ou carregando o corpo encara a mira e as pernas andam para qualquer lado: o blend 2D de AimLocomotion recebe a velocidade
+        // no referencial do corpo (MoveX = direita, MoveY = frente, em m/s).
+        void UpdateAiming(HeroCombatLogic logic, bool isFrozen, float dt)
+        {
+            var aiming = logic.IsAiming;
+            animator.SetBool(AimingParam, aiming);
+            if (!aiming || isFrozen)
+            {
+                animator.SetFloat(MoveXParam, 0f, speedDampSeconds, dt);
+                animator.SetFloat(MoveYParam, 0f, speedDampSeconds, dt);
+                return;
+            }
+            var velocity = logic.CurrentVelocity();
+            var facing = logic.FacingDirection();
+            var forward = velocity.X * facing.X + velocity.Z * facing.Z;
+            var right = velocity.X * facing.Z - velocity.Z * facing.X; // direita do corpo no plano XZ (frente = +Z)
+            animator.SetFloat(MoveXParam, right, speedDampSeconds, dt);
+            animator.SetFloat(MoveYParam, forward, speedDampSeconds, dt);
+        }
+
         void OnHit(in HitEvent evt)
         {
             if (!ReferenceEquals(evt.Target, Self)) return;
             if (!evt.Result.Landed || evt.Result.TotalDamage <= 0.0) return;
             flashTimeLeft = hitFlashSeconds;
-            if (HasAnimator && hitLayerIndex >= 0 && skillSet != null) PlayIfExists(skillSet.hitState, hitLayerIndex, 0f);
+            if (!HasAnimator || skillSet == null) return;
+            // Defendendo: o golpe absorvido mexe só o tronco e os braços (camada Upper), as pernas seguem andando; sem reação própria, o corpo todo.
+            var guarding = heroController != null && heroController.Logic != null && heroController.Logic.IsGuarding;
+            if (guarding && upperLayerIndex >= 0 && !string.IsNullOrEmpty(skillSet.guardHitState) && animator.HasState(upperLayerIndex, Animator.StringToHash(skillSet.guardHitState)))
+                PlayIfExists(skillSet.guardHitState, upperLayerIndex, 0f, skillSet.upperBlendSeconds);
+            else if (hitLayerIndex >= 0) PlayIfExists(skillSet.hitState, hitLayerIndex, 0f);
+        }
+
+        // Máquina de entrada do ataque básico (docs/18): carga e defesa tocam na camada de tronco e braços; o golpe forte solta na camada Action.
+        void OnBasicInput(in BasicInputEvent evt)
+        {
+            if (!ReferenceEquals(evt.Owner, Self) || !HasAnimator || skillSet == null || upperLayerIndex < 0) return;
+            var blend = skillSet.upperBlendSeconds;
+            switch (evt.Kind)
+            {
+                case BasicInputKind.ChargeStarted:
+                    // A pose congelada da carga é o quadro "arma atrás" do golpe forte (holdAt, medido no clipe).
+                    if (hasHoldAt && evt.Skill != null && skillSet.TryGet(evt.Skill.Id, out var heavy)) animator.SetFloat(HoldAtParam, heavy.holdAt);
+                    PlayIfExists(skillSet.chargeState, upperLayerIndex, 0f, blend);
+                    break;
+                case BasicInputKind.GuardUp:
+                    PlayIfExists(skillSet.guardRaiseState, upperLayerIndex, 0f, blend);
+                    break;
+                case BasicInputKind.ChargeCancelled:
+                case BasicInputKind.HeavyReleased:
+                case BasicInputKind.GuardDown:
+                case BasicInputKind.GuardBroke:
+                    PlayIfExists(skillSet.emptyState, upperLayerIndex, 0f, blend);
+                    break;
+            }
         }
 
         void OnSkillPhase(in SkillPhaseEvent evt)
@@ -239,6 +301,7 @@ namespace Echoes.Presentation
             {
                 string phaseState;
                 float phaseClip;
+                var phaseSeconds = (float)evt.PhaseSeconds;
                 switch (evt.Phase)
                 {
                     case ActionPhase.Windup:
@@ -247,14 +310,17 @@ namespace Echoes.Presentation
                         break;
                     case ActionPhase.Impact:
                         phaseState = string.IsNullOrEmpty(entry.impactState) ? entry.windupState : entry.impactState;
-                        phaseClip = 0f; // laco: velocidade 1
+                        phaseClip = entry.impactClipSeconds; // 0 = laco: velocidade 1
+                        // Sem estado de recuperacao, o clipe do impacto cobre impacto e recuperacao (ex.: Release do arco): a velocidade segue as duas fases do core.
+                        if (phaseClip > 0f && string.IsNullOrEmpty(entry.recoveryState)) phaseSeconds += (float)RecoverySecondsOf(evt.Skill);
                         break;
                     default:
+                        if (string.IsNullOrEmpty(entry.recoveryState) && entry.impactClipSeconds > 0f) return; // o clipe do impacto segue tocando
                         phaseState = string.IsNullOrEmpty(entry.recoveryState) ? entry.windupState : entry.recoveryState;
                         phaseClip = entry.recoveryClipSeconds;
                         break;
                 }
-                actionSpeed = phaseClip > 0f && evt.PhaseSeconds > 1e-4 ? phaseClip / (float)evt.PhaseSeconds : 1f;
+                actionSpeed = phaseClip > 0f && phaseSeconds > 1e-4f ? phaseClip / phaseSeconds : 1f;
                 if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(phaseState, actionLayerIndex, 0f);
                 if (evt.Phase == ActionPhase.Impact && entry.impactVfx != null && vfxPool != null)
                     vfxPool.Play(entry.impactVfx, FindAnchor(entry.anchor).position, transform.rotation, entry.vfxSeconds);
@@ -265,8 +331,9 @@ namespace Echoes.Presentation
             switch (evt.Phase)
             {
                 case ActionPhase.Windup:
-                    start = 0f;
-                    authored = windupEnd * clip;
+                    // Golpe carregado: a preparação parte do quadro "arma atrás" (holdAt), onde a camada Upper congelou a pose.
+                    start = entry != null && entry.holdAt > 0f && entry.holdAt < windupEnd ? entry.holdAt : 0f;
+                    authored = (windupEnd - start) * clip;
                     break;
                 case ActionPhase.Impact:
                     start = windupEnd;
@@ -286,6 +353,15 @@ namespace Echoes.Presentation
             // velocidade = duração autoral da fase / duração da fase no CSV (seção 3.3).
             actionSpeed = evt.PhaseSeconds > 1e-4 && authored > 0f ? authored / (float)evt.PhaseSeconds : 1f;
             if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(state, actionLayerIndex, start * clip);
+        }
+
+        // Recuperação da habilidade com a velocidade de ataque do herói (o core), para o clipe do impacto cobrir impacto + recuperação.
+        double RecoverySecondsOf(Echoes.Interop.SkillInfo skill)
+        {
+            var rules = root != null && root.Rules != null ? root.Rules.Core : null;
+            var self = Self;
+            if (rules == null || self == null || skill == null) return skill != null ? skill.Recovery : 0.0;
+            return rules.GetActionTiming(self.Stats, skill).Recovery;
         }
 
         /// <summary>Evento de clipe (AnimationEventRelay): "release" do Espectro no quadro 20, "summon_marks" e "slam" do rugido do Guardiao.</summary>

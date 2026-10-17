@@ -44,7 +44,8 @@ namespace Echoes.Tests.PlayMode
             var action = heroAnimator.GetLayerIndex("Action");
             var hitLayer = heroAnimator.GetLayerIndex("Hit");
             Assert.AreEqual(1, action);
-            Assert.AreEqual(2, hitLayer);
+            Assert.AreEqual(2, heroAnimator.GetLayerIndex("Upper"), "tronco e braços (defesa e carga) entre Action e Hit");
+            Assert.AreEqual(3, hitLayer);
 
             // Andar: a entrada de movimento vai para a logica; o PresentationController alimenta Speed (amortecido) com a velocidade dela.
             var walkForward = new WalkScript();
@@ -85,6 +86,60 @@ namespace Echoes.Tests.PlayMode
                 sawHit |= enemyAnimator.GetCurrentAnimatorStateInfo(enemyAnimator.GetLayerIndex("Hit")).IsName("Hit");
             }
             Assert.IsTrue(sawHit, "a camada Hit tocou Hit na Sentinela");
+        }
+
+        /// <summary>
+        /// Defesa e carga (docs/18) tocam na camada Upper (mascara de tronco e bracos) e saem dela sem mexer na camada Action: os eventos da maquina de
+        /// entrada (BasicInputEvent) levam o Animator da pose de repouso a GuardRaise (e GuardHold), ChargeHold com a pose congelada em HoldAt e de volta.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator GuardAndChargeEventsDriveTheUpperBodyLayer()
+        {
+            yield return SceneManager.LoadSceneAsync(ScenePath, LoadSceneMode.Single);
+            yield return null;
+            yield return null;
+            var host = Object.FindFirstObjectByType<CombatSystemHost>();
+            var hero = Object.FindFirstObjectByType<HeroController>();
+            var animator = hero.GetComponentInChildren<Animator>();
+            var upper = animator.GetLayerIndex("Upper");
+            var action = animator.GetLayerIndex("Action");
+            Assert.GreaterOrEqual(upper, 0);
+            Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(upper).IsName("Empty"));
+
+            var guardUp = new BasicInputEvent { Owner = hero.Combatant, Kind = BasicInputKind.GuardUp };
+            host.Events.Publish(in guardUp);
+            var sawRaise = false;
+            var sawHold = false;
+            for (var t = 0f; t < 0.8f; t += Time.deltaTime)
+            {
+                yield return null;
+                var info = animator.GetCurrentAnimatorStateInfo(upper);
+                sawRaise |= info.IsName("GuardRaise");
+                sawHold |= info.IsName("GuardHold");
+            }
+            Assert.IsTrue(sawRaise, "ergue a defesa");
+            Assert.IsTrue(sawHold, "e segura (Melee_Blocking em laço)");
+            Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(action).IsName("Empty"), "a camada Action fica livre: as pernas andam");
+
+            var guardDown = new BasicInputEvent { Owner = hero.Combatant, Kind = BasicInputKind.GuardDown };
+            host.Events.Publish(in guardDown);
+            for (var t = 0f; t < 0.4f; t += Time.deltaTime) yield return null;
+            Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(upper).IsName("Empty"), "baixar a defesa volta ao repouso");
+
+            var heavy = host.Rules.FindSkill("skill.warrior.iron_cut");
+            var charge = new BasicInputEvent { Owner = hero.Combatant, Kind = BasicInputKind.ChargeStarted, Skill = heavy };
+            host.Events.Publish(in charge);
+            var sawCharge = false;
+            for (var t = 0f; t < 0.4f; t += Time.deltaTime)
+            {
+                yield return null;
+                sawCharge |= animator.GetCurrentAnimatorStateInfo(upper).IsName("ChargeHold");
+            }
+            Assert.IsTrue(sawCharge, "carregar toca a pose congelada na camada Upper");
+            var released = new BasicInputEvent { Owner = hero.Combatant, Kind = BasicInputKind.HeavyReleased, Skill = heavy, Value = 1.0 };
+            host.Events.Publish(in released);
+            for (var t = 0f; t < 0.4f; t += Time.deltaTime) yield return null;
+            Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(upper).IsName("Empty"), "soltar entrega a pose para a camada Action");
         }
 
         [UnityTest]

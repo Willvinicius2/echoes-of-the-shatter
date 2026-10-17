@@ -10,9 +10,15 @@ namespace Echoes.Gameplay
     /// </summary>
     public static class BasicKitSource
     {
+        /// <summary>
+        /// Só para testes de PlayMode: fábrica de kit usada no lugar do core (os testes declaram os próprios valores falsos; o jogo nunca a define).
+        /// Quem define precisa devolver null para limpar.
+        /// </summary>
+        public static System.Func<IRulesCore, string, IBasicKit> TestFactory { get; set; }
+
         public static IBasicKit For(IRulesCore rules, string classId)
         {
-            return null;
+            return TestFactory != null ? TestFactory(rules, classId) : null;
         }
     }
 }

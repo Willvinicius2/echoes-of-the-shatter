@@ -124,14 +124,35 @@ namespace Echoes.Tests.EditMode
                 Assert.AreEqual(1f, parameters["ActionSpeed"].defaultFloat, spec.Name);
                 Assert.AreEqual(spec.Name == "AC_Boss", parameters.ContainsKey("Phase"), spec.Name + ": Phase so no chefe");
 
-                Assert.AreEqual(3, c.layers.Length, spec.Name);
+                // Heróis ganham a camada Upper (tronco e braços, com máscara) entre Action e Hit: defesa e carga com as pernas andando.
+                Assert.AreEqual(spec.Hero ? 4 : 3, c.layers.Length, spec.Name);
                 Assert.AreEqual("Action", c.layers[1].name);
-                Assert.AreEqual("Hit", c.layers[2].name);
+                var hitLayer = c.layers[c.layers.Length - 1];
+                Assert.AreEqual("Hit", hitLayer.name);
+                if (spec.Hero)
+                {
+                    Assert.IsTrue(parameters.ContainsKey("HoldAt"), spec.Name + ": pose de carga congelada");
+                    var upper = c.layers[2];
+                    Assert.AreEqual(AnimatorControllerBuilder.UpperLayerName, upper.name);
+                    Assert.IsNotNull(upper.avatarMask, spec.Name + ": Upper tem a máscara de tronco e braços");
+                    Assert.IsTrue(upper.avatarMask.GetHumanoidBodyPartActive(AvatarMaskBodyPart.LeftArm) && upper.avatarMask.GetHumanoidBodyPartActive(AvatarMaskBodyPart.RightArm));
+                    Assert.IsTrue(upper.avatarMask.GetHumanoidBodyPartActive(AvatarMaskBodyPart.Body));
+                    Assert.IsFalse(upper.avatarMask.GetHumanoidBodyPartActive(AvatarMaskBodyPart.LeftLeg) || upper.avatarMask.GetHumanoidBodyPartActive(AvatarMaskBodyPart.RightLeg), spec.Name + ": as pernas ficam na camada Base");
+                    Assert.IsFalse(upper.avatarMask.GetHumanoidBodyPartActive(AvatarMaskBodyPart.Root));
+                    CollectionAssert.AreEquivalent(new[] { "Empty" }.Concat(spec.Upper.Select(u => u.State)), upper.stateMachine.states.Select(s => s.state.name), spec.Name);
+                    foreach (var name in new[] { "Aiming", "MoveX", "MoveY" }) Assert.IsTrue(parameters.ContainsKey(name), spec.Name + "." + name);
+                    var aim = c.layers[0].stateMachine.states.First(s => s.state.name == "AimLocomotion").state;
+                    var aimTree = aim.motion as BlendTree;
+                    Assert.IsNotNull(aimTree, spec.Name + ": pernas de quem defende sao um blend 2D");
+                    Assert.AreEqual(BlendTreeType.FreeformDirectional2D, aimTree.blendType);
+                    Assert.AreEqual(5, aimTree.children.Length, "parado, frente, recuo e os dois lados");
+                    Assert.AreEqual(AnimatorControllerBuilder.StrafePlaybackScale, aimTree.children[3].timeScale, 1e-4f, "laterais a 55%");
+                }
                 var baseStates = c.layers[0].stateMachine.states.Select(s => s.state.name).ToList();
-                CollectionAssert.AreEquivalent(new[] { "Locomotion", "Death", "Stun" }, baseStates, spec.Name);
+                CollectionAssert.AreEquivalent(spec.Hero ? new[] { "Locomotion", "AimLocomotion", "Death", "Stun" } : new[] { "Locomotion", "Death", "Stun" }, baseStates, spec.Name);
                 var actionStates = c.layers[1].stateMachine.states.Select(s => s.state.name).ToList();
                 CollectionAssert.AreEquivalent(new[] { "Empty" }.Concat(spec.Actions.Select(a => a.State)), actionStates, spec.Name);
-                CollectionAssert.AreEquivalent(new[] { "Empty", "Hit" }, c.layers[2].stateMachine.states.Select(s => s.state.name), spec.Name);
+                CollectionAssert.AreEquivalent(new[] { "Empty", "Hit" }, hitLayer.stateMachine.states.Select(s => s.state.name), spec.Name);
 
                 var loco = c.layers[0].stateMachine.states.First(s => s.state.name == "Locomotion").state;
                 var tree = loco.motion as BlendTree;
@@ -147,6 +168,48 @@ namespace Echoes.Tests.EditMode
                     Assert.IsTrue(action.speedParameterActive && action.speedParameter == "ActionSpeed", action.name + ": a velocidade do clipe segue o core");
                 }
             }
+        }
+
+        [Test]
+        public void WarriorHasTheComboHeavyAndGuardStates()
+        {
+            var c = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath("AC_Warrior"));
+            var action = c.layers[1].stateMachine.states.Select(s => s.state.name).ToList();
+            foreach (var name in new[] { "Basic", "Combo2", "Combo3", "HeavyRelease" }) CollectionAssert.Contains(action, name);
+            var upper = c.layers[2].stateMachine.states.ToDictionary(s => s.state.name, s => s.state);
+            foreach (var name in new[] { "GuardRaise", "GuardHold", "GuardHit", "ChargeHold" }) Assert.IsTrue(upper.ContainsKey(name), name);
+            Assert.IsTrue(upper["ChargeHold"].timeParameterActive && upper["ChargeHold"].timeParameter == "HoldAt", "a pose de carga é o quadro holdAt congelado");
+            Assert.AreEqual(upper["ChargeHold"].motion, c.layers[1].stateMachine.states.First(s => s.state.name == "HeavyRelease").state.motion, "carga e soltura são o mesmo clipe");
+            Assert.AreEqual("GuardHold", upper["GuardRaise"].transitions.Single().destinationState.name, "erguer passa para segurar");
+            Assert.AreEqual(1, c.layers[2].stateMachine.states.Count(s => s.state.motion != null && s.state.motion.name == "Melee_Blocking"));
+            var set = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.WarriorSkillSetPath);
+            Assert.IsTrue(set.TryGet("skill.warrior.heavy_slash", out var heavy));
+            Assert.Greater(heavy.holdAt, 0f, "holdAt medido no clipe");
+            Assert.Less(heavy.holdAt, heavy.windupEnd + 0.05f, "a pose de carga vem antes do impacto");
+            Assert.AreEqual("Upper", set.upperLayer);
+            foreach (var skill in new[] { "skill.warrior.combo_2", "skill.warrior.combo_3" }) Assert.IsTrue(set.TryGet(skill, out _), skill);
+        }
+
+        [Test]
+        public void ArcherAndMageControllersFollowTheDoc18Mapping()
+        {
+            foreach (var spec in new[] { AnimatorControllerBuilder.HeroArcher, AnimatorControllerBuilder.HeroMage })
+            {
+                var c = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath(spec.Name));
+                Assert.IsNotNull(c, spec.Name);
+                var tree = (BlendTree)c.layers[0].stateMachine.states.First(s => s.state.name == "Locomotion").state.motion;
+                Assert.AreEqual(spec.RunClip, tree.children[2].motion.name, spec.Name + ": corrida da classe");
+                var set = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>($"{AnimatorControllerBuilder.SkillSetDir}/{spec.SkillSet}.asset");
+                Assert.IsNotNull(set, spec.SkillSet);
+                foreach (var phase in spec.PhaseSkills)
+                {
+                    Assert.IsTrue(set.TryGet(phase.SkillId, out var entry), phase.SkillId);
+                    Assert.IsTrue(entry.HasPhaseStates, phase.SkillId + ": preparação e impacto em clipes separados");
+                    Assert.Greater(entry.windupClipSeconds, 0f);
+                }
+            }
+            Assert.AreEqual("Running_HoldingBow", AnimatorControllerBuilder.HeroArcher.RunClip);
+            Assert.AreEqual("Running_B", AnimatorControllerBuilder.HeroMage.RunClip);
         }
 
         [Test]

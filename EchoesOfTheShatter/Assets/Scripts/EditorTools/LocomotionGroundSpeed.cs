@@ -18,6 +18,23 @@ namespace Echoes.EditorTools
         /// <summary>Limites do ajuste de reprodução (timeScale) para a pose não ficar apressada nem arrastada.</summary>
         public const float MinScale = 0.75f, MaxScale = 1.35f;
 
+        /// <summary>
+        /// Limite próprio da corrida (a caminhada segue em <see cref="MaxScale"/>): o herói corre bem mais rápido do que o clipe cobre, e o limite
+        /// de 1,35 deixava o pé deslizar. Arte, não balanceamento. ECHOES_RUN_MAX_SCALE sobrescreve ao montar (comparação em vídeo no editor).
+        /// </summary>
+        public const float DefaultRunMaxScale = 1.35f;
+
+        public static float RunMaxScale
+        {
+            get
+            {
+                var env = System.Environment.GetEnvironmentVariable("ECHOES_RUN_MAX_SCALE");
+                return !string.IsNullOrEmpty(env) && float.TryParse(env, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var value) && value >= MinScale
+                    ? value
+                    : DefaultRunMaxScale;
+            }
+        }
+
         [System.Serializable]
         public sealed class Entry
         {
@@ -32,20 +49,23 @@ namespace Echoes.EditorTools
             public List<Entry> entries = new List<Entry>();
         }
 
-        static readonly (string controller, string prefab, bool large)[] Targets =
+        // Controller, prefab e os clipes de caminhada e corrida que a árvore Locomotion usa (os do ControllerSpec).
+        static (string controller, string prefab, AnimatorControllerBuilder.ControllerSpec spec)[] Targets => new[]
         {
-            ("AC_Warrior", "Assets/Art/Prefabs/P_Hero_Warrior.prefab", false),
-            ("AC_EnemyHumanoid", "Assets/Art/Prefabs/P_Enemy_HollowSentinel.prefab", false),
-            ("AC_Boss", "Assets/Art/Prefabs/P_Boss_CryptGuardian.prefab", true),
+            ("AC_Warrior", "Assets/Art/Prefabs/P_Hero_Warrior.prefab", AnimatorControllerBuilder.Warrior),
+            ("AC_Archer", "Assets/Art/Prefabs/P_Hero_Archer.prefab", AnimatorControllerBuilder.HeroArcher),
+            ("AC_Mage", "Assets/Art/Prefabs/P_Hero_Mage.prefab", AnimatorControllerBuilder.HeroMage),
+            ("AC_EnemyHumanoid", "Assets/Art/Prefabs/P_Enemy_HollowSentinel.prefab", AnimatorControllerBuilder.EnemyHumanoid),
+            ("AC_Boss", "Assets/Art/Prefabs/P_Boss_CryptGuardian.prefab", AnimatorControllerBuilder.Boss),
         };
 
-        public static float Clamp(float scale) => Mathf.Clamp(scale, MinScale, MaxScale);
+        public static float Clamp(float scale, float max = MaxScale) => Mathf.Clamp(scale, MinScale, max);
 
-        /// <summary>Escala de reprodução = velocidade do jogo ÷ velocidade de solo do clipe, nos limites 0,75 a 1,35. Sem medida (≤ 0), 1.</summary>
-        public static float PlaybackScale(float gameSpeed, float clipGroundSpeed)
+        /// <summary>Escala de reprodução = velocidade do jogo ÷ velocidade de solo do clipe, entre 0,75 e <paramref name="max"/>. Sem medida (≤ 0), 1.</summary>
+        public static float PlaybackScale(float gameSpeed, float clipGroundSpeed, float max = MaxScale)
         {
             if (clipGroundSpeed <= 0.01f || gameSpeed <= 0f) return 1f;
-            return Clamp(gameSpeed / clipGroundSpeed);
+            return Clamp(gameSpeed / clipGroundSpeed, max);
         }
 
         public static Entry Load(string controller)
@@ -64,10 +84,10 @@ namespace Echoes.EditorTools
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(target.prefab);
                 if (prefab == null) { Debug.LogWarning("[GroundSpeed] prefab ausente: " + target.prefab); continue; }
-                var group = target.large ? "Large" : "Medium";
+                var group = target.spec.Rig;
                 var fbx = $"{KayKitAnimationImport.Root}/{group}/Rig_{group}_MovementBasic.fbx";
-                var walk = KayKitAnimationImport.FindClip(fbx, "Walking_A");
-                var run = KayKitAnimationImport.FindClip(fbx, "Running_A");
+                var walk = KayKitAnimationImport.FindClip(fbx, target.spec.WalkClip);
+                var run = KayKitAnimationImport.FindClip(target.spec.RunFbx ?? fbx, target.spec.RunClip);
                 var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
                 try
                 {
