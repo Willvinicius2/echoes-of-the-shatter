@@ -16,12 +16,31 @@ namespace Echoes.UI
 
         void Start()
         {
-            if (GameFlow.ArgValue("-bossshot") != null) StartCoroutine(Run(GameFlow.ArgValue("-bossshot")));
+            if (GameFlow.ArgValue("-bossshot") == null) return;
+            StartCoroutine(Run(GameFlow.ArgValue("-bossshot")));
+            StartCoroutine(Watchdog());
         }
+
+        string stage = "inicio";
+
+        void Stage(string name)
+        {
+            stage = name;
+            Debug.Log("[BossShot] etapa: " + name);
+        }
+
+        IEnumerator Watchdog()
+        {
+            yield return new WaitForSecondsRealtime(75f);
+            if (!done) Debug.LogError("[BossShot] TIMEOUT: parou na etapa '" + stage + "'");
+        }
+
+        bool done;
 
         IEnumerator Run(string path)
         {
             if (root == null) root = FindAnyObjectByType<GameRoot>();
+            Stage("aguardando 3 s na Cripta");
             yield return new WaitForSecondsRealtime(3f);
             var host = FindAnyObjectByType<CombatSystemHost>();
             var hero = FindAnyObjectByType<HeroController>();
@@ -31,12 +50,14 @@ namespace Echoes.UI
                 Debug.LogError("[BossShot] Cripta incompleta.");
                 yield break;
             }
+            Stage("heroi na arena");
             TestSettings.HeroGodMode = true;
             var controller = hero.GetComponent<CharacterController>();
             controller.enabled = false;
             hero.transform.position = new Vector3(arena.Trigger.center.x, 0f, arena.Trigger.center.y);
             controller.enabled = true;
             yield return new WaitForSecondsRealtime(3f);
+            Stage("golpeando o chefe");
             var skill = host.Rules.FindSkill("skill.warrior.iron_cut");
             var boss = arena.Boss;
             for (var i = 0; i < 4 && boss != null && !boss.Combatant.IsDead; i++)
@@ -50,9 +71,13 @@ namespace Echoes.UI
             var bar = ScreenHost.Current != null ? ScreenHost.Current.Root.Q<VisualElement>("boss-bar") : null;
             Debug.Log("[BossShot] fase=" + arena.Phase + ", barra=" + (bar != null ? bar.style.display.value.ToString() : "ausente") + ", vida=" + boss.Combatant.Life + "/" + boss.Combatant.MaxLife);
             yield return new WaitForSecondsRealtime(0.5f);
+            Stage("captura");
+            yield return new WaitForEndOfFrame();
             ScreenCapture.CaptureScreenshot(path);
             yield return new WaitForSecondsRealtime(1.5f);
-            Debug.Log("[BossShot] captura pedida: " + path);
+            done = true;
+            Debug.Log("[BossShot] captura pedida: " + path + " (" + (System.IO.File.Exists(path) ? "gravada" : "AUSENTE") + ")");
+            Application.Quit();
         }
     }
 }
