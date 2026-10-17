@@ -71,6 +71,7 @@ namespace Echoes.UI
 
             // Teste do player (-smoke): conquista a Cripta, inicia, avanca o relogio, coleta e registra o relatorio no log (e na captura -shot).
             if (GameFlow.ArgValue("-smoke") != null) StartCoroutine(SmokeRun());
+            if (GameFlow.ArgValue("-bossshot") != null) StartCoroutine(GoToCrypt());
             if (!string.IsNullOrEmpty(GameSession.PendingToastKey))
             {
                 ScreenHost.Toast(Loc.Get(GameSession.PendingToastKey));
@@ -81,6 +82,13 @@ namespace Echoes.UI
                 var charges = GameSession.Save.Current.Summary.MarkerCharges;
                 ScreenHost.Toast(Loc.Get("ui.hud.charges") + " " + charges + "/12");
             }
+        }
+
+        // Modo de captura do chefe: sai do Refugio para a Cripta (BossShotRunner assume la).
+        System.Collections.IEnumerator GoToCrypt()
+        {
+            yield return new WaitForSecondsRealtime(1.5f);
+            GameFlow.StartGame();
         }
 
         System.Collections.IEnumerator SmokeRun()

@@ -502,6 +502,8 @@ namespace Echoes.EditorTools
             {
                 var recorder = go.AddComponent<RunRecorder>();
                 SandboxBuilder.SetRef(recorder, "root", ctx.GameRoot);
+                var shot = go.AddComponent<BossShotRunner>();
+                SandboxBuilder.SetRef(shot, "root", ctx.GameRoot);
                 var bossBar = go.AddComponent<BossBarView>();
                 SandboxBuilder.SetRef(bossBar, "root", ctx.GameRoot);
             }

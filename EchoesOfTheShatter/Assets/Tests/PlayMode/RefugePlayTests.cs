@@ -87,7 +87,11 @@ namespace Echoes.Tests.PlayMode
             yield return null;
             Assert.AreEqual("Refugio", SceneManager.GetActiveScene().name, "o portal nao leva a Cripta com o heroi em rota");
             var root = Object.FindFirstObjectByType<GameRoot>();
-            StringAssert.Contains(root.Localization.Get("dlg.ilsa.busy"), ScreenHost.Current.Toasts.Current);
+            // Os avisos entram em fila (nenhum se perde): espera a vez do aviso de heroi ocupado.
+            var busyText = root.Localization.Get("dlg.ilsa.busy");
+            var waitStart = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - waitStart < 30f && !ScreenHost.Current.Toasts.Shown.Contains(busyText)) yield return null;
+            CollectionAssert.Contains(ScreenHost.Current.Toasts.Shown, busyText, "dlg.ilsa.busy apareceu na fila de avisos");
 
             // Tico: ainda em curso, depois pronto; coleta uma vez so.
             controller.TalkToTico();
