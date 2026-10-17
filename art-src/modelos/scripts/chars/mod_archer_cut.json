@@ -1,0 +1,39 @@
+{
+  "id": "mod_archer_cut",
+  "asset": "SK_Archer",
+  "kind": "humanoid",
+  "body_height_m": 1.5,
+  "tex_size": 1024,
+  "src_blend": "D:/openclaude/_trabalho-claude/modelos3d/m02_arqueiro/final/SK_Archer.blend",
+  "src_mesh": "SK_Archer_Body",
+  "src_tex_dir": "D:/openclaude/_trabalho-claude/modelos3d/m02_arqueiro/final",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_arqueiro/work/cut",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_arqueiro/final",
+  "set_name": "Starter",
+  "hero": "Archer",
+  "cuts": {
+    "waist_z": 0.7,
+    "boot_z": 0.19
+  },
+  "hides": {
+    "Head": [
+      "Head"
+    ],
+    "Chest": [
+      "Torso",
+      "Arms"
+    ],
+    "Hands": [
+      "Hands"
+    ],
+    "Legs": [
+      "Legs"
+    ],
+    "Feet": [
+      "Feet"
+    ]
+  },
+  "body_rig_blend": "D:/openclaude/_trabalho-claude/modelos3d/modular_arqueiro/work/body/game_rig.blend",
+  "body_tex_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_arqueiro/final",
+  "body_mesh_src": "D:/openclaude/_trabalho-claude/modelos3d/modular_arqueiro/work/body/game_uv.blend"
+}

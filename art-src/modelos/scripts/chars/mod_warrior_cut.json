@@ -1,0 +1,39 @@
+{
+  "id": "mod_warrior_cut",
+  "asset": "SK_Warrior",
+  "kind": "humanoid",
+  "body_height_m": 1.5,
+  "tex_size": 1024,
+  "src_blend": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/final/SK_Warrior.blend",
+  "src_mesh": "SK_Warrior_Body",
+  "src_tex_dir": "D:/openclaude/_trabalho-claude/modelos3d/m01_guerreiro/final",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/cut",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/final",
+  "set_name": "Starter",
+  "hero": "Warrior",
+  "cuts": {
+    "waist_z": 0.7,
+    "boot_z": 0.19
+  },
+  "hides": {
+    "Head": [
+      "Head"
+    ],
+    "Chest": [
+      "Torso",
+      "Arms"
+    ],
+    "Hands": [
+      "Hands"
+    ],
+    "Legs": [
+      "Legs"
+    ],
+    "Feet": [
+      "Feet"
+    ]
+  },
+  "body_rig_blend": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body/game_rig.blend",
+  "body_tex_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/final",
+  "body_mesh_src": "D:/openclaude/_trabalho-claude/modelos3d/modular_guerreiro/work/body/game_uv.blend"
+}

@@ -1,0 +1,120 @@
+{
+  "id": "m02_arqueiro",
+  "asset": "SK_Archer",
+  "kind": "humanoid",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/m02_arqueiro/m02_arqueiro.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m02_arqueiro.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/m02_arqueiro/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/m02_arqueiro/final",
+  "height_ref": "bbox",
+  "body_height_m": 1.5,
+  "tris_target": 6000,
+  "tris_range": [
+    5500,
+    6500
+  ],
+  "tex_size": 1024,
+  "min_component_ratio": 0.005,
+  "mesh_name": "SK_Archer_Body",
+  "bake_shards": 1,
+  "tint_hues": [
+    [
+      70,
+      160
+    ]
+  ],
+  "cloth_hues": [
+    [
+      70,
+      160
+    ]
+  ],
+  "sat_keep_hues": [
+    [
+      70,
+      160
+    ]
+  ],
+  "markers": {
+    "hips": [
+      0,
+      0.07,
+      0.55
+    ],
+    "spine": [
+      0,
+      0.07,
+      0.68
+    ],
+    "chest": [
+      0,
+      0.07,
+      0.85
+    ],
+    "neck": [
+      0,
+      0.07,
+      1.12
+    ],
+    "head": [
+      0,
+      0.07,
+      1.18
+    ],
+    "head_top": [
+      0,
+      0.07,
+      1.5
+    ],
+    "shoulder": [
+      0.07,
+      0.07,
+      0.98
+    ],
+    "upperarm": [
+      0.2,
+      0.07,
+      0.95
+    ],
+    "lowerarm": [
+      0.3,
+      0.06,
+      0.78
+    ],
+    "hand": [
+      0.36,
+      0.04,
+      0.66
+    ],
+    "hand_tip": [
+      0.39,
+      0.02,
+      0.58
+    ],
+    "upperleg": [
+      0.12,
+      0.08,
+      0.52
+    ],
+    "lowerleg": [
+      0.15,
+      0.07,
+      0.28
+    ],
+    "foot": [
+      0.16,
+      0.09,
+      0.09
+    ],
+    "toes": [
+      0.16,
+      0.0,
+      0.04
+    ],
+    "toe_tip": [
+      0.16,
+      -0.12,
+      0.02
+    ]
+  }
+}
