@@ -4,7 +4,7 @@
     "atualizado_em": "2026-10-17",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
-    "marco_atual": "Etapa 2 quase toda entregue; Etapa 3 em andamento",
+    "marco_atual": "Etapa 2 quase toda entregue; Etapa 3 em andamento (inventário pronto)",
     "legenda_estados": {
       "concluido": "Concluído",
       "nuvem": "Na nuvem",
@@ -14,7 +14,7 @@
       "bloqueado": "Bloqueado"
     },
     "destaque": "Teste o jogo: abra D:\\openclaude\\Builds\\Echoes_Cripta_dev\\EchoesOfTheShatter.exe",
-    "destaque_detalhe": "Build jogável com menu e escolha de herói (Arqueiro e Mago como prévia visual), Refúgio com a Ilsa (expedição) e o Tico (relatório), save com backups e expedição idle de ponta a ponta. Cripta e Refúgio com cenário pintado (26 peças) e fogo; inimigos pintados e animados; Guerreiro modular com armadura em peças; HUD com barra do chefe e fila de avisos. 238 EditMode e 11 PlayMode; cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada). Controles no LEIA-ME.txt; roteiro no docs/10."
+    "destaque_detalhe": "Build jogável com menu e escolha de herói (Arqueiro e Mago como prévia visual), Refúgio com a Ilsa (expedição) e o Tico (relatório), save com backups e expedição idle de ponta a ponta. Cripta e Refúgio com cenário pintado (26 peças) e fogo; inimigos pintados e animados; Guerreiro modular com armadura em peças; HUD com barra do chefe e fila de avisos. 238 EditMode e 11 PlayMode; cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada). Controles no LEIA-ME.txt; roteiro no docs/10. Agora com inventário completo (seção 4 do LEIA-ME): loot no chão com feixe de raridade, tela na tecla I com boneco modular, tooltip com comparação e valor de venda, Mochila 40 e Baú 100 [HIPÓTESE]."
   },
   "setores": [
     {
@@ -100,7 +100,7 @@
       "nome": "Conteúdo e textos",
       "agente": "Narrative",
       "estado": "concluido",
-      "resumo": "Textos pt_BR e en; 35 chaves novas da Etapa 2 (incluindo o slot Calça). Mais 177 chaves de texto das telas da Etapa 3.",
+      "resumo": "Textos pt_BR e en; 35 chaves novas da Etapa 2 (incluindo o slot Calça). Mais 177 chaves de texto das telas da Etapa 3. 6 chaves de texto repetidas removidas.",
       "entregas": [
         {
           "titulo": "Resumo do conteúdo e do tom",
@@ -144,7 +144,7 @@
       "nome": "Backend ShatterCore",
       "agente": "Backend Engineer",
       "estado": "concluido",
-      "resumo": "Etapa 2 entregue: etapa2/backend no master (merge d9b8eb3) com as 11 regras do docs/13 (poções, esquiva, stun e Guarda Quebrada, escudo e fases do Guardião, elites, Único com garantia, recuo a 0,25), slot legs, save v2 e API C 1.1 com início e coleta de expedição confiáveis. Testes: 146 do core e 21 da API C, mais o validador. Revisão de segurança ok. Falta só a fuga do Cão no simulador. Revisão na nuvem (docs/17) com todos os achados críticos e altos corrigidos; CI verde; fuga do inimigo decidida pelo core; API C 1.3.",
+      "resumo": "Etapa 2 entregue: etapa2/backend no master (merge d9b8eb3) com as 11 regras do docs/13 (poções, esquiva, stun e Guarda Quebrada, escudo e fases do Guardião, elites, Único com garantia, recuo a 0,25), slot legs, save v2 e API C 1.1 com início e coleta de expedição confiáveis. Testes: 146 do core e 21 da API C, mais o validador. Revisão de segurança ok. Falta só a fuga do Cão no simulador. Revisão na nuvem (docs/17) com todos os achados críticos e altos corrigidos; CI verde; fuga do inimigo decidida pelo core; API C 1.3. Inventário, equipamento, comparação, venda e loot no chão no core (API C minor 4): 199 testes do core e 27 da API C. Avisos do GCC e do Clang corrigidos, CI verde.",
       "entregas": [
         {
           "titulo": "Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)",
@@ -163,14 +163,14 @@
           "arquivo": ".github/workflows/core.yml"
         }
       ],
-      "proximo": "Inventário e equipamento da Etapa 3 (sessão na nuvem pedida); fuga do Cão no simulador."
+      "proximo": "Fuga do Cão já decidida pelo core; próximo: o que a Etapa 3 pedir (uso do Ouro depende de você)."
     },
     {
       "id": "frontend",
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
       "estado": "andamento",
-      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode). Build jogável v0.1 para Windows pronta (tela inicial, Cripta, pausa e opções). Merges 5f62828 (modelos pintados na Cripta), 17f887f e 9c960b4 (animações CC0 com retarget), ec35dea (golpes do Blender, squash no impacto, balanço do Espectro): 190 EditMode e 3 PlayMode. Build com menu, Refúgio (Ilsa e Tico), save com backups, expedição idle, cenário pintado, inimigos animados, Guerreiro modular e HUD do chefe: 238 EditMode e 11 PlayMode, cerca de 1 ms por quadro numa RTX 4060 Ti.",
+      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode). Build jogável v0.1 para Windows pronta (tela inicial, Cripta, pausa e opções). Merges 5f62828 (modelos pintados na Cripta), 17f887f e 9c960b4 (animações CC0 com retarget), ec35dea (golpes do Blender, squash no impacto, balanço do Espectro): 190 EditMode e 3 PlayMode. Build com menu, Refúgio (Ilsa e Tico), save com backups, expedição idle, cenário pintado, inimigos animados, Guerreiro modular e HUD do chefe: 238 EditMode e 11 PlayMode, cerca de 1 ms por quadro numa RTX 4060 Ti. Inventário no jogo (loot no chão, tecla I, tooltip com comparação, Mochila 40 e Baú 100 [HIPÓTESE], herói construído do save): 250 EditMode e 13 PlayMode.",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
@@ -185,7 +185,7 @@
           "arquivo": "EchoesOfTheShatter/Assets/Scenes/Cripta/Cripta.unity"
         }
       ],
-      "proximo": "Inventário, loot no chão e telas finais da Etapa 3 (as telas esperam a aprovação dos mockups)."
+      "proximo": "Ícones de item, tinta de raridade no boneco e telas finais (esperam a aprovação dos mockups)."
     },
     {
       "id": "arte_tecnica",
@@ -818,14 +818,6 @@
       "data": "2026-10-17",
       "detalhe": "Relatório no docs/17.",
       "saida": "Concluída: achados críticos e altos corrigidos; CI do GitHub verde de novo."
-    },
-    {
-      "n": 2,
-      "titulo": "Core: inventário e equipamento da Etapa 3",
-      "setor": "Backend",
-      "data": "2026-10-17",
-      "detalhe": "Aguarda você iniciar (veja Aguardando você).",
-      "saida": "Ainda não começou."
     }
   ],
   "infraestrutura": [
@@ -941,6 +933,10 @@
     },
     {
       "titulo": "Etapa 3: save, Refúgio e expedição idle prontos",
+      "feito": true
+    },
+    {
+      "titulo": "Etapa 3: inventário completo no jogo",
       "feito": true
     }
   ],
@@ -1322,6 +1318,13 @@
       "titulo": "Kit do cenário pintado",
       "detalhe": "Derivado de arte aprovada. Em produção.",
       "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/_inv_prancha.jpg",
+      "titulo": "Inventário no jogo",
+      "detalhe": "Tela de inventário (tecla I), boneco modular, tooltip com comparação e loot no chão. Em produção.",
+      "estado": "producao"
     }
   ],
   "etapas": [
@@ -1341,7 +1344,7 @@
       "n": 3,
       "titulo": "Ciclo completo do protótipo",
       "estado": "andamento",
-      "prova": "Save, Refúgio e expedição prontos; faltam inventário, loot no chão e as telas finais (esperam a aprovação dos mockups)"
+      "prova": "Save, Refúgio, expedição e inventário prontos; faltam a arte final das telas (mockups esperando aprovação), os ícones de item, a tinta de raridade no boneco, um segundo conjunto visual e o uso do Ouro"
     },
     {
       "n": 4,
