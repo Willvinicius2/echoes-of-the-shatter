@@ -262,118 +262,6 @@
   ],
   "pendencias_dono": [
     {
-      "id": "tinta-classe-capuz",
-      "titulo": "Raridade na capa do Arqueiro e do Mago",
-      "detalhe": "Como a cor da raridade aparece nas peças de tecido dos heróis.",
-      "origem": "docs/03_design_system.md §3.11",
-      "pergunta": "No Arqueiro e no Mago, a cor da raridade (azul no Mágico, dourado no Raro) pode tingir a capa e as bainhas, deixando a cor da classe só no capuz?",
-      "contexto": [
-        "Os heróis agora são modulares: cada peça (elmo, peitoral, luvas, calça, botas) é trocada pelo item equipado.",
-        "Itens Mágicos e Raros mudam só o material das peças: a cor de raridade é aplicada nas áreas de tecido (máscara de tinta), nunca no metal, no couro, na pele ou no cabelo.",
-        "No Guerreiro isso tinge o tabardo vermelho. No Arqueiro, a capa verde; no Mago, as bainhas creme e partes do manto azul.",
-        "O capuz é o que identifica a classe à distância (herói com ~88 px na tela), por isso o Art Director propôs manter o capuz sempre na cor da classe."
-      ],
-      "opcoes": [
-        {
-          "id": "a",
-          "nome": "Sim: raridade na capa, classe no capuz (proposta)",
-          "efeito": "A raridade aparece bem de longe; a classe continua reconhecível pelo capuz, que nunca muda de cor."
-        },
-        {
-          "id": "b",
-          "nome": "Raridade só no brilho e nos detalhes",
-          "efeito": "Capa e manto ficam sempre na cor da classe; a raridade aparece só no brilho da borda e em pequenos detalhes, mais discreta."
-        },
-        {
-          "id": "c",
-          "nome": "Raridade em tudo que é tecido, inclusive o capuz",
-          "efeito": "Máxima leitura da raridade, mas a classe passa a ser lida só pela silhueta."
-        }
-      ]
-    },
-    {
-      "id": "endgame-etapa",
-      "titulo": "Endgame: na etapa 4 ou numa etapa própria?",
-      "detalhe": "Decidir se o endgame inicial entra junto com o Ato I ou depois dele.",
-      "pergunta": "O endgame inicial (Carta dos Marcos, os 3 mapas de endgame e o chefe Predador dos Marcos) entra junto na etapa 4 (Elenco e Ato I) ou vira uma etapa própria depois do Ato I, antes do Acesso Antecipado?",
-      "contexto": [
-        "O plano do jogo promete o endgame já no lançamento em Acesso Antecipado.",
-        "A etapa 4 hoje já é grande: Arqueiro e Mago, os inimigos e os 3 chefes que faltam do Ato I, 7 áreas novas, livros, Sigilos, crafting com o Bram e a árvore passiva, para 8 a 12 horas de campanha.",
-        "Por isso o docs/15 deixou o endgame FORA da etapa 4 até você decidir. As artes do endgame (Ossário do Marco, Trilha de Cinza, Salão do Martelo, terrenos, inimigos e o Predador) já estão aprovadas."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Junto na etapa 4",
-          "efeito": "Uma etapa só, maior e mais longa. O Acesso Antecipado só começa depois que tudo estiver pronto e testado de uma vez."
-        },
-        {
-          "id": "B",
-          "nome": "B. Etapa própria depois do Ato I",
-          "efeito": "O Ato I fecha e é testado primeiro; o endgame é balanceado em cima de um Ato I estável. Ganha um portão de teste a mais e o Acesso Antecipado vira a etapa 6."
-        },
-        {
-          "id": "C",
-          "nome": "C. Fora do Acesso Antecipado",
-          "efeito": "O endgame entra como atualização depois do lançamento. Lança mais cedo, mas muda o que o plano promete e o lançamento sai com menos conteúdo."
-        }
-      ],
-      "origem": "docs/15_etapas.md"
-    },
-    {
-      "id": "demo-next-fest",
-      "titulo": "Fazer uma demo para o Steam Next Fest?",
-      "detalhe": "Decidir se haverá demo e em que etapa ela entra.",
-      "pergunta": "Vamos fazer uma demo para o Steam Next Fest? Se sim, ela vira uma etapa própria, entra dentro da etapa 3 ou fica para depois?",
-      "contexto": [
-        "O Next Fest é o festival de demos da Steam. Acontece em fevereiro, junho e outubro, e os jogos que participam ganham visibilidade e wishlists.",
-        "O plano original previa uma demo com a Estrada das Lanternas e a Cripta, só com o Guerreiro e 4 habilidades. Era a fase decisiva: a reação do público à demo diria se vale investir os 6 a 9 meses seguintes. A meta era ter 2 mil wishlists antes do festival.",
-        "Hoje nenhuma das 5 etapas cobre a demo. Para publicá-la é preciso ter conta de desenvolvedor na Steam (Steam Direct), a página 'Em breve' no ar, a classificação indicativa e a declaração de uso de IA. O plano pede CNPJ antes disso."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Etapa própria entre a 3 e a 4",
-          "efeito": "Segue o plano: mede o interesse do público antes da parte mais cara. Obriga a adiantar CNPJ, Steam Direct e página da loja."
-        },
-        {
-          "id": "B",
-          "nome": "B. Dentro da etapa 3",
-          "efeito": "A etapa 3 cresce: além do ciclo completo, precisa da Estrada das Lanternas, da página da loja e de um build para a Steam."
-        },
-        {
-          "id": "C",
-          "nome": "C. Sem demo por enquanto",
-          "efeito": "Foco total em chegar ao Acesso Antecipado. Perde o termômetro de wishlists e a vitrine do festival. Dá para decidir de novo ao fim da etapa 3."
-        }
-      ],
-      "origem": "docs/15_etapas.md"
-    },
-    {
-      "id": "calibracao-idle",
-      "titulo": "Calibrar o idle na etapa 4 ou antes?",
-      "detalhe": "Decidir quando a expedição perde o selo 'Estimativa'.",
-      "pergunta": "A calibração do modo idle (os IdleProfiles e o teste de paridade, adiados na decisão P-3) fica na etapa 4, como está planejado, ou vem antes, na etapa 3, para a expedição já sair sem o selo 'Estimativa'?",
-      "contexto": [
-        "Na expedição idle, o herói 'joga sozinho' enquanto você está fora, e o jogo calcula o resultado. Para isso, cada habilidade tem um IdleProfile: números que dizem, por exemplo, quantos inimigos a Fenda de Pedra acerta em média ou quantos ataques a IA consegue esquivar.",
-        "O teste de paridade é um robô que joga a cena real e compara com o cálculo da expedição. A diferença precisa ficar abaixo de 10% (meta de 5% no Acesso Antecipado). É ele que calibra os números.",
-        "Na decisão P-3 (16/10), esse teste foi adiado. Até lá, os números são estimados à mão e a tela mostra o selo 'Estimativa'. A etapa 3 entrega a expedição com o selo; o critério de paridade está na etapa 4."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Mantém na etapa 4",
-          "efeito": "A etapa 3 fica mais curta e o teste do ciclo usa números estimados com selo. A calibração é feita uma vez só, quando as 3 classes já existirem."
-        },
-        {
-          "id": "B",
-          "nome": "B. Antecipa para a etapa 3",
-          "efeito": "A expedição já sai confiável no teste do ciclo, mas calibra só o Guerreiro. Arqueiro e Mago precisarão de nova calibração na etapa 4, e o robô de teste vira trabalho extra mais cedo."
-        }
-      ],
-      "origem": "docs/15_etapas.md"
-    },
-    {
       "id": "capsulas-steam",
       "titulo": "Quem faz a capa e as cápsulas da Steam?",
       "detalhe": "Artista, IA declarada ou mista.",
@@ -663,6 +551,26 @@
       "data": "2026-10-17",
       "titulo": "História escrita pelo dono",
       "detalhe": "A equipe só adapta os textos ao formato do jogo."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Raridade na capa, classe no capuz",
+      "detalhe": "No Arqueiro e no Mago a tinta de raridade vai na capa e nas bainhas; o capuz fica sempre na cor da classe."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Calibração do idle na Etapa 4",
+      "detalhe": "O selo Estimativa continua até as 3 classes existirem."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Endgame vira etapa própria",
+      "detalhe": "Entre o Ato I (Etapa 4) e o Acesso Antecipado."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Sem demo do Next Fest por enquanto",
+      "detalhe": "Decidir de novo ao fim da Etapa 3."
     }
   ],
   "nuvem": [
