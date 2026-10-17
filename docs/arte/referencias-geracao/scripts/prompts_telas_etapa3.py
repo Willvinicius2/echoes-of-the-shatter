@@ -1,0 +1,94 @@
+"""Gera prompts_telas_etapa3.json: mockups das telas principais da Etapa 3 (docs/16_etapa3_fluxo.md).
+
+Telas: S-01 tela inicial, S-05 inventario e equipamento, S-06 tooltip comparando, S-08 expedicao, S-09 relatorio.
+Uso: prompts_telas_etapa3.py [pasta aprovadas] [pasta pranchas do Spell Brigade] [saida.json]
+"""
+import json, os, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+A = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", "aprovadas")
+P = sys.argv[2] if len(sys.argv) > 2 else r"D:\openclaude\_trabalho-claude\echoes-arte\pranchas"
+OUT = sys.argv[3] if len(sys.argv) > 3 else os.path.join(HERE, "..", "prompts_telas_etapa3.json")
+
+
+def ap(n):
+    return os.path.abspath(os.path.join(A, n + ".png")).replace("\\", "/")
+
+
+def sb(n):
+    return os.path.join(P, n + ".png").replace("\\", "/")
+
+
+REFS = [ap("10_hud_mockup"), ap("11_icones"), ap("02_guerreiro"), sb("ui_01"), sb("ui_02"), sb("ui_03")]
+
+BASE = (
+    "Create a finished, polished UI screen mockup (full-screen game UI design, 3:2 layout) for the action-RPG \"Echoes of the Shatter\". "
+    "CONSISTENCY (mandatory): attached image 1 is our approved HUD mockup and attached image 2 is our approved icon sheet: use exactly the same UI language, "
+    "dark violet-grey organic stone frames (#2A222F body, #161117 gaps, #0F0B14 outlines) with thorny corners, a thin gold filigree line (#D9A441, highlight #FCD58A), "
+    "bevelled stone buttons, lava-orange/crimson fills for life, amber for resource, and the same icon painting style (dark #161117 icon background, gold-framed squares with a small gem at the bottom). "
+    "Attached image 3 is the canonical Warrior sheet (golden visor helmet with red plume, red tabard, stone-inlay kite shield, stone block hammer): any hero shown is that Warrior exactly. "
+    "Attached images 4 to 6 are UI sheets of another game, only a style reference for finish and brushwork; do not copy any of their elements. "
+    "Hand-painted, chunky bevelled shapes, warm gold accents only where it matters, never pure black, strong readable hierarchy, clear contrast between panels and content. "
+    "NO readable text, no letters, no real numbers, no watermark: wherever text or numbers would be, draw abstract glyph-like marks, short rune-like dashes and tiny pictograms. "
+    "Rarity is shown by frame shape and color: common plain bevelled corner, magic blue (#6FA8FF) simple corner filigree, rare gold (#FFD24A) double corners, unique orange (#FF8A2E) thorny corners with glow. "
+    "SCREEN: "
+)
+
+ITEMS = [
+    ("t01_tela_inicial", "S-01 Tela inicial",
+     "MAIN MENU. Full-screen painted background of the Marco Refuge at night: a small walled camp of dark stone ruins with warm lanterns and a campfire, a glowing golden memory-shard "
+     "crystal standing in the middle, shattered floating towers and a giant cracked bell silhouette in a deep violet-blue sky, the Warrior standing small from behind in the lower left. "
+     "Top center: a large carved-stone game logo plate made of bold rune-like shapes (no readable letters) with a cracked gold shard motif. "
+     "Right or center-left column: a vertical stack of 5 wide bevelled stone buttons with gold filigree, the top one (Continue) larger, highlighted with a bright gold focus ring and a warm glow, "
+     "and a small portrait of the Warrior with glyph lines (name, class, level, area) as a caption beneath it, plus a small gold badge with a tiny scroll icon (expedition ready) on the top button; "
+     "the other four buttons are plain (new game, load, options, quit), each with a tiny glyph icon at the left. "
+     "Bottom-left a tiny logs-folder icon link, bottom-right a small version glyph string. Cinematic, calm, adventurous with a melancholic edge."),
+    ("t02_inventario", "S-05 Inventario e equipamento",
+     "INVENTORY AND EQUIPMENT (paper doll). Dark dimmed backdrop. Center-left: the Warrior as a full-body modular 3D character, standing in a neutral idle pose on a small round carved stone pedestal "
+     "with a soft golden spotlight behind him, wearing the starting set (golden visor helmet with red plume, chest armor with red tabard, gauntlets, armored pants, boots, stone hammer in the main hand, stone-inlay kite shield in the off hand, "
+     "a thin curved arrow icon below him hinting that he can be rotated by dragging). "
+     "Around the hero, 10 equipment slots in gold-trimmed stone square frames with a small gem at the bottom, each with a painted item icon in the style of the icon sheet: "
+     "left column top to bottom: helmet (head), chest armor (body), gauntlets (hands), armored pants (legs), boots (feet); "
+     "right column top to bottom: hammer (main hand), kite shield (off hand), amulet (neck), ring, belt. Slots that have no item show a faint ghost silhouette icon on dark stone. "
+     "Right side: a large stone panel with the backpack grid of 8 columns by 5 rows of square item slots (40 slots), about 12 filled with varied painted item icons (weapons, armor pieces, potions, materials) with rarity corner marks (common, magic blue, rare gold, one unique orange thorny), "
+     "one item highlighted by a bright gold hover frame with a small green up-arrow in its corner and another with a small red down-arrow; a slot-count glyph strip under the grid. "
+     "Below the grid: a compact stats block with 8 rows of small icon + glyph-dash value (life, armor, damage per second, crit, attack speed, move speed, fire resistance, regeneration), "
+     "and a resources row with gold coin, shard and charge icons. Tabs at the top of the right panel (backpack, shared chest) as small stone tabs with icons. Close button as a small stone X at the top-right corner of the panel."),
+    ("t03_tooltip_comparacao", "S-06 Tooltip comparando com o equipado",
+     "ITEM TOOLTIP COMPARISON. Same inventory screen dimmed and blurred in the background (backpack grid on the right, Warrior pedestal faintly visible on the left). "
+     "In the foreground, two tall tooltip panels side by side, equal height, the new item on the right and the currently equipped item on the left with a small 'equipped' tab glyph on its header. "
+     "Each tooltip is a dark stone panel with a rarity frame: the right one (a rare helmet) has a double gold corner frame and a gold-colored name made of glyph marks over two lines, "
+     "a large painted helmet icon in a stone square frame at the top, a rarity/type line (glyph dashes), a base property line, then 4 affix lines in soft blue glyph strokes with small value marks, a level requirement line and a small price line with a gold coin. "
+     "The left one (a common helmet, plain frame, white-grey name) shows fewer lines. "
+     "Beside the right tooltip, a stats-difference column: 5 rows each with a tiny stat icon and a glyph value mark preceded by a clear bright green up-triangle (improvement) or a red down-triangle (worse), "
+     "plus one neutral row with a grey dash. A key-hint footer strip at the bottom of the tooltip with three small keycap icons (mouse right button, Shift, Alt) and glyph labels. "
+     "The hovered backpack slot has a bright gold focus ring with a green up-arrow badge. Hierarchy: item name and the arrows must read first."),
+    ("t04_expedicao", "S-08 Expedicao: rota, regras de IA e tempo",
+     "EXPEDITION SETUP. A large stone panel centered on a dimmed Refuge background, with Ilsa (a small cloaked quartermaster woman NPC) portrait in a stone medallion at the top-left corner. "
+     "Header strip: Marco charges as a row of 12 small crystal pips (8 lit gold, 4 dark) and a stamina (Vigor) gauge. "
+     "Left column: area selector with a single selected card showing a painted thumbnail of the Broken Crypt (dark crypt arena with braziers and a cracked stone floor, as in our approved art), with a gold filigree selection frame, a small level-range glyph and a boss-skull mark. "
+     "Under it a row of 3 objective toggle buttons with icons (experience star, gold coin, materials pile), one selected with gold ring. "
+     "Center column: the AI rules list, 6 stacked horizontal stone rows each with an order handle, a condition chip (small icon like heart with percent mark), an arrow glyph and an action chip (potion icon or one of the Warrior skill icons from the icon sheet), up/down small arrow buttons and a delete X at the end; "
+     "rows 1 to 4 filled, row 5 empty with a gold dashed outline and a plus icon (add rule), row 6 empty dim. The first row is highlighted. "
+     "Bottom of the center: a wide duration slider track from 1 to 12 hours with 12 tick marks, a gold draggable knob at about 8, and the track coloured in three zones (full, reduced, low efficiency) green, amber, red-orange, with a small clock icon at the left. "
+     "Right column: a forecast card in lighter stone with ranges drawn as horizontal range bars (experience, gold, rare items 'up to 4' as 4 small gem icons, retreat risk as a small meter with a warning icon), "
+     "and a prominent round gold-rimmed 'Estimate' stamp seal (hourglass and wavy-line emblem, no letters) overlapping the card's top-right corner. "
+     "Bottom-right: a big primary stone button with gold glow (start expedition) and a smaller plain Cancel button to its left; a small padlock icon hinting that the build is frozen."),
+    ("t05_relatorio", "S-09 Relatorio da expedicao com selo Estimativa",
+     "EXPEDITION REPORT. A large stone panel centered over a dimmed Refuge background. At the left, Tico (a small cheerful messenger courier character in a brown satchel and cap, running pose) "
+     "stands in a stone medallion with a scroll in hand. Header: a stone title plate of glyph marks and, next to it, a round gold-rimmed 'Estimate' stamp seal (hourglass and wavy-line emblem, no letters), clearly visible. "
+     "Top row: 6 summary tiles in stone frames, each with a painted icon and glyph value marks: effective time (hourglass with a segmented bar mostly full), encounters won (crossed swords), potions used (red and blue flasks), "
+     "stop reason (a calm flag icon, neutral color), experience (star) and gold (coin pile). Under them a thin per-hour receipt strip made of 8 small bars of different heights. "
+     "Middle: the loot grid: rare items first as three large slots with double gold corners and glowing icons, then magic items with blue simple corners in a second row, then one wide long slot with a stack icon for aggregated common items and a materials/gold line. "
+     "A tip card with a lightbulb icon and glyph lines at the lower left with a small 'adjust rule' button; an invitation card with a portal icon and glyph lines at the lower middle with a 'play this route now' button. "
+     "Bottom-right: two buttons, a large primary gold-glowing 'collect all' stone button and a secondary 'collect and new expedition' button with a loop-arrow icon. Tone: calm and rewarding, no red for small quantities."),
+]
+
+result = []
+for iid, titulo, desc in ITEMS:
+    for r in REFS:
+        assert os.path.exists(r), r
+    result.append({"id": iid, "titulo": titulo, "tamanho": "1536x1024", "prompt": BASE + desc, "referencias": REFS})
+
+json.dump(result, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+print("ok", len(result), "->", os.path.abspath(OUT))
