@@ -52,6 +52,8 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como erro (`-Werror`): `-Wmissing-field-initializers` (agregado sem `{}`), `-Wtype-limits` (comparar tipo sem sinal com `< 0`, inclusive enum de base `uint8_t` convertido para `int`) e `-Wrange-loop-construct` (`for (const std::string x : ...)` em vez de `const std::string&`). Revise esses padrões antes de enviar mudanças no core e confira o CI depois do push.
+
 ## Perguntas ao dono
 - Toda pergunta ou dúvida para o dono, em `docs/` ou nas `pendencias_dono` de `docs/progresso/estado.json`, traz: a pergunta inteira (não um título), o contexto completo para entender sem abrir outro arquivo, e as opções com o efeito de cada uma. Quem lê pode ser o dono ou o sócio dele.
 - Em `estado.json`, cada pendência tem `id` (fixo, nunca reaproveitado), `titulo`, `detalhe` (resumo de uma linha), `pergunta`, `contexto` (lista de parágrafos), `opcoes` (`id` = letra, `nome` e `efeito`) e `origem`. Uma pergunta = uma escolha; dois assuntos viram duas pendências. O painel e o roteiro (`tools/roteiro/gerar_roteiro.py`) mostram esses campos.
