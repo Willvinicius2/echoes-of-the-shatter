@@ -602,6 +602,112 @@ namespace Echoes.EditorTools
             }
         }
 
+        /// <summary>armas_*.png: close-ups (frente e 3/4, ~4 m; Guardiao a 9 m) de Guerreiro, Arqueiro, Mago e Guardiao em Idle e no golpe. Reaplica os SO_WeaponOffset nas instancias antes de capturar.</summary>
+        public static void RunWeapons()
+        {
+            try
+            {
+                CharacterPrefabBuilder.BuildAll();
+                SandboxBuilder.Build();
+                EditorSceneManager.OpenScene(SandboxBuilder.ScenePath, OpenSceneMode.Single);
+                var dir = Environment.GetEnvironmentVariable("ECHOES_CAPTURE_DIR");
+                if (string.IsNullOrEmpty(dir)) dir = "D:/openclaude/_trabalho-claude/capturas";
+                Directory.CreateDirectory(dir);
+                var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
+                var cam = follow.GetComponentInChildren<Camera>();
+                follow.enabled = false;
+                var hero = GameObject.Find("Hero");
+                var origin = hero != null ? hero.transform.position : Vector3.zero;
+                origin.y = 0f;
+                if (hero != null) hero.SetActive(false);
+                foreach (var enemy in UnityEngine.Object.FindObjectsByType<Echoes.Gameplay.EnemyController>(FindObjectsSortMode.None)) enemy.gameObject.SetActive(false);
+                var med = KayKitAnimationImport.Root + "/Medium/";
+                var idle = KayKitAnimationImport.FindClip(med + "Rig_Medium_General.fbx", "Idle_A");
+                var slice = KayKitAnimationImport.FindClip(med + "Rig_Medium_CombatMelee.fbx", "Melee_1H_Attack_Slice_Horizontal");
+                var chop = KayKitAnimationImport.FindClip(med + "Rig_Medium_CombatMelee.fbx", "Melee_2H_Attack_Chop");
+                var bash = KayKitAnimationImport.FindClip(KayKitAnimationImport.Root + "/Large/Rig_Large_CombatMelee.fbx", "Melee_Block_Attack");
+                var heroes = new[]
+                {
+                    (name: "guerreiro", prefab: "P_Hero_Warrior", strike: slice, t: 0.4f, dist: 4f, look: 1.0f),
+                    (name: "arqueiro", prefab: "P_Hero_Archer", strike: slice, t: 0.4f, dist: 4f, look: 1.0f),
+                    (name: "mago", prefab: "P_Hero_Mage", strike: slice, t: 0.4f, dist: 4f, look: 1.0f),
+                    (name: "guardiao", prefab: "P_Boss_CryptGuardian", strike: bash, t: 0.45f, dist: 9f, look: 2.0f),
+                };
+                var steps = new System.Collections.Generic.Queue<Action>();
+                foreach (var h in heroes)
+                {
+                    foreach (var pose in new[] { "idle", "golpe" })
+                    {
+                        foreach (var view in new[] { "frente", "tres_quartos" })
+                        {
+                            var hh = h; var pp = pose; var vv = view;
+                            GameObject go = null;
+                            steps.Enqueue(() =>
+                            {
+                                go = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/{hh.prefab}.prefab"));
+                                go.transform.SetPositionAndRotation(origin, Quaternion.identity);
+                                var modular = go.GetComponent<ModularCharacter>();
+                                if (modular != null)
+                                {
+                                    modular.Build();
+                                    for (var i = 0; i < 5; i++) modular.Equip((HeroPartSlot)i, HeroPartCatalog.StarterSet);
+                                }
+                                foreach (var t in go.GetComponentsInChildren<Transform>(true))
+                                {
+                                    if (!t.name.StartsWith("Weapon_")) continue;
+                                    var so = AssetDatabase.LoadAssetAtPath<WeaponOffsetAsset>($"{WeaponOffsetBuilder.Dir}/SO_WeaponOffset_{t.name.Substring(7)}.asset");
+                                    if (so != null) so.Apply(t);
+                                    var rs = t.GetComponentsInChildren<Renderer>();
+                                    if (rs.Length == 0) continue;
+                                    var b = rs[0].bounds;
+                                    foreach (var r in rs) b.Encapsulate(r.bounds);
+                                    Debug.Log($"[Armas] {hh.name} {t.name} pai={t.parent.name} mundoCentro={b.center} mundoTam={b.size} pos={t.localPosition} euler={t.localEulerAngles}");
+                                }
+                                var clip = pp == "idle" ? idle : hh.strike;
+                                var time = pp == "idle" ? 0.3f : clip.length * hh.t;
+                                clip.SampleAnimation(go.GetComponentInChildren<Animator>().gameObject, time);
+                                var yaw = vv == "frente" ? 0f : 40f;
+                                var target = origin + Vector3.up * hh.look;
+                                // o personagem olha para +Z; a camera fica a frente (+Z) olhando para tras
+                                var dir3 = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                                cam.transform.position = target + dir3 * hh.dist + Vector3.up * (hh.dist * 0.08f);
+                                cam.transform.LookAt(target);
+                                cam.fieldOfView = 35f;
+                            });
+                            steps.Enqueue(() =>
+                            {
+                                Capture(cam, $"{dir}/armas_{hh.name}_{pp}_{vv}.png", 800, 800);
+                                UnityEngine.Object.DestroyImmediate(go);
+                            });
+                        }
+                    }
+                }
+                EditorApplication.CallbackFunction tick = null;
+                tick = () =>
+                {
+                    try
+                    {
+                        if (steps.Count > 0) { steps.Dequeue()(); return; }
+                        EditorApplication.update -= tick;
+                        Debug.Log("[AnimationShowcase] armas em " + dir);
+                        if (Application.isBatchMode) EditorApplication.Exit(0);
+                    }
+                    catch (Exception e)
+                    {
+                        EditorApplication.update -= tick;
+                        Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                        if (Application.isBatchMode) EditorApplication.Exit(1);
+                    }
+                };
+                EditorApplication.update += tick;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+            }
+        }
+
         /// <summary>Folha de contato (diagnostico): o clipe amostrado em N instantes, numa grade, para ajustar tempos e musculos.</summary>
         public static void RunSheet()
         {
