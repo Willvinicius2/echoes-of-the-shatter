@@ -72,7 +72,7 @@ namespace Echoes.Tests.EditMode
             foreach (var name in new[] { "_BaseMap", "_MaskMap", "_HitFlash", "_Dissolve", "_TintColor", "_TintStrength", "_FresnelStrength", "_EmissionColor" })
                 Assert.GreaterOrEqual(shader.FindPropertyIndex(name), 0, name);
             var material = new Material(shader);
-            Assert.AreEqual(2.5f, material.GetFloat("_FresnelStrength"));
+            Assert.AreEqual(1f, material.GetFloat("_FresnelStrength"));
             Object.DestroyImmediate(material);
         }
 
