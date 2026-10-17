@@ -30,7 +30,8 @@ Motor: **Unity 6.3 LTS (6000.3.26f1) com URP, C#** (decisão do dono em 16/10/20
 - `EchoesOfTheShatter/Content/Data/` — CSV de conteúdo, `Loc/` e esquemas (destino previsto: `Assets/StreamingAssets/Data`, ver 04 seção 4.2).
 - `art-src/graybox/` — malhas provisórias do Blender (scripts, .blend, .fbx no Git LFS, prévias).
 - `tools/validate_data.py` — validador de dados; `tools/build_core.cmd` — build e testes do ShatterCore no Windows.
-- `.claude/agents/` — agentes do projeto (ex.: `pesquisador-referencias`).
+- `.claude/agents/` — agentes do projeto: `painel-progresso`, `guardiao-github`, `pesquisador-referencias`.
+- `docs/prototipo_godot_f1.md` — como rodar o protótipo Godot F1 (histórico).
 
 ## Regras do projeto
 - Texto em português do Brasil; código, IDs de conteúdo e chaves em inglês (`skill.warrior.iron_cut`).
@@ -42,6 +43,16 @@ Motor: **Unity 6.3 LTS (6000.3.26f1) com URP, C#** (decisão do dono em 16/10/20
 - Nenhum texto visível ao jogador no código: só chaves de localização.
 - Git LFS ligado para `.blend`, `.fbx`, `.dll` e outros binários (ver `.gitattributes`).
 - **Agentes de design do jogo (conteúdo, narrativa, UI, revisões de design) usam no máximo o modelo Sonnet 5.5.**
+
+## Git e GitHub
+- Repositório: https://github.com/Willvinicius2/echoes-of-the-shatter (privado, com Git LFS), branch principal `master`. O sócio do dono também acompanha e trabalha por ele, então o GitHub precisa ter sempre o estado real do projeto.
+- O dono autorizou enviar ao GitHub todo commit do projeto. Ao fechar uma tarefa, faça o commit na branch da tarefa (Conventional Commits, mensagem em português) e o `git push` em seguida (`git push -u origin <branch>` na primeira vez). Trabalho terminado não fica só no PC.
+- Uma frente de trabalho = uma branch (`etapaN/<frente>`), de preferência numa worktree em `D:\openclaude\_trabalho-claude\wt\`. O merge no `master` vem depois dos testes, e o `master` também vai para o GitHub logo depois do merge.
+- Faça commit só do que é seu: `git commit -- <caminhos>`. Não leve junto alterações de outra sessão nem arquivos gerados de que outro agente é dono.
+- Nunca use `--force` no `master`, nunca reescreva histórico já enviado e nunca apague branch sem o ok do dono.
+- O hook Stop de `.claude/settings.json` (`tools/git/checar_envio.py`) não deixa a sessão encerrar a vez com commit que não está no GitHub.
+- Ao fechar uma etapa, ou quando o dono pedir, rode o agente `guardiao-github` (confere todas as worktrees e envia o que faltar) e depois o `painel-progresso`.
+- Ficam fora do GitHub de propósito: caches, `venv`, saídas brutas do TripoSG em `_trabalho-claude/modelos3d/`, imagens de trabalho do Codex, packs KayKit e os assets do Spell Brigade. A arte aprovada entra no repositório.
 
 ## Como compilar e testar o ShatterCore
 Windows: `tools\build_core.cmd Release --werror` (MSVC 14.50 e CMake do Visual Studio Build Tools).
@@ -62,7 +73,7 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 
 ## Pendências de decisão
 - Itens "confirmar na instalação" do `docs/04_arquitetura.md`: conferir na Unity 6.3 instalada antes de o Frontend depender deles.
-- O protótipo Godot F1 continua na raiz (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity.
+- O protótipo Godot F1 continua na raiz (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity. Como rodar: `docs/prototipo_godot_f1.md`.
 
 ## Próximo passo
 Etapa 2, fatia jogável da Cripta (ver `docs/15_etapas.md`): regras novas no core, tabelas novas, DLL real na Unity, layout da Cripta na escala A (`docs/14_layout_cripta.md`), modelos 3D gerados pelo TripoSG a partir de `docs/arte/referencias-geracao/aprovadas/modelagem/` e cenário da Cripta.
