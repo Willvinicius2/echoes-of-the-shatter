@@ -31,11 +31,12 @@ namespace Echoes.EditorTools
 
             var menu = new GameObject("MainMenu");
             var document = menu.AddComponent<UIDocument>();
-            document.panelSettings = panel;
+            document.panelSettings = SandboxBuilder.CreatePanelSettings();
             var controller = menu.AddComponent<MainMenuController>();
             SandboxBuilder.SetRef(controller, "root", gameRoot);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
+            Build.AddSceneToBuildSettings(ScenePath);
             Debug.Log("[MenuBuilder] Cena salva em " + ScenePath);
         }
     }

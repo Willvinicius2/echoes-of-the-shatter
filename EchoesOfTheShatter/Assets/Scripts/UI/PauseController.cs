@@ -48,12 +48,21 @@ namespace Echoes.UI
             MenuUi.Title(card, "ui.pause.title", loc, 44);
             MenuUi.MakeButton(card, loc.Get("ui.pause.resume"), () => SetPaused(false));
             MenuUi.AddDisplayOptions(card, loc);
-            MenuUi.MakeButton(card, loc.Get("ui.pause.to_menu"), GameFlow.ToMainMenu);
+            MenuUi.MakeButton(card, loc.Get("ui.pause.to_menu"), BackToTitle);
         }
 
         void Update()
         {
+            if (RefugeController.AnyScreenOpen) return;
             if (input != null && input.IsReady && input.PausePressed) SetPaused(!paused);
+        }
+
+        // Menu principal: o jogo e salvo antes de sair (docs/16, S-10).
+        void BackToTitle()
+        {
+            var rules = Echoes.Core.GameSession.NativeRules(root);
+            if (rules != null && Echoes.Core.GameSession.Save.HasSave) Echoes.Core.GameSession.Save.Save(rules);
+            GameFlow.ToMainMenu();
         }
 
         public void SetPaused(bool value)

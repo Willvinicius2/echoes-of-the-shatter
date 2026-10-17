@@ -48,7 +48,7 @@ namespace Echoes.EditorTools
             { "enemy.crypt_guardian", "SM_Boss_CryptGuardian.fbx" },
         };
 
-        sealed class Context
+        internal sealed class Context
         {
             public CriptaLayout Layout;
             public SandboxBuilder.Mats Mats;
@@ -130,6 +130,7 @@ namespace Echoes.EditorTools
             ctx.Interactives = new GameObject("Interactives").transform;
             var hero = BuildHero(ctx, renderSettings, inputActions);
             BuildHud(ctx, panel, hudUxml);
+            BuildSessionObjects(ctx, panel, true);
 
             // ---- Interativos (checkpoints, portais, baus, segredo, atalho, arena)
             var arena = BuildInteractives(ctx);
@@ -389,7 +390,7 @@ namespace Echoes.EditorTools
 
         // ============================================================================================== sistemas
 
-        static void BuildSystems(Context ctx, CombatFeelSettings feel, GameObject projectile)
+        internal static void BuildSystems(Context ctx, CombatFeelSettings feel, GameObject projectile)
         {
             var gameRoot = new GameObject("GameRoot").AddComponent<GameRoot>();
             var combatGo = new GameObject("Combat");
@@ -412,10 +413,9 @@ namespace Echoes.EditorTools
             ctx.Host = host;
         }
 
-        static HeroController BuildHero(Context ctx, RenderSettingsAsset renderSettings, InputActionAsset inputActions)
+        internal static HeroController BuildHero(Context ctx, RenderSettingsAsset renderSettings, InputActionAsset inputActions, Vector3? spawnOverride = null)
         {
-            var layout = ctx.Layout;
-            var spawn = new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y);
+            var spawn = spawnOverride ?? new Vector3(ctx.Layout.HeroSpawn.x, 0f, ctx.Layout.HeroSpawn.y);
 
             var camGo = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camGo.AddComponent<Camera>();
@@ -464,8 +464,9 @@ namespace Echoes.EditorTools
             return heroController;
         }
 
-        static void BuildHud(Context ctx, PanelSettings panel, VisualTreeAsset hudUxml)
+        internal static void BuildHud(Context ctx, PanelSettings panel, VisualTreeAsset hudUxml)
         {
+            panel = SandboxBuilder.CreatePanelSettings(); // recarrega: o asset carregado antes de NewScene pode ter sido descarregado (a referencia saia nula na cena)
             var hud = new GameObject("HUD");
             var uiDoc = hud.AddComponent<UIDocument>();
             uiDoc.panelSettings = panel;
@@ -482,6 +483,26 @@ namespace Echoes.EditorTools
             pauseDoc.sortingOrder = 100;
             var pauseController = pause.AddComponent<PauseController>();
             SandboxBuilder.SetRef(pauseController, "root", ctx.GameRoot);
+        }
+
+        /// <summary>Raiz de UI das cenas de jogo (toast), autosave e troca de area; na Cripta tambem o registro da vitoria (dominio e cargas).</summary>
+        internal static void BuildSessionObjects(Context ctx, PanelSettings panel, bool crypt)
+        {
+            panel = SandboxBuilder.CreatePanelSettings();
+            var go = new GameObject("Session");
+            var doc = go.AddComponent<UIDocument>();
+            doc.panelSettings = panel;
+            doc.sortingOrder = 90;
+            go.AddComponent<ScreenHost>();
+            var autosave = go.AddComponent<AutosaveRunner>();
+            SandboxBuilder.SetRef(autosave, "root", ctx.GameRoot);
+            var travel = go.AddComponent<AreaTravel>();
+            SandboxBuilder.SetRef(travel, "root", ctx.GameRoot);
+            if (crypt)
+            {
+                var recorder = go.AddComponent<RunRecorder>();
+                SandboxBuilder.SetRef(recorder, "root", ctx.GameRoot);
+            }
         }
 
         // ============================================================================================== interativos
@@ -512,6 +533,7 @@ namespace Echoes.EditorTools
                 SandboxBuilder.SetRef(zone, "hero", ctx.Hero);
                 SandboxBuilder.SetString(zone, "portalId", portal.Id);
                 SandboxBuilder.SetString(zone, "targetArea", portal.Target);
+                SandboxBuilder.SetBool(zone, "travels", true); // troca de cena pelo AreaTravel (Refugio)
                 if (portal.Active != "always") victory.Add(go);
             }
             foreach (var marker in layout.Markers)
