@@ -474,6 +474,14 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(hudView, "root", ctx.GameRoot);
             SandboxBuilder.SetRef(hudView, "hero", ctx.Hero);
             SandboxBuilder.SetRef(hudView, "worldCamera", ctx.Camera);
+
+            // Pausa (Esc): overlay acima do HUD; volta a tela inicial pelo menu.
+            var pause = new GameObject("Pause");
+            var pauseDoc = pause.AddComponent<UIDocument>();
+            pauseDoc.panelSettings = panel;
+            pauseDoc.sortingOrder = 100;
+            var pauseController = pause.AddComponent<PauseController>();
+            SandboxBuilder.SetRef(pauseController, "root", ctx.GameRoot);
         }
 
         // ============================================================================================== interativos

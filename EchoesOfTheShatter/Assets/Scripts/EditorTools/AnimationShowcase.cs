@@ -309,6 +309,7 @@ namespace Echoes.EditorTools
                     ("espectro_1_mira", shoot, 12 / EchoesAnimationImport.Fps),
                     ("espectro_2_disparo", shoot, EchoesAnimationImport.ShootReleaseFrame / EchoesAnimationImport.Fps),
                     ("espectro_3_recuperacao", shoot, 30 / EchoesAnimationImport.Fps),
+                    ("espectro_corrigido", shoot, EchoesAnimationImport.ShootReleaseFrame / EchoesAnimationImport.Fps),
                 });
                 Cast("P_Boss_CryptGuardian", 12f, 2.0f, 35f, new[]
                 {
@@ -334,6 +335,76 @@ namespace Echoes.EditorTools
                         }
                         EditorApplication.update -= tick;
                         Debug.Log("[AnimationShowcase] Capturas anim3 em " + dir);
+                        if (Application.isBatchMode) EditorApplication.Exit(0);
+                    }
+                    catch (Exception e)
+                    {
+                        EditorApplication.update -= tick;
+                        Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                        if (Application.isBatchMode) EditorApplication.Exit(1);
+                    }
+                };
+                EditorApplication.update += tick;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+            }
+        }
+
+
+        /// <summary>Diagnostico do Espectro: o mesmo quadro com rim, emissao e tinta ligados e desligados, uma imagem por variante em tmp.</summary>
+        public static void RunArcherDebug()
+        {
+            try
+            {
+                CriptaBuilder.BuildScene();
+                EditorSceneManager.OpenScene(CriptaBuilder.ScenePath, OpenSceneMode.Single);
+                var layout = CriptaLayout.LoadFromDocument();
+                var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
+                var cam = follow.GetComponentInChildren<Camera>();
+                follow.enabled = false;
+                var hero = GameObject.Find("Hero");
+                if (hero != null) hero.SetActive(false);
+                foreach (var enemy in UnityEngine.Object.FindObjectsByType<Echoes.Gameplay.EnemyController>(FindObjectsSortMode.None)) enemy.gameObject.SetActive(false);
+                var origin = new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y);
+                var go = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_Enemy_GhostArcher.prefab"));
+                go.transform.SetPositionAndRotation(origin, Quaternion.identity);
+                var animator = go.GetComponentInChildren<Animator>(true);
+                var clip = EchoesAnimationImport.Clip("AN_GhostArcher_Shoot");
+                var renderers = go.GetComponentsInChildren<SkinnedMeshRenderer>();
+                var material = new Material(renderers[0].sharedMaterial);
+                foreach (var r in renderers) r.sharedMaterial = material;
+                var variants = new (string, System.Action)[]
+                {
+                    ("a_atual", () => { }),
+                    ("b_sem_rim", () => material.SetFloat("_RimIntensity", 0f)),
+                    ("c_sem_emissao", () => { material.SetFloat("_RimIntensity", 0.5f); material.SetFloat("_EmissionIntensity", 0f); }),
+                    ("d_sem_nada", () => { material.SetFloat("_RimIntensity", 0f); material.SetFloat("_EmissionIntensity", 0f); }),
+                };
+                var steps = new System.Collections.Generic.Queue<Action>();
+                foreach (var variant in variants)
+                {
+                    var (label, apply) = variant;
+                    steps.Enqueue(() =>
+                    {
+                        apply();
+                        clip.SampleAnimation(animator.gameObject, 20 / 30f);
+                        var target = origin + Vector3.up * 1.0f;
+                        cam.transform.position = target + Quaternion.Euler(0f, 35f, 0f) * Vector3.forward * 4f + Vector3.up * 0.9f;
+                        cam.transform.LookAt(target);
+                        cam.fieldOfView = 35f;
+                    });
+                    steps.Enqueue(() => Capture(cam, "D:/openclaude/_trabalho-claude/tmp/dbg_" + label + ".png", 640, 640));
+                }
+                EditorApplication.CallbackFunction tick = null;
+                tick = () =>
+                {
+                    try
+                    {
+                        if (steps.Count > 0) { steps.Dequeue()(); return; }
+                        EditorApplication.update -= tick;
                         if (Application.isBatchMode) EditorApplication.Exit(0);
                     }
                     catch (Exception e)

@@ -35,6 +35,7 @@ namespace Echoes.EditorTools
             public WeaponSpec[] Weapons = Array.Empty<WeaponSpec>();
         }
 
+        public const float ArcherRimIntensity = 0.2f;
         static readonly string[] RightSockets = { "socket_weapon_r", "RightHand" };
         static readonly string[] LeftSockets = { "socket_weapon_l", "LeftHand" };
 
@@ -107,6 +108,13 @@ namespace Echoes.EditorTools
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{folder}/{spec.Model}.fbx");
             if (model == null) throw new InvalidOperationException($"FBX ausente: {folder}/{spec.Model}.fbx");
             var material = EnsureMaterial(spec.Material, $"{folder}/{spec.Textures}_BC.png", $"{folder}/{spec.Textures}_M.png");
+            if (spec.Prefab == "P_Enemy_GhostArcher")
+            {
+                // Tecido translucido: o rim quente e forte lavava o corpo e a capa de branco. Rim fraco e frio (mascara G reduzida a 30%).
+                material.SetFloat("_RimIntensity", ArcherRimIntensity);
+                material.SetColor("_RimColor", new Color(0.45f, 0.85f, 0.95f, 1f));
+                EditorUtility.SetDirty(material);
+            }
 
             var instance = UnityEngine.Object.Instantiate(model);
             instance.name = spec.Prefab;

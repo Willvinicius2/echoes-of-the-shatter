@@ -234,6 +234,23 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void GhostArcherMaterialDoesNotWashOutWithRim()
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Characters/M_Enemy_GhostArcher.mat");
+            Assert.LessOrEqual(material.GetFloat("_RimIntensity"), CharacterPrefabBuilder.ArcherRimIntensity + 1e-4f, "rim fraco no tecido translucido");
+            var mask = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/Characters/GhostArcher/T_Enemy_GhostArcher_M.png");
+            Assert.IsNotNull(mask);
+            var path = Path.Combine(Application.dataPath, "Art/Characters/GhostArcher/T_Enemy_GhostArcher_M.png");
+            var png = new Texture2D(2, 2);
+            png.LoadImage(File.ReadAllBytes(path));
+            var pixels = png.GetPixels32();
+            double g = 0;
+            foreach (var p in pixels) g += p.g;
+            Assert.Less(g / pixels.Length, 90.0, "mascara G (rim) corrigida, baixa");
+            Object.DestroyImmediate(png);
+        }
+
+        [Test]
         public void ArcherShotReleaseFrameMatchesTheCoreImpact()
         {
             var set = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>($"{AnimatorControllerBuilder.SkillSetDir}/{AnimatorControllerBuilder.ArcherSkillSetName}.asset");
