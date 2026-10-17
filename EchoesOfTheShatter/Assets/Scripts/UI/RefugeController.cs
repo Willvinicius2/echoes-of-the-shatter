@@ -20,6 +20,7 @@ namespace Echoes.UI
         [SerializeField] GameRoot root;
         [SerializeField] HeroController hero;
 
+        PlayerInputHandler input;
         ScreenHost host;
         VisualElement overlay, prompt;
         Label promptLabel;
@@ -39,6 +40,7 @@ namespace Echoes.UI
         void Start()
         {
             host = GetComponent<ScreenHost>();
+            input = FindAnyObjectByType<PlayerInputHandler>();
             if (root == null) root = FindAnyObjectByType<GameRoot>();
             if (hero == null) hero = FindAnyObjectByType<HeroController>();
             npcs.AddRange(FindObjectsByType<InteractableNpc>(FindObjectsSortMode.None));
@@ -93,7 +95,9 @@ namespace Echoes.UI
             Debug.Log("[Smoke] expedicao iniciada: " + check + ", heroi ocupado=" + GameSession.Expedition.IsHeroBusy);
             yield return new WaitForSecondsRealtime(1f);
             DebugAdvance(3601);
-            var status = CollectAndShowReport();
+            StartCollect();
+            while (IsCollecting) yield return null;
+            var status = LastCollectStatus;
             Debug.Log("[Smoke] coleta: " + status + (LastReport != null ? ", encontros=" + LastReport.Encounters + ", xp=" + LastReport.Xp + ", estimativa=" + LastReport.IsEstimate : string.Empty));
             yield return new WaitForSecondsRealtime(1f);
             var shot = GameFlow.ArgValue("-shot");
@@ -112,6 +116,12 @@ namespace Echoes.UI
 
         void Update()
         {
+            if (job != null)
+            {
+                if (bar != null) bar.value = job.Progress * 100f;
+                if (job.Done) CompleteCollect();
+                return;
+            }
             var keyboard = Keyboard.current;
             if (keyboard != null && SaveSettings.DebugAccelerator) DebugKeys(keyboard);
             if (screenOpen)
@@ -125,10 +135,12 @@ namespace Echoes.UI
                 prompt.style.display = DisplayStyle.None;
                 return;
             }
-            promptLabel.text = "[F] " + Loc.Get("npc." + near.npcId + ".name") + " - " + Loc.Get("ui.common.talk");
+            promptLabel.text = "[" + InteractGlyph() + "] " + Loc.Get("npc." + near.npcId + ".name") + " - " + Loc.Get("ui.common.talk");
             prompt.style.display = DisplayStyle.Flex;
-            if (keyboard != null && keyboard[Key.F].wasPressedThisFrame) Interact(near.npcId);
+            if (input != null && input.IsReady ? input.InteractPressed : keyboard != null && keyboard[Key.F].wasPressedThisFrame) Interact(near.npcId);
         }
+
+        string InteractGlyph() => input != null && input.IsReady ? input.InteractGlyph : "F";
 
         InteractableNpc NearestNpc()
         {
@@ -417,7 +429,7 @@ namespace Echoes.UI
                     break;
                 case ExpeditionPhase.ReadyToCollect:
                     ScreenKit.Line(card, Loc.Get("dlg.tico.report_ready"));
-                    MenuUi.MakeButton(card, Loc.Get("ui.exp.collect"), () => CollectAndShowReport());
+                    MenuUi.MakeButton(card, Loc.Get("ui.exp.collect"), () => StartCollect());
                     MenuUi.MakeButton(card, Loc.Get("ui.common.close"), CloseScreen);
                     break;
                 default:
@@ -429,16 +441,50 @@ namespace Echoes.UI
 
         public ExpeditionReport LastReport { get; private set; }
 
-        /// <summary>Coleta (uma vez so, pelo core) e mostra o relatorio com o selo Estimativa.</summary>
-        public CollectStatus CollectAndShowReport()
+        CollectJob job;
+        ProgressBar bar;
+
+        public bool IsCollecting => job != null;
+        public CollectStatus LastCollectStatus { get; private set; } = CollectStatus.Error;
+
+        /// <summary>
+        /// Coleta fora da main thread: mostra "O Tico esta voltando..." com a barra de progresso da simulacao em fatias; quando termina (uma vez so, pelo core)
+        /// mostra o relatorio com o selo Estimativa.
+        /// </summary>
+        public CollectJob StartCollect()
         {
-            var rules = Rules;
-            var status = GameSession.Expedition.Collect(rules, out var report);
-            if (status != CollectStatus.Collected)
+            if (job != null) return job;
+            job = GameSession.Expedition.CollectAsync(Rules);
+            if (job.Done)
+            {
+                CompleteCollect();
+                return job;
+            }
+            var card = OpenScreen();
+            MenuUi.Title(card, "ui.loading.tico", Loc, 34);
+            bar = new ProgressBar { lowValue = 0f, highValue = 100f };
+            bar.style.height = 28;
+            bar.style.marginTop = 16;
+            card.Add(bar);
+            return job;
+        }
+
+        void CompleteCollect()
+        {
+            var finished = job;
+            job = null;
+            GameSession.Expedition.FinishCollect(Rules, finished);
+            LastCollectStatus = finished.Status;
+            if (finished.Status != CollectStatus.Collected)
             {
                 CloseScreen();
-                return status;
+                return;
             }
+            ShowReport(finished.Report);
+        }
+
+        void ShowReport(ExpeditionReport report)
+        {
             LastReport = report;
             var card = OpenScreen();
             card.style.minWidth = 700;
@@ -463,7 +509,6 @@ namespace Echoes.UI
             var row = ScreenKit.Row(card);
             ScreenKit.SmallButton(row, Loc.Get("ui.exp.configure"), OpenExpeditionScreen);
             ScreenKit.SmallButton(row, Loc.Get("ui.common.close"), CloseScreen);
-            return status;
         }
 
         void Field(VisualElement card, string labelKey, string value)

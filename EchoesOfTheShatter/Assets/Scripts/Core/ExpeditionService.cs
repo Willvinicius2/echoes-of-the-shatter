@@ -137,6 +137,22 @@ namespace Echoes.Core
     }
 
     /// <summary>
+    /// Coleta em andamento fora da main thread (docs/16, F-13): a simulacao em fatias e a coleta _trusted rodam numa thread propria (o core e puro e o save
+    /// e usado por UMA thread so: a main nao o toca ate <see cref="Done"/>). <see cref="Progress"/> vai de 0 a 1 pelas fatias.
+    /// </summary>
+    public sealed class CollectJob
+    {
+        volatile float progress;
+        volatile bool done;
+        public float Progress { get => progress; internal set => progress = value; }
+        public bool Done { get => done; internal set => done = value; }
+        public CollectStatus Status = CollectStatus.Error;
+        public ExpeditionReport Report;
+        public string Error = string.Empty;
+        public System.Threading.Tasks.Task Task;
+    }
+
+    /// <summary>
     /// Expedicao idle ponta a ponta (docs/16, F-11 a F-13) so com as chamadas _trusted e o relogio confiavel: configurar (previsao e conferencia),
     /// iniciar, consultar o estado, coletar uma vez so e gravar. O heroi fica ocupado enquanto ela roda (setting).
     /// </summary>
@@ -207,6 +223,62 @@ namespace Echoes.Core
         }
 
         /// <summary>
+        /// Coleta fora da main thread: monta o pedido na main, simula em fatias e coleta numa thread dedicada. Enquanto <see cref="GameSession.SaveBusy"/> ninguem
+        /// mexe no save. Quando o job termina, chame <see cref="FinishCollect"/> na main (libera o save e grava).
+        /// </summary>
+        public CollectJob CollectAsync(NativeRulesCore rules)
+        {
+            var job = new CollectJob();
+            if (Save == null || !Save.Summary.HasRunningExpedition)
+            {
+                job.Status = CollectStatus.Already;
+                job.Progress = 1f;
+                job.Done = true;
+                return job;
+            }
+            var save = Save;
+            var clock = Clock;
+            var index = save.Summary.RunningExpedition;
+            if (!save.ExpeditionRequest(rules, index, clock, out var request, out var finished, out var effective) || !finished)
+            {
+                job.Status = finished ? CollectStatus.Error : CollectStatus.NotFinished;
+                job.Progress = 1f;
+                job.Done = true;
+                return job;
+            }
+            GameSession.SaveBusy = true;
+            job.Task = System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    SaveGame.SimulateSliced(rules, request, effective, 2, p => job.Progress = (float)p, out _);
+                    job.Status = save.CollectExpedition(rules, index, clock, out var json, out var error);
+                    job.Error = error;
+                    if (job.Status == CollectStatus.Collected) job.Report = ExpeditionReport.Parse(json);
+                }
+                catch (Exception e)
+                {
+                    job.Status = CollectStatus.Error;
+                    job.Error = e.Message;
+                }
+                finally
+                {
+                    job.Progress = 1f;
+                    job.Done = true;
+                }
+            });
+            return job;
+        }
+
+        /// <summary>Na main thread, depois do job: libera o save e grava (a coleta ja esta no save em memoria).</summary>
+        public void FinishCollect(NativeRulesCore rules, CollectJob job)
+        {
+            job.Task?.Wait();
+            GameSession.SaveBusy = false;
+            if (job.Status == CollectStatus.Collected) saves.Save(rules);
+        }
+
+        /// <summary>
         /// Coleta uma vez so (RF-55): o core recalcula o resultado e entrega itens, pilhas e XP no save; depois grava. NotFinished/Already nao mudam nada.
         /// </summary>
         public CollectStatus Collect(NativeRulesCore rules, out ExpeditionReport report)
@@ -249,6 +321,9 @@ namespace Echoes.Core
 
         /// <summary>Aviso para a proxima tela (ex.: LoadedFromBackup lido no menu, mostrado no Refugio).</summary>
         public static string PendingToastKey;
+
+        /// <summary>Uma thread de trabalho esta usando o save (coleta assincrona): autosave e telas nao podem toca-lo.</summary>
+        public static volatile bool SaveBusy;
 
         public static ExpeditionService Expedition => expedition ?? (expedition = new ExpeditionService(Save));
 

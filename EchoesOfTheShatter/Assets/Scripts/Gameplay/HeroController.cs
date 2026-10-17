@@ -162,6 +162,12 @@ namespace Echoes.Gameplay
             }
             deadTime = 0f;
 
+            if (TestSettings.HeroGodMode)
+            {
+                var vitals = combatant.Vitals;
+                vitals.Life = combatant.MaxLife; // so teste: nunca vem do CSV
+                combatant.SetVitals(in vitals);
+            }
             Logic.MoveInput = CameraRelative(input.Move);
             if (TryGetAimPoint(out var aimPoint)) Logic.AimPoint = aimPoint;
 

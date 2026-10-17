@@ -163,7 +163,7 @@ namespace Echoes.Core
         /// <summary>Grava o save atual (last_seen pelo relogio confiavel, depois a gravacao segura do core).</summary>
         public bool Save(NativeRulesCore rules)
         {
-            if (Current == null || CurrentSlot < 0) return false;
+            if (Current == null || CurrentSlot < 0 || GameSession.SaveBusy) return false;
             System.IO.Directory.CreateDirectory(Directory);
             var now = SaveGame.ResolveNow(rules, new ClockInput(Clock.NowUtc, Current.Summary.LastSeenUtc));
             Current.TouchLastSeen(now);

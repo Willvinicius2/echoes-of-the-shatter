@@ -77,6 +77,18 @@ namespace Echoes.Interop.Native
         public static extern int shatter_save_add_loot(IntPtr save, byte* lootJson, nuint len, ShatterError* err);
 
         [DllImport(SaveLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_save_roll_boss_loot(IntPtr db, IntPtr save, nuint characterIndex, byte* enemyId, nuint enemyIdLen, int areaLevel,
+                                                             ShatterRng* lootRng, byte* output, nuint cap, nuint* needed, ShatterError* err);
+
+        [DllImport(SaveLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_expedition_simulate_range(IntPtr db, byte* requestJson, nuint requestLen, byte* progressJson, nuint progressLen,
+                                                                   uint firstEncounter, uint count, byte* output, nuint cap, nuint* needed, ShatterError* err);
+
+        [DllImport(SaveLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_expedition_finalize(IntPtr db, byte* requestJson, nuint requestLen, byte* progressJson, nuint progressLen,
+                                                             uint flags, byte* output, nuint cap, nuint* needed, ShatterError* err);
+
+        [DllImport(SaveLib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_expedition_check(IntPtr db, IntPtr save, byte* paramsJson, nuint len, int* startCheck,
                                                           byte* output, nuint cap, nuint* needed, ShatterError* err);
 
