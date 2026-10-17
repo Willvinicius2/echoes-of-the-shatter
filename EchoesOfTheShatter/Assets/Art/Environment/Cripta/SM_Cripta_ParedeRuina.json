@@ -1,0 +1,45 @@
+{
+ "asset": "SM_Cripta_ParedeRuina",
+ "mesh": "SM_Cripta_ParedeRuina",
+ "tris": 794,
+ "kind": "detail",
+ "size_m_unity": [
+  2.0,
+  2.4,
+  0.9
+ ],
+ "bounds_blender": {
+  "min": [
+   -1.0,
+   0.0,
+   -0.0
+  ],
+  "max": [
+   1.0,
+   0.9,
+   2.4
+  ]
+ },
+ "pivot": "wall_outer",
+ "textures": {
+  "albedo": "T_Cripta_ParedeRuina_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_ParedeRuina_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    -0.0,
+    1.2,
+    -0.45
+   ],
+   "size": [
+    2.0,
+    2.4,
+    0.9
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

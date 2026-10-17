@@ -1,0 +1,45 @@
+{
+ "asset": "SM_Cripta_ParedeCantoA",
+ "mesh": "SM_Cripta_ParedeCantoA",
+ "tris": 290,
+ "kind": "simple",
+ "size_m_unity": [
+  1.0,
+  3.0,
+  1.0
+ ],
+ "bounds_blender": {
+  "min": [
+   -0.5,
+   -0.5,
+   0.0
+  ],
+  "max": [
+   0.5,
+   0.5,
+   3.0
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_ParedeCantoA_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_ParedeCantoA_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    -0.0,
+    1.5,
+    -0.0
+   ],
+   "size": [
+    1.0,
+    3.0,
+    1.0
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

@@ -1,0 +1,31 @@
+{
+ "asset": "SM_Cripta_Estandarte",
+ "mesh": "SM_Cripta_Estandarte",
+ "tris": 668,
+ "kind": "detail",
+ "size_m_unity": [
+  1.722,
+  2.8,
+  1.258
+ ],
+ "bounds_blender": {
+  "min": [
+   -0.861,
+   -0.629,
+   -0.0
+  ],
+  "max": [
+   0.861,
+   0.629,
+   2.8
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_Estandarte_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_Estandarte_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

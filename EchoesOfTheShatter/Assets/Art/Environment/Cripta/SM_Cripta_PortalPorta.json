@@ -1,0 +1,45 @@
+{
+ "asset": "SM_Cripta_PortalPorta",
+ "mesh": "SM_Cripta_PortalPorta",
+ "tris": 994,
+ "kind": "detail",
+ "size_m_unity": [
+  2.4,
+  3.6,
+  0.6
+ ],
+ "bounds_blender": {
+  "min": [
+   -1.2,
+   -0.3,
+   -0.0
+  ],
+  "max": [
+   1.2,
+   0.3,
+   3.6
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_PortalPorta_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_PortalPorta_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    0.0,
+    1.8,
+    -0.0
+   ],
+   "size": [
+    2.4,
+    3.6,
+    0.6
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

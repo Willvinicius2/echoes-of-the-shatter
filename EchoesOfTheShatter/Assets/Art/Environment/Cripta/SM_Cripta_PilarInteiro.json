@@ -1,0 +1,45 @@
+{
+ "asset": "SM_Cripta_PilarInteiro",
+ "mesh": "SM_Cripta_PilarInteiro",
+ "tris": 300,
+ "kind": "simple",
+ "size_m_unity": [
+  1.2,
+  4.0,
+  1.2
+ ],
+ "bounds_blender": {
+  "min": [
+   -0.6,
+   -0.6,
+   0.0
+  ],
+  "max": [
+   0.6,
+   0.6,
+   4.0
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_PilarInteiro_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_PilarInteiro_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    -0.0,
+    2.0,
+    -0.0
+   ],
+   "size": [
+    1.2,
+    4.0,
+    1.2
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

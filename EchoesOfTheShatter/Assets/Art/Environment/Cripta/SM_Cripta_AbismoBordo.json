@@ -1,0 +1,45 @@
+{
+ "asset": "SM_Cripta_AbismoBordo",
+ "mesh": "SM_Cripta_AbismoBordo",
+ "tris": 300,
+ "kind": "simple",
+ "size_m_unity": [
+  2.0,
+  0.536,
+  1.051
+ ],
+ "bounds_blender": {
+  "min": [
+   -1.0,
+   -0.525,
+   -0.0
+  ],
+  "max": [
+   1.0,
+   0.525,
+   0.536
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_AbismoBordo_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_AbismoBordo_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    -0.0,
+    0.268,
+    -0.0
+   ],
+   "size": [
+    2.0,
+    0.536,
+    1.051
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

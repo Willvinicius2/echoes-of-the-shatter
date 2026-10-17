@@ -1,0 +1,58 @@
+{
+ "asset": "SM_Cripta_ArcoRuina",
+ "mesh": "SM_Cripta_ArcoRuina",
+ "tris": 300,
+ "kind": "simple",
+ "size_m_unity": [
+  3.2,
+  3.0,
+  0.6
+ ],
+ "bounds_blender": {
+  "min": [
+   -1.6,
+   -0.3,
+   0.0
+  ],
+  "max": [
+   1.6,
+   0.3,
+   3.0
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_ArcoRuina_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_ArcoRuina_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    1.3,
+    1.5,
+    0.0
+   ],
+   "size": [
+    0.6,
+    3.0,
+    0.6
+   ]
+  },
+  {
+   "type": "BoxCollider",
+   "center": [
+    -1.3,
+    1.5,
+    0.0
+   ],
+   "size": [
+    0.6,
+    3.0,
+    0.6
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

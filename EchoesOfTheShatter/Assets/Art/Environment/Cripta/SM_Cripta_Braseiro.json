@@ -1,0 +1,45 @@
+{
+ "asset": "SM_Cripta_Braseiro",
+ "mesh": "SM_Cripta_Braseiro",
+ "tris": 999,
+ "kind": "detail",
+ "size_m_unity": [
+  1.3,
+  1.5,
+  1.3
+ ],
+ "bounds_blender": {
+  "min": [
+   -0.65,
+   -0.65,
+   -0.0
+  ],
+  "max": [
+   0.65,
+   0.65,
+   1.5
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_Braseiro_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_Braseiro_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    -0.0,
+    0.75,
+    -0.0
+   ],
+   "size": [
+    1.3,
+    1.5,
+    1.3
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

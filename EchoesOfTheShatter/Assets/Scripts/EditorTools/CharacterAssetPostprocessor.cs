@@ -15,6 +15,11 @@ namespace Echoes.EditorTools
         public const string CharactersRoot = "Assets/Art/Characters/";
         public const string WeaponsRoot = "Assets/Art/Weapons/";
         public const string HeroesRoot = "Assets/Content/Heroes/";
+        /// <summary>Kit de cenario pintado da Cripta (SM_Cripta_*, T_Cripta_*): pecas estaticas na grade de 2 m. O graybox antigo (subpasta Graybox) fica fora.</summary>
+        public const string EnvironmentRoot = "Assets/Art/Environment/Cripta/";
+
+        static bool IsEnvironment(string path) =>
+            path.StartsWith(EnvironmentRoot, System.StringComparison.Ordinal) && path.IndexOf("/Graybox/", System.StringComparison.Ordinal) < 0;
 
         /// <summary>Modelos sem pernas ou sem o conjunto humanoide: Generic (o avatar Humanoid falharia). O Arqueiro Espectral flutua.</summary>
         static bool IsGeneric(string path) =>
@@ -29,11 +34,11 @@ namespace Echoes.EditorTools
 
         static bool IsManaged(string path) =>
             path.StartsWith(CharactersRoot, System.StringComparison.Ordinal) || path.StartsWith(WeaponsRoot, System.StringComparison.Ordinal) ||
-            path.StartsWith(HeroesRoot, System.StringComparison.Ordinal);
+            path.StartsWith(HeroesRoot, System.StringComparison.Ordinal) || IsEnvironment(path);
         public const string RigPath = "Assets/Art/Characters/Rigs/Rig_Humanoid_Chibi.fbx";
 
         // Muda quando as regras abaixo mudam: força a reimportação.
-        public override uint GetVersion() => 11;
+        public override uint GetVersion() => 12;
 
         void OnPreprocessModel()
         {
@@ -50,7 +55,8 @@ namespace Echoes.EditorTools
             if (!IsManaged(assetPath)) return;
             var importer = (ModelImporter)assetImporter;
             // Armas e pecas de armadura (Heroes/*/Parts): malha propria; o esqueleto vem do heroi (ModularCharacter troca os ossos por nome).
-            var isWeapon = assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal) || assetPath.Contains("/Parts/");
+            var isEnvironment = IsEnvironment(assetPath);
+            var isWeapon = assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal) || assetPath.Contains("/Parts/") || isEnvironment;
 
             importer.globalScale = 1f;
             importer.useFileScale = true;           // Convert Units: o FBX vem em cm (fator 100), o Unity converte para 1 unidade = 1 m
@@ -62,7 +68,7 @@ namespace Echoes.EditorTools
             importer.importLights = false;
             importer.importVisibility = false;
             importer.generateSecondaryUV = false;
-            importer.isReadable = false;
+            importer.isReadable = isEnvironment;   // o cenario junta os pisos em malhas por sala (CombineMeshes no editor)
             importer.meshCompression = ModelImporterMeshCompression.Off;
             importer.weldVertices = true;
             importer.skinWeights = ModelImporterSkinWeights.Standard; // até 4 influências por vértice
@@ -188,7 +194,7 @@ namespace Echoes.EditorTools
             importer.mipmapEnabled = true;
             importer.streamingMipmaps = true;
             importer.alphaSource = TextureImporterAlphaSource.None;
-            importer.maxTextureSize = isMask ? 512 : 1024;
+            importer.maxTextureSize = isMask ? 512 : (IsEnvironment(assetPath) ? 512 : 1024);
             importer.textureCompression = isMask ? TextureImporterCompression.Compressed : TextureImporterCompression.CompressedHQ;
             importer.wrapMode = TextureWrapMode.Clamp;
         }

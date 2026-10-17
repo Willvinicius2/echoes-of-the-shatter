@@ -1,0 +1,31 @@
+{
+ "asset": "SM_Cripta_PedraE",
+ "mesh": "SM_Cripta_PedraE",
+ "tris": 192,
+ "kind": "simple",
+ "size_m_unity": [
+  0.8,
+  0.4,
+  0.55
+ ],
+ "bounds_blender": {
+  "min": [
+   -0.4,
+   -0.275,
+   0.0
+  ],
+  "max": [
+   0.4,
+   0.275,
+   0.4
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_PedraE_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_PedraE_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

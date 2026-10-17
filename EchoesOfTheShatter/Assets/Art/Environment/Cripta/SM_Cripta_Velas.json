@@ -1,0 +1,31 @@
+{
+ "asset": "SM_Cripta_Velas",
+ "mesh": "SM_Cripta_Velas",
+ "tris": 700,
+ "kind": "detail",
+ "size_m_unity": [
+  0.96,
+  0.6,
+  0.613
+ ],
+ "bounds_blender": {
+  "min": [
+   -0.48,
+   -0.307,
+   0.0
+  ],
+  "max": [
+   0.48,
+   0.307,
+   0.6
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_Velas_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_Velas_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}
