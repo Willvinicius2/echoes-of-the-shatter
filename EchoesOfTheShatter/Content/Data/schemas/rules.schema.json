@@ -470,6 +470,124 @@
       "default": 100,
       "min": 0,
       "desc": "Margem interna (uu) da area visivel de R-VIS-1 (docs/13 R2.2)"
+    },
+    {
+      "name": "inventory_capacity",
+      "type": "int",
+      "default": 40,
+      "min": 1,
+      "max": 1000,
+      "desc": "Posicoes da Mochila (docs/16 4.1) [HIPOTESE H3-08]"
+    },
+    {
+      "name": "stash_capacity",
+      "type": "int",
+      "default": 100,
+      "min": 0,
+      "max": 10000,
+      "desc": "Posicoes do Bau compartilhado (docs/16 4.1) [HIPOTESE H3-09]"
+    },
+    {
+      "name": "sell_price_normal",
+      "type": "int",
+      "default": 4,
+      "min": 0,
+      "desc": "Ouro por item Comum no nivel 1 (docs/16 4.4) [HIPOTESE H3-12]"
+    },
+    {
+      "name": "sell_price_magic",
+      "type": "int",
+      "default": 12,
+      "min": 0,
+      "desc": "Ouro por item Magico no nivel 1 [HIPOTESE H3-12]"
+    },
+    {
+      "name": "sell_price_rare",
+      "type": "int",
+      "default": 35,
+      "min": 0,
+      "desc": "Ouro por item Raro no nivel 1 [HIPOTESE H3-12]"
+    },
+    {
+      "name": "sell_price_unique",
+      "type": "int",
+      "default": 100,
+      "min": 0,
+      "desc": "Ouro por item Unico no nivel 1 [HIPOTESE H3-12]"
+    },
+    {
+      "name": "sell_level_factor",
+      "type": "number",
+      "default": 0.1,
+      "min": 0,
+      "max": 10,
+      "desc": "Preco de venda x (1 + fator x (itemLevel - 1)), arredondado [HIPOTESE]"
+    },
+    {
+      "name": "equip_slot_main_hand",
+      "type": "bool",
+      "default": true,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_off_hand",
+      "type": "bool",
+      "default": false,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_head",
+      "type": "bool",
+      "default": true,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_body",
+      "type": "bool",
+      "default": true,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_hands",
+      "type": "bool",
+      "default": true,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_feet",
+      "type": "bool",
+      "default": true,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_amulet",
+      "type": "bool",
+      "default": false,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_ring",
+      "type": "bool",
+      "default": false,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_ring2",
+      "type": "bool",
+      "default": false,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_belt",
+      "type": "bool",
+      "default": false,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "equip_slot_legs",
+      "type": "bool",
+      "default": true,
+      "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
     }
   ]
 }

@@ -125,6 +125,24 @@ Chaves de `RulesConstants` (`constants.h`). O validador exige as 62, nomes exato
 | `potion_lockout` | number | ≥ 0 | 1.0 | docs/13 item 2: Trava global entre usos de pocao (s) |
 | `unarmed_weapon_damage_physical` | number | ≥ 0 | 3 | docs/13 R2.5 item 1 [HIPÓTESE]: dano físico base da "arma" quando não há arma equipada (idle e golpe manual) |
 | `require_on_screen_margin` | number | ≥ 0 | 100 | docs/13 R2.2: margem interna (uu) da área visível de R-VIS-1 |
+| `inventory_capacity` | int | 1 a 1000 | 40 | docs/16 4.1 [HIPÓTESE H3-08]: posições da Mochila (8 x 5) |
+| `stash_capacity` | int | 0 a 10000 | 100 | docs/16 4.1 [HIPÓTESE H3-09]: posições do Baú compartilhado |
+| `sell_price_normal` | int | ≥ 0 | 4 | docs/16 4.4 [HIPÓTESE H3-12]: Ouro por item Comum de nível 1 |
+| `sell_price_magic` | int | ≥ 0 | 12 | idem, Mágico |
+| `sell_price_rare` | int | ≥ 0 | 35 | idem, Raro |
+| `sell_price_unique` | int | ≥ 0 | 100 | idem, Único (só tira duplicatas; protegido na UI) |
+| `sell_level_factor` | number | 0 a 10 | 0.1 | [HIPÓTESE]: venda = preço da raridade x (1 + fator x (itemLevel − 1)), arredondado. O Ouro ainda não tem uso (docs/16 Q3-3): é só o valor calculável |
+| `equip_slot_main_hand` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_off_hand` | bool | — | false | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_head` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_body` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_hands` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_feet` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_amulet` | bool | — | false | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_ring` | bool | — | false | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_ring2` | bool | — | false | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_belt` | bool | — | false | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_legs` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
 
 Regras de conteúdo:
 
@@ -737,6 +755,12 @@ Esquema em `schemas/save_v2.schema.json`, ao lado de `save_v1`. Não é usado pe
 - Cargas e relógios de esquiva não são salvos: reiniciam cheios ao carregar (docs/13 item 11).
 - `tutorial_flags` não entra na v2 (não aprovado, docs/13 item 11). A função `migrate_1_to_2` do validador foi ajustada para não gerar o campo. O fixture `migration/v1_to_v2_expected.json` (ShatterCore) ainda o contém e precisa ser alinhado pelo Backend.
 
+
+### Mochila no save (Etapa 3, sem mudar a versão)
+- `characters[].backpack`: lista de `ItemInstance` (mesmo formato do `stash`). **Opcional**: ausente = vazia, e o core só grava o campo quando há itens, então um save v2 sem Mochila mantém os mesmos bytes e o mesmo hash. Por isso não há migração nem `save_version` 3. O `stash` continua sendo o Baú compartilhado (100 posições, só no Refúgio).
+- Limites na leitura: no máximo 10000 itens por contêiner (`BadData` acima). A capacidade de jogo (`inventory_capacity`, `stash_capacity`) vale nas operações do core (adicionar, pegar, mover), não na leitura: um save com mais itens que a capacidade carrega e só não aceita novos.
+- O loot no chão **não é salvo** (vale até sair da Cripta, docs/16 4.2). A Mochila não entra no snapshot da expedição.
+- `item_bases.csv.slot` precisa estar liberado em `rules.csv` (`equip_slot_<slot>`); o validador acusa `E_SLOT_LOCKED` se uma base ficar numa posição bloqueada.
 
 ## 5b. Espaço `legs`, `visualSetId` e save v2 (C-10, decisão do dono 16/10/2026)
 

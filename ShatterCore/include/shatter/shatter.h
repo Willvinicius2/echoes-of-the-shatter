@@ -17,3 +17,4 @@
 #include "shatter/json.h"
 #include "shatter/sha256.h"
 #include "shatter/save.h"
+#include "shatter/inventory.h"
