@@ -158,7 +158,7 @@ EquipOutcome Equip(const ContentDB& db, SaveData& s, std::size_t characterIndex,
     const ItemBaseData* base = db.FindItemBase(cand.baseId);
     if (!ContentOk(db, cand)) { out.result = InvResult::UnknownContent; return out; }
     if (slot == ItemSlot::Count) slot = DefaultSlotFor(db, *c, cand);
-    if (static_cast<int>(slot) < 0 || static_cast<int>(slot) >= kItemSlotCount) { out.result = InvResult::SlotMismatch; return out; }
+    if (static_cast<std::size_t>(slot) >= static_cast<std::size_t>(kItemSlotCount)) { out.result = InvResult::SlotMismatch; return out; }
     out.slot = slot;
     if (!SlotCompatible(slot, base->slot)) { out.result = InvResult::SlotMismatch; return out; }
     if (!db.Rules().equipSlotEnabled[static_cast<std::size_t>(slot)]) { out.result = InvResult::SlotLocked; return out; }
@@ -181,7 +181,7 @@ EquipOutcome Unequip(const ContentDB& db, SaveData& s, std::size_t characterInde
     EquipOutcome out;
     CharacterState* c = Hero(s, characterIndex);
     if (c == nullptr) { out.result = InvResult::NotFound; return out; }
-    if (static_cast<int>(slot) < 0 || static_cast<int>(slot) >= kItemSlotCount) { out.result = InvResult::SlotMismatch; return out; }
+    if (static_cast<std::size_t>(slot) >= static_cast<std::size_t>(kItemSlotCount)) { out.result = InvResult::SlotMismatch; return out; }
     out.slot = slot;
     std::optional<ItemInstance>& place = c->equipment[static_cast<std::size_t>(slot)];
     if (!place) { out.result = InvResult::SlotEmpty; return out; }
@@ -199,7 +199,7 @@ ItemComparison CompareItem(const ContentDB& db, const CharacterState& c, const I
     const ItemBaseData* base = db.FindItemBase(item.baseId);
     if (base == nullptr || !ContentOk(db, item)) { cmp.result = InvResult::UnknownContent; return cmp; }
     if (slot == ItemSlot::Count) slot = DefaultSlotFor(db, c, item);
-    if (static_cast<int>(slot) < 0 || static_cast<int>(slot) >= kItemSlotCount || !SlotCompatible(slot, base->slot)) {
+    if (static_cast<std::size_t>(slot) >= static_cast<std::size_t>(kItemSlotCount) || !SlotCompatible(slot, base->slot)) {
         cmp.result = InvResult::SlotMismatch;
         return cmp;
     }

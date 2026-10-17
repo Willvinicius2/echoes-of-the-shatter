@@ -1586,7 +1586,7 @@ TEST(c_api_13_enemy_flee_is_decided_by_the_core_from_enemy_ai_csv) {
     shatter_actor_destroy(a);
 
     // Inimigo sem fuga no CSV e ator do herói: nunca foge, can_flee = 0.
-    for (const std::string eid : {std::string("enemy.ghost_archer"), std::string()}) {
+    for (const std::string& eid : {std::string("enemy.ghost_archer"), std::string()}) {
         shatter_actor* b = nullptr;
         ASSERT_EQ(shatter_actor_create(db.db, eid.data(), eid.size(), 0, &b), SHATTER_OK);
         ASSERT_EQ(shatter_actor_flee_step(b, 0.1, 1.0, 1000.0, 1, 0, &r), SHATTER_OK);
