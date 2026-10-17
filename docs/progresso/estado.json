@@ -676,30 +676,6 @@
           "efeito": "Seguimos só com o CC0 e o Blender."
         }
       ]
-    },
-    {
-      "id": "iniciar-sessao-inventario",
-      "titulo": "Iniciar a sessão de inventário e equipamento",
-      "detalhe": "A sessão de nuvem do inventário e equipamento da Etapa 3 ainda não começou.",
-      "origem": "docs/16_etapa3_fluxo.md",
-      "pergunta": "Iniciamos agora a sessão de inventário e equipamento da Etapa 3 na nuvem, ou fazemos no PC?",
-      "contexto": [
-        "Faltam o inventário, o loot no chão e as telas finais para fechar a Etapa 3.",
-        "As telas finais esperam a aprovação dos mockups.",
-        "A sessão fica como cartão para você iniciar."
-      ],
-      "opcoes": [
-        {
-          "id": "a",
-          "nome": "Iniciar na nuvem",
-          "efeito": "Roda em paralelo, sem pesar a memória do seu PC."
-        },
-        {
-          "id": "b",
-          "nome": "Fazer no PC",
-          "efeito": "Usa a memória do PC, que continua baixa, mas dá mais controle."
-        }
-      ]
     }
   ],
   "decisoes": [
