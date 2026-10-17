@@ -37,43 +37,42 @@ BASE = (
 ITEMS = [
     ("t01_tela_inicial", "S-01 Tela inicial",
      "MAIN MENU. Full-screen painted background of the Marco Refuge at night: a small walled camp of dark stone ruins with warm lanterns and a campfire, a glowing golden memory-shard "
-     "crystal standing in the middle, shattered floating towers and a giant cracked bell silhouette in a deep violet-blue sky, the Warrior standing small from behind in the lower left. "
+     "crystal in the middle-right, shattered floating towers and a giant cracked bell silhouette in a deep violet-blue sky. "
      "Top center: a large carved-stone game logo plate made of bold rune-like shapes (no readable letters) with a cracked gold shard motif. "
-     "Right or center-left column: a vertical stack of 5 wide bevelled stone buttons with gold filigree, the top one (Continue) larger, highlighted with a bright gold focus ring and a warm glow, "
-     "and a small portrait of the Warrior with glyph lines (name, class, level, area) as a caption beneath it, plus a small gold badge with a tiny scroll icon (expedition ready) on the top button; "
-     "the other four buttons are plain (new game, load, options, quit), each with a tiny glyph icon at the left. "
+     "Center column, below the logo: exactly FIVE separate wide bevelled stone buttons stacked vertically with clear gaps between them, each a single plain horizontal button with gold filigree and a tiny glyph icon at the left and rune-dash label marks: "
+     "1 Continue (slightly larger, bright gold focus ring and warm glow, with a small round gold badge carrying a scroll icon overlapping its top-right corner meaning expedition ready), 2 New game, 3 Options (gear icon), 4 Credits (star icon), 5 Quit (door icon). Do not draw any portrait inside the buttons. "
+     "SEPARATE from the buttons, at the left of the screen: a stand-alone save card in its own stone frame (not touching the buttons) with the Warrior bust portrait in a stone medallion and three short glyph lines (name, class and level, area). "
      "Bottom-left a tiny logs-folder icon link, bottom-right a small version glyph string. Cinematic, calm, adventurous with a melancholic edge."),
     ("t02_inventario", "S-05 Inventario e equipamento",
      "INVENTORY AND EQUIPMENT (paper doll). Dark dimmed backdrop. Center-left: the Warrior as a full-body modular 3D character, standing in a neutral idle pose on a small round carved stone pedestal "
      "with a soft golden spotlight behind him, wearing the starting set (golden visor helmet with red plume, chest armor with red tabard, gauntlets, armored pants, boots, stone hammer in the main hand, stone-inlay kite shield in the off hand, "
      "a thin curved arrow icon below him hinting that he can be rotated by dragging). "
-     "Around the hero, 10 equipment slots in gold-trimmed stone square frames with a small gem at the bottom, each with a painted item icon in the style of the icon sheet: "
-     "left column top to bottom: helmet (head), chest armor (body), gauntlets (hands), armored pants (legs), boots (feet); "
-     "right column top to bottom: hammer (main hand), kite shield (off hand), amulet (neck), ring, belt. Slots that have no item show a faint ghost silhouette icon on dark stone. "
+     "Around the hero, exactly 10 equipment slots in stone square frames with a small gem at the bottom. "
+     "SIX ACTIVE slots with gold trim and a painted item icon in the style of the icon sheet: left column top to bottom: helmet (head), chest armor (body), gauntlets (hands), armored pants (legs), boots (feet); right column top: hammer (main hand). "
+     "FOUR LOCKED slots, clearly dimmed and desaturated, dark stone, no gold trim, no item, a small grey padlock icon in the center and a faint ghost silhouette behind it: right column below the hammer, top to bottom: kite shield silhouette (off hand), amulet, ring, second ring. The hero still carries his shield on the arm visually, but its slot is locked. Active and locked slots must differ at a glance. "
      "Right side: a large stone panel with the backpack grid of 8 columns by 5 rows of square item slots (40 slots), about 12 filled with varied painted item icons (weapons, armor pieces, potions, materials) with rarity corner marks (common, magic blue, rare gold, one unique orange thorny), "
      "one item highlighted by a bright gold hover frame with a small green up-arrow in its corner and another with a small red down-arrow; a slot-count glyph strip under the grid. "
      "Below the grid: a compact stats block with 8 rows of small icon + glyph-dash value (life, armor, damage per second, crit, attack speed, move speed, fire resistance, regeneration), "
      "and a resources row with gold coin, shard and charge icons. Tabs at the top of the right panel (backpack, shared chest) as small stone tabs with icons. Close button as a small stone X at the top-right corner of the panel."),
     ("t03_tooltip_comparacao", "S-06 Tooltip comparando com o equipado",
-     "ITEM TOOLTIP COMPARISON. Same inventory screen dimmed and blurred in the background (backpack grid on the right, Warrior pedestal faintly visible on the left). "
-     "In the foreground, two tall tooltip panels side by side, equal height, the new item on the right and the currently equipped item on the left with a small 'equipped' tab glyph on its header. "
-     "Each tooltip is a dark stone panel with a rarity frame: the right one (a rare helmet) has a double gold corner frame and a gold-colored name made of glyph marks over two lines, "
-     "a large painted helmet icon in a stone square frame at the top, a rarity/type line (glyph dashes), a base property line, then 4 affix lines in soft blue glyph strokes with small value marks, a level requirement line and a small price line with a gold coin. "
-     "The left one (a common helmet, plain frame, white-grey name) shows fewer lines. "
-     "Beside the right tooltip, a stats-difference column: 5 rows each with a tiny stat icon and a glyph value mark preceded by a clear bright green up-triangle (improvement) or a red down-triangle (worse), "
-     "plus one neutral row with a grey dash. A key-hint footer strip at the bottom of the tooltip with three small keycap icons (mouse right button, Shift, Alt) and glyph labels. "
-     "The hovered backpack slot has a bright gold focus ring with a green up-arrow badge. Hierarchy: item name and the arrows must read first."),
+     "ITEM TOOLTIP COMPARISON, clean. Background: only a heavily dimmed and blurred dark stone inventory screen, NO HUD, NO life or resource orbs, NO skill bar, NO tab bar. "
+     "Center: exactly two tall tooltip cards side by side with a small gap, equal height and same layout, centered on screen. "
+     "LEFT card: the currently equipped item, a common helmet, plain bevelled stone frame, a small 'equipped' tab with a check glyph at its top edge, white-grey name made of glyph marks, a painted helmet icon in a stone square frame, a type line, one base property line, two short affix lines in grey, level line, no price. "
+     "RIGHT card: the new item, a rare helmet, double gold corner frame, gold-colored two-line name of glyph marks, larger painted helmet icon with a soft glow, rarity/type line, base property line, four affix lines in soft blue glyph strokes with small value marks, level line, small price line with a gold coin. "
+     "INSIDE both cards, in a stats section under the affixes, matching stat rows (armor, life, damage, speed, resistance), each row: a tiny stat icon, a glyph value mark, and on the right card a clear bright green up-triangle for better, a red down-triangle for worse, one grey dash for equal, so both columns can be compared row by row at a glance. "
+     "A single key-hint footer strip centered under the two cards with three keycap icons (mouse right button, Shift, Alt) and glyph labels. "
+     "Hierarchy: item name, icon and the green and red arrows read first."),
     ("t04_expedicao", "S-08 Expedicao: rota, regras de IA e tempo",
-     "EXPEDITION SETUP. A large stone panel centered on a dimmed Refuge background, with Ilsa (a small cloaked quartermaster woman NPC) portrait in a stone medallion at the top-left corner. "
-     "Header strip: Marco charges as a row of 12 small crystal pips (8 lit gold, 4 dark) and a stamina (Vigor) gauge. "
-     "Left column: area selector with a single selected card showing a painted thumbnail of the Broken Crypt (dark crypt arena with braziers and a cracked stone floor, as in our approved art), with a gold filigree selection frame, a small level-range glyph and a boss-skull mark. "
+     "EXPEDITION SETUP. A large stone panel centered on a dimmed Refuge workshop background. Top-left corner: portrait medallion of Ilsa, the Refuge quartermaster, an ordinary workshop woman in a brown leather apron with rolled sleeves, hair tied back, a small lit lantern hanging from her belt; NOT hooded, no green cloak, no bow. "
+     "Header strip: Marco charges as a row of 12 small crystal pips (8 lit gold, 4 dark) and a stamina gauge. "
+     "Left column: ONE single area card only, a painted thumbnail of the Broken Crypt (dark crypt arena with braziers and a cracked stone floor), gold filigree selection frame, small level-range glyph and boss-skull mark; no second thumbnail anywhere. "
      "Under it a row of 3 objective toggle buttons with icons (experience star, gold coin, materials pile), one selected with gold ring. "
-     "Center column: the AI rules list, 6 stacked horizontal stone rows each with an order handle, a condition chip (small icon like heart with percent mark), an arrow glyph and an action chip (potion icon or one of the Warrior skill icons from the icon sheet), up/down small arrow buttons and a delete X at the end; "
-     "rows 1 to 4 filled, row 5 empty with a gold dashed outline and a plus icon (add rule), row 6 empty dim. The first row is highlighted. "
-     "Bottom of the center: a wide duration slider track from 1 to 12 hours with 12 tick marks, a gold draggable knob at about 8, and the track coloured in three zones (full, reduced, low efficiency) green, amber, red-orange, with a small clock icon at the left. "
-     "Right column: a forecast card in lighter stone with ranges drawn as horizontal range bars (experience, gold, rare items 'up to 4' as 4 small gem icons, retreat risk as a small meter with a warning icon), "
-     "and a prominent round gold-rimmed 'Estimate' stamp seal (hourglass and wavy-line emblem, no letters) overlapping the card's top-right corner. "
-     "Bottom-right: a big primary stone button with gold glow (start expedition) and a smaller plain Cancel button to its left; a small padlock icon hinting that the build is frozen."),
+     "Center column: the AI rules list, 6 stacked horizontal stone rows, each with an order handle, a condition chip (icon like heart with percent mark), an arrow glyph, an action chip (potion icon or a Warrior skill icon from the icon sheet), up/down arrow buttons and a delete X; "
+     "rows 1 to 4 filled, row 5 empty with a gold dashed outline and plus icon, row 6 empty dim. "
+     "Bottom of the center: a wide duration slider from 1 to 12 hours with tick marks, gold knob at about 8, track in three zones (green, amber, red-orange), clock icon at the left. "
+     "Right column: a forecast card inside the panel (no big picture on it), titled by a glyph line, containing four clearly separated forecast rows, each with an icon at the left and a horizontal RANGE BAR with a pale filled band between a low and a high end marker: experience (star), gold (coin), rare items (4 small gem icons, 'up to 4'), retreat risk (skull with warning icon). "
+     "The round gold-rimmed 'Estimate' stamp seal (hourglass and wavy-line emblem, no letters) sits INSIDE the forecast card, fully contained within the card edges with a clear margin of stone on all four sides, placed in the card's header row beside the title glyph line, never overlapping or crossing the card border. "
+     "Bottom-right: a big primary stone button with gold glow (start expedition), a smaller plain Cancel button to its left, and a small padlock icon next to them."),
     ("t05_relatorio", "S-09 Relatorio da expedicao com selo Estimativa",
      "EXPEDITION REPORT. A large stone panel centered over a dimmed Refuge background. At the left, Tico (a small cheerful messenger courier character in a brown satchel and cap, running pose) "
      "stands in a stone medallion with a scroll in hand. Header: a stone title plate of glyph marks and, next to it, a round gold-rimmed 'Estimate' stamp seal (hourglass and wavy-line emblem, no letters), clearly visible. "
