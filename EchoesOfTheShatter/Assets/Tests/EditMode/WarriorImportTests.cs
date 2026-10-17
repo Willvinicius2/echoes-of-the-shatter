@@ -84,7 +84,7 @@ namespace Echoes.Tests.EditMode
             var animator = prefab.GetComponentInChildren<Animator>();
             Assert.IsNotNull(animator, "Animator preparado");
             Assert.IsTrue(animator.avatar != null && animator.avatar.isHuman, "avatar Humanoid");
-            var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Characters/M_Warrior.mat");
+            var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Characters/M_Warrior_Body.mat");
             Assert.IsNotNull(material);
             Assert.AreEqual("Echoes/SG_Character", material.shader.name);
             foreach (var smr in prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true))

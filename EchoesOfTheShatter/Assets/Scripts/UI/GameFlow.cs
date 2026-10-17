@@ -24,6 +24,17 @@ namespace Echoes.UI
             }
         }
 
+        /// <summary>Valor do argumento de linha de comando que segue <paramref name="name"/> (ou null).</summary>
+        public static string ArgValue(string name)
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (var i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], name, StringComparison.OrdinalIgnoreCase)) return args[i + 1];
+            }
+            return null;
+        }
+
         public static void StartGame()
         {
             Time.timeScale = 1f;

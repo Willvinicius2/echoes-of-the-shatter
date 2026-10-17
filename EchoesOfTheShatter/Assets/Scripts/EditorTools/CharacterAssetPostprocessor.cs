@@ -14,6 +14,7 @@ namespace Echoes.EditorTools
     {
         public const string CharactersRoot = "Assets/Art/Characters/";
         public const string WeaponsRoot = "Assets/Art/Weapons/";
+        public const string HeroesRoot = "Assets/Content/Heroes/";
 
         /// <summary>Modelos sem pernas ou sem o conjunto humanoide: Generic (o avatar Humanoid falharia). O Arqueiro Espectral flutua.</summary>
         static bool IsGeneric(string path) => path.IndexOf("GhostArcher", System.StringComparison.Ordinal) >= 0;
@@ -26,11 +27,12 @@ namespace Echoes.EditorTools
             path.IndexOf("StoneHerald", System.StringComparison.Ordinal) >= 0 || path.IndexOf("CryptGuardian", System.StringComparison.Ordinal) >= 0;
 
         static bool IsManaged(string path) =>
-            path.StartsWith(CharactersRoot, System.StringComparison.Ordinal) || path.StartsWith(WeaponsRoot, System.StringComparison.Ordinal);
+            path.StartsWith(CharactersRoot, System.StringComparison.Ordinal) || path.StartsWith(WeaponsRoot, System.StringComparison.Ordinal) ||
+            path.StartsWith(HeroesRoot, System.StringComparison.Ordinal);
         public const string RigPath = "Assets/Art/Characters/Rigs/Rig_Humanoid_Chibi.fbx";
 
         // Muda quando as regras abaixo mudam: força a reimportação.
-        public override uint GetVersion() => 8;
+        public override uint GetVersion() => 10;
 
         void OnPreprocessModel()
         {
@@ -46,7 +48,8 @@ namespace Echoes.EditorTools
             }
             if (!IsManaged(assetPath)) return;
             var importer = (ModelImporter)assetImporter;
-            var isWeapon = assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal);
+            // Armas e pecas de armadura (Heroes/*/Parts): malha propria; o esqueleto vem do heroi (ModularCharacter troca os ossos por nome).
+            var isWeapon = assetPath.StartsWith(WeaponsRoot, System.StringComparison.Ordinal) || assetPath.Contains("/Parts/");
 
             importer.globalScale = 1f;
             importer.useFileScale = true;           // Convert Units: o FBX vem em cm (fator 100), o Unity converte para 1 unidade = 1 m
@@ -65,6 +68,14 @@ namespace Echoes.EditorTools
             importer.optimizeGameObjects = false;                      // heróis modulares expõem os 55 ossos (17.4)
             importer.materialImportMode = ModelImporterMaterialImportMode.None; // materiais são os M_ do projeto (17.1)
             importer.importAnimation = false;                          // sem clipes até a etapa de animação
+            if (assetPath.Contains("/Parts/"))
+            {
+                // Peca de armadura: precisa continuar SkinnedMeshRenderer (animationType None viraria MeshRenderer). Generic com avatar proprio;
+                // o ModularCharacter passa os ossos do heroi para o renderer.
+                importer.animationType = ModelImporterAnimationType.Generic;
+                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                return;
+            }
             if (isWeapon)
             {
                 // Arma estatica (SM_Weapon_*): pivo na empunhadura, sem esqueleto nem avatar.

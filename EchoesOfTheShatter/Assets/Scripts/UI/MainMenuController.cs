@@ -14,6 +14,8 @@ namespace Echoes.UI
         [SerializeField] GameRoot root;
         [SerializeField, Min(0f)] float autoStartDelay = 1.5f;
         float autoStartAt = -1f;
+        float shotAt = -1f;
+        string shotPath;
 
         void Start()
         {
@@ -31,11 +33,19 @@ namespace Echoes.UI
             MenuUi.AddDisplayOptions(card, loc);
             MenuUi.MakeButton(card, loc.Get("ui.menu.quit"), GameFlow.Quit).name = "quit";
 
+            // Teste do player: -shot <arquivo.png> salva uma captura da tela inicial apos 2 s.
+            shotPath = GameFlow.ArgValue("-shot");
+            if (!string.IsNullOrEmpty(shotPath)) shotAt = Time.realtimeSinceStartup + 2f;
             if (GameFlow.AutoStartRequested) autoStartAt = Time.realtimeSinceStartup + autoStartDelay;
         }
 
         void Update()
         {
+            if (shotAt > 0f && Time.realtimeSinceStartup >= shotAt)
+            {
+                shotAt = -1f;
+                ScreenCapture.CaptureScreenshot(shotPath);
+            }
             if (autoStartAt > 0f && Time.realtimeSinceStartup >= autoStartAt)
             {
                 autoStartAt = -1f;

@@ -423,6 +423,94 @@ namespace Echoes.EditorTools
             }
         }
 
+
+        /// <summary>modular_*: as combinacoes de pecas dos herois modulares a 10 m (completo, sem elmo, sem luvas, sem botas, sem peito, sem calca, nu).</summary>
+        public static void RunModular()
+        {
+            try
+            {
+                CharacterPrefabBuilder.BuildAll();
+                SandboxBuilder.Build();
+                CriptaBuilder.BuildScene();
+                EditorSceneManager.OpenScene(CriptaBuilder.ScenePath, OpenSceneMode.Single);
+                var dir = Environment.GetEnvironmentVariable("ECHOES_CAPTURE_DIR");
+                if (string.IsNullOrEmpty(dir)) dir = "D:/openclaude/_trabalho-claude/capturas";
+                Directory.CreateDirectory(dir);
+
+                var layout = CriptaLayout.LoadFromDocument();
+                var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
+                var cam = follow.GetComponentInChildren<Camera>();
+                follow.enabled = false;
+                var hero = GameObject.Find("Hero");
+                if (hero != null) hero.SetActive(false);
+                foreach (var enemy in UnityEngine.Object.FindObjectsByType<Echoes.Gameplay.EnemyController>(FindObjectsSortMode.None)) enemy.gameObject.SetActive(false);
+                var origin = new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y);
+                var idle = KayKitAnimationImport.FindClip(KayKitAnimationImport.Root + "/Medium/Rig_Medium_General.fbx", "Idle_A");
+
+                var combos = new (string, HeroPartSlot[])[]
+                {
+                    ("completo", new HeroPartSlot[0]),
+                    ("sem_elmo", new[] { HeroPartSlot.Head }),
+                    ("sem_luvas", new[] { HeroPartSlot.Hands }),
+                    ("sem_botas", new[] { HeroPartSlot.Feet }),
+                    ("sem_peito", new[] { HeroPartSlot.Chest }),
+                    ("sem_calca", new[] { HeroPartSlot.Legs }),
+                    ("nu", new[] { HeroPartSlot.Head, HeroPartSlot.Chest, HeroPartSlot.Hands, HeroPartSlot.Legs, HeroPartSlot.Feet }),
+                };
+                var steps = new System.Collections.Generic.Queue<Action>();
+                foreach (var heroName in HeroModularBuilder.Heroes)
+                {
+                    GameObject go = null;
+                    steps.Enqueue(() =>
+                    {
+                        go = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/P_Hero_{heroName}.prefab"));
+                        go.transform.SetPositionAndRotation(origin, Quaternion.identity);
+                        go.GetComponent<ModularCharacter>().Build();
+                    });
+                    foreach (var combo in combos)
+                    {
+                        var (label, removed) = combo;
+                        steps.Enqueue(() =>
+                        {
+                            var modular = go.GetComponent<ModularCharacter>();
+                            for (var i = 0; i < 5; i++) modular.Equip((HeroPartSlot)i, HeroPartCatalog.StarterSet);
+                            foreach (var slot in removed) modular.Unequip(slot);
+                            idle.SampleAnimation(go, 0.3f);
+                            var target = origin + Vector3.up * 0.9f;
+                            cam.transform.position = target + Quaternion.Euler(0f, 35f, 0f) * Vector3.forward * 10f + Vector3.up * 2.2f;
+                            cam.transform.LookAt(target);
+                            cam.fieldOfView = 25f;
+                        });
+                        steps.Enqueue(() => Capture(cam, dir + "/modular_" + heroName.ToLowerInvariant() + "_" + label + ".png", 720, 720));
+                    }
+                    steps.Enqueue(() => UnityEngine.Object.DestroyImmediate(go));
+                }
+                EditorApplication.CallbackFunction tick = null;
+                tick = () =>
+                {
+                    try
+                    {
+                        if (steps.Count > 0) { steps.Dequeue()(); return; }
+                        EditorApplication.update -= tick;
+                        Debug.Log("[AnimationShowcase] Capturas modular em " + dir);
+                        if (Application.isBatchMode) EditorApplication.Exit(0);
+                    }
+                    catch (Exception e)
+                    {
+                        EditorApplication.update -= tick;
+                        Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                        if (Application.isBatchMode) EditorApplication.Exit(1);
+                    }
+                };
+                EditorApplication.update += tick;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+            }
+        }
+
         /// <summary>Folha de contato (diagnostico): o clipe amostrado em N instantes, numa grade, para ajustar tempos e musculos.</summary>
         public static void RunSheet()
         {
