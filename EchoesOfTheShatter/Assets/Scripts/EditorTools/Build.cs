@@ -102,7 +102,7 @@ namespace Echoes.EditorTools
         static void WriteReadme(string output)
         {
             const string text =
-@"ECHOES OF THE SHATTER - build de desenvolvimento (Refugio e Cripta)
+@"ECHOES OF THE SHATTER - build de desenvolvimento (Refugio e Cripta; Cao de Cinza animado)
 
 Abra EchoesOfTheShatter.exe. Tela inicial: Jogar (escolhe o save; sem save, pede o nome do heroi), Resolucao e Janela/Tela cheia
 (ficam salvas) e Sair. Jogar leva ao Refugio; o portal vermelho a direita leva a Cripta e o da Cripta traz de volta.
@@ -124,6 +124,11 @@ EXPEDICAO (Refugio)
   Tico: mostra quanto falta e, quando acabar, entrega o relatorio (coleta uma vez so). O selo Estimativa aparece enquanto as habilidades nao forem calibradas.
   A Ilsa so abre a rota depois de a Cripta estar dominada (vencer o Guardiao). Para testar sem lutar:
   F8 domina a Cripta (+5 cargas); F9 avanca o relogio 1 h; F10 avanca 12 h (acelerador de debug, so no Refugio).
+
+PREVIA VISUAL DOS HEROIS (modo de desenvolvimento)
+  Na tela inicial o botao Previa visual do heroi alterna Guerreiro, Arqueiro e Mago (ou abra com -hero warrior|archer|mage).
+  E so uma PREVIA VISUAL: apenas o Guerreiro tem kit de habilidades; o Arqueiro (arco na mao esquerda) e o Mago (cajado na mao direita)
+  usam o mesmo kit de teste do Guerreiro (animacoes e habilidades dele) ate o design deles existir. Pecas modulares: F1 a F5 so em Development Build.
 
 SAVE
   O jogo salva ao trocar de area, a cada 5 min, ao coletar e ao sair. O core mantem 3 backups (slot_1.bak1 a .bak3).

@@ -511,6 +511,97 @@ namespace Echoes.EditorTools
             }
         }
 
+
+        /// <summary>herois3.png (Guerreiro, Arqueiro e Mago lado a lado na Base_Escala) e cao.png (o Cao de Cinza mordendo o Guerreiro).</summary>
+        public static void RunHeroesAndHound()
+        {
+            try
+            {
+                CharacterPrefabBuilder.BuildAll();
+                SandboxBuilder.Build();
+                EditorSceneManager.OpenScene(SandboxBuilder.ScenePath, OpenSceneMode.Single);
+                var dir = Environment.GetEnvironmentVariable("ECHOES_CAPTURE_DIR");
+                if (string.IsNullOrEmpty(dir)) dir = "D:/openclaude/_trabalho-claude/capturas";
+                Directory.CreateDirectory(dir);
+                var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
+                var cam = follow.GetComponentInChildren<Camera>();
+                follow.enabled = false;
+                var hero = GameObject.Find("Hero");
+                var origin = hero != null ? hero.transform.position : Vector3.zero;
+                origin.y = 0f;
+                if (hero != null) hero.SetActive(false);
+                foreach (var enemy in UnityEngine.Object.FindObjectsByType<Echoes.Gameplay.EnemyController>(FindObjectsSortMode.None)) enemy.gameObject.SetActive(false);
+                var idle = KayKitAnimationImport.FindClip(KayKitAnimationImport.Root + "/Medium/Rig_Medium_General.fbx", "Idle_A");
+                var bite = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundBite);
+                var hit = KayKitAnimationImport.FindClip(KayKitAnimationImport.Root + "/Medium/Rig_Medium_General.fbx", "Hit_A");
+                var houndIdle = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundIdle);
+                var spawned = new System.Collections.Generic.List<GameObject>();
+                GameObject Place(string prefabName, Vector3 offset, float yaw)
+                {
+                    var go = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/{prefabName}.prefab"));
+                    go.transform.SetPositionAndRotation(origin + offset, Quaternion.Euler(0f, yaw, 0f));
+                    var modular = go.GetComponent<ModularCharacter>();
+                    if (modular != null)
+                    {
+                        // No editor o Start nao roda: veste as pecas Starter como o jogo faz.
+                        modular.Build();
+                        for (var i = 0; i < 5; i++) modular.Equip((HeroPartSlot)i, HeroPartCatalog.StarterSet);
+                    }
+                    spawned.Add(go);
+                    return go;
+                }
+                var steps = new System.Collections.Generic.Queue<Action>();
+                steps.Enqueue(() =>
+                {
+                    var w = Place("P_Hero_Warrior", new Vector3(-1.8f, 0f, 0f), 180f);
+                    var a = Place("P_Hero_Archer", new Vector3(0f, 0f, 0f), 180f);
+                    var m = Place("P_Hero_Mage", new Vector3(1.8f, 0f, 0f), 180f);
+                    foreach (var go in new[] { w, a, m }) idle.SampleAnimation(go.GetComponentInChildren<Animator>().gameObject, 0.3f);
+                    cam.transform.position = origin + new Vector3(0f, 1.6f, -6.5f) + new Vector3(0f, 0f, 0f);
+                    cam.transform.position = origin + new Vector3(0f, 1.5f, -6.5f);
+                    cam.transform.rotation = Quaternion.LookRotation(origin + new Vector3(0f, 0.8f, 0f) - cam.transform.position);
+                    cam.fieldOfView = 32f;
+                });
+                steps.Enqueue(() => Capture(cam, dir + "/herois3.png", 1600, 720));
+                steps.Enqueue(() =>
+                {
+                    foreach (var go in spawned) UnityEngine.Object.DestroyImmediate(go);
+                    spawned.Clear();
+                    var h = Place("P_Enemy_AshHound", new Vector3(0f, 0f, 0f), 0f);
+                    var w = Place("P_Hero_Warrior", new Vector3(0f, 0f, 1.6f), 180f);
+                    bite.SampleAnimation(h.GetComponentInChildren<Animator>().gameObject, EchoesAnimationImport.HoundBiteImpactFrame / EchoesAnimationImport.Fps);
+                    hit.SampleAnimation(w.GetComponentInChildren<Animator>().gameObject, 0.1f);
+                    cam.transform.position = origin + new Vector3(4.2f, 2.2f, 0.8f);
+                    cam.transform.rotation = Quaternion.LookRotation(origin + new Vector3(0f, 0.7f, 0.8f) - cam.transform.position);
+                    cam.fieldOfView = 35f;
+                });
+                steps.Enqueue(() => Capture(cam, dir + "/cao.png", 1280, 720));
+                EditorApplication.CallbackFunction tick = null;
+                tick = () =>
+                {
+                    try
+                    {
+                        if (steps.Count > 0) { steps.Dequeue()(); return; }
+                        EditorApplication.update -= tick;
+                        Debug.Log("[AnimationShowcase] herois3 e cao em " + dir);
+                        if (Application.isBatchMode) EditorApplication.Exit(0);
+                    }
+                    catch (Exception e)
+                    {
+                        EditorApplication.update -= tick;
+                        Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                        if (Application.isBatchMode) EditorApplication.Exit(1);
+                    }
+                };
+                EditorApplication.update += tick;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[AnimationShowcase] Falhou: " + e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+            }
+        }
+
         /// <summary>Folha de contato (diagnostico): o clipe amostrado em N instantes, numa grade, para ajustar tempos e musculos.</summary>
         public static void RunSheet()
         {

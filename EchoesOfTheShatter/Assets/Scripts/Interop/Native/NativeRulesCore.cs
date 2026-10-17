@@ -567,6 +567,9 @@ namespace Echoes.Interop.Native
                 var patrol = JsonNumber(json, "\"patrol_speed_mult\":");
                 if (patrol > 0.0) pair.Value.PatrolSpeedMult = patrol;
                 pair.Value.RequireOnScreen = json.IndexOf("\"require_on_screen\":true", StringComparison.Ordinal) >= 0;
+                pair.Value.FleeLifeFraction = JsonNumber(json, "\"flee_life_fraction\":");
+                pair.Value.FleeSeconds = JsonNumber(json, "\"flee_seconds\":");
+                pair.Value.FleeOncePerLife = json.IndexOf("\"flee_once_per_life\":false", StringComparison.Ordinal) < 0;
             }
         }
 

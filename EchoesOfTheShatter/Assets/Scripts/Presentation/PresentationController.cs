@@ -22,6 +22,7 @@ namespace Echoes.Presentation
         static readonly int IsStaggeredParam = Animator.StringToHash("IsStaggered");
         static readonly int ActionSpeedParam = Animator.StringToHash("ActionSpeed");
         static readonly int PhaseParam = Animator.StringToHash("Phase");
+        static readonly int IsFleeingParam = Animator.StringToHash("IsFleeing");
         static readonly int HitFlashId = Shader.PropertyToID("_HitFlash");
         static readonly int DissolveId = Shader.PropertyToID("_Dissolve");
 
@@ -56,6 +57,11 @@ namespace Echoes.Presentation
         bool hasIsStaggered;
         bool hasActionSpeed;
         bool hasPhase;
+        bool hasFleeing;
+        EnemyController enemyController;
+        bool eliteApplied;
+        [Tooltip("SO_RarityTint: o elite (modificador do core) ganha a tinta de Raro nos materiais do corpo.")]
+        [SerializeField] RarityTintAsset eliteTint;
         bool subscribed;
 
         Combatant Self => attributes != null ? attributes.Combatant : null;
@@ -63,6 +69,7 @@ namespace Echoes.Presentation
         void Awake()
         {
             attributes = GetComponent<AttributeComponent>();
+            enemyController = GetComponent<EnemyController>();
             if (animator == null) animator = GetComponentInChildren<Animator>();
             if (renderers == null || renderers.Length == 0) renderers = GetComponentsInChildren<Renderer>();
             attachedParticles = GetComponentsInChildren<ParticleSystem>();
@@ -91,6 +98,7 @@ namespace Echoes.Presentation
                     else if (hash == IsStaggeredParam) hasIsStaggered = true;
                     else if (hash == ActionSpeedParam) hasActionSpeed = true;
                     else if (hash == PhaseParam) hasPhase = true;
+                    else if (hash == IsFleeingParam) hasFleeing = true;
                 }
             }
             var events = root != null ? root.Events : null;
@@ -146,6 +154,7 @@ namespace Echoes.Presentation
                 moved.y = 0f;
                 if (hasSpeed) animator.SetFloat(SpeedParam, frozen ? 0f : moved.magnitude);
                 if (hasActionSpeed) animator.SetFloat(ActionSpeedParam, actionSpeed);
+                if (hasFleeing && enemyController != null && enemyController.Logic != null) animator.SetBool(IsFleeingParam, enemyController.Logic.IsFleeing);
                 if (hasIsStaggered)
                 {
                     var rules = root != null && root.Rules != null ? root.Rules.Core : null;
@@ -153,6 +162,13 @@ namespace Echoes.Presentation
                 }
             }
             lastPosition = transform.position;
+
+            // Tinta de elite (uma vez, quando o combatente existe): so o tecido, pelo mesmo mecanismo da raridade.
+            if (!eliteApplied && eliteTint != null && !self.Elite.IsNone)
+            {
+                eliteApplied = true;
+                foreach (var material in ownedMaterials) eliteTint.Apply(material, RarityTier.Rare);
+            }
 
             if (flashTimeLeft > 0f) flashTimeLeft -= dt;
             SetFlash(flashTimeLeft > 0f ? hitFlashIntensity : 0f);

@@ -197,7 +197,7 @@ namespace Echoes.Tests.EditMode
                 Assert.IsNotNull(clip, spec.Name);
                 Assert.AreEqual(spec.Seconds, clip.length, 0.05f, spec.Name + ": duracao do _clips_*.json");
                 Assert.AreEqual(spec.Loop, clip.isLooping, spec.Name);
-                Assert.AreEqual(spec.Kind != EchoesAnimationImport.Kind.ArcherGeneric, clip.isHumanMotion, spec.Name + ": Humanoid ou Generic");
+                Assert.AreEqual(!EchoesAnimationImport.IsGeneric(spec.Kind), clip.isHumanMotion, spec.Name + ": Humanoid ou Generic");
                 Assert.AreEqual(spec.Events.Length, clip.events.Length, spec.Name);
                 foreach (var e in spec.Events)
                 {

@@ -53,8 +53,15 @@ namespace Echoes.UI
             MenuUi.Title(card, "ui.menu.title", loc, 54);
             MenuUi.MakeButton(card, loc.Get("ui.menu.play"), OnPlay).name = "play";
             MenuUi.AddDisplayOptions(card, loc);
+            // Previa visual dos herois (so o Guerreiro tem kit de habilidades; os outros usam o kit de teste dele).
+            Button hero = null;
+            hero = MenuUi.MakeButton(card, string.Empty, () => { HeroChoice.Cycle(); hero.text = HeroLabel(); });
+            hero.style.fontSize = 22;
+            hero.text = HeroLabel();
             MenuUi.MakeButton(card, loc.Get("ui.menu.quit"), GameFlow.Quit).name = "quit";
         }
+
+        string HeroLabel() => loc.Get("ui.menu.hero_preview") + ": " + loc.Get(HeroChoice.NameKey(HeroChoice.Id));
 
         void OnPlay()
         {

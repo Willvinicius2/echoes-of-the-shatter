@@ -105,10 +105,12 @@ namespace Echoes.EditorTools
             PlaceholderReport.Clear();
             foreach (var spec in All) BuildController(spec);
             BuildArcherController();
+            BuildHoundController();
             AssetDatabase.SaveAssets();
             // Recria e recarrega: sem isso o Load logo depois pode devolver null no mesmo quadro do editor.
             foreach (var spec in All) AssetDatabase.ImportAsset(ControllerPath(spec.Name), ImportAssetOptions.ForceUpdate);
             AssetDatabase.ImportAsset(ControllerPath(ArcherControllerName), ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(ControllerPath(HoundControllerName), ImportAssetOptions.ForceUpdate);
         }
 
         public static string ControllerPath(string name) => $"{ControllerDir}/{name}.controller";
@@ -381,6 +383,114 @@ namespace Echoes.EditorTools
             return c;
         }
 
+        // ============================================================================================== Cao de Cinza (Generic quadrupede)
+
+        public const string HoundControllerName = "AC_Hound";
+        public const string HoundSkillSetName = "SO_SkillPresentation_Hound";
+        public const string HoundSkillId = "skill.enemy.ash_bite";
+
+        /// <summary>
+        /// AC_Hound: Base com Locomotion (Idle, Walk e Run pela velocidade), Flee (a fuga do core: IsFleeing) e Death; camada Action com Bite (velocidade do
+        /// clipe em ActionSpeed, casada com preparacao/impacto/recuperacao do core) e camada Hit.
+        /// </summary>
+        public static AnimatorController BuildHoundController()
+        {
+            var path = ControllerPath(HoundControllerName);
+            if (File.Exists(Path.GetFullPath(Path.Combine(Application.dataPath, "../" + path)))) AssetDatabase.DeleteAsset(path);
+            var c = AnimatorController.CreateAnimatorControllerAtPath(path);
+            c.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            c.AddParameter(new AnimatorControllerParameter { name = "ActionSpeed", type = AnimatorControllerParameterType.Float, defaultFloat = 1f });
+            c.AddParameter("IsDead", AnimatorControllerParameterType.Bool);
+            c.AddParameter("IsFleeing", AnimatorControllerParameterType.Bool);
+
+            var sm = c.layers[0].stateMachine;
+            var tree = new BlendTree { name = "Locomotion", blendType = BlendTreeType.Simple1D, blendParameter = "Speed", useAutomaticThresholds = false };
+            AssetDatabase.AddObjectToAsset(tree, c);
+            var run = MoveSpeedMeters(new ControllerSpec { SpeedSourceId = "enemy.ash_hound", Hero = false });
+            tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundIdle), 0f);
+            tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundWalk), run * 0.45f);
+            tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundRun), run);
+            var loco = sm.AddState("Locomotion");
+            loco.motion = tree;
+            sm.defaultState = loco;
+            var flee = sm.AddState("Flee");
+            flee.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundFlee);
+            var death = sm.AddState("Death");
+            death.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundDeath);
+
+            var toFlee = loco.AddTransition(flee);
+            toFlee.AddCondition(AnimatorConditionMode.If, 0f, "IsFleeing");
+            toFlee.hasExitTime = false;
+            toFlee.duration = 0.1f;
+            var fromFlee = flee.AddTransition(loco);
+            fromFlee.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsFleeing");
+            fromFlee.hasExitTime = false;
+            fromFlee.duration = 0.15f;
+            var toDeath = sm.AddAnyStateTransition(death);
+            toDeath.AddCondition(AnimatorConditionMode.If, 0f, "IsDead");
+            toDeath.hasExitTime = false;
+            toDeath.hasFixedDuration = true;
+            toDeath.duration = 0.1f;
+            toDeath.canTransitionToSelf = false;
+            var fromDeath = death.AddTransition(loco);
+            fromDeath.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsDead");
+            fromDeath.hasExitTime = false;
+            fromDeath.duration = 0.1f;
+
+            c.AddLayer("Action");
+            var layers = c.layers;
+            layers[1].defaultWeight = 1f;
+            c.layers = layers;
+            var action = c.layers[1].stateMachine;
+            var empty = action.AddState("Empty");
+            action.defaultState = empty;
+            var bite = action.AddState("Bite");
+            bite.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundBite);
+            bite.speedParameterActive = true;
+            bite.speedParameter = "ActionSpeed";
+            var back = bite.AddTransition(empty);
+            back.hasExitTime = true;
+            back.exitTime = 1f;
+            back.hasFixedDuration = true;
+            back.duration = 0.08f;
+
+            c.AddLayer("Hit");
+            layers = c.layers;
+            layers[2].defaultWeight = 1f;
+            c.layers = layers;
+            var hitMachine = c.layers[2].stateMachine;
+            var hitEmpty = hitMachine.AddState("Empty");
+            hitMachine.defaultState = hitEmpty;
+            var hit = hitMachine.AddState("Hit");
+            hit.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundHit);
+            var hitBack = hit.AddTransition(hitEmpty);
+            hitBack.hasExitTime = true;
+            hitBack.exitTime = 1f;
+            hitBack.hasFixedDuration = true;
+            hitBack.duration = 0.08f;
+            EditorUtility.SetDirty(c);
+            return c;
+        }
+
+        public static SkillPresentationSet BuildHoundSkillSet()
+        {
+            SandboxBuilder.EnsureDir(SkillSetDir);
+            var set = SandboxBuilder.LoadOrCreate<SkillPresentationSet>($"{SkillSetDir}/{HoundSkillSetName}.asset");
+            set.entries.Clear();
+            var bite = EchoesAnimationImport.Spec(EchoesAnimationImport.HoundBite);
+            // O core manda as fases (preparacao, impacto, recuperacao); a velocidade do clipe segue os tempos do core (ActionSpeed).
+            set.entries.Add(new SkillPresentationEntry
+            {
+                skillId = HoundSkillId, animatorState = "Bite", clipSeconds = bite.Seconds,
+                windupEnd = EchoesAnimationImport.HoundBiteWindupFrame / (float)bite.Frames,
+                impactEnd = EchoesAnimationImport.HoundBiteImpactFrame / (float)bite.Frames,
+                anchor = "Head",
+            });
+            set.dodgeState = "Dodge";
+            EditorUtility.SetDirty(set);
+            return set;
+        }
+
         public static SkillPresentationSet BuildArcherSkillSet()
         {
             SandboxBuilder.EnsureDir(SkillSetDir);
@@ -412,6 +522,9 @@ namespace Echoes.EditorTools
                     return $"{SkillSetDir}/{Boss.SkillSet}.asset";
                 case "enemy.ghost_archer":
                     return $"{SkillSetDir}/{ArcherSkillSetName}.asset";
+                case "enemy.ash_hound":
+                case "enemy.swift_ash_hound":
+                    return $"{SkillSetDir}/{HoundSkillSetName}.asset";
                 default:
                     return null;
             }

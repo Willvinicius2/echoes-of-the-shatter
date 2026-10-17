@@ -1,0 +1,114 @@
+[
+ {
+  "name": "AN_AshHound_Idle",
+  "file": "AN_AshHound_Idle.fbx",
+  "frames": 60,
+  "seconds": 2.0,
+  "loop": true,
+  "events": {},
+  "note": "Respirar e balancar o rabo, 2,0 s",
+  "preview": [
+   "AN_AshHound_Idle_f000.png",
+   "AN_AshHound_Idle_f015.png",
+   "AN_AshHound_Idle_f030.png",
+   "AN_AshHound_Idle_f045.png"
+  ]
+ },
+ {
+  "name": "AN_AshHound_Walk",
+  "file": "AN_AshHound_Walk.fbx",
+  "frames": 32,
+  "seconds": 1.067,
+  "loop": true,
+  "events": {},
+  "note": "Andar em loop 1,07 s, diagonais, sem root motion",
+  "preview": [
+   "AN_AshHound_Walk_f000.png",
+   "AN_AshHound_Walk_f008.png",
+   "AN_AshHound_Walk_f016.png",
+   "AN_AshHound_Walk_f024.png"
+  ]
+ },
+ {
+  "name": "AN_AshHound_Run",
+  "file": "AN_AshHound_Run.fbx",
+  "frames": 20,
+  "seconds": 0.667,
+  "loop": true,
+  "events": {},
+  "note": "Correr em loop 0,67 s (galope)",
+  "preview": [
+   "AN_AshHound_Run_f000.png",
+   "AN_AshHound_Run_f005.png",
+   "AN_AshHound_Run_f010.png",
+   "AN_AshHound_Run_f015.png"
+  ]
+ },
+ {
+  "name": "AN_AshHound_Bite",
+  "file": "AN_AshHound_Bite.fbx",
+  "frames": 24,
+  "seconds": 0.8,
+  "loop": false,
+  "events": {
+   "windup_end": 9,
+   "impact": 12,
+   "recovery_end": 24
+  },
+  "note": "skill.enemy.ash_bite: preparacao 0,3 s (0-9), bote/impacto 0,1 s (9-12), recuperacao 0,4 s (12-24)",
+  "preview": [
+   "AN_AshHound_Bite_f000.png",
+   "AN_AshHound_Bite_f005.png",
+   "AN_AshHound_Bite_f009.png",
+   "AN_AshHound_Bite_f012.png",
+   "AN_AshHound_Bite_f016.png",
+   "AN_AshHound_Bite_f024.png"
+  ]
+ },
+ {
+  "name": "AN_AshHound_Hit",
+  "file": "AN_AshHound_Hit.fbx",
+  "frames": 12,
+  "seconds": 0.4,
+  "loop": false,
+  "events": {},
+  "note": "Hit 0,4 s",
+  "preview": [
+   "AN_AshHound_Hit_f000.png",
+   "AN_AshHound_Hit_f003.png",
+   "AN_AshHound_Hit_f008.png",
+   "AN_AshHound_Hit_f012.png"
+  ]
+ },
+ {
+  "name": "AN_AshHound_Flee",
+  "file": "AN_AshHound_Flee.fbx",
+  "frames": 24,
+  "seconds": 0.8,
+  "loop": true,
+  "events": {},
+  "note": "Fuga: corrida para tras, loop 0,8 s, sem root motion",
+  "preview": [
+   "AN_AshHound_Flee_f000.png",
+   "AN_AshHound_Flee_f006.png",
+   "AN_AshHound_Flee_f012.png",
+   "AN_AshHound_Flee_f018.png"
+  ]
+ },
+ {
+  "name": "AN_AshHound_Death",
+  "file": "AN_AshHound_Death.fbx",
+  "frames": 36,
+  "seconds": 1.2,
+  "loop": false,
+  "events": {},
+  "note": "Morte 1,2 s: tomba de lado e encolhe (escala so aqui)",
+  "preview": [
+   "AN_AshHound_Death_f000.png",
+   "AN_AshHound_Death_f004.png",
+   "AN_AshHound_Death_f014.png",
+   "AN_AshHound_Death_f024.png",
+   "AN_AshHound_Death_f036.png"
+  ]
+ }
+]

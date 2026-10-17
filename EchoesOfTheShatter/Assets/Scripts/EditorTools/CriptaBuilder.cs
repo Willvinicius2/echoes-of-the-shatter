@@ -438,6 +438,7 @@ namespace Echoes.EditorTools
             var presentation = hero.AddComponent<PresentationController>();
             hero.AddComponent<ImpactSquash>();
             SandboxBuilder.SetRef(presentation, "root", ctx.GameRoot);
+            SandboxBuilder.SetRef(presentation, "eliteTint", AssetDatabase.LoadAssetAtPath<RarityTintAsset>("Assets/Data/Presentation/SO_RarityTint.asset"));
             SandboxBuilder.SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.WarriorSkillSetPath));
             SandboxBuilder.SetRef(heroController, "combatHost", ctx.Host);
             SandboxBuilder.SetRef(heroController, "input", inputHandler);
@@ -448,6 +449,11 @@ namespace Echoes.EditorTools
             var visual = (GameObject)PrefabUtility.InstantiatePrefab(heroPrefab);
             visual.name = "Body";
             visual.transform.SetParent(hero.transform, false);
+
+            var swap = hero.AddComponent<HeroVisualSwap>();
+            SandboxBuilder.SetRef(swap, "warrior", heroPrefab);
+            SandboxBuilder.SetRef(swap, "archer", CharacterPrefabBuilder.HeroPrefab("archer"));
+            SandboxBuilder.SetRef(swap, "mage", CharacterPrefabBuilder.HeroPrefab("mage"));
 
             var rig = new GameObject("CameraRig");
             rig.transform.position = hero.transform.position + new Vector3(0f, 0.52f, 0f);
@@ -758,6 +764,7 @@ namespace Echoes.EditorTools
             var presentation = go.AddComponent<PresentationController>();
             go.AddComponent<ImpactSquash>();
             SandboxBuilder.SetRef(presentation, "root", ctx.GameRoot);
+            SandboxBuilder.SetRef(presentation, "eliteTint", AssetDatabase.LoadAssetAtPath<RarityTintAsset>("Assets/Data/Presentation/SO_RarityTint.asset"));
             var skillSetPath = AnimatorControllerBuilder.SkillSetPathFor(g.EnemyId);
             if (skillSetPath != null) SandboxBuilder.SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(skillSetPath));
             BuildEnemyVisual(ctx, go.transform, g.EnemyId, boss);
