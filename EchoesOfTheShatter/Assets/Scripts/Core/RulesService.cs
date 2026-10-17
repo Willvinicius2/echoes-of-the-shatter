@@ -48,7 +48,7 @@ namespace Echoes.Core
             if (Core is NativeRulesCore)
             {
                 for (var i = 0; i < NativeRulesCore.StillInStub.Count; i++)
-                    Debug.Log("[Rules] Ainda no stub (API C v1 nao cobre): " + NativeRulesCore.StillInStub[i]);
+                    Debug.Log("[Rules] Ainda no stub (a API C 1.3 nao expoe; save, expedicao e fuga ja sao do core): " + NativeRulesCore.StillInStub[i]);
             }
             var warnings = Core.LoadWarnings;
             for (var i = 0; i < warnings.Count; i++)

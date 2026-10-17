@@ -22,14 +22,13 @@ namespace Echoes.Interop.Native
     {
         public const string Name = "shattercore-native";
 
-        /// <summary>O que a API C 1.1 ainda nao entrega e continua no <see cref="StubRulesCore"/> (lista para o log e o relatorio).</summary>
+        /// <summary>O que a API C 1.3 ainda nao entrega e continua no <see cref="StubRulesCore"/> (lista para o log e o relatorio). Save, expedicao e fuga ja sao nativos.</summary>
         public static readonly IReadOnlyList<string> StillInStub = new[]
         {
             "Registros de conteudo tipados (FindClass/FindSkill/FindEnemy/FindItemBase/FindPotion, Potions, ClassInfo/EnemyInfo/SkillInfo/PotionInfo): a API so devolve JSON por ID (shatter_db_lookup_json), sem listas tipadas",
             "NextBelow e NextUnit: a API so tem shatter_rng_next_u32, sem o sorteio limitado nem o unitario",
             "Tags dos efeitos nos eventos de dano de DoT (o evento nativo nao traz tags; vem do conteudo do stub)",
             "Sequenciamento de fases do ataque comum (EnemyBrainLogic: Idle/Chase/Telegraph/Attack/Recover) e da ação do herói (ActionTimeline): o C# so avança as fases com os tempos do core; chefe usa o shatter_boss",
-            "Salvar/ler (shatter_save_*) e expedicao (_trusted): nao ha camada de save/expedicao no C# ainda",
         };
 
         // Registro dos nucleos vivos (A-06): o editor/jogo descarta todos ao sair do Play, recarregar o dominio ou fechar,

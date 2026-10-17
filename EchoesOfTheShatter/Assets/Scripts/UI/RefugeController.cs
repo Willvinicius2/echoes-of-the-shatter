@@ -71,7 +71,7 @@ namespace Echoes.UI
 
             // Teste do player (-smoke): conquista a Cripta, inicia, avanca o relogio, coleta e registra o relatorio no log (e na captura -shot).
             if (GameFlow.ArgValue("-smoke") != null) StartCoroutine(SmokeRun());
-            if (GameFlow.ArgValue("-bossshot") != null) StartCoroutine(GoToCrypt());
+            if (GameFlow.ArgValue("-bossshot") != null || GameFlow.ArgValue("-perf") != null) StartCoroutine(GoToCrypt());
             if (!string.IsNullOrEmpty(GameSession.PendingToastKey))
             {
                 ScreenHost.Toast(Loc.Get(GameSession.PendingToastKey));

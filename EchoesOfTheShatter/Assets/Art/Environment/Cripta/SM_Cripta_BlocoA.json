@@ -1,0 +1,45 @@
+{
+ "asset": "SM_Cripta_BlocoA",
+ "mesh": "SM_Cripta_BlocoA",
+ "tris": 432,
+ "kind": "detail",
+ "size_m_unity": [
+  1.2,
+  0.9,
+  1.3
+ ],
+ "bounds_blender": {
+  "min": [
+   -0.6,
+   -0.65,
+   0.0
+  ],
+  "max": [
+   0.6,
+   0.65,
+   0.9
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_BlocoA_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_BlocoA_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    -0.0,
+    0.45,
+    -0.0
+   ],
+   "size": [
+    1.2,
+    0.9,
+    1.3
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

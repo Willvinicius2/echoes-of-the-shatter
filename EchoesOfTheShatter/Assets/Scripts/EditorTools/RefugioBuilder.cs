@@ -13,7 +13,7 @@ using UnityEngine.UIElements;
 namespace Echoes.EditorTools
 {
     /// <summary>
-    /// Refugio do Marco (docs/16, S-04) com primitivas e o kit graybox, pequeno (40 x 30 m): o heroi nasce perto do portal da Cripta, a Ilsa
+    /// Refugio do Marco (docs/16, S-04) com o kit de cenario pintado da Cripta, pequeno (40 x 30 m): o heroi nasce perto do portal da Cripta, a Ilsa
     /// (configurar e iniciar a expedicao) e o Tico (coletar e ver o relatorio) ficam a poucos passos. Sem inimigos. Cena: Assets/Scenes/Refugio/Refugio.unity.
     /// </summary>
     public static class RefugioBuilder
@@ -66,6 +66,7 @@ namespace Echoes.EditorTools
             BuildLevel(mats);
             CriptaBuilder.BuildSystems(ctx, feel, projectile);
             var hero = CriptaBuilder.BuildHero(ctx, renderSettings, inputActions, HeroSpawn);
+            SceneryBuilder.AddFirePool(hero != null ? hero.transform : null);
             CriptaBuilder.BuildHud(ctx, panel, hudUxml);
 
             // Portal para a Cripta (PortalZone avisa, AreaTravel troca a cena; heroi ocupado numa expedicao fica retido com dlg.ilsa.busy).
@@ -78,13 +79,8 @@ namespace Echoes.EditorTools
             ring.transform.localScale = new Vector3(3.6f, 0.04f, 3.6f);
             ring.transform.localPosition = new Vector3(0f, 0.04f, 0f);
             SandboxBuilder.Apply(ring, mats.Boss);
-            var pillar = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            pillar.name = "Gate";
-            UnityEngine.Object.DestroyImmediate(pillar.GetComponent<Collider>());
-            pillar.transform.SetParent(portal.transform, false);
-            pillar.transform.localScale = new Vector3(0.4f, 3f, 3f);
-            pillar.transform.localPosition = new Vector3(1.4f, 1.5f, 0f);
-            SandboxBuilder.Apply(pillar, mats.Boss);
+            var gate = EnvironmentKit.Place("PortalAberto", portal.transform, portal.transform.position + new Vector3(1.4f, 0f, 0f), 90f, instanceName: "Gate");
+            SceneryBuilder.AddFire(gate, false, 2.2f, new Color(0.62f, 0.5f, 1f), 1.6f, 7f);
             var zone = portal.AddComponent<PortalZone>();
             SandboxBuilder.SetRef(zone, "combatHost", ctx.Host);
             SandboxBuilder.SetRef(zone, "hero", hero);
@@ -107,21 +103,47 @@ namespace Echoes.EditorTools
             Echoes.EditorTools.Build.AddSceneToBuildSettings(ScenePath);
         }
 
+        /// <summary>Refugio com o kit pintado da Cripta (pisos de 2 m, paredes de 2 m, postes de canto, pilares, blocos, sarcofago como mesa, braseiros e entulho).</summary>
         static void BuildLevel(SandboxBuilder.Mats mats)
         {
+            EnvironmentKit.Import();
             var level = new GameObject("Level").transform;
-            Block(level, "Floor", new Vector3(0f, -0.1f, 0f), new Vector3(Width, 0.2f, Depth), mats.FloorA);
-            const float h = 3f, t = 0.6f;
-            Block(level, "Wall_N", new Vector3(0f, h / 2f, Depth / 2f), new Vector3(Width + t, h, t), mats.Wall);
-            Block(level, "Wall_S", new Vector3(0f, h / 2f, -Depth / 2f), new Vector3(Width + t, h, t), mats.Wall);
-            Block(level, "Wall_E", new Vector3(Width / 2f, h / 2f, 0f), new Vector3(t, h, Depth), mats.Wall);
-            Block(level, "Wall_W", new Vector3(-Width / 2f, h / 2f, 0f), new Vector3(t, h, Depth), mats.Wall);
-            // Cenario simples com o kit graybox: pilares nos cantos e caixas perto dos NPCs.
+            var decor = new GameObject("Decor").transform;
+            var floor = new GameObject("Floor");
+            floor.transform.SetParent(level, false);
+            var rect = new Rect(-Width / 2f, -Depth / 2f, Width, Depth);
+            var box = floor.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, -0.1f, 0f);
+            box.size = new Vector3(Width, 0.2f, Depth);
+            SceneryBuilder.BuildFloor(floor.transform, "refuge", rect, null);
+            var walls = new GameObject("Walls").transform;
+            walls.SetParent(level, false);
+            SceneryBuilder.WallRun(walls, "refuge_s", true, rect.yMin, rect.xMin, rect.xMax, false);
+            SceneryBuilder.WallRun(walls, "refuge_n", true, rect.yMax, rect.xMin, rect.xMax, true);
+            SceneryBuilder.WallRun(walls, "refuge_w", false, rect.xMin, rect.yMin, rect.yMax, false);
+            SceneryBuilder.WallRun(walls, "refuge_e", false, rect.xMax, rect.yMin, rect.yMax, true);
+            SceneryBuilder.CornerPosts(walls, "refuge", rect);
+            var props = new GameObject("Props").transform;
+            props.SetParent(level, false);
             foreach (var corner in new[] { new Vector3(-17f, 0f, 12f), new Vector3(17f, 0f, 12f), new Vector3(-17f, 0f, -12f), new Vector3(17f, 0f, -12f) })
-                Block(level, "Pillar", corner + new Vector3(0f, 1.5f, 0f), new Vector3(1.2f, 3f, 1.2f), mats.Pillar);
-            Block(level, "Crate_A", new Vector3(-11f, 0.5f, 7.5f), new Vector3(1f, 1f, 1f), mats.Crate);
-            Block(level, "Crate_B", new Vector3(-11f, 0.5f, -7.5f), new Vector3(1f, 1f, 1f), mats.Crate);
-            Block(level, "Table", new Vector3(-5f, 0.45f, 0f), new Vector3(2.4f, 0.9f, 1.2f), mats.Crate);
+                EnvironmentKit.Place("PilarInteiro", props, corner, 0f, instanceName: "Pillar");
+            EnvironmentKit.Place("BlocoA", props, new Vector3(-11f, 0f, 7.5f), 20f, instanceName: "Crate_A");
+            EnvironmentKit.Place("BlocoB", props, new Vector3(-11f, 0f, -7.5f), -15f, instanceName: "Crate_B");
+            EnvironmentKit.Place("SarcofagoFechado", props, new Vector3(-5f, 0f, 0f), 90f, instanceName: "Table");
+            foreach (var pos in new[] { new Vector3(12f, 0f, 5f), new Vector3(12f, 0f, -5f), new Vector3(-14f, 0f, 0f), new Vector3(-6f, 0f, 10f), new Vector3(-6f, 0f, -10f) })
+            {
+                var brazier = EnvironmentKit.Place("Braseiro", props, pos, 0f, instanceName: "Brazier");
+                SceneryBuilder.AddBrazierFire(brazier);
+            }
+            var rng = SceneryBuilder.Rng("refuge.decor");
+            foreach (var name in new[] { "Velas", "Velas", "Ossos", "PedraE", "PedraF", "PedraE", "Ossos", "PedraF" })
+            {
+                var p = new Vector3((float)(rng.NextDouble() * 30.0 - 15.0), 0f, (float)(rng.NextDouble() * 20.0 - 10.0));
+                if (Mathf.Abs(p.x) < 4f && Mathf.Abs(p.z) < 3f) continue;                         // longe do ponto de chegada e do caminho ate o portal
+                if (Mathf.Abs(p.z) < 2.5f && p.x > 0f) continue;
+                var go = EnvironmentKit.Place(name, decor, p, (float)rng.NextDouble() * 360f, colliders: false, instanceName: name);
+                if (name == "Velas") SceneryBuilder.AddCandleFire(go);
+            }
         }
 
         static void Block(Transform parent, string name, Vector3 position, Vector3 scale, Material material)

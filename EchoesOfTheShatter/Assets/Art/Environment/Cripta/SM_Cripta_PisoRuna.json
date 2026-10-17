@@ -1,0 +1,45 @@
+{
+ "asset": "SM_Cripta_PisoRuna",
+ "mesh": "SM_Cripta_PisoRuna",
+ "tris": 220,
+ "kind": "simple",
+ "size_m_unity": [
+  2.0,
+  0.2,
+  2.0
+ ],
+ "bounds_blender": {
+  "min": [
+   -1.0,
+   -1.0,
+   -0.2
+  ],
+  "max": [
+   1.0,
+   1.0,
+   0.0
+  ]
+ },
+ "pivot": "floor_top",
+ "textures": {
+  "albedo": "T_Cripta_PisoRuna_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_PisoRuna_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "BoxCollider",
+   "center": [
+    -0.0,
+    -0.1,
+    -0.0
+   ],
+   "size": [
+    2.0,
+    0.2,
+    2.0
+   ]
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

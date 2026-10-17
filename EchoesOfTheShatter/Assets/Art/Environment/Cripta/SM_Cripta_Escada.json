@@ -1,0 +1,49 @@
+{
+ "asset": "SM_Cripta_Escada",
+ "mesh": "SM_Cripta_Escada",
+ "tris": 300,
+ "kind": "simple",
+ "size_m_unity": [
+  2.0,
+  1.0,
+  2.0
+ ],
+ "bounds_blender": {
+  "min": [
+   -1.0,
+   -1.0,
+   0.0
+  ],
+  "max": [
+   1.0,
+   1.0,
+   1.0
+  ]
+ },
+ "pivot": "base_center",
+ "textures": {
+  "albedo": "T_Cripta_Escada_BC.png (512x512, sRGB)",
+  "mask": "T_Cripta_Escada_M.png (256x256, linear; R emissao, G rim, B tinta)"
+ },
+ "colliders": [
+  {
+   "type": "MeshCollider(convex) sugerido",
+   "note": "rampa: cunha de 2 m de base e 1 m de altura sobe para +Y do Blender (frente +Z da Unity vira topo)",
+   "bounds": {
+    "type": "BoxCollider",
+    "center": [
+     -0.0,
+     0.5,
+     0.0
+    ],
+    "size": [
+     2.0,
+     1.0,
+     2.0
+    ]
+   }
+  }
+ ],
+ "shadow_casting": "Off (cenario)",
+ "collider_note": "sugestao: nunca usar a malha visual como colisor"
+}

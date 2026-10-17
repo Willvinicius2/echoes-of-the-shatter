@@ -20,6 +20,32 @@ namespace Echoes.Tests.PlayMode
         const string ScenePath = "Assets/Scenes/Cripta/Cripta.unity";
 
         [UnityTest]
+        public IEnumerator FireLightsStayWithinTheBudgetAndFollowTheHero()
+        {
+            yield return SceneManager.LoadSceneAsync(ScenePath, LoadSceneMode.Single);
+            yield return new WaitForSeconds(1.5f);
+            var pool = Object.FindFirstObjectByType<Echoes.Presentation.FirePool>();
+            var hero = Object.FindFirstObjectByType<HeroController>();
+            Assert.IsNotNull(pool);
+            Assert.Greater(pool.SourceCount, 20);
+            Assert.LessOrEqual(pool.Capacity, 6);
+            Assert.Greater(pool.ActiveLightCount, 0, "perto do Atrio ha braseiros acesos");
+            Assert.LessOrEqual(Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Count(l => l.enabled && l.type == LightType.Point), 6, "no maximo 6 pontuais ativas");
+            Assert.LessOrEqual(Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None).Length, 6, "chamas so no pool");
+
+            // Longe de tudo (centro da arena a 200 m de um canto): continua dentro do orcamento.
+            var controller = hero.GetComponent<CharacterController>();
+            controller.enabled = false;
+            hero.transform.position = new Vector3(76f, 0f, 139f);
+            controller.enabled = true;
+            yield return new WaitForSeconds(1.2f);
+            Assert.LessOrEqual(Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Count(l => l.enabled && l.type == LightType.Point), 6);
+            var nearest = Object.FindObjectsByType<Echoes.Presentation.FireSource>(FindObjectsSortMode.None).OrderBy(f => Vector3.Distance(f.transform.position, hero.transform.position)).First();
+            var lit = Object.FindObjectsByType<Light>(FindObjectsSortMode.None).Where(l => l.enabled && l.type == LightType.Point && l.intensity > 0.2f).ToList();
+            Assert.IsTrue(lit.Any(l => Vector3.Distance(l.transform.position, nearest.FirePoint) < 0.5f), "a fonte mais proxima do heroi esta acesa");
+        }
+
+        [UnityTest]
         public IEnumerator CriptaLoadsRunsRespawnsEnemiesAndClosesTheArenaDoor()
         {
             // A cena esta nos Build Settings (o CriptaBuilder a adiciona): carrega pelo caminho.

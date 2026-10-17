@@ -21,7 +21,7 @@ namespace Echoes.EditorTools
     /// Monta a Cripta jogável da Etapa 2 (Assets/Scenes/Cripta/Cripta.unity) a partir do bloco JSON do docs/14_layout_cripta.md, na escala da
     /// zona A: 9 salas e o nicho secreto, corredores de 6 m, arena de 40 m com 8 pilares, portais, checkpoints, baús, segredo e atalho.
     /// Nenhum número do mapa mora aqui: salas, encontros, posições, pilares e raios vêm do JSON; os encontros ainda conferem com o
-    /// encounters.csv (testes). Visual provisório: kit graybox aprovado (SM_Cripta_*, SM_Enemy_*) onde existir, primitivas onde faltar.
+    /// encounters.csv (testes). Visual: kit de cenário pintado (SM_Cripta_*, ver EnvironmentKit e CriptaScenery) e os modelos dos inimigos.
     /// Menu: Echoes ▸ Montar Cripta. Batchmode: -executeMethod Echoes.EditorTools.CriptaBuilder.BuildFromCommandLine
     /// </summary>
     public static class CriptaBuilder
@@ -33,7 +33,6 @@ namespace Echoes.EditorTools
 
         static readonly string[] KitFiles =
         {
-            "SM_Cripta_Pillar_A.fbx", "SM_Cripta_Wall_2m_A.fbx", "SM_Cripta_Brazier_A.fbx", "SM_Cripta_Sarcophagus_A.fbx",
             "SM_Enemy_AshHound.fbx", "T_Graybox_Palette_BC.png", "T_Graybox_Palette_E.png",
         };
 
@@ -123,12 +122,14 @@ namespace Echoes.EditorTools
 
             // ---- Nivel: so a geometria andavel e as paredes entram no NavMesh
             var level = new GameObject("Level").transform;
-            BuildGeometry(ctx, level);
+            var decor = new GameObject("Decor").transform; // props sem colisor: fora do Level, fora da NavMesh
+            CriptaScenery.Build(ctx, level, decor);
 
             // ---- Sistemas, heroi, camera, HUD
             BuildSystems(ctx, feel, projectile);
             ctx.Interactives = new GameObject("Interactives").transform;
             var hero = BuildHero(ctx, renderSettings, inputActions);
+            SceneryBuilder.AddFirePool(hero != null ? hero.transform : null); // luzes e chamas em pool (ate 6)
             BuildHud(ctx, panel, hudUxml);
             BuildSessionObjects(ctx, panel, true);
 
@@ -164,228 +165,12 @@ namespace Echoes.EditorTools
 
         // ============================================================================================== geometria
 
-        static void BuildGeometry(Context ctx, Transform level)
-        {
-            var layout = ctx.Layout;
-            var rooms = new GameObject("Rooms").transform; rooms.SetParent(level, false);
-            var corridors = new GameObject("Corridors").transform; corridors.SetParent(level, false);
-            var walls = new GameObject("Walls").transform; walls.SetParent(level, false);
-            var pillars = new GameObject("Pillars").transform; pillars.SetParent(level, false);
-            var floorRects = new List<Rect>();
-
-            foreach (var room in layout.Rooms)
-            {
-                floorRects.Add(room.Rect);
-                var go = new GameObject(room.Id);
-                go.transform.SetParent(rooms, false);
-                AddFloorCollider(go.transform, room.Rect);
-            }
-            foreach (var corridor in layout.Corridors)
-            {
-                floorRects.Add(corridor.Rect);
-                var go = new GameObject(corridor.Id);
-                go.transform.SetParent(corridors, false);
-                AddFloorCollider(go.transform, corridor.Rect);
-            }
-
-            // Piso xadrez de 2 m (kit graybox de piso entra com o cenario pintado).
-            var meshA = SandboxBuilder.SaveMesh(SandboxBuilder.BuildCheckerMesh(floorRects, 0), GeneratedDir + "/Cripta_FloorA.asset");
-            var meshB = SandboxBuilder.SaveMesh(SandboxBuilder.BuildCheckerMesh(floorRects, 1), GeneratedDir + "/Cripta_FloorB.asset");
-            SandboxBuilder.AddFloorVisual(level, "Floor_A", meshA, ctx.Mats.FloorA);
-            SandboxBuilder.AddFloorVisual(level, "Floor_B", meshB, ctx.Mats.FloorB);
-
-            foreach (var room in layout.Rooms) BuildRoomWalls(ctx, walls, room);
-            foreach (var corridor in layout.Corridors) BuildCorridorWalls(ctx, walls, corridor);
-
-            foreach (var pillar in layout.Pillars) BuildPillar(ctx, pillars, pillar);
-
-            // Vistas nao caminhaveis (abismo, colunata, portao): bloco escuro com colisor, o cenario pintado troca depois.
-            foreach (var vista in layout.Vistas)
-            {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                go.name = vista.Id;
-                go.transform.SetParent(level, false);
-                go.transform.position = new Vector3(vista.Rect.center.x, 1.5f, vista.Rect.center.y);
-                go.transform.localScale = new Vector3(vista.Rect.width, 3f, vista.Rect.height);
-                SandboxBuilder.Apply(go, ctx.Mats.Pillar);
-            }
-        }
-
-        static void AddFloorCollider(Transform parent, Rect r)
+        /// <summary>O cenario (pisos, paredes, pilares, props) e do <see cref="CriptaScenery"/>, com o kit pintado; aqui so o colisor de piso por sala.</summary>
+        internal static void AddFloorCollider(Transform parent, Rect r)
         {
             var box = parent.gameObject.AddComponent<BoxCollider>();
             box.center = new Vector3(r.center.x, -0.1f, r.center.y);
             box.size = new Vector3(r.width, 0.2f, r.height);
-        }
-
-        // Paredes: o perimetro de cada sala com vaos onde um corredor (ou o segredo) encosta; os corredores ganham as paredes laterais.
-        static void BuildRoomWalls(Context ctx, Transform parent, CriptaLayout.RoomData room)
-        {
-            var r = room.Rect;
-            var layout = ctx.Layout;
-            const float eps = 0.01f;
-            for (var side = 0; side < 4; side++)
-            {
-                // side: 0 sul (z = zMin, ao longo de X), 1 norte, 2 oeste (x = xMin, ao longo de Z), 3 leste
-                var alongX = side < 2;
-                var line = side == 0 ? r.yMin : side == 1 ? r.yMax : side == 2 ? r.xMin : r.xMax;
-                var a = alongX ? r.xMin : r.yMin;
-                var b = alongX ? r.xMax : r.yMax;
-                var openings = new List<Vector2>();
-                foreach (var c in layout.Corridors)
-                {
-                    var cr = c.Rect;
-                    bool touches;
-                    Vector2 span;
-                    switch (side)
-                    {
-                        case 0: touches = Mathf.Abs(cr.yMax - line) < eps; span = new Vector2(cr.xMin, cr.xMax); break;
-                        case 1: touches = Mathf.Abs(cr.yMin - line) < eps; span = new Vector2(cr.xMin, cr.xMax); break;
-                        case 2: touches = Mathf.Abs(cr.xMax - line) < eps; span = new Vector2(cr.yMin, cr.yMax); break;
-                        default: touches = Mathf.Abs(cr.xMin - line) < eps; span = new Vector2(cr.yMin, cr.yMax); break;
-                    }
-                    if (touches && span.y > a && span.x < b) openings.Add(span);
-                }
-                foreach (var s in layout.Secrets)
-                {
-                    // Parede rachada: vao no lado sul/norte onde o retangulo do segredo atravessa a linha.
-                    if (!alongX) continue;
-                    if (line >= s.Rect.yMin - eps && line <= s.Rect.yMax + eps && s.Rect.xMin >= a && s.Rect.xMax <= b) openings.Add(new Vector2(s.Rect.xMin, s.Rect.xMax));
-                }
-                openings.Sort((p, q) => p.x.CompareTo(q.x));
-                var cursor = a;
-                foreach (var o in openings)
-                {
-                    if (o.x > cursor + eps) WallRun(ctx, parent, room.Id, alongX, line, cursor, o.x, side == 1 || side == 3, cursor == a, false);
-                    cursor = Mathf.Max(cursor, o.y);
-                }
-                if (b > cursor + eps) WallRun(ctx, parent, room.Id, alongX, line, cursor, b, side == 1 || side == 3, cursor == a, true);
-            }
-        }
-
-        static void BuildCorridorWalls(Context ctx, Transform parent, CriptaLayout.CorridorData c)
-        {
-            var r = c.Rect;
-            if (c.AlongX)
-            {
-                WallRun(ctx, parent, c.Id, true, r.yMin, r.xMin, r.xMax, false, false, false);
-                WallRun(ctx, parent, c.Id, true, r.yMax, r.xMin, r.xMax, true, false, false);
-            }
-            else
-            {
-                WallRun(ctx, parent, c.Id, false, r.xMin, r.yMin, r.yMax, false, false, false);
-                WallRun(ctx, parent, c.Id, false, r.xMax, r.yMin, r.yMax, true, false, false);
-            }
-        }
-
-        // Um trecho reto de parede entre from e to (ao longo do eixo), deslocado para FORA do chao jogavel. extendStart/End cobrem o canto.
-        static void WallRun(Context ctx, Transform parent, string owner, bool alongX, float line, float from, float to, bool positiveOutside, bool extendStart, bool extendEnd)
-        {
-            var t = SandboxBuilder.WallThickness;
-            if (extendStart) from -= t;
-            if (extendEnd) to += t;
-            var length = to - from;
-            if (length < 0.1f) return;
-            var module = ModuleLength();
-            var n = Mathf.Max(1, Mathf.RoundToInt(length / module));
-            var tile = length / n;
-            for (var i = 0; i < n; i++)
-            {
-                var center = from + tile * (i + 0.5f);
-                var outside = (positiveOutside ? 1f : -1f) * t * 0.5f;
-                var position = alongX ? new Vector3(center, 0f, line + outside) : new Vector3(line + outside, 0f, center);
-                PlaceWallTile(ctx, parent, $"{owner}_wall", position, alongX, tile);
-            }
-        }
-
-        static float cachedModule;
-
-        static float ModuleLength()
-        {
-            if (cachedModule > 0f) return cachedModule;
-            var model = AssetDatabase.LoadAssetAtPath<GameObject>(KitDir + "/SM_Cripta_Wall_2m_A.fbx");
-            cachedModule = 2f;
-            if (model != null)
-            {
-                var bounds = RenderBounds(model);
-                if (bounds.size.x > 0.1f) cachedModule = bounds.size.x;
-            }
-            return cachedModule;
-        }
-
-        static void PlaceWallTile(Context ctx, Transform parent, string name, Vector3 center, bool alongX, float tileLength)
-        {
-            var model = AssetDatabase.LoadAssetAtPath<GameObject>(KitDir + "/SM_Cripta_Wall_2m_A.fbx");
-            GameObject go;
-            if (model != null)
-            {
-                go = (GameObject)PrefabUtility.InstantiatePrefab(model);
-                go.name = name;
-                go.transform.SetParent(parent, false);
-                go.transform.rotation = alongX ? Quaternion.identity : Quaternion.Euler(0f, 90f, 0f);
-                var native = RenderBounds(go).size;
-                var scaleLength = native.x > 0.01f ? tileLength / (alongX ? native.x : native.z) : 1f;
-                go.transform.localScale = new Vector3(scaleLength, 1f, 1f);
-                // Escala so no comprimento do trecho: aplica no eixo local X (o comprimento do modulo).
-                var bounds = RenderBounds(go);
-                go.transform.position += new Vector3(center.x - bounds.center.x, -bounds.min.y, center.z - bounds.center.z);
-                ApplyPalette(go, ctx.Palette, false);
-            }
-            else
-            {
-                go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                go.name = name;
-                go.transform.SetParent(parent, false);
-                go.transform.position = new Vector3(center.x, SandboxBuilder.WallHeight / 2f, center.z);
-                go.transform.localScale = alongX
-                    ? new Vector3(tileLength, SandboxBuilder.WallHeight, SandboxBuilder.WallThickness)
-                    : new Vector3(SandboxBuilder.WallThickness, SandboxBuilder.WallHeight, tileLength);
-                SandboxBuilder.Apply(go, ctx.Mats.Wall);
-            }
-            AddWallCollider(go, alongX, tileLength);
-        }
-
-        // Colisor simples (04 secao 17.1): nunca o mesh visual.
-        static void AddWallCollider(GameObject go, bool alongX, float length)
-        {
-            foreach (var c in go.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(c);
-            var bounds = RenderBounds(go);
-            var box = go.AddComponent<BoxCollider>();
-            box.center = go.transform.InverseTransformPoint(bounds.center);
-            var size = bounds.size;
-            box.size = new Vector3(size.x / Mathf.Max(0.0001f, go.transform.lossyScale.x), size.y / Mathf.Max(0.0001f, go.transform.lossyScale.y), size.z / Mathf.Max(0.0001f, go.transform.lossyScale.z));
-        }
-
-        static void BuildPillar(Context ctx, Transform parent, CriptaLayout.PillarData p)
-        {
-            var model = AssetDatabase.LoadAssetAtPath<GameObject>(KitDir + "/SM_Cripta_Pillar_A.fbx");
-            GameObject go;
-            if (model != null)
-            {
-                go = (GameObject)PrefabUtility.InstantiatePrefab(model);
-                go.name = p.Id;
-                go.transform.SetParent(parent, false);
-                var native = RenderBounds(go).size;
-                go.transform.localScale = new Vector3(2f * p.Radius / Mathf.Max(0.01f, native.x), p.Height / Mathf.Max(0.01f, native.y), 2f * p.Radius / Mathf.Max(0.01f, native.z));
-                var bounds = RenderBounds(go);
-                go.transform.position += new Vector3(p.Pos.x - bounds.center.x, -bounds.min.y, p.Pos.y - bounds.center.z);
-                ApplyPalette(go, ctx.Palette, false);
-                foreach (var c in go.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(c);
-            }
-            else
-            {
-                go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                go.name = p.Id;
-                go.transform.SetParent(parent, false);
-                go.transform.position = new Vector3(p.Pos.x, p.Height / 2f, p.Pos.y);
-                go.transform.localScale = new Vector3(2f * p.Radius, p.Height / 2f, 2f * p.Radius);
-                SandboxBuilder.Apply(go, ctx.Mats.Pillar);
-                Object.DestroyImmediate(go.GetComponent<Collider>());
-            }
-            var capsule = go.AddComponent<CapsuleCollider>(); // colisor solido simples, no mundo
-            capsule.radius = p.Radius / Mathf.Max(0.0001f, go.transform.lossyScale.x);
-            capsule.height = p.Height / Mathf.Max(0.0001f, go.transform.lossyScale.y);
-            capsule.center = go.transform.InverseTransformPoint(new Vector3(p.Pos.x, p.Height / 2f, p.Pos.y));
         }
 
         // ============================================================================================== sistemas
@@ -510,6 +295,8 @@ namespace Echoes.EditorTools
                 SandboxBuilder.SetRef(recorder, "root", ctx.GameRoot);
                 var shot = go.AddComponent<BossShotRunner>();
                 SandboxBuilder.SetRef(shot, "root", ctx.GameRoot);
+                var perf = go.AddComponent<FramePerfRunner>();
+                SandboxBuilder.SetRef(perf, "root", ctx.GameRoot);
                 var bossBar = go.AddComponent<BossBarView>();
                 SandboxBuilder.SetRef(bossBar, "root", ctx.GameRoot);
             }
@@ -530,7 +317,6 @@ namespace Echoes.EditorTools
                 SandboxBuilder.SetRef(zone, "hero", ctx.Hero);
                 SandboxBuilder.SetString(zone, "checkpointId", cp.Id);
                 if (firstCheckpoint == null) firstCheckpoint = go.transform;
-                AddBrazier(ctx, go.transform);
             }
             if (firstCheckpoint != null) SandboxBuilder.SetRef(ctx.Hero, "checkpoint", firstCheckpoint);
 
@@ -538,6 +324,8 @@ namespace Echoes.EditorTools
             foreach (var portal in layout.Portals)
             {
                 var go = Marker(root, portal.Id, portal.Pos, ctx.Mats.Boss, 2.4f);
+                var frame = EnvironmentKit.Place("PortalAberto", go.transform, go.transform.position, 0f, instanceName: "PortalFrame");
+                SceneryBuilder.AddFire(frame, false, 2.2f, new Color(0.62f, 0.5f, 1f), 1.6f, 7f);
                 var zone = go.AddComponent<PortalZone>();
                 SandboxBuilder.SetRef(zone, "combatHost", ctx.Host);
                 SandboxBuilder.SetRef(zone, "hero", ctx.Hero);
@@ -623,18 +411,6 @@ namespace Echoes.EditorTools
             return go;
         }
 
-        static void AddBrazier(Context ctx, Transform parent)
-        {
-            var model = AssetDatabase.LoadAssetAtPath<GameObject>(KitDir + "/SM_Cripta_Brazier_A.fbx");
-            if (model == null) return;
-            var go = (GameObject)PrefabUtility.InstantiatePrefab(model);
-            go.name = "Brazier";
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = new Vector3(1.8f, 0f, 0f);
-            foreach (var c in go.GetComponentsInChildren<Collider>()) Object.DestroyImmediate(c);
-            ApplyPalette(go, ctx.Palette, false);
-        }
-
         static void BuildChest(Context ctx, Transform parent, CriptaLayout.PointData chest)
         {
             var go = new GameObject(chest.Id);
@@ -696,13 +472,17 @@ namespace Echoes.EditorTools
 
         static void BuildSecret(Context ctx, Transform parent, CriptaLayout.SecretData secret)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = secret.Id;
+            // Parede rachada: ParedeRuina (kit pintado) fechando o vao de 3 m; o SecretWall desliga o objeto inteiro ao abrir.
+            var go = new GameObject(secret.Id);
             go.transform.SetParent(parent, false);
             var width = secret.Rect.width;
-            go.transform.position = new Vector3(secret.Rect.center.x, SandboxBuilder.WallHeight / 2f, secret.Rect.center.y);
-            go.transform.localScale = new Vector3(width, SandboxBuilder.WallHeight, SandboxBuilder.WallThickness);
-            SandboxBuilder.Apply(go, ctx.Mats.Crate); // dourado: a "rachadura clara" do roteiro de arte
+            var piece = EnvironmentKit.Get("ParedeRuina");
+            go.transform.position = new Vector3(secret.Rect.center.x, 0f, secret.Rect.center.y);
+            var box = go.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, SandboxBuilder.WallHeight / 2f, -piece.Size.z * 0.5f);
+            box.size = new Vector3(width, SandboxBuilder.WallHeight, piece.Size.z);
+            var visual = EnvironmentKit.Place("ParedeRuina", go.transform, go.transform.position, 0f, new Vector3(width / piece.Size.x, SandboxBuilder.WallHeight / piece.Size.y, 1f), colliders: false, instanceName: "Visual");
+            visual.transform.localPosition = Vector3.zero;
             var wall = go.AddComponent<SecretWall>();
             SandboxBuilder.SetRef(wall, "combatHost", ctx.Host);
             SandboxBuilder.SetRef(wall, "hero", ctx.Hero);
