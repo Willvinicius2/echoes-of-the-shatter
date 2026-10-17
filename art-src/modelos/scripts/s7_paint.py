@@ -360,6 +360,8 @@ tintm = hmask(cfg.get("tint_hues")) & (hsv[..., 1] > 0.35) & (hsv[..., 2] > 0.12
 cloth = tintm | (hmask(cfg.get("cloth_hues")) & (hsv[..., 1] > 0.2))
 rim = np.where(cloth & (hsv[..., 2] < 0.35), 0.5, 1.0)
 rim = np.where(emi, 0.0, rim)
+if cfg.get("rim_mask_cap") is not None:      # opcao por personagem: teto do canal G (rim), p.ex. 0.30 no tecido translucido do Espectro
+    rim = np.minimum(rim, cfg["rim_mask_cap"])
 H2 = TS // 2
 chan = lambda a_: cv2.resize(cv2.GaussianBlur(a_.astype(np.float32), (0, 0), 1.0), (H2, H2), interpolation=cv2.INTER_AREA)
 mask = np.stack([chan(emi), chan(rim), chan(tintm), np.ones((H2, H2), np.float32)], -1)
