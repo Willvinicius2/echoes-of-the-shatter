@@ -1,8 +1,6 @@
 key,pt_BR,en,es,context,gender
 ui.menu.title,Echoes of the Shatter,Echoes of the Shatter,,menu; título do jogo; max=28,
 ui.menu.play,Jogar,Play,,menu; botão; max=16,
-ui.pause.title,Pausa,Paused,,tela de pausa; max=16,
-ui.pause.resume,Continuar,Resume,,pausa; botão; max=16,
 ui.pause.to_menu,Voltar ao início,Back to title,,pausa; botão; max=20,
 ui.options.resolution,Resolução,Resolution,,opção; max=16,
 ui.options.window_mode,Janela,Window,,opção; max=16,
