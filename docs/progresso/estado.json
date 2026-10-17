@@ -4,7 +4,7 @@
     "atualizado_em": "2026-10-17",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
-    "marco_atual": "Etapa 2: fatia jogável da Cripta",
+    "marco_atual": "Etapa 2 quase toda entregue; Etapa 3 em andamento",
     "legenda_estados": {
       "concluido": "Concluído",
       "nuvem": "Na nuvem",
@@ -14,7 +14,7 @@
       "bloqueado": "Bloqueado"
     },
     "destaque": "Teste o jogo: abra D:\\openclaude\\Builds\\Echoes_Cripta_dev\\EchoesOfTheShatter.exe",
-    "destaque_detalhe": "Build jogável v0.1 para Windows (110 MB), com tela inicial, Cripta, pausa e opções. Os controles estão no LEIA-ME.txt da pasta; o roteiro do dono está no docs/10, seção \"Roteiro do dono, build Cripta v0.1\"."
+    "destaque_detalhe": "Build jogável com menu e escolha de herói (Arqueiro e Mago como prévia visual), Refúgio com a Ilsa (expedição) e o Tico (relatório), save com backups e expedição idle de ponta a ponta. Cripta e Refúgio com cenário pintado (26 peças) e fogo; inimigos pintados e animados; Guerreiro modular com armadura em peças; HUD com barra do chefe e fila de avisos. 238 EditMode e 11 PlayMode; cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada). Controles no LEIA-ME.txt; roteiro no docs/10."
   },
   "setores": [
     {
@@ -144,7 +144,7 @@
       "nome": "Backend ShatterCore",
       "agente": "Backend Engineer",
       "estado": "concluido",
-      "resumo": "Etapa 2 entregue: etapa2/backend no master (merge d9b8eb3) com as 11 regras do docs/13 (poções, esquiva, stun e Guarda Quebrada, escudo e fases do Guardião, elites, Único com garantia, recuo a 0,25), slot legs, save v2 e API C 1.1 com início e coleta de expedição confiáveis. Testes: 146 do core e 21 da API C, mais o validador. Revisão de segurança ok. Falta só a fuga do Cão no simulador.",
+      "resumo": "Etapa 2 entregue: etapa2/backend no master (merge d9b8eb3) com as 11 regras do docs/13 (poções, esquiva, stun e Guarda Quebrada, escudo e fases do Guardião, elites, Único com garantia, recuo a 0,25), slot legs, save v2 e API C 1.1 com início e coleta de expedição confiáveis. Testes: 146 do core e 21 da API C, mais o validador. Revisão de segurança ok. Falta só a fuga do Cão no simulador. Revisão na nuvem (docs/17) com todos os achados críticos e altos corrigidos; CI verde; fuga do inimigo decidida pelo core; API C 1.3.",
       "entregas": [
         {
           "titulo": "Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)",
@@ -170,7 +170,7 @@
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
       "estado": "andamento",
-      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode). Build jogável v0.1 para Windows pronta (tela inicial, Cripta, pausa e opções). Merges 5f62828 (modelos pintados na Cripta), 17f887f e 9c960b4 (animações CC0 com retarget), ec35dea (golpes do Blender, squash no impacto, balanço do Espectro): 190 EditMode e 3 PlayMode.",
+      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode). Build jogável v0.1 para Windows pronta (tela inicial, Cripta, pausa e opções). Merges 5f62828 (modelos pintados na Cripta), 17f887f e 9c960b4 (animações CC0 com retarget), ec35dea (golpes do Blender, squash no impacto, balanço do Espectro): 190 EditMode e 3 PlayMode. Build com menu, Refúgio (Ilsa e Tico), save com backups, expedição idle, cenário pintado, inimigos animados, Guerreiro modular e HUD do chefe: 238 EditMode e 11 PlayMode, cerca de 1 ms por quadro numa RTX 4060 Ti.",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
@@ -185,14 +185,14 @@
           "arquivo": "EchoesOfTheShatter/Assets/Scenes/Cripta/Cripta.unity"
         }
       ],
-      "proximo": "Integrar os heróis modulares cortados na Unity."
+      "proximo": "Inventário, loot no chão e telas finais da Etapa 3 (as telas esperam a aprovação dos mockups)."
     },
     {
       "id": "arte_tecnica",
       "nome": "Arte técnica",
       "agente": "Artista técnico (Blender)",
       "estado": "andamento",
-      "resumo": "Modelos pintados e com esqueleto aprovados (Guerreiro, Sentinela, Arauto, Arqueiro Espectral, Guardião, 6 armas) e já na Cripta. Heróis modulares do Guerreiro e do Arqueiro cortados do modelo vestido (corpo em 6 regiões mais 5 peças). Animação por CC0, Mixamo opcional e Blender por script; Kimodo pausado.",
+      "resumo": "Modelos pintados e com esqueleto aprovados (Guerreiro, Sentinela, Arauto, Arqueiro Espectral, Guardião, 6 armas) e já na Cripta. Heróis modulares do Guerreiro e do Arqueiro cortados do modelo vestido (corpo em 6 regiões mais 5 peças). Animação por CC0, Mixamo opcional e Blender por script; Kimodo pausado. Lote 3 (Cão, arco, Mago vestido e modular) e kit do cenário pintado (26 peças) em produção. O TripoSG passou a usar cerca de 5 GB (pesos em fp16).",
       "entregas": [
         {
           "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
@@ -211,7 +211,7 @@
           "arquivo": "docs/pesquisa/modelos_3d_gratis.md"
         }
       ],
-      "proximo": "Corrigir as manchas brancas no material do Espectro; o cenário no TripoSG espera memória livre (a paginação no D: não está ativa; reiniciar o PC)."
+      "proximo": "Fechar o lote 3 e o cenário; corrigir as manchas brancas do Espectro."
     },
     {
       "id": "qa",
@@ -676,6 +676,30 @@
           "efeito": "Seguimos só com o CC0 e o Blender."
         }
       ]
+    },
+    {
+      "id": "iniciar-sessao-inventario",
+      "titulo": "Iniciar a sessão de inventário e equipamento",
+      "detalhe": "A sessão de nuvem do inventário e equipamento da Etapa 3 ainda não começou.",
+      "origem": "docs/16_etapa3_fluxo.md",
+      "pergunta": "Iniciamos agora a sessão de inventário e equipamento da Etapa 3 na nuvem, ou fazemos no PC?",
+      "contexto": [
+        "Faltam o inventário, o loot no chão e as telas finais para fechar a Etapa 3.",
+        "As telas finais esperam a aprovação dos mockups.",
+        "A sessão fica como cartão para você iniciar."
+      ],
+      "opcoes": [
+        {
+          "id": "a",
+          "nome": "Iniciar na nuvem",
+          "efeito": "Roda em paralelo, sem pesar a memória do seu PC."
+        },
+        {
+          "id": "b",
+          "nome": "Fazer no PC",
+          "efeito": "Usa a memória do PC, que continua baixa, mas dá mais controle."
+        }
+      ]
     }
   ],
   "decisoes": [
@@ -816,16 +840,16 @@
       "titulo": "Revisão do ShatterCore da Etapa 2 (Linux)",
       "setor": "Backend",
       "data": "2026-10-17",
-      "detalhe": "",
-      "saida": "Rodando."
+      "detalhe": "Relatório no docs/17.",
+      "saida": "Concluída: achados críticos e altos corrigidos; CI do GitHub verde de novo."
     },
     {
       "n": 2,
       "titulo": "Core: inventário e equipamento da Etapa 3",
       "setor": "Backend",
       "data": "2026-10-17",
-      "detalhe": "",
-      "saida": "Pedida."
+      "detalhe": "Aguarda você iniciar (veja Aguardando você).",
+      "saida": "Ainda não começou."
     }
   ],
   "infraestrutura": [
@@ -876,6 +900,10 @@
     {
       "item": "Build jogável v0.1",
       "detalhe": "D:\\openclaude\\Builds\\Echoes_Cripta_dev\\EchoesOfTheShatter.exe (110 MB), com LEIA-ME.txt"
+    },
+    {
+      "item": "Desempenho medido",
+      "detalhe": "Cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada)"
     }
   ],
   "marcos": [
@@ -933,6 +961,10 @@
     },
     {
       "titulo": "Modelos pintados e animações na Cripta",
+      "feito": true
+    },
+    {
+      "titulo": "Etapa 3: save, Refúgio e expedição idle prontos",
       "feito": true
     }
   ],
@@ -1279,6 +1311,41 @@
       "titulo": "Etapa 3: Relatório da expedição",
       "detalhe": "Mockup aguardando sua aprovação.",
       "estado": "aguardando"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/_runtime_prancha.jpg",
+      "titulo": "Capturas do jogo rodando",
+      "detalhe": "Captura do build. Em produção.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/runtime_heroi_perto.png",
+      "titulo": "Guerreiro modular de perto",
+      "detalhe": "Captura do build. Em produção.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/herois3.png",
+      "titulo": "Os três heróis no jogo",
+      "detalhe": "Captura do build. Em produção.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/_prancha_lote3_final.jpg",
+      "titulo": "Lote 3: Cão, arco, Mago vestido e modular",
+      "detalhe": "Derivado de arte aprovada. Em produção.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/_prancha_cenario_final.jpg",
+      "titulo": "Kit do cenário pintado",
+      "detalhe": "Derivado de arte aprovada. Em produção.",
+      "estado": "producao"
     }
   ],
   "etapas": [
@@ -1292,13 +1359,13 @@
       "n": 2,
       "titulo": "Fatia jogável da Cripta",
       "estado": "andamento",
-      "prova": "Você joga a Cripta inteira, com o Guerreiro final, e vence o Guardião"
+      "prova": "Quase toda entregue. Você joga a Cripta inteira, com o Guerreiro final, e vence o Guardião"
     },
     {
       "n": 3,
       "titulo": "Ciclo completo do protótipo",
-      "estado": "pendente",
-      "prova": "Jogar, salvar, expedição, relatório e loot"
+      "estado": "andamento",
+      "prova": "Save, Refúgio e expedição prontos; faltam inventário, loot no chão e as telas finais (esperam a aprovação dos mockups)"
     },
     {
       "n": 4,
