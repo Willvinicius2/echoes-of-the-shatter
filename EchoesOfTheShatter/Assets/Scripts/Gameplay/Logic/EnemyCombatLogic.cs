@@ -332,7 +332,7 @@ namespace Echoes.Gameplay
                 {
                     var speed = WorldUnits.ToMeters(skill.ProjectileSpeedUu);
                     var range = WorldUnits.ToMeters(skill.RangeUu);
-                    var radius = WorldUnits.ToMeters(skill.RadiusUu);
+                    var radius = ProjectileSystem.BodyRadiusMeters(skill);
                     var count = Math.Max(1, skill.Projectiles);
                     for (var i = 0; i < count; i++)
                         combatSystem.Projectiles.Spawn(combatSystem, self, skill, attackOrigin, attackDirection, speed, range, radius);

@@ -31,6 +31,8 @@ namespace Echoes.Gameplay
         PlanarVector dodgeDirection = PlanarVector.Forward;
         float dodgeSpeed;
         float dashSpeed;
+        PlanarVector dashDirection = PlanarVector.Forward;
+        PlanarVector groundCenter;
         PotionSlot drinking;
         double drinkRemaining;
 
@@ -112,7 +114,7 @@ namespace Echoes.Gameplay
             if (action.IsActive)
             {
                 if (currentSlot?.Skill != null && currentSlot.Skill.Shape == SkillShape.Dash && action.Phase == ActionPhase.Impact)
-                    return castDirection * dashSpeed;
+                    return dashDirection * dashSpeed;
                 return PlanarVector.Zero;
             }
             if (!rules.CanMove(self.Stats)) return PlanarVector.Zero;
@@ -351,6 +353,7 @@ namespace Echoes.Gameplay
             castDirection = (AimPoint - self.Position).NormalizedOr(self.Forward);
             self.Forward = castDirection;
             hitThisSwing.Clear();
+            if (skill.Behavior.GroundTargeted) groundCenter = AreaCenter(skill); // o círculo da Chuva fica onde o cursor estava ao começar
             var timing = rules.GetActionTiming(self.Stats, skill);
             action.Begin(in timing);
             // Crédito de preparação (docs/18, 1.2): o tempo apertado antes de soltar o clique desconta da preparação, até light_windup_credit_max dela.
@@ -417,12 +420,23 @@ namespace Echoes.Gameplay
                         HitCone(combat, skill);
                         break;
                     case SkillShape.Area:
-                        HitArea(combat, skill);
+                        // Área no cursor (Chuva): o círculo foi travado ao começar e o golpe cai no fim do impacto (o "impact" do CSV é o atraso até acertar).
+                        if (!skill.Behavior.GroundTargeted) HitArea(combat, skill);
                         break;
                     case SkillShape.Dash:
-                        var distance = Math.Min(WorldUnits.ToMeters(skill.RangeUu), PlanarVector.Distance(AimPoint, self.Position));
                         var impact = Math.Max(1e-3, action.Timing.Impact);
-                        dashSpeed = (float)(distance / impact);
+                        if (skill.Behavior.DashBackShot)
+                        {
+                            // Salto para trás com tiro: pula o alcance inteiro para longe da mira e atira no pico.
+                            dashDirection = -castDirection;
+                            dashSpeed = (float)(WorldUnits.ToMeters(skill.RangeUu) / impact);
+                        }
+                        else
+                        {
+                            var distance = Math.Min(WorldUnits.ToMeters(skill.RangeUu), PlanarVector.Distance(AimPoint, self.Position));
+                            dashDirection = castDirection;
+                            dashSpeed = (float)(distance / impact);
+                        }
                         break;
                     case SkillShape.Projectile:
                         SpawnProjectiles(combat, skill);
@@ -432,7 +446,12 @@ namespace Echoes.Gameplay
 
             if ((events & ActionTimelineEvents.ImpactEnded) != 0)
             {
-                if (skill.Shape == SkillShape.Dash) HitAroundSelf(combat, skill); // Investida: dano na chegada (RF-13)
+                if (skill.Shape == SkillShape.Dash)
+                {
+                    if (skill.Behavior.DashBackShot) SpawnDashShot(combat, skill); // tiro no pico do salto
+                    else HitAroundSelf(combat, skill); // Investida: dano na chegada (RF-13)
+                }
+                else if (skill.Shape == SkillShape.Area && skill.Behavior.GroundTargeted) HitArea(combat, skill, groundCenter);
                 PublishPhase(combat, ActionPhase.Recovery, action.Timing.Recovery);
             }
 
@@ -453,11 +472,16 @@ namespace Echoes.Gameplay
             }
         }
 
-        void HitArea(CombatSystem combat, SkillInfo skill)
+        /// <summary>Centro de uma área no cursor limitado ao alcance da habilidade (a Chuva cai até <c>range</c> do herói; área com alcance 0 fica em quem usa).</summary>
+        PlanarVector AreaCenter(SkillInfo skill)
         {
-            var range = WorldUnits.ToMeters(skill.RangeUu);
-            var toAim = AimPoint - self.Position;
-            var center = self.Position + toAim.ClampMagnitude(range);
+            return self.Position + (AimPoint - self.Position).ClampMagnitude(WorldUnits.ToMeters(skill.RangeUu));
+        }
+
+        void HitArea(CombatSystem combat, SkillInfo skill) => HitArea(combat, skill, AreaCenter(skill));
+
+        void HitArea(CombatSystem combat, SkillInfo skill, PlanarVector center)
+        {
             var radius = WorldUnits.ToMeters(skill.RadiusUu);
             var targets = combat.Combatants;
             for (var i = 0; i < targets.Count; i++)
@@ -486,10 +510,31 @@ namespace Echoes.Gameplay
         {
             var speed = WorldUnits.ToMeters(skill.ProjectileSpeedUu);
             var range = WorldUnits.ToMeters(skill.RangeUu);
-            var radius = WorldUnits.ToMeters(skill.RadiusUu);
+            var radius = ProjectileSystem.BodyRadiusMeters(skill);
             var count = Math.Max(1, skill.Projectiles);
+            // Leque (Behavior.Fan): N projéteis espalhados em ConeAngle graus em torno da mira; sem leque, saem juntos na mira.
+            var fan = skill.Behavior.Fan && count > 1;
             for (var i = 0; i < count; i++)
-                combat.Projectiles.Spawn(combat, self, skill, self.Position, castDirection, speed, range, radius, hitMultiplier);
+            {
+                var direction = fan ? Rotated(castDirection, (float)(-skill.ConeAngleDegrees * 0.5 + skill.ConeAngleDegrees * i / (count - 1))) : castDirection;
+                combat.Projectiles.Spawn(combat, self, skill, self.Position, direction, speed, range, radius, hitMultiplier);
+            }
+        }
+
+        // Tiro do pico do salto (Behavior.DashBackShot): alcance dash_shot_range do core, na direção da mira.
+        void SpawnDashShot(CombatSystem combat, SkillInfo skill)
+        {
+            var speed = WorldUnits.ToMeters(skill.ProjectileSpeedUu);
+            var range = WorldUnits.ToMeters(combatRules.DashShotRangeUu);
+            combat.Projectiles.Spawn(combat, self, skill, self.Position, castDirection, speed, range, ProjectileSystem.BodyRadiusMeters(skill), hitMultiplier);
+        }
+
+        static PlanarVector Rotated(PlanarVector v, float degrees)
+        {
+            var r = degrees * (float)(Math.PI / 180.0);
+            var c = (float)Math.Cos(r);
+            var s = (float)Math.Sin(r);
+            return new PlanarVector(v.X * c + v.Z * s, -v.X * s + v.Z * c);
         }
 
         bool IsValidTarget(Combatant target)
