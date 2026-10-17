@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: e54a21e1aa8b5ea41b80bb36893d3c39
   - enabled: 1
+    path: Assets/Scenes/Refugio/Refugio.unity
+    guid: 4838c6569f6de9645ab8df197b2724ad
+  - enabled: 1
     path: Assets/Scenes/Cripta/Cripta.unity
     guid: dab1e0e67f5989b41ab2a79c51ba05a3
   m_configObjects:

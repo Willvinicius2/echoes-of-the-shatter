@@ -37,9 +37,9 @@ namespace Echoes.UI
             if (Current == this) Current = null;
         }
 
-        public static void Toast(string text)
+        public static void Toast(string text, ToastKind kind = ToastKind.Info)
         {
-            if (Current != null && Current.Toasts != null) Current.Toasts.Show(text);
+            if (Current != null && Current.Toasts != null) Current.Toasts.Show(text, kind);
             else Debug.Log("[Toast] " + text);
         }
     }

@@ -41,7 +41,7 @@ namespace Echoes.UI
             var rules = GameSession.NativeRules(root);
             if (rules == null || !GameSession.Save.HasSave) return;
             recorded = true;
-            ScreenHost.Toast(root.Localization.Get("ui.boss.defeated") + " - " + root.Localization.Get("ui.boss.marker_installed"));
+            ScreenHost.Toast(root.Localization.Get("ui.boss.defeated") + " - " + root.Localization.Get("ui.boss.marker_installed"), ToastKind.Banner);
             var save = GameSession.Save;
             var reward = save.Current.RecordAreaRun(rules, 0, ExpeditionConfig.CryptMap, true, true);
             save.Save(rules); // RF-55: dominio e contador gravados ANTES de entregar o item
@@ -59,10 +59,10 @@ namespace Echoes.UI
                 if (!save.Current.AddLoot(json, out error)) Debug.LogError("[Boss] AddLoot falhou: " + error);
                 save.Save(rules);
                 LastLootJson = json;
-                if (json.Contains("\"rarity\":\"unique\"")) ScreenHost.Toast(root.Localization.Get("ui.item.picked").Replace("{item}", "Unico") + " (Bau)");
+                if (json.Contains("\"rarity\":\"unique\"")) ScreenHost.Toast(root.Localization.Get("ui.item.picked").Replace("{item}", "Unico") + " (Bau)", ToastKind.Item);
             }
             LastReward = reward;
-            if (reward.ChargesGained > 0) ScreenHost.Toast("+" + reward.ChargesGained + " " + root.Localization.Get("ui.hud.charges"));
+            if (reward.ChargesGained > 0) ScreenHost.Toast("+" + reward.ChargesGained + " " + root.Localization.Get("ui.hud.charges"), ToastKind.Charges);
         }
     }
 }

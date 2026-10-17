@@ -11,6 +11,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UIElements;
 
 namespace Echoes.Tests.PlayMode
 {
@@ -75,6 +76,7 @@ namespace Echoes.Tests.PlayMode
             // O heroi golpeia por tras do escudo frontal (a origem do golpe fica atras do chefe) ate ele cair, atravessando as fases.
             var skill = host.Rules.FindSkill("skill.warrior.iron_cut");
             var phases = new HashSet<int>();
+            var captured = false;
             var landed = 0;
             var attempts = 0;
             var started = Time.realtimeSinceStartup;
@@ -91,7 +93,16 @@ namespace Echoes.Tests.PlayMode
                 }
                 // Golpes espacados: o hitstop congela os timers do chefe e golpes a cada quadro o travariam no meio do padrao (a fase 2 so comeca no fim do golpe).
                 yield return new WaitForSeconds(0.5f);
+                if (!captured && attempts >= 6 && !boss.Combatant.IsDead)
+                {
+                    // A barra do chefe aparece na luta (a captura hud_chefe.png sai do player: -bossshot, BossShotRunner).
+                    var bar = ScreenHost.Current.Root.Q<UnityEngine.UIElements.VisualElement>("boss-bar");
+                    Assert.IsNotNull(bar, "BossBarView montada");
+                    Assert.AreEqual(UnityEngine.UIElements.DisplayStyle.Flex, bar.style.display.value, "a barra do chefe aparece durante a luta");
+                    captured = true;
+                }
             }
+            Assert.IsTrue(captured, "a barra do chefe foi conferida durante a luta");
             var last = boss.Logic.Boss.Info;
             Assert.IsTrue(boss.Combatant.IsDead, $"o Guardiao caiu (vida {boss.Combatant.Life}/{boss.Combatant.MaxLife}, golpes {landed}/{attempts}, fase {last.Phase}, estado {last.State}, escudo {last.ShieldUp}, invulneravel {last.Invulnerable}, heroi vivo {!hero.Combatant.IsDead})");
             for (var i = 0; i < 30 && arena.Phase != ArenaPhase.Won; i++) yield return null;
@@ -118,6 +129,22 @@ namespace Echoes.Tests.PlayMode
             var json = save.Current.ToJson();
             StringAssert.Contains("\"rarity\":\"unique\"", json, "o Unico esta no save do disco");
             StringAssert.Contains(ExpeditionConfig.CryptMap, save.Current.CharacterJson(0));
+        }
+
+        [Test]
+        public void ToastQueueKeepsEveryNoticeAndLetsTheBannerPassFirst()
+        {
+            var root = new UnityEngine.UIElements.VisualElement();
+            var layer = new ToastLayer(root);
+            layer.Show("info 1", ToastKind.Info);   // esta na tela
+            layer.Show("info 2", ToastKind.Info);
+            layer.Show("cargas", ToastKind.Charges);
+            layer.Show("banner", ToastKind.Banner);
+            layer.Show("item", ToastKind.Item);
+            Assert.AreEqual("info 1", layer.Current, "o que esta na tela nao e cortado");
+            Assert.AreEqual(4, layer.PendingCount, "nenhum aviso se perde");
+            Assert.AreEqual(3.5f, ToastLayer.SecondsFor(ToastKind.Banner));
+            Assert.Greater(ToastLayer.SecondsFor(ToastKind.Banner), ToastLayer.SecondsFor(ToastKind.Info), "duracao por tipo");
         }
     }
 }

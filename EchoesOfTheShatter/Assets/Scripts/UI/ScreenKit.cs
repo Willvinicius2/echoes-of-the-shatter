@@ -73,12 +73,27 @@ namespace Echoes.UI
         }
     }
 
-    /// <summary>Aviso curto no topo da tela (toast): uma linha por vez, some sozinho em 3 s. Usa o tempo real (funciona com o jogo pausado).</summary>
+    /// <summary>Tipos de aviso: cada um tem duracao e prioridade (o banner de vitoria passa na frente dos avisos comuns na fila, mas nenhum se perde).</summary>
+    public enum ToastKind { Info = 0, Item = 1, Charges = 2, Banner = 3, Error = 4 }
+
+    /// <summary>
+    /// Avisos no topo da tela em FILA: um por vez, sem cortar o que esta na tela; quem espera sai por prioridade (banner, erro, cargas, item, info) e,
+    /// em empate, na ordem de chegada. Nenhum aviso e descartado. Usa o tempo real (funciona com o jogo pausado).
+    /// </summary>
     public sealed class ToastLayer
     {
+        sealed class Entry
+        {
+            public string Text;
+            public ToastKind Kind;
+            public int Order;
+        }
+
         readonly Label label;
-        readonly Queue<string> queue = new Queue<string>();
-        IVisualElementScheduledItem hide;
+        readonly List<Entry> pending = new List<Entry>();
+        readonly List<string> shown = new List<string>();
+        int counter;
+        bool showing;
 
         public ToastLayer(VisualElement root)
         {
@@ -92,20 +107,56 @@ namespace Echoes.UI
             label.style.fontSize = 24;
             label.style.color = ScreenKit.Text;
             label.style.backgroundColor = new Color(0.07f, 0.06f, 0.09f, 0.92f);
-            label.style.paddingTop = label.style.paddingBottom = 10;
+            label.style.paddingTop = 10;
+            label.style.paddingBottom = 10;
             label.style.display = DisplayStyle.None;
             label.pickingMode = PickingMode.Ignore;
             root.Add(label);
         }
 
         public string Current => label.style.display == DisplayStyle.Flex ? label.text : string.Empty;
+        public int PendingCount => pending.Count;
 
-        public void Show(string text, float seconds = 3f)
+        /// <summary>Tudo que ja apareceu na tela, em ordem (testes).</summary>
+        public IReadOnlyList<string> Shown => shown;
+
+        public static float SecondsFor(ToastKind kind)
         {
-            label.text = text;
+            switch (kind)
+            {
+                case ToastKind.Banner: return 3.5f;
+                case ToastKind.Error: return 3.5f;
+                case ToastKind.Charges: return 2.5f;
+                case ToastKind.Item: return 2.5f;
+                default: return 2f;
+            }
+        }
+
+        public void Show(string text, ToastKind kind = ToastKind.Info)
+        {
+            pending.Add(new Entry { Text = text, Kind = kind, Order = counter++ });
+            if (!showing) Next();
+        }
+
+        void Next()
+        {
+            if (pending.Count == 0)
+            {
+                showing = false;
+                label.style.display = DisplayStyle.None;
+                return;
+            }
+            var best = pending[0];
+            foreach (var e in pending)
+            {
+                if (e.Kind > best.Kind || (e.Kind == best.Kind && e.Order < best.Order)) best = e;
+            }
+            pending.Remove(best);
+            showing = true;
+            label.text = best.Text;
             label.style.display = DisplayStyle.Flex;
-            hide?.Pause();
-            hide = label.schedule.Execute(() => label.style.display = DisplayStyle.None).StartingIn((long)(seconds * 1000f));
+            shown.Add(best.Text);
+            label.schedule.Execute(Next).StartingIn((long)(SecondsFor(best.Kind) * 1000f));
         }
     }
 }
