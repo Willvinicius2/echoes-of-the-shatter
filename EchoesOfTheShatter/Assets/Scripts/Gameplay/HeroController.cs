@@ -27,6 +27,9 @@ namespace Echoes.Gameplay
         [SerializeField, Min(1)] int level = 5;
         [Tooltip("Bases de item equipadas (a arma define o dano das habilidades que escalam com arma).")]
         [SerializeField] string[] equipment = { "item_base.iron_sword" };
+
+        /// <summary>Bases de item equipadas (a fonte e o save e o core; o visual modular le daqui o visualSetId pelo conjunto).</summary>
+        public System.Collections.Generic.IReadOnlyList<string> EquipmentIds => equipment;
         [Tooltip("Barra: botão esquerdo (ataque básico), botão direito, Q, E, R, F.")]
         [SerializeField] string[] skillBar =
         {

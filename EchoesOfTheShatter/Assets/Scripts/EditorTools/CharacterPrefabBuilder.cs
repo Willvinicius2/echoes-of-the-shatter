@@ -31,6 +31,8 @@ namespace Echoes.EditorTools
         public sealed class Spec
         {
             public string Folder, Model, Textures, Prefab, Material;
+            public string Dir;        // pasta do FBX e das texturas (vazio = Characters/<Folder>)
+            public string ModularHero; // herois modulares (17.4): Warrior/Archer; liga o ModularCharacter
             public string Controller; // AC_* (null = sem animacao ainda: Arqueiro Espectral)
             public WeaponSpec[] Weapons = Array.Empty<WeaponSpec>();
         }
@@ -41,7 +43,7 @@ namespace Echoes.EditorTools
 
         public static readonly Spec Warrior = new Spec
         {
-            Folder = "Warrior", Model = "SK_Warrior", Textures = "T_Warrior", Prefab = "P_Hero_Warrior", Material = "M_Warrior", Controller = "AC_Warrior",
+            Folder = "Warrior", Dir = "Assets/Content/Heroes/Warrior/Body", ModularHero = "Warrior", Model = "SK_Warrior_Body", Textures = "T_Warrior_Body", Prefab = "P_Hero_Warrior", Material = "M_Warrior_Body", Controller = "AC_Warrior",
             Weapons = new[] { new WeaponSpec { Name = "WarriorHammer", Sockets = RightSockets }, new WeaponSpec { Name = "WarriorShield", Sockets = LeftSockets } },
         };
 
@@ -64,8 +66,10 @@ namespace Echoes.EditorTools
         public static void BuildAll()
         {
             // 1) clipes KayKit e controllers; 2) prefabs (com o controller); 3) SO_SkillPresentation_* com o tempo do golpe medido no clipe.
+            HeroModularBuilder.BuildAll();
             AnimatorControllerBuilder.BuildAll();
             var warrior = Build(Warrior);
+            Build(Archer);
             GameObject sentinel = null, boss = null;
             foreach (var pair in EnemySpecs)
             {
@@ -81,9 +85,16 @@ namespace Echoes.EditorTools
             bossSet.roarClipSeconds = EchoesAnimationImport.Clip(EchoesAnimationImport.RoarName).length;
             EditorUtility.SetDirty(bossSet);
             AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh(); // religa as referencias de controller dos prefabs (o controller e recriado a cada montagem)
         }
 
         public static GameObject BuildWarrior() => Build(Warrior);
+
+        /// <summary>Arqueiro modular (sem controller ainda): prefab de teste das pecas, ate a classe entrar no jogo.</summary>
+        public static readonly Spec Archer = new Spec
+        {
+            Folder = "Archer", Dir = "Assets/Content/Heroes/Archer/Body", ModularHero = "Archer", Model = "SK_Archer_Body", Textures = "T_Archer_Body", Prefab = "P_Hero_Archer", Material = "M_Archer_Body",
+        };
 
         /// <summary>Prefab pintado do inimigo (o elite Escudado usa o da Sentinela); null para os que ainda sao graybox (Cao, Lanceira).</summary>
         public static GameObject PrefabForEnemy(string enemyId)
@@ -104,7 +115,7 @@ namespace Echoes.EditorTools
         {
             SandboxBuilder.EnsureDir(MaterialDir);
             SandboxBuilder.EnsureDir(PrefabDir);
-            var folder = $"{CharactersDir}/{spec.Folder}";
+            var folder = !string.IsNullOrEmpty(spec.Dir) ? spec.Dir : $"{CharactersDir}/{spec.Folder}";
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{folder}/{spec.Model}.fbx");
             if (model == null) throw new InvalidOperationException($"FBX ausente: {folder}/{spec.Model}.fbx");
             var material = EnsureMaterial(spec.Material, $"{folder}/{spec.Textures}_BC.png", $"{folder}/{spec.Textures}_M.png");
@@ -124,6 +135,7 @@ namespace Echoes.EditorTools
             if (animator == null) animator = instance.AddComponent<Animator>();
             animator.applyRootMotion = false; // sem root motion: a logica move o personagem
             animator.runtimeAnimatorController = spec.Controller != null ? AnimatorControllerBuilder.Load(spec.Controller) : null;
+            if (spec.Controller != null && animator.runtimeAnimatorController == null) throw new InvalidOperationException("Controller nao carregou: " + spec.Controller);
             if (animator.avatar == null) animator.avatar = AvatarOf($"{folder}/{spec.Model}.fbx");
             foreach (var smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
             {
@@ -152,6 +164,7 @@ namespace Echoes.EditorTools
                     animator.avatar = avatar;
                 }
             }
+            if (!string.IsNullOrEmpty(spec.ModularHero)) HeroModularBuilder.AddModularComponents(instance, spec.ModularHero);
             // Eventos de clipe (release do Espectro, rugido do Guardiao) chegam ao PresentationController pelo relay (no objeto do Animator).
             if (spec.Controller != null && animatorHost.GetComponent<AnimationEventRelay>() == null) animatorHost.AddComponent<AnimationEventRelay>();
             if (spec.Prefab == "P_Enemy_GhostArcher" && instance.GetComponent<SpectralSway>() == null) instance.AddComponent<SpectralSway>();

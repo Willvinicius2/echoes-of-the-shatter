@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71561c0582aed8748a2acc261c219e3c, type: 3}
+  m_Name: SO_HeroPartCatalog_Warrior
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.HeroPartCatalog
+  heroId: Warrior
+  parts:
+  - {fileID: 11400000, guid: 0db92b53cadc5db419c69805eba4a093, type: 2}
+  - {fileID: 11400000, guid: d390c5ae52e7d6e4db9778ca33e4c4cf, type: 2}
+  - {fileID: 11400000, guid: b326b38b6fe757b4a88cf9ff246b2e41, type: 2}
+  - {fileID: 11400000, guid: 336e4fbb04ebbf542814c934dd30ae62, type: 2}
+  - {fileID: 11400000, guid: 896734a94b967a843bbdfd55c094fb2e, type: 2}

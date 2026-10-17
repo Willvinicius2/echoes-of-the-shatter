@@ -106,11 +106,24 @@ namespace Echoes.EditorTools
             foreach (var spec in All) BuildController(spec);
             BuildArcherController();
             AssetDatabase.SaveAssets();
+            // Recria e recarrega: sem isso o Load logo depois pode devolver null no mesmo quadro do editor.
+            foreach (var spec in All) AssetDatabase.ImportAsset(ControllerPath(spec.Name), ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(ControllerPath(ArcherControllerName), ImportAssetOptions.ForceUpdate);
         }
 
         public static string ControllerPath(string name) => $"{ControllerDir}/{name}.controller";
 
-        public static RuntimeAnimatorController Load(string name) => AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ControllerPath(name));
+        public static RuntimeAnimatorController Load(string name)
+        {
+            var path = ControllerPath(name);
+            var controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(path);
+            if (controller == null)
+            {
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                controller = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(path);
+            }
+            return controller;
+        }
 
         static string Group(string clip)
         {
