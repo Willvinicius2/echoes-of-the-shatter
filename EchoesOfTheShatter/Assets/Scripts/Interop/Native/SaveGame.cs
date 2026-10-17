@@ -298,6 +298,122 @@ namespace Echoes.Interop.Native
             return new AreaRunReward(reward.charges_gained, reward.new_conquest != 0);
         }
 
+        // ------------------------------------------------------------------------------ simulacao em fatias (fora da main thread)
+
+        /// <summary>
+        /// Simula o pedido em fatias de <paramref name="encountersPerSlice"/> encontros (shatter_expedition_simulate_range) e fecha com finalize. So le o banco
+        /// e o JSON: pode rodar numa thread propria (o banco e imutavel; cada handle de save e de uma thread so). <paramref name="onProgress"/> recebe 0 a 1
+        /// (tempo simulado sobre o tempo efetivo). Devolve false se o core recusar.
+        /// </summary>
+        public static bool SimulateSliced(NativeRulesCore rules, string requestJson, double effectiveSeconds, int encountersPerSlice, Action<double> onProgress, out string resultJson)
+        {
+            var db = rules.DbPointer;
+            var request = Encoding.UTF8.GetBytes(requestJson);
+            byte[] progress = null;
+            uint next = 0;
+            resultJson = string.Empty;
+            for (var guard = 0; guard < 10000; guard++)
+            {
+                var text = SliceCall(db, request, progress, next, (uint)Math.Max(1, encountersPerSlice));
+                if (text == null) return false;
+                progress = Encoding.UTF8.GetBytes(text);
+                var o = MiniJson.AsObject(MiniJson.Parse(text));
+                next = (uint)MiniJson.Int(o, "next_encounter");
+                var elapsed = MiniJson.Num(o, "elapsed");
+                onProgress?.Invoke(effectiveSeconds > 0 ? Math.Min(1.0, elapsed / effectiveSeconds) : 1.0);
+                if (MiniJson.Str(o, "stop") != "none") break;
+            }
+            var buffer = new byte[16384];
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                nuint needed = 0;
+                ShatterError err = default;
+                int status;
+                fixed (byte* r = request)
+                fixed (byte* pg = progress)
+                fixed (byte* o = buffer)
+                    status = ShatterNative.shatter_expedition_finalize(db, r, (nuint)request.Length, pg, (nuint)progress.Length, 0u, o, (nuint)buffer.Length, &needed, &err);
+                if (status == NativeBuffers.BufferTooSmall)
+                {
+                    buffer = new byte[Math.Max(1, (int)needed)];
+                    continue;
+                }
+                if (status != 0) return false;
+                resultJson = Encoding.UTF8.GetString(buffer, 0, (int)needed);
+                return true;
+            }
+            return false;
+        }
+
+        static string SliceCall(IntPtr db, byte[] request, byte[] progress, uint first, uint count)
+        {
+            var buffer = new byte[8192];
+            for (var attempt = 0; attempt < 4; attempt++)
+            {
+                nuint needed = 0;
+                ShatterError err = default;
+                int status;
+                fixed (byte* r = request)
+                fixed (byte* pg = progress)
+                fixed (byte* o = buffer)
+                    status = ShatterNative.shatter_expedition_simulate_range(db, r, (nuint)request.Length, progress != null ? pg : null, progress != null ? (nuint)progress.Length : 0, first, count, o, (nuint)buffer.Length, &needed, &err);
+                if (status == NativeBuffers.BufferTooSmall)
+                {
+                    buffer = new byte[Math.Max(1, (int)needed)];
+                    continue;
+                }
+                return status == 0 ? Encoding.UTF8.GetString(buffer, 0, (int)needed) : null;
+            }
+            return null;
+        }
+
+        // ------------------------------------------------------------------------------ chefe
+
+        /// <summary>
+        /// Loot do Guardiao no modo manual (1a vitoria garantida, chance fixa, garantido no pityKills): AVANCA o contador do personagem no save.
+        /// Ordem do RF-55: grave o save ANTES de entregar o item com <see cref="AddLoot"/>. Devolve o JSON no formato de shatter_loot_roll.
+        /// </summary>
+        public string RollBossLoot(NativeRulesCore rules, int characterIndex, string enemyId, int areaLevel, ulong seed, out string error)
+        {
+            var id = NativeBuffers.Utf8(enemyId);
+            ShatterRng rng;
+            if (ShatterNative.shatter_rng_for_stream(seed, 2u, 0UL, &rng) != 0)
+            {
+                error = "rng";
+                return string.Empty;
+            }
+            var buffer = new byte[4096];
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                nuint needed = 0;
+                ShatterError err = default;
+                int status;
+                fixed (byte* e = id)
+                fixed (byte* o = buffer)
+                    status = ShatterNative.shatter_save_roll_boss_loot(rules.DbPointer, Raw, (nuint)characterIndex, e, (nuint)id.Length, areaLevel, &rng, o, (nuint)buffer.Length, &needed, &err);
+                if (status == NativeBuffers.BufferTooSmall)
+                {
+                    buffer = new byte[Math.Max(1, (int)needed)];
+                    continue;
+                }
+                error = status == 0 ? string.Empty : NativeBuffers.ErrorMessage(ref err);
+                return status == 0 ? Encoding.UTF8.GetString(buffer, 0, (int)needed) : string.Empty;
+            }
+            error = "buffer";
+            return string.Empty;
+        }
+
+        /// <summary>Junta ao bau compartilhado um loot (itens com os uids ja reservados; pilhas somadas). E onde o Unico vai enquanto nao ha inventario.</summary>
+        public bool AddLoot(string lootJson, out string error)
+        {
+            var bytes = Encoding.UTF8.GetBytes(lootJson);
+            ShatterError err = default;
+            int status;
+            fixed (byte* p = bytes) status = ShatterNative.shatter_save_add_loot(Raw, p, (nuint)bytes.Length, &err);
+            error = status == 0 ? string.Empty : NativeBuffers.ErrorMessage(ref err);
+            return status == 0;
+        }
+
         // ------------------------------------------------------------------------------ expedicao (so as chamadas _trusted)
 
         /// <summary>Confere os parametros sem mudar o save. <paramref name="blockers"/> = JSON com os IDs que bloqueiam (RF-43).</summary>

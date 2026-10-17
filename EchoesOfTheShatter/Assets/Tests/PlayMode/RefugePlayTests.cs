@@ -95,11 +95,16 @@ namespace Echoes.Tests.PlayMode
             Assert.AreEqual(ExpeditionPhase.Running, GameSession.Expedition.State(GameSession.NativeRules(root)).Phase);
             clock.Advance(3601);
             Assert.AreEqual(ExpeditionPhase.ReadyToCollect, GameSession.Expedition.State(GameSession.NativeRules(root)).Phase);
-            Assert.AreEqual(CollectStatus.Collected, controller.CollectAndShowReport());
+            controller.StartCollect();
+            Assert.IsTrue(controller.IsCollecting || controller.LastReport != null, "a coleta roda fora da main thread");
+            for (var i = 0; i < 600 && controller.IsCollecting; i++) yield return null;
+            Assert.IsFalse(controller.IsCollecting);
+            Assert.AreEqual(CollectStatus.Collected, controller.LastCollectStatus);
             Assert.IsNotNull(controller.LastReport);
             Assert.IsTrue(controller.LastReport.IsEstimate, "selo Estimativa");
             controller.CloseScreen();
-            Assert.AreEqual(CollectStatus.Already, controller.CollectAndShowReport(), "coleta uma vez so");
+            controller.StartCollect();
+            Assert.AreEqual(CollectStatus.Already, controller.LastCollectStatus, "coleta uma vez so");
             Assert.IsFalse(GameSession.Expedition.IsHeroBusy, "heroi livre depois de coletar");
 
             // O save foi gravado na coleta: recarregar do disco nao permite coletar de novo.

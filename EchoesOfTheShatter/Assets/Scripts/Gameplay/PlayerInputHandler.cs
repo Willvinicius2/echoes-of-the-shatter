@@ -23,6 +23,7 @@ namespace Echoes.Gameplay
         InputAction move;
         InputAction aim;
         InputAction pause;
+        InputAction interact;
         InputAction inventory;
         InputAction worldMap;
         InputAction passiveTree;
@@ -61,6 +62,7 @@ namespace Echoes.Gameplay
             move = map.FindAction(InputActionNames.Move, true);
             aim = map.FindAction(InputActionNames.Aim, true);
             pause = map.FindAction(InputActionNames.Pause, false);
+            interact = map.FindAction(InputActionNames.Interact, false);
             inventory = map.FindAction(InputActionNames.Inventory, false);
             worldMap = map.FindAction(InputActionNames.WorldMap, false);
             passiveTree = map.FindAction(InputActionNames.PassiveTree, false);
@@ -95,6 +97,12 @@ namespace Echoes.Gameplay
             var action = ActionFor(command);
             return action != null && action.IsPressed();
         }
+
+        /// <summary>Interagir (RF-64, remapeavel; padrao F): falar com Ilsa e Tico.</summary>
+        public bool InteractPressed => interact != null && interact.WasPressedThisFrame();
+
+        /// <summary>Glifo da tecla de Interagir para os prompts (vem do Input System: acompanha o remapeamento).</summary>
+        public string InteractGlyph => interact != null ? interact.GetBindingDisplayString() : "F";
 
         public bool PausePressed => pause != null && pause.WasPressedThisFrame();
         public bool InventoryPressed => inventory != null && inventory.WasPressedThisFrame();

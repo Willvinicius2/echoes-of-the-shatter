@@ -22,6 +22,7 @@ namespace Echoes.Gameplay
         public const string PassiveTree = "PassiveTree";
         public const string WorldMap = "Map";
         public const string Pause = "Pause";
+        public const string Interact = "Interact";
 
         /// <summary>Ação de cada <see cref="HeroCommand"/> (índice = valor do enum).</summary>
         public static readonly string[] ByCommand =

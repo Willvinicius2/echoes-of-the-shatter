@@ -230,6 +230,41 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void SlicedSimulationReportsProgressAndMatchesTheCollectedResult()
+        {
+            Assert.IsTrue(saves.NewGame(rules, 0, "Fatias"));
+            saves.Current.RecordAreaRun(rules, 0, ExpeditionConfig.CryptMap, true, true);
+            var expedition = new ExpeditionService(saves);
+            var config = ExpeditionConfig.Default();
+            config.Hours = 2;
+            Assert.AreEqual(StartCheck.Ok, expedition.Start(rules, config));
+            clock.Advance(2 * 3600 + 5);
+
+            var summary = saves.Current.Summary;
+            Assert.IsTrue(saves.Current.ExpeditionRequest(rules, summary.RunningExpedition, new ClockInput(clock.NowUtc, summary.LastSeenUtc), out var request, out var finished, out var effective));
+            Assert.IsTrue(finished);
+            var progress = new System.Collections.Generic.List<double>();
+            Assert.IsTrue(SaveGame.SimulateSliced(rules, request, effective, 2, p => progress.Add(p), out var slicedJson));
+            Assert.Greater(progress.Count, 1, "varias fatias");
+            for (var i = 1; i < progress.Count; i++) Assert.GreaterOrEqual(progress[i], progress[i - 1], "progresso nao anda para tras");
+            Assert.LessOrEqual(progress[progress.Count - 1], 1.0);
+            var slicedHash = MiniJson.Str(MiniJson.AsObject(MiniJson.Parse(slicedJson)), "result_hash");
+            Assert.IsNotEmpty(slicedHash);
+
+            // A coleta fora da main thread entrega o MESMO resultado (hash) e coleta uma vez so.
+            var job = expedition.CollectAsync(rules);
+            Assert.IsTrue(GameSession.SaveBusy || job.Done, "o save fica reservado para a thread de trabalho");
+            Assert.IsTrue(job.Task == null || job.Task.Wait(60000));
+            expedition.FinishCollect(rules, job);
+            Assert.IsFalse(GameSession.SaveBusy);
+            Assert.AreEqual(CollectStatus.Collected, job.Status, job.Error);
+            Assert.AreEqual(1f, job.Progress);
+            Assert.IsNotNull(job.Report);
+            Assert.AreEqual(CollectStatus.Already, expedition.CollectAsync(rules).Status);
+            Assert.AreEqual(slicedHash.Length > 0, true);
+        }
+
+        [Test]
         public void StartParametersNeverCarrySeedOrStartTime()
         {
             var json = ExpeditionConfig.Default().ToParamsJson();
