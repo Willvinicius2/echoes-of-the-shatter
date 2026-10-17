@@ -107,12 +107,17 @@ namespace Echoes.Gameplay
             return MoveInput.ClampMagnitude(1f) * speed;
         }
 
-        /// <summary>Para onde o modelo olha neste quadro.</summary>
+        /// <summary>
+        /// Para onde o modelo olha neste quadro: esquiva = direção da esquiva; ação (golpe ou magia) = a mira travada no início (castDirection);
+        /// andando sem ação = a direção do movimento (o pé acompanha o chão); parado = mantém a última direção.
+        /// </summary>
         public PlanarVector FacingDirection()
         {
             if (Dodge.IsDodging) return dodgeDirection;
             if (action.IsActive) return castDirection;
-            return (AimPoint - self.Position).NormalizedOr(self.Forward);
+            var velocity = CurrentVelocity();
+            if (velocity.SqrMagnitude > 1e-6f) return velocity.NormalizedOr(self.Forward);
+            return self.Forward;
         }
 
         public void FixedTick(CombatSystem combat, double dt)

@@ -23,6 +23,12 @@ namespace Echoes.Gameplay
         [SerializeField, Min(0f)] float knockbackBossCm = 0f;
         [SerializeField, Min(0f)] float knockbackDurationMs = 100f;
 
+        [Header("Virada do corpo do herói em graus/s")]
+        [Tooltip("Andando ou parado: o corpo gira suave até a direção do movimento.")]
+        [SerializeField, Min(1f)] float turnDegreesPerSecond = 900f;
+        [Tooltip("Ao iniciar golpe ou magia: giro mais rápido para encarar a mira.")]
+        [SerializeField, Min(1f)] float castTurnDegreesPerSecond = 1800f;
+
         [Header("Golpes pesados (recebem o hitstop de golpe pesado)")]
         [SerializeField] string[] heavySkills =
         {
@@ -46,6 +52,8 @@ namespace Echoes.Gameplay
                 KnockbackEliteMeters = knockbackEliteCm / 100f,
                 KnockbackBossMeters = knockbackBossCm / 100f,
                 KnockbackSeconds = knockbackDurationMs / 1000f,
+                TurnDegreesPerSecond = turnDegreesPerSecond,
+                CastTurnDegreesPerSecond = castTurnDegreesPerSecond,
             };
             if (heavySkills != null)
             {

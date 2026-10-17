@@ -18,6 +18,10 @@ namespace Echoes.Gameplay
         public float KnockbackEliteMeters;
         public float KnockbackBossMeters;
         public float KnockbackSeconds;
+        /// <summary>Velocidade de virada do corpo do herói em graus/s (andando, sem ação).</summary>
+        public float TurnDegreesPerSecond = 900f;
+        /// <summary>Velocidade de virada ao iniciar um golpe ou magia (mais rápida, para o corpo encarar a mira).</summary>
+        public float CastTurnDegreesPerSecond = 1800f;
         public readonly HashSet<string> HeavySkills = new HashSet<string>(StringComparer.Ordinal);
 
         public bool IsHeavy(string skillId) => skillId != null && HeavySkills.Contains(skillId);

@@ -78,6 +78,12 @@ namespace Echoes.Gameplay
         public PlayerInputHandler InputHandler => input;
         public float SecondsUntilRespawn => Combatant != null && Combatant.IsDead ? Mathf.Max(0f, respawnDelay - deadTime) : 0f;
 
+        /// <summary>Desvio (m) entre a posição lógica e o corpo a partir do qual a lógica ressincroniza (2 cm).</summary>
+        public const float ResyncMeters = 0.02f;
+
+        /// <summary>Diagnóstico: quadros com desvio acima de 1 mm e ressincronizações feitas (modo de gravação e testes).</summary>
+        public static int DeviationFrames, ResyncCount;
+
         PlanarVector lastSceneSync;
         bool hasSceneSync;
 
@@ -233,10 +239,22 @@ namespace Echoes.Gameplay
             verticalSpeed += Physics.gravity.y * dt;
             if (controller.enabled) controller.Move(delta.ToWorld(verticalSpeed * dt));
 
-            transform.rotation = Logic.FacingDirection().ToRotation(transform.rotation);
+            // Virada suave (graus/s do SO_CombatFeel): rápida ao iniciar golpe ou esquiva, mais calma ao andar.
+            var feel = combat != null ? combat.Feel : null;
+            var turnSpeed = feel == null ? 900f : (Logic.IsCasting || Logic.Dodge.IsDodging ? feel.CastTurnDegreesPerSecond : feel.TurnDegreesPerSecond);
+            var targetRotation = Logic.FacingDirection().ToRotation(transform.rotation);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * dt);
             // Parede ou obstáculo: a lógica volta para onde o corpo realmente ficou (sem interpolar de volta).
+            // Só resincroniza quando bateu de lado ou o desvio passa de ResyncMeters; o desvio pequeno (skin width, degrau, rampa)
+            // some sozinho no passo seguinte e não pode zerar a interpolação a cada quadro.
             var actual = transform.position.ToPlanar();
-            if (PlanarVector.Distance(actual, wanted) > 1e-3f) combatant.Teleport(actual);
+            var deviation = PlanarVector.Distance(actual, wanted);
+            if (deviation > 1e-3f) DeviationFrames++;
+            if (deviation > ResyncMeters || (deviation > 1e-3f && (controller.collisionFlags & CollisionFlags.Sides) != 0))
+            {
+                combatant.Teleport(actual);
+                ResyncCount++;
+            }
             lastSceneSync = actual;
             hasSceneSync = true;
         }
