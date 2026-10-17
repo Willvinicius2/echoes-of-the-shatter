@@ -692,6 +692,7 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("wall_stagger_seconds", Value(d->wallStaggerSeconds));
         o.Set("projectile_speed", Value(d->projectileSpeed));
         o.Set("pierce", Value(d->pierce));
+        o.Set("explosion_radius", Value(d->explosionRadius));
         const SkillBehavior b = ClassifySkill(*d);
         Value bv = Value::MakeObject();
         bv.Set("explodes", Value(b.explodes));

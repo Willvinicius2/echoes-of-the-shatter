@@ -639,6 +639,8 @@ namespace Echoes.Interop.Native
                 if (json == null) continue;
                 var skill = pair.Value;
                 skill.Pierce = (int)JsonNumber(json, "\"pierce\":");
+                skill.ExplosionRadiusUu = JsonNumber(json, "\"explosion_radius\":");
+                skill.KnockbackUu = JsonNumber(json, "\"knockback\":");
                 skill.Behavior = new SkillBehavior(
                     json.IndexOf("\"explodes\":true", StringComparison.Ordinal) >= 0,
                     json.IndexOf("\"fan\":true", StringComparison.Ordinal) >= 0,

@@ -589,6 +589,8 @@ def chk_skill(c: Content, table: str, rows: List[dict], rep: Report) -> None:
         # docs/18 8.2 e 8.3: semântica de forma no tempo real
         if r["pierce"] > 0 and r["shape"] != "projectile":
             rep.err(table, ln, "E_PIERCE", "pierce > 0 só vale para shape=projectile")
+        if r["explosionRadius"] > 0 and r["shape"] != "projectile":
+            rep.err(table, ln, "E_EXPLOSION", "explosionRadius > 0 só vale para shape=projectile")
         if r["shape"] == "projectile" and r["projectiles"] > 1 and r["coneAngle"] <= 0:
             rep.err(table, ln, "E_FAN", "projectile com projectiles > 1 exige coneAngle > 0 (leque)")
         if r["shape"] == "area" and r["radius"] <= 0:
@@ -1490,6 +1492,19 @@ def save_semantics(fname: str, d: dict, ver: int, rep: Report, content: Optional
 # ---------------------------------------------------------------------------
 # Mutações negativas do conteúdo real (docs/13): cada cópia com um defeito DEVE falhar com o código esperado
 # ---------------------------------------------------------------------------
+def _set_skill_field(text: str, skill_id: str, column: str, value: str) -> str:
+    """Troca uma célula de uma linha de skills.csv pelo nome da coluna (a mutação não depende do resto da linha)."""
+    lines = text.split("\n")
+    header = lines[0].split(",")
+    col = header.index(column)
+    for n, line in enumerate(lines):
+        if line.startswith(skill_id + ","):
+            cells = line.split(",")
+            cells[col] = value
+            lines[n] = ",".join(cells)
+    return "\n".join(lines)
+
+
 MUTATIONS = [
     ("unico_fora_de_tabela_de_chefe", "loot_entries.csv",
      lambda t: t + "loot.crypt.common,unique,unique.empty_throne_maul,5,1,1,1,999,true,,,\n", "E_UNIQUE_TABLE"),
@@ -1536,7 +1551,9 @@ MUTATIONS = [
     ("kit_com_arco_acima_de_360", "basic_kits.csv",
      lambda t: t.replace(",360,0,0.4,", ",400,0,0.4,"), "E_RANGE"),
     ("perfuracao_em_golpe_que_nao_e_projetil", "skills.csv",
-     lambda t: t.replace("skill.archer.arrow_rain,class.archer,,attack|projectile|area|physical,area,true,,,,,1.8,2,2.2,35,8,0.25,0.7,0.25,1100,300,1,,,false,,,,,,,,3,,,,,,", "skill.archer.arrow_rain,class.archer,,attack|projectile|area|physical,area,true,,,,,1.8,2,2.2,35,8,0.25,0.7,0.25,1100,300,1,,,false,,,,,,,,3,,,,,,5"), "E_PIERCE"),
+     lambda t: _set_skill_field(t, "skill.archer.arrow_rain", "pierce", "5"), "E_PIERCE"),
+    ("explosao_em_golpe_que_nao_e_projetil", "skills.csv",
+     lambda t: _set_skill_field(t, "skill.mage.frost_nova", "explosionRadius", "100"), "E_EXPLOSION"),
     ("leque_sem_angulo", "skills.csv",
      lambda t: t.replace("1100,,3,,,false,,,,,,,,1,28,", "1100,,3,,,false,,,,,,,,1,,"), "E_FAN"),
     ("base_em_posicao_bloqueada", "rules.csv",

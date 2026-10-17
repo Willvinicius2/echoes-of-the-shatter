@@ -2163,3 +2163,26 @@ TEST(c_api_15_charged_hit_multiplies_with_the_kit_max_mult_and_rejects_bad_charg
     EXPECT_EQ(shatter_resolve_hit_charged(nullptr, atk.sb, def.sb, &in, cls.data(), cls.size(), 0.5, &rr, &hi, &err), SHATTER_INVALID_ARGUMENT);
     EXPECT_EQ(shatter_resolve_hit_charged(db.db, atk.sb, def.sb, nullptr, cls.data(), cls.size(), 0.5, &rr, &hi, &err), SHATTER_INVALID_ARGUMENT);
 }
+
+TEST(c_api_15_lookup_exposes_knockback_and_explosion_radius_separate_from_radius) {
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    const ContentDB& cdb = RealContent();
+    auto skill = [&](const char* sid) {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_db_lookup_json(db.db, sid, std::strlen(sid), o, c, n);
+        }));
+    };
+    const json::Value fire = skill("skill.mage.fireball");
+    const SkillData& s = *cdb.FindSkill("skill.mage.fireball");
+    EXPECT_NEAR(fire["explosion_radius"].AsDouble(), s.explosionRadius, 0.0);
+    EXPECT_NEAR(fire["radius"].AsDouble(), s.radius, 0.0);
+    EXPECT_TRUE(fire["explosion_radius"].AsDouble() > fire["radius"].AsDouble());
+    EXPECT_NEAR(fire["knockback"].AsDouble(), s.knockback, 0.0);
+    EXPECT_TRUE(fire["behavior"]["explodes"].AsBool());
+    const json::Value finisher = skill("skill.warrior.combo_3");
+    EXPECT_NEAR(finisher["knockback"].AsDouble(), cdb.FindSkill("skill.warrior.combo_3")->knockback, 0.0);
+    EXPECT_TRUE(finisher["knockback"].AsDouble() > 0.0);
+    EXPECT_NEAR(skill("skill.warrior.iron_cut")["knockback"].AsDouble(), 0.0, 0.0);
+    EXPECT_NEAR(skill("skill.mage.arcane_dart")["explosion_radius"].AsDouble(), 0.0, 0.0);
+}

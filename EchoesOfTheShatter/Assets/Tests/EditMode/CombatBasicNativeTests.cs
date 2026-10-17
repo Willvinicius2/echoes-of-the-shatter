@@ -187,6 +187,15 @@ namespace Echoes.Tests.EditMode
                 Assert.IsTrue(core.FindSkill("skill.archer.back_leap").Behavior.DashBackShot);
                 Assert.IsFalse(core.FindSkill("skill.warrior.charge").Behavior.DashBackShot);
                 Assert.IsFalse(core.FindSkill("skill.warrior.iron_cut").Behavior.Explodes);
+                foreach (var id in new[] { "skill.mage.fireball", "skill.mage.arcane_orb" })
+                {
+                    var s = core.FindSkill(id);
+                    Assert.Greater(s.ExplosionRadiusUu, s.RadiusUu, id + ": a explosao e maior que a largura de colisao");
+                    Assert.Greater(s.RadiusUu, 0.0, id);
+                }
+                Assert.AreEqual(0.0, core.FindSkill("skill.mage.arcane_dart").ExplosionRadiusUu);
+                Assert.Greater(core.FindSkill("skill.warrior.combo_3").KnockbackUu, 0.0, "empurrao do golpe de fecho");
+                Assert.AreEqual(0.0, core.FindSkill("skill.warrior.iron_cut").KnockbackUu);
             }
         }
     }

@@ -329,6 +329,12 @@ Origem: `docs/18_combate_combo.md` (seção 8 e as decisões do orquestrador em 
 
 C# (`Interop`): `CombatRules` ganhou `ComboWindowSeconds`, `ComboWindowAfterDodgeSeconds`, `AttackBufferSeconds`, `HeavyHoldThresholdSeconds`, `LightWindupCreditMax`, `GuardLowerTimeSeconds`, `DashShotRangeUu`; `HitRequest.FromGuardArc`; `SkillTags.Guard`; `SkillInfo.Pierce`, `SkillInfo.Behavior` (`SkillBehavior`); `BasicKitInfo` (`IRulesCore.FindBasicKit(classId)`); `IRulesCore.TickVitals(..., moving)`, `GainResourceOnHit`, `GainResourceOnBlock` (membros com implementação padrão; o stub não os precisa). Não foi possível compilar na Unity neste worktree.
 
+### 12.4b Adições de 17/10 (mesma branch)
+
+- **Ataque forte no core**: `shatter_resolve_hit_charged` (tabela 12.3). O C# não escala mais o coeficiente: use `HitRequest.IsHeavy` + `ChargeFraction` + `ClassId`.
+- **`knockback`**: já era lido e validado (`SkillData::knockback`) e já saía no `shatter_db_lookup_json` (`knockback`); o C# agora o expõe como `SkillInfo.KnockbackUu`. Layout inalterado (nenhuma struct nova).
+- **`explosionRadius`** (coluna opcional nova, última de `skills.csv`): raio da explosão de projétil, separado de `radius` (largura de colisão). `SkillData::explosionRadius`; `SkillBehavior::explodes` = projétil com `explosionRadius` > 0; `lookup_json` `explosion_radius`; erro `E_RULE` (core) / `E_EXPLOSION` (validador) fora de projétil. Dados: `fireball` radius 35 / explosionRadius 220, `arcane_orb` radius 25 / explosionRadius 130 (as larguras 35 e 25 são [HIPÓTESE], o docs/18 só tinha o raio da explosão). C#: `SkillInfo.ExplosionRadiusUu`, `SkillInfo.RadiusUu` passa a ser só colisão em projétil.
+
 ### 12.5 Testes e pendências
 
 Testes novos em `test_combat_basic.cpp` (18) e `test_c_api.cpp` (3, `c_api_15_*`), `validate_data.py` com 8 mutações novas. Pendências: (1) defesa perfeita, limite de tempo, dreno de recurso e empurrão por tipo de alvo (docs/18 §8 itens 5 e 11) ficam no C# com os valores do kit; (2) o stub em C# ignora `moving`, kit, `pierce` e comportamento (só o núcleo nativo preenche); (3) Arqueiro e Mago sem expedição por decisão do dono (Q18-2).

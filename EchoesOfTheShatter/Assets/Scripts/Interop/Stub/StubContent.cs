@@ -203,6 +203,8 @@ namespace Echoes.Interop
                 skill.Shape = shape;
                 skill.ScalesWithWeapon = table.GetBool(row, "scalesWithWeapon", false, errors);
                 if (table.HasColumn("pierce")) skill.Pierce = table.GetInt(row, "pierce", 0, errors);
+                if (table.HasColumn("explosionRadius")) skill.ExplosionRadiusUu = table.GetDouble(row, "explosionRadius", 0, errors);
+                if (table.HasColumn("knockback")) skill.KnockbackUu = table.GetDouble(row, "knockback", 0, errors);
                 skill.BaseDamage = new DamageByType
                 {
                     Physical = table.GetDouble(row, "baseDamagePhysical", 0, errors),

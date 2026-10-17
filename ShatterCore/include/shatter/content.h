@@ -96,6 +96,9 @@ struct SkillData {                         // skills.csv
     // Coluna OPCIONAL `pierce` (docs/18 8.2), só tempo real e só shape projectile: 0 = nenhuma; N = atravessa N alvos além
     // do primeiro; kPierceAll (99) = atravessa todos. Cada projétil acerta o mesmo alvo uma vez (RF-16).
     int pierce = 0;
+    // Coluna OPCIONAL `explosionRadius` (uu): raio da explosão no impacto de um projétil (caso (a) de docs/18 8.3). 0 = sem
+    // explosão. `radius` num projétil é só a largura de colisão do corredor; as duas não se misturam. Só shape projectile.
+    double explosionRadius = 0.0;
     std::vector<ContentId> onHitEffects;   // "effect.burn", "effect.guard_break"
     std::vector<ContentId> selfEffects;    // aplicados em quem usa (Postura Firme, Barreira de Vidro)
     IdleProfile idle;
@@ -106,7 +109,8 @@ inline constexpr int kPierceAll = 99;
 
 // Comportamento em tempo real que os dados de uma habilidade determinam (docs/18 §8 item 3). UMA interpretação, no core:
 // o cliente escolhe a geometria por estes campos em vez de reler shape/range/radius.
-//  (a) projétil com radius > 0 explode no impacto e acerta todos os alvos da área uma vez (explodes);
+//  (a) projétil com explosionRadius > 0 explode no impacto e acerta todos os alvos da área uma vez (explodes); `radius` do
+//      projétil é só a largura de colisão;
 //  (b) projétil com projectiles > 1 e coneAngle > 0 sai em leque de coneAngle graus (fan);
 //  (c) área com range 0 é centrada em quem usa (selfCentered);
 //  (d) área com range > 0 cai no cursor, limitada a `range` uu do herói; `impact` é o atraso até acertar (groundTargeted);
