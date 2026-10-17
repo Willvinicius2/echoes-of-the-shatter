@@ -67,6 +67,9 @@ namespace Echoes.Core
             return key ?? string.Empty;
         }
 
+        /// <summary>Nota de contexto da chave (coluna context do CSV).</summary>
+        public string ContextOf(string key) => table.ContextOf(key);
+
         /// <summary>Texto da chave sem fallback para a própria chave (para avisos opcionais).</summary>
         public bool TryGet(string key, out string value)
         {

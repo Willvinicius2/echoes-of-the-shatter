@@ -120,7 +120,13 @@ namespace Echoes.Tests.PlayMode
             // Unico da 1a vitoria (garantido pelo core) entregue ao Bau do save.
             Assert.IsFalse(string.IsNullOrEmpty(RunRecorder.LastLootJson), "loot do Guardiao rolado pelo core");
             StringAssert.Contains("\"rarity\":\"unique\"", RunRecorder.LastLootJson);
-            StringAssert.Contains("\"stash\":[{", save.Current.ToJson(), "o item entrou no Bau compartilhado");
+            // O Unico cai NO CHAO (feixe laranja) pelo core; o contador ja foi gravado antes. Pegar manda para a Mochila (ou o Bau se cheia).
+            var rulesNow = GameSession.NativeRules(Object.FindFirstObjectByType<GameRoot>());
+            var unique = save.Current.GroundItems().Find(i => i.IsUnique);
+            Assert.IsNotNull(unique, "o Unico esta no chao");
+            Assert.IsNotNull(Object.FindFirstObjectByType<GroundLootDirector>().Views.TryGetValue(unique.Uid, out var uniqueView) ? uniqueView : null, "com o feixe de raridade");
+            Assert.AreEqual(PickupDest.Backpack, save.Current.Pickup(rulesNow, 0, unique.Uid));
+            Assert.IsTrue(save.Save(rulesNow));
 
             var root = Object.FindFirstObjectByType<GameRoot>();
             var live = GameSession.NativeRules(root);

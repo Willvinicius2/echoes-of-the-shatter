@@ -102,7 +102,7 @@ namespace Echoes.EditorTools
         static void WriteReadme(string output)
         {
             const string text =
-@"ECHOES OF THE SHATTER - build de desenvolvimento (menu, Refugio, Cripta e Guardiao)
+@"ECHOES OF THE SHATTER - build de desenvolvimento (menu, Refugio, Cripta, Guardiao, loot e inventario)
 
 Abra EchoesOfTheShatter.exe. O que da para testar hoje:
 
@@ -125,9 +125,20 @@ Abra EchoesOfTheShatter.exe. O que da para testar hoje:
    Cripta pintada com 9 salas, corredores, baus, checkpoints (braseiros), atalho e segredo (parede rachada: abre com Investida, Fenda de Pedra
    ou Escudada). Luzes e chamas de fogo acendem so perto do heroi. A arena do Guardiao fica no fim (porta fecha atras de voce, barra do chefe no topo).
 
+4. LOOT E INVENTARIO (novo)
+   Inimigos mortos na Cripta soltam itens no chao (o core rola o drop): Magico tem brilho azul, Raro coluna dourada, Unico coluna laranja grande
+   com pulso. Ouro e Lascas entram sozinhos. Ande por cima do item (ou use F a ate 3 m) para pegar; com a Mochila cheia o item fica no chao e
+   aparece o aviso (o Unico vai para o Bau). O Unico do Guardiao tambem cai no chao. O chao some ao sair da Cripta.
+   Tecla I (ou o botao Inventario no canto do Refugio): abre o inventario com o boneco modular (arraste para girar), as 6 posicoes liberadas
+   (arma, elmo, peitoral, luvas, calca, botas) e as bloqueadas com cadeado, a Mochila e (so no Refugio) o Bau. Clique num item para ver o tooltip:
+   nome com concordancia, raridade em texto, afixos, comparacao com o equipado (setas verde e vermelha, calculadas pelo core) e o valor de venda.
+   Botao direito ou duplo clique equipa/desequipa; botoes: Equipar, Desequipar, Mover para o Bau (Refugio), Descartar (pede confirmacao; o Unico
+   exige segurar 1 s) e Ordenar. O visual do boneco e o do heroi mudam na hora (posicao vazia = corpo nu). Na Cripta o jogo pausa com o inventario aberto.
+   Vender: por enquanto so o valor aparece no tooltip (o uso do Ouro e decisao do dono).
+
 CONTROLES
   WASD mover | mouse mira | botao esquerdo ataque basico | botao direito, Q, E habilidades | Espaco esquiva | 1 e 2 pocoes | F falar/interagir
-  Esc ......... pausa (Continuar, opcoes, Voltar ao inicio; o jogo e salvo ao voltar)
+  I ........... inventario | Esc ......... pausa (ou fecha o inventario) (Continuar, opcoes, Voltar ao inicio; o jogo e salvo ao voltar)
 
 PECAS DA ARMADURA (teclas de desenvolvimento, DESLIGADAS na build de release)
   Ligue abrindo com o argumento -devkeys (ex.: EchoesOfTheShatter.exe -devkeys, ou crie um atalho com isso no destino).

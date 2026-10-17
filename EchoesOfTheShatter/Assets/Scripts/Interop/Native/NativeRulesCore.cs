@@ -123,6 +123,11 @@ namespace Echoes.Interop.Native
                     reason = "layout ext2 (rodada 2) das structs diverge da DLL: " + ext2Message;
                     return false;
                 }
+                if (!NativeLayout.CheckExt4(out var ext4Message))
+                {
+                    reason = "layout ext4 (inventario) das structs diverge da DLL: " + ext4Message;
+                    return false;
+                }
                 if (!NativeLayout.CheckExt3(out var ext3Message))
                 {
                     reason = "layout ext3 (fuga) das structs diverge da DLL: " + ext3Message;
@@ -297,6 +302,9 @@ namespace Echoes.Interop.Native
         public ItemBaseInfo FindItemBase(string id) => stub.FindItemBase(id);
         public PotionInfo FindPotion(string id) => stub.FindPotion(id);
 
+        /// <summary>Dados de um ID de conteudo em JSON (afixo, base, unico...) para tooltips; nulo se nao existe.</summary>
+        public string ContentJson(string id) => LookupJson(id, 512);
+
         /// <summary>Dados de um ID de conteudo em JSON (<c>shatter_db_lookup_json</c>, duas chamadas); nulo se nao existe.</summary>
         internal unsafe string LookupJson(string id, int initialCapacity = 256)
         {
@@ -331,6 +339,7 @@ namespace Echoes.Interop.Native
         public unsafe IStatBlock CreateHeroStats(in HeroBuild build)
         {
             var handle = RequireDb();
+            if (build.Save != null) return build.Save.StatsOfCharacter(this, build.SaveCharacterIndex, build.Level);
             var json = Encoding.UTF8.GetBytes(BuildCharacterJson(build));
             var addRef = false;
             try

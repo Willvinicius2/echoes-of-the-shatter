@@ -98,7 +98,7 @@ namespace Echoes.Interop.Native
     /// expedicao (so as chamadas _trusted: inicio com o relogio confiavel e coleta recalculada pelo core) e coleta uma vez so.
     /// Main thread. Cada chamada recebe as regras (o banco de conteudo) da cena atual.
     /// </summary>
-    public sealed unsafe class SaveGame : IDisposable
+    public sealed unsafe partial class SaveGame : IDisposable
     {
         const string FormatTag = "echoes-of-the-shatter-save";
         readonly SaveHandle handle;

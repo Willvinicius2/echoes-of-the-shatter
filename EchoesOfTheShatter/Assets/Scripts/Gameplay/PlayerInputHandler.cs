@@ -105,6 +105,8 @@ namespace Echoes.Gameplay
         public string InteractGlyph => interact != null ? interact.GetBindingDisplayString() : "F";
 
         public bool PausePressed => pause != null && pause.WasPressedThisFrame();
+        public string InventoryGlyph => inventory != null ? inventory.GetBindingDisplayString() : "I";
+
         public bool InventoryPressed => inventory != null && inventory.WasPressedThisFrame();
         public bool MapPressed => worldMap != null && worldMap.WasPressedThisFrame();
         public bool PassiveTreePressed => passiveTree != null && passiveTree.WasPressedThisFrame();

@@ -49,6 +49,9 @@ namespace Echoes.Interop
         SkillInfo FindSkill(string id);
         EnemyInfo FindEnemy(string id);
         ItemBaseInfo FindItemBase(string id);
+
+        /// <summary>Conjunto visual do item (uniques.visualSetId, depois item_bases.visualSetId, depois vset.starter), vindo do core. Sem core (stub): vset.starter.</summary>
+        string ItemVisualSetId(string baseId, string uniqueId);
         PotionInfo FindPotion(string id);
 
         /// <summary>Poções disponíveis em ordem estável (tecla 1, tecla 2).</summary>

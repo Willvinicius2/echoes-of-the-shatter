@@ -289,6 +289,18 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(autosave, "root", ctx.GameRoot);
             var travel = go.AddComponent<AreaTravel>();
             SandboxBuilder.SetRef(travel, "root", ctx.GameRoot);
+            // Inventario (tecla I; botao no Refugio) com o boneco modular; o loot no chao so na Cripta.
+            var inventory = go.AddComponent<InventoryController>();
+            SandboxBuilder.SetRef(inventory, "root", ctx.GameRoot);
+            SandboxBuilder.SetRef(inventory, "hero", ctx.Hero);
+            SandboxBuilder.SetRef(inventory, "dollPrefab", CharacterPrefabBuilder.HeroPrefab("warrior"));
+            if (crypt)
+            {
+                var ground = new GameObject("GroundLoot").AddComponent<GroundLootDirector>();
+                SandboxBuilder.SetRef(ground, "root", ctx.GameRoot);
+                SandboxBuilder.SetRef(ground, "hero", ctx.Hero);
+                SandboxBuilder.SetRef(ground, "beam", LootBeamBuilder.CreateOrUpdate());
+            }
             if (crypt)
             {
                 var recorder = go.AddComponent<RunRecorder>();

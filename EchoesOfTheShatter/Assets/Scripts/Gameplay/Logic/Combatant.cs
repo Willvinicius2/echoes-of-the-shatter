@@ -38,7 +38,7 @@ namespace Echoes.Gameplay
         public IEffectSet Effects { get; }
         public ClassInfo Class { get; }
         public EnemyInfo Enemy { get; }
-        public ItemBaseInfo Weapon { get; }
+        public ItemBaseInfo Weapon { get; set; }
         public float RadiusMeters { get; }
         public ICombatActor Actor { get; internal set; }
         public bool IsRegistered { get; internal set; }

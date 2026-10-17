@@ -401,6 +401,7 @@ namespace Echoes.Interop
                         Lightning = table.GetDouble(row, "weaponDamageLightning", 0, errors),
                     },
                     AttackTime = table.GetDouble(row, "attackTime", 0, errors),
+                    GrammaticalGender = table.GetString(row, "grammaticalGender"),
                 };
                 var mods = new List<StubModifier>();
                 if (!StubParse.TryModifiers(table.GetString(row, "implicitMods"), id, mods, out var modError))

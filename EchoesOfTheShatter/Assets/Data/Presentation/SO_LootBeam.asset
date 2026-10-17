@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7b58ce1e065f11499d0df942a75138c, type: 3}
+  m_Name: SO_LootBeam
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.LootBeamSettings
+  magic:
+    color: {r: 0.43529412, g: 0.65882355, b: 1, a: 1}
+    radiusMeters: 0
+    heightMeters: 0
+    glowRadiusMeters: 0.25
+    pulseSeconds: 0
+  rare:
+    color: {r: 1, g: 0.8235294, b: 0.2901961, a: 1}
+    radiusMeters: 0.2
+    heightMeters: 2.5
+    glowRadiusMeters: 0
+    pulseSeconds: 0
+  unique:
+    color: {r: 1, g: 0.5411765, b: 0.18039216, a: 1}
+    radiusMeters: 0.3
+    heightMeters: 5
+    glowRadiusMeters: 0
+    pulseSeconds: 0.8
+  beamMaterial: {fileID: 2100000, guid: 85119eb5e86ed6641b306dd049b83448, type: 2}
+  glowMaterial: {fileID: 2100000, guid: e78cc4e2466e61549b6b26992936f431, type: 2}
+  markerMaterial: {fileID: 2100000, guid: 5425885b649181f448f526c7c23d93e1, type: 2}
+  placeholderSize: 0.35
+  pickupRadiusMeters: 1.2
+  interactRadiusMeters: 3
