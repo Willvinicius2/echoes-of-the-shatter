@@ -48,7 +48,7 @@ namespace Echoes.UI
             MenuUi.Title(card, "ui.pause.title", loc, 44);
             MenuUi.MakeButton(card, loc.Get("ui.pause.resume"), () => SetPaused(false));
             MenuUi.AddDisplayOptions(card, loc);
-            MenuUi.MakeButton(card, loc.Get("ui.pause.to_menu"), BackToTitle);
+            MenuUi.MakeButton(card, loc.Get("ui.pause.main_menu"), BackToTitle);
         }
 
         void Update()
