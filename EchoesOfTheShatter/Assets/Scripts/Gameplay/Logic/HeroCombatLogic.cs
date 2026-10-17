@@ -10,7 +10,7 @@ namespace Echoes.Gameplay
     /// Pura (sem UnityEngine): o <c>HeroController</c> entrega a entrada e aplica o movimento.
     /// Faz o papel do <c>SkillComponent</c> previsto em docs/04_arquitetura.md, seção 10.4.
     /// </summary>
-    public sealed class HeroCombatLogic : ICombatActor, IInterruptible, IDisposable
+    public sealed partial class HeroCombatLogic : ICombatActor, IInterruptible, IDisposable
     {
         public const int SlotCount = 6;
 
@@ -25,6 +25,8 @@ namespace Echoes.Gameplay
         readonly List<int> hitThisSwing = new List<int>(8);
 
         SkillSlot currentSlot;
+        BasicActionKind basicKind;
+        double hitMultiplier = 1.0;
         PlanarVector castDirection = PlanarVector.Forward;
         PlanarVector dodgeDirection = PlanarVector.Forward;
         float dodgeSpeed;
@@ -33,6 +35,15 @@ namespace Echoes.Gameplay
         double drinkRemaining;
 
         public HeroCombatLogic(Combatant self, IRulesCore rules, IReadOnlyList<string> skillBarIds)
+            : this(self, rules, skillBarIds, null)
+        {
+        }
+
+        /// <summary>
+        /// <paramref name="basicKit"/>: valores do combo, da carga e da defesa (docs/18). Com kit, o botão esquerdo e o direito entram por
+        /// <see cref="ButtonDown"/>/<see cref="ButtonUp"/> (máquina de entrada em HeroCombatLogic.BasicKit.cs); sem kit, a entrada antiga.
+        /// </summary>
+        public HeroCombatLogic(Combatant self, IRulesCore rules, IReadOnlyList<string> skillBarIds, IBasicKit basicKit)
         {
             this.self = self ?? throw new ArgumentNullException(nameof(self));
             this.rules = rules ?? throw new ArgumentNullException(nameof(rules));
@@ -52,6 +63,7 @@ namespace Echoes.Gameplay
 
             var potionInfos = rules.Potions;
             for (var i = 0; i < potionInfos.Count; i++) potions.Add(new PotionSlot(potionInfos[i], belt, i));
+            InitBasicKit(basicKit);
         }
 
         public Combatant Self => self;
@@ -115,6 +127,7 @@ namespace Echoes.Gameplay
         {
             if (Dodge.IsDodging) return dodgeDirection;
             if (action.IsActive) return castDirection;
+            if (IsAiming) return (AimPoint - self.Position).NormalizedOr(self.Forward); // defendendo ou carregando: encara a mira, o pé anda
             var velocity = CurrentVelocity();
             if (velocity.SqrMagnitude > 1e-6f) return velocity.NormalizedOr(self.Forward);
             return self.Forward;
@@ -130,6 +143,7 @@ namespace Echoes.Gameplay
                 slot.Cooldown.Tick(dt);
                 if (slot.Skill != null) slot.EffectiveCost = rules.GetEffectiveCost(self.Stats, slot.Skill);
             }
+            tick++;
             Dodge.Tick(dt);
             belt.Tick(dt);
             buffer.Tick(dt);
@@ -146,6 +160,7 @@ namespace Echoes.Gameplay
                 HandleActionEvents(combat, events);
             }
 
+            if (kit != null) TickBasicKit(combat);
             TryRunBufferedCommand(combat);
             self.IsInvulnerable = Dodge.IsInvulnerable;
             if (!action.IsActive) self.Forward = FacingDirection();
@@ -154,6 +169,7 @@ namespace Echoes.Gameplay
         public void FrozenTick(CombatSystem combat, double dt)
         {
             // Hitstop: nada avança (timers congelados). A velocidade sai zero em CurrentVelocity.
+            tick++; // o relógio da máquina de entrada segue: o botão segurado continua contando
         }
 
         public void OnIncomingHitAvoided(CombatSystem combat, Combatant attacker)
@@ -174,6 +190,7 @@ namespace Echoes.Gameplay
         public void OnInterrupted(CombatSystem combat)
         {
             if (action.IsActive && action.Phase == ActionPhase.Windup) EndAction(combat);
+            if (kit != null) CancelAllBasic(combat);
         }
 
         public void Dispose()
@@ -185,6 +202,7 @@ namespace Echoes.Gameplay
         public void OnDeath(CombatSystem combat)
         {
             if (action.IsActive) EndAction(combat);
+            if (kit != null) CancelAllBasic(combat);
             Dodge.Reset();
             drinking = null;
             buffer.Consume();
@@ -198,6 +216,7 @@ namespace Echoes.Gameplay
             for (var i = 0; i < SlotCount; i++) slots[i].Cooldown.Reset();
             Dodge.Reset();
             buffer.Consume();
+            if (kit != null) CancelAllBasic(combat);
         }
 
         void TryRunBufferedCommand(CombatSystem combat)
@@ -243,6 +262,7 @@ namespace Echoes.Gameplay
             }
             if (combatRules.DodgeResourceCost > 0.0) combat.TrySpendResource(self, combatRules.DodgeResourceCost);
             if (action.IsActive) EndAction(combat);
+            if (kit != null) OnDodgeCommitted(combat);
             buffer.Consume();
 
             // Direção do movimento; parado, para trás da mira (docs/13, item 1).
@@ -283,8 +303,20 @@ namespace Echoes.Gameplay
                 Deny(combat, command, DenyReason.Locked);
                 return;
             }
-            if (action.IsActive || Dodge.IsDodging || drinking != null) return; // espera no buffer
+            if (Dodge.IsDodging || drinking != null) return; // espera no buffer
+            if (kit != null && IsGuarding)
+            {
+                buffer.Consume(); // docs/18, 1.3: enquanto defende, o herói não ataca; o pedido não fica esperando
+                return;
+            }
+            var cancelsRecovery = false;
+            if (action.IsActive)
+            {
+                if (kit == null || !CanCancelBasicRecovery()) return; // espera no buffer
+                cancelsRecovery = true; // docs/18, 1.3: Q/E/R na metade final da recuperação do golpe básico cancela e zera o combo
+            }
             if (!rules.CanAct(self.Stats)) return;
+            if (kit != null && tick < guardLowerUntil) return; // espera: acabou de baixar a defesa
             if (!slot.Cooldown.IsReady)
             {
                 buffer.Consume();
@@ -301,16 +333,31 @@ namespace Echoes.Gameplay
             }
 
             buffer.Consume();
+            if (cancelsRecovery) EndAction(combat);
+            if (kit != null) CancelBasicForSkill(combat);
+            BeginAction(combat, slot, 0.0, 1.0, BasicActionKind.None);
+        }
+
+        /// <summary>Começa uma ação: recarga, mira travada, fases do core e o primeiro passo (fases de duração zero resolvem no mesmo passo).</summary>
+        void BeginAction(CombatSystem combat, SkillSlot slot, double creditSeconds, double hitMult, BasicActionKind kind)
+        {
+            var skill = slot.Skill;
             currentSlot = slot;
+            basicKind = kind;
+            hitMultiplier = hitMult;
             slot.Cooldown.Start(rules.GetEffectiveCooldown(self.Stats, skill));
             castDirection = (AimPoint - self.Position).NormalizedOr(self.Forward);
             self.Forward = castDirection;
             hitThisSwing.Clear();
             var timing = rules.GetActionTiming(self.Stats, skill);
             action.Begin(in timing);
-            PublishPhase(combat, ActionPhase.Windup, timing.Windup);
+            // Crédito de preparação (docs/18, 1.2): o tempo apertado antes de soltar o clique desconta da preparação, até light_windup_credit_max dela.
+            var credit = kind == BasicActionKind.Light && kit != null
+                ? Math.Max(0.0, Math.Min(creditSeconds, kit.LightWindupCreditMax * timing.Windup))
+                : 0.0;
+            if (credit > 0.0) action.Tick(credit); // menor que a preparação: não cruza fase
+            PublishPhase(combat, ActionPhase.Windup, timing.Windup - credit);
 
-            // Fases de duração zero (dados) resolvem no mesmo passo.
             var events = action.Tick(0.0);
             HandleActionEvents(combat, events);
         }
@@ -387,7 +434,7 @@ namespace Echoes.Gameplay
                 PublishPhase(combat, ActionPhase.Recovery, action.Timing.Recovery);
             }
 
-            if ((events & ActionTimelineEvents.Finished) != 0) EndAction(combat);
+            if ((events & ActionTimelineEvents.Finished) != 0) EndAction(combat, true);
         }
 
         void HitCone(CombatSystem combat, SkillInfo skill)
@@ -440,7 +487,7 @@ namespace Echoes.Gameplay
             var radius = WorldUnits.ToMeters(skill.RadiusUu);
             var count = Math.Max(1, skill.Projectiles);
             for (var i = 0; i < count; i++)
-                combat.Projectiles.Spawn(combat, self, skill, self.Position, castDirection, speed, range, radius);
+                combat.Projectiles.Spawn(combat, self, skill, self.Position, castDirection, speed, range, radius, hitMultiplier);
         }
 
         bool IsValidTarget(Combatant target)
@@ -451,7 +498,7 @@ namespace Echoes.Gameplay
         void Strike(CombatSystem combat, Combatant target, SkillInfo skill, PlanarVector origin)
         {
             hitThisSwing.Add(target.Id); // RF-16: no máximo 1 acerto por golpe em cada alvo
-            combat.ApplySkillHit(self, target, skill, origin);
+            combat.ApplySkillHit(self, target, skill, origin, hitMultiplier);
         }
 
         void ApplySelfEffects(CombatSystem combat, SkillInfo skill)
@@ -461,12 +508,16 @@ namespace Echoes.Gameplay
             for (var i = 0; i < effects.Count; i++) combat.ApplyEffect(self, effects[i], 1.0, self.ContentId);
         }
 
-        void EndAction(CombatSystem combat)
+        void EndAction(CombatSystem combat, bool completed = false)
         {
             var skill = currentSlot?.Skill;
+            var endedKind = basicKind;
             action.Cancel();
             currentSlot = null;
             dashSpeed = 0f;
+            basicKind = BasicActionKind.None;
+            hitMultiplier = 1.0;
+            if (kit != null) OnActionEnded(combat, endedKind, completed);
             if (skill == null) return;
             var evt = new SkillPhaseEvent { Owner = self, Skill = skill, Phase = ActionPhase.None, PhaseSeconds = 0.0, Direction = castDirection };
             combat.Events.Publish(in evt);

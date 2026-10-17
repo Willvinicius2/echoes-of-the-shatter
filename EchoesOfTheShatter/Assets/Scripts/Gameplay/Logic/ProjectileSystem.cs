@@ -17,7 +17,7 @@ namespace Echoes.Gameplay
         public IReadOnlyList<ProjectileState> Active => active;
 
         public ProjectileState Spawn(CombatSystem combat, Combatant owner, Echoes.Interop.SkillInfo skill, PlanarVector origin,
-            PlanarVector direction, float speed, float rangeMeters, float radiusMeters)
+            PlanarVector direction, float speed, float rangeMeters, float radiusMeters, double hitMultiplier = 1.0)
         {
             if (active.Count >= MaxActive || speed <= 0f || rangeMeters <= 0f) return null;
             var p = pool.Count > 0 ? pool.Pop() : new ProjectileState();
@@ -29,6 +29,7 @@ namespace Echoes.Gameplay
             p.SpeedMetersPerSecond = speed;
             p.RemainingMeters = rangeMeters;
             p.RadiusMeters = radiusMeters;
+            p.HitMultiplier = hitMultiplier;
             p.Active = true;
             active.Add(p);
             var evt = new ProjectileEvent { ProjectileId = p.Id, Spawned = true, Owner = owner, Position = origin, Direction = p.Direction };
@@ -55,7 +56,7 @@ namespace Echoes.Gameplay
                     var target = targets[t];
                     if (target.IsDead || !CombatSystem.AreHostile(p.Owner, target)) continue;
                     if (!ShapeQuery.InCorridor(start, end, p.RadiusMeters, target.Position, target.RadiusMeters)) continue;
-                    combat.ApplySkillHit(p.Owner, target, p.Skill, start);
+                    combat.ApplySkillHit(p.Owner, target, p.Skill, start, p.HitMultiplier);
                     hit = true;
                     break;
                 }

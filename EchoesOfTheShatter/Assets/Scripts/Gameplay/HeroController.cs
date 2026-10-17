@@ -30,7 +30,7 @@ namespace Echoes.Gameplay
 
         /// <summary>Bases de item equipadas (a fonte e o save e o core; o visual modular le daqui o visualSetId pelo conjunto).</summary>
         public System.Collections.Generic.IReadOnlyList<string> EquipmentIds => equipment;
-        [Tooltip("Barra: botão esquerdo (ataque básico), botão direito, Q, E, R, F.")]
+        [Tooltip("Botão esquerdo (ataque básico) e depois as habilidades na ordem Q, E, R, F. O botão direito é a defesa (docs/18) e não entra aqui: a lógica reserva o espaço 1 da barra.")]
         [SerializeField] string[] skillBar =
         {
             "skill.warrior.iron_cut",
@@ -151,8 +151,19 @@ namespace Echoes.Gameplay
 
             var build = new HeroBuild(classInfo.Id, level, equipped, saveSource, 0);
             var combatant = attributes.CreateHero(rules, in build, classInfo, weapon, controller.radius);
-            Logic = new HeroCombatLogic(combatant, rules, skillBar);
+            Logic = new HeroCombatLogic(combatant, rules, BuildLogicBar(), BasicKitSource.For(rules, classInfo.Id));
             combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
+        }
+
+        // A barra do inspetor lista o botão esquerdo e depois Q, E, R, F; a lógica tem 6 espaços e o 1 (botão direito) é a defesa, sem habilidade.
+        string[] BuildLogicBar()
+        {
+            var bar = new string[HeroCombatLogic.SlotCount];
+            for (var i = 0; i < bar.Length; i++) bar[i] = string.Empty;
+            if (skillBar == null) return bar;
+            if (skillBar.Length > 0) bar[0] = skillBar[0];
+            for (var i = 1; i < skillBar.Length && i + 1 < bar.Length; i++) bar[i + 1] = skillBar[i];
+            return bar;
         }
 
         /// <summary>
@@ -209,17 +220,44 @@ namespace Echoes.Gameplay
             Logic.MoveInput = CameraRelative(input.Move);
             if (TryGetAimPoint(out var aimPoint)) Logic.AimPoint = aimPoint;
 
+            var hasKit = Logic.HasKit;
             var pressedAny = false;
             for (var c = HeroCommand.BasicAttack; c <= HeroCommand.Potion2; c++)
             {
+                // Com kit (docs/18), o botão esquerdo e o direito entram por apertar/soltar (clique ou segurar, defesa); o resto, pelo buffer.
+                if (hasKit && (c == HeroCommand.BasicAttack || c == HeroCombatLogic.GuardButton)) continue;
                 if (!input.WasPressed(c)) continue;
                 Logic.Press(c);
                 pressedAny = true;
             }
-            // Segurar o botão do ataque básico repete o golpe assim que a ação anterior termina,
+            if (hasKit)
+            {
+                PumpButton(HeroCommand.BasicAttack, ref leftWasHeld);
+                PumpButton(HeroCombatLogic.GuardButton, ref guardWasHeld);
+            }
+            // Sem kit (entrada antiga): segurar o botão do ataque básico repete o golpe assim que a ação anterior termina,
             // sem passar por cima de outro comando pedido neste quadro ou ainda no buffer.
-            if (!pressedAny && !Logic.HasPendingCommand && Logic.IsReadyForAction && input.IsHeld(HeroCommand.BasicAttack))
+            else if (!pressedAny && !Logic.HasPendingCommand && Logic.IsReadyForAction && input.IsHeld(HeroCommand.BasicAttack))
                 Logic.Press(HeroCommand.BasicAttack);
+        }
+
+        bool leftWasHeld;
+        bool guardWasHeld;
+
+        // Transforma o estado do botão em eventos de apertar e soltar (um clique mais curto que o quadro dá os dois no mesmo quadro).
+        void PumpButton(HeroCommand button, ref bool wasHeld)
+        {
+            var held = input.IsHeld(button);
+            if (input.WasPressed(button))
+            {
+                Logic.ButtonDown(button);
+                wasHeld = true;
+            }
+            if (wasHeld && !held)
+            {
+                Logic.ButtonUp(button);
+                wasHeld = false;
+            }
         }
 
         void LateUpdate()
@@ -241,7 +279,7 @@ namespace Echoes.Gameplay
 
             // Virada suave (graus/s do SO_CombatFeel): rápida ao iniciar golpe ou esquiva, mais calma ao andar.
             var feel = combat != null ? combat.Feel : null;
-            var turnSpeed = feel == null ? 900f : (Logic.IsCasting || Logic.Dodge.IsDodging ? feel.CastTurnDegreesPerSecond : feel.TurnDegreesPerSecond);
+            var turnSpeed = feel == null ? 900f : (Logic.IsCasting || Logic.Dodge.IsDodging || Logic.IsAiming ? feel.CastTurnDegreesPerSecond : feel.TurnDegreesPerSecond);
             var targetRotation = Logic.FacingDirection().ToRotation(transform.rotation);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * dt);
             // Parede ou obstáculo: a lógica volta para onde o corpo realmente ficou (sem interpolar de volta).

@@ -13,6 +13,8 @@ namespace Echoes.Gameplay
         public float SpeedMetersPerSecond;
         public float RemainingMeters;
         public float RadiusMeters;
+        /// <summary>Multiplicador de dano do golpe forte carregado (1 = golpe comum).</summary>
+        public double HitMultiplier = 1.0;
         public bool Active;
     }
 }

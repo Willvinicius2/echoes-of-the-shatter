@@ -30,6 +30,8 @@ namespace Echoes.UI
         const string HiddenClass = "hud--hidden";
         const string ToastVisibleClass = "hud__toast--visible";
 
+        const string GuardNameKey = "ui.hud.guard";
+
         static readonly string[] DenyKeys =
         {
             "ui.hud.no_resource",       // DenyReason.NoResource
@@ -231,13 +233,19 @@ namespace Echoes.UI
                 if (view.Root == null) continue;
                 var slot = logic.GetSlot(i);
                 var skill = slot != null ? slot.Skill : null;
-                view.Root.EnableInClassList(EmptyClass, skill == null);
+                // Com kit (docs/18) o botão direito (espaço 1) é a defesa: aparece como slot sem habilidade, com o nome da Loc.
+                var isGuardSlot = i == (int)HeroCombatLogic.GuardButton && logic.HasKit;
+                view.Root.EnableInClassList(EmptyClass, skill == null && !isGuardSlot);
                 view.Root.EnableInClassList(LockedClass, skill != null && !slot.Unlocked);
                 var icon = skill != null ? FindIcon(skill.Id) : null;
                 view.Root.EnableInClassList(HasIconClass, icon != null);
                 if (view.Icon != null)
                     view.Icon.style.backgroundImage = icon != null ? new StyleBackground(icon) : new StyleBackground(StyleKeyword.None);
-                if (view.Name != null) view.Name.text = skill != null && localization != null ? localization.Get(skill.NameKey) : string.Empty;
+                if (view.Name != null)
+                {
+                    if (isGuardSlot) view.Name.text = localization != null ? localization.Get(GuardNameKey) : string.Empty;
+                    else view.Name.text = skill != null && localization != null ? localization.Get(skill.NameKey) : string.Empty;
+                }
                 if (view.Key != null && input != null) view.Key.text = input.GetBindingDisplay((HeroCommand)i);
             }
             for (var i = 0; i < potionViews.Length; i++)

@@ -76,7 +76,7 @@ namespace Echoes.Tests.EditMode
             return core;
         }
 
-        public (Combatant combatant, HeroCombatLogic logic) AddHero(PlanarVector position, int level = 5, IReadOnlyList<string> bar = null)
+        public (Combatant combatant, HeroCombatLogic logic) AddHero(PlanarVector position, int level = 5, IReadOnlyList<string> bar = null, IBasicKit kit = null)
         {
             var classInfo = Rules.FindClass(WarriorClass);
             var weapon = Rules.FindItemBase(Sword);
@@ -88,7 +88,7 @@ namespace Echoes.Tests.EditMode
                 Position = position,
                 Forward = PlanarVector.Forward,
             };
-            var logic = new HeroCombatLogic(combatant, Rules, bar ?? DefaultBar);
+            var logic = new HeroCombatLogic(combatant, Rules, bar ?? DefaultBar, kit);
             Combat.Register(combatant, logic);
             logic.AimPoint = position + PlanarVector.Forward * 3f;
             return (combatant, logic);

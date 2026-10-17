@@ -181,8 +181,10 @@ namespace Echoes.Gameplay
         /// monta o pedido, chama o motor de regras, aplica vida/barreira, efeitos ao acertar, recurso,
         /// hitstop e knockback, e publica os eventos. Devolve true se o golpe acertou (não evadido).
         /// Quem chama garante "no máximo 1 vez por golpe por alvo" (RF-16).
+        /// <paramref name="damageMultiplier"/>: multiplicador do golpe forte carregado (docs/18, seção 1.4: 1 + (heavyMaxMult - 1) * carga),
+        /// vindo da máquina de entrada; 1 em todo outro golpe. Entra como fator do coeficiente da habilidade.
         /// </summary>
-        public bool ApplySkillHit(Combatant attacker, Combatant target, SkillInfo skill, PlanarVector hitOrigin)
+        public bool ApplySkillHit(Combatant attacker, Combatant target, SkillInfo skill, PlanarVector hitOrigin, double damageMultiplier = 1.0)
         {
             if (attacker == null || target == null || skill == null) return false;
             if (target.IsDead || ReferenceEquals(attacker, target) || !target.IsRegistered) return false;
@@ -204,7 +206,7 @@ namespace Echoes.Gameplay
                 Defender = target.Stats,
                 SkillTags = skill.Tags,
                 BaseDamage = Rules.GetSkillBaseDamage(skill, attacker.Weapon),
-                Coefficient = skill.Coefficient(1),
+                Coefficient = skill.Coefficient(1) * damageMultiplier,
                 IsDamageOverTime = false,
                 CanBeBlocked = true,
                 DefenderLife = target.vitals.Life,
