@@ -41,6 +41,8 @@ namespace Echoes.Presentation
         [Min(0f)] public float authoredRadiusMeters;
         [Tooltip("Estica o comprimento (Z) até o alcance da habilidade (feixe do Raio Arcano).")]
         public bool lengthFromRange;
+        [Tooltip("Segundos de duração do efeito até o último golpe visual (queda das flechas). Maior que 0: o efeito começa em (PhaseSeconds da fase - este valor) e termina junto do fim da fase, então acompanha o tempo do impacto vindo dos dados.")]
+        [Min(0f)] public float endsWithPhaseAfter;
 
         public bool IsSet => prefab != null;
     }

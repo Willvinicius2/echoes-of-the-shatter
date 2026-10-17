@@ -112,7 +112,7 @@ namespace Echoes.EditorTools
                     skillId = "skill.archer.arrow_rain",
                     // A logica acerta ao fim do impacto: a marcacao fica na preparacao e as flechas caem no impacto, pousando no instante do golpe (ate 0,1 s antes).
                     windupFx = new[] { Spec(pRainMarker, VfxPlace.AimGround, string.Empty, 1.1f, false, false, 0f, 1f, 3f) },
-                    releaseFx = new[] { Spec(pRain, VfxPlace.AimGround, string.Empty, 1.4f, false, false, 0f, 1f, 3f) },
+                    releaseFx = new[] { Rain() },
                     hitFx = new[] { OnTarget(pArrowHit, 1.0f) },
                 },
                 new SkillVfxEntry { skillId = "class.archer#guard", hitFx = new[] { OnAnchor(pGuardArcher, "bow_nock", 0.4f) } },
@@ -191,6 +191,13 @@ namespace Echoes.EditorTools
             library.maxVfxLights = 2;
             library.projectileHeight = 1f;
             EditorUtility.SetDirty(library);
+        }
+
+        static VfxSpec Rain()
+        {
+            var spec = Spec(pRain, VfxPlace.AimGround, string.Empty, 1.2f, false, false, 0f, 1f, 3f);
+            spec.endsWithPhaseAfter = RainSeconds;
+            return spec;
         }
 
         static SkillVfxEntry Arrow(string id, GameObject projectile, float scale, GameObject muzzle, GameObject hit)

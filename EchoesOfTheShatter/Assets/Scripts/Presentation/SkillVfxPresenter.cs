@@ -40,6 +40,8 @@ namespace Echoes.Presentation
             public Quaternion Facing;
             public Vector3 Point;
             public bool HasPoint;
+            public float PhaseSeconds;
+            public bool PointResolved;
             public float RadiusOverrideMeters; // raio da explosao vindo do evento do projetil (0 = usa o da habilidade)
         }
 
@@ -67,6 +69,14 @@ namespace Echoes.Presentation
         readonly Dictionary<int, List<GameObject>> windupLive = new Dictionary<int, List<GameObject>>();
         readonly Dictionary<int, List<GameObject>> chargeLive = new Dictionary<int, List<GameObject>>();
         readonly Dictionary<GameObject, BladeTrail> trailCache = new Dictionary<GameObject, BladeTrail>();
+        struct Pending
+        {
+            public float TimeLeft;
+            public VfxSpec Spec;
+            public Context Ctx;
+        }
+
+        readonly List<Pending> pending = new List<Pending>(4);
         readonly SkillAnchors anchors = new SkillAnchors();
         bool subscribed;
 
@@ -164,6 +174,24 @@ namespace Echoes.Presentation
         partial void SubscribeBasicInput(EventBus events);
         partial void UnsubscribeBasicInput(EventBus events);
 
+        void Update()
+        {
+            if (pending.Count == 0) return;
+            var dt = Time.deltaTime;
+            for (var i = pending.Count - 1; i >= 0; i--)
+            {
+                var item = pending[i];
+                item.TimeLeft -= dt;
+                if (item.TimeLeft > 0f)
+                {
+                    pending[i] = item;
+                    continue;
+                }
+                pending.RemoveAt(i);
+                Play(item.Spec, in item.Ctx);
+            }
+        }
+
         void LateUpdate()
         {
             hitMarks.Clear();
@@ -221,7 +249,7 @@ namespace Echoes.Presentation
             var ctx = new Context
             {
                 Owner = owner, OwnerTransform = ownerT, Skill = evt.Skill,
-                Facing = evt.Direction.ToRotation(ownerT.rotation),
+                Facing = evt.Direction.ToRotation(ownerT.rotation), PhaseSeconds = (float)evt.PhaseSeconds,
             };
             switch (evt.Phase)
             {
@@ -329,6 +357,19 @@ namespace Echoes.Presentation
         {
             for (var i = 0; i < specs.Length; i++)
             {
+                if (specs[i] != null && specs[i].endsWithPhaseAfter > 0f && ctx.PhaseSeconds > 0f)
+                {
+                    // Atrasado pelo tempo da fase de impacto (dados): termina junto do golpe. O ponto no chão é fixado agora, como a lógica faz.
+                    var delayed = ctx;
+                    if (specs[i].place == VfxPlace.AimGround && TryAimGround(in ctx, out var ground))
+                    {
+                        delayed.Point = ground;
+                        delayed.HasPoint = true;
+                        delayed.PointResolved = true;
+                    }
+                    pending.Add(new Pending { TimeLeft = VfxMath.DelayToEndWithPhase(ctx.PhaseSeconds, specs[i].endsWithPhaseAfter), Spec = specs[i], Ctx = delayed });
+                    continue;
+                }
                 var instance = Play(specs[i], in ctx);
                 if (instance != null && track != null) track.Add(instance);
             }
@@ -357,7 +398,8 @@ namespace Echoes.Presentation
                     if (spec.follow) follow = ownerT;
                     break;
                 case VfxPlace.AimGround:
-                    if (!TryAimGround(in ctx, out position)) return null;
+                    if (ctx.PointResolved) position = ctx.Point;
+                    else if (!TryAimGround(in ctx, out position)) return null;
                     break;
                 default:
                     if (!ctx.HasPoint) return null;

@@ -110,9 +110,20 @@ namespace Echoes.Tests.EditMode
             Assert.IsNotEmpty(e.windupFx, "marcacao no chao na preparacao");
             Assert.IsNotEmpty(e.releaseFx, "flechas caindo no impacto");
             Assert.IsTrue(e.windupFx.Concat(e.releaseFx).All(s => s.place == VfxPlace.AimGround && s.authoredRadiusMeters > 0f));
-            var arrows = e.releaseFx[0].prefab.GetComponentsInChildren<ParticleSystem>(true).First(p => p.name == "Arrows");
-            var land = arrows.main.startDelay.constant + arrows.main.duration + arrows.main.startLifetime.constant;
-            Assert.That(land, Is.InRange(0.59f, 0.71f), "as flechas pousam entre 0,6 e 0,7 s: o golpe sai ao fim do impacto (0,70 s)");
+            var spec = e.releaseFx[0];
+            Assert.Greater(spec.endsWithPhaseAfter, 0f, "o inicio vem do tempo do impacto (SkillPhaseEvent), nao de atraso fixo no prefab");
+            var arrows = spec.prefab.GetComponentsInChildren<ParticleSystem>(true).First(p => p.name == "Arrows");
+            Assert.AreEqual(0f, arrows.main.startDelay.constant, "sem atraso fixo no prefab");
+            var fall = arrows.main.startLifetime.constant;
+            var emit = arrows.main.duration;
+            // Com dois tempos de impacto diferentes, as flechas pousam entre (fim - 0,1 s) e o fim da fase.
+            foreach (var phase in new[] { 0.7f, 0.5f })
+            {
+                var start = VfxMath.DelayToEndWithPhase(phase, spec.endsWithPhaseAfter);
+                Assert.That(start + fall, Is.GreaterThanOrEqualTo(phase - 0.1f - 1e-4f), $"impacto de {phase} s: primeira flecha");
+                Assert.That(start + fall + emit, Is.LessThanOrEqualTo(phase + 1e-4f), $"impacto de {phase} s: ultima flecha");
+            }
+            Assert.AreEqual(0f, VfxMath.DelayToEndWithPhase(0.1f, spec.endsWithPhaseAfter), "fase curta demais: toca de imediato");
         }
 
         [Test]

@@ -16,6 +16,9 @@ namespace Echoes.Presentation
             return t * t * (3f - 2f * t);
         }
 
+        /// <summary>Espera antes de tocar um efeito que dura <paramref name="effectSeconds"/> para terminar no fim da fase de <paramref name="phaseSeconds"/> (nunca negativa).</summary>
+        public static float DelayToEndWithPhase(float phaseSeconds, float effectSeconds) => Mathf.Max(0f, phaseSeconds - effectSeconds);
+
         /// <summary>Escala do efeito: <paramref name="baseScale"/> vezes (raio da habilidade / raio com que o prefab foi feito); sem raio, só a escala base.</summary>
         public static float RadiusScale(float skillRadiusMeters, float authoredRadiusMeters, float baseScale)
         {
