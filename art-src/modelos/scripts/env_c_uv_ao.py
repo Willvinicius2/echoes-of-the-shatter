@@ -32,13 +32,61 @@ for e in bm.edges:
 for f in bm.faces: f.smooth = True
 bm.to_mesh(low.data); bm.free()
 
-# UV
+# UV: ilhas por direcao da normal no quadro src (frente -Y = a propria imagem da folha, costas, lados, topo) com
+# projecao planar em metros (densidade uniforme); componentes minusculos viram parte do vizinho; fundo (normal final
+# para baixo) fica com 20 % da densidade porque a camera nunca o ve.
+Ai = np.linalg.inv(A)
+sc_ax = np.linalg.norm(A, axis=0)                      # comprimento final de cada eixo src
+bm = bmesh.new(); bm.from_mesh(low.data); bm.faces.ensure_lookup_table(); bm.edges.ensure_lookup_table()
+AX = np.array([[0, -1, 0], [0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]], float)
+bias = np.array([1.0, 1.0, .85, .85, .85, .85])
+fgrp = np.zeros(len(bm.faces), int); farea = np.zeros(len(bm.faces))
+for f in bm.faces:
+    ns = A.T @ np.array(f.normal[:]); ns /= max(np.linalg.norm(ns), 1e-9)
+    fgrp[f.index] = int(np.argmax((AX @ ns) * bias)); farea[f.index] = f.calc_area()
+for _ in range(3):
+    seen = -np.ones(len(bm.faces), int); comps = []
+    for f0 in bm.faces:
+        if seen[f0.index] >= 0: continue
+        st = [f0]; seen[f0.index] = len(comps); cur = [f0.index]
+        while st:
+            x = st.pop()
+            for e in x.edges:
+                for g in e.link_faces:
+                    if seen[g.index] < 0 and fgrp[g.index] == fgrp[f0.index]:
+                        seen[g.index] = len(comps); st.append(g); cur.append(g.index)
+        comps.append(cur)
+    tot = farea.sum(); changed = False
+    for cur in comps:
+        if farea[cur].sum() < 0.05 * tot and len(comps) > 1:
+            votes = {}
+            for fi in cur:
+                for e in bm.faces[fi].edges:
+                    for g in e.link_faces:
+                        if g.index not in cur: votes[fgrp[g.index]] = votes.get(fgrp[g.index], 0) + e.calc_length()
+            if votes:
+                fgrp[cur] = max(votes, key=votes.get); changed = True
+    if not changed: break
+uvl = bm.loops.layers.uv.new("UVMap")
+for f in bm.faces:
+    nf = np.array(f.normal[:])
+    g = fgrp[f.index]; hid = (nf[2] < -0.8)
+    for l in f.loops:
+        q = Ai @ (np.array(l.vert.co[:]) - t)
+        if g == 0: uv = (q[0] * sc_ax[0], q[2] * sc_ax[2])
+        elif g == 1: uv = (-q[0] * sc_ax[0], q[2] * sc_ax[2])
+        elif g in (2, 3): uv = (q[1] * sc_ax[1] * (1 if g == 2 else -1), q[2] * sc_ax[2])
+        else: uv = (q[0] * sc_ax[0], q[1] * sc_ax[1] * (1 if g == 4 else -1))
+        k = 0.2 if hid else 1.0
+        l[uvl].uv = (uv[0] * k, uv[1] * k)
+bm.to_mesh(low.data); bm.free()
 bpy.ops.object.select_all(action='DESELECT'); low.select_set(True); bpy.context.view_layer.objects.active = low
+bpy.context.scene.tool_settings.use_uv_select_sync = True
 bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.uv.smart_project(angle_limit=math.radians(c.get("uv_angle", 62)), island_margin=0.012, area_weight=0.6)
-bpy.ops.uv.pack_islands(rotate=False, margin=0.012)
+bpy.ops.uv.pack_islands(rotate=False, margin=0.01)
 bpy.ops.object.mode_set(mode='OBJECT')
 low.data.name = low.name = "game"
+uvrep = dict(islands_by_group=np.bincount(fgrp, minlength=6).tolist())
 
 # geometria por texel (512) e AO (256)
 TS = c["tex"]
@@ -75,4 +123,4 @@ for y, x in zip(ys, xs):
 np.savez_compressed(wpath(c, "ao256.npz"), ao=ao, valid=g2["valid"])
 bpy.data.objects.remove(high)
 bpy.ops.wm.save_as_mainfile(filepath=wpath(c, "game_final.blend"), compress=True)
-print("EC", len(low.data.polygons), "tris; texels", int(g["valid"].sum()), "ao", round(float(ao[g2["valid"]].mean()), 3), round(time.time() - t0), "s")
+print("EC", uvrep, len(low.data.polygons), "tris; texels", int(g["valid"].sum()), "ao", round(float(ao[g2["valid"]].mean()), 3), round(time.time() - t0), "s")

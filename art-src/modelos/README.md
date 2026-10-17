@@ -36,3 +36,22 @@ Cada peça sai como FBX próprio com o mesmo esqueleto.
 - `static` (arma): sem esqueleto; `body_height_m` = comprimento, `pivot_frac` = posição da empunhadura, `single_view` = imagem única (costas = espelho), `delete_boxes_frac` apaga faces por caixa (corda do arco).
 
 Máscara `T_<Nome>_M.png` (docs/04 3.5): R emissão (só o que brilha), G rim, B tinta; AO só no albedo. Ferramenta `tool_grid.py` gera vistas com grade para ler marcos.
+
+## Tipo `prop` (cenario da Cripta, estatico, sem esqueleto): `env_*.py`
+
+Kit de cenario (26 pecas SM_Cripta_*) a partir das malhas altas da IA (GLB) e dos recortes das folhas aprovadas c01 a c06.
+Especificacao de cada peca (dimensoes do kit, pivo, triangulos, colisor) em `scripts/env_common.py`; rodar com
+`python scripts/env_run.py <peca|a,b|all> [--from a|b|c|d|e] [--only x]` (um processo por vez; espera 4 GB de memoria virtual
+livre; `MDL_OVERRIDE='{"shell_close":6}'` ajusta sem editar a tabela). `env_f_prancha.py` (prancha), `env_g_scene.py` (cena de
+teste 3 x 3 com a camera do jogo) e `env_h_verify.py` (reimporta os FBX e confere) rodam depois.
+
+| Etapa | Script | O que faz |
+|---|---|---|
+| a | `env_a_import.py` | GLB -> `raw.ply` (pose da fonte: Z para cima, a imagem de entrada vista de -Y) |
+| b | `env_b_geometry.py` | tira fios/folhas flutuantes e pedacos soltos; solido externo (fecha o fundo aberto da IA); decimacao ate `tris`; malha alta decimada (120 k) para a AO; escala NAO uniforme minima e pivo (`norm.json`); pecas `proc` (superelipsoide ou L por campo de distancia) quando a malha da IA e recusada |
+| c | `env_c_uv_ao.py` | arestas vivas por angulo; UV 512 por ilhas planares na direcao da normal (a ilha da frente e a propria imagem da folha); AO da malha alta decimada por raios (BVH) |
+| d | `env_d_paint.py` | projeta a imagem de entrada (alinhada por caixa + ECC) na frente, nas costas (espelho), nos lados (imagem girada 90 graus) e no topo (faixa alta); o que sobra recebe a mediana 3D; soma AO, luz do alto-esquerda e sombra violeta; mascara R emissao (fogo), G rim (ouro), B tinta (pano) |
+| e | `env_e_export.py` | 1 material, FBX com o preset do graybox, `.blend`, json (`SM_Cripta_<Peca>.json`: colisor sugerido em coordenadas da Unity, triangulos, tamanho) e previas |
+
+Pisos: topo em z = 0 (pivo no centro do topo); paredes: face de frente (-Y) em y = 0 e corpo para +Y; demais: centro da base.
+A IA normaliza todo objeto num cubo de ~1,9 m; por isso a escala nao uniforme e grande em pisos (espessura x0,1) e paredes.

@@ -28,7 +28,7 @@ PIECES = {
     "piso_runa": P(folha="c01_pisos", rot="floor", dims=(2, 2, .2), pivot="floor_top", tris=220, kind="simple", ao_dist=.08, collider="floor"),
     # c02 paredes 2 x 0,6 x 3; canto 1 x 1 x 3
     "parede_reta": P(folha="c02_paredes", dims=(2, .6, 3), pivot="wall_outer", tris=250, kind="simple", ao_dist=.15, collider="box"),
-    "parede_canto_a": P(folha="c02_paredes", dims=(1, 1, 3), pivot="base_center", auto_yaw=True, tris=290, kind="simple", ao_dist=.15, collider="box"),
+    "parede_canto_a": P(folha="c02_paredes", proc=dict(sdf="L", dims=(1, 1, 3), thick=.6, seed=4), pivot="base_center", tris=290, kind="simple", ao_dist=.15, collider="box"),
     "parede_ruina": P(folha="c02_paredes", dims=(2, .9, 2.4), pivot="wall_outer", tris=800, kind="detail", ao_dist=.2, collider="box"),
     # c03
     "arco_ruina": P(folha="c03_pilar_arco", dims=(3.2, .6, 3), pivot="base_center", tris=300, kind="simple", ao_dist=.2,
@@ -44,12 +44,12 @@ PIECES = {
     "braseiro": P(folha="c05_decoracao", dims=(1.3, 1.3, 1.5), pivot="base_center", tris=1000, kind="detail", ao_dist=.1, emission="fire", collider="box"),
     "estandarte": P(folha="c05_decoracao", dims=(None, None, 2.8), pivot="base_center", tris=700, kind="detail", ao_dist=.1, tint="cloth", collider="none"),
     "ossos": P(folha="c05_decoracao", dims=(1.2, None, None), pivot="base_center", tris=900, kind="detail", ao_dist=.08, collider="none"),
-    "sarcofago_aberto": P(folha="c05_decoracao", dims=(2, 1.3, 1), pivot="base_center", tris=1100, kind="detail", ao_dist=.1, collider="box"),
-    "sarcofago_fechado": P(folha="c05_decoracao", dims=(2, 1, 1), pivot="base_center", tris=800, kind="detail", ao_dist=.1, collider="box"),
+    "sarcofago_aberto": P(folha="c05_decoracao", shell_res=130, shell_close=5, dims=(2, 1.3, 1), pivot="base_center", tris=1100, kind="detail", ao_dist=.1, collider="box"),
+    "sarcofago_fechado": P(folha="c05_decoracao", top_band=(0.0, 0.42), dims=(2, 1, 1), pivot="base_center", tris=800, kind="detail", ao_dist=.1, collider="box"),
     "velas": P(folha="c05_decoracao", dims=(None, None, .6), pivot="base_center", tris=700, kind="detail", ao_dist=.06, emission="fire", collider="none"),
     # c06 entulho e abismo
     "abismo_bordo": P(folha="c06_entulho_abismo", dims=(2, None, None), pivot="base_center", tris=300, kind="simple", ao_dist=.1, collider="box"),
-    "bloco_a": P(folha="c06_entulho_abismo", dims=(None, None, .9), pivot="base_center", tris=450, kind="detail", ao_dist=.12, collider="box"),
+    "bloco_a": P(folha="c06_entulho_abismo", proc=dict(dims=(1.2, 1.3, .9), p=2.6, noise=.12, k=6, seed=2), pivot="base_center", tris=430, kind="detail", ao_dist=.12, collider="box"),
     "bloco_c": P(folha="c06_entulho_abismo", dims=(None, None, .8), pivot="base_center", tris=450, kind="detail", ao_dist=.12, collider="box"),
     "ruina_grande": P(folha="c06_entulho_abismo", dims=(2.2, None, None), pivot="base_center", tris=1200, kind="detail", ao_dist=.15, collider="box"),
     # refeitos proceduralmente (geometria da IA recusada): superelipsoide com ruido, pintura pela imagem da propria peca
@@ -63,6 +63,7 @@ ORDER = list(PIECES)
 
 def cfg_for(pid):
     c = dict(PIECES[pid]); c["id"] = pid
+    c.update(json.loads(os.environ.get("MDL_OVERRIDE", "{}")))       # ajuste pontual sem editar a tabela
     c["asset"] = "SM_Cripta_" + "".join(w.capitalize() for w in pid.split("_"))
     c["glb"] = f"{SRC_ROOT}/{c['folha']}/{pid}/{pid}.glb"
     c["entrada"] = f"{SRC_ROOT}/{c['folha']}/{pid}/{pid}_entrada_rgba.png"

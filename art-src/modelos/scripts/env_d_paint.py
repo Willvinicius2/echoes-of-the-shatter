@@ -107,17 +107,33 @@ acc = np.zeros(valid.shape + (6,)); wsum = np.zeros(valid.shape)
 ix = np.clip(np.round((POS[..., 0] - lo[0]) / (hi[0] - lo[0]) * (VG - 1)).astype(int), 0, VG - 1)
 iz = np.clip(np.round((hi[2] - POS[..., 2]) / (hi[2] - lo[2]) * (VG - 1)).astype(int), 0, VG - 1)
 src_img = np.concatenate([rgb, feat], -1).astype(np.float32)
-for sign, wmul, mirror in ((1, 1.0, False), (-1, 0.55, True)):
-    zb = zbuffer(sign)
-    vis = (sign * POS[..., 1]) <= zb[iz, ix] + tol
-    cosv = np.clip(-sign * NRM[..., 1], 0, 1)
-    Pm = POS.copy()
-    if mirror: Pm[..., 0] = lo[0] + hi[0] - Pm[..., 0]
-    u, v = to_img2(Pm)
-    mu_, mv_ = u.astype(np.float32), v.astype(np.float32)
+def img_uv(Pq, mode):
+    """Coordenadas da imagem de cada ponto src para a vista virtual. F/B: frente e costas (espelho). S+/S-: lados, a imagem
+    da frente girada 90 graus (a profundidade vira largura: mantem as faixas de altura e o grao). T: topo, a faixa alta
+    da imagem (nos 3/4 da folha e onde o topo aparece)."""
+    x, y, z = Pq[..., 0], Pq[..., 1], Pq[..., 2]
+    xr = (x - lo[0]) / (hi[0] - lo[0]); yr = (y - lo[1]) / max(hi[1] - lo[1], 1e-9); zr = (hi[2] - z) / (hi[2] - lo[2])
+    if mode == "F": a_, b_ = xr, zr
+    elif mode == "B": a_, b_ = 1 - xr, zr
+    elif mode == "S+": a_, b_ = yr, zr
+    elif mode == "S-": a_, b_ = 1 - yr, zr
+    else:
+        tb = c.get("top_band", (0.02, 0.18)); a_, b_ = xr, tb[0] + (tb[1] - tb[0]) * (1 - yr)
+    u, v = fx0 + a_ * (fx1 - fx0), fy0 + b_ * (fy1 - fy0)
+    return (W[0, 0] * u + W[0, 1] * v + W[0, 2]).astype(np.float32), (W[1, 0] * u + W[1, 1] * v + W[1, 2]).astype(np.float32)
+
+for mode, sign, wmul in (("F", 1, 1.0), ("B", -1, 0.55), ("S+", 0, 0.5), ("S-", 0, 0.5), ("T", 0, 0.6)):
+    if sign:
+        zb = zbuffer(sign)
+        vis = (sign * POS[..., 1]) <= zb[iz, ix] + tol
+        cosv = np.clip(-sign * NRM[..., 1], 0, 1)
+    else:
+        vis = np.ones(valid.shape, bool)
+        cosv = np.clip({"S+": NRM[..., 0], "S-": -NRM[..., 0], "T": NRM[..., 2]}[mode], 0, 1)
+    mu_, mv_ = img_uv(POS, mode)
     smp = np.concatenate([cv2.remap(src_img[..., :3], mu_, mv_, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE),
                           cv2.remap(src_img[..., 3:], mu_, mv_, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)], -1)
-    gd = cv2.remap(good, u.astype(np.float32), v.astype(np.float32), cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+    gd = cv2.remap(good, mu_, mv_, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
     w = vis * valid * (cosv ** 1.5) * np.clip(gd * 1.5 - .25, 0, 1) * wmul
     acc += smp * w[..., None]; wsum += w
 paint = wsum > 0.12

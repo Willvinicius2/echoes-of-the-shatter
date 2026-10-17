@@ -85,11 +85,50 @@ def pivot_t(c, lo, hi):
     return np.array([-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]])
 
 
+def sdf_union(boxes, r, dims, pitch=0.02, noise=0.012, seed=1):
+    """Uniao de caixas arredondadas (x0,x1,y0,y1,z0,z1) por campo de distancia + ruido de baixa frequencia; fundo plano em z = 0.
+    Marching cubes em passo de 2 cm, orientado para fora. Devolve (V, F) ja no quadro final (sem pivo)."""
+    pad = 0.08
+    xs = np.arange(-pad, dims[0] + pad, pitch); ys = np.arange(-pad, dims[1] + pad, pitch); zs = np.arange(-pad, dims[2] + pad, pitch)
+    X, Y, Z = np.meshgrid(xs, ys, zs, indexing="ij")
+    d = np.full(X.shape, 1e9)
+    for x0, x1, y0, y1, z0, z1 in boxes:
+        cen = np.array([(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]); h = np.array([(x1 - x0) / 2, (y1 - y0) / 2, (z1 - z0) / 2]) - r
+        q = np.stack([np.abs(X - cen[0]) - h[0], np.abs(Y - cen[1]) - h[1], np.abs(Z - cen[2]) - h[2]], -1)
+        d = np.minimum(d, np.linalg.norm(np.maximum(q, 0), axis=-1) + np.minimum(q.max(-1), 0) - r)
+    P = np.stack([X, Y, Z], -1).reshape(-1, 3)
+    d = d + (noise * noise3(P * 3.0, seed, (1.0, 2.3))).reshape(d.shape)
+    d = np.maximum(d, -Z)                                  # base plana
+    vv, ff, _, _ = measure.marching_cubes(d, 0.0, spacing=(pitch, pitch, pitch))
+    vv = vv + np.array([xs[0], ys[0], zs[0]])
+    vol = np.einsum('ij,ij->i', vv[ff[:, 0]], np.cross(vv[ff[:, 1]], vv[ff[:, 2]])).sum() / 6
+    if vol < 0: ff = ff[:, ::-1]
+    return vv, ff
+
+
+def decimate(V, F, n, preserve=True):
+    ms_ = pymeshlab.MeshSet(); ms_.add_mesh(pymeshlab.Mesh(vertex_matrix=V, face_matrix=F.astype(np.int32)))
+    ms_.meshing_decimation_quadric_edge_collapse(targetfacenum=n, preservetopology=False, planarquadric=True, preservenormal=True, qualitythr=0.5, optimalplacement=True)
+    ms_.meshing_remove_duplicate_vertices(); ms_.meshing_remove_unreferenced_vertices()
+    return ms_.current_mesh().vertex_matrix().astype(np.float64), ms_.current_mesh().face_matrix()
+
+
 if "proc" in c:
     pr = c["proc"]
-    Vg, Fg = superellipsoid(pr["dims"], pr["p"], pr["noise"], pr["k"], pr["seed"])
-    Vh, Fh = superellipsoid(pr["dims"], pr["p"], pr["noise"], 28, pr["seed"], hi=True)
-    # a malha alta usa o mesmo ruido de baixa frequencia + um oitavo de relevo: reaplica a base achatada
+    if pr.get("sdf") == "L":
+        # canto: L de 1 x 1 m, bracos de 0,6 m de espessura, 3 m de altura, arestas arredondadas
+        th = pr.get("thick", 0.6); Wd, Dp, Ht = pr["dims"]
+        boxes = [(0, Wd, 0, th, 0, Ht), (0, th, 0, Dp, 0, Ht)]
+        Vh, Fh = sdf_union(boxes, 0.05, pr["dims"], seed=pr["seed"])
+        Vh, Fh = decimate(Vh, Fh, 30000)
+        Vg, Fg = decimate(Vh, Fh, c["tris"])
+        Vh = Vh - 0.0
+    else:
+        Vg, Fg = superellipsoid(pr["dims"], pr["p"], pr["noise"], pr["k"], pr["seed"])
+        Vh, Fh = superellipsoid(pr["dims"], pr["p"], pr["noise"], 28, pr["seed"], hi=True)
+    lo0, hi0 = Vg.min(0), Vg.max(0)               # dimensoes exatas: ajusta a caixa da malha de jogo (e a mesma transformacao na alta)
+    fit = lambda Q: (Q - lo0) / (hi0 - lo0) * np.array(pr["dims"])
+    Vg, Vh = fit(Vg), fit(Vh)
     lo, hi = Vg.min(0), Vg.max(0)
     t = pivot_t(c, lo, hi)
     A = np.eye(3)
@@ -131,7 +170,7 @@ rep["top_components"] = comp_rep[:8]
 print("componentes", nc, "removidos", smallest_dropped, "faces", len(F), round(time.time() - t0), "s", flush=True)
 
 # 2. solido externo + decimacao
-pitch = max(V.max(0) - V.min(0)) / c.get("shell_res", 340)
+pitch = max(V.max(0) - V.min(0)) / c.get("shell_res", 160)
 pad = 6
 origin = V.min(0) - pad * pitch
 pts = np.concatenate([V, V[F].mean(1), V[F[:, :2]].mean(1), V[F[:, 1:]].mean(1)])
@@ -139,11 +178,19 @@ idx = np.floor((pts - origin) / pitch).astype(int)
 shape = tuple(idx.max(0) + pad + 1)
 vox = np.zeros(shape, bool); vox[idx[:, 0], idx[:, 1], idx[:, 2]] = True
 del pts, idx
-vox = ndi.binary_closing(vox, iterations=c.get("shell_close", 2))
+skin_n = int(vox.sum())
+vox = ndi.binary_closing(vox, iterations=c.get("shell_close", 3))
+if c.get("rot") != "floor":
+    # a IA deixa a base aberta (o fundo nunca aparece): fecha o fundo para a inundacao do exterior nao entrar no miolo.
+    # Projecao 2D das camadas mais baixas com buracos preenchidos (o vao de um arco continua aberto: nao e buraco da projecao).
+    zocc = np.where(vox.any((0, 1)))[0]; z0 = int(zocc.min())
+    foot = ndi.binary_fill_holes(vox[:, :, z0:z0 + 5].any(2))
+    vox[:, :, z0:z0 + 2] |= foot[:, :, None]
 lab3, _ = ndi.label(~vox)
 solid = ~(lab3 == lab3[0, 0, 0])
+print('voxels pele', skin_n, 'solido', int(solid.sum()), 'caixa', int(np.prod(shape)), flush=True)
 del lab3, vox
-field = ndi.gaussian_filter(solid.astype(np.float32), c.get("shell_blur", 1.2))
+field = ndi.gaussian_filter(solid.astype(np.float32), c.get("shell_blur", 1.0))
 vv, ff, _, _ = measure.marching_cubes(field, 0.5)
 vv = origin + (vv + 0.5) * pitch
 vol = np.einsum('ij,ij->i', vv[ff[:, 0]], np.cross(vv[ff[:, 1]], vv[ff[:, 2]])).sum() / 6
@@ -157,13 +204,15 @@ ms.meshing_decimation_quadric_edge_collapse(targetfacenum=min(120000, ms.current
                                             planarquadric=True, qualitythr=0.4, optimalplacement=True)
 ms.meshing_remove_duplicate_vertices(); ms.meshing_remove_unreferenced_vertices()
 ms.save_current_mesh(wpath(c, "high_src.ply"), binary=True)
-Hv = ms.current_mesh().vertex_matrix().astype(np.float64)
+Hv = ms.current_mesh().vertex_matrix().astype(np.float64); Fh_ = ms.current_mesh().face_matrix()
 ms.meshing_decimation_quadric_edge_collapse(targetfacenum=max(2000, 6 * c["tris"]), preservetopology=False, planarquadric=True,
                                             qualitythr=0.4, optimalplacement=True)
 ms.apply_coord_taubin_smoothing(lambda_=0.5, mu=-0.53, stepsmoothnum=c.get("taubin_pre", 2))
 ms.meshing_decimation_quadric_edge_collapse(targetfacenum=c["tris"], preservetopology=False, planarquadric=True,
                                             preservenormal=True, qualitythr=0.5, optimalplacement=True)
 ms.meshing_remove_duplicate_vertices(); ms.meshing_remove_unreferenced_vertices()
+ms.meshing_remove_connected_component_by_face_number(mincomponentsize=max(4, c["tris"] // 40))   # pedacos soltos pequenos da malha de jogo
+ms.meshing_remove_unreferenced_vertices()
 mg = ms.current_mesh(); Vg = mg.vertex_matrix().astype(np.float64); Fg = mg.face_matrix()
 tm = ms.get_topological_measures()
 rep["game_tris"] = int(len(Fg)); rep["closed"] = bool(tm["boundary_edges"] == 0)
@@ -171,13 +220,18 @@ print("jogo:", len(Fg), "tris, fechada", rep["closed"], "manifold", tm["is_mesh_
 ms.save_current_mesh(wpath(c, "game_src.ply"), binary=True)
 
 # 3. normalizacao
+if c.get("rot") != "floor" and c.get("clamp_base", True):
+    zfl = np.percentile(Hv[:, 2], 2.0)             # pontas que descem abaixo do chao da peca (cones do voxel) viram base plana
+    Vg[:, 2] = np.maximum(Vg[:, 2], zfl); Hv[:, 2] = np.maximum(Hv[:, 2], zfl)
+    rep["base_clamp_z"] = float(zfl)
+    save_ply(wpath(c, "game_src.ply"), Vg, Fg); save_ply(wpath(c, "high_src.ply"), Hv, ms.current_mesh().face_matrix() if False else Fh_)
 R = np.eye(3)
 if c.get("rot") == "floor":
     R = np.array([[1, 0, 0], [0, 0, 1], [0, -1, 0]], float)       # (x,y,z) -> (x,z,-y): a face da imagem (-Y) vira o topo (+Z)
 yaw = 0.0
 if c.get("auto_yaw"):
     best = None
-    sub = Hv[:: max(1, len(Hv) // 20000)] @ R.T
+    sub = Vg[:: max(1, len(Vg) // 20000)] @ R.T
     for a in np.arange(-90, 90.5, 1.0):
         th = np.radians(a); Rz = np.array([[np.cos(th), -np.sin(th), 0], [np.sin(th), np.cos(th), 0], [0, 0, 1]])
         q = sub @ Rz.T; ar = np.ptp(q[:, 0]) * np.ptp(q[:, 1])
@@ -185,19 +239,19 @@ if c.get("auto_yaw"):
     yaw = best[1]; th = np.radians(yaw)
     R = np.array([[np.cos(th), -np.sin(th), 0], [np.sin(th), np.cos(th), 0], [0, 0, 1]]) @ R
 rep["yaw_deg"] = yaw
-Q = Hv @ R.T
+Q = Vg @ R.T
 ext = Q.max(0) - Q.min(0)
 fac = [d / ext[i] if d else None for i, d in enumerate(c["dims"])]
 given = [f for f in fac if f]
 uni = float(np.exp(np.mean(np.log(given)))) if given else 1.0
 fac = np.array([f if f else uni for f in fac])
 A = np.diag(fac) @ R
-Qf = Hv @ A.T
+Qf = Vg @ A.T
 t = pivot_t(c, Qf.min(0), Qf.max(0))
 lo, hi = Qf.min(0) + t, Qf.max(0) + t
 rep["scale_factors"] = np.round(fac, 3).tolist(); rep["uniform_fill"] = round(uni, 3)
 rep["nonuniform_ratio"] = round(float(fac.max() / fac.min()), 3)
-norm = dict(A=A.tolist(), t=t.tolist(), src_lo=Hv.min(0).tolist(), src_hi=Hv.max(0).tolist(), final_lo=lo.tolist(), final_hi=hi.tolist(),
+norm = dict(A=A.tolist(), t=t.tolist(), src_lo=Vg.min(0).tolist(), src_hi=Vg.max(0).tolist(), final_lo=lo.tolist(), final_hi=hi.tolist(),
             final_dims=(hi - lo).tolist(), report=rep)
 save_json(wpath(c, "norm.json"), norm)
 print("EB", rep["game_tris"], "tris; final", np.round(hi - lo, 3).tolist(), "fatores", rep["scale_factors"], round(time.time() - t0), "s")
