@@ -17,9 +17,11 @@ namespace Echoes.UI
         {
             get
             {
+                // Os modos de captura/medicao do player (-bossshot, -perf, -shots) precisam entrar no jogo sozinhos: implicam -autostart.
                 foreach (var arg in Environment.GetCommandLineArgs())
                 {
-                    if (string.Equals(arg, AutoStartArg, StringComparison.OrdinalIgnoreCase)) return true;
+                    if (string.Equals(arg, AutoStartArg, StringComparison.OrdinalIgnoreCase) || string.Equals(arg, "-bossshot", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(arg, "-perf", StringComparison.OrdinalIgnoreCase) || string.Equals(arg, "-shots", StringComparison.OrdinalIgnoreCase)) return true;
                 }
                 return false;
             }
