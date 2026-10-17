@@ -132,6 +132,8 @@ namespace Echoes.UI
                 else EnterGame();
             });
             MenuUi.MakeButton(card, loc.Get("ui.common.back"), ShowMain);
+            // Teste do player (-autostart): confirma sozinho com o nome padrao.
+            if (GameFlow.AutoStartRequested) card.schedule.Execute(() => { if (GameSession.Save.NewGame(Rules, slot, field.value)) EnterGame(); }).StartingIn(800);
         }
 
         void EnterGame()

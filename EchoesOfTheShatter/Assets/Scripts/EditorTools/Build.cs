@@ -102,10 +102,10 @@ namespace Echoes.EditorTools
         static void WriteReadme(string output)
         {
             const string text =
-@"ECHOES OF THE SHATTER - build de desenvolvimento (Cripta)
+@"ECHOES OF THE SHATTER - build de desenvolvimento (Refugio e Cripta)
 
-Abra EchoesOfTheShatter.exe. Na tela inicial: Jogar entra na Cripta; Sair fecha o jogo.
-Resolucao e Janela/Tela cheia mudam na tela inicial e na pausa (ficam salvas).
+Abra EchoesOfTheShatter.exe. Tela inicial: Jogar (escolhe o save; sem save, pede o nome do heroi), Resolucao e Janela/Tela cheia
+(ficam salvas) e Sair. Jogar leva ao Refugio; o portal vermelho a direita leva a Cripta e o da Cripta traz de volta.
 
 CONTROLES
   WASD ........................ mover
@@ -114,14 +114,24 @@ CONTROLES
   Botao direito / Q / E ....... habilidades
   Espaco ...................... esquiva
   1 e 2 ....................... pocoes
-  I ........................... inventario (quando disponivel)
-  Esc ......................... pausa (Continuar, opcoes, Voltar ao inicio)
+  F ........................... falar com a Ilsa e o Tico (no Refugio, perto deles)
+  Esc ......................... pausa (Continuar, opcoes, Voltar ao inicio; o jogo e salvo ao voltar)
+  Dev: F1 a F5 tiram e poem as pecas da armadura (so em Development Build)
 
-Dicas: o Guardiao esta na arena do fim da Cripta (a porta fecha atras de voce e reabre quando a luta acaba).
-Se morrer, voce volta ao ultimo checkpoint e os inimigos reaparecem.
+EXPEDICAO (Refugio)
+  Ilsa: configura a rota da Cripta (objetivo, ate 6 regras de IA, duracao 1 a 12 h; a duracao e limitada pelas Cargas do Marco) e inicia.
+  Enquanto a expedicao roda o heroi esta em rota: o portal da Cripta fica fechado (a Ilsa avisa).
+  Tico: mostra quanto falta e, quando acabar, entrega o relatorio (coleta uma vez so). O selo Estimativa aparece enquanto as habilidades nao forem calibradas.
+  A Ilsa so abre a rota depois de a Cripta estar dominada (vencer o Guardiao). Para testar sem lutar:
+  F8 domina a Cripta (+5 cargas); F9 avanca o relogio 1 h; F10 avanca 12 h (acelerador de debug, so no Refugio).
 
-Arquivo de log do jogo: %USERPROFILE%\AppData\LocalLow\DefaultCompany\Echoes of the Shatter\Player.log
-Teste de fumaca: EchoesOfTheShatter.exe -autostart -logFile player.log (entra sozinho na Cripta).
+SAVE
+  O jogo salva ao trocar de area, a cada 5 min, ao coletar e ao sair. O core mantem 3 backups (slot_1.bak1 a .bak3).
+  Pasta dos saves: %USERPROFILE%\AppData\LocalLow\DefaultCompany\Echoes of the Shatter\saves
+  Numero de slots: 1 (variavel de ambiente ECHOES_SAVE_SLOTS=3 para 3 slots).
+
+Log do jogo: %USERPROFILE%\AppData\LocalLow\DefaultCompany\Echoes of the Shatter\Player.log
+Teste de fumaca: EchoesOfTheShatter.exe -autostart -smoke 1 -savedir pasta -logFile player.log (entra, domina, expede, coleta e registra no log).
 ";
             File.WriteAllText(Path.Combine(output, "LEIA-ME.txt"), text.Replace("\r\n", "\n").Replace("\n", "\r\n"), new System.Text.UTF8Encoding(false));
         }

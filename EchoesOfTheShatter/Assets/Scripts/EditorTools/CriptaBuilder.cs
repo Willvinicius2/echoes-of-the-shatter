@@ -466,6 +466,7 @@ namespace Echoes.EditorTools
 
         internal static void BuildHud(Context ctx, PanelSettings panel, VisualTreeAsset hudUxml)
         {
+            panel = SandboxBuilder.CreatePanelSettings(); // recarrega: o asset carregado antes de NewScene pode ter sido descarregado (a referencia saia nula na cena)
             var hud = new GameObject("HUD");
             var uiDoc = hud.AddComponent<UIDocument>();
             uiDoc.panelSettings = panel;
@@ -487,6 +488,7 @@ namespace Echoes.EditorTools
         /// <summary>Raiz de UI das cenas de jogo (toast), autosave e troca de area; na Cripta tambem o registro da vitoria (dominio e cargas).</summary>
         internal static void BuildSessionObjects(Context ctx, PanelSettings panel, bool crypt)
         {
+            panel = SandboxBuilder.CreatePanelSettings();
             var go = new GameObject("Session");
             var doc = go.AddComponent<UIDocument>();
             doc.panelSettings = panel;

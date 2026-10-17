@@ -234,7 +234,18 @@ namespace Echoes.Core
         static SaveService save;
         static ExpeditionService expedition;
 
-        public static SaveService Save => save ?? (save = new SaveService(System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "saves"), new SystemGameClock()));
+        public static SaveService Save => save ?? (save = new SaveService(SaveDirectory(), new SystemGameClock()));
+
+        // Pasta dos saves: persistentDataPath/saves, ou a do argumento -savedir (teste do player, para nao mexer no save do jogador).
+        static string SaveDirectory()
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (var i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], "-savedir", StringComparison.OrdinalIgnoreCase)) return args[i + 1];
+            }
+            return System.IO.Path.Combine(UnityEngine.Application.persistentDataPath, "saves");
+        }
 
         /// <summary>Aviso para a proxima tela (ex.: LoadedFromBackup lido no menu, mostrado no Refugio).</summary>
         public static string PendingToastKey;

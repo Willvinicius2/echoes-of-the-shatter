@@ -9,16 +9,6 @@ using UnityEngine.UIElements;
 
 namespace Echoes.UI
 {
-    /// <summary>Ponto de interacao do Refugio (Ilsa ou Tico): o RefugeController mostra a dica e abre a conversa ao apertar F perto.</summary>
-    public sealed class InteractableNpc : MonoBehaviour
-    {
-        public const string Ilsa = "ilsa";
-        public const string Tico = "tico";
-
-        public string npcId = Ilsa;
-        public float radius = 2.8f;
-    }
-
     /// <summary>
     /// O Refugio (hub, docs/16 S-04): Ilsa configura e inicia a expedicao (S-08), Tico mostra o estado e entrega o relatorio (S-09). Telas funcionais
     /// em UI Toolkit; a arte final vem depois da aprovacao dos mockups. Tudo passa por <see cref="ExpeditionService"/> (so chamadas _trusted).
@@ -77,6 +67,8 @@ namespace Echoes.UI
             promptLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             rootElement.Add(prompt);
 
+            // Teste do player (-smoke): conquista a Cripta, inicia, avanca o relogio, coleta e registra o relatorio no log (e na captura -shot).
+            if (GameFlow.ArgValue("-smoke") != null) StartCoroutine(SmokeRun());
             if (!string.IsNullOrEmpty(GameSession.PendingToastKey))
             {
                 ScreenHost.Toast(Loc.Get(GameSession.PendingToastKey));
@@ -87,6 +79,27 @@ namespace Echoes.UI
                 var charges = GameSession.Save.Current.Summary.MarkerCharges;
                 ScreenHost.Toast(Loc.Get("ui.hud.charges") + " " + charges + "/12");
             }
+        }
+
+        System.Collections.IEnumerator SmokeRun()
+        {
+            yield return new WaitForSecondsRealtime(2f);
+            var shotBase = GameFlow.ArgValue("-shot");
+            if (!string.IsNullOrEmpty(shotBase)) ScreenCapture.CaptureScreenshot(shotBase.Replace(".png", "_hud.png"));
+            yield return new WaitForSecondsRealtime(1f);
+            DebugConquerCrypt();
+            config.Hours = 1;
+            var check = StartExpedition();
+            Debug.Log("[Smoke] expedicao iniciada: " + check + ", heroi ocupado=" + GameSession.Expedition.IsHeroBusy);
+            yield return new WaitForSecondsRealtime(1f);
+            DebugAdvance(3601);
+            var status = CollectAndShowReport();
+            Debug.Log("[Smoke] coleta: " + status + (LastReport != null ? ", encontros=" + LastReport.Encounters + ", xp=" + LastReport.Xp + ", estimativa=" + LastReport.IsEstimate : string.Empty));
+            yield return new WaitForSecondsRealtime(1f);
+            var shot = GameFlow.ArgValue("-shot");
+            if (!string.IsNullOrEmpty(shot)) ScreenCapture.CaptureScreenshot(shot);
+            yield return new WaitForSecondsRealtime(1f);
+            Debug.Log("[Smoke] segunda coleta: " + GameSession.Expedition.Collect(Rules, out _));
         }
 
         // O Refugio aberto direto no editor (sem passar pelo menu) joga com o slot 1: carrega ou cria um Guerreiro.

@@ -228,6 +228,7 @@ namespace Echoes.EditorTools
             // ---- HUD (README 4.7)
             var hud = new GameObject("HUD");
             var uiDoc = hud.AddComponent<UIDocument>();
+            panel = CreatePanelSettings();
             uiDoc.panelSettings = panel;
             uiDoc.visualTreeAsset = hudUxml;
             var hudView = hud.AddComponent<HudView>();
