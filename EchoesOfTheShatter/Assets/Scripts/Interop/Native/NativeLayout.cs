@@ -130,73 +130,140 @@ namespace Echoes.Interop.Native
             return v.ToArray();
         }
 
-        /// <summary>Lista do layout da API 1.1 (kLayoutExt): 37 valores, na ordem de shatter_c.cpp.</summary>
+        /// <summary>Lista do layout da API 1.1 e 1.2 (kLayoutExt): 114 valores, na ordem de shatter_c.cpp (gerada do proprio kLayoutExt).</summary>
         public static uint[] BuildExt()
         {
-            var v = new List<uint>(37);
+            var v = new List<uint>(114);
 
-            ShatterRulesExt re = default;
+            ShatterRulesExt s_shatter_rules_ext = default;
             v.Add((uint)sizeof(ShatterRulesExt));
-            v.Add(Off(&re, &re.guard_break_stagger_seconds));
-            v.Add(Off(&re, &re.potion_lockout));
-            v.Add(Off(&re, &re.dodge_max_charges));
-
-            ShatterVitals vi = default;
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_recharge));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_duration));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_iframes));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_distance));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_cost_resource));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_buffer));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_perfect_resource));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_cancel_recovery_fraction));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.guard_break_stagger_seconds));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.guard_break_stagger_damage_taken));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.guard_break_immunity_boss));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.guard_break_immunity_other));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.boss_shield_down_seconds));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.elite_life_mult));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.elite_damage_mult));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.elite_xp_mult));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.potion_lockout));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.out_of_combat_seconds));
+            v.Add(Off(&s_shatter_rules_ext, &s_shatter_rules_ext.dodge_max_charges));
+            ShatterVitals s_shatter_vitals = default;
             v.Add((uint)sizeof(ShatterVitals));
-            v.Add(Off(&vi, &vi.barrier_seconds_left));
-
-            ShatterActionTiming at = default;
+            v.Add(Off(&s_shatter_vitals, &s_shatter_vitals.life));
+            v.Add(Off(&s_shatter_vitals, &s_shatter_vitals.resource));
+            v.Add(Off(&s_shatter_vitals, &s_shatter_vitals.barrier));
+            v.Add(Off(&s_shatter_vitals, &s_shatter_vitals.barrier_seconds_left));
+            v.Add(Off(&s_shatter_vitals, &s_shatter_vitals.potion_barrier));
+            ShatterActionTiming s_shatter_action_timing = default;
             v.Add((uint)sizeof(ShatterActionTiming));
-            v.Add(Off(&at, &at.cost));
-
-            ShatterPotionOutcome po = default;
+            v.Add(Off(&s_shatter_action_timing, &s_shatter_action_timing.windup));
+            v.Add(Off(&s_shatter_action_timing, &s_shatter_action_timing.impact));
+            v.Add(Off(&s_shatter_action_timing, &s_shatter_action_timing.recovery));
+            v.Add(Off(&s_shatter_action_timing, &s_shatter_action_timing.cooldown));
+            v.Add(Off(&s_shatter_action_timing, &s_shatter_action_timing.cost));
+            ShatterPotionOutcome s_shatter_potion_outcome = default;
             v.Add((uint)sizeof(ShatterPotionOutcome));
-            v.Add(Off(&po, &po.status));
-
-            ShatterDodgeState ds = default;
+            v.Add(Off(&s_shatter_potion_outcome, &s_shatter_potion_outcome.heal_amount));
+            v.Add(Off(&s_shatter_potion_outcome, &s_shatter_potion_outcome.barrier_amount));
+            v.Add(Off(&s_shatter_potion_outcome, &s_shatter_potion_outcome.barrier_seconds));
+            v.Add(Off(&s_shatter_potion_outcome, &s_shatter_potion_outcome.use_time));
+            v.Add(Off(&s_shatter_potion_outcome, &s_shatter_potion_outcome.move_speed_while_using));
+            v.Add(Off(&s_shatter_potion_outcome, &s_shatter_potion_outcome.lockout));
+            v.Add(Off(&s_shatter_potion_outcome, &s_shatter_potion_outcome.status));
+            ShatterDodgeState s_shatter_dodge_state = default;
             v.Add((uint)sizeof(ShatterDodgeState));
-            v.Add(Off(&ds, &ds.charges));
-            v.Add(Off(&ds, &ds.active));
-
-            ShatterActorApply aa = default;
+            v.Add(Off(&s_shatter_dodge_state, &s_shatter_dodge_state.recharge_remaining));
+            v.Add(Off(&s_shatter_dodge_state, &s_shatter_dodge_state.elapsed));
+            v.Add(Off(&s_shatter_dodge_state, &s_shatter_dodge_state.charges));
+            v.Add(Off(&s_shatter_dodge_state, &s_shatter_dodge_state.active));
+            ShatterActorApply s_shatter_actor_apply = default;
             v.Add((uint)sizeof(ShatterActorApply));
-            v.Add(Off(&aa, &aa.guard_break_stacks));
-            v.Add(Off(&aa, &aa.applied));
-            v.Add(Off(&aa, &aa.remove_barrier));
-
-            ShatterActorInfo ai = default;
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.stun_seconds));
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.stagger_seconds));
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.guard_break_stacks));
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.applied));
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.stunned));
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.stun_blocked));
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.interrupted));
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.staggered));
+            v.Add(Off(&s_shatter_actor_apply, &s_shatter_actor_apply.remove_barrier));
+            ShatterActorInfo s_shatter_actor_info = default;
             v.Add((uint)sizeof(ShatterActorInfo));
-            v.Add(Off(&ai, &ai.can_act));
-
-            ShatterEliteInfo ei = default;
+            v.Add(Off(&s_shatter_actor_info, &s_shatter_actor_info.stun_remaining));
+            v.Add(Off(&s_shatter_actor_info, &s_shatter_actor_info.stagger_remaining));
+            v.Add(Off(&s_shatter_actor_info, &s_shatter_actor_info.immunity_remaining));
+            v.Add(Off(&s_shatter_actor_info, &s_shatter_actor_info.can_act));
+            v.Add(Off(&s_shatter_actor_info, &s_shatter_actor_info.stun_immune));
+            ShatterEliteInfo s_shatter_elite_info = default;
             v.Add((uint)sizeof(ShatterEliteInfo));
-            v.Add(Off(&ei, ei.modifier_id));
-            v.Add(Off(&ei, &ei.rolled));
-
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.life_mult));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.damage_mult));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.xp_mult));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.barrier_fraction_of_life));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.move_speed_mult));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.attack_speed_mult));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.recovery_mult));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.death_explosion_radius));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.death_explosion_damage));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.death_explosion_fuse));
+            v.Add(Off(&s_shatter_elite_info, s_shatter_elite_info.modifier_id));
+            v.Add(Off(&s_shatter_elite_info, &s_shatter_elite_info.rolled));
+            ShatterVec2 s_shatter_vec2 = default;
             v.Add((uint)sizeof(ShatterVec2));
+            v.Add(Off(&s_shatter_vec2, &s_shatter_vec2.x));
+            v.Add(Off(&s_shatter_vec2, &s_shatter_vec2.z));
+            ShatterBossContext s_shatter_boss_context = default;
             v.Add((uint)sizeof(ShatterBossContext));
-
-            ShatterBossEvent be = default;
+            v.Add(Off(&s_shatter_boss_context, &s_shatter_boss_context.boss));
+            v.Add(Off(&s_shatter_boss_context, &s_shatter_boss_context.player));
+            ShatterBossEvent s_shatter_boss_event = default;
             v.Add((uint)sizeof(ShatterBossEvent));
-            v.Add(Off(&be, &be.kind));
-            v.Add(Off(&be, be.pattern_id));
-            v.Add(Off(&be, be.skill_id));
-            v.Add(Off(&be, be.enemy_id));
-
-            ShatterBossInfo bi = default;
+            v.Add(Off(&s_shatter_boss_event, &s_shatter_boss_event.seconds));
+            v.Add(Off(&s_shatter_boss_event, &s_shatter_boss_event.kind));
+            v.Add(Off(&s_shatter_boss_event, &s_shatter_boss_event.phase));
+            v.Add(Off(&s_shatter_boss_event, &s_shatter_boss_event.count));
+            v.Add(Off(&s_shatter_boss_event, s_shatter_boss_event.pattern_id));
+            v.Add(Off(&s_shatter_boss_event, s_shatter_boss_event.skill_id));
+            v.Add(Off(&s_shatter_boss_event, s_shatter_boss_event.enemy_id));
+            ShatterBossInfo s_shatter_boss_info = default;
             v.Add((uint)sizeof(ShatterBossInfo));
-            v.Add(Off(&bi, &bi.phase));
-            v.Add(Off(&bi, &bi.shield_up));
-
-            ShatterBossDamage bd = default;
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.life));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.max_life));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.shield_down_remaining));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.turn_rate_deg_per_sec));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.facing_x));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.facing_z));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.stagger_remaining));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.stun_remaining));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.phase));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.state));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.shield_up));
+            v.Add(Off(&s_shatter_boss_info, &s_shatter_boss_info.invulnerable));
+            ShatterBossDamage s_shatter_boss_damage = default;
             v.Add((uint)sizeof(ShatterBossDamage));
-            v.Add(Off(&bd, &bd.shield_blocked));
-
+            v.Add(Off(&s_shatter_boss_damage, &s_shatter_boss_damage.applied));
+            v.Add(Off(&s_shatter_boss_damage, &s_shatter_boss_damage.life_after));
+            v.Add(Off(&s_shatter_boss_damage, &s_shatter_boss_damage.shield_blocked));
+            v.Add(Off(&s_shatter_boss_damage, &s_shatter_boss_damage.invulnerable));
+            v.Add(Off(&s_shatter_boss_damage, &s_shatter_boss_damage.clamped_by_phase));
+            v.Add(Off(&s_shatter_boss_damage, &s_shatter_boss_damage.killed));
+            ShatterBossProgress s_shatter_boss_progress = default;
             v.Add((uint)sizeof(ShatterBossProgress));
-
-            ShatterForecastEx fe = default;
+            v.Add(Off(&s_shatter_boss_progress, &s_shatter_boss_progress.kills));
+            v.Add(Off(&s_shatter_boss_progress, &s_shatter_boss_progress.kills_since_unique));
+            ShatterForecastEx s_shatter_forecast_ex = default;
             v.Add((uint)sizeof(ShatterForecastEx));
-            v.Add(Off(&fe, &fe.calibration));
+            v.Add(Off(&s_shatter_forecast_ex, &s_shatter_forecast_ex.baseForecast));
+            v.Add(Off(&s_shatter_forecast_ex, &s_shatter_forecast_ex.calibration));
 
             return v.ToArray();
         }

@@ -372,6 +372,7 @@ namespace Echoes.UI
                 case StartCheck.AnotherRunning: return Loc.Get("ui.exp.err.busy");
                 case StartCheck.InvalidDuration: return Loc.Get("ui.exp.err.duration_range");
                 case StartCheck.TooManyRules: return Loc.Get("ui.exp.err.rules_max");
+                case StartCheck.ClockRollback: return Loc.Get("ui.exp.err.clock_rollback");
                 case StartCheck.IdleIncompatible: return ScreenKit.Fmt(Loc, "ui.exp.err.skill_blocked", ("skill", string.Empty));
                 default: return check.ToString();
             }
@@ -414,7 +415,7 @@ namespace Echoes.UI
             var rules = Rules;
             var check = GameSession.Expedition.Start(rules, config);
             CloseScreen();
-            ScreenHost.Toast(check == StartCheck.Ok ? Loc.Get("ui.exp.started_hint") : ErrorText(check));
+            ScreenHost.Toast(check == StartCheck.Ok ? Loc.Get("ui.exp.started_hint") : ErrorText(check), check == StartCheck.Ok ? ToastKind.Info : ToastKind.Error);
             return check;
         }
 
