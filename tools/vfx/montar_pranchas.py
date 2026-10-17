@@ -91,7 +91,7 @@ def prancha(pasta, rotulo, marcas, orcamento):
     arquivos = sorted(f for f in os.listdir(quadros_pasta) if f.endswith(".jpg"))
     total = len(arquivos)
     chaves = quadros_chave(marcas.get(rotulo, {}), total)
-    e56 = rotulo.endswith("_56m")
+    e56 = "_56m" in rotulo
     tile_w, tile_h = (720, 405) if e56 else (640, 360)
     linhas = (len(chaves) + COLS - 1) // COLS
     margem, topo = 8, 56
@@ -127,12 +127,12 @@ def geral(pasta, enquadramento, itens):
     d.text((margem, 10), f"VFX das habilidades - enquadramento {enquadramento}", fill=(252, 213, 138), font=fonte(26))
     for i, (rotulo, caminho_quadro) in enumerate(itens):
         img = Image.open(caminho_quadro).convert("RGB")
-        if enquadramento == "56m":
+        if enquadramento.startswith("56m"):
             img = recorte_56m(img)
         img = img.resize((tile_w, tile_h), Image.LANCZOS)
         x = margem + (i % cols) * (tile_w + margem)
         y = 50 + (i // cols) * (tile_h + 28)
-        d.text((x + 4, y + 2), rotulo.replace("_", " ").rsplit(" ", 1)[0], fill=(232, 224, 212), font=fonte(16))
+        d.text((x + 4, y + 2), rotulo.replace("_", " "), fill=(232, 224, 212), font=fonte(16))
         folha.paste(img, (x, y + 24))
     saida = os.path.join(pasta, f"prancha_geral_{enquadramento}.jpg")
     folha.save(saida, quality=92)
@@ -150,7 +150,7 @@ def main():
     for rotulo in sorted(os.listdir(quadros)):
         saida, chaves, total = prancha(pasta, rotulo, marcas, orcamento)
         print(f"{saida}: {len(chaves)} quadros-chave de {total}")
-        enquadramento = rotulo.rsplit("_", 1)[1]
+        enquadramento = next(e for e in ("56m_bloom", "perto_bloom", "56m", "perto") if rotulo.endswith("_" + e))
         escolha = next((q for n, q in chaves if n in ("impacto", "em voo")), chaves[len(chaves) // 2][1])
         arquivos = sorted(f for f in os.listdir(os.path.join(quadros, rotulo)) if f.endswith(".jpg"))
         grupos[enquadramento].append((rotulo, os.path.join(quadros, rotulo, arquivos[min(escolha, len(arquivos) - 1)])))

@@ -37,6 +37,8 @@ namespace Echoes.Presentation
         [SerializeField] Camera viewCamera;
         [SerializeField] RenderSettingsAsset renderSettings;
         [SerializeField] TextAsset script;
+        [Tooltip("Volume global com bloom leve; peso 1 nos enquadramentos terminados em _bloom.")]
+        [SerializeField] UnityEngine.Rendering.Volume bloomVolume;
         [Header("Modelos prontos (objeto inativo com AttributeComponent + PresentationController + corpo)")]
         [SerializeField] GameObject warriorTemplate;
         [SerializeField] GameObject archerTemplate;
@@ -109,7 +111,7 @@ namespace Echoes.Presentation
             var folder = ArgValue("-vfxshow");
             if (string.IsNullOrEmpty(folder)) yield break;
             var only = ArgValue("-vfxonly");
-            var views = ArgValue("-vfxviews") ?? "perto,56m";
+            var views = ArgValue("-vfxviews") ?? "perto,56m,56m_bloom";
             yield return RunScript(folder, only, views);
             Time.captureFramerate = 0;
             Quit(failure == null ? 0 : 1);
@@ -202,6 +204,8 @@ namespace Echoes.Presentation
                     ShotRangeMeters = (float)MiniJson.Num(o, "shotRangeUu", 0) * 0.01f,
                 };
                 def.Info = rules.FindSkill(def.Id) ?? MakeSkill(o);
+                // O core ja diz o comportamento (SkillBehavior): explosao so no visual, com o RadiusUu; o projetil continua explodindo no alvo (corredor fino).
+                if (def.Info.Behavior.Explodes) def.ExplodeMeters = WorldUnits.ToMeters(def.Info.RadiusUu);
                 sims[def.Id] = def;
             }
             foreach (var item in MiniJson.AsArray(doc["shots"]))
@@ -455,7 +459,10 @@ namespace Echoes.Presentation
 
         IEnumerator RecordShot(Shot shot, string view, string folder)
         {
-            var label = $"{shot.Id}_{view}";
+            var bloom = view.EndsWith("_bloom", StringComparison.Ordinal);
+            if (bloom) view = view.Substring(0, view.Length - "_bloom".Length);
+            if (bloomVolume != null) bloomVolume.weight = bloom ? 1f : 0f;
+            var label = $"{shot.Id}_{view}{(bloom ? "_bloom" : string.Empty)}";
             currentShotLabel = label;
             currentMarkHit = false;
             var frames = Path.Combine(folder, "frames", label);
@@ -616,11 +623,6 @@ namespace Echoes.Presentation
             At(t + windup, () => { Mark("saida"); Publish(skill, ActionPhase.Impact, impact); Effect(def, shot); });
             At(t + windup + impact, () => Publish(skill, ActionPhase.Recovery, recovery));
             At(t + windup + impact + recovery, () => Publish(skill, ActionPhase.None, 0.0));
-            if (skill.Id == "skill.archer.arrow_rain")
-            {
-                // Chuva: o golpe acerta uma vez, ao fim do impacto (0,70 s depois da preparação, docs/18 seção 2.2).
-                At(t + windup + impact, () => HitCircle(def, AimCenter(def), WorldUnits.ToMeters(skill.RadiusUu)));
-            }
             return t + windup + impact + recovery;
         }
 
@@ -671,7 +673,8 @@ namespace Echoes.Presentation
                                 combat.ApplySkillHit(caster, target, skill, caster.Position);
                         }
                     }
-                    else if (skill.RangeUu <= 0.0) HitCircle(def, caster.Position, WorldUnits.ToMeters(skill.RadiusUu));
+                    else if (skill.Behavior.GroundTargeted) HitCircle(def, AimCenter(def), WorldUnits.ToMeters(skill.RadiusUu));
+                    else if (skill.RangeUu <= 0.0 || skill.Behavior.SelfCentered) HitCircle(def, caster.Position, WorldUnits.ToMeters(skill.RadiusUu));
                     break;
             }
         }
@@ -696,7 +699,7 @@ namespace Echoes.Presentation
             for (var i = 0; i < count; i++)
             {
                 // Leque: ConeAngle graus divididos entre as flechas (docs/18 8.3b: o core ainda não define; a vitrine abre o leque).
-                var angle = count > 1 ? Mathf.Lerp(-spread * 0.5f, spread * 0.5f, i / (float)(count - 1)) : 0f;
+                var angle = count > 1 && (skill.Behavior.Fan || spread > 0f) ? Mathf.Lerp(-spread * 0.5f, spread * 0.5f, i / (float)(count - 1)) : 0f;
                 var rotated = Quaternion.Euler(0f, angle, 0f) * new Vector3(direction.X, 0f, direction.Z);
                 combat.Projectiles.Spawn(combat, stage.Caster, skill, origin, rotated.ToPlanar(), WorldUnits.ToMeters(skill.ProjectileSpeedUu), range, def.CorridorMeters);
             }

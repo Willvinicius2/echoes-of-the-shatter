@@ -1,5 +1,6 @@
 using Echoes.Core;
 using Echoes.Gameplay;
+using UnityEngine;
 
 namespace Echoes.Presentation
 {
@@ -10,9 +11,30 @@ namespace Echoes.Presentation
     /// </summary>
     public sealed partial class SkillVfxPresenter
     {
-        partial void SubscribeBasicInput(EventBus events) => events.Subscribe<BasicInputEvent>(OnBasicInput);
+        partial void SubscribeBasicInput(EventBus events)
+        {
+            events.Subscribe<BasicInputEvent>(OnBasicInput);
+            events.Subscribe<GuardBlockEvent>(OnGuardBlock);
+        }
 
-        partial void UnsubscribeBasicInput(EventBus events) => events.Unsubscribe<BasicInputEvent>(OnBasicInput);
+        partial void UnsubscribeBasicInput(EventBus events)
+        {
+            events.Unsubscribe<BasicInputEvent>(OnBasicInput);
+            events.Unsubscribe<GuardBlockEvent>(OnGuardBlock);
+        }
+
+        // Golpe absorvido pela defesa: faisca comum, ou clarao da defesa perfeita. O contato fica na frente do defensor, virado para o atacante.
+        void OnGuardBlock(in GuardBlockEvent evt)
+        {
+            if (evt.Target == null) return;
+            var targetPos = evt.Target.Position;
+            var toAttacker = evt.Attacker != null ? (evt.Attacker.Position - targetPos).NormalizedOr(evt.Target.Forward) : evt.Target.Forward;
+            var contact = new Vector3(targetPos.X + toAttacker.X * 0.7f, 0f, targetPos.Z + toAttacker.Z * 0.7f);
+            if (evt.Target.Owner is Component owner && owner != null) contact.y = owner.transform.position.y;
+            contact.y += 1f;
+            if (evt.Perfect) GuardPerfect(evt.Target, contact);
+            else GuardBlock(evt.Target, contact);
+        }
 
         void OnBasicInput(in BasicInputEvent evt)
         {

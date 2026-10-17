@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 namespace Echoes.EditorTools
@@ -88,6 +89,19 @@ namespace Echoes.EditorTools
             cam.backgroundColor = new Color(0.059f, 0.043f, 0.078f);
             cam.allowHDR = true;
 
+            // Bloom leve (docs/03 3.6: limiar alto, intensidade ~0,25) ligado so nos enquadramentos "_bloom": confere os efeitos com e sem ele.
+            var bloomGo = new GameObject("BloomVolume");
+            var volume = bloomGo.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.weight = 0f;
+            var profile = SandboxBuilder.LoadOrCreate<VolumeProfile>(VfxLibraryBuilder.Root + "/VP_VfxShowcaseBloom.asset");
+            if (!profile.TryGet<Bloom>(out var bloom)) bloom = profile.Add<Bloom>(true);
+            bloom.threshold.Override(1.0f);
+            bloom.intensity.Override(0.25f);
+            bloom.scatter.Override(0.6f);
+            EditorUtility.SetDirty(profile);
+            volume.sharedProfile = profile;
+
             var templates = new GameObject("Templates");
             var warrior = Template(templates.transform, "Template_Warrior", CharacterPrefabBuilder.HeroPrefab("warrior"), AnimatorControllerBuilder.WarriorSkillSetPath, gameRoot);
             var archer = Template(templates.transform, "Template_Archer", CharacterPrefabBuilder.HeroPrefab("archer"), VfxLibraryBuilder.ArcherSetPath, gameRoot);
@@ -106,6 +120,7 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(show, "viewCamera", cam);
             SandboxBuilder.SetRef(show, "renderSettings", renderSettings);
             SandboxBuilder.SetRef(show, "script", script);
+            SandboxBuilder.SetRef(show, "bloomVolume", volume);
             SandboxBuilder.SetRef(show, "warriorTemplate", warrior);
             SandboxBuilder.SetRef(show, "archerTemplate", archer);
             SandboxBuilder.SetRef(show, "mageTemplate", mage);

@@ -107,10 +107,10 @@ namespace Echoes.Tests.EditMode
         public void TheArrowRainMarksTheCircleBeforeTheArrowsFall()
         {
             var e = Entry("skill.archer.arrow_rain");
-            Assert.IsNotEmpty(e.windupFx, "marcacao no chao na preparacao");
-            Assert.IsNotEmpty(e.releaseFx, "flechas caindo no impacto");
-            Assert.AreEqual(VfxPlace.AimGround, e.releaseFx[0].place);
-            Assert.Greater(e.releaseFx[0].authoredRadiusMeters, 0f);
+            Assert.GreaterOrEqual(e.windupFx.Length, 2, "marcacao no chao e flechas na preparacao: pousam no instante do golpe");
+            Assert.IsTrue(e.windupFx.All(s => s.place == VfxPlace.AimGround && s.authoredRadiusMeters > 0f));
+            var arrows = e.windupFx[1].prefab.GetComponentsInChildren<ParticleSystem>(true).First(p => p.name == "Arrows");
+            Assert.LessOrEqual(arrows.main.duration + arrows.main.startLifetime.constant, 0.26f, "pousam ate o fim da preparacao (0,25 s)");
         }
 
         [Test]

@@ -268,7 +268,7 @@ namespace Echoes.EditorTools
                 }.Build(root.transform);
             });
 
-            // Chuva de Flechas: círculo de marcação (ácido, nunca vermelho), 12 a 16 flechas caindo de 6 m em 0,6 s e poeira no impacto.
+            // Chuva de Flechas: círculo de marcação (ácido, nunca vermelho), 12 a 16 flechas caindo de 6 m e pousando no instante do golpe (ate 0,1 s antes) e poeira no impacto.
             pRainMarker = SavePrefab("FX_Rain_Marker", root =>
             {
                 var g = Child(root, "Ground", new Vector3(0f, Ground, 0f));
@@ -288,25 +288,25 @@ namespace Echoes.EditorTools
             {
                 new Layer
                 {
-                    Name = "Arrows", Mat = mMeshArrow, Duration = 0.5f, Life = R(0.3f), Speed = R(22f), Size = R(0.7f), Rate = 30f, Max = 24,
+                    Name = "Arrows", Mat = mMeshArrow, Duration = 0.1f, Life = R(0.15f), Speed = R(40f), Size = R(0.7f), Rate = 150f, Max = 24,
                     Shape = ParticleSystemShapeType.Cone, Angle = 0f, Radius = 2.9f, RadiusThickness = 1f, Position = new Vector3(0f, 6f, 0f), ShapeRotation = new Vector3(90f, 0f, 0f),
                     Render = ParticleSystemRenderMode.Mesh, Mesh = meshArrow, AlignToVelocity = true, Grad = Flat(Color.white, 1f, 0.01f, 0.85f),
                 }.Build(root.transform);
                 new Layer
                 {
-                    Name = "ArrowTrails", Mat = mAddStreak, Duration = 0.5f, Life = R(0.28f), Speed = R(22f), Size = R(0.1f), Rate = 30f, Max = 24,
+                    Name = "ArrowTrails", Mat = mAddStreak, Duration = 0.1f, Life = R(0.14f), Speed = R(40f), Size = R(0.1f), Rate = 150f, Max = 24,
                     Shape = ParticleSystemShapeType.Cone, Angle = 0f, Radius = 2.9f, Position = new Vector3(0f, 6.5f, 0f), ShapeRotation = new Vector3(90f, 0f, 0f),
                     Render = ParticleSystemRenderMode.Stretch, LengthScale = 1f, VelocityScale = 0.12f, Grad = Flat(AcidCore, 0.85f, 0.02f, 0.8f),
                 }.Build(root.transform);
                 new Layer
                 {
-                    Name = "Impacts", Mat = mAlphaSmoke, Duration = 0.5f, Delay = 0.25f, Life = R(0.35f, 0.55f), Speed = R(0.5f, 1.4f), Size = R(0.4f, 0.7f), Rate = 30f, Max = 24,
+                    Name = "Impacts", Mat = mAlphaSmoke, Duration = 0.1f, Delay = 0.15f, Life = R(0.35f, 0.55f), Speed = R(0.5f, 1.4f), Size = R(0.4f, 0.7f), Rate = 150f, Max = 24,
                     Shape = ParticleSystemShapeType.Cone, Angle = 18f, Radius = 2.8f, ShapeRotation = new Vector3(-90f, 0f, 0f), Position = new Vector3(0f, Ground, 0f), World = true,
                     Grad = Flat(PhysEdge, 0.45f, 0.1f, 0.35f), SizeCurve = Curve(0f, 0.4f, 1f, 1.4f), StartRotation = R(0f, 360f),
                 }.Build(root.transform);
                 new Layer
                 {
-                    Name = "ImpactSparks", Mat = mAddStreak, Duration = 0.5f, Delay = 0.25f, Life = R(0.15f, 0.3f), Speed = R(2f, 4.5f), Size = R(0.05f, 0.08f), Rate = 36f, Max = 30,
+                    Name = "ImpactSparks", Mat = mAddStreak, Duration = 0.1f, Delay = 0.15f, Life = R(0.15f, 0.3f), Speed = R(2f, 4.5f), Size = R(0.05f, 0.08f), Rate = 180f, Max = 30,
                     Shape = ParticleSystemShapeType.Cone, Angle = 30f, Radius = 2.8f, ShapeRotation = new Vector3(-90f, 0f, 0f), Position = new Vector3(0f, Ground, 0f), Gravity = 1f,
                     Render = ParticleSystemRenderMode.Stretch, LengthScale = 1.6f, VelocityScale = 0.04f, World = true, Grad = Snap(AcidCore, AcidMid, 1f, 0.5f),
                 }.Build(root.transform);

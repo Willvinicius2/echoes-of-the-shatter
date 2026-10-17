@@ -5,7 +5,8 @@
         "Echoes.Core",
         "Echoes.Gameplay",
         "Echoes.Interop",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
