@@ -45,7 +45,11 @@ namespace Echoes.Presentation
         [Header("Habilidades")]
         public List<SkillPresentationEntry> entries = new List<SkillPresentationEntry>();
 
+        [Header("VFX das habilidades (SkillVfxPresenter; VfxLibraryBuilder). Separado de entries, que o AnimatorControllerBuilder regenera")]
+        public List<SkillVfxEntry> vfx = new List<SkillVfxEntry>();
+
         [NonSerialized] Dictionary<string, SkillPresentationEntry> lookup;
+        [NonSerialized] Dictionary<string, SkillVfxEntry> vfxLookup;
 
         public bool TryGet(string skillId, out SkillPresentationEntry entry)
         {
@@ -63,9 +67,26 @@ namespace Echoes.Presentation
             return lookup.TryGetValue(skillId, out entry);
         }
 
+        public bool TryGetVfx(string skillId, out SkillVfxEntry entry)
+        {
+            entry = null;
+            if (string.IsNullOrEmpty(skillId)) return false;
+            if (vfxLookup == null)
+            {
+                vfxLookup = new Dictionary<string, SkillVfxEntry>(StringComparer.Ordinal);
+                for (var i = 0; i < vfx.Count; i++)
+                {
+                    var e = vfx[i];
+                    if (e != null && !string.IsNullOrEmpty(e.skillId)) vfxLookup[e.skillId] = e;
+                }
+            }
+            return vfxLookup.TryGetValue(skillId, out entry);
+        }
+
         void OnValidate()
         {
             lookup = null;
+            vfxLookup = null;
         }
     }
 }

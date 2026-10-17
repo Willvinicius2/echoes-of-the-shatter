@@ -1,0 +1,37 @@
+{
+  "_nota": "Roteiro da vitrine de VFX (-vfxshow). Os valores das habilidades do Arqueiro e do Mago e dos golpes novos do Guerreiro vem do docs/18 secao 2 e so servem para a vitrine ate o core (class.archer, class.mage) ter essas linhas em skills.csv; a vitrine usa a linha do CSV quando ela existe. Nada aqui e balanceamento do jogo. Tempos em segundos, distancias em uu (1 uu = 1 cm). corridorUu = largura do corredor do projetil; explodeUu = raio da explosao em area (mecanica que o core ainda nao tem: a vitrine aplica o golpe nos alvos da area).",
+  "skills": [
+    { "id": "skill.warrior.combo_2", "shape": "cone", "tags": "attack|melee|physical", "windup": 0.12, "impact": 0.10, "recovery": 0.22, "rangeUu": 190, "coneDegrees": 140, "physical": 6 },
+    { "id": "skill.warrior.combo_3", "shape": "cone", "tags": "attack|melee|physical", "windup": 0.22, "impact": 0.12, "recovery": 0.40, "rangeUu": 210, "coneDegrees": 160, "physical": 9 },
+    { "id": "skill.warrior.heavy_slash", "shape": "cone", "tags": "attack|melee|physical", "windup": 0.10, "impact": 0.12, "recovery": 0.50, "rangeUu": 220, "coneDegrees": 150, "physical": 12 },
+    { "id": "skill.archer.quick_shot", "shape": "projectile", "tags": "attack|projectile|physical", "windup": 0.10, "impact": 0.05, "recovery": 0.20, "rangeUu": 1300, "speedUu": 2400, "corridorUu": 10, "physical": 6 },
+    { "id": "skill.archer.fan_shot", "shape": "projectile", "tags": "attack|projectile|physical", "windup": 0.18, "impact": 0.05, "recovery": 0.32, "rangeUu": 1100, "speedUu": 2400, "corridorUu": 10, "projectiles": 3, "coneDegrees": 28, "physical": 4 },
+    { "id": "skill.archer.piercing_shot", "shape": "projectile", "tags": "attack|projectile|physical", "windup": 0.06, "impact": 0.04, "recovery": 0.35, "rangeUu": 1500, "speedUu": 3200, "corridorUu": 10, "physical": 10 },
+    { "id": "skill.archer.back_leap", "shape": "dash", "tags": "attack|projectile|physical", "windup": 0.05, "impact": 0.25, "recovery": 0.20, "rangeUu": 450, "speedUu": 2400, "corridorUu": 10, "shotRangeUu": 1000, "physical": 7 },
+    { "id": "skill.archer.arrow_rain", "shape": "area", "tags": "attack|projectile|area|physical", "windup": 0.25, "impact": 0.70, "recovery": 0.25, "rangeUu": 1100, "radiusUu": 300, "physical": 9 },
+    { "id": "skill.mage.arcane_dart", "shape": "projectile", "tags": "spell|projectile|lightning", "windup": 0.12, "impact": 0.06, "recovery": 0.22, "rangeUu": 1200, "speedUu": 2000, "corridorUu": 10, "lightning": 8 },
+    { "id": "skill.mage.arcane_orb", "shape": "projectile", "tags": "spell|projectile|area|lightning", "windup": 0.20, "impact": 0.08, "recovery": 0.38, "rangeUu": 1000, "speedUu": 1300, "corridorUu": 20, "radiusUu": 130, "explodeUu": 130, "lightning": 11 },
+    { "id": "skill.mage.fireball", "shape": "projectile", "tags": "spell|projectile|area|fire", "windup": 0.10, "impact": 0.06, "recovery": 0.45, "rangeUu": 1300, "speedUu": 1100, "corridorUu": 30, "radiusUu": 220, "explodeUu": 220, "fire": 20 },
+    { "id": "skill.mage.frost_nova", "shape": "area", "tags": "spell|area|cold", "windup": 0.25, "impact": 0.08, "recovery": 0.35, "rangeUu": 0, "radiusUu": 340, "cold": 12 },
+    { "id": "skill.mage.arcane_ray", "shape": "area", "tags": "spell|area|lightning", "windup": 0.35, "impact": 0.05, "recovery": 0.40, "rangeUu": 900, "radiusUu": 20, "lightning": 26, "line": true }
+  ],
+  "shots": [
+    { "id": "guerreiro_corte_de_ferro", "caster": "warrior", "skill": "skill.warrior.iron_cut", "targets": [[1.6, 0]], "tail": 1.4, "frameHeight": 7 },
+    { "id": "guerreiro_golpe_2", "caster": "warrior", "skill": "skill.warrior.combo_2", "targets": [[1.6, 0]], "tail": 1.4, "frameHeight": 7 },
+    { "id": "guerreiro_golpe_3_fecho", "caster": "warrior", "skill": "skill.warrior.combo_3", "targets": [[1.7, 0], [1.9, 1.2]], "tail": 1.6, "frameHeight": 7 },
+    { "id": "guerreiro_ataque_forte", "caster": "warrior", "skill": "skill.warrior.heavy_slash", "charge": 0.95, "targets": [[1.8, 0], [2.0, 1.1], [2.0, -1.1]], "tail": 1.8, "frameHeight": 8 },
+    { "id": "guerreiro_defesa", "caster": "warrior", "kind": "guard", "targets": [[2.2, 0]], "tail": 0.8, "frameHeight": 6 },
+    { "id": "arqueiro_disparo_reto", "caster": "archer", "skill": "skill.archer.quick_shot", "targets": [[9, 0]], "tail": 1.2, "frameHeight": 12 },
+    { "id": "arqueiro_leque", "caster": "archer", "skill": "skill.archer.fan_shot", "targets": [[7, -2], [7, 0], [7, 2]], "tail": 1.2, "frameHeight": 12 },
+    { "id": "arqueiro_tiro_perfurante", "caster": "archer", "skill": "skill.archer.piercing_shot", "charge": 0.95, "targets": [[8, 0], [11, 0]], "tail": 1.4, "frameHeight": 14 },
+    { "id": "arqueiro_salto_para_tras", "caster": "archer", "skill": "skill.archer.back_leap", "targets": [[7, 0]], "tail": 1.2, "frameHeight": 12 },
+    { "id": "arqueiro_chuva_de_flechas", "caster": "archer", "skill": "skill.archer.arrow_rain", "targets": [[8, 0], [9.2, 1.3], [9.2, -1.3]], "aimAtTargets": true, "tail": 1.4, "frameHeight": 14 },
+    { "id": "mago_dardo_arcano", "caster": "mage", "skill": "skill.mage.arcane_dart", "targets": [[8, 0]], "tail": 1.1, "frameHeight": 12 },
+    { "id": "mago_orbe_arcano", "caster": "mage", "skill": "skill.mage.arcane_orb", "targets": [[8, 0], [8.8, 1.1]], "tail": 1.4, "frameHeight": 12 },
+    { "id": "mago_bola_de_fogo", "caster": "mage", "skill": "skill.mage.fireball", "charge": 0.9, "targets": [[9, 0], [9.8, 1.4], [8.4, -1.5]], "tail": 3.4, "frameHeight": 14 },
+    { "id": "mago_nova_de_gelo", "caster": "mage", "skill": "skill.mage.frost_nova", "targets": [[2.2, 0.5], [-1.5, 1.8], [0.8, -2.6]], "tail": 1.8, "frameHeight": 11 },
+    { "id": "mago_raio_arcano", "caster": "mage", "skill": "skill.mage.arcane_ray", "targets": [[4, 0], [6.5, 0], [8.5, 0]], "tail": 1.2, "frameHeight": 12 },
+    { "id": "mago_barreira_arcana", "caster": "mage", "kind": "barrier", "targets": [[4, 0]], "tail": 0.8, "frameHeight": 7 },
+    { "id": "inimigo_flecha_do_arqueiro_fantasma", "caster": "ghost", "skill": "skill.enemy.ghost_arrow", "targetKind": "warrior", "targets": [[9, 0]], "tail": 1.4, "frameHeight": 12 }
+  ]
+}
