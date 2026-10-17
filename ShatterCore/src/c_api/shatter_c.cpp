@@ -41,6 +41,7 @@ struct shatter_potions {
 };
 struct shatter_actor {
     shatter::ActionStatus st;
+    shatter::FleeState flee;
 };
 struct shatter_boss {
     const shatter_db* owner = nullptr;  // banco que o criou (referência contada)
@@ -344,6 +345,12 @@ const std::uint32_t kLayoutExt2[] = {static_cast<std::uint32_t>(sizeof(shatter_r
                                     static_cast<std::uint32_t>(offsetof(shatter_rules_ext2, unarmed_weapon_damage_physical)),
                                     static_cast<std::uint32_t>(offsetof(shatter_rules_ext2, require_on_screen_margin))};
 static_assert(sizeof(kLayoutExt2) / sizeof(kLayoutExt2[0]) == SHATTER_LAYOUT_EXT2_COUNT, "SHATTER_LAYOUT_EXT2_COUNT desatualizado");
+
+const std::uint32_t kLayoutExt3[] = {
+    static_cast<std::uint32_t>(sizeof(shatter_flee_result)), static_cast<std::uint32_t>(offsetof(shatter_flee_result, remaining)),
+    static_cast<std::uint32_t>(offsetof(shatter_flee_result, fleeing)), static_cast<std::uint32_t>(offsetof(shatter_flee_result, started)),
+    static_cast<std::uint32_t>(offsetof(shatter_flee_result, ended)), static_cast<std::uint32_t>(offsetof(shatter_flee_result, can_flee))};
+static_assert(sizeof(kLayoutExt3) / sizeof(kLayoutExt3[0]) == SHATTER_LAYOUT_EXT3_COUNT, "SHATTER_LAYOUT_EXT3_COUNT desatualizado");
 
 // Copia texto para um campo char[N] (NUL no fim, cortado em fronteira de caractere UTF-8).
 template <std::size_t N>
@@ -2242,6 +2249,29 @@ SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext2(const std::uin
     return SHATTER_OK;
 }
 
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext3(std::uint32_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    if (needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = SHATTER_LAYOUT_EXT3_COUNT;
+    if (cap < SHATTER_LAYOUT_EXT3_COUNT) return SHATTER_BUFFER_TOO_SMALL;
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    std::memcpy(out, kLayoutExt3, sizeof(kLayoutExt3));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext3(const std::uint32_t* values, std::size_t n,
+                                                                shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (values == nullptr && n != 0) return SetError(err, SHATTER_INVALID_ARGUMENT, "values is null");
+    if (n != SHATTER_LAYOUT_EXT3_COUNT) return SetError(err, SHATTER_VERSION_MISMATCH, "ext3 layout count differs");
+    for (std::size_t i = 0; i < n; ++i) {
+        if (values[i] != kLayoutExt3[i])
+            return SetError(err, SHATTER_VERSION_MISMATCH, "ext3 layout entry " + std::to_string(i) + " differs",
+                            static_cast<int>(i) + 1);
+    }
+    return SHATTER_OK;
+}
+
 SHATTER_API shatter_status SHATTER_CALL shatter_db_rules_ext2(const shatter_db* db, shatter_rules_ext2* out) SHATTER_NOEXCEPT {
     const ContentDB* d = UsableDb(db);
     if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
@@ -2612,6 +2642,15 @@ SHATTER_API shatter_status SHATTER_CALL shatter_actor_create(const shatter_db* d
     std::unique_ptr<shatter_actor> box(new (std::nothrow) shatter_actor());
     if (!box) return SHATTER_INTERNAL;
     box->st.Init(MakeStatusProfile(*d, e, elite != 0));
+    if (e != nullptr) {
+        if (const EnemyAiData* ai = d->FindEnemyAi(e->id)) {
+            FleeProfile fp;
+            fp.lifeFraction = ai->fleeLifeFraction;
+            fp.seconds = ai->fleeSeconds;
+            fp.oncePerLife = ai->fleeOncePerLife;
+            box->flee = FleeState(fp);
+        }
+    }
     *out = box.release();
     return SHATTER_OK;
 }
@@ -2653,6 +2692,27 @@ SHATTER_API shatter_status SHATTER_CALL shatter_actor_info_get(const shatter_act
     out->immunity_remaining = actor->st.ImmunityRemaining();
     out->can_act = actor->st.CanAct() ? 1 : 0;
     out->stun_immune = actor->st.Profile().stunImmune ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_flee_step(shatter_actor* actor, double dt, double life,
+                                                              double max_life, std::uint8_t has_target, std::uint8_t dead,
+                                                              shatter_flee_result* out) SHATTER_NOEXCEPT {
+    if (actor == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (!std::isfinite(dt) || dt < 0.0 || !std::isfinite(life) || !std::isfinite(max_life)) return SHATTER_INVALID_ARGUMENT;
+    const FleeStep s = actor->flee.Step(dt, life, max_life, has_target != 0, dead != 0);
+    std::memset(out, 0, sizeof(*out));
+    out->remaining = s.remaining;
+    out->fleeing = s.fleeing ? 1 : 0;
+    out->started = s.started ? 1 : 0;
+    out->ended = s.ended ? 1 : 0;
+    out->can_flee = actor->flee.Profile().lifeFraction > 0.0 ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_flee_reset(shatter_actor* actor) SHATTER_NOEXCEPT {
+    if (actor == nullptr) return SHATTER_INVALID_ARGUMENT;
+    actor->flee.Reset();
     return SHATTER_OK;
 }
 

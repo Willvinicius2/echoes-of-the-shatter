@@ -96,6 +96,32 @@ void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double 
     TickPotionBarrier(v.barrier, v.potionBarrier, v.barrierSecondsLeft, dt);
 }
 
+FleeStep FleeState::Step(double dt, double life, double maxLife, bool hasTarget, bool dead) {
+    FleeStep s;
+    if (profile_.lifeFraction <= 0.0) return s;
+    if (dead) {
+        fleeing_ = false;
+        remaining_ = 0.0;
+        return s;
+    }
+    if (fleeing_) {
+        remaining_ -= dt;
+        if (remaining_ <= 0.0 || !hasTarget) {
+            fleeing_ = false;
+            remaining_ = 0.0;
+            s.ended = true;
+        }
+    } else if (hasTarget && !(profile_.oncePerLife && hasFled_) && maxLife > 0.0 && life < profile_.lifeFraction * maxLife) {
+        fleeing_ = true;
+        hasFled_ = true;
+        remaining_ = profile_.seconds;
+        s.started = true;
+    }
+    s.fleeing = fleeing_;
+    s.remaining = remaining_;
+    return s;
+}
+
 void ApplyPotionBarrier(double& barrier, double& potionAmount, double& remaining, double newAmount, double seconds) {
     barrier = std::max(0.0, barrier - potionAmount) + newAmount;
     potionAmount = newAmount;

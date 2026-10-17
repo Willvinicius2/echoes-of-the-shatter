@@ -236,3 +236,18 @@ Save v2 (leitura recusa com `BadData`, sem migração; saves honestos nunca caem
 Conteúdo (CSV): as **62 chaves** de `rules.csv` agora são obrigatórias quando o conteúdo vem de CSV (chave faltando = erro de validação `E_REQUIRED`); `constants.h` guarda só 0 neutro, nenhum número de balanceamento escondido. `potions.csv`, `elite_modifiers.csv`, `boss_phases.csv`, `boss_patterns.csv` e `enemy_ai.csv` são obrigatórias (arquivo ausente em `LoadDirectory` = E_IO; carregar regras sem uma delas = `E_REQUIRED` no `Finalize`). Entrada de loot fixa só vale na tabela de topo de um chefe (fora disso `E_RULE`); `tools/validate_data.py` aceita peso vazio em entrada fixa por `fixedChance`, `guaranteeFirstKill` ou `pityKills`, e rejeita entrada fixa fora da tabela de topo (`E_FIXED_TABLE`).
 
 Regras: barreira da poção igual no manual e no idle (`ApplyPotionBarrier`/`TickPotionBarrier`, uma só implementação); poção cheia não é gasta ao ganhar carga de elite e a carga vai para a poção com `refillOnEliteKill` que não estava cheia; DoT do herói no idle respeita a barreira do elite; explosão do Volátil e DoT recebido no idle usam `idleDamageTakenMult`; `ComputeExpeditionWindow` usa `double` na janela (sem estouro com `start_utc` extremo).
+
+## 10. API C 1.3: fuga do inimigo no core (Backend, 17/10/2026, `etapa2/backend`)
+
+`SHATTER_C_API_MINOR` vai para **3** (só adições). A decisão de fuga (antes em C#, `EnemyCombatLogic.UpdateFlee`) passa a ser do core, no `shatter_actor`, lida de `enemy_ai.csv` (`fleeLifeFraction`, `fleeSeconds`, `fleeOncePerLife`). O C# não compara vida com fração nem conta o tempo de fuga: só chama o passo e move o inimigo para longe do alvo.
+
+| Função / tipo | Contrato |
+|---|---|
+| `shatter_actor_flee_step(actor, dt, life, max_life, has_target, dead, shatter_flee_result* out)` | Uma vez por tick de IA. Ator criado com o `enemy_id` do inimigo. Vida < fração x vida máx. (estritamente), com alvo e fora do "uma vez por vida" gasto: `started = 1`, `fleeing = 1`, dura `fleeSeconds`. Em curso: `remaining` cai; acaba por tempo ou sem alvo (`ended = 1`, `fleeing = 0`). Iniciar e acabar nunca no mesmo passo. Morto (`dead != 0`) não foge. `dt < 0` ou valores não finitos: INVALID_ARGUMENT. |
+| `shatter_actor_flee_reset(actor)` | Revive: zera a fuga e libera o "uma vez por vida". |
+| `shatter_flee_result` | `double remaining; u8 fleeing, started, ended, can_flee; u8 reserved[4]` (16 bytes). `can_flee = 0`: inimigo sem linha em `enemy_ai.csv`, fração 0 ou ator do herói (enemy_id vazio): nunca foge. |
+| `shatter_layout_info_ext3` / `shatter_layout_check_ext3` (`SHATTER_LAYOUT_EXT3_COUNT` = 6) | `[tamanho, offsets de remaining, fleeing, started, ended, can_flee]`. Chamar o check na inicialização, como os outros. |
+
+Ao `started`, o cliente cancela o telegraph e o golpe em curso (o core não controla a animação). O C# deve exigir `shatter_api_minor() >= 3`. No core: `FleeProfile`/`FleeState`/`FleeStep` em `combat.h`.
+
+Paridade: o simulador idle NÃO modela fuga de inimigo (eles lutam até morrer; só o herói recua, `retreatLifeFraction`), então não existe lógica idle de fuga para igualar. A regra única fica no core (`FleeState`) e os testes (`test_flee.cpp`, `c_api_13_*`) fixam o comportamento do `UpdateFlee` anterior (limite estrito, tempo, sem alvo, uma vez por vida, revive) lendo os números do CSV real.
