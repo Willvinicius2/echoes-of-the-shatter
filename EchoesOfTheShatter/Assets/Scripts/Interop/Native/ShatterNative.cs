@@ -10,7 +10,7 @@ namespace Echoes.Interop.Native
     /// Declara so o que o <see cref="NativeRulesCore"/> usa; o resto do header (save, expedicao, loot,
     /// relogio) entra quando a camada de save/idle precisar.
     /// </summary>
-    internal static unsafe class ShatterNative
+    internal static unsafe partial class ShatterNative
     {
         const string Lib = "shattercore";
 
