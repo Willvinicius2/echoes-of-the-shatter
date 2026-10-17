@@ -1,7 +1,7 @@
 {
   "meta": {
     "jogo": "Echoes of the Shatter",
-    "atualizado_em": "2026-10-16",
+    "atualizado_em": "2026-10-17",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
     "marco_atual": "Etapa 2: fatia jogável da Cripta",
@@ -12,7 +12,9 @@
       "aguardando_dono": "Aguardando você",
       "pendente": "Pendente",
       "bloqueado": "Bloqueado"
-    }
+    },
+    "destaque": "Teste o jogo: abra D:\\openclaude\\Builds\\Echoes_Cripta_dev\\EchoesOfTheShatter.exe",
+    "destaque_detalhe": "Build jogável v0.1 para Windows (110 MB), com tela inicial, Cripta, pausa e opções. Os controles estão no LEIA-ME.txt da pasta; o roteiro do dono está no docs/10, seção \"Roteiro do dono, build Cripta v0.1\"."
   },
   "setores": [
     {
@@ -50,7 +52,7 @@
       "nome": "Game Design",
       "agente": "Game Designer",
       "estado": "andamento",
-      "resumo": "Decisões de 16/10 aplicadas: câmera, escala, respawn e porta da arena.",
+      "resumo": "Decisões de 16/10 aplicadas: câmera, escala, respawn e porta da arena. Balanceamento rodada 2 (9f95eb3): dano desarmado 3, idleDamageTakenMult 0,80 (20 sementes), bug do Veloz corrigido.",
       "entregas": [
         {
           "titulo": "Decisões que travavam o protótipo (10 itens)",
@@ -63,6 +65,10 @@
         {
           "titulo": "Etapas do jogo (5 etapas)",
           "arquivo": "docs/15_etapas.md"
+        },
+        {
+          "titulo": "Etapa 3: fluxo, 14 telas e 27 critérios",
+          "arquivo": "docs/16_etapa3_fluxo.md"
         }
       ],
       "proximo": "Rever o balanceamento do idle: com o conteúdo real, o Guerreiro nível 4 sem equipamento recua em cerca de 1 min. Depois, as perguntas abertas do docs/15 (com você)."
@@ -94,7 +100,7 @@
       "nome": "Conteúdo e textos",
       "agente": "Narrative",
       "estado": "concluido",
-      "resumo": "Textos pt_BR e en; 35 chaves novas da Etapa 2 (incluindo o slot Calça).",
+      "resumo": "Textos pt_BR e en; 35 chaves novas da Etapa 2 (incluindo o slot Calça). Mais 177 chaves de texto das telas da Etapa 3.",
       "entregas": [
         {
           "titulo": "Resumo do conteúdo e do tom",
@@ -157,14 +163,14 @@
           "arquivo": ".github/workflows/core.yml"
         }
       ],
-      "proximo": "Fuga do Cão-de-Cinza no simulador."
+      "proximo": "Inventário e equipamento da Etapa 3 (sessão na nuvem pedida); fuga do Cão no simulador."
     },
     {
       "id": "frontend",
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
       "estado": "andamento",
-      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode).",
+      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode). Build jogável v0.1 para Windows pronta (tela inicial, Cripta, pausa e opções). Merges 5f62828 (modelos pintados na Cripta), 17f887f e 9c960b4 (animações CC0 com retarget), ec35dea (golpes do Blender, squash no impacto, balanço do Espectro): 190 EditMode e 3 PlayMode.",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
@@ -179,14 +185,14 @@
           "arquivo": "EchoesOfTheShatter/Assets/Scenes/Cripta/Cripta.unity"
         }
       ],
-      "proximo": "Ligar a API C 1.1 na Unity, trocar para as chamadas confiáveis e regravar o golden."
+      "proximo": "Integrar os heróis modulares cortados na Unity."
     },
     {
       "id": "arte_tecnica",
       "nome": "Arte técnica",
       "agente": "Artista técnico (Blender)",
       "estado": "andamento",
-      "resumo": "PR #1 no master. Guerreiro pintado na Unity com shader de rim. TripoSG: corpos e peças gerados, cenário sendo gerado agora. O acabamento dos inimigos espera memória livre.",
+      "resumo": "Modelos pintados e com esqueleto aprovados (Guerreiro, Sentinela, Arauto, Arqueiro Espectral, Guardião, 6 armas) e já na Cripta. Heróis modulares do Guerreiro e do Arqueiro cortados do modelo vestido (corpo em 6 regiões mais 5 peças). Animação por CC0, Mixamo opcional e Blender por script; Kimodo pausado.",
       "entregas": [
         {
           "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
@@ -205,7 +211,7 @@
           "arquivo": "docs/pesquisa/modelos_3d_gratis.md"
         }
       ],
-      "proximo": "Receber o cenário do TripoSG; acabamento dos inimigos e das armas quando houver memória livre."
+      "proximo": "Corrigir as manchas brancas no material do Espectro; o cenário no TripoSG espera memória livre (a paginação no D: não está ativa; reiniciar o PC)."
     },
     {
       "id": "qa",
@@ -647,6 +653,29 @@
           "efeito": "Economiza tempo agora; conjuntos novos entram na Etapa 4."
         }
       ]
+    },
+    {
+      "id": "mixamo-download",
+      "titulo": "Baixar as animações do Mixamo",
+      "detalhe": "Lista em docs/arte/animacao_mixamo.md.",
+      "origem": "docs/arte/animacao_mixamo.md",
+      "pergunta": "Você baixa agora as animações do Mixamo da lista em docs/arte/animacao_mixamo.md?",
+      "contexto": [
+        "Precisa da sua conta Adobe.",
+        "Não bloqueia nada: o pacote CC0 e o Blender por script já cobrem o básico."
+      ],
+      "opcoes": [
+        {
+          "id": "a",
+          "nome": "Baixo agora",
+          "efeito": "Mais variedade de golpes já nesta etapa."
+        },
+        {
+          "id": "b",
+          "nome": "Depois",
+          "efeito": "Seguimos só com o CC0 e o Blender."
+        }
+      ]
     }
   ],
   "decisoes": [
@@ -759,9 +788,46 @@
       "data": "2026-10-16",
       "titulo": "Graybox aprovado só como provisório",
       "detalhe": "Será trocado pelos modelos 3D finais."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Animações por três fontes",
+      "detalhe": "Pacote CC0 KayKit (só as animações), Mixamo baixado por você e Blender por script."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Kimodo pausado",
+      "detalhe": "A IA de animação fica de lado por enquanto."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Golpes do Blender aprovados",
+      "detalhe": "Entram no jogo."
+    },
+    {
+      "data": "2026-10-17",
+      "titulo": "Peças modulares cortadas do herói vestido",
+      "detalhe": "As peças geradas isoladas pela IA não serviram; o corte do modelo vestido aprovado funcionou."
     }
   ],
-  "nuvem": [],
+  "nuvem": [
+    {
+      "n": 1,
+      "titulo": "Revisão do ShatterCore da Etapa 2 (Linux)",
+      "setor": "Backend",
+      "data": "2026-10-17",
+      "detalhe": "",
+      "saida": "Rodando."
+    },
+    {
+      "n": 2,
+      "titulo": "Core: inventário e equipamento da Etapa 3",
+      "setor": "Backend",
+      "data": "2026-10-17",
+      "detalhe": "",
+      "saida": "Pedida."
+    }
+  ],
   "infraestrutura": [
     {
       "item": "Unity 6.3 LTS (6000.3.26f1)",
@@ -806,6 +872,10 @@
     {
       "item": "Roteiro do sócio (Artifact)",
       "detalhe": "https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8"
+    },
+    {
+      "item": "Build jogável v0.1",
+      "detalhe": "D:\\openclaude\\Builds\\Echoes_Cripta_dev\\EchoesOfTheShatter.exe (110 MB), com LEIA-ME.txt"
     }
   ],
   "marcos": [
@@ -856,6 +926,14 @@
     {
       "titulo": "Fatia jogável da Cripta (Etapa 2)",
       "feito": false
+    },
+    {
+      "titulo": "Build jogável v0.1 (Windows)",
+      "feito": true
+    },
+    {
+      "titulo": "Modelos pintados e animações na Cripta",
+      "feito": true
     }
   ],
   "galeria": [
@@ -1110,6 +1188,97 @@
       "titulo": "Guerreiro a 56 m",
       "detalhe": "Captura a 56 m. Em produção: paredes e Guardião ainda em graybox provisório.",
       "estado": "producao"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/_prancha_final.jpg",
+      "titulo": "Prancha final dos modelos",
+      "detalhe": "Guerreiro refeito, Sentinela Oca, Arauto de Pedra, Arqueiro Espectral, Guardião e 6 armas, todos pintados e com esqueleto. Aprovada.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/animacoes/blender/_prancha_v2.jpg",
+      "titulo": "Prancha de golpes (Blender)",
+      "detalhe": "Golpes feitos no Blender por script, sem IA. Aprovados para entrar no jogo.",
+      "estado": "aprovada"
+    },
+    {
+      "grupo": "modelos3d",
+      "arquivo": "D:/openclaude/_trabalho-claude/modelos3d/_prancha_modular.jpg",
+      "titulo": "Heróis modulares cortados",
+      "detalhe": "Guerreiro e Arqueiro: corpo em 6 regiões mais 5 peças, cortados do modelo vestido aprovado. Integração na Unity em andamento.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/cripta2_arena_guardiao.png",
+      "titulo": "Cripta: arena do Guardião (modelos pintados)",
+      "detalhe": "Captura do jogo. Em produção: paredes e Guardião ainda em graybox provisório.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/cripta2_encontro_sentinelas_arqueiros.png",
+      "titulo": "Cripta: encontro de Sentinelas e Arqueiros",
+      "detalhe": "Captura do jogo. Em produção: paredes e Guardião ainda em graybox provisório.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/_anim2_prancha.jpg",
+      "titulo": "Animações no jogo (prancha 2)",
+      "detalhe": "Captura do jogo. Em produção: paredes e Guardião ainda em graybox provisório.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "nojogo",
+      "arquivo": "D:/openclaude/_trabalho-claude/capturas/_anim3_prancha.jpg",
+      "titulo": "Animações no jogo (prancha 3)",
+      "detalhe": "Captura do jogo. Em produção: paredes e Guardião ainda em graybox provisório.",
+      "estado": "producao"
+    },
+    {
+      "grupo": "aguardando",
+      "arquivo": "D:/openclaude/_trabalho-claude/echoes-arte/geradas_telas/_prancha_telas.jpg",
+      "titulo": "Telas da Etapa 3: prancha",
+      "detalhe": "Mockups das telas da Etapa 3. Aguardando sua aprovação.",
+      "estado": "aguardando"
+    },
+    {
+      "grupo": "aguardando",
+      "arquivo": "D:/openclaude/_trabalho-claude/echoes-arte/geradas_telas/t01_tela_inicial.png",
+      "titulo": "Etapa 3: Tela inicial",
+      "detalhe": "Mockup aguardando sua aprovação.",
+      "estado": "aguardando"
+    },
+    {
+      "grupo": "aguardando",
+      "arquivo": "D:/openclaude/_trabalho-claude/echoes-arte/geradas_telas/t02_inventario.png",
+      "titulo": "Etapa 3: Inventário",
+      "detalhe": "Mockup aguardando sua aprovação.",
+      "estado": "aguardando"
+    },
+    {
+      "grupo": "aguardando",
+      "arquivo": "D:/openclaude/_trabalho-claude/echoes-arte/geradas_telas/t03_tooltip_comparacao.png",
+      "titulo": "Etapa 3: Comparação de item",
+      "detalhe": "Mockup aguardando sua aprovação.",
+      "estado": "aguardando"
+    },
+    {
+      "grupo": "aguardando",
+      "arquivo": "D:/openclaude/_trabalho-claude/echoes-arte/geradas_telas/t04_expedicao.png",
+      "titulo": "Etapa 3: Expedição",
+      "detalhe": "Mockup aguardando sua aprovação.",
+      "estado": "aguardando"
+    },
+    {
+      "grupo": "aguardando",
+      "arquivo": "D:/openclaude/_trabalho-claude/echoes-arte/geradas_telas/t05_relatorio.png",
+      "titulo": "Etapa 3: Relatório da expedição",
+      "detalhe": "Mockup aguardando sua aprovação.",
+      "estado": "aguardando"
     }
   ],
   "etapas": [

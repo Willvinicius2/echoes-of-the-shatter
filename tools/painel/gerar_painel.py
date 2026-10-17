@@ -81,6 +81,7 @@ p{margin:4px 0}.mut{color:var(--clara)}.peq{font-size:.85rem}
 .faixa a.concluido{border-color:var(--verde)}.faixa a.nuvem{border-color:var(--azul)}.faixa a.andamento{border-color:var(--ouro)}
 .faixa a.aguardando_dono{border-color:var(--lava)}.faixa a.bloqueado{border-color:var(--carm)}
 .faixa b{display:block;font-family:var(--f-tit);font-size:.85rem}
+.dest{margin:12px 0 0;padding:10px 14px;border:2px solid var(--verde);border-radius:4px;background:var(--media)}.dest b{display:block;color:var(--ouro-claro);overflow-wrap:anywhere}.dest span{display:block;font-size:.85rem;margin-top:4px}
 .etapas{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:14px}
 .etapa{background:var(--media);border-radius:4px;padding:8px 10px;font-size:.85rem}.etapa b{display:block;font-family:var(--f-tit);color:var(--ouro-claro)}.etapa.concluido{border-top:4px solid var(--verde)}.etapa.andamento{border-top:4px solid var(--ouro)}.etapa.pendente{border-top:4px dashed var(--clara)}
 .pend{grid-column:1/-1}.perg{font-weight:600;font-size:1.05rem;color:var(--ouro-claro);border-left:4px solid var(--lava);padding-left:10px;margin:8px 0}
@@ -150,7 +151,7 @@ def main() -> None:
             tit, _, resto = desc.partition(":")
             aprov.append((miniatura(origem, origem.stem), tit.strip() if resto else desc, resto.strip(), nome))
     GRUPOS = [("referencias", "Referências"), ("modelagem", "Modelagem"), ("modulares", "Heróis modulares"),
-              ("nojogo", "No jogo"), ("cenario", "Cenário da Cripta"), ("modelos3d", "Modelos 3D"), ("graybox", "Graybox")]
+              ("aguardando", "Aguardando aprovação"), ("nojogo", "No jogo"), ("cenario", "Cenário da Cripta"), ("modelos3d", "Modelos 3D"), ("graybox", "Graybox")]
     itens = [("referencias", "aprovada", miniatura(APROV / n, Path(n).stem), (t.partition(":")[0].strip() if ":" in t else t),
               t.partition(":")[2].strip()) for n, t in sorted(titulos.items()) if (APROV / n).exists()]
     for it in estado.get("galeria", []):
@@ -174,6 +175,8 @@ def main() -> None:
     o.append(f'<p class="sub">{e(estado["meta"]["marco_atual"])}. Atualizado em {e(estado["meta"]["atualizado_em"][8:10])}/{e(estado["meta"]["atualizado_em"][5:7])}/{e(estado["meta"]["atualizado_em"][:4])}.</p>')
     o.append(f'<p class="sub"><a href="#aguardando">Votar nas perguntas</a> · '
              f'<a href="{ROTEIRO_URL}" target="_blank" rel="noopener">Roteiro completo: documentos e artes ↗</a></p>')
+    if estado["meta"].get("destaque"):
+        o.append(f'<p class="dest"><b>{e(estado["meta"]["destaque"])}</b><span>{e(estado["meta"].get("destaque_detalhe", ""))}</span></p>')
     o.append('<div class="faixa">')
     for s in setores:
         o.append(f'<a class="{e(s["estado"])}" href="#s-{e(s["id"])}"><b>{e(s["nome"])}</b>{e(leg[s["estado"]])}</a>')
@@ -248,8 +251,8 @@ def main() -> None:
             o.append(f'<button data-f="{gid}" aria-pressed="false">{e(gn)} ({n})</button>')
     o.append('</div><div class="gal">')
     for gid, est, img, tit, det in itens:
-        prov = est in ("provisoria", "producao")
-        pil = pilula("andamento", {"andamento": "Em produção" if est == "producao" else "Provisório"}) if prov else pilula("concluido", {"concluido": "Aprovada"})
+        prov = est in ("provisoria", "producao", "aguardando")
+        pil = pilula("aguardando_dono", {"aguardando_dono": "Aguardando aprovação"}) if est == "aguardando" else pilula("andamento", {"andamento": "Em produção" if est == "producao" else "Provisório"}) if prov else pilula("concluido", {"concluido": "Aprovada"})
         o.append(f'<figure class="{"ag" if prov else ""}" data-k="{gid}"><img src="{e(img)}" alt="{e(tit)}" loading="lazy"><figcaption><b>{e(tit)}</b>{e(det)}<br>{pil}</figcaption></figure>')
     o.append("</div>")
 
