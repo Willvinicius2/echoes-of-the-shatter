@@ -1,65 +1,62 @@
-# Echoes of the Shatter — Protótipo F1
+# Echoes of the Shatter
 
-ARPG pixel art, single-player offline. A F1 prova que o **combate do Guerreiro na Cripta** é gostoso em 30 segundos.
-Godot 4.7.2 (GL Compatibility), GDScript tipado. Toda a arte é placeholder desenhada em código.
+ARPG single-player em 3D estilizado, com câmera fixa 3/4 e expedições idle, para PC (Steam, Acesso Antecipado).
+Três heróis no lançamento: Guerreiro, Arqueiro e Mago. O visual segue o estilo pintado à mão do Spell Brigade.
 
-## Como abrir e rodar
+- **Motor:** Unity 6.3 LTS (`6000.3.26f1`) com URP, em C#.
+- **Regras do jogo:** ShatterCore, em C++17, compilado como DLL e chamado pela Unity. Combate e simulador idle usam o mesmo motor.
+- **Estado atual:** etapa 2 de 5, a fatia jogável da Cripta. O andamento de cada setor está no painel.
 
-- **Editor:** abra o Godot 4.7.2, "Importar" e selecione `project.godot`. A cena principal é `res://scenes/crypt.tscn` (F5).
-- **Linha de comando:** `Godot_v4.7.2-stable_win64.exe --path D:\openclaude\EchoesOfTheShatter`
-- Primeira vez (gera o cache de classes globais): `<godot_console> --headless --path <projeto> --import`
+## Acompanhar sem abrir o código
 
-## Testes (headless, sem addons)
-
-```
-<godot_console> --headless --path D:\openclaude\EchoesOfTheShatter -s res://tests/run_tests.gd
-```
-
-Sai com código diferente de zero se algo falhar. Cobre: fórmula do StatBlock e tags, ordem de cálculo e tetos
-(evasão 70, bloqueio 50, resistência 75), crítico determinístico, fluxos de RNG, valores nunca negativos,
-efeitos/gatilhos/guarda, validação dos `.tres`, ações de input e um teste de fumaça (900 frames de física com um
-bot que anda e ataca, incluindo o chefe; falha se houver qualquer erro/`push_error`, capturado por `Logger`).
-
-## Controles
-
-| Ação | Entrada |
+| O quê | Onde |
 |---|---|
-| Mover | WASD |
-| Mirar | Mouse |
-| Corte de Ferro (básico) | Botão esquerdo (segure para repetir) |
-| Investida | Botão direito |
-| Escudada | Q |
-| Fenda de Pedra | E |
-| Esquiva | Espaço (3 cargas) |
-| Reservadas (sem função na F1) | R, F, 1, 2 |
+| Painel de produção: etapas, setores, perguntas para votar, decisões e galeria | https://claude.ai/artifact/7Kzo46Eyy8cQjF9HhuWMXg |
+| Roteiro: todos os documentos e as artes aprovadas | https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8 |
+| As 5 etapas do jogo e os critérios de cada uma | [`docs/15_etapas.md`](docs/15_etapas.md) |
+| Plano completo do jogo | [`docs/00_plano_existente.md`](docs/00_plano_existente.md) |
 
-As ações são registradas pelo autoload `InputSetup` caso não existam no InputMap.
+Os links do painel e do roteiro só abrem para quem foi convidado pelo dono.
 
-## Estrutura
+## Baixar e abrir
 
-```
-autoload/        EventBus (sinais), InputSetup (ações), Game (seed, RNG, flag de tremor)
-core/data/       Resources tipados: ClassData, SkillData, EnemyData, EffectData, EncounterData
-core/rules/      Motor de regras (RefCounted puro, sem Node): StatBlock, DamageCalc, Combatant,
-                 EffectSet, TriggerSet, GuardMeter, ResourcePool, RngStreams, Geo, DataDB...
-data/            Instâncias .tres (heroes, skills, enemies, effects, encounters) com IDs estáveis
-game/actors/     Actor, Player, Enemy (apresentação + ponte para o motor)
-game/world/      Crypt (fluxo do encontro), CryptFloor (chão isométrico, paredes, portas)
-game/fx/         FxLayer (pools de partículas e números de dano)
-game/ui/         Hud
-scenes/          crypt.tscn (cena principal)
-tests/           run_tests.gd
-```
+1. Instale o [Git](https://git-scm.com/) e o [Git LFS](https://git-lfs.com/). Sem o LFS, modelos, texturas e a DLL chegam como arquivos vazios.
+2. Clone e baixe os arquivos grandes:
+   ```
+   git clone https://github.com/Willvinicius2/echoes-of-the-shatter.git
+   cd echoes-of-the-shatter
+   git lfs pull
+   ```
+3. Instale pelo Unity Hub exatamente a versão **6000.3.26f1**. Outra versão reimporta o projeto inteiro e gera mudanças em centenas de arquivos.
+4. No Unity Hub, use **Add** e escolha a pasta `EchoesOfTheShatter/`, que fica dentro do repositório.
 
-## Regras de arquitetura
+## Pastas
 
-- Lógica separada da apresentação: todo cálculo de dano passa por `DamageCalc` (futuro simulador idle usará o mesmo motor).
-- Nenhum número de balanceamento em script: tudo em `data/*.tres`. (Em `Rules` ficam só os tetos/mínimos de design.)
-- RNG determinístico por fluxo: seed = hash(seed, fluxo, índice). Opcional: `-- --seed=123` na linha de comando.
-- Hitstop é por entidade (nunca congela o jogo todo). Tremor de tela pode ser desligado com `Game.shake_enabled = false`.
+| Pasta | Conteúdo |
+|---|---|
+| `EchoesOfTheShatter/` | Projeto Unity: `Assets/` (cenas, scripts, arte), `Content/Data/` (tabelas CSV, textos pt_BR e en, esquemas) |
+| `ShatterCore/` | Motor de regras em C++17, com testes |
+| `docs/` | Plano, requisitos, design system, arquitetura, dados, QA, etapas, pesquisa |
+| `docs/arte/referencias-geracao/aprovadas/` | Artes aprovadas: heróis, inimigos, chefes, cenários, ícones e folhas de modelagem |
+| `docs/progresso/` | `estado.json` (fonte do painel) e o painel gerado |
+| `art-src/` | Arquivos de arte de origem: Blender, graybox e o pipeline de acabamento dos modelos |
+| `tools/` | Validador de dados, build do ShatterCore e geradores do painel e do roteiro |
+| `.claude/` | Agentes e configuração do Claude Code usados na produção |
 
-## Simplificações da F1
+A raiz também guarda o protótipo antigo em Godot (`project.godot`, `core/`, `game/` etc.). Ele serve só de referência de game feel; veja [`docs/prototipo_godot_f1.md`](docs/prototipo_godot_f1.md).
 
-- Sem poções, loot, inventário, menu ou salvar; R/F/1/2 só registrados.
-- Sprites são formas desenhadas em `_draw`; sem animação por quadros.
-- Vitória exibe uma mensagem e o jogo continua; não há tela de reinício.
+## Testar
+
+- **ShatterCore no Windows:** `tools\build_core.cmd Release --werror` (precisa do Visual Studio Build Tools). Em Linux, ver o `CLAUDE.md`.
+- **Tabelas de dados:** `python tools/validate_data.py`
+- **Unity:** Window > General > Test Runner, testes EditMode.
+- O CI do GitHub compila e testa o núcleo e valida as tabelas a cada push e pull request para o `master`.
+
+## Como trabalhamos
+
+- Cada frente de trabalho tem sua branch (`etapaN/<frente>`). O merge no `master` vem depois dos testes.
+- Todo commit vai para o GitHub logo depois de feito, para o repositório sempre mostrar o estado real.
+- Mensagens de commit seguem o padrão Conventional Commits, em português (`feat(...)`, `fix(...)`, `docs(...)`).
+- Arte nova só entra no jogo depois da aprovação do dono.
+- Evite que duas pessoas mexam na mesma cena ou no mesmo prefab da Unity ao mesmo tempo: conflito nesses arquivos é difícil de resolver.
+- As regras completas do projeto, para pessoas e para o Claude Code, estão no [`CLAUDE.md`](CLAUDE.md).

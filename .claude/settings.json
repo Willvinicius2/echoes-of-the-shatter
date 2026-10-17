@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "f=\"$CLAUDE_PROJECT_DIR/tools/git/checar_envio.py\"; [ -f \"$f\" ] && python \"$f\" || true",
+            "timeout": 30,
+            "statusMessage": "Conferindo se os commits já estão no GitHub"
+          }
+        ]
+      }
+    ]
+  }
+}
