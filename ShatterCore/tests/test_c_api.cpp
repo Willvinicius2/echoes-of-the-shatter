@@ -1,6 +1,7 @@
 // Fronteira da API C (docs/04_arquitetura.md, seções 9.2 e 9.7): versão e layout, argumento nulo,
 // BUFFER_TOO_SMALL sem efeito colateral, ida e volta de cada grupo de funções e o MESMO resultado do C++
 // (golpe, expedição, golden). Este executável é ligado à DLL/so shattercore.
+#include <cmath>
 #include <cstring>
 #include <functional>
 #include <sstream>
@@ -2111,4 +2112,77 @@ TEST(c_api_15_vitals_regen_while_moving_and_resource_on_hit_and_block) {
     EXPECT_EQ(shatter_vitals_gain_on_hit(db.db, &f, archer.sb, "class.nope", 10), SHATTER_INVALID_ARGUMENT);
     EXPECT_EQ(shatter_vitals_gain_on_block(db.db, nullptr, archer.sb, cls.data(), cls.size()), SHATTER_INVALID_ARGUMENT);
     EXPECT_EQ(shatter_vitals_gain_on_hit(nullptr, &f, archer.sb, cls.data(), cls.size()), SHATTER_INVALID_ARGUMENT);
+}
+
+TEST(c_api_15_charged_hit_multiplies_with_the_kit_max_mult_and_rejects_bad_charge) {
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    const BasicKitData* kit = RealContent().FindBasicKit("class.warrior");
+    ASSERT_TRUE(kit != nullptr && kit->heavyMaxMult > 1.0);
+    StatHandle atk, def;
+    ASSERT_EQ(shatter_statblock_create(&atk.sb), SHATTER_OK);
+    ASSERT_EQ(shatter_statblock_create(&def.sb), SHATTER_OK);
+    shatter_hit_input in{};
+    in.base_damage[SHATTER_DAMAGE_PHYSICAL] = 100.0;
+    in.coefficient = 1.0;
+    in.defender_life = 100000.0;
+    in.can_be_blocked = 1;
+    in.skill_tags = SHATTER_TAG_ATTACK | SHATTER_TAG_MELEE | SHATTER_TAG_PHYSICAL;
+    EXPECT_EQ(sizeof(shatter_hit_input), static_cast<std::size_t>(64));
+    const std::string cls = "class.warrior";
+    auto run = [&](double fraction, shatter_rng* rng, shatter_hit_result* out, shatter_error* err) {
+        return shatter_resolve_hit_charged(db.db, atk.sb, def.sb, &in, cls.data(), cls.size(), fraction, rng, out, err);
+    };
+    shatter_rng r0{};
+    shatter_rng_for_stream(3, SHATTER_RNG_COMBAT, 0, &r0);
+    shatter_rng ra = r0, rb = r0, rc = r0, rplain = r0;
+    shatter_hit_result plain{}, lo{}, hi{}, mid{};
+    shatter_error err{};
+    ASSERT_EQ(shatter_resolve_hit_db(db.db, atk.sb, def.sb, &in, &rplain, &plain), SHATTER_OK);
+    ASSERT_EQ(run(0.0, &ra, &lo, &err), SHATTER_OK);
+    ASSERT_EQ(run(1.0, &rb, &hi, &err), SHATTER_OK);
+    ASSERT_EQ(run(0.5, &rc, &mid, &err), SHATTER_OK);
+    EXPECT_NEAR(lo.total_damage, plain.total_damage, 1e-9);                       // carga mínima = golpe comum
+    EXPECT_NEAR(hi.total_damage, plain.total_damage * kit->heavyMaxMult, 1e-9);   // carga máxima = heavy_max_mult
+    EXPECT_NEAR(mid.total_damage, plain.total_damage * (1.0 + (kit->heavyMaxMult - 1.0) * 0.5), 1e-9);
+    EXPECT_EQ(ra.state, rplain.state);  // 3 números de rng, como o golpe comum
+
+    // Erros: nada muda (rng não avança), mensagem em err.
+    for (double bad : {-0.01, 1.01, 5.0, std::nan("")}) {
+        shatter_rng rr = r0;
+        shatter_hit_result out{};
+        out.total_damage = -5.0;
+        EXPECT_EQ(run(bad, &rr, &out, &err), SHATTER_INVALID_ARGUMENT);
+        EXPECT_EQ(rr.state, r0.state);
+        EXPECT_NEAR(out.total_damage, -5.0, 0.0);
+        EXPECT_TRUE(std::string(err.message).find("charge_fraction") != std::string::npos);
+    }
+    shatter_rng rr = r0;
+    EXPECT_EQ(shatter_resolve_hit_charged(db.db, atk.sb, def.sb, &in, "class.nope", 10, 0.5, &rr, &hi, &err), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_resolve_hit_charged(db.db, atk.sb, def.sb, &in, nullptr, 0, 0.5, &rr, &hi, &err), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_resolve_hit_charged(nullptr, atk.sb, def.sb, &in, cls.data(), cls.size(), 0.5, &rr, &hi, &err), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_resolve_hit_charged(db.db, atk.sb, def.sb, nullptr, cls.data(), cls.size(), 0.5, &rr, &hi, &err), SHATTER_INVALID_ARGUMENT);
+}
+
+TEST(c_api_15_lookup_exposes_knockback_and_explosion_radius_separate_from_radius) {
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    const ContentDB& cdb = RealContent();
+    auto skill = [&](const char* sid) {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_db_lookup_json(db.db, sid, std::strlen(sid), o, c, n);
+        }));
+    };
+    const json::Value fire = skill("skill.mage.fireball");
+    const SkillData& s = *cdb.FindSkill("skill.mage.fireball");
+    EXPECT_NEAR(fire["explosion_radius"].AsDouble(), s.explosionRadius, 0.0);
+    EXPECT_NEAR(fire["radius"].AsDouble(), s.radius, 0.0);
+    EXPECT_TRUE(fire["explosion_radius"].AsDouble() > fire["radius"].AsDouble());
+    EXPECT_NEAR(fire["knockback"].AsDouble(), s.knockback, 0.0);
+    EXPECT_TRUE(fire["behavior"]["explodes"].AsBool());
+    const json::Value finisher = skill("skill.warrior.combo_3");
+    EXPECT_NEAR(finisher["knockback"].AsDouble(), cdb.FindSkill("skill.warrior.combo_3")->knockback, 0.0);
+    EXPECT_TRUE(finisher["knockback"].AsDouble() > 0.0);
+    EXPECT_NEAR(skill("skill.warrior.iron_cut")["knockback"].AsDouble(), 0.0, 0.0);
+    EXPECT_NEAR(skill("skill.mage.arcane_dart")["explosion_radius"].AsDouble(), 0.0, 0.0);
 }

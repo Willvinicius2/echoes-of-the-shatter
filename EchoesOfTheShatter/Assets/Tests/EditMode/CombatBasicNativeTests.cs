@@ -97,6 +97,48 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void HeavyChargeMultiplierIsAppliedByTheCore()
+        {
+            using (var core = TestWorld.LoadNativeRules())
+            using (var attacker = core.CreateEmptyStats())
+            using (var defender = core.CreateEmptyStats())
+            {
+                var kit = core.FindBasicKit("class.warrior");
+                var request = new HitRequest
+                {
+                    Attacker = attacker,
+                    Defender = defender,
+                    SkillTags = SkillTags.Attack | SkillTags.Melee | SkillTags.Physical,
+                    BaseDamage = new DamageByType { Physical = 100.0 },
+                    Coefficient = 1.0,
+                    CanBeBlocked = true,
+                    DefenderLife = 100000.0,
+                };
+                var rngPlain = core.CreateRng(3UL, RngStream.Combat, 0UL);
+                var plain = core.ResolveHit(in request, ref rngPlain);
+
+                request.IsHeavy = true;
+                request.ClassId = "class.warrior";
+                request.ChargeFraction = 1.0;
+                var rngHeavy = core.CreateRng(3UL, RngStream.Combat, 0UL);
+                var full = core.ResolveHit(in request, ref rngHeavy);
+                Assert.AreEqual(plain.TotalDamage * kit.HeavyMaxMultiplier, full.TotalDamage, Tolerance, "carga maxima = heavy_max_mult, calculado no core");
+                Assert.AreEqual(rngPlain.State, rngHeavy.State);
+
+                request.ChargeFraction = 0.0;
+                var rngMin = core.CreateRng(3UL, RngStream.Combat, 0UL);
+                Assert.AreEqual(plain.TotalDamage, core.ResolveHit(in request, ref rngMin).TotalDamage, Tolerance, "carga minima = golpe comum");
+
+                request.ChargeFraction = 1.5;
+                var rngBad = core.CreateRng(3UL, RngStream.Combat, 0UL);
+                var before = rngBad.State;
+                var ex = Assert.Throws<NativeCallException>(() => core.ResolveHit(in request, ref rngBad));
+                Assert.AreEqual(RulesStatus.InvalidArgument, ex.Status);
+                Assert.AreEqual(before, rngBad.State, "recusado antes de sortear");
+            }
+        }
+
+        [Test]
         public void FocusRegeneratesSlowerWhileMovingAndTheWarriorGainsResourceOnHitAndBlock()
         {
             using (var core = TestWorld.LoadNativeRules())
@@ -145,6 +187,15 @@ namespace Echoes.Tests.EditMode
                 Assert.IsTrue(core.FindSkill("skill.archer.back_leap").Behavior.DashBackShot);
                 Assert.IsFalse(core.FindSkill("skill.warrior.charge").Behavior.DashBackShot);
                 Assert.IsFalse(core.FindSkill("skill.warrior.iron_cut").Behavior.Explodes);
+                foreach (var id in new[] { "skill.mage.fireball", "skill.mage.arcane_orb" })
+                {
+                    var s = core.FindSkill(id);
+                    Assert.Greater(s.ExplosionRadiusUu, s.RadiusUu, id + ": a explosao e maior que a largura de colisao");
+                    Assert.Greater(s.RadiusUu, 0.0, id);
+                }
+                Assert.AreEqual(0.0, core.FindSkill("skill.mage.arcane_dart").ExplosionRadiusUu);
+                Assert.Greater(core.FindSkill("skill.warrior.combo_3").KnockbackUu, 0.0, "empurrao do golpe de fecho");
+                Assert.AreEqual(0.0, core.FindSkill("skill.warrior.iron_cut").KnockbackUu);
             }
         }
     }

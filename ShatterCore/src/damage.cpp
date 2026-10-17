@@ -59,7 +59,7 @@ HitResult ResolveHit(const HitInput& in, const RulesConstants& rules, Pcg32& com
             continue;
         }
         const TagMask tags = in.skillTags | TagOf(static_cast<DamageType>(t));
-        r.afterModifiers[static_cast<std::size_t>(t)] = atk.ApplyTagged(StatId::Damage, tags, base);
+        r.afterModifiers[static_cast<std::size_t>(t)] = atk.ApplyTagged(StatId::Damage, tags, base) * in.hitMore;
     }
 
     bool evaded = false;

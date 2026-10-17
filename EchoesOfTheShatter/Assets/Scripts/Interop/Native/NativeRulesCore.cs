@@ -513,9 +513,24 @@ namespace Echoes.Interop.Native
                 {
                     database.DangerousAddRef(ref b);
                     // Constantes de regra vem do BANCO (A-06): o C# nao manda numero de balanceamento.
-                    var status = ShatterNative.shatter_resolve_hit_db(database.DangerousGetHandle(), attacker.Handle.DangerousGetHandle(),
-                        defender.Handle.DangerousGetHandle(), &input, &rng, &output);
-                    NativeCallException.ThrowIfFailed("shatter_resolve_hit_db", status);
+                    if (request.IsHeavy || request.ChargeFraction != 0.0)
+                    {
+                        // Ataque forte: o multiplicador da carga e do core (1 + (heavyMaxMult - 1) * fracao, como `more` neste golpe).
+                        var classBytes = NativeBuffers.Utf8(request.ClassId);
+                        ShatterError err = default;
+                        int heavyStatus;
+                        fixed (byte* cid = classBytes)
+                            heavyStatus = ShatterNative.shatter_resolve_hit_charged(database.DangerousGetHandle(), attacker.Handle.DangerousGetHandle(),
+                                defender.Handle.DangerousGetHandle(), &input, cid, (nuint)classBytes.Length, request.ChargeFraction, &rng, &output, &err);
+                        if (heavyStatus != 0)
+                            throw new NativeCallException("shatter_resolve_hit_charged", heavyStatus, NativeBuffers.ErrorMessage(ref err));
+                    }
+                    else
+                    {
+                        var status = ShatterNative.shatter_resolve_hit_db(database.DangerousGetHandle(), attacker.Handle.DangerousGetHandle(),
+                            defender.Handle.DangerousGetHandle(), &input, &rng, &output);
+                        NativeCallException.ThrowIfFailed("shatter_resolve_hit_db", status);
+                    }
                 }
                 finally
                 {
@@ -624,6 +639,8 @@ namespace Echoes.Interop.Native
                 if (json == null) continue;
                 var skill = pair.Value;
                 skill.Pierce = (int)JsonNumber(json, "\"pierce\":");
+                skill.ExplosionRadiusUu = JsonNumber(json, "\"explosion_radius\":");
+                skill.KnockbackUu = JsonNumber(json, "\"knockback\":");
                 skill.Behavior = new SkillBehavior(
                     json.IndexOf("\"explodes\":true", StringComparison.Ordinal) >= 0,
                     json.IndexOf("\"fan\":true", StringComparison.Ordinal) >= 0,

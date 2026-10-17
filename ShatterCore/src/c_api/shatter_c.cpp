@@ -692,6 +692,7 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("wall_stagger_seconds", Value(d->wallStaggerSeconds));
         o.Set("projectile_speed", Value(d->projectileSpeed));
         o.Set("pierce", Value(d->pierce));
+        o.Set("explosion_radius", Value(d->explosionRadius));
         const SkillBehavior b = ClassifySkill(*d);
         Value bv = Value::MakeObject();
         bv.Set("explodes", Value(b.explodes));
@@ -1598,10 +1599,10 @@ SHATTER_API shatter_status SHATTER_CALL shatter_statblock_revision(const shatter
 }
 
 // --- Golpe ---------------------------------------------------------------------------------------
-SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit(const shatter_statblock* attacker,
-                                                          const shatter_statblock* defender,
-                                                          const shatter_hit_input* input, const shatter_rules* rules,
-                                                          shatter_rng* rng, shatter_hit_result* out) SHATTER_NOEXCEPT {
+namespace {
+shatter_status ResolveHitImpl(const shatter_statblock* attacker, const shatter_statblock* defender,
+                              const shatter_hit_input* input, const shatter_rules* rules, shatter_rng* rng,
+                              shatter_hit_result* out, double hitMore) {
     if (attacker == nullptr || defender == nullptr || input == nullptr || rules == nullptr || rng == nullptr ||
         out == nullptr)
         return SHATTER_INVALID_ARGUMENT;
@@ -1616,6 +1617,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit(const shatter_statbl
     in.defenderLife = input->defender_life;
     in.defenderBarrier = input->defender_barrier;
     in.fromGuardArc = input->from_guard_arc != 0;
+    in.hitMore = hitMore;
     Pcg32 r = Pcg32::FromRaw(rng->state, rng->inc);
     const HitResult hr = ResolveHit(in, FromC(*rules), r);
     rng->state = r.State();
@@ -1635,6 +1637,14 @@ SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit(const shatter_statbl
     out->landed = hr.landed ? 1 : 0;
     out->killed = hr.killed ? 1 : 0;
     return SHATTER_OK;
+}
+}  // namespace
+
+SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit(const shatter_statblock* attacker,
+                                                          const shatter_statblock* defender,
+                                                          const shatter_hit_input* input, const shatter_rules* rules,
+                                                          shatter_rng* rng, shatter_hit_result* out) SHATTER_NOEXCEPT {
+    return ResolveHitImpl(attacker, defender, input, rules, rng, out, 1.0);
 }
 
 SHATTER_API shatter_status SHATTER_CALL shatter_effective_cooldown(double base_cooldown, double cooldown_recovery,
@@ -2343,6 +2353,30 @@ SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit_db(const shatter_db*
     shatter_rules rules;
     ToC(d->Rules(), rules);
     return shatter_resolve_hit(attacker, defender, input, &rules, rng, out);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit_charged(
+    const shatter_db* db, const shatter_statblock* attacker, const shatter_statblock* defender,
+    const shatter_hit_input* input, const char* class_id, std::size_t class_id_len, double charge_fraction,
+    shatter_rng* rng, shatter_hit_result* out, shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    const ContentDB* d = UsableDb(db);
+    std::string_view cid;
+    if (attacker == nullptr || defender == nullptr || input == nullptr || rng == nullptr || out == nullptr ||
+        class_id == nullptr || !Text(class_id, class_id_len, cid))
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "null argument or class_id is not valid UTF-8");
+    if (d == nullptr) return DbError(db, err);
+    const BasicKitData* kit = d->FindBasicKit(cid);
+    if (kit == nullptr) return SetError(err, SHATTER_NOT_FOUND, "class has no basic kit (basic_kits.csv)");
+    double mult = 1.0;
+    // Erro tipado, antes de qualquer efeito: fração fora de [0, 1] ou NaN. Nada muda e o rng não avança.
+    if (!HeavyChargeMultiplier(*kit, charge_fraction, mult))
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "charge_fraction must be in [0, 1]");
+    shatter_rules rules;
+    ToC(d->Rules(), rules);
+    const shatter_status st = ResolveHitImpl(attacker, defender, input, &rules, rng, out, mult);
+    if (st != SHATTER_OK) return SetError(err, st, "resolve_hit failed");
+    return SHATTER_OK;
 }
 
 SHATTER_API shatter_status SHATTER_CALL shatter_effective_cooldown_db(const shatter_db* db, double base_cooldown,

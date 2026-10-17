@@ -27,7 +27,17 @@ namespace Echoes.Interop
         public double Impact { get; internal set; }
         public double Recovery { get; internal set; }
         public double RangeUu { get; internal set; }
+        /// <summary>
+        /// Raio em uu. Em habilidade de área é o raio da área; em PROJÉTIL é só a largura de colisão do corredor (a explosão no impacto é
+        /// <see cref="ExplosionRadiusUu"/>, coluna <c>explosionRadius</c>). Não use este valor como raio de explosão.
+        /// </summary>
         public double RadiusUu { get; internal set; }
+
+        /// <summary>Raio da explosão no impacto de um projétil (coluna <c>explosionRadius</c>, docs/18 8.3 a); 0 = sem explosão (<see cref="SkillBehavior.Explodes"/>).</summary>
+        public double ExplosionRadiusUu { get; internal set; }
+
+        /// <summary>Empurrão em uu aplicado no alvo por golpe (coluna <c>knockback</c>); 0 = nenhum. Elites e chefes aplicam o fator deles no gameplay.</summary>
+        public double KnockbackUu { get; internal set; }
         /// <summary>Abertura total do cone em graus (formas Cone e Melee).</summary>
         public double ConeAngleDegrees { get; internal set; }
         /// <summary>Velocidade do projétil em uu/s (forma Projectile).</summary>

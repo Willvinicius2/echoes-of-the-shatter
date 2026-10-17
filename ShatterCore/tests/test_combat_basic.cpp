@@ -3,6 +3,7 @@
 // tag `guard`), recurso por golpe e por bloqueio, regeneração em movimento, compatibilidade com o idle e `cast_speed` neutro.
 // Tudo contra o conteúdo REAL (Content/Data) com 3 classes; os cenários inválidos trocam UMA tabela por texto alterado.
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <memory>
 
@@ -39,6 +40,19 @@ std::unique_ptr<ContentDB> RealDb(const Overrides& ov = {}, const std::vector<st
 const ContentDB& Real() {
     static const std::unique_ptr<ContentDB> db = RealDb();
     return *db;
+}
+
+// Troca a última célula (explosionRadius) da linha de uma habilidade em skills.csv.
+std::string _SetExplosion(std::string text, const std::string& skillId, const std::string& value) {
+    const std::size_t at = text.find("\n" + skillId + ",");
+    if (at == std::string::npos) {
+        FAIL("_SetExplosion: habilidade nao encontrada: " + skillId);
+        return text;
+    }
+    const std::size_t end = text.find('\n', at + 1);
+    const std::size_t comma = text.rfind(',', end);
+    text.replace(comma + 1, end - comma - 1, value);
+    return text;
 }
 
 std::string Table(const std::string& name) { return tu::ReadFile(tu::ContentDir() + "/" + name); }
@@ -251,7 +265,8 @@ TEST(combat_basic_pierce_column_is_read_validated_and_optional) {
             if (nl == std::string::npos) nl = skills.size();
             std::string line = skills.substr(pos, nl - pos);
             if (line.empty()) break;
-            line.erase(line.rfind(','));  // tira a última coluna (pierce)
+            line.erase(line.rfind(','));  // tira as duas últimas colunas (pierce e explosionRadius)
+            line.erase(line.rfind(','));
             old += line + "\n";
             pos = nl + 1;
         }
@@ -261,24 +276,30 @@ TEST(combat_basic_pierce_column_is_read_validated_and_optional) {
     EXPECT_EQ(legacy->FindSkill("skill.archer.piercing_shot")->pierce, 0);
 
     // 99 em um projétil e 3 (atravessa 3 alvos) também valem; 100 e negativo não.
-    const std::string piercing = "1500,,1,,,false,,,,,,,,1,,,3200,,,99";
-    auto three = RealDb({{"skills.csv", tu::Replace(skills, piercing, "1500,,1,,,false,,,,,,,,1,,,3200,,,3")}});
+    const std::string piercing = "1500,,1,,,false,,,,,,,,1,,,3200,,,99,";
+    auto three = RealDb({{"skills.csv", tu::Replace(skills, piercing, "1500,,1,,,false,,,,,,,,1,,,3200,,,3,")}});
     EXPECT_TRUE(three->Errors().empty());
     EXPECT_EQ(three->FindSkill("skill.archer.piercing_shot")->pierce, 3);
-    ExpectRejected("pierce 100", "skills.csv", tu::Replace(skills, piercing, "1500,,1,,,false,,,,,,,,1,,,3200,,,100"), "E_RANGE");
-    ExpectRejected("pierce negativo", "skills.csv", tu::Replace(skills, piercing, "1500,,1,,,false,,,,,,,,1,,,3200,,,-1"), "E_RANGE");
-    ExpectRejected("pierce fracionario", "skills.csv", tu::Replace(skills, piercing, "1500,,1,,,false,,,,,,,,1,,,3200,,,1.5"), "E_TYPE");
+    ExpectRejected("pierce 100", "skills.csv", tu::Replace(skills, piercing, "1500,,1,,,false,,,,,,,,1,,,3200,,,100,"), "E_RANGE");
+    ExpectRejected("pierce negativo", "skills.csv", tu::Replace(skills, piercing, "1500,,1,,,false,,,,,,,,1,,,3200,,,-1,"), "E_RANGE");
+    ExpectRejected("pierce fracionario", "skills.csv", tu::Replace(skills, piercing, "1500,,1,,,false,,,,,,,,1,,,3200,,,1.5,"), "E_TYPE");
     // pierce só em projétil: a Chuva de Flechas é área.
     ExpectRejected("pierce em area", "skills.csv",
-                   tu::Replace(skills, "1100,300,1,,,false,,,,,,,,3,,,,,,", "1100,300,1,,,false,,,,,,,,3,,,,,,5"), "E_RULE");
+                   tu::Replace(skills, "1100,300,1,,,false,,,,,,,,3,,,,,,,", "1100,300,1,,,false,,,,,,,,3,,,,,,5,"), "E_RULE");
 }
 
 TEST(combat_basic_skill_behavior_follows_the_data) {
     const ContentDB& db = Real();
     auto beh = [&](const char* id) { return ClassifySkill(*db.FindSkill(id)); };
-    // (a) projétil com radius > 0 explode no impacto.
+    // (a) projétil com explosionRadius > 0 explode no impacto; `radius` é só a largura de colisão do corredor.
     EXPECT_TRUE(beh("skill.mage.arcane_orb").explodes);
     EXPECT_TRUE(beh("skill.mage.fireball").explodes);
+    for (const char* id : {"skill.mage.arcane_orb", "skill.mage.fireball"}) {
+        const SkillData& s = *db.FindSkill(id);
+        EXPECT_TRUE(s.explosionRadius > 0.0 && s.radius > 0.0);
+        EXPECT_TRUE(s.radius < s.explosionRadius);  // o corredor é estreito: a explosão não acontece antes do alvo
+    }
+    EXPECT_NEAR(db.FindSkill("skill.mage.arcane_dart")->explosionRadius, 0.0, 0.0);
     EXPECT_FALSE(beh("skill.mage.arcane_dart").explodes);
     EXPECT_FALSE(beh("skill.archer.quick_shot").explodes);
     // (b) vários projéteis com ângulo = leque.
@@ -313,6 +334,13 @@ TEST(combat_basic_skill_shape_rules_are_validated) {
     ExpectRejected("leque sem angulo", "skills.csv", tu::Replace(skills, "1100,,3,,,false,,,,,,,,1,28,", "1100,,3,,,false,,,,,,,,1,,"), "E_RULE");
     // Área sem raio.
     ExpectRejected("area sem raio", "skills.csv", tu::Replace(skills, "0.35,0,340,1,effect.chill", "0.35,0,0,1,effect.chill"), "E_RULE");
+    // Explosão só em projétil; radius sozinho (sem explosionRadius) não explode.
+    ExpectRejected("explosao em area", "skills.csv", _SetExplosion(skills, "skill.mage.frost_nova", "100"), "E_RULE");
+    ExpectRejected("explosao negativa", "skills.csv", _SetExplosion(skills, "skill.mage.fireball", "-1"), "E_RANGE");
+    auto noExplosion = RealDb({{"skills.csv", _SetExplosion(skills, "skill.mage.fireball", "")}});
+    EXPECT_TRUE(noExplosion->Errors().empty());
+    EXPECT_FALSE(ClassifySkill(*noExplosion->FindSkill("skill.mage.fireball")).explodes);
+    EXPECT_TRUE(noExplosion->FindSkill("skill.mage.fireball")->radius > 0.0);
     // Dash com tag projectile sem dash_shot_range.
     auto noRange = RealDb({{"rules.csv", tu::Replace(Table("rules.csv"), "dash_shot_range,1000", "dash_shot_range,0")}});
     EXPECT_TRUE(HasError(*noRange, "skills.csv", "E_RULE"));
@@ -695,4 +723,57 @@ TEST(combat_basic_new_classes_are_blocked_from_expeditions_and_the_warrior_seal_
     EXPECT_FALSE(IsKitOnlySkill(db, "class.warrior", "skill.warrior.iron_cut"));  // o golpe 1 conta
     EXPECT_FALSE(IsKitOnlySkill(db, "class.warrior", "skill.warrior.charge"));
     EXPECT_FALSE(IsKitOnlySkill(db, "class.nope", "skill.warrior.heavy_slash"));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Multiplicador do ataque forte (docs/18 1.4): regra do core, aplicada como `more` neste golpe
+// ---------------------------------------------------------------------------------------------------------------------
+TEST(combat_basic_heavy_charge_multiplier_is_linear_and_rejects_out_of_range) {
+    const BasicKitData* kit = Real().FindBasicKit("class.warrior");
+    ASSERT_TRUE(kit != nullptr && kit->heavyMaxMult > 1.0);
+    double m = -1.0;
+    ASSERT_TRUE(HeavyChargeMultiplier(*kit, 0.0, m));
+    EXPECT_NEAR(m, 1.0, 0.0);
+    ASSERT_TRUE(HeavyChargeMultiplier(*kit, 1.0, m));
+    EXPECT_NEAR(m, kit->heavyMaxMult, 1e-12);
+    ASSERT_TRUE(HeavyChargeMultiplier(*kit, 0.5, m));
+    EXPECT_NEAR(m, 1.0 + (kit->heavyMaxMult - 1.0) * 0.5, 1e-12);
+    m = -7.0;
+    for (double bad : {-0.001, 1.001, 2.0, -1.0, std::nan(""), HUGE_VAL}) {
+        EXPECT_FALSE(HeavyChargeMultiplier(*kit, bad, m));
+        EXPECT_NEAR(m, -7.0, 0.0);  // saída intacta
+    }
+}
+
+TEST(combat_basic_hit_more_multiplies_this_hit_only_before_the_crit) {
+    const ContentDB& db = Real();
+    StatBlock atk, def;
+    def.SetBase(StatId::Life, 10000.0);
+    atk.SetBase(StatId::CritChance, 1.0);  // sempre critica: o `more` entra antes do multiplicador do crítico
+    auto hit = [&](double more) {
+        HitInput in;
+        in.attacker = &atk;
+        in.defender = &def;
+        in.skillTags = Tag::Attack | Tag::Melee | Tag::Physical;
+        in.baseDamage[0] = 100.0;
+        in.coefficient = 1.0;
+        in.defenderLife = 10000.0;
+        in.hitMore = more;
+        Pcg32 rng = Pcg32::ForStream(5, RngStream::Combat, 0);
+        const HitResult r = ResolveHit(in, db.Rules(), rng);
+        return std::make_pair(r, rng.State());
+    };
+    const auto base = hit(1.0);
+    const auto heavy = hit(1.5);
+    EXPECT_TRUE(base.first.critical && heavy.first.critical);
+    EXPECT_NEAR(heavy.first.totalDamage, base.first.totalDamage * 1.5, 1e-9);
+    EXPECT_EQ(base.second, heavy.second);  // mesmo consumo de RNG
+    // Soma com um `more` do atacante (multiplicam entre si), não substitui.
+    Modifier mod;
+    mod.stat = StatId::Damage;
+    mod.kind = ModKind::More;
+    mod.value = 0.2;
+    mod.source = "t";
+    atk.AddModifier(mod);
+    EXPECT_NEAR(hit(1.5).first.totalDamage, base.first.totalDamage * 1.2 * 1.5, 1e-9);
 }

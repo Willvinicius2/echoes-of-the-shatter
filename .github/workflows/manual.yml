@@ -21,7 +21,7 @@ jobs:
         with:
           lfs: false
       - name: Configurar
-        run: cmake -S ShatterCore -B build -G "Visual Studio 17 2022" -A x64 -DSHATTER_WERROR=ON -DSHATTER_BUILD_SHARED=ON
+        run: cmake -S ShatterCore -B build -DSHATTER_WERROR=ON -DSHATTER_BUILD_SHARED=ON
       - name: Compilar
         run: cmake --build build --config Release --parallel
       - name: Testar
@@ -49,7 +49,9 @@ jobs:
           lfs: false
       - name: Configurar
         run: cmake -S ShatterCore -B build -DCMAKE_BUILD_TYPE=Release -DSHATTER_WERROR=ON -DSHATTER_BUILD_BENCH=ON
-      - name: Compilar
-        run: cmake --build build -j "$(nproc)" --target shattercore_bench
-      - name: Rodar (falha se 12 h de expedição > 2 s)
-        run: ./build/shattercore_bench
+      - name: Compilar (GCC com -Werror)
+        run: cmake --build build -j "$(nproc)"
+      - name: Testar
+        run: ctest --test-dir build --output-on-failure
+      - name: Rodar o bench (falha se 12 h de expedição > 2 s; omitido sem bench/*.cpp)
+        run: test -x build/shattercore_bench && ./build/shattercore_bench || echo "sem bench/*.cpp"

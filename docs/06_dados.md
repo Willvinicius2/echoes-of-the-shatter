@@ -243,7 +243,7 @@ class.warrior,resource,100,0
 ### `skills.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel,coneAngle,knockback,projectileSpeed,idleCalibration,wallStaggerSeconds,pierce`.
+- Cabeçalho exato: `id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel,coneAngle,knockback,projectileSpeed,idleCalibration,wallStaggerSeconds,pierce,explosionRadius`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -284,7 +284,8 @@ class.warrior,resource,100,0
 | `projectileSpeed` | número | não | ≥ 0 | 0 | Velocidade do projetil (uu/s) |
 | `idleCalibration` | enum: `none`, `manual_estimate`, `bot_parity` | não | — | none | Calibracao do perfil idle: none / manual_estimate / bot_parity |
 | `wallStaggerSeconds` | número | não | ≥ 0 | 0 | Stagger (s) do atacante ao bater em pilar ou parede na investida (docs/13 R2.2); só `skill.enemy.guardian_shield_charge` = 2,0 |
-| `pierce` | inteiro | não | 0 a 99 | 0 | Perfuração do projétil (docs/18 8.2): 0 ou vazio = nenhuma; N = atravessa N alvos além do primeiro; 99 = todos. Só `shape = projectile`. Cada projétil acerta o mesmo alvo uma vez (RF-16). Coluna opcional no core, última do cabeçalho |
+| `pierce` | inteiro | não | 0 a 99 | 0 | Perfuração do projétil (docs/18 8.2): 0 ou vazio = nenhuma; N = atravessa N alvos além do primeiro; 99 = todos. Só `shape = projectile`. Cada projétil acerta o mesmo alvo uma vez (RF-16). Coluna opcional no core |
+| `explosionRadius` | número | não | ≥ 0 | 0 | Raio (uu) da explosão no impacto de um projétil (docs/18 8.3 a); vazio ou 0 = sem explosão. Só `shape = projectile` (erro `E_EXPLOSION`). **`radius` num projétil é só a largura de colisão do corredor**; a explosão não usa `radius`. Última coluna do cabeçalho. `skill.mage.fireball` 220 e `skill.mage.arcane_orb` 130 |
 
 Regras de conteúdo:
 
@@ -293,7 +294,7 @@ Regras de conteúdo:
 - Coeficientes não decrescentes (aviso). Com `scalesWithWeapon=true`, `baseDamage*` é ignorado (aviso).
 - `windup + impact + recovery = 0` (aviso, exceto `shape = self`).
 - Idle suportado sem alvos (`idleAvgTargetsHit` e `idleFractionOfGroupHit` zerados): erro.
-- Semântica de forma no tempo real (docs/18 8, item 3), classificada pelo core (`ClassifySkill`, `lookup_json` `behavior`): (a) `projectile` com `radius` > 0 explode no impacto e acerta todos os alvos da área uma vez; (b) `projectile` com `projectiles` > 1 exige `coneAngle` > 0 e sai em leque (erro `E_FAN`/`E_RULE` sem ângulo); (c) `area` com `range` 0 é centrada em quem usa; (d) `area` com `range` > 0 cai no cursor, limitada a `range`, e `impact` é o atraso até acertar; `area` exige `radius` > 0; (e) `dash` com tag `projectile` pula `range` uu para trás e atira em `dash_shot_range` no pico. `pierce` > 0 em habilidade que não é `projectile`: erro.
+- Semântica de forma no tempo real (docs/18 8, item 3), classificada pelo core (`ClassifySkill`, `lookup_json` `behavior`): (a) `projectile` com `explosionRadius` > 0 explode no impacto e acerta todos os alvos da área uma vez (o `radius` do projétil é só a largura de colisão); (b) `projectile` com `projectiles` > 1 exige `coneAngle` > 0 e sai em leque (erro `E_FAN`/`E_RULE` sem ângulo); (c) `area` com `range` 0 é centrada em quem usa; (d) `area` com `range` > 0 cai no cursor, limitada a `range`, e `impact` é o atraso até acertar; `area` exige `radius` > 0; (e) `dash` com tag `projectile` pula `range` uu para trás e atira em `dash_shot_range` no pico. `pierce` > 0 em habilidade que não é `projectile`: erro.
 - `unlockLevel` 1 para o kit básico; Q em 2 e E em 3 (docs/18 4.1).
 
 Exemplo (`ShatterCore/tests/data/skills.csv`):

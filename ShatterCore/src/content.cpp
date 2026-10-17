@@ -29,7 +29,7 @@ bool ParseSkillShape(std::string_view text, SkillShape& out) {
 SkillBehavior ClassifySkill(const SkillData& s) {
     SkillBehavior b;
     const bool projectile = s.shape == SkillShape::Projectile;
-    b.explodes = projectile && s.radius > 0.0;
+    b.explodes = projectile && s.explosionRadius > 0.0;
     b.fan = projectile && s.projectiles > 1 && s.coneAngle > 0.0;
     b.selfCentered = s.shape == SkillShape::Area && s.range <= 0.0;
     b.groundTargeted = s.shape == SkillShape::Area && s.range > 0.0;
@@ -364,7 +364,8 @@ const std::vector<TableDef>& TableDefs() {
           "selfEffects", "idleSupported", "idleAvgTargetsHit", "idleFractionOfGroupHit", "idleApproachTime",
           "idleUptime", "idleDodgeTelegraphedBonus", "idleDamageTakenMult", "idleParitySampleSize",
           "unlockLevel"},
-         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration", "wallStaggerSeconds", "pierce"}},
+         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration", "wallStaggerSeconds", "pierce",
+          "explosionRadius"}},
         {"effects.csv",
          {"id", "duration", "tickInterval", "stackRule", "maxStacks", "damagePerTickPhysical", "damagePerTickFire",
           "damagePerTickCold", "damagePerTickLightning", "modifiers", "barrier", "trigger", "triggerChance",
@@ -666,6 +667,7 @@ void LoadSkills(LoadCtx& c) {
         d.wallStaggerSeconds = cell.Num("wallStaggerSeconds", 0.0, 0.0, 60.0);
         d.projectileSpeed = cell.Num("projectileSpeed", 0.0, 0.0, kInf);
         d.pierce = static_cast<int>(cell.Int("pierce", 0, 0, kPierceAll));
+        d.explosionRadius = cell.Num("explosionRadius", 0.0, 0.0, kInf);
         d.onHitEffects = cell.IdList("onHitEffects");
         d.selfEffects = cell.IdList("selfEffects");
         d.idle.supported = cell.Bool("idleSupported", false);
@@ -1486,6 +1488,8 @@ bool ContentDB::Finalize() {
         // Semântica de forma no tempo real (docs/18 §8 item 3): os dados precisam dizer o que o cliente vai fazer.
         if (s.pierce > 0 && s.shape != SkillShape::Projectile)
             f.E("skills.csv", ln, "E_RULE", "pierce > 0 requires shape projectile");
+        if (s.explosionRadius > 0.0 && s.shape != SkillShape::Projectile)
+            f.E("skills.csv", ln, "E_RULE", "explosionRadius > 0 requires shape projectile");
         if (s.shape == SkillShape::Projectile && s.projectiles > 1 && !(s.coneAngle > 0.0))
             f.E("skills.csv", ln, "E_RULE", "projectile with projectiles > 1 requires coneAngle > 0 (fan)");
         if (s.shape == SkillShape::Area && !(s.radius > 0.0)) f.E("skills.csv", ln, "E_RULE", "shape area requires radius > 0");

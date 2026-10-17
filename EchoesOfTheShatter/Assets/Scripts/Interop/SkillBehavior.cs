@@ -7,7 +7,7 @@ namespace Echoes.Interop
     /// </summary>
     public readonly struct SkillBehavior
     {
-        /// <summary>(a) Projétil com raio &gt; 0: explode no impacto e acerta todos os alvos da área uma vez.</summary>
+        /// <summary>(a) Projétil com <see cref="SkillInfo.ExplosionRadiusUu"/> &gt; 0: explode no impacto e acerta todos os alvos da área uma vez (o <see cref="SkillInfo.RadiusUu"/> é só a largura de colisão).</summary>
         public readonly bool Explodes;
 
         /// <summary>(b) Vários projéteis com ângulo: sai em leque de <see cref="SkillInfo.ConeAngleDegrees"/> graus.</summary>

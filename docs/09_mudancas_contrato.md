@@ -318,6 +318,7 @@ Origem: `docs/18_combate_combo.md` (seção 8 e as decisões do orquestrador em 
 |---|---|
 | `shatter_hit_input.from_guard_arc` | 1 = o golpe veio de dentro do arco da defesa do alvo. 0 (o que chamadores antigos já mandavam) = fora. Tamanho do struct inalterado (64) |
 | `SHATTER_TAG_GUARD` (1 << 9) | Tag de efeito de defesa. `shatter_statblock_get(sb, DAMAGE_TAKEN, SHATTER_TAG_GUARD)` dá o dano recebido DENTRO do arco; com tags 0, fora |
+| `shatter_resolve_hit_charged(db, atk, def, input, class_id, len, charge_fraction, rng, out, err)` | Golpe do ataque forte (adição de 17/10). O CORE calcula `1 + (heavy_max_mult - 1) * charge_fraction` com o kit da classe e aplica como `more` só neste golpe, depois dos modificadores do atacante e antes do crítico (`HitInput::hitMore`, `HeavyChargeMultiplier`). Fração fora de [0,1] ou NaN: INVALID_ARGUMENT com mensagem em `err`, sem efeito e sem avançar o rng; classe sem kit: NOT_FOUND. Função própria, e não campo em `shatter_hit_input`, porque só sobra 1 byte livre no struct de 64 bytes. C#: `HitRequest.IsHeavy`, `ChargeFraction`, `ClassId` (o C# não escala o coeficiente) |
 | `shatter_combat_rules` + `shatter_db_combat_rules(db, out)` | 7 doubles: `combo_window`, `combo_window_after_dodge`, `attack_buffer`, `heavy_hold_threshold`, `light_windup_credit_max`, `guard_lower_time`, `dash_shot_range` |
 | `shatter_basic_kit` + `shatter_basic_kit_get(db, class_id, len, out)` | Kit da classe (720 bytes). 9 doubles (`heavy_charge_time`, `heavy_max_mult`, `guard_arc`, `guard_max_hold`, `guard_cooldown`, `guard_perfect_window`, `guard_perfect_cooldown`, `guard_perfect_resource`, `guard_drain_per_damage`), `int32 light_chain_count` (1 a 3), `int32 guard_perfect_effect_count` (0 a 4), `char light_chain[3][64]`, `heavy_skill[64]`, `charge_effect[64]`, `guard_effect[64]`, `guard_perfect_effects[4][64]` (UTF-8, NUL). NOT_FOUND: classe inexistente ou sem linha |
 | `shatter_vitals_tick_ex(db, vitals, stats, class_id, len, dt, in_combat, moving)` | Como `shatter_vitals_tick`, com o herói andando ou parado |
@@ -327,6 +328,12 @@ Origem: `docs/18_combate_combo.md` (seção 8 e as decisões do orquestrador em 
 ### 12.4 Para o Frontend / Integração
 
 C# (`Interop`): `CombatRules` ganhou `ComboWindowSeconds`, `ComboWindowAfterDodgeSeconds`, `AttackBufferSeconds`, `HeavyHoldThresholdSeconds`, `LightWindupCreditMax`, `GuardLowerTimeSeconds`, `DashShotRangeUu`; `HitRequest.FromGuardArc`; `SkillTags.Guard`; `SkillInfo.Pierce`, `SkillInfo.Behavior` (`SkillBehavior`); `BasicKitInfo` (`IRulesCore.FindBasicKit(classId)`); `IRulesCore.TickVitals(..., moving)`, `GainResourceOnHit`, `GainResourceOnBlock` (membros com implementação padrão; o stub não os precisa). Não foi possível compilar na Unity neste worktree.
+
+### 12.4b Adições de 17/10 (mesma branch)
+
+- **Ataque forte no core**: `shatter_resolve_hit_charged` (tabela 12.3). O C# não escala mais o coeficiente: use `HitRequest.IsHeavy` + `ChargeFraction` + `ClassId`.
+- **`knockback`**: já era lido e validado (`SkillData::knockback`) e já saía no `shatter_db_lookup_json` (`knockback`); o C# agora o expõe como `SkillInfo.KnockbackUu`. Layout inalterado (nenhuma struct nova).
+- **`explosionRadius`** (coluna opcional nova, última de `skills.csv`): raio da explosão de projétil, separado de `radius` (largura de colisão). `SkillData::explosionRadius`; `SkillBehavior::explodes` = projétil com `explosionRadius` > 0; `lookup_json` `explosion_radius`; erro `E_RULE` (core) / `E_EXPLOSION` (validador) fora de projétil. Dados: `fireball` radius 35 / explosionRadius 220, `arcane_orb` radius 25 / explosionRadius 130 (as larguras 35 e 25 são [HIPÓTESE], o docs/18 só tinha o raio da explosão). C#: `SkillInfo.ExplosionRadiusUu`, `SkillInfo.RadiusUu` passa a ser só colisão em projétil.
 
 ### 12.5 Testes e pendências
 

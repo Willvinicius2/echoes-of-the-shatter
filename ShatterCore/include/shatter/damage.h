@@ -53,6 +53,9 @@ struct HitInput {
     // docs/18 8.1: o cliente faz a geometria (arco da defesa) e diz ao core se ESTE golpe veio de dentro do arco.
     // Os modificadores de DamageTaken de efeitos com a tag guard só valem se true; o resto do defensor não muda.
     bool fromGuardArc = false;
+    // Multiplicador `more` só DESTE golpe (ataque forte carregado, docs/18 1.4): aplicado depois dos modificadores do atacante
+    // (passo 2) e antes do crítico, como um `more` a mais. 1 = nenhum. Calcule com HeavyChargeMultiplier (combat.h).
+    double hitMore = 1.0;
 };
 
 enum class HitOutcome : std::uint8_t {
