@@ -235,7 +235,7 @@ TEST(r2_new_columns_are_validated) {
     fails("invocacao sem fracao", "boss_phases.csv", tu::Replace(Table("boss_phases.csv"), ",0.6,1.1,0.5", ",0.6,1.1,"), "E_RULE");
     fails("fracao 1", "boss_phases.csv", tu::Replace(Table("boss_phases.csv"), ",0.6,1.1,0.5", ",0.6,1.1,1"), "E_RULE");
     fails("patrulha acima de 1", "enemies.csv", tu::Replace(Table("enemies.csv"), ",0.5\n", ",1.5\n"), "E_RANGE");
-    fails("stagger de parede negativo", "skills.csv", tu::Replace(Table("skills.csv"), ",2.0\n", ",-1\n"), "E_RANGE");
+    fails("stagger de parede negativo", "skills.csv", tu::Replace(Table("skills.csv"), ",2.0,\n", ",-1,\n"), "E_RANGE");
     fails("requireOnScreen invalido", "enemy_ai.csv", tu::Replace(Table("enemy_ai.csv"), "2.0,2,true", "2.0,2,yes"), "E_TYPE");
     fails("margem negativa", "rules.csv", tu::Replace(Table("rules.csv"), "require_on_screen_margin,100", "require_on_screen_margin,-5"), "E_RANGE");
 }

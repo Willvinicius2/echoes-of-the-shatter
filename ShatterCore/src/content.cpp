@@ -26,6 +26,18 @@ bool ParseSkillShape(std::string_view text, SkillShape& out) {
     return false;
 }
 
+SkillBehavior ClassifySkill(const SkillData& s) {
+    SkillBehavior b;
+    const bool projectile = s.shape == SkillShape::Projectile;
+    b.explodes = projectile && s.radius > 0.0;
+    b.fan = projectile && s.projectiles > 1 && s.coneAngle > 0.0;
+    b.selfCentered = s.shape == SkillShape::Area && s.range <= 0.0;
+    b.groundTargeted = s.shape == SkillShape::Area && s.range > 0.0;
+    b.dashBackShot = s.shape == SkillShape::Dash && HasTag(s.tags, Tag::Projectile);
+    b.pierce = projectile ? s.pierce : 0;
+    return b;
+}
+
 bool ParseIdleCalibration(std::string_view text, IdleCalibration& out) {
     if (text == "none") { out = IdleCalibration::None; return true; }
     if (text == "manual_estimate") { out = IdleCalibration::ManualEstimate; return true; }
@@ -53,7 +65,7 @@ namespace {
 using detail::CsvRow;
 using detail::CsvTable;
 
-constexpr std::size_t kRuleKeyCount = 62 + 18;
+constexpr std::size_t kRuleKeyCount = 62 + 18 + 7;
 
 // --- tabela de chaves de rules.csv (faixas = validação estrutural do 06_dados.md, não balanceamento) ---
 struct RuleDef {
@@ -160,6 +172,14 @@ const RuleDef kRuleDefs[kRuleKeyCount] = {
     {"equip_slot_ring2", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[8] = v != 0.0; }},
     {"equip_slot_belt", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[9] = v != 0.0; }},
     {"equip_slot_legs", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[10] = v != 0.0; }},
+    // Combate básico (docs/18 1.2): tempos em s (0 a 5), crédito de preparação em fração (0 a 1), alcance do tiro do dash em uu.
+    {"combo_window", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.comboWindow = v; }},
+    {"combo_window_after_dodge", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.comboWindowAfterDodge = v; }},
+    {"attack_buffer", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.attackBuffer = v; }},
+    {"heavy_hold_threshold", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.heavyHoldThreshold = v; }},
+    {"light_windup_credit_max", 'd', 0, 1, false, [](RulesConstants& r, double v) { r.lightWindupCreditMax = v; }},
+    {"guard_lower_time", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.guardLowerTime = v; }},
+    {"dash_shot_range", 'd', 0, 10000, false, [](RulesConstants& r, double v) { r.dashShotRange = v; }},
 };
 
 // --- leitor de células tipado ----------------------------------------------------------------
@@ -344,7 +364,7 @@ const std::vector<TableDef>& TableDefs() {
           "selfEffects", "idleSupported", "idleAvgTargetsHit", "idleFractionOfGroupHit", "idleApproachTime",
           "idleUptime", "idleDodgeTelegraphedBonus", "idleDamageTakenMult", "idleParitySampleSize",
           "unlockLevel"},
-         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration", "wallStaggerSeconds"}},
+         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration", "wallStaggerSeconds", "pierce"}},
         {"effects.csv",
          {"id", "duration", "tickInterval", "stackRule", "maxStacks", "damagePerTickPhysical", "damagePerTickFire",
           "damagePerTickCold", "damagePerTickLightning", "modifiers", "barrier", "trigger", "triggerChance",
@@ -387,6 +407,12 @@ const std::vector<TableDef>& TableDefs() {
         {"boss_patterns.csv",
          {"id", "bossId", "phase", "skillId", "weight", "telegraphSeconds", "recoverySeconds", "cooldown", "maxRepeat",
           "playerNearWeightMult", "ignoreIfBehind"}},
+        // Tabela OPCIONAL de verdade (docs/18 4.6): arquivo ausente em LoadDirectory não é erro; classe sem linha não tem kit.
+        {"basic_kits.csv",
+         {"classId", "lightChain", "heavySkill", "heavyChargeTime", "heavyMaxMult", "chargeEffect", "guardEffect",
+          "guardArc"},
+         {"guardMaxHold", "guardCooldown", "guardPerfectWindow", "guardPerfectCooldown", "guardPerfectEffects",
+          "guardPerfectResource", "guardDrainPerDamage"}},
         {"enemy_ai.csv",
          {"enemyId", "aggroRange", "alertRadius", "leashRange", "leashSeconds", "preferredMin", "preferredMax",
           "retreatBelow", "retreatMaxSeconds", "circleMin", "circleMax", "circleSpeed", "attackTokens",
@@ -437,6 +463,8 @@ struct ContentImpl {
     std::vector<int> bossPhaseLines;
     std::vector<EnemyAiData> enemyAis;
     std::vector<int> enemyAiLines;
+    std::vector<BasicKitData> basicKits;
+    std::vector<int> basicKitLines;
 
     struct ClassStatRow { ContentId classId; StatGrowth g; int line = 0; };
     struct EnemyAttackRow { ContentId enemyId; EnemyAttack a; int line = 0; };
@@ -637,6 +665,7 @@ void LoadSkills(LoadCtx& c) {
         d.knockback = cell.Num("knockback", 0.0, 0.0, kInf);
         d.wallStaggerSeconds = cell.Num("wallStaggerSeconds", 0.0, 0.0, 60.0);
         d.projectileSpeed = cell.Num("projectileSpeed", 0.0, 0.0, kInf);
+        d.pierce = static_cast<int>(cell.Int("pierce", 0, 0, kPierceAll));
         d.onHitEffects = cell.IdList("onHitEffects");
         d.selfEffects = cell.IdList("selfEffects");
         d.idle.supported = cell.Bool("idleSupported", false);
@@ -1049,6 +1078,48 @@ void LoadEnemyAis(LoadCtx& c) {
     }
 }
 
+// Lista de IDs onde o MESMO ID pode repetir (lightChain: Arqueiro e Mago repetem o golpe 1 no golpe 2).
+std::vector<ContentId> IdListWithRepeats(Cells& cell, std::string_view col) {
+    std::vector<ContentId> out;
+    for (std::string_view item : detail::SplitView(cell.Raw(col), '|')) {
+        if (item.empty() || !IsValidContentId(item)) {
+            cell.Err("E_ID_FORMAT", std::string(col) + ": invalid id in list");
+            continue;
+        }
+        out.emplace_back(item);
+    }
+    return out;
+}
+
+void LoadBasicKits(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        BasicKitData d;
+        d.classId = cell.Id("classId", true);
+        d.lightChain = IdListWithRepeats(cell, "lightChain");
+        if (cell.Empty("lightChain")) cell.Err("E_REQUIRED", "lightChain is required");
+        d.heavySkill = cell.Id("heavySkill", true);
+        d.heavyChargeTime = cell.Num("heavyChargeTime", 0.0, 0.0, kInf, true);
+        if (cell.Empty("heavyChargeTime")) cell.Err("E_REQUIRED", "heavyChargeTime is required");
+        d.heavyMaxMult = cell.Num("heavyMaxMult", 1.0, 1.0, kInf);
+        if (cell.Empty("heavyMaxMult")) cell.Err("E_REQUIRED", "heavyMaxMult is required");
+        d.chargeEffect = cell.Id("chargeEffect", true);
+        d.guardEffect = cell.Id("guardEffect", true);
+        d.guardArc = cell.Num("guardArc", 0.0, 0.0, 360.0);
+        if (cell.Empty("guardArc")) cell.Err("E_REQUIRED", "guardArc is required");
+        d.guardMaxHold = cell.Num("guardMaxHold", 0.0, 0.0, 60.0);
+        d.guardCooldown = cell.Num("guardCooldown", 0.0, 0.0, 60.0);
+        d.guardPerfectWindow = cell.Num("guardPerfectWindow", 0.0, 0.0, 5.0);
+        d.guardPerfectCooldown = cell.Num("guardPerfectCooldown", 0.0, 0.0, 60.0);
+        d.guardPerfectEffects = cell.IdList("guardPerfectEffects");
+        d.guardPerfectResource = cell.Num("guardPerfectResource", 0.0, 0.0, kInf);
+        d.guardDrainPerDamage = cell.Num("guardDrainPerDamage", 0.0, 0.0, kInf);
+        if (cell.bad()) continue;
+        c.impl.basicKits.push_back(std::move(d));
+        c.impl.basicKitLines.push_back(row.line);
+    }
+}
+
 }  // namespace
 
 bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvText) {
@@ -1119,6 +1190,7 @@ bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvTex
     else if (table == "boss_phases.csv") LoadBossPhases(ctx);
     else if (table == "boss_patterns.csv") LoadBossPatterns(ctx);
     else if (table == "enemy_ai.csv") LoadEnemyAis(ctx);
+    else if (table == "basic_kits.csv") LoadBasicKits(ctx);
     return errors_.size() == before;
 }
 
@@ -1135,6 +1207,7 @@ bool ContentDB::LoadDirectory(const std::string& path) {
     for (const TableDef& def : TableDefs()) {
         const fs::path file = dir / def.name;
         if (!fs::is_regular_file(file, ec)) {
+            if (std::string_view(def.name) == "basic_kits.csv") continue;  // única tabela opcional de verdade (docs/18 4.6)
             PushErr(errors_, def.name, 0, "E_IO", "table file missing");
             continue;
         }
@@ -1199,6 +1272,12 @@ void ContentDB::Add(EnemyAiData d) {
     impl_->enemyAiLines.push_back(0);
 }
 
+void ContentDB::Add(BasicKitData d) {
+    if (impl_->finalized) { PushErr(errors_, "basicKits", 0, "E_STATE", "Add after Finalize"); return; }
+    impl_->basicKits.push_back(std::move(d));
+    impl_->basicKitLines.push_back(0);
+}
+
 // ===============================================================================================
 // Lookups
 // ===============================================================================================
@@ -1226,6 +1305,12 @@ const EnemyAiData* ContentDB::FindEnemyAi(std::string_view enemyId) const {
     }
     return nullptr;
 }
+const BasicKitData* ContentDB::FindBasicKit(std::string_view classId) const {
+    for (const BasicKitData& k : impl_->basicKits) {
+        if (k.classId == classId) return &k;
+    }
+    return nullptr;
+}
 const BossPhaseData* ContentDB::FindBossPhase(std::string_view bossId, int phase) const {
     for (const BossPhaseData& p : impl_->bossPhases) {
         if (p.bossId == bossId && p.phase == phase) return &p;
@@ -1237,6 +1322,7 @@ const std::vector<EliteModifierData>& ContentDB::EliteModifiers() const { return
 const std::vector<BossPhaseData>& ContentDB::BossPhases() const { return impl_->bossPhases; }
 const std::vector<BossPatternData>& ContentDB::BossPatterns() const { return impl_->bossPatterns; }
 const std::vector<EnemyAiData>& ContentDB::EnemyAis() const { return impl_->enemyAis; }
+const std::vector<BasicKitData>& ContentDB::BasicKits() const { return impl_->basicKits; }
 const std::vector<AffixData>& ContentDB::Affixes() const { return impl_->affixes.items; }
 const std::vector<ItemBaseData>& ContentDB::ItemBases() const { return impl_->bases.items; }
 const std::vector<MapData>& ContentDB::Maps() const { return impl_->maps.items; }
@@ -1397,6 +1483,14 @@ bool ContentDB::Finalize() {
             if (im.effects.Find(e) == nullptr) f.E("skills.csv", ln, "E_FK", "onHitEffects: '" + e + "' not in effects.csv");
         for (const ContentId& e : s.selfEffects)
             if (im.effects.Find(e) == nullptr) f.E("skills.csv", ln, "E_FK", "selfEffects: '" + e + "' not in effects.csv");
+        // Semântica de forma no tempo real (docs/18 §8 item 3): os dados precisam dizer o que o cliente vai fazer.
+        if (s.pierce > 0 && s.shape != SkillShape::Projectile)
+            f.E("skills.csv", ln, "E_RULE", "pierce > 0 requires shape projectile");
+        if (s.shape == SkillShape::Projectile && s.projectiles > 1 && !(s.coneAngle > 0.0))
+            f.E("skills.csv", ln, "E_RULE", "projectile with projectiles > 1 requires coneAngle > 0 (fan)");
+        if (s.shape == SkillShape::Area && !(s.radius > 0.0)) f.E("skills.csv", ln, "E_RULE", "shape area requires radius > 0");
+        if (im.rulesLoaded && s.shape == SkillShape::Dash && HasTag(s.tags, Tag::Projectile) && !(rules_.dashShotRange > 0.0))
+            f.E("skills.csv", ln, "E_RULE", "dash with tag projectile requires dash_shot_range > 0 in rules.csv");
         if (s.idle.supported) {
             if (s.idle.paritySampleSize == 0) f.E("skills.csv", ln, "E_RULE", "idleSupported requires idleParitySampleSize > 0");
             if (s.idle.avgTargetsHit <= 0.0 && s.idle.fractionOfGroupHit <= 0.0)
@@ -1692,6 +1786,48 @@ bool ContentDB::Finalize() {
         bool any = false;
         for (const BossPatternData& pt : im.bossPatterns) any = any || (pt.bossId == ph.bossId && pt.phase == ph.phase && pt.weight > 0.0);
         if (!any) f.E("boss_patterns.csv", 0, "E_RULE", "boss '" + ph.bossId + "' phase " + std::to_string(ph.phase) + " needs a pattern with weight > 0");
+    }
+    // --- kits básicos (docs/18 4.6): tabela opcional; só valida o que existe ---
+    for (std::size_t i = 0; i < im.basicKits.size(); ++i) {
+        const BasicKitData& k = im.basicKits[i];
+        const int ln = im.basicKitLines[i];
+        const char* T = "basic_kits.csv";
+        if (im.classes.Find(k.classId) == nullptr) f.E(T, ln, "E_FK", "classId '" + k.classId + "' not in classes.csv");
+        for (std::size_t j = 0; j < i; ++j) {
+            if (im.basicKits[j].classId == k.classId) f.E(T, ln, "E_DUP_ID", "class repeated in basic_kits.csv");
+        }
+        if (k.lightChain.empty() || k.lightChain.size() > kMaxLightChain)
+            f.E(T, ln, "E_RANGE", "lightChain needs 1 to " + std::to_string(kMaxLightChain) + " skills");
+        if (!(k.heavyChargeTime > 0.0)) f.E(T, ln, "E_RANGE", "heavyChargeTime must be > 0");
+        if (!(k.heavyMaxMult >= 1.0)) f.E(T, ln, "E_RANGE", "heavyMaxMult must be >= 1");
+        if (k.guardArc < 0.0 || k.guardArc > 360.0) f.E(T, ln, "E_RANGE", "guardArc must be in [0, 360]");
+        if (k.guardPerfectEffects.size() > kMaxGuardPerfectEffects)
+            f.E(T, ln, "E_RANGE", "guardPerfectEffects has more than " + std::to_string(kMaxGuardPerfectEffects) + " effects");
+        auto checkSkill = [&](const ContentId& id, const char* col) {
+            const SkillData* s = im.skills.Find(id);
+            if (s == nullptr) { f.E(T, ln, "E_FK", std::string(col) + ": '" + id + "' not in skills.csv"); return; }
+            if (s->classId != k.classId)
+                f.E(T, ln, "E_RULE", std::string(col) + ": '" + id + "' does not belong to " + k.classId);
+        };
+        for (const ContentId& id : k.lightChain) checkSkill(id, "lightChain");
+        checkSkill(k.heavySkill, "heavySkill");
+        auto checkEffect = [&](const ContentId& id, const char* col) -> const EffectData* {
+            const EffectData* e = im.effects.Find(id);
+            if (e == nullptr) f.E(T, ln, "E_FK", std::string(col) + ": '" + id + "' not in effects.csv");
+            return e;
+        };
+        checkEffect(k.chargeEffect, "chargeEffect");
+        const EffectData* guard = checkEffect(k.guardEffect, "guardEffect");
+        // Sem a tag guard o efeito reduziria o dano de golpes de FORA do arco: o arco do kit não valeria nada.
+        if (guard != nullptr && !HasTag(guard->tags, Tag::Guard))
+            f.E(T, ln, "E_RULE", "guardEffect '" + k.guardEffect + "' needs the guard tag in effects.csv");
+        for (const ContentId& id : k.guardPerfectEffects) checkEffect(id, "guardPerfectEffects");
+        // O C API copia os IDs em campos de 64 bytes.
+        auto fits = [&](const ContentId& id) { return id.size() < 64; };
+        bool idsFit = fits(k.classId) && fits(k.heavySkill) && fits(k.chargeEffect) && fits(k.guardEffect);
+        for (const ContentId& id : k.lightChain) idsFit = idsFit && fits(id);
+        for (const ContentId& id : k.guardPerfectEffects) idsFit = idsFit && fits(id);
+        if (!idsFit) f.E(T, ln, "E_RANGE", "id longer than 63 bytes (C API field size)");
     }
     for (std::size_t i = 0; i < im.enemyAis.size(); ++i) {
         const EnemyAiData& a = im.enemyAis[i];

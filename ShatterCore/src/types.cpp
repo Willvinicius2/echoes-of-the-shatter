@@ -14,6 +14,7 @@ constexpr TagName kTagNames[kTagCount] = {
     {"attack", Tag::Attack},       {"spell", Tag::Spell},         {"melee", Tag::Melee},
     {"projectile", Tag::Projectile}, {"area", Tag::Area},         {"fire", Tag::Fire},
     {"cold", Tag::Cold},           {"lightning", Tag::Lightning}, {"physical", Tag::Physical},
+    {"guard", Tag::Guard},
 };
 
 constexpr const char* kSlotNames[kItemSlotCount] = {

@@ -16,5 +16,11 @@ namespace Echoes.Interop
         Cold = 1u << 6,
         Lightning = 1u << 7,
         Physical = 1u << 8,
+
+        /// <summary>
+        /// Tag de EFEITO de defesa (<c>effect.guarding.*</c>, docs/18 8.1): os modificadores de dano recebido de um efeito com esta
+        /// tag só valem num golpe que veio de dentro do arco da defesa (<see cref="HitRequest.FromGuardArc"/>). Não é tag de habilidade.
+        /// </summary>
+        Guard = 1u << 9,
     }
 }

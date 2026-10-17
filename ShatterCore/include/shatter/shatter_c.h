@@ -122,7 +122,9 @@ enum {
 enum {
     SHATTER_TAG_ATTACK = 1 << 0, SHATTER_TAG_SPELL = 1 << 1, SHATTER_TAG_MELEE = 1 << 2,
     SHATTER_TAG_PROJECTILE = 1 << 3, SHATTER_TAG_AREA = 1 << 4, SHATTER_TAG_FIRE = 1 << 5,
-    SHATTER_TAG_COLD = 1 << 6, SHATTER_TAG_LIGHTNING = 1 << 7, SHATTER_TAG_PHYSICAL = 1 << 8
+    SHATTER_TAG_COLD = 1 << 6, SHATTER_TAG_LIGHTNING = 1 << 7, SHATTER_TAG_PHYSICAL = 1 << 8,
+    /* Tag de EFEITO de defesa (API 1.5, docs/18 8.1): ver shatter_hit_input.from_guard_arc. Não é tag de habilidade. */
+    SHATTER_TAG_GUARD = 1 << 9
 };
 /* Tipos de dano: índice dos vetores [4] (physical, fire, cold, lightning). */
 enum { SHATTER_DAMAGE_PHYSICAL = 0, SHATTER_DAMAGE_FIRE = 1, SHATTER_DAMAGE_COLD = 2, SHATTER_DAMAGE_LIGHTNING = 3 };
@@ -145,7 +147,11 @@ typedef struct shatter_hit_input {
     uint32_t skill_tags;          /* SHATTER_TAG_* */
     uint8_t is_damage_over_time;  /* tick de DoT: sem crítico/evasão/bloqueio, sem RNG */
     uint8_t can_be_blocked;
-    uint8_t reserved[2];
+    /* API 1.5 (antes reserved[0]; 0 = fora do arco, o que os chamadores antigos já mandavam): 1 = ESTE golpe veio de dentro
+     * do arco da defesa do alvo (o C# faz a geometria). Só então valem os modificadores de dano recebido dos efeitos com a
+     * tag guard (effect.guarding.*). Os demais modificadores do alvo não dependem disto. */
+    uint8_t from_guard_arc;
+    uint8_t reserved[1];
 } shatter_hit_input;
 
 enum { SHATTER_HIT = 0, SHATTER_HIT_EVADED = 1, SHATTER_HIT_BLOCKED = 2 };
@@ -543,7 +549,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 4u   /* 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 5u   /* 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -937,6 +943,70 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_ground_clear(shatter_save* 
 #define SHATTER_LAYOUT_EXT4_COUNT 10u
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext4(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext4(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+
+/* --- Combate básico (API 1.5; docs/18, docs/09 seção 12) ---
+ * A máquina de combate básica (combo, buffer, carga, cancelamentos) roda no C# (HeroCombatLogic, docs/18 8.1). O core
+ * guarda e valida os NÚMEROS (basic_kits.csv e as 7 chaves novas de rules.csv), resolve dano, efeitos, defesa e recurso. */
+
+/* Chaves novas de rules.csv (docs/18 1.2). Tempos em s; light_windup_credit_max é fração; dash_shot_range em uu. */
+typedef struct shatter_combat_rules {
+    double combo_window, combo_window_after_dodge, attack_buffer, heavy_hold_threshold;
+    double light_windup_credit_max, guard_lower_time, dash_shot_range;
+} shatter_combat_rules;
+SHATTER_API shatter_status SHATTER_CALL shatter_db_combat_rules(const shatter_db* db,
+                                                                shatter_combat_rules* out) SHATTER_NOEXCEPT;
+
+#define SHATTER_KIT_ID_SIZE 64u            /* cada ID cabe em 63 bytes + NUL (validado no carregamento) */
+#define SHATTER_KIT_MAX_LIGHT_CHAIN 3u
+#define SHATTER_KIT_MAX_PERFECT_EFFECTS 4u
+/* Kit básico de uma classe (basic_kits.csv). Os campos de texto são IDs de conteúdo, UTF-8, terminados em NUL. */
+typedef struct shatter_basic_kit {
+    double heavy_charge_time;          /* s da carga depois de heavy_hold_threshold */
+    double heavy_max_mult;             /* multiplicador de dano na carga máxima: 1 + (max - 1) * progresso, linear */
+    double guard_arc;                  /* graus, arco TOTAL da defesa (360 = cúpula) */
+    double guard_max_hold;             /* s; 0 = ilimitado */
+    double guard_cooldown;             /* s de espera depois de soltar (ou de cair sozinha) */
+    double guard_perfect_window;       /* s depois do aperto; 0 = sem defesa perfeita */
+    double guard_perfect_cooldown;     /* s mínimos desde o último aperto para a janela abrir de novo */
+    double guard_perfect_resource;     /* recurso ganho pela perfeita (substitui resourceOnBlock) */
+    double guard_drain_per_damage;     /* recurso gasto por ponto de dano evitado; 0 = não gasta */
+    int32_t light_chain_count;         /* 1 a 3 */
+    int32_t guard_perfect_effect_count;/* 0 a 4 */
+    char light_chain[3][64];           /* golpes leves em ordem; o mesmo ID pode repetir */
+    char heavy_skill[64];
+    char charge_effect[64];            /* reaplicado a cada tick enquanto carrega */
+    char guard_effect[64];             /* reaplicado a cada tick enquanto defende; tag guard */
+    char guard_perfect_effects[4][64]; /* aplicados no atacante corpo a corpo pela defesa perfeita */
+} shatter_basic_kit;
+/* Kit da classe. SHATTER_NOT_FOUND se a classe não existe ou não tem linha em basic_kits.csv (tabela opcional). */
+SHATTER_API shatter_status SHATTER_CALL shatter_basic_kit_get(const shatter_db* db, const char* class_id,
+                                                              size_t class_id_len, shatter_basic_kit* out) SHATTER_NOEXCEPT;
+
+/* Como shatter_vitals_tick, com `moving` (!= 0: o herói está andando). A regeneração do RECURSO é multiplicada por
+ * regen_mult_while_moving da classe (Foco: 0,3); a vida não muda. moving = 0 é igual a shatter_vitals_tick. */
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_tick_ex(const shatter_db* db, shatter_vitals* vitals,
+                                                               const shatter_statblock* stats, const char* class_id,
+                                                               size_t class_id_len, double dt, uint8_t in_combat,
+                                                               uint8_t moving) SHATTER_NOEXCEPT;
+/* Recurso por golpe que acerta / por bloqueio, da classe (classes.csv resourceOnHit / resourceOnBlock), limitado ao máximo.
+ * É a MESMA regra do simulador idle. class_id pode ser nulo/vazio (sem classe: nada). */
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_gain_on_hit(const shatter_db* db, shatter_vitals* vitals,
+                                                                   const shatter_statblock* stats, const char* class_id,
+                                                                   size_t class_id_len) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_gain_on_block(const shatter_db* db, shatter_vitals* vitals,
+                                                                     const shatter_statblock* stats, const char* class_id,
+                                                                     size_t class_id_len) SHATTER_NOEXCEPT;
+
+/* Layout 1.5: [offsetof(shatter_hit_input, from_guard_arc),
+ *              sizeof(shatter_combat_rules), 7 offsets,
+ *              sizeof(shatter_basic_kit), offsets de heavy_charge_time, heavy_max_mult, guard_arc, guard_max_hold,
+ *              guard_cooldown, guard_perfect_window, guard_perfect_cooldown, guard_perfect_resource,
+ *              guard_drain_per_damage, light_chain_count, guard_perfect_effect_count, light_chain, heavy_skill,
+ *              charge_effect, guard_effect, guard_perfect_effects]. Chamar o check na inicialização, como os outros. */
+#define SHATTER_LAYOUT_EXT5_COUNT 26u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext5(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext5(const uint32_t* values, size_t n,
                                                                   shatter_error* err) SHATTER_NOEXCEPT;
 
 /* --- Elite (docs/13, item 5) --- */

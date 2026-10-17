@@ -6,3 +6,4 @@ item_base.leather_vest,body,1,life:flat:12,,,,,,,m,vset.starter
 item_base.leather_gloves,hands,1,attack_speed:increased:0.03,,,,,,,f,vset.starter
 item_base.worn_boots,feet,1,move_speed:increased:0.05,,,,,,,f,vset.starter
 item_base.worn_trousers,legs,1,armor:flat:4,,,,,,,f,vset.starter
+item_base.hunter_bow,main_hand,1,crit_chance:flat:0.02,8,,,,0.8,projectile,m,

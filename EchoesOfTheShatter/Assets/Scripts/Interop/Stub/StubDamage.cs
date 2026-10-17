@@ -90,7 +90,7 @@ namespace Echoes.Interop
             mitigated.Lightning = mitigated.Lightning * (1.0 - ClampResistance(defender.GetRaw(StatId.ResistLightning), rules));
 
             // 8. dano recebido do defensor.
-            var taken = defender.Get(StatId.DamageTaken);
+            var taken = defender.GetTagged(StatId.DamageTaken, input.FromGuardArc ? SkillTags.Guard : SkillTags.None);
             for (var t = 0; t < DamageByType.Count; t++) mitigated[t] = mitigated[t] * taken;
 
             result.AfterMitigation = mitigated;

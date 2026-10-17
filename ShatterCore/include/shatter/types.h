@@ -53,8 +53,11 @@ enum class Tag : TagMask {
     Cold       = 1u << 6,
     Lightning  = 1u << 7,
     Physical   = 1u << 8,
+    // Efeito de defesa (docs/18 8.1): os modificadores de DamageTaken de um efeito com esta tag só valem num golpe
+    // que veio de dentro do arco da defesa (HitInput::fromGuardArc). Não é tag de habilidade nem de tipo de dano.
+    Guard      = 1u << 9,
 };
-inline constexpr int kTagCount = 9;
+inline constexpr int kTagCount = 10;
 
 constexpr TagMask Mask(Tag t) { return static_cast<TagMask>(t); }
 constexpr TagMask operator|(Tag a, Tag b) { return Mask(a) | Mask(b); }
@@ -64,7 +67,7 @@ constexpr bool HasAllTags(TagMask have, TagMask required) { return (have & requi
 constexpr bool HasTag(TagMask have, Tag t) { return (have & Mask(t)) != 0; }
 
 // Conversão para/de texto usado nos CSV ("attack", "spell", "melee", "projectile",
-// "area", "fire", "cold", "lightning", "physical"). Lista no CSV separada por '|'.
+// "area", "fire", "cold", "lightning", "physical", "guard"). Lista no CSV separada por '|'.
 // Implementação: src/types.cpp. Retorna false se alguma tag for desconhecida.
 bool ParseTagList(std::string_view text, TagMask& out);
 std::string TagListToString(TagMask mask);

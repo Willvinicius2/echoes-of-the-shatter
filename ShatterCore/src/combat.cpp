@@ -79,7 +79,7 @@ Vitals CreateVitals(const StatBlock& stats, const ClassData* cls) {
     return v;
 }
 
-void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double dt, bool inCombat) {
+void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double dt, bool inCombat, bool moving) {
     if (v.life <= 0.0 || dt <= 0.0) return;
     const double maxLife = stats.Get(StatId::Life);
     const double regen = stats.Get(StatId::LifeRegen);
@@ -87,7 +87,8 @@ void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double 
     if (v.life > maxLife) v.life = maxLife;
 
     const double maxRes = stats.Get(StatId::Resource);
-    const double resRegen = stats.Get(StatId::ResourceRegen);
+    double resRegen = stats.Get(StatId::ResourceRegen);
+    if (moving && cls != nullptr) resRegen *= cls->regenMultWhileMoving;
     if (resRegen > 0.0) v.resource = std::min(maxRes, v.resource + resRegen * dt);
     if (!inCombat && cls != nullptr && cls->resourceDecayOutOfCombat > 0.0)
         v.resource = std::max(0.0, v.resource - cls->resourceDecayOutOfCombat * dt);
@@ -147,6 +148,11 @@ void GainResource(Vitals& v, const StatBlock& stats, double amount) {
     if (!(amount > 0.0)) return;
     v.resource = std::min(stats.Get(StatId::Resource), v.resource + amount);
 }
+
+double ResourceOnHit(const ClassData* cls) { return cls != nullptr ? cls->resourceOnHit : 0.0; }
+double ResourceOnBlock(const ClassData* cls) { return cls != nullptr ? cls->resourceOnBlock : 0.0; }
+void GainResourceOnHit(Vitals& v, const StatBlock& stats, const ClassData* cls) { GainResource(v, stats, ResourceOnHit(cls)); }
+void GainResourceOnBlock(Vitals& v, const StatBlock& stats, const ClassData* cls) { GainResource(v, stats, ResourceOnBlock(cls)); }
 
 bool TrySpendResource(Vitals& v, double amount) {
     if (!(amount > 0.0)) return true;

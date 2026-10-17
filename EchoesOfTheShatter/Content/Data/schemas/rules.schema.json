@@ -588,6 +588,62 @@
       "type": "bool",
       "default": true,
       "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "combo_window",
+      "type": "number",
+      "default": 0.4,
+      "desc": "Janela (s) depois do fim da recuperacao de um golpe leve em que um clique continua o combo (docs/18 1.2) [HIPOTESE H18-01]",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "combo_window_after_dodge",
+      "type": "number",
+      "default": 0.3,
+      "desc": "Janela (s) que reabre ao fim da esquiva para retomar o combo [HIPOTESE H18-11]",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "attack_buffer",
+      "type": "number",
+      "default": 0.15,
+      "desc": "Um clique entra na fila se chegar nos ultimos attack_buffer s da recuperacao [HIPOTESE H18-01]",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "heavy_hold_threshold",
+      "type": "number",
+      "default": 0.35,
+      "desc": "Tempo (s) apertado que separa clique leve de ataque forte carregado (decisao do orquestrador)",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "light_windup_credit_max",
+      "type": "number",
+      "default": 0.7,
+      "desc": "Fracao maxima da preparacao do golpe leve descontada pelo tempo que o botao ficou apertado [HIPOTESE H18-02]",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "guard_lower_time",
+      "type": "number",
+      "default": 0.1,
+      "desc": "Tempo (s) sem atacar depois de soltar a defesa [HIPOTESE]",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "dash_shot_range",
+      "type": "number",
+      "default": 1000,
+      "desc": "Alcance (uu) do tiro de uma habilidade dash com tag projectile (Salto do Arqueiro) [HIPOTESE]",
+      "min": 0,
+      "max": 10000
     }
   ]
 }

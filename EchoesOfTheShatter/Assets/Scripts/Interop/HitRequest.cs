@@ -16,5 +16,12 @@ namespace Echoes.Interop
         public bool CanBeBlocked;
         public double DefenderLife;
         public double DefenderBarrier;
+
+        /// <summary>
+        /// docs/18 8.1: ESTE golpe veio de dentro do arco da defesa do alvo (o C# faz a geometria, <c>ShapeQuery</c>). Só então valem os
+        /// modificadores de dano recebido dos efeitos de defesa (tag <see cref="SkillTags.Guard"/>). Os demais não dependem disto.
+        /// Padrão false = fora do arco.
+        /// </summary>
+        public bool FromGuardArc;
     }
 }

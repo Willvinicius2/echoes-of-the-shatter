@@ -27,11 +27,15 @@ void RebuildMods(const std::vector<ActiveEffect>& active, const ContentId& effec
     const std::string src = FxSource(effectId);
     target.RemoveModifiersFrom(src);
     if (data == nullptr) return;
+    // Efeito de defesa (tag guard): o dano recebido só cai quando o golpe vem de dentro do arco (damage.h, fromGuardArc).
+    // Só os mods de DamageTaken ganham a exigência; a lentidão de andar com a guarda erguida vale sempre.
+    const bool guard = HasTag(data->tags, Tag::Guard);
     for (const ActiveEffect& a : active) {
         if (a.effectId != effectId) continue;
         for (const Modifier& m : data->modifiers) {
             Modifier mod = m;
             mod.value = m.value * a.magnitude;
+            if (guard && mod.stat == StatId::DamageTaken) mod.requiredTags |= Mask(Tag::Guard);
             mod.source = src;
             target.AddModifier(mod);
         }

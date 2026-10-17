@@ -57,7 +57,8 @@ namespace Echoes.Interop.Native
         public uint skill_tags;
         public byte is_damage_over_time;
         public byte can_be_blocked;
-        public fixed byte reserved[2];
+        public byte from_guard_arc;     // API 1.5 (antes reserved[0]): o golpe veio de dentro do arco da defesa do alvo
+        public fixed byte reserved[1];
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -306,6 +307,29 @@ namespace Echoes.Interop.Native
     {
         public double unarmed_weapon_damage_physical;
         public double require_on_screen_margin;
+    }
+
+    // API C 1.5 (docs/09 secao 12): chaves novas de rules.csv e kit basico de uma classe; layout ext5 (26 valores).
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterCombatRules
+    {
+        public double combo_window, combo_window_after_dodge, attack_buffer, heavy_hold_threshold;
+        public double light_windup_credit_max, guard_lower_time, dash_shot_range;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct ShatterBasicKit
+    {
+        public double heavy_charge_time, heavy_max_mult;
+        public double guard_arc, guard_max_hold, guard_cooldown, guard_perfect_window, guard_perfect_cooldown;
+        public double guard_perfect_resource, guard_drain_per_damage;
+        public int light_chain_count;
+        public int guard_perfect_effect_count;
+        public fixed byte light_chain[192];             // 3 x 64
+        public fixed byte heavy_skill[64];
+        public fixed byte charge_effect[64];
+        public fixed byte guard_effect[64];
+        public fixed byte guard_perfect_effects[256];   // 4 x 64
     }
 
     [StructLayout(LayoutKind.Sequential)]

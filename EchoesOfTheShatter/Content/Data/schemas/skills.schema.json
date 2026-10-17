@@ -305,6 +305,15 @@
       "default": 0,
       "min": 0,
       "desc": "Stagger (s) do atacante ao bater em pilar ou parede na investida (docs/13 R2.2); vazio = nao tem"
+    },
+    {
+      "name": "pierce",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 99,
+      "desc": "Perfuracao do projetil (docs/18 8.2): 0 ou vazio = nenhuma; N = atravessa N alvos; 99 = atravessa todos. Cada projetil acerta o mesmo alvo uma vez. So para shape projectile"
     }
   ],
   "checks": [

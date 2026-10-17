@@ -45,11 +45,11 @@ TEST(content_rnf07_error_catalog) {
     ExpectFail("peso 0", "affixes.csv", Replace(affixes, "1,10,body|head,life,false", "1,0,body|head,life,false"), "affixes.csv", 2, "E_RANGE");
     ExpectFail("efeito inexistente", "skills.csv", Replace(skills, "effect.guard_break", "effect.nope"), "skills.csv", 3, "E_FK");
     ExpectFail("idle sem amostra de paridade", "skills.csv",
-               Replace(skills, "false,,,,,,,,1,,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,0,1,,,,,\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_RULE");
+               Replace(skills, "false,,,,,,,,1,,,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,0,1,,,,,,\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_RULE");
     ExpectFail("idle sem selo de calibracao", "skills.csv",
-               Replace(skills, "false,,,,,,,,1,,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,20,1,,,,none,\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_RULE");
+               Replace(skills, "false,,,,,,,,1,,,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,20,1,,,,none,,\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_RULE");
     ExpectFail("selo de calibracao desconhecido", "skills.csv",
-               Replace(skills, "false,,,,,,,,1,,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,20,1,,,,guess,\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_ENUM");
+               Replace(skills, "false,,,,,,,,1,,,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,20,1,,,,guess,,\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_ENUM");
     ExpectFail("unico idle sem amostra", "uniques.csv", Replace(Table("uniques.csv"), "damage:increased:0.2:melee,effect.block_spark,false,,,", "damage:increased:0.2:melee,effect.block_spark,true,,,"), "uniques.csv", 2, "E_RULE");
     ExpectFail("recarga abaixo do minimo", "skills.csv", Replace(skills, ",0,8,0.2,0,0.2,", ",0,0.05,0.2,0,0.2,"), "skills.csv", 4, "E_RANGE");
     ExpectFail("tipo invalido", "skills.csv", Replace(skills, "10,,,,1,1.1", "ten,,,,1,1.1"), "skills.csv", 2, "E_TYPE");

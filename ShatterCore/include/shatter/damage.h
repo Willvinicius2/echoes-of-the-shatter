@@ -16,7 +16,8 @@
 //     Ex.: A=500: golpe de 100 → 50% de redução; golpe de 1000 → 9%. Golpe grande passa mais.
 //  7. resistência: por tipo elemental, res = clamp(defender Resist*, resistFloor, resistCap);
 //     dano × (1 − res).
-//  8. dano recebido: × defender.Get(DamageTaken) (base 1).
+//  8. dano recebido: × defender.GetTagged(DamageTaken, fromGuardArc ? guard : nenhuma) (base 1). Mods de efeito `guard`
+//     (defesa) só entram se o chamador informar que o golpe veio de dentro do arco.
 //  9. barreira absorve primeiro; o resto sai da vida. Vida mínima 0.
 // Efeitos ao acertar (queimadura, lentidão, quebra de guarda, ganho de recurso)
 // NÃO são resolvidos aqui: o chamador aplica depois, se result.landed (ver effects.h).
@@ -49,6 +50,9 @@ struct HitInput {
     bool canBeBlocked = true;              // falso p/ dano de terreno, por exemplo
     double defenderLife = 0.0;             // vida atual do alvo
     double defenderBarrier = 0.0;          // barreira atual do alvo
+    // docs/18 8.1: o cliente faz a geometria (arco da defesa) e diz ao core se ESTE golpe veio de dentro do arco.
+    // Os modificadores de DamageTaken de efeitos com a tag guard só valem se true; o resto do defensor não muda.
+    bool fromGuardArc = false;
 };
 
 enum class HitOutcome : std::uint8_t {

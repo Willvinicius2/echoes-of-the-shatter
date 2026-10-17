@@ -42,6 +42,7 @@ namespace Echoes.Interop
             { "cold", SkillTags.Cold },
             { "lightning", SkillTags.Lightning },
             { "physical", SkillTags.Physical },
+            { "guard", SkillTags.Guard },
         };
 
         static readonly Dictionary<string, SkillShape> Shapes = new Dictionary<string, SkillShape>(StringComparer.Ordinal)

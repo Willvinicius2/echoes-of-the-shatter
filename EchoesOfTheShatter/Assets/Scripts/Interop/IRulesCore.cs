@@ -138,5 +138,35 @@ namespace Echoes.Interop
         bool TrySpendResource(ref Vitals vitals, double amount);
 
         PotionOutcome ResolvePotion(PotionInfo potion, IStatBlock stats, in Vitals vitals);
+
+        // --- Combate básico (docs/18, API C 1.5). Membros com implementação padrão: o stub não os precisa. ---
+
+        /// <summary>
+        /// Kit básico da classe (basic_kits.csv, <c>shatter_basic_kit_get</c>): combo, golpe forte e defesa. null se a classe não tem
+        /// kit (tabela opcional) ou no stub. A máquina de combate básica roda no C# e só lê estes números.
+        /// </summary>
+        BasicKitInfo FindBasicKit(string classId) => null;
+
+        /// <summary>
+        /// Como <see cref="TickVitals(ref Vitals, IStatBlock, ClassInfo, double, bool)"/>, com <paramref name="moving"/> (o herói está
+        /// andando): a regeneração do RECURSO é multiplicada por <see cref="ClassInfo.RegenMultWhileMoving"/> (Foco: 0,3). Vida não muda.
+        /// O stub ignora <paramref name="moving"/>.
+        /// </summary>
+        void TickVitals(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull, double dt, bool inCombat, bool moving)
+        {
+            TickVitals(ref vitals, stats, classOrNull, dt, inCombat);
+        }
+
+        /// <summary>Recurso por golpe que acerta (<see cref="ClassInfo.ResourceOnHit"/>), limitado ao máximo. Mesma regra do simulador idle.</summary>
+        void GainResourceOnHit(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull)
+        {
+            if (classOrNull != null) GainResource(ref vitals, stats, classOrNull.ResourceOnHit);
+        }
+
+        /// <summary>Recurso por bloqueio (<see cref="ClassInfo.ResourceOnBlock"/>), limitado ao máximo.</summary>
+        void GainResourceOnBlock(ref Vitals vitals, IStatBlock stats, ClassInfo classOrNull)
+        {
+            if (classOrNull != null) GainResource(ref vitals, stats, classOrNull.ResourceOnBlock);
+        }
     }
 }
