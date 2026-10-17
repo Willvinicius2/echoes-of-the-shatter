@@ -543,6 +543,110 @@
         }
       ],
       "origem": "decisão do dono"
+    },
+    {
+      "id": "save-slots",
+      "titulo": "Quantos slots de save",
+      "detalhe": "Quantas partidas separadas o jogador pode ter.",
+      "origem": "docs/16_etapa3_fluxo.md (Q3-1)",
+      "pergunta": "O protótipo deve ter 1 slot de save ou 3 slots?",
+      "contexto": [
+        "O docs/02 e o docs/15 falam em 1 slot; o docs/03 (§4.5, tela de saves) desenhou 3.",
+        "O save já tem backups automáticos e verificação de integridade no core; o número de slots muda só a tela de seleção e onde os arquivos ficam."
+      ],
+      "opcoes": [
+        {
+          "id": "a",
+          "nome": "1 slot",
+          "efeito": "Mais simples: o jogo abre direto na partida. Menos tela para fazer na Etapa 3."
+        },
+        {
+          "id": "b",
+          "nome": "3 slots",
+          "efeito": "Permite partidas separadas (por exemplo, testar classes). Precisa da tela de seleção de save."
+        }
+      ]
+    },
+    {
+      "id": "jogar-durante-expedicao",
+      "titulo": "Jogar enquanto a expedição roda",
+      "detalhe": "O que o herói faz enquanto está na expedição idle.",
+      "origem": "docs/16_etapa3_fluxo.md (Q3-2)",
+      "pergunta": "Enquanto o herói está em uma expedição idle, o jogador pode jogar com ele?",
+      "contexto": [
+        "A expedição idle simula o herói explorando a rota por horas e devolve loot e XP com o selo \"Estimativa\".",
+        "Já existe a fala da Ilsa: \"Seu herói ainda está na rota. Fale com o Tico depois.\"",
+        "Se o herói pudesse jogar ao mesmo tempo, ele ganharia em dobro (idle + manual)."
+      ],
+      "opcoes": [
+        {
+          "id": "a",
+          "nome": "Não: herói ocupado (proposta)",
+          "efeito": "Enquanto a expedição roda, a Cripta fica bloqueada para esse herói; o jogador volta depois para coletar."
+        },
+        {
+          "id": "b",
+          "nome": "Sim, com outro herói",
+          "efeito": "O jogador pode jogar com outro personagem (Arqueiro, Mago). Exige ter mais de um herói já no protótipo."
+        },
+        {
+          "id": "c",
+          "nome": "Sim, o mesmo herói",
+          "efeito": "A expedição vira só tempo fora do jogo; mais liberdade, mas risco de ganho em dobro."
+        }
+      ]
+    },
+    {
+      "id": "uso-do-ouro",
+      "titulo": "Para que serve o Ouro",
+      "detalhe": "O Ouro cai dos baús e inimigos, mas ainda não tem uso.",
+      "origem": "docs/16_etapa3_fluxo.md (Q3-3)",
+      "pergunta": "No protótipo, para que serve o Ouro?",
+      "contexto": [
+        "Baús e inimigos já dão Ouro, mas o protótipo não tem onde gastar.",
+        "Itens de raridade sobem de valor de venda; o core vai calcular o valor de venda por nível e raridade."
+      ],
+      "opcoes": [
+        {
+          "id": "a",
+          "nome": "Vendedor no Refúgio (proposta)",
+          "efeito": "Um vendedor compra os itens que você não quer e vende poções; o loop de loot fica completo."
+        },
+        {
+          "id": "b",
+          "nome": "Só melhorias",
+          "efeito": "O Ouro serve para melhorar o equipamento (reforjar afixos) no ferreiro; sem compra e venda."
+        },
+        {
+          "id": "c",
+          "nome": "Sem uso por enquanto",
+          "efeito": "O Ouro só acumula no protótipo; o uso entra na versão 1.0."
+        }
+      ]
+    },
+    {
+      "id": "segundo-conjunto",
+      "titulo": "Segundo visual de armadura",
+      "detalhe": "Hoje só existe o visual inicial de cada herói.",
+      "origem": "docs/16_etapa3_fluxo.md (Q3-4)",
+      "pergunta": "Fazemos já um segundo conjunto de armadura do Guerreiro (por exemplo, o de raridade Rara) para ver o equipamento mudando o visual no protótipo?",
+      "contexto": [
+        "Os heróis são modulares: cada peça troca com o item equipado.",
+        "Hoje só existe o conjunto inicial; itens Mágicos e Raros mudam só a tinta do tecido.",
+        "Um conjunto novo segue o mesmo caminho: folha do herói vestido no gpt-image, modelo 3D, acabamento e corte em 5 peças. Você aprova a arte antes."
+      ],
+      "opcoes": [
+        {
+          "id": "a",
+          "nome": "Sim, um conjunto novo do Guerreiro",
+          "efeito": "No protótipo dá para ver a armadura realmente mudando de forma ao equipar um item raro."
+        },
+        {
+          "id": "b",
+          "nome": "Não, só a tinta por enquanto",
+          "efeito": "Economiza tempo agora; conjuntos novos entram na Etapa 4."
+        }
+      ]
     }
   ],
   "decisoes": [
