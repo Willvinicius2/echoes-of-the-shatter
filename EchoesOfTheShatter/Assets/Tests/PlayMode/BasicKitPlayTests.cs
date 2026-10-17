@@ -12,40 +12,11 @@ namespace Echoes.Tests.PlayMode
 {
     /// <summary>
     /// Máquina de entrada do ataque básico (docs/18) ligada à cena da Cripta: o botão direito levanta a defesa e o esquerdo segurado carrega, e a apresentação
-    /// toca isso na camada Upper (tronco e braços) enquanto as pernas da camada Base seguem andando. Os valores do kit são FALSOS e só existem aqui (o core
-    /// ainda não expõe basic_kits.csv); a cena e o Animator são os reais.
+    /// toca isso na camada Upper (tronco e braços) enquanto as pernas da camada Base seguem andando. Kit, cena e Animator são os reais (basic_kits.csv do core).
     /// </summary>
     [Category("Animation")]
     public sealed class BasicKitPlayTests
     {
-        sealed class TestKit : IBasicKit
-        {
-            public TestKit(IRulesCore rules)
-            {
-                var cut = rules.FindSkill("skill.warrior.iron_cut");
-                LightChain = new[] { cut, cut, cut };
-                HeavySkill = cut;
-            }
-
-            public double ComboWindow => 0.4;
-            public double ComboWindowAfterDodge => 0.3;
-            public double AttackBuffer => 0.15;
-            public double HeavyHoldThreshold => 0.35;
-            public double LightWindupCreditMax => 0.7;
-            public double GuardLowerTime => 0.1;
-            public IReadOnlyList<SkillInfo> LightChain { get; }
-            public SkillInfo HeavySkill { get; }
-            public double HeavyChargeTime => 0.9;
-            public double HeavyMaxMult => 2.0;
-            public string ChargeEffect => string.Empty;
-            public string GuardEffect => string.Empty;
-            public double GuardArcDegrees => 120.0;
-            public double GuardMaxHold => 0.0;
-            public double GuardCooldown => 0.25;
-            public double GuardPerfectWindow => 0.2;
-            public double GuardPerfectCooldown => 0.8;
-        }
-
         /// <summary>Entrada roteirizada: andar para cima e segurar botões.</summary>
         sealed class Buttons : IScriptedInput
         {
@@ -72,14 +43,13 @@ namespace Echoes.Tests.PlayMode
         [UnityTest]
         public IEnumerator GuardAndChargeUseTheUpperLayerWhileTheLegsKeepWalking()
         {
-            BasicKitSource.TestFactory = (rules, classId) => new TestKit(rules);
             try
             {
                 yield return SceneManager.LoadSceneAsync(ScenePath, LoadSceneMode.Single);
                 yield return null;
                 yield return null;
                 var hero = Object.FindFirstObjectByType<HeroController>();
-                Assert.IsTrue(hero.Logic.HasKit, "a cena pegou o kit da fábrica de teste");
+                Assert.IsTrue(hero.Logic.HasKit, "o Guerreiro tem kit no core (basic_kits.csv)");
                 var animator = hero.GetComponentInChildren<Animator>();
                 var upper = animator.GetLayerIndex("Upper");
                 var action = animator.GetLayerIndex("Action");
@@ -122,14 +92,13 @@ namespace Echoes.Tests.PlayMode
                 for (var t = 0f; t < 0.8f; t += Time.deltaTime)
                 {
                     yield return null;
-                    sawBasic |= animator.GetCurrentAnimatorStateInfo(action).IsName("Basic");
+                    sawBasic |= animator.GetCurrentAnimatorStateInfo(action).IsName("HeavyRelease");
                 }
-                Assert.IsTrue(sawBasic, "o golpe forte soltou na camada Action");
+                Assert.IsTrue(sawBasic, "o golpe forte (Melee_2H_Attack_Slice a partir de holdAt) soltou na camada Action");
                 Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(upper).IsName("Empty"));
             }
             finally
             {
-                BasicKitSource.TestFactory = null;
                 var hero = Object.FindFirstObjectByType<HeroController>();
                 if (hero != null) hero.InputHandler.Script = null;
             }

@@ -114,7 +114,7 @@ namespace Echoes.EditorTools
         public static readonly Spec Archer = new Spec
         {
             Folder = "Archer", Dir = "Assets/Content/Heroes/Archer/Body", ModularHero = "Archer", Model = "SK_Archer_Body", Textures = "T_Archer_Body", Prefab = "P_Hero_Archer", Material = "M_Archer_Body",
-            Controller = "AC_Warrior", // previa visual: o kit de animacao do Guerreiro ate o design do Arqueiro existir
+            Controller = "AC_Archer", // docs/18, 5.2
             Weapons = new[] { new WeaponSpec { Name = "Bow", Sockets = LeftSockets } },
         };
 
@@ -122,7 +122,7 @@ namespace Echoes.EditorTools
         public static readonly Spec Mage = new Spec
         {
             Folder = "Mage", Dir = "Assets/Content/Heroes/Mage/Body", ModularHero = "Mage", Model = "SK_Mage_Body", Textures = "T_Mage_Body", Prefab = "P_Hero_Mage", Material = "M_Mage_Body",
-            Controller = "AC_Warrior",
+            Controller = "AC_Mage", // docs/18, 5.3
             Weapons = new[] { new WeaponSpec { Name = "Staff", Sockets = RightSockets } },
         };
 

@@ -41,6 +41,12 @@ namespace Echoes.Gameplay
             "",
         };
 
+        [Header("Arqueiro e Mago (-hero archer|mage; docs/18): barra (esquerdo, Q, E, R, F) e equipamento de teste")]
+        [SerializeField] string[] archerBar = { "skill.archer.quick_shot", "skill.archer.back_leap", "skill.archer.arrow_rain", "", "" };
+        [SerializeField] string[] archerEquipment = { "item_base.hunter_bow" };
+        [SerializeField] string[] mageBar = { "skill.mage.arcane_dart", "skill.mage.frost_nova", "skill.mage.arcane_ray", "", "" };
+        [SerializeField] string[] mageEquipment = { };
+
         [Header("Checkpoint (RF-18)")]
         [Tooltip("Onde o herói volta ao morrer. Vazio = posição inicial.")]
         [SerializeField] Transform checkpoint;
@@ -110,6 +116,15 @@ namespace Echoes.Gameplay
             }
 
             var rules = combat.Rules;
+            // A classe escolhida (-hero ou tela inicial) manda; Arqueiro e Mago nao tem save ainda e jogam com a barra e o equipamento de teste daqui.
+            var choice = Echoes.Core.HeroChoice.Id;
+            var otherClass = choice == "archer" || choice == "mage";
+            if (otherClass)
+            {
+                classId = Echoes.Core.HeroChoice.ClassId;
+                skillBar = choice == "archer" ? archerBar : mageBar;
+                equipment = choice == "archer" ? archerEquipment : mageEquipment;
+            }
             var classInfo = rules.FindClass(classId);
             if (classInfo == null)
             {
@@ -123,7 +138,7 @@ namespace Echoes.Gameplay
             // Com save (jogo normal): equipamento e atributos vem do SAVE pelo core (itens com afixos). Sem save (cena aberta direto): as bases do inspetor.
             Echoes.Interop.Native.SaveGame saveSource = null;
             var native = rules as Echoes.Interop.Native.NativeRulesCore;
-            if (native != null && Echoes.Core.GameSession.Save != null && Echoes.Core.GameSession.Save.HasSave)
+            if (!otherClass && native != null && Echoes.Core.GameSession.Save != null && Echoes.Core.GameSession.Save.HasSave)
             {
                 saveSource = Echoes.Core.GameSession.Save.Current;
                 foreach (var item in saveSource.Equipment(0))

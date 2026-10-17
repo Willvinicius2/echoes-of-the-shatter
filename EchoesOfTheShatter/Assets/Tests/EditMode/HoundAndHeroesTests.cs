@@ -139,7 +139,7 @@ namespace Echoes.Tests.EditMode
                     Assert.IsNotNull(model, prefab + ": " + weapon);
                     Assert.IsTrue(model.IsChildOf(animator.GetBoneTransform(hand)), prefab + ": " + weapon + " na mao certa");
                     Assert.IsNotNull(go.GetComponent<ModularCharacter>(), prefab + ": modular");
-                    Assert.AreEqual("AC_Warrior", prefab == "P_Hero_Archer" ? CharacterPrefabBuilder.Archer.Controller : CharacterPrefabBuilder.Mage.Controller, prefab + ": kit de teste do Guerreiro (previa visual)");
+                    Assert.AreEqual(prefab == "P_Hero_Archer" ? "AC_Archer" : "AC_Mage", prefab == "P_Hero_Archer" ? CharacterPrefabBuilder.Archer.Controller : CharacterPrefabBuilder.Mage.Controller, prefab + ": controller da classe (docs/18, secao 5)");
                 }
                 finally
                 {

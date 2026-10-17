@@ -5,7 +5,7 @@ namespace Echoes.Presentation
 {
     /// <summary>
     /// Previa visual dos herois: troca o corpo (filho "Body") pelo prefab do heroi escolhido (HeroChoice: -hero ou tela inicial) antes de o
-    /// PresentationController achar o Animator. Guerreiro = o que a cena ja tem. Arqueiro e Mago usam o kit de teste do Guerreiro.
+    /// PresentationController achar o Animator. Guerreiro = o que a cena ja tem. Arqueiro e Mago trazem o proprio controller (AC_Archer, AC_Mage) e conjunto.
     /// </summary>
     [DefaultExecutionOrder(-2000)]
     [DisallowMultipleComponent]
@@ -14,11 +14,16 @@ namespace Echoes.Presentation
         [SerializeField] GameObject warrior;
         [SerializeField] GameObject archer;
         [SerializeField] GameObject mage;
+        [Tooltip("Conjuntos de apresentação do Arqueiro e do Mago (AC_Archer e AC_Mage): o PresentationController da raiz passa a usá-los.")]
+        [SerializeField] SkillPresentationSet archerSkillSet;
+        [SerializeField] SkillPresentationSet mageSkillSet;
 
         void Awake()
         {
             var prefab = Pick(HeroChoice.Id);
             if (prefab == null) return;
+            var set = HeroChoice.Id == "archer" ? archerSkillSet : mageSkillSet;
+            if (set != null && TryGetComponent<PresentationController>(out var presentation)) presentation.UseSkillSet(set);
             var body = transform.Find("Body");
             if (body != null && body.name == prefab.name) return;
             if (body != null) DestroyImmediate(body.gameObject);

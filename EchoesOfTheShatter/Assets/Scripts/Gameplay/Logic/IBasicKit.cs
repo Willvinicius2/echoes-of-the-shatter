@@ -61,5 +61,14 @@ namespace Echoes.Gameplay
 
         /// <summary>Tempo mínimo desde o último aperto para a janela perfeita abrir de novo.</summary>
         double GuardPerfectCooldown { get; }
+
+        /// <summary>Efeitos aplicados no atacante corpo a corpo pela defesa perfeita.</summary>
+        IReadOnlyList<string> GuardPerfectEffects { get; }
+
+        /// <summary>Recurso ganho pela defesa perfeita (no lugar do recurso por bloqueio).</summary>
+        double GuardPerfectResource { get; }
+
+        /// <summary>Recurso gasto por ponto de dano evitado (0 = não gasta).</summary>
+        double GuardDrainPerDamage { get; }
     }
 }

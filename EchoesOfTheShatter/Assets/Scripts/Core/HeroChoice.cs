@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Echoes.Core
 {
     /// <summary>
-    /// Heroi mostrado no jogo (previa visual): warrior, archer ou mage. So o Guerreiro tem kit de habilidades; Arqueiro e Mago usam o mesmo kit de teste
-    /// (controller e habilidades do Guerreiro) ate o design deles existir. Escolhido pelo argumento -hero ou pelo botao da tela inicial.
+    /// Heroi escolhido: warrior, archer ou mage (classes class.warrior, class.archer e class.mage, docs/18). Cada um joga com o proprio kit, controller e
+    /// habilidades. Escolhido pelo argumento -hero ou pelo botao da tela inicial (ate a selecao de classe de verdade entrar).
     /// </summary>
     public static class HeroChoice
     {
@@ -28,6 +28,9 @@ namespace Echoes.Core
                 PlayerPrefs.SetString(PrefsKey, current);
             }
         }
+
+        /// <summary>ID de conteudo da classe do heroi escolhido (class.warrior, class.archer, class.mage).</summary>
+        public static string ClassId => "class." + Id;
 
         public static void Cycle() => Id = Ids[(Array.IndexOf(Ids, Id) + 1) % Ids.Length];
 

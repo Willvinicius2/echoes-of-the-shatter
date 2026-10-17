@@ -87,9 +87,11 @@ namespace Echoes.Gameplay
         public PlanarVector AimPoint { get; set; }
 
         /// <summary>Velocidade de caminhada em m/s (base da classe × atributo MoveSpeed).</summary>
-        public float WalkSpeed => self.Class != null
-            ? WorldUnits.ToMeters(rules.GetMoveSpeedUu(self.Stats, self.Class.MoveSpeedUu))
-            : 0f;
+        public float WalkSpeed => TestSettings.HeroSpeedOverrideMetersPerSecond > 0f
+            ? TestSettings.HeroSpeedOverrideMetersPerSecond
+            : self.Class != null
+                ? WorldUnits.ToMeters(rules.GetMoveSpeedUu(self.Stats, self.Class.MoveSpeedUu))
+                : 0f;
 
         public void Press(HeroCommand command)
         {

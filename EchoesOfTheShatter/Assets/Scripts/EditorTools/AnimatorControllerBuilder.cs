@@ -474,6 +474,9 @@ namespace Echoes.EditorTools
         // Velocidade de movimento em m/s: class_stats.csv (heroi, em uu/s) ou enemies.csv (inimigo, em uu/s); 1 uu = 1 cm.
         static float MoveSpeedMeters(ControllerSpec spec)
         {
+            // So para o video da corrida: o mesmo override de RecordMode (ECHOES_DEV_HERO_SPEED, m/s) vale no limiar da corrida da arvore do heroi.
+            var dev = Environment.GetEnvironmentVariable("ECHOES_DEV_HERO_SPEED");
+            if (spec.Hero && !string.IsNullOrEmpty(dev) && float.TryParse(dev, NumberStyles.Float, CultureInfo.InvariantCulture, out var devSpeed) && devSpeed > 0f) return devSpeed;
             var dir = Path.GetFullPath(Path.Combine(Application.dataPath, "../Content/Data"));
             string file = spec.Hero ? "class_stats.csv" : "enemies.csv";
             var lines = File.ReadAllLines(Path.Combine(dir, file));

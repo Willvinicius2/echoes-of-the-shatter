@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Echoes.Interop;
 
 namespace Echoes.Gameplay
@@ -17,7 +18,7 @@ namespace Echoes.Gameplay
     /// soltura automática no máximo, defesa segurada no botão direito e os cancelamentos. Tudo em ticks inteiros de 1/60 s; os valores vêm de
     /// <see cref="IBasicKit"/> (core). Sem kit (<see cref="HasKit"/> falso) nada daqui roda e vale a entrada antiga.
     /// </summary>
-    public sealed partial class HeroCombatLogic
+    public sealed partial class HeroCombatLogic : IHeroGuardian
     {
         /// <summary>Botão direito do mouse = defesa (índice 1 da barra: o mesmo <see cref="HeroCommand"/> do espaço 1).</summary>
         public const HeroCommand GuardButton = HeroCommand.Skill1;
@@ -100,6 +101,11 @@ namespace Echoes.Gameplay
         public bool IsComboWindowOpen => comboIndex > 0;
 
         public SkillInfo HeavySkill => heavySlot != null ? heavySlot.Skill : null;
+
+        public bool IsMoving => CurrentVelocity().SqrMagnitude > 1e-6f;
+        public double GuardPerfectResource => kit != null ? kit.GuardPerfectResource : 0.0;
+        public IReadOnlyList<string> GuardPerfectEffects => kit != null ? kit.GuardPerfectEffects : System.Array.Empty<string>();
+        public double GuardDrainPerDamage => kit != null ? kit.GuardDrainPerDamage : 0.0;
 
         /// <summary>
         /// O golpe vindo de <paramref name="attackerPosition"/> bate dentro do arco da defesa? (docs/18, 8.1: o C# tem a geometria e diz ao core
@@ -436,6 +442,12 @@ namespace Echoes.Gameplay
             if (guardWanted && !guarding) TryEnterGuard(combat);
             if (!guarding) return;
             ApplyKitEffect(combat, kit.GuardEffect);
+            // Defesa que gasta recurso (Mago): sem Mana a barreira estilhaça e cai.
+            if (kit.GuardDrainPerDamage > 0.0 && self.Resource <= Eps)
+            {
+                ExitGuard(combat, true);
+                return;
+            }
             if (kit.GuardMaxHold > 0.0 && tick - guardEnterTick >= Ticks(kit.GuardMaxHold)) ExitGuard(combat, true);
         }
 

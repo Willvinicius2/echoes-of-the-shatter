@@ -17,6 +17,9 @@ namespace Echoes.UI
     /// </summary>
     public sealed class RecordMode : MonoBehaviour, IScriptedInput
     {
+        /// <summary>m/s do herói só para o vídeo da corrida; o AnimatorControllerBuilder lê a mesma variável para o limiar da corrida da árvore.</summary>
+        public const string DevSpeedVariable = "ECHOES_DEV_HERO_SPEED";
+
         const int Fps = 30;
         const int MaxFrames = 420;
 
@@ -71,6 +74,10 @@ namespace Echoes.UI
                 yield break;
             }
             TestSettings.HeroGodMode = true;
+            // Comparacao do pe na corrida: velocidade do heroi em m/s so para o video (variavel de ambiente de desenvolvimento; nao toca o CSV).
+            var speedEnv = System.Environment.GetEnvironmentVariable(DevSpeedVariable);
+            if (!string.IsNullOrEmpty(speedEnv) && float.TryParse(speedEnv, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var devSpeed) && devSpeed > 0f)
+                TestSettings.HeroSpeedOverrideMetersPerSecond = devSpeed;
             input.Script = this;
             if (closeup != null) yield return RunCloseup(hero);
             else yield return RunRecord(hero);

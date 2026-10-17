@@ -34,6 +34,9 @@ namespace Echoes.Tests.EditMode
             public double GuardCooldown { get; set; } = 0.25;
             public double GuardPerfectWindow { get; set; } = 0.2;
             public double GuardPerfectCooldown { get; set; } = 0.8;
+            public IReadOnlyList<string> GuardPerfectEffects { get; set; } = new[] { "effect.stun" };
+            public double GuardPerfectResource { get; set; } = 25.0;
+            public double GuardDrainPerDamage { get; set; }
         }
 
         sealed class Rig : IDisposable
@@ -645,6 +648,87 @@ namespace Echoes.Tests.EditMode
                 }
             }
             Assert.AreEqual(Run(), Run());
+        }
+
+        // ---------------------------------------------------------------------------------------------------------- defesa no dano recebido
+
+        [Test]
+        public void PerfectGuardTakesNoDamageStunsTheMeleeAttackerAndGivesTheResource()
+        {
+            using (var rig = new Rig())
+            {
+                var enemy = rig.World.AddEnemy("enemy.hollow_sentinel", new PlanarVector(0f, 1.5f));
+                rig.Logic.AimPoint = new PlanarVector(0f, 5f);
+                rig.Logic.ButtonDown(HeroCommand.Skill1);
+                rig.Ticks(2);
+                Assert.IsTrue(rig.Logic.GuardPerfectOpen);
+                var life = rig.Hero.Life;
+                rig.World.Combat.TrySpendResource(rig.Hero, 60.0); // abre espaço para o ganho (o Ímpeto estava no máximo)
+                var resource = rig.Hero.Resource;
+                var strike = rig.World.Rules.FindSkill("skill.enemy.sentinel_strike");
+                var blocks = new List<GuardBlockEvent>();
+                rig.World.Events.Subscribe<GuardBlockEvent>((in GuardBlockEvent e) => blocks.Add(e));
+                Assert.IsFalse(rig.World.Combat.ApplySkillHit(enemy.combatant, rig.Hero, strike, enemy.combatant.Position));
+                Assert.AreEqual(life, rig.Hero.Life, 1e-9, "defesa perfeita: 0 de dano");
+                Assert.Greater(rig.Hero.Resource, resource + 20.0, "o recurso da perfeita");
+                Assert.IsFalse(rig.World.Rules.CanAct(enemy.combatant.Stats), "o atacante corpo a corpo fica atordoado");
+                Assert.AreEqual(1, blocks.Count);
+                Assert.IsTrue(blocks[0].Perfect);
+            }
+        }
+
+        [Test]
+        public void HitFromBehindTheGuardIsNotAbsorbed()
+        {
+            using (var rig = new Rig())
+            {
+                var enemy = rig.World.AddEnemy("enemy.hollow_sentinel", new PlanarVector(0f, -1.5f));
+                rig.Logic.AimPoint = new PlanarVector(0f, 5f);
+                rig.Logic.ButtonDown(HeroCommand.Skill1);
+                rig.Ticks(2);
+                var life = rig.Hero.Life;
+                var strike = rig.World.Rules.FindSkill("skill.enemy.sentinel_strike");
+                rig.World.Combat.ApplySkillHit(enemy.combatant, rig.Hero, strike, enemy.combatant.Position);
+                Assert.Less(rig.Hero.Life, life, "pelas costas a defesa (e a janela perfeita) não valem");
+            }
+        }
+
+        // ---------------------------------------------------------------------------------------------------------- kit real do core (DLL)
+
+        [Test]
+        public void CoreKitDrivesTheRealComboAndTheGuardArcReducesOnlyFrontalDamage()
+        {
+            var rules = TestWorld.LoadNativeRules();
+            using (var world = new TestWorld(null, rules))
+            {
+                var kit = CoreBasicKit.Create(rules, TestWorld.WarriorClass);
+                Assert.IsNotNull(kit, "o Guerreiro tem linha em basic_kits.csv");
+                Assert.AreEqual(3, kit.LightChain.Count);
+                Assert.AreEqual("skill.warrior.combo_3", kit.LightChain[2].Id);
+                Assert.AreEqual("skill.warrior.heavy_slash", kit.HeavySkill.Id);
+
+                double Taken(PlanarVector attackerAt)
+                {
+                    using (var w = new TestWorld(null, TestWorld.LoadNativeRules()))
+                    {
+                        var k = CoreBasicKit.Create(w.Rules, TestWorld.WarriorClass);
+                        var hero = w.AddHero(PlanarVector.Zero, 5, null, k);
+                        var foe = w.AddEnemy("enemy.hollow_sentinel", attackerAt);
+                        hero.logic.AimPoint = new PlanarVector(0f, 5f);
+                        hero.logic.ButtonDown(HeroCommand.Skill1);
+                        for (var i = 0; i < 30; i++) w.Combat.Step(w.Step); // passa da janela perfeita (0,2 s)
+                        Assert.IsTrue(hero.logic.IsGuarding);
+                        Assert.IsFalse(hero.logic.GuardPerfectOpen);
+                        var life = hero.combatant.Life;
+                        w.Combat.ApplySkillHit(foe.combatant, hero.combatant, w.Rules.FindSkill("skill.enemy.sentinel_strike"), foe.combatant.Position);
+                        return life - hero.combatant.Life;
+                    }
+                }
+                var front = Taken(new PlanarVector(0f, 1.5f));
+                var behind = Taken(new PlanarVector(0f, -1.5f));
+                Assert.Greater(behind, 0.0);
+                Assert.Less(front, behind * 0.5, "de frente a defesa corta o dano (-65%); pelas costas não (HitRequest.FromGuardArc)");
+            }
         }
 
         [Test]

@@ -210,6 +210,12 @@ namespace Echoes.Presentation
 
         bool HasAnimator => animator != null && animator.runtimeAnimatorController != null;
 
+        /// <summary>Troca o conjunto de apresentação antes do Start (a classe escolhida: o HeroVisualSwap chama no Awake).</summary>
+        public void UseSkillSet(SkillPresentationSet set)
+        {
+            if (set != null) skillSet = set;
+        }
+
         // Defendendo ou carregando o corpo encara a mira e as pernas andam para qualquer lado: o blend 2D de AimLocomotion recebe a velocidade
         // no referencial do corpo (MoveX = direita, MoveY = frente, em m/s).
         void UpdateAiming(HeroCombatLogic logic, bool isFrozen, float dt)
