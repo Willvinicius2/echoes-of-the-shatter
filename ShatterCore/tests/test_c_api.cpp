@@ -1545,3 +1545,70 @@ TEST(c_api_r2_boss_wall_hit_staggers_and_swift_timing_ignores_missing_mods) {
     EXPECT_NEAR(t2.impact, t.impact, 1e-12);
     EXPECT_NEAR(t2.recovery, t.recovery, 1e-12);
 }
+
+// =============================================================================================
+// API 1.3: fuga do inimigo decidida pelo core (shatter_actor_flee_step / _reset)
+// =============================================================================================
+TEST(c_api_13_enemy_flee_is_decided_by_the_core_from_enemy_ai_csv) {
+    DbHandle db(tu::ContentDir());
+    const std::string id = "enemy.ash_hound";
+    const json::Value look = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_db_lookup_json(db.db, id.data(), id.size(), o, c, n);
+    }));
+    const json::Value& ai = look["ai"];
+    const double frac = ai["flee_life_fraction"].AsDouble(), secs = ai["flee_seconds"].AsDouble();
+    const bool once = ai["flee_once_per_life"].AsBool();
+    ASSERT_TRUE(frac > 0.0 && secs > 0.0);
+
+    shatter_actor* a = nullptr;
+    ASSERT_EQ(shatter_actor_create(db.db, id.data(), id.size(), 0, &a), SHATTER_OK);
+    shatter_flee_result r{};
+    const double maxLife = 1000.0;
+    ASSERT_EQ(shatter_actor_flee_step(a, 0.1, maxLife, maxLife, 1, 0, &r), SHATTER_OK);
+    EXPECT_TRUE(r.can_flee == 1 && r.fleeing == 0 && r.started == 0);
+    ASSERT_EQ(shatter_actor_flee_step(a, 0.1, frac * maxLife, maxLife, 1, 0, &r), SHATTER_OK);   // no limite: não foge
+    EXPECT_EQ(r.fleeing, 0);
+    ASSERT_EQ(shatter_actor_flee_step(a, 0.1, frac * maxLife - 1.0, maxLife, 1, 0, &r), SHATTER_OK);
+    EXPECT_TRUE(r.fleeing == 1 && r.started == 1 && r.ended == 0);
+    EXPECT_NEAR(r.remaining, secs, 1e-9);
+    ASSERT_EQ(shatter_actor_flee_step(a, secs / 2.0, frac * maxLife - 1.0, maxLife, 1, 0, &r), SHATTER_OK);
+    EXPECT_TRUE(r.fleeing == 1 && r.started == 0);
+    EXPECT_NEAR(r.remaining, secs / 2.0, 1e-9);
+    ASSERT_EQ(shatter_actor_flee_step(a, secs, frac * maxLife - 1.0, maxLife, 1, 0, &r), SHATTER_OK);
+    EXPECT_TRUE(r.fleeing == 0 && r.ended == 1);
+    ASSERT_EQ(shatter_actor_flee_step(a, 0.1, 1.0, maxLife, 1, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.started, once ? 0 : 1);                                  // uma vez por vida (CSV)
+    ASSERT_EQ(shatter_actor_flee_reset(a), SHATTER_OK);
+    ASSERT_EQ(shatter_actor_flee_step(a, 0.1, 1.0, maxLife, 1, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.started, 1);                                             // revive libera
+    ASSERT_EQ(shatter_actor_flee_step(a, 0.1, 1.0, maxLife, 0, 0, &r), SHATTER_OK);   // alvo sumiu
+    EXPECT_TRUE(r.ended == 1 && r.fleeing == 0);
+    shatter_actor_destroy(a);
+
+    // Inimigo sem fuga no CSV e ator do herói: nunca foge, can_flee = 0.
+    for (const std::string eid : {std::string("enemy.ghost_archer"), std::string()}) {
+        shatter_actor* b = nullptr;
+        ASSERT_EQ(shatter_actor_create(db.db, eid.data(), eid.size(), 0, &b), SHATTER_OK);
+        ASSERT_EQ(shatter_actor_flee_step(b, 0.1, 1.0, 1000.0, 1, 0, &r), SHATTER_OK);
+        EXPECT_TRUE(r.can_flee == 0 && r.fleeing == 0);
+        shatter_actor_destroy(b);
+    }
+
+    // Erros de argumento e layout.
+    EXPECT_EQ(shatter_actor_flee_step(nullptr, 0.1, 1.0, 1.0, 1, 0, &r), SHATTER_INVALID_ARGUMENT);
+    shatter_actor* c = nullptr;
+    ASSERT_EQ(shatter_actor_create(db.db, id.data(), id.size(), 0, &c), SHATTER_OK);
+    EXPECT_EQ(shatter_actor_flee_step(c, -1.0, 1.0, 1.0, 1, 0, &r), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_actor_flee_step(c, 0.1, 1.0, 1.0, 1, 0, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_actor_flee_reset(nullptr), SHATTER_INVALID_ARGUMENT);
+    shatter_actor_destroy(c);
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_layout_info_ext3(nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(needed, static_cast<std::size_t>(SHATTER_LAYOUT_EXT3_COUNT));
+    std::vector<std::uint32_t> layout(needed);
+    ASSERT_EQ(shatter_layout_info_ext3(layout.data(), layout.size(), &needed), SHATTER_OK);
+    shatter_error err{};
+    EXPECT_EQ(shatter_layout_check_ext3(layout.data(), layout.size(), &err), SHATTER_OK);
+    layout[2] += 1;
+    EXPECT_EQ(shatter_layout_check_ext3(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
+}

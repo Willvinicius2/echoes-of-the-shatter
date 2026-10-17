@@ -543,7 +543,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 2u   /* 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 3u   /* 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -602,6 +602,14 @@ typedef struct shatter_actor_apply {   /* resultado de aplicar um efeito (stun /
     uint8_t remove_barrier;     /* zere a barreira/escudo do alvo */
     uint8_t reserved[2];
 } shatter_actor_apply;
+typedef struct shatter_flee_result {   /* um passo da fuga do inimigo (shatter_actor_flee_step) */
+    double remaining;          /* segundos de fuga que faltam */
+    uint8_t fleeing;           /* 1 = foge neste passo (se afasta do alvo) */
+    uint8_t started;           /* 1 = começou neste passo (cancele telegraph e golpe em curso) */
+    uint8_t ended;             /* 1 = acabou neste passo */
+    uint8_t can_flee;          /* 1 = o inimigo tem fleeLifeFraction > 0 no enemy_ai.csv */
+    uint8_t reserved[4];
+} shatter_flee_result;
 typedef struct shatter_actor_info {
     double stun_remaining, stagger_remaining, immunity_remaining;
     uint8_t can_act, stun_immune, reserved[6];
@@ -804,6 +812,23 @@ SHATTER_API shatter_status SHATTER_CALL shatter_actor_tick(shatter_actor* actor,
                                                            uint8_t* stagger_ended) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_actor_info_get(const shatter_actor* actor,
                                                                shatter_actor_info* out) SHATTER_NOEXCEPT;
+
+/* --- Fuga do inimigo (API 1.3; enemy_ai.csv: fleeLifeFraction, fleeSeconds, fleeOncePerLife) ---
+ * A decisão é do core: o cliente NÃO compara vida com fração nem conta tempo de fuga. Chame uma vez por tick de IA do
+ * inimigo (ator criado com o enemy_id dele; sem linha em enemy_ai.csv ou fração 0 = nunca foge, can_flee = 0).
+ * Vida < fração x vida máx., com alvo, inicia (started = 1) e dura fleeSeconds; acaba por tempo ou sem alvo (ended = 1).
+ * fleeOncePerLife: só uma fuga por vida até shatter_actor_flee_reset. Morto (dead != 0) não foge. Iniciar e acabar nunca
+ * ocorrem no mesmo passo. dt >= 0 finito; life/max_life finitos. Estado é só do ator (sem rng). */
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_flee_step(shatter_actor* actor, double dt, double life,
+                                                                double max_life, uint8_t has_target, uint8_t dead,
+                                                                shatter_flee_result* out) SHATTER_NOEXCEPT;
+/* Revive: zera a fuga em curso e libera o "uma vez por vida". */
+SHATTER_API shatter_status SHATTER_CALL shatter_actor_flee_reset(shatter_actor* actor) SHATTER_NOEXCEPT;
+/* Layout de shatter_flee_result: [tamanho, offsets de remaining, fleeing, started, ended, can_flee]. */
+#define SHATTER_LAYOUT_EXT3_COUNT 6u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext3(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext3(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
 
 /* --- Elite (docs/13, item 5) --- */
 /* Sorteia o modificador (consome SEMPRE 1 número do rng de eventos) e devolve os multiplicadores de um elite sorteado. */

@@ -199,6 +199,40 @@ private:
 };
 
 // ---------------------------------------------------------------------------
+// Fuga do inimigo (enemy_ai.csv: fleeLifeFraction, fleeSeconds, fleeOncePerLife). Decisão do core; o cliente só move.
+// ---------------------------------------------------------------------------
+struct FleeProfile {
+    double lifeFraction = 0.0;   // <= 0: o inimigo nunca foge
+    double seconds = 0.0;
+    bool oncePerLife = false;
+};
+struct FleeStep {
+    bool fleeing = false;        // foge neste passo (o cliente se afasta do alvo e toca a animação)
+    bool started = false;        // a fuga começou neste passo (o cliente cancela o telegraph/golpe em curso)
+    bool ended = false;          // a fuga acabou neste passo (tempo, ou o alvo sumiu)
+    double remaining = 0.0;      // segundos de fuga que faltam
+};
+class FleeState {
+public:
+    FleeState() = default;
+    explicit FleeState(const FleeProfile& p) : profile_(p) {}
+    // Um passo de `dt` s: avança a fuga em curso ou decide iniciar uma (vida < fração x vida máx., com alvo, e fora do
+    // "uma vez por vida" já gasto). Fim: tempo esgotado ou sem alvo. Morto: não foge. Iniciar e acabar nunca no mesmo passo.
+    FleeStep Step(double dt, double life, double maxLife, bool hasTarget, bool dead);
+    // Revive / novo ciclo de vida: zera a fuga e libera o "uma vez por vida".
+    void Reset() { fleeing_ = false; hasFled_ = false; remaining_ = 0.0; }
+    bool Fleeing() const { return fleeing_; }
+    bool HasFled() const { return hasFled_; }
+    const FleeProfile& Profile() const { return profile_; }
+
+private:
+    FleeProfile profile_;
+    bool fleeing_ = false;
+    bool hasFled_ = false;
+    double remaining_ = 0.0;
+};
+
+// ---------------------------------------------------------------------------
 // Elite (item 5)
 // ---------------------------------------------------------------------------
 struct EliteProfile {
