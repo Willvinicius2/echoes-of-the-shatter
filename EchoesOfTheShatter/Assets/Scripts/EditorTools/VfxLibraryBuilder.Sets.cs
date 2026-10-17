@@ -110,8 +110,9 @@ namespace Echoes.EditorTools
                 new SkillVfxEntry
                 {
                     skillId = "skill.archer.arrow_rain",
-                    // O golpe acerta no inicio do impacto (logica): marcacao e chuva tocam na preparacao e as flechas pousam ate 0,1 s antes do golpe.
-                    windupFx = new[] { Spec(pRainMarker, VfxPlace.AimGround, string.Empty, 1.0f, false, false, 0f, 1f, 3f), Spec(pRain, VfxPlace.AimGround, string.Empty, 1.2f, false, false, 0f, 1f, 3f) },
+                    // A logica acerta ao fim do impacto: a marcacao fica na preparacao e as flechas caem no impacto, pousando no instante do golpe (ate 0,1 s antes).
+                    windupFx = new[] { Spec(pRainMarker, VfxPlace.AimGround, string.Empty, 1.1f, false, false, 0f, 1f, 3f) },
+                    releaseFx = new[] { Spec(pRain, VfxPlace.AimGround, string.Empty, 1.4f, false, false, 0f, 1f, 3f) },
                     hitFx = new[] { OnTarget(pArrowHit, 1.0f) },
                 },
                 new SkillVfxEntry { skillId = "class.archer#guard", hitFx = new[] { OnAnchor(pGuardArcher, "bow_nock", 0.4f) } },

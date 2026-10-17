@@ -40,6 +40,7 @@ namespace Echoes.Presentation
             public Quaternion Facing;
             public Vector3 Point;
             public bool HasPoint;
+            public float RadiusOverrideMeters; // raio da explosao vindo do evento do projetil (0 = usa o da habilidade)
         }
 
         /// <summary>Opção "Reduzir efeitos do jogador" (docs/03 seção 3.8): 0 desliga os efeitos do herói; o valor entre 0 e 1 fica para o menu de opções.</summary>
@@ -282,7 +283,7 @@ namespace Echoes.Presentation
             if (!projectiles.TryGetValue(evt.ProjectileId, out var info)) return;
             endedProjectiles.Add(evt.ProjectileId);
             if (Muted(info.Owner)) return;
-            var hit = false;
+            var hit = evt.ExplosionRadiusMeters > 0f;
             for (var i = 0; i < hitMarks.Count; i++)
             {
                 if (info.Owner != null && hitMarks[i].OwnerId == info.Owner.Id && string.Equals(hitMarks[i].SkillId, info.Skill.Id, StringComparison.Ordinal))
@@ -300,6 +301,7 @@ namespace Echoes.Presentation
             {
                 Owner = info.Owner, OwnerTransform = ownerT, Skill = info.Skill, Facing = dir,
                 Point = new Vector3(evt.Position.X, groundY, evt.Position.Z), HasPoint = true,
+                RadiusOverrideMeters = evt.ExplosionRadiusMeters,
             };
             PlayAll(specs, in ctx, null);
         }
@@ -364,7 +366,7 @@ namespace Echoes.Presentation
             }
             position.y += spec.yOffset;
 
-            var scale = VfxMath.RadiusScale(ctx.Skill != null ? WorldUnits.ToMeters(ctx.Skill.RadiusUu) : 0f, spec.authoredRadiusMeters, spec.scale);
+            var scale = VfxMath.RadiusScale(ctx.RadiusOverrideMeters > 0f ? ctx.RadiusOverrideMeters : ctx.Skill != null ? WorldUnits.ToMeters(ctx.Skill.RadiusUu) : 0f, spec.authoredRadiusMeters, spec.scale);
             var instance = vfxPool.Play(spec.prefab, position, rotation, spec.seconds, scale, follow, Vector3.zero);
             if (instance != null && spec.lengthFromRange && ctx.Skill != null)
             {

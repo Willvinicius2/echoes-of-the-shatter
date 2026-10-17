@@ -51,7 +51,6 @@ namespace Echoes.Presentation
             public string Id;
             public SkillInfo Info;
             public float CorridorMeters;
-            public float ExplodeMeters;
             public bool Line;
             public float ShotRangeMeters;
         }
@@ -199,13 +198,10 @@ namespace Echoes.Presentation
                 {
                     Id = MiniJson.Str(o, "id"),
                     CorridorMeters = (float)MiniJson.Num(o, "corridorUu", 20) * 0.01f,
-                    ExplodeMeters = (float)MiniJson.Num(o, "explodeUu", 0) * 0.01f,
                     Line = MiniJson.Bool(o, "line"),
                     ShotRangeMeters = (float)MiniJson.Num(o, "shotRangeUu", 0) * 0.01f,
                 };
                 def.Info = rules.FindSkill(def.Id) ?? MakeSkill(o);
-                // O core ja diz o comportamento (SkillBehavior): explosao so no visual, com o RadiusUu; o projetil continua explodindo no alvo (corredor fino).
-                if (def.Info.Behavior.Explodes) def.ExplodeMeters = WorldUnits.ToMeters(def.Info.RadiusUu);
                 sims[def.Id] = def;
             }
             foreach (var item in MiniJson.AsArray(doc["shots"]))
@@ -288,19 +284,8 @@ namespace Echoes.Presentation
         void OnProjectile(in ProjectileEvent evt)
         {
             if (evt.Spawned || stage == null) return;
-            // Explosão em área (docs/18 8.3a: o core ainda não tem): a vitrine aplica o golpe nos alvos dentro do raio, no ponto onde o projétil acabou.
-            if (activeDef == null || activeDef.ExplodeMeters <= 0f) return;
-            var center = evt.Position;
-            foreach (var target in stage.Targets)
-            {
-                if (target.IsDead || !ShapeQuery.InCircle(center, activeDef.ExplodeMeters, target.Position, target.RadiusMeters)) continue;
-                var already = false;
-                for (var i = 0; i < stepHits.Count; i++)
-                {
-                    if (ReferenceEquals(stepHits[i].Target, target)) { already = true; break; }
-                }
-                if (!already) combat.ApplySkillHit(stage.Caster, target, activeDef.Info, center);
-            }
+            // A explosao em area e a perfuracao sao da logica (ProjectileSystem); aqui so se marca o quadro para a prancha.
+            if (evt.ExplosionRadiusMeters <= 0f) return;
             Mark("explosao");
         }
 
@@ -673,7 +658,12 @@ namespace Echoes.Presentation
                                 combat.ApplySkillHit(caster, target, skill, caster.Position);
                         }
                     }
-                    else if (skill.Behavior.GroundTargeted) HitCircle(def, AimCenter(def), WorldUnits.ToMeters(skill.RadiusUu));
+                    else if (skill.Behavior.GroundTargeted)
+                    {
+                        // Como a logica: o circulo fica onde o cursor estava e o golpe sai ao fim do impacto.
+                        var center = AimCenter(def);
+                        At(TimeNow() + (float)skill.Impact, () => HitCircle(def, center, WorldUnits.ToMeters(skill.RadiusUu)));
+                    }
                     else if (skill.RangeUu <= 0.0 || skill.Behavior.SelfCentered) HitCircle(def, caster.Position, WorldUnits.ToMeters(skill.RadiusUu));
                     break;
             }
@@ -701,7 +691,7 @@ namespace Echoes.Presentation
                 // Leque: ConeAngle graus divididos entre as flechas (docs/18 8.3b: o core ainda não define; a vitrine abre o leque).
                 var angle = count > 1 && (skill.Behavior.Fan || spread > 0f) ? Mathf.Lerp(-spread * 0.5f, spread * 0.5f, i / (float)(count - 1)) : 0f;
                 var rotated = Quaternion.Euler(0f, angle, 0f) * new Vector3(direction.X, 0f, direction.Z);
-                combat.Projectiles.Spawn(combat, stage.Caster, skill, origin, rotated.ToPlanar(), WorldUnits.ToMeters(skill.ProjectileSpeedUu), range, def.CorridorMeters);
+                combat.Projectiles.Spawn(combat, stage.Caster, skill, origin, rotated.ToPlanar(), WorldUnits.ToMeters(skill.ProjectileSpeedUu), range, ProjectileSystem.BodyRadiusMeters(skill));
             }
         }
 

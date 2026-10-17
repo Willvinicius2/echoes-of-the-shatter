@@ -107,10 +107,12 @@ namespace Echoes.Tests.EditMode
         public void TheArrowRainMarksTheCircleBeforeTheArrowsFall()
         {
             var e = Entry("skill.archer.arrow_rain");
-            Assert.GreaterOrEqual(e.windupFx.Length, 2, "marcacao no chao e flechas na preparacao: pousam no instante do golpe");
-            Assert.IsTrue(e.windupFx.All(s => s.place == VfxPlace.AimGround && s.authoredRadiusMeters > 0f));
-            var arrows = e.windupFx[1].prefab.GetComponentsInChildren<ParticleSystem>(true).First(p => p.name == "Arrows");
-            Assert.LessOrEqual(arrows.main.duration + arrows.main.startLifetime.constant, 0.26f, "pousam ate o fim da preparacao (0,25 s)");
+            Assert.IsNotEmpty(e.windupFx, "marcacao no chao na preparacao");
+            Assert.IsNotEmpty(e.releaseFx, "flechas caindo no impacto");
+            Assert.IsTrue(e.windupFx.Concat(e.releaseFx).All(s => s.place == VfxPlace.AimGround && s.authoredRadiusMeters > 0f));
+            var arrows = e.releaseFx[0].prefab.GetComponentsInChildren<ParticleSystem>(true).First(p => p.name == "Arrows");
+            var land = arrows.main.startDelay.constant + arrows.main.duration + arrows.main.startLifetime.constant;
+            Assert.That(land, Is.InRange(0.59f, 0.71f), "as flechas pousam entre 0,6 e 0,7 s: o golpe sai ao fim do impacto (0,70 s)");
         }
 
         [Test]
