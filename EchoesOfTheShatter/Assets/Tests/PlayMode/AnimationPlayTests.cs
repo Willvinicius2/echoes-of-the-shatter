@@ -18,6 +18,15 @@ namespace Echoes.Tests.PlayMode
     [Category("Animation")]
     public sealed class AnimationPlayTests
     {
+        /// <summary>Entrada roteirizada: só W (andar para cima na tela).</summary>
+        sealed class WalkScript : IScriptedInput
+        {
+            public Vector2 Move => Vector2.up;
+            public Vector2 Aim => Vector2.zero;
+            public bool WasPressed(HeroCommand command) => false;
+            public bool IsHeld(HeroCommand command) => false;
+        }
+
         const string ScenePath = "Assets/Scenes/Cripta/Cripta.unity";
 
         [UnityTest]
@@ -37,17 +46,18 @@ namespace Echoes.Tests.PlayMode
             Assert.AreEqual(1, action);
             Assert.AreEqual(2, hitLayer);
 
-            // Andar: o corpo do heroi anda (CharacterController, como no jogo); o PresentationController alimenta Speed com o deslocamento real.
-            var controller = hero.GetComponent<CharacterController>();
+            // Andar: a entrada de movimento vai para a logica; o PresentationController alimenta Speed (amortecido) com a velocidade dela.
+            var walkForward = new WalkScript();
             var maxSpeed = 0f;
             var locomotion = false;
             for (var t = 0f; t < 0.8f; t += Time.deltaTime)
             {
-                controller.Move(hero.transform.forward * (5f * Time.deltaTime));
+                hero.InputHandler.Script = walkForward; // o herói anda pela lógica (o Speed vem da velocidade dela)
                 yield return null;
                 maxSpeed = Mathf.Max(maxSpeed, heroAnimator.GetFloat("Speed"));
                 locomotion |= heroAnimator.GetCurrentAnimatorStateInfo(0).IsName("Locomotion");
             }
+            hero.InputHandler.Script = null;
             Assert.IsTrue(locomotion, "camada Base em Locomotion");
             Assert.Greater(maxSpeed, 1f, "o heroi andou: Speed alimenta o blend Idle/Walk/Run");
 

@@ -103,7 +103,7 @@ namespace Echoes.EditorTools
                 Debug.LogWarning("[EchoesAnimationImport] FBX ausente: " + spec.Path);
                 return;
             }
-            if (IsConfigured(importer, spec)) return;
+            if (IsConfigured(importer, spec) && importer.animationCompression == ModelImporterAnimationCompression.Off) return;
 
             // O take da animação (o Blender pode exportar também um take vazio): o mais longo.
             var takes = importer.defaultClipAnimations;
@@ -132,6 +132,7 @@ namespace Echoes.EditorTools
                 time = e.frame / length,
             }).ToArray();
             importer.clipAnimations = new[] { take };
+            importer.animationCompression = ModelImporterAnimationCompression.Off; // sem Keyframe Reduction: o erro alto dava tremor de pose
             importer.SaveAndReimport();
         }
     }

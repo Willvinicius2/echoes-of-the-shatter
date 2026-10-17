@@ -1,0 +1,19 @@
+{
+    "entries": [
+        {
+            "controller": "AC_Warrior",
+            "walk": 0.7442030906677246,
+            "run": 2.0473268032073976
+        },
+        {
+            "controller": "AC_EnemyHumanoid",
+            "walk": 0.7442053556442261,
+            "run": 2.047330379486084
+        },
+        {
+            "controller": "AC_Boss",
+            "walk": 2.0381722450256349,
+            "run": 3.3207850456237795
+        }
+    ]
+}

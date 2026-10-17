@@ -36,6 +36,8 @@ namespace Echoes.Presentation
         [SerializeField, Min(0f)] float hitFlashSeconds = 0.083f;
         [Tooltip("Opção \"Reduzir flashes\": intensidade do flash (1 = normal, 0,5 = reduzido).")]
         [SerializeField, Range(0f, 1f)] float hitFlashIntensity = 1f;
+        [Tooltip("Amortecimento do parâmetro Speed do Animator (s): evita a troca seca entre parado, andar e correr.")]
+        [SerializeField, Min(0f)] float speedDampSeconds = 0.08f;
         [Tooltip("Duração da dissolução na morte (docs/03, seção 6: 500 ms).")]
         [SerializeField, Min(0.01f)] float dissolveSeconds = 0.5f;
 
@@ -59,6 +61,7 @@ namespace Echoes.Presentation
         bool hasPhase;
         bool hasFleeing;
         EnemyController enemyController;
+        HeroController heroController;
         bool eliteApplied;
         [Tooltip("SO_RarityTint: o elite (modificador do core) ganha a tinta de Raro nos materiais do corpo.")]
         [SerializeField] RarityTintAsset eliteTint;
@@ -70,6 +73,7 @@ namespace Echoes.Presentation
         {
             attributes = GetComponent<AttributeComponent>();
             enemyController = GetComponent<EnemyController>();
+            heroController = GetComponent<HeroController>();
             if (animator == null) animator = GetComponentInChildren<Animator>();
             if (renderers == null || renderers.Length == 0) renderers = GetComponentsInChildren<Renderer>();
             attachedParticles = GetComponentsInChildren<ParticleSystem>();
@@ -150,9 +154,20 @@ namespace Echoes.Presentation
             if (HasAnimator)
             {
                 animator.speed = frozen ? 0f : 1f;
-                var moved = (transform.position - lastPosition) / Mathf.Max(dt, 1e-5f);
-                moved.y = 0f;
-                if (hasSpeed) animator.SetFloat(SpeedParam, frozen ? 0f : moved.magnitude);
+                // Herói: velocidade da lógica (estável, sem o ruído do deslocamento por quadro). Inimigo: deslocamento medido.
+                float speed;
+                if (heroController != null && heroController.Logic != null) speed = heroController.Logic.CurrentVelocity().Magnitude;
+                else
+                {
+                    var moved = (transform.position - lastPosition) / Mathf.Max(dt, 1e-5f);
+                    moved.y = 0f;
+                    speed = moved.magnitude;
+                }
+                if (hasSpeed)
+                {
+                    if (frozen) animator.SetFloat(SpeedParam, 0f);
+                    else animator.SetFloat(SpeedParam, speed, speedDampSeconds, dt);
+                }
                 if (hasActionSpeed) animator.SetFloat(ActionSpeedParam, actionSpeed);
                 if (hasFleeing && enemyController != null && enemyController.Logic != null) animator.SetBool(IsFleeingParam, enemyController.Logic.IsFleeing);
                 if (hasIsStaggered)
@@ -196,7 +211,7 @@ namespace Echoes.Presentation
             if (evt.Phase == ActionPhase.None)
             {
                 actionSpeed = 1f;
-                if (HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f);
+                if (HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f, ActionExitBlendSeconds);
                 return;
             }
             if (skillSet == null) return;
@@ -270,7 +285,7 @@ namespace Echoes.Presentation
 
             // velocidade = duração autoral da fase / duração da fase no CSV (seção 3.3).
             actionSpeed = evt.PhaseSeconds > 1e-4 && authored > 0f ? authored / (float)evt.PhaseSeconds : 1f;
-            if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(state, actionLayerIndex, start);
+            if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(state, actionLayerIndex, start * clip);
         }
 
         /// <summary>Evento de clipe (AnimationEventRelay): "release" do Espectro no quadro 20, "summon_marks" e "slam" do rugido do Guardiao.</summary>
@@ -312,11 +327,18 @@ namespace Echoes.Presentation
             for (var i = 0; i < dissolveMaterials.Count; i++) dissolveMaterials[i].SetFloat(DissolveId, 0f);
         }
 
-        void PlayIfExists(string state, int layer, float normalizedTime)
+        /// <summary>Entrada curta na camada Action/Hit (fade fixo): sem o corte seco do Play, e o quadro de impacto continua nos tempos do core.</summary>
+        public const float ActionBlendSeconds = 0.06f;
+
+        /// <summary>Saída da ação para o repouso: fade mais longo, para o corpo voltar à locomoção sem tranco.</summary>
+        public const float ActionExitBlendSeconds = 0.15f;
+
+        // offsetSeconds: início dentro do estado, em segundos do clipe (CrossFadeInFixedTime).
+        void PlayIfExists(string state, int layer, float offsetSeconds, float blendSeconds = ActionBlendSeconds)
         {
             if (string.IsNullOrEmpty(state)) return;
             var hash = Animator.StringToHash(state);
-            if (animator.HasState(layer, hash)) animator.Play(hash, layer, normalizedTime);
+            if (animator.HasState(layer, hash)) animator.CrossFadeInFixedTime(hash, blendSeconds, layer, offsetSeconds);
         }
 
         Transform FindAnchor(string anchorName)

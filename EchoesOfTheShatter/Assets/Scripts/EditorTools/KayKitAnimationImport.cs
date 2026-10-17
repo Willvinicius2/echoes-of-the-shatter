@@ -87,7 +87,7 @@ namespace Echoes.EditorTools
             }
             var wanted = specs.Select(s => s.Take).ToList();
             var current = importer.clipAnimations;
-            if (current != null && current.Length == wanted.Count && current.All(c => wanted.Contains(c.name)) && current.All(c => c.lockRootHeightY && c.heightFromFeet && c.keepOriginalOrientation)) return;
+            if (current != null && current.Length == wanted.Count && current.All(c => wanted.Contains(c.name)) && current.All(c => c.lockRootHeightY && c.heightFromFeet && c.keepOriginalOrientation) && importer.animationCompression == ModelImporterAnimationCompression.Off) return;
 
             var defaults = importer.defaultClipAnimations;
             var clips = new List<ModelImporterClipAnimation>();
@@ -113,6 +113,7 @@ namespace Echoes.EditorTools
                 clips.Add(source);
             }
             importer.clipAnimations = clips.ToArray();
+            importer.animationCompression = ModelImporterAnimationCompression.Off; // sem Keyframe Reduction: o erro alto dava tremor de pose
             importer.SaveAndReimport();
         }
 

@@ -25,6 +25,9 @@ namespace Echoes.EditorTools
         public const string SkillSetDir = "Assets/Data/Presentation";
         public const string PlaceholderTag = "Placeholder";
 
+        /// <summary>Saída das camadas Action e Hit para o repouso (0,12 a 0,18 s): a locomoção volta sem corte.</summary>
+        public const float ExitBlendSeconds = 0.15f;
+
         public sealed class ActionSpec
         {
             public string State;
@@ -164,6 +167,7 @@ namespace Echoes.EditorTools
             tree.AddChild(Clip(general, "Idle_A"), 0f);
             tree.AddChild(Clip(basic, "Walking_A"), walk);
             tree.AddChild(Clip(basic, "Running_A"), run);
+            ApplyGroundSpeedScales(tree, spec.Name, walk, run);
             var loco = sm.AddState("Locomotion");
             loco.motion = tree;
             sm.defaultState = loco;
@@ -220,7 +224,7 @@ namespace Echoes.EditorTools
                 back.hasExitTime = true;
                 back.exitTime = 1f;
                 back.hasFixedDuration = true;
-                back.duration = 0.08f;
+                back.duration = ExitBlendSeconds;
             }
 
             // ---- Hit: Empty + Hit
@@ -237,10 +241,24 @@ namespace Echoes.EditorTools
             hitBack.hasExitTime = true;
             hitBack.exitTime = 1f;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = 0.08f;
+            hitBack.duration = ExitBlendSeconds;
 
             EditorUtility.SetDirty(c);
             return c;
+        }
+
+        /// <summary>
+        /// Para o pé acompanhar o chão: o timeScale de Walk e Run na árvore = velocidade do jogo ÷ velocidade de solo medida do clipe
+        /// (<see cref="LocomotionGroundSpeed"/>), limitado a 0,75 a 1,35. Sem medida gravada, 1 (como antes).
+        /// </summary>
+        static void ApplyGroundSpeedScales(BlendTree tree, string controllerName, float walkGameSpeed, float runGameSpeed)
+        {
+            var measured = LocomotionGroundSpeed.Load(controllerName);
+            if (measured == null) return;
+            var children = tree.children;
+            children[1].timeScale = LocomotionGroundSpeed.PlaybackScale(walkGameSpeed, measured.walk);
+            children[2].timeScale = LocomotionGroundSpeed.PlaybackScale(runGameSpeed, measured.run);
+            tree.children = children;
         }
 
         // Velocidade de movimento em m/s: class_stats.csv (heroi, em uu/s) ou enemies.csv (inimigo, em uu/s); 1 uu = 1 cm.
@@ -363,7 +381,7 @@ namespace Echoes.EditorTools
             back.hasExitTime = true;
             back.exitTime = 1f;
             back.hasFixedDuration = true;
-            back.duration = 0.08f;
+            back.duration = ExitBlendSeconds;
 
             c.AddLayer("Hit");
             layers = c.layers;
@@ -378,7 +396,7 @@ namespace Echoes.EditorTools
             hitBack.hasExitTime = true;
             hitBack.exitTime = 1f;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = 0.08f;
+            hitBack.duration = ExitBlendSeconds;
             EditorUtility.SetDirty(c);
             return c;
         }
@@ -452,7 +470,7 @@ namespace Echoes.EditorTools
             back.hasExitTime = true;
             back.exitTime = 1f;
             back.hasFixedDuration = true;
-            back.duration = 0.08f;
+            back.duration = ExitBlendSeconds;
 
             c.AddLayer("Hit");
             layers = c.layers;
@@ -467,7 +485,7 @@ namespace Echoes.EditorTools
             hitBack.hasExitTime = true;
             hitBack.exitTime = 1f;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = 0.08f;
+            hitBack.duration = ExitBlendSeconds;
             EditorUtility.SetDirty(c);
             return c;
         }
