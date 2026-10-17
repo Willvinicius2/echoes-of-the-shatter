@@ -31,15 +31,24 @@ namespace Echoes.Gameplay
         public bool IsReady => map != null;
         public InputActionAsset Actions => actions;
 
+        public const string PreloadedActionsName = "Echoes";
         const string DefaultActionsPath = "Assets/Settings/Echoes.inputactions";
 
         void Awake()
         {
 #if UNITY_EDITOR
             // O asset de acoes nao serializa a referencia nas cenas montadas por script (fileID 0); no editor carrega pelo caminho.
-            // TODO(build): colocar o Echoes.inputactions nos Preloaded Assets / Resources para o jogador.
             if (actions == null) actions = UnityEditor.AssetDatabase.LoadAssetAtPath<InputActionAsset>(DefaultActionsPath);
 #endif
+            // Player: o Echoes.inputactions entra no build pelos Preloaded Assets (Echoes.EditorTools.Build); as cenas montadas por script nao
+            // serializam a referencia, entao procura o asset ja carregado pelo nome.
+            if (actions == null)
+            {
+                foreach (var loaded in Resources.FindObjectsOfTypeAll<InputActionAsset>())
+                {
+                    if (loaded.name == PreloadedActionsName) actions = loaded;
+                }
+            }
             if (actions == null)
             {
                 Debug.LogError("[Input] Ligue o Echoes.inputactions no PlayerInputHandler.", this);
