@@ -13,11 +13,17 @@ namespace Echoes.Interop
         public readonly int Level;
         public readonly IReadOnlyList<string> EquipmentBaseIds;
 
-        public HeroBuild(string classId, int level, IReadOnlyList<string> equipmentBaseIds)
+        /// <summary>Com save: os atributos saem do personagem do save (equipamento com afixos), pelo core; <see cref="EquipmentBaseIds"/> segue valendo para a arma e o visual.</summary>
+        public readonly Native.SaveGame Save;
+        public readonly int SaveCharacterIndex;
+
+        public HeroBuild(string classId, int level, IReadOnlyList<string> equipmentBaseIds, Native.SaveGame save = null, int saveCharacterIndex = 0)
         {
             ClassId = classId;
             Level = level;
             EquipmentBaseIds = equipmentBaseIds;
+            Save = save;
+            SaveCharacterIndex = saveCharacterIndex;
         }
     }
 }

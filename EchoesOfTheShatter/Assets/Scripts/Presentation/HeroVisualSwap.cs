@@ -28,6 +28,9 @@ namespace Echoes.Presentation
             visual.transform.localRotation = Quaternion.identity;
         }
 
+        /// <summary>O prefab do heroi escolhido (Guerreiro por padrao): o boneco do inventario usa o mesmo.</summary>
+        public GameObject CurrentPrefab => Pick(HeroChoice.Id) ?? warrior;
+
         public GameObject Pick(string id)
         {
             switch (id)

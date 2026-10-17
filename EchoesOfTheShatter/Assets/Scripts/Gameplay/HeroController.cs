@@ -114,22 +114,54 @@ namespace Echoes.Gameplay
 
             ItemBaseInfo weapon = null;
             var equipped = new List<string>(equipment.Length);
-            for (var i = 0; i < equipment.Length; i++)
+            // Com save (jogo normal): equipamento e atributos vem do SAVE pelo core (itens com afixos). Sem save (cena aberta direto): as bases do inspetor.
+            Echoes.Interop.Native.SaveGame saveSource = null;
+            var native = rules as Echoes.Interop.Native.NativeRulesCore;
+            if (native != null && Echoes.Core.GameSession.Save != null && Echoes.Core.GameSession.Save.HasSave)
             {
-                var item = rules.FindItemBase(equipment[i]);
-                if (item == null)
+                saveSource = Echoes.Core.GameSession.Save.Current;
+                foreach (var item in saveSource.Equipment(0))
                 {
-                    if (!string.IsNullOrEmpty(equipment[i])) Debug.LogWarning($"[Hero] Base de item '{equipment[i]}' não existe; ignorada.", this);
-                    continue;
+                    var info = item != null ? rules.FindItemBase(item.BaseId) : null;
+                    if (info == null) continue;
+                    equipped.Add(info.Id);
+                    if (weapon == null && info.IsWeapon) weapon = info;
                 }
-                equipped.Add(item.Id);
-                if (weapon == null && item.IsWeapon) weapon = item;
+            }
+            else
+            {
+                for (var i = 0; i < equipment.Length; i++)
+                {
+                    var item = rules.FindItemBase(equipment[i]);
+                    if (item == null)
+                    {
+                        if (!string.IsNullOrEmpty(equipment[i])) Debug.LogWarning($"[Hero] Base de item '{equipment[i]}' não existe; ignorada.", this);
+                        continue;
+                    }
+                    equipped.Add(item.Id);
+                    if (weapon == null && item.IsWeapon) weapon = item;
+                }
             }
 
-            var build = new HeroBuild(classInfo.Id, level, equipped);
+            var build = new HeroBuild(classInfo.Id, level, equipped, saveSource, 0);
             var combatant = attributes.CreateHero(rules, in build, classInfo, weapon, controller.radius);
             Logic = new HeroCombatLogic(combatant, rules, skillBar);
             combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
+        }
+
+        /// <summary>
+        /// Depois de equipar ou desequipar pelo inventario (o core ja atualizou o bloco de atributos do heroi): a arma das habilidades passa a ser a da
+        /// mao principal do save.
+        /// </summary>
+        public void OnEquipmentChanged()
+        {
+            if (Logic == null || combat == null) return;
+            var save = Echoes.Core.GameSession.Save;
+            if (save == null || !save.HasSave) return;
+            ItemBaseInfo weapon = null;
+            var main = save.Current.Equipment(0)[0];
+            if (main != null) weapon = combat.Rules.FindItemBase(main.BaseId);
+            Logic.Self.Weapon = weapon != null && weapon.IsWeapon ? weapon : null;
         }
 
         // Sai do combate ao desligar (e antes do OnDestroy de qualquer componente), pela referência própria:

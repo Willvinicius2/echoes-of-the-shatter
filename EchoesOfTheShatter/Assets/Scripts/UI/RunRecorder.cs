@@ -55,9 +55,17 @@ namespace Echoes.UI
             else
             {
                 save.Save(rules); // o contador do chefe ja esta no disco antes do item entrar
-                // TODO(inventario): sem inventario o item vai para o Bau compartilhado (stash do save); falta o item cair no chao com feixe e a Mochila.
-                if (!save.Current.AddLoot(json, out error)) Debug.LogError("[Boss] AddLoot falhou: " + error);
-                save.Save(rules);
+                // O Unico cai NO CHAO (feixe de raridade) pelo core; pegar manda para a Mochila (ou o Bau se estiver cheia). O chao nao e salvo:
+                // o contador do chefe ja esta gravado acima (RF-55). Sem diretor de loot na cena (teste), vai direto para o Bau.
+                var director = FindAnyObjectByType<GroundLootDirector>();
+                var arena = FindAnyObjectByType<ArenaController>();
+                var where = arena != null && arena.Boss != null ? arena.Boss.transform.position : Vector3.zero;
+                where.y = 0f;
+                if (director == null || !director.DropBossLoot(json, where))
+                {
+                    if (!save.Current.AddLoot(json, out error)) Debug.LogError("[Boss] AddLoot falhou: " + error);
+                    save.Save(rules);
+                }
                 LastLootJson = json;
                 if (json.Contains("\"rarity\":\"unique\"")) ScreenHost.Toast(root.Localization.Get("ui.item.picked").Replace("{item}", "Unico") + " (Bau)", ToastKind.Item);
             }

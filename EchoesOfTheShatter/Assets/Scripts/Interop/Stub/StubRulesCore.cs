@@ -61,6 +61,8 @@ namespace Echoes.Interop
         public SkillInfo FindSkill(string id) => Find(RequireContent().Skills, id);
         public EnemyInfo FindEnemy(string id) => Find(RequireContent().Enemies, id);
         public ItemBaseInfo FindItemBase(string id) => Find(RequireContent().ItemBases, id);
+
+        public string ItemVisualSetId(string baseId, string uniqueId) => "vset.starter";
         public PotionInfo FindPotion(string id) => Find(RequireContent().PotionsById, id);
 
         public IStatBlock CreateHeroStats(in HeroBuild build)

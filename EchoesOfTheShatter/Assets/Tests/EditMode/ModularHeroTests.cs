@@ -140,35 +140,20 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
-        public void VisualSetResolutionOrderIsUniqueThenBaseThenStarter()
+        public void VisualSetComesFromTheCoreAndTheSlotFromTheItemBase()
         {
-            var dir = Path.Combine(Path.GetTempPath(), "echoes_vset_" + System.Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(dir);
-            try
+            using (var rules = TestWorld.LoadNativeRules())
             {
-                File.WriteAllText(Path.Combine(dir, "item_bases.csv"),
-                    "id,slot,itemLevel,implicitMods,weaponDamagePhysical,weaponDamageFire,weaponDamageCold,weaponDamageLightning,attackTime,weaponTags,grammaticalGender,visualSetId\n" +
-                    "item_base.sword,main_hand,1,,9,,,,0.9,melee,f,\n" +
-                    "item_base.plain_chest,body,1,,,,,,,,f,\n" +
-                    "item_base.iron_chest,body,1,,,,,,,,f,vset.iron_guard\n" +
-                    "item_base.legs,legs,1,,,,,,,,f,vset.iron_guard\n");
-                File.WriteAllText(Path.Combine(dir, "uniques.csv"), "id,baseId,fixedMods,ruleEffectId,idleSupported,idleParitySampleSize,idleCalibration,visualSetId\nunique.bone,item_base.iron_chest,,,,,,vset.unq_bone\n");
-                VisualSetResolver.Reload(dir);
-                Assert.IsFalse(VisualSetResolver.TryResolve(dir, "item_base.sword", null, out _, out _), "arma: sem visual modular");
-                Assert.IsTrue(VisualSetResolver.TryResolve(dir, "item_base.plain_chest", null, out var slot, out var set));
-                Assert.AreEqual(HeroPartSlot.Chest, slot);
-                Assert.AreEqual(HeroPartCatalog.StarterSet, set, "sem visualSetId: starter");
-                VisualSetResolver.TryResolve(dir, "item_base.iron_chest", null, out slot, out set);
-                Assert.AreEqual("vset.iron_guard", set, "da base");
-                VisualSetResolver.TryResolve(dir, "item_base.iron_chest", "unique.bone", out slot, out set);
-                Assert.AreEqual("vset.unq_bone", set, "o Unico prevalece");
-                VisualSetResolver.TryResolve(dir, "item_base.legs", null, out slot, out set);
+                var native = (Echoes.Interop.Native.NativeRulesCore)rules;
+                Assert.IsFalse(VisualSetResolver.TryResolve(rules, "item_base.iron_sword", null, out _, out _), "arma: sem visual modular");
+                Assert.IsTrue(VisualSetResolver.TryResolve(rules, "item_base.iron_helm", null, out var slot, out var set));
+                Assert.AreEqual(HeroPartSlot.Head, slot);
+                Assert.AreEqual(HeroPartCatalog.StarterSet, set, "base com vset.starter");
+                Assert.IsTrue(VisualSetResolver.TryResolve(rules, "item_base.worn_trousers", null, out slot, out set));
                 Assert.AreEqual(HeroPartSlot.Legs, slot, "slot legs do core");
-            }
-            finally
-            {
-                Directory.Delete(dir, true);
-                VisualSetResolver.Reload(Path.Combine(Path.GetDirectoryName(Application.dataPath), "Content", "Data"));
+                Assert.AreEqual("vset.starter", native.ItemVisualSetId("item_base.leather_vest", string.Empty), "pelo shatter_item_visual_set_id");
+                Assert.AreEqual("vset.starter", native.ItemVisualSetId("item_base.stone_maul", "unique.empty_throne_maul"), "Unico sem conjunto proprio: cai no starter");
+                Assert.IsFalse(VisualSetResolver.TryResolve(rules, "item_base.nao_existe", null, out _, out _));
             }
         }
 
@@ -180,7 +165,7 @@ namespace Echoes.Tests.EditMode
             {
                 var equipment = go.GetComponent<HeroVisualEquipment>();
                 // Hoje so ha a espada (arma): nenhuma peca vem do item; tudo cai no starter.
-                equipment.Apply(new[] { "item_base.iron_sword" }, TestWorld.DataDirectory);
+                using (var rules = TestWorld.LoadNativeRules()) equipment.Apply(new[] { ("item_base.iron_sword", string.Empty) }, rules);
                 var modular = go.GetComponent<ModularCharacter>();
                 for (var i = 0; i < 5; i++) Assert.IsTrue(modular.IsEquipped((HeroPartSlot)i), ((HeroPartSlot)i).ToString());
                 Assert.AreEqual(BodyRegion.None, modular.VisibleRegions);

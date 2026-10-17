@@ -282,6 +282,33 @@ namespace Echoes.Interop.Native
             return new[] { (uint)sizeof(ShatterFleeResult), Off(&r, &r.remaining), Off(&r, &r.fleeing), Off(&r, &r.started), Off(&r, &r.ended), Off(&r, &r.can_flee) };
         }
 
+        /// <summary>Lista do layout ext4 (API 1.4, inventario): [tamanho de shatter_inventory_info, 4 offsets, tamanho de shatter_equip_result, 4 offsets].</summary>
+        public static uint[] BuildExt4()
+        {
+            ShatterInventoryInfo i = default;
+            ShatterEquipResult e = default;
+            return new[]
+            {
+                (uint)sizeof(ShatterInventoryInfo), Off(&i, &i.backpack_capacity), Off(&i, &i.backpack_used), Off(&i, &i.stash_capacity), Off(&i, &i.stash_used),
+                (uint)sizeof(ShatterEquipResult), Off(&e, &e.result), Off(&e, &e.slot), Off(&e, &e.displaced_uid), Off(&e, &e.displaced),
+            };
+        }
+
+        public static bool CheckExt4(out string message)
+        {
+            var values = BuildExt4();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext4(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext4 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
         public static bool CheckExt3(out string message)
         {
             var values = BuildExt3();

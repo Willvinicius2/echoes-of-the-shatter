@@ -53,7 +53,7 @@ namespace Echoes.UI
 
         void Update()
         {
-            if (RefugeController.AnyScreenOpen) return;
+            if (RefugeController.AnyScreenOpen || InventoryController.IsOpen) return;
             if (input != null && input.IsReady && input.PausePressed) SetPaused(!paused);
         }
 

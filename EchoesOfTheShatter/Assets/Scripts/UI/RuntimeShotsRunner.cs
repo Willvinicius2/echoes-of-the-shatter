@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Echoes.Core;
 using Echoes.Gameplay;
 using Echoes.Presentation;
 using UnityEngine;
@@ -124,6 +126,46 @@ namespace Echoes.UI
             TestSettings.HeroGodMode = true;
             Stage("captura da entrada da Cripta");
             yield return Shoot("runtime_cripta_entrada.png");
+
+            Stage("loot no chao (feixes de raridade)");
+            var director = FindAnyObjectByType<GroundLootDirector>();
+            var inventory = FindAnyObjectByType<InventoryController>();
+            if (director != null && inventory != null)
+            {
+                var rules = GameSession.NativeRules(FindAnyObjectByType<GameRoot>());
+                var origin = hero.transform.position + new Vector3(3f, 0f, 3f);
+                for (var i = 0; i < 3; i++) director.DropTable("loot.crypt.guardian", 3, origin + new Vector3(i * 0.4f, 0f, 0f));
+                var bossJson = GameSession.Save.Current.RollBossLoot(rules, 0, "enemy.crypt_guardian", 3, 777UL, out var bossError);
+                if (!string.IsNullOrEmpty(bossJson)) director.DropBossLoot(bossJson, origin + new Vector3(-2.5f, 0f, 1f));
+                else Debug.LogWarning("[Shots] loot do Guardiao: " + bossError);
+                yield return new WaitForSecondsRealtime(1.6f);
+                yield return Shoot("inv_loot_chao.png");
+
+                Stage("pegando o loot e abrindo o inventario");
+                var uids = new List<ulong>(director.Views.Keys);
+                foreach (var uid in uids)
+                {
+                    if (!director.Views.TryGetValue(uid, out var view) || view == null) continue;
+                    Teleport(hero, new Vector3(view.transform.position.x, 0f, view.transform.position.z));
+                    yield return new WaitForSecondsRealtime(0.25f);
+                }
+                Teleport(hero, origin - new Vector3(3f, 0f, 3f));
+                yield return new WaitForSecondsRealtime(0.5f);
+                Debug.Log("[Shots] chao restante: " + director.GroundCount + "; Mochila: " + GameSession.Save.Current.Inventory(rules, 0).BackpackUsed);
+                inventory.Show();
+                yield return new WaitForSecondsRealtime(1.0f);
+                var items = GameSession.Save.Current.ListItems(0, Echoes.Interop.ItemContainer.Backpack);
+                if (items.Count > 0)
+                {
+                    var pick = items.Find(x => x.Rarity != Echoes.Interop.ItemRarity.Normal) ?? items[0];
+                    inventory.SelectUid(pick.Uid);
+                }
+                yield return new WaitForSecondsRealtime(0.6f);
+                yield return Shoot("inv_inventario.png");
+                inventory.Close();
+                yield return new WaitForSecondsRealtime(0.4f);
+            }
+            else Debug.LogWarning("[Shots] sem GroundLootDirector/InventoryController na Cripta");
 
             Stage("sala com encontro (Patrulha B)");
             EnemyController target = null;

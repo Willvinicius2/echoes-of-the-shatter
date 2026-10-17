@@ -15,6 +15,7 @@ namespace Echoes.Core
         readonly Dictionary<string, Dictionary<string, string>> byCulture =
             new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
         readonly List<string> duplicateKeys = new List<string>();
+        readonly Dictionary<string, string> contextByKey = new Dictionary<string, string>(StringComparer.Ordinal);
 
         public IReadOnlyList<string> DuplicateKeys => duplicateKeys;
 
@@ -39,6 +40,7 @@ namespace Echoes.Core
             var header = records[0].Fields;
             var keyIndex = Array.IndexOf(header, KeyColumn);
             if (keyIndex < 0) return;
+            var contextIndex = Array.IndexOf(header, "context");
 
             for (var r = 1; r < records.Count; r++)
             {
@@ -46,6 +48,7 @@ namespace Echoes.Core
                 if (keyIndex >= fields.Length) continue;
                 var key = fields[keyIndex];
                 if (key.Length == 0) continue;
+                if (contextIndex >= 0 && contextIndex < fields.Length) contextByKey[key] = fields[contextIndex];
                 for (var c = 0; c < header.Length && c < fields.Length; c++)
                 {
                     var column = header[c];
@@ -62,6 +65,9 @@ namespace Echoes.Core
                 }
             }
         }
+
+        /// <summary>Coluna <c>context</c> da chave (nota para quem traduz; marca, por exemplo, nomes de item no plural). Vazio se nao ha.</summary>
+        public string ContextOf(string key) => key != null && contextByKey.TryGetValue(key, out var context) ? context : string.Empty;
 
         public bool HasCulture(string culture) => culture != null && byCulture.ContainsKey(culture);
 
