@@ -1,9 +1,6 @@
 // Revisão do core da Etapa 2 (docs/17_revisao_core_etapa2.md): reproduções de achados nas regras de combate.
 //
-// Cada teste afirma o comportamento CORRETO e falha no master atual. Ficam DESLIGADOS por padrão (saem cedo e passam)
-// e só rodam com SHATTER_REVISAO_BUGS=1, no mesmo padrão de SHATTER_BALANCE_PROBE:
-//   SHATTER_REVISAO_BUGS=1 shattercore_tests revisao_
-// O nome de cada teste traz o ID do achado no docs/17. Quando o achado for corrigido, apague a guarda do teste.
+// Cada teste afirma o comportamento CORRETO do achado do docs/17 (todos corrigidos e LIGADOS; sem variável de ambiente).
 #include <memory>
 
 #include "test_util.h"
@@ -14,7 +11,6 @@ namespace {
 
 using Overrides = std::vector<std::pair<std::string, std::string>>;
 
-bool BugsOn() { return !tu::GetEnv("SHATTER_REVISAO_BUGS").empty(); }
 
 std::unique_ptr<ContentDB> RichWith(const Overrides& ov) {
     auto db = std::make_unique<ContentDB>();
@@ -35,7 +31,6 @@ std::unique_ptr<ContentDB> RichWith(const Overrides& ov) {
 // refillOnEliteKill abaixo do máximo (combat.cpp:230-245). shatter_c.h promete "*added = 0 se todas estavam cheias".
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_B1_carga_de_elite_perdida_com_pocao_minima_cheia) {
-    if (!BugsOn()) return;  // DESLIGADO: B1
     // Resguardo com 1 carga máxima (dado plausível); Vida com 3. Recarga longa para isolar a regra.
     const std::unique_ptr<ContentDB> dbp = RichWith({{"potions.csv",
         "id,kind,fractionOfMaxLife,duration,maxCharges,rechargeSeconds,useTime,moveSpeedWhileUsing,globalLockout,"
@@ -59,7 +54,6 @@ TEST(revisao_B1_carga_de_elite_perdida_com_pocao_minima_cheia) {
 // não recebe defenderBarrier), enquanto o golpe direto respeita (expedition.cpp:448-451; docs/04 §11, passo 9).
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_B2_dot_do_idle_ignora_a_barreira_do_elite) {
-    if (!BugsOn()) return;  // DESLIGADO: B2
     const std::string table = tu::ReadFile(tu::RichDir() + "/skills.csv");
     // Corte de Ferro sem dano direto e com veneno ao acertar: todo o dano que o elite recebe vem do DoT.
     const std::string skills = tu::Replace(table, "attack|melee|physical,melee,,10,,,,1,1.1,1.2,0,0,0.2,0.1,0.2,60,,1,,,",
@@ -82,4 +76,35 @@ TEST(revisao_B2_dot_do_idle_ignora_a_barreira_do_elite) {
     // Correto: a barreira de 40% da vida absorve parte do veneno, então o elite com Escudo demora mais para morrer.
     if (!(a.duration > b.duration + 1e-9))
         FAIL("com barreira " + std::to_string(a.duration) + " s, sem barreira " + std::to_string(b.duration) + " s");
+}
+
+// ---------------------------------------------------------------------------------------------
+// M5 — a barreira da poção é a MESMA no manual (Vitals) e no idle: reaplicar renova só a parte da poção e a de outra
+// fonte fica; ao fim do tempo sai só a parte da poção. Os dois caminhos usam ApplyPotionBarrier/TickPotionBarrier.
+// ---------------------------------------------------------------------------------------------
+TEST(revisao_M5_barreira_da_pocao_igual_no_manual_e_no_idle) {
+    // "Idle": variáveis soltas (como o simulador).
+    double barrier = 40.0;                 // 40 de outra fonte (elite/habilidade)
+    double potionAmount = 0.0, remaining = 0.0;
+    ApplyPotionBarrier(barrier, potionAmount, remaining, 30.0, 5.0);
+    ApplyPotionBarrier(barrier, potionAmount, remaining, 30.0, 5.0);  // reaplicar renova, não acumula
+    EXPECT_NEAR(barrier, 70.0, 1e-9);
+
+    // "Manual": Vitals com a mesma situação.
+    Vitals v{};
+    v.life = 500.0;
+    v.barrier = 40.0;
+    PotionOutcome po;
+    po.barrierAmount = 30.0;
+    po.barrierSeconds = 5.0;
+    ApplyPotionOutcome(v, po, 1000.0);
+    ApplyPotionOutcome(v, po, 1000.0);
+    EXPECT_NEAR(v.barrier, barrier, 1e-9);
+
+    // Passa o tempo: sai só a parte da poção nos dois caminhos.
+    TickPotionBarrier(barrier, potionAmount, remaining, 6.0);
+    StatBlock stats;
+    TickVitals(v, stats, nullptr, 6.0, false);
+    EXPECT_NEAR(barrier, 40.0, 1e-9);
+    EXPECT_NEAR(v.barrier, barrier, 1e-9);
 }

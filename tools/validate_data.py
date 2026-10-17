@@ -799,8 +799,13 @@ def chk_loot_entry(c: Content, table: str, rows: List[dict], rep: Report) -> Non
                 rep.err(table, ln, "E_LOOT", f"kind={kind} exige refId '{prefix}*'")
             if tbl and ref not in c.ids(tbl):
                 rep.err(table, ln, "E_FK", f"refId: '{ref}' não existe em {tbl}")
-        if r["weight"] <= 0 and r["fixedChance"] <= 0:
-            rep.err(table, ln, "E_WEIGHT", "peso vazio/0 so e valido com fixedChance > 0")
+        fixed = r["fixedChance"] > 0 or r["guaranteeFirstKill"] or r["pityKills"] > 0
+        if r["weight"] <= 0 and not fixed:
+            rep.err(table, ln, "E_WEIGHT", "peso vazio/0 so e valido em entrada fixa (fixedChance > 0, guaranteeFirstKill ou pityKills > 0)")
+        if fixed and r["tableId"] not in boss_tables(c):
+            rep.err(table, ln, "E_FIXED_TABLE", f"entrada fixa so vale na tabela de topo de um chefe; '{r['tableId']}' nao e")
+        if fixed and any(o["kind"] == "table" and o["refId"] == r["tableId"] for o in rows):
+            rep.err(table, ln, "E_FIXED_TABLE", f"entrada fixa em subtabela ('{r['tableId']}' e alvo de kind=table) nunca cai")
         if kind == "unique" and r["tableId"] not in boss_tables(c):
             rep.err(table, ln, "E_UNIQUE_TABLE", f"Unico so pode estar em tabela de chefe (lootTableId de enemies.csv com isBoss=true); '{r['tableId']}' nao e")
         if kind in MANUAL_ONLY_KINDS and not r["manualOnly"]:

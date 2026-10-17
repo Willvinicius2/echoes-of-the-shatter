@@ -112,6 +112,10 @@ void RollTable(RollState& st, const LootTableData& table, int depth) {
     // Entradas FIXAS (docs/13, item 9): só no Manual, só na tabela de topo, fora do sorteio ponderado.
     // Cada entrada fixa consome exatamente 1 número do fluxo Loot, tenha caído ou não (posição do fluxo estável).
     if (depth == 1 && !st.idle()) {
+        if (st.ctx.bossProgress != nullptr) {  // contador fora da faixa (só por código; o save recusa): vale 0
+            if (st.ctx.bossProgress->kills < 0) st.ctx.bossProgress->kills = 0;
+            if (st.ctx.bossProgress->killsSinceUnique < 0) st.ctx.bossProgress->killsSinceUnique = 0;
+        }
         bool uniqueDropped = false;
         bool anyFixed = false;
         for (const LootEntry& e : table.entries) {
@@ -120,17 +124,22 @@ void RollTable(RollState& st, const LootTableData& table, int depth) {
             anyFixed = true;
             bool drop = st.rng.Chance(e.fixedChance);
             if (st.ctx.bossProgress != nullptr) {
-                if (e.guaranteeFirstKill && st.ctx.bossProgress->kills == 0) drop = true;
-                if (e.pityKills > 0 && st.ctx.bossProgress->killsSinceUnique + 1 >= e.pityKills) drop = true;
+                if (e.guaranteeFirstKill && st.ctx.bossProgress->kills <= 0) drop = true;
+                // `killsSinceUnique + 1 >= pity` sem somar (INT_MAX estouraria); contador negativo vale 0.
+                if (e.pityKills > 0 && st.ctx.bossProgress->killsSinceUnique >= e.pityKills - 1) drop = true;
             }
             if (!drop) continue;
             uniqueDropped = true;
             EmitEntry(st, table, e, depth);
         }
         if (st.ctx.bossProgress != nullptr) {
-            ++st.ctx.bossProgress->kills;
-            if (anyFixed && uniqueDropped) st.ctx.bossProgress->killsSinceUnique = 0;
-            else ++st.ctx.bossProgress->killsSinceUnique;
+            // Contadores saturam em kMaxBossCounter (sem estouro de int com sinal).
+            BossProgressEntry& bp = *st.ctx.bossProgress;
+            if (bp.kills < kMaxBossCounter) ++bp.kills;
+            else bp.kills = kMaxBossCounter;
+            if (anyFixed && uniqueDropped) bp.killsSinceUnique = 0;
+            else if (bp.killsSinceUnique < kMaxBossCounter) ++bp.killsSinceUnique;
+            else bp.killsSinceUnique = kMaxBossCounter;
         }
     }
 

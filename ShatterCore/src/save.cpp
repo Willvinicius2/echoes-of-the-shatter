@@ -243,18 +243,32 @@ bool CharacterFromJson(const Value& o, CharacterState& c, std::string* err) {
     }
     c.conqueredMaps = ReadStrList(o["conquered_maps"]);
     c.highestTierCleared = static_cast<int>(o["highest_tier_cleared"].AsInt(0));
+    // Save v2 vindo de disco pode estar adulterado (o SHA-256 não tem segredo): valida faixas na leitura (docs/17, M1 e B6).
     for (const Value& s : o["potion_slots"].Items()) {
         PotionSlotState ps;
         ps.potionId = s["potion_id"].AsString();
-        ps.charges = static_cast<int>(s["charges"].AsInt(0));
-        ps.rechargeRemaining = s["recharge_remaining"].AsDouble(0.0);
+        const std::int64_t charges = s["charges"].AsInt(0);
+        const double recharge = s["recharge_remaining"].AsDouble(0.0);
+        if (charges < 0 || charges > kMaxSavedPotionCharges) return Fail(err, "character: potion_slots charges out of range");
+        if (!(recharge >= 0.0) || recharge > kMaxSavedRechargeSeconds) return Fail(err, "character: potion_slots recharge_remaining out of range");
+        for (const PotionSlotState& q : c.potionSlots)
+            if (q.potionId == ps.potionId) return Fail(err, "character: potion_slots repeats '" + ps.potionId + "'");
+        ps.charges = static_cast<int>(charges);
+        ps.rechargeRemaining = recharge;
         c.potionSlots.push_back(std::move(ps));
     }
     for (const Value& b : o["boss_progress"].Items()) {
         BossProgressEntry be;
         be.enemyId = b["enemy_id"].AsString();
-        be.kills = static_cast<int>(b["kills"].AsInt(0));
-        be.killsSinceUnique = static_cast<int>(b["kills_since_unique"].AsInt(0));
+        const std::int64_t kills = b["kills"].AsInt(0);
+        const std::int64_t since = b["kills_since_unique"].AsInt(0);
+        if (be.enemyId.empty()) return Fail(err, "character: boss_progress without enemy_id");
+        if (FindBossProgress(c.bossProgress, be.enemyId) != nullptr)
+            return Fail(err, "character: boss_progress repeats '" + be.enemyId + "'");
+        if (kills < 0 || kills > kMaxBossCounter) return Fail(err, "character: boss_progress kills out of range");
+        if (since < 0 || since > kills) return Fail(err, "character: boss_progress kills_since_unique out of range");
+        be.kills = static_cast<int>(kills);
+        be.killsSinceUnique = static_cast<int>(since);
         c.bossProgress.push_back(std::move(be));
     }
     c.playTimeSeconds = o["play_time_seconds"].AsDouble(0.0);
@@ -279,6 +293,7 @@ bool ExpeditionRequestFromJson(const Value& o, ExpeditionRequest& r, std::string
     }
     r.seed = o["seed"].AsUInt64(0);
     r.startUtc = o["start_utc"].AsInt(0);
+    if (r.startUtc < 0 || r.startUtc > kMaxSaveUtc) return Fail(err, "request: start_utc out of range");
     r.durationHours = static_cast<int>(o["duration_hours"].AsInt(1));
     r.effectiveSeconds = o["effective_seconds"].AsDouble(0.0);
     r.contentVersion = static_cast<std::uint32_t>(o["content_version"].AsInt(0));
@@ -378,7 +393,12 @@ bool SaveFromJson(const Value& data, SaveData& out, std::string* error) {
         std::size_t idx = 0;
         if (!ParseName(kStatusNames, ev["status"].AsString(), idx)) return Fail(error, "expedition: bad status");
         se.status = static_cast<ExpeditionStatus>(idx);
-        se.characterIndex = static_cast<int>(ev["character_index"].AsInt(-1));
+        const std::int64_t ci = ev["character_index"].AsInt(-1);
+        if (ci < -1 || ci > 1000000) return Fail(error, "expedition: character_index out of range");
+        se.characterIndex = static_cast<int>(ci);
+        // Expedição em andamento ou coletada precisa apontar para um personagem do save (senão fica presa para sempre).
+        if (se.status != ExpeditionStatus::None && (ci < 0 || static_cast<std::size_t>(ci) >= s.characters.size()))
+            return Fail(error, "expedition: character_index does not exist");
         if (!ExpeditionRequestFromJson(ev["request"], se.request, error)) return false;
         se.collectedResultHash = ev["collected_result_hash"].AsUInt64(0);
         s.expeditions.push_back(std::move(se));

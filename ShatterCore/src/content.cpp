@@ -63,7 +63,6 @@ struct RuleDef {
     double hi;
     bool loExclusive;
     void (*set)(RulesConstants&, double);
-    bool optional = false;  // chave de docs/13: ausente = valor padrão do RulesConstants
 };
 
 constexpr double kInf = 1e300;
@@ -116,32 +115,32 @@ const RuleDef kRuleDefs[kRuleKeyCount] = {
     {"xp_exponent", 'd', 0, 3, false, [](RulesConstants& r, double v) { r.xpExponent = v; }},
     {"max_level", 'i', 1, 100, false, [](RulesConstants& r, double v) { r.maxLevel = static_cast<int>(v); }},
     // --- ADIÇÃO (docs/13): opcionais; o validador de dados do merge exige todas. ---
-    {"dodge_max_charges", 'i', 1, 10, false, [](RulesConstants& r, double v) { r.dodgeMaxCharges = static_cast<int>(v); }, true},
-    {"dodge_recharge", 'd', 0, 60, true, [](RulesConstants& r, double v) { r.dodgeRecharge = v; }, true},
-    {"dodge_duration", 'd', 0, 5, true, [](RulesConstants& r, double v) { r.dodgeDuration = v; }, true},
-    {"dodge_iframes", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.dodgeIframes = v; }, true},
-    {"dodge_distance", 'd', 0, 5000, false, [](RulesConstants& r, double v) { r.dodgeDistance = v; }, true},
-    {"dodge_cost_resource", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.dodgeCostResource = v; }, true},
-    {"dodge_buffer", 'd', 0, 1, false, [](RulesConstants& r, double v) { r.dodgeBuffer = v; }, true},
-    {"dodge_perfect_resource", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.dodgePerfectResource = v; }, true},
-    {"guard_break_stagger_seconds", 'd', 0, 60, false, [](RulesConstants& r, double v) { r.guardBreakStaggerSeconds = v; }, true},
+    {"dodge_max_charges", 'i', 1, 10, false, [](RulesConstants& r, double v) { r.dodgeMaxCharges = static_cast<int>(v); }},
+    {"dodge_recharge", 'd', 0, 60, true, [](RulesConstants& r, double v) { r.dodgeRecharge = v; }},
+    {"dodge_duration", 'd', 0, 5, true, [](RulesConstants& r, double v) { r.dodgeDuration = v; }},
+    {"dodge_iframes", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.dodgeIframes = v; }},
+    {"dodge_distance", 'd', 0, 5000, false, [](RulesConstants& r, double v) { r.dodgeDistance = v; }},
+    {"dodge_cost_resource", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.dodgeCostResource = v; }},
+    {"dodge_buffer", 'd', 0, 1, false, [](RulesConstants& r, double v) { r.dodgeBuffer = v; }},
+    {"dodge_perfect_resource", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.dodgePerfectResource = v; }},
+    {"guard_break_stagger_seconds", 'd', 0, 60, false, [](RulesConstants& r, double v) { r.guardBreakStaggerSeconds = v; }},
     {"guard_break_stagger_damage_taken", 'd', 0, 5, false,
-     [](RulesConstants& r, double v) { r.guardBreakStaggerDamageTaken = v; }, true},
-    {"guard_break_immunity_boss", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.guardBreakImmunityBoss = v; }, true},
-    {"guard_break_immunity_other", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.guardBreakImmunityOther = v; }, true},
-    {"boss_shield_down_seconds", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.bossShieldDownSeconds = v; }, true},
-    {"elite_life_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteLifeMult = v; }, true},
-    {"elite_damage_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteDamageMult = v; }, true},
-    {"elite_xp_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteXpMult = v; }, true},
-    {"potion_lockout", 'd', 0, 60, false, [](RulesConstants& r, double v) { r.potionLockout = v; }, true},
+     [](RulesConstants& r, double v) { r.guardBreakStaggerDamageTaken = v; }},
+    {"guard_break_immunity_boss", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.guardBreakImmunityBoss = v; }},
+    {"guard_break_immunity_other", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.guardBreakImmunityOther = v; }},
+    {"boss_shield_down_seconds", 'd', 0, 120, false, [](RulesConstants& r, double v) { r.bossShieldDownSeconds = v; }},
+    {"elite_life_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteLifeMult = v; }},
+    {"elite_damage_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteDamageMult = v; }},
+    {"elite_xp_mult", 'd', 0, kInf, true, [](RulesConstants& r, double v) { r.eliteXpMult = v; }},
+    {"potion_lockout", 'd', 0, 60, false, [](RulesConstants& r, double v) { r.potionLockout = v; }},
     // Pedidas pelo IRulesCore do C# (docs/11, A-01); ainda não estão em rules.csv: opcionais.
     {"dodge_cancel_recovery_fraction", 'd', 0, 1, false,
-     [](RulesConstants& r, double v) { r.dodgeCancelRecoveryFraction = v; }, true},
-    {"out_of_combat_seconds", 'd', 0, 600, false, [](RulesConstants& r, double v) { r.outOfCombatSeconds = v; }, true},
+     [](RulesConstants& r, double v) { r.dodgeCancelRecoveryFraction = v; }},
+    {"out_of_combat_seconds", 'd', 0, 600, false, [](RulesConstants& r, double v) { r.outOfCombatSeconds = v; }},
     // Rodada 2 (docs/13, R2): opcionais no core; o validador de dados as exige.
     {"unarmed_weapon_damage_physical", 'd', 0, kInf, false,
-     [](RulesConstants& r, double v) { r.unarmedWeaponDamagePhysical = v; }, true},
-    {"require_on_screen_margin", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.requireOnScreenMargin = v; }, true},
+     [](RulesConstants& r, double v) { r.unarmedWeaponDamagePhysical = v; }},
+    {"require_on_screen_margin", 'd', 0, kInf, false, [](RulesConstants& r, double v) { r.requireOnScreenMargin = v; }},
 };
 
 // --- leitor de células tipado ----------------------------------------------------------------
@@ -307,8 +306,8 @@ bool StartsWith(std::string_view s, std::string_view p) { return s.substr(0, p.s
 struct TableDef {
     const char* name;
     std::vector<const char*> columns;          // obrigatórias
-    std::vector<const char*> optionalColumns;  // ADIÇÃO: podem faltar no cabeçalho (valor padrão)
-    bool optionalTable = false;                // ADIÇÃO: o arquivo pode não existir (tabela vazia)
+    std::vector<const char*> optionalColumns{};  // colunas que podem faltar no cabeçalho (valor neutro); {} evita
+                                                 // -Wmissing-field-initializers (GCC/Clang) nas tabelas sem colunas opcionais
 };
 
 const std::vector<TableDef>& TableDefs() {
@@ -355,29 +354,26 @@ const std::vector<TableDef>& TableDefs() {
          {"fixedChance", "guaranteeFirstKill", "pityKills"}},
         {"encounters.csv", {"id", "groups", "weight", "travelTime", "isBoss"}},
         {"maps.csv", {"id", "monsterLevel", "tier", "encounters", "bossEncounter", "areaLootTable", "idleAllowed"}},
-        // ADIÇÃO (docs/13, "Para o Data Engineer"): tabelas opcionais até o merge com os dados.
+        // Tabelas de docs/13 ("Para o Data Engineer"): obrigatórias, como as demais (arquivo faltando = E_IO).
         {"potions.csv",
          {"id", "kind", "fractionOfMaxLife", "duration", "maxCharges", "rechargeSeconds", "useTime",
-          "moveSpeedWhileUsing", "globalLockout", "refillOnEliteKill", "hotkeySlot"},
-         {}, true},
+          "moveSpeedWhileUsing", "globalLockout", "refillOnEliteKill", "hotkeySlot"}},
         {"elite_modifiers.csv",
          {"id", "weightPrototype", "lifeMult", "damageMult", "xpMult", "barrierFractionOfLife", "moveSpeedMult",
-          "attackSpeedMult", "recoveryMult", "deathExplosionRadius", "deathExplosionDamage", "deathExplosionFuse"},
-         {}, true},
+          "attackSpeedMult", "recoveryMult", "deathExplosionRadius", "deathExplosionDamage", "deathExplosionFuse"}},
         {"boss_phases.csv",
          {"bossId", "phase", "lifeThreshold", "transitionSeconds", "summonEnemyId", "summonCount", "shieldSeconds",
           "turnRate", "decisionDelayMin", "decisionDelayMax"},
-         {"summonAtFraction"}, true},
+         {"summonAtFraction"}},
         {"boss_patterns.csv",
          {"id", "bossId", "phase", "skillId", "weight", "telegraphSeconds", "recoverySeconds", "cooldown", "maxRepeat",
-          "playerNearWeightMult", "ignoreIfBehind"},
-         {}, true},
+          "playerNearWeightMult", "ignoreIfBehind"}},
         {"enemy_ai.csv",
          {"enemyId", "aggroRange", "alertRadius", "leashRange", "leashSeconds", "preferredMin", "preferredMax",
           "retreatBelow", "retreatMaxSeconds", "circleMin", "circleMax", "circleSpeed", "attackTokens",
           "tokenIntervalMin", "tokenIntervalMax", "fleeLifeFraction", "fleeSeconds", "fleeOncePerLife",
           "attackCooldown", "maxSimultaneousShooters"},
-         {"requireOnScreen"}, true},
+         {"requireOnScreen"}},
     };
     return defs;
 }
@@ -435,6 +431,7 @@ struct ContentImpl {
 
     bool rulesLoaded = false;
     bool metaLoaded = false;
+    std::vector<std::string> loadedTables;  // nomes das tabelas carregadas por LoadTableCsv (para exigir as de docs/13)
     std::array<bool, kRuleKeyCount> ruleSeen{};
     bool finalized = false;
     bool finalizeOk = false;
@@ -1081,6 +1078,7 @@ bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvTex
     }
     if (!headerOk) return false;
 
+    impl_->loadedTables.push_back(table);
     LoadCtx ctx{*impl_, errors_, rules_, contentVersion_, table, csv};
     if (table == "rules.csv") LoadRules(ctx);
     else if (table == "meta.csv") LoadMeta(ctx);
@@ -1118,7 +1116,7 @@ bool ContentDB::LoadDirectory(const std::string& path) {
     for (const TableDef& def : TableDefs()) {
         const fs::path file = dir / def.name;
         if (!fs::is_regular_file(file, ec)) {
-            if (!def.optionalTable) PushErr(errors_, def.name, 0, "E_IO", "table file missing");
+            PushErr(errors_, def.name, 0, "E_IO", "table file missing");
             continue;
         }
         std::ifstream in(file, std::ios::binary);
@@ -1286,7 +1284,7 @@ bool ContentDB::Finalize() {
     // --- regras globais ---
     if (im.rulesLoaded) {
         for (std::size_t i = 0; i < kRuleKeyCount; ++i) {
-            if (!im.ruleSeen[i] && !kRuleDefs[i].optional)
+            if (!im.ruleSeen[i])
                 f.E("rules.csv", 0, "E_REQUIRED", std::string("rule '") + kRuleDefs[i].key + "' missing");
         }
         if (rules_.dodgeIframes > rules_.dodgeDuration) f.E("rules.csv", 0, "E_RULE", "dodge_iframes > dodge_duration");
@@ -1297,6 +1295,14 @@ bool ContentDB::Finalize() {
             f.E("rules.csv", 0, "E_RULE", "3 * vigor_band_hours < max_expedition_hours");
     }
     if (!im.metaLoaded && contentVersion_ == 0) f.E("meta.csv", 0, "E_REQUIRED", "content_version not loaded");
+    if (im.rulesLoaded) {
+        // Conteúdo vindo de CSV: as tabelas de docs/13 são obrigatórias (docs/17, M4). Sem elas o jogo ficaria sem poção,
+        // sem fases de chefe, sem elites e sem fichas de ataque, em silêncio.
+        for (const char* t : {"potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv"}) {
+            if (std::find(im.loadedTables.begin(), im.loadedTables.end(), std::string(t)) == im.loadedTables.end())
+                f.E(t, 0, "E_REQUIRED", "required table not loaded");
+        }
+    }
 
     // --- filhos: class_stats, enemy_attacks, loot_entries (independe da ordem de carga) ---
     for (const ContentImpl::ClassStatRow& r : im.classStatRows) {
@@ -1530,6 +1536,17 @@ bool ContentDB::Finalize() {
                 const bool top = e.kind == LootEntryKind::Unique || e.kind == LootEntryKind::SpecBook ||
                                  e.kind == LootEntryKind::MapStone || e.kind == LootEntryKind::EchoFragment;
                 if (top && !e.manualOnly) f.E(T, ln, "E_RULE", "top-tier entries require manualOnly = true");
+                if (e.IsFixed()) {
+                    // Entrada fixa só rola na tabela de TOPO do chefe (loot.cpp): em subtabela ou em tabela de outro inimigo
+                    // o Finalize aceitaria uma entrada que nunca cai.
+                    const ContentId& tid = im.loot.items[ti].id;
+                    bool bossTop = false, subtable = false;
+                    for (const EnemyData& en : im.enemies.items) bossTop = bossTop || (en.isBoss && en.lootTableId == tid);
+                    for (const LootTableData& other : im.loot.items)
+                        for (const LootEntry& oe : other.entries) subtable = subtable || (oe.kind == LootEntryKind::Table && oe.refId == tid);
+                    if (!bossTop || subtable)
+                        f.E(T, ln, "E_RULE", "fixed entry must be in the top-level loot table of a boss (not a subtable)");
+                }
             }
         }
     }

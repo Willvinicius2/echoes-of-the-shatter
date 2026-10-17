@@ -63,7 +63,8 @@ inline OfflineWindow ComputeExpeditionWindow(UnixSeconds startUtc, int durationH
         ref = std::max(lastSeenUtc, startUtc);
         w.endedByRollback = true;
     }
-    const double elapsed = static_cast<double>(ref - startUtc);
+    // Em double: o início vem de um save que pode estar adulterado e `ref - startUtc` em int64 estouraria (UB).
+    const double elapsed = static_cast<double>(ref) - static_cast<double>(startUtc);
     w.effectiveSeconds = std::clamp(elapsed, 0.0, limit);
     w.finished = w.endedByRollback || elapsed >= limit;
     return w;

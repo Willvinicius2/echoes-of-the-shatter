@@ -1,11 +1,6 @@
 // Revisão do core da Etapa 2 (docs/17_revisao_core_etapa2.md): reproduções de achados em save, loot fixo e conteúdo.
 //
-// Cada teste afirma o comportamento CORRETO e falha no master atual. Ficam DESLIGADOS por padrão (saem cedo e passam)
-// e só rodam com SHATTER_REVISAO_BUGS=1, no mesmo padrão de SHATTER_BALANCE_PROBE:
-//   SHATTER_REVISAO_BUGS=1 shattercore_tests revisao_
-// O nome de cada teste traz o ID do achado no docs/17. Quando o achado for corrigido, apague a guarda do teste.
-// Os testes com "UB" no nome dependem de comportamento indefinido (o UBSan acusa e, no Clang, aborta):
-// rodam só com SHATTER_REVISAO_UB=1, um de cada vez (shattercore_tests <nome do teste>).
+// Cada teste afirma o comportamento CORRETO do achado do docs/17 (todos corrigidos e LIGADOS; sem variável de ambiente).
 #include <climits>
 #include <memory>
 
@@ -17,9 +12,6 @@ namespace {
 
 using Overrides = std::vector<std::pair<std::string, std::string>>;
 
-bool BugsOn() { return !tu::GetEnv("SHATTER_REVISAO_BUGS").empty(); }
-// Variável própria para os testes de UB: SHATTER_REVISAO_BUGS=1 roda os demais até o fim sem abortar.
-bool UbOn() { return !tu::GetEnv("SHATTER_REVISAO_UB").empty(); }
 
 std::string RichTable(const std::string& name) { return tu::ReadFile(tu::RichDir() + "/" + name); }
 
@@ -84,21 +76,25 @@ std::string SaveWithBossProgress(const std::string& bossProgressJson) {
 // (O caso de entradas duplicadas está em test_revisao_api_c.cpp, porque a leitura e a gravação divergem na API C.)
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_M1_save_aceita_boss_progress_negativo_ou_int_max) {
-    if (!BugsOn()) return;  // DESLIGADO: M1
     const std::string text = SaveWithBossProgress(
         "[{\"enemy_id\":\"enemy.crypt_guardian\",\"kills\":2147483647,\"kills_since_unique\":-1000}]");
     SaveData s;
     std::string err;
-    ASSERT_TRUE(ParseJson(text, s, &err) == LoadStatus::Ok);
-    ASSERT_TRUE(s.characters.size() == 1 && s.characters[0].bossProgress.size() == 1);
-    const BossProgressEntry& b = s.characters[0].bossProgress[0];
-    // Esperado: a leitura recusa (BadData) ou corta para 0 <= killsSinceUnique <= kills < INT_MAX.
-    EXPECT_TRUE(b.killsSinceUnique >= 0);
-    EXPECT_TRUE(b.kills < INT_MAX);
+    // A leitura recusa (BadData): contador negativo, acima do teto ou com killsSinceUnique > kills.
+    EXPECT_ENUM_EQ(ParseJson(text, s, &err), LoadStatus::BadData);
+    for (const char* bad : {"[{\"enemy_id\":\"enemy.crypt_guardian\",\"kills\":-1,\"kills_since_unique\":0}]",
+                            "[{\"enemy_id\":\"enemy.crypt_guardian\",\"kills\":3,\"kills_since_unique\":4}]",
+                            "[{\"enemy_id\":\"enemy.crypt_guardian\",\"kills\":1000001,\"kills_since_unique\":0}]",
+                            "[{\"enemy_id\":\"enemy.crypt_guardian\",\"kills\":1,\"kills_since_unique\":0},"
+                            "{\"enemy_id\":\"enemy.crypt_guardian\",\"kills\":2,\"kills_since_unique\":0}]",
+                            "[{\"enemy_id\":\"\",\"kills\":0,\"kills_since_unique\":0}]"})
+        EXPECT_ENUM_EQ(ParseJson(SaveWithBossProgress(bad), s, &err), LoadStatus::BadData);
+    // No limite válido (teto) a leitura aceita.
+    EXPECT_ENUM_EQ(ParseJson(SaveWithBossProgress(
+        "[{\"enemy_id\":\"enemy.crypt_guardian\",\"kills\":1000000,\"kills_since_unique\":1000000}]"), s, &err), LoadStatus::Ok);
 }
 
 TEST(revisao_M1_pity_negativo_vindo_do_save_atrasa_o_unico) {
-    if (!BugsOn()) return;  // DESLIGADO: M1
     // Só a proteção (pityKills = 5) faz o Único cair; o save traz killsSinceUnique = -1000.
     bool ok = false;
     const std::unique_ptr<ContentDB> db = RichWith(
@@ -109,7 +105,7 @@ TEST(revisao_M1_pity_negativo_vindo_do_save_atrasa_o_unico) {
         &ok);
     ASSERT_TRUE(ok);
     const EnemyData* boss = db->FindEnemy("enemy.crypt_guardian");
-    BossProgressEntry prog{boss->id, 3, -1000};
+    BossProgressEntry prog{boss->id, 3, -1000};  // fora da faixa (só chega assim por código): o roll trata negativo como 0
     std::uint64_t uid = 1;
     Pcg32 rng(11);
     int drops = 0;
@@ -119,15 +115,14 @@ TEST(revisao_M1_pity_negativo_vindo_do_save_atrasa_o_unico) {
 }
 
 TEST(revisao_M1_kills_int_max_estoura_no_roll_UB) {
-    if (!UbOn()) return;  // DESLIGADO: M1 (UB: o UBSan acusa loot.cpp:124, 131 e 133)
     const ContentDB& db = tu::RichDb();
     const EnemyData* boss = db.FindEnemy("enemy.crypt_guardian");
     BossProgressEntry prog{boss->id, INT_MAX, INT_MAX};
     std::uint64_t uid = 1;
     Pcg32 rng(3);
     RollBossLoot(db, *boss, 3, prog, &uid, rng);  // ++kills e killsSinceUnique + 1 com INT_MAX: estouro de int
-    EXPECT_TRUE(prog.kills >= 0);
-    EXPECT_TRUE(prog.killsSinceUnique >= 0);
+    EXPECT_TRUE(prog.kills >= 0 && prog.kills <= kMaxBossCounter);
+    EXPECT_TRUE(prog.killsSinceUnique >= 0 && prog.killsSinceUnique <= kMaxBossCounter);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -135,7 +130,6 @@ TEST(revisao_M1_kills_int_max_estoura_no_roll_UB) {
 // balanceamento escrito em constants.h:42-68 (CLAUDE.md: nenhum número de balanceamento no código).
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_M3_rules_sem_chave_de_balanceamento_usa_numero_do_codigo) {
-    if (!BugsOn()) return;  // DESLIGADO: M3
     std::string rules = RichTable("rules.csv");
     const std::size_t at = rules.find("elite_life_mult,");
     ASSERT_TRUE(at != std::string::npos);
@@ -151,7 +145,6 @@ TEST(revisao_M3_rules_sem_chave_de_balanceamento_usa_numero_do_codigo) {
 // finaliza sem erro e o herói fica sem poções no manual e no idle.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_M4_conteudo_real_sem_potions_csv_finaliza_sem_pocoes) {
-    if (!BugsOn()) return;  // DESLIGADO: M4
     ContentDB db;
     for (const char* t : tu::kTableNames) {
         if (std::string(t) == "potions.csv") continue;
@@ -166,7 +159,6 @@ TEST(revisao_M4_conteudo_real_sem_potions_csv_finaliza_sem_pocoes) {
 // tabela de topo e loot.cpp:144 as tira do sorteio ponderado: a entrada nunca cai.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_B4_entrada_fixa_em_subtabela_nunca_cai) {
-    if (!BugsOn()) return;  // DESLIGADO: B4
     // O livro de especialização vira entrada fixa garantida (chance 1) numa subtabela sorteada pelo chefe.
     const std::string tables = RichTable("loot_tables.csv") + "loot.crypt.guardian_bonus,1,1,80,18,2\n";
     std::string entries = RichTable("loot_entries.csv");
@@ -190,7 +182,6 @@ TEST(revisao_B4_entrada_fixa_em_subtabela_nunca_cai) {
 // B6 — recharge_remaining do save sem teto (combat.cpp:196, save.cpp:250): a poção nunca recarrega.
 // ---------------------------------------------------------------------------------------------
 TEST(revisao_B6_recarga_de_pocao_gigante_no_save_trava_a_carga) {
-    if (!BugsOn()) return;  // DESLIGADO: B6
     const ContentDB& db = tu::RichDb();
     const PotionData* life = db.FindPotion("potion.life");
     ASSERT_TRUE(life != nullptr);
@@ -199,9 +190,12 @@ TEST(revisao_B6_recarga_de_pocao_gigante_no_save_trava_a_carga) {
     s.characters[0].potionSlots[0].rechargeRemaining = 1e12;  // save editado ou corrompido
     std::string err;
     SaveData back;
+    // Acima do teto a leitura recusa (BadData); o teste de MakePotionBelt abaixo cobre o valor dentro do teto.
+    EXPECT_ENUM_EQ(ParseJson(SerializeJson(s), back, &err), LoadStatus::BadData);
+    s.characters[0].potionSlots[0].rechargeRemaining = 5.0e8;  // dentro do teto do save, mas muito além do período
     ASSERT_TRUE(ParseJson(SerializeJson(s), back, &err) == LoadStatus::Ok);
     NormalizeSavePotions(db, back);
     PotionBelt belt = MakePotionBelt(db, back.characters[0].potionSlots);
     TickPotions(db, belt, life->rechargeSeconds + 1.0);
-    EXPECT_EQ(PotionCharges(belt, "potion.life"), 1);  // hoje: 0 (faltam 1e12 s)
+    EXPECT_EQ(PotionCharges(belt, "potion.life"), 1);  // cortado ao período: a carga volta em rechargeSeconds
 }

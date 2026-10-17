@@ -36,6 +36,10 @@ namespace shatter {
 
 inline constexpr int kCurrentSaveVersion = 2;   // v2: potion_slots, boss_progress, equipment.legs (docs/09)
 inline constexpr int kSaveBackupCount = 3;
+// Faixas aceitas na leitura de um save (docs/17, M1, M2 e B6); fora delas o save é BadData.
+inline constexpr std::int64_t kMaxSaveUtc = 253402300799;       // 9999-12-31T23:59:59Z
+inline constexpr std::int64_t kMaxSavedPotionCharges = 1000;
+inline constexpr double kMaxSavedRechargeSeconds = 1.0e9;
 inline constexpr const char* kSaveFormatTag = "echoes-of-the-shatter-save";
 
 enum class ExpeditionStatus : std::uint8_t {

@@ -235,7 +235,8 @@ typedef struct shatter_area_run_reward {
 enum {
     SHATTER_START_OK = 0, SHATTER_START_MAP_NOT_CONQUERED, SHATTER_START_NOT_ENOUGH_CHARGES,
     SHATTER_START_ANOTHER_RUNNING, SHATTER_START_INVALID_DURATION, SHATTER_START_TOO_MANY_RULES,
-    SHATTER_START_IDLE_INCOMPATIBLE, SHATTER_START_UNKNOWN_CONTENT
+    SHATTER_START_IDLE_INCOMPATIBLE, SHATTER_START_UNKNOWN_CONTENT,
+    SHATTER_START_CLOCK_ROLLBACK     /* 1.1+: o relógio voltou (RF-48); só o início confiável devolve; nada muda */
 };
 /* Motivo de parada (StopReason); no JSON vai como texto ("duration_reached", "retreat"...). */
 enum {
@@ -542,7 +543,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 1u
+#define SHATTER_C_API_MINOR 2u   /* 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -562,6 +563,7 @@ typedef struct shatter_rules_ext {   /* chaves novas de rules.csv (docs/13); o C
 typedef struct shatter_vitals {      /* vida, recurso e barreira de uma entidade (o C# guarda; o core calcula) */
     double life, resource, barrier;
     double barrier_seconds_left;     /* > 0: a barreira (de poção) some ao chegar a 0 */
+    double potion_barrier;           /* parte de `barrier` que veio da poção (só ela some junto); 0 = o core assume tudo */
 } shatter_vitals;
 
 typedef struct shatter_action_timing {   /* tempos das 3 fases com a velocidade aplicada, recarga e custo */
@@ -662,7 +664,7 @@ enum { SHATTER_CALIBRATION_NONE = 0, SHATTER_CALIBRATION_MANUAL_ESTIMATE = 1, SH
 /* Resultado de shatter_save_collect_expedition_trusted. */
 enum { SHATTER_COLLECT_COLLECTED = 0, SHATTER_COLLECT_ALREADY = 1, SHATTER_COLLECT_NOT_FINISHED = 2 };
 
-#define SHATTER_LAYOUT_EXT_COUNT 37u
+#define SHATTER_LAYOUT_EXT_COUNT 114u
 SHATTER_API uint32_t SHATTER_CALL shatter_api_minor(void) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext(const uint32_t* values, size_t n,
@@ -812,7 +814,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_elite_profile(const shatter_db* 
                                                               size_t modifier_id_len, uint8_t rolled,
                                                               shatter_elite_info* out) SHATTER_NOEXCEPT;
 /* Escreve os multiplicadores no bloco do inimigo (Life/Damage/MoveSpeed/AttackSpeed More; fonte "elite") e devolve a
- * barreira inicial. Chame depois de shatter_statblock_for_enemy. */
+ * barreira inicial. Idempotente (reaplica no mesmo bloco sem multiplicar de novo). SÓ `modifier_id` e `rolled` da struct
+ * valem: os multiplicadores são montados pelo banco, o chamador não os escolhe. Chame depois de shatter_statblock_for_enemy. */
 SHATTER_API shatter_status SHATTER_CALL shatter_elite_apply(const shatter_db* db, const shatter_elite_info* info,
                                                             shatter_statblock* stats, double* barrier) SHATTER_NOEXCEPT;
 
@@ -869,14 +872,23 @@ SHATTER_API shatter_status SHATTER_CALL shatter_expedition_forecast_ex(const sha
                                                                        size_t len, uint64_t base_seed, int32_t samples,
                                                                        shatter_forecast_ex* out,
                                                                        shatter_error* err) SHATTER_NOEXCEPT;
-/* Inicia a expedição: start_utc = now->now (relógio confiável) e a seed é derivada pelo core do estado do save. Os
- * campos "seed" e "start_utc" do JSON de parâmetros são PROIBIDOS (INVALID_ARGUMENT). Substitui
- * shatter_save_start_expedition (que passa a recusar com INVALID_ARGUMENT). */
+/* Inicia a expedição: start_utc = max(now->now, last_seen do save) e a seed é derivada pelo core do estado do save. Os
+ * campos "seed" e "start_utc" do JSON de parâmetros são PROIBIDOS (INVALID_ARGUMENT). Relógio voltando (flag
+ * rollback_detected do chamador OU now < last_seen do SAVE − tolerância): *start_check = SHATTER_START_CLOCK_ROLLBACK e
+ * nada muda (RF-48). Início aceito: last_seen do save sobe para o início. Prefira shatter_save_start_expedition_clock,
+ * que resolve o relógio por dentro. Substitui shatter_save_start_expedition (que passa a recusar com INVALID_ARGUMENT). */
 SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition_trusted(const shatter_db* db, shatter_save* save,
                                                                               const char* params_json, size_t len,
                                                                               const shatter_trusted_now* now,
                                                                               int32_t* start_check,
                                                                               shatter_error* err) SHATTER_NOEXCEPT;
+/* Como _trusted, mas recebe o relógio cru (shatter_clock_input) e resolve o "agora" por dentro (ResolveNow com o last_seen
+ * do SAVE, como a coleta): o chamador não escolhe nem o início nem a seed. */
+SHATTER_API shatter_status SHATTER_CALL shatter_save_start_expedition_clock(const shatter_db* db, shatter_save* save,
+                                                                            const char* params_json, size_t len,
+                                                                            const shatter_clock_input* clock,
+                                                                            int32_t* start_check,
+                                                                            shatter_error* err) SHATTER_NOEXCEPT;
 /* Coleta: o core RECALCULA o resultado pelo pedido salvo (snapshot, seed, início) e pelo relógio confiável; nada do
  * resultado vem do chamador. *collect_status = SHATTER_COLLECT_*: NOT_FINISHED (a janela ainda não acabou: nada
  * muda), ALREADY (já coletada) ou COLLECTED (itens, pilhas e XP entram no save e o status vira collected).

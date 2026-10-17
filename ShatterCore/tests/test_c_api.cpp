@@ -1054,7 +1054,9 @@ TEST(c_api_11_potions_belt_use_tick_elite_refill_and_save_roundtrip) {
     EXPECT_NEAR(pv.life, 1.0 + maxLife * 0.4, 1e-9);
     EXPECT_EQ(shatter_potion_resolve(db.db, "potion.nope", 11, hero.sb, &pv, &po), SHATTER_NOT_FOUND);
     EXPECT_EQ(shatter_potions_use(db.db, nullptr, life.data(), life.size(), hero.sb, &v, &o), SHATTER_INVALID_ARGUMENT);
-    EXPECT_EQ(shatter_potions_from_save(db.db, save.save, 9, &again.p), SHATTER_INVALID_ARGUMENT);
+    shatter_potions* invalid = nullptr;  // variável própria: a API zera *out antes de recusar (contrato); `again` não pode perder o dono (LeakSanitizer)
+    EXPECT_EQ(shatter_potions_from_save(db.db, save.save, 9, &invalid), SHATTER_INVALID_ARGUMENT);
+    EXPECT_TRUE(invalid == nullptr);
     shatter_potions_destroy(nullptr);
 }
 
@@ -1440,8 +1442,8 @@ TEST(c_api_r2_rules_ext2_layout_unarmed_base_damage_and_lookup_columns) {
     DbHandle db(tu::RichDir());
     shatter_rules_ext2 x{};
     ASSERT_EQ(shatter_db_rules_ext2(db.db, &x), SHATTER_OK);
-    EXPECT_NEAR(x.unarmed_weapon_damage_physical, 3.0, 0.0);
-    EXPECT_NEAR(x.require_on_screen_margin, 100.0, 0.0);
+    EXPECT_NEAR(x.unarmed_weapon_damage_physical, tu::RichDb().Rules().unarmedWeaponDamagePhysical, 0.0);
+    EXPECT_TRUE(x.unarmed_weapon_damage_physical > 0.0 && x.require_on_screen_margin >= 0.0);
     EXPECT_EQ(shatter_db_rules_ext2(db.db, nullptr), SHATTER_INVALID_ARGUMENT);
     std::size_t needed = 0;
     EXPECT_EQ(shatter_layout_info_ext2(nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
@@ -1453,7 +1455,7 @@ TEST(c_api_r2_rules_ext2_layout_unarmed_base_damage_and_lookup_columns) {
     EXPECT_EQ(shatter_layout_check_ext2(layout.data(), layout.size(), &err), SHATTER_OK);
     layout[2] += 8;
     EXPECT_EQ(shatter_layout_check_ext2(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
-    EXPECT_EQ(SHATTER_LAYOUT_EXT_COUNT, 37u);          // o layout ext anterior não mudou
+    EXPECT_EQ(SHATTER_LAYOUT_EXT_COUNT, 114u);         // layout ext completo (todos os campos; docs/17 M6)
 
     // Dano base: com espada o da arma; SEM arma (id vazio) o desarmado, só físico; golpe que não escala usa o dele.
     double dmg[4] = {-1, -1, -1, -1};
@@ -1461,7 +1463,7 @@ TEST(c_api_r2_rules_ext2_layout_unarmed_base_damage_and_lookup_columns) {
     ASSERT_EQ(shatter_skill_base_damage(db.db, cut.data(), cut.size(), sword.data(), sword.size(), dmg), SHATTER_OK);
     EXPECT_NEAR(dmg[0], tu::RichDb().FindItemBase(sword)->weaponDamage[0], 0.0);
     ASSERT_EQ(shatter_skill_base_damage(db.db, cut.data(), cut.size(), nullptr, 0, dmg), SHATTER_OK);
-    EXPECT_NEAR(dmg[0], 3.0, 0.0);
+    EXPECT_NEAR(dmg[0], x.unarmed_weapon_damage_physical, 0.0);
     EXPECT_NEAR(dmg[1] + dmg[2] + dmg[3], 0.0, 0.0);
     ASSERT_EQ(shatter_skill_base_damage(db.db, strike.data(), strike.size(), nullptr, 0, dmg), SHATTER_OK);
     EXPECT_NEAR(dmg[0], tu::RichDb().FindSkill(strike)->baseDamage[0], 0.0);
@@ -1529,15 +1531,17 @@ TEST(c_api_r2_boss_wall_hit_staggers_and_swift_timing_ignores_missing_mods) {
     StatHandle houndSb;
     ASSERT_EQ(shatter_statblock_for_enemy(real.db, hound.data(), hound.size(), 3, &houndSb.sb), SHATTER_OK);
     shatter_action_timing t{};
+    shatter_action_timing plainT{};
+    ASSERT_EQ(shatter_skill_timing(real.db, bite.data(), bite.size(), houndSb.sb, nullptr, 0, &plainT), SHATTER_OK);
     ASSERT_EQ(shatter_skill_timing(real.db, bite.data(), bite.size(), houndSb.sb, mod.data(), mod.size(), &t), SHATTER_OK);
-    EXPECT_NEAR(t.windup, 0.3, 1e-12);
+    EXPECT_NEAR(t.windup, plainT.windup, 1e-12);          // o modificador não muda o telegraph (valor vem do CSV)
     shatter_elite_info info{};
     double barrier = 0.0;
     ASSERT_EQ(shatter_elite_profile(real.db, mod.data(), mod.size(), 0, &info), SHATTER_OK);
     ASSERT_EQ(shatter_elite_apply(real.db, &info, houndSb.sb, &barrier), SHATTER_OK);
     shatter_action_timing t2{};
     ASSERT_EQ(shatter_skill_timing(real.db, bite.data(), bite.size(), houndSb.sb, mod.data(), mod.size(), &t2), SHATTER_OK);
-    EXPECT_NEAR(t2.windup, 0.3, 1e-12);
+    EXPECT_NEAR(t2.windup, plainT.windup, 1e-12);
     EXPECT_NEAR(t2.impact, t.impact, 1e-12);
     EXPECT_NEAR(t2.recovery, t.recovery, 1e-12);
 }

@@ -39,33 +39,34 @@ struct RulesConstants {
     std::array<double, 3> vigorByBand = {1.0, 0.7, 0.4};
     double vigorBandHours = 4.0;           // vigor_band_hours
 
-    // --- ADIÇÃO (docs/13): valores padrão = os do design; os CSV (rules.csv) sempre sobrescrevem. Chaves opcionais. ---
+    // --- Chaves de docs/13 e da rodada 2: OBRIGATÓRIAS em rules.csv (ausente = E_KEY_MISSING no Finalize). Os valores
+    // abaixo são neutros (0): o número de balanceamento mora só no CSV (CLAUDE.md), nunca num padrão escondido. ---
     // Esquiva (item 1)
-    int    dodgeMaxCharges = 3;            // dodge_max_charges
-    double dodgeRecharge = 1.5;            // dodge_recharge (s por carga, em série)
-    double dodgeDuration = 0.35;           // dodge_duration (s)
-    double dodgeIframes = 0.2;             // dodge_iframes: invulnerável em [0, iframes)
-    double dodgeDistance = 400.0;          // dodge_distance (uu)
+    int    dodgeMaxCharges = 0;            // dodge_max_charges
+    double dodgeRecharge = 0.0;            // dodge_recharge (s por carga, em série)
+    double dodgeDuration = 0.0;            // dodge_duration (s)
+    double dodgeIframes = 0.0;             // dodge_iframes: invulnerável em [0, iframes)
+    double dodgeDistance = 0.0;            // dodge_distance (uu)
     double dodgeCostResource = 0.0;        // dodge_cost_resource
-    double dodgeBuffer = 0.1;              // dodge_buffer (s de buffer de entrada; o C# aplica)
-    double dodgePerfectResource = 10.0;    // dodge_perfect_resource: recurso ao ser invulnerável no golpe
+    double dodgeBuffer = 0.0;              // dodge_buffer (s de buffer de entrada; o C# aplica)
+    double dodgePerfectResource = 0.0;     // dodge_perfect_resource: recurso ao ser invulnerável no golpe
+    double dodgeCancelRecoveryFraction = 0.0;    // dodge_cancel_recovery_fraction: a esquiva cancela a partir desta fração da recuperação
+    double outOfCombatSeconds = 0.0;             // out_of_combat_seconds: sem dar nem levar golpe = fora de combate (RF-14)
     // Guarda Quebrada (item 3)
-    double guardBreakStaggerSeconds = 1.5;       // guard_break_stagger_seconds
-    double guardBreakStaggerDamageTaken = 0.30;  // guard_break_stagger_damage_taken (fração a mais de dano recebido)
-    double guardBreakImmunityBoss = 8.0;         // guard_break_immunity_boss (s)
-    double guardBreakImmunityOther = 4.0;        // guard_break_immunity_other (s)
-    double bossShieldDownSeconds = 5.0;          // boss_shield_down_seconds
+    double guardBreakStaggerSeconds = 0.0;       // guard_break_stagger_seconds
+    double guardBreakStaggerDamageTaken = 0.0;   // guard_break_stagger_damage_taken (fração a mais de dano recebido)
+    double guardBreakImmunityBoss = 0.0;         // guard_break_immunity_boss (s)
+    double guardBreakImmunityOther = 0.0;        // guard_break_immunity_other (s)
+    double bossShieldDownSeconds = 0.0;          // boss_shield_down_seconds
     // Elite sorteado (item 5)
-    double eliteLifeMult = 2.0;            // elite_life_mult
-    double eliteDamageMult = 1.2;          // elite_damage_mult
-    double eliteXpMult = 3.0;              // elite_xp_mult
-    double dodgeCancelRecoveryFraction = 0.5;    // dodge_cancel_recovery_fraction: a esquiva cancela a partir desta fração da recuperação
-    double outOfCombatSeconds = 3.0;             // out_of_combat_seconds: sem dar nem levar golpe = fora de combate (RF-14)
+    double eliteLifeMult = 0.0;            // elite_life_mult
+    double eliteDamageMult = 0.0;          // elite_damage_mult
+    double eliteXpMult = 0.0;              // elite_xp_mult
     // Poções (item 2)
-    double potionLockout = 1.0;            // potion_lockout: trava global entre usos (s)
+    double potionLockout = 0.0;            // potion_lockout: trava global entre usos (s)
     // Rodada 2 (docs/13, R2): dano base físico da "arma" sem arma equipada; margem da área visível de R-VIS-1.
-    double unarmedWeaponDamagePhysical = 3.0;  // unarmed_weapon_damage_physical
-    double requireOnScreenMargin = 100.0;      // require_on_screen_margin (uu)
+    double unarmedWeaponDamagePhysical = 0.0;  // unarmed_weapon_damage_physical
+    double requireOnScreenMargin = 0.0;        // require_on_screen_margin (uu)
 
     // --- Fervor (jogo manual). O idle é a taxa base = 1. ---
     double fervorXpMult = 3.0;             // fervor_xp_mult
