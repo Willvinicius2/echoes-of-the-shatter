@@ -638,7 +638,7 @@ namespace Echoes.EditorTools
                 {
                     foreach (var pose in new[] { "idle", "golpe" })
                     {
-                        foreach (var view in new[] { "frente", "tres_quartos" })
+                        foreach (var view in new[] { "frente", "tres_quartos", "lado" })
                         {
                             var hh = h; var pp = pose; var vv = view;
                             GameObject go = null;
@@ -666,7 +666,17 @@ namespace Echoes.EditorTools
                                 var clip = pp == "idle" ? idle : hh.strike;
                                 var time = pp == "idle" ? 0.3f : clip.length * hh.t;
                                 clip.SampleAnimation(go.GetComponentInChildren<Animator>().gameObject, time);
-                                var yaw = vv == "frente" ? 0f : 40f;
+                                if (vv == "frente")
+                                    foreach (var t in go.GetComponentsInChildren<Transform>(true))
+                                    {
+                                        if (!t.name.StartsWith("Weapon_")) continue;
+                                        var mf = t.GetComponentInChildren<MeshFilter>();
+                                        var smr = t.GetComponentInChildren<SkinnedMeshRenderer>();
+                                        var mb = mf != null ? mf.sharedMesh.bounds : smr != null ? smr.sharedMesh.bounds : default;
+                                        var sk = t.parent;
+                                        Debug.Log($"[ArmasEixos] {hh.name} {pp} {t.name} malha(centro={mb.center:F2} tam={mb.size:F2}) escalaMundo={t.lossyScale:F2} armaX={t.right:F2} armaY={t.up:F2} armaZ={t.forward:F2} personagemFrente={go.transform.forward}");
+                                    }
+                                var yaw = vv == "frente" ? 0f : vv == "lado" ? -90f : 40f;
                                 var target = origin + Vector3.up * hh.look;
                                 // o personagem olha para +Z; a camera fica a frente (+Z) olhando para tras
                                 var dir3 = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;

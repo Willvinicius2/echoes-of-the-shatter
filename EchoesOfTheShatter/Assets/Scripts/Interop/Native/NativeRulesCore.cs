@@ -111,7 +111,7 @@ namespace Echoes.Interop.Native
                 var minor = ShatterNative.shatter_api_minor();
                 if (minor < ShatterNative.ExpectedApiMinor)
                 {
-                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
+                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (fuga do inimigo no core, vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
                     return false;
                 }
                 if (!NativeLayout.CheckExt(out var extMessage))
@@ -122,6 +122,11 @@ namespace Echoes.Interop.Native
                 if (!NativeLayout.CheckExt2(out var ext2Message))
                 {
                     reason = "layout ext2 (rodada 2) das structs diverge da DLL: " + ext2Message;
+                    return false;
+                }
+                if (!NativeLayout.CheckExt3(out var ext3Message))
+                {
+                    reason = "layout ext3 (fuga) das structs diverge da DLL: " + ext3Message;
                     return false;
                 }
                 core = new NativeRulesCore(version);

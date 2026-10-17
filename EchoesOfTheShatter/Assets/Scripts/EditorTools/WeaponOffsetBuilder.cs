@@ -10,15 +10,18 @@ namespace Echoes.EditorTools
     {
         public const string Dir = "Assets/Data/Presentation/Weapons";
 
+        /// <summary>Pe a arma (autorada com o comprimento no eixo Y e a face no Z) em pe no eixo Z da mao (Rx 90) e depois gira essa pose em torno do eixo da mao (Rz): quem manda e a ordem Rx primeiro, Rz depois.</summary>
+        static Vector3 Stand(float yawAroundHand) => (Quaternion.Euler(0f, 0f, yawAroundHand) * Quaternion.Euler(90f, 0f, 0f)).eulerAngles;
+
         // nome -> (posicao local, euler local). Ajustados por captura (armas_*.png). Martelo: identidade (ja alinhado).
         static readonly Dictionary<string, (Vector3 pos, Vector3 euler)> Defaults = new Dictionary<string, (Vector3, Vector3)>
         {
             { "WarriorHammer", (Vector3.zero, Vector3.zero) },
             { "GuardianHammer", (Vector3.zero, Vector3.zero) },
-            { "WarriorShield", (Vector3.zero, Vector3.zero) },
-            { "GuardianShield", (Vector3.zero, Vector3.zero) },
-            { "Bow", (Vector3.zero, Vector3.zero) },
-            { "Staff", (Vector3.zero, Vector3.zero) },
+            { "WarriorShield", (Vector3.zero, Stand(180f)) },
+            { "GuardianShield", (Vector3.zero, Stand(180f)) },
+            { "Bow", (Vector3.zero, Stand(90f)) },
+            { "Staff", (Vector3.zero, new Vector3(90f, 0f, 0f)) },
         };
 
         /// <summary>Retorna o asset da arma, criando com o padrao se nao existir (nunca sobrescreve valores ja ajustados).</summary>

@@ -130,6 +130,37 @@ namespace Echoes.Interop.Native
 
         public ActorApplyResult LastApply => lastApply;
 
+        public FleeResult FleeStep(double dt, double life, double maxLife, bool hasTarget, bool dead)
+        {
+            bool c = false;
+            try
+            {
+                actor.DangerousAddRef(ref c);
+                ShatterFleeResult r = default;
+                NativeCallException.ThrowIfFailed("shatter_actor_flee_step",
+                    ShatterNative.shatter_actor_flee_step(actor.DangerousGetHandle(), dt, life, maxLife, (byte)(hasTarget ? 1 : 0), (byte)(dead ? 1 : 0), &r));
+                return new FleeResult { Remaining = r.remaining, Fleeing = r.fleeing != 0, Started = r.started != 0, Ended = r.ended != 0, CanFlee = r.can_flee != 0 };
+            }
+            finally
+            {
+                if (c) actor.DangerousRelease();
+            }
+        }
+
+        public void FleeReset()
+        {
+            bool c = false;
+            try
+            {
+                actor.DangerousAddRef(ref c);
+                NativeCallException.ThrowIfFailed("shatter_actor_flee_reset", ShatterNative.shatter_actor_flee_reset(actor.DangerousGetHandle()));
+            }
+            finally
+            {
+                if (c) actor.DangerousRelease();
+            }
+        }
+
         public void BindBoss(IBossController bossController)
         {
             boss = bossController as NativeBoss;

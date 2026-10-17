@@ -512,6 +512,17 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void Ext3LayoutOfTheFleeResultIsCheckedAndApiMinorIsAtLeast3()
+        {
+            LoadNative().Dispose();
+            Assert.IsTrue(NativeLayout.CheckExt3(out var message), message);
+            var values = NativeLayout.BuildExt3();
+            Assert.AreEqual(6, values.Length);
+            Assert.AreEqual(16u, values[0], "shatter_flee_result tem 16 bytes");
+            Assert.GreaterOrEqual(ShatterNative.shatter_api_minor(), 3u);
+        }
+
+        [Test]
         public void CombatRulesComeFromTheDatabaseExtension()
         {
             using (var native = LoadNative())

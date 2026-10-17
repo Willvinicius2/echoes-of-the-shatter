@@ -117,6 +117,12 @@ namespace Echoes.Tests.EditMode
                     world.Run(0.3);
                     Assert.IsFalse(hound.logic.IsFleeing, "uma vez por vida");
                 }
+                world.Combat.Revive(hound.combatant);
+                vitals = hound.combatant.Vitals;
+                vitals.Life = hound.combatant.MaxLife * info.FleeLifeFraction * 0.4;
+                hound.combatant.SetVitals(in vitals);
+                world.Run(0.3);
+                Assert.IsTrue(hound.logic.IsFleeing, "o revive libera a fuga de novo (shatter_actor_flee_reset)");
             }
         }
 
