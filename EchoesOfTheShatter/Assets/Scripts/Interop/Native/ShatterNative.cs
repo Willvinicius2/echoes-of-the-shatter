@@ -151,6 +151,11 @@ namespace Echoes.Interop.Native
 
         // API C 1.5 (combate basico, docs/09 secao 12)
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_resolve_hit_charged(IntPtr db, IntPtr attacker, IntPtr defender, ShatterHitInput* input,
+                                                             byte* classId, nuint classIdLen, double chargeFraction,
+                                                             ShatterRng* rng, ShatterHitResult* output, ShatterError* err);
+
+        [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_layout_check_ext5(uint* values, nuint n, ShatterError* err);
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]

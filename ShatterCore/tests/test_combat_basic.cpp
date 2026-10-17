@@ -3,6 +3,7 @@
 // tag `guard`), recurso por golpe e por bloqueio, regeneração em movimento, compatibilidade com o idle e `cast_speed` neutro.
 // Tudo contra o conteúdo REAL (Content/Data) com 3 classes; os cenários inválidos trocam UMA tabela por texto alterado.
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <memory>
 
@@ -695,4 +696,57 @@ TEST(combat_basic_new_classes_are_blocked_from_expeditions_and_the_warrior_seal_
     EXPECT_FALSE(IsKitOnlySkill(db, "class.warrior", "skill.warrior.iron_cut"));  // o golpe 1 conta
     EXPECT_FALSE(IsKitOnlySkill(db, "class.warrior", "skill.warrior.charge"));
     EXPECT_FALSE(IsKitOnlySkill(db, "class.nope", "skill.warrior.heavy_slash"));
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Multiplicador do ataque forte (docs/18 1.4): regra do core, aplicada como `more` neste golpe
+// ---------------------------------------------------------------------------------------------------------------------
+TEST(combat_basic_heavy_charge_multiplier_is_linear_and_rejects_out_of_range) {
+    const BasicKitData* kit = Real().FindBasicKit("class.warrior");
+    ASSERT_TRUE(kit != nullptr && kit->heavyMaxMult > 1.0);
+    double m = -1.0;
+    ASSERT_TRUE(HeavyChargeMultiplier(*kit, 0.0, m));
+    EXPECT_NEAR(m, 1.0, 0.0);
+    ASSERT_TRUE(HeavyChargeMultiplier(*kit, 1.0, m));
+    EXPECT_NEAR(m, kit->heavyMaxMult, 1e-12);
+    ASSERT_TRUE(HeavyChargeMultiplier(*kit, 0.5, m));
+    EXPECT_NEAR(m, 1.0 + (kit->heavyMaxMult - 1.0) * 0.5, 1e-12);
+    m = -7.0;
+    for (double bad : {-0.001, 1.001, 2.0, -1.0, std::nan(""), HUGE_VAL}) {
+        EXPECT_FALSE(HeavyChargeMultiplier(*kit, bad, m));
+        EXPECT_NEAR(m, -7.0, 0.0);  // saída intacta
+    }
+}
+
+TEST(combat_basic_hit_more_multiplies_this_hit_only_before_the_crit) {
+    const ContentDB& db = Real();
+    StatBlock atk, def;
+    def.SetBase(StatId::Life, 10000.0);
+    atk.SetBase(StatId::CritChance, 1.0);  // sempre critica: o `more` entra antes do multiplicador do crítico
+    auto hit = [&](double more) {
+        HitInput in;
+        in.attacker = &atk;
+        in.defender = &def;
+        in.skillTags = Tag::Attack | Tag::Melee | Tag::Physical;
+        in.baseDamage[0] = 100.0;
+        in.coefficient = 1.0;
+        in.defenderLife = 10000.0;
+        in.hitMore = more;
+        Pcg32 rng = Pcg32::ForStream(5, RngStream::Combat, 0);
+        const HitResult r = ResolveHit(in, db.Rules(), rng);
+        return std::make_pair(r, rng.State());
+    };
+    const auto base = hit(1.0);
+    const auto heavy = hit(1.5);
+    EXPECT_TRUE(base.first.critical && heavy.first.critical);
+    EXPECT_NEAR(heavy.first.totalDamage, base.first.totalDamage * 1.5, 1e-9);
+    EXPECT_EQ(base.second, heavy.second);  // mesmo consumo de RNG
+    // Soma com um `more` do atacante (multiplicam entre si), não substitui.
+    Modifier mod;
+    mod.stat = StatId::Damage;
+    mod.kind = ModKind::More;
+    mod.value = 0.2;
+    mod.source = "t";
+    atk.AddModifier(mod);
+    EXPECT_NEAR(hit(1.5).first.totalDamage, base.first.totalDamage * 1.2 * 1.5, 1e-9);
 }

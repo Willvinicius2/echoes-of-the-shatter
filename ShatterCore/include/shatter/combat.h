@@ -65,6 +65,11 @@ void GainResourceOnHit(Vitals& v, const StatBlock& stats, const ClassData* cls);
 void GainResourceOnBlock(Vitals& v, const StatBlock& stats, const ClassData* cls);
 bool TrySpendResource(Vitals& v, double amount);   // false (sem gastar) se faltar recurso
 
+// Multiplicador de dano do ataque forte (docs/18 1.4): 1 + (heavyMaxMult - 1) * fração da carga, linear, sem pow. `fraction` é o
+// progresso da carga de 0 a 1 (0 = carga mínima = 1, 1 = máxima = heavyMaxMult). false (e `out` intacto) se a fração for NaN
+// ou estiver fora de [0, 1]. Aplique em HitInput::hitMore.
+bool HeavyChargeMultiplier(const BasicKitData& kit, double fraction, double& out);
+
 // ---------------------------------------------------------------------------
 // Tempos de ação
 // ---------------------------------------------------------------------------

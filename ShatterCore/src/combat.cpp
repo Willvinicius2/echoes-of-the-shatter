@@ -149,6 +149,12 @@ void GainResource(Vitals& v, const StatBlock& stats, double amount) {
     v.resource = std::min(stats.Get(StatId::Resource), v.resource + amount);
 }
 
+bool HeavyChargeMultiplier(const BasicKitData& kit, double fraction, double& out) {
+    if (!(fraction >= 0.0 && fraction <= 1.0)) return false;  // também recusa NaN
+    out = 1.0 + (kit.heavyMaxMult - 1.0) * fraction;
+    return true;
+}
+
 double ResourceOnHit(const ClassData* cls) { return cls != nullptr ? cls->resourceOnHit : 0.0; }
 double ResourceOnBlock(const ClassData* cls) { return cls != nullptr ? cls->resourceOnBlock : 0.0; }
 void GainResourceOnHit(Vitals& v, const StatBlock& stats, const ClassData* cls) { GainResource(v, stats, ResourceOnHit(cls)); }

@@ -983,6 +983,17 @@ typedef struct shatter_basic_kit {
 SHATTER_API shatter_status SHATTER_CALL shatter_basic_kit_get(const shatter_db* db, const char* class_id,
                                                               size_t class_id_len, shatter_basic_kit* out) SHATTER_NOEXCEPT;
 
+/* Golpe do ATAQUE FORTE carregado (docs/18 1.4). O core calcula o multiplicador com o heavy_max_mult do kit da classe:
+ * 1 + (heavy_max_mult - 1) * charge_fraction (linear) e o aplica como `more` SÓ neste golpe (depois dos modificadores do
+ * atacante, antes do crítico). O resto é igual a shatter_resolve_hit_db (3 números de rng, constantes do banco).
+ * charge_fraction = progresso da carga, 0 (mínima) a 1 (máxima). Fora de [0, 1] ou NaN: INVALID_ARGUMENT com mensagem em
+ * err, sem efeito (o rng não avança). Classe sem kit: NOT_FOUND. Não cabe campo novo em shatter_hit_input (só sobra 1
+ * byte livre e o tamanho 64 é contrato): por isso função própria, com o ID da classe. */
+SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit_charged(
+    const shatter_db* db, const shatter_statblock* attacker, const shatter_statblock* defender,
+    const shatter_hit_input* input, const char* class_id, size_t class_id_len, double charge_fraction,
+    shatter_rng* rng, shatter_hit_result* out, shatter_error* err) SHATTER_NOEXCEPT;
+
 /* Como shatter_vitals_tick, com `moving` (!= 0: o herói está andando). A regeneração do RECURSO é multiplicada por
  * regen_mult_while_moving da classe (Foco: 0,3); a vida não muda. moving = 0 é igual a shatter_vitals_tick. */
 SHATTER_API shatter_status SHATTER_CALL shatter_vitals_tick_ex(const shatter_db* db, shatter_vitals* vitals,
