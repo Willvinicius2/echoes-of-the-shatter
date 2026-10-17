@@ -1,0 +1,39 @@
+{
+  "id": "mod_mage_cut",
+  "asset": "SK_Mage",
+  "kind": "humanoid",
+  "body_height_m": 1.5,
+  "tex_size": 1024,
+  "src_blend": "D:/openclaude/_trabalho-claude/modelos3d/m03_mago/final/SK_Mage.blend",
+  "src_mesh": "SK_Mage_Body",
+  "src_tex_dir": "D:/openclaude/_trabalho-claude/modelos3d/m03_mago/final",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_mago/work/cut",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_mago/final",
+  "set_name": "Starter",
+  "hero": "Mage",
+  "cuts": {
+    "waist_z": 0.7,
+    "boot_z": 0.19
+  },
+  "hides": {
+    "Head": [
+      "Head"
+    ],
+    "Chest": [
+      "Torso",
+      "Arms"
+    ],
+    "Hands": [
+      "Hands"
+    ],
+    "Legs": [
+      "Legs"
+    ],
+    "Feet": [
+      "Feet"
+    ]
+  },
+  "body_rig_blend": "D:/openclaude/_trabalho-claude/modelos3d/modular_mago/work/body/game_rig.blend",
+  "body_tex_dir": "D:/openclaude/_trabalho-claude/modelos3d/modular_mago/final",
+  "body_mesh_src": "D:/openclaude/_trabalho-claude/modelos3d/modular_mago/work/body/game_uv.blend"
+}

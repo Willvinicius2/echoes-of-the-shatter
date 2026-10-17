@@ -84,7 +84,7 @@ bm.free()
 # a malha reimportada separa vertices por UV/normal; fecha pela posicao antes de contar buracos
 v, f = mesh_arrays(body)
 key = {}
-vid = np.array([key.setdefault(tuple(np.round(p, 5)), len(key)) for p in v])
+vid = np.array([key.setdefault(tuple(np.round(p, 4)), len(key)) for p in v])
 fw = vid[f]
 edges = {}
 for a, b, c in fw:

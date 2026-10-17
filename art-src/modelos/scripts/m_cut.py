@@ -145,7 +145,8 @@ for i, pn in enumerate(PIECES):
             extra = len(nf2)
         except Exception as ex:
             print("triangle_fill falhou", pn, ex)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    if extra:
+        bmesh.ops.recalc_face_normals(bm, faces=nf2)    # so as faces do triangle_fill; o resto ja vem orientado do modelo original
     left = sum(1 for e in bm.edges if e.is_boundary or not e.is_manifold)
     caps[pn] = dict(boundary_edges=len(bedges), cap_tris=len(newf), triangle_fill_extra=extra, arestas_abertas_restantes=left)
     bm.to_mesh(o2.data); bm.free()

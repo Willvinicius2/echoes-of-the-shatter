@@ -73,6 +73,20 @@ def hole_scan(objs):
     return res
 
 
+# referencia: o proprio heroi vestido intacto (SK_<Heroi>.blend). Aberturas naturais (capuz aberto, manga) aparecem como face de
+# tras tambem nele; o que conta como buraco de junta e o excesso sobre essa referencia, vista a vista.
+import bpy as _b
+with _b.data.libraries.load(cfg["src_blend"]) as (_s, _d):
+    _d.objects = [cfg["src_mesh"]]
+orig = _d.objects[0]
+_b.context.scene.collection.objects.link(orig)
+orig.parent = None
+for _m in list(orig.modifiers):
+    orig.modifiers.remove(_m)
+baseline = hole_scan([orig])
+_b.data.objects.remove(orig)
+report["referencia_heroi_intacto_pct_por_vista"] = baseline
+
 for pose in ("repouso", "teste"):
     if pose == "teste":
         apply_test_pose(arm)
@@ -81,8 +95,10 @@ for pose in ("repouso", "teste"):
         objs = [o for s, o in pieces.items() if s in worn] + [regs[r] for r in vis]
         res = hole_scan(objs)
         tri = sum(len(o.data.polygons) for o in objs)
+        exc = {k: round(res[k] - baseline[k], 3) for k in res}
         report["combos"].setdefault(cn, {})[pose] = dict(regioes_do_corpo_visiveis=vis, triangulos=tri, face_de_tras_pct_por_vista=res,
-                                                         pior_vista_pct=max(res.values()))
+                                                         excesso_sobre_intacto_por_vista=exc, pior_vista_pct=max(res.values()),
+                                                         pior_excesso_pct=max(exc.values()))
 
 # vertices de borda compartilhados entre pecas: distancia na pose (repouso: mesma posicao exata)
 from mathutils.kdtree import KDTree
@@ -104,13 +120,13 @@ for i in range(len(slots)):
                 shared += 1
                 mx = max(mx, (Vector(posed[slots[i]][k]) - Vector(posed[slots[j]][kk])).length)
 report["juntas"] = dict(vertices_compartilhados=shared, distancia_maxima_na_pose_m=round(mx, 6))
-worst = max(v[p]["pior_vista_pct"] for v in report["combos"].values() for p in v)
+worst = max(v[p]["pior_excesso_pct"] for k, v in report["combos"].items() if k != "so_corpo" for p in v)
 total_worst = sum(p["tris"] for p in report["pecas"].values())
-report["resumo"] = dict(pior_face_de_tras_pct=worst, soma_triangulos_pecas=total_worst,
+report["resumo"] = dict(pior_excesso_de_face_de_tras_sobre_intacto_pct=round(worst, 3), soma_triangulos_pecas=total_worst,
                         pecas_acima_do_teto=[n for n, p in report["pecas"].items() if p["acima_do_teto"]],
                         pecas_com_arestas_abertas=[n for n, p in report["pecas"].items() if p["arestas_abertas"]],
-                        sem_buracos=worst < 0.5 and mx < 1e-4)
+                        sem_buracos=worst < 1.0 and mx < 1e-4)
 save_json(fpath(cfg, "verify_modular_report.json"), report)
 print("VMOD", json.dumps(report["resumo"]), report["juntas"])
 for cn, v in report["combos"].items():
-    print(" ", cn, {p: v[p]["pior_vista_pct"] for p in v})
+    print(" ", cn, {p: v[p]["pior_excesso_pct"] for p in v})

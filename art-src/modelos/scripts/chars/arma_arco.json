@@ -8,13 +8,13 @@
   "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/m09_armas/arco/final",
   "body_height_m": 0.9,
   "pivot_frac": 0.5,
-  "tris_target": 700,
+  "tris_target": 900,
   "tex_size": 256,
   "tris_range": [
     300,
     1200
   ],
-  "min_component_ratio": 0.03,
+  "min_component_ratio": 0.02,
   "mesh_name": "SM_Weapon_Bow",
   "bake_shards": 1,
   "sat_keep_hues": [
@@ -31,11 +31,8 @@
       55
     ]
   ],
-  "drop_light_gray_alpha": true,
-  "mask_from_image": {
-    "dilate_px": 5
-  },
-  "preserve_topology": false,
-  "shell_close": 2,
-  "shell_res": 600
+  "preserve_topology": true,
+  "shell_close": 1,
+  "shell_res": 500,
+  "drop_light_gray_alpha": true
 }

@@ -1,0 +1,120 @@
+{
+  "id": "m03_mago",
+  "asset": "SK_Mage",
+  "kind": "humanoid",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/m03_mago/m03_mago.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m03_mago.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/m03_mago/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/m03_mago/final",
+  "height_ref": "bbox",
+  "body_height_m": 1.5,
+  "tris_target": 6000,
+  "tris_range": [
+    5500,
+    6500
+  ],
+  "tex_size": 1024,
+  "min_component_ratio": 0.005,
+  "mesh_name": "SK_Mage_Body",
+  "bake_shards": 1,
+  "tint_hues": [
+    [
+      200,
+      250
+    ]
+  ],
+  "cloth_hues": [
+    [
+      200,
+      250
+    ]
+  ],
+  "sat_keep_hues": [
+    [
+      200,
+      250
+    ]
+  ],
+  "markers": {
+    "hips": [
+      0,
+      0.04,
+      0.52
+    ],
+    "spine": [
+      0,
+      0.04,
+      0.64
+    ],
+    "chest": [
+      0,
+      0.04,
+      0.78
+    ],
+    "neck": [
+      0,
+      0.04,
+      0.92
+    ],
+    "head": [
+      0,
+      0.04,
+      0.97
+    ],
+    "head_top": [
+      0,
+      0.04,
+      1.5
+    ],
+    "shoulder": [
+      0.07,
+      0.04,
+      0.84
+    ],
+    "upperarm": [
+      0.2,
+      0.04,
+      0.8
+    ],
+    "lowerarm": [
+      0.33,
+      0.03,
+      0.66
+    ],
+    "hand": [
+      0.39,
+      0.02,
+      0.52
+    ],
+    "hand_tip": [
+      0.41,
+      0.01,
+      0.46
+    ],
+    "upperleg": [
+      0.1,
+      0.05,
+      0.48
+    ],
+    "lowerleg": [
+      0.11,
+      0.05,
+      0.26
+    ],
+    "foot": [
+      0.15,
+      0.07,
+      0.09
+    ],
+    "toes": [
+      0.16,
+      -0.02,
+      0.04
+    ],
+    "toe_tip": [
+      0.16,
+      -0.11,
+      0.02
+    ]
+  }
+}
