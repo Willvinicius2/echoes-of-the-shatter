@@ -200,6 +200,10 @@ namespace Echoes.EditorTools
             var visual = (GameObject)PrefabUtility.InstantiatePrefab(heroPrefab);
             visual.name = "Body";
             visual.transform.SetParent(hero.transform, false);
+            var swap = hero.AddComponent<HeroVisualSwap>();
+            SetRef(swap, "warrior", heroPrefab);
+            SetRef(swap, "archer", CharacterPrefabBuilder.HeroPrefab("archer"));
+            SetRef(swap, "mage", CharacterPrefabBuilder.HeroPrefab("mage"));
 
             // ---- Câmera (README 4.5) + ferramentas de desenvolvimento
             var rig = new GameObject("CameraRig");
@@ -505,6 +509,7 @@ namespace Echoes.EditorTools
             var presentation = go.AddComponent<PresentationController>();
             go.AddComponent<ImpactSquash>();
             SetRef(presentation, "root", gameRoot);
+            SetRef(presentation, "eliteTint", AssetDatabase.LoadAssetAtPath<RarityTintAsset>("Assets/Data/Presentation/SO_RarityTint.asset"));
             var skillSetPath = AnimatorControllerBuilder.SkillSetPathFor(enemyId);
             if (skillSetPath != null) SetRef(presentation, "skillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(skillSetPath));
             var painted = CharacterPrefabBuilder.PrefabForEnemy(enemyId);

@@ -26,6 +26,11 @@ namespace Echoes.Interop
         /// <summary>R-VIS-1: o atirador só mira dentro da área visível menos a margem (<c>requireOnScreen</c> do enemy_ai.csv, lida pelo core).</summary>
         public bool RequireOnScreen { get; internal set; }
 
+        /// <summary>Fuga (enemy_ai.csv, lida pelo core): foge quando a vida cai abaixo desta fracao (0 = nao foge), por <see cref="FleeSeconds"/>, uma vez por vida se <see cref="FleeOncePerLife"/>.</summary>
+        public double FleeLifeFraction { get; internal set; }
+        public double FleeSeconds { get; internal set; }
+        public bool FleeOncePerLife { get; internal set; } = true;
+
         /// <summary>Elite fixo: modificador de <c>elite_modifiers.csv</c> aplicado sempre (vazio = nenhum). Coluna <c>modifierId</c> do enemies.csv.</summary>
         public string ModifierId { get; internal set; } = string.Empty;
 

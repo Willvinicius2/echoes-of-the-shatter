@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a7a7ac7b28ab784a93d07cfda79c6ec, type: 3}
+  m_Name: SO_HeroPart_Mage_Head_Starter
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.HeroPart
+  slot: 0
+  visualSetId: vset.starter
+  hidesRegions: 1
+  prefab: {fileID: 6111834540025026311, guid: 02a97235f92b25d40a05e5434e0bedfe, type: 3}

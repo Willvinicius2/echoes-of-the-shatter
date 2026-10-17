@@ -16,7 +16,7 @@ namespace Echoes.EditorTools
     public static class HeroModularBuilder
     {
         public const string Root = "Assets/Content/Heroes";
-        public static readonly string[] Heroes = { "Warrior", "Archer" };
+        public static readonly string[] Heroes = { "Warrior", "Archer", "Mage" };
         public static readonly string[] SlotNames = { "Head", "Chest", "Hands", "Legs", "Feet" };
         public const string StarterSet = "Starter"; // vset.starter em PascalCase para o nome dos assets
 

@@ -1,0 +1,18 @@
+{
+ "Head": [
+  "Head"
+ ],
+ "Chest": [
+  "Torso",
+  "Arms"
+ ],
+ "Hands": [
+  "Hands"
+ ],
+ "Legs": [
+  "Legs"
+ ],
+ "Feet": [
+  "Feet"
+ ]
+}

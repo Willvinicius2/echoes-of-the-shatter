@@ -25,7 +25,7 @@ namespace Echoes.Tests.EditMode
             ("CryptGuardian", "SK_Boss_CryptGuardian", "T_Boss_CryptGuardian", "P_Boss_CryptGuardian", true),
         };
 
-        static readonly string[] Weapons = { "WarriorHammer", "WarriorShield", "GuardianHammer", "GuardianShield", "Quiver", "Staff" };
+        static readonly string[] Weapons = { "WarriorHammer", "WarriorShield", "GuardianHammer", "GuardianShield", "Quiver", "Staff", "Bow" };
 
         [OneTimeSetUp]
         public void BuildPrefabs()

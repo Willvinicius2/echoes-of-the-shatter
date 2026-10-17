@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71561c0582aed8748a2acc261c219e3c, type: 3}
+  m_Name: SO_HeroPartCatalog_Mage
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.HeroPartCatalog
+  heroId: Mage
+  parts:
+  - {fileID: 11400000, guid: d10f06066c27fcf4fb7875f30da7e1ce, type: 2}
+  - {fileID: 11400000, guid: 4797fe778d56e874eb96ac7556d0aa6f, type: 2}
+  - {fileID: 11400000, guid: d26effa1a9743b2498bc1ac3b88d6ce8, type: 2}
+  - {fileID: 11400000, guid: 3540dafb18576c641bea119f12907c27, type: 2}
+  - {fileID: 11400000, guid: 14db0c59ca72e8b439141a1c4be25545, type: 2}

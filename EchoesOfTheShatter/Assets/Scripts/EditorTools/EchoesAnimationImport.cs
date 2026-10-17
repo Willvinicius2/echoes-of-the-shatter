@@ -16,7 +16,9 @@ namespace Echoes.EditorTools
         public const float Fps = 30f;
         public const string EventFunction = "OnClipEvent";
 
-        public enum Kind { SharedHumanoid, GuardianHumanoid, ArcherGeneric }
+        public enum Kind { SharedHumanoid, GuardianHumanoid, ArcherGeneric, HoundGeneric }
+
+        public static bool IsGeneric(Kind kind) => kind == Kind.ArcherGeneric || kind == Kind.HoundGeneric;
 
         public readonly struct ClipSpec
         {
@@ -45,6 +47,9 @@ namespace Echoes.EditorTools
         public const string ChargeRunName = "AN_Guardian_ShieldCharge_Run";
         public const string ChargeRecoverName = "AN_Guardian_ShieldCharge_Recover";
         public const int ShootReleaseFrame = 20;
+        public const string HoundIdle = "AN_AshHound_Idle", HoundWalk = "AN_AshHound_Walk", HoundRun = "AN_AshHound_Run", HoundBite = "AN_AshHound_Bite";
+        public const string HoundHit = "AN_AshHound_Hit", HoundFlee = "AN_AshHound_Flee", HoundDeath = "AN_AshHound_Death";
+        public const int HoundBiteWindupFrame = 9, HoundBiteImpactFrame = 12;
 
         /// <summary>Quadros, laço e eventos iguais aos de _clips_*.json.</summary>
         public static readonly ClipSpec[] Clips =
@@ -59,6 +64,14 @@ namespace Echoes.EditorTools
             new ClipSpec("AN_GhostArcher_Shoot", Kind.ArcherGeneric, 44, false, ("draw_start", 5), ("aim_end", 19), ("release", ShootReleaseFrame)),
             new ClipSpec("AN_GhostArcher_Hit", Kind.ArcherGeneric, 12, false),
             new ClipSpec("AN_GhostArcher_Death", Kind.ArcherGeneric, 36, false),
+            // Cao de Cinza (quadrupede, Generic): a mordida tem os eventos do clipe (preparacao ate o quadro 9, impacto no 12, fim da recuperacao no 24).
+            new ClipSpec(HoundIdle, Kind.HoundGeneric, 60, true),
+            new ClipSpec(HoundWalk, Kind.HoundGeneric, 32, true),
+            new ClipSpec(HoundRun, Kind.HoundGeneric, 20, true),
+            new ClipSpec(HoundBite, Kind.HoundGeneric, 24, false, ("windup_end", 9), ("impact", 12), ("recovery_end", 24)),
+            new ClipSpec(HoundHit, Kind.HoundGeneric, 12, false),
+            new ClipSpec(HoundFlee, Kind.HoundGeneric, 24, true),
+            new ClipSpec(HoundDeath, Kind.HoundGeneric, 36, false),
         };
 
         public static ClipSpec Spec(string name) => Clips.First(c => c.Name == name);
@@ -78,7 +91,7 @@ namespace Echoes.EditorTools
             var current = importer.clipAnimations;
             if (current == null || current.Length != 1 || current[0].name != spec.Name || current[0].loopTime != spec.Loop) return false;
             if (current[0].events == null || current[0].events.Length != spec.Events.Length) return false;
-            if (spec.Kind != Kind.ArcherGeneric && !(current[0].lockRootHeightY && current[0].heightFromFeet)) return false;
+            if (!IsGeneric(spec.Kind) && !(current[0].lockRootHeightY && current[0].heightFromFeet)) return false;
             return true;
         }
 
@@ -107,7 +120,7 @@ namespace Echoes.EditorTools
             take.keepOriginalOrientation = true;
             take.lockRootHeightY = true;
             take.keepOriginalPositionY = false;
-            take.heightFromFeet = spec.Kind != Kind.ArcherGeneric; // o Espectro flutua (sem pés)
+            take.heightFromFeet = !IsGeneric(spec.Kind); // o Espectro flutua (sem pés)
             take.lockRootPositionXZ = true;
             take.keepOriginalPositionXZ = false;
             var length = Mathf.Max(1f, take.lastFrame - take.firstFrame);

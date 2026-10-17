@@ -17,7 +17,8 @@ namespace Echoes.EditorTools
         public const string HeroesRoot = "Assets/Content/Heroes/";
 
         /// <summary>Modelos sem pernas ou sem o conjunto humanoide: Generic (o avatar Humanoid falharia). O Arqueiro Espectral flutua.</summary>
-        static bool IsGeneric(string path) => path.IndexOf("GhostArcher", System.StringComparison.Ordinal) >= 0;
+        static bool IsGeneric(string path) =>
+            path.IndexOf("GhostArcher", System.StringComparison.Ordinal) >= 0 || path.IndexOf("AshHound", System.StringComparison.Ordinal) >= 0;
 
         /// <summary>
         /// Modelos de escala bem diferente da do rig (Arauto e Guardiao, 2x a 3x maiores): avatar Humanoid proprio. Com o avatar do rig o
@@ -32,7 +33,7 @@ namespace Echoes.EditorTools
         public const string RigPath = "Assets/Art/Characters/Rigs/Rig_Humanoid_Chibi.fbx";
 
         // Muda quando as regras abaixo mudam: força a reimportação.
-        public override uint GetVersion() => 10;
+        public override uint GetVersion() => 11;
 
         void OnPreprocessModel()
         {
@@ -142,7 +143,7 @@ namespace Echoes.EditorTools
             importer.generateSecondaryUV = false;
 
             var name = System.IO.Path.GetFileNameWithoutExtension(assetPath);
-            if (name.StartsWith("AN_GhostArcher", System.StringComparison.Ordinal))
+            if (name.StartsWith("AN_GhostArcher", System.StringComparison.Ordinal) || name.StartsWith("AN_AshHound", System.StringComparison.Ordinal))
             {
                 // Generic: o clipe anima por caminho de Transform; avatar proprio (sem depender da ordem de importacao do modelo).
                 importer.animationType = ModelImporterAnimationType.Generic;

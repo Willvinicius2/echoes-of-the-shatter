@@ -125,6 +125,10 @@ namespace Echoes.Gameplay
             var target = combatSystem.Hero;
             var hasTarget = target != null && !target.IsDead;
             var toTarget = hasTarget ? target.Position - self.Position : PlanarVector.Zero;
+
+            // Fuga pela fracao de vida do core (enemy_ai.csv: fleeLifeFraction, fleeSeconds, fleeOncePerLife): foge do heroi e depois volta a lutar.
+            if (UpdateFlee(combatSystem, dt, hasTarget, toTarget)) return;
+
             var input = new EnemyBrainInput
             {
                 HasTarget = hasTarget,
@@ -172,6 +176,42 @@ namespace Echoes.Gameplay
             ChaseSpeed = WantsToMove ? WorldUnits.ToMeters(rules.GetMoveSpeedUu(self.Stats, enemy.MoveSpeedUu)) : 0f;
         }
 
+        /// <summary>O inimigo esta fugindo (a apresentacao toca a animacao de fuga).</summary>
+        public bool IsFleeing { get; private set; }
+
+        float fleeLeft;
+        bool hasFled;
+
+        /// <summary>Devolve true enquanto foge (o passo de IA normal e pulado e o movimento e para longe do heroi).</summary>
+        bool UpdateFlee(CombatSystem combatSystem, double dt, bool hasTarget, PlanarVector toTarget)
+        {
+            var fraction = enemy.FleeLifeFraction;
+            if (fraction <= 0.0 || self.IsDead) return false;
+            if (IsFleeing)
+            {
+                fleeLeft -= (float)dt;
+                if (fleeLeft <= 0f || !hasTarget)
+                {
+                    IsFleeing = false;
+                    return false;
+                }
+            }
+            else if (hasTarget && !(enemy.FleeOncePerLife && hasFled) && self.MaxLife > 0.0 && self.Life / self.MaxLife < fraction)
+            {
+                IsFleeing = true;
+                hasFled = true;
+                fleeLeft = (float)enemy.FleeSeconds;
+                OnInterrupted(combatSystem); // cancela o telegraph e o golpe em curso
+            }
+            if (!IsFleeing) return false;
+            var away = (-toTarget).NormalizedOr(self.Forward);
+            self.Forward = away;
+            WantsToMove = rules.CanMove(self.Stats);
+            MoveTarget = self.Position + away * 10f;
+            ChaseSpeed = WantsToMove ? WorldUnits.ToMeters(rules.GetMoveSpeedUu(self.Stats, enemy.MoveSpeedUu)) : 0f;
+            return true;
+        }
+
         public void FrozenTick(CombatSystem combatSystem, double dt)
         {
             WantsToMove = false;
@@ -212,6 +252,8 @@ namespace Echoes.Gameplay
 
         public void OnRevive(CombatSystem combatSystem)
         {
+            IsFleeing = false;
+            hasFled = false;
             dashing = false;
             Brain.Reset();
             if (boss == null) return;

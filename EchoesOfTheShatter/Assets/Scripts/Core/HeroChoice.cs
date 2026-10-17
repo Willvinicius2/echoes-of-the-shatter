@@ -1,0 +1,47 @@
+using System;
+using UnityEngine;
+
+namespace Echoes.Core
+{
+    /// <summary>
+    /// Heroi mostrado no jogo (previa visual): warrior, archer ou mage. So o Guerreiro tem kit de habilidades; Arqueiro e Mago usam o mesmo kit de teste
+    /// (controller e habilidades do Guerreiro) ate o design deles existir. Escolhido pelo argumento -hero ou pelo botao da tela inicial.
+    /// </summary>
+    public static class HeroChoice
+    {
+        public static readonly string[] Ids = { "warrior", "archer", "mage" };
+        const string PrefsKey = "echoes.hero.preview";
+        static string current;
+
+        public static string Id
+        {
+            get
+            {
+                if (current != null) return current;
+                var arg = FromArgument();
+                current = Array.IndexOf(Ids, arg) >= 0 ? arg : Array.IndexOf(Ids, PlayerPrefs.GetString(PrefsKey, Ids[0])) >= 0 ? PlayerPrefs.GetString(PrefsKey, Ids[0]) : Ids[0];
+                return current;
+            }
+            set
+            {
+                current = Array.IndexOf(Ids, value) >= 0 ? value : Ids[0];
+                PlayerPrefs.SetString(PrefsKey, current);
+            }
+        }
+
+        public static void Cycle() => Id = Ids[(Array.IndexOf(Ids, Id) + 1) % Ids.Length];
+
+        static string FromArgument()
+        {
+            var args = Environment.GetCommandLineArgs();
+            for (var i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], "-hero", StringComparison.OrdinalIgnoreCase)) return args[i + 1].ToLowerInvariant();
+            }
+            return null;
+        }
+
+        /// <summary>Chave de Loc do nome do heroi na tela inicial.</summary>
+        public static string NameKey(string id) => "ui.menu.hero." + id;
+    }
+}

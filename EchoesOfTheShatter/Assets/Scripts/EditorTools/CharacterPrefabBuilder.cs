@@ -32,6 +32,7 @@ namespace Echoes.EditorTools
         {
             public string Folder, Model, Textures, Prefab, Material;
             public string Dir;        // pasta do FBX e das texturas (vazio = Characters/<Folder>)
+            public bool GenericArmature; // Generic com a armature dentro de um container (Animator no container: caminhos dos clipes comecam em "root")
             public string ModularHero; // herois modulares (17.4): Warrior/Archer; liga o ModularCharacter
             public string Controller; // AC_* (null = sem animacao ainda: Arqueiro Espectral)
             public WeaponSpec[] Weapons = Array.Empty<WeaponSpec>();
@@ -47,12 +48,20 @@ namespace Echoes.EditorTools
             Weapons = new[] { new WeaponSpec { Name = "WarriorHammer", Sockets = RightSockets }, new WeaponSpec { Name = "WarriorShield", Sockets = LeftSockets } },
         };
 
+        /// <summary>Cao de Cinza (e o Cao Veloz, que so ganha a tinta de elite): quadrupede Generic de 22 ossos, AC_Hound.</summary>
+        public static readonly Spec HoundSpec = new Spec
+        {
+            Folder = "AshHound", Model = "SK_Enemy_AshHound", Textures = "T_Enemy_AshHound", Prefab = "P_Enemy_AshHound", Material = "M_Enemy_AshHound", Controller = "AC_Hound", GenericArmature = true,
+        };
+
         static readonly Dictionary<string, Spec> EnemySpecs = new Dictionary<string, Spec>
         {
             { "enemy.hollow_sentinel", new Spec { Folder = "HollowSentinel", Model = "SK_Enemy_HollowSentinel", Textures = "T_Enemy_HollowSentinel", Prefab = "P_Enemy_HollowSentinel", Material = "M_Enemy_HollowSentinel", Controller = "AC_EnemyHumanoid" } },
             { "enemy.shielded_sentinel", null },
+            { "enemy.ash_hound", HoundSpec },
+            { "enemy.swift_ash_hound", HoundSpec },
             { "enemy.stone_herald", new Spec { Folder = "StoneHerald", Model = "SK_Enemy_StoneHerald", Textures = "T_Enemy_StoneHerald", Prefab = "P_Enemy_StoneHerald", Material = "M_Enemy_StoneHerald", Controller = "AC_EnemyHumanoid" } },
-            { "enemy.ghost_archer", new Spec { Folder = "GhostArcher", Model = "SK_Enemy_GhostArcher", Textures = "T_Enemy_GhostArcher", Prefab = "P_Enemy_GhostArcher", Material = "M_Enemy_GhostArcher", Controller = "AC_GhostArcher" } },
+            { "enemy.ghost_archer", new Spec { Folder = "GhostArcher", Model = "SK_Enemy_GhostArcher", Textures = "T_Enemy_GhostArcher", Prefab = "P_Enemy_GhostArcher", Material = "M_Enemy_GhostArcher", Controller = "AC_GhostArcher", GenericArmature = true } },
             {
                 "enemy.crypt_guardian", new Spec
                 {
@@ -70,6 +79,7 @@ namespace Echoes.EditorTools
             AnimatorControllerBuilder.BuildAll();
             var warrior = Build(Warrior);
             Build(Archer);
+            Build(Mage);
             GameObject sentinel = null, boss = null;
             foreach (var pair in EnemySpecs)
             {
@@ -81,6 +91,7 @@ namespace Echoes.EditorTools
             AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.Warrior, warrior);
             AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.EnemyHumanoid, sentinel);
             AnimatorControllerBuilder.BuildArcherSkillSet();
+            AnimatorControllerBuilder.BuildHoundSkillSet();
             var bossSet = AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.Boss, boss);
             bossSet.roarClipSeconds = EchoesAnimationImport.Clip(EchoesAnimationImport.RoarName).length;
             EditorUtility.SetDirty(bossSet);
@@ -90,10 +101,27 @@ namespace Echoes.EditorTools
 
         public static GameObject BuildWarrior() => Build(Warrior);
 
+        /// <summary>Prefab de heroi (previa visual): carrega o que existe ou monta.</summary>
+        public static GameObject HeroPrefab(string id)
+        {
+            var spec = id == "archer" ? Archer : id == "mage" ? Mage : Warrior;
+            return AssetDatabase.LoadAssetAtPath<GameObject>($"{PrefabDir}/{spec.Prefab}.prefab") ?? Build(spec);
+        }
+
         /// <summary>Arqueiro modular (sem controller ainda): prefab de teste das pecas, ate a classe entrar no jogo.</summary>
         public static readonly Spec Archer = new Spec
         {
             Folder = "Archer", Dir = "Assets/Content/Heroes/Archer/Body", ModularHero = "Archer", Model = "SK_Archer_Body", Textures = "T_Archer_Body", Prefab = "P_Hero_Archer", Material = "M_Archer_Body",
+            Controller = "AC_Warrior", // previa visual: o kit de animacao do Guerreiro ate o design do Arqueiro existir
+            Weapons = new[] { new WeaponSpec { Name = "Bow", Sockets = LeftSockets } },
+        };
+
+        /// <summary>Mago modular (previa visual, kit de teste do Guerreiro): cajado na mao direita.</summary>
+        public static readonly Spec Mage = new Spec
+        {
+            Folder = "Mage", Dir = "Assets/Content/Heroes/Mage/Body", ModularHero = "Mage", Model = "SK_Mage_Body", Textures = "T_Mage_Body", Prefab = "P_Hero_Mage", Material = "M_Mage_Body",
+            Controller = "AC_Warrior",
+            Weapons = new[] { new WeaponSpec { Name = "Staff", Sockets = RightSockets } },
         };
 
         /// <summary>Prefab pintado do inimigo (o elite Escudado usa o da Sentinela); null para os que ainda sao graybox (Cao, Lanceira).</summary>
@@ -148,7 +176,7 @@ namespace Echoes.EditorTools
             // Generic (Espectro): os clipes do Blender usam caminhos a partir do osso "root"; o Animator fica no objeto que contem esse osso
             // (a armature), senao os caminhos nao casam e o clipe nao anima nada.
             var animatorHost = instance;
-            if (spec.Prefab == "P_Enemy_GhostArcher")
+            if (spec.GenericArmature)
             {
                 var rootBone = FindDeep(instance.transform, "root");
                 if (rootBone != null && rootBone.parent != null && rootBone.parent != instance.transform)
