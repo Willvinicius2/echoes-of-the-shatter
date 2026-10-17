@@ -7,7 +7,7 @@ namespace Echoes.Interop.Native
 {
     public enum LoadOutcome { Ok = 0, NotFound, VersionMismatch, AllCorrupt, IoError, Failed }
 
-    public enum StartCheck { Ok = 0, MapNotConquered, NotEnoughCharges, AnotherRunning, InvalidDuration, TooManyRules, IdleIncompatible, UnknownContent, Error = 99 }
+    public enum StartCheck { Ok = 0, MapNotConquered, NotEnoughCharges, AnotherRunning, InvalidDuration, TooManyRules, IdleIncompatible, UnknownContent, ClockRollback, Error = 99 }
 
     public enum CollectStatus { Collected = 0, Already = 1, NotFinished = 2, Error = 99 }
 

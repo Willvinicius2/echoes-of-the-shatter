@@ -163,6 +163,9 @@ Teste de fumaca: EchoesOfTheShatter.exe -autostart -smoke 1 -savedir pasta -logF
                 File.Copy(file, destination, true);
                 count++;
             }
+            var expected = Directory.GetFiles(source, "*.csv", SearchOption.AllDirectories).Length;
+            if (count != expected || !File.Exists(Path.Combine(target, "rules.csv")) || !File.Exists(Path.Combine(target, "Loc", "ui.csv")))
+                throw new BuildFailedException("StreamingAssets/Data incompleto: o core recusa conteudo sem as tabelas e chaves obrigatorias.");
             AssetDatabase.Refresh();
             Debug.Log($"[Build] {count} CSV copiados para {Target}");
         }

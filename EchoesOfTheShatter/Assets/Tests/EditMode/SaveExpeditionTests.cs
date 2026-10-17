@@ -87,6 +87,34 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void TamperedSaveFallsBackToTheBackup()
+        {
+            Assert.IsTrue(saves.NewGame(rules, 0, "Adulterado"));
+            Assert.IsTrue(saves.Save(rules));
+            var main = Path.Combine(dir, "slot_1.json");
+            Assert.IsTrue(File.Exists(main));
+            File.WriteAllText(main, File.ReadAllText(main).Replace("Adulterado", "Adulterad0")); // JSON valido, checksum nao
+            saves.Close();
+            var backup = -1;
+            saves.LoadedFromBackup += (slot, b) => backup = b;
+            Assert.AreEqual(LoadOutcome.Ok, saves.Load(rules, 0));
+            Assert.Greater(backup, 0, "save adulterado: usa o backup e avisa");
+            Assert.AreEqual("Adulterado", MiniJson.Str(MiniJson.AsObject(MiniJson.Parse(saves.Current.CharacterJson(0))), "name"));
+        }
+
+        [Test]
+        public void ClockRollbackBlocksTheStartWithItsOwnResult()
+        {
+            Assert.IsTrue(saves.NewGame(rules, 0, "Relogio2"));
+            saves.Current.RecordAreaRun(rules, 0, ExpeditionConfig.CryptMap, true, true);
+            var expedition = new ExpeditionService(saves);
+            clock.Advance(-100000); // o relogio local fica muito antes do last_seen do save
+            var check = expedition.Start(rules, ExpeditionConfig.Default());
+            Assert.AreEqual(StartCheck.ClockRollback, check);
+            Assert.IsFalse(saves.Current.Summary.HasRunningExpedition, "nada muda");
+        }
+
+        [Test]
         public void MissingAndCorruptSlotsAreReportedAndNeverOverwritten()
         {
             Assert.AreEqual(LoadOutcome.NotFound, saves.Load(rules, 0));

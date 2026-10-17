@@ -508,7 +508,7 @@ namespace Echoes.Tests.EditMode
         {
             LoadNative().Dispose();
             Assert.IsTrue(NativeLayout.CheckExt(out var message), message);
-            Assert.AreEqual(37, NativeLayout.BuildExt().Length);
+            Assert.AreEqual(114, NativeLayout.BuildExt().Length);
         }
 
         [Test]

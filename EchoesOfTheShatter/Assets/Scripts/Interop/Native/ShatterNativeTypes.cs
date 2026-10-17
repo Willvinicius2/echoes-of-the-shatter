@@ -187,6 +187,7 @@ namespace Echoes.Interop.Native
     {
         public double life, resource, barrier;
         public double barrier_seconds_left;
+        public double potion_barrier;   // parte da barreira que veio da pocao (API 1.2); 0 = o core assume tudo
     }
 
     [StructLayout(LayoutKind.Sequential)]

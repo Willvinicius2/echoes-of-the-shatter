@@ -111,7 +111,7 @@ namespace Echoes.Interop.Native
                 var minor = ShatterNative.shatter_api_minor();
                 if (minor < ShatterNative.ExpectedApiMinor)
                 {
-                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (vitals, timing, actor, pocoes)";
+                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
                     return false;
                 }
                 if (!NativeLayout.CheckExt(out var extMessage))
@@ -773,9 +773,9 @@ namespace Echoes.Interop.Native
             return new PotionOutcome(v.life, v.barrier, seconds, outcome.heal_amount);
         }
 
-        static Vitals FromNative(in ShatterVitals v) => new Vitals { Life = v.life, Resource = v.resource, Barrier = v.barrier, BarrierSecondsLeft = v.barrier_seconds_left };
+        static Vitals FromNative(in ShatterVitals v) => new Vitals { Life = v.life, Resource = v.resource, Barrier = v.barrier, BarrierSecondsLeft = v.barrier_seconds_left, PotionBarrier = v.potion_barrier };
 
-        static ShatterVitals ToNative(in Vitals v) => new ShatterVitals { life = v.Life, resource = v.Resource, barrier = v.Barrier, barrier_seconds_left = v.BarrierSecondsLeft };
+        static ShatterVitals ToNative(in Vitals v) => new ShatterVitals { life = v.Life, resource = v.Resource, barrier = v.Barrier, barrier_seconds_left = v.BarrierSecondsLeft, potion_barrier = v.PotionBarrier };
 
         static NativeStatBlock RequireNative(IStatBlock stats)
         {
