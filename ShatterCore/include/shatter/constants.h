@@ -76,6 +76,16 @@ struct RulesConstants {
     double sellLevelFactor = 0.0;              // sell_level_factor: +fração do preço por itemLevel acima de 1
     bool equipSlotEnabled[11] = {};            // equip_slot_<slot>: posição liberada no protótipo (ordem de ItemSlot)
 
+    // Combate básico (docs/18 1.2): combo, buffer, carga e defesa. A máquina de estados mora no C# (HeroCombatLogic,
+    // docs/18 8.1); o core só guarda e valida os números (faixas 0 a 5 s; light_windup_credit_max em 0 a 1).
+    double comboWindow = 0.0;                  // combo_window (s): janela depois da recuperação em que um clique continua o combo
+    double comboWindowAfterDodge = 0.0;        // combo_window_after_dodge (s): janela que reabre ao fim da esquiva
+    double attackBuffer = 0.0;                 // attack_buffer (s): clique nos últimos s da recuperação entra na fila
+    double heavyHoldThreshold = 0.0;           // heavy_hold_threshold (s): apertado por mais que isto vira ataque forte
+    double lightWindupCreditMax = 0.0;         // light_windup_credit_max: fração máxima da preparação do leve descontada pelo aperto
+    double guardLowerTime = 0.0;               // guard_lower_time (s): sem atacar depois de soltar a defesa
+    double dashShotRange = 0.0;                // dash_shot_range (uu): alcance do tiro de um dash com tag projectile
+
     // --- Fervor (jogo manual). O idle é a taxa base = 1. ---
     double fervorXpMult = 3.0;             // fervor_xp_mult
     double fervorGoldMatMult = 1.25;       // fervor_gold_mat_mult

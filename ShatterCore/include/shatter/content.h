@@ -6,6 +6,7 @@
 // Esquemas das colunas: docs/06_dados.md (Data Engineer). Nomes de campo abaixo = nomes de coluna.
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -92,11 +93,33 @@ struct SkillData {                         // skills.csv
     double knockback = 0.0;                // uu empurrados no alvo; só tempo real
     double wallStaggerSeconds = 0.0;       // > 0: stagger do atacante ao bater em pilar/parede na investida (BossFight::OnWallHit)
     double projectileSpeed = 0.0;          // uu/s; só tempo real
+    // Coluna OPCIONAL `pierce` (docs/18 8.2), só tempo real e só shape projectile: 0 = nenhuma; N = atravessa N alvos além
+    // do primeiro; kPierceAll (99) = atravessa todos. Cada projétil acerta o mesmo alvo uma vez (RF-16).
+    int pierce = 0;
     std::vector<ContentId> onHitEffects;   // "effect.burn", "effect.guard_break"
     std::vector<ContentId> selfEffects;    // aplicados em quem usa (Postura Firme, Barreira de Vidro)
     IdleProfile idle;
     int unlockLevel = 1;
 };
+
+inline constexpr int kPierceAll = 99;
+
+// Comportamento em tempo real que os dados de uma habilidade determinam (docs/18 §8 item 3). UMA interpretação, no core:
+// o cliente escolhe a geometria por estes campos em vez de reler shape/range/radius.
+//  (a) projétil com radius > 0 explode no impacto e acerta todos os alvos da área uma vez (explodes);
+//  (b) projétil com projectiles > 1 e coneAngle > 0 sai em leque de coneAngle graus (fan);
+//  (c) área com range 0 é centrada em quem usa (selfCentered);
+//  (d) área com range > 0 cai no cursor, limitada a `range` uu do herói; `impact` é o atraso até acertar (groundTargeted);
+//  (e) dash com tag projectile pula `range` uu para trás e atira em dash_shot_range no pico (dashBackShot).
+struct SkillBehavior {
+    bool explodes = false;
+    bool fan = false;
+    bool selfCentered = false;
+    bool groundTargeted = false;
+    bool dashBackShot = false;
+    int pierce = 0;                        // = SkillData::pierce (0 nenhuma; kPierceAll todos)
+};
+SkillBehavior ClassifySkill(const SkillData& skill);
 
 // Comportamento base de IA do inimigo (máquina parado→perseguir→telegraph→atacar→recuperar).
 struct EnemyAttack {
@@ -233,6 +256,28 @@ struct MapData {                           // maps.csv
 };
 
 
+// Kit básico de uma classe (basic_kits.csv, docs/18 4.6): combo de golpes leves, golpe forte carregado e defesa. TABELA
+// OPCIONAL: classe sem linha não tem kit. A máquina (índice do combo, janelas, carga) roda no C#; o core guarda e valida.
+inline constexpr std::size_t kMaxLightChain = 3;
+inline constexpr std::size_t kMaxGuardPerfectEffects = 4;
+struct BasicKitData {
+    ContentId classId;                     // chave primária
+    std::vector<ContentId> lightChain;     // 1 a 3 golpes leves em ordem; o mesmo ID pode repetir
+    ContentId heavySkill;                  // golpe forte
+    double heavyChargeTime = 0.0;          // s de carga depois de heavy_hold_threshold (> 0)
+    double heavyMaxMult = 1.0;             // multiplicador de dano na carga máxima (>= 1; linear)
+    ContentId chargeEffect;                // reaplicado a cada tick enquanto carrega
+    ContentId guardEffect;                 // reaplicado a cada tick enquanto defende (tag guard)
+    double guardArc = 0.0;                 // graus, arco TOTAL da defesa (0 a 360)
+    double guardMaxHold = 0.0;             // s; 0 = ilimitado
+    double guardCooldown = 0.0;            // s de espera depois de soltar (ou de cair sozinha)
+    double guardPerfectWindow = 0.0;       // s depois do aperto; 0 = sem defesa perfeita
+    double guardPerfectCooldown = 0.0;     // s mínimos desde o último aperto para a janela abrir de novo
+    std::vector<ContentId> guardPerfectEffects;  // aplicados no atacante corpo a corpo (no máximo kMaxGuardPerfectEffects)
+    double guardPerfectResource = 0.0;     // recurso ganho pela perfeita (substitui resourceOnBlock)
+    double guardDrainPerDamage = 0.0;      // recurso gasto por ponto de dano evitado; 0 = não gasta
+};
+
 // ---------------------------------------------------------------------------
 // ADIÇÃO (docs/09, docs/13): poções, modificadores de elite, fases e padrões do chefe, IA dos comuns.
 // ---------------------------------------------------------------------------
@@ -334,7 +379,8 @@ public:
     // ("rules.csv", "classes.csv", "class_stats.csv", "skills.csv", "effects.csv",
     //  "enemies.csv", "enemy_attacks.csv", "affixes.csv", "item_bases.csv", "uniques.csv",
     //  "loot_tables.csv", "loot_entries.csv", "encounters.csv", "maps.csv", "meta.csv";
-    //  ADIÇÃO, opcionais: "potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv").
+    //  ADIÇÃO, opcionais: "potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv";
+    //  docs/18, opcional de verdade: "basic_kits.csv").
     // Erros são acumulados; retorna false se houve algum nesta tabela.
     bool LoadTableCsv(std::string_view tableName, std::string_view csvText);
     // Conveniência fora do UE (testes, bench, ferramentas): lê todos os *.csv de uma pasta.
@@ -365,6 +411,8 @@ public:
     const EliteModifierData* FindEliteModifier(std::string_view id) const;
     const BossPatternData* FindBossPattern(std::string_view id, int phase) const;  // chave = id + phase
     const EnemyAiData* FindEnemyAi(std::string_view enemyId) const;
+    // Kit básico da classe (basic_kits.csv); nullptr se a classe não tem linha ou a tabela não foi carregada.
+    const BasicKitData* FindBasicKit(std::string_view classId) const;
     // Fase `phase` do chefe (nullptr se não existir).
     const BossPhaseData* FindBossPhase(std::string_view bossId, int phase) const;
 
@@ -377,6 +425,7 @@ public:
     const std::vector<BossPhaseData>& BossPhases() const;
     const std::vector<BossPatternData>& BossPatterns() const;
     const std::vector<EnemyAiData>& EnemyAis() const;
+    const std::vector<BasicKitData>& BasicKits() const;                // ordem do CSV
     // Mapa de efeitos para EffectContainer::Tick.
     const std::unordered_map<ContentId, const EffectData*>& EffectLookup() const;
 
@@ -401,6 +450,7 @@ public:
     void Add(BossPhaseData d);
     void Add(BossPatternData d);
     void Add(EnemyAiData d);
+    void Add(BasicKitData d);
 
 private:
     struct Impl;                       // tabelas e índices; definido em src/content.cpp

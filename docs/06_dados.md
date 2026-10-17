@@ -1,6 +1,6 @@
 # 06 — Dados: esquemas, tabelas CSV e save
 
-Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (62 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds` e as 2 da rodada 2), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
+Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (87 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds`, as 2 da rodada 2, as 18 de inventário e as 7 do combate básico de docs/18), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
 
 ## 1. Fontes e escopo
 
@@ -143,6 +143,13 @@ Chaves de `RulesConstants` (`constants.h`). O validador exige as 62, nomes exato
 | `equip_slot_ring2` | bool | — | false | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
 | `equip_slot_belt` | bool | — | false | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
 | `equip_slot_legs` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `combo_window` | número | — | 0,4 | s, 0 a 5. docs/18 1.2 [HIPÓTESE H18-01]: janela depois do fim da recuperação de um golpe leve em que um clique continua o combo. Só o C# (`HeroCombatLogic`) usa; o core guarda e valida |
+| `combo_window_after_dodge` | número | — | 0,3 | s, 0 a 5. Janela que reabre ao fim da esquiva [HIPÓTESE H18-11] |
+| `attack_buffer` | número | — | 0,15 | s, 0 a 5. Um clique nos últimos `attack_buffer` s da recuperação (ou depois) entra na fila [HIPÓTESE H18-01] |
+| `heavy_hold_threshold` | número | — | 0,35 | s, 0 a 5. Botão apertado por mais que isto vira ataque forte carregado (decisão do orquestrador) |
+| `light_windup_credit_max` | número | — | 0,7 | fração, 0 a 1. O tempo apertado desconta da preparação do golpe leve até esta fração dela [HIPÓTESE H18-02] |
+| `guard_lower_time` | número | — | 0,1 | s, 0 a 5. Sem atacar por este tempo depois de soltar a defesa [HIPÓTESE] |
+| `dash_shot_range` | número | — | 1000 | uu, 0 a 10000. Alcance do tiro de uma habilidade `dash` com tag `projectile` (Salto do Arqueiro) [HIPÓTESE]. Obrigatória e > 0 se houver uma habilidade assim |
 
 Regras de conteúdo:
 
@@ -236,7 +243,7 @@ class.warrior,resource,100,0
 ### `skills.csv`
 
 - Chave primária: `id`.
-- Cabeçalho exato: `id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel,coneAngle,knockback,projectileSpeed,idleCalibration,wallStaggerSeconds`.
+- Cabeçalho exato: `id,classId,specId,tags,shape,scalesWithWeapon,baseDamagePhysical,baseDamageFire,baseDamageCold,baseDamageLightning,coefficientRank1,coefficientRank2,coefficientRank3,cost,cooldown,windup,impact,recovery,range,radius,projectiles,onHitEffects,selfEffects,idleSupported,idleAvgTargetsHit,idleFractionOfGroupHit,idleApproachTime,idleUptime,idleDodgeTelegraphedBonus,idleDamageTakenMult,idleParitySampleSize,unlockLevel,coneAngle,knockback,projectileSpeed,idleCalibration,wallStaggerSeconds,pierce`.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -277,6 +284,7 @@ class.warrior,resource,100,0
 | `projectileSpeed` | número | não | ≥ 0 | 0 | Velocidade do projetil (uu/s) |
 | `idleCalibration` | enum: `none`, `manual_estimate`, `bot_parity` | não | — | none | Calibracao do perfil idle: none / manual_estimate / bot_parity |
 | `wallStaggerSeconds` | número | não | ≥ 0 | 0 | Stagger (s) do atacante ao bater em pilar ou parede na investida (docs/13 R2.2); só `skill.enemy.guardian_shield_charge` = 2,0 |
+| `pierce` | inteiro | não | 0 a 99 | 0 | Perfuração do projétil (docs/18 8.2): 0 ou vazio = nenhuma; N = atravessa N alvos além do primeiro; 99 = todos. Só `shape = projectile`. Cada projétil acerta o mesmo alvo uma vez (RF-16). Coluna opcional no core, última do cabeçalho |
 
 Regras de conteúdo:
 
@@ -285,6 +293,8 @@ Regras de conteúdo:
 - Coeficientes não decrescentes (aviso). Com `scalesWithWeapon=true`, `baseDamage*` é ignorado (aviso).
 - `windup + impact + recovery = 0` (aviso, exceto `shape = self`).
 - Idle suportado sem alvos (`idleAvgTargetsHit` e `idleFractionOfGroupHit` zerados): erro.
+- Semântica de forma no tempo real (docs/18 8, item 3), classificada pelo core (`ClassifySkill`, `lookup_json` `behavior`): (a) `projectile` com `radius` > 0 explode no impacto e acerta todos os alvos da área uma vez; (b) `projectile` com `projectiles` > 1 exige `coneAngle` > 0 e sai em leque (erro `E_FAN`/`E_RULE` sem ângulo); (c) `area` com `range` 0 é centrada em quem usa; (d) `area` com `range` > 0 cai no cursor, limitada a `range`, e `impact` é o atraso até acertar; `area` exige `radius` > 0; (e) `dash` com tag `projectile` pula `range` uu para trás e atira em `dash_shot_range` no pico. `pierce` > 0 em habilidade que não é `projectile`: erro.
+- `unlockLevel` 1 para o kit básico; Q em 2 e E em 3 (docs/18 4.1).
 
 Exemplo (`ShatterCore/tests/data/skills.csv`):
 
@@ -736,6 +746,35 @@ IA de Cão-de-Cinza, Cão Veloz e Arqueiro (docs/13 item 6). O Cão Veloz tem in
 | `requireOnScreen` | booleano | não | — | false | R-VIS-1: o atirador só mira com o alvo dentro da tela, menos `require_on_screen_margin` (docs/13 R2.2). Só `enemy.ghost_archer` = true |
 
 Checagens do validador: `enemy_ai_rules`.
+
+### `basic_kits.csv` (tabela OPCIONAL, docs/18 4.6)
+
+Kit básico por classe: combo de golpes leves, golpe forte carregado e defesa. **Única tabela opcional de verdade**: o arquivo pode faltar (classe sem linha não tem kit, `shatter_basic_kit_get` devolve NOT_FOUND). As outras tabelas de 5a são obrigatórias. O core lê, valida e expõe os números; a máquina de combate básica (índice do combo, buffer, janelas, carga, cancelamentos) roda no C# (`HeroCombatLogic`, docs/18 8.1).
+
+- Chave primária: `classId` (uma linha por classe).
+- Cabeçalho exato: `classId,lightChain,heavySkill,heavyChargeTime,heavyMaxMult,chargeEffect,guardEffect,guardArc,guardMaxHold,guardCooldown,guardPerfectWindow,guardPerfectCooldown,guardPerfectEffects,guardPerfectResource,guardDrainPerDamage`. No core, as 7 últimas colunas podem faltar no cabeçalho (valor neutro); o validador exige o cabeçalho completo.
+
+| Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
+|---|---|---|---|---|---|
+| `classId` | ref `classes.csv` | sim | — | — | Classe dona do kit |
+| `lightChain` | lista de ref `skills.csv` | sim | 1 a 3 itens | — | Golpes leves em ordem; o MESMO ID pode repetir (a única lista de IDs que aceita repetição). Cada habilidade deve ser da própria classe; o golpe 1 deve ser o `startingSkill` (aviso) |
+| `heavySkill` | ref `skills.csv` | sim | — | — | Golpe forte; da própria classe |
+| `heavyChargeTime` | número | sim | > 0 | — | s da carga depois de `heavy_hold_threshold` |
+| `heavyMaxMult` | número | sim | ≥ 1 | — | Multiplicador de dano na carga máxima; progresso linear `1 + (max − 1) × p` |
+| `chargeEffect` | ref `effects.csv` | sim | — | — | Reaplicado a cada tick enquanto carrega |
+| `guardEffect` | ref `effects.csv` | sim | — | — | Reaplicado a cada tick enquanto defende. Deve ter a tag `guard` (erro `E_KIT`/`E_RULE` sem ela) |
+| `guardArc` | número | sim | 0 a 360 | — | Arco TOTAL da defesa em graus (360 = cúpula) |
+| `guardMaxHold` | número | não | 0 a 60 | 0 | s; 0 = ilimitado |
+| `guardCooldown` | número | não | 0 a 60 | 0 | s de espera depois de soltar (ou de cair sozinha) |
+| `guardPerfectWindow` | número | não | 0 a 5 | 0 | s depois do aperto; 0 = sem defesa perfeita |
+| `guardPerfectCooldown` | número | não | 0 a 60 | 0 | s mínimos desde o último aperto para a janela abrir de novo |
+| `guardPerfectEffects` | lista de ref `effects.csv` | não | até 4 itens | vazio | Aplicados no atacante corpo a corpo |
+| `guardPerfectResource` | número | não | ≥ 0 | 0 | Recurso ganho pela perfeita (substitui `resourceOnBlock`) |
+| `guardDrainPerDamage` | número | não | ≥ 0 | 0 | Recurso gasto por ponto de dano evitado; 0 = não gasta |
+
+Checagens do validador: `basic_kit_rules` (habilidade de outra classe, `guardEffect` sem a tag `guard`, janela perfeita menor que a espera). Os IDs do kit cabem em 63 bytes (campos do C API).
+
+**Tag `guard` em `effects.csv`** (docs/18 8.1): um efeito com a tag `guard` (`effect.guarding.*`) só reduz o dano recebido (`damage_taken`) quando o chamador informa que o golpe veio de dentro do arco da defesa (`HitInput::fromGuardArc`, `shatter_hit_input.from_guard_arc`). A lentidão do mesmo efeito (`move_speed`) vale sempre. O C# faz a geometria (`ShapeQuery`); o core aplica o modificador.
 
 ### Nota sobre o Único do Guardião (`loot_entries.csv`)
 

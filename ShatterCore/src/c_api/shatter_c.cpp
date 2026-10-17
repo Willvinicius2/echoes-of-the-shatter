@@ -353,6 +353,26 @@ const std::uint32_t kLayoutExt3[] = {
     static_cast<std::uint32_t>(offsetof(shatter_flee_result, ended)), static_cast<std::uint32_t>(offsetof(shatter_flee_result, can_flee))};
 static_assert(sizeof(kLayoutExt3) / sizeof(kLayoutExt3[0]) == SHATTER_LAYOUT_EXT3_COUNT, "SHATTER_LAYOUT_EXT3_COUNT desatualizado");
 
+#define SHATTER_L5(T, F) static_cast<std::uint32_t>(offsetof(T, F))
+const std::uint32_t kLayoutExt5[] = {
+    SHATTER_L5(shatter_hit_input, from_guard_arc),
+    static_cast<std::uint32_t>(sizeof(shatter_combat_rules)),
+    SHATTER_L5(shatter_combat_rules, combo_window), SHATTER_L5(shatter_combat_rules, combo_window_after_dodge),
+    SHATTER_L5(shatter_combat_rules, attack_buffer), SHATTER_L5(shatter_combat_rules, heavy_hold_threshold),
+    SHATTER_L5(shatter_combat_rules, light_windup_credit_max), SHATTER_L5(shatter_combat_rules, guard_lower_time),
+    SHATTER_L5(shatter_combat_rules, dash_shot_range),
+    static_cast<std::uint32_t>(sizeof(shatter_basic_kit)),
+    SHATTER_L5(shatter_basic_kit, heavy_charge_time), SHATTER_L5(shatter_basic_kit, heavy_max_mult),
+    SHATTER_L5(shatter_basic_kit, guard_arc), SHATTER_L5(shatter_basic_kit, guard_max_hold),
+    SHATTER_L5(shatter_basic_kit, guard_cooldown), SHATTER_L5(shatter_basic_kit, guard_perfect_window),
+    SHATTER_L5(shatter_basic_kit, guard_perfect_cooldown), SHATTER_L5(shatter_basic_kit, guard_perfect_resource),
+    SHATTER_L5(shatter_basic_kit, guard_drain_per_damage), SHATTER_L5(shatter_basic_kit, light_chain_count),
+    SHATTER_L5(shatter_basic_kit, guard_perfect_effect_count), SHATTER_L5(shatter_basic_kit, light_chain),
+    SHATTER_L5(shatter_basic_kit, heavy_skill), SHATTER_L5(shatter_basic_kit, charge_effect),
+    SHATTER_L5(shatter_basic_kit, guard_effect), SHATTER_L5(shatter_basic_kit, guard_perfect_effects)};
+#undef SHATTER_L5
+static_assert(sizeof(kLayoutExt5) / sizeof(kLayoutExt5[0]) == SHATTER_LAYOUT_EXT5_COUNT, "SHATTER_LAYOUT_EXT5_COUNT desatualizado");
+
 // Copia texto para um campo char[N] (NUL no fim, cortado em fronteira de caractere UTF-8).
 template <std::size_t N>
 void CopyText(char (&dst)[N], const std::string& s) {
@@ -671,6 +691,15 @@ bool LookupJson(const ContentDB& db, std::string_view id, Value& o) {
         o.Set("knockback", Value(d->knockback));
         o.Set("wall_stagger_seconds", Value(d->wallStaggerSeconds));
         o.Set("projectile_speed", Value(d->projectileSpeed));
+        o.Set("pierce", Value(d->pierce));
+        const SkillBehavior b = ClassifySkill(*d);
+        Value bv = Value::MakeObject();
+        bv.Set("explodes", Value(b.explodes));
+        bv.Set("fan", Value(b.fan));
+        bv.Set("self_centered", Value(b.selfCentered));
+        bv.Set("ground_targeted", Value(b.groundTargeted));
+        bv.Set("dash_back_shot", Value(b.dashBackShot));
+        o.Set("behavior", std::move(bv));
         return true;
     }
     if (StartsWith(id, "effect.")) {
@@ -1586,6 +1615,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit(const shatter_statbl
     in.canBeBlocked = input->can_be_blocked != 0;
     in.defenderLife = input->defender_life;
     in.defenderBarrier = input->defender_barrier;
+    in.fromGuardArc = input->from_guard_arc != 0;
     Pcg32 r = Pcg32::FromRaw(rng->state, rng->inc);
     const HitResult hr = ResolveHit(in, FromC(*rules), r);
     rng->state = r.State();
@@ -2369,6 +2399,120 @@ SHATTER_API shatter_status SHATTER_CALL shatter_vitals_spend_resource(shatter_vi
     Vitals v = VitalsFromC(*vitals);
     *ok = TrySpendResource(v, amount) ? 1 : 0;
     VitalsToC(v, *vitals);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_tick_ex(const shatter_db* db, shatter_vitals* vitals,
+                                                             const shatter_statblock* stats, const char* class_id,
+                                                             std::size_t class_id_len, double dt, std::uint8_t in_combat,
+                                                             std::uint8_t moving) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (vitals == nullptr || stats == nullptr || !std::isfinite(dt)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const ClassData* cls = nullptr;
+    if (!FindClassArg(*d, class_id, class_id_len, cls)) return SHATTER_INVALID_ARGUMENT;
+    Vitals v = VitalsFromC(*vitals);
+    TickVitals(v, stats->sb, cls, dt, in_combat != 0, moving != 0);
+    VitalsToC(v, *vitals);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_gain_on_hit(const shatter_db* db, shatter_vitals* vitals,
+                                                                 const shatter_statblock* stats, const char* class_id,
+                                                                 std::size_t class_id_len) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (vitals == nullptr || stats == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const ClassData* cls = nullptr;
+    if (!FindClassArg(*d, class_id, class_id_len, cls)) return SHATTER_INVALID_ARGUMENT;
+    Vitals v = VitalsFromC(*vitals);
+    GainResourceOnHit(v, stats->sb, cls);
+    VitalsToC(v, *vitals);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_gain_on_block(const shatter_db* db, shatter_vitals* vitals,
+                                                                   const shatter_statblock* stats, const char* class_id,
+                                                                   std::size_t class_id_len) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (vitals == nullptr || stats == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const ClassData* cls = nullptr;
+    if (!FindClassArg(*d, class_id, class_id_len, cls)) return SHATTER_INVALID_ARGUMENT;
+    Vitals v = VitalsFromC(*vitals);
+    GainResourceOnBlock(v, stats->sb, cls);
+    VitalsToC(v, *vitals);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_db_combat_rules(const shatter_db* db,
+                                                              shatter_combat_rules* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const RulesConstants& r = d->Rules();
+    std::memset(out, 0, sizeof(*out));
+    out->combo_window = r.comboWindow;
+    out->combo_window_after_dodge = r.comboWindowAfterDodge;
+    out->attack_buffer = r.attackBuffer;
+    out->heavy_hold_threshold = r.heavyHoldThreshold;
+    out->light_windup_credit_max = r.lightWindupCreditMax;
+    out->guard_lower_time = r.guardLowerTime;
+    out->dash_shot_range = r.dashShotRange;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_basic_kit_get(const shatter_db* db, const char* class_id,
+                                                            std::size_t class_id_len,
+                                                            shatter_basic_kit* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view cid;
+    if (out == nullptr || class_id == nullptr || !Text(class_id, class_id_len, cid)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const BasicKitData* k = d->FindBasicKit(cid);
+    if (k == nullptr) return SHATTER_NOT_FOUND;
+    std::memset(out, 0, sizeof(*out));
+    out->heavy_charge_time = k->heavyChargeTime;
+    out->heavy_max_mult = k->heavyMaxMult;
+    out->guard_arc = k->guardArc;
+    out->guard_max_hold = k->guardMaxHold;
+    out->guard_cooldown = k->guardCooldown;
+    out->guard_perfect_window = k->guardPerfectWindow;
+    out->guard_perfect_cooldown = k->guardPerfectCooldown;
+    out->guard_perfect_resource = k->guardPerfectResource;
+    out->guard_drain_per_damage = k->guardDrainPerDamage;
+    // O carregamento já garantiu 1 a 3 golpes leves, até 4 efeitos da perfeita e IDs de até 63 bytes.
+    out->light_chain_count = static_cast<std::int32_t>(k->lightChain.size());
+    for (std::size_t i = 0; i < k->lightChain.size() && i < kMaxLightChain; ++i) CopyText(out->light_chain[i], k->lightChain[i]);
+    CopyText(out->heavy_skill, k->heavySkill);
+    CopyText(out->charge_effect, k->chargeEffect);
+    CopyText(out->guard_effect, k->guardEffect);
+    out->guard_perfect_effect_count = static_cast<std::int32_t>(k->guardPerfectEffects.size());
+    for (std::size_t i = 0; i < k->guardPerfectEffects.size() && i < kMaxGuardPerfectEffects; ++i)
+        CopyText(out->guard_perfect_effects[i], k->guardPerfectEffects[i]);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext5(std::uint32_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    if (needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = SHATTER_LAYOUT_EXT5_COUNT;
+    if (cap < SHATTER_LAYOUT_EXT5_COUNT) return SHATTER_BUFFER_TOO_SMALL;
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    std::memcpy(out, kLayoutExt5, sizeof(kLayoutExt5));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext5(const std::uint32_t* values, std::size_t n,
+                                                                shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (values == nullptr && n != 0) return SetError(err, SHATTER_INVALID_ARGUMENT, "values is null");
+    if (n != SHATTER_LAYOUT_EXT5_COUNT) return SetError(err, SHATTER_VERSION_MISMATCH, "ext5 layout count differs");
+    for (std::size_t i = 0; i < n; ++i) {
+        if (values[i] != kLayoutExt5[i])
+            return SetError(err, SHATTER_VERSION_MISMATCH, "ext5 layout entry " + std::to_string(i) + " differs",
+                            static_cast<int>(i) + 1);
+    }
     return SHATTER_OK;
 }
 

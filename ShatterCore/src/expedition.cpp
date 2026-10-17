@@ -443,7 +443,7 @@ private:
             e.barrier = r.defenderBarrierAfter;
             damageDealt_ += r.totalDamage;
             if (r.landed) {
-                resource_ = std::min(maxRes, resource_ + su_.cls->resourceOnHit);
+                resource_ = std::min(maxRes, resource_ + ResourceOnHit(su_.cls));
                 for (const ContentId& id : s.onHitEffects) {
                     const EffectData* fx = db_.FindEffect(id);
                     if (fx != nullptr) e.fx.Apply(*fx, "player", 1.0, TriggerKind::None, e.stats, rules_);
@@ -545,7 +545,7 @@ private:
             FireTrigger(TriggerKind::OnTakeDamage);
         }
         if (r.outcome == HitOutcome::Blocked) {
-            resource_ = std::min(ps_.Get(StatId::Resource), resource_ + su_.cls->resourceOnBlock);
+            resource_ = std::min(ps_.Get(StatId::Resource), resource_ + ResourceOnBlock(su_.cls));
             FireTrigger(TriggerKind::OnBlock);
         }
     }
@@ -830,8 +830,13 @@ StartCheck CanStartExpedition(const ContentDB& db, const CharacterState& c, cons
 
 IdleCalibration BuildIdleCalibration(const ContentDB& db, const CharacterState& c) {
     IdleCalibration cal = IdleCalibration::BotParity;
+    // O selo cobre o que o idle joga: o golpe 1 do kit e a barra; os outros golpes do kit só existem no tempo real.
+    if (const BasicKitData* kit = db.FindBasicKit(c.classId)) {
+        if (!kit->lightChain.empty())
+            if (const SkillData* s = db.FindSkill(kit->lightChain.front())) cal = WeakestCalibration(cal, s->idle.calibration);
+    }
     for (const ContentId& id : c.skillBar) {
-        if (id.empty()) continue;
+        if (id.empty() || IsKitOnlySkill(db, c.classId, id)) continue;
         if (const SkillData* s = db.FindSkill(id)) cal = WeakestCalibration(cal, s->idle.calibration);
     }
     for (const auto& item : c.equipment) {

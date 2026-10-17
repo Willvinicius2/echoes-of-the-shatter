@@ -284,3 +284,50 @@ Paridade: o simulador idle NÃO modela fuga de inimigo (eles lutam até morrer; 
 `shatter_equip_result`: `{int32 result; int32 slot; uint64 displaced_uid; uint8 displaced; uint8 reserved[7]}` (24 bytes). Ordem do Refúgio para o chefe: grave o save (`shatter_save_write`) antes de `ground_add_loot` do Único (RF-55); o chão não é salvo, então o Único só pode ficar no chão se o contador já foi gravado.
 
 Fora do escopo desta rodada (decisão do dono ou UI): requisito de nível do item, "Vender Comuns ao coletar" (a coleta atômica da expedição continua entregando ao Baú), confirmações e desfazer 5 s (UI), uso do Ouro (docs/16 Q3-3).
+
+## 12. API C 1.5: combate básico com combo, ataque forte e defesa (Backend, 17/10/2026, `etapa3/combate-core`)
+
+Origem: `docs/18_combate_combo.md` (seção 8 e as decisões do orquestrador em 8.1). `SHATTER_C_API_MINOR` vai para **5** (só adições; o C# deve exigir `shatter_api_minor() >= 5`). **A máquina de combate básica fica no C#** (`HeroCombatLogic`, passo fixo de 60 Hz): índice do combo, buffer, janelas, limiar de segurar, carga com multiplicador linear, cancelamentos e a geometria do arco da defesa. O core guarda e valida os NÚMEROS (`basic_kits.csv` e 7 chaves de `rules.csv`) e continua resolvendo dano, efeitos, defesa e recurso. O item 4 do docs/18 seção 8 (máquina no core) não vale.
+
+### 12.1 Dados
+
+| Onde | Mudança |
+|---|---|
+| `rules.csv` | 7 chaves obrigatórias: `combo_window`, `combo_window_after_dodge`, `attack_buffer`, `heavy_hold_threshold`, `light_windup_credit_max`, `guard_lower_time`, `dash_shot_range` (87 no total; faixas: tempos 0 a 5 s, crédito 0 a 1, alcance 0 a 10000 uu). `RulesConstants` ganha os 7 campos com 0 neutro |
+| `basic_kits.csv` (nova, OPCIONAL) | Kit por classe (`ContentDB::FindBasicKit`, `BasicKits()`, `BasicKitData`). Validação: classe existe e sem linha repetida, `lightChain` de 1 a 3 (repete permitido), habilidades da própria classe, efeitos existentes, `guardEffect` com a tag `guard`, `heavyChargeTime` > 0, `heavyMaxMult` >= 1, `guardArc` 0 a 360, no máximo 4 efeitos da defesa perfeita, IDs de até 63 bytes. Arquivo ausente em `LoadDirectory` não é erro |
+| `skills.csv` `pierce` | Coluna opcional, 0 a 99 (99 = atravessa todos), só `shape = projectile`. `SkillData::pierce`, `kPierceAll` |
+| `effects.csv` tag `guard` | Nova tag (`Tag::Guard = 1 << 9`, `kTagCount` 10, `SHATTER_TAG_GUARD`). Efeito com a tag: os mods de `damage_taken` ganham a exigência da tag ao entrar no StatBlock |
+| Conteúdo (docs/18 4.1 a 4.7) | 13 habilidades, 6 efeitos, 2 classes (Arqueiro e Mago), `class_stats`, `item_base.hunter_bow`, chaves de Loc em pt-BR |
+
+### 12.2 Regras no core
+
+| Item do docs/18 §8 | Implementação |
+|---|---|
+| 1, 2 | `basic_kits.csv` lida e validada com erros tipados (`E_FK`, `E_RANGE`, `E_RULE`, `E_DUP_ID`, `E_TYPE`, `E_HEADER`); as 7 chaves lidas e validadas; `pierce` lida e validada |
+| 3 (a) a (e) | `ClassifySkill(SkillData) -> SkillBehavior`: `explodes` (projétil com `radius` > 0), `fan` (projétil com `projectiles` > 1 e `coneAngle` > 0), `selfCentered` (área com `range` 0), `groundTargeted` (área com `range` > 0), `dashBackShot` (dash com tag `projectile`; pula `range` e atira em `dash_shot_range`). Validação no `Finalize`: leque sem ângulo, área sem raio, dash com tiro sem `dash_shot_range`, `pierce` fora de projétil. Exposto no `lookup_json` da habilidade (`pierce`, `behavior`). A geometria em si continua no C# |
+| 5 (defesa) | `HitInput::fromGuardArc` (C: `shatter_hit_input.from_guard_arc`, antes `reserved[0]`). Passo 8 de `ResolveHit`: `defender.GetTagged(DamageTaken, fromGuardArc ? guard : nenhuma)`. Os mods de efeito `guard` só valem se o chamador diz que o golpe veio de dentro do arco; os demais mods do alvo não dependem disso. O consumo de RNG não muda. **Não implementado no core** (ficam no C#, com os valores do kit): tempo máximo da defesa, espera, janela da defesa perfeita, dano zero da perfeita, efeitos no atacante, dreno de Mana por ponto evitado |
+| 6 | `ResourceOnHit/OnBlock(cls)` e `GainResourceOnHit/OnBlock(vitals, stats, cls)` (combat.h); o simulador idle usa as mesmas funções. API: `shatter_vitals_gain_on_hit`, `shatter_vitals_gain_on_block` |
+| 7 | `TickVitals(..., bool moving = false)`: o recurso regenera × `regenMultWhileMoving` com o herói andando (Foco 0,3); a vida não muda; sem classe, nada. API: `shatter_vitals_tick_ex` (o `shatter_vitals_tick` antigo = parado) |
+| 8 | `IsIdleCompatible` olha o golpe 1 do kit e a barra (Q/E/R); golpes 2 e 3 do combo e o golpe forte do kit (`IsKitOnlySkill`) não exigem perfil idle, mesmo na barra. Arqueiro e Mago ficam bloqueados para expedição (`IdleIncompatible`, RF-43, esperado). `BuildIdleCalibration` ignora os mesmos golpes |
+| 9 | `cast_speed` tem base neutra 1 (`StatBlock`); o Mago sem o atributo conjura nos tempos do CSV. Teste fixa |
+| 10 | `ctest` e `validate_data.py` com 3 classes; nenhum teste de classe única precisou de ajuste de lógica (só as colunas novas dos fixtures) |
+
+### 12.3 API C 1.5 (aditiva)
+
+| Função / tipo | Contrato |
+|---|---|
+| `shatter_hit_input.from_guard_arc` | 1 = o golpe veio de dentro do arco da defesa do alvo. 0 (o que chamadores antigos já mandavam) = fora. Tamanho do struct inalterado (64) |
+| `SHATTER_TAG_GUARD` (1 << 9) | Tag de efeito de defesa. `shatter_statblock_get(sb, DAMAGE_TAKEN, SHATTER_TAG_GUARD)` dá o dano recebido DENTRO do arco; com tags 0, fora |
+| `shatter_combat_rules` + `shatter_db_combat_rules(db, out)` | 7 doubles: `combo_window`, `combo_window_after_dodge`, `attack_buffer`, `heavy_hold_threshold`, `light_windup_credit_max`, `guard_lower_time`, `dash_shot_range` |
+| `shatter_basic_kit` + `shatter_basic_kit_get(db, class_id, len, out)` | Kit da classe (720 bytes). 9 doubles (`heavy_charge_time`, `heavy_max_mult`, `guard_arc`, `guard_max_hold`, `guard_cooldown`, `guard_perfect_window`, `guard_perfect_cooldown`, `guard_perfect_resource`, `guard_drain_per_damage`), `int32 light_chain_count` (1 a 3), `int32 guard_perfect_effect_count` (0 a 4), `char light_chain[3][64]`, `heavy_skill[64]`, `charge_effect[64]`, `guard_effect[64]`, `guard_perfect_effects[4][64]` (UTF-8, NUL). NOT_FOUND: classe inexistente ou sem linha |
+| `shatter_vitals_tick_ex(db, vitals, stats, class_id, len, dt, in_combat, moving)` | Como `shatter_vitals_tick`, com o herói andando ou parado |
+| `shatter_vitals_gain_on_hit` / `shatter_vitals_gain_on_block` `(db, vitals, stats, class_id, len)` | Recurso por golpe e por bloqueio da classe, limitado ao máximo; class_id vazio/nulo = nada; classe desconhecida = INVALID_ARGUMENT |
+| `shatter_layout_info_ext5` / `shatter_layout_check_ext5` (`SHATTER_LAYOUT_EXT5_COUNT` = 26) | `[offset de from_guard_arc, sizeof(shatter_combat_rules), 7 offsets, sizeof(shatter_basic_kit), 9 offsets dos doubles, light_chain_count, guard_perfect_effect_count, light_chain, heavy_skill, charge_effect, guard_effect, guard_perfect_effects]`. Chamar o check na inicialização |
+
+### 12.4 Para o Frontend / Integração
+
+C# (`Interop`): `CombatRules` ganhou `ComboWindowSeconds`, `ComboWindowAfterDodgeSeconds`, `AttackBufferSeconds`, `HeavyHoldThresholdSeconds`, `LightWindupCreditMax`, `GuardLowerTimeSeconds`, `DashShotRangeUu`; `HitRequest.FromGuardArc`; `SkillTags.Guard`; `SkillInfo.Pierce`, `SkillInfo.Behavior` (`SkillBehavior`); `BasicKitInfo` (`IRulesCore.FindBasicKit(classId)`); `IRulesCore.TickVitals(..., moving)`, `GainResourceOnHit`, `GainResourceOnBlock` (membros com implementação padrão; o stub não os precisa). Não foi possível compilar na Unity neste worktree.
+
+### 12.5 Testes e pendências
+
+Testes novos em `test_combat_basic.cpp` (18) e `test_c_api.cpp` (3, `c_api_15_*`), `validate_data.py` com 8 mutações novas. Pendências: (1) defesa perfeita, limite de tempo, dreno de recurso e empurrão por tipo de alvo (docs/18 §8 itens 5 e 11) ficam no C# com os valores do kit; (2) o stub em C# ignora `moving`, kit, `pierce` e comportamento (só o núcleo nativo preenche); (3) Arqueiro e Mago sem expedição por decisão do dono (Q18-2).

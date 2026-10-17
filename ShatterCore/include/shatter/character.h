@@ -61,8 +61,12 @@ bool BuildStatBlock(const ContentDB& db, const CharacterState& c, StatBlock& out
 // pela API C, no combate em tempo real. Nível < 1 conta como 1.
 void BuildEnemyStatBlock(const EnemyData& enemy, int level, StatBlock& out);
 
-// Verifica se todas as habilidades da barra, Sigilos e Únicos equipados têm IdleProfile
-// suportado. Preenche `blockingIds` com o que bloqueia (UI: "X ainda não funciona em patrulha").
+// Verifica se o golpe 1 do kit da classe (basic_kits.csv), as habilidades da barra (Q/E/R), Sigilos e Únicos equipados têm
+// IdleProfile suportado. Os outros golpes do kit (combo 2 e 3, golpe forte) não entram (docs/18 §8 item 8). Preenche `blockingIds` com o que bloqueia (UI: "X ainda não funciona em patrulha").
 bool IsIdleCompatible(const ContentDB& db, const CharacterState& c, std::vector<ContentId>* blockingIds);
+
+// A habilidade é só do kit básico da classe e NÃO é o golpe 1: golpes 2 e 3 do combo e golpe forte (basic_kits.csv).
+// Existem só no tempo real; o idle (compatibilidade e selo de calibração) as ignora (docs/18 §8 item 8).
+bool IsKitOnlySkill(const ContentDB& db, const ContentId& classId, const ContentId& skillId);
 
 }  // namespace shatter

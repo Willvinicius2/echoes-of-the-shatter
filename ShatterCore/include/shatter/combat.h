@@ -53,8 +53,16 @@ void TickPotionBarrier(double& barrier, double& potionAmount, double& remaining,
 // Vida cheia; recurso no repouso da classe (vazio se decai fora de combate, senão cheio).
 Vitals CreateVitals(const StatBlock& stats, const ClassData* cls);
 // Regeneração de vida e recurso, decaimento do recurso fora de combate e fim da barreira temporária.
-void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double dt, bool inCombat);
+// `moving` (docs/18 §8 item 7): o herói está andando; a regeneração do RECURSO é multiplicada por
+// ClassData::regenMultWhileMoving (Foco do Arqueiro: 0,3). false (padrão) = parado, multiplicador 1. A vida não muda.
+void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double dt, bool inCombat, bool moving = false);
 void GainResource(Vitals& v, const StatBlock& stats, double amount);
+// Recurso por golpe que acerta / por bloqueio (classes.csv resourceOnHit/resourceOnBlock). UMA regra para o tempo real
+// (pela API C) e para o simulador idle, que usa estes mesmos valores (docs/18 §8 item 6). 0 sem classe.
+double ResourceOnHit(const ClassData* cls);
+double ResourceOnBlock(const ClassData* cls);
+void GainResourceOnHit(Vitals& v, const StatBlock& stats, const ClassData* cls);
+void GainResourceOnBlock(Vitals& v, const StatBlock& stats, const ClassData* cls);
 bool TrySpendResource(Vitals& v, double amount);   // false (sem gastar) se faltar recurso
 
 // ---------------------------------------------------------------------------
