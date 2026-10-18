@@ -20,6 +20,13 @@ namespace Echoes.EditorTools
         public static readonly string[] SlotNames = { "Head", "Chest", "Hands", "Legs", "Feet" };
         public const string StarterSet = "Starter"; // vset.starter em PascalCase para o nome dos assets
 
+        /// <summary>Conjuntos visuais por sufixo de arquivo: Starter (todos os herois) e Rare (2o conjunto do Guerreiro, vset.warrior_rare_01). Conjunto sem FBX para o heroi e ignorado.</summary>
+        public static readonly (string suffix, string visualSetId)[] Sets =
+        {
+            (StarterSet, HeroPartCatalog.StarterSet),
+            ("Rare", HeroPartCatalog.WarriorRareSet),
+        };
+
         public static string CatalogPath(string hero) => $"{Root}/{hero}/SO_HeroPartCatalog_{hero}.asset";
         public static string BodyDir(string hero) => $"{Root}/{hero}/Body";
         public static string PartsDir(string hero) => $"{Root}/{hero}/Parts";
@@ -58,38 +65,43 @@ namespace Echoes.EditorTools
         public static HeroPartCatalog BuildHero(string hero)
         {
             var bodyMaterial = CharacterPrefabBuilder.EnsureMaterial($"M_{hero}_Body", $"{BodyDir(hero)}/T_{hero}_Body_BC.png", $"{BodyDir(hero)}/T_{hero}_Body_M.png");
-            var starterMaterial = CharacterPrefabBuilder.EnsureMaterial($"M_{hero}_Starter", $"{PartsDir(hero)}/T_{hero}_Starter_BC.png", $"{PartsDir(hero)}/T_{hero}_Starter_M.png");
             var hides = ReadHides(hero);
 
             var catalog = SandboxBuilder.LoadOrCreate<HeroPartCatalog>(CatalogPath(hero));
             catalog.heroId = hero;
             catalog.parts.Clear();
-            for (var i = 0; i < SlotNames.Length; i++)
+            foreach (var (suffix, visualSetId) in Sets)
             {
-                var slotName = SlotNames[i];
-                var fbx = $"{PartsDir(hero)}/SK_{hero}_{slotName}_{StarterSet}.fbx";
-                var model = AssetDatabase.LoadAssetAtPath<GameObject>(fbx);
-                if (model == null) throw new InvalidOperationException("FBX da peca ausente: " + fbx);
-
-                var instance = (GameObject)UnityEngine.Object.Instantiate(model);
-                instance.name = $"P_{hero}_{slotName}_{StarterSet}";
-                foreach (var smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (!File.Exists(Path.Combine(Path.GetDirectoryName(Application.dataPath), PartsDir(hero), $"SK_{hero}_Head_{suffix}.fbx"))) continue;
+                // Mesmo shader (SG_Character, pelo EnsureMaterial) e mesma mascara; so muda o atlas do conjunto.
+                var material = CharacterPrefabBuilder.EnsureMaterial($"M_{hero}_{suffix}", $"{PartsDir(hero)}/T_{hero}_{suffix}_BC.png", $"{PartsDir(hero)}/T_{hero}_{suffix}_M.png");
+                for (var i = 0; i < SlotNames.Length; i++)
                 {
-                    smr.sharedMaterial = starterMaterial;
-                    smr.shadowCastingMode = ShadowCastingMode.On;
-                    smr.receiveShadows = true;
-                    smr.updateWhenOffscreen = false;
-                }
-                var prefab = PrefabUtility.SaveAsPrefabAsset(instance, $"{PartsDir(hero)}/{instance.name}.prefab");
-                UnityEngine.Object.DestroyImmediate(instance);
+                    var slotName = SlotNames[i];
+                    var fbx = $"{PartsDir(hero)}/SK_{hero}_{slotName}_{suffix}.fbx";
+                    var model = AssetDatabase.LoadAssetAtPath<GameObject>(fbx);
+                    if (model == null) throw new InvalidOperationException("FBX da peca ausente: " + fbx);
 
-                var part = SandboxBuilder.LoadOrCreate<HeroPart>($"{PartsDir(hero)}/SO_HeroPart_{hero}_{slotName}_{StarterSet}.asset");
-                part.slot = (HeroPartSlot)i;
-                part.visualSetId = HeroPartCatalog.StarterSet;
-                part.hidesRegions = hides.TryGetValue(slotName, out var flags) ? flags : BodyRegion.None;
-                part.prefab = prefab;
-                EditorUtility.SetDirty(part);
-                catalog.parts.Add(part);
+                    var instance = (GameObject)UnityEngine.Object.Instantiate(model);
+                    instance.name = $"P_{hero}_{slotName}_{suffix}";
+                    foreach (var smr in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    {
+                        smr.sharedMaterial = material;
+                        smr.shadowCastingMode = ShadowCastingMode.On;
+                        smr.receiveShadows = true;
+                        smr.updateWhenOffscreen = false;
+                    }
+                    var prefab = PrefabUtility.SaveAsPrefabAsset(instance, $"{PartsDir(hero)}/{instance.name}.prefab");
+                    UnityEngine.Object.DestroyImmediate(instance);
+
+                    var part = SandboxBuilder.LoadOrCreate<HeroPart>($"{PartsDir(hero)}/SO_HeroPart_{hero}_{slotName}_{suffix}.asset");
+                    part.slot = (HeroPartSlot)i;
+                    part.visualSetId = visualSetId;
+                    part.hidesRegions = hides.TryGetValue(slotName, out var flags) ? flags : BodyRegion.None;
+                    part.prefab = prefab;
+                    EditorUtility.SetDirty(part);
+                    catalog.parts.Add(part);
+                }
             }
             EditorUtility.SetDirty(catalog);
             return catalog;

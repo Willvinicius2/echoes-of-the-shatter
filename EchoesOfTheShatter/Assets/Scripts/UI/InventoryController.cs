@@ -29,7 +29,12 @@ namespace Echoes.UI
 
         ScreenHost host;
         PlayerInputHandler input;
-        VisualElement screen, detail, backpackGrid, stashGrid, slotsColumn, dollImage, modal, openButton;
+        VisualElement screen, detail, backpackGrid, stashGrid, slotsColumn, dollImage, modal, openButton, statsPanel, undoColumn;
+        readonly Dictionary<ulong, ItemContainer> pendingDiscards = new Dictionary<ulong, ItemContainer>();
+        readonly Dictionary<ulong, VisualElement> undoBars = new Dictionary<ulong, VisualElement>();
+
+        /// <summary>Segundos para desfazer um descarte de item Comum (docs/16 S-07).</summary>
+        public const float UndoSeconds = 5f;
         Label backpackTitle, stashTitle;
         PaperDoll doll;
         int previousScale = 1;
@@ -119,6 +124,7 @@ namespace Echoes.UI
         public void Close()
         {
             if (!open) return;
+            FlushPendingDiscards(); // o que ainda esta na janela de desfazer vale ao fechar
             open = false;
             IsOpen = false;
             CloseModal();
@@ -139,12 +145,11 @@ namespace Echoes.UI
             screen.pickingMode = PickingMode.Position;
             var frame = new VisualElement { name = "inventory" };
             frame.style.flexDirection = FlexDirection.Column;
-            frame.style.backgroundColor = new Color(0.086f, 0.067f, 0.09f, 0.96f);
-            frame.style.paddingLeft = 24;
-            frame.style.paddingRight = 24;
-            frame.style.paddingTop = 16;
-            frame.style.paddingBottom = 16;
-            Border(frame, 2, ScreenKit.Gold);
+            frame.AddToClassList("art-frame-ornate");
+            frame.style.paddingLeft = 52;
+            frame.style.paddingRight = 52;
+            frame.style.paddingTop = 40;
+            frame.style.paddingBottom = 40;
             screen.Add(frame);
 
             var header = ScreenKit.Row(frame);
@@ -179,6 +184,15 @@ namespace Echoes.UI
             center.Add(dollImage);
             var hint = ScreenKit.Line(center, Loc.Get("ui.inventory.drag_hint"), 15, ScreenKit.Muted);
             hint.style.unityTextAlign = TextAnchor.MiddleCenter;
+            statsPanel = new VisualElement { name = "stats-panel" };
+            statsPanel.style.width = PaperDoll.Width * 0.72f;
+            statsPanel.style.marginTop = 8;
+            center.Add(statsPanel);
+            undoColumn = new VisualElement { name = "undo-column" };
+            undoColumn.style.position = Position.Absolute;
+            undoColumn.style.left = 52;
+            undoColumn.style.bottom = 14;
+            frame.Add(undoColumn);
 
             // coluna 2: grades
             var middle = new VisualElement();
@@ -199,12 +213,11 @@ namespace Echoes.UI
             detail.style.marginLeft = 16;
             detail.style.width = 430;
             detail.style.height = 790;
-            detail.style.backgroundColor = new Color(0.047f, 0.043f, 0.063f, 0.9f);
-            detail.style.paddingLeft = 14;
-            detail.style.paddingRight = 14;
-            detail.style.paddingTop = 8;
+            detail.AddToClassList("art-frame-plain");
+            detail.style.paddingLeft = 26;
+            detail.style.paddingRight = 26;
+            detail.style.paddingTop = 22;
             detail.style.overflow = Overflow.Hidden;
-            Border(detail, 1, new Color(0.4f, 0.34f, 0.22f));
             body.Add(detail);
         }
 
@@ -243,9 +256,11 @@ namespace Echoes.UI
             stash = save.ListItems(0, ItemContainer.Stash);
             equipment = save.Equipment(0);
             var info = save.Inventory(Rules, 0);
-            backpackTitle.text = Loc.Get("ui.inventory.backpack").Replace("{used}", info.BackpackUsed.ToString()).Replace("{cap}", info.BackpackCapacity.ToString());
-            backpackTitle.style.color = info.BackpackUsed >= info.BackpackCapacity ? ScreenKit.Bad : ScreenKit.Gold;
-            stashTitle.text = Loc.Get("ui.inventory.stash").Replace("{used}", info.StashUsed.ToString()).Replace("{cap}", info.StashCapacity.ToString());
+            var hiddenBackpack = backpack.RemoveAll(i => pendingDiscards.ContainsKey(i.Uid)); // descarte na janela de desfazer: ja some da grade
+            var hiddenStash = stash.RemoveAll(i => pendingDiscards.ContainsKey(i.Uid));
+            backpackTitle.text = Loc.Get("ui.inventory.backpack").Replace("{used}", (info.BackpackUsed - hiddenBackpack).ToString()).Replace("{cap}", info.BackpackCapacity.ToString());
+            backpackTitle.style.color = info.BackpackUsed - hiddenBackpack >= info.BackpackCapacity ? ScreenKit.Bad : ScreenKit.Gold;
+            stashTitle.text = Loc.Get("ui.inventory.stash").Replace("{used}", (info.StashUsed - hiddenStash).ToString()).Replace("{cap}", info.StashCapacity.ToString());
 
             backpackGrid.Clear();
             for (var i = 0; i < info.BackpackCapacity; i++)
@@ -262,6 +277,7 @@ namespace Echoes.UI
                 stashTitle.style.color = ScreenKit.Muted;
             }
             BuildSlots();
+            RefreshStats();
             if (selected != null && FindByUid(selected.Uid) == null && !IsEquipped(selected.Uid)) selected = null;
             ShowDetail(selected);
             if (doll != null) doll.Refresh();
@@ -282,6 +298,38 @@ namespace Echoes.UI
 
         // ------------------------------------------------------------------------------------------------ celulas
 
+        static string RarityClass(ItemRarity rarity)
+        {
+            switch (rarity)
+            {
+                case ItemRarity.Magic: return "art-slot--magic";
+                case ItemRarity.Rare: return "art-slot--rare";
+                case ItemRarity.Unique: return "art-slot--unique";
+                default: return "art-slot--common";
+            }
+        }
+
+        static readonly Color SelectedTint = new Color(1.35f, 1.2f, 0.8f, 1f);
+
+        /// <summary>Icone do item (icones_itens_01, por base) sobre o slot; sem icone cai nas iniciais da base.</summary>
+        void AddItemIcon(VisualElement cell, ItemInstanceInfo item, float size)
+        {
+            var icon = UiArt.IconFor(item);
+            if (icon != null)
+            {
+                var image = new VisualElement { name = "icon" };
+                image.style.width = size;
+                image.style.height = size;
+                image.style.backgroundImage = new StyleBackground(icon);
+                image.pickingMode = PickingMode.Ignore;
+                cell.Add(image);
+                return;
+            }
+            var glyph = ScreenKit.Line(cell, ItemText.Glyph(Loc, item), 22, ItemText.RarityColor(item.Rarity), true);
+            glyph.style.marginTop = 0;
+            glyph.pickingMode = PickingMode.Ignore;
+        }
+
         VisualElement ItemCell(ItemInstanceInfo item, string from)
         {
             var cell = new VisualElement { name = "cell" };
@@ -289,16 +337,13 @@ namespace Echoes.UI
             cell.style.height = Cell;
             cell.style.marginRight = 4;
             cell.style.marginBottom = 4;
-            cell.style.backgroundColor = new Color(0.118f, 0.102f, 0.133f, 1f);
             cell.style.alignItems = Align.Center;
             cell.style.justifyContent = Justify.Center;
-            Border(cell, 2, item != null ? ItemText.RarityColor(item.Rarity) : new Color(0.25f, 0.22f, 0.2f));
+            cell.AddToClassList(item != null ? RarityClass(item.Rarity) : "art-slot--empty");
             if (item == null) return cell;
             cell.userData = item;
-            var glyph = ScreenKit.Line(cell, ItemText.Glyph(Loc, item), 22, ItemText.RarityColor(item.Rarity), true);
-            glyph.style.marginTop = 0;
-            glyph.pickingMode = PickingMode.Ignore;
-            if (selected != null && selected.Uid == item.Uid) cell.style.backgroundColor = new Color(0.25f, 0.2f, 0.12f, 1f);
+            AddItemIcon(cell, item, Cell - 14);
+            if (selected != null && selected.Uid == item.Uid) cell.style.unityBackgroundImageTintColor = SelectedTint;
             // seta de melhora ou piora (do core) no canto, sem precisar de Shift
             if (from == "backpack")
             {
@@ -307,8 +352,8 @@ namespace Echoes.UI
                 {
                     var arrow = ScreenKit.Line(cell, verdict > 0 ? "▲" : "▼", 14, verdict > 0 ? ScreenKit.Good : ScreenKit.Bad, true);
                     arrow.style.position = Position.Absolute;
-                    arrow.style.right = 2;
-                    arrow.style.top = -4;
+                    arrow.style.right = 4;
+                    arrow.style.top = -2;
                     arrow.pickingMode = PickingMode.Ignore;
                 }
             }
@@ -323,21 +368,21 @@ namespace Echoes.UI
             return cell;
         }
 
+        /// <summary>Posicoes do prototipo (docs/16 S-05): so as habilitadas pelo core aparecem; as sem conteudo (maos, amuleto, aneis, cinto) ficam escondidas.</summary>
         void BuildSlots()
         {
             slotsColumn.Clear();
-            // ordem de exibicao: as seis posicoes do prototipo primeiro (arma, elmo, peitoral, luvas, calca, botas), depois as bloqueadas
             var order = new[] { "main_hand", "head", "body", "hands", "legs", "feet", "off_hand", "amulet", "ring", "ring2", "belt" };
             foreach (var name in order)
             {
                 var index = ItemSlots.IndexOf(name);
+                if (!SaveGame.SlotEnabled(Rules, index)) continue;
                 slotsColumn.Add(SlotCell(name, index));
             }
         }
 
         VisualElement SlotCell(string slotName, int index)
         {
-            var enabled = SaveGame.SlotEnabled(Rules, index);
             var item = equipment[index];
             var cell = new VisualElement { name = "slot-" + slotName };
             cell.style.width = Cell + 8;
@@ -345,25 +390,31 @@ namespace Echoes.UI
             cell.style.marginBottom = 6;
             cell.style.alignItems = Align.Center;
             cell.style.justifyContent = Justify.Center;
-            cell.style.backgroundColor = enabled ? new Color(0.118f, 0.102f, 0.133f, 1f) : new Color(0.05f, 0.045f, 0.055f, 1f);
-            Border(cell, 2, item != null ? ItemText.RarityColor(item.Rarity) : (enabled ? new Color(0.45f, 0.38f, 0.22f) : new Color(0.2f, 0.18f, 0.18f)));
+            cell.AddToClassList(item != null ? RarityClass(item.Rarity) : "art-slot--empty");
+            if (item == null)
+            {
+                // posicao vazia: icone-fantasma da peca (o boneco mostra o corpo nu)
+                var ghost = UiArt.Icon(UiArt.IconName(null, false, slotName));
+                if (ghost != null)
+                {
+                    var image = new VisualElement { name = "ghost" };
+                    image.style.width = Cell - 10;
+                    image.style.height = Cell - 10;
+                    image.style.backgroundImage = new StyleBackground(ghost);
+                    image.style.opacity = 0.22f;
+                    image.pickingMode = PickingMode.Ignore;
+                    cell.Add(image);
+                }
+            }
             var name = ScreenKit.Line(cell, Loc.Get("slot." + slotName + ".name"), 11, ScreenKit.Muted);
             name.style.position = Position.Absolute;
             name.style.bottom = 0;
             name.style.marginTop = 0;
             name.pickingMode = PickingMode.Ignore;
-            if (!enabled)
-            {
-                cell.Add(LockIcon());
-                cell.tooltip = Loc.Get("ui.inventory.slot_locked");
-                return cell;
-            }
             if (item != null)
             {
                 cell.userData = item;
-                var glyph = ScreenKit.Line(cell, ItemText.Glyph(Loc, item), 22, ItemText.RarityColor(item.Rarity), true);
-                glyph.style.marginTop = -8;
-                glyph.pickingMode = PickingMode.Ignore;
+                AddItemIcon(cell, item, Cell - 10);
                 var from = "slot:" + index;
                 cell.RegisterCallback<PointerEnterEvent>(_ => ShowDetail(item, from));
                 cell.RegisterCallback<PointerLeaveEvent>(_ => ShowDetail(selected, selectedFrom));
@@ -372,42 +423,88 @@ namespace Echoes.UI
                     SelectItem(item, from);
                     if (e.button == 1 || e.clickCount >= 2) UnequipSelected();   // botao direito / duplo clique desequipa
                 });
-                if (selected != null && selected.Uid == item.Uid) cell.style.backgroundColor = new Color(0.25f, 0.2f, 0.12f, 1f);
+                if (selected != null && selected.Uid == item.Uid) cell.style.unityBackgroundImageTintColor = SelectedTint;
             }
             return cell;
         }
 
-        /// <summary>Cadeado simples (corpo e arco) para posicao bloqueada: o prototipo nao usa essas posicoes ainda.</summary>
-        static VisualElement LockIcon()
+        // ------------------------------------------------------------------------------------------------ atributos e recursos
+
+        static readonly (StatId id, string key)[] StatLines =
         {
-            var icon = new VisualElement { name = "lock" };
-            icon.style.width = 26;
-            icon.style.height = 30;
-            icon.pickingMode = PickingMode.Ignore;
-            var shackle = new VisualElement();
-            shackle.style.position = Position.Absolute;
-            shackle.style.left = 6;
-            shackle.style.top = 0;
-            shackle.style.width = 14;
-            shackle.style.height = 14;
-            Border(shackle, 3, new Color(0.62f, 0.58f, 0.52f));
-            shackle.style.borderTopLeftRadius = 7;
-            shackle.style.borderTopRightRadius = 7;
-            shackle.style.borderBottomWidth = 0;
-            icon.Add(shackle);
-            var body = new VisualElement();
-            body.style.position = Position.Absolute;
-            body.style.left = 1;
-            body.style.top = 12;
-            body.style.width = 24;
-            body.style.height = 17;
-            body.style.backgroundColor = new Color(0.62f, 0.58f, 0.52f);
-            body.style.borderTopLeftRadius = 3;
-            body.style.borderTopRightRadius = 3;
-            body.style.borderBottomLeftRadius = 3;
-            body.style.borderBottomRightRadius = 3;
-            icon.Add(body);
-            return icon;
+            (StatId.Life, "life"), (StatId.LifeRegen, "life_regen"), (StatId.Armor, "armor"), (StatId.CritChance, "crit_chance"),
+            (StatId.AttackSpeed, "attack_speed"), (StatId.MoveSpeed, "move_speed"), (StatId.ResistFire, "resist_fire"),
+        };
+
+        /// <summary>Painel de atributos (valores do core: o bloco de atributos do heroi), Ouro, Lascas e Cargas do Marco (leitura do save).</summary>
+        void RefreshStats()
+        {
+            if (statsPanel == null) return;
+            statsPanel.Clear();
+            var stats = hero != null && hero.Logic != null ? hero.Logic.Self.Stats : null;
+            if (stats != null)
+            {
+                ScreenKit.Line(statsPanel, Loc.Get("ui.inventory.stats"), 20, ScreenKit.Gold, true);
+                var dps = EquippedWeaponDps();
+                if (dps.HasValue)
+                {
+                    var dpsRow = ScreenKit.Row(statsPanel);
+                    dpsRow.name = "stat-weapon-dps";
+                    ScreenKit.Line(dpsRow, Loc.Get("ui.inventory.stat_dps"), 17, ScreenKit.Muted).style.marginTop = 1;
+                    ScreenKit.Line(dpsRow, dps.Value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture), 17, ScreenKit.Text, true).style.marginTop = 1;
+                }
+                foreach (var (id, key) in StatLines)
+                {
+                    var row = ScreenKit.Row(statsPanel);
+                    row.name = "stat-" + key;
+                    var label = ScreenKit.Line(row, ItemText.StatName(Loc, key), 17, ScreenKit.Muted);
+                    label.style.marginTop = 1;
+                    var value = ScreenKit.Line(row, ItemText.StatValue(key, stats.Get(id)), 17, ScreenKit.Text, true);
+                    value.style.marginTop = 1;
+                }
+            }
+            var snap = SaveReadout.Read(Rules, ExpeditionConfig.CryptMap);
+            if (!snap.Valid) return;
+            var title = ScreenKit.Line(statsPanel, Loc.Get("ui.inventory.resources"), 20, ScreenKit.Gold, true);
+            title.style.marginTop = 8;
+            ResourceRow("gold", "icon_gold", Loc.Get("ui.common.gold"), Loc.FormatInteger(snap.Gold));
+            ResourceRow("shards", "icon_shards", Loc.Get("ui.inventory.shards"), Loc.FormatInteger(snap.Shards));
+        }
+
+        /// <summary>
+        /// Dano por segundo da arma equipada, do core (a "antes" da comparacao da propria arma). Se o core recusar comparar o item equipado consigo
+        /// mesmo, devolve null e a linha some (falta a API shatter_equipped_weapon_dps: pedido ao Backend).
+        /// </summary>
+        double? EquippedWeaponDps()
+        {
+            var slot = ItemSlots.IndexOf("main_hand");
+            var weapon = slot >= 0 && slot < equipment.Length ? equipment[slot] : null;
+            if (weapon == null || Rules == null) return null;
+            var compare = GameSession.Save.Current.Compare(Rules, 0, weapon.Uid, slot);
+            if (compare == null || compare.Result != InvResult.Ok || !compare.IsWeapon) return null;
+            return compare.WeaponDpsBefore;
+        }
+
+        void ResourceRow(string name, string iconName, string label, string value)
+        {
+            var row = ScreenKit.Row(statsPanel);
+            row.name = "res-" + name;
+            var left = new VisualElement();
+            left.style.flexDirection = FlexDirection.Row;
+            left.style.alignItems = Align.Center;
+            row.Add(left);
+            var icon = UiArt.Icon(iconName);
+            if (icon != null)
+            {
+                var image = new VisualElement();
+                image.style.width = 26;
+                image.style.height = 26;
+                image.style.marginRight = 6;
+                image.style.backgroundImage = new StyleBackground(icon);
+                left.Add(image);
+            }
+            ScreenKit.Line(left, label, 17, ScreenKit.Muted).style.marginTop = 0;
+            ScreenKit.Line(row, value, 19, ScreenKit.Gold, true).style.marginTop = 0;
         }
 
         // ------------------------------------------------------------------------------------------------ selecao e acoes
@@ -496,7 +593,6 @@ namespace Echoes.UI
                 return;
             }
             var color = ItemText.RarityColor(item.Rarity);
-            Border(detail, 2, color);
             var name = ScreenKit.Line(detail, ItemText.Name(Loc, Rules, item), 26, color, true);
             name.name = "item-name";
             ScreenKit.Line(detail, ItemText.RarityLine(Loc, Rules, item), 18, color).name = "item-rarity";
@@ -542,6 +638,12 @@ namespace Echoes.UI
         void AskDiscard()
         {
             if (selected == null) return;
+            // Comum: sem confirmacao, com 5 s para desfazer (docs/16 S-07). Magico e Raro: modal. Unico: segurar 1 s.
+            if (selected.Rarity == ItemRarity.Normal)
+            {
+                QueueDiscard();
+                return;
+            }
             CloseModal();
             modal = new VisualElement { name = "discard-modal" };
             modal.style.position = Position.Absolute;
@@ -568,11 +670,78 @@ namespace Echoes.UI
             modal = null;
         }
 
-        /// <summary>Teste: pede a confirmacao e confirma (Comum, Magico, Raro; o Unico exige segurar).</summary>
+        /// <summary>Teste: descarta o selecionado como o jogador (Comum: janela de desfazer, confirmada ao fim; Magico e Raro: modal confirmado).</summary>
         public void ConfirmDiscardForTest()
         {
             AskDiscard();
-            DiscardSelected();
+            if (modal != null) DiscardSelected();
+            else FlushPendingDiscards();
+        }
+
+        // ------------------------------------------------------------------------------------------------ desfazer (5 s)
+
+        public int PendingDiscardCount => pendingDiscards.Count;
+
+        /// <summary>
+        /// Descarte de item Comum com janela de desfazer: o item some da grade na hora, mas o descarte real (core) so acontece quando a janela
+        /// fecha (5 s, ao fechar o inventario ou trocar de area). Desfazer so tira o item da lista de pendentes. O core nao tem "restaurar".
+        /// </summary>
+        void QueueDiscard()
+        {
+            if (selected == null) return;
+            var uid = selected.Uid;
+            var container = selectedFrom == "stash" ? ItemContainer.Stash : ItemContainer.Backpack;
+            var name = ItemText.Name(Loc, Rules, selected);
+            pendingDiscards[uid] = container;
+            selected = null;
+            AddUndoBar(uid, name);
+            Refresh();
+        }
+
+        void AddUndoBar(ulong uid, string itemName)
+        {
+            if (undoColumn == null) return;
+            var bar = new VisualElement { name = "undo-bar" };
+            bar.style.flexDirection = FlexDirection.Row;
+            bar.style.alignItems = Align.Center;
+            bar.style.marginTop = 4;
+            bar.style.paddingLeft = 12;
+            bar.style.backgroundColor = new Color(0.07f, 0.06f, 0.09f, 0.95f);
+            ScreenKit.Line(bar, ScreenKit.Fmt(Loc, "ui.inventory.done_discarded", ("item", itemName)), 20).style.marginTop = 0;
+            ScreenKit.SmallButton(bar, Loc.Get("ui.common.undo"), () => UndoDiscard(uid)).name = "undo-discard";
+            undoColumn.Add(bar);
+            undoBars[uid] = bar;
+            bar.schedule.Execute(() => CommitDiscard(uid)).StartingIn((long)(UndoSeconds * 1000f));
+        }
+
+        /// <summary>Desfaz o descarte pendente (volta a aparecer na grade).</summary>
+        public bool UndoDiscard(ulong uid)
+        {
+            if (!pendingDiscards.Remove(uid)) return false;
+            RemoveUndoBar(uid);
+            Refresh();
+            return true;
+        }
+
+        void CommitDiscard(ulong uid)
+        {
+            if (!pendingDiscards.TryGetValue(uid, out var container)) return;
+            pendingDiscards.Remove(uid);
+            RemoveUndoBar(uid);
+            InventoryOps.Discard(root, container, uid);
+            Refresh();
+        }
+
+        void RemoveUndoBar(ulong uid)
+        {
+            if (undoBars.TryGetValue(uid, out var bar)) bar.RemoveFromHierarchy();
+            undoBars.Remove(uid);
+        }
+
+        /// <summary>Confirma agora todos os descartes ainda na janela de desfazer (ao fechar o inventario).</summary>
+        public void FlushPendingDiscards()
+        {
+            foreach (var uid in new List<ulong>(pendingDiscards.Keys)) CommitDiscard(uid);
         }
     }
 }

@@ -135,7 +135,7 @@ namespace Echoes.Tests.PlayMode
             yield return MoveHeroTo(hero, portal.transform.position + new Vector3(8f, 0f, 0f));
             yield return null;
             yield return MoveHeroTo(hero, portal.transform.position);
-            for (var i = 0; i < 30 && SceneManager.GetActiveScene().name != "Cripta"; i++) yield return null;
+            var travelStart = Time.realtimeSinceStartup; while (Time.realtimeSinceStartup - travelStart < 10f && SceneManager.GetActiveScene().name != "Cripta") yield return null; // fade de portal (0,4 s) antes da troca
             Assert.AreEqual("Cripta", SceneManager.GetActiveScene().name, "o portal do Refugio leva a Cripta");
             yield return null;
             yield return null;

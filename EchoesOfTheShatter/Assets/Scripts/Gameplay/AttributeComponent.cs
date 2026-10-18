@@ -43,6 +43,25 @@ namespace Echoes.Gameplay
             return Combatant;
         }
 
+        /// <summary>
+        /// Refaz os atributos do herói pelo core (subiu de nível ou o item equipado mudou): bloco e efeitos novos entram no mesmo
+        /// <see cref="Combatant"/>, os antigos são descartados. Nada é calculado aqui.
+        /// </summary>
+        public void RefreshHero(IRulesCore rules, in HeroBuild build)
+        {
+            var c = Combatant;
+            if (c == null) return;
+            var oldStats = c.Stats;
+            var oldEffects = c.Effects;
+            var lifeFraction = c.MaxLife > 0.0 ? c.Life / c.MaxLife : 1.0;
+            var resourceFraction = c.MaxResource > 0.0 ? c.Resource / c.MaxResource : 0.0;
+            var stats = rules.CreateHeroStats(build);
+            var effects = rules.CreateEffectSet(stats, null);
+            c.ReplaceBlocks(build.Level, stats, effects, lifeFraction, resourceFraction);
+            oldEffects?.Dispose();
+            oldStats.Dispose();
+        }
+
         public Combatant CreateEnemy(IRulesCore rules, EnemyInfo enemy, int level, float radiusMeters)
         {
             return CreateEnemy(rules, enemy, level, radiusMeters, default);

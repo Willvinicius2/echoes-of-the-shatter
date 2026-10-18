@@ -77,6 +77,9 @@ namespace Echoes.Tests.PlayMode
             var skill = host.Rules.FindSkill("skill.warrior.iron_cut");
             var phases = new HashSet<int>();
             var captured = false;
+            var summoner = Object.FindFirstObjectByType<BossSummoner>();
+            Assert.IsNotNull(summoner, "o Guardiao tem o invocador da fase 2");
+            var maxSummons = 0;
             var landed = 0;
             var attempts = 0;
             var started = Time.realtimeSinceStartup;
@@ -84,6 +87,7 @@ namespace Echoes.Tests.PlayMode
             {
                 var info = boss.Logic.Boss.Info;
                 phases.Add(info.Phase);
+                maxSummons = Mathf.Max(maxSummons, summoner.Spawned.Count);
                 var p = boss.Combatant.Position;
                 var behind = new PlanarVector(p.X - (float)info.FacingX * 3f, p.Z - (float)info.FacingZ * 3f);
                 for (var k = 0; k < 3; k++)
@@ -108,6 +112,12 @@ namespace Echoes.Tests.PlayMode
             for (var i = 0; i < 30 && arena.Phase != ArenaPhase.Won; i++) yield return null;
             Assert.AreEqual(ArenaPhase.Won, arena.Phase);
             Assert.IsTrue(phases.Contains(1));
+            // Fase 2: o core sinalizou a invocacao e as 2 Sentinelas nasceram nas summonMarks (boss_phases.csv); com o chefe vencido somem.
+            Assert.AreEqual(2, maxSummons, "as 2 Sentinelas da fase 2 foram invocadas");
+            Assert.AreEqual(0, summoner.Spawned.Count, "as invocadas somem quando a luta acaba");
+            // S-13: a vitoria ganha a faixa de verdade, nao so um aviso.
+            var rootForBanner = Object.FindFirstObjectByType<GameRoot>();
+            CollectionAssert.Contains(ScreenHost.Current.Banners.Shown, rootForBanner.Localization.Get("ui.boss.defeated"));
             Assert.IsFalse(gate.IsClosed, "a porta reabre ao fim da luta");
 
             // Dominio e +5 cargas gravados no save (no disco tambem).

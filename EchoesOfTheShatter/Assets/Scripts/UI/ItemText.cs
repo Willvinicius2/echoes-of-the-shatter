@@ -35,7 +35,7 @@ namespace Echoes.UI
         public static string RarityKey(ItemRarity rarity) => "rarity." + rarity.ToString().ToLowerInvariant() + ".name";
 
         /// <summary>Atributos mostrados como porcentagem quando o valor e fracao (chance de critico, resistencias); o resto e numero.</summary>
-        static bool IsFractionStat(string stat) => stat == "crit_chance" || stat.StartsWith("resist", StringComparison.Ordinal);
+        static bool IsFractionStat(string stat) => stat == "crit_chance" || stat == "block_chance" || stat == "evasion_chance" || stat.StartsWith("resist", StringComparison.Ordinal);
 
         // ------------------------------------------------------------------------------------------------ nome
 
@@ -104,7 +104,7 @@ namespace Echoes.UI
         }
 
         /// <summary>Linhas do tooltip na ordem do docs/16 S-06: propriedades da base, afixos, efeito do Unico, nivel.</summary>
-        public static List<(string text, Color color)> BodyLines(LocalizationService loc, NativeRulesCore rules, ItemInstanceInfo item)
+        public static List<(string text, Color color)> BodyLines(LocalizationService loc, NativeRulesCore rules, ItemInstanceInfo item, bool includeAffixes = true)
         {
             var lines = new List<(string, Color)>();
             var info = rules?.FindItemBase(item.BaseId);
@@ -126,6 +126,7 @@ namespace Echoes.UI
             }
             foreach (var affix in item.Affixes)
             {
+                if (!includeAffixes) break; // o Encantador mostra os afixos em linhas proprias (valor, barra e passos)
                 var data = LookupAffix(rules, affix.AffixId);
                 lines.Add((ModLine(loc, data.Stat, data.ModKind, affix.Value), MagicColor));
             }
@@ -192,7 +193,15 @@ namespace Echoes.UI
             return Math.Sign(Math.Round(score, 4));
         }
 
-        /// <summary>Abreviacao do item para o quadrado do slot (ate o icone existir): iniciais da base.</summary>
+        /// <summary>Valor de atributo do painel: fracao vira porcentagem (critico, resistencias); o resto, numero com ate 2 casas.</summary>
+        public static string StatValue(string stat, double value)
+        {
+            return IsFractionStat(stat)
+                ? (value * 100.0).ToString("0.#", CultureInfo.InvariantCulture) + "%"
+                : value.ToString("0.##", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>Abreviacao do item para o quadrado do slot (so quando a base nao tem icone em UiArt): iniciais da base.</summary>
         public static string Glyph(LocalizationService loc, ItemInstanceInfo item)
         {
             var name = loc.Get(item.BaseId + ".name");

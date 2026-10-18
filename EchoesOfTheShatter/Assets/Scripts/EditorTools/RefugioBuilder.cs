@@ -24,6 +24,10 @@ namespace Echoes.EditorTools
         public static readonly Vector3 PortalPosition = new Vector3(15f, 0f, 0f);
         public static readonly Vector3 IlsaPosition = new Vector3(-8f, 0f, 6f);
         public static readonly Vector3 TicoPosition = new Vector3(-8f, 0f, -6f);
+        // S-04: Vendedor, Encantador e Bau compartilhado a poucos passos (ate 12 m uns dos outros). Capsulas com rotulo ate os modelos chegarem.
+        public static readonly Vector3 VendorPosition = new Vector3(3f, 0f, 9f);
+        public static readonly Vector3 EnchanterPosition = new Vector3(3f, 0f, -9f);
+        public static readonly Vector3 StashPosition = new Vector3(-3f, 0f, -3.5f);
 
         [MenuItem("Echoes/Montar Refugio")]
         public static void Build()
@@ -91,6 +95,10 @@ namespace Echoes.EditorTools
 
             MakeNpc("Ilsa", InteractableNpc.Ilsa, IlsaPosition, mats.Checkpoint, 1.8f);
             MakeNpc("Tico", InteractableNpc.Tico, TicoPosition, mats.Crate, 1.3f);
+            // TODO(asset npc.vendor, npc.enchanter): modelos dos NPCs em producao; ate la, capsulas com rotulo.
+            MakeNpc("Vendedor", InteractableNpc.Vendor, VendorPosition, mats.Crate, 1.5f);
+            MakeNpc("Encantador", InteractableNpc.Enchanter, EnchanterPosition, mats.Boss, 1.7f);
+            MakeNpc("Bau", InteractableNpc.Stash, StashPosition, mats.Pillar, 1.0f);
 
             // Sessao: toast, autosave, troca de area e o controlador do Refugio (Ilsa e Tico).
             CriptaBuilder.BuildSessionObjects(ctx, panel, false);

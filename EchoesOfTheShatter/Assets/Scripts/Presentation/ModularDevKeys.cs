@@ -5,7 +5,7 @@ namespace Echoes.Presentation
 {
     /// <summary>
     /// Atalho de desenvolvimento para testar as pecas do heroi modular: F1 a F5 tiram e poem Head, Chest, Hands, Legs e Feet;
-    /// F6 veste tudo (starter); F7 tira tudo (corpo nu). So no editor, em Development Build ou com o argumento -devkeys.
+    /// F6 veste tudo (starter); F7 tira tudo (corpo nu); F11 veste o conjunto Raro (vset.warrior_rare_01). So no editor, em Development Build ou com o argumento -devkeys.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ModularDevKeys : MonoBehaviour
@@ -41,6 +41,8 @@ namespace Echoes.Presentation
             }
             if (keyboard[Key.F6].wasPressedThisFrame)
                 for (var i = 0; i < SlotKeys.Length; i++) modular.Equip((HeroPartSlot)i, HeroPartCatalog.StarterSet);
+            if (keyboard[Key.F11].wasPressedThisFrame)
+                for (var i = 0; i < SlotKeys.Length; i++) modular.Equip((HeroPartSlot)i, HeroPartCatalog.WarriorRareSet);
             if (keyboard[Key.F7].wasPressedThisFrame)
                 for (var i = 0; i < SlotKeys.Length; i++) modular.Unequip((HeroPartSlot)i);
         }

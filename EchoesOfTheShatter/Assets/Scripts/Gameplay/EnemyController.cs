@@ -26,6 +26,8 @@ namespace Echoes.Gameplay
         [SerializeField, Min(0.05f)] float repathInterval = 0.2f;
         [Tooltip("Elite sorteado: o core sorteia o modificador no fluxo de eventos e aplica os multiplicadores (docs/13, item 5).")]
         [SerializeField] bool rolledElite;
+        [Tooltip("Modificador do elite sorteado pelo core no encontro (shatter_encounter_roll); vazio = o fluxo de eventos sorteia.")]
+        [SerializeField] string rolledModifierId = string.Empty;
         [Header("Cripta (docs/14)")]
         [Tooltip("Parado e sem IA até alguém ativar (o Guardião antes do gatilho da arena).")]
         [SerializeField] bool startDormant;
@@ -55,6 +57,26 @@ namespace Echoes.Gameplay
         public Combatant Combatant => attributes != null ? attributes.Combatant : null;
         public string EnemyId => enemyId;
 
+        /// <summary>Fora do encontro desta visita (o core sorteou menos inimigos que o máximo do layout): fica desligado e não reaparece.</summary>
+        public bool Excluded { get; private set; }
+
+        /// <summary>
+        /// Aplica o que o core sorteou para este espaço do encontro (n e elite; docs/09 seção 14). Chamar ANTES do Start (o Awake do diretor).
+        /// <paramref name="elite"/>: virou elite sorteado com o modificador dado.
+        /// </summary>
+        public void ApplyRoll(bool elite, string modifierId)
+        {
+            rolledElite = elite;
+            rolledModifierId = elite ? modifierId ?? string.Empty : string.Empty;
+        }
+
+        /// <summary>O espaço não foi sorteado nesta visita: desliga e nunca reaparece (nem no checkpoint).</summary>
+        public void Exclude()
+        {
+            Excluded = true;
+            gameObject.SetActive(false);
+        }
+
         void Awake()
         {
             attributes = GetComponent<AttributeComponent>();
@@ -83,7 +105,7 @@ namespace Echoes.Gameplay
             var radius = bodyRadius > 0f ? bodyRadius : agent != null ? agent.radius : body != null ? body.radius : 0.5f;
             // Elite sorteado (fluxo de eventos) ou elite fixo (modifierId do enemies.csv): o core aplica os multiplicadores.
             var elite = rolledElite
-                ? combat.RollElite()
+                ? (string.IsNullOrEmpty(rolledModifierId) ? combat.RollElite() : rules.GetEliteProfile(rolledModifierId, true))
                 : !string.IsNullOrEmpty(info.ModifierId) ? rules.GetEliteProfile(info.ModifierId, false) : default;
             var combatant = attributes.CreateEnemy(rules, info, level, radius, elite);
             Logic = new EnemyCombatLogic(combatant, rules);
@@ -128,7 +150,7 @@ namespace Echoes.Gameplay
         /// </summary>
         public void ResetToSpawn(bool dormant)
         {
-            if (Logic == null || combat == null) return;
+            if (Excluded || Logic == null || combat == null) return;
             deadTime = 0f;
             patrolIndex = 0;
             if (!gameObject.activeSelf) gameObject.SetActive(true); // OnEnable registra de novo no combate

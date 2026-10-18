@@ -66,6 +66,41 @@ namespace Echoes.Gameplay
 
         public Transform Checkpoint => checkpoint;
 
+        /// <summary>
+        /// Subiu de nível ou o equipamento mudou por melhoria (Encantador): refaz o bloco de atributos pelo core com o nível e os itens do SAVE e
+        /// libera as habilidades do novo nível na hora. Sem save, não faz nada.
+        /// </summary>
+        public bool RefreshFromSave()
+        {
+            if (Logic == null || combat == null) return false;
+            var native = combat.Rules as Echoes.Interop.Native.NativeRulesCore;
+            var session = Echoes.Core.GameSession.Save;
+            if (native == null || session == null || !session.HasSave || Echoes.Core.HeroChoice.Id != "warrior") return false;
+            var save = session.Current;
+            var equipped = new List<string>();
+            foreach (var item in save.Equipment(0))
+            {
+                var info = item != null ? combat.Rules.FindItemBase(item.BaseId) : null;
+                if (info != null) equipped.Add(info.Id);
+            }
+            var progress = save.CharacterProgress(native, 0);
+            var newLevel = progress.Level >= 1 ? progress.Level : Logic.Self.Level;
+            var build = new HeroBuild(Logic.Self.Class.Id, newLevel, equipped, save, 0);
+            attributes.RefreshHero(combat.Rules, in build);
+            Logic.RefreshUnlocks();
+            OnEquipmentChanged();
+            return true;
+        }
+
+        /// <summary>Teste e captura: zera a vida do herói (a morte segue o fluxo normal: tela "Você caiu", retorno ao checkpoint).</summary>
+        public void ForceDeathForTest()
+        {
+            if (Combatant == null) return;
+            var vitals = Combatant.Vitals;
+            vitals.Life = 0.0;
+            Combatant.SetVitals(in vitals);
+        }
+
         /// <summary>Define o checkpoint atual (as zonas de checkpoint e a arena chamam).</summary>
         public void SetCheckpoint(Transform point)
         {
@@ -164,7 +199,14 @@ namespace Echoes.Gameplay
                 }
             }
 
-            var build = new HeroBuild(classInfo.Id, level, equipped, saveSource, 0);
+            // Com save, o nivel e o do SAVE (o core guarda nivel e XP; o heroi nao usa mais o nivel fixo da cena); sem save, o do inspetor.
+            var heroLevel = level;
+            if (saveSource != null)
+            {
+                var progress = saveSource.CharacterProgress(native, 0);
+                if (progress.Level >= 1) heroLevel = progress.Level;
+            }
+            var build = new HeroBuild(classInfo.Id, heroLevel, equipped, saveSource, 0);
             var combatant = attributes.CreateHero(rules, in build, classInfo, weapon, controller.radius);
             Logic = new HeroCombatLogic(combatant, rules, BuildLogicBar(), BasicKitSource.For(rules, classInfo.Id));
             combat.Register(combatant, Logic, CombatOrderKey.Of(transform));

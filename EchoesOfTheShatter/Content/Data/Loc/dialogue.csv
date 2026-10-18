@@ -22,3 +22,4 @@ dlg.tico.delivery,Tudo aqui. Nada se perdeu no caminho.,All here. Nothing got lo
 dlg.tico.farewell,Até a próxima rota!,See you on the next route!,,Tico; despedida; max=30; provisório,
 npc.vendor.name,Vendedor,Vendor,,npc; max=16; provisório,m
 npc.enchanter.name,Encantador,Enchanter,,npc; max=16; provisório,m
+npc.stash.name,Baú compartilhado,Shared stash,,npc; ponto de interação; max=20; provisório,
