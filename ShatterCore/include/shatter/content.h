@@ -282,6 +282,30 @@ struct BasicKitData {
     double guardDrainPerDamage = 0.0;      // recurso gasto por ponto de dano evitado; 0 = não gasta
 };
 
+// Economia do protótipo (docs/16 seção 11). Tabelas OPCIONAIS: sem craft_costs.csv o Encantador não tem preço (as
+// operações recusam com UnknownContent); sem vendor_stock.csv o Vendedor não vende nada.
+enum class CraftOp : std::uint8_t { Refine = 0, Reforge, Add, Polish, Dismantle };
+inline constexpr int kCraftOpCount = 5;
+bool ParseCraftOp(std::string_view text, CraftOp& out);  // "refine" | "reforge" | "add" | "polish" (Desmontar não tem custo)
+const char* ToString(CraftOp op);
+
+struct CraftCostData {                     // craft_costs.csv
+    ContentId id;                          // "craft.reforge.rare"
+    CraftOp op = CraftOp::Refine;
+    bool anyRarity = false;                // rarity = any
+    Rarity rarity = Rarity::Normal;        // vale se !anyRarity (normal | magic | rare)
+    int step = 0;                          // 0, ou 1..polish_max_steps para Lapidar
+    std::int64_t goldCost = 0;             // custo base no nível 1
+    std::int64_t shardCost = 0;
+};
+
+struct VendorStockData {                   // vendor_stock.csv
+    ContentId id;                          // "vendor.refill_flask"
+    ContentId refId;                       // "consumable.refill_flask" | "material.*" (pilha em SaveData::currencies)
+    std::int64_t priceGold = 0;
+    int carryCap = 1;                      // máximo que o jogador leva
+};
+
 // ---------------------------------------------------------------------------
 // ADIÇÃO (docs/09, docs/13): poções, modificadores de elite, fases e padrões do chefe, IA dos comuns.
 // ---------------------------------------------------------------------------
@@ -384,7 +408,8 @@ public:
     //  "enemies.csv", "enemy_attacks.csv", "affixes.csv", "item_bases.csv", "uniques.csv",
     //  "loot_tables.csv", "loot_entries.csv", "encounters.csv", "maps.csv", "meta.csv";
     //  ADIÇÃO, opcionais: "potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv";
-    //  docs/18, opcional de verdade: "basic_kits.csv").
+    //  docs/18, opcional de verdade: "basic_kits.csv"; docs/16 seção 11, opcionais de verdade: "craft_costs.csv",
+    //  "vendor_stock.csv").
     // Erros são acumulados; retorna false se houve algum nesta tabela.
     bool LoadTableCsv(std::string_view tableName, std::string_view csvText);
     // Conveniência fora do UE (testes, bench, ferramentas): lê todos os *.csv de uma pasta.
@@ -417,6 +442,11 @@ public:
     const EnemyAiData* FindEnemyAi(std::string_view enemyId) const;
     // Kit básico da classe (basic_kits.csv); nullptr se a classe não tem linha ou a tabela não foi carregada.
     const BasicKitData* FindBasicKit(std::string_view classId) const;
+    // Custo base de uma operação do Encantador (craft_costs.csv): a linha da raridade exata; senão a de rarity = any.
+    // `step` é 0, ou o passo (1..polish_max_steps) da Lapidar. nullptr se não existir.
+    const CraftCostData* FindCraftCost(CraftOp op, Rarity rarity, int step) const;
+    const VendorStockData* FindVendorStock(std::string_view id) const;
+    const VendorStockData* FindVendorStockByRef(std::string_view refId) const;
     // Fase `phase` do chefe (nullptr se não existir).
     const BossPhaseData* FindBossPhase(std::string_view bossId, int phase) const;
 
@@ -430,6 +460,8 @@ public:
     const std::vector<BossPatternData>& BossPatterns() const;
     const std::vector<EnemyAiData>& EnemyAis() const;
     const std::vector<BasicKitData>& BasicKits() const;                // ordem do CSV
+    const std::vector<CraftCostData>& CraftCosts() const;              // ordem do CSV
+    const std::vector<VendorStockData>& VendorStock() const;           // ordem do CSV
     // Mapa de efeitos para EffectContainer::Tick.
     const std::unordered_map<ContentId, const EffectData*>& EffectLookup() const;
 
@@ -455,6 +487,8 @@ public:
     void Add(BossPatternData d);
     void Add(EnemyAiData d);
     void Add(BasicKitData d);
+    void Add(CraftCostData d);
+    void Add(VendorStockData d);
 
 private:
     struct Impl;                       // tabelas e índices; definido em src/content.cpp

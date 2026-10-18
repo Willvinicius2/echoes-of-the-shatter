@@ -183,6 +183,71 @@ int PickWeighted(const std::vector<double>& weights, Pcg32& rng) {
     return lastPositive;  // arredondamento: cai no último com peso
 }
 
+std::vector<const AffixData*> EligibleAffixes(const ContentDB& db, const ItemBaseData& base, int itemLevel,
+                                              const std::vector<RolledAffix>& current, bool onlyCraftInscription) {
+    int prefixes = 0, suffixes = 0;
+    std::vector<const AffixData*> chosen;
+    for (const RolledAffix& r : current) {
+        const AffixData* a = db.FindAffix(r.affixId);
+        if (a == nullptr) continue;
+        chosen.push_back(a);
+        if (a->kind == AffixKind::Prefix) ++prefixes; else ++suffixes;
+    }
+    std::vector<const AffixData*> out;
+    for (const AffixData& a : db.Affixes()) {  // ordem do CSV
+        if (a.minItemLevel > itemLevel) continue;
+        if (onlyCraftInscription && !a.craftInscription) continue;
+        if (!a.allowedSlots.empty() &&
+            std::find(a.allowedSlots.begin(), a.allowedSlots.end(), base.slot) == a.allowedSlots.end())
+            continue;
+        if (a.kind == AffixKind::Prefix && prefixes >= 2) continue;
+        if (a.kind == AffixKind::Suffix && suffixes >= 2) continue;
+        bool conflict = false;
+        for (const AffixData* c : chosen) {
+            if (c == &a || (!a.group.empty() && c->group == a.group)) conflict = true;
+        }
+        if (conflict) continue;
+        out.push_back(&a);
+    }
+    return out;
+}
+
+double RollAffixValue(const AffixData& a, Pcg32& rng) {
+    if (IsIntegral(a.minValue) && IsIntegral(a.maxValue))
+        return static_cast<double>(rng.RangeInt(static_cast<std::int32_t>(a.minValue), static_cast<std::int32_t>(a.maxValue)));
+    return rng.RangeReal(a.minValue, a.maxValue);
+}
+
+namespace {
+
+// Completa `result` (afixos já fixos, em ordem) até `count` afixos, sorteando um por vez. Para quando não há mais candidato.
+void DrawAffixes(const ContentDB& db, const ItemBaseData& base, int itemLevel, int count, std::vector<RolledAffix>& result,
+                 Pcg32& rng) {
+    while (static_cast<int>(result.size()) < count) {
+        const std::vector<const AffixData*> cands = EligibleAffixes(db, base, itemLevel, result, false);
+        std::vector<double> weights;
+        weights.reserve(cands.size());
+        for (const AffixData* a : cands) weights.push_back(a->weight);
+        const int pick = PickWeighted(weights, rng);
+        if (pick < 0) break;
+        const AffixData* a = cands[static_cast<std::size_t>(pick)];
+        RolledAffix ra;
+        ra.affixId = a->id;
+        ra.value = RollAffixValue(*a, rng);
+        result.push_back(std::move(ra));
+    }
+}
+
+// Prefixos antes de sufixos, mantendo a ordem de rolagem dentro de cada grupo.
+void PrefixesFirst(const ContentDB& db, std::vector<RolledAffix>& result) {
+    std::stable_partition(result.begin(), result.end(), [&](const RolledAffix& r) {
+        const AffixData* a = db.FindAffix(r.affixId);
+        return a != nullptr && a->kind == AffixKind::Prefix;
+    });
+}
+
+}  // namespace
+
 std::vector<RolledAffix> RollAffixes(const ContentDB& db, const ItemBaseData& base, Rarity rarity, int itemLevel,
                                      Pcg32& lootRng) {
     std::vector<RolledAffix> result;
@@ -190,47 +255,16 @@ std::vector<RolledAffix> RollAffixes(const ContentDB& db, const ItemBaseData& ba
     if (rarity == Rarity::Magic) count = lootRng.RangeInt(1, 2);
     else if (rarity == Rarity::Rare) count = lootRng.RangeInt(3, 4);
     if (count == 0) return result;
+    DrawAffixes(db, base, itemLevel, count, result, lootRng);
+    PrefixesFirst(db, result);
+    return result;
+}
 
-    std::vector<const AffixData*> chosen;
-    int prefixes = 0, suffixes = 0;
-    for (int n = 0; n < count; ++n) {
-        std::vector<const AffixData*> cands;
-        std::vector<double> weights;
-        for (const AffixData& a : db.Affixes()) {  // ordem do CSV
-            if (a.minItemLevel > itemLevel) continue;
-            if (!a.allowedSlots.empty() &&
-                std::find(a.allowedSlots.begin(), a.allowedSlots.end(), base.slot) == a.allowedSlots.end())
-                continue;
-            if (a.kind == AffixKind::Prefix && prefixes >= 2) continue;
-            if (a.kind == AffixKind::Suffix && suffixes >= 2) continue;
-            bool conflict = false;
-            for (const AffixData* c : chosen) {
-                if (c == &a || (!a.group.empty() && c->group == a.group)) conflict = true;
-            }
-            if (conflict) continue;
-            cands.push_back(&a);
-            weights.push_back(a.weight);
-        }
-        const int pick = PickWeighted(weights, lootRng);
-        if (pick < 0) break;
-        const AffixData* a = cands[static_cast<std::size_t>(pick)];
-        chosen.push_back(a);
-        if (a->kind == AffixKind::Prefix) ++prefixes; else ++suffixes;
-        RolledAffix ra;
-        ra.affixId = a->id;
-        if (IsIntegral(a->minValue) && IsIntegral(a->maxValue)) {
-            ra.value = static_cast<double>(lootRng.RangeInt(static_cast<std::int32_t>(a->minValue),
-                                                            static_cast<std::int32_t>(a->maxValue)));
-        } else {
-            ra.value = lootRng.RangeReal(a->minValue, a->maxValue);
-        }
-        result.push_back(std::move(ra));
-    }
-    // Prefixos antes de sufixos, mantendo a ordem de rolagem dentro de cada grupo.
-    std::stable_partition(result.begin(), result.end(), [&](const RolledAffix& r) {
-        const AffixData* a = db.FindAffix(r.affixId);
-        return a != nullptr && a->kind == AffixKind::Prefix;
-    });
+std::vector<RolledAffix> RollAffixesFixed(const ContentDB& db, const ItemBaseData& base, int itemLevel, int count,
+                                          const std::vector<RolledAffix>& kept, Pcg32& rng) {
+    std::vector<RolledAffix> result = kept;
+    DrawAffixes(db, base, itemLevel, count, result, rng);
+    PrefixesFirst(db, result);
     return result;
 }
 

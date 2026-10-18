@@ -1917,8 +1917,8 @@ double HitDamage(const shatter_db* db, const shatter_statblock* attacker, const 
 }  // namespace
 
 TEST(c_api_15_minor_5_layout_combat_rules_and_basic_kits) {
-    EXPECT_EQ(SHATTER_C_API_MINOR, 5u);
-    EXPECT_EQ(shatter_api_minor(), 5u);
+    EXPECT_EQ(SHATTER_C_API_MINOR, 6u);  // 1.5 ganhou a 1.6 (economia): só adições
+    EXPECT_EQ(shatter_api_minor(), 6u);
     EXPECT_EQ(shatter_api_version(), 1u);
     EXPECT_EQ(static_cast<int>(SHATTER_TAG_GUARD), static_cast<int>(Mask(Tag::Guard)));
 
@@ -2185,4 +2185,243 @@ TEST(c_api_15_lookup_exposes_knockback_and_explosion_radius_separate_from_radius
     EXPECT_TRUE(finisher["knockback"].AsDouble() > 0.0);
     EXPECT_NEAR(skill("skill.warrior.iron_cut")["knockback"].AsDouble(), 0.0, 0.0);
     EXPECT_NEAR(skill("skill.mage.arcane_dart")["explosion_radius"].AsDouble(), 0.0, 0.0);
+}
+
+// --- API 1.6: economia do protótipo (Vendedor, Frasco de Recarga, Encantador) -------------------------------------
+namespace {
+
+SaveHandle EconomySave(const SaveData& data) {
+    const std::string text = SerializeJson(data, false);
+    SaveHandle h;
+    std::int32_t load = -1;
+    shatter_error err{};
+    if (shatter_save_from_json(text.data(), text.size(), &h.save, &load, &err) != SHATTER_OK) FAIL(err.message);
+    return h;
+}
+
+std::int64_t Cur(const shatter_save* s, const char* id) {
+    std::int64_t v = -1;
+    if (shatter_currency_get(s, id, std::strlen(id), &v) != SHATTER_OK) FAIL("currency_get");
+    return v;
+}
+
+RolledAffix RA(const char* id, double value) {
+    RolledAffix a;
+    a.affixId = id;
+    a.value = value;
+    return a;
+}
+
+ItemInstance EconItem(std::uint64_t uid, const char* base, Rarity r, int lvl, std::vector<RolledAffix> aff = {}) {
+    ItemInstance it;
+    it.uid = uid;
+    it.baseId = base;
+    it.rarity = r;
+    it.itemLevel = lvl;
+    it.affixes = std::move(aff);
+    return it;
+}
+
+std::string SaveBytes(const shatter_save* s) {
+    return TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_to_json(s, 0, o, c, n); });
+}
+
+}  // namespace
+
+TEST(c_api_16_minor_6_layout_ext6_and_constants) {
+    EXPECT_EQ(SHATTER_C_API_MINOR, 6u);
+    EXPECT_TRUE(shatter_api_minor() >= 6u);
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_layout_info_ext6(nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(needed, static_cast<std::size_t>(SHATTER_LAYOUT_EXT6_COUNT));
+    std::vector<std::uint32_t> layout(needed);
+    ASSERT_EQ(shatter_layout_info_ext6(layout.data(), layout.size(), &needed), SHATTER_OK);
+    const std::uint32_t expected[] = {32, 0, 4, 8, 16, 24, 24, 0, 4, 8, 16, 16, 0, 4, 8, 12};
+    for (std::size_t i = 0; i < sizeof(expected) / sizeof(expected[0]); ++i) EXPECT_EQ(layout[i], expected[i]);
+    shatter_error err{};
+    EXPECT_EQ(shatter_layout_check_ext6(layout.data(), layout.size(), &err), SHATTER_OK);
+    layout[3] += 8;
+    EXPECT_EQ(shatter_layout_check_ext6(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
+    EXPECT_EQ(shatter_layout_check_ext6(layout.data(), layout.size() - 1, &err), SHATTER_VERSION_MISMATCH);
+    EXPECT_EQ(static_cast<int>(SHATTER_CRAFT_BAD_INDEX), static_cast<int>(CraftResult::BadIndex));
+    EXPECT_EQ(static_cast<int>(SHATTER_CRAFT_OP_DISMANTLE), static_cast<int>(CraftOp::Dismantle));
+}
+
+TEST(c_api_16_craft_quote_refine_offer_apply_polish_and_dismantle) {
+    DbHandle db(tu::RichDir());
+    SaveData data;
+    data.contentVersion = tu::RichDb().ContentVersion();
+    data.characters.push_back(tu::MakeWarrior(tu::RichDb(), 3));
+    data.nextItemUid = 1000;
+    data.currencies = {{kGoldId, 5000}, {kShardsId, 500}};
+    auto& bp = data.characters[0].backpack;
+    bp.push_back(EconItem(10, "item_base.iron_sword", Rarity::Normal, 1));
+    bp.push_back(EconItem(11, "item_base.bone_helm", Rarity::Magic, 1, {RA("affix.life_flat", 12.0)}));
+    bp.push_back(EconItem(12, "item_base.leather_vest", Rarity::Rare, 2,
+                          {RA("affix.life_flat", 12.0), RA("affix.armor_flat", 8.0), RA("affix.fire_res", 0.1)}));
+    SaveHandle save = EconomySave(data);
+    // Prévia não altera e traz o custo da tabela.
+    const std::string before = SaveBytes(save.save);
+    const json::Value q = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_craft_quote_json(db.db, save.save, 0, 10, SHATTER_CRAFT_OP_REFINE, 0, o, c, n);
+    }));
+    EXPECT_EQ(q["result"].AsInt(), static_cast<std::int64_t>(SHATTER_CRAFT_OK));
+    EXPECT_EQ(q["gold"].AsInt(), 40);
+    EXPECT_EQ(q["shards"].AsInt(), 10);
+    EXPECT_EQ(q["affix_count_min"].AsInt(), 1);
+    EXPECT_EQ(q["affix_count_max"].AsInt(), 2);
+    EXPECT_EQ(q["have_gold"].AsInt(), 5000);
+    EXPECT_FALSE(q["expedition_running"].AsBool(true));
+    EXPECT_EQ(SaveBytes(save.save), before);
+    const json::Value qLock = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_craft_quote_json(db.db, save.save, 0, 12, SHATTER_CRAFT_OP_REFORGE, 0, o, c, n);
+    }));
+    EXPECT_EQ(qLock["shards_no_lock"].AsInt() * 2, qLock["shards_with_lock"].AsInt());
+    EXPECT_EQ(qLock["shards"].AsInt(), qLock["shards_with_lock"].AsInt());
+    // Buffer pequeno não muda nada.
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_craft_quote_json(db.db, save.save, 0, 10, SHATTER_CRAFT_OP_REFINE, 0, nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(SaveBytes(save.save), before);
+    // Refinar.
+    shatter_craft_result r{};
+    ASSERT_EQ(shatter_craft_refine(db.db, save.save, 0, 10, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    EXPECT_EQ(r.gold_spent, 40);
+    EXPECT_EQ(r.shards_spent, 10);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), 4960);
+    EXPECT_EQ(Cur(save.save, "material.shards"), 490);
+    ASSERT_EQ(shatter_craft_refine(db.db, save.save, 0, 10, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_WRONG_RARITY);
+    EXPECT_EQ(r.gold_spent, 0);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), 4960);
+    // Adicionar afixo: a oferta repete; aplicar custa; o índice precisa existir.
+    auto offer = [&]() {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_craft_add_affix_offer(db.db, save.save, 0, 11, o, c, n);
+        }));
+    };
+    const json::Value o1 = offer(), o2 = offer();
+    EXPECT_EQ(S(o1), S(o2));
+    ASSERT_TRUE(o1["candidates"].Size() >= 1 && o1["candidates"].Size() <= 3);
+    ASSERT_EQ(shatter_craft_add_affix_apply(db.db, save.save, 0, 11, 9, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_BAD_INDEX);
+    ASSERT_EQ(shatter_craft_add_affix_apply(db.db, save.save, 0, 11, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    EXPECT_TRUE(r.changed_affix >= 0 && r.changed_affix < 2);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), 4960 - 90);
+    ASSERT_EQ(shatter_craft_add_affix_apply(db.db, save.save, 0, 11, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_AFFIX_LIMIT);
+    // Lapidar e Reforjar com trava.
+    ASSERT_EQ(shatter_craft_polish(db.db, save.save, 0, 12, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    EXPECT_EQ(r.changed_affix, 0);
+    EXPECT_EQ(r.gold_spent, 66);   // 60 no nível 2: +10%
+    ASSERT_EQ(shatter_craft_reforge(db.db, save.save, 0, 12, 7, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_BAD_INDEX);
+    ASSERT_EQ(shatter_craft_reforge(db.db, save.save, 0, 12, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    // Desmontar: 11 é Mágico (5 Lascas); repetir não paga de novo.
+    const std::int64_t shards = Cur(save.save, "material.shards");
+    ASSERT_EQ(shatter_craft_dismantle(db.db, save.save, 0, 11, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    EXPECT_EQ(r.shards_gained, 5);
+    EXPECT_EQ(Cur(save.save, "material.shards"), shards + 5);
+    ASSERT_EQ(shatter_craft_dismantle(db.db, save.save, 0, 11, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_NOT_FOUND);
+    // Argumentos inválidos.
+    EXPECT_EQ(shatter_craft_refine(db.db, save.save, 7, 10, &r), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_craft_refine(db.db, nullptr, 0, 10, &r), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_craft_refine(db.db, save.save, 0, 10, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_craft_quote_json(db.db, save.save, 0, 10, 9, 0, nullptr, 0, &needed), SHATTER_INVALID_ARGUMENT);
+    std::int64_t unused = 0;
+    EXPECT_EQ(shatter_currency_get(nullptr, "currency.gold", 13, &unused), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(Cur(save.save, "currency.nada"), 0);
+}
+
+TEST(c_api_16_vendor_sell_buyback_stock_buy_and_flask) {
+    DbHandle db(tu::RichDir());
+    SaveData data;
+    data.contentVersion = tu::RichDb().ContentVersion();
+    data.characters.push_back(tu::MakeWarrior(tu::RichDb(), 3));
+    data.characters[0].potionSlots = {{"potion.life", 1, 40.0}, {"potion.ward", 2, 0.0}};
+    data.nextItemUid = 1000;
+    data.currencies = {{kGoldId, 300}};
+    for (std::uint64_t i = 0; i < 11; ++i)
+        data.characters[0].backpack.push_back(EconItem(100 + i, "item_base.iron_sword", i == 0 ? Rarity::Rare : Rarity::Normal, 1));
+    SaveHandle save = EconomySave(data);
+    shatter_vendor_result v{};
+    for (std::uint64_t i = 0; i < 10; ++i) {
+        ASSERT_EQ(shatter_vendor_sell(db.db, save.save, 0, SHATTER_CONTAINER_BACKPACK, 100 + i, &v), SHATTER_OK);
+        EXPECT_EQ(v.result, SHATTER_VENDOR_OK);
+        EXPECT_EQ(v.evicted, 0);
+    }
+    auto buyback = [&]() {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_vendor_buyback_json(db.db, save.save, o, c, n); }));
+    };
+    json::Value b = buyback();
+    EXPECT_EQ(b["capacity"].AsInt(), 10);
+    EXPECT_EQ(b["count"].AsInt(), 10);
+    EXPECT_TRUE(b["would_evict"].AsBool(false));
+    EXPECT_EQ(b["evict_rarity"].AsInt(), static_cast<std::int64_t>(Rarity::Rare));   // o mais antigo (uid 100) é Raro
+    EXPECT_EQ(b["items"].At(0)["item"]["uid"].AsString(), std::string("109"));       // mais recente primeiro
+    ASSERT_EQ(shatter_vendor_sell(db.db, save.save, 0, SHATTER_CONTAINER_BACKPACK, 110, &v), SHATTER_OK);
+    EXPECT_EQ(v.evicted, 1);
+    EXPECT_EQ(v.evicted_rarity, static_cast<std::int32_t>(Rarity::Rare));
+    ASSERT_EQ(shatter_vendor_sell(db.db, save.save, 0, SHATTER_CONTAINER_BACKPACK, 110, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_NOT_FOUND);
+    // Recompra por uid: 4 Ouro do Comum -> 5 Ouro; repetir não cobra.
+    const std::int64_t gold = Cur(save.save, "currency.gold");
+    ASSERT_EQ(shatter_vendor_buyback(db.db, save.save, 0, 105, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_OK);
+    EXPECT_EQ(v.gold, 5);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), gold - 5);
+    ASSERT_EQ(shatter_vendor_buyback(db.db, save.save, 0, 105, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_NOT_FOUND);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), gold - 5);
+    // A recompra sobrevive ao arquivo.
+    const std::string text = SaveBytes(save.save);
+    SaveHandle again;
+    std::int32_t load = -1;
+    shatter_error err{};
+    ASSERT_EQ(shatter_save_from_json(text.data(), text.size(), &again.save, &load, &err), SHATTER_OK);
+    EXPECT_EQ(SaveBytes(again.save), text);
+    // Estoque e compra.
+    const json::Value stock = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_vendor_stock_json(db.db, save.save, o, c, n); }));
+    ASSERT_EQ(stock.Size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(stock.At(0)["id"].AsString(), std::string("vendor.refill_flask"));
+    EXPECT_EQ(stock.At(0)["price_gold"].AsInt(), 50);
+    EXPECT_EQ(stock.At(0)["owned"].AsInt(), 0);
+    const char* id = "vendor.refill_flask";
+    ASSERT_EQ(shatter_vendor_buy(db.db, save.save, id, std::strlen(id), 2, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_OK);
+    EXPECT_EQ(v.gold, 100);
+    ASSERT_EQ(shatter_vendor_buy(db.db, save.save, id, std::strlen(id), 2, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_CARRY_CAP);
+    ASSERT_EQ(shatter_vendor_buy(db.db, save.save, id, std::strlen(id), 0, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_BAD_QUANTITY);
+    EXPECT_EQ(shatter_vendor_buy(db.db, save.save, nullptr, 0, 1, &v), SHATTER_INVALID_ARGUMENT);
+    // Frasco: a Vida tem 1 carga; o cinto é o vivo do personagem.
+    shatter_potions* belt = nullptr;
+    ASSERT_EQ(shatter_potions_from_save(db.db, save.save, 0, &belt), SHATTER_OK);
+    shatter_flask_result f{};
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_ARENA, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_ARENA_LOCKED);
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_IDLE, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_IDLE_FORBIDDEN);
+    EXPECT_EQ(Cur(save.save, "consumable.refill_flask"), 2);
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_RUN, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_OK);
+    EXPECT_EQ(f.potion_index, 0);
+    EXPECT_EQ(f.charges_after, 2);
+    EXPECT_EQ(f.flasks_left, 1);
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_RUN, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_LOCKED_OUT);     // trava global de 1 s
+    ASSERT_EQ(shatter_potions_tick(db.db, belt, 1.5), SHATTER_OK);
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_RUN, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_OK);
+    EXPECT_EQ(f.charges_after, 3);
+    EXPECT_EQ(Cur(save.save, "consumable.refill_flask"), 0);
+    EXPECT_EQ(shatter_flask_use(db.db, save.save, belt, 9, &f), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_flask_use(db.db, save.save, nullptr, SHATTER_FLASK_CTX_RUN, &f), SHATTER_INVALID_ARGUMENT);
+    shatter_potions_destroy(belt);
 }

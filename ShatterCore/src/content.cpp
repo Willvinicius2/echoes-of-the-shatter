@@ -38,6 +38,27 @@ SkillBehavior ClassifySkill(const SkillData& s) {
     return b;
 }
 
+bool ParseCraftOp(std::string_view text, CraftOp& out) {
+    static constexpr struct { const char* n; CraftOp o; } kOps[] = {
+        {"refine", CraftOp::Refine}, {"reforge", CraftOp::Reforge}, {"add", CraftOp::Add}, {"polish", CraftOp::Polish},
+    };
+    for (const auto& e : kOps) {
+        if (text == e.n) { out = e.o; return true; }
+    }
+    return false;
+}
+
+const char* ToString(CraftOp op) {
+    switch (op) {
+        case CraftOp::Refine: return "refine";
+        case CraftOp::Reforge: return "reforge";
+        case CraftOp::Add: return "add";
+        case CraftOp::Polish: return "polish";
+        case CraftOp::Dismantle: return "dismantle";
+    }
+    return "refine";
+}
+
 bool ParseIdleCalibration(std::string_view text, IdleCalibration& out) {
     if (text == "none") { out = IdleCalibration::None; return true; }
     if (text == "manual_estimate") { out = IdleCalibration::ManualEstimate; return true; }
@@ -65,7 +86,7 @@ namespace {
 using detail::CsvRow;
 using detail::CsvTable;
 
-constexpr std::size_t kRuleKeyCount = 62 + 18 + 7;
+constexpr std::size_t kRuleKeyCount = 62 + 18 + 7 + 15;
 
 // --- tabela de chaves de rules.csv (faixas = validação estrutural do 06_dados.md, não balanceamento) ---
 struct RuleDef {
@@ -180,6 +201,22 @@ const RuleDef kRuleDefs[kRuleKeyCount] = {
     {"light_windup_credit_max", 'd', 0, 1, false, [](RulesConstants& r, double v) { r.lightWindupCreditMax = v; }},
     {"guard_lower_time", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.guardLowerTime = v; }},
     {"dash_shot_range", 'd', 0, 10000, false, [](RulesConstants& r, double v) { r.dashShotRange = v; }},
+    // Economia do protótipo (docs/16 seção 11): Vendedor, Frasco de Recarga e Encantador.
+    {"vendor_buyback_slots", 'i', 1, 100, false, [](RulesConstants& r, double v) { r.vendorBuybackSlots = static_cast<int>(v); }},
+    {"vendor_buyback_price_factor", 'd', 1, 10, false, [](RulesConstants& r, double v) { r.vendorBuybackPriceFactor = v; }},
+    {"refill_flask_carry_cap", 'i', 1, 99, false, [](RulesConstants& r, double v) { r.refillFlaskCarryCap = static_cast<int>(v); }},
+    {"refill_flask_charges", 'i', 1, 10, false, [](RulesConstants& r, double v) { r.refillFlaskCharges = static_cast<int>(v); }},
+    {"craft_cost_level_factor", 'd', 0, 10, false, [](RulesConstants& r, double v) { r.craftCostLevelFactor = v; }},
+    {"reforge_step_mult", 'd', 0, 10, false, [](RulesConstants& r, double v) { r.reforgeStepMult = v; }},
+    {"reforge_mult_cap", 'd', 1, 100, false, [](RulesConstants& r, double v) { r.reforgeMultCap = v; }},
+    {"reforge_lock_cost_mult", 'd', 1, 100, false, [](RulesConstants& r, double v) { r.reforgeLockCostMult = v; }},
+    {"reforge_lock_max", 'i', 0, 1, false, [](RulesConstants& r, double v) { r.reforgeLockMax = static_cast<int>(v); }},
+    {"add_affix_candidates", 'i', 1, 8, false, [](RulesConstants& r, double v) { r.addAffixCandidates = static_cast<int>(v); }},
+    {"polish_step_fraction", 'd', 0, 1, true, [](RulesConstants& r, double v) { r.polishStepFraction = v; }},
+    {"polish_max_steps", 'i', 1, 10, false, [](RulesConstants& r, double v) { r.polishMaxSteps = static_cast<int>(v); }},
+    {"dismantle_shards_normal", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[0] = static_cast<int>(v); }},
+    {"dismantle_shards_magic", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[1] = static_cast<int>(v); }},
+    {"dismantle_shards_rare", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[2] = static_cast<int>(v); }},
 };
 
 // --- leitor de células tipado ----------------------------------------------------------------
@@ -414,6 +451,9 @@ const std::vector<TableDef>& TableDefs() {
           "guardArc"},
          {"guardMaxHold", "guardCooldown", "guardPerfectWindow", "guardPerfectCooldown", "guardPerfectEffects",
           "guardPerfectResource", "guardDrainPerDamage"}},
+        // Economia do protótipo (docs/16 seção 11): opcionais de verdade, como basic_kits.csv.
+        {"craft_costs.csv", {"id", "op", "rarity", "step", "goldCost", "shardCost"}},
+        {"vendor_stock.csv", {"id", "refId", "kind", "priceGold", "carryCap"}},
         {"enemy_ai.csv",
          {"enemyId", "aggroRange", "alertRadius", "leashRange", "leashSeconds", "preferredMin", "preferredMax",
           "retreatBelow", "retreatMaxSeconds", "circleMin", "circleMax", "circleSpeed", "attackTokens",
@@ -466,6 +506,10 @@ struct ContentImpl {
     std::vector<int> enemyAiLines;
     std::vector<BasicKitData> basicKits;
     std::vector<int> basicKitLines;
+    std::vector<CraftCostData> craftCosts;
+    std::vector<int> craftCostLines;
+    std::vector<VendorStockData> vendorStock;
+    std::vector<int> vendorStockLines;
 
     struct ClassStatRow { ContentId classId; StatGrowth g; int line = 0; };
     struct EnemyAttackRow { ContentId enemyId; EnemyAttack a; int line = 0; };
@@ -1122,6 +1166,55 @@ void LoadBasicKits(LoadCtx& c) {
     }
 }
 
+bool ParseCraftRarity(std::string_view text, bool& any, Rarity& out) {
+    any = false;
+    if (text == "any") { any = true; return true; }
+    if (text == "normal" || text == "magic" || text == "rare") return ParseRarity(text, out);
+    return false;  // unique nunca tem custo de melhoria (docs/16 11.5)
+}
+
+void LoadCraftCosts(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        CraftCostData d;
+        d.id = cell.Id("id", true);
+        const std::string op = cell.Str("op", true);
+        if (!op.empty() && !ParseCraftOp(op, d.op)) cell.Err("E_ENUM", "op: unknown '" + op + "'");
+        const std::string rarity = cell.Str("rarity", true);
+        if (!rarity.empty() && !ParseCraftRarity(rarity, d.anyRarity, d.rarity))
+            cell.Err("E_ENUM", "rarity: unknown '" + rarity + "' (normal|magic|rare|any)");
+        d.step = static_cast<int>(cell.Int("step", 0, 0, 1000));
+        d.goldCost = cell.Int("goldCost", 0, 0, 1000000000000LL);
+        d.shardCost = cell.Int("shardCost", 0, 0, 1000000000000LL);
+        if (cell.Empty("step")) cell.Err("E_REQUIRED", "step is required");
+        if (cell.Empty("goldCost")) cell.Err("E_REQUIRED", "goldCost is required");
+        if (cell.Empty("shardCost")) cell.Err("E_REQUIRED", "shardCost is required");
+        if (cell.bad()) continue;
+        if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "craft.")) continue;
+        c.impl.craftCosts.push_back(std::move(d));
+        c.impl.craftCostLines.push_back(row.line);
+    }
+}
+
+void LoadVendorStock(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        VendorStockData d;
+        d.id = cell.Id("id", true);
+        d.refId = cell.Id("refId", true);
+        const std::string kind = cell.Str("kind", true);
+        if (!kind.empty() && kind != "stack") cell.Err("E_ENUM", "kind: unknown '" + kind + "' (stack)");
+        d.priceGold = cell.Int("priceGold", 0, 0, 1000000000000LL);
+        d.carryCap = static_cast<int>(cell.Int("carryCap", 1, 1, 1000000));
+        if (cell.Empty("priceGold")) cell.Err("E_REQUIRED", "priceGold is required");
+        if (cell.Empty("carryCap")) cell.Err("E_REQUIRED", "carryCap is required");
+        if (cell.bad()) continue;
+        if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "vendor.")) continue;
+        c.impl.vendorStock.push_back(std::move(d));
+        c.impl.vendorStockLines.push_back(row.line);
+    }
+}
+
 }  // namespace
 
 bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvText) {
@@ -1193,6 +1286,8 @@ bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvTex
     else if (table == "boss_patterns.csv") LoadBossPatterns(ctx);
     else if (table == "enemy_ai.csv") LoadEnemyAis(ctx);
     else if (table == "basic_kits.csv") LoadBasicKits(ctx);
+    else if (table == "craft_costs.csv") LoadCraftCosts(ctx);
+    else if (table == "vendor_stock.csv") LoadVendorStock(ctx);
     return errors_.size() == before;
 }
 
@@ -1209,7 +1304,9 @@ bool ContentDB::LoadDirectory(const std::string& path) {
     for (const TableDef& def : TableDefs()) {
         const fs::path file = dir / def.name;
         if (!fs::is_regular_file(file, ec)) {
-            if (std::string_view(def.name) == "basic_kits.csv") continue;  // única tabela opcional de verdade (docs/18 4.6)
+            // Tabelas opcionais de verdade: basic_kits.csv (docs/18 4.6), craft_costs.csv e vendor_stock.csv (docs/16 seção 11).
+            const std::string_view n(def.name);
+            if (n == "basic_kits.csv" || n == "craft_costs.csv" || n == "vendor_stock.csv") continue;
             PushErr(errors_, def.name, 0, "E_IO", "table file missing");
             continue;
         }
@@ -1280,6 +1377,20 @@ void ContentDB::Add(BasicKitData d) {
     impl_->basicKitLines.push_back(0);
 }
 
+void ContentDB::Add(CraftCostData d) {
+    if (impl_->finalized) { PushErr(errors_, "craftCosts", 0, "E_STATE", "Add after Finalize"); return; }
+    if (!RegisterId(*impl_, errors_, "craftCosts", 0, d.id, "craft.")) return;
+    impl_->craftCosts.push_back(std::move(d));
+    impl_->craftCostLines.push_back(0);
+}
+
+void ContentDB::Add(VendorStockData d) {
+    if (impl_->finalized) { PushErr(errors_, "vendorStock", 0, "E_STATE", "Add after Finalize"); return; }
+    if (!RegisterId(*impl_, errors_, "vendorStock", 0, d.id, "vendor.")) return;
+    impl_->vendorStock.push_back(std::move(d));
+    impl_->vendorStockLines.push_back(0);
+}
+
 // ===============================================================================================
 // Lookups
 // ===============================================================================================
@@ -1313,6 +1424,27 @@ const BasicKitData* ContentDB::FindBasicKit(std::string_view classId) const {
     }
     return nullptr;
 }
+const CraftCostData* ContentDB::FindCraftCost(CraftOp op, Rarity rarity, int step) const {
+    const CraftCostData* any = nullptr;
+    for (const CraftCostData& c : impl_->craftCosts) {
+        if (c.op != op || c.step != step) continue;
+        if (!c.anyRarity && c.rarity == rarity) return &c;
+        if (c.anyRarity && any == nullptr) any = &c;
+    }
+    return any;
+}
+const VendorStockData* ContentDB::FindVendorStock(std::string_view id) const {
+    for (const VendorStockData& v : impl_->vendorStock) {
+        if (v.id == id) return &v;
+    }
+    return nullptr;
+}
+const VendorStockData* ContentDB::FindVendorStockByRef(std::string_view refId) const {
+    for (const VendorStockData& v : impl_->vendorStock) {
+        if (v.refId == refId) return &v;
+    }
+    return nullptr;
+}
 const BossPhaseData* ContentDB::FindBossPhase(std::string_view bossId, int phase) const {
     for (const BossPhaseData& p : impl_->bossPhases) {
         if (p.bossId == bossId && p.phase == phase) return &p;
@@ -1325,6 +1457,8 @@ const std::vector<BossPhaseData>& ContentDB::BossPhases() const { return impl_->
 const std::vector<BossPatternData>& ContentDB::BossPatterns() const { return impl_->bossPatterns; }
 const std::vector<EnemyAiData>& ContentDB::EnemyAis() const { return impl_->enemyAis; }
 const std::vector<BasicKitData>& ContentDB::BasicKits() const { return impl_->basicKits; }
+const std::vector<CraftCostData>& ContentDB::CraftCosts() const { return impl_->craftCosts; }
+const std::vector<VendorStockData>& ContentDB::VendorStock() const { return impl_->vendorStock; }
 const std::vector<AffixData>& ContentDB::Affixes() const { return impl_->affixes.items; }
 const std::vector<ItemBaseData>& ContentDB::ItemBases() const { return impl_->bases.items; }
 const std::vector<MapData>& ContentDB::Maps() const { return impl_->maps.items; }
@@ -1832,6 +1966,60 @@ bool ContentDB::Finalize() {
         for (const ContentId& id : k.lightChain) idsFit = idsFit && fits(id);
         for (const ContentId& id : k.guardPerfectEffects) idsFit = idsFit && fits(id);
         if (!idsFit) f.E(T, ln, "E_RANGE", "id longer than 63 bytes (C API field size)");
+    }
+    // --- economia do protótipo (docs/16 seção 11): tabelas opcionais; só valida o que existe ---
+    {
+        const bool craftLoaded = !im.craftCosts.empty() ||
+                                 std::find(im.loadedTables.begin(), im.loadedTables.end(), "craft_costs.csv") != im.loadedTables.end();
+        const char* T = "craft_costs.csv";
+        for (std::size_t i = 0; i < im.craftCosts.size(); ++i) {
+            const CraftCostData& k = im.craftCosts[i];
+            const int ln = im.craftCostLines[i];
+            if (k.op == CraftOp::Polish ? k.step < 1 : k.step != 0)
+                f.E(T, ln, "E_RANGE", "step must be 1.. for polish and 0 for the other operations");
+            if (k.op == CraftOp::Polish && im.rulesLoaded && k.step > rules_.polishMaxSteps)
+                f.E(T, ln, "E_RANGE", "polish step above polish_max_steps");
+            if (k.op == CraftOp::Refine && (k.anyRarity || k.rarity != Rarity::Normal))
+                f.E(T, ln, "E_RULE", "refine only accepts rarity normal");
+            if ((k.op == CraftOp::Reforge || k.op == CraftOp::Add) && !k.anyRarity && k.rarity == Rarity::Normal)
+                f.E(T, ln, "E_RULE", "reforge and add accept magic, rare or any");
+            for (std::size_t j = 0; j < i; ++j) {
+                const CraftCostData& o = im.craftCosts[j];
+                if (o.op == k.op && o.step == k.step && o.anyRarity == k.anyRarity && (k.anyRarity || o.rarity == k.rarity))
+                    f.E(T, ln, "E_DUP_ID", "(op, rarity, step) repeated");
+            }
+        }
+        if (craftLoaded && im.rulesLoaded) {
+            auto need = [&](CraftOp op, Rarity r, int step) {
+                bool found = false;
+                for (const CraftCostData& k : im.craftCosts)
+                    if (k.op == op && k.step == step && (k.anyRarity || k.rarity == r)) found = true;
+                if (!found)
+                    f.E(T, 0, "E_RULE", std::string("missing cost row for ") + ToString(op) + " " + ToString(r) +
+                                            " step " + std::to_string(step));
+            };
+            need(CraftOp::Refine, Rarity::Normal, 0);
+            need(CraftOp::Reforge, Rarity::Magic, 0);
+            need(CraftOp::Reforge, Rarity::Rare, 0);
+            need(CraftOp::Add, Rarity::Magic, 0);
+            need(CraftOp::Add, Rarity::Rare, 0);
+            for (int s = 1; s <= rules_.polishMaxSteps; ++s) {
+                need(CraftOp::Polish, Rarity::Magic, s);
+                need(CraftOp::Polish, Rarity::Rare, s);
+            }
+        }
+        const char* V = "vendor_stock.csv";
+        for (std::size_t i = 0; i < im.vendorStock.size(); ++i) {
+            const VendorStockData& v = im.vendorStock[i];
+            const int ln = im.vendorStockLines[i];
+            if (!StartsWith(v.refId, "consumable.") && !StartsWith(v.refId, "material."))
+                f.E(V, ln, "E_ID_PREFIX", "refId must start with 'consumable.' or 'material.'");
+            for (std::size_t j = 0; j < i; ++j) {
+                if (im.vendorStock[j].refId == v.refId) f.E(V, ln, "E_DUP_ID", "refId repeated in vendor_stock.csv");
+            }
+            if (v.refId == "consumable.refill_flask" && im.rulesLoaded && v.carryCap != rules_.refillFlaskCarryCap)
+                f.E(V, ln, "E_RULE", "carryCap of the refill flask must equal refill_flask_carry_cap in rules.csv");
+        }
     }
     for (std::size_t i = 0; i < im.enemyAis.size(); ++i) {
         const EnemyAiData& a = im.enemyAis[i];

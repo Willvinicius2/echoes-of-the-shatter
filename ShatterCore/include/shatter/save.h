@@ -42,6 +42,8 @@ inline constexpr std::int64_t kMaxSavedPotionCharges = 1000;
 inline constexpr double kMaxSavedRechargeSeconds = 1.0e9;
 inline constexpr std::size_t kMaxSavedItems = 10000;             // itens por contêiner (Mochila ou Baú) lidos de um save
 inline constexpr const char* kSaveFormatTag = "echoes-of-the-shatter-save";
+inline constexpr std::size_t kMaxSavedBuyback = 100;             // itens na recompra do Vendedor (vendor_buyback_slots <= 100)
+inline constexpr int kMaxSavedPolish = 10;                       // passos de Lapidar por afixo (polish_max_steps <= 10)
 
 enum class ExpeditionStatus : std::uint8_t {
     None = 0,       // nenhuma expedição
@@ -55,6 +57,12 @@ struct SavedExpedition {
     int characterIndex = -1;            // índice em SaveData::characters
     ExpeditionRequest request;          // snapshot, seed, start, duração, regras, content_version
     std::uint64_t collectedResultHash = 0;  // ExpeditionResult::resultHash da coleta (anti-duplicação)
+};
+
+// Item vendido ao Vendedor que ainda pode ser recomprado (docs/16 11.2). `paid` = Ouro que o jogador recebeu na venda.
+struct BuybackEntry {
+    ItemInstance item;
+    std::int64_t paid = 0;
 };
 
 struct SaveData {
@@ -71,6 +79,10 @@ struct SaveData {
     std::vector<SavedExpedition> expeditions; // 0..expeditionSlots
     std::vector<ContentId> codexSeenUniques;  // Codex (Fragmentos de Eco)
     std::vector<ContentId> booksSeen;         // proteção contra azar (Irmã Odete)
+    // Economia do protótipo (docs/16 seção 11). Campos OPCIONAIS no save v2 (só gravados se != 0 / não vazios): saves
+    // antigos mantêm os mesmos bytes e hash. As pilhas de Ouro, Lascas e Frasco ficam em `currencies`.
+    std::uint64_t craftSeed = 0;              // craft_seed: base da semente das melhorias; 0 = ainda não fixada (ver EffectiveCraftSeed)
+    std::vector<BuybackEntry> vendorBuyback;  // recompra: o mais RECENTE primeiro, no máximo vendor_buyback_slots
 };
 
 // ---------------------------------------------------------------------------

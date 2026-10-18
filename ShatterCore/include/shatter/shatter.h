@@ -18,3 +18,5 @@
 #include "shatter/sha256.h"
 #include "shatter/save.h"
 #include "shatter/inventory.h"
+#include "shatter/craft.h"
+#include "shatter/vendor.h"

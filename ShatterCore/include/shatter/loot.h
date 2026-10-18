@@ -54,6 +54,18 @@ LootDrop RollLootTable(const ContentDB& db, const LootTableData& table, const Lo
 std::vector<RolledAffix> RollAffixes(const ContentDB& db, const ItemBaseData& base, Rarity rarity,
                                      int itemLevel, Pcg32& lootRng);
 
+// ADIÇÃO (docs/16 seção 11, Encantador): usa o fluxo que o chamador passar (Crafting no Encantador, nunca Loot).
+// Afixos que ainda podem entrar num item (slot, nível, grupo e limite 2 prefixos + 2 sufixos), na ordem do CSV, dado o
+// que o item já tem. `onlyCraftInscription` restringe aos afixos com craftInscription = true.
+std::vector<const AffixData*> EligibleAffixes(const ContentDB& db, const ItemBaseData& base, int itemLevel,
+                                              const std::vector<RolledAffix>& current, bool onlyCraftInscription);
+// Valor uniforme na faixa do afixo (inteiro se min e max forem inteiros). Consome 1 número.
+double RollAffixValue(const AffixData& a, Pcg32& rng);
+// Como RollAffixes, mas com a quantidade fixa `count` e afixos já mantidos (`kept`, ex.: o travado do Reforjar). Devolve
+// menos que `count` só se o conjunto elegível acabar. Prefixos antes de sufixos.
+std::vector<RolledAffix> RollAffixesFixed(const ContentDB& db, const ItemBaseData& base, int itemLevel, int count,
+                                          const std::vector<RolledAffix>& kept, Pcg32& rng);
+
 // Escolha ponderada genérica: índice em [0, weights.size()) ou -1 se soma <= 0.
 // Consome exatamente 1 número. Exposta para o teste estatístico de 1 milhão de sorteios.
 int PickWeighted(const std::vector<double>& weights, Pcg32& rng);

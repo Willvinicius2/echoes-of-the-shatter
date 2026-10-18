@@ -338,3 +338,60 @@ C# (`Interop`): `CombatRules` ganhou `ComboWindowSeconds`, `ComboWindowAfterDodg
 ### 12.5 Testes e pendências
 
 Testes novos em `test_combat_basic.cpp` (18) e `test_c_api.cpp` (3, `c_api_15_*`), `validate_data.py` com 8 mutações novas. Pendências: (1) defesa perfeita, limite de tempo, dreno de recurso e empurrão por tipo de alvo (docs/18 §8 itens 5 e 11) ficam no C# com os valores do kit; (2) o stub em C# ignora `moving`, kit, `pierce` e comportamento (só o núcleo nativo preenche); (3) Arqueiro e Mago sem expedição por decisão do dono (Q18-2).
+
+## 13. API C 1.6: economia do protótipo, Vendedor, Frasco de Recarga e Encantador (Backend, 18/10/2026, `etapa3/economia`)
+
+Origem: `docs/16_etapa3_fluxo.md` seção 11, com as decisões Q3-5 A (2 afixos novos de arma) e Q3-6 A (Reforjar sem desfazer, com trava de 1 afixo e aviso). `SHATTER_C_API_MINOR` vai para **6** (só adições; o C# deve exigir `shatter_api_minor() >= 6` e chamar `shatter_layout_check_ext6`). Código novo: `craft.h/.cpp` (Encantador), `vendor.h/.cpp` (Vendedor e frasco); o resto é adição em `rng.h`, `item.h`, `constants.h`, `content.*`, `loot.*` e `save.*`.
+
+### 13.1 Dados
+
+| Onde | Mudança |
+|---|---|
+| `rules.csv` | 15 chaves obrigatórias (102 no total): `vendor_buyback_slots`, `vendor_buyback_price_factor`, `refill_flask_carry_cap`, `refill_flask_charges`, `craft_cost_level_factor`, `reforge_step_mult`, `reforge_mult_cap`, `reforge_lock_cost_mult`, `reforge_lock_max`, `add_affix_candidates`, `polish_step_fraction`, `polish_max_steps`, `dismantle_shards_normal/magic/rare`. `RulesConstants` ganha os campos (0 neutro) |
+| `craft_costs.csv`, `vendor_stock.csv` | Tabelas NOVAS e OPCIONAIS (como `basic_kits.csv`: arquivo ausente não é erro; sem `craft_costs` o Encantador recusa com `UnknownContent`). Validação no `Finalize` (`E_RULE`, `E_RANGE`, `E_DUP_ID`, `E_ID_PREFIX`): passo 1.. só na Lapidar, Refinar só `normal`, linha de custo para cada operação e raridade e para cada passo de Lapidar até `polish_max_steps`, `carryCap` do frasco igual a `refill_flask_carry_cap` |
+| `affixes.csv` | `craftInscription = true` nos afixos do protótipo; afixos novos de arma `affix.scorching` (dano de fogo aumentado) e `affix.of_ruin` (multiplicador de crítico). "Vida por acerto" não existe como atributo: criar exigiria mexer no combate e no idle |
+| Loc | Vendedor e Encantador por chave provisória (`npc.*.name`, `ui.vendor.*`, `ui.enchant.*`, `consumable.refill_flask.*`), sem lore |
+
+### 13.2 Save (v2, campos OPCIONAIS; sem novo `save_version` e sem migração)
+
+Só são gravados se diferentes de zero/vazios, então saves antigos mantêm os mesmos bytes e hash (os saves `save_v1`/`save_v2` de teste continuam passando). `SaveData.craftSeed` (`craft_seed`, uint64 em texto), `SaveData.vendorBuyback` (`vendor_buyback`: até `vendor_buyback_slots` de `{item, paid}`, o mais recente primeiro), `ItemInstance.craftSteps` (`craft_steps`), `ItemInstance.craftReforges` (`craft_reforges`, preço do próximo Reforjar) e `RolledAffix.polish` (`polish`, 0 a `polish_max_steps`). Faixas validadas na leitura (save adulterado é recusado). Ouro (`currency.gold`), Lascas (`material.shards`) e Frasco de Recarga (`consumable.refill_flask`) são pilhas de `currencies`: formato inalterado. Como não houve mudança de formato incompatível, **não há migração**; um save sem `craft_seed` usa `EffectiveCraftSeed` (função estável do nome e da classe do primeiro personagem), e a primeira melhoria grava exatamente esse valor (fixar a semente não muda sorteio algum).
+
+### 13.3 Regras no core
+
+- `RngStream::Crafting = 4`. Semente por operação = função pura de (`craft_seed`, `uid`, `craft_steps` do item, operação) em `CraftRng`; nada consome `Loot`. Recarregar o save antes de confirmar não muda o sorteio. `craft_steps` sobe a cada Refinar, Reforjar e Adicionar; Lapidar não sorteia e não sobe.
+- `PlanCraft` só lê o save e decide tudo (custo, resultado, item depois); `CommitCraft` só escreve (cobra e aplica juntos, confere o plano contra o save e o saldo de novo). Operação que não chega ao Commit deixa o save byte a byte igual.
+- Custo = base x (1 + `craft_cost_level_factor` x (itemLevel - 1)), arredondado para cima (margem de 1e-9 contra ruído de ponto flutuante). Reforjar x `min(reforge_mult_cap, 1 + reforge_step_mult x reforges anteriores)`; travar 1 afixo multiplica só as Lascas por `reforge_lock_cost_mult`.
+- Refinar (Comum vira Mágico, 1 a 2 afixos), Reforjar (mantém quantidade e inscrição, zera a lapidação dos novos, mantém valor e lapidação do travado; se o sorteio guloso empacar num conjunto pequeno, tenta de novo até 16 vezes e por fim mantém os mesmos afixos com valores novos), Adicionar afixo (oferta de até `add_affix_candidates` sem repetição, só `craftInscription`, respeitando slot, nível, grupo e 2+2; a aplicação recalcula a oferta, não confia no cliente), Lapidar (sobe `polish_step_fraction` da faixa; inteiros arredondam e andam pelo menos 1; recusa no máximo ou no passo `polish_max_steps`), Desmontar (Lascas por raridade; só Mochila e Baú).
+- Vendedor: `VendorSell` paga `SellValue`, guarda o item na recompra e expulsa o mais antigo no 11º; `BuybackPrice` = ceil(pago x `vendor_buyback_price_factor`); recompra e venda são idempotentes por `uid`; `VendorBuy` respeita `carryCap` e Ouro.
+- Frasco: `UseRefillFlask` age sobre o cinto vivo (`PotionBelt`) e sobre o save; recusa por contexto `Arena`/`Idle`, sem frasco, poções cheias (não gasta) e trava global (`LockedOut`); restaura `refill_flask_charges` da poção com menos cargas (empate: a primeira do CSV, a Vida); inicia a trava global da poção.
+- `RollAffixes` ganhou irmãos (`EligibleAffixes`, `RollAffixValue`, `RollAffixesFixed`); o sorteio do loot não mudou (mesma sequência).
+
+### 13.4 API C 1.6
+
+| Função | Contrato |
+|---|---|
+| `shatter_currency_get(save, id, len, int64* amount)` | saldo de uma pilha (0 se não existe) |
+| `shatter_craft_quote_json(db, save, ci, uid, op, arg, buf...)` | prévia sem custo: `{op,result,gold,shards,shards_gain,affix_count_min/max,polish_step,polish_from/to,shards_with_lock,shards_no_lock,reforges,expedition_running,have_gold,have_shards}`; `NO_GOLD`/`NO_SHARDS` trazem os custos. `arg`: Reforjar = afixo travado (-1), Lapidar = afixo, Adicionar = -1 |
+| `shatter_craft_refine(db, save, ci, uid, shatter_craft_result*)` | Refinar |
+| `shatter_craft_reforge(db, save, ci, uid, locked_affix_index, ...)` | Reforjar (-1 = sem trava) |
+| `shatter_craft_add_affix_offer(db, save, ci, uid, buf...)` | `{result,gold,shards,candidates:[{affix_id,min,max}]}`; não altera; mesma saída se repetida |
+| `shatter_craft_add_affix_apply(db, save, ci, uid, candidate_index, ...)` | confirma o candidato |
+| `shatter_craft_polish(db, save, ci, uid, affix_index, ...)` | um passo de Lapidar |
+| `shatter_craft_dismantle(db, save, ci, uid, ...)` | Desmontar |
+| `shatter_vendor_sell(db, save, ci, container, uid, shatter_vendor_result*)` | vende ao Vendedor (vai para a recompra) |
+| `shatter_vendor_buyback_json(db, save, buf...)` | `{capacity,count,would_evict,evict_rarity,items:[{item,paid,price}]}`, o mais recente primeiro |
+| `shatter_vendor_buyback(db, save, ci, uid, ...)` | recompra POR UID (não por índice: o índice muda a cada venda e dois cliques comprariam itens diferentes) |
+| `shatter_vendor_stock_json(db, save, buf...)` | `[{id,ref_id,price_gold,carry_cap,owned}]` |
+| `shatter_vendor_buy(db, save, stock_id, len, qty, ...)` | compra (`qty` >= 1) |
+| `shatter_flask_use(db, save, potions, context, shatter_flask_result*)` | Frasco de Recarga; `context` 0 = corrida, 1 = arena, 2 = idle. Recebe o cinto vivo `shatter_potions*` (sem `ci`: o cinto já é de um personagem) |
+| `shatter_layout_info_ext6` / `shatter_layout_check_ext6` (`SHATTER_LAYOUT_EXT6_COUNT` = 16) | `[sizeof(shatter_craft_result), 5 offsets, sizeof(shatter_vendor_result), 4 offsets, sizeof(shatter_flask_result), 4 offsets]` |
+
+Resultados: `SHATTER_CRAFT_*` (`OK, NOT_FOUND, UNIQUE, WRONG_RARITY, AFFIX_LIMIT, ALREADY_INSCRIBED, POLISH_MAX, NO_CANDIDATE, NO_GOLD, NO_SHARDS, EQUIPPED_DISMANTLE, UNKNOWN_CONTENT, BAD_INDEX`), `SHATTER_VENDOR_*` (`OK, NOT_FOUND, FULL, NO_GOLD, CARRY_CAP, BAD_QUANTITY, UNKNOWN_CONTENT`), `SHATTER_FLASK_*` (`OK, NO_FLASK, ARENA_LOCKED, IDLE_FORBIDDEN, POTIONS_FULL, LOCKED_OUT, UNKNOWN_CONTENT`). Recusa não muda nada.
+
+### 13.5 Para o Frontend / Integração
+
+C# em `Assets/Scripts/Interop`: `EconomyTypes.cs` (tipos), `Native/ShatterNative.Economy.cs` (P/Invoke) e `Native/SaveGame.Economy.cs`: `Currency(id)`, `QuoteCraft`, `CraftRefine`, `CraftReforge`, `CraftAddAffixOffer`, `CraftAddAffixApply`, `CraftPolish`, `CraftDismantle`, `VendorSell`, `VendorBuybackInfo`, `VendorRebuy`, `VendorStock`, `VendorBuy`, `UseRefillFlask`. `ItemInstanceInfo` ganhou `CraftSteps`, `CraftReforges` e `AffixInfo.Polish`. `ExpectedApiMinor` = 6 e o `CheckExt6` entram na inicialização. **Depois de melhorar um item equipado, refaça o bloco de atributos** (`StatsOfCharacter`); com expedição `Running` a UI mostra "Vale a partir da próxima expedição" (`expedition_running` na prévia). Gravar o save depois de cada melhoria (RF-54). Não foi possível abrir a Unity neste worktree; o C# do Interop foi compilado com o Roslyn da Unity contra netstandard 2.1.
+
+### 13.6 Testes e pendências
+
+`test_economy.cpp` (29 testes: dados e erros, RNG puro, cada operação e cada recusa, custo por nível e por Reforjar, atomicidade, 1000 ciclos salvar/carregar, recompra e frasco, save e a propriedade de **1 milhão de operações aleatórias** sem violar a lista "nunca pode acontecer" do docs/16 11.5) e `c_api_16_*` (3 testes na fronteira da DLL). Pendências: a falha injetada é por `PlanCraft` sem `CommitCraft` (não há ponto de falha dentro do Commit); a medição de ritmo H3-20 (A3-37) depende do `batch_sim`; `content_version` precisa de bump na próxima release (os dados mudam o loot de arma).
