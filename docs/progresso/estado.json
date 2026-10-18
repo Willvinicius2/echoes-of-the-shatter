@@ -379,59 +379,6 @@
         }
       ],
       "origem": "infraestrutura"
-    },
-    {
-      "id": "afixos-arma",
-      "titulo": "Afixos novos para arma?",
-      "detalhe": "Sem eles, o Encantador quase não melhora armas.",
-      "pergunta": "Os 8 afixos atuais só dão 3 opções para arma (dano aumentado, crítico e velocidade de ataque). Podemos criar pelo menos 2 afixos novos de arma para as melhorias do Encantador fazerem sentido?",
-      "contexto": [
-        "Um item Raro sorteia 3 a 4 afixos. Como a arma só tem 3 possíveis, o Raro de arma já nasce com todos e não pode receber 'Adicionar afixo'.",
-        "Reforjar uma arma hoje só muda os valores, nunca troca o afixo. As armaduras têm 4 a 5 afixos possíveis e funcionam bem.",
-        "Não é história: são só números e nomes de afixo (por exemplo dano de elemento ou vida por acerto)."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Criar 2 afixos de arma agora (recomendado)",
-          "efeito": "Reforjar e Adicionar afixo viram escolhas reais na arma. Custa 2 linhas de dados e 2 textos."
-        },
-        {
-          "id": "B",
-          "nome": "B. Aceitar a limitação",
-          "efeito": "Nada novo nos dados; a arma só melhora por Lapidar e o Encantador fica pobre para quem foca em arma."
-        }
-      ],
-      "origem": "docs/16_etapa3_fluxo.md §11.15"
-    },
-    {
-      "id": "reforjar-desfazer",
-      "titulo": "Reforjar pode ser desfeito?",
-      "detalhe": "Quando o resultado sai pior.",
-      "pergunta": "Quando o jogador reforja uma peça e o resultado sai pior, ele pode voltar ao estado anterior?",
-      "contexto": [
-        "O plano diz que o crafting nunca destrói o item; o risco é perder uma combinação boa, e a tela avisa antes.",
-        "Já existe a trava de 1 afixo, que protege o melhor afixo durante o Reforjar.",
-        "O sorteio é determinístico por peça e passo, então recarregar o save não muda o resultado."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Sem desfazer, com trava e aviso (recomendado)",
-          "efeito": "A decisão pesa, a trava dá controle e o save não ganha estado novo."
-        },
-        {
-          "id": "B",
-          "nome": "B. Desfazer o último Reforjar de graça",
-          "efeito": "Menos medo, mas o jogador reforja e desfaz até acertar, o que quebra o custo crescente."
-        },
-        {
-          "id": "C",
-          "nome": "C. Desfazer pagando metade do custo",
-          "efeito": "Meio-termo; ainda guarda o estado anterior no item e pede regra de custo e tela."
-        }
-      ],
-      "origem": "docs/16_etapa3_fluxo.md §11.15"
     }
   ],
   "decisoes": [
@@ -624,6 +571,31 @@
       "data": "2026-10-17",
       "titulo": "Sem demo do Next Fest por enquanto",
       "detalhe": "Decidir de novo ao fim da Etapa 3."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Dois afixos novos de arma (decisão do orquestrador com autonomia do dono)",
+      "detalhe": "Q3-5 opção A: Reforjar e Adicionar afixo viram escolhas reais na arma."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Reforjar sem desfazer, com trava e aviso (decisão do orquestrador)",
+      "detalhe": "Q3-6 opção A: a decisão pesa e o save não ganha estado novo."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Combate básico: combo, ataque forte e defesa para as 3 classes",
+      "detalhe": "docs/18; o botão direito vira defesa, e Investida, Fenda e Escudada vão para Q, E e R. Q18-1 a Q18-4 com a opção (a)."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Itens e habilidades do Ato I (docs/19)",
+      "detalhe": "Recomendações Q19-1 a Q19-11 aceitas: o attackTime da arma muda o tempo dos golpes, entra o slot off_hand, o rank 3 tem perk e há 3 Únicos novos."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Conjunto Raro do Guerreiro em 3D",
+      "detalhe": "vset.warrior_rare_01, 5 peças cortadas do modelo da folha m10 (aço claro com frisos dourados)."
     }
   ],
   "nuvem": [

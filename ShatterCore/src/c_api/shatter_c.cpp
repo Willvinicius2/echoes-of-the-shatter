@@ -2580,6 +2580,33 @@ SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing(const shatter_db* d
     return SHATTER_OK;
 }
 
+SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing_weapon(const shatter_db* db, const char* skill_id,
+                                                                  std::size_t skill_id_len, const shatter_statblock* stats,
+                                                                  const char* class_id, std::size_t class_id_len,
+                                                                  const char* weapon_base_id, std::size_t weapon_base_id_len,
+                                                                  shatter_action_timing* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view sid, cid, wid;
+    if (stats == nullptr || out == nullptr || skill_id == nullptr || !Text(skill_id, skill_id_len, sid) ||
+        !Text(class_id, class_id_len, cid) || !Text(weapon_base_id, weapon_base_id_len, wid))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    const SkillData* s = d->FindSkill(sid);
+    if (s == nullptr) return SHATTER_NOT_FOUND;
+    const ItemBaseData* weapon = nullptr;
+    if (!wid.empty()) {
+        weapon = d->FindItemBase(wid);
+        if (weapon == nullptr) return SHATTER_NOT_FOUND;
+    }
+    const ActionTimingInfo t = ComputeActionTiming(*d, *s, stats->sb, nullptr, WeaponTimeFactor(*s, weapon, ClassRefAttackTime(*d, cid)));
+    out->windup = t.windup;
+    out->impact = t.impact;
+    out->recovery = t.recovery;
+    out->cooldown = t.cooldown;
+    out->cost = t.cost;
+    return SHATTER_OK;
+}
+
 SHATTER_API shatter_status SHATTER_CALL shatter_move_speed(const shatter_statblock* stats, double base_uu_per_sec,
                                                          double* out) SHATTER_NOEXCEPT {
     if (stats == nullptr || out == nullptr || !std::isfinite(base_uu_per_sec)) return SHATTER_INVALID_ARGUMENT;
@@ -3598,5 +3625,561 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition_trusted(
     if (!text.empty()) std::memcpy(out, text.data(), text.size());
     return SHATTER_OK;
 }
+
+// --- Economia do protótipo: Vendedor, Frasco de Recarga e Encantador (API 1.6) -------------------------------------
+namespace {
+
+static_assert(sizeof(shatter_craft_result) == 32, "shatter_craft_result");
+static_assert(sizeof(shatter_vendor_result) == 24, "shatter_vendor_result");
+static_assert(sizeof(shatter_flask_result) == 16, "shatter_flask_result");
+static_assert(static_cast<int>(CraftResult::BadIndex) == SHATTER_CRAFT_BAD_INDEX, "CraftResult");
+static_assert(static_cast<int>(CraftOp::Dismantle) == SHATTER_CRAFT_OP_DISMANTLE, "CraftOp");
+static_assert(static_cast<int>(VendorResult::UnknownContent) == SHATTER_VENDOR_UNKNOWN_CONTENT, "VendorResult");
+static_assert(static_cast<int>(FlaskResult::UnknownContent) == SHATTER_FLASK_UNKNOWN_CONTENT, "FlaskResult");
+static_assert(static_cast<int>(FlaskContext::Idle) == SHATTER_FLASK_CTX_IDLE, "FlaskContext");
+
+const std::uint32_t kLayoutExt6[] = {
+    static_cast<std::uint32_t>(sizeof(shatter_craft_result)),
+    static_cast<std::uint32_t>(offsetof(shatter_craft_result, result)),
+    static_cast<std::uint32_t>(offsetof(shatter_craft_result, changed_affix)),
+    static_cast<std::uint32_t>(offsetof(shatter_craft_result, gold_spent)),
+    static_cast<std::uint32_t>(offsetof(shatter_craft_result, shards_spent)),
+    static_cast<std::uint32_t>(offsetof(shatter_craft_result, shards_gained)),
+    static_cast<std::uint32_t>(sizeof(shatter_vendor_result)),
+    static_cast<std::uint32_t>(offsetof(shatter_vendor_result, result)),
+    static_cast<std::uint32_t>(offsetof(shatter_vendor_result, evicted)),
+    static_cast<std::uint32_t>(offsetof(shatter_vendor_result, evicted_rarity)),
+    static_cast<std::uint32_t>(offsetof(shatter_vendor_result, gold)),
+    static_cast<std::uint32_t>(sizeof(shatter_flask_result)),
+    static_cast<std::uint32_t>(offsetof(shatter_flask_result, result)),
+    static_cast<std::uint32_t>(offsetof(shatter_flask_result, potion_index)),
+    static_cast<std::uint32_t>(offsetof(shatter_flask_result, charges_after)),
+    static_cast<std::uint32_t>(offsetof(shatter_flask_result, flasks_left)),
+};
+static_assert(sizeof(kLayoutExt6) / sizeof(kLayoutExt6[0]) == SHATTER_LAYOUT_EXT6_COUNT, "SHATTER_LAYOUT_EXT6_COUNT desatualizado");
+
+void FillCraft(const CraftPlan& p, shatter_craft_result* out) {
+    std::memset(out, 0, sizeof(*out));
+    out->result = static_cast<std::int32_t>(p.result);
+    out->changed_affix = p.result == CraftResult::Ok ? p.changedAffix : -1;
+    if (p.result == CraftResult::Ok) {
+        out->gold_spent = p.gold;
+        out->shards_spent = p.shards;
+        out->shards_gained = p.shardsGain;
+    }
+}
+
+shatter_status RunCraft(const shatter_db* db, shatter_save* save, std::size_t ci, std::uint64_t uid, CraftOp op, int arg,
+                        shatter_craft_result* out) {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || out == nullptr || ci >= save->data.characters.size()) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    CraftPlan p = PlanCraft(*d, save->data, ci, uid, op, arg);
+    CommitCraft(save->data, ci, p);
+    FillCraft(p, out);
+    return SHATTER_OK;
+}
+
+void FillVendor(VendorResult r, std::int64_t gold, bool evicted, Rarity rarity, shatter_vendor_result* out) {
+    std::memset(out, 0, sizeof(*out));
+    out->result = static_cast<std::int32_t>(r);
+    out->gold = r == VendorResult::Ok ? gold : 0;
+    out->evicted = evicted ? 1 : 0;
+    out->evicted_rarity = evicted ? static_cast<std::int32_t>(rarity) : 0;
+}
+
+}  // namespace
+
+SHATTER_API shatter_status SHATTER_CALL shatter_currency_get(const shatter_save* save, const char* id, std::size_t id_len,
+                                                           std::int64_t* amount) SHATTER_NOEXCEPT {
+    std::string_view name;
+    if (save == nullptr || amount == nullptr || id == nullptr || !Text(id, id_len, name)) return SHATTER_INVALID_ARGUMENT;
+    *amount = CurrencyAmount(save->data, name);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_quote_json(const shatter_db* db, const shatter_save* save,
+                                                               std::size_t character_index, std::uint64_t uid,
+                                                               std::int32_t op, std::int32_t arg, std::uint8_t* out,
+                                                               std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || needed == nullptr || character_index >= save->data.characters.size() || op < 0 ||
+        op > SHATTER_CRAFT_OP_DISMANTLE)
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const CraftOp cop = static_cast<CraftOp>(op);
+    CraftPlan p;
+    if (cop == CraftOp::Add && arg < 0) {  // prévia da oferta: custo sem escolher candidato
+        const AffixOffer offer = OfferAddAffix(*d, save->data, character_index, uid);
+        p.op = cop;
+        p.uid = uid;
+        p.result = offer.result;
+        p.gold = offer.gold;
+        p.shards = offer.shards;
+        if (p.result == CraftResult::Ok) {
+            if (CurrencyAmount(save->data, kGoldId) < p.gold) p.result = CraftResult::NoGold;
+            else if (CurrencyAmount(save->data, kShardsId) < p.shards) p.result = CraftResult::NoShards;
+        }
+    } else {
+        p = PlanCraft(*d, save->data, character_index, uid, cop, arg);
+    }
+    Value o = Value::MakeObject();
+    o.Set("op", Value(ToString(cop)));
+    o.Set("result", Value(static_cast<std::int64_t>(p.result)));
+    o.Set("gold", Value(p.gold));
+    o.Set("shards", Value(p.shards));
+    o.Set("shards_gain", Value(p.shardsGain));
+    o.Set("affix_count_min", Value(static_cast<std::int64_t>(p.affixCountMin)));
+    o.Set("affix_count_max", Value(static_cast<std::int64_t>(p.affixCountMax)));
+    o.Set("polish_step", Value(static_cast<std::int64_t>(p.polishStep)));
+    o.Set("polish_from", Value(p.polishFrom));
+    o.Set("polish_to", Value(p.polishTo));
+    o.Set("shards_with_lock", Value(p.shardsWithLock));
+    o.Set("shards_no_lock", Value(p.shardsNoLock));
+    o.Set("reforges", Value(static_cast<std::int64_t>(p.reforgesBefore)));
+    o.Set("expedition_running", Value(HasRunningExpedition(save->data, character_index)));
+    o.Set("have_gold", Value(CurrencyAmount(save->data, kGoldId)));
+    o.Set("have_shards", Value(CurrencyAmount(save->data, kShardsId)));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_refine(const shatter_db* db, shatter_save* save,
+                                                           std::size_t character_index, std::uint64_t uid,
+                                                           shatter_craft_result* out) SHATTER_NOEXCEPT {
+    return RunCraft(db, save, character_index, uid, CraftOp::Refine, 0, out);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_reforge(const shatter_db* db, shatter_save* save,
+                                                            std::size_t character_index, std::uint64_t uid,
+                                                            std::int32_t locked_affix_index,
+                                                            shatter_craft_result* out) SHATTER_NOEXCEPT {
+    return RunCraft(db, save, character_index, uid, CraftOp::Reforge, locked_affix_index, out);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_add_affix_offer(const shatter_db* db, const shatter_save* save,
+                                                                    std::size_t character_index, std::uint64_t uid,
+                                                                    std::uint8_t* out, std::size_t cap,
+                                                                    std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || needed == nullptr || character_index >= save->data.characters.size()) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const AffixOffer offer = OfferAddAffix(*d, save->data, character_index, uid);
+    Value o = Value::MakeObject();
+    o.Set("result", Value(static_cast<std::int64_t>(offer.result)));
+    o.Set("gold", Value(offer.gold));
+    o.Set("shards", Value(offer.shards));
+    Value arr = Value::MakeArray();
+    for (const AffixCandidate& c : offer.candidates) {
+        Value e = Value::MakeObject();
+        e.Set("affix_id", Value(c.affixId));
+        e.Set("min", Value(c.minValue));
+        e.Set("max", Value(c.maxValue));
+        arr.Push(std::move(e));
+    }
+    o.Set("candidates", std::move(arr));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_add_affix_apply(const shatter_db* db, shatter_save* save,
+                                                                    std::size_t character_index, std::uint64_t uid,
+                                                                    std::int32_t candidate_index,
+                                                                    shatter_craft_result* out) SHATTER_NOEXCEPT {
+    return RunCraft(db, save, character_index, uid, CraftOp::Add, candidate_index, out);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_polish(const shatter_db* db, shatter_save* save,
+                                                           std::size_t character_index, std::uint64_t uid,
+                                                           std::int32_t affix_index, shatter_craft_result* out) SHATTER_NOEXCEPT {
+    return RunCraft(db, save, character_index, uid, CraftOp::Polish, affix_index, out);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_dismantle(const shatter_db* db, shatter_save* save,
+                                                              std::size_t character_index, std::uint64_t uid,
+                                                              shatter_craft_result* out) SHATTER_NOEXCEPT {
+    return RunCraft(db, save, character_index, uid, CraftOp::Dismantle, 0, out);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_sell(const shatter_db* db, shatter_save* save,
+                                                          std::size_t character_index, std::int32_t container,
+                                                          std::uint64_t uid, shatter_vendor_result* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || out == nullptr || character_index >= save->data.characters.size() || !ContainerOk(container))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    std::int64_t gold = 0;
+    bool evicted = false;
+    Rarity rarity = Rarity::Normal;
+    const VendorResult r = VendorSell(*d, save->data, character_index, static_cast<Container>(container), uid, &gold, &evicted, &rarity);
+    FillVendor(r, gold, evicted, rarity, out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_buyback_json(const shatter_db* db, const shatter_save* save,
+                                                                  std::uint8_t* out, std::size_t cap,
+                                                                  std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const BuybackInfo info = GetBuybackInfo(*d, save->data);
+    Value o = Value::MakeObject();
+    o.Set("capacity", Value(static_cast<std::int64_t>(info.capacity)));
+    o.Set("count", Value(static_cast<std::int64_t>(info.count)));
+    o.Set("would_evict", Value(info.wouldEvict));
+    o.Set("evict_rarity", Value(static_cast<std::int64_t>(info.evictRarity)));
+    Value items = Value::MakeArray();
+    for (const BuybackEntry& e : save->data.vendorBuyback) {
+        Value eo = Value::MakeObject();
+        eo.Set("item", ItemToJson(e.item));
+        eo.Set("paid", Value(e.paid));
+        eo.Set("price", Value(BuybackPrice(*d, e.paid)));
+        items.Push(std::move(eo));
+    }
+    o.Set("items", std::move(items));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_buyback(const shatter_db* db, shatter_save* save,
+                                                             std::size_t character_index, std::uint64_t uid,
+                                                             shatter_vendor_result* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || out == nullptr || character_index >= save->data.characters.size()) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    std::int64_t spent = 0;
+    const VendorResult r = VendorBuyback(*d, save->data, character_index, uid, &spent);
+    FillVendor(r, spent, false, Rarity::Normal, out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_stock_json(const shatter_db* db, const shatter_save* save,
+                                                                std::uint8_t* out, std::size_t cap,
+                                                                std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    Value arr = Value::MakeArray();
+    for (const VendorStockData& v : d->VendorStock()) {
+        Value e = Value::MakeObject();
+        e.Set("id", Value(v.id));
+        e.Set("ref_id", Value(v.refId));
+        e.Set("price_gold", Value(v.priceGold));
+        e.Set("carry_cap", Value(static_cast<std::int64_t>(v.carryCap)));
+        e.Set("owned", Value(CurrencyAmount(save->data, v.refId)));
+        arr.Push(std::move(e));
+    }
+    return WriteJson(arr, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_buy(const shatter_db* db, shatter_save* save, const char* stock_id,
+                                                         std::size_t stock_id_len, std::int32_t qty,
+                                                         shatter_vendor_result* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view id;
+    if (save == nullptr || out == nullptr || stock_id == nullptr || !Text(stock_id, stock_id_len, id)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    std::int64_t spent = 0;
+    const VendorResult r = VendorBuy(*d, save->data, id, qty, &spent);
+    FillVendor(r, spent, false, Rarity::Normal, out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_flask_use(const shatter_db* db, shatter_save* save, shatter_potions* potions,
+                                                        std::int32_t context, shatter_flask_result* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (save == nullptr || potions == nullptr || out == nullptr || context < SHATTER_FLASK_CTX_RUN || context > SHATTER_FLASK_CTX_IDLE)
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const FlaskOutcome o = UseRefillFlask(*d, save->data, potions->belt, static_cast<FlaskContext>(context));
+    out->result = static_cast<std::int32_t>(o.result);
+    out->potion_index = o.potionIndex;
+    out->charges_after = o.chargesAfter;
+    out->flasks_left = o.flasksLeft;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext6(std::uint32_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    if (needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = SHATTER_LAYOUT_EXT6_COUNT;
+    if (cap < SHATTER_LAYOUT_EXT6_COUNT) return SHATTER_BUFFER_TOO_SMALL;
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    std::memcpy(out, kLayoutExt6, sizeof(kLayoutExt6));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext6(const std::uint32_t* values, std::size_t n,
+                                                                shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (values == nullptr && n != 0) return SetError(err, SHATTER_INVALID_ARGUMENT, "values is null");
+    if (n != SHATTER_LAYOUT_EXT6_COUNT) return SetError(err, SHATTER_VERSION_MISMATCH, "ext6 layout count differs");
+    for (std::size_t i = 0; i < n; ++i) {
+        if (values[i] != kLayoutExt6[i])
+            return SetError(err, SHATTER_VERSION_MISMATCH, "ext6 layout entry " + std::to_string(i) + " differs",
+                            static_cast<int>(i) + 1);
+    }
+    return SHATTER_OK;
+}
+
+
+// --- Core da Cripta: mundo, baús, encontros, XP e Fervor (API 1.7) ------------------------------------------------
+namespace {
+
+static_assert(sizeof(shatter_xp_info) == 40, "shatter_xp_info");
+static_assert(sizeof(shatter_fervor_info) == 48, "shatter_fervor_info");
+
+const std::uint32_t kLayoutExt7[] = {
+    static_cast<std::uint32_t>(sizeof(shatter_xp_info)),
+    static_cast<std::uint32_t>(offsetof(shatter_xp_info, awarded)),
+    static_cast<std::uint32_t>(offsetof(shatter_xp_info, xp_in_level)),
+    static_cast<std::uint32_t>(offsetof(shatter_xp_info, xp_to_next)),
+    static_cast<std::uint32_t>(offsetof(shatter_xp_info, level_before)),
+    static_cast<std::uint32_t>(offsetof(shatter_xp_info, level)),
+    static_cast<std::uint32_t>(offsetof(shatter_xp_info, level_cap)),
+    static_cast<std::uint32_t>(offsetof(shatter_xp_info, reserved)),
+    static_cast<std::uint32_t>(sizeof(shatter_fervor_info)),
+    static_cast<std::uint32_t>(offsetof(shatter_fervor_info, xp_mult)),
+    static_cast<std::uint32_t>(offsetof(shatter_fervor_info, gold_mat_mult)),
+    static_cast<std::uint32_t>(offsetof(shatter_fervor_info, rare_mult)),
+    static_cast<std::uint32_t>(offsetof(shatter_fervor_info, xp_bonus)),
+    static_cast<std::uint32_t>(offsetof(shatter_fervor_info, gold_mat_bonus)),
+    static_cast<std::uint32_t>(offsetof(shatter_fervor_info, rare_bonus)),
+};
+static_assert(sizeof(kLayoutExt7) / sizeof(kLayoutExt7[0]) == SHATTER_LAYOUT_EXT7_COUNT, "SHATTER_LAYOUT_EXT7_COUNT desatualizado");
+
+void FillXp(const XpAward& a, shatter_xp_info* out) {
+    std::memset(out, 0, sizeof(*out));
+    out->awarded = a.awarded;
+    out->xp_in_level = a.xpInLevel;
+    out->xp_to_next = a.xpToNext;
+    out->level_before = a.levelBefore;
+    out->level = a.levelAfter;
+    out->level_cap = a.levelCap;
+}
+
+}  // namespace
+
+SHATTER_API shatter_status SHATTER_CALL shatter_world_begin_visit(const shatter_db* db, shatter_save* save, const char* map_id,
+                                                                std::size_t map_id_len, std::uint64_t* visit_seed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view map;
+    if (save == nullptr || visit_seed == nullptr || map_id == nullptr || !Text(map_id, map_id_len, map)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    if (d->FindMap(map) == nullptr) return SHATTER_NOT_FOUND;
+    return BeginAreaVisit(*d, save->data, ContentId(map), visit_seed) ? SHATTER_OK : SHATTER_INVALID_ARGUMENT;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_world_object_get(const shatter_save* save, const char* map_id,
+                                                               std::size_t map_id_len, const char* object_id,
+                                                               std::size_t object_id_len, std::uint8_t* opened) SHATTER_NOEXCEPT {
+    std::string_view map, obj;
+    if (save == nullptr || opened == nullptr || map_id == nullptr || object_id == nullptr || !Text(map_id, map_id_len, map) ||
+        !Text(object_id, object_id_len, obj))
+        return SHATTER_INVALID_ARGUMENT;
+    *opened = IsWorldObjectOpen(save->data, map, obj) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_world_object_set(shatter_save* save, const char* map_id, std::size_t map_id_len,
+                                                               const char* object_id, std::size_t object_id_len,
+                                                               std::uint8_t opened) SHATTER_NOEXCEPT {
+    std::string_view map, obj;
+    if (save == nullptr || map_id == nullptr || object_id == nullptr || !Text(map_id, map_id_len, map) ||
+        !Text(object_id, object_id_len, obj))
+        return SHATTER_INVALID_ARGUMENT;
+    return SetWorldObjectOpen(save->data, ContentId(map), ContentId(obj), opened != 0) ? SHATTER_OK : SHATTER_INVALID_ARGUMENT;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_world_state_json(const shatter_save* save, const char* map_id,
+                                                               std::size_t map_id_len, std::uint8_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    std::string_view map;
+    if (save == nullptr || needed == nullptr || map_id == nullptr || !Text(map_id, map_id_len, map)) return SHATTER_INVALID_ARGUMENT;
+    Value o = Value::MakeObject();
+    o.Set("map_id", Value(std::string(map)));
+    const WorldAreaState* a = FindWorldArea(save->data, map);
+    o.Set("visits", Value(static_cast<std::int64_t>(a != nullptr ? a->visits : 0u)));
+    Value arr = Value::MakeArray();
+    if (a != nullptr)
+        for (const ContentId& id : a->opened) arr.Push(Value(id));
+    o.Set("opened", std::move(arr));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_map_info_json(const shatter_db* db, const char* map_id, std::size_t map_id_len,
+                                                            std::uint8_t* out, std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view map;
+    if (needed == nullptr || map_id == nullptr || !Text(map_id, map_id_len, map)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const MapData* m = d->FindMap(map);
+    if (m == nullptr) return SHATTER_NOT_FOUND;
+    Value o = Value::MakeObject();
+    o.Set("map_id", Value(m->id));
+    o.Set("monster_level", Value(static_cast<std::int64_t>(m->monsterLevel)));
+    o.Set("tier", Value(static_cast<std::int64_t>(m->tier)));
+    o.Set("area_loot_table", Value(m->areaLootTable));
+    o.Set("boss_encounter", Value(m->bossEncounter));
+    Value encs = Value::MakeArray();
+    for (const ContentId& id : m->encounters) encs.Push(Value(id));
+    o.Set("encounters", std::move(encs));
+    Value chests = Value::MakeArray();
+    for (const ChestData& c : d->Chests()) {
+        if (c.mapId != m->id) continue;
+        Value co = Value::MakeObject();
+        co.Set("id", Value(c.id));
+        co.Set("loot_table", Value(c.lootTable));
+        chests.Push(std::move(co));
+    }
+    o.Set("chests", std::move(chests));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json(const shatter_db* db, const char* encounter_id,
+                                                                  std::size_t encounter_id_len, std::uint64_t visit_seed,
+                                                                  std::uint8_t* out, std::size_t cap,
+                                                                  std::size_t* needed) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view enc;
+    if (needed == nullptr || encounter_id == nullptr || !Text(encounter_id, encounter_id_len, enc)) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    RolledEncounter r;
+    if (!RollEncounter(*d, enc, visit_seed, r)) return SHATTER_NOT_FOUND;
+    Value o = Value::MakeObject();
+    o.Set("encounter_id", Value(r.encounterId));
+    o.Set("is_boss", Value(r.isBoss));
+    Value groups = Value::MakeArray();
+    for (const RolledGroup& g : r.groups) {
+        Value go = Value::MakeObject();
+        go.Set("enemy_id", Value(g.enemyId));
+        go.Set("count", Value(static_cast<std::int64_t>(g.slots.size())));
+        Value slots = Value::MakeArray();
+        for (const RolledSlot& sl : g.slots) {
+            Value so = Value::MakeObject();
+            so.Set("elite", Value(static_cast<std::int64_t>(sl.elite ? 1 : 0)));
+            so.Set("modifier_id", Value(sl.modifierId));
+            slots.Push(std::move(so));
+        }
+        go.Set("slots", std::move(slots));
+        groups.Push(std::move(go));
+    }
+    o.Set("groups", std::move(groups));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_chest_open(const shatter_db* db, shatter_save* save, const char* map_id,
+                                                         std::size_t map_id_len, const char* chest_id, std::size_t chest_id_len,
+                                                         const shatter_loot_context* ctx, shatter_rng* rng, std::uint8_t* out,
+                                                         std::size_t cap, std::size_t* needed, std::int32_t* result,
+                                                         shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    const ContentDB* d = UsableDb(db);
+    std::string_view map, chest;
+    if (save == nullptr || needed == nullptr || result == nullptr || map_id == nullptr || chest_id == nullptr ||
+        !Text(map_id, map_id_len, map) || !Text(chest_id, chest_id_len, chest) || !IsValidContentId(chest))
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "bad chest arguments");
+    if (d == nullptr) return DbError(db, err);
+    *needed = 0;
+    if (d->FindMap(map) == nullptr) return SetError(err, SHATTER_NOT_FOUND, "map not found");
+    if (IsWorldObjectOpen(save->data, map, chest)) {
+        *result = SHATTER_CHEST_ALREADY_OPEN;
+        return SHATTER_OK;
+    }
+    const std::string table = ChestLootTable(*d, map, chest);
+    if (table.empty()) {
+        *result = SHATTER_CHEST_NO_TABLE;
+        return SHATTER_OK;
+    }
+    {  // o estado do mundo precisa caber ANTES de rolar: o loot só sai junto com a marca de aberto
+        const WorldAreaState* a = FindWorldArea(save->data, map);
+        if ((a == nullptr && save->data.world.size() >= kMaxWorldAreas) || (a != nullptr && a->opened.size() >= kMaxWorldObjects))
+            return SetError(err, SHATTER_INVALID_ARGUMENT, "world state is full");
+    }
+    const shatter_status st = shatter_save_drop_loot(db, save, table.data(), table.size(), ctx, rng, out, cap, needed, err);
+    if (st != SHATTER_OK) return st;  // buffer pequeno e erros: nada mudou
+    SetWorldObjectOpen(save->data, ContentId(map), ContentId(chest), true);
+    *result = SHATTER_CHEST_OPENED;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_clear_loot(const shatter_db* db, shatter_save* save, const char* map_id,
+                                                                   std::size_t map_id_len, const shatter_loot_context* ctx,
+                                                                   shatter_rng* rng, std::uint8_t* out, std::size_t cap,
+                                                                   std::size_t* needed, shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    const ContentDB* d = UsableDb(db);
+    std::string_view map;
+    if (save == nullptr || map_id == nullptr || !Text(map_id, map_id_len, map)) return SetError(err, SHATTER_INVALID_ARGUMENT, "bad map");
+    if (d == nullptr) return DbError(db, err);
+    const std::string table = AreaLootTable(*d, map);
+    if (table.empty()) return SetError(err, SHATTER_NOT_FOUND, "map has no area loot table");
+    return shatter_save_drop_loot(db, save, table.data(), table.size(), ctx, rng, out, cap, needed, err);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_xp_award_kill(const shatter_db* db, shatter_save* save, std::size_t character_index,
+                                                            const char* map_id, std::size_t map_id_len, const char* enemy_id,
+                                                            std::size_t enemy_id_len, std::int32_t monster_level,
+                                                            std::uint8_t elite_rolled, const char* modifier_id,
+                                                            std::size_t modifier_id_len, std::uint8_t fervor,
+                                                            shatter_xp_info* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view map, enemy, mod;
+    if (save == nullptr || out == nullptr || character_index >= save->data.characters.size() || enemy_id == nullptr ||
+        !Text(map_id, map_id_len, map) || !Text(enemy_id, enemy_id_len, enemy) || !Text(modifier_id, modifier_id_len, mod) ||
+        monster_level < 1 || monster_level > 1000)
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    if (d->FindEnemy(enemy) == nullptr || (!mod.empty() && d->FindEliteModifier(mod) == nullptr)) return SHATTER_NOT_FOUND;
+    FillXp(AwardKillXp(*d, save->data, character_index, map, enemy, monster_level, elite_rolled != 0, mod, fervor != 0), out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_character_progress(const shatter_db* db, const shatter_save* save,
+                                                                 std::size_t character_index, const char* map_id,
+                                                                 std::size_t map_id_len, shatter_xp_info* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    std::string_view map;
+    if (save == nullptr || out == nullptr || character_index >= save->data.characters.size() || !Text(map_id, map_id_len, map))
+        return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    FillXp(CharacterProgress(*d, save->data, character_index, map), out);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_fervor_get(const shatter_db* db, shatter_fervor_info* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return SHATTER_CONTENT_INVALID;
+    const FervorInfo f = GetFervorInfo(*d);
+    out->xp_mult = f.xpMult;
+    out->gold_mat_mult = f.goldMatMult;
+    out->rare_mult = f.rareMult;
+    out->xp_bonus = f.xpBonus;
+    out->gold_mat_bonus = f.goldMatBonus;
+    out->rare_bonus = f.rareBonus;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext7(std::uint32_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    if (needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = SHATTER_LAYOUT_EXT7_COUNT;
+    if (cap < SHATTER_LAYOUT_EXT7_COUNT) return SHATTER_BUFFER_TOO_SMALL;
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    std::memcpy(out, kLayoutExt7, sizeof(kLayoutExt7));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext7(const std::uint32_t* values, std::size_t n,
+                                                                shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (values == nullptr && n != 0) return SetError(err, SHATTER_INVALID_ARGUMENT, "values is null");
+    if (n != SHATTER_LAYOUT_EXT7_COUNT) return SetError(err, SHATTER_VERSION_MISMATCH, "ext7 layout count differs");
+    for (std::size_t i = 0; i < n; ++i) {
+        if (values[i] != kLayoutExt7[i])
+            return SetError(err, SHATTER_VERSION_MISMATCH, "ext7 layout entry " + std::to_string(i) + " differs",
+                            static_cast<int>(i) + 1);
+    }
+    return SHATTER_OK;
+}
+
 
 }  // extern "C"

@@ -112,7 +112,7 @@ namespace Echoes.Interop.Native
                 var minor = ShatterNative.shatter_api_minor();
                 if (minor < ShatterNative.ExpectedApiMinor)
                 {
-                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (combate basico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento; fuga do inimigo, vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
+                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (core da Cripta: mundo, baus, encontros, XP, Fervor; economia: Vendedor, recompra, Frasco de Recarga e Encantador; combate basico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento; fuga do inimigo, vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
                     return false;
                 }
                 if (!NativeLayout.CheckExt(out var extMessage))
@@ -138,6 +138,16 @@ namespace Echoes.Interop.Native
                 if (!NativeLayout.CheckExt5(out var ext5Message))
                 {
                     reason = "layout ext5 (combate basico) das structs diverge da DLL: " + ext5Message;
+                    return false;
+                }
+                if (!NativeLayout.CheckExt6(out var ext6Message))
+                {
+                    reason = "layout ext6 (economia) das structs diverge da DLL: " + ext6Message;
+                    return false;
+                }
+                if (!NativeLayout.CheckExt7(out var ext7Message))
+                {
+                    reason = "layout ext7 (core da Cripta) das structs diverge da DLL: " + ext7Message;
                     return false;
                 }
                 core = new NativeRulesCore(version);

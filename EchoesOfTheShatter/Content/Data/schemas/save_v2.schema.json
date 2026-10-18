@@ -68,6 +68,12 @@
         },
         "value": {
           "type": "number"
+        },
+        "polish": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Passos de Lapidar ja aplicados (0 a polish_max_steps). Opcional: so e gravado quando > 0 (docs/16 11.4)."
         }
       }
     },
@@ -115,6 +121,18 @@
         },
         "has_inscription": {
           "type": "boolean"
+        },
+        "craft_steps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "description": "Operacoes de Encantar ja aplicadas na peca (uint). Opcional: so e gravado quando > 0."
+        },
+        "craft_reforges": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "description": "Reforjar ja aplicados na peca (uint; sobe o custo). Opcional: so e gravado quando > 0."
         }
       }
     },
@@ -610,6 +628,32 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/Id"
+          }
+        },
+        "craft_seed": {
+          "$ref": "#/$defs/DecimalU64",
+          "description": "Semente das operacoes de Encantar (uint64 como texto decimal). Opcional: so e gravada quando != 0."
+        },
+        "vendor_buyback": {
+          "type": "array",
+          "maxItems": 100,
+          "description": "Lista de recompra do Vendedor (ate rules.csv vendor_buyback_slots). Opcional: so e gravada quando nao vazia.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "item",
+              "paid"
+            ],
+            "properties": {
+              "item": {
+                "$ref": "#/$defs/ItemInstance"
+              },
+              "paid": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
           }
         }
       }

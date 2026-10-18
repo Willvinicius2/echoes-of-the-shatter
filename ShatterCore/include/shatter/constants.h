@@ -86,6 +86,21 @@ struct RulesConstants {
     double guardLowerTime = 0.0;               // guard_lower_time (s): sem atacar depois de soltar a defesa
     double dashShotRange = 0.0;                // dash_shot_range (uu): alcance do tiro de um dash com tag projectile
 
+    // Economia do protótipo (docs/16 seção 11: Vendedor e Encantador; valores [HIPÓTESE] em rules.csv, todas obrigatórias).
+    int vendorBuybackSlots = 0;                // vendor_buyback_slots: itens guardados na recompra (os 10 últimos vendidos)
+    double vendorBuybackPriceFactor = 0.0;     // vendor_buyback_price_factor: recomprar custa fator x o valor pago ao jogador
+    int refillFlaskCarryCap = 0;               // refill_flask_carry_cap: máximo de Frascos de Recarga levados
+    int refillFlaskCharges = 0;                // refill_flask_charges: cargas de poção que cada frasco restaura
+    double craftCostLevelFactor = 0.0;         // craft_cost_level_factor: o custo cresce fração x (itemLevel - 1)
+    double reforgeStepMult = 0.0;              // reforge_step_mult: cada Reforjar anterior da peça soma esta fração ao próximo
+    double reforgeMultCap = 0.0;               // reforge_mult_cap: teto do multiplicador de custo do Reforjar
+    double reforgeLockCostMult = 0.0;          // reforge_lock_cost_mult: travar um afixo multiplica só as Lascas
+    int reforgeLockMax = 0;                    // reforge_lock_max: afixos travados por Reforjar (0 desliga a trava)
+    int addAffixCandidates = 0;                // add_affix_candidates: cartões de Adicionar afixo
+    double polishStepFraction = 0.0;           // polish_step_fraction: cada passo de Lapidar sobe esta fração da faixa
+    int polishMaxSteps = 0;                    // polish_max_steps: passos de Lapidar por afixo
+    int dismantleShards[3] = {0, 0, 0};        // dismantle_shards_normal/magic/rare: Lascas devolvidas ao Desmontar
+
     // --- Fervor (jogo manual). O idle é a taxa base = 1. ---
     double fervorXpMult = 3.0;             // fervor_xp_mult
     double fervorGoldMatMult = 1.25;       // fervor_gold_mat_mult

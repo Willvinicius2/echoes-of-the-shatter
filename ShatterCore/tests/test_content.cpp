@@ -63,7 +63,7 @@ TEST(content_rich_fixture_passes_and_exposes_everything) {
     EXPECT_EQ(cleave->idle.paritySampleSize, static_cast<std::uint32_t>(100));
     EXPECT_EQ(cleave->onHitEffects.size(), static_cast<std::size_t>(1));
     EXPECT_NEAR(cleave->coefficientByRank[2], 1.2, 1e-12);
-    EXPECT_EQ(db.Affixes().size(), static_cast<std::size_t>(8));  // ordem do CSV
+    EXPECT_EQ(db.Affixes().size(), static_cast<std::size_t>(10));  // ordem do CSV
     EXPECT_EQ(db.Affixes()[0].id, std::string("affix.life_flat"));
     EXPECT_EQ(db.Maps().size(), static_cast<std::size_t>(3));
     const MapData* crypt = db.FindMap("map.act1.crypt");

@@ -542,6 +542,16 @@ def check_rules(c: Content, rep: Report) -> None:
         if not ok:
             rep.err("item_bases.csv", base["__line__"], "E_SLOT_LOCKED",
                     f"{base['id']}: a posição '{s}' está bloqueada em rules.csv (equip_slot_{s} = false); a peça nunca poderia ser equipada")
+    # Economia do protótipo (docs/16 11.8)
+    if g("polish_step_fraction") is not None and g("polish_max_steps") is not None:
+        if g("polish_step_fraction") * g("polish_max_steps") > 1:
+            rep.warn("rules.csv", ln.get("polish_max_steps", 0), "W_RULES", "polish_step_fraction x polish_max_steps > 1: os últimos passos de Lapidar passam do máximo da faixa e não rendem nada")
+    shards = [g("dismantle_shards_normal"), g("dismantle_shards_magic"), g("dismantle_shards_rare")]
+    if None not in shards and not (shards[0] <= shards[1] <= shards[2]):
+        rep.warn("rules.csv", ln.get("dismantle_shards_magic", 0), "W_RULES", "Lascas de Desmontar deveriam crescer com a raridade (Comum <= Mágico <= Raro)")
+    if g("reforge_mult_cap") is not None and g("reforge_step_mult") is not None:
+        if g("reforge_step_mult") == 0 and g("reforge_mult_cap") > 1:
+            rep.warn("rules.csv", ln.get("reforge_step_mult", 0), "W_RULES", "reforge_step_mult = 0: reforge_mult_cap nunca é atingido")
 
 
 def run_checks(c: Content, schemas: Dict[str, dict], rep: Report) -> None:
@@ -653,6 +663,63 @@ def chk_basic_kit(c: Content, table: str, rows: List[dict], rep: Report) -> None
             rep.err(table, ln, "E_KIT", f"guardEffect {r['guardEffect']} deve ter a tag 'guard' (o dano recebido só cai se o golpe vem de dentro do arco)")
         if r["guardPerfectWindow"] > 0 and r["guardPerfectCooldown"] < r["guardPerfectWindow"]:
             rep.warn(table, ln, "W_KIT", "guardPerfectCooldown menor que guardPerfectWindow: a janela perfeita reabriria dentro de si mesma")
+        # docs/19 N0: refAttackTime e o attackTime da arma inicial da classe (so faz sentido se o golpe escala com a arma)
+        ref = r["refAttackTime"]
+        first_skill = skills.get(r["lightChain"][0]) if r["lightChain"] else None
+        if ref > 0 and first_skill is not None and first_skill["scalesWithWeapon"]:
+            style = "melee" if "melee" in first_skill["tags"] else "projectile"
+            starters = [b for b in c.tables.get("item_bases.csv", [])
+                        if b["slot"] == "main_hand" and b["itemLevel"] <= 1 and style in b["weaponTags"]]
+            if starters and not any(abs(b["attackTime"] - ref) < 1e-9 for b in starters):
+                times = ", ".join(sorted({str(b["attackTime"]) for b in starters}))
+                rep.warn(table, ln, "W_KIT", f"refAttackTime {ref} difere do attackTime da arma inicial da classe ({times}): o kit inicial não ficaria com fator 1,0")
+
+
+def chk_craft_cost(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    """docs/16 11.8: custos de Encantar. Tabela opcional; presente, precisa cobrir todas as operações."""
+    if table not in c.tables:
+        return
+    allowed = {"refine": ("normal",), "reforge": ("magic", "rare"), "add": ("magic", "rare"), "polish": ("normal", "magic", "rare", "any")}
+    max_steps = c.rules.get("polish_max_steps")
+    seen: Dict[Tuple[str, str, int], int] = {}
+    for r in rows:
+        ln = r["__line__"]
+        key = (r["op"], r["rarity"], r["step"])
+        if key in seen:
+            rep.err(table, ln, "E_CRAFT", f"par (op, rarity, step) {key} repetido (primeiro na linha {seen[key]})")
+        seen[key] = ln
+        if r["rarity"] not in allowed[r["op"]]:
+            rep.err(table, ln, "E_CRAFT", f"op={r['op']} só aceita rarity {', '.join(allowed[r['op']])} (veio {r['rarity']})")
+        if r["op"] != "polish" and r["step"] != 0:
+            rep.err(table, ln, "E_CRAFT", f"op={r['op']} usa step 0 (só polish usa passos)")
+        if r["op"] == "polish" and r["step"] < 1:
+            rep.err(table, ln, "E_CRAFT", "op=polish exige step >= 1")
+        if r["op"] == "polish" and isinstance(max_steps, int) and r["step"] > max_steps:
+            rep.err(table, ln, "E_CRAFT", f"step {r['step']} > polish_max_steps ({max_steps})")
+    for op in allowed:
+        if not any(r["op"] == op for r in rows):
+            rep.err(table, 0, "E_CRAFT", f"a operação '{op}' não tem nenhuma linha em craft_costs.csv")
+    if isinstance(max_steps, int):
+        for s in range(1, max_steps + 1):
+            if not any(r["op"] == "polish" and r["step"] == s for r in rows):
+                rep.err(table, 0, "E_CRAFT", f"polish sem linha para o passo {s} (1..polish_max_steps = {max_steps})")
+    dn = c.rules.get("dismantle_shards_normal")
+    for r in rows:
+        if r["op"] == "refine" and isinstance(dn, int) and dn >= r["shardCost"]:
+            rep.warn(table, r["__line__"], "W_CRAFT", "Desmontar Comum devolve >= Lascas que Refinar custa: ciclo infinito de Lascas")
+
+
+def chk_vendor_stock(c: Content, table: str, rows: List[dict], rep: Report) -> None:
+    """docs/16 11.8: estoque fixo do Vendedor. refId não é validado contra tabela (não há tabela de consumíveis)."""
+    seen: Dict[str, int] = {}
+    cap = c.rules.get("refill_flask_carry_cap")
+    for r in rows:
+        ln = r["__line__"]
+        if r["refId"] in seen:
+            rep.err(table, ln, "E_VENDOR", f"refId '{r['refId']}' repetido (primeiro na linha {seen[r['refId']]})")
+        seen[r["refId"]] = ln
+        if r["refId"] == "consumable.refill_flask" and isinstance(cap, int) and r["carryCap"] != cap:
+            rep.err(table, ln, "E_VENDOR", f"carryCap {r['carryCap']} difere de refill_flask_carry_cap em rules.csv ({cap})")
 
 
 def chk_modifier(c: Content, table: str, rows: List[dict], rep: Report) -> None:
@@ -913,6 +980,8 @@ CHECKS = {
     "unique_rules": chk_unique,
     "potion_rules": chk_potion,
     "basic_kit_rules": chk_basic_kit,
+    "craft_cost_rules": chk_craft_cost,
+    "vendor_stock_rules": chk_vendor_stock,
     "modifier_rules": chk_modifier,
     "boss_phase_rules": chk_boss_phase,
     "boss_pattern_rules": chk_boss_pattern,
@@ -1391,6 +1460,10 @@ def save_semantics(fname: str, d: dict, ver: int, rep: Report, content: Optional
             rep.err(fname, 0, "E_SAVE", f"{where}: raridade unique sem unique_id")
         if it["rarity"] != "unique" and it["unique_id"]:
             rep.err(fname, 0, "E_SAVE", f"{where}: unique_id em item não-único")
+        pmax = content.rules.get("polish_max_steps") if content is not None else None
+        for a in it["affixes"]:
+            if isinstance(pmax, int) and a.get("polish", 0) > pmax:
+                rep.err(fname, 0, "E_SAVE", f"{where}: polish {a['polish']} > polish_max_steps {pmax}")
         limit = {"normal": 0, "magic": 2, "rare": 4, "unique": 0}[it["rarity"]]
         if len(it["affixes"]) > limit:
             rep.err(fname, 0, "E_SAVE", f"{where}: {len(it['affixes'])} afixos > máximo {limit} para {it['rarity']}")
@@ -1442,6 +1515,17 @@ def save_semantics(fname: str, d: dict, ver: int, rep: Report, content: Optional
     nxt = int(d["next_item_uid"])
     if uids and nxt <= max(uids):
         rep.err(fname, 0, "E_SAVE", f"next_item_uid {nxt} <= maior uid em uso ({max(uids)})")
+    for i, ch in enumerate(d["characters"]):
+        for j, it in enumerate(ch.get("backpack") or []):
+            check_item(f"characters[{i}].backpack[{j}]", it)
+    bb = d.get("vendor_buyback") or []
+    bslots = content.rules.get("vendor_buyback_slots") if content is not None else None
+    if isinstance(bslots, int) and len(bb) > bslots:
+        rep.err(fname, 0, "E_SAVE", f"vendor_buyback tem {len(bb)} itens > vendor_buyback_slots {bslots}")
+    for j, e in enumerate(bb):
+        check_item(f"vendor_buyback[{j}].item", e["item"])
+        if e["paid"] < 0:
+            rep.err(fname, 0, "E_SAVE", f"vendor_buyback[{j}]: paid negativo")
     cur_ids = [c["id"] for c in d["currencies"]]
     if len(cur_ids) != len(set(cur_ids)):
         rep.err(fname, 0, "E_SAVE", "currencies com id repetido")
@@ -1550,12 +1634,36 @@ MUTATIONS = [
      lambda t: t.replace("skill.mage.arcane_dart|skill.mage.arcane_dart|skill.mage.arcane_orb", "skill.mage.arcane_dart|skill.mage.arcane_dart|skill.mage.arcane_orb|skill.mage.arcane_dart"), "E_LIST"),
     ("kit_com_arco_acima_de_360", "basic_kits.csv",
      lambda t: t.replace(",360,0,0.4,", ",400,0,0.4,"), "E_RANGE"),
+    ("kit_com_refAttackTime_negativo", "basic_kits.csv",
+     lambda t: t.replace("effect.stun|effect.guard_break,25,0,0.9", "effect.stun|effect.guard_break,25,0,-0.9"), "E_RANGE"),
+    ("bau_com_prefixo_errado", "chests.csv",
+     lambda t: t.replace("chest.crypt.01,", "box.crypt.01,"), "E_ID"),
+    ("bau_com_mapa_inexistente", "chests.csv",
+     lambda t: t.replace("chest.crypt.02,map.act1.crypt", "chest.crypt.02,map.act1.nope"), "E_FK"),
+    ("bau_com_tabela_de_loot_inexistente", "chests.csv",
+     lambda t: t.replace("loot.crypt.elite", "loot.crypt.nope", 1), "E_FK"),
+    ("bau_com_id_repetido", "chests.csv",
+     lambda t: t.replace("chest.crypt.03,", "chest.crypt.02,"), "E_DUP_ID"),
     ("perfuracao_em_golpe_que_nao_e_projetil", "skills.csv",
      lambda t: _set_skill_field(t, "skill.archer.arrow_rain", "pierce", "5"), "E_PIERCE"),
     ("explosao_em_golpe_que_nao_e_projetil", "skills.csv",
      lambda t: _set_skill_field(t, "skill.mage.frost_nova", "explosionRadius", "100"), "E_EXPLOSION"),
     ("leque_sem_angulo", "skills.csv",
      lambda t: t.replace("1100,,3,,,false,,,,,,,,1,28,", "1100,,3,,,false,,,,,,,,1,,"), "E_FAN"),
+    ("craft_costs_sem_a_operacao_polish", "craft_costs.csv",
+     lambda t: chr(10).join(l for l in t.split(chr(10)) if not l.startswith("craft.polish.")), "E_CRAFT"),
+    ("craft_costs_com_op_invalido", "craft_costs.csv",
+     lambda t: t.replace("craft.refine.normal,refine,", "craft.refine.normal,upgrade,"), "E_ENUM"),
+    ("craft_costs_reforge_em_raridade_any", "craft_costs.csv",
+     lambda t: t.replace("craft.reforge.rare,reforge,rare,", "craft.reforge.rare,reforge,any,"), "E_CRAFT"),
+    ("craft_costs_com_par_repetido", "craft_costs.csv",
+     lambda t: t + "craft.polish.9,polish,any,3,1,0" + chr(10), "E_CRAFT"),
+    ("vendor_stock_com_carryCap_diferente_da_regra", "vendor_stock.csv",
+     lambda t: t.replace("stack,50,3", "stack,50,5"), "E_VENDOR"),
+    ("afixo_com_craftInscription_invalido", "affixes.csv",
+     lambda t: t.replace("affix.sturdy,prefix,life,flat,,10,25,1,10,head|body|hands|legs|feet|off_hand,life,true", "affix.sturdy,prefix,life,flat,,10,25,1,10,head|body|hands|legs|feet|off_hand,life,sim"), "E_TYPE"),
+    ("reforge_mult_cap_abaixo_de_1", "rules.csv",
+     lambda t: t.replace("reforge_mult_cap,3.0", "reforge_mult_cap,0.5"), "E_RANGE"),
     ("base_em_posicao_bloqueada", "rules.csv",
      lambda t: t.replace("equip_slot_head,true", "equip_slot_head,false"), "E_SLOT_LOCKED"),
 ]

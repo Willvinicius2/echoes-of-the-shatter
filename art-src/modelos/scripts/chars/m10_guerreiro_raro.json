@@ -1,0 +1,130 @@
+{
+  "id": "m10_guerreiro_raro",
+  "asset": "SK_Warrior",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/m10_guerreiro_raro/m10_guerreiro_raro.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/m10_guerreiro_raro.png",
+  "sheet_cuts": [
+    579,
+    947
+  ],
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/m10_guerreiro_raro/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/m10_guerreiro_raro/final",
+  "min_component_faces": 5000,
+  "body_height_m": 1.5,
+  "crown_z_src": 0.83,
+  "tris_target": 6000,
+  "taubin_pre": 3,
+  "taubin_post": 2,
+  "sharp_angle_deg": 75,
+  "markers": {
+    "hips": [
+      0,
+      0.03,
+      0.5
+    ],
+    "spine": [
+      0,
+      0.03,
+      0.62
+    ],
+    "chest": [
+      0,
+      0.03,
+      0.78
+    ],
+    "neck": [
+      0,
+      0.0,
+      1.02
+    ],
+    "head": [
+      0,
+      0.0,
+      1.1
+    ],
+    "head_top": [
+      0,
+      0.0,
+      1.5
+    ],
+    "shoulder": [
+      0.06,
+      0.03,
+      0.96
+    ],
+    "upperarm": [
+      0.27,
+      0.03,
+      0.93
+    ],
+    "lowerarm": [
+      0.4,
+      0.0,
+      0.76
+    ],
+    "hand": [
+      0.45,
+      -0.04,
+      0.64
+    ],
+    "hand_tip": [
+      0.48,
+      -0.09,
+      0.53
+    ],
+    "upperleg": [
+      0.15,
+      0.02,
+      0.5
+    ],
+    "lowerleg": [
+      0.17,
+      -0.01,
+      0.28
+    ],
+    "foot": [
+      0.16,
+      0.04,
+      0.09
+    ],
+    "toes": [
+      0.16,
+      -0.08,
+      0.04
+    ],
+    "toe_tip": [
+      0.16,
+      -0.2,
+      0.02
+    ]
+  },
+  "disc_thr": 0.4,
+  "min_weight": 0.001,
+  "mesh_name": "SK_Warrior_Body",
+  "tris_range": [
+    5500,
+    6500
+  ],
+  "height_ref": "crown",
+  "tint_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ],
+  "cloth_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ]
+  ],
+  "bake_shards": 1
+}

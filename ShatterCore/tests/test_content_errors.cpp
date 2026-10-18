@@ -40,9 +40,9 @@ TEST(content_rnf07_error_catalog) {
     using tu::Replace;
     const std::string skills = Table("skills.csv"), loot = Table("loot_entries.csv"), maps = Table("maps.csv"),
                       affixes = Table("affixes.csv"), rules = Table("rules.csv");
-    ExpectFail("id duplicado", "affixes.csv", affixes + "affix.life_flat,prefix,life,flat,,1,2,1,1,,,false\n", "affixes.csv", 10, "E_DUP_ID");
+    ExpectFail("id duplicado", "affixes.csv", affixes + "affix.life_flat,prefix,life,flat,,1,2,1,1,,,false\n", "affixes.csv", 12, "E_DUP_ID");
     ExpectFail("min > max", "affixes.csv", Replace(affixes, "life,flat,,10,20,1,10", "life,flat,,30,20,1,10"), "affixes.csv", 2, "E_RANGE");
-    ExpectFail("peso 0", "affixes.csv", Replace(affixes, "1,10,body|head,life,false", "1,0,body|head,life,false"), "affixes.csv", 2, "E_RANGE");
+    ExpectFail("peso 0", "affixes.csv", Replace(affixes, "1,10,body|head,life,true", "1,0,body|head,life,true"), "affixes.csv", 2, "E_RANGE");
     ExpectFail("efeito inexistente", "skills.csv", Replace(skills, "effect.guard_break", "effect.nope"), "skills.csv", 3, "E_FK");
     ExpectFail("idle sem amostra de paridade", "skills.csv",
                Replace(skills, "false,,,,,,,,1,,,,,,,\nskill.enemy.sentinel_strike", "true,1,,,,,,0,1,,,,,,,\nskill.enemy.sentinel_strike"), "skills.csv", 5, "E_RULE");

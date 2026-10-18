@@ -157,6 +157,48 @@ namespace Echoes.Tests.EditMode
             }
         }
 
+        // docs/19 N10: herois jogaveis na etapa atual (Etapa 3: so o Guerreiro). Um conjunto visual do CSV precisa ter peca para
+        // estes herois; Arqueiro e Mago entram nesta lista quando forem jogaveis (Etapa 4). Conjunto exclusivo de um heroi
+        // se declara como vset.<heroi>_* (ex.: vset.warrior_rare_01) e so exige peca desse heroi.
+        static readonly string[] PlayableHeroes = { "Warrior" };
+
+        [Test]
+        public void EveryVisualSetInTheCsvHasPartsForThePlayableHeroes()
+        {
+            var lines = File.ReadAllLines(Path.Combine(TestWorld.DataDirectory, "item_bases.csv"));
+            var header = lines[0].Split(',');
+            var slotCol = System.Array.IndexOf(header, "slot");
+            var setCol = System.Array.IndexOf(header, "visualSetId");
+            Assert.GreaterOrEqual(slotCol, 0, "coluna slot");
+            Assert.GreaterOrEqual(setCol, 0, "coluna visualSetId");
+            var slotByName = new System.Collections.Generic.Dictionary<string, HeroPartSlot>
+            {
+                { "head", HeroPartSlot.Head }, { "body", HeroPartSlot.Chest }, { "hands", HeroPartSlot.Hands },
+                { "legs", HeroPartSlot.Legs }, { "feet", HeroPartSlot.Feet },
+            };
+            var needed = new System.Collections.Generic.HashSet<(string set, HeroPartSlot slot)>();
+            foreach (var line in lines.Skip(1))
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                var cells = line.Split(',');
+                if (cells.Length <= setCol || string.IsNullOrEmpty(cells[setCol]) || !slotByName.TryGetValue(cells[slotCol], out var slot)) continue;
+                needed.Add((cells[setCol], slot));
+            }
+            Assert.IsNotEmpty(needed, "item_bases.csv sem nenhum visualSetId");
+            foreach (var (set, slot) in needed)
+            {
+                foreach (var hero in PlayableHeroes)
+                {
+                    var exclusive = set.StartsWith("vset.", System.StringComparison.Ordinal) && set.Substring(5).Contains("_")
+                        && HeroModularBuilder.Heroes.Any(h => set.StartsWith("vset." + h.ToLowerInvariant() + "_", System.StringComparison.Ordinal));
+                    if (exclusive && !set.StartsWith("vset." + hero.ToLowerInvariant() + "_", System.StringComparison.Ordinal)) continue;
+                    var catalog = AssetDatabase.LoadAssetAtPath<HeroPartCatalog>(HeroModularBuilder.CatalogPath(hero));
+                    Assert.IsNotNull(catalog, hero);
+                    Assert.IsTrue(catalog.TryGet(slot, set, out _), $"{hero}: sem peca {slot}/{set} (item_bases.csv)");
+                }
+            }
+        }
+
         [Test]
         public void EquipmentFromTheCoreDrivesTheModularParts()
         {
