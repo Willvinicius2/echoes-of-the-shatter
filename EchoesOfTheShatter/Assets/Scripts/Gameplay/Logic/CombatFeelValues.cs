@@ -26,6 +26,12 @@ namespace Echoes.Gameplay
         public float AimTurnDegreesPerSecond = 720f;
         /// <summary>Hitstop leve (s) de golpes que não são pesados mas merecem um tranco no acerto (ex.: a explosão da Bola de Fogo).</summary>
         public double HitstopLightSeconds = 0.035;
+        /// <summary>Inimigos (rev5, só apresentação e agente de navegação, nada de regra): segundos de 0 à velocidade de perseguição e de volta a 0.</summary>
+        public float EnemyAccelSeconds = 0.15f;
+        public float EnemyDecelSeconds = 0.12f;
+        /// <summary>Virada do corpo do inimigo em graus/s: calma ao perseguir e mais firme no telégrafo e no golpe (o chefe segue a direção exata do core).</summary>
+        public float EnemyTurnDegreesPerSecond = 540f;
+        public float EnemyAttackTurnDegreesPerSecond = 900f;
         public readonly HashSet<string> LightHitstopSkills = new HashSet<string>(StringComparer.Ordinal);
         public readonly HashSet<string> HeavySkills = new HashSet<string>(StringComparer.Ordinal);
 

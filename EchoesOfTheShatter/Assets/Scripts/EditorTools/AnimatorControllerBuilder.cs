@@ -292,9 +292,13 @@ namespace Echoes.EditorTools
             var walk = spec.Hero ? run * 0.5f : run;     // o heroi tem uma velocidade so (corrida); o inimigo anda na dele
             if (!spec.Hero) run = walk * 2f;
             tree.AddChild(Clip(general, "Idle_A"), 0f);
-            tree.AddChild(Clip(basic, spec.WalkClip), walk);
-            tree.AddChild(Clip(spec.RunFbx ?? basic, spec.RunClip), run);
-            ApplyGroundSpeedScales(tree, spec.Name, walk, run);
+            if (spec.Hero)
+            {
+                tree.AddChild(Clip(basic, spec.WalkClip), walk);
+                tree.AddChild(Clip(spec.RunFbx ?? basic, spec.RunClip), run);
+                ApplyGroundSpeedScales(tree, spec.Name, walk, run);
+            }
+            else BuildEnemyGait(tree, spec, Clip(basic, spec.WalkClip), Clip(spec.RunFbx ?? basic, spec.RunClip), MoveSpeedMeters(spec));
             var loco = sm.AddState("Locomotion");
             loco.motion = tree;
             sm.defaultState = loco;
@@ -363,12 +367,14 @@ namespace Echoes.EditorTools
             layers = c.layers;
             var hitIndex = layers.Length - 1;
             layers[hitIndex].defaultWeight = 1f;
+            if (!spec.Hero) layers[hitIndex].avatarMask = LoadOrCreateUpperMask(); // flinch so no tronco: as pernas seguem a locomocao
             c.layers = layers;
             var hitMachine = c.layers[hitIndex].stateMachine;
             var hitEmpty = hitMachine.AddState("Empty");
             hitMachine.defaultState = hitEmpty;
             var hit = hitMachine.AddState("Hit");
             hit.motion = Clip(general, spec.HitClip);
+            if (!spec.Hero && hit.motion != null && hit.motion.averageDuration > EnemyFlinchSeconds) hit.speed = hit.motion.averageDuration / EnemyFlinchSeconds;
             var hitBack = hit.AddTransition(hitEmpty);
             hitBack.hasExitTime = true;
             hitBack.exitTime = 1f;
@@ -488,6 +494,70 @@ namespace Echoes.EditorTools
             tree.children = children;
         }
 
+        /// <summary>
+        /// Passo do inimigo humanoide (rev5): o pe acompanha o chao. Anda se a velocidade de perseguicao cabe no passo da caminhada com escala ate
+        /// <see cref="EnemyWalkMaxScale"/> (Arauto, Guardiao); senao corre (Sentinela), e a caminhada cobre a patrulha em 45% da velocidade.
+        /// Escalas medidas em <see cref="LocomotionGroundSpeed"/>; sem medida, o comportamento antigo (passo na velocidade dele).
+        /// </summary>
+        static void BuildEnemyGait(BlendTree tree, ControllerSpec spec, AnimationClip walkClip, AnimationClip runClip, float speed)
+        {
+            var measured = LocomotionGroundSpeed.Load(spec.Name);
+            if (measured == null || measured.walk <= 0.01f || measured.run <= 0.01f)
+            {
+                tree.AddChild(walkClip, speed);
+                tree.AddChild(runClip, speed * 2f);
+                return;
+            }
+            var needWalk = speed / measured.walk;
+            if (needWalk <= EnemyWalkMaxScale)
+            {
+                tree.AddChild(walkClip, speed);
+                var only = tree.children;
+                only[1].timeScale = LocomotionGroundSpeed.PlaybackScale(speed, measured.walk, EnemyWalkMaxScale);
+                tree.children = only;
+                return;
+            }
+            tree.AddChild(walkClip, speed * EnemyPatrolFraction);
+            tree.AddChild(runClip, speed);
+            var children = tree.children;
+            children[1].timeScale = LocomotionGroundSpeed.PlaybackScale(speed * EnemyPatrolFraction, measured.walk, EnemyWalkMaxScale);
+            children[2].timeScale = LocomotionGroundSpeed.PlaybackScale(speed, measured.run, LocomotionGroundSpeed.RunMaxScale);
+            tree.children = children;
+        }
+
+        /// <summary>
+        /// Atordoamento dos inimigos Generic (Cao, Arqueiro Espectral), que nao usam o clipe Stun humanoide: o pico da reacao a golpe fica de lado
+        /// avancando bem devagar (vivo, sem congelar) enquanto IsStaggered (stun, Guarda Quebrada). Estado Stun na camada Base, qualquer estado vai para ele.
+        /// </summary>
+        static void AddCreepStun(AnimatorController c, AnimatorStateMachine sm, AnimatorState loco, AnimationClip hitClip)
+        {
+            c.AddParameter("IsStaggered", AnimatorControllerParameterType.Bool);
+            var stun = sm.AddState("Stun");
+            stun.motion = hitClip;
+            stun.speed = 0.15f;
+            stun.cycleOffset = 0.25f;
+            var to = sm.AddAnyStateTransition(stun);
+            to.AddCondition(AnimatorConditionMode.If, 0f, "IsStaggered");
+            to.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsDead");
+            to.hasExitTime = false;
+            to.hasFixedDuration = true;
+            to.duration = 0.1f;
+            to.canTransitionToSelf = false;
+            var from = stun.AddTransition(loco);
+            from.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsStaggered");
+            from.hasExitTime = false;
+            from.duration = 0.12f;
+        }
+
+        /// <summary>Teto da escala de caminhada do inimigo (passo curto de construto/chefe): arte, nao balanceamento.</summary>
+        public const float EnemyWalkMaxScale = 1.8f;
+
+        /// <summary>Patrulha = 45% da velocidade de perseguicao (patrolSpeedMult do enemies.csv e 0,5 no Sentinela).</summary>
+        public const float EnemyPatrolFraction = 0.45f;
+
+        /// <summary>Flinch curto de tronco (rev5): o clipe de reacao toca em ate tanto tempo, so tronco e bracos, sem parar a locomocao.</summary>
+        public const float EnemyFlinchSeconds = 0.3f;
+
         // Velocidade de movimento em m/s: class_stats.csv (heroi, em uu/s) ou enemies.csv (inimigo, em uu/s); 1 uu = 1 cm.
         static float MoveSpeedMeters(ControllerSpec spec)
         {
@@ -534,7 +604,26 @@ namespace Echoes.EditorTools
             { "skill.mage.arcane_ray", (0.10f, 0f) },
             { "skill.mage.fireball", (0.15f, 0.02f) },
             { "skill.mage.frost_nova", (0.08f, 0f) },
+            // Inimigos (rev5): avanco visual curto no impacto; o chefe com tremor de camera (hitstop pelos SO_CombatFeel).
+            { "skill.enemy.sentinel_strike", (0.20f, 0f) },
+            { "skill.enemy.ash_bite", (0.30f, 0f) },
+            { "skill.enemy.herald_slam", (0.25f, 0.03f) },
+            { "skill.enemy.ghost_arrow", (-0.10f, 0f) },
+            { "skill.enemy.guardian_hammer", (0.30f, 0.05f) },
+            { "skill.enemy.guardian_shield_bash", (0.25f, 0.03f) },
+            { "skill.enemy.guardian_shield_charge", (0f, 0.04f) },
         };
+
+        /// <summary>Grava o peso por habilidade (avanco e tremor) nas entradas do conjunto.</summary>
+        static void ApplySkillFeel(SkillPresentationSet set)
+        {
+            foreach (var entry in set.entries)
+            {
+                if (!SkillFeel.TryGetValue(entry.skillId, out var feel)) continue;
+                entry.lungeMeters = feel.lunge;
+                entry.shakeMeters = feel.shake;
+            }
+        }
 
         public static SkillPresentationSet BuildSkillSet(ControllerSpec spec, GameObject prefab)
         {
@@ -589,12 +678,6 @@ namespace Echoes.EditorTools
             {
                 UnityEngine.Object.DestroyImmediate(instance);
             }
-            foreach (var entry in set.entries)
-            {
-                if (!SkillFeel.TryGetValue(entry.skillId, out var feel)) continue;
-                entry.lungeMeters = feel.lunge;
-                entry.shakeMeters = feel.shake;
-            }
             if (spec == Boss)
             {
                 // Investida do Escudo: tres estados, cada um com o clipe e a duracao autoral; o core manda as fases (preparacao, impacto, recuperacao).
@@ -608,6 +691,10 @@ namespace Echoes.EditorTools
                 });
             }
             set.dodgeState = "Dodge";
+            ApplySkillFeel(set);
+            // Reacao: o chefe quase nao se encolhe (quase imune, peso grande); os demais, flinch inteiro e empurrao visual curto.
+            set.hitFlinchWeight = spec == Boss ? 0.35f : 1f;
+            set.hitKickMeters = spec == Boss ? 0.03f : spec.Hero ? 0f : 0.1f;
             if (spec.Upper.Count > 0)
             {
                 set.upperLayer = UpperLayerName;
@@ -648,6 +735,7 @@ namespace Echoes.EditorTools
             sm.defaultState = loco;
             var death = sm.AddState("Death");
             death.motion = EchoesAnimationImport.Clip("AN_GhostArcher_Death");
+            AddCreepStun(c, sm, loco, EchoesAnimationImport.Clip("AN_GhostArcher_Hit"));
             var toDeath = sm.AddAnyStateTransition(death);
             toDeath.AddCondition(AnimatorConditionMode.If, 0f, "IsDead");
             toDeath.hasExitTime = false;
@@ -721,6 +809,15 @@ namespace Echoes.EditorTools
             tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundIdle), 0f);
             tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundWalk), run * 0.45f);
             tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundRun), run);
+            var houndMeasured = LocomotionGroundSpeed.Load(HoundControllerName);
+            if (houndMeasured != null && houndMeasured.walk > 0.01f && houndMeasured.run > 0.01f)
+            {
+                // Pe no chao: escala = velocidade do jogo / velocidade de solo medida (patas), entre 0,6 e 2,2.
+                var houndChildren = tree.children;
+                houndChildren[1].timeScale = Mathf.Clamp(run * 0.45f / houndMeasured.walk, 0.6f, 2.2f);
+                houndChildren[2].timeScale = Mathf.Clamp(run / houndMeasured.run, 0.6f, 2.2f);
+                tree.children = houndChildren;
+            }
             var loco = sm.AddState("Locomotion");
             loco.motion = tree;
             sm.defaultState = loco;
@@ -728,6 +825,7 @@ namespace Echoes.EditorTools
             flee.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundFlee);
             var death = sm.AddState("Death");
             death.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundDeath);
+            AddCreepStun(c, sm, loco, EchoesAnimationImport.Clip(EchoesAnimationImport.HoundHit));
 
             var toFlee = loco.AddTransition(flee);
             toFlee.AddCondition(AnimatorConditionMode.If, 0f, "IsFleeing");
@@ -798,6 +896,8 @@ namespace Echoes.EditorTools
                 anchor = "Head",
             });
             set.dodgeState = "Dodge";
+            ApplySkillFeel(set);
+            set.hitKickMeters = 0.12f;
             EditorUtility.SetDirty(set);
             return set;
         }
@@ -817,6 +917,8 @@ namespace Echoes.EditorTools
                 anchor = "Hips",
             });
             set.dodgeState = "Dodge";
+            ApplySkillFeel(set);
+            set.hitKickMeters = 0.1f;
             EditorUtility.SetDirty(set);
             return set;
         }

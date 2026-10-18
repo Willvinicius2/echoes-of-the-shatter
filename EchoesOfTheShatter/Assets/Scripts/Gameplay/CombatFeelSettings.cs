@@ -17,6 +17,12 @@ namespace Echoes.Gameplay
         [SerializeField, Min(0f)] float hitstopBossHeavyMs = 80f;
         [SerializeField, Min(0f)] float hitstopPlayerHitMs = 40f;
 
+        [Header("Inimigos (rev5): rampa do agente e virada do corpo")]
+        [SerializeField, Min(0f)] float enemyAccelSeconds = 0.15f;
+        [SerializeField, Min(0f)] float enemyDecelSeconds = 0.12f;
+        [SerializeField, Min(1f)] float enemyTurnDegreesPerSecond = 540f;
+        [SerializeField, Min(1f)] float enemyAttackTurnDegreesPerSecond = 900f;
+
         [Header("Hitstop leve (golpe que não é pesado mas merece um tranco)")]
         [SerializeField, Min(0f)] float hitstopLightMs = 35f;
         [SerializeField] string[] lightHitstopSkills =
@@ -68,6 +74,10 @@ namespace Echoes.Gameplay
                 AimTurnDegreesPerSecond = aimTurnDegreesPerSecond,
             };
             values.HitstopLightSeconds = hitstopLightMs / 1000.0;
+            values.EnemyAccelSeconds = enemyAccelSeconds;
+            values.EnemyDecelSeconds = enemyDecelSeconds;
+            values.EnemyTurnDegreesPerSecond = enemyTurnDegreesPerSecond;
+            values.EnemyAttackTurnDegreesPerSecond = enemyAttackTurnDegreesPerSecond;
             if (lightHitstopSkills != null)
             {
                 for (var i = 0; i < lightHitstopSkills.Length; i++)

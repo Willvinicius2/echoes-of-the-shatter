@@ -20,7 +20,7 @@ namespace Echoes.UI
     /// (docs/18: combo, forte carregado, defesa, defesa perfeita, esquiva retomando o combo; leque, tiro carregado e Chuva; dardos, orbe, Bola de Fogo e Nova)
     /// e junta os quadros num MP4 com o ffmpeg (<c>-videoname NOME</c>). Sem <c>-scenario</c> grava a locomoção (corrida em círculo e zigue-zague).
     /// </summary>
-    public sealed class RecordMode : MonoBehaviour, IScriptedInput
+    public sealed partial class RecordMode : MonoBehaviour, IScriptedInput
     {
         /// <summary>m/s do herói só para o vídeo da corrida; o AnimatorControllerBuilder lê a mesma variável para o limiar da corrida da árvore.</summary>
         public const string DevSpeedVariable = "ECHOES_DEV_HERO_SPEED";
@@ -93,6 +93,7 @@ namespace Echoes.UI
             input.Script = this;
             ApplyCameraDistance();
             if (closeup != null) yield return RunCloseup(hero);
+            else if (string.Equals(scenario, "enemy", StringComparison.OrdinalIgnoreCase) || string.Equals(scenario, "mixed", StringComparison.OrdinalIgnoreCase)) yield return RunEnemyScenario(hero, scenario.ToLowerInvariant());
             else if (!string.IsNullOrEmpty(scenario) && !string.Equals(scenario, "run", StringComparison.OrdinalIgnoreCase)) yield return RunScenario(hero, scenario.ToLowerInvariant());
             else yield return RunRecord(hero);
             Application.Quit();
@@ -596,11 +597,12 @@ namespace Echoes.UI
 
         static EnemyController NearestEnemy(Vector3 from)
         {
+            if (scenarioTarget != null) return scenarioTarget;
             EnemyController best = null;
             var bestDistance = float.MaxValue;
             foreach (var enemy in FindObjectsByType<EnemyController>(FindObjectsSortMode.None))
             {
-                if (enemy.Combatant == null || enemy.Combatant.IsBoss) continue;
+                if (enemy.Combatant == null || enemy.Combatant.IsBoss || (!TestSettings.EnemyGodMode && enemy.Combatant.IsDead)) continue;
                 var d = (enemy.transform.position - from).sqrMagnitude;
                 if (d < bestDistance)
                 {

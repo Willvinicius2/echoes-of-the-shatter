@@ -158,9 +158,13 @@ namespace Echoes.Tests.EditMode
                 var tree = loco.motion as BlendTree;
                 Assert.IsNotNull(tree, spec.Name + ": Locomotion e um blend pela velocidade");
                 Assert.AreEqual("Speed", tree.blendParameter);
-                Assert.AreEqual(3, tree.children.Length, "Idle, Walk e Run");
-                Assert.Less(tree.children[0].threshold, tree.children[1].threshold);
-                Assert.Less(tree.children[1].threshold, tree.children[2].threshold);
+                // Heroi: Idle, Walk e Run. Inimigo humanoide (rev5): Idle e Walk quando o passo cabe na velocidade dele (Arauto, Guardiao), ou Idle, Walk e Run (Sentinela).
+                if (spec.Hero) Assert.AreEqual(3, tree.children.Length, "Idle, Walk e Run");
+                else CollectionAssert.Contains(new[] { 2, 3 }, tree.children.Length, "inimigo: Idle e Walk, ou Idle, Walk e Run");
+                for (var i = 1; i < tree.children.Length; i++) Assert.Less(tree.children[i - 1].threshold, tree.children[i].threshold);
+                if (!spec.Hero)
+                    foreach (var child in tree.children.Skip(1))
+                        Assert.That(child.timeScale, Is.InRange(0.75f, AnimatorControllerBuilder.EnemyWalkMaxScale + 1e-3f), spec.Name + ": escala do pe medida, dentro dos limites");
 
                 foreach (var action in c.layers[1].stateMachine.states.Select(s => s.state).Where(s => s.name != "Empty"))
                 {
@@ -279,7 +283,7 @@ namespace Echoes.Tests.EditMode
             Assert.IsNotNull(c);
             var parameters = c.parameters.Select(p => p.name).ToList();
             foreach (var name in new[] { "Speed", "ActionSpeed", "IsDead" }) CollectionAssert.Contains(parameters, name);
-            CollectionAssert.AreEquivalent(new[] { "Locomotion", "Death" }, c.layers[0].stateMachine.states.Select(s => s.state.name));
+            CollectionAssert.AreEquivalent(new[] { "Locomotion", "Death", "Stun" }, c.layers[0].stateMachine.states.Select(s => s.state.name));
             CollectionAssert.AreEquivalent(new[] { "Empty", "Shoot" }, c.layers[1].stateMachine.states.Select(s => s.state.name));
             CollectionAssert.AreEquivalent(new[] { "Empty", "Hit" }, c.layers[2].stateMachine.states.Select(s => s.state.name));
             var tree = (BlendTree)c.layers[0].stateMachine.states.First(s => s.state.name == "Locomotion").state.motion;

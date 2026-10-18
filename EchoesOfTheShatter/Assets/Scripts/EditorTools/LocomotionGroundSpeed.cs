@@ -107,10 +107,85 @@ namespace Echoes.EditorTools
                     Object.DestroyImmediate(instance);
                 }
             }
+            MeasureHound(table);
             var full = Path.GetFullPath(Path.Combine(Application.dataPath, "../" + JsonPath));
             Directory.CreateDirectory(Path.GetDirectoryName(full));
             File.WriteAllText(full, JsonUtility.ToJson(table, true));
             AssetDatabase.ImportAsset(JsonPath);
+        }
+
+        /// <summary>Cão de Cinza (Generic, 4 patas): velocidade de solo da pata de apoio (a mais baixa) nos laços de Walk e Run.</summary>
+        static void MeasureHound(Table table)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_Enemy_AshHound.prefab");
+            if (prefab == null) { Debug.LogWarning("[GroundSpeed] P_Enemy_AshHound ausente"); return; }
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            try
+            {
+                var paws = new List<Transform>();
+                foreach (var t in instance.GetComponentsInChildren<Transform>()) if (t.name.EndsWith("Paw")) paws.Add(t);
+                if (paws.Count < 4) { Debug.LogWarning("[GroundSpeed] Cao: patas nao encontradas (" + paws.Count + ")"); return; }
+                var animator = instance.GetComponentInChildren<Animator>();
+                var entry = new Entry
+                {
+                    controller = AnimatorControllerBuilder.HoundControllerName,
+                    walk = MeasureFeet(instance, animator, EchoesAnimationImport.Clip(EchoesAnimationImport.HoundWalk), paws),
+                    run = MeasureFeet(instance, animator, EchoesAnimationImport.Clip(EchoesAnimationImport.HoundRun), paws),
+                };
+                Debug.Log($"[GroundSpeed] {entry.controller}: walk {entry.walk:F3} m/s, run {entry.run:F3} m/s");
+                table.entries.Add(entry);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        // Patas em apoio = as que estao a menos de ContactHeight da mais baixa nos dois passos seguidos; a velocidade e a media, para tras, dessas patas.
+        const float ContactHeight = 0.03f;
+
+        static float MeasureFeet(GameObject root, Animator animator, AnimationClip clip, List<Transform> feet)
+        {
+            if (clip == null || animator == null) return 0f;
+            var forward = root.transform.forward;
+            const int steps = 120;
+            var dt = clip.length / steps;
+            var sum = 0f;
+            var count = 0;
+            var prevPos = new float[feet.Count];
+            var prevContact = new bool[feet.Count];
+            void Sample(float[] positions, bool[] contact)
+            {
+                var lowest = float.MaxValue;
+                foreach (var foot in feet) lowest = Mathf.Min(lowest, foot.position.y);
+                for (var i = 0; i < feet.Count; i++)
+                {
+                    positions[i] = Vector3.Dot(feet[i].position, forward);
+                    contact[i] = feet[i].position.y < lowest + ContactHeight;
+                }
+            }
+            clip.SampleAnimation(animator.gameObject, 0f);
+            Sample(prevPos, prevContact);
+            var pos = new float[feet.Count];
+            var contactNow = new bool[feet.Count];
+            for (var step = 1; step <= steps; step++)
+            {
+                clip.SampleAnimation(animator.gameObject, step * dt);
+                Sample(pos, contactNow);
+                for (var i = 0; i < feet.Count; i++)
+                {
+                    if (!(prevContact[i] && contactNow[i])) continue;
+                    var v = -(pos[i] - prevPos[i]) / dt;
+                    if (v > 0f)
+                    {
+                        sum += v;
+                        count++;
+                    }
+                }
+                System.Array.Copy(pos, prevPos, pos.Length);
+                System.Array.Copy(contactNow, prevContact, contactNow.Length);
+            }
+            return count > 0 ? sum / count : 0f;
         }
 
         /// <summary>Velocidade média do pé de apoio (para trás, em m/s) ao longo do laço do clipe.</summary>

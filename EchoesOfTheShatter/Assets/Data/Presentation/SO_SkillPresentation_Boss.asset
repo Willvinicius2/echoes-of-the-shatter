@@ -29,9 +29,14 @@ MonoBehaviour:
   preRollHoldFraction: 0.6
   recoveryMinSpeed: 1
   recoveryMaxSpeed: 1.2
+  windupHoldSpeed: 0.1
   impactCarrySeconds: 0.07
   clipEndBlendSeconds: 0.12
   actionExitBlendSeconds: 0.1
+  hitFlinchWeight: 0.35
+  hitKickMeters: 0.03
+  hitKickSeconds: 0.18
+  deathDissolveDelaySeconds: 0.8
   roarState: Roar
   roarClipSeconds: 2
   fallbackClipSeconds: 1
@@ -44,8 +49,8 @@ MonoBehaviour:
     windupEnd: 0.3838384
     impactEnd: 0.5252525
     holdAt: 0
-    lungeMeters: 0
-    shakeMeters: 0
+    lungeMeters: 0.3
+    shakeMeters: 0.05
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -63,8 +68,8 @@ MonoBehaviour:
     windupEnd: 0.25396827
     impactEnd: 0.41269842
     holdAt: 0
-    lungeMeters: 0
-    shakeMeters: 0
+    lungeMeters: 0.25
+    shakeMeters: 0.03
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -83,7 +88,7 @@ MonoBehaviour:
     impactEnd: 1
     holdAt: 0
     lungeMeters: 0
-    shakeMeters: 0
+    shakeMeters: 0.04
     windupState: ChargeWindup
     windupClipSeconds: 0.9
     windupFrom: 0

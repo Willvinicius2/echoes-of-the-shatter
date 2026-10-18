@@ -49,7 +49,7 @@ namespace Echoes.Tests.EditMode
             Assert.IsNotNull(c);
             var parameters = c.parameters.Select(p => p.name).ToList();
             foreach (var name in new[] { "Speed", "ActionSpeed", "IsDead", "IsFleeing" }) CollectionAssert.Contains(parameters, name);
-            CollectionAssert.AreEquivalent(new[] { "Locomotion", "Flee", "Death" }, c.layers[0].stateMachine.states.Select(s => s.state.name));
+            CollectionAssert.AreEquivalent(new[] { "Locomotion", "Flee", "Death", "Stun" }, c.layers[0].stateMachine.states.Select(s => s.state.name));
             CollectionAssert.AreEquivalent(new[] { "Empty", "Bite" }, c.layers[1].stateMachine.states.Select(s => s.state.name));
             CollectionAssert.AreEquivalent(new[] { "Empty", "Hit" }, c.layers[2].stateMachine.states.Select(s => s.state.name));
             var tree = (BlendTree)c.layers[0].stateMachine.states.First(s => s.state.name == "Locomotion").state.motion;

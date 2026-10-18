@@ -42,12 +42,23 @@ namespace Echoes.Presentation
         [Tooltip("Velocidade do acompanhamento (cauda do clipe) na recuperação: entre o mínimo e o máximo; natural = 1.")]
         [Range(0.5f, 1.5f)] public float recoveryMinSpeed = 1f;
         [Range(1f, 4f)] public float recoveryMaxSpeed = 1.2f;
+        [Tooltip("Preparação longa (telégrafo do inimigo): o trecho autoral da preparação toca em velocidade natural e a pose armada segura com esta velocidade (pequena, viva) até o impacto do core.")]
+        [Range(0f, 0.5f)] public float windupHoldSpeed = 0.1f;
         [Tooltip("O movimento do impacto continua por tanto tempo dentro da recuperação (o quadro de impacto do core não muda): o impacto do leve fica legível em 4 a 5 quadros. 0 = o swing termina com a fase de impacto.")]
         [Min(0f)] public float impactCarrySeconds = 0.07f;
         [Tooltip("O clipe acabou antes de a recuperação do core: mistura para a pose de combate ou para a locomoção em tanto tempo, em vez de congelar no último quadro.")]
         [Min(0.02f)] public float clipEndBlendSeconds = 0.12f;
         [Tooltip("A lógica liberou antes de o clipe acabar: sai para o próximo golpe ou para o movimento em tanto tempo.")]
         [Min(0.02f)] public float actionExitBlendSeconds = 0.1f;
+
+        [Header("Reação a golpe e morte (inimigos)")]
+        [Tooltip("Peso da camada Hit (flinch de tronco). Chefe: pequeno.")]
+        [Range(0f, 1f)] public float hitFlinchWeight = 1f;
+        [Tooltip("Empurrão visual do corpo (filho visual) na direção do golpe recebido, em metros, que some em hitKickSeconds. Soma-se ao empurrão real do core.")]
+        [Min(0f)] public float hitKickMeters = 0.1f;
+        [Min(0.02f)] public float hitKickSeconds = 0.18f;
+        [Tooltip("Morte: segundos de queda antes de o dissolve começar (a queda tem peso, o dissolve não corta a pose).")]
+        [Min(0f)] public float deathDissolveDelaySeconds = 0.8f;
 
         [Header("Chefe: rugido de fase (BossStateEvent.PhaseStart)")]
         public string roarState = "Roar";

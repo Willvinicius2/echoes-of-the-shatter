@@ -17,6 +17,10 @@ MonoBehaviour:
   hitstopBossHeavyMs: 80
   hitstopPlayerHitMs: 40
   hitstopLightMs: 35
+  enemyAccelSeconds: 0.15
+  enemyDecelSeconds: 0.12
+  enemyTurnDegreesPerSecond: 540
+  enemyAttackTurnDegreesPerSecond: 900
   lightHitstopSkills:
   - skill.mage.fireball
   knockbackCommonCm: 20
@@ -25,6 +29,7 @@ MonoBehaviour:
   knockbackDurationMs: 100
   heavySkills:
   - skill.warrior.heavy_slash
+  - skill.enemy.guardian_shield_charge
   - skill.warrior.combo_3
   - skill.warrior.charge
   - skill.warrior.stone_rift

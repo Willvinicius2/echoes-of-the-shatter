@@ -82,6 +82,10 @@ namespace Echoes.Presentation
         float actionPos;
         SkillPresentationEntry trackedEntry;
         FollowCamera followCamera;
+        float windupHoldTimer = -1f;          // preparacao longa: depois deste tempo, a pose armada segura devagar
+        float dissolveDelayLeft;
+        Vector3 hitKick;                      // empurrao visual do golpe recebido (mundo), decai sozinho
+        UnityEngine.AI.NavMeshAgent enemyAgent;
         bool lungeApplied;
         SkillPresentationEntry chargeEntry; // golpe forte em carga (a pose congelada avanca devagar com a carga do core)
         float chargeHoldAt;                 // ponto normalizado atual da pose de carga; o golpe solta daqui
@@ -106,6 +110,7 @@ namespace Echoes.Presentation
             attributes = GetComponent<AttributeComponent>();
             enemyController = GetComponent<EnemyController>();
             heroController = GetComponent<HeroController>();
+            enemyAgent = GetComponent<UnityEngine.AI.NavMeshAgent>();
             if (animator == null) animator = GetComponentInChildren<Animator>();
             if (renderers == null || renderers.Length == 0) renderers = GetComponentsInChildren<Renderer>();
             attachedParticles = GetComponentsInChildren<ParticleSystem>();
@@ -117,7 +122,7 @@ namespace Echoes.Presentation
         {
             if (root == null) root = FindAnyObjectByType<GameRoot>();
             if (vfxPool == null) vfxPool = FindAnyObjectByType<VfxPool>();
-            if (HasAnimator && heroController != null && animator.transform != transform)
+            if (HasAnimator && animator.transform != transform)
             {
                 modelRoot = animator.transform;
                 modelBaseLocal = modelRoot.localPosition;
@@ -129,6 +134,7 @@ namespace Echoes.Presentation
                     actionLayerIndex = animator.GetLayerIndex(skillSet.actionLayer);
                     hitLayerIndex = animator.GetLayerIndex(skillSet.hitLayer);
                     if (!string.IsNullOrEmpty(skillSet.upperLayer)) upperLayerIndex = animator.GetLayerIndex(skillSet.upperLayer);
+                    if (hitLayerIndex >= 0 && enemyController != null) animator.SetLayerWeight(hitLayerIndex, skillSet.hitFlinchWeight);
                 }
                 // Só escreve parâmetros que existem (o Animator avisa no Console a cada chamada sem parâmetro).
                 var parameters = animator.parameters;
@@ -199,6 +205,13 @@ namespace Echoes.Presentation
                 // Herói: velocidade da lógica (estável, sem o ruído do deslocamento por quadro). Inimigo: deslocamento medido.
                 float speed;
                 if (heroController != null && heroController.Logic != null) speed = heroController.Logic.CurrentVelocity().Magnitude;
+                else if (enemyController != null && enemyAgent != null && enemyAgent.enabled && enemyAgent.isOnNavMesh)
+                {
+                    // O agente tem a rampa de aceleracao (valores de feel): o pe acompanha a velocidade dele e o knockback nao vira corrida.
+                    var velocity = enemyAgent.velocity;
+                    velocity.y = 0f;
+                    speed = velocity.magnitude;
+                }
                 else
                 {
                     var moved = (transform.position - lastPosition) / Mathf.Max(dt, 1e-5f);
@@ -212,6 +225,15 @@ namespace Echoes.Presentation
                 }
                 var stepDt = frozen ? 0f : dt;
                 if (trackAction) actionPos += actionSpeed * stepDt;
+                if (windupHoldTimer > 0f)
+                {
+                    windupHoldTimer -= stepDt;
+                    if (windupHoldTimer <= 0f)
+                    {
+                        windupHoldTimer = -1f;
+                        actionSpeed = skillSet != null ? skillSet.windupHoldSpeed : 0.1f; // pose armada segura, viva, ate o impacto
+                    }
+                }
                 if (preRoll != null) TickPreRoll(stepDt);
                 if (clipEndTimer > 0f)
                 {
@@ -248,7 +270,8 @@ namespace Echoes.Presentation
             if (flashTimeLeft > 0f) flashTimeLeft -= dt;
             SetFlash(flashTimeLeft > 0f ? hitFlashIntensity : 0f);
 
-            if (dissolveProgress >= 0f && dissolveProgress < 1f)
+            if (dissolveDelayLeft > 0f) dissolveDelayLeft -= dt;
+            else if (dissolveProgress >= 0f && dissolveProgress < 1f)
             {
                 dissolveProgress = Mathf.Min(1f, dissolveProgress + dt / dissolveSeconds);
                 for (var i = 0; i < dissolveMaterials.Count; i++) dissolveMaterials[i].SetFloat(DissolveId, dissolveProgress);
@@ -289,6 +312,12 @@ namespace Echoes.Presentation
             if (!evt.Result.Landed || evt.Result.TotalDamage <= 0.0) return;
             flashTimeLeft = hitFlashSeconds;
             if (!HasAnimator || skillSet == null) return;
+            if (enemyController != null && modelRoot != null && evt.Attacker != null && skillSet.hitKickMeters > 0f)
+            {
+                // Empurrao visual coerente com o do core: na direcao do golpe (do atacante para o alvo), mais forte se a habilidade tem knockback proprio.
+                var away = (Self.Position - evt.Attacker.Position).NormalizedOr(Self.Forward * -1f);
+                hitKick = new Vector3(away.X, 0f, away.Z) * skillSet.hitKickMeters * (evt.Skill != null && evt.Skill.KnockbackUu > 0.0 ? 1.6f : 1f);
+            }
             // Defendendo: o golpe absorvido mexe só o tronco e os braços (camada Upper), as pernas seguem andando; sem reação própria, o corpo todo.
             var guarding = heroController != null && heroController.Logic != null && heroController.Logic.IsGuarding;
             if (guarding && upperLayerIndex >= 0 && !string.IsNullOrEmpty(skillSet.guardHitState) && animator.HasState(upperLayerIndex, Animator.StringToHash(skillSet.guardHitState)))
@@ -341,6 +370,7 @@ namespace Echoes.Presentation
             {
                 actionSpeed = 1f;
                 clipEndTimer = -1f;
+                windupHoldTimer = -1f;
                 trackAction = false;
                 LungeTo(0f, 0.08f);
                 if (!actionClipEnded && HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f, ExitBlendSeconds);
@@ -429,7 +459,14 @@ namespace Echoes.Presentation
                     start = entry != null && entry.holdAt > 0f && entry.holdAt < windupEnd ? entry.holdAt : 0f;
                     if (start > 0f && ReferenceEquals(entry, chargeEntry) && chargeHoldAt > start && chargeHoldAt < windupEnd) start = chargeHoldAt; // continua da pose em que a carga parou
                     authored = (windupEnd - start) * clip;
-                    if (evt.PhaseSeconds > 1e-4 && authored > (float)evt.PhaseSeconds * skillSet.maxWindupSpeed)
+                    windupHoldTimer = -1f;
+                    if (evt.PhaseSeconds > 1e-4 && authored < (float)evt.PhaseSeconds * 0.999f)
+                    {
+                        // Telegrafo longo: o trecho autoral toca em velocidade natural e a pose armada segura (windupHoldSpeed) ate o impacto do core.
+                        windupHoldTimer = authored;
+                        authored = (float)evt.PhaseSeconds; // so para a velocidade sair 1,0 abaixo
+                    }
+                    else if (evt.PhaseSeconds > 1e-4 && authored > (float)evt.PhaseSeconds * skillSet.maxWindupSpeed)
                     {
                         // Preparacao legivel: no maximo maxWindupSpeed; o que nao couber fica para tras (comeca mais adiante no clipe).
                         authored = (float)evt.PhaseSeconds * skillSet.maxWindupSpeed;
@@ -502,7 +539,7 @@ namespace Echoes.Presentation
 
         void StartLunge(SkillPresentationEntry entry, float impactSeconds)
         {
-            if (entry == null || heroController == null) return;
+            if (entry == null) return;
             if (entry.shakeMeters > 0f)
             {
                 if (followCamera == null) followCamera = FindAnyObjectByType<FollowCamera>();
@@ -523,7 +560,8 @@ namespace Echoes.Presentation
         void ApplyLunge(float dt)
         {
             if (modelRoot == null) return;
-            if (lunge == 0f && lungeTarget == 0f)
+            if (hitKick.sqrMagnitude > 1e-8f) hitKick = Vector3.MoveTowards(hitKick, Vector3.zero, hitKick.magnitude / Mathf.Max(0.02f, skillSet != null ? skillSet.hitKickSeconds : 0.18f) * dt);
+            if (lunge == 0f && lungeTarget == 0f && hitKick.sqrMagnitude < 1e-8f)
             {
                 if (lungeApplied)
                 {
@@ -534,7 +572,8 @@ namespace Echoes.Presentation
             }
             lunge = Mathf.MoveTowards(lunge, lungeTarget, lungeRate * dt);
             var forward = modelRoot.parent != null ? modelRoot.parent.InverseTransformDirection(transform.forward) : transform.forward;
-            modelRoot.localPosition = modelBaseLocal + forward.normalized * lunge;
+            var kick = modelRoot.parent != null ? modelRoot.parent.InverseTransformDirection(hitKick) : hitKick;
+            modelRoot.localPosition = modelBaseLocal + forward.normalized * lunge + kick;
             lungeApplied = true;
         }
 
@@ -646,6 +685,11 @@ namespace Echoes.Presentation
             actionSpeed = 1f;
             if (HasAnimator && hasIsDead) animator.SetBool(IsDeadParam, true);
             dissolveProgress = dissolveMaterials.Count > 0 ? 0f : -1f;
+            dissolveDelayLeft = enemyController != null && skillSet != null ? skillSet.deathDissolveDelaySeconds : 0f;
+            trackAction = false;
+            clipEndTimer = -1f;
+            windupHoldTimer = -1f;
+            LungeTo(0f, 0.1f);
         }
 
         void OnRevived(in CombatantRevivedEvent evt)

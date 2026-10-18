@@ -85,6 +85,57 @@ namespace Echoes.EditorTools
             }
         }
 
+        /// <summary>
+        /// Diagnóstico dos golpes dos inimigos (batchmode): a mão da arma (frente, altura, lado, velocidade) a cada 2 quadros de 30 fps dos clipes de ataque
+        /// do Sentinela, do Arauto e do Guardião, mais o windupEnd e o impactEnd medidos. <c>-executeMethod Echoes.EditorTools.DevPipeline.DiagnoseEnemy</c>.
+        /// </summary>
+        public static void DiagnoseEnemy()
+        {
+            try
+            {
+                var medium = KayKitAnimationImport.Root + "/Medium/Rig_Medium_CombatMelee.fbx";
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_Enemy_HollowSentinel.prefab");
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                try
+                {
+                    foreach (var name in new[] { "Melee_1H_Attack_Chop", "Melee_2H_Attack_Chop", "Melee_Unarmed_Attack_Punch_A", "Melee_Unarmed_Attack_Kick" })
+                    {
+                        var clip = KayKitAnimationImport.FindClip(medium, name);
+                        if (clip == null)
+                        {
+                            Debug.Log("[Diag] clipe ausente: " + name);
+                            continue;
+                        }
+                        ClipTiming.Analyze(instance, clip, out var windupEnd, out var impactEnd);
+                        var hand = CharacterPrefabBuilder.FindDeep(instance.transform, "RightHand");
+                        var sb = new System.Text.StringBuilder();
+                        sb.AppendLine($"[Diag] {name}: {clip.length:F3} s, windupEnd {windupEnd:F3} ({windupEnd * clip.length:F2} s), impactEnd {impactEnd:F3} ({impactEnd * clip.length:F2} s)");
+                        var previous = Vector3.zero;
+                        const float fps = 30f;
+                        for (var i = 0; i <= Mathf.CeilToInt(clip.length * fps); i += 2)
+                        {
+                            var t = Mathf.Min(clip.length, i / fps);
+                            clip.SampleAnimation(instance, t);
+                            var local = instance.transform.InverseTransformPoint(hand.position);
+                            sb.AppendLine($"[Diag] {t:F3} {t / clip.length:F3} frente {local.z:F3} altura {local.y:F3} lado {local.x:F3} vel {(i > 0 ? (hand.position - previous).magnitude * fps / 2f : 0f):F2}");
+                            previous = hand.position;
+                        }
+                        Debug.Log(sb.ToString());
+                    }
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(instance);
+                }
+                EditorApplication.Exit(0);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[DevPipeline] DiagnoseEnemy falhou: " + e);
+                EditorApplication.Exit(1);
+            }
+        }
+
         static readonly HumanBodyBones[] PoseBones =
         {
             HumanBodyBones.RightHand, HumanBodyBones.LeftHand, HumanBodyBones.RightLowerArm, HumanBodyBones.LeftLowerArm,
