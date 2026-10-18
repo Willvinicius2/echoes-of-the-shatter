@@ -27,3 +27,18 @@ Sob a Cinza, o Caçador (forasteiro que a Cinza não prende) devolve o mundo reg
 - Aprovar a troca de narrativa (Aural/Vespéria → Generais) e o destino de Bram e Odete (hoje só nomes sem função).
 - Criar tabela de quests e de Ecos (esquema em `docs/tecnico/06_dados.md`) antes de ligar isso ao jogo.
 - Chaves de Fome, Mancha e finais ficam para depois.
+
+## Complemento (18/10): NPCs do Refúgio e Região 2
+Narrativa aprovada pelo dono em 18/10 (Generais e veredito no lugar da seção 3 do plano).
+
+### Bram, o Ferreiro e Irmã Odete, a Leitora
+- **Bram**: perdeu a memória do ofício, mas as mãos lembram. Reforja as armas quebradas dos Ecos (ideia do pitch); reage à Fome (`dlg.bram.*`).
+- **Odete**: ex-aprendiz de Vespéria no plano antigo; agora lê os Ecos e avisa sobre o veredito, sem dizer toda a verdade (`dlg.odete.*`). Vespéria sai da narrativa.
+- Funções de jogo (forja, Livros, árvore) seguem as decisões de `15_etapas.md`; nada ligado ao cliente ainda.
+
+### Região 2: Planícies Cinzentas (A Arqueira)
+- **Rastrear**: campo aberto, Anomalias comuns, Ecos de flechas partidas.
+- **Cercar**: torres e elites de longo alcance, sem cobertura.
+- **Duelo**: à distância, forçando fechar espaço; falas `dlg.archer.*`.
+- **Reconstrução**: Exorcizar vira vila com plantações; Devorar vira posto avançado.
+- Cada General luta com o estilo do herói que foi (Ecos mostram os golpes antes).
