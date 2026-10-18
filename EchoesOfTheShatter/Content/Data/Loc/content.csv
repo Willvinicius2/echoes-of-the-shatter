@@ -152,3 +152,10 @@ effect.charging.heavy.name,Carregando,Charging,,effect; max=24,
 effect.charging.archer.name,Mirando,Aiming,,effect; max=24,
 effect.chill.name,Enregelado,Chilled,,effect; max=24,m
 item_base.hunter_bow.name,Arco de Caçador,Hunter's Bow,,item base; max=28,m
+affix.scorching.name,Abrasador,Scorching,,affix prefix; forma m singular,m
+affix.scorching.name_f,Abrasadora,Scorching,,affix prefix; forma f singular,f
+affix.scorching.name_mp,Abrasadores,Scorching,,affix prefix; forma m plural,m
+affix.scorching.name_fp,Abrasadoras,Scorching,,affix prefix; forma f plural,f
+affix.of_ruin.name,de Ruína,of Ruin,,affix suffix; invariável,
+consumable.refill_flask.name,Frasco de Recarga,Refill Flask,,consumível; max=20; provisório,m
+consumable.refill_flask.desc,Restaura 1 carga de poção. Não funciona na arena do Guardião,Restores 1 potion charge. Does not work in the Guardian arena,,consumível; max=70; provisório,

@@ -1,6 +1,6 @@
 # 06 — Dados: esquemas, tabelas CSV e save
 
-Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (87 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds`, as 2 da rodada 2, as 18 de inventário e as 7 do combate básico de docs/18), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
+Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (102 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds`, as 2 da rodada 2, as 18 de inventário e as 7 do combate básico de docs/18 e as 15 da economia de docs/16 seção 11), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
 
 ## 1. Fontes e escopo
 
@@ -423,7 +423,7 @@ enemy.hollow_sentinel,skill.enemy.sentinel_strike,1,true
 | `weight` | número (ponto decimal) | não | > 0 | 1 | Peso de sorteio (> 0) |
 | `allowedSlots` | lista (`\|`) de enum: `main_hand`, `off_hand`, `head`, `body`, `hands`, `legs`, `feet`, `amulet`, `ring`, `ring2`, `belt` | não | — | — | Posições permitidas (vazio = todas) |
 | `group` | texto (regex `^[a-z0-9_]+$`) | não | — | — | Grupo exclusivo |
-| `craftInscription` | bool (`true`/`false`) | não | — | false | Disponível em Fixar Inscrição |
+| `craftInscription` | bool (`true`/`false`) | não | — | false | Pode ser sorteado como candidato de Adicionar afixo no Encantador (docs/16 11.4). Hoje `true` nos 10 afixos do protótipo |
 
 Regras de conteúdo:
 
@@ -802,6 +802,65 @@ Esquema em `schemas/save_v2.schema.json`, ao lado de `save_v1`. Não é usado pe
 - O loot no chão **não é salvo** (vale até sair da Cripta, docs/16 4.2). A Mochila não entra no snapshot da expedição.
 - `item_bases.csv.slot` precisa estar liberado em `rules.csv` (`equip_slot_<slot>`); o validador acusa `E_SLOT_LOCKED` se uma base ficar numa posição bloqueada.
 
+## 5c. Economia do protótipo: Vendedor e Encantador (docs/16 seção 11)
+
+Todos os números são [HIPÓTESE]. Nada disso exige `save_version` novo (ver "Save" abaixo).
+
+### `rules.csv`: 15 chaves novas (todas obrigatórias)
+
+| Chave | Tipo | Faixa | Padrão | Descrição |
+|---|---|---|---|---|
+| `vendor_buyback_slots` | int | 1 a 100 | 10 | Vagas da lista de recompra |
+| `vendor_buyback_price_factor` | number | 1 a 10 | 1.25 | Recompra custa este fator sobre o valor pago |
+| `refill_flask_carry_cap` | int | 1 a 99 | 3 | Teto de Frascos de Recarga levados |
+| `refill_flask_charges` | int | 1 a 10 | 1 | Cargas de poção que cada Frasco restaura |
+| `craft_cost_level_factor` | number | 0 a 10 | 0.1 | Custo cresce por nível de item acima de 1 |
+| `reforge_step_mult` | number | 0 a 10 | 0.5 | Cada Reforjar da mesma peça soma esta fração do custo-base |
+| `reforge_mult_cap` | number | 1 a 100 | 3.0 | Teto do multiplicador de custo do Reforjar |
+| `reforge_lock_cost_mult` | number | 1 a 100 | 2.0 | Multiplicador das Lascas ao travar um afixo |
+| `reforge_lock_max` | int | 0 a 1 | 1 | Afixos travados por Reforjar (0 = sem trava) |
+| `add_affix_candidates` | int | 1 a 8 | 3 | Candidatos de Adicionar afixo |
+| `polish_step_fraction` | number | > 0, ≤ 1 | 0.25 | Fração da faixa por passo de Lapidar |
+| `polish_max_steps` | int | 1 a 10 | 3 | Passos de Lapidar por afixo |
+| `dismantle_shards_normal` | int | 0 a 1000000 | 2 | Lascas ao desmontar Comum |
+| `dismantle_shards_magic` | int | 0 a 1000000 | 5 | Lascas ao desmontar Mágico |
+| `dismantle_shards_rare` | int | 0 a 1000000 | 12 | Lascas ao desmontar Raro |
+
+Avisos do validador (`W_RULES`): `polish_step_fraction x polish_max_steps > 1`; Lascas de Desmontar não crescentes com a raridade; `reforge_step_mult = 0` com `reforge_mult_cap > 1`.
+
+### `craft_costs.csv` (tabela OPCIONAL)
+
+- Chave primária: `id` (prefixo `craft.`). Cabeçalho exato: `id,op,rarity,step,goldCost,shardCost`.
+- `op`: `refine`, `reforge`, `add`, `polish` (Desmontar não tem custo). `rarity`: `normal`, `magic`, `rare`, `any`. `step`, `goldCost`, `shardCost`: inteiros ≥ 0.
+- Regras (`craft_cost_rules`, código `E_CRAFT`): par (`op`, `rarity`, `step`) único; `refine` só `normal`; `reforge` e `add` só `magic`/`rare`; `polish` aceita qualquer raridade; só `polish` usa `step` ≥ 1 e as outras usam 0; toda operação tem ao menos uma linha; `polish` tem linha para cada passo 1 a `polish_max_steps`. Aviso `W_CRAFT`: `dismantle_shards_normal` ≥ Lascas de Refinar (ciclo infinito).
+- Conteúdo: 8 linhas (`craft.refine.normal`, `craft.reforge.magic`, `craft.reforge.rare`, `craft.add.magic`, `craft.add.rare`, `craft.polish.1/2/3`), valores em docs/16 11.8.
+
+### `vendor_stock.csv` (tabela OPCIONAL)
+
+- Chave primária: `id` (prefixo `vendor.`). Cabeçalho exato: `id,refId,kind,priceGold,carryCap`.
+- `kind`: `stack`. `refId`: `consumable.*` ou `material.*` (a existência não é validada: não há tabela de consumíveis). `priceGold` ≥ 0; `carryCap` ≥ 1.
+- Regras (`vendor_stock_rules`, código `E_VENDOR`): `refId` único; se `refId = consumable.refill_flask`, `carryCap` deve ser igual a `refill_flask_carry_cap`.
+- Conteúdo: 1 linha, `vendor.refill_flask,consumable.refill_flask,stack,50,3`.
+
+As duas tabelas também existem em `ShatterCore/tests/data/rich/` (cópia das mesmas linhas). Os fixtures raiz e `invalid/*` não as têm (opcionais), mas ganharam as 15 chaves de `rules.csv`.
+
+### Save (campos OPCIONAIS, sem `save_version` novo)
+
+Todos em snake_case, gravados só quando há valor; save sem eles mantém os mesmos bytes e o mesmo hash. Esquema: `save_v2.schema.json` (a v1 não muda).
+
+| Onde | Campo | Tipo | Quando aparece |
+|---|---|---|---|
+| `ItemInstance` (personagens, equipamento, `backpack`, `stash`) | `craft_steps` | inteiro ≥ 0 (uint) | só se > 0 |
+| `ItemInstance` | `craft_reforges` | inteiro ≥ 0 (uint) | só se > 0 |
+| `RolledAffix` | `polish` | inteiro, 0 a `polish_max_steps` | só se > 0 |
+| `SaveData` | `craft_seed` | uint64 em texto decimal | só se != 0 |
+| `SaveData` | `vendor_buyback` | lista de `{item: ItemInstance, paid: int ≥ 0}`, até `vendor_buyback_slots` | só se não vazia |
+
+Pilhas ficam em `currencies`: `currency.gold`, `material.shards`, `consumable.refill_flask`. O validador de save não restringe o prefixo do `id` em `currencies` (aceita `consumable.`). Checagens semânticas (`E_SAVE`): `polish` ≤ `polish_max_steps`; `vendor_buyback` ≤ `vendor_buyback_slots`; `paid` ≥ 0 e `craft_*` ≥ 0 (esquema); os itens da recompra e da Mochila passam pela checagem comum de item (limite de afixos por raridade, referências).
+
+### Loc
+Chaves novas: nomes dos afixos `affix.scorching` e `affix.of_ruin` (`content.csv`), `consumable.refill_flask.name/.desc` (`content.csv`), `npc.vendor.name`, `npc.enchanter.name` (`dialogue.csv`) e `ui.vendor.*`, `ui.enchant.*` (`ui.csv`, incluindo `.err.*`). Placeholders por nome (`{amount}`, `{rarity}`, `{n}`, `{total}`), como no resto de `ui.csv`. Textos provisórios.
+
 ## 5b. Espaço `legs`, `visualSetId` e save v2 (C-10, decisão do dono 16/10/2026)
 
 - `@slots` (`schemas/_enums.json`) ganhou `legs` no fim da lista. `item_bases.slot` e `affixes.allowedSlots` aceitam `legs`.
@@ -882,6 +941,8 @@ Envelope (raiz): `format`, `save_version`, `sha256`, `data`, exatamente nessa or
 | `unique_id` | ID ou vazio | sim | — | Vazio, salvo se `rarity = unique`. |
 | `affixes` | lista de objeto `RolledAffix` | sim | — | Limite por raridade: normal 0, mágico 2, raro 4, único 0. |
 | `has_inscription` | bool | sim | — |  |
+| `craft_steps` | inteiro (uint) | não (v2) | ≥ 0 | Só aparece se > 0 (seção 5c) |
+| `craft_reforges` | inteiro (uint) | não (v2) | ≥ 0 | Só aparece se > 0 (seção 5c) |
 
 #### `RolledAffix`
 
@@ -889,6 +950,7 @@ Envelope (raiz): `format`, `save_version`, `sha256`, `data`, exatamente nessa or
 |---|---|---|---|---|
 | `affix_id` | ID (texto) | sim | — |  |
 | `value` | número | sim | — |  |
+| `polish` | inteiro | não (v2) | 0 a `polish_max_steps` | Só aparece se > 0 (seção 5c) |
 
 #### `StackEntry`
 
