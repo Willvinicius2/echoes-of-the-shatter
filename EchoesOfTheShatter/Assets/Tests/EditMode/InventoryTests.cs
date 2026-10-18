@@ -85,9 +85,10 @@ namespace Echoes.Tests.EditMode
             Assert.AreEqual(40, info.BackpackCapacity, "inventory_capacity do rules.csv");
             Assert.AreEqual(100, info.StashCapacity, "stash_capacity do rules.csv");
             Assert.AreEqual(0, info.BackpackUsed);
-            foreach (var enabled in new[] { "main_hand", "head", "body", "hands", "feet", "legs" })
+            // off_hand liberada: decisão do docs/19 (Q19-3 A), o Guerreiro tem escudo na mão secundária.
+            foreach (var enabled in new[] { "main_hand", "off_hand", "head", "body", "hands", "feet", "legs" })
                 Assert.IsTrue(SaveGame.SlotEnabled(rules, ItemSlots.IndexOf(enabled)), enabled);
-            foreach (var locked in new[] { "off_hand", "amulet", "ring", "ring2", "belt" })
+            foreach (var locked in new[] { "amulet", "ring", "ring2", "belt" })
                 Assert.IsFalse(SaveGame.SlotEnabled(rules, ItemSlots.IndexOf(locked)), locked + " bloqueada");
             var equipment = save.Equipment(0);
             Assert.AreEqual("item_base.iron_sword", equipment[0].BaseId);
