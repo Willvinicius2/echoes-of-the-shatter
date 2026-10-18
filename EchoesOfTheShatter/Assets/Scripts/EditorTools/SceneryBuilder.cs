@@ -79,19 +79,187 @@ namespace Echoes.EditorTools
         }
 
         /// <summary>Simbolo de bussola no chao (decalque dourado, 2,6 m). So onde marca algo de jogo (checkpoint, portal); no maximo 2 por sala.</summary>
-        public static GameObject Glyph(Transform parent, Vector2 pos, float yaw, string name, float height = 0.012f)
+        public static GameObject Glyph(Transform parent, Vector2 pos, float yaw, string name, float height = 0.012f, float size = 2.6f)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.transform.SetPositionAndRotation(new Vector3(pos.x, height, pos.y), Quaternion.Euler(90f, yaw, 0f));
             var mf = go.AddComponent<MeshFilter>();
             mf.sharedMesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
-            go.transform.localScale = new Vector3(2.6f, 2.6f, 1f);
+            go.transform.localScale = new Vector3(size, size, 1f);
             var mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterial = EnvironmentKit.EnsureGlyphMaterial();
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows = false;
             return go;
+        }
+
+        // ------------------------------------------------------------------------------------------------ circulo de pedra e portao
+
+        static void AddQuad(List<Vector3> v, List<Vector3> n, List<Vector2> uv, List<int> t, Vector3 c, Vector3 u, Vector3 w)
+        {
+            var i = v.Count;
+            v.Add(c - u - w); v.Add(c - u + w); v.Add(c + u + w); v.Add(c + u - w);
+            for (var k = 0; k < 4; k++) { n.Add(Vector3.up); uv.Add(Vector2.zero); }
+            var cross = Vector3.Cross(v[i + 1] - v[i], v[i + 2] - v[i]);
+            if (cross.y >= 0f) t.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
+            else t.AddRange(new[] { i, i + 2, i + 1, i, i + 3, i + 2 });
+        }
+
+        /// <summary>
+        /// Circulo de pedra no chao (checkpoint, portal de saida): anel chanfrado de pedra (projecao no mundo, igual a parede) com runas na face de
+        /// cima que acendem (material de emissao com pulso; o bloom faz o brilho). So visual: sem colisor, sem gatilho.
+        /// </summary>
+        public static GameObject StoneCircle(Transform parent, Vector3 center, float outerRadius, float ringWidth, string name, bool portal, int runes = 8)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = center;
+            var inner = outerRadius - ringWidth;
+            const int segments = 56;
+            const float top = 0.1f;
+            const float bevel = 0.06f;
+            var profile = new[] { new Vector2(inner, 0f), new Vector2(inner + bevel, top), new Vector2(outerRadius - bevel, top), new Vector2(outerRadius, 0f) };
+            Vector2 EdgeNormal(int a) { var d = profile[a + 1] - profile[a]; return new Vector2(-d.y, d.x).normalized; }
+            // Normal de cada ponta do perfil: media das arestas vizinhas (o chanfro fica arredondado).
+            var pn = new[] { EdgeNormal(0), (EdgeNormal(0) + EdgeNormal(1)).normalized, (EdgeNormal(1) + EdgeNormal(2)).normalized, EdgeNormal(2) };
+            var v = new List<Vector3>(); var n = new List<Vector3>(); var uv = new List<Vector2>(); var t = new List<int>();
+            for (var s = 0; s <= segments; s++)
+            {
+                var a = s * Mathf.PI * 2f / segments;
+                var dir = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                for (var k = 0; k < 4; k++)
+                {
+                    v.Add(dir * profile[k].x + Vector3.up * profile[k].y);
+                    n.Add((dir * pn[k].x + Vector3.up * pn[k].y).normalized);
+                    uv.Add(Vector2.zero);
+                }
+            }
+            for (var s = 0; s < segments; s++)
+            {
+                for (var k = 0; k < 3; k++)
+                {
+                    var a0 = s * 4 + k;
+                    var a1 = (s + 1) * 4 + k;
+                    // Enrola de modo que a face aponte para a normal do perfil (cima / fora).
+                    var cross = Vector3.Cross(v[a0 + 1] - v[a0], v[a1] - v[a0]);
+                    if (Vector3.Dot(cross, n[a0] + n[a0 + 1]) >= 0f) t.AddRange(new[] { a0, a0 + 1, a1, a1, a0 + 1, a1 + 1 });
+                    else t.AddRange(new[] { a0, a1, a0 + 1, a1, a1 + 1, a0 + 1 });
+                }
+            }
+            var ringMesh = new Mesh { name = "Ring_" + name };
+            ringMesh.SetVertices(v); ringMesh.SetNormals(n); ringMesh.SetUVs(0, uv); ringMesh.SetTriangles(t, 0);
+            ringMesh.RecalculateBounds();
+
+            // Runas: marcas na face de cima (losango, par de barras, chevron), todas pequenas.
+            v = new List<Vector3>(); n = new List<Vector3>(); uv = new List<Vector2>(); t = new List<int>();
+            var mid = (inner + outerRadius) * 0.5f;
+            var y = top + 0.004f;
+            for (var k = 0; k < runes; k++)
+            {
+                var a = (k + 0.5f) * Mathf.PI * 2f / runes;
+                var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+                var tangent = new Vector3(-radial.z, 0f, radial.x);
+                var c = radial * mid + Vector3.up * y;
+                switch (k % 3)
+                {
+                    case 0: // losango
+                        AddQuad(v, n, uv, t, c, (radial + tangent) * 0.13f, (radial - tangent) * 0.13f);
+                        break;
+                    case 1: // par de barras
+                        AddQuad(v, n, uv, t, c + tangent * 0.12f, radial * 0.22f, tangent * 0.032f);
+                        AddQuad(v, n, uv, t, c - tangent * 0.12f, radial * 0.22f, tangent * 0.032f);
+                        break;
+                    default: // chevron
+                        AddQuad(v, n, uv, t, c + (radial * 0.09f - tangent * 0.1f), (radial + tangent) * 0.12f, (radial - tangent) * 0.032f);
+                        AddQuad(v, n, uv, t, c + (radial * 0.09f + tangent * 0.1f), (radial - tangent) * 0.12f, (radial + tangent) * 0.032f);
+                        break;
+                }
+            }
+            var runeMesh = new Mesh { name = "Runes_" + name };
+            runeMesh.SetVertices(v); runeMesh.SetNormals(n); runeMesh.SetUVs(0, uv); runeMesh.SetTriangles(t, 0);
+            runeMesh.RecalculateBounds();
+
+            SandboxBuilder.EnsureDir(EnvironmentKit.GeneratedDir + "/Props");
+            ringMesh = SandboxBuilder.SaveMesh(ringMesh, $"{EnvironmentKit.GeneratedDir}/Props/Ring_{Sanitize(name)}.asset");
+            runeMesh = SandboxBuilder.SaveMesh(runeMesh, $"{EnvironmentKit.GeneratedDir}/Props/Runes_{Sanitize(name)}.asset");
+
+            var ring = new GameObject("Ring");
+            ring.transform.SetParent(go.transform, false);
+            ring.AddComponent<MeshFilter>().sharedMesh = ringMesh;
+            var rr = ring.AddComponent<MeshRenderer>();
+            rr.sharedMaterial = EnvironmentKit.EnsureStoneMaterial();
+            rr.shadowCastingMode = ShadowCastingMode.Off;
+            var rune = new GameObject("Runes");
+            rune.transform.SetParent(go.transform, false);
+            rune.AddComponent<MeshFilter>().sharedMesh = runeMesh;
+            var mr = rune.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = EnvironmentKit.EnsureRuneMaterial(portal);
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            return go;
+        }
+
+        /// <summary>
+        /// Portao de pedra com grade (arena do Guardiao, atalho): dois pilares e um arco do kit e, entre eles, a grade de ferro (barras e travessas numa
+        /// malha so). O arco e os pilares ficam sempre; so a grade (devolvida em <paramref name="grille"/>) some quando o GateBarrier abre. O colisor e o
+        /// NavMeshObstacle continuam os do CriptaBuilder.
+        /// </summary>
+        public static void StoneGate(Transform gate, float width, float wallHeight, out Renderer grille)
+        {
+            var pillar = EnvironmentKit.Get("PilarInteiro");
+            var arch = EnvironmentKit.Get("ArcoRuina");
+            var px = width * 0.5f - 0.45f;
+            var pillarScale = new Vector3(1f, (wallHeight + 0.7f) / Mathf.Max(0.01f, pillar.Size.y), 1f);
+            foreach (var sx in new[] { -1f, 1f })
+                EnvironmentKit.Place("PilarInteiro", gate, gate.position + new Vector3(sx * px, 0f, 0f), 0f, pillarScale, colliders: false, instanceName: "Pillar");
+            var clear = (px - pillar.Size.x * 0.5f) * 2f;
+            EnvironmentKit.Place("ArcoRuina", gate, gate.position, 0f, new Vector3(clear / Mathf.Max(0.01f, arch.Size.x), 1f, 1f), colliders: false, instanceName: "Arch");
+
+            var v = new List<Vector3>(); var n = new List<Vector3>(); var uv = new List<Vector2>(); var t = new List<int>();
+            void Box(Vector3 c, Vector3 h)
+            {
+                // Seis faces com normais proprias (a grade e fina: aresta viva de ferro).
+                var axes = new[] { Vector3.right, Vector3.up, Vector3.forward };
+                for (var a = 0; a < 3; a++)
+                {
+                    var b = (a + 1) % 3;
+                    var d = (a + 2) % 3;
+                    foreach (var sign in new[] { -1f, 1f })
+                    {
+                        var nrm = axes[a] * sign;
+                        var i = v.Count;
+                        var center = c + Vector3.Scale(nrm, h);
+                        var ub = axes[b] * Mathf.Abs(Vector3.Dot(h, axes[b]));
+                        var ud = axes[d] * Mathf.Abs(Vector3.Dot(h, axes[d]));
+                        v.Add(center - ub - ud); v.Add(center - ub + ud); v.Add(center + ub + ud); v.Add(center + ub - ud);
+                        for (var k = 0; k < 4; k++) { n.Add(nrm); uv.Add(Vector2.zero); }
+                        var cross = Vector3.Cross(v[i + 1] - v[i], v[i + 2] - v[i]);
+                        if (Vector3.Dot(cross, nrm) >= 0f) t.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
+                        else t.AddRange(new[] { i, i + 2, i + 1, i, i + 3, i + 2 });
+                    }
+                }
+            }
+            var half = clear * 0.5f - 0.08f;
+            var bars = Mathf.Max(3, Mathf.RoundToInt(half * 2f / 0.3f));
+            var top = wallHeight - 0.45f;
+            for (var k = 0; k <= bars; k++)
+            {
+                var x = Mathf.Lerp(-half, half, k / (float)bars);
+                Box(new Vector3(x, top * 0.5f, 0f), new Vector3(0.045f, top * 0.5f, 0.045f));
+            }
+            foreach (var ry in new[] { 0.35f, top * 0.5f, top - 0.1f }) Box(new Vector3(0f, ry, 0f), new Vector3(half + 0.05f, 0.05f, 0.05f));
+            var mesh = new Mesh { name = "Grille_" + gate.name, indexFormat = IndexFormat.UInt32 };
+            mesh.SetVertices(v); mesh.SetNormals(n); mesh.SetUVs(0, uv); mesh.SetTriangles(t, 0);
+            mesh.RecalculateBounds();
+            SandboxBuilder.EnsureDir(EnvironmentKit.GeneratedDir + "/Props");
+            mesh = SandboxBuilder.SaveMesh(mesh, $"{EnvironmentKit.GeneratedDir}/Props/Grille_{Sanitize(gate.name)}.asset");
+            var go = new GameObject("Grid");
+            go.transform.SetParent(gate, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            grille = go.AddComponent<MeshRenderer>();
+            grille.sharedMaterial = EnvironmentKit.EnsureGrateMaterial();
+            grille.shadowCastingMode = ShadowCastingMode.Off;
         }
 
         static bool Inside(IList<Rect> holes, Vector3 p)
@@ -220,14 +388,14 @@ namespace Echoes.EditorTools
             // O ACES + a cena escura da paleta (albedo ~0,07 linear) comem ~2 EV: a exposicao de +1,4 EV devolve o piso ao tom do alvo
             // (sombra ~#4E4257 a #5A5078) e as poças quentes ficam por cima. O balanco de branco tira o magenta que a luz quente sobre o ambiente
             // violeta cria no piso (tinta -22, temperatura -5), e o split toning das sombras e mais claro que o do spec (#5A4C8C escureceria a cena).
-            adjust.postExposure.Override(1.4f);
-            adjust.contrast.Override(12f);
-            adjust.saturation.Override(-4f);
+            adjust.postExposure.Override(1.6f);
+            adjust.contrast.Override(16f);
+            adjust.saturation.Override(-2f);
             var balance = Add<WhiteBalance>();
-            balance.temperature.Override(-5f);
-            balance.tint.Override(-22f);
+            balance.temperature.Override(10f); // rev2: mais quente, menos roxo
+            balance.tint.Override(-24f);
             var split = Add<SplitToning>();
-            split.shadows.Override(Hex("#7A74A0"));
+            split.shadows.Override(Hex("#9A92A8"));
             split.highlights.Override(Hex("#FFC88A"));
             split.balance.Override(-20f);
             var bloom = Add<Bloom>();

@@ -172,8 +172,29 @@ namespace Echoes.Tests.EditMode
             foreach (var room in l.Rooms)
                 Assert.LessOrEqual(glyphs.Count(g => room.Rect.Contains(new Vector2(g.transform.position.x, g.transform.position.z))), 2, room.Id + ": no maximo 2 simbolos");
 
+            // Checkpoint, portal e marcador de vitoria: circulo de pedra com runas (so visual, sem colisor); o gatilho continua no objeto de logica.
+            var circles = Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None).Where(t => t.name.EndsWith(".circle")).ToList();
+            Assert.AreEqual(l.Checkpoints.Count + l.Portals.Count + l.Markers.Count, circles.Count, "um circulo de pedra por ponto de jogo");
+            foreach (var c in circles)
+            {
+                Assert.IsNull(c.GetComponentInChildren<Collider>(true), c.name + ": circulo sem colisor");
+                Assert.IsNotNull(c.Find("Runes"), c.name + ": runas");
+            }
+
+            // Portao da arena: pilares e arco do kit, grade de ferro que e o unico visual do GateBarrier; o colisor e o mesmo de antes.
+            var gate = GameObject.Find("gate.crypt.arena");
+            Assert.IsNotNull(gate);
+            Assert.IsNotNull(gate.transform.Find("Grid"), "grade");
+            Assert.IsNotNull(gate.transform.Find("Arch"), "arco");
+            Assert.AreEqual(2, gate.transform.Cast<Transform>().Count(t => t.name == "Pillar"), "dois pilares");
+            Assert.IsNotNull(gate.GetComponent<BoxCollider>(), "colisor do portao");
+            StringAssert.EndsWith("Env_Scenery", gate.transform.Find("Grid").GetComponent<Renderer>().sharedMaterial.shader.name);
+
             var arena = l.Room("room.crypt.r09_arena");
             Assert.IsNotNull(GameObject.Find("Props").transform.Cast<Transform>().FirstOrDefault(t => t.name.StartsWith(arena.Id) && t.name.EndsWith("brazier")), "braseiros na arena");
+            var arenaPillars = l.Pillars.Count(p => arena.Rect.Contains(p.Pos));
+            Assert.Greater(arenaPillars, 0);
+            Assert.GreaterOrEqual(GameObject.Find("Props").transform.Cast<Transform>().Count(t => t.name.StartsWith("pil.") && t.name.EndsWith(".brazier")), arenaPillars, "um braseiro por pilar da arena (poca quente)");
             var secret = GameObject.Find(l.Secrets[0].Id);
             Assert.IsNotNull(secret.GetComponent<SecretWall>());
             Assert.IsNotNull(secret.GetComponent<BoxCollider>());

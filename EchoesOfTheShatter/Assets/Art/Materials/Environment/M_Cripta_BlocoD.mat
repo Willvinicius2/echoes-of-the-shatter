@@ -65,6 +65,7 @@ Material:
     - _DstBlend: 0
     - _EdgeWidth: 0.05
     - _EmissionIntensity: 0.6
+    - _FloorContrast: 1.2
     - _FloorTile: 8
     - _FresnelBlend: 0.5
     - _FresnelStrength: 2.5
@@ -76,6 +77,7 @@ Material:
     - _RimIntensity: 0.5
     - _RimMaskInfluence: 1
     - _RimTintMix: 0
+    - _RuneIntensity: 2.5
     - _ShadeSoftness: 0.6
     - _SrcBlend: 1
     - _TintDesat: 0
@@ -96,6 +98,7 @@ Material:
     - _HitColor: {r: 0.6, g: 0.34999996, b: 0.38999996, a: 1}
     - _RimColor: {r: 1, g: 0.82, b: 0.62, a: 1}
     - _RimTint: {r: 1, g: 1, b: 1, a: 1}
+    - _RuneColor: {r: 1, g: 0.7, b: 0.3, a: 1}
     - _ShadowTint: {r: 0.41999996, g: 0.35999998, b: 0.5, a: 1}
     - _Tint: {r: 1.4, g: 1.4, b: 1.4, a: 1}
     - _TintColor: {r: 1, g: 1, b: 1, a: 1}

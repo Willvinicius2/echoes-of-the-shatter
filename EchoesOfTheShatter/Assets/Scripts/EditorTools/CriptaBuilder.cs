@@ -315,7 +315,7 @@ namespace Echoes.EditorTools
 
             foreach (var cp in layout.Checkpoints)
             {
-                var go = Marker(root, cp.Id, cp.Pos, ctx.Mats.Checkpoint, 1.2f);
+                var go = StoneMarker(root, cp.Id, cp.Pos, 1.75f, 0.45f, false);
                 var zone = go.AddComponent<CheckpointZone>();
                 SandboxBuilder.SetRef(zone, "hero", ctx.Hero);
                 SandboxBuilder.SetString(zone, "checkpointId", cp.Id);
@@ -326,7 +326,7 @@ namespace Echoes.EditorTools
             var victory = new List<GameObject>();
             foreach (var portal in layout.Portals)
             {
-                var go = Marker(root, portal.Id, portal.Pos, ctx.Mats.Boss, 2.4f);
+                var go = StoneMarker(root, portal.Id, portal.Pos, 2.5f, 0.55f, true);
                 var frame = EnvironmentKit.Place("PortalAberto", go.transform, go.transform.position, 0f, instanceName: "PortalFrame");
                 SceneryBuilder.AddFire(frame, false, 2.2f, new Color(0.62f, 0.5f, 1f), 1.6f, 7f);
                 var zone = go.AddComponent<PortalZone>();
@@ -339,7 +339,7 @@ namespace Echoes.EditorTools
             }
             foreach (var marker in layout.Markers)
             {
-                var go = Marker(root, marker.Id, marker.Pos, ctx.Mats.Checkpoint, 1.6f);
+                var go = StoneMarker(root, marker.Id, marker.Pos, 1.5f, 0.4f, false);
                 if (marker.Active != "always") victory.Add(go);
             }
             foreach (var chest in layout.Chests) BuildChest(ctx, root, chest);
@@ -399,18 +399,16 @@ namespace Echoes.EditorTools
             return arena;
         }
 
-        static GameObject Marker(Transform parent, string id, Vector2 pos, Material mat, float diameter)
+        /// <summary>
+        /// Ponto de jogo no chao (checkpoint, portal, marcador de vitoria): o GameObject da logica fica como sempre (o gatilho e do componente que o
+        /// chamador poe nele) e o visual e um circulo de pedra com runas que acendem (<see cref="SceneryBuilder.StoneCircle"/>), sem colisor.
+        /// </summary>
+        static GameObject StoneMarker(Transform parent, string id, Vector2 pos, float outerRadius, float ringWidth, bool portal)
         {
             var go = new GameObject(id);
             go.transform.SetParent(parent, false);
             go.transform.position = new Vector3(pos.x, 0f, pos.y);
-            var disc = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            disc.name = "Disc";
-            Object.DestroyImmediate(disc.GetComponent<Collider>());
-            disc.transform.SetParent(go.transform, false);
-            disc.transform.localScale = new Vector3(diameter, 0.02f, diameter);
-            disc.transform.localPosition = new Vector3(0f, 0.03f, 0f);
-            SandboxBuilder.Apply(disc, mat);
+            SceneryBuilder.StoneCircle(go.transform, go.transform.position, outerRadius, ringWidth, id + ".circle", portal);
             return go;
         }
 
@@ -447,13 +445,7 @@ namespace Echoes.EditorTools
             var go = new GameObject(gate.Id);
             go.transform.SetParent(parent, false);
             go.transform.position = new Vector3(gate.Pos.x, 0f, gate.Pos.y);
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visual.name = "Grid";
-            Object.DestroyImmediate(visual.GetComponent<Collider>());
-            visual.transform.SetParent(go.transform, false);
-            visual.transform.localScale = new Vector3(gate.Width, SandboxBuilder.WallHeight, 0.5f);
-            visual.transform.localPosition = new Vector3(0f, SandboxBuilder.WallHeight / 2f, 0f);
-            SandboxBuilder.Apply(visual, ctx.Mats.Wall);
+            SceneryBuilder.StoneGate(go.transform, gate.Width, SandboxBuilder.WallHeight, out var grille); // arco e pilares do kit ficam; so a grade some ao abrir
             var collider = go.AddComponent<BoxCollider>();
             collider.center = new Vector3(0f, SandboxBuilder.WallHeight / 2f, 0f);
             collider.size = new Vector3(gate.Width, SandboxBuilder.WallHeight, 0.5f);
@@ -464,11 +456,11 @@ namespace Echoes.EditorTools
             obstacle.carving = true;
             var barrier = go.AddComponent<GateBarrier>();
             SandboxBuilder.SetRef(barrier, "blocker", collider);
-            SetObjectArray(barrier, "visuals", new List<Renderer> { visual.GetComponent<Renderer>() });
+            SetObjectArray(barrier, "visuals", new List<Renderer> { grille });
             SandboxBuilder.SetRef(barrier, "obstacle", obstacle);
             SandboxBuilder.SetBool(barrier, "startClosed", closedAtStart);
             collider.enabled = closedAtStart;
-            visual.GetComponent<Renderer>().enabled = closedAtStart;
+            grille.enabled = closedAtStart;
             obstacle.enabled = closedAtStart;
             return barrier;
         }

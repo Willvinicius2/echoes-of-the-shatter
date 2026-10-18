@@ -100,7 +100,7 @@ namespace Echoes.EditorTools
                 perArea.TryGetValue(area, out var n);
                 if (n >= 2) return;
                 perArea[area] = n + 1;
-                SceneryBuilder.Glyph(decor, pos, 0f, id + ".glyph");
+                SceneryBuilder.Glyph(decor, pos, 0f, id + ".glyph", 0.012f, 2.0f); // dentro do circulo de pedra
             }
             foreach (var cp in layout.Checkpoints) Mark(cp.Id, cp.Pos);
             foreach (var portal in layout.Portals) Mark(portal.Id, portal.Pos);
@@ -389,6 +389,21 @@ namespace Echoes.EditorTools
             {
                 var go = EnvironmentKit.Place("Braseiro", props, new Vector3(cp.Pos.x + 1.8f, 0f, cp.Pos.y), 0f, instanceName: cp.Id + ".brazier");
                 SceneryBuilder.AddBrazierFire(go);
+            }
+
+            // Arena: um braseiro encostado em cada pilar, do lado do centro. O FirePool acende os 6 mais proximos do heroi, entao as pocas quentes
+            // acompanham o jogador pela arena sem passar do limite de luzes.
+            foreach (var room in layout.Rooms)
+            {
+                if (room.Role != "boss") continue;
+                foreach (var pillar in layout.Pillars)
+                {
+                    if (!room.Rect.Contains(pillar.Pos)) continue;
+                    var toCenter = (room.Rect.center - pillar.Pos).normalized;
+                    var pos = pillar.Pos + toCenter * (pillar.Radius + 0.9f);
+                    var go = EnvironmentKit.Place("Braseiro", props, new Vector3(pos.x, 0f, pos.y), Mathf.Atan2(toCenter.x, toCenter.y) * Mathf.Rad2Deg, instanceName: pillar.Id + ".brazier");
+                    SceneryBuilder.AddBrazierFire(go);
+                }
             }
 
             // Estandartes e braseiros no corredor do chefe e na porta: ja cobertos por PlaceBraziers (antecamara e arena).

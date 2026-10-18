@@ -30,7 +30,7 @@ namespace Echoes.EditorTools
         /// <summary>Pecas com chanfro e normais suaves (saida do env_bevel_kit.py), versionadas no repositorio; vencem a peca de origem.</summary>
         public static string BeveledDir => Path.GetFullPath(Path.Combine(Application.dataPath, "../../art-src/modelos/cenario_chanfro"));
 
-        public enum Look { Kit, Floor, Wall, Band, Decal }
+        public enum Look { Kit, Floor, Wall, Band, Decal, Rune }
 
         /// <summary>Como cada peca recebe o albedo: faixa (parede reta), alvenaria (projecao no mundo) ou o albedo pintado da peca (kit).</summary>
         public static Look LookOf(string name)
@@ -213,17 +213,18 @@ namespace Echoes.EditorTools
 
         static void SetLook(Material mat, Look look)
         {
-            foreach (var k in new[] { "_ENV_FLOOR", "_ENV_WALL", "_ENV_BAND", "_ENV_DECAL" }) mat.DisableKeyword(k);
+            foreach (var k in new[] { "_ENV_FLOOR", "_ENV_WALL", "_ENV_BAND", "_ENV_DECAL", "_ENV_RUNE" }) mat.DisableKeyword(k);
             switch (look)
             {
                 case Look.Floor: mat.EnableKeyword("_ENV_FLOOR"); break;
                 case Look.Wall: mat.EnableKeyword("_ENV_WALL"); break;
                 case Look.Band: mat.EnableKeyword("_ENV_BAND"); break;
                 case Look.Decal: mat.EnableKeyword("_ENV_DECAL"); break;
+                case Look.Rune: mat.EnableKeyword("_ENV_RUNE"); break;
             }
-            mat.SetFloat("_PoolStrength", 1.5f);
+            mat.SetFloat("_PoolStrength", look == Look.Kit ? 1.0f : 1.5f); // pecas pintadas (pilares ao lado do braseiro) estouravam com 1,5
             // As faces verticais pegam pouco do sol de cima-esquerda: parede, faixa e pecas pintadas sobem na tinta para ler como pedra clara do alvo.
-            var gain = look == Look.Wall || look == Look.Band ? 1.4f : look == Look.Floor || look == Look.Decal ? 1f : 1.3f;
+            var gain = look == Look.Wall || look == Look.Band ? 1.4f : look == Look.Floor || look == Look.Decal || look == Look.Rune ? 1f : 1.0f;
             mat.SetColor("_Tint", new Color(gain, gain, gain, 1f));
             mat.SetTexture("_MapA", Tex("T_Env_PisoA"));
             mat.SetTexture("_MapB", Tex("T_Env_PisoB"));
@@ -243,6 +244,40 @@ namespace Echoes.EditorTools
             EnsureTextures();
             var mat = LoadOrCreate(MaterialDir + "/M_Env_Piso.mat");
             SetLook(mat, Look.Floor);
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>M_Env_Pedra: pedra clara em projecao no mundo (circulos de checkpoint e de portal, como a parede).</summary>
+        public static Material EnsureStoneMaterial()
+        {
+            EnsureTextures();
+            var mat = LoadOrCreate(MaterialDir + "/M_Env_Pedra.mat");
+            SetLook(mat, Look.Wall);
+            mat.SetColor("_Tint", new Color(0.95f, 0.93f, 1f, 1f)); // pedra do circulo: cinza claro, sem estourar
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>M_Env_Runa / M_Env_RunaPortal: runas que acendem (emissao pura com pulso). Ambar no checkpoint, violeta no portal.</summary>
+        public static Material EnsureRuneMaterial(bool portal)
+        {
+            EnsureTextures();
+            var mat = LoadOrCreate(MaterialDir + (portal ? "/M_Env_RunaPortal.mat" : "/M_Env_Runa.mat"));
+            SetLook(mat, Look.Rune);
+            mat.SetColor("_RuneColor", portal ? new Color(0.62f, 0.5f, 1f, 1f) : new Color(1f, 0.72f, 0.3f, 1f));
+            mat.SetFloat("_RuneIntensity", portal ? 2.8f : 2.4f);
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>M_Env_Grade: ferro escuro da grade do portao da arena (modo kit, sem textura: so a tinta).</summary>
+        public static Material EnsureGrateMaterial()
+        {
+            EnsureTextures();
+            var mat = LoadOrCreate(MaterialDir + "/M_Env_Grade.mat");
+            SetLook(mat, Look.Kit);
+            mat.SetColor("_Tint", new Color(0.34f, 0.32f, 0.4f, 1f));
             EditorUtility.SetDirty(mat);
             return mat;
         }

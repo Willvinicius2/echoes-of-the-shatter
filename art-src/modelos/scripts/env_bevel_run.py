@@ -15,7 +15,10 @@ WIDTH = {
     "ParedeReta": 0.06, "ParedeCantoA": 0.06, "ParedeRuina": 0.05, "ArcoRuina": 0.04, "RuinaGrande": 0.05, "AbismoBordo": 0.04,
     "PilarInteiro": 0.04, "PilarQuebrado": 0.05, "BlocoA": 0.04, "BlocoB": 0.04, "BlocoC": 0.04, "BlocoD": 0.04,
     "SarcofagoAberto": 0.04, "SarcofagoFechado": 0.04, "Escada": 0.04, "PortalAberto": 0.04, "PortalPorta": 0.04,
+    "PedraE": 0.04, "PedraF": 0.04, "Ossos": 0.02,
 }
+# Ruinas e pedras soltas: todas as faces suaves (media ponderada por area e angulo), para nao parecerem facetadas.
+SMOOTH_ALL = {"ParedeRuina", "ArcoRuina", "RuinaGrande", "PilarQuebrado", "PedraE", "PedraF", "Ossos"}
 
 def run(name):
     src = f"{SRC}/SM_Cripta_{name}.fbx"
@@ -25,7 +28,7 @@ def run(name):
     wait_free_virtual(3.0)
     t = time.time()
     r = subprocess.run([BLENDER, "-b", "--factory-startup", "--python-exit-code", "1", "-P", os.path.join(HERE, "env_bevel_kit.py"), "--",
-                        src, dst, "--width", str(WIDTH[name]), "--segments", "3", "--angle", "35"], env=env, capture_output=True, text=True)
+                        src, dst, "--width", str(WIDTH[name]), "--segments", "3", "--angle", "35"] + (["--smooth-all"] if name in SMOOTH_ALL else []), env=env, capture_output=True, text=True)
     out = (r.stdout + r.stderr).splitlines()
     print(f"[{name}] {round(time.time() - t)} s cod {r.returncode} | " + " | ".join(l for l in out if "bevel" in l or "gravado" in l or "rror" in l or "Traceback" in l), flush=True)
     return r.returncode == 0

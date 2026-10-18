@@ -63,13 +63,7 @@ namespace Echoes.EditorTools
             // Portal para a Cripta (PortalZone avisa, AreaTravel troca a cena; heroi ocupado numa expedicao fica retido com dlg.ilsa.busy).
             var portal = new GameObject("portal.refuge.crypt");
             portal.transform.position = PortalPosition;
-            var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            ring.name = "Ring";
-            UnityEngine.Object.DestroyImmediate(ring.GetComponent<Collider>());
-            ring.transform.SetParent(portal.transform, false);
-            ring.transform.localScale = new Vector3(3.6f, 0.04f, 3.6f);
-            ring.transform.localPosition = new Vector3(0f, 0.04f, 0f);
-            SandboxBuilder.Apply(ring, mats.Boss);
+            SceneryBuilder.StoneCircle(portal.transform, PortalPosition, 2.5f, 0.55f, "portal.refuge.crypt.circle", true); // mesma linguagem do portal da Cripta
             var gate = EnvironmentKit.Place("PortalAberto", portal.transform, portal.transform.position + new Vector3(1.4f, 0f, 0f), 90f, instanceName: "Gate");
             SceneryBuilder.AddFire(gate, false, 2.2f, new Color(0.62f, 0.5f, 1f), 1.6f, 7f);
             var zone = portal.AddComponent<PortalZone>();

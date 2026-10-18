@@ -7,6 +7,7 @@
 //   _ENV_WALL   alvenaria: projecao pelo eixo dominante da normal no mundo (1 tile = _WallTile m), topo e laterais com a mesma textura.
 //   _ENV_BAND   faixa: nas faces verticais usa a textura da faixa (U no mundo, 1 tile = _BandTile m; V = altura da peca / _BandHeight, topo =
 //               coroamento e base = rodape); nas faces de cima, a alvenaria.
+//   _ENV_RUNE   runa: emissao pura (cor HDR e intensidade), sem iluminacao; o bloom faz o brilho.
 //   _ENV_DECAL  simbolo no chao (alfa): albedo/alfa da _BaseMap por UV, com brilho de emissao; passa por cima do piso (Offset).
 // DESVIO REGISTRADO (igual ao SG_Character): HLSL URP, nao Shader Graph.
 Shader "Echoes/Env_Scenery"
@@ -31,6 +32,9 @@ Shader "Echoes/Env_Scenery"
         _WarpFreq("Piso: frequencia da curvatura", Float) = 0.09
         _EdgeWidth("Piso: largura da emenda entre celulas (fracao da celula)", Range(0.005, 0.2)) = 0.05
         _BShare("Piso: fracao de celulas com a lajota B", Range(0, 1)) = 0.35
+        _FloorContrast("Piso: contraste lajota x rejunte (1 = textura pura)", Range(0.8, 1.8)) = 1.35
+        [HDR] _RuneColor("Runa: cor (emissao)", Color) = (1, 0.7, 0.3, 1)
+        _RuneIntensity("Runa: intensidade", Float) = 2.5
         _Variation("Variacao suave de brilho (0 = nenhuma)", Range(0, 0.3)) = 0.07
 
         [Header(Iluminacao suave)]
@@ -74,6 +78,9 @@ Shader "Echoes/Env_Scenery"
             float _EdgeWidth;
             float _BShare;
             half _Variation;
+            half _FloorContrast;
+            half4 _RuneColor;
+            half _RuneIntensity;
             half _ShadeSoftness;
             half4 _ShadowTint;
             half _AmbientStrength;
@@ -94,7 +101,7 @@ Shader "Echoes/Env_Scenery"
             #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma shader_feature_local _ _ENV_FLOOR _ENV_WALL _ENV_BAND _ENV_DECAL
+            #pragma shader_feature_local _ _ENV_FLOOR _ENV_WALL _ENV_BAND _ENV_DECAL _ENV_RUNE
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
@@ -171,7 +178,8 @@ Shader "Echoes/Env_Scenery"
             {
                 float2 h = Hash22(cell);
                 float2 h2 = Hash22(cell + 17.31);
-                float rot = floor(h.y * 4.0);
+                bool useB = h.x < _BShare;
+                float rot = floor(h.y * 2.0) * 2.0; // so 0 ou 180 graus: a 90 graus as lajotas viravam escama sob a camera a 45 graus (variedade vem do espelho, do deslocamento e de A/B)
                 float flip = h2.x > 0.5 ? -1.0 : 1.0;
                 float2 u = uv, ddx_ = dx, ddy_ = dy;
                 if (rot == 1.0) { u = float2(-u.y, u.x); ddx_ = float2(-ddx_.y, ddx_.x); ddy_ = float2(-ddy_.y, ddy_.x); }
@@ -179,7 +187,7 @@ Shader "Echoes/Env_Scenery"
                 else if (rot == 3.0) { u = float2(u.y, -u.x); ddx_ = float2(ddx_.y, -ddx_.x); ddy_ = float2(ddy_.y, -ddy_.x); }
                 u.x *= flip; ddx_.x *= flip; ddy_.x *= flip;
                 u += h2.yx;
-                [branch] if (h.x < _BShare) return SAMPLE_TEXTURE2D_GRAD(_MapB, sampler_MapB, u, ddx_, ddy_).rgb;
+                [branch] if (useB) return SAMPLE_TEXTURE2D_GRAD(_MapB, sampler_MapB, u, ddx_, ddy_).rgb;
                 return SAMPLE_TEXTURE2D_GRAD(_MapA, sampler_MapA, u, ddx_, ddy_).rgb;
             }
 
@@ -205,7 +213,9 @@ Shader "Echoes/Env_Scenery"
                 half3 other = FloorCell(uv, dx, dy, nb);
                 half3 c = lerp(other, own, 0.5 + 0.5 * smoothstep(0.0, _EdgeWidth, d));
                 float v = FbmNoise(xz * 0.031 + 91.7); // brilho suave em manchas de ~30 m
-                return c * (1.0 + (v - 0.5) * 2.0 * _Variation);
+                c *= 1.0 + (v - 0.5) * 2.0 * _Variation;
+                const half pivot = 0.075h; // media linear das lajotas: acima clareia, abaixo (rejunte) escurece
+                return pivot * pow(max(c, 1e-4) / pivot, _FloorContrast);
             }
 
             half3 SampleWall(float3 positionWS, float3 normalWS)
@@ -231,6 +241,11 @@ Shader "Echoes/Env_Scenery"
             {
                 UNITY_SETUP_INSTANCE_ID(input);
 
+            #if defined(_ENV_RUNE)
+                // Runa: so emissao (acende com bloom), com pulso lento e defasado pelo mundo.
+                float pulse = 0.85 + 0.15 * sin(_Time.y * 2.2 + dot(input.positionWS.xz, float2(0.9, 0.6)));
+                return half4(_RuneColor.rgb * _RuneIntensity * pulse, 1);
+            #endif
                 half3 albedo;
                 half alpha = 1;
                 half emission = 0;
