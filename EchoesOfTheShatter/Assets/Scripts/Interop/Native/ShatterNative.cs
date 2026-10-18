@@ -107,7 +107,7 @@ namespace Echoes.Interop.Native
         // =============================================================================================
         // API C 1.1 (minor 1)
         // =============================================================================================
-        public const uint ExpectedApiMinor = 5u;
+        public const uint ExpectedApiMinor = 6u;
 
         [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
         public static extern uint shatter_api_minor();

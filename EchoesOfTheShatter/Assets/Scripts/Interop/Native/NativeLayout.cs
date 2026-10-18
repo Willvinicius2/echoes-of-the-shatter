@@ -316,6 +316,39 @@ namespace Echoes.Interop.Native
             };
         }
 
+        /// <summary>
+        /// Lista do layout ext6 (API 1.6, economia): [tamanho de shatter_craft_result e offsets de result, changed_affix, gold_spent, shards_spent,
+        /// shards_gained; tamanho de shatter_vendor_result e offsets de result, evicted, evicted_rarity, gold; tamanho de shatter_flask_result e
+        /// offsets de result, potion_index, charges_after, flasks_left] = 16 valores.
+        /// </summary>
+        public static uint[] BuildExt6()
+        {
+            ShatterCraftResult c = default;
+            ShatterVendorResult v = default;
+            ShatterFlaskResult f = default;
+            return new[]
+            {
+                (uint)sizeof(ShatterCraftResult), Off(&c, &c.result), Off(&c, &c.changed_affix), Off(&c, &c.gold_spent), Off(&c, &c.shards_spent), Off(&c, &c.shards_gained),
+                (uint)sizeof(ShatterVendorResult), Off(&v, &v.result), Off(&v, &v.evicted), Off(&v, &v.evicted_rarity), Off(&v, &v.gold),
+                (uint)sizeof(ShatterFlaskResult), Off(&f, &f.result), Off(&f, &f.potion_index), Off(&f, &f.charges_after), Off(&f, &f.flasks_left),
+            };
+        }
+
+        public static bool CheckExt6(out string message)
+        {
+            var values = BuildExt6();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext6(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext6 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
         public static bool CheckExt5(out string message)
         {
             var values = BuildExt5();
