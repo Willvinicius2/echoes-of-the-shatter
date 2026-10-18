@@ -294,7 +294,7 @@ namespace Echoes.Gameplay
 
             // Virada suave (graus/s do SO_CombatFeel): rápida ao iniciar golpe ou esquiva, mais calma ao andar.
             var feel = combat != null ? combat.Feel : null;
-            var turnSpeed = feel == null ? 900f : (Logic.IsCasting || Logic.Dodge.IsDodging || Logic.IsAiming ? feel.CastTurnDegreesPerSecond : feel.TurnDegreesPerSecond);
+            var turnSpeed = feel == null ? 900f : (Logic.IsCasting || Logic.Dodge.IsDodging ? feel.CastTurnDegreesPerSecond : Logic.IsAiming ? feel.AimTurnDegreesPerSecond : feel.TurnDegreesPerSecond);
             var targetRotation = Logic.FacingDirection().ToRotation(transform.rotation);
             transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * dt);
             // Parede ou obstáculo: a lógica volta para onde o corpo realmente ficou (sem interpolar de volta).

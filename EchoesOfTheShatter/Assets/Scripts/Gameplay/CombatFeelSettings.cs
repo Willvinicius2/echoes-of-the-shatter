@@ -27,11 +27,15 @@ namespace Echoes.Gameplay
         [Tooltip("Andando ou parado: o corpo gira suave até a direção do movimento.")]
         [SerializeField, Min(1f)] float turnDegreesPerSecond = 900f;
         [Tooltip("Ao iniciar golpe ou magia: giro mais rápido para encarar a mira.")]
-        [SerializeField, Min(1f)] float castTurnDegreesPerSecond = 1800f;
+        [SerializeField, Min(1f)] float castTurnDegreesPerSecond = 1200f;
+        [Tooltip("Defendendo ou carregando: giro mais calmo, sem pressa.")]
+        [SerializeField, Min(1f)] float aimTurnDegreesPerSecond = 720f;
 
         [Header("Golpes pesados (recebem o hitstop de golpe pesado)")]
         [SerializeField] string[] heavySkills =
         {
+            "skill.warrior.heavy_slash",
+            "skill.warrior.combo_3",
             "skill.warrior.charge",
             "skill.warrior.stone_rift",
             "skill.warrior.shield_bash",
@@ -54,6 +58,7 @@ namespace Echoes.Gameplay
                 KnockbackSeconds = knockbackDurationMs / 1000f,
                 TurnDegreesPerSecond = turnDegreesPerSecond,
                 CastTurnDegreesPerSecond = castTurnDegreesPerSecond,
+                AimTurnDegreesPerSecond = aimTurnDegreesPerSecond,
             };
             if (heavySkills != null)
             {

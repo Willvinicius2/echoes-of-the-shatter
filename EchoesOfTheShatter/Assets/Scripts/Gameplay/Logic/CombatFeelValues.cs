@@ -21,7 +21,9 @@ namespace Echoes.Gameplay
         /// <summary>Velocidade de virada do corpo do herói em graus/s (andando, sem ação).</summary>
         public float TurnDegreesPerSecond = 900f;
         /// <summary>Velocidade de virada ao iniciar um golpe ou magia (mais rápida, para o corpo encarar a mira).</summary>
-        public float CastTurnDegreesPerSecond = 1800f;
+        public float CastTurnDegreesPerSecond = 1200f;
+        /// <summary>Defendendo ou carregando (sem golpe nem esquiva): o corpo acompanha a mira sem estalar, porque ali não há pressa.</summary>
+        public float AimTurnDegreesPerSecond = 720f;
         public readonly HashSet<string> HeavySkills = new HashSet<string>(StringComparer.Ordinal);
 
         public bool IsHeavy(string skillId) => skillId != null && HeavySkills.Contains(skillId);

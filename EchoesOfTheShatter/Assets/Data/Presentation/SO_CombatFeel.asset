@@ -21,6 +21,8 @@ MonoBehaviour:
   knockbackBossCm: 0
   knockbackDurationMs: 100
   heavySkills:
+  - skill.warrior.heavy_slash
+  - skill.warrior.combo_3
   - skill.warrior.charge
   - skill.warrior.stone_rift
   - skill.warrior.shield_bash
