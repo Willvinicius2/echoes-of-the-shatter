@@ -56,16 +56,7 @@ namespace Echoes.EditorTools
 
             var ctx = new CriptaBuilder.Context { Mats = mats };
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            RenderSettings.skybox = null;
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.6f, 0.56f, 0.62f);
-            var lightGo = new GameObject("Directional Light");
-            lightGo.transform.rotation = Quaternion.Euler(50f, -25f, 0f);
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.color = new Color(1f, 0.93f, 0.82f);
-            light.intensity = 1.1f;
-            light.shadows = LightShadows.Soft;
+            SceneryBuilder.ApplyLook(null);
 
             BuildLevel(mats);
             CriptaBuilder.BuildSystems(ctx, feel, projectile);
@@ -76,13 +67,7 @@ namespace Echoes.EditorTools
             // Portal para a Cripta (PortalZone avisa, AreaTravel troca a cena; heroi ocupado numa expedicao fica retido com dlg.ilsa.busy).
             var portal = new GameObject("portal.refuge.crypt");
             portal.transform.position = PortalPosition;
-            var ring = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            ring.name = "Ring";
-            UnityEngine.Object.DestroyImmediate(ring.GetComponent<Collider>());
-            ring.transform.SetParent(portal.transform, false);
-            ring.transform.localScale = new Vector3(3.6f, 0.04f, 3.6f);
-            ring.transform.localPosition = new Vector3(0f, 0.04f, 0f);
-            SandboxBuilder.Apply(ring, mats.Boss);
+            SceneryBuilder.StoneCircle(portal.transform, PortalPosition, 2.5f, 0.55f, "portal.refuge.crypt.circle", true); // mesma linguagem do portal da Cripta
             var gate = EnvironmentKit.Place("PortalAberto", portal.transform, portal.transform.position + new Vector3(1.4f, 0f, 0f), 90f, instanceName: "Gate");
             SceneryBuilder.AddFire(gate, false, 2.2f, new Color(0.62f, 0.5f, 1f), 1.6f, 7f);
             var zone = portal.AddComponent<PortalZone>();
@@ -143,15 +128,17 @@ namespace Echoes.EditorTools
                 var brazier = EnvironmentKit.Place("Braseiro", props, pos, 0f, instanceName: "Brazier");
                 SceneryBuilder.AddBrazierFire(brazier);
             }
-            var rng = SceneryBuilder.Rng("refuge.decor");
-            foreach (var name in new[] { "Velas", "Velas", "Ossos", "PedraE", "PedraF", "PedraE", "Ossos", "PedraF" })
+            // Entulho e velas so junto das paredes e dos braseiros (nunca espalhados pelo meio do chao); um unico simbolo, onde esta o portal.
+            foreach (var (name, pos, yaw) in new[]
             {
-                var p = new Vector3((float)(rng.NextDouble() * 30.0 - 15.0), 0f, (float)(rng.NextDouble() * 20.0 - 10.0));
-                if (Mathf.Abs(p.x) < 4f && Mathf.Abs(p.z) < 3f) continue;                         // longe do ponto de chegada e do caminho ate o portal
-                if (Mathf.Abs(p.z) < 2.5f && p.x > 0f) continue;
-                var go = EnvironmentKit.Place(name, decor, p, (float)rng.NextDouble() * 360f, colliders: false, instanceName: name);
+                ("PedraE", new Vector3(-18f, 0f, 3f), 30f), ("PedraF", new Vector3(-17.2f, 0f, 4.2f), 140f), ("Ossos", new Vector3(18f, 0f, -11f), 70f),
+                ("PedraE", new Vector3(5f, 0f, 13.2f), 200f), ("Velas", new Vector3(-6.8f, 0f, 9f), 0f), ("Velas", new Vector3(12.8f, 0f, -4.2f), 90f),
+            })
+            {
+                var go = EnvironmentKit.Place(name, decor, pos, yaw, colliders: false, instanceName: name);
                 if (name == "Velas") SceneryBuilder.AddCandleFire(go);
             }
+            SceneryBuilder.Glyph(decor, new Vector2(PortalPosition.x, PortalPosition.z), 0f, "portal.refuge.crypt.glyph", 0.1f);
         }
 
         static void Block(Transform parent, string name, Vector3 position, Vector3 scale, Material material)
