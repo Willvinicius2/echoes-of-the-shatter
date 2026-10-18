@@ -84,7 +84,7 @@ namespace Echoes.EditorTools
             importer.wrapMode = wrap;
             importer.filterMode = FilterMode.Bilinear;
             importer.maxTextureSize = 512;
-            importer.textureCompression = TextureImporterCompression.Compressed;
+            importer.textureCompression = TextureImporterCompression.Uncompressed; // pequenas: sem blocos nos degradês do fogo
             importer.SaveAndReimport();
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
@@ -174,6 +174,36 @@ namespace Echoes.EditorTools
             var tip = 1f - Smooth(0.78f, 1f, v);
             var heat = Mathf.Lerp(0.55f, 1f, 1f - v);
             return White(body * tip * heat);
+        });
+
+        // Atlas 2 x 2 de nuvens de fogo/fumaça: 4 variações suaves (borda irregular por ruído com deformação, miolo mais denso). Cada partícula
+        // sorteia uma célula (TextureSheetAnimation), então a explosão não repete a mesma mancha. Substitui a gota de chama de borda dura.
+        static Texture2D TexFirePuff() => GenerateTexture("T_VFX_FirePuff", 256, 256, (u, v) =>
+        {
+            var cx = u < 0.5f ? 0 : 1;
+            var cy = v < 0.5f ? 0 : 1;
+            var lu = (u - 0.5f * cx) * 2f;
+            var lv = (v - 0.5f * cy) * 2f;
+            var seed = 100 + cx * 7 + cy * 13;
+            var x = (lu - 0.5f) * 2f;
+            var y = (lv - 0.5f) * 2f;
+            var r = Mathf.Sqrt(x * x + y * y);
+            var n = Fbm(lu, lv, 3, seed) - 0.5f;
+            var w = Fbm(lu + 0.37f, lv + 0.61f, 2, seed + 9) - 0.5f;
+            var rr = r + n * 0.9f + w * 0.35f;
+            var body = Mathf.Pow(1f - Smooth(0.12f, 0.95f, rr), 1.2f);
+            var edge = 1f - Smooth(0.8f, 1f, r);
+            return White(body * edge);
+        });
+
+        // Faixa do arco de lâmina: u corre pelo arco, v vai do raio de dentro (0) ao de fora (1). Borda de fora nítida e brilhante, corpo que
+        // esmaece para dentro com listras de movimento: lê como "corte", não como setor de círculo cheio.
+        static Texture2D TexSwipe() => GenerateTexture("T_VFX_Swipe", 128, 64, (u, v) =>
+        {
+            var rim = Mathf.Exp(-Mathf.Pow((v - 0.92f) / 0.045f, 2f));
+            var body = Mathf.Pow(Smooth(0.2f, 0.93f, v), 2.6f) * (1f - Smooth(0.95f, 1f, v));
+            var streak = 0.78f + 0.22f * ValueNoise(u * 18f, v * 2f, 18, 77);
+            return White(Mathf.Clamp01((body * 0.7f + rim) * streak));
         });
 
         // Placa do rastro da lâmina: u = vida (1 recente), v = 0 cabo, 1 ponta. A ponta é viva e a cauda esfumaça em listras de movimento.

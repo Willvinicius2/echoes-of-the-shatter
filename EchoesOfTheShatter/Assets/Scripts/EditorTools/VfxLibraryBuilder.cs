@@ -67,7 +67,7 @@ namespace Echoes.EditorTools
 
         // ------------------------------------------------------------------------------------------------ texturas
 
-        static Texture2D tSoft, tCore, tRing, tRingSoft, tStar4, tStar6, tStreak, tSmoke, tFlame, tSlash, tSlashGold, tScorch, tHex, tBeam, tRune, tNoise, tSpark, tTrail;
+        static Texture2D tSoft, tCore, tRing, tRingSoft, tStar4, tStar6, tStreak, tSmoke, tFlame, tFirePuff, tSwipe, tSlash, tSlashGold, tScorch, tHex, tBeam, tRune, tNoise, tSpark, tTrail;
 
         static void BuildTextures()
         {
@@ -80,6 +80,8 @@ namespace Echoes.EditorTools
             tStreak = TexStreak();
             tSmoke = TexSmoke();
             tFlame = TexFlame();
+            tFirePuff = TexFirePuff();
+            tSwipe = TexSwipe();
             tSlash = TexSlash("T_VFX_Slash", false);
             tSlashGold = TexSlash("T_VFX_SlashGold", true);
             tScorch = TexScorch();
@@ -95,8 +97,8 @@ namespace Echoes.EditorTools
 
         enum Blend { Additive, Alpha, Opaque }
 
-        static Material mAddSoft, mAddCore, mAddRing, mAddRingSoft, mAddStar4, mAddStar6, mAddStreak, mAddFlame, mAddSmoke, mAddHex, mAddSlash, mAddSlashGold,
-            mAddBeam, mAddRune, mAddSpark, mAddTrail, mAlphaSmoke, mAlphaScorch, mAlphaGhostWisp, mAlphaGhostTrail, mMeshArrow, mMeshGhost, mMeshOutline, mMeshCrystal, mMeshBeam, mDome, mFloor;
+        static Material mAddSoft, mAddCore, mAddRing, mAddRingSoft, mAddStar4, mAddStar6, mAddStreak, mAddFlame, mAddFire, mAddSmoke, mAddHex, mAddSlash, mAddSlashGold, mAddArc, mAddArcGold,
+            mAddBeam, mAddRune, mAddSpark, mAddTrail, mAlphaSmoke, mAlphaPuff, mAlphaScorch, mAlphaGhostWisp, mAlphaGhostTrail, mMeshArrow, mMeshGhost, mMeshOutline, mMeshCrystal, mMeshBeam, mDome, mFloor;
 
         static Material MakeMaterial(string name, Texture2D texture, Blend blend, float hdr = 1.4f, bool cullFront = false, Color? tint = null)
         {
@@ -161,15 +163,19 @@ namespace Echoes.EditorTools
             mAddStar6 = MakeMaterial("M_VFX_AddStar6", tStar6, Blend.Additive, 1.6f);
             mAddStreak = MakeMaterial("M_VFX_AddStreak", tStreak, Blend.Additive, 1.6f);
             mAddFlame = MakeMaterial("M_VFX_AddFlame", tFlame, Blend.Additive, 1.5f);
+            mAddFire = MakeMaterial("M_VFX_AddFire", tFirePuff, Blend.Additive, 1.4f);
             mAddSmoke = MakeMaterial("M_VFX_AddSmoke", tSmoke, Blend.Additive, 1.3f);
             mAddHex = MakeMaterial("M_VFX_AddHex", tHex, Blend.Additive, 1.5f);
             mAddSlash = MakeMaterial("M_VFX_AddSlash", tSlash, Blend.Additive, 1.6f);
             mAddSlashGold = MakeMaterial("M_VFX_AddSlashGold", tSlashGold, Blend.Additive, 1.6f);
+            mAddArc = MakeMaterial("M_VFX_AddArc", tSwipe, Blend.Additive, 1.6f);
+            mAddArcGold = MakeMaterial("M_VFX_AddArcGold", tSwipe, Blend.Additive, 1.6f);
             mAddBeam = MakeMaterial("M_VFX_AddBeam", tBeam, Blend.Additive, 1.7f);
             mAddRune = MakeMaterial("M_VFX_AddRune", tRune, Blend.Additive, 1.4f);
             mAddSpark = MakeMaterial("M_VFX_AddSpark", tSpark, Blend.Additive, 1.8f);
             mAddTrail = MakeMaterial("M_VFX_AddTrail", tTrail, Blend.Additive, 1.7f);
             mAlphaSmoke = MakeMaterial("M_VFX_AlphaSmoke", tSmoke, Blend.Alpha, 1f);
+            mAlphaPuff = MakeMaterial("M_VFX_AlphaPuff", tFirePuff, Blend.Alpha, 1f);
             mAlphaScorch = MakeMaterial("M_VFX_AlphaScorch", tScorch, Blend.Alpha, 1f);
             mAlphaGhostWisp = MakeMaterial("M_VFX_AlphaGhostWisp", tSmoke, Blend.Alpha, 1f);
             mAlphaGhostTrail = MakeMaterial("M_VFX_AlphaGhostTrail", tTrail, Blend.Alpha, 1f);

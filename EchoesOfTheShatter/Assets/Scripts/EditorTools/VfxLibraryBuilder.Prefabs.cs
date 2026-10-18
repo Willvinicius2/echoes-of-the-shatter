@@ -12,6 +12,7 @@ namespace Echoes.EditorTools
     public static partial class VfxLibraryBuilder
     {
         // Warrior
+        static GameObject pArc1, pArc2, pArc3, pArcHeavy, pGuardArc;
         static GameObject pTrail1, pTrail2, pTrail3, pTrailHeavy, pHitSpark, pHitSparkHeavy, pChargeGlowWarrior, pChargeRing, pChargeFlash,
             pGuardShimmer, pGuardBlock, pGuardPerfect;
         // Archer
@@ -55,41 +56,115 @@ namespace Echoes.EditorTools
             });
         }
 
+        static void ArcRenderer(GameObject go, Material material)
+        {
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+        }
+
+        static Gradient AcrossGradient(Color inner, Color outer)
+        {
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(inner, 0f), new GradientColorKey(outer, 1f) }, new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+            return g;
+        }
+
+        static GameObject MakeArc(string name, Material mat, float inner, float outer, float startDeg, float endDeg, float rise, float lift, float sweep, float fade, Color cInner, Color cOuter)
+        {
+            return SavePrefab(name, root =>
+            {
+                var go = Child(root, "Arc", Vector3.zero);
+                go.AddComponent<MeshFilter>();
+                ArcRenderer(go, mat);
+                var swipe = go.AddComponent<VfxArcSwipe>();
+                swipe.Configure(inner, outer, startDeg, endDeg, 0.55f, rise, sweep, fade, 0.55f, AcrossGradient(cInner, cOuter), false, 0.4f);
+                swipe.SetLift(lift);
+            });
+        }
+
+        // Arco fixo da guarda (persistente): faixa fina e leque fraco no chão, nunca vermelho (docs/18: #FCD58A alfa 0,45).
+        static GameObject MakeGuardArc(string name, Material band, Material fill, float halfAngle)
+        {
+            return SavePrefab(name, root =>
+            {
+                var b = Child(root, "Band", Vector3.zero);
+                b.AddComponent<MeshFilter>();
+                ArcRenderer(b, band);
+                var bandColor = new Gradient();
+                bandColor.SetKeys(new[] { new GradientColorKey(GoldMid, 0f), new GradientColorKey(GoldMid, 1f) }, new[] { new GradientAlphaKey(0.75f, 0f), new GradientAlphaKey(0.75f, 1f) });
+                b.AddComponent<VfxArcSwipe>().Configure(0.98f, 1.2f, -halfAngle, halfAngle, 0.05f, 0f, 0.1f, 0.2f, 0.6f, bandColor, true, 0f);
+                var f = Child(root, "Fill", Vector3.zero);
+                f.AddComponent<MeshFilter>();
+                ArcRenderer(f, fill);
+                var fillColor = new Gradient();
+                fillColor.SetKeys(new[] { new GradientColorKey(GoldMid, 0f), new GradientColorKey(GoldMid, 1f) }, new[] { new GradientAlphaKey(0.2f, 0f), new GradientAlphaKey(0.2f, 1f) });
+                f.AddComponent<VfxArcSwipe>().Configure(0.3f, 1.1f, -halfAngle, halfAngle, 0.04f, 0f, 0.1f, 0.2f, 0.6f, fillColor, true, 0f);
+            });
+        }
+
+        // Corpo de fogo: nuvens suaves do atlas FirePuff somadas (aditivo), do cremoso ao laranja e ao vermelho escuro. Em espaço do mundo deixa
+        // o rastro de quem se move; a subida leve faz as chamas "lamberem" para cima.
+        static void FireBody(Transform parent, string name, Vector2 life, Vector2 size, float rate, float radius, bool world, float rise)
+        {
+            new Layer
+            {
+                Name = name, Mat = mAddFire, Duration = 1f, Loop = true, Life = life, Size = size, Rate = rate, World = world, Speed = R(0f, 0.3f),
+                Shape = ParticleSystemShapeType.Sphere, Radius = radius, Gravity = -rise, Grad = Ramp(Hex("#FFD27A"), FireMid, FireEdge, 0.95f, 0.05f, 0.35f),
+                SizeCurve = Curve(0f, 0.85f, 0.3f, 1f, 1f, 0.2f), StartRotation = R(0f, 360f), RotationSpeed = 70f, SheetTiles = 2, NoiseStrength = 0.25f,
+            }.Build(parent);
+        }
+
+        // Faísca de impacto do golpe físico: clarão em estrela, faíscas quentes bem visíveis a 56 m, poeira e, no golpe pesado, uma onda no chão
+        // (anel nítido deitado no piso: lê como onda de choque, não como bolha). O prefab nasce no peito do alvo (+1 m); a onda desce até o piso.
         static void HitSpark(GameObject root, int sparks, int dust, bool ring, float scale)
         {
             new Layer
             {
-                Name = "Flash", Mat = mAddStar4, Duration = 0.3f, Life = R(0.09f), Size = R(0.6f * scale), Bursts = new[] { (0f, 1, 1) },
+                Name = "Flash", Mat = mAddStar4, Duration = 0.3f, Life = R(0.11f), Size = R(1.15f * scale), Bursts = new[] { (0f, 1, 1) },
                 Grad = Snap(Color.white, SparkYellow, 1f, 0.4f), SizeCurve = Curve(0f, 0.55f, 0.3f, 1f, 1f, 0.8f), Radius = 0.001f,
             }.Build(root.transform);
             new Layer
             {
-                Name = "Sparks", Mat = mAddStreak, Duration = 0.4f, Life = R(0.22f, 0.42f), Speed = R(3f, 6.5f), Size = R(0.05f, 0.09f) * scale,
-                Bursts = new[] { (0f, sparks / 2, sparks) }, Shape = ParticleSystemShapeType.Cone, Angle = 40f, Radius = 0.04f, Gravity = 0.9f,
-                Render = ParticleSystemRenderMode.Stretch, LengthScale = 1.8f, VelocityScale = 0.045f, Drag = 1.2f, World = true,
-                Grad = Snap(SparkYellow, Hex("#FF8A2E"), 1f, 0.5f),
+                Name = "Glow", Mat = mAddSoft, Duration = 0.3f, Life = R(0.14f), Size = R(0.9f * scale), Bursts = new[] { (0f, 1, 1) },
+                Grad = Snap(Color.white, Hex("#FFB347"), 0.9f, 0.3f), Radius = 0.001f,
             }.Build(root.transform);
             new Layer
             {
-                Name = "Dust", Mat = mAlphaSmoke, Duration = 0.5f, Life = R(0.3f, 0.7f), Speed = R(0.7f, 1.8f), Size = R(0.14f, 0.24f) * scale,
+                Name = "Sparks", Mat = mAddStreak, Duration = 0.4f, Life = R(0.22f, 0.46f), Speed = R(3.5f, 7.5f), Size = R(0.1f, 0.17f) * scale,
+                Bursts = new[] { (0f, sparks / 2, sparks) }, Shape = ParticleSystemShapeType.Cone, Angle = 45f, Radius = 0.04f, Gravity = 1.1f,
+                Render = ParticleSystemRenderMode.Stretch, LengthScale = 2.2f, VelocityScale = 0.06f, Drag = 1.1f, World = true,
+                Grad = Snap(Hex("#FFD87A"), Hex("#FF6A1A"), 1f, 0.5f),
+            }.Build(root.transform);
+            new Layer
+            {
+                Name = "Dust", Mat = mAlphaSmoke, Duration = 0.5f, Life = R(0.3f, 0.7f), Speed = R(0.7f, 1.8f), Size = R(0.22f, 0.36f) * scale,
                 Bursts = new[] { (0f, dust - 2, dust) }, Shape = ParticleSystemShapeType.Cone, Angle = 55f, Radius = 0.05f, Gravity = -0.04f, World = true,
                 Grad = Flat(PhysEdge, 0.5f, 0.05f, 0.3f), SizeCurve = Curve(0f, 0.5f, 1f, 1.3f), StartRotation = R(0f, 360f),
             }.Build(root.transform);
             if (!ring) return;
             new Layer
             {
-                Name = "Ring", Mat = mAddRingSoft, Duration = 0.3f, Life = R(0.22f), Size = R(1.7f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f,
-                Grad = Snap(PhysCore, PhysMid, 0.9f, 0.2f), SizeCurve = Curve(0f, 0.15f, 0.5f, 0.7f, 1f, 1f),
+                Name = "Wave", Mat = mAddRing, Duration = 0.3f, Life = R(0.24f), Size = R(2.7f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Position = new Vector3(0f, -0.96f, 0f),
+                Render = ParticleSystemRenderMode.HorizontalBillboard, Grad = Snap(SparkYellow, Hex("#FF8A2E"), 0.9f, 0.2f), SizeCurve = Curve(0f, 0.12f, 0.5f, 0.7f, 1f, 1f),
             }.Build(root.transform);
         }
 
         static void BuildWarriorPrefabs()
         {
             // Rastro da arma: 180, 180, 240 e 300 ms (o 3º golpe é mais largo e leva um fio dourado no núcleo).
-            pTrail1 = MakeTrail("FX_Warrior_Trail_1", 0.18f, FireEdge, FireMid, FireCore, mAddSlash, 28);
-            pTrail2 = MakeTrail("FX_Warrior_Trail_2", 0.18f, FireEdge, FireMid, FireCore, mAddSlash, 28);
-            pTrail3 = MakeTrail("FX_Warrior_Trail_3", 0.24f, FireEdge, FireMid, GoldCore, mAddSlashGold, 32);
-            pTrailHeavy = MakeTrail("FX_Warrior_Trail_Heavy", 0.30f, FireEdge, FireMid, GoldCore, mAddSlashGold, 40);
+            pTrail1 = MakeTrail("FX_Warrior_Trail_1", 0.18f, FireEdge, FireMid, FireMid, mAddSlash, 28);
+            pTrail2 = MakeTrail("FX_Warrior_Trail_2", 0.18f, FireEdge, FireMid, FireMid, mAddSlash, 28);
+            pTrail3 = MakeTrail("FX_Warrior_Trail_3", 0.24f, FireEdge, FireMid, GoldMid, mAddSlashGold, 32);
+            pTrailHeavy = MakeTrail("FX_Warrior_Trail_Heavy", 0.30f, FireEdge, FireMid, GoldMid, mAddSlashGold, 40);
+
+            // Arco de lâmina varrido à frente (o rastro que lê a 56 m). Golpe 1 da esquerda para a direita, 2 de volta, 3 e forte maiores e dourados.
+            pArc1 = MakeArc("FX_Warrior_Arc_1", mAddArc, 0.85f, 2.0f, -88f, 88f, 0.25f, 0.85f, 0.11f, 0.2f, FireMid, Hex("#FF9A4A"));
+            pArc2 = MakeArc("FX_Warrior_Arc_2", mAddArc, 0.85f, 2.0f, 88f, -88f, -0.25f, 0.85f, 0.11f, 0.2f, FireMid, Hex("#FF9A4A"));
+            pArc3 = MakeArc("FX_Warrior_Arc_3", mAddArcGold, 1.2f, 2.5f, -105f, 105f, 0.4f, 1.0f, 0.14f, 0.24f, GoldMid, Hex("#FFD060"));
+            pArcHeavy = MakeArc("FX_Warrior_Arc_Heavy", mAddArcGold, 1.3f, 3.0f, -125f, 125f, 0.6f, 1.3f, 0.16f, 0.3f, GoldMid, Hex("#FFD060"));
 
             pHitSpark = SavePrefab("FX_Hit_Spark", root => HitSpark(root, 7, 8, false, 1f));
             pHitSparkHeavy = SavePrefab("FX_Hit_Spark_Heavy", root => HitSpark(root, 14, 14, true, 1.25f));
@@ -99,8 +174,9 @@ namespace Echoes.EditorTools
             {
                 var grow = Child(root, "Grow", Vector3.zero);
                 grow.AddComponent<VfxGrow>().Configure(0.12f, 0.9f);
-                new Layer { Name = "Halo", Mat = mAddSoft, Duration = 1f, Loop = true, Life = R(0.3f), Size = R(1.1f), Rate = 34f, Grad = Flat(FireMid, 0.30f, 0.1f, 0.5f) }.Build(grow.transform);
-                new Layer { Name = "Core", Mat = mAddCore, Duration = 1f, Loop = true, Life = R(0.18f), Size = R(0.55f), Rate = 40f, Grad = Flat(FireCore, 0.9f, 0.05f, 0.5f) }.Build(grow.transform);
+                new Layer { Name = "Halo", Mat = mAddSoft, Duration = 1f, Loop = true, Life = R(0.3f), Size = R(1.3f), Rate = 34f, Grad = Flat(FireMid, 0.34f, 0.1f, 0.5f) }.Build(grow.transform);
+                FireBody(grow.transform, "Body", R(0.25f, 0.4f), R(0.5f, 0.7f), 40f, 0.08f, true, 0.2f);
+                new Layer { Name = "Core", Mat = mAddCore, Duration = 1f, Loop = true, Life = R(0.18f), Size = R(0.6f), Rate = 40f, Grad = Flat(FireCore, 0.95f, 0.05f, 0.5f) }.Build(grow.transform);
                 new Layer
                 {
                     Name = "Pulse", Mat = mAddSoft, Duration = 4f, Loop = true, Delay = 0.9f, Life = R(0.16f), Size = R(1.5f), Rate = 6f,
@@ -141,26 +217,22 @@ namespace Echoes.EditorTools
                 new Layer { Name = "Glow", Mat = mAddSoft, Duration = 0.2f, Life = R(0.12f), Size = R(1.0f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(Color.white, GoldMid, 0.8f, 0.3f) }.Build(root.transform);
             });
 
-            // Defesa do escudo: placa hexagonal fraca e reflexos dourados; enquanto segura.
+            // Defesa do escudo: arco de 120 graus no chão mostrando a frente protegida (docs/18 fx.guard.arc_hint) e reflexos dourados no escudo.
+            pGuardArc = MakeGuardArc("FX_Guard_Arc", mAddTrail, mAddSlash, 60f);
             pGuardShimmer = SavePrefab("FX_Guard_Shimmer", root =>
             {
                 new Layer
                 {
-                    Name = "Plate", Mat = mAddHex, Duration = 1f, Loop = true, Life = R(1.2f), Size = R(1.0f), Rate = 1.2f, Radius = 0.001f, Position = new Vector3(0f, 0f, 0.1f),
-                    Grad = Flat(GoldMid, 0.28f, 0.3f, 0.6f), StartRotation = R(0f, 60f),
-                }.Build(root.transform);
-                new Layer
-                {
-                    Name = "Glints", Mat = mAddStar4, Duration = 1f, Loop = true, Life = R(0.25f, 0.4f), Size = R(0.18f, 0.3f), Rate = 4f, Shape = ParticleSystemShapeType.Sphere,
-                    Radius = 0.28f, ShapeScale = new Vector3(1f, 1f, 0.3f), Grad = Flat(GoldCore, 0.9f, 0.2f, 0.5f), StartRotation = R(0f, 90f),
+                    Name = "Glints", Mat = mAddStar4, Duration = 1f, Loop = true, Life = R(0.25f, 0.4f), Size = R(0.22f, 0.36f), Rate = 5f, Shape = ParticleSystemShapeType.Sphere,
+                    Radius = 0.3f, ShapeScale = new Vector3(1f, 1f, 0.3f), Grad = Flat(GoldCore, 0.9f, 0.2f, 0.5f), StartRotation = R(0f, 90f),
                 }.Build(root.transform);
             });
             pGuardBlock = SavePrefab("FX_Guard_BlockSpark", root =>
             {
-                new Layer { Name = "Flash", Mat = mAddStar4, Duration = 0.2f, Life = R(0.08f), Size = R(0.5f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(Color.white, PhysMid, 1f, 0.4f) }.Build(root.transform);
+                new Layer { Name = "Flash", Mat = mAddStar4, Duration = 0.2f, Life = R(0.1f), Size = R(1.0f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(Color.white, GoldCore, 1f, 0.4f) }.Build(root.transform);
                 new Layer
                 {
-                    Name = "Sparks", Mat = mAddStreak, Duration = 0.3f, Life = R(0.1f, 0.15f), Speed = R(3f, 5f), Size = R(0.04f, 0.07f), Bursts = new[] { (0f, 5, 7) },
+                    Name = "Sparks", Mat = mAddStreak, Duration = 0.3f, Life = R(0.14f, 0.22f), Speed = R(3.5f, 6f), Size = R(0.08f, 0.13f), Bursts = new[] { (0f, 7, 10) },
                     Shape = ParticleSystemShapeType.Cone, Angle = 50f, Radius = 0.03f, Gravity = 0.6f, Render = ParticleSystemRenderMode.Stretch, LengthScale = 1.6f, VelocityScale = 0.04f, World = true,
                     Grad = Snap(PhysMid, SparkYellow, 1f, 0.5f),
                 }.Build(root.transform);
@@ -291,13 +363,13 @@ namespace Echoes.EditorTools
             {
                 new Layer
                 {
-                    Name = "Arrows", Mat = mMeshArrow, Duration = 0.1f, Life = R(0.15f), Speed = R(40f), Size = R(0.7f), Rate = 150f, Max = 24,
+                    Name = "Arrows", Mat = mMeshArrow, Duration = 0.1f, Life = R(0.15f), Speed = R(40f), Size = R(1.1f), Rate = 150f, Max = 24,
                     Shape = ParticleSystemShapeType.Cone, Angle = 0f, Radius = 2.9f, RadiusThickness = 1f, Position = new Vector3(0f, 6f, 0f), ShapeRotation = new Vector3(90f, 0f, 0f),
                     Render = ParticleSystemRenderMode.Mesh, Mesh = meshArrow, AlignToVelocity = true, Grad = Flat(Color.white, 1f, 0.01f, 0.85f),
                 }.Build(root.transform);
                 new Layer
                 {
-                    Name = "ArrowTrails", Mat = mAddStreak, Duration = 0.1f, Life = R(0.14f), Speed = R(40f), Size = R(0.1f), Rate = 150f, Max = 24,
+                    Name = "ArrowTrails", Mat = mAddStreak, Duration = 0.1f, Life = R(0.14f), Speed = R(40f), Size = R(0.18f), Rate = 150f, Max = 24,
                     Shape = ParticleSystemShapeType.Cone, Angle = 0f, Radius = 2.9f, Position = new Vector3(0f, 6.5f, 0f), ShapeRotation = new Vector3(90f, 0f, 0f),
                     Render = ParticleSystemRenderMode.Stretch, LengthScale = 1f, VelocityScale = 0.12f, Grad = Flat(AcidCore, 0.85f, 0.02f, 0.8f),
                 }.Build(root.transform);
@@ -319,14 +391,9 @@ namespace Echoes.EditorTools
             {
                 new Layer
                 {
-                    Name = "Ring", Mat = mAddRingSoft, Duration = 0.4f, Life = R(0.3f), Size = R(2.4f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Position = new Vector3(0f, Ground, 0f),
-                    Render = ParticleSystemRenderMode.HorizontalBillboard, Grad = Snap(PhysMid, PhysEdge, 0.45f, 0.2f), SizeCurve = Curve(0f, 0.15f, 0.5f, 0.7f, 1f, 1f),
-                }.Build(root.transform);
-                new Layer
-                {
-                    Name = "Dust", Mat = mAlphaSmoke, Duration = 0.4f, Life = R(0.4f, 0.7f), Speed = R(0.8f, 2f), Size = R(0.3f, 0.5f), Bursts = new[] { (0f, 8, 10) },
+                    Name = "Dust", Mat = mAlphaPuff, SheetTiles = 2, Duration = 0.4f, Life = R(0.45f, 0.8f), Speed = R(1.2f, 2.6f), Size = R(0.5f, 0.8f), Bursts = new[] { (0f, 10, 13) },
                     Shape = ParticleSystemShapeType.Circle, Radius = 0.3f, ShapeRotation = new Vector3(90f, 0f, 0f), Position = new Vector3(0f, 0.1f, 0f), World = true,
-                    Grad = Flat(PhysEdge, 0.5f, 0.1f, 0.35f), SizeCurve = Curve(0f, 0.5f, 1f, 1.5f), StartRotation = R(0f, 360f),
+                    Grad = Flat(PhysMid, 0.45f, 0.1f, 0.35f), SizeCurve = Curve(0f, 0.5f, 1f, 1.6f), StartRotation = R(0f, 360f),
                 }.Build(root.transform);
                 // 3 linhas de vento atrás (o salto vai para trás: +Z do prefab é a direção do tiro, o vento sai para o lado oposto ao do pulo)
                 for (var i = -1; i <= 1; i++)
@@ -382,8 +449,9 @@ namespace Echoes.EditorTools
             {
                 var grow = Child(root, "Grow", Vector3.zero);
                 grow.AddComponent<VfxGrow>().Configure(0.2f, 0.25f);
-                new Layer { Name = "Halo", Mat = mAddSoft, Duration = 1f, Loop = true, Life = R(0.25f), Size = R(1.0f), Rate = 34f, Grad = Flat(FireMid, 0.32f, 0.1f, 0.5f) }.Build(grow.transform);
-                new Layer { Name = "Core", Mat = mAddCore, Duration = 1f, Loop = true, Life = R(0.15f), Size = R(0.5f), Rate = 40f, Grad = Flat(FireCore, 0.95f, 0.05f, 0.5f) }.Build(grow.transform);
+                new Layer { Name = "Halo", Mat = mAddSoft, Duration = 1f, Loop = true, Life = R(0.25f), Size = R(1.4f), Rate = 34f, Grad = Flat(FireMid, 0.34f, 0.1f, 0.5f) }.Build(grow.transform);
+                FireBody(grow.transform, "Body", R(0.25f, 0.4f), R(0.45f, 0.6f), 44f, 0.06f, true, 0.2f);
+                new Layer { Name = "Core", Mat = mAddCore, Duration = 1f, Loop = true, Life = R(0.15f), Size = R(0.55f), Rate = 40f, Grad = Flat(FireCore, 0.95f, 0.05f, 0.5f) }.Build(grow.transform);
                 new Layer
                 {
                     Name = "Embers", Mat = mAddSpark, Duration = 1f, Loop = true, Life = R(0.4f, 0.7f), Speed = R(0.3f, 0.9f), Size = R(0.05f, 0.08f), Rate = 16f, Shape = ParticleSystemShapeType.Sphere,
@@ -474,22 +542,27 @@ namespace Echoes.EditorTools
                 }.Build(air.transform);
             });
 
-            // Bola de Fogo (docs/18: 70 cm, núcleo, chamas, fumaça e luz que viaja; explosão de 220 uu).
+            // Bola de Fogo (docs/18: 70 cm, núcleo, chamas, fumaça e luz que viaja; explosão de 220 uu). O corpo é de nuvens suaves de fogo
+            // (atlas FirePuff, aditivo) em espaço do mundo: a bola voa e deixa para trás uma cauda de chamas que sobem e esfriam do creme ao vermelho.
             pFireball = SavePrefab("FX_Fireball", root =>
             {
-                new Layer { Name = "Halo", Mat = mAddSoft, Duration = 1f, Loop = true, Life = R(0.25f), Size = R(1.5f), Rate = 36f, Grad = Flat(FireMid, 0.24f, 0.1f, 0.5f) }.Build(root.transform);
-                new Layer { Name = "Body", Mat = mAddFlame, Duration = 1f, Loop = true, Life = R(0.2f, 0.3f), Size = R(0.7f, 0.95f), Rate = 70f, World = true, Speed = R(0.1f, 0.5f), Shape = ParticleSystemShapeType.Sphere, Radius = 0.12f,
-                    Grad = Ramp(FireCore, FireMid, FireEdge, 0.95f, 0.05f, 0.5f), SizeCurve = Curve(0f, 0.7f, 0.3f, 1f, 1f, 0.35f), StartRotation = R(0f, 360f), RotationSpeed = 50f }.Build(root.transform);
-                new Layer { Name = "Core", Mat = mAddCore, Duration = 1f, Loop = true, Life = R(0.12f), Size = R(0.55f), Rate = 60f, Grad = Flat(FireCore, 1f, 0.05f, 0.5f) }.Build(root.transform);
+                new Layer { Name = "Halo", Mat = mAddSoft, Duration = 1f, Loop = true, Life = R(0.25f), Size = R(2.1f), Rate = 36f, Grad = Flat(FireMid, 0.26f, 0.1f, 0.5f) }.Build(root.transform);
+                FireBody(root.transform, "Tail", R(0.34f, 0.5f), R(0.85f, 1.15f), 90f, 0.1f, true, 0.12f);
                 new Layer
                 {
-                    Name = "Embers", Mat = mAddSpark, Duration = 1f, Loop = true, Life = R(0.3f, 0.6f), Speed = R(0.3f, 1.4f), Size = R(0.04f, 0.08f), Rate = 36f, Shape = ParticleSystemShapeType.Sphere,
-                    Radius = 0.2f, Gravity = -0.1f, World = true, Grad = Snap(SparkYellow, FireMid, 1f, 0.55f),
+                    Name = "Ball", Mat = mAddFire, Duration = 1f, Loop = true, Life = R(0.16f, 0.22f), Size = R(0.62f, 0.78f), Rate = 60f, Speed = R(0f), Shape = ParticleSystemShapeType.Sphere, Radius = 0.05f,
+                    Grad = Ramp(FireCore, FireCore, FireMid, 1f, 0.05f, 0.6f), StartRotation = R(0f, 360f), RotationSpeed = 120f, SheetTiles = 2,
+                }.Build(root.transform);
+                new Layer { Name = "Core", Mat = mAddCore, Duration = 1f, Loop = true, Life = R(0.12f), Size = R(0.5f), Rate = 60f, Grad = Flat(Color.white, 1f, 0.05f, 0.5f) }.Build(root.transform);
+                new Layer
+                {
+                    Name = "Embers", Mat = mAddStreak, Duration = 1f, Loop = true, Life = R(0.3f, 0.6f), Speed = R(0.3f, 1.4f), Size = R(0.06f, 0.1f), Rate = 38f, Shape = ParticleSystemShapeType.Sphere,
+                    Radius = 0.22f, Gravity = -0.1f, World = true, Render = ParticleSystemRenderMode.Stretch, LengthScale = 1.8f, VelocityScale = 0.04f, Grad = Snap(SparkYellow, FireMid, 1f, 0.55f),
                 }.Build(root.transform);
                 new Layer
                 {
-                    Name = "Smoke", Mat = mAlphaSmoke, Duration = 1f, Loop = true, Life = R(0.45f, 0.65f), Speed = R(0.1f, 0.4f), Size = R(0.25f, 0.4f), Rate = 22f, World = true,
-                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.14f, Gravity = -0.05f, Grad = Flat(Hex("#403836"), 0.42f, 0.1f, 0.35f), SizeCurve = Curve(0f, 0.6f, 1f, 2.2f), StartRotation = R(0f, 360f),
+                    Name = "Smoke", Mat = mAlphaPuff, SheetTiles = 2, Duration = 1f, Loop = true, Life = R(0.5f, 0.75f), Speed = R(0.1f, 0.4f), Size = R(0.4f, 0.6f), Rate = 22f, World = true,
+                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.14f, Gravity = -0.05f, Grad = Flat(Hex("#403836"), 0.45f, 0.1f, 0.35f), SizeCurve = Curve(0f, 0.6f, 1f, 2.2f), StartRotation = R(0f, 360f),
                 }.Build(root.transform);
                 var lamp = Child(root, "Light", Vector3.zero);
                 AddLight(lamp, new Color(1f, 0.52f, 0.2f), 7f, 3.2f, 0f, null, 0.22f);
@@ -497,41 +570,48 @@ namespace Echoes.EditorTools
             pFireballExplosion = SavePrefab("FX_Fireball_Explosion", root =>
             {
                 var air = Child(root, "Air", new Vector3(0f, 0.9f, 0f));
-                new Layer { Name = "Flash", Mat = mAddSoft, Duration = 0.3f, Life = R(0.14f), Size = R(4.4f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(Color.white, FireMid, 0.95f, 0.3f), SizeCurve = Curve(0f, 0.4f, 0.35f, 1f, 1f, 1.1f) }.Build(air.transform);
-                new Layer { Name = "Core", Mat = mAddCore, Duration = 0.3f, Life = R(0.2f), Size = R(2.4f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(FireCore, FireMid, 1f, 0.35f) }.Build(air.transform);
+                new Layer { Name = "Flash", Mat = mAddSoft, Duration = 0.3f, Life = R(0.14f), Size = R(3.6f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(Color.white, FireMid, 0.95f, 0.3f), SizeCurve = Curve(0f, 0.4f, 0.35f, 1f, 1f, 1.1f) }.Build(air.transform);
+                new Layer { Name = "Core", Mat = mAddCore, Duration = 0.3f, Life = R(0.2f), Size = R(2.0f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(FireCore, FireMid, 1f, 0.35f) }.Build(air.transform);
+                // Massa de fogo: nuvens grandes que incham para fora e esfriam (creme, laranja, vermelho escuro).
                 new Layer
                 {
-                    Name = "ShockAir", Mat = mAddRing, Duration = 0.4f, Life = R(0.24f), Size = R(4.0f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f,
-                    Grad = Snap(FireCore, FireMid, 0.95f, 0.3f), SizeCurve = Curve(0f, 0.12f, 0.45f, 0.75f, 1f, 1f),
+                    Name = "FireBurst", Mat = mAddFire, Duration = 0.4f, Life = R(0.5f, 0.85f), Speed = R(2.2f, 5.2f), Size = R(1.5f, 2.4f), Bursts = new[] { (0f, 16, 20) },
+                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.4f, Gravity = -0.22f, Grad = Ramp(FireCore, FireMid, FireEdge, 1f, 0.05f, 0.4f),
+                    SizeCurve = Curve(0f, 0.45f, 0.3f, 1f, 1f, 0.85f), StartRotation = R(0f, 360f), RotationSpeed = 40f, Drag = 1.7f, SheetTiles = 2,
                 }.Build(air.transform);
                 new Layer
                 {
-                    Name = "FireBurst", Mat = mAddFlame, Duration = 0.4f, Life = R(0.4f, 0.75f), Speed = R(1.5f, 4.5f), Size = R(0.8f, 1.5f), Bursts = new[] { (0f, 14, 18) },
-                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.3f, Gravity = -0.15f, Grad = Ramp(FireCore, FireMid, FireEdge, 0.9f, 0.06f, 0.45f),
-                    SizeCurve = Curve(0f, 0.6f, 0.4f, 1f, 1f, 0.6f), StartRotation = R(0f, 360f), RotationSpeed = 60f, Drag = 1.2f,
+                    Name = "FireInner", Mat = mAddFire, Duration = 0.4f, Delay = 0.05f, Life = R(0.55f, 0.95f), Speed = R(0.8f, 2.4f), Size = R(1.2f, 1.9f), Bursts = new[] { (0f, 8, 10) },
+                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.25f, Gravity = -0.35f, Grad = Ramp(FireCore, FireMid, FireEdge, 0.95f, 0.08f, 0.45f),
+                    SizeCurve = Curve(0f, 0.55f, 0.35f, 1f, 1f, 0.7f), StartRotation = R(0f, 360f), RotationSpeed = 30f, Drag = 1.2f, SheetTiles = 2,
                 }.Build(air.transform);
                 new Layer
                 {
-                    Name = "Embers", Mat = mAddStreak, Duration = 0.4f, Life = R(0.55f, 1.1f), Speed = R(4f, 9f), Size = R(0.06f, 0.1f), Bursts = new[] { (0f, 26, 32) },
-                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.3f, Gravity = 1.6f, Render = ParticleSystemRenderMode.Stretch, LengthScale = 1.8f, VelocityScale = 0.045f, Drag = 0.8f, World = true,
+                    Name = "Embers", Mat = mAddStreak, Duration = 0.4f, Life = R(0.55f, 1.1f), Speed = R(4f, 9.5f), Size = R(0.08f, 0.14f), Bursts = new[] { (0f, 28, 36) },
+                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.3f, Gravity = 1.6f, Render = ParticleSystemRenderMode.Stretch, LengthScale = 1.8f, VelocityScale = 0.05f, Drag = 0.8f, World = true,
                     Grad = Snap(SparkYellow, FireMid, 1f, 0.55f),
                 }.Build(air.transform);
                 new Layer
                 {
-                    Name = "Smoke", Mat = mAlphaSmoke, Duration = 0.5f, Delay = 0.05f, Life = R(0.9f, 1.4f), Speed = R(0.4f, 1.4f), Size = R(1f, 1.6f), Bursts = new[] { (0f, 7, 9) },
-                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.6f, ShapeScale = new Vector3(1f, 0.4f, 1f), Gravity = -0.05f, World = true,
-                    Grad = Flat(Hex("#2E2826"), 0.5f, 0.1f, 0.4f), SizeCurve = Curve(0f, 0.5f, 1f, 1.4f), StartRotation = R(0f, 360f),
+                    Name = "Smoke", Mat = mAlphaPuff, Duration = 0.5f, Delay = 0.1f, Life = R(1.0f, 1.6f), Speed = R(0.4f, 1.4f), Size = R(1.5f, 2.3f), Bursts = new[] { (0f, 8, 10) },
+                    Shape = ParticleSystemShapeType.Sphere, Radius = 0.6f, ShapeScale = new Vector3(1f, 0.5f, 1f), Gravity = -0.08f, World = true, SheetTiles = 2,
+                    Grad = Flat(Hex("#2E2826"), 0.55f, 0.15f, 0.45f), SizeCurve = Curve(0f, 0.5f, 1f, 1.4f), StartRotation = R(0f, 360f),
+                }.Build(air.transform);
+                new Layer
+                {
+                    Name = "ShockAir", Mat = mAddRing, Duration = 0.4f, Life = R(0.24f), Size = R(4.2f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f,
+                    Grad = Snap(FireCore, FireMid, 0.95f, 0.3f), SizeCurve = Curve(0f, 0.12f, 0.45f, 0.75f, 1f, 1f),
                 }.Build(air.transform);
                 var g = Child(root, "Ground", new Vector3(0f, Ground, 0f));
                 new Layer
                 {
-                    Name = "ShockGround", Mat = mAddRingSoft, Duration = 0.5f, Life = R(0.32f), Size = R(4.4f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f,
-                    Render = ParticleSystemRenderMode.HorizontalBillboard, Grad = Snap(FireCore, FireMid, 0.9f, 0.3f), SizeCurve = Curve(0f, 0.1f, 0.4f, 0.75f, 1f, 1f),
+                    Name = "ShockGround", Mat = mAddRing, Duration = 0.5f, Life = R(0.34f), Size = R(4.6f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f,
+                    Render = ParticleSystemRenderMode.HorizontalBillboard, Grad = Snap(FireCore, FireMid, 1f, 0.3f), SizeCurve = Curve(0f, 0.1f, 0.4f, 0.75f, 1f, 1f),
                 }.Build(g.transform);
                 new Layer
                 {
-                    Name = "GroundGlow", Mat = mAddSoft, Duration = 1.2f, Life = R(0.9f), Size = R(4.2f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f,
-                    Render = ParticleSystemRenderMode.HorizontalBillboard, Grad = Snap(FireMid, FireEdge, 0.3f, 0.25f),
+                    Name = "GroundGlow", Mat = mAddSoft, Duration = 1.2f, Life = R(1.0f), Size = R(4.6f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f,
+                    Render = ParticleSystemRenderMode.HorizontalBillboard, Grad = Snap(FireMid, FireEdge, 0.42f, 0.25f),
                 }.Build(g.transform);
                 // Marca de queimado no chão: some em ~3 s.
                 new Layer
@@ -540,16 +620,15 @@ namespace Echoes.EditorTools
                     Render = ParticleSystemRenderMode.HorizontalBillboard, Grad = Flat(Color.white, 0.85f, 0.02f, 0.62f), StartRotation = R(0f, 360f), SizeCurve = Curve(0f, 0.7f, 0.05f, 1f, 1f, 1.03f),
                 }.Build(g.transform);
                 var lamp = Child(root, "Light", new Vector3(0f, 1.2f, 0f));
-                AddLight(lamp, new Color(1f, 0.55f, 0.25f), 8f, 7f, 0.45f, Curve(0f, 1f, 0.2f, 0.75f, 1f, 0f), 0.1f);
+                AddLight(lamp, new Color(1f, 0.55f, 0.25f), 9f, 8f, 0.5f, Curve(0f, 1f, 0.2f, 0.75f, 1f, 0f), 0.1f);
             });
             pChargeFire = SavePrefab("FX_Mage_Charge_Fire", root =>
             {
                 var grow = Child(root, "Grow", Vector3.zero);
                 grow.AddComponent<VfxGrow>().Configure(0.14f, 0.9f);
-                new Layer { Name = "Halo", Mat = mAddSoft, Duration = 1f, Loop = true, Life = R(0.25f), Size = R(1.6f), Rate = 36f, Grad = Flat(FireMid, 0.26f, 0.1f, 0.5f) }.Build(grow.transform);
-                new Layer { Name = "Body", Mat = mAddFlame, Duration = 1f, Loop = true, Life = R(0.3f, 0.4f), Size = R(0.8f, 1.0f), Rate = 50f, Shape = ParticleSystemShapeType.Sphere, Radius = 0.12f, Speed = R(0.1f, 0.4f),
-                    Grad = Ramp(FireCore, FireMid, FireEdge, 0.95f, 0.05f, 0.5f), SizeCurve = Curve(0f, 0.7f, 0.3f, 1f, 1f, 0.35f), StartRotation = R(0f, 360f), RotationSpeed = 60f }.Build(grow.transform);
-                new Layer { Name = "Core", Mat = mAddCore, Duration = 1f, Loop = true, Life = R(0.14f), Size = R(0.6f), Rate = 50f, Grad = Flat(FireCore, 1f, 0.05f, 0.5f) }.Build(grow.transform);
+                new Layer { Name = "Halo", Mat = mAddSoft, Duration = 1f, Loop = true, Life = R(0.25f), Size = R(2.0f), Rate = 36f, Grad = Flat(FireMid, 0.28f, 0.1f, 0.5f) }.Build(grow.transform);
+                FireBody(grow.transform, "Body", R(0.3f, 0.45f), R(0.8f, 1.0f), 56f, 0.1f, true, 0.25f);
+                new Layer { Name = "Core", Mat = mAddCore, Duration = 1f, Loop = true, Life = R(0.14f), Size = R(0.7f), Rate = 50f, Grad = Flat(Color.white, 1f, 0.05f, 0.5f) }.Build(grow.transform);
                 new Layer
                 {
                     Name = "Embers", Mat = mAddSpark, Duration = 1f, Loop = true, Life = R(0.4f, 0.8f), Speed = R(0.3f, 1f), Size = R(0.04f, 0.08f), Rate = 18f, Shape = ParticleSystemShapeType.Sphere,

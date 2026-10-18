@@ -44,6 +44,9 @@ namespace Echoes.Presentation
         [Tooltip("Segundos de duração do efeito até o último golpe visual (queda das flechas). Maior que 0: o efeito começa em (PhaseSeconds da fase - este valor) e termina junto do fim da fase, então acompanha o tempo do impacto vindo dos dados.")]
         [Min(0f)] public float endsWithPhaseAfter;
 
+        [Tooltip("Sobrevive à troca de fase: a marcação da Chuva nasce na preparação e fica até as flechas caírem no fim do impacto, em vez de apagar quando o impacto começa.")]
+        public bool survivePhaseChange;
+
         public bool IsSet => prefab != null;
     }
 

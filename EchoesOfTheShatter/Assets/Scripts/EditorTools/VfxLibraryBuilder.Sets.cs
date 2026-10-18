@@ -37,11 +37,12 @@ namespace Echoes.EditorTools
         static VfxSpec OnTarget(GameObject prefab, float seconds, float y = ChestHeight, float scale = 1f, float radius = 0f) =>
             Spec(prefab, VfxPlace.Target, string.Empty, seconds, false, true, y, scale, radius);
 
-        static SkillVfxEntry Melee(string id, GameObject trail, float coverage, float emit, float trailSeconds, GameObject hit)
+        static SkillVfxEntry Melee(string id, GameObject arc, GameObject trail, float coverage, float emit, float trailSeconds, GameObject hit)
         {
             return new SkillVfxEntry
             {
                 skillId = id,
+                releaseFx = new[] { Spec(arc, VfxPlace.OwnerFeet, string.Empty, 0.6f, false, true) },
                 trail = Spec(trail, VfxPlace.Anchor, string.Empty, trailSeconds, false, false),
                 trailBase = "weapon_base", trailTip = "weapon_tip", trailWidth = coverage, trailEmitSeconds = emit,
                 hitFx = new[] { OnTarget(hit, 1.0f) },
@@ -59,27 +60,28 @@ namespace Echoes.EditorTools
             var warrior = LoadSet(WarriorSetPath);
             warrior.vfx = new List<SkillVfxEntry>
             {
-                Melee("skill.warrior.iron_cut", pTrail1, 0.7f, 0.22f, 0.5f, pHitSpark),
-                Melee("skill.warrior.combo_2", pTrail2, 0.7f, 0.22f, 0.5f, pHitSpark),
+                Melee("skill.warrior.iron_cut", pArc1, pTrail1, 0.3f, 0.22f, 0.5f, pHitSpark),
+                Melee("skill.warrior.combo_2", pArc2, pTrail2, 0.3f, 0.22f, 0.5f, pHitSpark),
                 // O 3º golpe do combo: faixa mais larga (cobre a arma toda), fio dourado, faísca pesada e anel.
-                Melee("skill.warrior.combo_3", pTrail3, 1.0f, 0.3f, 0.65f, pHitSparkHeavy),
+                Melee("skill.warrior.combo_3", pArc3, pTrail3, 0.4f, 0.3f, 0.65f, pHitSparkHeavy),
                 new SkillVfxEntry
                 {
                     skillId = "skill.warrior.heavy_slash",
                     chargeFx = new[] { OnAnchor(pChargeGlowWarrior, "weapon_tip", 30f, true), Spec(pChargeRing, VfxPlace.OwnerFeet, string.Empty, 30f, true, false) },
                     chargeFullFx = new[] { OnAnchor(pChargeFlash, "weapon_tip", 0.4f, true) },
+                    releaseFx = new[] { Spec(pArcHeavy, VfxPlace.OwnerFeet, string.Empty, 0.7f, false, true) },
                     trail = Spec(pTrailHeavy, VfxPlace.Anchor, string.Empty, 0.8f, false, false),
-                    trailBase = "weapon_base", trailTip = "weapon_tip", trailWidth = 1.0f, trailEmitSeconds = 0.34f,
+                    trailBase = "weapon_base", trailTip = "weapon_tip", trailWidth = 0.4f, trailEmitSeconds = 0.34f,
                     hitFx = new[] { OnTarget(pHitSparkHeavy, 1.0f) },
                 },
-                Melee("skill.warrior.charge", pTrail2, 0.7f, 0.2f, 0.5f, pHitSpark),
+                Melee("skill.warrior.charge", pArc2, pTrail2, 0.3f, 0.2f, 0.5f, pHitSpark),
                 new SkillVfxEntry { skillId = "skill.warrior.stone_rift", hitFx = new[] { OnTarget(pHitSparkHeavy, 1.0f) } },
                 new SkillVfxEntry { skillId = "skill.warrior.shield_bash", hitFx = new[] { OnTarget(pHitSparkHeavy, 1.0f) } },
                 // Estados do kit (IDs virtuais): defesa erguida, golpe absorvido e defesa perfeita.
                 new SkillVfxEntry
                 {
                     skillId = "class.warrior#guard",
-                    windupFx = new[] { OnAnchor(pGuardShimmer, "shield_face", 60f, true) },
+                    windupFx = new[] { Spec(pGuardArc, VfxPlace.OwnerFeet, string.Empty, 60f, true, true), OnAnchor(pGuardShimmer, "shield_face", 60f, true) },
                     hitFx = new[] { OnTarget(pGuardBlock, 0.6f, 0f) },
                 },
                 new SkillVfxEntry { skillId = "class.warrior#perfect", releaseFx = new[] { OnTarget(pGuardPerfect, 0.6f, 0f) } },
@@ -111,7 +113,7 @@ namespace Echoes.EditorTools
                 {
                     skillId = "skill.archer.arrow_rain",
                     // A logica acerta ao fim do impacto: a marcacao fica na preparacao e as flechas caem no impacto, pousando no instante do golpe (ate 0,1 s antes).
-                    windupFx = new[] { Spec(pRainMarker, VfxPlace.AimGround, string.Empty, 1.1f, false, false, 0f, 1f, 3f) },
+                    windupFx = new[] { Marker() },
                     releaseFx = new[] { Rain() },
                     hitFx = new[] { OnTarget(pArrowHit, 1.0f) },
                 },
@@ -191,6 +193,13 @@ namespace Echoes.EditorTools
             library.maxVfxLights = 2;
             library.projectileHeight = 1f;
             EditorUtility.SetDirty(library);
+        }
+
+        static VfxSpec Marker()
+        {
+            var spec = Spec(pRainMarker, VfxPlace.AimGround, string.Empty, 1.1f, false, false, 0f, 1f, 3f);
+            spec.survivePhaseChange = true;
+            return spec;
         }
 
         static VfxSpec Rain()

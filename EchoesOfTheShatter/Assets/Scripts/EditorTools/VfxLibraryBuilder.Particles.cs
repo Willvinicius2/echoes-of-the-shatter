@@ -108,6 +108,8 @@ namespace Echoes.EditorTools
             public float NoiseFrequency = 0.8f;
             public Vector3 StartRotation3DMin, StartRotation3DMax;
             public bool UseRotation3D;
+            [Tooltip("Atlas N x N: cada partícula sorteia uma célula (sem animar).")]
+            public int SheetTiles;
 
             public ParticleSystem Build(Transform parent)
             {
@@ -196,6 +198,19 @@ namespace Echoes.EditorTools
                     noise.strength = NoiseStrength;
                     noise.frequency = NoiseFrequency;
                     noise.quality = ParticleSystemNoiseQuality.Low;
+                }
+
+                if (SheetTiles > 1)
+                {
+                    var sheet = ps.textureSheetAnimation;
+                    sheet.enabled = true;
+                    sheet.mode = ParticleSystemAnimationMode.Grid;
+                    sheet.numTilesX = SheetTiles;
+                    sheet.numTilesY = SheetTiles;
+                    sheet.animation = ParticleSystemAnimationType.WholeSheet;
+                    sheet.frameOverTime = new ParticleSystem.MinMaxCurve(0f);
+                    sheet.startFrame = new ParticleSystem.MinMaxCurve(0f, 0.999f);
+                    sheet.cycleCount = 1;
                 }
 
                 var renderer = go.GetComponent<ParticleSystemRenderer>();

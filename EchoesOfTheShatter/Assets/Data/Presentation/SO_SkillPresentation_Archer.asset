@@ -153,6 +153,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -167,6 +168,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -190,6 +192,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.archer.fan_shot
     windupFx: []
@@ -205,6 +208,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -219,6 +223,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -242,6 +247,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.archer.piercing_shot
     windupFx: []
@@ -257,6 +263,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx:
     - prefab: {fileID: 6717606531142463148, guid: 98ff368de88268e478c10e713e6a3a5c, type: 3}
       place: 0
@@ -269,6 +276,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFullFx:
     - prefab: {fileID: 6098099536950492821, guid: a5ca22644ecc61b48924ef85bd0f14ca, type: 3}
       place: 0
@@ -281,6 +289,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trail:
       prefab: {fileID: 0}
       place: 0
@@ -293,6 +302,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -316,6 +326,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.archer.back_leap
     windupFx: []
@@ -331,6 +342,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     - prefab: {fileID: 3726138060627275062, guid: 15e963545015c404e9aaae0947a786ea, type: 3}
       place: 0
       anchor: bow_nock
@@ -342,6 +354,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -356,6 +369,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -379,6 +393,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.archer.arrow_rain
     windupFx:
@@ -393,6 +408,7 @@ MonoBehaviour:
       authoredRadiusMeters: 3
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 1
     releaseFx:
     - prefab: {fileID: 343835517032812416, guid: 8e8844e4f1a60f34d9a3b7b0d638fe10, type: 3}
       place: 2
@@ -405,6 +421,7 @@ MonoBehaviour:
       authoredRadiusMeters: 3
       lengthFromRange: 0
       endsWithPhaseAfter: 0.25
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -419,6 +436,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -442,6 +460,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: class.archer#guard
     windupFx: []
@@ -460,6 +479,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -483,4 +503,5 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []

@@ -371,7 +371,7 @@ namespace Echoes.Presentation
                     continue;
                 }
                 var instance = Play(specs[i], in ctx);
-                if (instance != null && track != null) track.Add(instance);
+                if (instance != null && track != null && !specs[i].survivePhaseChange) track.Add(instance);
             }
         }
 

@@ -179,7 +179,19 @@ MonoBehaviour:
   vfx:
   - skillId: skill.warrior.iron_cut
     windupFx: []
-    releaseFx: []
+    releaseFx:
+    - prefab: {fileID: 5480451242239593444, guid: fddcd4fe16fd0cb4099e33728638064d, type: 3}
+      place: 1
+      anchor: 
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -194,9 +206,10 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
-    trailWidth: 0.7
+    trailWidth: 0.3
     trailEmitSeconds: 0.22
     projectile: {fileID: 0}
     projectileScale: 1
@@ -217,10 +230,23 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.warrior.combo_2
     windupFx: []
-    releaseFx: []
+    releaseFx:
+    - prefab: {fileID: 5510922765132567429, guid: fb9337cb5e4b7dc469f20e5b683f66e4, type: 3}
+      place: 1
+      anchor: 
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -235,9 +261,10 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
-    trailWidth: 0.7
+    trailWidth: 0.3
     trailEmitSeconds: 0.22
     projectile: {fileID: 0}
     projectileScale: 1
@@ -258,10 +285,23 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.warrior.combo_3
     windupFx: []
-    releaseFx: []
+    releaseFx:
+    - prefab: {fileID: 1783676509746475860, guid: d3f925b015812934eb00d4f8eb8e1634, type: 3}
+      place: 1
+      anchor: 
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -276,9 +316,10 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
-    trailWidth: 1
+    trailWidth: 0.4
     trailEmitSeconds: 0.3
     projectile: {fileID: 0}
     projectileScale: 1
@@ -299,10 +340,23 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.warrior.heavy_slash
     windupFx: []
-    releaseFx: []
+    releaseFx:
+    - prefab: {fileID: 56867362303411590, guid: 9b4eec5dea7fbba4ab086a11ca0c291b, type: 3}
+      place: 1
+      anchor: 
+      seconds: 0.7
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx:
     - prefab: {fileID: 3172763661028963610, guid: f2dbf524cc0b249448b10e29ec6de4d3, type: 3}
       place: 0
@@ -315,6 +369,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     - prefab: {fileID: 5451213736464640363, guid: dfa4c06756fbdfd4b8e4891aeb006ab1, type: 3}
       place: 1
       anchor: 
@@ -326,6 +381,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFullFx:
     - prefab: {fileID: 6098099536950492821, guid: a5ca22644ecc61b48924ef85bd0f14ca, type: 3}
       place: 0
@@ -338,6 +394,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trail:
       prefab: {fileID: 5744723909051989209, guid: 0aed0b2ca7f3d7d4e8c559ed477c11b5, type: 3}
       place: 0
@@ -350,9 +407,10 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
-    trailWidth: 1
+    trailWidth: 0.4
     trailEmitSeconds: 0.34
     projectile: {fileID: 0}
     projectileScale: 1
@@ -373,10 +431,23 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.warrior.charge
     windupFx: []
-    releaseFx: []
+    releaseFx:
+    - prefab: {fileID: 5510922765132567429, guid: fb9337cb5e4b7dc469f20e5b683f66e4, type: 3}
+      place: 1
+      anchor: 
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -391,9 +462,10 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
-    trailWidth: 0.7
+    trailWidth: 0.3
     trailEmitSeconds: 0.2
     projectile: {fileID: 0}
     projectileScale: 1
@@ -414,6 +486,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.warrior.stone_rift
     windupFx: []
@@ -432,6 +505,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -455,6 +529,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: skill.warrior.shield_bash
     windupFx: []
@@ -473,6 +548,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -496,9 +572,22 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: class.warrior#guard
     windupFx:
+    - prefab: {fileID: 4846530582993571979, guid: c9dc56ec99b454449afe3825a10624ed, type: 3}
+      place: 1
+      anchor: 
+      seconds: 60
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     - prefab: {fileID: 8410298191121070331, guid: 96fc605d9fade1543afd21c1265a74b8, type: 3}
       place: 0
       anchor: shield_face
@@ -510,6 +599,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     releaseFx: []
     chargeFx: []
     chargeFullFx: []
@@ -525,6 +615,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -548,6 +639,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []
   - skillId: class.warrior#perfect
     windupFx: []
@@ -563,6 +655,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     chargeFx: []
     chargeFullFx: []
     trail:
@@ -577,6 +670,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1

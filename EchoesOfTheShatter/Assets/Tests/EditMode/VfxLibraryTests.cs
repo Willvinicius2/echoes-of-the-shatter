@@ -47,6 +47,65 @@ namespace Echoes.Tests.EditMode
             Assert.IsNotEmpty(e.hitFx, id + ": faisca de impacto");
         }
 
+        [TestCase("skill.warrior.iron_cut")]
+        [TestCase("skill.warrior.combo_2")]
+        [TestCase("skill.warrior.combo_3")]
+        [TestCase("skill.warrior.heavy_slash")]
+        public void WarriorStrikesSweepABladeArcBigEnoughToReadFrom56Meters(string id)
+        {
+            var e = Entry(id);
+            var spec = e.releaseFx.FirstOrDefault(s => s.IsSet && s.prefab.GetComponentInChildren<VfxArcSwipe>(true) != null);
+            Assert.IsNotNull(spec, id + ": arco de lamina no impacto");
+            Assert.AreEqual(VfxPlace.OwnerFeet, spec.place, id + ": o arco nasce no heroi e gira para o golpe");
+            var arc = new SerializedObject(spec.prefab.GetComponentInChildren<VfxArcSwipe>(true));
+            Assert.GreaterOrEqual(arc.FindProperty("outerRadius").floatValue - arc.FindProperty("innerRadius").floatValue, 1.1f, id + ": faixa de pelo menos 1,1 m (85 px a 56 m)");
+            Assert.GreaterOrEqual(Mathf.Abs(arc.FindProperty("endDegrees").floatValue - arc.FindProperty("startDegrees").floatValue), 170f, id + ": varre pelo menos 170 graus");
+        }
+
+        [Test]
+        public void TheSecondComboHitSweepsBackTheOtherWay()
+        {
+            float Direction(string id)
+            {
+                var arc = new SerializedObject(Entry(id).releaseFx[0].prefab.GetComponentInChildren<VfxArcSwipe>(true));
+                return Mathf.Sign(arc.FindProperty("endDegrees").floatValue - arc.FindProperty("startDegrees").floatValue);
+            }
+            Assert.AreNotEqual(Direction("skill.warrior.iron_cut"), Direction("skill.warrior.combo_2"));
+        }
+
+        [Test]
+        public void TheGuardShowsTheProtectedFrontOnTheGroundAndFadesWithThePool()
+        {
+            var guard = Entry("class.warrior#guard");
+            var arc = guard.windupFx.FirstOrDefault(s => s.IsSet && s.prefab.GetComponentInChildren<VfxArcSwipe>(true) != null);
+            Assert.IsNotNull(arc, "arco no chao (docs/18 fx.guard.arc_hint)");
+            Assert.AreEqual(VfxPlace.OwnerFeet, arc.place);
+            Assert.IsTrue(arc.follow, "acompanha o heroi enquanto segura");
+            foreach (var swipe in arc.prefab.GetComponentsInChildren<VfxArcSwipe>(true))
+                Assert.IsTrue(new SerializedObject(swipe).FindProperty("persistent").boolValue, "arco fixo, nao varrido");
+        }
+
+        [Test]
+        public void TheFireIsMadeOfSoftCloudsFromTheFireAtlasNotHardEdgedShards()
+        {
+            var e = Entry("skill.mage.fireball");
+            foreach (var prefab in new[] { e.projectile, e.endFx[0].prefab })
+            {
+                var puffs = prefab.GetComponentsInChildren<ParticleSystemRenderer>(true).Where(r => r.sharedMaterial != null && r.sharedMaterial.mainTexture != null && r.sharedMaterial.mainTexture.name == "T_VFX_FirePuff").ToArray();
+                Assert.IsNotEmpty(puffs, prefab.name + ": nuvens de fogo");
+                foreach (var puff in puffs)
+                    Assert.IsTrue(puff.GetComponent<ParticleSystem>().textureSheetAnimation.enabled, prefab.name + "/" + puff.name + ": sorteia a celula do atlas");
+            }
+        }
+
+        [Test]
+        public void TheArrowRainMarkerStaysUntilTheLastArrowLands()
+        {
+            var e = Entry("skill.archer.arrow_rain");
+            Assert.IsTrue(e.windupFx[0].survivePhaseChange, "a marcacao nao some quando o impacto comeca");
+            Assert.IsTrue(e.windupFx[0].seconds >= 0.95f, "dura a preparacao mais o impacto (0,25 + 0,7 s dos dados)");
+        }
+
         [Test]
         public void TheThirdComboHitTrailIsWiderThanTheOthers()
         {

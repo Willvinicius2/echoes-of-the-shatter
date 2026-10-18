@@ -191,6 +191,12 @@ namespace Echoes.Presentation
             vertices[v + 1] = tp;
             var cb = colorAlongBlade.Evaluate(0f);
             var ct = colorAlongBlade.Evaluate(1f);
+            var ab = cb.a;
+            var at = ct.a;
+            cb = cb.linear; // cor de vértice é linear; o degradê é autorado em sRGB
+            ct = ct.linear;
+            cb.a = ab;
+            ct.a = at;
             cb.a *= fade;
             ct.a *= fade;
             colors[v] = cb;

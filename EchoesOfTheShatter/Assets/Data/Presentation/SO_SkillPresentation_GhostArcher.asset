@@ -76,6 +76,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     releaseFx: []
     chargeFx: []
     chargeFullFx: []
@@ -91,6 +92,7 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     trailBase: weapon_base
     trailTip: weapon_tip
     trailWidth: 1
@@ -114,4 +116,5 @@ MonoBehaviour:
       authoredRadiusMeters: 0
       lengthFromRange: 0
       endsWithPhaseAfter: 0
+      survivePhaseChange: 0
     hitHeavyFx: []

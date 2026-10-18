@@ -25,6 +25,7 @@ namespace Echoes.Presentation
         {
             public ParticleSystem[] Systems;
             public TrailRenderer[] Trails;
+            public VfxArcSwipe[] Arcs;
             public Vector3 PrefabScale;
         }
 
@@ -69,6 +70,7 @@ namespace Echoes.Presentation
                 {
                     Systems = instance.GetComponentsInChildren<ParticleSystem>(true), // uma vez por instância do pool
                     Trails = instance.GetComponentsInChildren<TrailRenderer>(true),
+                    Arcs = instance.GetComponentsInChildren<VfxArcSwipe>(true),
                 };
                 cache.Add(instance, cached);
             }
@@ -100,6 +102,7 @@ namespace Echoes.Presentation
                 {
                     for (var s = 0; s < cached.Systems.Length; s++) cached.Systems[s].Stop(true, ParticleSystemStopBehavior.StopEmitting);
                     for (var t = 0; t < cached.Trails.Length; t++) cached.Trails[t].emitting = false;
+                    for (var a = 0; a < cached.Arcs.Length; a++) cached.Arcs[a].BeginFadeOut(remainingSeconds);
                 }
                 return;
             }

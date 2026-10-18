@@ -32,6 +32,22 @@ namespace Echoes.EditorTools
             BuildScene();
         }
 
+        /// <summary>Entrada de linha de comando: <c>-executeMethod Echoes.EditorTools.VfxShowcaseBuilder.BuildBatch</c> (biblioteca + cena, depois sai).</summary>
+        public static void BuildBatch()
+        {
+            try
+            {
+                Build();
+                AssetDatabase.SaveAssets();
+                if (Application.isBatchMode) EditorApplication.Exit(0);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[VfxShowcase] Falhou: " + e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+            }
+        }
+
         public static void BuildScene()
         {
             SandboxBuilder.EnsureDir(Path.GetDirectoryName(ScenePath).Replace('\\', '/'));
@@ -154,10 +170,54 @@ namespace Echoes.EditorTools
             return go;
         }
 
+        // Piso da vitrine: liso, escuro e frio (violeta-grafite), com junta fina a cada 2 m para dar escala. O piso real da Cripta usa paralaxe
+        // e briga com os efeitos; aqui o que se avalia e o VFX, sobre um fundo neutro e de baixa saturacao (docs/03: piso <= 35%).
+        static Material MakeFloorMaterial()
+        {
+            const string texPath = VfxLibraryBuilder.Root + "/Textures/T_VfxShowcase_Floor.png";
+            const string matPath = VfxLibraryBuilder.MaterialDir + "/M_VfxShowcase_Floor.mat";
+            const int size = 128;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var baseColor = new Color32(0x2B, 0x26, 0x31, 255);
+            var joint = new Color32(0x1B, 0x17, 0x20, 255);
+            var rng = new System.Random(7);
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    var edge = Mathf.Min(Mathf.Min(x, size - 1 - x), Mathf.Min(y, size - 1 - y));
+                    var color = edge < 1 ? joint : baseColor;
+                    var n = (int)(rng.NextDouble() * 5) - 2; // grao leve, sem padrao visivel
+                    tex.SetPixel(x, y, new Color32((byte)Mathf.Clamp(color.r + n, 0, 255), (byte)Mathf.Clamp(color.g + n, 0, 255), (byte)Mathf.Clamp(color.b + n, 0, 255), 255));
+                }
+            }
+            File.WriteAllBytes(Path.GetFullPath(Path.Combine(Application.dataPath, "..", texPath)), tex.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(texPath, ImportAssetOptions.ForceSynchronousImport);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(texPath);
+            importer.mipmapEnabled = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.sRGBTexture = true;
+            importer.SaveAndReimport();
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+            var material = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(material, matPath);
+            }
+            material.SetTexture("_BaseMap", texture);
+            material.SetColor("_BaseColor", Color.white);
+            material.SetFloat("_Smoothness", 0.05f);
+            material.SetFloat("_Metallic", 0f);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         // Piso: ladrilhos de 2 m com o material do piso liso da Cripta (UV 0..1 por ladrilho, como o módulo do kit).
         static void BuildFloor()
         {
-            var material = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/Materials/Environment/M_Cripta_PisoLiso.mat");
+            var material = MakeFloorMaterial();
             const int cells = 24; // 48 m x 48 m
             const float module = 2f;
             var vertices = new List<Vector3>();

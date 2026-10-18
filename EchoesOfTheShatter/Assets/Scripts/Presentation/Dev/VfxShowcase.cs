@@ -26,6 +26,7 @@ namespace Echoes.Presentation
     /// <para>Argumentos: <c>-vfxshow PASTA</c>, <c>-vfxonly id1,id2</c> (filtra), <c>-vfxviews perto,56m</c>.</para>
     /// </summary>
     [DisallowMultipleComponent]
+    [DefaultExecutionOrder(32000)]
     public sealed class VfxShowcase : MonoBehaviour
     {
         const int Fps = 30;
@@ -93,6 +94,35 @@ namespace Echoes.Presentation
         bool subscribed;
         string failure;
 
+        RenderTexture captureTarget;
+        Texture2D captureRead;
+        string capturePath;
+        float lastProgress;
+
+        void LateUpdate()
+        {
+            if (capturePath != null)
+            {
+                viewCamera.Render();
+                var previous = RenderTexture.active;
+                RenderTexture.active = captureTarget;
+                captureRead.ReadPixels(new Rect(0, 0, captureTarget.width, captureTarget.height), 0, 0, false);
+                captureRead.Apply(false);
+                RenderTexture.active = previous;
+                File.WriteAllBytes(capturePath, captureRead.EncodeToJPG(94));
+                capturePath = null;
+                lastProgress = Time.realtimeSinceStartup;
+            }
+            else if (started && lastProgress > 0f && Time.realtimeSinceStartup - lastProgress > 120f && failure == null)
+            {
+                // Vigia: sem progresso por 2 min (travou), sai com erro em vez de deixar o Editor aberto.
+                failure = "vigia: sem novo quadro ha 120 s";
+                Quit(1);
+            }
+        }
+
+        bool started;
+
         // -------------------------------------------------------------------------------------------------------------- arranque
 
         static string ArgValue(string name)
@@ -109,11 +139,39 @@ namespace Echoes.Presentation
         {
             var folder = ArgValue("-vfxshow");
             if (string.IsNullOrEmpty(folder)) yield break;
+            started = true;
+            lastProgress = Time.realtimeSinceStartup;
             var only = ArgValue("-vfxonly");
             var views = ArgValue("-vfxviews") ?? "perto,56m,56m_bloom";
-            yield return RunScript(folder, only, views);
+            // Uma excecao no meio do roteiro derrubaria so a coroutine e deixaria o Editor em Play para sempre: percorre-se a mao e sai com codigo 1.
+            var script = RunScript(folder, only, views);
+            while (true)
+            {
+                object current;
+                try
+                {
+                    if (!script.MoveNext()) break;
+                    current = script.Current;
+                }
+                catch (Exception e)
+                {
+                    failure = "excecao: " + e;
+                    break;
+                }
+                yield return current;
+            }
             Time.captureFramerate = 0;
             Quit(failure == null ? 0 : 1);
+        }
+
+        RenderSettingsAsset Settings
+        {
+            get
+            {
+                // Como o FollowCamera: sem o asset ligado na cena, valem os padroes do docs/04 (55 graus, 45 graus, FOV 14,2, 56 m).
+                if (renderSettings == null) renderSettings = ScriptableObject.CreateInstance<RenderSettingsAsset>();
+                return renderSettings;
+            }
         }
 
         void Quit(int code)
@@ -300,6 +358,8 @@ namespace Echoes.Presentation
         public int PeakLights { get; private set; }
         public int PeakParticles { get; private set; }
         public int PeakEffects { get; private set; }
+        /// <summary>Maior número de vértices vivos nas fitas de rastro da lâmina (0 = o rastro nunca apareceu).</summary>
+        public int PeakTrailVertices { get; private set; }
 
         void SampleBudget()
         {
@@ -313,6 +373,13 @@ namespace Echoes.Presentation
             PeakLights = Mathf.Max(PeakLights, lights);
             PeakParticles = Mathf.Max(PeakParticles, particles);
             PeakEffects = Mathf.Max(PeakEffects, pool.ActiveCount);
+            var trailVertices = 0;
+            foreach (var trail in FindObjectsByType<BladeTrail>(FindObjectsSortMode.None))
+            {
+                var filter = trail.GetComponent<MeshFilter>();
+                if (filter != null && filter.sharedMesh != null) trailVertices += filter.sharedMesh.vertexCount;
+            }
+            PeakTrailVertices = Mathf.Max(PeakTrailVertices, trailVertices);
         }
 
         // -------------------------------------------------------------------------------------------------------------- palco
@@ -379,7 +446,7 @@ namespace Echoes.Presentation
         {
             var s = new Stage();
             // Direção da mira: para a direita da tela (perfil), um pouco para cima, para o voo do projétil aparecer inteiro.
-            var yaw = renderSettings != null ? renderSettings.yawDegrees : 45f;
+            var yaw = Settings.yawDegrees;
             var camRot = Quaternion.Euler(0f, yaw, 0f);
             var right = camRot * Vector3.right;
             var forward = camRot * Vector3.forward;
@@ -416,7 +483,7 @@ namespace Echoes.Presentation
 
         void FrameCamera(string view, Shot shot)
         {
-            var s = renderSettings;
+            var s = Settings;
             var rotation = Quaternion.Euler(s.pitchDegrees, s.yawDegrees, 0f);
             Vector3 focus;
             float distance, fov;
@@ -457,6 +524,7 @@ namespace Echoes.Presentation
             PeakLights = 0;
             PeakParticles = 0;
             PeakEffects = 0;
+            PeakTrailVertices = 0;
             stage = BuildStage(shot);
             presenter.AimResolver = owner =>
             {
@@ -486,13 +554,12 @@ namespace Echoes.Presentation
                 failure = RunDue(elapsed, label);
                 if (failure != null) yield break;
                 if (frameIndex % 2 == 0) SampleBudget();
-                yield return new WaitForEndOfFrame();
-                viewCamera.Render();
-                RenderTexture.active = rt;
-                read.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
-                read.Apply(false);
-                RenderTexture.active = null;
-                File.WriteAllBytes(Path.Combine(frames, $"{frameIndex:D5}.jpg"), read.EncodeToJPG(94));
+                // Em -batchmode o Editor nao chega ao fim do quadro de uma janela (WaitForEndOfFrame nunca volta): o render e a leitura
+                // acontecem no LateUpdate deste componente (ordem 32000, depois de Animator e projeteis) e a coroutine espera o pedido sumir.
+                captureTarget = rt;
+                captureRead = read;
+                capturePath = Path.Combine(frames, $"{frameIndex:D5}.jpg");
+                while (capturePath != null) yield return null;
                 elapsed += 1f / Fps;
                 stepHits.Clear(); // as acertadas por passo servem so a explosao do mesmo passo
             }
@@ -505,7 +572,7 @@ namespace Echoes.Presentation
             presenter.AimResolver = null;
             for (var i = 0; i < 4; i++) yield return null;
             Encode(frames, Path.Combine(folder, label + ".mp4"));
-            marks.AppendLine($"{label}	orcamento	luzes={PeakLights} particulas={PeakParticles} efeitos={PeakEffects}");
+            marks.AppendLine($"{label}	orcamento	luzes={PeakLights} particulas={PeakParticles} efeitos={PeakEffects} vertices_rastro={PeakTrailVertices}");
             Debug.Log($"[VfxShow] {label}: {frameCount} quadros, picos: luzes {PeakLights}, particulas {PeakParticles}, efeitos {PeakEffects}");
         }
 
