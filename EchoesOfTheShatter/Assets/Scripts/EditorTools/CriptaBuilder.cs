@@ -321,6 +321,9 @@ namespace Echoes.EditorTools
                 var perf = go.AddComponent<FramePerfRunner>();
                 SandboxBuilder.SetRef(perf, "root", ctx.GameRoot);
                 go.AddComponent<InteractPromptView>();
+                var flaskUser = go.AddComponent<FlaskUser>();
+                SandboxBuilder.SetRef(flaskUser, "root", ctx.GameRoot);
+                SandboxBuilder.SetRef(flaskUser, "hero", ctx.Hero);
                 var kills = go.AddComponent<KillRewardDirector>();
                 SandboxBuilder.SetRef(kills, "root", ctx.GameRoot);
                 var bossBar = go.AddComponent<BossBarView>();

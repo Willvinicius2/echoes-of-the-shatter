@@ -21,8 +21,10 @@ namespace Echoes.UI
             /// <summary>XP dentro do nivel atual e o XP que o nivel pede (0 no teto de nivel da area).</summary>
             public readonly double XpInLevel, XpToNext;
             public readonly long Gold, Shards;
+            /// <summary>Frascos de Recarga que o jogador leva e o maximo (vendor_stock.csv, carryCap).</summary>
+            public readonly int Flasks, FlaskCap;
 
-            public Snapshot(int level, double xpInLevel, double xpToNext, long gold, long shards, int charges)
+            public Snapshot(int level, double xpInLevel, double xpToNext, long gold, long shards, int charges, int flasks = 0, int flaskCap = 0)
             {
                 Valid = true;
                 Level = level;
@@ -31,6 +33,8 @@ namespace Echoes.UI
                 Gold = gold;
                 Shards = shards;
                 Charges = charges;
+                Flasks = flasks;
+                FlaskCap = flaskCap;
             }
 
             /// <summary>Fracao da barra de XP (0 a 1); no teto de nivel a barra fica cheia.</summary>
@@ -71,7 +75,15 @@ namespace Echoes.UI
                 if (id == GoldId) gold += amount;
                 else if (id == ShardsId) shards += amount;
             }
-            return new Snapshot(level, inLevel, toNext, gold, shards, save.Summary.MarkerCharges);
+            var flasks = 0;
+            var flaskCap = 0;
+            if (rules != null)
+            {
+                var stock = save.VendorStock(rules).Find(x => x.RefId == SaveGame.RefillFlaskId);
+                flasks = stock.Owned;
+                flaskCap = stock.CarryCap;
+            }
+            return new Snapshot(level, inLevel, toNext, gold, shards, save.Summary.MarkerCharges, flasks, flaskCap);
         }
     }
 }

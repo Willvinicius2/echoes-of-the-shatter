@@ -198,8 +198,44 @@ namespace Echoes.UI
 
         public void Interact(string npcId)
         {
-            if (npcId == InteractableNpc.Ilsa) TalkToIlsa();
-            else TalkToTico();
+            switch (npcId)
+            {
+                case InteractableNpc.Ilsa: TalkToIlsa(); break;
+                case InteractableNpc.Vendor: OpenVendor(); break;
+                case InteractableNpc.Enchanter: OpenEnchanter(); break;
+                case InteractableNpc.Stash: OpenStash(); break;
+                default: TalkToTico(); break;
+            }
+        }
+
+        VendorScreen vendorScreen;
+        EnchantScreen enchantScreen;
+
+        /// <summary>Vendedor (S-14): vender, recomprar e Frascos de Recarga.</summary>
+        public VendorScreen OpenVendor()
+        {
+            if (Rules == null || !GameSession.Save.HasSave) return null;
+            var card = OpenScreen();
+            vendorScreen = new VendorScreen(card, root, CloseScreen);
+            vendorScreen.Show();
+            return vendorScreen;
+        }
+
+        /// <summary>Encantador (S-15): Refinar, Reforjar, Adicionar afixo, Lapidar e Desmontar.</summary>
+        public EnchantScreen OpenEnchanter()
+        {
+            if (Rules == null || !GameSession.Save.HasSave) return null;
+            var card = OpenScreen();
+            enchantScreen = new EnchantScreen(card, root, hero, CloseScreen);
+            enchantScreen.Show();
+            return enchantScreen;
+        }
+
+        /// <summary>Bau compartilhado (S-04): abre o inventario com o Bau (so existe no Refugio).</summary>
+        public void OpenStash()
+        {
+            var inventory = FindAnyObjectByType<InventoryController>();
+            if (inventory != null) inventory.Show();
         }
 
         VisualElement OpenScreen()
@@ -217,6 +253,9 @@ namespace Echoes.UI
 
         public void CloseScreen()
         {
+            vendorScreen?.Flush(); // vendas na janela de desfazer valem ao fechar
+            vendorScreen = null;
+            enchantScreen = null;
             if (screen != null) screen.RemoveFromHierarchy();
             screen = null;
             if (screenOpen) Time.timeScale = 1f;

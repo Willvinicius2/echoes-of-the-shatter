@@ -66,6 +66,32 @@ namespace Echoes.Gameplay
 
         public Transform Checkpoint => checkpoint;
 
+        /// <summary>
+        /// Subiu de nível ou o equipamento mudou por melhoria (Encantador): refaz o bloco de atributos pelo core com o nível e os itens do SAVE e
+        /// libera as habilidades do novo nível na hora. Sem save, não faz nada.
+        /// </summary>
+        public bool RefreshFromSave()
+        {
+            if (Logic == null || combat == null) return false;
+            var native = combat.Rules as Echoes.Interop.Native.NativeRulesCore;
+            var session = Echoes.Core.GameSession.Save;
+            if (native == null || session == null || !session.HasSave || Echoes.Core.HeroChoice.Id != "warrior") return false;
+            var save = session.Current;
+            var equipped = new List<string>();
+            foreach (var item in save.Equipment(0))
+            {
+                var info = item != null ? combat.Rules.FindItemBase(item.BaseId) : null;
+                if (info != null) equipped.Add(info.Id);
+            }
+            var progress = save.CharacterProgress(native, 0);
+            var newLevel = progress.Level >= 1 ? progress.Level : Logic.Self.Level;
+            var build = new HeroBuild(Logic.Self.Class.Id, newLevel, equipped, save, 0);
+            attributes.RefreshHero(combat.Rules, in build);
+            Logic.RefreshUnlocks();
+            OnEquipmentChanged();
+            return true;
+        }
+
         /// <summary>Teste e captura: zera a vida do herói (a morte segue o fluxo normal: tela "Você caiu", retorno ao checkpoint).</summary>
         public void ForceDeathForTest()
         {

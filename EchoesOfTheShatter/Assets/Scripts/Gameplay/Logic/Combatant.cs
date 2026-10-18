@@ -33,9 +33,9 @@ namespace Echoes.Gameplay
         public int Id { get; internal set; }
         public CombatTeam Team { get; }
         public string ContentId { get; }
-        public int Level { get; }
-        public IStatBlock Stats { get; }
-        public IEffectSet Effects { get; }
+        public int Level { get; private set; }
+        public IStatBlock Stats { get; private set; }
+        public IEffectSet Effects { get; private set; }
         public ClassInfo Class { get; }
         public EnemyInfo Enemy { get; }
         public ItemBaseInfo Weapon { get; set; }
@@ -106,6 +106,21 @@ namespace Echoes.Gameplay
         public double SecondsSinceCombat { get; internal set; } = double.MaxValue;
 
         public bool IsKnockedBack => knockbackTimeLeft > 0f;
+
+        /// <summary>
+        /// Troca o nível e os blocos do core (atributos e efeitos) do herói depois de subir de nível ou melhorar um item equipado: o core recalculou o
+        /// bloco. Vida e recurso mantêm a FRAÇÃO que tinham. Os blocos antigos são descartados por quem chama.
+        /// </summary>
+        internal void ReplaceBlocks(int level, IStatBlock stats, IEffectSet effects, double lifeFraction, double resourceFraction)
+        {
+            Level = level;
+            Stats = stats ?? throw new ArgumentNullException(nameof(stats));
+            Effects = effects;
+            var v = vitals;
+            v.Life = IsDead ? 0.0 : Math.Max(1.0, MaxLife * lifeFraction);
+            v.Resource = MaxResource * resourceFraction;
+            vitals = v;
+        }
 
         internal void SetVitals(in Vitals value)
         {

@@ -445,6 +445,14 @@ namespace Echoes.UI
             if (stats != null)
             {
                 ScreenKit.Line(statsPanel, Loc.Get("ui.inventory.stats"), 20, ScreenKit.Gold, true);
+                var dps = EquippedWeaponDps();
+                if (dps.HasValue)
+                {
+                    var dpsRow = ScreenKit.Row(statsPanel);
+                    dpsRow.name = "stat-weapon-dps";
+                    ScreenKit.Line(dpsRow, Loc.Get("ui.inventory.stat_dps"), 17, ScreenKit.Muted).style.marginTop = 1;
+                    ScreenKit.Line(dpsRow, dps.Value.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture), 17, ScreenKit.Text, true).style.marginTop = 1;
+                }
                 foreach (var (id, key) in StatLines)
                 {
                     var row = ScreenKit.Row(statsPanel);
@@ -461,6 +469,20 @@ namespace Echoes.UI
             title.style.marginTop = 8;
             ResourceRow("gold", "icon_gold", Loc.Get("ui.common.gold"), Loc.FormatInteger(snap.Gold));
             ResourceRow("shards", "icon_shards", Loc.Get("ui.inventory.shards"), Loc.FormatInteger(snap.Shards));
+        }
+
+        /// <summary>
+        /// Dano por segundo da arma equipada, do core (a "antes" da comparacao da propria arma). Se o core recusar comparar o item equipado consigo
+        /// mesmo, devolve null e a linha some (falta a API shatter_equipped_weapon_dps: pedido ao Backend).
+        /// </summary>
+        double? EquippedWeaponDps()
+        {
+            var slot = ItemSlots.IndexOf("main_hand");
+            var weapon = slot >= 0 && slot < equipment.Length ? equipment[slot] : null;
+            if (weapon == null || Rules == null) return null;
+            var compare = GameSession.Save.Current.Compare(Rules, 0, weapon.Uid, slot);
+            if (compare == null || compare.Result != InvResult.Ok || !compare.IsWeapon) return null;
+            return compare.WeaponDpsBefore;
         }
 
         void ResourceRow(string name, string iconName, string label, string value)

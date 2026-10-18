@@ -100,7 +100,8 @@ namespace Echoes.UI
         VisualElement deathOverlay;
         Label deathDetail;
         VisualElement goldIcon, chargesIcon, fervorBox, levelBox, xpBar, xpFill, checkpointFlash;
-        Label goldValue, chargesValue, levelValue, xpValue, fervorXp;
+        Label goldValue, chargesValue, levelValue, xpValue, fervorXp, flaskValue;
+        VisualElement flaskIcon;
         ArenaController arena;
         float readoutTimeLeft;
         bool wasDead;
@@ -213,6 +214,10 @@ namespace Echoes.UI
             goldIcon = r.Q<VisualElement>("gold-icon");
             chargesIcon = r.Q<VisualElement>("charges-icon");
             goldValue = r.Q<Label>("gold-value");
+            flaskValue = r.Q<Label>("flask-value");
+            flaskIcon = r.Q<VisualElement>("flask-icon");
+            var refillTexture = UiArt.Icon("icon_potion_life");
+            if (flaskIcon != null && refillTexture != null) flaskIcon.style.backgroundImage = new StyleBackground(refillTexture); // TODO(asset ui.icon.refill_flask): icone proprio do Frasco de Recarga
             chargesValue = r.Q<Label>("charges-value");
             levelBox = r.Q<VisualElement>("level-box");
             levelValue = r.Q<Label>("level-value");
@@ -488,6 +493,7 @@ namespace Echoes.UI
             var snap = SaveReadout.Read(rules, ExpeditionConfig.CryptMap);
             if (!snap.Valid) return;
             if (goldValue != null) goldValue.text = localization.FormatInteger(snap.Gold);
+            if (flaskValue != null) flaskValue.text = snap.Flasks + "/" + snap.FlaskCap;
             if (chargesValue != null) chargesValue.text = snap.Charges + "/12";
             if (levelValue != null) levelValue.text = ScreenKit.Fmt(localization, "ui.common.level", ("level", snap.Level.ToString()));
             // XP e nivel reais (core): "XP 120/300" dentro do nivel e a barra; no teto da area a barra fica cheia e o texto diz so o XP.

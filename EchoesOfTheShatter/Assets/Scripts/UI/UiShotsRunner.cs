@@ -248,6 +248,72 @@ namespace Echoes.UI
             refuge.CloseScreen();
             refuge.Config.Rules.RemoveAll(r => r.RefId == "skill.warrior.charge");
 
+            // ---- Vendedor (S-14)
+            Stage("vendedor");
+            var vendor = refuge.OpenVendor();
+            var sellable = GameSession.Save.Current.ListItems(0, ItemContainer.Backpack).FindAll(x => !x.IsUnique);
+            var showItem = sellable.Find(x => x.Rarity == ItemRarity.Magic) ?? sellable.Find(x => x.Rarity != ItemRarity.Normal) ?? sellable[0];
+            vendor.SelectForTest(showItem, ItemContainer.Backpack);
+            yield return Settle();
+            yield return Snap("21_vendedor_vender.png");
+            var secondItem = sellable.Find(x => x.Uid != showItem.Uid);
+            if (secondItem != null)
+            {
+                vendor.SellNow(secondItem.Uid, ItemContainer.Backpack, true);
+                vendor.SellNow(showItem.Uid, ItemContainer.Backpack, true);
+            }
+            vendor.SetTab(VendorScreen.Tab.Buyback);
+            yield return Settle();
+            yield return Snap("22_vendedor_recomprar.png");
+            vendor.SetTab(VendorScreen.Tab.Flasks);
+            vendor.BuyFlask("vendor.refill_flask", 1);
+            yield return Settle();
+            yield return Snap("23_vendedor_frascos.png");
+            refuge.CloseScreen();
+
+            // ---- Encantador (S-15)
+            Stage("encantador");
+            var enchanter = refuge.OpenEnchanter();
+            var rulesNow = CurrentRules();
+            var armor = GameSession.Save.Current.ListItems(0, ItemContainer.Backpack).Find(x => x.Rarity == ItemRarity.Normal && rulesNow.FindItemBase(x.BaseId).Slot != "main_hand");
+            if (armor != null)
+            {
+                enchanter.SelectItem(armor.Uid);
+                yield return Settle();
+                yield return Snap("24_encantador_item_operacoes.png");
+                enchanter.ChooseOpForTest(CraftOp.Refine);
+                yield return Settle();
+                yield return Snap("25_encantador_refinar_confirmacao.png");
+                enchanter.Apply(GameSession.Save.Current.CraftRefine(rulesNow, 0, armor.Uid));
+                enchanter.ChooseOpForTest(CraftOp.Add);
+                yield return Settle();
+                yield return Snap("26_encantador_adicionar_afixo_candidatos.png");
+                enchanter.SelectOfferForTest(0);
+                enchanter.Apply(GameSession.Save.Current.CraftAddAffixApply(rulesNow, 0, armor.Uid, 0));
+                enchanter.ChooseOpForTest(CraftOp.Polish);
+                enchanter.SelectAffixForTest(0);
+                yield return Settle();
+                yield return Snap("27_encantador_lapidar.png");
+                enchanter.ChooseOpForTest(CraftOp.Reforge);
+                enchanter.SelectAffixForTest(0);
+                yield return Settle();
+                yield return Snap("28_encantador_reforjar_trava_aviso.png");
+            }
+            refuge.CloseScreen();
+
+            // ---- Refugio: pontos de interacao com o aviso do Vendedor
+            Stage("refugio pontos");
+            var points = FindObjectsByType<InteractableNpc>(FindObjectsSortMode.None);
+            {
+                foreach (var point in points)
+                {
+                    if (point.npcId != InteractableNpc.Vendor) continue;
+                    Teleport(hero, point.transform.position + new Vector3(1.2f, 0f, 0f));
+                    yield return Settle(0.8f);
+                    yield return Snap("29_refugio_pontos_aviso_vendedor.png");
+                }
+            }
+
             // ---- Cripta: entra pelo "Jogar esta rota agora" (Fervor ligado)
             Stage("cripta");
             RunState.FervorActive = true;

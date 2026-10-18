@@ -33,6 +33,7 @@ namespace Echoes.Gameplay
         InputAction aim;
         InputAction pause;
         InputAction interact;
+        InputAction flask;
         InputAction inventory;
         InputAction worldMap;
         InputAction passiveTree;
@@ -72,6 +73,7 @@ namespace Echoes.Gameplay
             aim = map.FindAction(InputActionNames.Aim, true);
             pause = map.FindAction(InputActionNames.Pause, false);
             interact = map.FindAction(InputActionNames.Interact, false);
+            flask = map.FindAction(InputActionNames.Flask, false);
             inventory = map.FindAction(InputActionNames.Inventory, false);
             worldMap = map.FindAction(InputActionNames.WorldMap, false);
             passiveTree = map.FindAction(InputActionNames.PassiveTree, false);
@@ -117,6 +119,10 @@ namespace Echoes.Gameplay
 
         /// <summary>Glifo da tecla de Interagir para os prompts (vem do Input System: acompanha o remapeamento).</summary>
         public string InteractGlyph => interact != null ? interact.GetBindingDisplayString() : "F";
+
+        /// <summary>Usar o Frasco de Recarga (remapeavel; padrao G).</summary>
+        public bool FlaskPressed => flask != null && flask.WasPressedThisFrame();
+        public string FlaskGlyph => flask != null ? flask.GetBindingDisplayString() : "G";
 
         public bool PausePressed => pause != null && pause.WasPressedThisFrame();
         public string InventoryGlyph => inventory != null ? inventory.GetBindingDisplayString() : "I";

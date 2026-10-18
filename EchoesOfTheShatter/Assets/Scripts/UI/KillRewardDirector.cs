@@ -13,6 +13,7 @@ namespace Echoes.UI
     public sealed class KillRewardDirector : MonoBehaviour
     {
         [SerializeField] GameRoot root;
+        [SerializeField] HeroController hero;
         bool subscribed;
 
         /// <summary>Mortes que renderam XP e o XP total concedido nesta visita (testes e telas).</summary>
@@ -23,6 +24,7 @@ namespace Echoes.UI
         void Start()
         {
             if (root == null) root = FindAnyObjectByType<GameRoot>();
+            if (hero == null) hero = FindAnyObjectByType<HeroController>();
             if (root == null || root.Events == null) return;
             root.Events.Subscribe<CombatantDiedEvent>(OnDied);
             subscribed = true;
@@ -51,6 +53,7 @@ namespace Echoes.UI
             LastAward = award;
             if (!award.LeveledUp) return;
             ScreenHost.Toast(root.Localization.Get("ui.hud.level_up") + " " + ScreenKit.Fmt(root.Localization, "ui.common.level", ("level", award.Level.ToString())), ToastKind.Banner);
+            if (hero != null) hero.RefreshFromSave(); // atributos e habilidades do novo nivel valem na hora (o core recalcula o bloco)
             GameSession.Save.Save(rules); // nivel novo gravado na hora
         }
     }

@@ -107,6 +107,11 @@
                 <Echoes.UI.LocLabel loc-key="ui.common.gold" class="hud__res-name" picking-mode="Ignore" />
                 <ui:Label name="gold-value" class="hud__res-value" picking-mode="Ignore" />
             </ui:VisualElement>
+            <ui:VisualElement name="flask-row" class="hud__res-row" picking-mode="Ignore">
+                <ui:VisualElement name="flask-icon" class="hud__res-icon" picking-mode="Ignore" />
+                <Echoes.UI.LocLabel loc-key="consumable.refill_flask.name" class="hud__res-name" picking-mode="Ignore" />
+                <ui:Label name="flask-value" class="hud__res-value" picking-mode="Ignore" />
+            </ui:VisualElement>
             <ui:VisualElement name="charges-row" class="hud__res-row" picking-mode="Ignore">
                 <ui:VisualElement name="charges-icon" class="hud__res-icon hud__res-icon--charges" picking-mode="Ignore" />
                 <Echoes.UI.LocLabel loc-key="ui.hud.charges" class="hud__res-name" picking-mode="Ignore" />
