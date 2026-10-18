@@ -139,7 +139,7 @@ namespace Echoes.Presentation
             if (!evt.Result.Landed || !evt.IsHeavy || evt.Attacker == null) return;
             var s = Settings;
             if (evt.Attacker.IsBoss && evt.Target != null && evt.Target.Team == CombatTeam.Hero) AddShake(s.shakeBossMeters, s.shakeSeconds);
-            else if (evt.Attacker.Team == CombatTeam.Hero && evt.Result.Critical) AddShake(s.shakeHeavyMeters, s.shakeSeconds);
+            else if (evt.Attacker.Team == CombatTeam.Hero) AddShake(evt.Result.Critical ? s.shakeHeavyMeters : s.shakeHeavyMeters * 0.7f, evt.Result.Critical ? s.shakeSeconds : s.shakeHeroHeavySeconds);
         }
     }
 }

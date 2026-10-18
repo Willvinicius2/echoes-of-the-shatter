@@ -25,6 +25,12 @@ MonoBehaviour:
   chargeState: ChargeHold
   upperBlendSeconds: 0.1
   chargeCreep: 0.7
+  maxWindupSpeed: 2.5
+  preRollHoldFraction: 0.6
+  recoveryMinSpeed: 1
+  recoveryMaxSpeed: 1.2
+  clipEndBlendSeconds: 0.12
+  actionExitBlendSeconds: 0.1
   roarState: Roar
   roarClipSeconds: 1
   fallbackClipSeconds: 1
@@ -37,6 +43,7 @@ MonoBehaviour:
     windupEnd: 0.072289154
     impactEnd: 0.21686748
     holdAt: 0
+    lungeMeters: 0.12
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -54,6 +61,7 @@ MonoBehaviour:
     windupEnd: 0.05
     impactEnd: 0.48333332
     holdAt: 0
+    lungeMeters: 0.15
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -71,6 +79,7 @@ MonoBehaviour:
     windupEnd: 0.05
     impactEnd: 0.5625
     holdAt: 0
+    lungeMeters: 0.3
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -88,6 +97,7 @@ MonoBehaviour:
     windupEnd: 0.3181818
     impactEnd: 0.3939394
     holdAt: 0.18181817
+    lungeMeters: 0.35
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -105,6 +115,7 @@ MonoBehaviour:
     windupEnd: 0.20618556
     impactEnd: 0.25773194
     holdAt: 0
+    lungeMeters: 0
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -122,6 +133,7 @@ MonoBehaviour:
     windupEnd: 0.3838384
     impactEnd: 0.5252525
     holdAt: 0
+    lungeMeters: 0
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -139,6 +151,7 @@ MonoBehaviour:
     windupEnd: 0.09375
     impactEnd: 0.59375
     holdAt: 0
+    lungeMeters: 0
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0

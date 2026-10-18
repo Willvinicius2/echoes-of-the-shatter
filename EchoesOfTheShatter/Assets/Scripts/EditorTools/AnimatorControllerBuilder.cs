@@ -38,6 +38,7 @@ namespace Echoes.EditorTools
             public string Note;
             public bool Hold;         // sem saida automatica para Empty (laco ou fase que o core encerra)
             public string[] AlsoSkills; // outras habilidades que tocam o mesmo estado (cada uma ganha a propria entrada)
+            public float Lunge;       // peso: avanco visual do corpo no impacto (m), so no filho visual; arte, nao regra
             public bool HoldPose;     // golpe carregado: o quadro "arma atras" (holdAt) e medido no clipe; a preparacao do golpe comeca nele
         }
 
@@ -105,11 +106,11 @@ namespace Echoes.EditorTools
             Actions =
             {
                 // Combo (docs/18, 5.1): cada golpe e um clipe diferente do anterior
-                new ActionSpec { State = "Basic", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Slice_Horizontal", SkillId = "skill.warrior.iron_cut" },
-                new ActionSpec { State = "Combo2", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Slice_Diagonal", SkillId = "skill.warrior.combo_2" },
-                new ActionSpec { State = "Combo3", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Jump_Chop", SkillId = "skill.warrior.combo_3" },
+                new ActionSpec { State = "Basic", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Slice_Horizontal", SkillId = "skill.warrior.iron_cut", Lunge = 0.12f },
+                new ActionSpec { State = "Combo2", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Slice_Diagonal", SkillId = "skill.warrior.combo_2", Lunge = 0.15f },
+                new ActionSpec { State = "Combo3", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Jump_Chop", SkillId = "skill.warrior.combo_3", Lunge = 0.3f },
                 // Forte: a mesma Melee_2H_Attack_Slice congelada na carga (camada Upper) e solta daqui, do quadro holdAt ate o fim
-                new ActionSpec { State = "HeavyRelease", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Slice", SkillId = "skill.warrior.heavy_slash", HoldPose = true },
+                new ActionSpec { State = "HeavyRelease", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Slice", SkillId = "skill.warrior.heavy_slash", HoldPose = true, Lunge = 0.35f },
                 new ActionSpec { State = "Charge", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Stab", SkillId = "skill.warrior.charge" },
                 new ActionSpec { State = "Rift", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Chop", SkillId = "skill.warrior.stone_rift" },
                 new ActionSpec { State = "Bash", Fbx = Medium("CombatMelee"), Clip = "Melee_Block_Attack", SkillId = "skill.warrior.shield_bash" },
@@ -541,7 +542,7 @@ namespace Echoes.EditorTools
                         set.entries.Add(new SkillPresentationEntry
                         {
                             skillId = skillId, animatorState = action.State, clipSeconds = clip.length,
-                            windupEnd = windupEnd, impactEnd = impactEnd, holdAt = holdAt, anchor = "socket_weapon_r",
+                            windupEnd = windupEnd, impactEnd = impactEnd, holdAt = holdAt, lungeMeters = action.Lunge, anchor = "socket_weapon_r",
                         });
                     }
                 }

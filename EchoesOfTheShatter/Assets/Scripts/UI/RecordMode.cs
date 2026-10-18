@@ -147,7 +147,9 @@ namespace Echoes.UI
             var nextAttackFrame = -1;
             var idleAfter = 0;
             var f = 0;
-            for (; f < MaxFrames; f++)
+            var runSeconds = ArgInt("-runseconds", 0);
+            var runFrames = runSeconds > 0 ? Mathf.Min(MaxFrames, runSeconds * Fps) : MaxFrames;
+            for (; f < runFrames; f++)
             {
                 var heroPos = hero.transform.position;
                 var aimWorld = heroPos + new Vector3(3f, 0f, 0f);
@@ -205,6 +207,7 @@ namespace Echoes.UI
             text.AppendLine($"resyncs={HeroController.ResyncCount}");
             File.WriteAllText(Path.Combine(folder, "stats.txt"), text.ToString());
             File.WriteAllText(Path.Combine(folder, "trace.csv"), trace.ToString());
+            if (!string.IsNullOrEmpty(videoName)) Encode(Path.Combine(folder, videoName + ".mp4"));
             Debug.Log("[Record] gravado em " + folder + "\n" + text);
         }
 

@@ -40,6 +40,8 @@ namespace Echoes.Presentation
         public float shakeHeavyMeters = 0.03f;
         public float shakeBossMeters = 0.05f;
         public float shakeSeconds = 0.2f;
+        [Tooltip("Golpe pesado do herói (forte, fecho do combo): tremor curto.")]
+        public float shakeHeroHeavySeconds = 0.12f;
         public float shakeFrequencyHz = 30f;
     }
 }

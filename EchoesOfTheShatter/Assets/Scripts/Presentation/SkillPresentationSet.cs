@@ -34,9 +34,18 @@ namespace Echoes.Presentation
         [Tooltip("Carga do golpe forte: a pose congelada vai se armando devagar, do holdAt até esta fração do caminho até o fim da preparação, conforme a carga do core. 0 = pose parada.")]
         [Range(0f, 1f)] public float chargeCreep = 0.7f;
 
-        [Header("Recuperação")]
-        [Tooltip("Velocidade máxima do clipe na recuperação do golpe. A cauda do clipe (a volta lenta à guarda) é longa; apertá-la na recuperação curta do core corre o clipe e termina numa pose parada. Com o limite, toca só o começo da cauda e a saída mistura com a locomoção.")]
-        [Range(0.5f, 4f)] public float recoveryMaxSpeed = 1.5f;
+        [Header("Preparação, recuperação e saída do golpe (rev3: nunca congelar no último quadro)")]
+        [Tooltip("Velocidade máxima do clipe na preparação. Se o trecho autoral não couber, o clipe começa mais adiante em vez de acelerar mais.")]
+        [Range(1f, 4f)] public float maxWindupSpeed = 2.5f;
+        [Tooltip("Fração do trecho de preparação que o aperto toca antes de o core iniciar o golpe (o resto fecha na preparação do core). Segurar o botão vira carga: o leve não toca inteiro antes.")]
+        [Range(0.2f, 1f)] public float preRollHoldFraction = 0.6f;
+        [Tooltip("Velocidade do acompanhamento (cauda do clipe) na recuperação: entre o mínimo e o máximo; natural = 1.")]
+        [Range(0.5f, 1.5f)] public float recoveryMinSpeed = 1f;
+        [Range(1f, 4f)] public float recoveryMaxSpeed = 1.2f;
+        [Tooltip("O clipe acabou antes de a recuperação do core: mistura para a pose de combate ou para a locomoção em tanto tempo, em vez de congelar no último quadro.")]
+        [Min(0.02f)] public float clipEndBlendSeconds = 0.12f;
+        [Tooltip("A lógica liberou antes de o clipe acabar: sai para o próximo golpe ou para o movimento em tanto tempo.")]
+        [Min(0.02f)] public float actionExitBlendSeconds = 0.1f;
 
         [Header("Chefe: rugido de fase (BossStateEvent.PhaseStart)")]
         public string roarState = "Roar";

@@ -65,11 +65,19 @@ namespace Echoes.Presentation
         {
             public SkillPresentationEntry Entry;
             public float Pos;      // posicao atual no clipe (s)
+            public float HoldPos;  // ate aqui toca no aperto; o resto fecha na preparacao do core
             public float EndPos;   // fim do trecho de preparacao (s)
             public float Rate;     // velocidade para cobrir o trecho na preparacao do core
             public float Elapsed;
         }
         PreRoll preRoll;
+        float clipEndTimer = -1f;   // o clipe da recuperacao acaba antes do core: faltam tantos segundos para misturar com a pose de combate
+        bool actionClipEnded;
+        // Peso: avanco visual do corpo (so o filho visual do heroi) no impacto, de volta na recuperacao.
+        Transform modelRoot;
+        Vector3 modelBaseLocal;
+        float lunge, lungeTarget, lungeRate;
+        bool lungeApplied;
         SkillPresentationEntry chargeEntry; // golpe forte em carga (a pose congelada avanca devagar com a carga do core)
         float chargeHoldAt;                 // ponto normalizado atual da pose de carga; o golpe solta daqui
         bool hasAiming;
@@ -104,6 +112,11 @@ namespace Echoes.Presentation
         {
             if (root == null) root = FindAnyObjectByType<GameRoot>();
             if (vfxPool == null) vfxPool = FindAnyObjectByType<VfxPool>();
+            if (HasAnimator && heroController != null && animator.transform != transform)
+            {
+                modelRoot = animator.transform;
+                modelBaseLocal = modelRoot.localPosition;
+            }
             if (HasAnimator)
             {
                 if (skillSet != null)
@@ -192,7 +205,13 @@ namespace Echoes.Presentation
                     if (frozen) animator.SetFloat(SpeedParam, 0f);
                     else animator.SetFloat(SpeedParam, speed, speedDampSeconds, dt);
                 }
-                if (preRoll != null) TickPreRoll(dt);
+                var stepDt = frozen ? 0f : dt;
+                if (preRoll != null) TickPreRoll(stepDt);
+                if (clipEndTimer > 0f)
+                {
+                    clipEndTimer -= stepDt;
+                    if (clipEndTimer <= 0f) EndActionClip();
+                }
                 if (hasActionSpeed) animator.SetFloat(ActionSpeedParam, actionSpeed);
                 if (chargeEntry != null && hasHoldAt && heroController != null && heroController.Logic != null && heroController.Logic.IsCharging)
                 {
@@ -211,6 +230,7 @@ namespace Echoes.Presentation
                 }
             }
             lastPosition = transform.position;
+            ApplyLunge(frozen ? 0f : dt);
 
             // Tinta de elite (uma vez, quando o combatente existe): so o tecido, pelo mesmo mecanismo da raridade.
             if (!eliteApplied && eliteTint != null && !self.Elite.IsNone)
@@ -314,10 +334,15 @@ namespace Echoes.Presentation
             if (evt.Phase == ActionPhase.None)
             {
                 actionSpeed = 1f;
-                if (HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f, ActionExitBlendSeconds);
+                clipEndTimer = -1f;
+                LungeTo(0f, 0.08f);
+                if (!actionClipEnded && HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f, ExitBlendSeconds);
+                actionClipEnded = false;
                 return;
             }
             if (skillSet == null) return;
+            if (evt.Phase != ActionPhase.Recovery) clipEndTimer = -1f;
+            if (evt.Phase == ActionPhase.Windup) actionClipEnded = false;
 
             string state;
             float clip, windupEnd, impactEnd;
@@ -351,6 +376,12 @@ namespace Echoes.Presentation
                         phaseState = entry.windupState;
                         phaseClip = entry.windupClipSeconds * Mathf.Max(0.01f, entry.windupTo - entry.windupFrom);
                         windupOffset = entry.windupFrom * entry.windupClipSeconds;
+                        if (phaseSeconds > 1e-4f && phaseClip > phaseSeconds * skillSet.maxWindupSpeed)
+                        {
+                            // Nao acelera alem do teto: comeca mais adiante no clipe (so o final do puxar).
+                            phaseClip = phaseSeconds * skillSet.maxWindupSpeed;
+                            windupOffset = entry.windupTo * entry.windupClipSeconds - phaseClip;
+                        }
                         break;
                     case ActionPhase.Impact:
                         phaseState = string.IsNullOrEmpty(entry.impactState) ? entry.windupState : entry.impactState;
@@ -365,8 +396,11 @@ namespace Echoes.Presentation
                         break;
                 }
                 actionSpeed = phaseClip > 0f && phaseSeconds > 1e-4f ? phaseClip / phaseSeconds : 1f;
-                // Recuperacao: nunca acelera o clipe alem de recoveryMaxSpeed (cortar o resto e melhor que correr com a cauda do clipe e parar numa pose); a saida mistura com a locomocao.
-                if (evt.Phase != ActionPhase.Windup && phaseClip > 0f) actionSpeed = Mathf.Min(actionSpeed, skillSet.recoveryMaxSpeed);
+                // Acompanhamento em velocidade natural (1,0 a 1,2x); se o clipe acabar antes do core, mistura com a pose de combate em vez de congelar.
+                if (evt.Phase != ActionPhase.Windup && phaseClip > 0f)
+                    actionSpeed = RecoverySpeed(phaseClip, phaseSeconds);
+                if (evt.Phase == ActionPhase.Impact) StartLunge(entry, (float)evt.PhaseSeconds);
+                else if (evt.Phase != ActionPhase.Windup) LungeTo(0f, Mathf.Max(0.05f, (float)evt.PhaseSeconds * 0.9f));
                 if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(phaseState, actionLayerIndex, windupOffset);
                 if (evt.Phase == ActionPhase.Impact && entry.impactVfx != null && vfxPool != null)
                     vfxPool.Play(entry.impactVfx, FindAnchor(entry.anchor).position, transform.rotation, entry.vfxSeconds);
@@ -382,10 +416,17 @@ namespace Echoes.Presentation
                     start = entry != null && entry.holdAt > 0f && entry.holdAt < windupEnd ? entry.holdAt : 0f;
                     if (start > 0f && ReferenceEquals(entry, chargeEntry) && chargeHoldAt > start && chargeHoldAt < windupEnd) start = chargeHoldAt; // continua da pose em que a carga parou
                     authored = (windupEnd - start) * clip;
+                    if (evt.PhaseSeconds > 1e-4 && authored > (float)evt.PhaseSeconds * skillSet.maxWindupSpeed)
+                    {
+                        // Preparacao legivel: no maximo maxWindupSpeed; o que nao couber fica para tras (comeca mais adiante no clipe).
+                        authored = (float)evt.PhaseSeconds * skillSet.maxWindupSpeed;
+                        start = windupEnd - authored / clip;
+                    }
                     break;
                 case ActionPhase.Impact:
                     start = windupEnd;
                     authored = (impactEnd - windupEnd) * clip;
+                    StartLunge(entry, (float)evt.PhaseSeconds);
                     if (entry != null && entry.impactVfx != null && vfxPool != null)
                     {
                         var anchor = FindAnchor(entry.anchor);
@@ -394,13 +435,71 @@ namespace Echoes.Presentation
                     break;
                 default:
                     start = impactEnd;
-                    authored = Mathf.Min((1f - impactEnd) * clip, (float)evt.PhaseSeconds * skillSet.recoveryMaxSpeed); // so toca o inicio da cauda (ver recoveryMaxSpeed)
+                    authored = (1f - impactEnd) * clip;
+                    LungeTo(0f, Mathf.Max(0.05f, (float)evt.PhaseSeconds * 0.9f));
                     break;
             }
 
             // velocidade = duração autoral da fase / duração da fase no CSV (seção 3.3).
             actionSpeed = evt.PhaseSeconds > 1e-4 && authored > 0f ? authored / (float)evt.PhaseSeconds : 1f;
+            // Recuperacao: acompanhamento em velocidade natural (cauda do clipe de 1,0 a 1,2x); clipe curto = mistura no fim, clipe longo = saida da logica.
+            if (evt.Phase == ActionPhase.Recovery) actionSpeed = RecoverySpeed(authored, (float)evt.PhaseSeconds);
             if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(state, actionLayerIndex, start * clip);
+        }
+
+        // ---- acompanhamento, saida do clipe e peso (rev3)
+
+        float ExitBlendSeconds => skillSet != null ? skillSet.actionExitBlendSeconds : ActionExitBlendSeconds;
+
+        // Velocidade do acompanhamento: a cauda do clipe (tail, s) em velocidade natural, entre recoveryMinSpeed e recoveryMaxSpeed; se ainda assim
+        // acabar antes da recuperacao do core, agenda a mistura com a pose de combate (clipEndBlendSeconds) em vez de congelar no ultimo quadro.
+        float RecoverySpeed(float tail, float phaseSeconds)
+        {
+            clipEndTimer = -1f;
+            if (tail <= 0f) return 1f;
+            var ratio = phaseSeconds > 1e-4f ? tail / phaseSeconds : 1f;
+            var speed = Mathf.Clamp(ratio, skillSet.recoveryMinSpeed, skillSet.recoveryMaxSpeed);
+            if (tail / speed < phaseSeconds - 0.03f) clipEndTimer = tail / speed;
+            return speed;
+        }
+
+        void EndActionClip()
+        {
+            actionSpeed = 1f;
+            actionClipEnded = true;
+            if (HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f, skillSet.clipEndBlendSeconds);
+        }
+
+        void StartLunge(SkillPresentationEntry entry, float impactSeconds)
+        {
+            if (modelRoot == null || entry == null || entry.lungeMeters <= 0f) return;
+            lungeTarget = entry.lungeMeters;
+            lungeRate = entry.lungeMeters / Mathf.Max(0.04f, impactSeconds);
+        }
+
+        void LungeTo(float target, float seconds)
+        {
+            if (modelRoot == null) return;
+            lungeTarget = target;
+            lungeRate = Mathf.Abs(lunge - target) / Mathf.Max(0.02f, seconds);
+        }
+
+        void ApplyLunge(float dt)
+        {
+            if (modelRoot == null) return;
+            if (lunge == 0f && lungeTarget == 0f)
+            {
+                if (lungeApplied)
+                {
+                    modelRoot.localPosition = modelBaseLocal;
+                    lungeApplied = false;
+                }
+                return;
+            }
+            lunge = Mathf.MoveTowards(lunge, lungeTarget, lungeRate * dt);
+            var forward = modelRoot.parent != null ? modelRoot.parent.InverseTransformDirection(transform.forward) : transform.forward;
+            modelRoot.localPosition = modelBaseLocal + forward.normalized * lunge;
+            lungeApplied = true;
         }
 
         // ---- antecipacao no aperto
@@ -425,7 +524,11 @@ namespace Echoes.Presentation
             }
             var windup = WindupSecondsOf(skill);
             if (string.IsNullOrEmpty(state) || end - start < 0.02f || windup < 1e-3) return;
-            preRoll = new PreRoll { Entry = entry, Pos = start, EndPos = end, Rate = (end - start) / (float)windup };
+            // Teto de velocidade da preparacao: o que nao couber fica para tras (comeca mais adiante no clipe).
+            var maxSpan = (float)windup * skillSet.maxWindupSpeed;
+            if (end - start > maxSpan) start = end - maxSpan;
+            var hold = start + (end - start) * skillSet.preRollHoldFraction;
+            preRoll = new PreRoll { Entry = entry, Pos = start, HoldPos = hold, EndPos = end, Rate = (end - start) / (float)windup };
             actionSpeed = preRoll.Rate;
             PlayIfExists(state, actionLayerIndex, start);
         }
@@ -434,7 +537,7 @@ namespace Echoes.Presentation
         {
             preRoll.Elapsed += dt;
             preRoll.Pos += actionSpeed * dt;
-            if (preRoll.Pos >= preRoll.EndPos) actionSpeed = 0f; // armado: segura a pose ate o core iniciar o golpe
+            if (preRoll.Pos >= preRoll.HoldPos) actionSpeed = 0f; // armado: segura a pose ate o core iniciar o golpe (o leve nao toca inteiro: segurar vira carga)
             if (preRoll.Elapsed > PreRollMaxSeconds) CancelPreRoll();
         }
 
@@ -443,7 +546,7 @@ namespace Echoes.Presentation
             if (preRoll == null) return;
             preRoll = null;
             actionSpeed = 1f;
-            if (HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f, ActionExitBlendSeconds);
+            if (HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f, ExitBlendSeconds);
         }
 
         /// <summary>Tempo maximo de espera da pose armada sem o core iniciar o golpe (segurar vira carga em 0,35 s; mais que isso e um aperto que nao virou golpe).</summary>
