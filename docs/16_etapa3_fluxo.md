@@ -774,6 +774,8 @@ Proposta; o contrato final é do Backend e do Tech Lead. Padrão da seção 11 d
 
 ### 11.15 Perguntas abertas para o dono
 
+> **Decididas em 18/10/2026** pelo orquestrador, com autonomia dada pelo dono: Q3-5 opção A (2 afixos novos de arma) e Q3-6 opção A (sem desfazer, com trava e aviso).
+
 ### Q3-5 — Podemos acrescentar afixos novos para arma?
 **Pergunta:** Os 8 afixos atuais só dão 3 opções para arma (dano aumentado, crítico, velocidade de ataque); posso pedir ao Data Engineer pelo menos 2 afixos novos de arma para as melhorias fazerem sentido?
 **Contexto:** `RollAffixes` sorteia Mágico com 1 a 2 e Raro com 3 a 4 afixos. Como a arma só tem 3 afixos possíveis, o Raro de arma sempre tem os 3 e não pode receber "Adicionar afixo"; Reforjar de arma só embaralha valores, sem trocar afixos. Armadura tem 4 a 5 e funciona bem. Não é lore: são só números e rótulos.
