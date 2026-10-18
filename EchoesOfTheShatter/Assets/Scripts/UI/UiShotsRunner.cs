@@ -90,6 +90,8 @@ namespace Echoes.UI
             {
                 if (doc.panelSettings == null) continue;
                 doc.panelSettings.targetTexture = uiRt;
+                doc.panelSettings.clearColor = true;               // sem isso a RT acumula o quadro anterior (o fundo opaco do menu cobriria a cena)
+                doc.panelSettings.colorClearValue = new Color(0f, 0f, 0f, 0f);
                 panels.Add(doc.panelSettings);
             }
         }
@@ -213,7 +215,7 @@ namespace Echoes.UI
             pause.SetPaused(false);
 
             Stage("inventario");
-            var drop = DropAndPickup(rules);
+            var drop = DropAndPickup(CurrentRules());
             Debug.Log("[UiShots] itens pegos: " + drop);
             var inventory = FindAnyObjectByType<InventoryController>();
             inventory.Show();
@@ -340,6 +342,9 @@ namespace Echoes.UI
         }
 
         static void Kill(HeroController hero) => hero.ForceDeathForTest();
+
+        // O motor nativo pertence ao GameRoot da cena: a cada cena nova o anterior e descartado, entao busca de novo.
+        static NativeRulesCore CurrentRules() => GameSession.NativeRules(FindAnyObjectByType<GameRoot>());
 
         /// <summary>Rola o drop do Guardiao varias vezes e pega tudo (itens Magicos e Raros e moedas) para o inventario da captura.</summary>
         static int DropAndPickup(NativeRulesCore rules)

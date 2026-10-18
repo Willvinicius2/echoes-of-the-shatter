@@ -167,7 +167,7 @@
 .hud__resources {
     position: absolute;
     right: var(--viewport-safe-margin);
-    top: var(--viewport-safe-margin);
+    top: 84px; /* abaixo do botao do inventario (Refugio) */
     align-items: flex-end;
 }
 
