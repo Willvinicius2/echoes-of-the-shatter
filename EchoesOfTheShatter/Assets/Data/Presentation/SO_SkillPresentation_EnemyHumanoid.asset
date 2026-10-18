@@ -45,9 +45,9 @@ MonoBehaviour:
   entries:
   - skillId: skill.enemy.sentinel_strike
     animatorState: Strike
-    clipSeconds: 1.0666667
-    windupEnd: 0.5
-    impactEnd: 0.59375
+    clipSeconds: 1.3000001
+    windupEnd: 0.53846157
+    impactEnd: 0.61538464
     holdAt: 0
     lungeMeters: 0.2
     shakeMeters: 0

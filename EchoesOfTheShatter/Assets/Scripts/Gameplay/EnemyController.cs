@@ -46,6 +46,9 @@ namespace Echoes.Gameplay
         float patrolSpeedMult = 1f;
         float onScreenMarginMeters;
         PlanarVector agentSyncedPosition;
+        PlanarVector approachDirection;   // lado do herói por onde este inimigo chega (vaga fixa durante a perseguição)
+        bool hasApproachDirection;
+        float notChasingTime;
         Camera visibleAreaCamera;
 
         public EnemyCombatLogic Logic { get; private set; }
@@ -106,6 +109,10 @@ namespace Echoes.Gameplay
                 // Sem frenagem automatica do agente: ele freava ja a metros do destino (a posicao do heroi) e o inimigo se arrastava; quem para e a IA
                 // (alcance do golpe) e a desaceleracao vem do EnemyDecelSeconds do feel.
                 agent.autoBraking = false;
+                // Evasao: prioridades diferentes quebram a simetria entre vizinhos (valores no SO_CombatFeel); o inimigo nao desacelera so para nao esbarrar no vizinho.
+                var avoidFeel = combat.Feel;
+                if (!combatant.IsBoss) agent.radius = Mathf.Min(agent.radius, avoidFeel.EnemyAvoidanceRadiusMeters);
+                agent.avoidancePriority = Mathf.Clamp(avoidFeel.EnemyAvoidancePriorityBase + Mathf.Abs(GetInstanceID()) % Mathf.Max(1, avoidFeel.EnemyAvoidancePrioritySpread), 0, 99);
             }
         }
 
@@ -220,6 +227,8 @@ namespace Echoes.Gameplay
             if (agent != null && agent.enabled && agent.isOnNavMesh)
             {
                 var feel = combat != null ? combat.Feel : null;
+                if (!dead && Logic.WantsToMove) notChasingTime = 0f;
+                else if ((notChasingTime += dt) > 1f) hasApproachDirection = false; // a proxima perseguicao escolhe a vaga de novo
                 if (!dead && Logic.WantsToMove)
                 {
                     agent.isStopped = false;
@@ -229,7 +238,7 @@ namespace Echoes.Gameplay
                     if (repathTimer <= 0f)
                     {
                         repathTimer = repathInterval;
-                        agent.SetDestination(Logic.MoveTarget.ToWorld(transform.position.y));
+                        agent.SetDestination(ApproachPoint(feel).ToWorld(transform.position.y));
                     }
                 }
                 else if (!dead && !Logic.Dormant && patrolPoints != null && patrolPoints.Length > 1 && Logic.Brain.State == EnemyBrainState.Idle)
@@ -271,6 +280,27 @@ namespace Echoes.Gameplay
                     transform.rotation = Quaternion.RotateTowards(transform.rotation, wanted3, degrees * dt);
                 }
             }
+        }
+
+        // Ponto de chegada da perseguicao: o anel de alcance do golpe em volta do alvo, na vaga deste inimigo (angulo fixo por inimigo dentro de
+        // +-EnemySurroundSpreadDegrees a partir do lado de onde ele veio). Chefe, alvo ausente ou espalhamento 0: o proprio alvo.
+        PlanarVector ApproachPoint(CombatFeelValues feel)
+        {
+            var target = Logic.MoveTarget;
+            if (feel == null || feel.EnemySurroundSpreadDegrees <= 0f || Logic.Self.IsBoss) return target;
+            if (!hasApproachDirection)
+            {
+                var fromTarget = (Logic.Self.Position - target).NormalizedOr(PlanarVector.Forward);
+                var slot = (Mathf.Abs(GetInstanceID()) % 7 / 3f - 1f) * feel.EnemySurroundSpreadDegrees; // -spread..+spread, estavel por inimigo
+                var radians = slot * Mathf.Deg2Rad;
+                var cos = Mathf.Cos(radians);
+                var sin = Mathf.Sin(radians);
+                approachDirection = new PlanarVector(fromTarget.X * cos - fromTarget.Z * sin, fromTarget.X * sin + fromTarget.Z * cos);
+                hasApproachDirection = true;
+            }
+            var heroRadius = combat != null && combat.Hero != null ? combat.Hero.RadiusMeters : 0.5f;
+            var ring = Logic.StopDistance * feel.EnemyApproachFraction + heroRadius;
+            return target + approachDirection * ring;
         }
 
         // NavMeshAgent.acceleration em m/s2 que leva a 'speed' em 'seconds' (0 s = praticamente instantaneo).

@@ -38,6 +38,7 @@ namespace Echoes.EditorTools
             public string Note;
             public bool Hold;         // sem saida automatica para Empty (laco ou fase que o core encerra)
             public string[] AlsoSkills; // outras habilidades que tocam o mesmo estado (cada uma ganha a propria entrada)
+            public float WindupEnd, ImpactEnd; // > 0: tempos do clipe (fracao) dados pelo autor (clipe do Blender), no lugar da medida pela mao
             public bool HoldPose;     // golpe carregado: o quadro "arma atras" (holdAt) e medido no clipe; a preparacao do golpe comeca nele
         }
 
@@ -193,13 +194,27 @@ namespace Echoes.EditorTools
             },
         };
 
+        static ActionSpec SentinelStrike()
+        {
+            var path = EchoesAnimationImport.PathOf(EchoesAnimationImport.SentinelStrikeName);
+            if (AssetDatabase.LoadMainAssetAtPath(path) == null)
+                return new ActionSpec { State = "Strike", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Chop", SkillId = "skill.enemy.sentinel_strike" };
+            return new ActionSpec
+            {
+                State = "Strike", Fbx = path, Clip = EchoesAnimationImport.SentinelStrikeName, SkillId = "skill.enemy.sentinel_strike",
+                WindupEnd = EchoesAnimationImport.SentinelWindupFrame / (float)EchoesAnimationImport.SentinelFrames,
+                ImpactEnd = EchoesAnimationImport.SentinelImpactFrame / (float)EchoesAnimationImport.SentinelFrames,
+            };
+        }
+
         public static readonly ControllerSpec EnemyHumanoid = new ControllerSpec
         {
             Name = "AC_EnemyHumanoid", SkillSet = "SO_SkillPresentation_EnemyHumanoid", Rig = "Medium", SpeedSourceId = "enemy.hollow_sentinel", Hero = false,
             HitClip = "Hit_A", DeathClip = "Death_B",
             Actions =
             {
-                new ActionSpec { State = "Strike", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Chop", SkillId = "skill.enemy.sentinel_strike" },
+                // Golpe da Sentinela: o clipe do Blender (tronco torce para tras, peso no pe de tras, braco atras da cabeca); sem o FBX, o Chop do KayKit.
+                SentinelStrike(),
                 new ActionSpec { State = "Slam", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Chop", SkillId = "skill.enemy.herald_slam" },
             },
         };
@@ -374,12 +389,19 @@ namespace Echoes.EditorTools
             hitMachine.defaultState = hitEmpty;
             var hit = hitMachine.AddState("Hit");
             hit.motion = Clip(general, spec.HitClip);
-            if (!spec.Hero && hit.motion != null && hit.motion.averageDuration > EnemyFlinchSeconds) hit.speed = hit.motion.averageDuration / EnemyFlinchSeconds;
+            var hitExit = 1f;
+            var hitFade = ExitBlendSeconds;
+            if (!spec.Hero && hit.motion != null)
+            {
+                hitExit = EnemyFlinchClipFraction;
+                hitFade = EnemyFlinchFadeSeconds;
+                hit.speed = Mathf.Max(1f, hit.motion.averageDuration * EnemyFlinchClipFraction / EnemyFlinchPlaySeconds);
+            }
             var hitBack = hit.AddTransition(hitEmpty);
             hitBack.hasExitTime = true;
-            hitBack.exitTime = 1f;
+            hitBack.exitTime = hitExit;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = ExitBlendSeconds;
+            hitBack.duration = hitFade;
 
             EditorUtility.SetDirty(c);
             return c;
@@ -555,8 +577,12 @@ namespace Echoes.EditorTools
         /// <summary>Patrulha = 45% da velocidade de perseguicao (patrolSpeedMult do enemies.csv e 0,5 no Sentinela).</summary>
         public const float EnemyPatrolFraction = 0.45f;
 
-        /// <summary>Flinch curto de tronco (rev5): o clipe de reacao toca em ate tanto tempo, so tronco e bracos, sem parar a locomocao.</summary>
+        /// <summary>
+        /// Flinch curto de tronco (rev6): a reacao inteira (entrada de 0,06 s + trecho do clipe + saida de 0,06 s) dura perto de 0,3 s. Toca so a primeira
+        /// metade do clipe de reacao (o tranco), em <see cref="EnemyFlinchPlaySeconds"/>, e sai com fade curto.
+        /// </summary>
         public const float EnemyFlinchSeconds = 0.3f;
+        public const float EnemyFlinchPlaySeconds = 0.18f, EnemyFlinchClipFraction = 0.5f, EnemyFlinchFadeSeconds = 0.06f;
 
         // Velocidade de movimento em m/s: class_stats.csv (heroi, em uu/s) ou enemies.csv (inimigo, em uu/s); 1 uu = 1 cm.
         static float MoveSpeedMeters(ControllerSpec spec)
@@ -638,6 +664,11 @@ namespace Echoes.EditorTools
                     if (string.IsNullOrEmpty(action.SkillId)) continue;
                     var clip = Clip(action.Fbx, action.Clip);
                     ClipTiming.Analyze(instance, clip, out var windupEnd, out var impactEnd);
+                    if (action.WindupEnd > 0f && action.ImpactEnd > action.WindupEnd)
+                    {
+                        windupEnd = action.WindupEnd;
+                        impactEnd = action.ImpactEnd;
+                    }
                     var holdAt = 0f;
                     if (action.HoldPose)
                     {
@@ -773,11 +804,12 @@ namespace Echoes.EditorTools
             hitMachine.defaultState = hitEmpty;
             var hit = hitMachine.AddState("Hit");
             hit.motion = EchoesAnimationImport.Clip("AN_GhostArcher_Hit");
+            hit.speed = 1.5f;
             var hitBack = hit.AddTransition(hitEmpty);
             hitBack.hasExitTime = true;
-            hitBack.exitTime = 1f;
+            hitBack.exitTime = 0.7f;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = ExitBlendSeconds;
+            hitBack.duration = EnemyFlinchFadeSeconds;
             EditorUtility.SetDirty(c);
             return c;
         }
@@ -872,11 +904,12 @@ namespace Echoes.EditorTools
             hitMachine.defaultState = hitEmpty;
             var hit = hitMachine.AddState("Hit");
             hit.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundHit);
+            hit.speed = 1.5f;
             var hitBack = hit.AddTransition(hitEmpty);
             hitBack.hasExitTime = true;
-            hitBack.exitTime = 1f;
+            hitBack.exitTime = 0.7f;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = ExitBlendSeconds;
+            hitBack.duration = EnemyFlinchFadeSeconds;
             EditorUtility.SetDirty(c);
             return c;
         }

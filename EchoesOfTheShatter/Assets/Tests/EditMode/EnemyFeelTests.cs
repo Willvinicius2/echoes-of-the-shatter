@@ -52,7 +52,7 @@ namespace Echoes.Tests.EditMode
                 var hit = c.layers.First(l => l.name == "Hit");
                 Assert.IsNotNull(hit.avatarMask, name + ": o flinch so mexe o tronco (mascara), as pernas seguem a locomocao");
                 var state = hit.stateMachine.states.First(s => s.state.name == "Hit").state;
-                Assert.LessOrEqual(state.motion.averageDuration / state.speed, AnimatorControllerBuilder.EnemyFlinchSeconds + 1e-3f, name + ": flinch curto");
+                Assert.LessOrEqual(state.motion.averageDuration * state.transitions.Single().exitTime / state.speed, AnimatorControllerBuilder.EnemyFlinchPlaySeconds + 0.01f, name + ": flinch curto");
             }
             var bossSet = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>("Assets/Data/Presentation/SO_SkillPresentation_Boss.asset");
             Assert.Less(bossSet.hitFlinchWeight, 0.5f, "o chefe quase nao se encolhe");
@@ -94,6 +94,45 @@ namespace Echoes.Tests.EditMode
             var feel = AssetDatabase.LoadAssetAtPath<CombatFeelSettings>("Assets/Data/Presentation/SO_CombatFeel.asset").ToValues();
             foreach (var id in new[] { "skill.enemy.guardian_hammer", "skill.enemy.guardian_shield_bash", "skill.enemy.guardian_shield_charge" })
                 Assert.IsTrue(feel.IsHeavy(id), id + ": hitstop de chefe pelo SO_CombatFeel");
+        }
+
+        [Test]
+        public void SentinelStrikeIsTheAuthoredBlenderClipWithTheCoreTimings()
+        {
+            var action = Controller("AC_EnemyHumanoid").layers[1].stateMachine.states.First(st => st.state.name == "Strike").state;
+            Assert.AreEqual(EchoesAnimationImport.SentinelStrikeName, action.motion.name, "golpe da Sentinela: tronco torce, peso para tras (Blender, anim_lib)");
+            Assert.AreEqual(EchoesAnimationImport.SentinelFrames / EchoesAnimationImport.Fps, ((AnimationClip)action.motion).length, 0.05f);
+            var set = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>("Assets/Data/Presentation/SO_SkillPresentation_EnemyHumanoid.asset");
+            Assert.IsTrue(set.TryGet("skill.enemy.sentinel_strike", out var entry));
+            Assert.AreEqual(EchoesAnimationImport.SentinelWindupFrame / (float)EchoesAnimationImport.SentinelFrames, entry.windupEnd, 1e-3f, "fim da preparacao nos quadros do autor");
+            Assert.AreEqual(EchoesAnimationImport.SentinelImpactFrame / (float)EchoesAnimationImport.SentinelFrames, entry.impactEnd, 1e-3f);
+        }
+
+        [Test]
+        public void FlinchTotalIsAboutAThirdOfASecond()
+        {
+            foreach (var name in new[] { "AC_EnemyHumanoid", "AC_Boss", "AC_Hound", "AC_GhostArcher" })
+            {
+                var hit = Controller(name).layers.First(l => l.name == "Hit");
+                var state = hit.stateMachine.states.First(st => st.state.name == "Hit").state;
+                var exit = state.transitions.Single();
+                var played = state.motion.averageDuration * exit.exitTime / state.speed;
+                var total = AnimatorControllerBuilder_EntryBlend + played + exit.duration;
+                Assert.That(total, Is.InRange(0.2f, 0.36f), name + ": flinch de ~0,3 s no total, com fades curtos");
+                Assert.LessOrEqual(exit.duration, 0.08f + 1e-4f, name + ": saida em fade curto");
+            }
+        }
+
+        const float AnimatorControllerBuilder_EntryBlend = Echoes.Presentation.PresentationController.ActionBlendSeconds;
+
+        [Test]
+        public void EnemyApproachRingAndAvoidanceAreFeelValues()
+        {
+            var feel = AssetDatabase.LoadAssetAtPath<CombatFeelSettings>("Assets/Data/Presentation/SO_CombatFeel.asset").ToValues();
+            Assert.AreEqual(0.9f, feel.EnemyApproachFraction, 1e-4f);
+            Assert.AreEqual(70f, feel.EnemySurroundSpreadDegrees, 1e-4f, "o grupo se espalha em volta do heroi em ate +-70 graus");
+            Assert.Greater(feel.EnemyAvoidancePrioritySpread, 0, "prioridades de evasao diferentes quebram a simetria entre vizinhos");
+            Assert.AreEqual(0.3f, feel.EnemyAvoidanceRadiusMeters, 1e-4f, "raio de evasao menor que o corpo: o inimigo nao freia por causa dos vizinhos");
         }
 
         [Test]

@@ -22,6 +22,13 @@ namespace Echoes.Gameplay
         [SerializeField, Min(0f)] float enemyDecelSeconds = 0.12f;
         [SerializeField, Min(1f)] float enemyTurnDegreesPerSecond = 540f;
         [SerializeField, Min(1f)] float enemyAttackTurnDegreesPerSecond = 900f;
+        [Tooltip("Perseguição em grupo: o inimigo mira o anel de alcance do golpe (fração do alcance) numa vaga de até ± estes graus em volta do herói.")]
+        [SerializeField, Range(0.5f, 1f)] float enemyApproachFraction = 0.9f;
+        [SerializeField, Range(0f, 120f)] float enemySurroundSpreadDegrees = 70f;
+        [SerializeField, Range(0, 99)] int enemyAvoidancePriorityBase = 40;
+        [SerializeField, Range(0, 49)] int enemyAvoidancePrioritySpread = 20;
+        [Tooltip("Raio de evasão do agente de navegação do inimigo (o chefe usa o próprio): menor que o corpo para os vizinhos não o frearem.")]
+        [SerializeField, Range(0.1f, 0.6f)] float enemyAvoidanceRadiusMeters = 0.3f;
 
         [Header("Hitstop leve (golpe que não é pesado mas merece um tranco)")]
         [SerializeField, Min(0f)] float hitstopLightMs = 35f;
@@ -78,6 +85,11 @@ namespace Echoes.Gameplay
             values.EnemyDecelSeconds = enemyDecelSeconds;
             values.EnemyTurnDegreesPerSecond = enemyTurnDegreesPerSecond;
             values.EnemyAttackTurnDegreesPerSecond = enemyAttackTurnDegreesPerSecond;
+            values.EnemyApproachFraction = enemyApproachFraction;
+            values.EnemySurroundSpreadDegrees = enemySurroundSpreadDegrees;
+            values.EnemyAvoidancePriorityBase = enemyAvoidancePriorityBase;
+            values.EnemyAvoidancePrioritySpread = enemyAvoidancePrioritySpread;
+            values.EnemyAvoidanceRadiusMeters = enemyAvoidanceRadiusMeters;
             if (lightHitstopSkills != null)
             {
                 for (var i = 0; i < lightHitstopSkills.Length; i++)

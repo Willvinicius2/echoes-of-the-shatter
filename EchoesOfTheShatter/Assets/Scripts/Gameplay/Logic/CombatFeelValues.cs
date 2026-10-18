@@ -32,6 +32,16 @@ namespace Echoes.Gameplay
         /// <summary>Virada do corpo do inimigo em graus/s: calma ao perseguir e mais firme no telégrafo e no golpe (o chefe segue a direção exata do core).</summary>
         public float EnemyTurnDegreesPerSecond = 540f;
         public float EnemyAttackTurnDegreesPerSecond = 900f;
+        /// <summary>Perseguição em grupo (rev6): cada inimigo mira num ponto do anel de alcance em volta do herói (fração do alcance do golpe), numa vaga fixa
+        /// de até ±EnemySurroundSpreadDegrees em relação ao lado de onde veio, e o grupo se espalha em vez de enfileirar. 0 graus = mira o herói.</summary>
+        public float EnemyApproachFraction = 0.9f;
+        public float EnemySurroundSpreadDegrees = 70f;
+        /// <summary>Prioridade de evasão do agente: base e variação por inimigo (quem cede passa por quem tem número menor).</summary>
+        public int EnemyAvoidancePriorityBase = 40;
+        public int EnemyAvoidancePrioritySpread = 20;
+        /// <summary>Raio de evasão do agente (m; o chefe usa o próprio). Com o raio do corpo (0,5), o inimigo freava de 2,2 para 0,5 m/s a 3 m do herói por causa
+        /// dos vizinhos; com 0,3 ele chega ao alcance do golpe sem desacelerar (medido, rev6). É só o raio de desvio, o corpo da lógica não muda.</summary>
+        public float EnemyAvoidanceRadiusMeters = 0.3f;
         public readonly HashSet<string> LightHitstopSkills = new HashSet<string>(StringComparer.Ordinal);
         public readonly HashSet<string> HeavySkills = new HashSet<string>(StringComparer.Ordinal);
 

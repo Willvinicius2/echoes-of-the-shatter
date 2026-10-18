@@ -21,6 +21,11 @@ MonoBehaviour:
   enemyDecelSeconds: 0.12
   enemyTurnDegreesPerSecond: 540
   enemyAttackTurnDegreesPerSecond: 900
+  enemyApproachFraction: 0.9
+  enemySurroundSpreadDegrees: 70
+  enemyAvoidancePriorityBase: 40
+  enemyAvoidancePrioritySpread: 20
+  enemyAvoidanceRadiusMeters: 0.3
   lightHitstopSkills:
   - skill.mage.fireball
   knockbackCommonCm: 20

@@ -93,7 +93,7 @@ namespace Echoes.UI
             input.Script = this;
             ApplyCameraDistance();
             if (closeup != null) yield return RunCloseup(hero);
-            else if (string.Equals(scenario, "enemy", StringComparison.OrdinalIgnoreCase) || string.Equals(scenario, "mixed", StringComparison.OrdinalIgnoreCase)) yield return RunEnemyScenario(hero, scenario.ToLowerInvariant());
+            else if (string.Equals(scenario, "enemy", StringComparison.OrdinalIgnoreCase) || string.Equals(scenario, "mixed", StringComparison.OrdinalIgnoreCase) || string.Equals(scenario, "boss", StringComparison.OrdinalIgnoreCase)) yield return RunEnemyScenario(hero, scenario.ToLowerInvariant());
             else if (!string.IsNullOrEmpty(scenario) && !string.Equals(scenario, "run", StringComparison.OrdinalIgnoreCase)) yield return RunScenario(hero, scenario.ToLowerInvariant());
             else yield return RunRecord(hero);
             Application.Quit();

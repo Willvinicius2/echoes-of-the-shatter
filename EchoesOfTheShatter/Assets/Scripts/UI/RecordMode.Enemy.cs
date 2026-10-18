@@ -124,9 +124,11 @@ namespace Echoes.UI
             Directory.CreateDirectory(folder);
             var cam = Camera.main;
             var mixed = mode == "mixed";
+            var bossDemo = mode == "boss";
             TestSettings.EnemyGodMode = false;
             var host = FindAnyObjectByType<CombatSystemHost>();
             host.Events.Subscribe<SkillPhaseEvent>(OnEnemyPhase);
+            if (bossDemo) host.Events.Subscribe<BossStateEvent>(OnBossEvent);
 
             EnemyController enemy;
             if (mixed)
@@ -136,7 +138,7 @@ namespace Echoes.UI
             }
             else
             {
-                var id = GameFlow.ArgValue("-enemy");
+                var id = bossDemo ? "enemy.crypt_guardian" : GameFlow.ArgValue("-enemy");
                 enemy = FindEnemy(id, hero.transform.position);
                 scenarioTarget = enemy;
             }
@@ -170,8 +172,21 @@ namespace Echoes.UI
             if (!hero.Logic.HasKit) Debug.LogError("[Record] O herói não tem kit básico (o roteiro precisa do core nativo).");
 
             Time.captureFramerate = Fps;
-            var maxSeconds = ArgFloat("-maxseconds", mixed ? 40f : boss ? 80f : 32f);
-            var script = EnemySteps(hero, mixed, maxSeconds);
+            var maxSeconds = ArgFloat("-maxseconds", mixed ? 40f : bossDemo ? 150f : boss ? 80f : 32f);
+            var script = bossDemo ? BossSteps(hero, enemy, maxSeconds) : EnemySteps(hero, mixed, maxSeconds);
+            var avoidArg = GameFlow.ArgValue("-avoid");
+            if (!string.IsNullOrEmpty(avoidArg))
+            {
+                // -avoid none|low: so para ensaiar a causa da perseguicao lenta (evasao entre vizinhos).
+                foreach (var other in FindObjectsByType<EnemyController>(FindObjectsSortMode.None))
+                {
+                    var otherAgent = other.GetComponent<UnityEngine.AI.NavMeshAgent>();
+                    if (otherAgent == null) continue;
+                    if (avoidArg == "none") otherAgent.obstacleAvoidanceType = UnityEngine.AI.ObstacleAvoidanceType.NoObstacleAvoidance;
+                    else if (avoidArg == "low") otherAgent.obstacleAvoidanceType = UnityEngine.AI.ObstacleAvoidanceType.LowQualityObstacleAvoidance;
+                    else if (avoidArg.StartsWith("r")) otherAgent.radius = float.Parse(avoidArg.Substring(1), System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
             Func<bool> wait = null;
             var done = false;
             var tail = 0;
@@ -201,10 +216,17 @@ namespace Echoes.UI
                     toTarget.y = 0f;
                     if (toTarget.magnitude > approachRange) Move = ScreenDirection(cam, toTarget.normalized);
                 }
+                if (walkToPoint != null)
+                {
+                    var walk = walkToPoint() - hero.transform.position;
+                    walk.y = 0f;
+                    if (walk.magnitude > 0.35f) Move = ScreenDirection(cam, walk.normalized);
+                }
                 if (focus != null && enemy != null)
                 {
                     // -focus enemy: a camera segue so o inimigo (revisao do clipe de perto); padrao = meio entre o heroi e o inimigo.
                     var goal = followEnemyOnly ? enemy.transform.position : (hero.transform.position + enemy.transform.position) * 0.5f;
+                    if (followEnemyOnly) goal += Vector3.up * ArgFloat("-focusheight", 0.8f); // olha para o tronco, nao para os pes
                     focus.position = Vector3.Lerp(focus.position, goal, 0.2f);
                     if (camSide && follow != null)
                     {
@@ -226,6 +248,11 @@ namespace Echoes.UI
             }
             Time.captureFramerate = 0;
             host.Events.Unsubscribe<SkillPhaseEvent>(OnEnemyPhase);
+            if (bossDemo)
+            {
+                host.Events.Unsubscribe<BossStateEvent>(OnBossEvent);
+                File.WriteAllText(Path.Combine(folder, "boss_events.txt"), bossLog.ToString() + $"fase2={bossPhase2} guardaQuebrada={bossGuardBroke} staggers={bossStaggers} invocados={bossSummons}\n");
+            }
             File.WriteAllText(Path.Combine(folder, "trace.csv"), trace.ToString());
             File.WriteAllText(Path.Combine(folder, "trace_enemy.csv"), enemyTrace.ToString());
             Encode(Path.Combine(folder, (string.IsNullOrEmpty(videoName) ? "inimigo" : videoName) + ".mp4"));
