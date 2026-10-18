@@ -42,6 +42,7 @@ Shader "Echoes/Env_Scenery"
         _ShadowTint("Cor da sombra", Color) = (0.35, 0.3, 0.55, 1)
         _AmbientStrength("Ambiente", Range(0, 2)) = 1
         _PoolStrength("Luz das tochas (pontuais)", Range(0, 3)) = 1.5
+        _PoolSoftClip("Tochas: compressao do brilho perto da fonte (0 = nenhuma)", Range(0, 2)) = 0.3
 
         [Header(Emissao)]
         _EmissionIntensity("Emissao pela mascara R", Float) = 0.6
@@ -85,6 +86,7 @@ Shader "Echoes/Env_Scenery"
             half4 _ShadowTint;
             half _AmbientStrength;
             half _PoolStrength;
+            half _PoolSoftClip;
             half _EmissionIntensity;
         CBUFFER_END
         ENDHLSL
@@ -291,12 +293,16 @@ Shader "Echoes/Env_Scenery"
                 inputData.positionWS = input.positionWS;
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 uint pixelLightCount = GetAdditionalLightsCount();
+                half3 pool = 0;
                 LIGHT_LOOP_BEGIN(pixelLightCount)
                     Light light = GetAdditionalLight(lightIndex, input.positionWS);
                     half pndl = dot(normalWS, light.direction);
                     half plit = lerp(saturate(pndl), pndl * 0.5h + 0.5h, _ShadeSoftness);
-                    color += albedo * light.color * (plit * light.distanceAttenuation * _PoolStrength);
+                    pool += light.color * (plit * light.distanceAttenuation * _PoolStrength);
                 LIGHT_LOOP_END
+                // Compressao suave (Reinhard) da soma das tochas: a 1/d2 estoura a pedra clara colada na fonte (pilar ao lado do braseiro); longe da fonte quase nao muda.
+                pool = pool / (1.0h + _PoolSoftClip * pool);
+                color += albedo * pool;
             #endif
 
                 color += albedo * (emission * 1.0h);

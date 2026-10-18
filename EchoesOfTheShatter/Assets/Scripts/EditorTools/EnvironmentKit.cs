@@ -223,6 +223,7 @@ namespace Echoes.EditorTools
                 case Look.Rune: mat.EnableKeyword("_ENV_RUNE"); break;
             }
             mat.SetFloat("_PoolStrength", look == Look.Kit ? 1.0f : 1.5f); // pecas pintadas (pilares ao lado do braseiro) estouravam com 1,5
+            mat.SetFloat("_PoolSoftClip", look == Look.Kit ? 1.2f : look == Look.Wall || look == Look.Band ? 0.7f : 0.3f); // pedra clara comprime mais perto da fonte
             // As faces verticais pegam pouco do sol de cima-esquerda: parede, faixa e pecas pintadas sobem na tinta para ler como pedra clara do alvo.
             var gain = look == Look.Wall || look == Look.Band ? 1.4f : look == Look.Floor || look == Look.Decal || look == Look.Rune ? 1f : 1.0f;
             mat.SetColor("_Tint", new Color(gain, gain, gain, 1f));
@@ -265,8 +266,9 @@ namespace Echoes.EditorTools
             EnsureTextures();
             var mat = LoadOrCreate(MaterialDir + (portal ? "/M_Env_RunaPortal.mat" : "/M_Env_Runa.mat"));
             SetLook(mat, Look.Rune);
-            mat.SetColor("_RuneColor", portal ? new Color(0.62f, 0.5f, 1f, 1f) : new Color(1f, 0.72f, 0.3f, 1f));
-            mat.SetFloat("_RuneIntensity", portal ? 2.8f : 2.4f);
+            // Emissao baixa de proposito: com +1,6 EV e o ACES, acima de ~1,3 a cor desatura para branco; abaixo disso le ambar depois do bloom.
+            mat.SetColor("_RuneColor", portal ? new Color(0.55f, 0.4f, 1f, 1f) : new Color(1f, 0.52f, 0.1f, 1f));
+            mat.SetFloat("_RuneIntensity", portal ? 0.7f : 0.55f);
             EditorUtility.SetDirty(mat);
             return mat;
         }
