@@ -19627,7 +19627,7 @@ Transform:
   - {fileID: 7780645254030742355}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5403445080948959993
+--- !u!1 &5247719524280363265
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -19635,9 +19635,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7377330392770347860}
-  - component: {fileID: 7363744950788547993}
-  - component: {fileID: 8254942839166926944}
+  - component: {fileID: 2531636946098477501}
+  - component: {fileID: 9068775052352481415}
+  - component: {fileID: 2668274196801683858}
   m_Layer: 0
   m_Name: Flash
   m_TagString: Untagged
@@ -19645,13 +19645,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7377330392770347860
+--- !u!4 &2531636946098477501
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5403445080948959993}
+  m_GameObject: {fileID: 5247719524280363265}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -19660,13 +19660,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 475949708502564143}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!198 &7363744950788547993
+--- !u!198 &9068775052352481415
 ParticleSystem:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5403445080948959993}
+  m_GameObject: {fileID: 5247719524280363265}
   serializedVersion: 8
   lengthInSec: 0.3
   simulationSpeed: 1
@@ -24450,14 +24450,14 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     vectorLabel1_3: W
---- !u!199 &8254942839166926944
+--- !u!199 &2668274196801683858
 ParticleSystemRenderer:
   serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5403445080948959993}
+  m_GameObject: {fileID: 5247719524280363265}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -29465,7 +29465,7 @@ Transform:
   - {fileID: 293995024617362451}
   - {fileID: 3730195021347697223}
   - {fileID: 44788100186732107}
-  - {fileID: 7377330392770347860}
+  - {fileID: 2531636946098477501}
   - {fileID: 7336391628150987055}
   - {fileID: 4055879318661127715}
   m_Father: {fileID: 5499009224672816140}

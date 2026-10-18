@@ -570,7 +570,7 @@ namespace Echoes.EditorTools
             pFireballExplosion = SavePrefab("FX_Fireball_Explosion", root =>
             {
                 var air = Child(root, "Air", new Vector3(0f, 0.9f, 0f));
-                new Layer { Name = "Flash", Mat = mAddSoft, Duration = 0.3f, Life = R(0.14f), Size = R(3.6f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(Color.white, FireMid, 0.95f, 0.3f), SizeCurve = Curve(0f, 0.4f, 0.35f, 1f, 1f, 1.1f) }.Build(air.transform);
+                new Layer { Name = "Flash", Mat = mAddSoft, Duration = 0.3f, Life = R(0.14f), Size = R(3.2f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(FireCore, FireMid, 0.7f, 0.3f), SizeCurve = Curve(0f, 0.4f, 0.35f, 1f, 1f, 1.1f) }.Build(air.transform);
                 new Layer { Name = "Core", Mat = mAddCore, Duration = 0.3f, Life = R(0.2f), Size = R(2.0f), Bursts = new[] { (0f, 1, 1) }, Radius = 0.001f, Grad = Snap(FireCore, FireMid, 1f, 0.35f) }.Build(air.transform);
                 // Massa de fogo: nuvens grandes que incham para fora e esfriam (creme, laranja, vermelho escuro).
                 new Layer
