@@ -100,6 +100,30 @@ namespace Echoes.UI
 
         IEnumerator RunCloseup(HeroController hero)
         {
+            // -rimtest MISTURA,BORDA,INTERIOR: so para ensaiar a faixa do Fresnel em foto (ex.: 0.4,0.5,0.1).
+            var rimTest = GameFlow.ArgValue("-rimtest");
+            if (rimTest != null)
+            {
+                var parts = rimTest.Split(',');
+                var inv = System.Globalization.CultureInfo.InvariantCulture;
+                if (parts.Length >= 3 && float.TryParse(parts[0], System.Globalization.NumberStyles.Float, inv, out var blend)
+                    && float.TryParse(parts[1], System.Globalization.NumberStyles.Float, inv, out var edge) && float.TryParse(parts[2], System.Globalization.NumberStyles.Float, inv, out var inner))
+                {
+                    var noiseLow = parts.Length >= 5 && float.TryParse(parts[3], System.Globalization.NumberStyles.Float, inv, out var lo) ? lo : -1f;
+                    var noiseHigh = parts.Length >= 5 && float.TryParse(parts[4], System.Globalization.NumberStyles.Float, inv, out var hi) ? hi : -1f;
+                    foreach (var renderer in hero.GetComponentsInChildren<Renderer>())
+                    {
+                        foreach (var material in renderer.materials)
+                        {
+                            if (!material.HasProperty("_FresnelBlend")) continue;
+                            material.SetFloat("_FresnelBlend", blend);
+                            material.SetVector("_FresnelSmoothStepRange", new Vector4(edge, inner, 0f, 0f));
+                            if (parts.Length >= 6 && float.TryParse(parts[5], System.Globalization.NumberStyles.Float, inv, out var litInfluence) && material.HasProperty("_RimLitInfluence")) material.SetFloat("_RimLitInfluence", litInfluence);
+                            if (noiseLow >= 0f && material.HasProperty("_RimNoiseRange")) material.SetVector("_RimNoiseRange", new Vector4(noiseLow, noiseHigh, 0f, 0f));
+                        }
+                    }
+                }
+            }
             if (rimOld)
             {
                 foreach (var renderer in hero.GetComponentsInChildren<Renderer>())
@@ -118,7 +142,10 @@ namespace Echoes.UI
             for (var i = 0; i < 60; i++) yield return null;
             var t = hero.transform;
             var focus = t.position + Vector3.up * 0.9f;
-            cam.transform.position = focus + t.forward * 2.2f + t.right * 1.1f + Vector3.up * 0.5f;
+            var angleArg = GameFlow.ArgValue("-closeangle"); // graus em volta do heroi (0 = frente-direita como sempre); so para fotos de revisao
+            var angle = angleArg != null && float.TryParse(angleArg, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var degrees) ? degrees : 0f;
+            var offset = Quaternion.AngleAxis(angle, Vector3.up) * (t.forward * 2.2f + t.right * 1.1f);
+            cam.transform.position = focus + offset + Vector3.up * 0.5f;
             cam.transform.rotation = Quaternion.LookRotation(focus - cam.transform.position, Vector3.up);
             for (var i = 0; i < 30; i++) yield return null;
             yield return new WaitForEndOfFrame();

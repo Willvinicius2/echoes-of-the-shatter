@@ -263,7 +263,7 @@ namespace Echoes.Gameplay
                 for (var i = 0; i < onHit.Count; i++) ApplyEffect(target, onHit[i], 1.0, attacker.ContentId);
                 Rules.GainResourceOnHit(ref attacker.vitals, attacker.Stats, attacker.Class);
 
-                var hitstop = Feel.HitstopFor(result.Critical, heavy, attacker.IsBoss, target.Team == CombatTeam.Hero);
+                var hitstop = Math.Max(Feel.HitstopFor(result.Critical, heavy, attacker.IsBoss, target.Team == CombatTeam.Hero), Feel.LightHitstopFor(skill.Id));
                 if (hitstop > 0.0)
                 {
                     attacker.Hitstop.Trigger(hitstop);

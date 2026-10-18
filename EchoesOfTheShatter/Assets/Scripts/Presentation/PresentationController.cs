@@ -77,6 +77,11 @@ namespace Echoes.Presentation
         Transform modelRoot;
         Vector3 modelBaseLocal;
         float lunge, lungeTarget, lungeRate;
+        // Impacto legivel: o swing continua um pouco dentro da recuperacao; a posicao no clipe segue a velocidade aplicada.
+        bool trackAction;
+        float actionPos;
+        SkillPresentationEntry trackedEntry;
+        FollowCamera followCamera;
         bool lungeApplied;
         SkillPresentationEntry chargeEntry; // golpe forte em carga (a pose congelada avanca devagar com a carga do core)
         float chargeHoldAt;                 // ponto normalizado atual da pose de carga; o golpe solta daqui
@@ -206,6 +211,7 @@ namespace Echoes.Presentation
                     else animator.SetFloat(SpeedParam, speed, speedDampSeconds, dt);
                 }
                 var stepDt = frozen ? 0f : dt;
+                if (trackAction) actionPos += actionSpeed * stepDt;
                 if (preRoll != null) TickPreRoll(stepDt);
                 if (clipEndTimer > 0f)
                 {
@@ -335,6 +341,7 @@ namespace Echoes.Presentation
             {
                 actionSpeed = 1f;
                 clipEndTimer = -1f;
+                trackAction = false;
                 LungeTo(0f, 0.08f);
                 if (!actionClipEnded && HasAnimator && skillSet != null && actionLayerIndex >= 0) PlayIfExists(skillSet.emptyState, actionLayerIndex, 0f, ExitBlendSeconds);
                 actionClipEnded = false;
@@ -342,7 +349,11 @@ namespace Echoes.Presentation
             }
             if (skillSet == null) return;
             if (evt.Phase != ActionPhase.Recovery) clipEndTimer = -1f;
-            if (evt.Phase == ActionPhase.Windup) actionClipEnded = false;
+            if (evt.Phase == ActionPhase.Windup)
+            {
+                actionClipEnded = false;
+                trackAction = false;
+            }
 
             string state;
             float clip, windupEnd, impactEnd;
@@ -408,6 +419,8 @@ namespace Echoes.Presentation
             }
 
             float start, authored;
+            var impactPhase = false;
+            var continuing = false;
             switch (evt.Phase)
             {
                 case ActionPhase.Windup:
@@ -427,6 +440,7 @@ namespace Echoes.Presentation
                     start = windupEnd;
                     authored = (impactEnd - windupEnd) * clip;
                     StartLunge(entry, (float)evt.PhaseSeconds);
+                    impactPhase = true;
                     if (entry != null && entry.impactVfx != null && vfxPool != null)
                     {
                         var anchor = FindAnchor(entry.anchor);
@@ -437,6 +451,12 @@ namespace Echoes.Presentation
                     start = impactEnd;
                     authored = (1f - impactEnd) * clip;
                     LungeTo(0f, Mathf.Max(0.05f, (float)evt.PhaseSeconds * 0.9f));
+                    if (trackAction && ReferenceEquals(trackedEntry, entry) && entry != null)
+                    {
+                        // O swing do impacto continuou dentro da recuperacao: segue de onde o clipe esta, sem voltar ao ponto de impactEnd.
+                        continuing = true;
+                        authored = Mathf.Max(0f, clip - actionPos);
+                    }
                     break;
             }
 
@@ -444,7 +464,17 @@ namespace Echoes.Presentation
             actionSpeed = evt.PhaseSeconds > 1e-4 && authored > 0f ? authored / (float)evt.PhaseSeconds : 1f;
             // Recuperacao: acompanhamento em velocidade natural (cauda do clipe de 1,0 a 1,2x); clipe curto = mistura no fim, clipe longo = saida da logica.
             if (evt.Phase == ActionPhase.Recovery) actionSpeed = RecoverySpeed(authored, (float)evt.PhaseSeconds);
-            if (HasAnimator && actionLayerIndex >= 0) PlayIfExists(state, actionLayerIndex, start * clip);
+            if (impactPhase && entry != null)
+            {
+                // Impacto legivel (4 a 5 quadros): o swing termina impactCarrySeconds depois do fim da fase de impacto, em velocidade natural no minimo.
+                // O quadro de impacto do core nao muda (a fase comeca aqui); o resto vira acompanhamento.
+                var stretched = authored / ((float)evt.PhaseSeconds + skillSet.impactCarrySeconds);
+                actionSpeed = Mathf.Min(actionSpeed, Mathf.Max(1f, stretched));
+                trackAction = true;
+                trackedEntry = entry;
+                actionPos = start * clip;
+            }
+            if (!continuing && HasAnimator && actionLayerIndex >= 0) PlayIfExists(state, actionLayerIndex, start * clip);
         }
 
         // ---- acompanhamento, saida do clipe e peso (rev3)
@@ -472,9 +502,15 @@ namespace Echoes.Presentation
 
         void StartLunge(SkillPresentationEntry entry, float impactSeconds)
         {
-            if (modelRoot == null || entry == null || entry.lungeMeters <= 0f) return;
+            if (entry == null || heroController == null) return;
+            if (entry.shakeMeters > 0f)
+            {
+                if (followCamera == null) followCamera = FindAnyObjectByType<FollowCamera>();
+                if (followCamera != null) followCamera.AddHeroShake(entry.shakeMeters);
+            }
+            if (modelRoot == null || Mathf.Abs(entry.lungeMeters) < 1e-4f) return;
             lungeTarget = entry.lungeMeters;
-            lungeRate = entry.lungeMeters / Mathf.Max(0.04f, impactSeconds);
+            lungeRate = Mathf.Abs(entry.lungeMeters - lunge) / Mathf.Max(0.04f, impactSeconds);
         }
 
         void LungeTo(float target, float seconds)

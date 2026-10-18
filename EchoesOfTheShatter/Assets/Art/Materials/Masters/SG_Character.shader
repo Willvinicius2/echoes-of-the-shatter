@@ -29,6 +29,8 @@ Shader "Echoes/SG_Character"
         _FresnelBlend("Mistura", Range(0, 1)) = 0.5
         _RimMaskInfluence("Quanto a mascara G controla o rim (0 = rim em tudo)", Range(0, 1)) = 1
         _FresnelSmoothStepRange("Faixa smoothstep (x = borda, y = interior)", Vector) = (0.65, 0, 0, 0)
+        _RimLitInfluence("Rim so no lado iluminado (0 = em toda a silhueta)", Range(0, 1)) = 1
+        _RimNoiseRange("Rim some onde a normal varia depressa (x = comeca a sumir, y = some de vez): triangulos finos da silhueta nao viram dente", Vector) = (0.12, 0.35, 0, 0)
 
         _RimIntensity("Intensidade do rim por raridade (base 0,5)", Range(0, 2)) = 0.5
         _RimTint("Cor do rim da raridade", Color) = (1, 1, 1, 1)
@@ -87,6 +89,8 @@ Shader "Echoes/SG_Character"
             half _FresnelBlend;
             half _RimMaskInfluence;
             float4 _FresnelSmoothStepRange;
+            float4 _RimNoiseRange;
+            half _RimLitInfluence;
             half4 _EmissionColor;
             half _EmissionIntensity;
             half _AccentEmissive;
@@ -217,6 +221,10 @@ Shader "Echoes/SG_Character"
                 half ndv = saturate(dot(normalWS, viewWS));
                 half rim = 1.0h - smoothstep(_FresnelSmoothStepRange.y, _FresnelSmoothStepRange.x, ndv);
                 rim *= lerp(1.0h, mask.g, _RimMaskInfluence);
+                // Triangulos finos da silhueta tem normal interpolada instavel: o rim apareceria como dente. Onde a normal varia depressa por pixel, o rim some.
+                half normalVariation = length(fwidth(normalWS));
+                rim *= 1.0h - smoothstep(_RimNoiseRange.x, _RimNoiseRange.y, normalVariation);
+                rim *= lerp(1.0h, saturate(lit), _RimLitInfluence);
                 half3 rimColor = lerp(_RimColor.rgb, _RimTint.rgb, _RimTintMix);
                 color += rimColor * (rim * _FresnelStrength * _FresnelBlend * (_RimIntensity / 0.5h));
 

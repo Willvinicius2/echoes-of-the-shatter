@@ -20,9 +20,10 @@ namespace Echoes.EditorTools
 
         /// <summary>
         /// Limite próprio da corrida (a caminhada segue em <see cref="MaxScale"/>): o herói corre bem mais rápido do que o clipe cobre, e o limite
-        /// de 1,35 deixava o pé deslizar. Arte, não balanceamento. ECHOES_RUN_MAX_SCALE sobrescreve ao montar (comparação em vídeo no editor).
+        /// de 1,35 deixava o pé deslizar. Padrão 2,2 (corrida A aprovada na rev3: 4,5 m/s com o clipe de 2,057 m/s fecha em 2,19x e o pé não escorrega).
+        /// Arte, não balanceamento. ECHOES_RUN_MAX_SCALE só sobrescreve ao montar para comparação em vídeo; sem a variável vale o padrão.
         /// </summary>
-        public const float DefaultRunMaxScale = 1.35f;
+        public const float DefaultRunMaxScale = 2.2f;
 
         public static float RunMaxScale
         {

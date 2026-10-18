@@ -22,8 +22,10 @@ namespace Echoes.Presentation
         [Range(0f, 1f)] public float impactEnd = 0.5f;
         [Tooltip("Golpe carregado: fração do clipe onde a pose \"arma atrás\" fica congelada na carga (camada Upper). A preparação do golpe começa neste ponto.")]
         [Range(0f, 1f)] public float holdAt;
-        [Tooltip("Peso do golpe: avanço visual do corpo no impacto, em metros, só no filho visual do herói (a posição lógica e o acerto não mudam); volta na recuperação.")]
-        [Min(0f)] public float lungeMeters;
+        [Tooltip("Peso do golpe: avanço visual do corpo no impacto, em metros (negativo = coice, ex.: soltar a flecha), só no filho visual do herói (a posição lógica e o acerto não mudam); volta na recuperação.")]
+        public float lungeMeters;
+        [Tooltip("Tremor mínimo de câmera no momento do impacto/soltura (m, na distância de referência); 0 = sem tremor. Tiro carregado e Bola de Fogo.")]
+        [Min(0f)] public float shakeMeters;
         [Header("Golpe em estados separados (opcional; ex.: Investida do Guardião: preparação, corrida em laço, recuperação)")]
         [Tooltip("Estado da preparação. Vazio = o golpe usa só animatorState, dividido por windupEnd e impactEnd.")]
         public string windupState = string.Empty;

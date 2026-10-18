@@ -16,6 +16,9 @@ MonoBehaviour:
   hitstopCriticalMs: 80
   hitstopBossHeavyMs: 80
   hitstopPlayerHitMs: 40
+  hitstopLightMs: 35
+  lightHitstopSkills:
+  - skill.mage.fireball
   knockbackCommonCm: 20
   knockbackEliteCm: 6
   knockbackBossCm: 0

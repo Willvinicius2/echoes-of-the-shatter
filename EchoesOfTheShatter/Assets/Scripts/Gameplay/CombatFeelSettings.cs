@@ -17,6 +17,13 @@ namespace Echoes.Gameplay
         [SerializeField, Min(0f)] float hitstopBossHeavyMs = 80f;
         [SerializeField, Min(0f)] float hitstopPlayerHitMs = 40f;
 
+        [Header("Hitstop leve (golpe que não é pesado mas merece um tranco)")]
+        [SerializeField, Min(0f)] float hitstopLightMs = 35f;
+        [SerializeField] string[] lightHitstopSkills =
+        {
+            "skill.mage.fireball",
+        };
+
         [Header("Knockback em cm (juice.knockback_cm)")]
         [SerializeField, Min(0f)] float knockbackCommonCm = 20f;
         [SerializeField, Min(0f)] float knockbackEliteCm = 6f;
@@ -60,6 +67,14 @@ namespace Echoes.Gameplay
                 CastTurnDegreesPerSecond = castTurnDegreesPerSecond,
                 AimTurnDegreesPerSecond = aimTurnDegreesPerSecond,
             };
+            values.HitstopLightSeconds = hitstopLightMs / 1000.0;
+            if (lightHitstopSkills != null)
+            {
+                for (var i = 0; i < lightHitstopSkills.Length; i++)
+                {
+                    if (!string.IsNullOrEmpty(lightHitstopSkills[i])) values.LightHitstopSkills.Add(lightHitstopSkills[i]);
+                }
+            }
             if (heavySkills != null)
             {
                 for (var i = 0; i < heavySkills.Length; i++)

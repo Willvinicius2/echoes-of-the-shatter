@@ -134,6 +134,9 @@ namespace Echoes.Presentation
             transform.position = followPosition + offset;
         }
 
+        /// <summary>Tremor mínimo do herói (tiro carregado, Bola de Fogo): amplitude do golpe, duração curta do RenderSettings.</summary>
+        public void AddHeroShake(float amplitudeMeters) => AddShake(amplitudeMeters, Settings.shakeHeroHeavySeconds);
+
         void OnHit(in HitEvent evt)
         {
             if (!evt.Result.Landed || !evt.IsHeavy || evt.Attacker == null) return;

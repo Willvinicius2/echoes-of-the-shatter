@@ -42,6 +42,8 @@ namespace Echoes.Presentation
         [Tooltip("Velocidade do acompanhamento (cauda do clipe) na recuperação: entre o mínimo e o máximo; natural = 1.")]
         [Range(0.5f, 1.5f)] public float recoveryMinSpeed = 1f;
         [Range(1f, 4f)] public float recoveryMaxSpeed = 1.2f;
+        [Tooltip("O movimento do impacto continua por tanto tempo dentro da recuperação (o quadro de impacto do core não muda): o impacto do leve fica legível em 4 a 5 quadros. 0 = o swing termina com a fase de impacto.")]
+        [Min(0f)] public float impactCarrySeconds = 0.07f;
         [Tooltip("O clipe acabou antes de a recuperação do core: mistura para a pose de combate ou para a locomoção em tanto tempo, em vez de congelar no último quadro.")]
         [Min(0.02f)] public float clipEndBlendSeconds = 0.12f;
         [Tooltip("A lógica liberou antes de o clipe acabar: sai para o próximo golpe ou para o movimento em tanto tempo.")]

@@ -120,6 +120,9 @@ namespace Echoes.Gameplay
             if (!rules.CanMove(self.Stats)) return PlanarVector.Zero;
             var speed = WalkSpeed;
             if (drinking != null) speed *= (float)drinking.Potion.MoveSpeedWhileUsing;
+            // TODO(etapa3/economia): aceleração e desaceleração suaves. Quando o Backend entregar hero_move_accel_seconds (0,10) e hero_move_decel_seconds (0,08)
+            // em CombatRules, trocar este retorno por uma velocidade suavizada (estado no passo fixo, MoveTowards pelo tempo do core; nada de número aqui)
+            // e cobrir com teste de lógica (zero ao máximo em accel s, máximo a zero em decel s, parado sem entrada).
             return MoveInput.ClampMagnitude(1f) * speed;
         }
 

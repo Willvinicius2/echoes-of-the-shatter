@@ -29,6 +29,7 @@ MonoBehaviour:
   preRollHoldFraction: 0.6
   recoveryMinSpeed: 1
   recoveryMaxSpeed: 1.2
+  impactCarrySeconds: 0.07
   clipEndBlendSeconds: 0.12
   actionExitBlendSeconds: 0.1
   roarState: Roar
@@ -44,6 +45,7 @@ MonoBehaviour:
     impactEnd: 0.5252525
     holdAt: 0
     lungeMeters: 0
+    shakeMeters: 0
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -62,6 +64,7 @@ MonoBehaviour:
     impactEnd: 0.41269842
     holdAt: 0
     lungeMeters: 0
+    shakeMeters: 0
     windupState: 
     windupClipSeconds: 1
     windupFrom: 0
@@ -80,6 +83,7 @@ MonoBehaviour:
     impactEnd: 1
     holdAt: 0
     lungeMeters: 0
+    shakeMeters: 0
     windupState: ChargeWindup
     windupClipSeconds: 0.9
     windupFrom: 0

@@ -24,7 +24,13 @@ namespace Echoes.Gameplay
         public float CastTurnDegreesPerSecond = 1200f;
         /// <summary>Defendendo ou carregando (sem golpe nem esquiva): o corpo acompanha a mira sem estalar, porque ali não há pressa.</summary>
         public float AimTurnDegreesPerSecond = 720f;
+        /// <summary>Hitstop leve (s) de golpes que não são pesados mas merecem um tranco no acerto (ex.: a explosão da Bola de Fogo).</summary>
+        public double HitstopLightSeconds = 0.035;
+        public readonly HashSet<string> LightHitstopSkills = new HashSet<string>(StringComparer.Ordinal);
         public readonly HashSet<string> HeavySkills = new HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>Hitstop leve da habilidade (0 = nenhum).</summary>
+        public double LightHitstopFor(string skillId) => skillId != null && LightHitstopSkills.Contains(skillId) ? HitstopLightSeconds : 0.0;
 
         public bool IsHeavy(string skillId) => skillId != null && HeavySkills.Contains(skillId);
 
