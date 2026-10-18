@@ -663,6 +663,16 @@ def chk_basic_kit(c: Content, table: str, rows: List[dict], rep: Report) -> None
             rep.err(table, ln, "E_KIT", f"guardEffect {r['guardEffect']} deve ter a tag 'guard' (o dano recebido só cai se o golpe vem de dentro do arco)")
         if r["guardPerfectWindow"] > 0 and r["guardPerfectCooldown"] < r["guardPerfectWindow"]:
             rep.warn(table, ln, "W_KIT", "guardPerfectCooldown menor que guardPerfectWindow: a janela perfeita reabriria dentro de si mesma")
+        # docs/19 N0: refAttackTime e o attackTime da arma inicial da classe (so faz sentido se o golpe escala com a arma)
+        ref = r["refAttackTime"]
+        first_skill = skills.get(r["lightChain"][0]) if r["lightChain"] else None
+        if ref > 0 and first_skill is not None and first_skill["scalesWithWeapon"]:
+            style = "melee" if "melee" in first_skill["tags"] else "projectile"
+            starters = [b for b in c.tables.get("item_bases.csv", [])
+                        if b["slot"] == "main_hand" and b["itemLevel"] <= 1 and style in b["weaponTags"]]
+            if starters and not any(abs(b["attackTime"] - ref) < 1e-9 for b in starters):
+                times = ", ".join(sorted({str(b["attackTime"]) for b in starters}))
+                rep.warn(table, ln, "W_KIT", f"refAttackTime {ref} difere do attackTime da arma inicial da classe ({times}): o kit inicial não ficaria com fator 1,0")
 
 
 def chk_craft_cost(c: Content, table: str, rows: List[dict], rep: Report) -> None:
@@ -1624,6 +1634,16 @@ MUTATIONS = [
      lambda t: t.replace("skill.mage.arcane_dart|skill.mage.arcane_dart|skill.mage.arcane_orb", "skill.mage.arcane_dart|skill.mage.arcane_dart|skill.mage.arcane_orb|skill.mage.arcane_dart"), "E_LIST"),
     ("kit_com_arco_acima_de_360", "basic_kits.csv",
      lambda t: t.replace(",360,0,0.4,", ",400,0,0.4,"), "E_RANGE"),
+    ("kit_com_refAttackTime_negativo", "basic_kits.csv",
+     lambda t: t.replace("effect.stun|effect.guard_break,25,0,0.9", "effect.stun|effect.guard_break,25,0,-0.9"), "E_RANGE"),
+    ("bau_com_prefixo_errado", "chests.csv",
+     lambda t: t.replace("chest.crypt.01,", "box.crypt.01,"), "E_ID"),
+    ("bau_com_mapa_inexistente", "chests.csv",
+     lambda t: t.replace("chest.crypt.02,map.act1.crypt", "chest.crypt.02,map.act1.nope"), "E_FK"),
+    ("bau_com_tabela_de_loot_inexistente", "chests.csv",
+     lambda t: t.replace("loot.crypt.elite", "loot.crypt.nope", 1), "E_FK"),
+    ("bau_com_id_repetido", "chests.csv",
+     lambda t: t.replace("chest.crypt.03,", "chest.crypt.02,"), "E_DUP_ID"),
     ("perfuracao_em_golpe_que_nao_e_projetil", "skills.csv",
      lambda t: _set_skill_field(t, "skill.archer.arrow_rain", "pierce", "5"), "E_PIERCE"),
     ("explosao_em_golpe_que_nao_e_projetil", "skills.csv",
@@ -1641,7 +1661,7 @@ MUTATIONS = [
     ("vendor_stock_com_carryCap_diferente_da_regra", "vendor_stock.csv",
      lambda t: t.replace("stack,50,3", "stack,50,5"), "E_VENDOR"),
     ("afixo_com_craftInscription_invalido", "affixes.csv",
-     lambda t: t.replace("affix.sturdy,prefix,life,flat,,10,25,1,10,head|body|hands|legs|feet,life,true", "affix.sturdy,prefix,life,flat,,10,25,1,10,head|body|hands|legs|feet,life,sim"), "E_TYPE"),
+     lambda t: t.replace("affix.sturdy,prefix,life,flat,,10,25,1,10,head|body|hands|legs|feet|off_hand,life,true", "affix.sturdy,prefix,life,flat,,10,25,1,10,head|body|hands|legs|feet|off_hand,life,sim"), "E_TYPE"),
     ("reforge_mult_cap_abaixo_de_1", "rules.csv",
      lambda t: t.replace("reforge_mult_cap,3.0", "reforge_mult_cap,0.5"), "E_RANGE"),
     ("base_em_posicao_bloqueada", "rules.csv",

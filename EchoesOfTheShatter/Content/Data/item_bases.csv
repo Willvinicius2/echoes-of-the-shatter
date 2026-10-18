@@ -7,3 +7,12 @@ item_base.leather_gloves,hands,1,attack_speed:increased:0.03,,,,,,,f,vset.starte
 item_base.worn_boots,feet,1,move_speed:increased:0.05,,,,,,,f,vset.starter
 item_base.worn_trousers,legs,1,armor:flat:4,,,,,,,f,vset.starter
 item_base.hunter_bow,main_hand,1,crit_chance:flat:0.02,8,,,,0.8,projectile,m,
+item_base.steel_sword,main_hand,4,crit_chance:flat:0.02,12,,,,0.9,melee,f,
+item_base.quarry_maul,main_hand,5,,21,,,,1.4,melee,m,
+item_base.wooden_shield,off_hand,1,armor:flat:10,,,,,,,m,
+item_base.guard_helm,head,2,armor:flat:14,,,,,,,m,vset.warrior_rare_01
+item_base.guard_cuirass,body,2,life:flat:22,,,,,,,f,vset.warrior_rare_01
+item_base.guard_gauntlets,hands,2,attack_speed:increased:0.05,,,,,,,f,vset.warrior_rare_01
+item_base.guard_greaves,legs,2,armor:flat:8,,,,,,,f,vset.warrior_rare_01
+item_base.guard_sabatons,feet,2,move_speed:increased:0.06,,,,,,,m,vset.warrior_rare_01
+item_base.guard_shield,off_hand,4,armor:flat:18|life:flat:12,,,,,,,m,

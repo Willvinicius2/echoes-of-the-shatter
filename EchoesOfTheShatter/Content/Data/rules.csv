@@ -69,7 +69,7 @@ sell_price_rare,35
 sell_price_unique,100
 sell_level_factor,0.1
 equip_slot_main_hand,true
-equip_slot_off_hand,false
+equip_slot_off_hand,true
 equip_slot_head,true
 equip_slot_body,true
 equip_slot_hands,true

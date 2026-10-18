@@ -152,10 +152,26 @@ effect.charging.heavy.name,Carregando,Charging,,effect; max=24,
 effect.charging.archer.name,Mirando,Aiming,,effect; max=24,
 effect.chill.name,Enregelado,Chilled,,effect; max=24,m
 item_base.hunter_bow.name,Arco de Caçador,Hunter's Bow,,item base; max=28,m
-affix.scorching.name,Abrasador,Scorching,,affix prefix; forma m singular,m
-affix.scorching.name_f,Abrasadora,Scorching,,affix prefix; forma f singular,f
-affix.scorching.name_mp,Abrasadores,Scorching,,affix prefix; forma m plural,m
-affix.scorching.name_fp,Abrasadoras,Scorching,,affix prefix; forma f plural,f
-affix.of_ruin.name,de Ruína,of Ruin,,affix suffix; invariável,
+item_base.steel_sword.name,Espada de Aço,Steel Sword,,item base; max=28,f
+item_base.quarry_maul.name,Martelo de Cantaria,Quarry Maul,,item base; max=28,m
+item_base.wooden_shield.name,Escudo de Madeira,Wooden Shield,,item base; max=28,m
+item_base.guard_shield.name,Escudo de Guarda,Guard Shield,,item base; max=28,m
+item_base.guard_helm.name,Elmo de Guarda,Guard Helm,,item base; max=28,m
+item_base.guard_cuirass.name,Couraça de Guarda,Guard Cuirass,,item base; max=28,f
+item_base.guard_gauntlets.name,Manoplas de Guarda,Guard Gauntlets,,item base; plural; max=28,f
+item_base.guard_greaves.name,Grevas de Guarda,Guard Greaves,,item base; plural; max=28,f
+item_base.guard_sabatons.name,Escarpes de Guarda,Guard Sabatons,,item base; plural; max=28,m
+affix.ruthless.name,Impiedoso,Ruthless,,affix prefix; forma m singular,m
+affix.ruthless.name_f,Impiedosa,Ruthless,,affix prefix; forma f singular,f
+affix.ruthless.name_mp,Impiedosos,Ruthless,,affix prefix; forma m plural,m
+affix.ruthless.name_fp,Impiedosas,Ruthless,,affix prefix; forma f plural,f
+affix.resolute.name,Resoluto,Resolute,,affix prefix; forma m singular,m
+affix.resolute.name_f,Resoluta,Resolute,,affix prefix; forma f singular,f
+affix.resolute.name_mp,Resolutos,Resolute,,affix prefix; forma m plural,m
+affix.resolute.name_fp,Resolutas,Resolute,,affix prefix; forma f plural,f
+affix.of_cadence.name,de Cadência,of Cadence,,affix suffix; invariável,
+affix.of_reach.name,de Alcance,of Reach,,affix suffix; invariável,
+affix.of_the_flask.name,do Frasco,of the Flask,,affix suffix; invariável,
+affix.of_the_wall.name,do Muro,of the Wall,,affix suffix; invariável,
 consumable.refill_flask.name,Frasco de Recarga,Refill Flask,,consumível; max=20; provisório,m
 consumable.refill_flask.desc,Restaura 1 carga de poção. Não funciona na arena do Guardião,Restores 1 potion charge. Does not work in the Guardian arena,,consumível; max=70; provisório,

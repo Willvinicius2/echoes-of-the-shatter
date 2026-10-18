@@ -1,0 +1,6 @@
+id,mapId,lootTable
+chest.crypt.01,map.act1.crypt,loot.crypt.area
+chest.crypt.02,map.act1.crypt,loot.crypt.area
+chest.crypt.03,map.act1.crypt,loot.crypt.area
+chest.crypt.04,map.act1.crypt,loot.crypt.common
+chest.crypt.05,map.act1.crypt,loot.crypt.common
