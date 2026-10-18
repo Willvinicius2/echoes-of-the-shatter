@@ -192,7 +192,15 @@ namespace Echoes.UI
             return Math.Sign(Math.Round(score, 4));
         }
 
-        /// <summary>Abreviacao do item para o quadrado do slot (ate o icone existir): iniciais da base.</summary>
+        /// <summary>Valor de atributo do painel: fracao vira porcentagem (critico, resistencias); o resto, numero com ate 2 casas.</summary>
+        public static string StatValue(string stat, double value)
+        {
+            return IsFractionStat(stat)
+                ? (value * 100.0).ToString("0.#", CultureInfo.InvariantCulture) + "%"
+                : value.ToString("0.##", CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>Abreviacao do item para o quadrado do slot (so quando a base nao tem icone em UiArt): iniciais da base.</summary>
         public static string Glyph(LocalizationService loc, ItemInstanceInfo item)
         {
             var name = loc.Get(item.BaseId + ".name");

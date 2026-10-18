@@ -101,13 +101,43 @@
             </ui:VisualElement>
         </ui:VisualElement>
 
+        <ui:VisualElement name="resources" class="hud__resources" picking-mode="Ignore">
+            <ui:VisualElement name="gold-row" class="hud__res-row" picking-mode="Ignore">
+                <ui:VisualElement name="gold-icon" class="hud__res-icon" picking-mode="Ignore" />
+                <Echoes.UI.LocLabel loc-key="ui.common.gold" class="hud__res-name" picking-mode="Ignore" />
+                <ui:Label name="gold-value" class="hud__res-value" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="charges-row" class="hud__res-row" picking-mode="Ignore">
+                <ui:VisualElement name="charges-icon" class="hud__res-icon hud__res-icon--charges" picking-mode="Ignore" />
+                <Echoes.UI.LocLabel loc-key="ui.hud.charges" class="hud__res-name" picking-mode="Ignore" />
+                <ui:Label name="charges-value" class="hud__res-value" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="level-box" class="hud__level" picking-mode="Ignore">
+            <ui:Label name="level-value" class="hud__level-value" picking-mode="Ignore" />
+            <ui:VisualElement name="xp-bar" class="hud__xp-bar" picking-mode="Ignore">
+                <ui:VisualElement name="xp-fill" class="hud__xp-fill" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:Label name="xp-value" class="hud__xp-value" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="fervor" class="hud__fervor hud--hidden" picking-mode="Ignore">
+            <ui:VisualElement name="fervor-icon" class="hud__fervor-icon" picking-mode="Ignore" />
+            <Echoes.UI.LocLabel loc-key="ui.hud.fervor" class="hud__fervor-name" picking-mode="Ignore" />
+            <Echoes.UI.LocLabel loc-key="ui.hud.fervor_xp" class="hud__fervor-xp" picking-mode="Ignore" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="checkpoint-flash" class="hud__flash" picking-mode="Ignore" />
+
         <ui:VisualElement name="toast" class="hud__toast" picking-mode="Ignore">
             <ui:Label name="toast-label" class="hud__toast-label" picking-mode="Ignore" />
         </ui:VisualElement>
 
         <ui:VisualElement name="death-overlay" class="hud__death hud--hidden" picking-mode="Ignore">
             <Echoes.UI.LocLabel loc-key="ui.death.title" class="hud__death-title" picking-mode="Ignore" />
-            <Echoes.UI.LocLabel loc-key="ui.death.checkpoint" class="hud__death-subtitle" picking-mode="Ignore" />
+            <Echoes.UI.LocLabel loc-key="ui.death.nothing_lost" class="hud__death-subtitle" picking-mode="Ignore" />
+            <Echoes.UI.LocLabel name="death-detail" loc-key="ui.death.checkpoint" class="hud__death-subtitle" picking-mode="Ignore" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
