@@ -1,0 +1,98 @@
+{
+ "frame_ornate": {
+  "w": 505,
+  "h": 466,
+  "left": 100,
+  "top": 100,
+  "right": 100,
+  "bottom": 100
+ },
+ "frame_plain": {
+  "w": 455,
+  "h": 421,
+  "left": 40,
+  "top": 40,
+  "right": 40,
+  "bottom": 40
+ },
+ "slot_empty": {
+  "w": 224,
+  "h": 211,
+  "left": 34,
+  "top": 34,
+  "right": 34,
+  "bottom": 34
+ },
+ "slot_common": {
+  "w": 225,
+  "h": 224,
+  "left": 48,
+  "top": 48,
+  "right": 48,
+  "bottom": 52
+ },
+ "slot_magic": {
+  "w": 225,
+  "h": 224,
+  "left": 48,
+  "top": 48,
+  "right": 48,
+  "bottom": 52
+ },
+ "slot_rare": {
+  "w": 227,
+  "h": 227,
+  "left": 52,
+  "top": 52,
+  "right": 52,
+  "bottom": 54
+ },
+ "slot_unique": {
+  "w": 262,
+  "h": 240,
+  "left": 72,
+  "top": 70,
+  "right": 72,
+  "bottom": 72
+ },
+ "button_normal": {
+  "w": 296,
+  "h": 131,
+  "left": 52,
+  "top": 40,
+  "right": 52,
+  "bottom": 40
+ },
+ "button_hover": {
+  "w": 306,
+  "h": 155,
+  "left": 60,
+  "top": 48,
+  "right": 60,
+  "bottom": 48
+ },
+ "button_disabled": {
+  "w": 289,
+  "h": 125,
+  "left": 46,
+  "top": 36,
+  "right": 46,
+  "bottom": 36
+ },
+ "tab": {
+  "w": 271,
+  "h": 112,
+  "left": 52,
+  "top": 38,
+  "right": 52,
+  "bottom": 30
+ },
+ "bar_thin": {
+  "w": 314,
+  "h": 82,
+  "left": 60,
+  "top": 36,
+  "right": 60,
+  "bottom": 36
+ }
+}

@@ -1,9 +1,14 @@
+using Echoes.Core;
 using UnityEngine;
 
 namespace Echoes.Gameplay
 {
-    /// <summary>Baú da Cripta: abre uma vez quando o herói chega perto e publica <see cref="ChestOpenedEvent"/> com a tabela de loot.</summary>
-    public sealed class ChestPickup : MonoBehaviour
+    /// <summary>
+    /// Baú da Cripta (docs/14 5.2): abre com a ação Interagir quando o herói está perto. Quem rola o loot é o core (a UI escuta
+    /// <see cref="ChestOpenedEvent"/> e chama OpenChest, que também marca o baú como aberto no estado do mundo do save). Baú já aberto no save
+    /// aparece aberto e não abre de novo (nem depois de checkpoint ou de sair e voltar).
+    /// </summary>
+    public sealed class ChestPickup : MonoBehaviour, IInteractable
     {
         [SerializeField] CombatSystemHost combatHost;
         [SerializeField] HeroController hero;
@@ -18,20 +23,34 @@ namespace Echoes.Gameplay
         public string ChestId => chestId;
         public string LootTableId => lootTableId;
 
+        public bool CanInteract => !IsOpen && hero != null && hero.Combatant != null && !hero.Combatant.IsDead;
+        public string PromptKey => "ui.interact.open_chest";
+        public Vector3 Position => transform.position;
+        public float Reach => radius;
+
         void Start()
         {
-            Show(false);
+            IsOpen = OpenInSave();
+            Show(IsOpen);
         }
 
-        void Update()
+        // Estado do mundo no save (o core guarda por ID de objeto): sem save (cena aberta direto) o baú começa fechado.
+        bool OpenInSave()
         {
-            if (IsOpen || hero == null || hero.Combatant == null || hero.Combatant.IsDead) return;
+            var save = GameSession.Save;
+            return save != null && save.HasSave && !string.IsNullOrEmpty(chestId) && save.Current.IsWorldObjectOpen(ExpeditionConfig.CryptMap, chestId);
+        }
+
+        public void Interact()
+        {
+            if (!CanInteract) return;
             var d = hero.transform.position - transform.position;
             d.y = 0f;
             if (d.sqrMagnitude > radius * radius) return;
             IsOpen = true;
             Show(true);
-            var evt = new ChestOpenedEvent { ChestId = chestId, LootTableId = lootTableId };
+            combatHost = CombatSystemHost.Resolve(combatHost, this);
+            var evt = new ChestOpenedEvent { ChestId = chestId, LootTableId = lootTableId, Position = transform.position };
             combatHost?.Events?.Publish(in evt);
         }
 

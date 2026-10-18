@@ -42,9 +42,33 @@ namespace Echoes.UI
                 ScreenHost.Toast(root.Localization.Get("dlg.ilsa.busy"));
                 return;
             }
+            Go(rules, target == CryptArea ? GameFlow.CriptaScene : GameFlow.RefugeScene);
+        }
+
+        static bool traveling;
+
+        /// <summary>Troca de area com autosave e fade (portais e "Jogar esta rota agora"). Chamadas repetidas durante a transicao sao ignoradas.</summary>
+        public static void Go(Echoes.Interop.Native.NativeRulesCore rules, string scene)
+        {
+            if (traveling) return;
+            traveling = true;
             if (rules != null && GameSession.Save.HasSave) GameSession.Save.Save(rules); // troca de area: autosave
+            var fade = ScreenHost.Current != null ? ScreenHost.Current.Fade : null;
+            if (fade == null)
+            {
+                Load(scene);
+                return;
+            }
+            // Fade de portal (F-06): escurece, troca a cena e a nova cena sai do preto (ScreenHost.FadeInOnNextScene).
+            fade.FadeTo(1f, FadeLayer.DefaultSeconds, () => Load(scene));
+        }
+
+        static void Load(string scene)
+        {
+            traveling = false;
             Time.timeScale = 1f;
-            SceneManager.LoadScene(target == CryptArea ? GameFlow.CriptaScene : GameFlow.RefugeScene, LoadSceneMode.Single);
+            ScreenHost.FadeInOnNextScene = true;
+            SceneManager.LoadScene(scene, LoadSceneMode.Single);
         }
     }
 }

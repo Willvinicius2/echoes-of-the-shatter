@@ -38,9 +38,10 @@ namespace Echoes.Core
             var dataDirectory = ContentPaths.ResolveDataDirectory(dataDirectoryOverride);
             Localization = new LocalizationService(message => Debug.LogWarning("[Loc] " + message));
             Localization.LoadDirectory(ContentPaths.LocalizationDirectory(dataDirectory));
-            var culture = string.IsNullOrEmpty(cultureOverride)
-                ? LocalizationTable.CultureColumnFor(SystemLanguageCode(Application.systemLanguage))
-                : cultureOverride;
+            var saved = UserSettings.Culture; // escolha do jogador (S-11), persistida em settings.json
+            var culture = !string.IsNullOrEmpty(cultureOverride) ? cultureOverride
+                : !string.IsNullOrEmpty(saved) ? saved
+                : LocalizationTable.CultureColumnFor(SystemLanguageCode(Application.systemLanguage));
             Localization.SetCulture(culture);
 
             Rules = new RulesService(RulesCoreFactory.CreateDefault(message => Debug.LogWarning(message)));

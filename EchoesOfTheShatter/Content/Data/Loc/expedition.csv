@@ -92,3 +92,4 @@ report.time.of,{hours} h {minutes} min de {total} h,{hours} h {minutes} min of {
 report.stop.charges_empty,Recuo por falta de recursos,Retreated for lack of resources,,motivo; max=30,
 report.stop.fire_resist,Recuo por pouca resistência a fogo,Retreated on low fire resistance,,motivo; max=36,
 report.calculating,Calculando o relatório...,Calculating the report...,,S-09; estado; max=30,
+report.adjust_rule,Ajustar regra,Adjust rule,,relatório; botão; max=20,

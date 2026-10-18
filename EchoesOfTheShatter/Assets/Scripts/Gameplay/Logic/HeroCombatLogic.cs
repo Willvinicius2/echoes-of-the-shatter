@@ -69,6 +69,23 @@ namespace Echoes.Gameplay
         }
 
         public Combatant Self => self;
+
+        /// <summary>Cinto de poções do herói (cargas e recarga do core): o Frasco de Recarga age nele.</summary>
+        public IPotionBelt Belt => belt;
+
+        /// <summary>
+        /// Subiu de nível: as habilidades (barra e kit básico) passam a liberar pelo unlockLevel do novo nível, na hora (o <see cref="Combatant.Level"/>
+        /// já foi trocado por <see cref="AttributeComponent.RefreshHero"/>).
+        /// </summary>
+        public void RefreshUnlocks()
+        {
+            for (var i = 0; i < SlotCount; i++)
+            {
+                var slot = slots[i];
+                slot.Unlocked = slot.Skill != null && self.Level >= slot.Skill.UnlockLevel;
+            }
+            RefreshKitUnlocks();
+        }
         public IDodgeCharges Dodge { get; }
         public ActionTimeline Action => action;
         public SkillInfo CurrentSkill => currentSlot?.Skill;
@@ -252,6 +269,9 @@ namespace Echoes.Gameplay
             buffer.Consume();
             self.IsInvulnerable = false;
         }
+
+        /// <summary>Enche as poções pela regra do core (checkpoint alcançado, F-07).</summary>
+        public void RefillPotions() => belt.Refill();
 
         public void OnRevive(CombatSystem combat)
         {

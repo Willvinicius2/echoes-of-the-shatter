@@ -64,6 +64,10 @@ namespace Echoes.Tests.PlayMode
             Assert.IsNotNull(inventory);
             Assert.IsNotNull(rules);
             TestSettings.HeroGodMode = true;
+            // O XP por morte subiria o nivel do save no meio do teste e o bloco de atributos do heroi (montado no nivel da entrada) deixaria de bater com a
+            // comparacao do core: aqui o assunto e o inventario, entao o diretor de XP fica de fora.
+            var xpDirector = Object.FindFirstObjectByType<KillRewardDirector>();
+            if (xpDirector != null) Object.DestroyImmediate(xpDirector); // imediato: as mortes do teste acontecem neste mesmo quadro
             var save = GameSession.Save.Current;
             Assert.IsNotNull(hero.Combatant.Weapon, "arma do heroi vinda do save (espada de ferro)");
 

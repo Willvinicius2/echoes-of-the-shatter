@@ -23,6 +23,7 @@ namespace Echoes.Gameplay
         public const string WorldMap = "Map";
         public const string Pause = "Pause";
         public const string Interact = "Interact";
+        public const string Flask = "Flask";
 
         /// <summary>Ação de cada <see cref="HeroCommand"/> (índice = valor do enum).</summary>
         public static readonly string[] ByCommand =

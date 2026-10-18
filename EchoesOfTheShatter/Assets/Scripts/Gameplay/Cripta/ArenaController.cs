@@ -24,6 +24,9 @@ namespace Echoes.Gameplay
         public Rect Trigger => trigger;
         public EnemyController Boss => boss;
 
+        /// <summary>O herói já cruzou o gatilho da arena nesta corrida (RF-50: base do "chegou ao fim" do domínio; docs/16 H3-01). Não volta a falso na corrida.</summary>
+        public bool EverTriggered { get; private set; }
+
         void Start()
         {
             SetVictoryVisible(false);
@@ -52,6 +55,7 @@ namespace Echoes.Gameplay
         void StartFight()
         {
             Phase = ArenaPhase.Fighting;
+            EverTriggered = true;
             gate?.Close();
             hero.SetCheckpoint(arenaSpawn);
             boss.Activate();

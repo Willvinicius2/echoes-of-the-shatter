@@ -10,6 +10,9 @@ namespace Echoes.Presentation
     {
         public const string StarterSet = "vset.starter";
 
+        /// <summary>2o conjunto do Guerreiro (armadura Rara, SK_Warrior_*_Rare). As bases de item Raras apontam para ele nos CSV (Backend).</summary>
+        public const string WarriorRareSet = "vset.warrior_rare_01";
+
         public string heroId = "Warrior";
         public List<HeroPart> parts = new List<HeroPart>();
 

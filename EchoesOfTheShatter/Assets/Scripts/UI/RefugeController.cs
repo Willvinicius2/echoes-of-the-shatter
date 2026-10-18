@@ -70,6 +70,7 @@ namespace Echoes.UI
             rootElement.Add(prompt);
 
             // Teste do player (-smoke): conquista a Cripta, inicia, avanca o relogio, coleta e registra o relatorio no log (e na captura -shot).
+            RunState.Reset(); // HUD sem Fervor no Refugio
             if (GameFlow.ArgValue("-smoke") != null) StartCoroutine(SmokeRun());
             if (GameFlow.ArgValue("-bossshot") != null || GameFlow.ArgValue("-perf") != null) StartCoroutine(GoToCrypt());
             if (!string.IsNullOrEmpty(GameSession.PendingToastKey))
@@ -197,8 +198,44 @@ namespace Echoes.UI
 
         public void Interact(string npcId)
         {
-            if (npcId == InteractableNpc.Ilsa) TalkToIlsa();
-            else TalkToTico();
+            switch (npcId)
+            {
+                case InteractableNpc.Ilsa: TalkToIlsa(); break;
+                case InteractableNpc.Vendor: OpenVendor(); break;
+                case InteractableNpc.Enchanter: OpenEnchanter(); break;
+                case InteractableNpc.Stash: OpenStash(); break;
+                default: TalkToTico(); break;
+            }
+        }
+
+        VendorScreen vendorScreen;
+        EnchantScreen enchantScreen;
+
+        /// <summary>Vendedor (S-14): vender, recomprar e Frascos de Recarga.</summary>
+        public VendorScreen OpenVendor()
+        {
+            if (Rules == null || !GameSession.Save.HasSave) return null;
+            var card = OpenScreen();
+            vendorScreen = new VendorScreen(card, root, CloseScreen);
+            vendorScreen.Show();
+            return vendorScreen;
+        }
+
+        /// <summary>Encantador (S-15): Refinar, Reforjar, Adicionar afixo, Lapidar e Desmontar.</summary>
+        public EnchantScreen OpenEnchanter()
+        {
+            if (Rules == null || !GameSession.Save.HasSave) return null;
+            var card = OpenScreen();
+            enchantScreen = new EnchantScreen(card, root, hero, CloseScreen);
+            enchantScreen.Show();
+            return enchantScreen;
+        }
+
+        /// <summary>Bau compartilhado (S-04): abre o inventario com o Bau (so existe no Refugio).</summary>
+        public void OpenStash()
+        {
+            var inventory = FindAnyObjectByType<InventoryController>();
+            if (inventory != null) inventory.Show();
         }
 
         VisualElement OpenScreen()
@@ -216,6 +253,9 @@ namespace Echoes.UI
 
         public void CloseScreen()
         {
+            vendorScreen?.Flush(); // vendas na janela de desfazer valem ao fechar
+            vendorScreen = null;
+            enchantScreen = null;
             if (screen != null) screen.RemoveFromHierarchy();
             screen = null;
             if (screenOpen) Time.timeScale = 1f;
@@ -326,7 +366,8 @@ namespace Echoes.UI
                 {
                     var index = i;
                     var row = ScreenKit.Row(card);
-                    ScreenKit.Line(row, ScreenKit.Fmt(Loc, "ui.exp.rule_slot", ("n", (i + 1).ToString())) + ": " + RuleLabel(config.Rules[i]), 20);
+                    var ruleLine = ScreenKit.Line(row, ScreenKit.Fmt(Loc, "ui.exp.rule_slot", ("n", (i + 1).ToString())) + ": " + RuleLabel(config.Rules[i]), 20, i == highlightRule ? ScreenKit.Gold : ScreenKit.Text, i == highlightRule);
+                    ruleLine.name = "rule-" + i;
                     var tools = new VisualElement();
                     tools.style.flexDirection = FlexDirection.Row;
                     row.Add(tools);
@@ -354,8 +395,8 @@ namespace Echoes.UI
                     }
                 }
 
-                var check = GameSession.Expedition.Check(rules, config, out _);
-                if (check != StartCheck.Ok) ScreenKit.Line(card, ErrorText(check), 20, ScreenKit.Bad);
+                var check = GameSession.Expedition.Check(rules, config, out var blockers);
+                if (check != StartCheck.Ok) ScreenKit.Line(card, ErrorText(check, blockers), 20, ScreenKit.Bad).name = "start-error";
                 var buttons = ScreenKit.Row(card);
                 var start = ScreenKit.SmallButton(buttons, Loc.Get("ui.exp.start"), ConfirmStart);
                 start.SetEnabled(check == StartCheck.Ok);
@@ -363,7 +404,7 @@ namespace Echoes.UI
             }
         }
 
-        string ErrorText(StartCheck check)
+        string ErrorText(StartCheck check, string blockers = null)
         {
             switch (check)
             {
@@ -373,7 +414,7 @@ namespace Echoes.UI
                 case StartCheck.InvalidDuration: return Loc.Get("ui.exp.err.duration_range");
                 case StartCheck.TooManyRules: return Loc.Get("ui.exp.err.rules_max");
                 case StartCheck.ClockRollback: return Loc.Get("ui.exp.err.clock_rollback");
-                case StartCheck.IdleIncompatible: return ScreenKit.Fmt(Loc, "ui.exp.err.skill_blocked", ("skill", string.Empty));
+                case StartCheck.IdleIncompatible: return ScreenKit.Fmt(Loc, "ui.exp.err.skill_blocked", ("skill", ExpeditionBlockers.Names(blockers, Loc))); // RF-43: o nome da habilidade que bloqueia
                 default: return check.ToString();
             }
         }
@@ -413,9 +454,10 @@ namespace Echoes.UI
         public StartCheck StartExpedition()
         {
             var rules = Rules;
+            GameSession.Expedition.Check(rules, config, out var blockers);
             var check = GameSession.Expedition.Start(rules, config);
             CloseScreen();
-            ScreenHost.Toast(check == StartCheck.Ok ? Loc.Get("ui.exp.started_hint") : ErrorText(check), check == StartCheck.Ok ? ToastKind.Info : ToastKind.Error);
+            ScreenHost.Toast(check == StartCheck.Ok ? Loc.Get("ui.exp.started_hint") : ErrorText(check, blockers), check == StartCheck.Ok ? ToastKind.Info : ToastKind.Error);
             return check;
         }
 
@@ -516,9 +558,42 @@ namespace Echoes.UI
             if (!string.IsNullOrEmpty(report.TipKey)) Field(card, "report.tip", Loc.Get(report.TipKey));
             ScreenKit.Line(card, Loc.Get("report.invite"), 18, ScreenKit.Muted);
             var row = ScreenKit.Row(card);
-            ScreenKit.SmallButton(row, Loc.Get("ui.exp.configure"), OpenExpeditionScreen);
+            row.style.flexWrap = Wrap.Wrap;
+            ScreenKit.SmallButton(row, Loc.Get("report.play_route"), PlayRoute).name = "report-play-route";
+            ScreenKit.SmallButton(row, Loc.Get("report.adjust_rule"), () => AdjustRule(report.TipKey)).name = "report-adjust-rule";
+            ScreenKit.SmallButton(row, Loc.Get("ui.exp.configure"), OpenExpeditionScreen).name = "report-new-expedition";
             ScreenKit.SmallButton(row, Loc.Get("ui.common.close"), CloseScreen);
         }
+
+        /// <summary>"Jogar esta rota agora" (S-09): a coleta ja foi feita; vai a Cripta com o Fervor ligado (RF-32) e fade.</summary>
+        public void PlayRoute()
+        {
+            CloseScreen();
+            RunState.FervorActive = true;
+            AreaTravel.Go(Rules, GameFlow.CriptaScene);
+        }
+
+        /// <summary>Indice da regra que a dica aponta (as dicas de pocao falam da regra de pocao); -1 = nenhuma em especial.</summary>
+        public static int RuleForTip(string tipKey, System.Collections.Generic.IReadOnlyList<AiRuleDef> rules)
+        {
+            if (string.IsNullOrEmpty(tipKey) || rules == null) return -1;
+            var potionTip = tipKey.EndsWith("raise_potion", StringComparison.Ordinal) || tipKey.EndsWith("more_potions", StringComparison.Ordinal);
+            if (!potionTip) return -1;
+            for (var i = 0; i < rules.Count; i++)
+            {
+                if (rules[i].Action == "use_potion") return i;
+            }
+            return -1;
+        }
+
+        /// <summary>"Ajustar regra" (S-09): abre a configuracao da expedicao com a regra da dica em destaque.</summary>
+        public void AdjustRule(string tipKey)
+        {
+            highlightRule = RuleForTip(tipKey, config.Rules);
+            OpenExpeditionScreen();
+        }
+
+        int highlightRule = -1;
 
         void Field(VisualElement card, string labelKey, string value)
         {

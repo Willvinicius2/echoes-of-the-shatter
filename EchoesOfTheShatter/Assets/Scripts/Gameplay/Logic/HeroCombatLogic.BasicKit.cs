@@ -165,6 +165,16 @@ namespace Echoes.Gameplay
             heavySlot = heavy != null ? new SkillSlot(110, heavy, self.Level >= heavy.UnlockLevel) : null;
         }
 
+        void RefreshKitUnlocks()
+        {
+            if (kit == null) return;
+            if (chainSlots != null)
+            {
+                foreach (var slot in chainSlots) slot.Unlocked = slot.Skill != null && self.Level >= slot.Skill.UnlockLevel;
+            }
+            if (heavySlot != null) heavySlot.Unlocked = self.Level >= heavySlot.Skill.UnlockLevel;
+        }
+
         long Ticks(double seconds)
         {
             return seconds <= 0.0 ? 0L : (long)Math.Ceiling(seconds / step - 1e-6);

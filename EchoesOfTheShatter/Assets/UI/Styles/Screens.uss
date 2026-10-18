@@ -162,3 +162,131 @@
     color: var(--color-text-secondary);
     -unity-text-align: middle-center;
 }
+
+/* Recursos (Ouro, Cargas do Marco) no topo-direita e nivel/XP abaixo da barra de recurso do topo-esquerda (docs/16, HUD). */
+.hud__resources {
+    position: absolute;
+    right: var(--viewport-safe-margin);
+    top: 84px; /* abaixo do botao do inventario (Refugio) */
+    align-items: flex-end;
+}
+
+.hud__res-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 6px;
+    padding: 4px 14px;
+    background-color: var(--color-surface-panel);
+    border-width: 1px;
+    border-color: var(--color-border-default);
+    border-radius: 6px;
+}
+
+.hud__res-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 10px;
+    background-size: 100% 100%;
+}
+
+.hud__res-name {
+    margin: 0 10px 0 0;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-secondary);
+}
+
+.hud__res-value {
+    margin: 0;
+    min-width: 56px;
+    font-size: var(--font-title-size);
+    -unity-font-style: bold;
+    -unity-text-align: middle-right;
+    color: var(--color-text-title);
+}
+
+.hud__level {
+    position: absolute;
+    left: var(--viewport-safe-margin);
+    top: 140px;
+    width: 348px;
+}
+
+.hud__level-value {
+    margin: 0;
+    font-size: var(--font-body-size);
+    -unity-font-style: bold;
+    color: var(--color-text-title);
+}
+
+.hud__xp-bar {
+    height: 8px;
+    margin-top: 2px;
+    background-color: var(--color-semantic-impeto-dark);
+    border-width: 1px;
+    border-color: var(--color-border-default);
+    overflow: hidden;
+}
+
+.hud__xp-fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--color-base-dourado-claro);
+}
+
+.hud__xp-value {
+    margin: 2px 0 0 0;
+    font-size: var(--font-micro-size);
+    color: var(--color-text-secondary);
+}
+
+/* Fervor ativo: icone e +200% XP sob o nivel (RF-32, so jogo manual em rota de expedicao). */
+.hud__fervor {
+    position: absolute;
+    left: var(--viewport-safe-margin);
+    top: 214px;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px 12px;
+    background-color: var(--color-surface-panel);
+    border-width: 1px;
+    border-color: var(--color-semantic-warning);
+    border-radius: 6px;
+}
+
+.hud__fervor-icon {
+    width: 28px;
+    height: 28px;
+    margin-right: 8px;
+    background-color: #FF8A2E;
+    border-radius: 14px;
+}
+
+.hud__fervor-name {
+    margin: 0 8px 0 0;
+    font-size: var(--font-body-size);
+    -unity-font-style: bold;
+    color: #FF8A2E;
+}
+
+.hud__fervor-xp {
+    margin: 0;
+    font-size: var(--font-body-size);
+    color: var(--color-text-primary);
+}
+
+/* Retorno visual do checkpoint (F-07): brilho dourado curto sobre a tela toda. */
+.hud__flash {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(252, 213, 138, 0.22);
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.45s;
+}
+
+.hud__flash--on {
+    opacity: 1;
+}

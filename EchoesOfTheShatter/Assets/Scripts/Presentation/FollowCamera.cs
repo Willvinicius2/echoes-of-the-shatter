@@ -102,6 +102,7 @@ namespace Echoes.Presentation
         /// </summary>
         public void AddShake(float amplitudeMeters, float seconds)
         {
+            amplitudeMeters *= Echoes.Core.UserSettings.ShakeFactor; // opcao de acessibilidade: Normal, Reduzido ou Desligado (RF-62)
             if (!shakeEnabled || amplitudeMeters <= 0f || seconds <= 0f) return;
             shakeAmplitude = Mathf.Min(Mathf.Max(shakeAmplitude, amplitudeMeters), Settings.shakeMaxMeters);
             shakeDuration = Mathf.Max(seconds, shakeTimeLeft);
