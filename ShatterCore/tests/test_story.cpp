@@ -81,6 +81,25 @@ TEST(story_rejects_bad_rules_and_references) {
     EXPECT_FALSE(ok);
 }
 
+TEST(story_rejects_swapped_unlisted_and_repeated_rules) {
+    bool ok = true;
+    StoryDB a;   // exorcizeVerdict apontando para o veredito de Devorar
+    a.LoadTableCsv("regions.csv", "id,order,mapId,generalId,exorcizeVerdict,devourVerdict\n"
+                                  "region.r1.crypt,1,map.act1.crypt,enemy.crypt_guardian,verdict.r1.devour,verdict.r1.devour\n");
+    a.LoadTableCsv("echoes.csv", kEchoes);
+    a.LoadTableCsv("quests.csv", kQuests);
+    a.LoadTableCsv("verdicts.csv", kVerdicts);
+    a.LoadTableCsv("story_rules.csv", kRules);
+    EXPECT_FALSE(a.Finalize());
+    const std::string extra = std::string(kVerdicts) + "verdict.r1.x,region.r1.crypt,devour,1,0,,,stain,hub.b,\n";
+    Make(extra, kRules, &ok);                                   // veredito que nenhuma região lista
+    EXPECT_FALSE(ok);
+    Make(kVerdicts, "key,value\nhunger_max,4\nhunger_max,5\n", &ok);
+    EXPECT_FALSE(ok);
+    SaveData s = SaveWithKill(true);
+    EXPECT_TRUE(ApplyVerdict(StoryDB(), s, "verdict.r1.devour") == VerdictResult::UnknownVerdict);   // banco vazio
+}
+
 TEST(story_echoes_record_once_and_reveal_skill) {
     const StoryDB db = Make();
     SaveData s;

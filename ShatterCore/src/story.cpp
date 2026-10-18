@@ -128,6 +128,7 @@ bool StoryDB::LoadTableCsv(std::string_view table, std::string_view text) {
         if (!Header(t, {"key", "value"}, table, errors_)) return false;
         for (const CsvRow& r : t.rows) {
             if (r.cells[0] == "hunger_max") {
+                if (hasHungerMax_) bad(r, "hunger_max repeated");
                 if (!Int(r.cells[1], 1, kMaxSavedHunger, hungerMax_)) bad(r, "hunger_max out of range");
                 hasHungerMax_ = true;
             } else {
@@ -183,6 +184,10 @@ bool StoryDB::Finalize(const ContentDB* content) {
             if (sv == nullptr) E("regions.csv", "verdict '" + *v + "' not in verdicts.csv");
             else if (sv->regionId != r.id) E("regions.csv", "verdict '" + *v + "' belongs to another region");
         }
+        const StoryVerdict* ex = FindById(verdicts_, r.exorcizeVerdict);
+        const StoryVerdict* dv = FindById(verdicts_, r.devourVerdict);
+        if (ex != nullptr && ex->choice != VerdictChoice::Exorcise) E("regions.csv", "exorcizeVerdict is not an exorcise verdict");
+        if (dv != nullptr && dv->choice != VerdictChoice::Devour) E("regions.csv", "devourVerdict is not a devour verdict");
         if (content != nullptr) {
             if (content->FindMap(r.mapId) == nullptr) E("regions.csv", "mapId '" + r.mapId + "' not in maps.csv");
             if (content->FindEnemy(r.generalId) == nullptr) E("regions.csv", "generalId '" + r.generalId + "' not in enemies.csv");
@@ -203,6 +208,9 @@ bool StoryDB::Finalize(const ContentDB* content) {
             E("quests.csv", "objectiveCount above the region's echoes for '" + q.id + "'");
     }
     for (const StoryVerdict& v : verdicts_) {
+        const StoryRegion* owner = FindById(regions_, v.regionId);
+        if (owner != nullptr && owner->exorcizeVerdict != v.id && owner->devourVerdict != v.id)
+            E("verdicts.csv", "verdict '" + v.id + "' is not listed by its region");
         if (FindById(regions_, v.regionId) == nullptr) E("verdicts.csv", "regionId '" + v.regionId + "' not in regions.csv");
         if (hasHungerMax_ && v.hungerDelta > hungerMax_) E("verdicts.csv", "hungerDelta above hunger_max for '" + v.id + "'");
         if (v.choice == VerdictChoice::Exorcise && (v.hungerDelta != 0 || v.statBonusPct != 0 || !v.grantsSignature.empty()))
@@ -249,7 +257,7 @@ bool IsSkillRevealed(const StoryDB& story, const SaveData& s, std::string_view r
 VerdictResult ApplyVerdict(const StoryDB& story, SaveData& s, std::string_view verdictId) {
     const StoryVerdict* v = story.FindVerdict(verdictId);
     const StoryRegion* region = v != nullptr ? story.FindRegion(v->regionId) : nullptr;
-    if (v == nullptr || region == nullptr) return VerdictResult::UnknownVerdict;
+    if (v == nullptr || region == nullptr || story.HungerMax() < 1) return VerdictResult::UnknownVerdict;   // banco não finalizado
     if (FindRecord(s, v->regionId) != nullptr) return VerdictResult::AlreadyDecided;
     bool defeated = false;
     for (const CharacterState& c : s.characters) {

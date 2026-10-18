@@ -110,6 +110,17 @@ def main():
         for col in ("exorcizeVerdict", "devourVerdict"):
             if r[col] not in verdicts:
                 err("regions.csv", ln, f"{col} '{r[col]}' não existe em verdicts.csv")
+    by_id = {r["id"]: r for r in t["verdicts.csv"]}
+    listed = set()
+    for r in t["regions.csv"]:
+        for col, want in (("exorcizeVerdict", "exorcise"), ("devourVerdict", "devour")):
+            v = by_id.get(r[col])
+            if v and v["choice"] != want:
+                err("regions.csv", r["__line__"], f"{col} deve ser um veredito '{want}'")
+            listed.add(r[col])
+    for r in t["verdicts.csv"]:
+        if r["id"] not in listed:
+            err("verdicts.csv", r["__line__"], f"veredito '{r['id']}' não é listado por nenhuma região")
     for r in t["echoes.csv"]:
         ln = r["__line__"]
         if r["regionId"] not in regions:
