@@ -655,6 +655,45 @@
               }
             }
           }
+        },
+        "story": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Progresso da historia (veredito, Fome, Ecos; docs/design/21 e 22). Opcional: so e gravado quando nao vazio.",
+          "properties": {
+            "hunger": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "verdicts": {
+              "type": "array",
+              "maxItems": 64,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "region_id",
+                  "verdict_id"
+                ],
+                "properties": {
+                  "region_id": {
+                    "$ref": "#/$defs/Id"
+                  },
+                  "verdict_id": {
+                    "$ref": "#/$defs/Id"
+                  }
+                }
+              }
+            },
+            "echoes": {
+              "type": "array",
+              "maxItems": 1024,
+              "items": {
+                "$ref": "#/$defs/Id"
+              }
+            }
+          }
         }
       }
     },

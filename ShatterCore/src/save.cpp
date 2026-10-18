@@ -408,6 +408,20 @@ Value SaveToJson(const SaveData& s) {
         }
         o.Set("world_state", std::move(ws));
     }
+    if (!s.story.Empty()) {
+        Value so = Value::MakeObject();
+        so.Set("hunger", Value(s.story.hunger));
+        Value vs = Value::MakeArray();
+        for (const StoryVerdictRecord& v : s.story.verdicts) {
+            Value vo = Value::MakeObject();
+            vo.Set("region_id", Value(v.regionId));
+            vo.Set("verdict_id", Value(v.verdictId));
+            vs.Push(std::move(vo));
+        }
+        so.Set("verdicts", std::move(vs));
+        so.Set("echoes", StrList(s.story.echoes));
+        o.Set("story", std::move(so));
+    }
     if (!s.vendorBuyback.empty()) {
         Value bb = Value::MakeArray();
         for (const BuybackEntry& e : s.vendorBuyback) {
@@ -478,6 +492,30 @@ bool SaveFromJson(const Value& data, SaveData& out, std::string* error) {
             for (const ContentId& id : a.opened)
                 if (!IsValidContentId(id)) return Fail(error, "world_state: bad object id");
             s.world.push_back(std::move(a));
+        }
+    }
+    {
+        const Value& so = data["story"];
+        const std::int64_t hunger = so["hunger"].AsInt(0);
+        if (hunger < 0 || hunger > kMaxSavedHunger) return Fail(error, "story: hunger out of range");
+        s.story.hunger = static_cast<int>(hunger);
+        const auto& vs = so["verdicts"].Items();
+        if (vs.size() > kMaxSavedVerdicts) return Fail(error, "story: too many verdicts");
+        for (const Value& vv : vs) {
+            StoryVerdictRecord r;
+            r.regionId = vv["region_id"].AsString();
+            r.verdictId = vv["verdict_id"].AsString();
+            if (!IsValidContentId(r.regionId) || !IsValidContentId(r.verdictId)) return Fail(error, "story: bad verdict id");
+            for (const StoryVerdictRecord& other : s.story.verdicts)
+                if (other.regionId == r.regionId) return Fail(error, "story repeats verdict for '" + r.regionId + "'");
+            s.story.verdicts.push_back(std::move(r));
+        }
+        s.story.echoes = ReadStrList(so["echoes"]);
+        if (s.story.echoes.size() > kMaxSavedEchoes) return Fail(error, "story: too many echoes");
+        for (std::size_t i = 0; i < s.story.echoes.size(); ++i) {
+            if (!IsValidContentId(s.story.echoes[i])) return Fail(error, "story: bad echo id");
+            for (std::size_t j = 0; j < i; ++j)
+                if (s.story.echoes[j] == s.story.echoes[i]) return Fail(error, "story repeats echo '" + s.story.echoes[i] + "'");
         }
     }
     {

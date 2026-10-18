@@ -1,0 +1,280 @@
+// ShatterCore — história da campanha (story.h).
+#include "shatter/story.h"
+
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <map>
+
+#include "csv.h"
+#include "numtext.h"
+
+namespace shatter {
+
+namespace {
+
+namespace fs = std::filesystem;
+using detail::CsvRow;
+using detail::CsvTable;
+
+
+bool Header(const CsvTable& t, const std::vector<std::string>& want, std::string_view table, std::vector<ContentError>& errs) {
+    bool ok = t.header.size() == want.size();
+    for (std::size_t i = 0; ok && i < want.size(); ++i) ok = t.header[i] == want[i];
+    if (!ok) errs.push_back({std::string(table), t.headerLine, "unexpected header"});
+    return ok;
+}
+
+bool Int(std::string_view cell, int lo, int hi, int& out) {
+    std::int64_t v = 0;
+    if (!detail::ParseInt64(cell, v) || v < lo || v > hi) return false;
+    out = static_cast<int>(v);
+    return true;
+}
+
+template <class T>
+const T* FindById(const std::vector<T>& list, std::string_view id) {
+    for (const T& e : list)
+        if (e.id == id) return &e;
+    return nullptr;
+}
+
+const StoryVerdictRecord* FindRecord(const SaveData& s, std::string_view regionId) {
+    for (const StoryVerdictRecord& r : s.story.verdicts)
+        if (r.regionId == regionId) return &r;
+    return nullptr;
+}
+
+}  // namespace
+
+bool StoryDB::LoadTableCsv(std::string_view table, std::string_view text) {
+    const std::size_t before = errors_.size();
+    const std::string name(table);
+    CsvTable t;
+    detail::CsvError ce;
+    if (!detail::ParseCsv(text, t, ce)) {
+        errors_.push_back({name, ce.line, ce.message});
+        return false;
+    }
+    auto bad = [&](const CsvRow& r, const char* msg) { errors_.push_back({name, r.line, msg}); };
+    auto S = [](const CsvRow& r, std::size_t i) { return std::string(r.cells[i]); };
+    if (table == "regions.csv") {
+        if (!Header(t, {"id", "order", "mapId", "generalId", "exorcizeVerdict", "devourVerdict"}, table, errors_)) return false;
+        for (const CsvRow& r : t.rows) {
+            StoryRegion x;
+            x.id = S(r, 0);
+            if (!Int(r.cells[1], 1, 1000, x.order)) bad(r, "order out of range");
+            x.mapId = S(r, 2);
+            x.generalId = S(r, 3);
+            x.exorcizeVerdict = S(r, 4);
+            x.devourVerdict = S(r, 5);
+            regions_.push_back(std::move(x));
+        }
+    } else if (table == "echoes.csv") {
+        if (!Header(t, {"id", "regionId", "kind", "revealsSkill", "minToReveal"}, table, errors_)) return false;
+        for (const CsvRow& r : t.rows) {
+            StoryEcho x;
+            x.id = S(r, 0);
+            x.regionId = S(r, 1);
+            x.kind = S(r, 2);
+            if (x.kind != "weapon" && x.kind != "memory") bad(r, "kind must be weapon or memory");
+            x.revealsSkill = S(r, 3);
+            if (!Int(r.cells[4], 1, 100, x.minToReveal)) bad(r, "minToReveal out of range");
+            echoes_.push_back(std::move(x));
+        }
+    } else if (table == "quests.csv") {
+        if (!Header(t, {"id", "regionId", "giver", "objectiveType", "objectiveTarget", "objectiveCount", "requires", "reward"},
+                    table, errors_))
+            return false;
+        for (const CsvRow& r : t.rows) {
+            StoryQuest x;
+            x.id = S(r, 0);
+            x.regionId = S(r, 1);
+            x.giver = S(r, 2);
+            x.objectiveType = S(r, 3);
+            if (x.objectiveType != "talk" && x.objectiveType != "collect_echo" && x.objectiveType != "reach_map_boss" &&
+                x.objectiveType != "verdict")
+                bad(r, "unknown objectiveType");
+            x.objectiveTarget = S(r, 4);
+            if (!Int(r.cells[5], 1, 1000, x.objectiveCount)) bad(r, "objectiveCount out of range");
+            x.requires_ = S(r, 6);
+            x.reward = S(r, 7);
+            quests_.push_back(std::move(x));
+        }
+    } else if (table == "verdicts.csv") {
+        if (!Header(t, {"id", "regionId", "choice", "hungerDelta", "statBonusPct", "grantsRelic", "grantsSignature", "regionState",
+                        "hubState", "lastWordsKey"},
+                    table, errors_))
+            return false;
+        for (const CsvRow& r : t.rows) {
+            StoryVerdict x;
+            x.id = S(r, 0);
+            x.regionId = S(r, 1);
+            if (r.cells[2] == "exorcise") x.choice = VerdictChoice::Exorcise;
+            else if (r.cells[2] == "devour") x.choice = VerdictChoice::Devour;
+            else bad(r, "choice must be exorcise or devour");
+            if (!Int(r.cells[3], 0, 100, x.hungerDelta)) bad(r, "hungerDelta out of range");
+            if (!Int(r.cells[4], 0, 1000, x.statBonusPct)) bad(r, "statBonusPct out of range");
+            x.grantsRelic = S(r, 5);
+            x.grantsSignature = S(r, 6);
+            x.regionState = S(r, 7);
+            if (x.regionState != "purified" && x.regionState != "stain") bad(r, "regionState must be purified or stain");
+            x.hubState = S(r, 8);
+            x.lastWordsKey = S(r, 9);
+            verdicts_.push_back(std::move(x));
+        }
+    } else if (table == "story_rules.csv") {
+        if (!Header(t, {"key", "value"}, table, errors_)) return false;
+        for (const CsvRow& r : t.rows) {
+            if (r.cells[0] == "hunger_max") {
+                if (!Int(r.cells[1], 1, kMaxSavedHunger, hungerMax_)) bad(r, "hunger_max out of range");
+                hasHungerMax_ = true;
+            } else {
+                bad(r, "unknown key");
+            }
+        }
+    } else {
+        errors_.push_back({name, 0, "unknown story table"});
+    }
+    return errors_.size() == before;
+}
+
+bool StoryDB::LoadDirectory(const std::string& path) {
+    std::error_code ec;
+    const fs::path dir = fs::u8path(path);
+    if (!fs::is_directory(dir, ec)) {
+        errors_.push_back({"Story", 0, "story directory missing"});
+        return false;
+    }
+    bool ok = true;
+    for (const char* name : {"regions.csv", "echoes.csv", "quests.csv", "verdicts.csv", "story_rules.csv"}) {
+        std::ifstream in(dir / name, std::ios::binary);
+        if (!in) {
+            errors_.push_back({name, 0, "table file missing"});
+            ok = false;
+            continue;
+        }
+        const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+        ok = LoadTableCsv(name, text) && ok;
+    }
+    return ok;
+}
+
+bool StoryDB::Finalize(const ContentDB* content) {
+    const std::size_t before = errors_.size();
+    auto E = [&](const char* table, const std::string& msg) { errors_.push_back({table, 0, msg}); };
+    if (!hasHungerMax_) E("story_rules.csv", "hunger_max missing");
+    auto uniqueIds = [&](const char* table, const auto& list, const char* prefix) {
+        for (std::size_t i = 0; i < list.size(); ++i) {
+            const std::string& id = list[i].id;
+            if (!IsValidContentId(id) || id.rfind(prefix, 0) != 0) E(table, "bad id '" + id + "'");
+            for (std::size_t j = 0; j < i; ++j)
+                if (list[j].id == id) E(table, "duplicate id '" + id + "'");
+        }
+    };
+    uniqueIds("regions.csv", regions_, "region.");
+    uniqueIds("echoes.csv", echoes_, "echo.");
+    uniqueIds("quests.csv", quests_, "quest.");
+    uniqueIds("verdicts.csv", verdicts_, "verdict.");
+    for (const StoryRegion& r : regions_) {
+        for (const ContentId* v : {&r.exorcizeVerdict, &r.devourVerdict}) {
+            const StoryVerdict* sv = FindById(verdicts_, *v);
+            if (sv == nullptr) E("regions.csv", "verdict '" + *v + "' not in verdicts.csv");
+            else if (sv->regionId != r.id) E("regions.csv", "verdict '" + *v + "' belongs to another region");
+        }
+        if (content != nullptr) {
+            if (content->FindMap(r.mapId) == nullptr) E("regions.csv", "mapId '" + r.mapId + "' not in maps.csv");
+            if (content->FindEnemy(r.generalId) == nullptr) E("regions.csv", "generalId '" + r.generalId + "' not in enemies.csv");
+        }
+    }
+    for (const StoryEcho& e : echoes_) {
+        if (FindById(regions_, e.regionId) == nullptr) E("echoes.csv", "regionId '" + e.regionId + "' not in regions.csv");
+        if (content != nullptr && content->FindSkill(e.revealsSkill) == nullptr)
+            E("echoes.csv", "revealsSkill '" + e.revealsSkill + "' not in skills.csv");
+    }
+    for (const StoryQuest& q : quests_) {
+        if (FindById(regions_, q.regionId) == nullptr) E("quests.csv", "regionId '" + q.regionId + "' not in regions.csv");
+        if (!q.requires_.empty() && FindById(quests_, q.requires_) == nullptr)
+            E("quests.csv", "requires '" + q.requires_ + "' not in quests.csv");
+        if (q.objectiveType == "collect_echo" &&
+            q.objectiveCount > static_cast<int>(std::count_if(echoes_.begin(), echoes_.end(),
+                                                              [&](const StoryEcho& e) { return e.regionId == q.regionId; })))
+            E("quests.csv", "objectiveCount above the region's echoes for '" + q.id + "'");
+    }
+    for (const StoryVerdict& v : verdicts_) {
+        if (FindById(regions_, v.regionId) == nullptr) E("verdicts.csv", "regionId '" + v.regionId + "' not in regions.csv");
+        if (hasHungerMax_ && v.hungerDelta > hungerMax_) E("verdicts.csv", "hungerDelta above hunger_max for '" + v.id + "'");
+        if (v.choice == VerdictChoice::Exorcise && (v.hungerDelta != 0 || v.statBonusPct != 0 || !v.grantsSignature.empty()))
+            E("verdicts.csv", "exorcise gives no hunger, bonus or signature: '" + v.id + "'");
+        if (v.choice == VerdictChoice::Devour && (v.hungerDelta < 1 || !v.grantsRelic.empty()))
+            E("verdicts.csv", "devour needs hunger >= 1 and gives no relic: '" + v.id + "'");
+    }
+    return errors_.size() == before;
+}
+
+const StoryRegion* StoryDB::FindRegion(std::string_view id) const { return FindById(regions_, id); }
+const StoryEcho* StoryDB::FindEcho(std::string_view id) const { return FindById(echoes_, id); }
+const StoryQuest* StoryDB::FindQuest(std::string_view id) const { return FindById(quests_, id); }
+const StoryVerdict* StoryDB::FindVerdict(std::string_view id) const { return FindById(verdicts_, id); }
+
+bool RecordEcho(const StoryDB& story, SaveData& s, std::string_view echoId) {
+    if (story.FindEcho(echoId) == nullptr) return false;
+    if (std::find(s.story.echoes.begin(), s.story.echoes.end(), echoId) != s.story.echoes.end()) return false;
+    if (s.story.echoes.size() >= kMaxSavedEchoes) return false;
+    s.story.echoes.emplace_back(echoId);
+    return true;
+}
+
+int EchoesFound(const StoryDB& story, const SaveData& s, std::string_view regionId) {
+    int n = 0;
+    for (const ContentId& id : s.story.echoes) {
+        const StoryEcho* e = story.FindEcho(id);
+        if (e != nullptr && e->regionId == regionId) ++n;
+    }
+    return n;
+}
+
+bool IsSkillRevealed(const StoryDB& story, const SaveData& s, std::string_view regionId, std::string_view skillId) {
+    int found = 0, need = 0;
+    for (const ContentId& id : s.story.echoes) {
+        const StoryEcho* e = story.FindEcho(id);
+        if (e != nullptr && e->regionId == regionId && e->revealsSkill == skillId) ++found;
+    }
+    for (const StoryEcho& e : story.Echoes())
+        if (e.regionId == regionId && e.revealsSkill == skillId) need = std::max(need, e.minToReveal);
+    return need > 0 && found >= need;
+}
+
+VerdictResult ApplyVerdict(const StoryDB& story, SaveData& s, std::string_view verdictId) {
+    const StoryVerdict* v = story.FindVerdict(verdictId);
+    const StoryRegion* region = v != nullptr ? story.FindRegion(v->regionId) : nullptr;
+    if (v == nullptr || region == nullptr) return VerdictResult::UnknownVerdict;
+    if (FindRecord(s, v->regionId) != nullptr) return VerdictResult::AlreadyDecided;
+    bool defeated = false;
+    for (const CharacterState& c : s.characters) {
+        const BossProgressEntry* b = FindBossProgress(c.bossProgress, region->generalId);
+        defeated = defeated || (b != nullptr && b->kills >= 1);
+    }
+    if (!defeated) return VerdictResult::GeneralNotDefeated;
+    if (s.story.verdicts.size() >= kMaxSavedVerdicts) return VerdictResult::UnknownVerdict;
+    s.story.verdicts.push_back({v->regionId, v->id});
+    s.story.hunger = std::min(story.HungerMax(), s.story.hunger + v->hungerDelta);
+    return VerdictResult::Ok;
+}
+
+const StoryVerdict* DecidedVerdict(const StoryDB& story, const SaveData& s, std::string_view regionId) {
+    const StoryVerdictRecord* r = FindRecord(s, regionId);
+    return r != nullptr ? story.FindVerdict(r->verdictId) : nullptr;
+}
+
+int TotalStatBonusPct(const StoryDB& story, const SaveData& s) {
+    int total = 0;
+    for (const StoryVerdictRecord& r : s.story.verdicts) {
+        const StoryVerdict* v = story.FindVerdict(r.verdictId);
+        if (v != nullptr) total += v->statBonusPct;
+    }
+    return total;
+}
+
+}  // namespace shatter
