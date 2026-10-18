@@ -34,3 +34,6 @@ EchoesOfTheShatter/crashlytics-build.properties
 
 # Saída do gerador do roteiro (tools/roteiro)
 /docs/roteiro/
+
+__pycache__/
+*.pyc
