@@ -35,7 +35,7 @@ namespace Echoes.Tests.EditMode
             {
                 var catalog = AssetDatabase.LoadAssetAtPath<HeroPartCatalog>(HeroModularBuilder.CatalogPath(hero));
                 Assert.IsNotNull(catalog, hero);
-                Assert.AreEqual(5, catalog.parts.Count, hero);
+                Assert.AreEqual(5, catalog.parts.FindAll(x => x.visualSetId == HeroPartCatalog.StarterSet).Count, hero); // so o Guerreiro tem o 2o conjunto (Raro)
                 var hides = HeroModularBuilder.ReadHides(hero);
                 for (var i = 0; i < 5; i++)
                 {
@@ -86,7 +86,7 @@ namespace Echoes.Tests.EditMode
                 {
                     var modular = go.GetComponent<ModularCharacter>();
                     Assert.IsNotNull(modular.Catalog, hero + ": catalogo ligado no prefab");
-                    Assert.AreEqual(5, modular.Catalog.parts.Count, hero);
+                    Assert.AreEqual(5, modular.Catalog.parts.FindAll(x => x.visualSetId == HeroPartCatalog.StarterSet).Count, hero);
                     for (var i = 0; i < 5; i++) modular.Equip((HeroPartSlot)i, HeroPartCatalog.StarterSet);
                     Assert.AreEqual(BodyRegion.None, modular.VisibleRegions, hero + ": armadura completa cobre o corpo todo");
 
