@@ -455,7 +455,7 @@ namespace Echoes.UI
                     value.style.marginTop = 1;
                 }
             }
-            var snap = SaveReadout.Read();
+            var snap = SaveReadout.Read(Rules, ExpeditionConfig.CryptMap);
             if (!snap.Valid) return;
             var title = ScreenKit.Line(statsPanel, Loc.Get("ui.inventory.resources"), 20, ScreenKit.Gold, true);
             title.style.marginTop = 8;

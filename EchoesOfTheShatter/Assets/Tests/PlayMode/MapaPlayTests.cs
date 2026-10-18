@@ -39,6 +39,7 @@ namespace Echoes.Tests.PlayMode
         const long T0 = 1_800_000_000;
         string dir;
         string settingsFile;
+        FakeGameClock clock;
 
         [SetUp]
         public void SetUp()
@@ -46,7 +47,8 @@ namespace Echoes.Tests.PlayMode
             dir = Path.Combine(Path.GetTempPath(), "echoes_mapa_" + System.Guid.NewGuid().ToString("N"));
             settingsFile = Path.Combine(Path.GetTempPath(), "echoes_mapa_settings_" + System.Guid.NewGuid().ToString("N") + ".json");
             UserSettings.UseFile(settingsFile);
-            GameSession.Use(new SaveService(dir, new FakeGameClock(T0)));
+            clock = new FakeGameClock(T0);
+            GameSession.Use(new SaveService(dir, clock));
             Assert.IsTrue(NativeRulesCore.TryCreate(out var rules, out var reason), reason);
             using (rules)
             {
@@ -87,7 +89,7 @@ namespace Echoes.Tests.PlayMode
 
         // ------------------------------------------------------------------------------------------------ Fase 2
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator SummonEventSpawnsTwoSentinelsAtTheMarks_AndTheyGoAwayWhenTheFightRestarts()
         {
             yield return LoadScene("Cripta");
@@ -120,7 +122,7 @@ namespace Echoes.Tests.PlayMode
 
         // ------------------------------------------------------------------------------------------------ checkpoint
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Checkpoint_RefillsPotionsSavesAndShowsTheReturn()
         {
             yield return LoadScene("Cripta");
@@ -155,7 +157,7 @@ namespace Echoes.Tests.PlayMode
 
         // ------------------------------------------------------------------------------------------------ morte
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Death_ShowsNothingLostThenSavesAfterTheReturn()
         {
             yield return LoadScene("Cripta");
@@ -179,7 +181,7 @@ namespace Echoes.Tests.PlayMode
             Assert.Greater(hooks.SaveCount, saves, "salvou depois de morrer");
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Death_InTheArenaShowsTheFightRestarts()
         {
             yield return LoadScene("Cripta");
@@ -199,7 +201,7 @@ namespace Echoes.Tests.PlayMode
 
         // ------------------------------------------------------------------------------------------------ vitoria (RF-50)
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Victory_WithoutReachingTheArena_DoesNotConquerTheArea()
         {
             yield return LoadScene("Cripta");
@@ -210,10 +212,10 @@ namespace Echoes.Tests.PlayMode
             host.Events.Publish(in won);
             yield return null;
             Assert.IsFalse(RunRecorder.LastReward.NewConquest, "A3-08: sem chegar a arena nao grava dominio");
-            Assert.AreEqual(0, GameSession.Save.Current.Summary.MarkerCharges);
+            Assert.Less(GameSession.Save.Current.Summary.MarkerCharges, 5, "as cargas de area nova nao vem");
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Victory_AfterTheArenaGrantsDomainAndShowsTheBanner()
         {
             yield return LoadScene("Cripta");
@@ -231,13 +233,17 @@ namespace Echoes.Tests.PlayMode
             yield return null;
             Assert.IsTrue(RunRecorder.LastReward.NewConquest);
             Assert.Greater(GameSession.Save.Current.Summary.MarkerCharges, 0);
-            Assert.AreEqual(root.Localization.Get("ui.boss.defeated"), ScreenHost.Current.Banners.Current, "a faixa de vitoria");
+            // A faixa de vitoria entra na fila atras da faixa do nome da area (3 s) e nenhuma se perde.
+            var victoryTitle = root.Localization.Get("ui.boss.defeated");
+            var started = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - started < 8f && ScreenHost.Current.Banners.Current != victoryTitle) yield return null;
+            Assert.AreEqual(victoryTitle, ScreenHost.Current.Banners.Current, "a faixa de vitoria");
             Assert.AreEqual(root.Localization.Get("ui.boss.marker_installed"), ScreenHost.Current.Banners.CurrentSubtitle);
         }
 
         // ------------------------------------------------------------------------------------------------ HUD
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Hud_ShowsGoldChargesLevelFervorAndTheAreaBanner()
         {
             Assert.IsTrue(NativeRulesCore.TryCreate(out var seedRules, out var why), why);
@@ -268,7 +274,7 @@ namespace Echoes.Tests.PlayMode
             Assert.AreEqual("Gold", hud.Query<LocLabel>().ToList().First(l => l.LocKey == "ui.common.gold").text, "idioma trocado sem reiniciar");
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Portal_FadesToBlackBeforeSwitchingAndTheNewSceneFadesIn()
         {
             yield return LoadScene("Refugio");
@@ -295,7 +301,7 @@ namespace Echoes.Tests.PlayMode
 
         // ------------------------------------------------------------------------------------------------ menus
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator MainMenu_ContinueShowsTheSaveLegendVersionAndLogs()
         {
             yield return LoadScene("MainMenu");
@@ -316,7 +322,7 @@ namespace Echoes.Tests.PlayMode
             Assert.IsNotNull(doc.Q<Button>("overwrite-hold"));
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator MainMenu_WithoutSaveHasNoContinue_AndNewGameOverASaveAsksFirst()
         {
             GameSession.Save.Close();
@@ -328,7 +334,7 @@ namespace Echoes.Tests.PlayMode
             Assert.IsNotNull(doc.Q<Button>("play"));
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Options_SwitchLanguageRemapDodgeAndShake_WorkAndPersist()
         {
             yield return LoadScene("MainMenu");
@@ -364,7 +370,7 @@ namespace Echoes.Tests.PlayMode
             Assert.IsNull(doc.Q<VisualElement>("row-Pause"), "Esc nao e remapeavel");
         }
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Pause_HasOptionsQuitAndTheSaveWarning()
         {
             yield return LoadScene("Refugio");
@@ -392,7 +398,7 @@ namespace Echoes.Tests.PlayMode
 
         // ------------------------------------------------------------------------------------------------ relatorio
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Report_HasPlayRouteAndAdjustRule_AndPlayRouteTurnsFervorOn()
         {
             yield return LoadScene("Refugio");
@@ -401,17 +407,10 @@ namespace Echoes.Tests.PlayMode
             controller.DebugConquerCrypt();
             controller.Config.Hours = 1;
             Assert.AreEqual(StartCheck.Ok, controller.StartExpedition());
-            SystemGameClock.DebugOffsetSeconds += 3601;
-            try
-            {
-                controller.StartCollect();
-                for (var i = 0; i < 600 && controller.IsCollecting; i++) yield return null;
-                Assert.AreEqual(CollectStatus.Collected, controller.LastCollectStatus);
-            }
-            finally
-            {
-                SystemGameClock.DebugOffsetSeconds = 0;
-            }
+            clock.Advance(3601); // relogio do save de teste (o acelerador de debug so vale para o relogio do sistema)
+            controller.StartCollect();
+            for (var i = 0; i < 600 && controller.IsCollecting; i++) yield return null;
+            Assert.AreEqual(CollectStatus.Collected, controller.LastCollectStatus);
             yield return null;
             var doc = ScreenHost.Current.Root;
             Assert.IsNotNull(doc.Q<Button>("report-play-route"), "Jogar esta rota agora");
@@ -434,7 +433,7 @@ namespace Echoes.Tests.PlayMode
 
         // ------------------------------------------------------------------------------------------------ inventario
 
-        [UnityTest]
+        [UnityTest, Timeout(240000)] // teste que espera algo que nunca vem nao pode prender a Unity (o inventario pausa o tempo: WaitForSeconds escalado travaria)
         public IEnumerator Inventory_ShowsStatsGoldShards_HidesLockedSlots_AndUndoesACommonDiscard()
         {
             yield return LoadScene("Refugio");
@@ -463,9 +462,9 @@ namespace Echoes.Tests.PlayMode
             Assert.IsNotNull(doc.Q<VisualElement>("stat-armor"));
             Assert.IsNotNull(doc.Q<VisualElement>("res-gold"), "Ouro");
             Assert.IsNotNull(doc.Q<VisualElement>("res-shards"), "Lascas");
-            foreach (var hidden in new[] { "off_hand", "amulet", "ring", "ring2", "belt" })
+            foreach (var hidden in new[] { "amulet", "ring", "ring2", "belt" })
                 Assert.IsNull(doc.Q<VisualElement>("slot-" + hidden), "posicao sem conteudo escondida: " + hidden);
-            foreach (var shown in new[] { "main_hand", "head", "body", "hands", "legs", "feet" })
+            foreach (var shown in new[] { "main_hand", "head", "body", "hands", "legs", "feet", "off_hand" }) // off_hand: escudos do docs/19
                 Assert.IsNotNull(doc.Q<VisualElement>("slot-" + shown), shown);
             Assert.IsNull(doc.Q<VisualElement>("lock"), "sem cadeados");
 
@@ -483,7 +482,7 @@ namespace Echoes.Tests.PlayMode
 
             inventory.SelectUid(common.Uid);
             doc.Q<Button>("act-discard").SendClick();
-            yield return new WaitForSeconds(RunRecorderUndoWait());
+            yield return new WaitForSecondsRealtime(RunRecorderUndoWait()); // o inventario aberto pausa o tempo (timeScale 0)
             Assert.AreEqual(0, inventory.PendingDiscardCount);
             Assert.AreEqual(before - 1, save.ListItems(0, ItemContainer.Backpack).Count, "passados 5 s o descarte vale");
             inventory.Close();

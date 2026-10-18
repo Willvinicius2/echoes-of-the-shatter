@@ -35,6 +35,7 @@ namespace Echoes.UI
         static Dictionary<string, Slice> slices;
 
         // Mapa base de item -> icone (icones_itens_01). Bases sem entrada caem no icone da posicao; sem icone, a UI mostra as iniciais.
+        // TODO(asset ui.icon.shield): o Escudo (off_hand: wooden_shield, guard_shield) ainda nao tem icone aprovado; a UI mostra as iniciais da base.
         // TODO(asset ui.icon.hunter_bow): o Arco do Cacador ainda nao tem icone proprio (so Guerreiro no prototipo); usa a espada.
         static readonly Dictionary<string, string> iconByBase = new Dictionary<string, string>
         {
@@ -46,6 +47,8 @@ namespace Echoes.UI
             { "item_base.worn_boots", "icon_boots" },
             { "item_base.worn_trousers", "icon_trousers" },
             { "item_base.hunter_bow", "icon_sword" },
+            { "item_base.steel_sword", "icon_sword" },
+            { "item_base.quarry_maul", "icon_hammer" },
         };
 
         static readonly Dictionary<string, string> iconBySlot = new Dictionary<string, string>

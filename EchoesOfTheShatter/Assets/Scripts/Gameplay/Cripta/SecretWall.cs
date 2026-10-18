@@ -1,3 +1,4 @@
+using Echoes.Core;
 using UnityEngine;
 
 namespace Echoes.Gameplay
@@ -22,6 +23,14 @@ namespace Echoes.Gameplay
 
         void Start()
         {
+            // Já aberta no save (estado do mundo por ID): nasce aberta e não volta com o checkpoint nem ao reentrar.
+            var save = GameSession.Save;
+            if (save != null && save.HasSave && !string.IsNullOrEmpty(secretId) && save.Current.IsWorldObjectOpen(ExpeditionConfig.CryptMap, secretId))
+            {
+                IsOpen = true;
+                gameObject.SetActive(false);
+                return;
+            }
             var events = combatHost != null ? combatHost.Events : null;
             if (events == null) return;
             events.Subscribe<SkillPhaseEvent>(OnSkillPhase);
@@ -49,6 +58,8 @@ namespace Echoes.Gameplay
             if (IsOpen) return;
             IsOpen = true;
             gameObject.SetActive(false);
+            var saved = GameSession.Save;
+            if (saved != null && saved.HasSave && !string.IsNullOrEmpty(secretId)) saved.Current.SetWorldObjectOpen(ExpeditionConfig.CryptMap, secretId, true);
             var evt = new SecretOpenedEvent { SecretId = secretId };
             combatHost?.Events?.Publish(in evt);
         }

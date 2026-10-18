@@ -61,11 +61,7 @@ namespace Echoes.UI
         [Tooltip("Segundos do brilho do checkpoint (F-07).")]
         [SerializeField, Min(0.1f)] float flashSeconds = 0.5f;
 
-        /// <summary>
-        /// Fração da barra de XP do nível atual. Quem calcula é o core (curva de XP); enquanto o Backend não expõe a API a barra fica oculta e
-        /// só aparecem nível e XP total. Ligue aqui a função (nível, XP) → [0,1] quando existir.
-        /// </summary>
-        public static System.Func<int, double, float> XpFraction;
+
 
         sealed class SkillSlotView
         {
@@ -104,7 +100,7 @@ namespace Echoes.UI
         VisualElement deathOverlay;
         Label deathDetail;
         VisualElement goldIcon, chargesIcon, fervorBox, levelBox, xpBar, xpFill, checkpointFlash;
-        Label goldValue, chargesValue, levelValue, xpValue;
+        Label goldValue, chargesValue, levelValue, xpValue, fervorXp;
         ArenaController arena;
         float readoutTimeLeft;
         bool wasDead;
@@ -224,6 +220,7 @@ namespace Echoes.UI
             xpFill = r.Q<VisualElement>("xp-fill");
             xpValue = r.Q<Label>("xp-value");
             fervorBox = r.Q<VisualElement>("fervor");
+            fervorXp = r.Q<Label>("fervor-xp");
             checkpointFlash = r.Q<VisualElement>("checkpoint-flash");
             var goldTexture = UiArt.Icon("icon_gold");
             if (goldIcon != null && goldTexture != null) goldIcon.style.backgroundImage = new StyleBackground(goldTexture);
@@ -487,15 +484,24 @@ namespace Echoes.UI
             readoutTimeLeft -= dt;
             if (readoutTimeLeft > 0f || localization == null) return;
             readoutTimeLeft = readoutSeconds;
-            var snap = SaveReadout.Read();
+            var rules = GameSession.NativeRules(root);
+            var snap = SaveReadout.Read(rules, ExpeditionConfig.CryptMap);
             if (!snap.Valid) return;
             if (goldValue != null) goldValue.text = localization.FormatInteger(snap.Gold);
             if (chargesValue != null) chargesValue.text = snap.Charges + "/12";
             if (levelValue != null) levelValue.text = ScreenKit.Fmt(localization, "ui.common.level", ("level", snap.Level.ToString()));
-            if (xpValue != null) xpValue.text = ScreenKit.Fmt(localization, "ui.hud.xp_total", ("xp", localization.FormatInteger((long)System.Math.Floor(snap.Xp))));
-            var fraction = XpFraction != null ? XpFraction(snap.Level, snap.Xp) : -1f;
-            if (xpBar != null) xpBar.style.display = fraction >= 0f ? DisplayStyle.Flex : DisplayStyle.None;
-            if (fraction >= 0f) SetWidth(xpFill, fraction);
+            // XP e nivel reais (core): "XP 120/300" dentro do nivel e a barra; no teto da area a barra fica cheia e o texto diz so o XP.
+            if (xpValue != null)
+                xpValue.text = snap.XpToNext > 0.0
+                    ? ScreenKit.Fmt(localization, "ui.hud.xp_progress", ("xp", localization.FormatInteger((long)System.Math.Floor(snap.XpInLevel))), ("next", localization.FormatInteger((long)System.Math.Ceiling(snap.XpToNext))))
+                    : ScreenKit.Fmt(localization, "ui.hud.xp_total", ("xp", localization.FormatInteger((long)System.Math.Floor(snap.XpInLevel))));
+            if (xpBar != null) xpBar.style.display = DisplayStyle.Flex;
+            SetWidth(xpFill, snap.XpFraction);
+            if (fervorXp != null && rules != null)
+            {
+                var fervor = rules.Fervor(); // o bonus vem do rules.csv pelo core (XP +200% com o CSV atual)
+                fervorXp.text = ScreenKit.Fmt(localization, "ui.hud.fervor_bonus", ("pct", localization.FormatInteger((long)System.Math.Round(fervor.XpBonus * 100.0))));
+            }
         }
 
         /// <summary>"Você caiu": a linha de baixo diz o que acontece (a luta recomeça na arena; senão, volta ao checkpoint). Nada foi perdido vem do UXML.</summary>

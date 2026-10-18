@@ -39,6 +39,8 @@ namespace Echoes.UI
             if (root != null && root.Events != null)
             {
                 root.Events.Subscribe<CombatantDiedEvent>(OnDied);
+                root.Events.Subscribe<ChestOpenedEvent>(OnChest);
+                root.Events.Subscribe<EncounterClearedEvent>(OnEncounterCleared);
                 subscribed = true;
             }
             if (GameSession.Save != null && GameSession.Save.HasSave) GameSession.Save.Current.GroundClear(); // chao vazio ao entrar
@@ -46,7 +48,12 @@ namespace Echoes.UI
 
         void OnDestroy()
         {
-            if (subscribed && root != null && root.Events != null) root.Events.Unsubscribe<CombatantDiedEvent>(OnDied);
+            if (subscribed && root != null && root.Events != null)
+            {
+                root.Events.Unsubscribe<CombatantDiedEvent>(OnDied);
+                root.Events.Unsubscribe<ChestOpenedEvent>(OnChest);
+                root.Events.Unsubscribe<EncounterClearedEvent>(OnEncounterCleared);
+            }
             if (GameSession.Save != null && GameSession.Save.HasSave) GameSession.Save.Current.GroundClear(); // saiu da Cripta: o chao some
         }
 
@@ -74,6 +81,39 @@ namespace Echoes.UI
             }
             var origin = new Vector3(victim.Position.X, 0f, victim.Position.Z);
             SpawnViews(ItemInstanceInfo.ListFromJson(json), origin);
+        }
+
+        // Nivel de monstro da area (maps.csv, pelo core): o drop de bau e de encontro usa o nivel da area.
+        int AreaLevel(Echoes.Interop.Native.NativeRulesCore rules)
+        {
+            var info = Echoes.Interop.Native.SaveGame.MapInfoOf(rules, ExpeditionConfig.CryptMap);
+            return info.MonsterLevel > 0 ? info.MonsterLevel : 1;
+        }
+
+        /// <summary>Baú aberto (Interagir): o core rola a tabela do baú, marca o baú como aberto no estado do mundo e o save é gravado; os itens caem no chão.</summary>
+        void OnChest(in ChestOpenedEvent evt)
+        {
+            var rules = GameSession.NativeRules(root);
+            if (rules == null || !GameSession.Save.HasSave) return;
+            var json = GameSession.Save.Current.OpenChest(rules, ExpeditionConfig.CryptMap, evt.ChestId, AreaLevel(rules), raresDropped, -1, NextSeed(), out var result, out var error);
+            if (result == ChestOpenResult.Error) Debug.LogWarning("[Loot] bau " + evt.ChestId + ": " + error);
+            GameSession.Save.Save(rules); // o bau aberto (estado do mundo) e o Ouro e as Lascas vao para o disco
+            if (result != ChestOpenResult.Opened || string.IsNullOrEmpty(json)) return;
+            SpawnViews(ItemInstanceInfo.ListFromJson(json), evt.Position + Vector3.up * 0f);
+        }
+
+        /// <summary>Encontro limpo: o core rola a tabela da área (Ouro, Lascas e itens baixos), uma vez por encontro na visita.</summary>
+        void OnEncounterCleared(in EncounterClearedEvent evt)
+        {
+            var rules = GameSession.NativeRules(root);
+            if (rules == null || !GameSession.Save.HasSave) return;
+            var json = GameSession.Save.Current.EncounterClearLoot(rules, ExpeditionConfig.CryptMap, AreaLevel(rules), raresDropped, -1, NextSeed(), out var error);
+            if (string.IsNullOrEmpty(json))
+            {
+                if (!string.IsNullOrEmpty(error)) Debug.LogWarning("[Loot] loot do encontro " + evt.EncounterId + ": " + error);
+                return;
+            }
+            SpawnViews(ItemInstanceInfo.ListFromJson(json), evt.Position);
         }
 
         /// <summary>Loot do Guardiao (JSON do core, com o Unico): grave o save ANTES (RF-55); aqui o item cai no chao.</summary>

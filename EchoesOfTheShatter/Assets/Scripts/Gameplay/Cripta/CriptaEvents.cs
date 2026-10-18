@@ -5,6 +5,20 @@ namespace Echoes.Gameplay
     {
         public string ChestId;
         public string LootTableId;
+        public UnityEngine.Vector3 Position;
+    }
+
+    /// <summary>O herói limpou todos os inimigos de um encontro (a primeira vez na visita): a UI pede o loot da área ao core.</summary>
+    public struct EncounterClearedEvent
+    {
+        public string EncounterId;
+        public UnityEngine.Vector3 Position;
+    }
+
+    /// <summary>O atalho abriu (alavanca): o estado vai para o save pelo ID do portão.</summary>
+    public struct ShortcutOpenedEvent
+    {
+        public string ShortcutId;
     }
 
     /// <summary>O herói passou num checkpoint novo (F-07): poções cheias, salvar e mostrar o retorno visual.</summary>

@@ -125,7 +125,7 @@
         <ui:VisualElement name="fervor" class="hud__fervor hud--hidden" picking-mode="Ignore">
             <ui:VisualElement name="fervor-icon" class="hud__fervor-icon" picking-mode="Ignore" />
             <Echoes.UI.LocLabel loc-key="ui.hud.fervor" class="hud__fervor-name" picking-mode="Ignore" />
-            <Echoes.UI.LocLabel loc-key="ui.hud.fervor_xp" class="hud__fervor-xp" picking-mode="Ignore" />
+            <ui:Label name="fervor-xp" class="hud__fervor-xp" picking-mode="Ignore" />
         </ui:VisualElement>
 
         <ui:VisualElement name="checkpoint-flash" class="hud__flash" picking-mode="Ignore" />

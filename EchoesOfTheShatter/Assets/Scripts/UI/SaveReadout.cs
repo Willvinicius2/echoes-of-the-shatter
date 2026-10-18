@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Echoes.Core;
 using Echoes.Interop;
 using Echoes.Interop.Native;
@@ -6,8 +5,9 @@ using Echoes.Interop.Native;
 namespace Echoes.UI
 {
     /// <summary>
-    /// Leitura do save para a HUD e o inventario: nivel, XP, Ouro, Lascas e Cargas do Marco. So le (o ganho de XP e o Ouro sao do core/Backend);
-    /// nada aqui calcula regra. Moedas vem do bloco <c>currencies</c> do JSON do save (ids de loot_entries.csv).
+    /// Leitura do save para a HUD e o inventario: nivel, XP, Ouro, Lascas e Cargas do Marco. So le (XP, nivel e Ouro sao do core); nada aqui calcula
+    /// regra. Nivel e XP vem de <c>shatter_character_progress</c> (nivel do save, XP dentro do nivel e o total do nivel); moedas, do bloco
+    /// <c>currencies</c> do JSON do save (ids de loot_entries.csv).
     /// </summary>
     public static class SaveReadout
     {
@@ -18,26 +18,48 @@ namespace Echoes.UI
         {
             public readonly bool Valid;
             public readonly int Level, Charges;
-            public readonly double Xp;
+            /// <summary>XP dentro do nivel atual e o XP que o nivel pede (0 no teto de nivel da area).</summary>
+            public readonly double XpInLevel, XpToNext;
             public readonly long Gold, Shards;
 
-            public Snapshot(int level, double xp, long gold, long shards, int charges)
+            public Snapshot(int level, double xpInLevel, double xpToNext, long gold, long shards, int charges)
             {
                 Valid = true;
                 Level = level;
-                Xp = xp;
+                XpInLevel = xpInLevel;
+                XpToNext = xpToNext;
                 Gold = gold;
                 Shards = shards;
                 Charges = charges;
             }
+
+            /// <summary>Fracao da barra de XP (0 a 1); no teto de nivel a barra fica cheia.</summary>
+            public float XpFraction => XpToNext > 0.0 ? (float)System.Math.Max(0.0, System.Math.Min(1.0, XpInLevel / XpToNext)) : 1f;
         }
 
-        public static Snapshot Read()
+        /// <param name="rules">Motor nativo (nivel e XP vem dele); null cai no JSON do save.</param>
+        /// <param name="mapId">Area do teto de nivel (vazio = teto maximo).</param>
+        public static Snapshot Read(NativeRulesCore rules = null, string mapId = "")
         {
             var service = GameSession.Save;
             if (service == null || !service.HasSave || GameSession.SaveBusy) return default;
             var save = service.Current;
-            var character = MiniJson.AsObject(MiniJson.Parse(save.CharacterJson(0)));
+            int level;
+            double inLevel, toNext;
+            if (rules != null)
+            {
+                var progress = save.CharacterProgress(rules, 0, mapId);
+                level = progress.Level >= 1 ? progress.Level : 1;
+                inLevel = progress.XpInLevel;
+                toNext = progress.XpToNext;
+            }
+            else
+            {
+                var character = MiniJson.AsObject(MiniJson.Parse(save.CharacterJson(0)));
+                level = MiniJson.Int(character, "level", 1);
+                inLevel = MiniJson.Num(character, "xp");
+                toNext = 0.0;
+            }
             long gold = 0, shards = 0;
             var envelope = MiniJson.AsObject(MiniJson.Parse(save.ToJson()));
             var data = envelope.TryGetValue("data", out var inner) ? MiniJson.AsObject(inner) : envelope; // o save vem num envelope {format, data}
@@ -49,7 +71,7 @@ namespace Echoes.UI
                 if (id == GoldId) gold += amount;
                 else if (id == ShardsId) shards += amount;
             }
-            return new Snapshot(MiniJson.Int(character, "level", 1), MiniJson.Num(character, "xp"), gold, shards, save.Summary.MarkerCharges);
+            return new Snapshot(level, inLevel, toNext, gold, shards, save.Summary.MarkerCharges);
         }
     }
 }

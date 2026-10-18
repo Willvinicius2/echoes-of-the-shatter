@@ -59,6 +59,8 @@ namespace Echoes.EditorTools
             public Transform Interactives;
             public Camera Camera;
             public readonly List<EnemyController> Enemies = new List<EnemyController>();
+            /// <summary>Espaco de cada inimigo no encontro (encontro, n-esimo grupo do mesmo inimigo, espaco): o diretor aplica o sorteio do core nele.</summary>
+            public readonly List<(EnemyController enemy, string encounterId, int groupOrdinal, int slot)> Slots = new List<(EnemyController, string, int, int)>();
         }
 
         [MenuItem("Echoes/Montar Cripta")]
@@ -155,6 +157,7 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(director, "hero", hero);
             SandboxBuilder.SetRef(director, "arena", arena);
             SetObjectArray(director, "enemies", ctx.Enemies);
+            SetEncounterSlots(director, ctx);
             if (arena != null) SetBossOf(arena, ctx);
             if (arena != null) BuildSummoner(ctx, arena, enemies);
 
@@ -317,6 +320,9 @@ namespace Echoes.EditorTools
                 SandboxBuilder.SetRef(shot, "root", ctx.GameRoot);
                 var perf = go.AddComponent<FramePerfRunner>();
                 SandboxBuilder.SetRef(perf, "root", ctx.GameRoot);
+                go.AddComponent<InteractPromptView>();
+                var kills = go.AddComponent<KillRewardDirector>();
+                SandboxBuilder.SetRef(kills, "root", ctx.GameRoot);
                 var bossBar = go.AddComponent<BossBarView>();
                 SandboxBuilder.SetRef(bossBar, "root", ctx.GameRoot);
             }
@@ -377,6 +383,8 @@ namespace Echoes.EditorTools
                     // Do lado da sala de origem do atalho (a sala que abre): 3 m para dentro dela a partir do portao.
                     lever.transform.position = new Vector3(gate.Pos.x, 0f, room != null && gate.Pos.y <= room.Rect.yMin + 0.5f ? gate.Pos.y + 3f : gate.Pos.y - 3f);
                     var l = lever.AddComponent<ShortcutLever>();
+                    SandboxBuilder.SetRef(l, "combatHost", ctx.Host);
+                    SandboxBuilder.SetString(l, "shortcutId", gate.Id); // ID do objeto no estado do mundo do save (shortcut.crypt.a)
                     SandboxBuilder.SetRef(l, "hero", ctx.Hero);
                     SandboxBuilder.SetRef(l, "gate", barrier);
                     var visual = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -520,13 +528,17 @@ namespace Echoes.EditorTools
             {
                 var group = new GameObject(encounter.Id).transform;
                 group.SetParent(parent, false);
+                var ordinals = new Dictionary<string, int>();
                 foreach (var g in encounter.Groups)
                 {
-                    var count = Mathf.Min(g.Max, g.Slots.Count); // os n primeiros espacos (docs/14 secao 4); o maximo do CSV
+                    ordinals.TryGetValue(g.EnemyId, out var groupOrdinal);
+                    ordinals[g.EnemyId] = groupOrdinal + 1;
+                    var count = Mathf.Min(g.Max, g.Slots.Count); // os n primeiros espacos (docs/14 secao 4); o maximo do CSV; o core sorteia n em jogo
                     for (var i = 0; i < count; i++)
                     {
                         var controller = SpawnEnemy(ctx, group, encounter, g, i);
                         ctx.Enemies.Add(controller);
+                        ctx.Slots.Add((controller, encounter.Id, groupOrdinal, i));
                     }
                 }
             }
@@ -770,6 +782,22 @@ namespace Echoes.EditorTools
             var p = so.FindProperty(field) ?? throw new InvalidOperationException(field);
             p.arraySize = values.Count;
             for (var i = 0; i < values.Count; i++) p.GetArrayElementAtIndex(i).stringValue = values[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static void SetEncounterSlots(Object director, Context ctx)
+        {
+            var so = new SerializedObject(director);
+            var p = so.FindProperty("slots") ?? throw new InvalidOperationException("slots");
+            p.arraySize = ctx.Slots.Count;
+            for (var i = 0; i < ctx.Slots.Count; i++)
+            {
+                var e = p.GetArrayElementAtIndex(i);
+                e.FindPropertyRelative("enemy").objectReferenceValue = ctx.Slots[i].enemy;
+                e.FindPropertyRelative("encounterId").stringValue = ctx.Slots[i].encounterId;
+                e.FindPropertyRelative("groupOrdinal").intValue = ctx.Slots[i].groupOrdinal;
+                e.FindPropertyRelative("slot").intValue = ctx.Slots[i].slot;
+            }
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 

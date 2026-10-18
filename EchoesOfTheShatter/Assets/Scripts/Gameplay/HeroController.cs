@@ -173,7 +173,14 @@ namespace Echoes.Gameplay
                 }
             }
 
-            var build = new HeroBuild(classInfo.Id, level, equipped, saveSource, 0);
+            // Com save, o nivel e o do SAVE (o core guarda nivel e XP; o heroi nao usa mais o nivel fixo da cena); sem save, o do inspetor.
+            var heroLevel = level;
+            if (saveSource != null)
+            {
+                var progress = saveSource.CharacterProgress(native, 0);
+                if (progress.Level >= 1) heroLevel = progress.Level;
+            }
+            var build = new HeroBuild(classInfo.Id, heroLevel, equipped, saveSource, 0);
             var combatant = attributes.CreateHero(rules, in build, classInfo, weapon, controller.radius);
             Logic = new HeroCombatLogic(combatant, rules, BuildLogicBar(), BasicKitSource.For(rules, classInfo.Id));
             combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
