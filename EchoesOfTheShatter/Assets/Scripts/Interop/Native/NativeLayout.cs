@@ -381,6 +381,28 @@ namespace Echoes.Interop.Native
             return false;
         }
 
+        /// <summary>Lista do layout ext8 (API 1.7, movimento do herói): [tamanho de shatter_hero_move_rules, offset de accel_seconds, offset de decel_seconds].</summary>
+        public static uint[] BuildExt8()
+        {
+            ShatterHeroMoveRules m = default;
+            return new[] { (uint)sizeof(ShatterHeroMoveRules), Off(&m, &m.accel_seconds), Off(&m, &m.decel_seconds) };
+        }
+
+        public static bool CheckExt8(out string message)
+        {
+            var values = BuildExt8();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext8(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext8 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
         public static bool CheckExt5(out string message)
         {
             var values = BuildExt5();

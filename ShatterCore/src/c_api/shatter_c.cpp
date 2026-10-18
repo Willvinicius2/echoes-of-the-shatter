@@ -4182,4 +4182,42 @@ SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext7(const std::uin
 }
 
 
+// --- Movimento do herói (rampa de aceleração e desaceleração) ----------------------------------------------------
+static_assert(sizeof(shatter_hero_move_rules) == 16, "shatter_hero_move_rules");
+
+SHATTER_API shatter_status SHATTER_CALL shatter_db_hero_move_rules(const shatter_db* db, shatter_hero_move_rules* out) SHATTER_NOEXCEPT {
+    const ContentDB* d = UsableDb(db);
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    if (d == nullptr) return db == nullptr ? SHATTER_INVALID_ARGUMENT : SHATTER_CONTENT_INVALID;
+    out->accel_seconds = d->Rules().heroMoveAccelSeconds;
+    out->decel_seconds = d->Rules().heroMoveDecelSeconds;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext8(std::uint32_t* out, std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    if (needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *needed = SHATTER_LAYOUT_EXT8_COUNT;
+    if (cap < SHATTER_LAYOUT_EXT8_COUNT) return SHATTER_BUFFER_TOO_SMALL;
+    if (out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    out[0] = static_cast<std::uint32_t>(sizeof(shatter_hero_move_rules));
+    out[1] = static_cast<std::uint32_t>(offsetof(shatter_hero_move_rules, accel_seconds));
+    out[2] = static_cast<std::uint32_t>(offsetof(shatter_hero_move_rules, decel_seconds));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext8(const std::uint32_t* values, std::size_t n, shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    std::uint32_t expected[SHATTER_LAYOUT_EXT8_COUNT] = {};
+    std::size_t needed = 0;
+    shatter_layout_info_ext8(expected, SHATTER_LAYOUT_EXT8_COUNT, &needed);
+    if (values == nullptr && n != 0) return SetError(err, SHATTER_INVALID_ARGUMENT, "values is null");
+    if (n != SHATTER_LAYOUT_EXT8_COUNT) return SetError(err, SHATTER_VERSION_MISMATCH, "ext8 layout count differs");
+    for (std::size_t i = 0; i < n; ++i) {
+        if (values[i] != expected[i])
+            return SetError(err, SHATTER_VERSION_MISMATCH, "ext8 layout entry " + std::to_string(i) + " differs", static_cast<int>(i) + 1);
+    }
+    return SHATTER_OK;
+}
+
+
 }  // extern "C"

@@ -764,6 +764,22 @@
       "desc": "Lascas devolvidas ao desmontar item Raro [HIPÓTESE]",
       "min": 0,
       "max": 1000000
+    },
+    {
+      "name": "hero_move_accel_seconds",
+      "type": "number",
+      "default": 0.1,
+      "desc": "Tempo (s) do herói de 0 até a velocidade máxima [HIPÓTESE]",
+      "min": 0,
+      "max": 0.5
+    },
+    {
+      "name": "hero_move_decel_seconds",
+      "type": "number",
+      "default": 0.08,
+      "desc": "Tempo (s) do herói da velocidade máxima até 0 [HIPÓTESE]",
+      "min": 0,
+      "max": 0.5
     }
   ]
 }

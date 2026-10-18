@@ -127,6 +127,8 @@ namespace Echoes.Interop
             Combat.LightWindupCreditMax = RuleOrZero("light_windup_credit_max");
             Combat.GuardLowerTimeSeconds = RuleOrZero("guard_lower_time");
             Combat.DashShotRangeUu = RuleOrZero("dash_shot_range");
+            Combat.HeroMoveAccelSeconds = RuleOrZero("hero_move_accel_seconds");
+            Combat.HeroMoveDecelSeconds = RuleOrZero("hero_move_decel_seconds");
         }
 
         double RuleOrZero(string key) => RuleValues.TryGetValue(key, out var value) ? value : 0.0;

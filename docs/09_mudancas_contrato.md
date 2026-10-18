@@ -437,3 +437,7 @@ C# em `Assets/Scripts/Interop`: `CryptTypes.cs`, `Native/ShatterNative.Crypt.cs`
 ### 14.4 Testes
 
 `test_world.cpp` (13 testes: estado do mundo e limites, save antigo sem o campo, semente da visita, formação determinística e distribuição de elite em 20 mil sementes, tabela de baú e fallback, erros de `chests.csv`, XP de cada tipo, Fervor, teto de nível, N0 com o conteúdo real: Martelo mais lento que a Espada e DPS na faixa do docs/19) e `c_api_17_*` (5 testes na fronteira da DLL).
+
+### 14.5 Movimento do herói (rampa)
+
+Chaves `hero_move_accel_seconds` (0,10) e `hero_move_decel_seconds` (0,08) em `rules.csv` [HIPÓTESE], faixa 0 a 0,5 s, obrigatórias. API: `shatter_db_hero_move_rules` e `shatter_layout_check_ext8` (3 valores). C#: `CombatRules.HeroMoveAccelSeconds` e `HeroMoveDecelSeconds` (o C# aplica a rampa linear: velocidade += máxima x dt / tempo; 0 = instantâneo). Teste: `c_api_17_hero_move_rules_...`.

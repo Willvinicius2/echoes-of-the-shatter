@@ -101,3 +101,5 @@ polish_max_steps,3
 dismantle_shards_normal,2
 dismantle_shards_magic,5
 dismantle_shards_rare,12
+hero_move_accel_seconds,0.10
+hero_move_decel_seconds,0.08

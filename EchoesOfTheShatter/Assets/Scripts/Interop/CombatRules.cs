@@ -58,5 +58,13 @@ namespace Echoes.Interop
 
         /// <summary><c>dash_shot_range</c>: alcance em uu do tiro de uma habilidade dash com tag projétil (Salto do Arqueiro).</summary>
         public double DashShotRangeUu { get; internal set; }
+
+        // --- Movimento do herói (API C 1.7): rampa de aceleração e desaceleração. O core guarda e valida (0 a 0,5 s); o C# aplica. ---
+
+        /// <summary><c>hero_move_accel_seconds</c>: segundos de 0 até a velocidade máxima (0 = instantâneo). Rampa linear: velocidade += max x dt / este tempo.</summary>
+        public double HeroMoveAccelSeconds { get; internal set; }
+
+        /// <summary><c>hero_move_decel_seconds</c>: segundos da velocidade máxima até 0 (0 = para na hora).</summary>
+        public double HeroMoveDecelSeconds { get; internal set; }
     }
 }

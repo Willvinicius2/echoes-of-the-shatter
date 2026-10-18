@@ -24,8 +24,20 @@ namespace Echoes.Interop.Native
         public double xp_bonus, gold_mat_bonus, rare_bonus;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ShatterHeroMoveRules
+    {
+        public double accel_seconds, decel_seconds;
+    }
+
     internal static unsafe partial class ShatterNative
     {
+        [DllImport("shattercore", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_db_hero_move_rules(IntPtr db, ShatterHeroMoveRules* output);
+
+        [DllImport("shattercore", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_layout_check_ext8(uint* values, nuint n, ShatterError* err);
+
         const string CryptLib = "shattercore";
 
         [DllImport(CryptLib, CallingConvention = CallingConvention.Cdecl)]

@@ -3,6 +3,7 @@
 // (golpe, expedição, golden). Este executável é ligado à DLL/so shattercore.
 #include <cmath>
 #include <cstring>
+#include <filesystem>
 #include <functional>
 #include <sstream>
 
@@ -2643,4 +2644,45 @@ TEST(c_api_17_skill_timing_weapon_makes_the_maul_slower_than_the_sword_in_the_re
     EXPECT_EQ(shatter_skill_timing_weapon(db.db, skill, std::strlen(skill), sb, cls, std::strlen(cls), "item_base.nope", 14, &t), SHATTER_NOT_FOUND);
     EXPECT_EQ(shatter_skill_timing_weapon(db.db, skill, std::strlen(skill), nullptr, cls, std::strlen(cls), "", 0, &t), SHATTER_INVALID_ARGUMENT);
     shatter_statblock_destroy(sb);
+}
+
+TEST(c_api_17_hero_move_rules_come_from_rules_csv_with_layout_and_range_validation) {
+    DbHandle db(tu::RichDir());
+    shatter_hero_move_rules m{};
+    ASSERT_EQ(shatter_db_hero_move_rules(db.db, &m), SHATTER_OK);
+    EXPECT_NEAR(m.accel_seconds, 0.10, 1e-12);
+    EXPECT_NEAR(m.decel_seconds, 0.08, 1e-12);
+    EXPECT_EQ(shatter_db_hero_move_rules(db.db, nullptr), SHATTER_INVALID_ARGUMENT);
+    std::uint32_t layout[SHATTER_LAYOUT_EXT8_COUNT] = {};
+    std::size_t needed = 0;
+    ASSERT_EQ(shatter_layout_info_ext8(layout, SHATTER_LAYOUT_EXT8_COUNT, &needed), SHATTER_OK);
+    EXPECT_EQ(layout[0], 16u);
+    EXPECT_EQ(layout[1], 0u);
+    EXPECT_EQ(layout[2], 8u);
+    shatter_error err{};
+    EXPECT_EQ(shatter_layout_check_ext8(layout, SHATTER_LAYOUT_EXT8_COUNT, &err), SHATTER_OK);
+    layout[2] += 8;
+    EXPECT_EQ(shatter_layout_check_ext8(layout, SHATTER_LAYOUT_EXT8_COUNT, &err), SHATTER_VERSION_MISMATCH);
+    // Faixa 0 a 0,5 s: fora dela o conteudo e recusado (E_RANGE); no limite passa; chave ausente e E_REQUIRED.
+    auto load = [&](const std::string& oldLine, const std::string& newLine) {
+        const std::string rules = tu::Replace(tu::ReadFile(tu::RichDir() + "/rules.csv"), oldLine, newLine);
+        ContentDB c;
+        bool ok = true;
+        for (const char* t : tu::kTableNames) {
+            const std::string path = tu::RichDir() + "/" + t;
+            if (tu::IsOptionalTable(t) && !std::filesystem::exists(std::filesystem::u8path(path))) continue;
+            ok = c.LoadTableCsv(t, std::string(t) == "rules.csv" ? rules : tu::ReadFile(path)) && ok;
+        }
+        return ok && c.Finalize();
+    };
+    EXPECT_FALSE(load("hero_move_accel_seconds,0.10", "hero_move_accel_seconds,0.6"));
+    EXPECT_FALSE(load("hero_move_decel_seconds,0.08", "hero_move_decel_seconds,-0.01"));
+    EXPECT_TRUE(load("hero_move_accel_seconds,0.10", "hero_move_accel_seconds,0.5"));
+    EXPECT_TRUE(load("hero_move_decel_seconds,0.08", "hero_move_decel_seconds,0"));
+    EXPECT_FALSE(load("hero_move_decel_seconds,0.08\n", ""));
+    // O conteudo real tem os valores combinados.
+    DbHandle real(tu::ContentDir());
+    ASSERT_EQ(shatter_db_hero_move_rules(real.db, &m), SHATTER_OK);
+    EXPECT_NEAR(m.accel_seconds, 0.10, 1e-12);
+    EXPECT_NEAR(m.decel_seconds, 0.08, 1e-12);
 }

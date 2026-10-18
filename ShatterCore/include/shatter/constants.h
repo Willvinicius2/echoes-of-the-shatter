@@ -101,6 +101,10 @@ struct RulesConstants {
     int polishMaxSteps = 0;                    // polish_max_steps: passos de Lapidar por afixo
     int dismantleShards[3] = {0, 0, 0};        // dismantle_shards_normal/magic/rare: Lascas devolvidas ao Desmontar
 
+    // Movimento do herói (aceleração e desaceleração, [HIPÓTESE]; faixa 0 a 0,5 s; 0 = instantâneo). O C# aplica a rampa.
+    double heroMoveAccelSeconds = 0.0;         // hero_move_accel_seconds: de 0 até a velocidade máxima
+    double heroMoveDecelSeconds = 0.0;         // hero_move_decel_seconds: da velocidade máxima até 0
+
     // --- Fervor (jogo manual). O idle é a taxa base = 1. ---
     double fervorXpMult = 3.0;             // fervor_xp_mult
     double fervorGoldMatMult = 1.25;       // fervor_gold_mat_mult

@@ -86,7 +86,7 @@ namespace {
 using detail::CsvRow;
 using detail::CsvTable;
 
-constexpr std::size_t kRuleKeyCount = 62 + 18 + 7 + 15;
+constexpr std::size_t kRuleKeyCount = 62 + 18 + 7 + 15 + 2;
 
 // --- tabela de chaves de rules.csv (faixas = validação estrutural do 06_dados.md, não balanceamento) ---
 struct RuleDef {
@@ -216,6 +216,8 @@ const RuleDef kRuleDefs[kRuleKeyCount] = {
     {"polish_max_steps", 'i', 1, 10, false, [](RulesConstants& r, double v) { r.polishMaxSteps = static_cast<int>(v); }},
     {"dismantle_shards_normal", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[0] = static_cast<int>(v); }},
     {"dismantle_shards_magic", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[1] = static_cast<int>(v); }},
+    {"hero_move_accel_seconds", 'd', 0, 0.5, false, [](RulesConstants& r, double v) { r.heroMoveAccelSeconds = v; }},
+    {"hero_move_decel_seconds", 'd', 0, 0.5, false, [](RulesConstants& r, double v) { r.heroMoveDecelSeconds = v; }},
     {"dismantle_shards_rare", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[2] = static_cast<int>(v); }},
 };
 

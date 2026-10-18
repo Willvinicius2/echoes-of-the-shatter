@@ -1316,6 +1316,16 @@ SHATTER_API shatter_status SHATTER_CALL shatter_character_progress(const shatter
                                                                    size_t map_id_len, shatter_xp_info* out) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_fervor_get(const shatter_db* db, shatter_fervor_info* out) SHATTER_NOEXCEPT;
 
+/* Movimento do herói (rules.csv hero_move_accel_seconds / hero_move_decel_seconds, 0 a 0,5 s): tempo de 0 até a velocidade
+ * máxima e dela até 0. O core guarda e valida os números; o C# aplica a rampa. */
+typedef struct shatter_hero_move_rules { double accel_seconds, decel_seconds; } shatter_hero_move_rules;
+SHATTER_API shatter_status SHATTER_CALL shatter_db_hero_move_rules(const shatter_db* db, shatter_hero_move_rules* out) SHATTER_NOEXCEPT;
+/* Layout 1.7b: [sizeof(shatter_hero_move_rules), offset de accel_seconds, offset de decel_seconds] = 3 valores. */
+#define SHATTER_LAYOUT_EXT8_COUNT 3u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext8(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext8(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+
 /* Layout 1.7: [sizeof(shatter_xp_info), 7 offsets (awarded, xp_in_level, xp_to_next, level_before, level, level_cap, reserved),
  *              sizeof(shatter_fervor_info), 6 offsets] = 15 valores. */
 #define SHATTER_LAYOUT_EXT7_COUNT 15u
