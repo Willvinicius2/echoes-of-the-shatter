@@ -4,7 +4,7 @@
     "atualizado_em": "2026-10-18",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
-    "marco_atual": "Etapa 2 quase toda entregue; Etapa 3 em andamento (inventário pronto)",
+    "marco_atual": "Etapa 3 integrada no master em 18/10 (economia, polimento, mapa e cenário); falta o build integrado, o vídeo de gameplay e a rodada completa de testes",
     "legenda_estados": {
       "concluido": "Concluído",
       "nuvem": "Na nuvem",
@@ -14,7 +14,7 @@
       "bloqueado": "Bloqueado"
     },
     "destaque": "Teste o jogo: abra D:\\openclaude\\Builds\\Echoes_Cripta_dev\\EchoesOfTheShatter.exe",
-    "destaque_detalhe": "Build jogável com menu e escolha de herói (Arqueiro e Mago como prévia visual), Refúgio com a Ilsa (expedição) e o Tico (relatório), save com backups e expedição idle de ponta a ponta. Cripta e Refúgio com cenário pintado (26 peças) e fogo; inimigos pintados e animados; Guerreiro modular com armadura em peças; HUD com barra do chefe e fila de avisos. 238 EditMode e 11 PlayMode; cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada). Controles no LEIA-ME.txt; roteiro no docs/10. Agora com inventário completo (seção 4 do LEIA-ME): loot no chão com feixe de raridade, tela na tecla I com boneco modular, tooltip com comparação e valor de venda, Mochila 40 e Baú 100 [HIPÓTESE]."
+    "destaque_detalhe": "Build jogável com menu e escolha de herói (Arqueiro e Mago como prévia visual), Refúgio com a Ilsa (expedição) e o Tico (relatório), save com backups e expedição idle de ponta a ponta. Cripta e Refúgio com cenário pintado (26 peças) e fogo; inimigos pintados e animados; Guerreiro modular com armadura em peças; HUD com barra do chefe e fila de avisos. 238 EditMode e 11 PlayMode; cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada). Controles no LEIA-ME.txt; roteiro no docs/10. Agora com inventário completo (seção 4 do LEIA-ME): loot no chão com feixe de raridade, tela na tecla I com boneco modular, tooltip com comparação e valor de venda, Mochila 40 e Baú 100 [HIPÓTESE]. Em 17 e 18/10 o master recebeu animação rev1 a rev6, VFX, economia com Vendedor e Encantador, cliente da Cripta fechado e cenário rev2; o build acima ainda não inclui esse conjunto (o integrado será Echoes_Cripta_dev3)."
   },
   "setores": [
     {
@@ -22,7 +22,7 @@
       "nome": "Direção de arte",
       "agente": "Art Director",
       "estado": "andamento",
-      "resumo": "Folhas de modelagem, heróis modulares e cenário da Cripta aprovados em 16/10; Guerreiro 3D gerado, em acabamento.",
+      "resumo": "Folhas de modelagem, heróis modulares e cenário da Cripta aprovados em 16/10; Guerreiro 3D gerado, em acabamento. Em 18/10 o dono deu autonomia sobre a arte e o orquestrador aprovou m10 (Raro) e as folhas dos 4 NPCs.",
       "entregas": [
         {
           "titulo": "24 referências de arte aprovadas",
@@ -43,9 +43,17 @@
         {
           "titulo": "Régua de escala do Spell Brigade",
           "arquivo": "docs/arte/regua_spell_brigade.md"
+        },
+        {
+          "titulo": "Folha do conjunto Raro do Guerreiro (m10), aprovada em 18/10",
+          "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/"
+        },
+        {
+          "titulo": "Folhas dos NPCs do Refúgio (Ilsa, Tico, Vendedor, Encantador), aprovadas em 18/10",
+          "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/"
         }
       ],
-      "proximo": "Pintura, esqueleto e FBX do Guerreiro no Blender; fila do TripoSG."
+      "proximo": "NPCs em 3D (GLBs gerados; faltam acabamento, rig Humanoid e prancha com o Guerreiro) e troca das cápsulas no Refúgio."
     },
     {
       "id": "design",
@@ -144,7 +152,7 @@
       "nome": "Backend ShatterCore",
       "agente": "Backend Engineer",
       "estado": "concluido",
-      "resumo": "Etapa 2 entregue: etapa2/backend no master (merge d9b8eb3) com as 11 regras do docs/13 (poções, esquiva, stun e Guarda Quebrada, escudo e fases do Guardião, elites, Único com garantia, recuo a 0,25), slot legs, save v2 e API C 1.1 com início e coleta de expedição confiáveis. Testes: 146 do core e 21 da API C, mais o validador. Revisão de segurança ok. Falta só a fuga do Cão no simulador. Revisão na nuvem (docs/17) com todos os achados críticos e altos corrigidos; CI verde; fuga do inimigo decidida pelo core; API C 1.3. Inventário, equipamento, comparação, venda e loot no chão no core (API C minor 4): 199 testes do core e 27 da API C. Avisos do GCC e do Clang corrigidos, CI verde.",
+      "resumo": "Etapa 2 entregue: etapa2/backend no master (merge d9b8eb3) com as 11 regras do docs/13 (poções, esquiva, stun e Guarda Quebrada, escudo e fases do Guardião, elites, Único com garantia, recuo a 0,25), slot legs, save v2 e API C 1.1 com início e coleta de expedição confiáveis. Testes: 146 do core e 21 da API C, mais o validador. Revisão de segurança ok. Falta só a fuga do Cão no simulador. Revisão na nuvem (docs/17) com todos os achados críticos e altos corrigidos; CI verde; fuga do inimigo decidida pelo core; API C 1.3. Inventário, equipamento, comparação, venda e loot no chão no core (API C minor 4): 199 testes do core e 27 da API C. Avisos do GCC e do Clang corrigidos, CI verde. Em 17 e 18/10: API C 1.6 e 1.7 (economia, Vendedor, Encantador, XP, estado do mundo, baús, encontros), carga e explosão pelo core, rampa de movimento; branch etapa3/economia integrada no master (merge 48cdab2). Contagem de testes (251 do core e 41 da API C) vem da passagem de bastão de 18/10.",
       "entregas": [
         {
           "titulo": "Motor em C++ já no repositório (dano, efeitos, loot, expedição, save)",
@@ -161,16 +169,28 @@
         {
           "titulo": "CI roda a cada push no núcleo (último sucesso em 3ad87b9)",
           "arquivo": ".github/workflows/core.yml"
+        },
+        {
+          "titulo": "API C 1.6 e 1.7: Vendedor, recompra, Frasco de Recarga, Encantador, XP, estado do mundo, baús e encontros sorteados (merge 48cdab2)",
+          "arquivo": "ShatterCore/include/shatter/, ShatterCore/src/"
+        },
+        {
+          "titulo": "Rampa de movimento do herói no core (hero_move_accel_seconds e hero_move_decel_seconds)",
+          "arquivo": "EchoesOfTheShatter/Content/Data/"
+        },
+        {
+          "titulo": "Dados da economia e da Cripta, linhas F1 do Guerreiro; content_version 2 (7a07013)",
+          "arquivo": "EchoesOfTheShatter/Content/Data/"
         }
       ],
-      "proximo": "Fuga do Cão já decidida pelo core; próximo: o que a Etapa 3 pedir (uso do Ouro depende de você)."
+      "proximo": "Itens pequenos pedidos pelo cliente: DPS da arma no painel de atributos e restaurar item no desfazer do inventário."
     },
     {
       "id": "frontend",
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
       "estado": "andamento",
-      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode). Build jogável v0.1 para Windows pronta (tela inicial, Cripta, pausa e opções). Merges 5f62828 (modelos pintados na Cripta), 17f887f e 9c960b4 (animações CC0 com retarget), ec35dea (golpes do Blender, squash no impacto, balanço do Espectro): 190 EditMode e 3 PlayMode. Build com menu, Refúgio (Ilsa e Tico), save com backups, expedição idle, cenário pintado, inimigos animados, Guerreiro modular e HUD do chefe: 238 EditMode e 11 PlayMode, cerca de 1 ms por quadro numa RTX 4060 Ti. Inventário no jogo (loot no chão, tecla I, tooltip com comparação, Mochila 40 e Baú 100 [HIPÓTESE], herói construído do save): 250 EditMode e 13 PlayMode.",
+      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode). Build jogável v0.1 para Windows pronta (tela inicial, Cripta, pausa e opções). Merges 5f62828 (modelos pintados na Cripta), 17f887f e 9c960b4 (animações CC0 com retarget), ec35dea (golpes do Blender, squash no impacto, balanço do Espectro): 190 EditMode e 3 PlayMode. Build com menu, Refúgio (Ilsa e Tico), save com backups, expedição idle, cenário pintado, inimigos animados, Guerreiro modular e HUD do chefe: 238 EditMode e 11 PlayMode, cerca de 1 ms por quadro numa RTX 4060 Ti. Inventário no jogo (loot no chão, tecla I, tooltip com comparação, Mochila 40 e Baú 100 [HIPÓTESE], herói construído do save): 250 EditMode e 13 PlayMode. Em 17 e 18/10 entraram no master as branches etapa3/economia, etapa3/polimento, etapa3/mapa e etapa3/cenario: animação rev1 a rev6, VFX das habilidades, cliente da Cripta fechado, Vendedor e Encantador, kit de UI e conjunto Raro.",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
@@ -183,16 +203,36 @@
         {
           "titulo": "Cripta jogável na escala aprovada",
           "arquivo": "EchoesOfTheShatter/Assets/Scenes/Cripta/Cripta.unity"
+        },
+        {
+          "titulo": "Animação do herói e dos inimigos, rev1 a rev6 (merge 885b68a, etapa3/polimento)",
+          "arquivo": "EchoesOfTheShatter/Assets/"
+        },
+        {
+          "titulo": "VFX das habilidades: biblioteca, vitrine sem janela, arco de lâmina, fogo, guarda no chão",
+          "arquivo": "EchoesOfTheShatter/Assets/"
+        },
+        {
+          "titulo": "Fechamento do cliente da Cripta: fase 2, checkpoint, morte, HUD, menus, relatório (merge 22c5dd9, etapa3/mapa)",
+          "arquivo": "EchoesOfTheShatter/Assets/"
+        },
+        {
+          "titulo": "Vendedor (S-14), Encantador (S-15), pontos de interação do Refúgio, Frasco de Recarga e nível imediato",
+          "arquivo": "EchoesOfTheShatter/Assets/"
+        },
+        {
+          "titulo": "Kit de UI 9-slice, slots por raridade, botões e ícones de item",
+          "arquivo": "EchoesOfTheShatter/Assets/"
         }
       ],
-      "proximo": "Ícones de item, tinta de raridade no boneco e telas finais (esperam a aprovação dos mockups)."
+      "proximo": "Build integrado em Echoes_Cripta_dev3, vídeo de ~1 min da Cripta até o Guardião e rodada de EditMode e PlayMode (falha conhecida: InventoryPlayTests.KillDropPickupEquip)."
     },
     {
       "id": "arte_tecnica",
       "nome": "Arte técnica",
       "agente": "Artista técnico (Blender)",
       "estado": "andamento",
-      "resumo": "Modelos pintados e com esqueleto aprovados (Guerreiro, Sentinela, Arauto, Arqueiro Espectral, Guardião, 6 armas) e já na Cripta. Heróis modulares do Guerreiro e do Arqueiro cortados do modelo vestido (corpo em 6 regiões mais 5 peças). Animação por CC0, Mixamo opcional e Blender por script; Kimodo pausado. Lote 3 (Cão, arco, Mago vestido e modular) e kit do cenário pintado (26 peças) em produção. O TripoSG passou a usar cerca de 5 GB (pesos em fp16).",
+      "resumo": "Modelos pintados e com esqueleto aprovados (Guerreiro, Sentinela, Arauto, Arqueiro Espectral, Guardião, 6 armas) e já na Cripta. Heróis modulares do Guerreiro e do Arqueiro cortados do modelo vestido (corpo em 6 regiões mais 5 peças). Animação por CC0, Mixamo opcional e Blender por script; Kimodo pausado. Lote 3 (Cão, arco, Mago vestido e modular) e kit do cenário pintado (26 peças) em produção. O TripoSG passou a usar cerca de 5 GB (pesos em fp16). Em 18/10: cenário rev1 e rev2 aprovados e rev3 parcial, conjunto Raro e Sentinela com golpe feito no Blender; etapa3/cenario integrada no master.",
       "entregas": [
         {
           "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
@@ -209,9 +249,21 @@
         {
           "titulo": "Pesquisa de modelos 3D grátis",
           "arquivo": "docs/pesquisa/modelos_3d_gratis.md"
+        },
+        {
+          "titulo": "Conjunto Raro do Guerreiro em 3D (vset.warrior_rare_01, 5 peças)",
+          "arquivo": "art-src/graybox/"
+        },
+        {
+          "titulo": "Cenário rev2: poças quentes, portão de pedra com grade, círculos de runas, braseiros (10c0f95)",
+          "arquivo": "EchoesOfTheShatter/Assets/"
+        },
+        {
+          "titulo": "Cenário: piso por células, parede chanfrada, luz das tochas e pós do URP (04c51bb); rev3 parcial no merge 2e7c57f",
+          "arquivo": "EchoesOfTheShatter/Assets/"
         }
       ],
-      "proximo": "Fechar o lote 3 e o cenário; corrigir as manchas brancas do Espectro."
+      "proximo": "Fechar a rev3 do cenário (pilar perto do braseiro, runas âmbar no bloom, piso menos lilás) e os NPCs em 3D."
     },
     {
       "id": "qa",
@@ -246,7 +298,7 @@
       "nome": "Produção",
       "agente": "Orquestrador",
       "estado": "andamento",
-      "resumo": "Os PRs #1, #2 e #3 estão no master. Etapa 1 concluída; Etapa 2 em andamento.",
+      "resumo": "Os PRs #1 a #5 estão no master. Etapa 1 concluída; Etapa 3 integrada no master em 18/10. O PR #5 reorganizou as pastas e o CLAUDE.md ganhou a regra de modelo por tarefa.",
       "entregas": [
         {
           "titulo": "Plano de execução e próximos passos",
@@ -255,9 +307,21 @@
         {
           "titulo": "Este painel",
           "arquivo": "docs/progresso/estado.json, tools/painel/gerar_painel.py"
+        },
+        {
+          "titulo": "Reorganização do repositório (PR #5): docs por assunto, Godot em prototipos/, tools por área",
+          "arquivo": "docs/README.md"
+        },
+        {
+          "titulo": "Regra de modelo certo para cada tarefa (Haiku, Sonnet, Opus, Fable)",
+          "arquivo": "CLAUDE.md"
+        },
+        {
+          "titulo": "Proposta de alinhamento de contexto, dupla e escopo",
+          "arquivo": "docs/design/20_alinhamento_ia_e_escopo.md"
         }
       ],
-      "proximo": "Fechar a Etapa 2 e preparar a Etapa 3."
+      "proximo": "Build e vídeo do master integrado, depois mostrar ao dono. Perguntas abertas ao dono continuam em Aguardando você."
     }
   ],
   "pendencias_dono": [
@@ -654,6 +718,21 @@
       "data": "2026-10-18",
       "titulo": "Conjunto Raro do Guerreiro em 3D",
       "detalhe": "vset.warrior_rare_01, 5 peças cortadas do modelo da folha m10 (aço claro com frisos dourados)."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Regra de modelo por tarefa",
+      "detalhe": "Haiku para terminal e Git, Sonnet 5.5 como padrão, Opus só para decisão difícil, Fable só quando o dono pedir (CLAUDE.md)."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Reorganização do repositório",
+      "detalhe": "Docs em design, tecnico, requisitos-qa, arte, pesquisa e progresso; Godot em prototipos/godot-f1; tools por área (PR #5)."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Autonomia sobre a arte",
+      "detalhe": "O orquestrador aprova a arte; ao dono vai o resultado final, de preferência em vídeo de dentro do jogo."
     }
   ],
   "nuvem": [
@@ -784,6 +863,30 @@
     {
       "titulo": "Etapa 3: inventário completo no jogo",
       "feito": true
+    },
+    {
+      "titulo": "Etapa 3: animação rev1 a rev6 e VFX das habilidades",
+      "feito": true
+    },
+    {
+      "titulo": "Etapa 3: economia (API C 1.7), cliente da Cripta, Vendedor e Encantador",
+      "feito": true
+    },
+    {
+      "titulo": "Etapa 3: cenário rev1 e rev2 aprovados",
+      "feito": true
+    },
+    {
+      "titulo": "Etapa 3 integrada no master (economia, polimento, mapa, cenário)",
+      "feito": true
+    },
+    {
+      "titulo": "Repositório reorganizado (PR #5)",
+      "feito": true
+    },
+    {
+      "titulo": "Build integrado e vídeo de gameplay da Cripta",
+      "feito": false
     }
   ],
   "galeria": [
@@ -1190,7 +1293,7 @@
       "n": 3,
       "titulo": "Ciclo completo do protótipo",
       "estado": "andamento",
-      "prova": "Save, Refúgio, expedição e inventário prontos; faltam a arte final das telas (mockups esperando aprovação), os ícones de item, a tinta de raridade no boneco, um segundo conjunto visual e o uso do Ouro"
+      "prova": "Save, Refúgio, expedição, inventário, economia (Vendedor e Encantador), cliente da Cripta e cenário rev2 integrados no master; faltam o build integrado, o vídeo de gameplay, os NPCs em 3D e o uso do Ouro"
     },
     {
       "n": 4,
