@@ -47,6 +47,35 @@ M10 = (
     "whole body inside each column with a clear margin. Neutral A-pose: standing straight, arms angled about 40 degrees away from the body, legs slightly apart. "
 )
 
+# m10b: correcao do m10 (placas com cara de pedra cinza-escura; dourado demais frente ao 03 secao 3.11)
+M10B = (
+    "CHARACTER MODEL SHEET of the Warrior of the action-RPG \"Echoes of the Shatter\" wearing the RARE armor set (second modular set, corrected revision for owner approval). "
+    "CONSISTENCY (mandatory): attached image 1 is the approved modeling sheet of the Warrior with the starting set (copy its LIGHT POLISHED STEEL material and its finish); attached image 2 is his approved bare base body with the approved face. "
+    "Draw the SAME character: same body, same chibi proportions (about 3 heads tall), same height, head size, build, A-pose and ground line. "
+    "FACE: exactly the face of image 2 (brown eyes, thick brows, small friendly smile, short spiky RED-AUBURN hair showing under the helmet at the temples and nape), "
+    "and the helmet VISOR is OPEN and raised high: the whole face from the brow to the chin is clearly visible, eyes, nose, mouth and cheeks, with NO dark void and NO shadow hiding the face. "
+    "The visor is a gold-rimmed steel visor pushed up above the brow, or a wide open face window; the face must read at a glance in the front view and in profile. "
+    "Only the equipment changes. Attached images 3 to 5 are style references of stylized 3D mage heroes of another game: only finish and brushwork, copy nothing from them. "
+    "MATERIAL RULES (the correction): ALL armor plates (helmet shell, pauldrons, breastplate, gauntlets, thigh, knee and shin guards) are BRIGHT, LIGHT, POLISHED STEEL, light silver-grey (#B8BCC4 to #E4E7EC) with crisp white specular highlights, "
+    "smooth metal with small scratches and soft blue-violet shadow, like the steel plates of image 1 but cleaner and shinier. NO stone, NO rock texture, NO cracks, NO cell or hexagon pattern, NO dark charcoal grey plates. "
+    "GOLD (#FFD24A) is used ONLY as thin trim lines on plate edges, a few small rivets, the small central emblem, and the embroidery on the tabard and the cape hem; gold covers at most about 10 percent of the visible surface; "
+    "no big gold plates, no gold helmet shell, no gold gauntlet blocks. The dominant colors are: steel silver, Warrior red cloth (#C42A22), brown leather. "
+    "THE RARE SET must read as clearly different in SILHOUETTE from image 1 at a glance, but still be the same hero: "
+    "1 HELMET: a steel helmet with a thin gold edge line, small steel wing-shaped cheek plates with a gold rim, a gold-edged raised visor, and a big red plume crest (the class mark) on top, wide and swept back, in red. "
+    "2 SHOULDERS: much LARGER layered pauldrons, three overlapping polished steel plates each, only a thin gold rim line and one small gold rivet each, rising above the shoulder line, so the upper body is visibly wider than image 1. "
+    "3 BODY: heavier polished steel breastplate with ribbed plates, steel gorget, thin gold edge lines and a small gold sunburst emblem at the center of the chest. "
+    "4 TABARD AND CAPE: a red tabard (front and back) with GOLD EMBROIDERY (#FFD24A thread: border scrolls, a sunburst, small shard motifs) and a short red cape with a gold-embroidered hem behind the shoulders. This cloth is where the rarity gold shows. "
+    "5 GAUNTLETS: heavy polished steel gauntlets with a thin gold rim and long cuffs, small steel knuckle guards. "
+    "6 LEGS AND BOOTS: bigger polished steel thigh and knee guards with a thin gold edge line, steel greaves, brown leather boots with small gold buckles and steel toe caps. "
+    "Nothing glows. The hands are EMPTY: no weapon, no shield, no props. "
+    "LAYOUT exactly like image 1: three full-body views side by side in three equal-width columns, left to right FRONT view, RIGHT SIDE profile view, BACK view; orthographic look, same scale, aligned on the same ground line, "
+    "whole body inside each column with a clear margin. Neutral A-pose: standing straight, arms angled about 40 degrees away from the body, legs slightly apart. "
+)
+M10B_VAR = {
+    "m10b_a": "",
+    "m10b_b": "VARIATION: make the steel even brighter and more mirror-like, make the face window slightly larger, and give the tabard a slightly longer front hem. ",
+}
+
 UI_KIT = (
     "UI KIT SHEET (elements for 9-slice cutting) for the dark-fantasy action-RPG \"Echoes of the Shatter\". "
     "CONSISTENCY (mandatory): attached images 1 to 3 are our approved UI screens and HUD: copy exactly their UI language, dark violet-grey organic stone (#2A222F body, #161117 recessed gaps, #0F0B14 outlines, rim light #6A606E), "
@@ -90,11 +119,13 @@ ICONES = (
 
 REFS_M10 = [ap("modelagem", "m01_guerreiro"), ap("modelagem", "mod_b01_guerreiro_corpo"), ap("02_guerreiro"),
             sb("magos_01"), sb("magos_02"), sb("magos_03")]
+REFS_M10B = [ap("modelagem", "m01_guerreiro"), ap("modelagem", "mod_b01_guerreiro_corpo"), sb("magos_01"), sb("magos_02"), sb("magos_03")]
 REFS_UI = [ap("telas", "t02_inventario"), ap("telas", "t04_expedicao"), ap("10_hud_mockup"), ap("11_icones"), sb("ui_01"), sb("ui_02")]
 REFS_ICO = [ap("11_icones"), ap("02_guerreiro"), ap("modelagem", "mod_a01_guerreiro_inicial"), ap("modelagem", "m09_armas"), ap("06_chefes_ato1")]
 
 ITENS = [
     ("m10_guerreiro_raro", "Guerreiro: conjunto Raro", "1536x1024", M10 + COMUM_MODELO, REFS_M10),
+    *[(k, "Guerreiro: conjunto Raro corrigido (" + k[-1] + ")", "1536x1024", M10B + v + COMUM_MODELO, REFS_M10B) for k, v in M10B_VAR.items()],
     ("ui_kit_01", "Kit de UI para 9-slice", "1536x1024", UI_KIT, REFS_UI),
     ("icones_itens_01", "Icones de itens (12)", "1536x1024", ICONES, REFS_ICO),
 ]
