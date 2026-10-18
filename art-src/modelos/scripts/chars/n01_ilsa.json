@@ -1,0 +1,120 @@
+{
+  "id": "n01_ilsa",
+  "asset": "SK_NPC_Ilsa",
+  "kind": "humanoid",
+  "height_ref": "bbox",
+  "body_height_m": 1.4,
+  "tris_target": 6000,
+  "tris_range": [
+    5500,
+    6500
+  ],
+  "tex_size": 1024,
+  "min_component_ratio": 0.005,
+  "mesh_name": "SK_NPC_Ilsa_Body",
+  "bake_shards": 1,
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/n01_ilsa/n01_ilsa.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/n01_ilsa.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/n01_ilsa/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/n01_ilsa/final",
+  "tint_hues": [
+    [
+      160,
+      200
+    ]
+  ],
+  "cloth_hues": [
+    [
+      160,
+      200
+    ]
+  ],
+  "sat_keep_hues": [
+    [
+      160,
+      200
+    ]
+  ],
+  "markers": {
+    "hips": [
+      0,
+      0.03,
+      0.57
+    ],
+    "spine": [
+      0,
+      0.03,
+      0.68
+    ],
+    "chest": [
+      0,
+      0.03,
+      0.78
+    ],
+    "neck": [
+      0,
+      0.03,
+      0.93
+    ],
+    "head": [
+      0,
+      0.03,
+      0.99
+    ],
+    "head_top": [
+      0,
+      0.03,
+      1.4
+    ],
+    "shoulder": [
+      0.06,
+      0.03,
+      0.9
+    ],
+    "upperarm": [
+      0.13,
+      0.03,
+      0.88
+    ],
+    "lowerarm": [
+      0.25,
+      0.03,
+      0.69
+    ],
+    "hand": [
+      0.34,
+      0.0,
+      0.54
+    ],
+    "hand_tip": [
+      0.37,
+      -0.02,
+      0.5
+    ],
+    "upperleg": [
+      0.13,
+      0.03,
+      0.5
+    ],
+    "lowerleg": [
+      0.13,
+      0.03,
+      0.27
+    ],
+    "foot": [
+      0.14,
+      0.05,
+      0.08
+    ],
+    "toes": [
+      0.14,
+      -0.04,
+      0.04
+    ],
+    "toe_tip": [
+      0.14,
+      -0.12,
+      0.02
+    ]
+  }
+}
