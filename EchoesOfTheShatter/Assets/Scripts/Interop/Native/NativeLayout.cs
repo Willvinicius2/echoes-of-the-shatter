@@ -349,6 +349,38 @@ namespace Echoes.Interop.Native
             return false;
         }
 
+        /// <summary>
+        /// Lista do layout ext7 (API 1.7, core da Cripta): [tamanho de shatter_xp_info e offsets de awarded, xp_in_level, xp_to_next, level_before, level,
+        /// level_cap, reserved; tamanho de shatter_fervor_info e offsets de xp_mult, gold_mat_mult, rare_mult, xp_bonus, gold_mat_bonus, rare_bonus] = 15 valores.
+        /// </summary>
+        public static uint[] BuildExt7()
+        {
+            ShatterXpInfo x = default;
+            ShatterFervorInfo f = default;
+            return new[]
+            {
+                (uint)sizeof(ShatterXpInfo), Off(&x, &x.awarded), Off(&x, &x.xp_in_level), Off(&x, &x.xp_to_next), Off(&x, &x.level_before), Off(&x, &x.level),
+                Off(&x, &x.level_cap), Off(&x, &x.reserved),
+                (uint)sizeof(ShatterFervorInfo), Off(&f, &f.xp_mult), Off(&f, &f.gold_mat_mult), Off(&f, &f.rare_mult), Off(&f, &f.xp_bonus), Off(&f, &f.gold_mat_bonus),
+                Off(&f, &f.rare_bonus),
+            };
+        }
+
+        public static bool CheckExt7(out string message)
+        {
+            var values = BuildExt7();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext7(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext7 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
         public static bool CheckExt5(out string message)
         {
             var values = BuildExt5();
