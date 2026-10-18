@@ -20,12 +20,23 @@ namespace Echoes.Presentation
         [Range(0f, 1f)] public float windupEnd = 0.3f;
         [Tooltip("Fração do clipe onde termina o impacto.")]
         [Range(0f, 1f)] public float impactEnd = 0.5f;
+        [Tooltip("Golpe carregado: fração do clipe onde a pose \"arma atrás\" fica congelada na carga (camada Upper). A preparação do golpe começa neste ponto.")]
+        [Range(0f, 1f)] public float holdAt;
+        [Tooltip("Peso do golpe: avanço visual do corpo no impacto, em metros (negativo = coice, ex.: soltar a flecha), só no filho visual do herói (a posição lógica e o acerto não mudam); volta na recuperação.")]
+        public float lungeMeters;
+        [Tooltip("Tremor mínimo de câmera no momento do impacto/soltura (m, na distância de referência); 0 = sem tremor. Tiro carregado e Bola de Fogo.")]
+        [Min(0f)] public float shakeMeters;
         [Header("Golpe em estados separados (opcional; ex.: Investida do Guardião: preparação, corrida em laço, recuperação)")]
         [Tooltip("Estado da preparação. Vazio = o golpe usa só animatorState, dividido por windupEnd e impactEnd.")]
         public string windupState = string.Empty;
         [Min(0.01f)] public float windupClipSeconds = 1f;
+        [Tooltip("Trecho do clipe da preparação que toca (fração). A preparação do core é curta (0,1 a 0,25 s): tocar o clipe inteiro vira um estalo; o trecho útil (ex.: o puxar da corda do arco) fica legível.")]
+        [Range(0f, 1f)] public float windupFrom;
+        [Range(0f, 1f)] public float windupTo = 1f;
         [Tooltip("Estado do impacto (laço): toca com velocidade 1 enquanto durar a fase de impacto.")]
         public string impactState = string.Empty;
+        [Tooltip("Duração autoral do clipe do estado de impacto. Com recoveryState vazio, o clipe cobre impacto e recuperação (a velocidade é ajustada às duas fases).")]
+        [Min(0f)] public float impactClipSeconds;
         public string recoveryState = string.Empty;
         [Min(0.01f)] public float recoveryClipSeconds = 1f;
         public bool HasPhaseStates => !string.IsNullOrEmpty(windupState);

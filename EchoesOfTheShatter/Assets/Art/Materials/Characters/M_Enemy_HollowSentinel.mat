@@ -42,7 +42,7 @@ Material:
     - _DissolveEdgeWidth: 0.06
     - _EmissionIntensity: 0.6
     - _FresnelBlend: 0.5
-    - _FresnelStrength: 2.5
+    - _FresnelStrength: 1
     - _HitFlash: 0
     - _RimIntensity: 0.5
     - _RimMaskInfluence: 1
@@ -56,7 +56,7 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _DissolveEdgeColor: {r: 1, g: 0.5, b: 0.2, a: 1}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _FresnelSmoothStepRange: {r: 0.2, g: 0.05, b: 0, a: 0}
+    - _FresnelSmoothStepRange: {r: 0.65, g: 0, b: 0, a: 0}
     - _HitColor: {r: 0.6, g: 0.34999996, b: 0.38999996, a: 1}
     - _RimColor: {r: 1, g: 0.82, b: 0.62, a: 1}
     - _RimTint: {r: 1, g: 1, b: 1, a: 1}

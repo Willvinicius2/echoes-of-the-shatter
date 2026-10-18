@@ -42,6 +42,9 @@ namespace Echoes.EditorTools
         }
 
         public const string StunName = "AN_Shared_Stun";
+        /// <summary>Golpe da Sentinela feito no Blender (clips_sentinel.py): preparacao 0-21, impacto 21-24, recuperacao 24-39 (30 fps), tempos do core.</summary>
+        public const string SentinelStrikeName = "AN_Sentinel_Strike";
+        public const int SentinelWindupFrame = 21, SentinelImpactFrame = 24, SentinelFrames = 39;
         public const string RoarName = "AN_Guardian_Roar";
         public const string ChargeWindupName = "AN_Guardian_ShieldCharge_Windup";
         public const string ChargeRunName = "AN_Guardian_ShieldCharge_Run";
@@ -55,6 +58,7 @@ namespace Echoes.EditorTools
         public static readonly ClipSpec[] Clips =
         {
             new ClipSpec(StunName, Kind.SharedHumanoid, 24, true),
+            new ClipSpec(SentinelStrikeName, Kind.SharedHumanoid, SentinelFrames, false),
             new ClipSpec(RoarName, Kind.GuardianHumanoid, 60, false, ("summon_marks", 30), ("slam", 48)),
             new ClipSpec(ChargeWindupName, Kind.GuardianHumanoid, 27, false),
             new ClipSpec(ChargeRunName, Kind.GuardianHumanoid, 18, true),
@@ -103,7 +107,7 @@ namespace Echoes.EditorTools
                 Debug.LogWarning("[EchoesAnimationImport] FBX ausente: " + spec.Path);
                 return;
             }
-            if (IsConfigured(importer, spec)) return;
+            if (IsConfigured(importer, spec) && importer.animationCompression == ModelImporterAnimationCompression.Off) return;
 
             // O take da animação (o Blender pode exportar também um take vazio): o mais longo.
             var takes = importer.defaultClipAnimations;
@@ -132,6 +136,7 @@ namespace Echoes.EditorTools
                 time = e.frame / length,
             }).ToArray();
             importer.clipAnimations = new[] { take };
+            importer.animationCompression = ModelImporterAnimationCompression.Off; // sem Keyframe Reduction: o erro alto dava tremor de pose
             importer.SaveAndReimport();
         }
     }

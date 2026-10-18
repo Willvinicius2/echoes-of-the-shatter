@@ -21,6 +21,45 @@ namespace Echoes.Presentation
         public string hitLayer = "Hit";
         public string hitState = "Hit";
 
+        [Header("Heróis: camada de tronco e braços (defesa e carga, BasicInputEvent); vazio = sem a camada")]
+        public string upperLayer = string.Empty;
+        [Tooltip("Estado ao levantar a defesa (ele mesmo passa para o estado de segurar, se o controller tiver).")]
+        public string guardRaiseState = "GuardRaise";
+        [Tooltip("Reação ao golpe absorvido na defesa (vazio = usa a camada Hit, o corpo todo).")]
+        public string guardHitState = "GuardHit";
+        [Tooltip("Primeiro estado da carga do golpe forte.")]
+        public string chargeState = "ChargeHold";
+        [Tooltip("Transição de entrada e de saída dos estados da camada de tronco e braços, em segundos.")]
+        [Min(0f)] public float upperBlendSeconds = 0.1f;
+        [Tooltip("Carga do golpe forte: a pose congelada vai se armando devagar, do holdAt até esta fração do caminho até o fim da preparação, conforme a carga do core. 0 = pose parada.")]
+        [Range(0f, 1f)] public float chargeCreep = 0.7f;
+
+        [Header("Preparação, recuperação e saída do golpe (rev3: nunca congelar no último quadro)")]
+        [Tooltip("Velocidade máxima do clipe na preparação. Se o trecho autoral não couber, o clipe começa mais adiante em vez de acelerar mais.")]
+        [Range(1f, 4f)] public float maxWindupSpeed = 2.5f;
+        [Tooltip("Fração do trecho de preparação que o aperto toca antes de o core iniciar o golpe (o resto fecha na preparação do core). Segurar o botão vira carga: o leve não toca inteiro antes.")]
+        [Range(0.2f, 1f)] public float preRollHoldFraction = 0.6f;
+        [Tooltip("Velocidade do acompanhamento (cauda do clipe) na recuperação: entre o mínimo e o máximo; natural = 1.")]
+        [Range(0.5f, 1.5f)] public float recoveryMinSpeed = 1f;
+        [Range(1f, 4f)] public float recoveryMaxSpeed = 1.2f;
+        [Tooltip("Preparação longa (telégrafo do inimigo): o trecho autoral da preparação toca em velocidade natural e a pose armada segura com esta velocidade (pequena, viva) até o impacto do core.")]
+        [Range(0f, 0.5f)] public float windupHoldSpeed = 0.1f;
+        [Tooltip("O movimento do impacto continua por tanto tempo dentro da recuperação (o quadro de impacto do core não muda): o impacto do leve fica legível em 4 a 5 quadros. 0 = o swing termina com a fase de impacto.")]
+        [Min(0f)] public float impactCarrySeconds = 0.07f;
+        [Tooltip("O clipe acabou antes de a recuperação do core: mistura para a pose de combate ou para a locomoção em tanto tempo, em vez de congelar no último quadro.")]
+        [Min(0.02f)] public float clipEndBlendSeconds = 0.12f;
+        [Tooltip("A lógica liberou antes de o clipe acabar: sai para o próximo golpe ou para o movimento em tanto tempo.")]
+        [Min(0.02f)] public float actionExitBlendSeconds = 0.1f;
+
+        [Header("Reação a golpe e morte (inimigos)")]
+        [Tooltip("Peso da camada Hit (flinch de tronco). Chefe: pequeno.")]
+        [Range(0f, 1f)] public float hitFlinchWeight = 1f;
+        [Tooltip("Empurrão visual do corpo (filho visual) na direção do golpe recebido, em metros, que some em hitKickSeconds. Soma-se ao empurrão real do core.")]
+        [Min(0f)] public float hitKickMeters = 0.1f;
+        [Min(0.02f)] public float hitKickSeconds = 0.18f;
+        [Tooltip("Morte: segundos de queda antes de o dissolve começar (a queda tem peso, o dissolve não corta a pose).")]
+        [Min(0f)] public float deathDissolveDelaySeconds = 0.8f;
+
         [Header("Chefe: rugido de fase (BossStateEvent.PhaseStart)")]
         public string roarState = "Roar";
         [Tooltip("Duração autoral do clipe de rugido; a velocidade é ajustada ao rugido do core (transitionSeconds).")]
@@ -34,7 +73,11 @@ namespace Echoes.Presentation
         [Header("Habilidades")]
         public List<SkillPresentationEntry> entries = new List<SkillPresentationEntry>();
 
+        [Header("VFX das habilidades (SkillVfxPresenter; VfxLibraryBuilder). Separado de entries, que o AnimatorControllerBuilder regenera")]
+        public List<SkillVfxEntry> vfx = new List<SkillVfxEntry>();
+
         [NonSerialized] Dictionary<string, SkillPresentationEntry> lookup;
+        [NonSerialized] Dictionary<string, SkillVfxEntry> vfxLookup;
 
         public bool TryGet(string skillId, out SkillPresentationEntry entry)
         {
@@ -52,9 +95,26 @@ namespace Echoes.Presentation
             return lookup.TryGetValue(skillId, out entry);
         }
 
+        public bool TryGetVfx(string skillId, out SkillVfxEntry entry)
+        {
+            entry = null;
+            if (string.IsNullOrEmpty(skillId)) return false;
+            if (vfxLookup == null)
+            {
+                vfxLookup = new Dictionary<string, SkillVfxEntry>(StringComparer.Ordinal);
+                for (var i = 0; i < vfx.Count; i++)
+                {
+                    var e = vfx[i];
+                    if (e != null && !string.IsNullOrEmpty(e.skillId)) vfxLookup[e.skillId] = e;
+                }
+            }
+            return vfxLookup.TryGetValue(skillId, out entry);
+        }
+
         void OnValidate()
         {
             lookup = null;
+            vfxLookup = null;
         }
     }
 }

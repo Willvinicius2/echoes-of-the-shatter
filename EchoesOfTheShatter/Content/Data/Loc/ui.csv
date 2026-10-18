@@ -22,6 +22,7 @@ ui.hud.fervor_xp,+200% XP,+200% XP,,HUD ao lado do ícone do Fervor; max=10; RF-
 ui.hud.vigor,Vigor,Vigor,,barra do personagem; max=10,
 ui.hud.level_up,Subiu de nível!,Level up!,,HUD aviso; max=20,
 ui.hud.no_resource,Ímpeto insuficiente,Not enough Momentum,,HUD aviso; max=24,
+ui.hud.guard,Defesa,Guard,,HUD nome do botão direito; max=10,
 ui.hud.potion_empty,Sem cargas de poção,No potion charges,,HUD aviso; max=24; provisório (P1),
 ui.hud.checkpoint,Checkpoint alcançado,Checkpoint reached,,HUD aviso; max=24,
 ui.hud.area_name,{area},{area},,faixa do nome da área; usa map.*.name,

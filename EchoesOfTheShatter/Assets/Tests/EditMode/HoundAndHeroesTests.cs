@@ -49,7 +49,7 @@ namespace Echoes.Tests.EditMode
             Assert.IsNotNull(c);
             var parameters = c.parameters.Select(p => p.name).ToList();
             foreach (var name in new[] { "Speed", "ActionSpeed", "IsDead", "IsFleeing" }) CollectionAssert.Contains(parameters, name);
-            CollectionAssert.AreEquivalent(new[] { "Locomotion", "Flee", "Death" }, c.layers[0].stateMachine.states.Select(s => s.state.name));
+            CollectionAssert.AreEquivalent(new[] { "Locomotion", "Flee", "Death", "Stun" }, c.layers[0].stateMachine.states.Select(s => s.state.name));
             CollectionAssert.AreEquivalent(new[] { "Empty", "Bite" }, c.layers[1].stateMachine.states.Select(s => s.state.name));
             CollectionAssert.AreEquivalent(new[] { "Empty", "Hit" }, c.layers[2].stateMachine.states.Select(s => s.state.name));
             var tree = (BlendTree)c.layers[0].stateMachine.states.First(s => s.state.name == "Locomotion").state.motion;
@@ -139,7 +139,7 @@ namespace Echoes.Tests.EditMode
                     Assert.IsNotNull(model, prefab + ": " + weapon);
                     Assert.IsTrue(model.IsChildOf(animator.GetBoneTransform(hand)), prefab + ": " + weapon + " na mao certa");
                     Assert.IsNotNull(go.GetComponent<ModularCharacter>(), prefab + ": modular");
-                    Assert.AreEqual("AC_Warrior", prefab == "P_Hero_Archer" ? CharacterPrefabBuilder.Archer.Controller : CharacterPrefabBuilder.Mage.Controller, prefab + ": kit de teste do Guerreiro (previa visual)");
+                    Assert.AreEqual(prefab == "P_Hero_Archer" ? "AC_Archer" : "AC_Mage", prefab == "P_Hero_Archer" ? CharacterPrefabBuilder.Archer.Controller : CharacterPrefabBuilder.Mage.Controller, prefab + ": controller da classe (docs/18, secao 5)");
                 }
                 finally
                 {

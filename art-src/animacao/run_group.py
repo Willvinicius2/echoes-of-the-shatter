@@ -1,6 +1,6 @@
 """Gera as animacoes de um grupo. Uso:
 blender -b --factory-startup -P run_group.py -- <grupo> <fbx_esqueleto> <fbx_previa|-> <pasta_saida>
-grupos: shared | guardian | ghost | hound.  Sem IA: so Python do Blender posando os ossos."""
+grupos: shared | guardian | ghost | hound | sentinel.  Sem IA: so Python do Blender posando os ossos."""
 import bpy, sys, os, json, importlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -9,7 +9,7 @@ import anim_lib as A
 argv = sys.argv[sys.argv.index("--") + 1:]
 group, rig_fbx, prev_fbx, out = argv[0], argv[1], argv[2], argv[3]
 os.makedirs(out, exist_ok=True)
-mod = importlib.import_module({"shared": "clips_shared", "guardian": "clips_guardian", "ghost": "clips_ghost", "hound": "clips_hound"}[group])
+mod = importlib.import_module({"shared": "clips_shared", "guardian": "clips_guardian", "ghost": "clips_ghost", "hound": "clips_hound", "sentinel": "clips_sentinel"}[group])
 
 # 1) exportacao: esqueleto do proprio rig
 arm = A.load_rig(rig_fbx)

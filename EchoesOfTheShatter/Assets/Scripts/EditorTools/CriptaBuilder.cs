@@ -239,6 +239,8 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(swap, "warrior", heroPrefab);
             SandboxBuilder.SetRef(swap, "archer", CharacterPrefabBuilder.HeroPrefab("archer"));
             SandboxBuilder.SetRef(swap, "mage", CharacterPrefabBuilder.HeroPrefab("mage"));
+            SandboxBuilder.SetRef(swap, "archerSkillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.ArcherHeroSkillSetPath));
+            SandboxBuilder.SetRef(swap, "mageSkillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.MageHeroSkillSetPath));
 
             var rig = new GameObject("CameraRig");
             rig.transform.position = hero.transform.position + new Vector3(0f, 0.52f, 0f);

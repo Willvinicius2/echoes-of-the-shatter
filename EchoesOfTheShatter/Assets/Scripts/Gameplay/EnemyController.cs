@@ -45,6 +45,10 @@ namespace Echoes.Gameplay
         int patrolIndex;
         float patrolSpeedMult = 1f;
         float onScreenMarginMeters;
+        PlanarVector agentSyncedPosition;
+        PlanarVector approachDirection;   // lado do herói por onde este inimigo chega (vaga fixa durante a perseguição)
+        bool hasApproachDirection;
+        float notChasingTime;
         Camera visibleAreaCamera;
 
         public EnemyCombatLogic Logic { get; private set; }
@@ -94,6 +98,7 @@ namespace Echoes.Gameplay
             Logic.IsDashBlocked = IsDashBlocked;
             spawnPosition = transform.position;
             spawnRotation = transform.rotation;
+            agentSyncedPosition = combatant.Position;
             if (logStateChanges) Logic.StateChanged += LogStateChange;
             combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
 
@@ -101,7 +106,13 @@ namespace Echoes.Gameplay
             {
                 agent.updateRotation = false; // o giro segue o dado (turnRate) na lógica
                 agent.stoppingDistance = 0f;  // quem para é a IA (alcance do ataque)
-                agent.autoBraking = true;
+                // Sem frenagem automatica do agente: ele freava ja a metros do destino (a posicao do heroi) e o inimigo se arrastava; quem para e a IA
+                // (alcance do golpe) e a desaceleracao vem do EnemyDecelSeconds do feel.
+                agent.autoBraking = false;
+                // Evasao: prioridades diferentes quebram a simetria entre vizinhos (valores no SO_CombatFeel); o inimigo nao desacelera so para nao esbarrar no vizinho.
+                var avoidFeel = combat.Feel;
+                if (!combatant.IsBoss) agent.radius = Mathf.Min(agent.radius, avoidFeel.EnemyAvoidanceRadiusMeters);
+                agent.avoidancePriority = Mathf.Clamp(avoidFeel.EnemyAvoidancePriorityBase + Mathf.Abs(GetInstanceID()) % Mathf.Max(1, avoidFeel.EnemyAvoidancePrioritySpread), 0, 99);
             }
         }
 
@@ -133,6 +144,7 @@ namespace Echoes.Gameplay
             }
             transform.rotation = spawnRotation;
             Logic.Self.Teleport(spawnPosition.ToPlanar());
+            agentSyncedPosition = Logic.Self.Position;
             var facing = spawnRotation * Vector3.forward;
             Logic.Self.Forward = facing.ToPlanar().NormalizedOr(PlanarVector.Forward);
             combat.Revive(Logic.Self);
@@ -189,6 +201,12 @@ namespace Echoes.Gameplay
         void Update()
         {
             var combatant = Logic != null ? Logic.Self : null;
+            if (combatant != null && TestSettings.EnemyGodMode && !combatant.IsDead)
+            {
+                var vitals = combatant.Vitals;
+                vitals.Life = combatant.MaxLife; // so teste (gravacao): nunca vem do CSV
+                combatant.SetVitals(in vitals);
+            }
             if (combatant == null || !combatant.IsDead) return;
             deadTime += Time.deltaTime;
             if (deadTime < corpseSeconds) return;
@@ -208,15 +226,19 @@ namespace Echoes.Gameplay
 
             if (agent != null && agent.enabled && agent.isOnNavMesh)
             {
+                var feel = combat != null ? combat.Feel : null;
+                if (!dead && Logic.WantsToMove) notChasingTime = 0f;
+                else if ((notChasingTime += dt) > 1f) hasApproachDirection = false; // a proxima perseguicao escolhe a vaga de novo
                 if (!dead && Logic.WantsToMove)
                 {
                     agent.isStopped = false;
                     agent.speed = Logic.ChaseSpeed;
+                    agent.acceleration = RampAcceleration(Logic.ChaseSpeed, feel != null ? feel.EnemyAccelSeconds : 0f);
                     repathTimer -= dt;
                     if (repathTimer <= 0f)
                     {
                         repathTimer = repathInterval;
-                        agent.SetDestination(Logic.MoveTarget.ToWorld(transform.position.y));
+                        agent.SetDestination(ApproachPoint(feel).ToWorld(transform.position.y));
                     }
                 }
                 else if (!dead && !Logic.Dormant && patrolPoints != null && patrolPoints.Length > 1 && Logic.Brain.State == EnemyBrainState.Idle)
@@ -225,14 +247,17 @@ namespace Echoes.Gameplay
                 }
                 else if (!agent.isStopped)
                 {
+                    // Para frenando (EnemyDecelSeconds do feel), sem zerar a velocidade de uma vez: o pe nao trava de repente.
+                    agent.acceleration = RampAcceleration(Mathf.Max(agent.speed, agent.velocity.magnitude), feel != null ? feel.EnemyDecelSeconds : 0f);
                     agent.isStopped = true;
-                    agent.velocity = Vector3.zero;
                     repathTimer = 0f;
                 }
-                // Com agente, só o knockback (vindo da lógica) é deslocamento externo; o resto é do agente.
-                var pushed = combatant.Position - transform.position.ToPlanar();
+                // Com agente, só o knockback (vindo da lógica) é deslocamento externo; o resto é do agente. O knockback é o que a lógica mexeu na posição
+                // desde a última sincronia com o corpo (não "posição lógica menos corpo": o passo do próprio agente cancelaria o movimento todo).
+                var pushed = combatant.Position - agentSyncedPosition;
                 if (pushed.Magnitude > 1e-5f) agent.Move(pushed.ToWorld());
                 combatant.Teleport(transform.position.ToPlanar());
+                agentSyncedPosition = combatant.Position;
             }
             else
             {
@@ -242,14 +267,51 @@ namespace Echoes.Gameplay
                 if (PlanarVector.Distance(actual, wanted) > 1e-3f) combatant.Teleport(actual);
             }
 
-            if (!dead) transform.rotation = combatant.Forward.ToRotation(transform.rotation);
+            if (!dead)
+            {
+                var wanted3 = combatant.Forward.ToRotation(transform.rotation);
+                var feelTurn = combat != null ? combat.Feel : null;
+                if (feelTurn == null || combatant.IsBoss) transform.rotation = wanted3; // o chefe usa a direcao exata do core (escudo frontal, travas)
+                else
+                {
+                    var state = Logic.Brain.State;
+                    var calm = state == EnemyBrainState.Idle || state == EnemyBrainState.Chase || state == EnemyBrainState.Recover;
+                    var degrees = calm ? feelTurn.EnemyTurnDegreesPerSecond : feelTurn.EnemyAttackTurnDegreesPerSecond;
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, wanted3, degrees * dt);
+                }
+            }
         }
+
+        // Ponto de chegada da perseguicao: o anel de alcance do golpe em volta do alvo, na vaga deste inimigo (angulo fixo por inimigo dentro de
+        // +-EnemySurroundSpreadDegrees a partir do lado de onde ele veio). Chefe, alvo ausente ou espalhamento 0: o proprio alvo.
+        PlanarVector ApproachPoint(CombatFeelValues feel)
+        {
+            var target = Logic.MoveTarget;
+            if (feel == null || feel.EnemySurroundSpreadDegrees <= 0f || Logic.Self.IsBoss) return target;
+            if (!hasApproachDirection)
+            {
+                var fromTarget = (Logic.Self.Position - target).NormalizedOr(PlanarVector.Forward);
+                var slot = (Mathf.Abs(GetInstanceID()) % 7 / 3f - 1f) * feel.EnemySurroundSpreadDegrees; // -spread..+spread, estavel por inimigo
+                var radians = slot * Mathf.Deg2Rad;
+                var cos = Mathf.Cos(radians);
+                var sin = Mathf.Sin(radians);
+                approachDirection = new PlanarVector(fromTarget.X * cos - fromTarget.Z * sin, fromTarget.X * sin + fromTarget.Z * cos);
+                hasApproachDirection = true;
+            }
+            var heroRadius = combat != null && combat.Hero != null ? combat.Hero.RadiusMeters : 0.5f;
+            var ring = Logic.StopDistance * feel.EnemyApproachFraction + heroRadius;
+            return target + approachDirection * ring;
+        }
+
+        // NavMeshAgent.acceleration em m/s2 que leva a 'speed' em 'seconds' (0 s = praticamente instantaneo).
+        static float RampAcceleration(float speed, float seconds) => seconds > 1e-4f ? Mathf.Max(1f, speed / seconds) : 1000f;
 
         // Vai e volta entre os pontos enquanto a IA está parada (Idle); ao ver o herói a IA assume.
         void Patrol(float dt)
         {
             agent.isStopped = false;
             agent.speed = Logic.FullMoveSpeedMeters * patrolSpeedMult;
+            agent.acceleration = RampAcceleration(agent.speed, combat != null ? combat.Feel.EnemyAccelSeconds : 0f);
             var target = patrolPoints[patrolIndex];
             repathTimer -= dt;
             if (repathTimer <= 0f)

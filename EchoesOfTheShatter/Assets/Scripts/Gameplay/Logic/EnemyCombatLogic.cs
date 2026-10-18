@@ -176,6 +176,19 @@ namespace Echoes.Gameplay
             ChaseSpeed = WantsToMove ? WorldUnits.ToMeters(rules.GetMoveSpeedUu(self.Stats, enemy.MoveSpeedUu)) : 0f;
         }
 
+        /// <summary>Estado do chefe vindo do core (vida, fase, escudo); default se este inimigo nao e chefe.</summary>
+        public Echoes.Interop.BossInfo BossInfo => boss != null ? boss.Info : default;
+
+        /// <summary>
+        /// SO GRAVACAO (RecordMode -scenario boss): dano direto no chefe, vindo de <paramref name="origin"/> (fora do arco do escudo), para chegar a
+        /// fase 2 sem a luta inteira. Passa pelo core (escudo, limiar de fase); nunca e chamado no jogo.
+        /// </summary>
+        public double DevDamageBoss(double amount, PlanarVector origin)
+        {
+            if (boss == null) return 0.0;
+            return boss.ApplyDamage(amount, self.Position.X, self.Position.Z, origin.X, origin.Z).Applied;
+        }
+
         /// <summary>O inimigo esta fugindo (a apresentacao toca a animacao de fuga).</summary>
         public bool IsFleeing { get; private set; }
 
@@ -332,7 +345,7 @@ namespace Echoes.Gameplay
                 {
                     var speed = WorldUnits.ToMeters(skill.ProjectileSpeedUu);
                     var range = WorldUnits.ToMeters(skill.RangeUu);
-                    var radius = WorldUnits.ToMeters(skill.RadiusUu);
+                    var radius = ProjectileSystem.BodyRadiusMeters(skill);
                     var count = Math.Max(1, skill.Projectiles);
                     for (var i = 0; i < count; i++)
                         combatSystem.Projectiles.Spawn(combatSystem, self, skill, attackOrigin, attackDirection, speed, range, radius);

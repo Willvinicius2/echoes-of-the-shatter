@@ -204,6 +204,8 @@ namespace Echoes.EditorTools
             SetRef(swap, "warrior", heroPrefab);
             SetRef(swap, "archer", CharacterPrefabBuilder.HeroPrefab("archer"));
             SetRef(swap, "mage", CharacterPrefabBuilder.HeroPrefab("mage"));
+            SetRef(swap, "archerSkillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.ArcherHeroSkillSetPath));
+            SetRef(swap, "mageSkillSet", AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.MageHeroSkillSetPath));
 
             // ---- Câmera (README 4.5) + ferramentas de desenvolvimento
             var rig = new GameObject("CameraRig");

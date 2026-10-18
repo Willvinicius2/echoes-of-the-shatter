@@ -16,8 +16,14 @@ namespace Echoes.Gameplay
 
         public IReadOnlyList<ProjectileState> Active => active;
 
+        /// <summary>Meia largura do corredor do projétil: o <c>radius</c> do CSV. O raio da explosão é outra coluna (<c>explosionRadius</c>).</summary>
+        public static float BodyRadiusMeters(Echoes.Interop.SkillInfo skill)
+        {
+            return WorldUnits.ToMeters(skill.RadiusUu);
+        }
+
         public ProjectileState Spawn(CombatSystem combat, Combatant owner, Echoes.Interop.SkillInfo skill, PlanarVector origin,
-            PlanarVector direction, float speed, float rangeMeters, float radiusMeters)
+            PlanarVector direction, float speed, float rangeMeters, float radiusMeters, bool isHeavy = false, double chargeFraction = 0.0)
         {
             if (active.Count >= MaxActive || speed <= 0f || rangeMeters <= 0f) return null;
             var p = pool.Count > 0 ? pool.Pop() : new ProjectileState();
@@ -29,11 +35,25 @@ namespace Echoes.Gameplay
             p.SpeedMetersPerSecond = speed;
             p.RemainingMeters = rangeMeters;
             p.RadiusMeters = radiusMeters;
+            p.IsHeavy = isHeavy;
+            p.ChargeFraction = chargeFraction;
+            p.HitTargets.Clear();
+            // Perfuração (SkillInfo.Pierce): N alvos além do primeiro; 99 atravessa todos. Explosão (Behavior.Explodes): dano em área onde o projétil acaba.
+            p.MaxHits = skill.Pierce <= 0 ? 1 : skill.Pierce >= Echoes.Interop.SkillInfo.PierceAll ? int.MaxValue : skill.Pierce + 1;
+            p.ExplosionRadiusMeters = skill.Behavior.Explodes ? WorldUnits.ToMeters(skill.ExplosionRadiusUu) : 0f;
             p.Active = true;
             active.Add(p);
             var evt = new ProjectileEvent { ProjectileId = p.Id, Spawned = true, Owner = owner, Position = origin, Direction = p.Direction };
             combat.Events.Publish(in evt);
             return p;
+        }
+
+        readonly List<Candidate> candidates = new List<Candidate>(8);
+
+        struct Candidate
+        {
+            public Combatant Target;
+            public float T;
         }
 
         public void Step(CombatSystem combat, double dt)
@@ -48,20 +68,67 @@ namespace Echoes.Gameplay
                 p.Position = end;
                 p.RemainingMeters -= travel;
 
-                var hit = false;
+                // Alvos tocados neste passo, do mais perto ao mais longe ao longo do caminho (a perfuração acerta na ordem do voo).
+                candidates.Clear();
                 var targets = combat.Combatants;
                 for (var t = 0; t < targets.Count; t++)
                 {
                     var target = targets[t];
-                    if (target.IsDead || !CombatSystem.AreHostile(p.Owner, target)) continue;
+                    if (target.IsDead || !CombatSystem.AreHostile(p.Owner, target) || p.HitTargets.Contains(target.Id)) continue;
                     if (!ShapeQuery.InCorridor(start, end, p.RadiusMeters, target.Position, target.RadiusMeters)) continue;
-                    combat.ApplySkillHit(p.Owner, target, p.Skill, start);
-                    hit = true;
-                    break;
+                    var c = new Candidate { Target = target, T = ProjectOnSegment(start, end, target.Position) };
+                    var at = candidates.Count;
+                    while (at > 0 && candidates[at - 1].T > c.T) at--;
+                    candidates.Insert(at, c);
                 }
 
-                if (hit || p.RemainingMeters <= 0f) End(combat, i);
+                var ended = false;
+                for (var c = 0; c < candidates.Count && !ended; c++)
+                {
+                    var target = candidates[c].Target;
+                    if (target.IsDead) continue;
+                    var contact = start + (end - start) * candidates[c].T;
+                    if (p.ExplosionRadiusMeters > 0f)
+                    {
+                        p.Position = contact;
+                        Explode(combat, p, contact);
+                        ended = true;
+                        break;
+                    }
+                    p.HitTargets.Add(target.Id);
+                    combat.ApplySkillHit(p.Owner, target, p.Skill, start, p.IsHeavy, p.ChargeFraction);
+                    if (p.HitTargets.Count >= p.MaxHits)
+                    {
+                        p.Position = contact;
+                        ended = true;
+                    }
+                }
+
+                if (ended || p.RemainingMeters <= 0f) End(combat, i);
             }
+        }
+
+        // Explosão: um acerto por alvo hostil dentro do raio, centrada no ponto do impacto (RF-16); o alvo atingido de frente também está no círculo.
+        void Explode(CombatSystem combat, ProjectileState p, PlanarVector center)
+        {
+            var targets = combat.Combatants;
+            for (var t = 0; t < targets.Count; t++)
+            {
+                var target = targets[t];
+                if (target.IsDead || !CombatSystem.AreHostile(p.Owner, target) || p.HitTargets.Contains(target.Id)) continue;
+                if (!ShapeQuery.InCircle(center, p.ExplosionRadiusMeters, target.Position, target.RadiusMeters)) continue;
+                p.HitTargets.Add(target.Id);
+                combat.ApplySkillHit(p.Owner, target, p.Skill, center, p.IsHeavy, p.ChargeFraction);
+            }
+        }
+
+        static float ProjectOnSegment(PlanarVector a, PlanarVector b, PlanarVector point)
+        {
+            var ab = b - a;
+            var lengthSq = ab.SqrMagnitude;
+            if (lengthSq < 1e-8f) return 0f;
+            var t = PlanarVector.Dot(point - a, ab) / lengthSq;
+            return t < 0f ? 0f : t > 1f ? 1f : t;
         }
 
         public void Clear(CombatSystem combat)
@@ -74,7 +141,7 @@ namespace Echoes.Gameplay
             var p = active[index];
             active.RemoveAt(index);
             p.Active = false;
-            var evt = new ProjectileEvent { ProjectileId = p.Id, Spawned = false, Owner = p.Owner, Position = p.Position, Direction = p.Direction };
+            var evt = new ProjectileEvent { ProjectileId = p.Id, Spawned = false, Owner = p.Owner, Position = p.Position, Direction = p.Direction, ExplosionRadiusMeters = p.HitTargets.Count > 0 ? p.ExplosionRadiusMeters : 0f };
             p.Owner = null;
             p.Skill = null;
             pool.Push(p);

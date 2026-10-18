@@ -9,6 +9,15 @@ namespace Echoes.Gameplay
     /// remapeamento salvo em <c>persistentDataPath/bindings.json</c> (docs/04_arquitetura.md, seção 8).
     /// Leitura por polling no Update (sem callbacks, sem alocação por quadro).
     /// </summary>
+    /// <summary>Fonte de entrada roteirizada (gravação de vídeo e testes): mesma forma que o teclado e o mouse entregam.</summary>
+    public interface IScriptedInput
+    {
+        Vector2 Move { get; }
+        Vector2 Aim { get; }
+        bool WasPressed(HeroCommand command);
+        bool IsHeld(HeroCommand command);
+    }
+
     [DefaultExecutionOrder(-950)]
     [DisallowMultipleComponent]
     public sealed class PlayerInputHandler : MonoBehaviour
@@ -80,20 +89,25 @@ namespace Echoes.Gameplay
             map?.Disable();
         }
 
+        /// <summary>Entrada roteirizada (modo de gravação -record). Nula no jogo normal; quando existe, substitui o teclado e o mouse.</summary>
+        public IScriptedInput Script { get; set; }
+
         /// <summary>WASD no espaço da tela (x = direita, y = para cima), módulo até 1.</summary>
-        public Vector2 Move => move != null ? Vector2.ClampMagnitude(move.ReadValue<Vector2>(), 1f) : Vector2.zero;
+        public Vector2 Move => Script != null ? Vector2.ClampMagnitude(Script.Move, 1f) : move != null ? Vector2.ClampMagnitude(move.ReadValue<Vector2>(), 1f) : Vector2.zero;
 
         /// <summary>Posição do ponteiro em pixels de tela.</summary>
-        public Vector2 AimScreenPosition => aim != null ? aim.ReadValue<Vector2>() : Vector2.zero;
+        public Vector2 AimScreenPosition => Script != null ? Script.Aim : aim != null ? aim.ReadValue<Vector2>() : Vector2.zero;
 
         public bool WasPressed(HeroCommand command)
         {
+            if (Script != null) return Script.WasPressed(command);
             var action = ActionFor(command);
             return action != null && action.WasPressedThisFrame();
         }
 
         public bool IsHeld(HeroCommand command)
         {
+            if (Script != null) return Script.IsHeld(command);
             var action = ActionFor(command);
             return action != null && action.IsPressed();
         }

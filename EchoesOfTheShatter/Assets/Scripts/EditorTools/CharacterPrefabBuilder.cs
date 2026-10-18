@@ -78,8 +78,8 @@ namespace Echoes.EditorTools
             HeroModularBuilder.BuildAll();
             AnimatorControllerBuilder.BuildAll();
             var warrior = Build(Warrior);
-            Build(Archer);
-            Build(Mage);
+            var archer = Build(Archer);
+            var mage = Build(Mage);
             GameObject sentinel = null, boss = null;
             foreach (var pair in EnemySpecs)
             {
@@ -89,6 +89,8 @@ namespace Echoes.EditorTools
                 if (pair.Key == "enemy.crypt_guardian") boss = prefab;
             }
             AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.Warrior, warrior);
+            AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.HeroArcher, archer); // AC_Archer e AC_Mage: kits do docs/18; os prefabs passam a usa-los com os kits do core
+            AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.HeroMage, mage);
             AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.EnemyHumanoid, sentinel);
             AnimatorControllerBuilder.BuildArcherSkillSet();
             AnimatorControllerBuilder.BuildHoundSkillSet();
@@ -112,7 +114,7 @@ namespace Echoes.EditorTools
         public static readonly Spec Archer = new Spec
         {
             Folder = "Archer", Dir = "Assets/Content/Heroes/Archer/Body", ModularHero = "Archer", Model = "SK_Archer_Body", Textures = "T_Archer_Body", Prefab = "P_Hero_Archer", Material = "M_Archer_Body",
-            Controller = "AC_Warrior", // previa visual: o kit de animacao do Guerreiro ate o design do Arqueiro existir
+            Controller = "AC_Archer", // docs/18, 5.2
             Weapons = new[] { new WeaponSpec { Name = "Bow", Sockets = LeftSockets } },
         };
 
@@ -120,7 +122,7 @@ namespace Echoes.EditorTools
         public static readonly Spec Mage = new Spec
         {
             Folder = "Mage", Dir = "Assets/Content/Heroes/Mage/Body", ModularHero = "Mage", Model = "SK_Mage_Body", Textures = "T_Mage_Body", Prefab = "P_Hero_Mage", Material = "M_Mage_Body",
-            Controller = "AC_Warrior",
+            Controller = "AC_Mage", // docs/18, 5.3
             Weapons = new[] { new WeaponSpec { Name = "Staff", Sockets = RightSockets } },
         };
 

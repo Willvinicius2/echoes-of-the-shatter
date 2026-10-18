@@ -25,6 +25,9 @@ namespace Echoes.EditorTools
         public const string SkillSetDir = "Assets/Data/Presentation";
         public const string PlaceholderTag = "Placeholder";
 
+        /// <summary>Saída das camadas Action e Hit para o repouso (0,12 a 0,18 s): a locomoção volta sem corte.</summary>
+        public const float ExitBlendSeconds = 0.15f;
+
         public sealed class ActionSpec
         {
             public string State;
@@ -34,6 +37,33 @@ namespace Echoes.EditorTools
             public bool Placeholder;  // o KayKit nao tem o clipe certo
             public string Note;
             public bool Hold;         // sem saida automatica para Empty (laco ou fase que o core encerra)
+            public string[] AlsoSkills; // outras habilidades que tocam o mesmo estado (cada uma ganha a propria entrada)
+            public float WindupEnd, ImpactEnd; // > 0: tempos do clipe (fracao) dados pelo autor (clipe do Blender), no lugar da medida pela mao
+            public bool HoldPose;     // golpe carregado: o quadro "arma atras" (holdAt) e medido no clipe; a preparacao do golpe comeca nele
+        }
+
+        /// <summary>Estado da camada de tronco e bracos (mascara AM_UpperBody): defesa e carga, enquanto as pernas andam na camada Base.</summary>
+        public sealed class UpperSpec
+        {
+            public string State;
+            public string Fbx;
+            public string Clip;
+            public string Next;       // estado para onde vai ao terminar o clipe (vazio = segura o ultimo quadro)
+            public bool TimeParam;    // o tempo do clipe e o parametro HoldAt (pose congelada)
+            public float Speed = 1f;  // velocidade de reproducao do estado (erguer a defesa e armar a carga sao curtos: docs/18, 5.1)
+            public float ExitTime = 1f; // fracao do clipe em que passa para Next (o clipe chega na pose final antes do fim: medido com DevPipeline.Diagnose)
+            public float FreezeAt;    // > 0: estado parado (velocidade 0) neste ponto normalizado do clipe, para segurar a pose enquanto o botao esta apertado
+        }
+
+        /// <summary>Golpe em fases (preparacao, impacto e recuperacao em estados separados, cada um com o seu clipe): usa estados de Actions.</summary>
+        public sealed class PhaseSkillSpec
+        {
+            public string SkillId;
+            public string WindupState;
+            public string ImpactState;
+            public string RecoveryState;
+            public float WindupFrom;      // trecho do clipe da preparacao que toca (fracao): o puxar da corda, nao o clipe inteiro (medido com DevPipeline.Diagnose)
+            public float WindupTo = 1f;
         }
 
         public sealed class ControllerSpec
@@ -45,7 +75,25 @@ namespace Echoes.EditorTools
             public bool Hero;
             public string HitClip, DeathClip;
             public List<ActionSpec> Actions = new List<ActionSpec>();
+            // Locomocao do heroi (docs/18, 5): o Guerreiro corre com Running_A, o Arqueiro com Running_HoldingBow e o Mago com Running_B.
+            public string WalkClip = "Walking_A";
+            public string RunFbx;     // vazio = MovementBasic do rig
+            public string RunClip = "Running_A";
+            public List<UpperSpec> Upper = new List<UpperSpec>();
+            public List<PhaseSkillSpec> PhaseSkills = new List<PhaseSkillSpec>();
+            public string ChargeState = "ChargeHold";       // primeiro estado da camada Upper ao carregar
+            public string GuardRaiseState = "GuardRaise";
+            public string GuardHitState = "GuardHit";       // vazio = a defesa nao tem reacao propria
         }
+
+        /// <summary>
+        /// Erguer a defesa (Melee_Block) chega na pose de Melee_Blocking em 0,333 s (31% do clipe, medido); passa para o laco ai e toca a 2x
+        /// (0,17 s de entrada), para a defesa parecer firme e nao um levantar lento. Arte, nao balanceamento.
+        /// </summary>
+        public const float BlockPoseTime = 0.313f, GuardRaiseSpeed = 2f;
+
+        public const string UpperLayerName = "Upper";
+        public const string UpperMaskPath = ControllerDir + "/AM_UpperBody.mask";
 
         static string Medium(string group) => $"{KayKitAnimationImport.Root}/Medium/Rig_Medium_{group}.fbx";
         static string Large(string group) => $"{KayKitAnimationImport.Root}/Large/Rig_Large_{group}.fbx";
@@ -54,15 +102,110 @@ namespace Echoes.EditorTools
         {
             Name = "AC_Warrior", SkillSet = "SO_SkillPresentation_Warrior", Rig = "Medium", SpeedSourceId = "class.warrior", Hero = true,
             HitClip = "Hit_A", DeathClip = "Death_A",
+            RunClip = WarriorRunClip(),
             Actions =
             {
+                // Combo (docs/18, 5.1): cada golpe e um clipe diferente do anterior
                 new ActionSpec { State = "Basic", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Slice_Horizontal", SkillId = "skill.warrior.iron_cut" },
+                new ActionSpec { State = "Combo2", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Slice_Diagonal", SkillId = "skill.warrior.combo_2" },
+                new ActionSpec { State = "Combo3", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Jump_Chop", SkillId = "skill.warrior.combo_3" },
+                // Forte: a mesma Melee_2H_Attack_Slice congelada na carga (camada Upper) e solta daqui, do quadro holdAt ate o fim
+                new ActionSpec { State = "HeavyRelease", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Slice", SkillId = "skill.warrior.heavy_slash", HoldPose = true },
                 new ActionSpec { State = "Charge", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Stab", SkillId = "skill.warrior.charge" },
                 new ActionSpec { State = "Rift", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Chop", SkillId = "skill.warrior.stone_rift" },
                 new ActionSpec { State = "Bash", Fbx = Medium("CombatMelee"), Clip = "Melee_Block_Attack", SkillId = "skill.warrior.shield_bash" },
                 new ActionSpec { State = "Dodge", Fbx = Medium("MovementAdvanced"), Clip = "Dodge_Forward", SkillId = "" },
             },
+            Upper =
+            {
+                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatMelee"), Clip = "Melee_Block", Next = "GuardHold", Speed = GuardRaiseSpeed, ExitTime = BlockPoseTime },
+                new UpperSpec { State = "GuardHold", Fbx = Medium("CombatMelee"), Clip = "Melee_Blocking" },
+                new UpperSpec { State = "GuardHit", Fbx = Medium("CombatMelee"), Clip = "Melee_Block_Hit", Next = "GuardHold" },
+                new UpperSpec { State = "ChargeHold", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Slice", TimeParam = true },
+            },
         };
+
+        // Corrida do Guerreiro: Running_A, ou Running_B para comparar em video (ECHOES_WARRIOR_RUN=Running_B; so no editor, ao montar).
+        static string WarriorRunClip()
+        {
+            var env = Environment.GetEnvironmentVariable("ECHOES_WARRIOR_RUN");
+            return string.IsNullOrEmpty(env) ? "Running_A" : env;
+        }
+
+        /// <summary>Arqueiro (docs/18, 5.2): disparo curto = Draw na preparacao + Release; carga = Draw e depois Aiming_Idle; corre com Running_HoldingBow.</summary>
+        public static readonly ControllerSpec HeroArcher = new ControllerSpec
+        {
+            Name = "AC_Archer", SkillSet = "SO_SkillPresentation_Archer", Rig = "Medium", SpeedSourceId = "class.archer", Hero = true,
+            HitClip = "Hit_A", DeathClip = "Death_A",
+            RunFbx = Medium("MovementAdvanced"), RunClip = "Running_HoldingBow",
+            ChargeState = "ChargeDraw",
+            Actions =
+            {
+                new ActionSpec { State = "BowDraw", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Draw", SkillId = "" },
+                new ActionSpec { State = "BowRelease", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Release", SkillId = "skill.archer.piercing_shot" },
+                new ActionSpec { State = "RainDraw", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Draw_Up", SkillId = "" },
+                new ActionSpec { State = "RainRelease", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Release_Up", SkillId = "" },
+                new ActionSpec { State = "BackLeap", Fbx = Medium("MovementAdvanced"), Clip = "Dodge_Backward", SkillId = "skill.archer.back_leap" },
+                new ActionSpec { State = "Dodge", Fbx = Medium("MovementAdvanced"), Clip = "Dodge_Forward", SkillId = "" },
+            },
+            PhaseSkills =
+            {
+                new PhaseSkillSpec { SkillId = "skill.archer.quick_shot", WindupState = "BowDraw", ImpactState = "BowRelease", WindupFrom = 0.33f, WindupTo = 0.62f }, // Bow_Draw: ajusta a flecha em 0,44 s e puxa ate 0,83 s (62%)
+                new PhaseSkillSpec { SkillId = "skill.archer.fan_shot", WindupState = "BowDraw", ImpactState = "BowRelease", WindupFrom = 0.15f, WindupTo = 0.62f },
+                new PhaseSkillSpec { SkillId = "skill.archer.arrow_rain", WindupState = "RainDraw", ImpactState = "RainRelease", WindupFrom = 0.15f, WindupTo = 0.62f },
+            },
+            Upper =
+            {
+                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatMelee"), Clip = "Melee_Block", Next = "GuardHold", Speed = GuardRaiseSpeed, ExitTime = BlockPoseTime },
+                new UpperSpec { State = "GuardHold", Fbx = Medium("CombatMelee"), Clip = "Melee_Blocking" },
+                new UpperSpec { State = "GuardHit", Fbx = Medium("CombatMelee"), Clip = "Melee_Block_Hit", Next = "GuardHold" },
+                new UpperSpec { State = "ChargeDraw", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Draw", Next = "ChargeHold", Speed = 1.25f, ExitTime = 0.65f }, // a puxada assenta na mira em 65% do clipe (medido)
+                new UpperSpec { State = "ChargeHold", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Aiming_Idle" },
+            },
+        };
+
+        /// <summary>Mago (docs/18, 5.3): Dardo = Shoot; Orbe e Raio = Spellcasting na preparacao + Shoot; carga = Spellcasting_Long; defesa = Raise congelado no ultimo quadro.</summary>
+        public static readonly ControllerSpec HeroMage = new ControllerSpec
+        {
+            Name = "AC_Mage", SkillSet = "SO_SkillPresentation_Mage", Rig = "Medium", SpeedSourceId = "class.mage", Hero = true,
+            HitClip = "Hit_A", DeathClip = "Death_A",
+            RunClip = "Running_B",
+            GuardHitState = "",
+            Actions =
+            {
+                new ActionSpec { State = "MageShoot", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Shoot", SkillId = "skill.mage.arcane_dart", AlsoSkills = new[] { "skill.mage.fireball" } },
+                new ActionSpec { State = "MageCast", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Spellcasting", SkillId = "" },
+                new ActionSpec { State = "MageSummon", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Summon", SkillId = "skill.mage.frost_nova" },
+                new ActionSpec { State = "Dodge", Fbx = Medium("MovementAdvanced"), Clip = "Dodge_Forward", SkillId = "" },
+            },
+            PhaseSkills =
+            {
+                new PhaseSkillSpec { SkillId = "skill.mage.arcane_orb", WindupState = "MageCast", ImpactState = "MageShoot" },
+                new PhaseSkillSpec { SkillId = "skill.mage.arcane_ray", WindupState = "MageCast", ImpactState = "MageShoot" },
+            },
+            Upper =
+            {
+                // Raise: os bracos chegam na pose em 0,67 s (32% do clipe) e o resto do clipe baixa de novo; a pose fica parada enquanto segura.
+                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Raise", Next = "GuardHold", Speed = 2f, ExitTime = 0.32f },
+                new UpperSpec { State = "GuardHold", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Raise", FreezeAt = 0.32f },
+                // Spellcasting_Long: o armar vai ate ~1,3 s (51%), depois vem o gesto de lancar (so no solto); a carga para o armar nessa pose.
+                new UpperSpec { State = "ChargeHold", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Spellcasting_Long", Next = "ChargeFreeze", Speed = 1.6f, ExitTime = 0.5f },
+                new UpperSpec { State = "ChargeFreeze", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Spellcasting_Long", FreezeAt = 0.5f },
+            },
+        };
+
+        static ActionSpec SentinelStrike()
+        {
+            var path = EchoesAnimationImport.PathOf(EchoesAnimationImport.SentinelStrikeName);
+            if (AssetDatabase.LoadMainAssetAtPath(path) == null)
+                return new ActionSpec { State = "Strike", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Chop", SkillId = "skill.enemy.sentinel_strike" };
+            return new ActionSpec
+            {
+                State = "Strike", Fbx = path, Clip = EchoesAnimationImport.SentinelStrikeName, SkillId = "skill.enemy.sentinel_strike",
+                WindupEnd = EchoesAnimationImport.SentinelWindupFrame / (float)EchoesAnimationImport.SentinelFrames,
+                ImpactEnd = EchoesAnimationImport.SentinelImpactFrame / (float)EchoesAnimationImport.SentinelFrames,
+            };
+        }
 
         public static readonly ControllerSpec EnemyHumanoid = new ControllerSpec
         {
@@ -70,7 +213,8 @@ namespace Echoes.EditorTools
             HitClip = "Hit_A", DeathClip = "Death_B",
             Actions =
             {
-                new ActionSpec { State = "Strike", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Chop", SkillId = "skill.enemy.sentinel_strike" },
+                // Golpe da Sentinela: o clipe do Blender (tronco torce para tras, peso no pe de tras, braco atras da cabeca); sem o FBX, o Chop do KayKit.
+                SentinelStrike(),
                 new ActionSpec { State = "Slam", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Chop", SkillId = "skill.enemy.herald_slam" },
             },
         };
@@ -91,7 +235,7 @@ namespace Echoes.EditorTools
             },
         };
 
-        public static readonly ControllerSpec[] All = { Warrior, EnemyHumanoid, Boss };
+        public static readonly ControllerSpec[] All = { Warrior, EnemyHumanoid, Boss, HeroArcher, HeroMage };
 
         /// <summary>Clipes que ficaram com placeholder (viram pedido de Mixamo ou de animacao no Blender): "AC_Boss/Roar", "AC_Warrior/Stun"...</summary>
         public static readonly List<string> PlaceholderReport = new List<string>();
@@ -150,6 +294,7 @@ namespace Echoes.EditorTools
             c.AddParameter("IsDead", AnimatorControllerParameterType.Bool);
             c.AddParameter("IsStaggered", AnimatorControllerParameterType.Bool);
             if (spec == Boss) c.AddParameter("Phase", AnimatorControllerParameterType.Int);
+            if (spec.Upper.Count > 0) c.AddParameter("HoldAt", AnimatorControllerParameterType.Float); // tempo normalizado da pose de carga congelada
 
             var general = spec.Rig == "Large" ? Large("General") : Medium("General");
             var basic = spec.Rig == "Large" ? Large("MovementBasic") : Medium("MovementBasic");
@@ -162,11 +307,17 @@ namespace Echoes.EditorTools
             var walk = spec.Hero ? run * 0.5f : run;     // o heroi tem uma velocidade so (corrida); o inimigo anda na dele
             if (!spec.Hero) run = walk * 2f;
             tree.AddChild(Clip(general, "Idle_A"), 0f);
-            tree.AddChild(Clip(basic, "Walking_A"), walk);
-            tree.AddChild(Clip(basic, "Running_A"), run);
+            if (spec.Hero)
+            {
+                tree.AddChild(Clip(basic, spec.WalkClip), walk);
+                tree.AddChild(Clip(spec.RunFbx ?? basic, spec.RunClip), run);
+                ApplyGroundSpeedScales(tree, spec.Name, walk, run);
+            }
+            else BuildEnemyGait(tree, spec, Clip(basic, spec.WalkClip), Clip(spec.RunFbx ?? basic, spec.RunClip), MoveSpeedMeters(spec));
             var loco = sm.AddState("Locomotion");
             loco.motion = tree;
             sm.defaultState = loco;
+            if (spec.Hero) BuildAimLocomotion(c, sm, loco, Clip(general, "Idle_A"), Clip(basic, spec.WalkClip), walk);
 
             var death = sm.AddState("Death");
             death.motion = Clip(general, spec.DeathClip);
@@ -220,32 +371,225 @@ namespace Echoes.EditorTools
                 back.hasExitTime = true;
                 back.exitTime = 1f;
                 back.hasFixedDuration = true;
-                back.duration = 0.08f;
+                back.duration = ExitBlendSeconds;
             }
+
+            // ---- Upper (so herois): tronco e bracos com mascara, para defender e carregar enquanto as pernas da camada Base andam
+            if (spec.Upper.Count > 0) BuildUpperLayer(c, spec);
 
             // ---- Hit: Empty + Hit
             c.AddLayer("Hit");
             layers = c.layers;
-            layers[2].defaultWeight = 1f;
+            var hitIndex = layers.Length - 1;
+            layers[hitIndex].defaultWeight = 1f;
+            if (!spec.Hero) layers[hitIndex].avatarMask = LoadOrCreateUpperMask(); // flinch so no tronco: as pernas seguem a locomocao
             c.layers = layers;
-            var hitMachine = c.layers[2].stateMachine;
+            var hitMachine = c.layers[hitIndex].stateMachine;
             var hitEmpty = hitMachine.AddState("Empty");
             hitMachine.defaultState = hitEmpty;
             var hit = hitMachine.AddState("Hit");
             hit.motion = Clip(general, spec.HitClip);
+            var hitExit = 1f;
+            var hitFade = ExitBlendSeconds;
+            if (!spec.Hero && hit.motion != null)
+            {
+                hitExit = EnemyFlinchClipFraction;
+                hitFade = EnemyFlinchFadeSeconds;
+                hit.speed = Mathf.Max(1f, hit.motion.averageDuration * EnemyFlinchClipFraction / EnemyFlinchPlaySeconds);
+            }
             var hitBack = hit.AddTransition(hitEmpty);
             hitBack.hasExitTime = true;
-            hitBack.exitTime = 1f;
+            hitBack.exitTime = hitExit;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = 0.08f;
+            hitBack.duration = hitFade;
 
             EditorUtility.SetDirty(c);
             return c;
         }
 
+        public const float StrafePlaybackScale = 0.55f; // docs/18, 5.1: laterais da defesa a 55% de velocidade
+
+        /// <summary>
+        /// Pernas de quem defende ou carrega (parametro Aiming): o corpo encara a mira e anda para qualquer lado. Blend 2D pela velocidade local
+        /// (MoveX = direita, MoveY = frente, em m/s): frente Walking, recuo Walking_Backwards, lados Running_Strafe a 55%. O tronco e os bracos
+        /// ficam na camada Upper.
+        /// </summary>
+        static void BuildAimLocomotion(AnimatorController c, AnimatorStateMachine sm, AnimatorState loco, AnimationClip idle, AnimationClip walkForward, float walkSpeed)
+        {
+            c.AddParameter("Aiming", AnimatorControllerParameterType.Bool);
+            c.AddParameter("MoveX", AnimatorControllerParameterType.Float);
+            c.AddParameter("MoveY", AnimatorControllerParameterType.Float);
+            var advanced = Medium("MovementAdvanced");
+            var tree = new BlendTree { name = "AimLocomotion", blendType = BlendTreeType.FreeformDirectional2D, blendParameter = "MoveX", blendParameterY = "MoveY", useAutomaticThresholds = false };
+            AssetDatabase.AddObjectToAsset(tree, c);
+            tree.AddChild(idle, new Vector2(0f, 0f));
+            tree.AddChild(walkForward, new Vector2(0f, walkSpeed));
+            tree.AddChild(Clip(advanced, "Walking_Backwards"), new Vector2(0f, -walkSpeed));
+            tree.AddChild(Clip(advanced, "Running_Strafe_Left"), new Vector2(-walkSpeed, 0f));
+            tree.AddChild(Clip(advanced, "Running_Strafe_Right"), new Vector2(walkSpeed, 0f));
+            var children = tree.children;
+            children[3].timeScale = StrafePlaybackScale;
+            children[4].timeScale = StrafePlaybackScale;
+            tree.children = children;
+            var aim = sm.AddState("AimLocomotion");
+            aim.motion = tree;
+            var enter = loco.AddTransition(aim);
+            enter.AddCondition(AnimatorConditionMode.If, 0f, "Aiming");
+            enter.hasExitTime = false;
+            enter.hasFixedDuration = true;
+            enter.duration = 0.12f;
+            var leave = aim.AddTransition(loco);
+            leave.AddCondition(AnimatorConditionMode.IfNot, 0f, "Aiming");
+            leave.hasExitTime = false;
+            leave.hasFixedDuration = true;
+            leave.duration = 0.12f;
+        }
+
+        // Camada Upper: AvatarMask de tronco, cabeca e bracos (sem raiz nem pernas). Os estados vem de spec.Upper; "Empty" e o repouso.
+        static void BuildUpperLayer(AnimatorController c, ControllerSpec spec)
+        {
+            c.AddLayer(UpperLayerName);
+            var layers = c.layers;
+            var index = layers.Length - 1;
+            layers[index].defaultWeight = 1f;
+            layers[index].blendingMode = AnimatorLayerBlendingMode.Override;
+            layers[index].avatarMask = LoadOrCreateUpperMask();
+            c.layers = layers;
+            var machine = c.layers[index].stateMachine;
+            var empty = machine.AddState("Empty");
+            machine.defaultState = empty;
+            var states = new Dictionary<string, AnimatorState>();
+            foreach (var upper in spec.Upper)
+            {
+                var state = machine.AddState(upper.State);
+                state.motion = Clip(upper.Fbx, upper.Clip);
+                state.speed = upper.FreezeAt > 0f ? 0f : upper.Speed;
+                if (upper.FreezeAt > 0f) state.cycleOffset = upper.FreezeAt;
+                if (upper.TimeParam)
+                {
+                    state.timeParameterActive = true;
+                    state.timeParameter = "HoldAt";
+                }
+                states[upper.State] = state;
+            }
+            foreach (var upper in spec.Upper)
+            {
+                if (string.IsNullOrEmpty(upper.Next) || !states.TryGetValue(upper.Next, out var next)) continue;
+                var t = states[upper.State].AddTransition(next);
+                t.hasExitTime = true;
+                t.exitTime = upper.ExitTime;
+                t.hasFixedDuration = true;
+                t.duration = 0.06f;
+            }
+        }
+
+        static AvatarMask LoadOrCreateUpperMask()
+        {
+            var mask = AssetDatabase.LoadAssetAtPath<AvatarMask>(UpperMaskPath);
+            if (mask == null)
+            {
+                mask = new AvatarMask { name = "AM_UpperBody" };
+                AssetDatabase.CreateAsset(mask, UpperMaskPath);
+            }
+            foreach (AvatarMaskBodyPart part in Enum.GetValues(typeof(AvatarMaskBodyPart)))
+            {
+                if (part == AvatarMaskBodyPart.LastBodyPart) continue;
+                var upper = part == AvatarMaskBodyPart.Body || part == AvatarMaskBodyPart.Head || part == AvatarMaskBodyPart.LeftArm || part == AvatarMaskBodyPart.RightArm
+                    || part == AvatarMaskBodyPart.LeftFingers || part == AvatarMaskBodyPart.RightFingers;
+                mask.SetHumanoidBodyPartActive(part, upper);
+            }
+            EditorUtility.SetDirty(mask);
+            return mask;
+        }
+
+        /// <summary>
+        /// Para o pé acompanhar o chão: o timeScale de Walk e Run na árvore = velocidade do jogo ÷ velocidade de solo medida do clipe
+        /// (<see cref="LocomotionGroundSpeed"/>), limitado a 0,75 a 1,35. Sem medida gravada, 1 (como antes).
+        /// </summary>
+        static void ApplyGroundSpeedScales(BlendTree tree, string controllerName, float walkGameSpeed, float runGameSpeed)
+        {
+            var measured = LocomotionGroundSpeed.Load(controllerName);
+            if (measured == null) return;
+            var children = tree.children;
+            children[1].timeScale = LocomotionGroundSpeed.PlaybackScale(walkGameSpeed, measured.walk);
+            children[2].timeScale = LocomotionGroundSpeed.PlaybackScale(runGameSpeed, measured.run, LocomotionGroundSpeed.RunMaxScale);
+            tree.children = children;
+        }
+
+        /// <summary>
+        /// Passo do inimigo humanoide (rev5): o pe acompanha o chao. Anda se a velocidade de perseguicao cabe no passo da caminhada com escala ate
+        /// <see cref="EnemyWalkMaxScale"/> (Arauto, Guardiao); senao corre (Sentinela), e a caminhada cobre a patrulha em 45% da velocidade.
+        /// Escalas medidas em <see cref="LocomotionGroundSpeed"/>; sem medida, o comportamento antigo (passo na velocidade dele).
+        /// </summary>
+        static void BuildEnemyGait(BlendTree tree, ControllerSpec spec, AnimationClip walkClip, AnimationClip runClip, float speed)
+        {
+            var measured = LocomotionGroundSpeed.Load(spec.Name);
+            if (measured == null || measured.walk <= 0.01f || measured.run <= 0.01f)
+            {
+                tree.AddChild(walkClip, speed);
+                tree.AddChild(runClip, speed * 2f);
+                return;
+            }
+            var needWalk = speed / measured.walk;
+            if (needWalk <= EnemyWalkMaxScale)
+            {
+                tree.AddChild(walkClip, speed);
+                var only = tree.children;
+                only[1].timeScale = LocomotionGroundSpeed.PlaybackScale(speed, measured.walk, EnemyWalkMaxScale);
+                tree.children = only;
+                return;
+            }
+            tree.AddChild(walkClip, speed * EnemyPatrolFraction);
+            tree.AddChild(runClip, speed);
+            var children = tree.children;
+            children[1].timeScale = LocomotionGroundSpeed.PlaybackScale(speed * EnemyPatrolFraction, measured.walk, EnemyWalkMaxScale);
+            children[2].timeScale = LocomotionGroundSpeed.PlaybackScale(speed, measured.run, LocomotionGroundSpeed.RunMaxScale);
+            tree.children = children;
+        }
+
+        /// <summary>
+        /// Atordoamento dos inimigos Generic (Cao, Arqueiro Espectral), que nao usam o clipe Stun humanoide: o pico da reacao a golpe fica de lado
+        /// avancando bem devagar (vivo, sem congelar) enquanto IsStaggered (stun, Guarda Quebrada). Estado Stun na camada Base, qualquer estado vai para ele.
+        /// </summary>
+        static void AddCreepStun(AnimatorController c, AnimatorStateMachine sm, AnimatorState loco, AnimationClip hitClip)
+        {
+            c.AddParameter("IsStaggered", AnimatorControllerParameterType.Bool);
+            var stun = sm.AddState("Stun");
+            stun.motion = hitClip;
+            stun.speed = 0.15f;
+            stun.cycleOffset = 0.25f;
+            var to = sm.AddAnyStateTransition(stun);
+            to.AddCondition(AnimatorConditionMode.If, 0f, "IsStaggered");
+            to.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsDead");
+            to.hasExitTime = false;
+            to.hasFixedDuration = true;
+            to.duration = 0.1f;
+            to.canTransitionToSelf = false;
+            var from = stun.AddTransition(loco);
+            from.AddCondition(AnimatorConditionMode.IfNot, 0f, "IsStaggered");
+            from.hasExitTime = false;
+            from.duration = 0.12f;
+        }
+
+        /// <summary>Teto da escala de caminhada do inimigo (passo curto de construto/chefe): arte, nao balanceamento.</summary>
+        public const float EnemyWalkMaxScale = 1.8f;
+
+        /// <summary>Patrulha = 45% da velocidade de perseguicao (patrolSpeedMult do enemies.csv e 0,5 no Sentinela).</summary>
+        public const float EnemyPatrolFraction = 0.45f;
+
+        /// <summary>
+        /// Flinch curto de tronco (rev6): a reacao inteira (entrada de 0,06 s + trecho do clipe + saida de 0,06 s) dura perto de 0,3 s. Toca so a primeira
+        /// metade do clipe de reacao (o tranco), em <see cref="EnemyFlinchPlaySeconds"/>, e sai com fade curto.
+        /// </summary>
+        public const float EnemyFlinchSeconds = 0.3f;
+        public const float EnemyFlinchPlaySeconds = 0.18f, EnemyFlinchClipFraction = 0.5f, EnemyFlinchFadeSeconds = 0.06f;
+
         // Velocidade de movimento em m/s: class_stats.csv (heroi, em uu/s) ou enemies.csv (inimigo, em uu/s); 1 uu = 1 cm.
         static float MoveSpeedMeters(ControllerSpec spec)
         {
+            // So para o video da corrida: o mesmo override de RecordMode (ECHOES_DEV_HERO_SPEED, m/s) vale no limiar da corrida da arvore do heroi.
+            var dev = Environment.GetEnvironmentVariable("ECHOES_DEV_HERO_SPEED");
+            if (spec.Hero && !string.IsNullOrEmpty(dev) && float.TryParse(dev, NumberStyles.Float, CultureInfo.InvariantCulture, out var devSpeed) && devSpeed > 0f) return devSpeed;
             var dir = Path.GetFullPath(Path.Combine(Application.dataPath, "../Content/Data"));
             string file = spec.Hero ? "class_stats.csv" : "enemies.csv";
             var lines = File.ReadAllLines(Path.Combine(dir, file));
@@ -267,6 +611,46 @@ namespace Echoes.EditorTools
 
         // ============================================================================================== SO_SkillPresentation_*
 
+        /// <summary>
+        /// Peso por habilidade (arte, nao regra): avanco visual do corpo no impacto em metros (negativo = coice) e tremor minimo de camera.
+        /// Gravado nas entradas do SO_SkillPresentation_*; so o filho visual do heroi se mexe, a posicao logica e o acerto nao mudam.
+        /// </summary>
+        static readonly Dictionary<string, (float lunge, float shake)> SkillFeel = new Dictionary<string, (float, float)>
+        {
+            { "skill.warrior.iron_cut", (0.12f, 0f) },
+            { "skill.warrior.combo_2", (0.15f, 0f) },
+            { "skill.warrior.combo_3", (0.30f, 0f) },
+            { "skill.warrior.heavy_slash", (0.35f, 0f) },
+            { "skill.archer.quick_shot", (-0.08f, 0f) },
+            { "skill.archer.fan_shot", (-0.08f, 0f) },
+            { "skill.archer.piercing_shot", (-0.08f, 0.02f) },
+            { "skill.archer.arrow_rain", (-0.08f, 0f) },
+            { "skill.mage.arcane_dart", (0.05f, 0f) },
+            { "skill.mage.arcane_orb", (0.10f, 0f) },
+            { "skill.mage.arcane_ray", (0.10f, 0f) },
+            { "skill.mage.fireball", (0.15f, 0.02f) },
+            { "skill.mage.frost_nova", (0.08f, 0f) },
+            // Inimigos (rev5): avanco visual curto no impacto; o chefe com tremor de camera (hitstop pelos SO_CombatFeel).
+            { "skill.enemy.sentinel_strike", (0.20f, 0f) },
+            { "skill.enemy.ash_bite", (0.30f, 0f) },
+            { "skill.enemy.herald_slam", (0.25f, 0.03f) },
+            { "skill.enemy.ghost_arrow", (-0.10f, 0f) },
+            { "skill.enemy.guardian_hammer", (0.30f, 0.05f) },
+            { "skill.enemy.guardian_shield_bash", (0.25f, 0.03f) },
+            { "skill.enemy.guardian_shield_charge", (0f, 0.04f) },
+        };
+
+        /// <summary>Grava o peso por habilidade (avanco e tremor) nas entradas do conjunto.</summary>
+        static void ApplySkillFeel(SkillPresentationSet set)
+        {
+            foreach (var entry in set.entries)
+            {
+                if (!SkillFeel.TryGetValue(entry.skillId, out var feel)) continue;
+                entry.lungeMeters = feel.lunge;
+                entry.shakeMeters = feel.shake;
+            }
+        }
+
         public static SkillPresentationSet BuildSkillSet(ControllerSpec spec, GameObject prefab)
         {
             SandboxBuilder.EnsureDir(SkillSetDir);
@@ -280,10 +664,44 @@ namespace Echoes.EditorTools
                     if (string.IsNullOrEmpty(action.SkillId)) continue;
                     var clip = Clip(action.Fbx, action.Clip);
                     ClipTiming.Analyze(instance, clip, out var windupEnd, out var impactEnd);
+                    if (action.WindupEnd > 0f && action.ImpactEnd > action.WindupEnd)
+                    {
+                        windupEnd = action.WindupEnd;
+                        impactEnd = action.ImpactEnd;
+                    }
+                    var holdAt = 0f;
+                    if (action.HoldPose)
+                    {
+                        holdAt = ClipTiming.FindHoldPose(instance, clip, windupEnd);
+                        Debug.Log($"[ClipTiming] {spec.Name}/{action.State}: holdAt {holdAt:F3} (windupEnd {windupEnd:F3}, impactEnd {impactEnd:F3}, clip {clip.length:F2}s)");
+                    }
+                    var skills = new List<string> { action.SkillId };
+                    if (action.AlsoSkills != null) skills.AddRange(action.AlsoSkills);
+                    foreach (var skillId in skills)
+                    {
+                        set.entries.Add(new SkillPresentationEntry
+                        {
+                            skillId = skillId, animatorState = action.State, clipSeconds = clip.length,
+                            windupEnd = windupEnd, impactEnd = impactEnd, holdAt = holdAt, anchor = "socket_weapon_r",
+                        });
+                    }
+                }
+                foreach (var phase in spec.PhaseSkills)
+                {
+                    var windup = spec.Actions.Find(a => a.State == phase.WindupState);
+                    var impact = string.IsNullOrEmpty(phase.ImpactState) ? null : spec.Actions.Find(a => a.State == phase.ImpactState);
+                    var recovery = string.IsNullOrEmpty(phase.RecoveryState) ? null : spec.Actions.Find(a => a.State == phase.RecoveryState);
+                    if (windup == null) throw new InvalidOperationException($"{spec.Name}: estado de preparacao '{phase.WindupState}' de {phase.SkillId} nao existe");
+                    var windupClip = Clip(windup.Fbx, windup.Clip);
+                    var impactClip = impact != null ? Clip(impact.Fbx, impact.Clip) : null;
+                    var recoveryClip = recovery != null ? Clip(recovery.Fbx, recovery.Clip) : null;
                     set.entries.Add(new SkillPresentationEntry
                     {
-                        skillId = action.SkillId, animatorState = action.State, clipSeconds = clip.length,
-                        windupEnd = windupEnd, impactEnd = impactEnd, anchor = "socket_weapon_r",
+                        skillId = phase.SkillId, animatorState = phase.WindupState, clipSeconds = windupClip.length,
+                        windupEnd = 1f, impactEnd = 1f, anchor = "socket_weapon_r",
+                        windupState = phase.WindupState, windupClipSeconds = windupClip.length, windupFrom = phase.WindupFrom, windupTo = phase.WindupTo,
+                        impactState = phase.ImpactState ?? string.Empty, impactClipSeconds = impactClip != null ? impactClip.length : 0f,
+                        recoveryState = phase.RecoveryState ?? string.Empty, recoveryClipSeconds = recoveryClip != null ? recoveryClip.length : 1f,
                     });
                 }
             }
@@ -304,6 +722,17 @@ namespace Echoes.EditorTools
                 });
             }
             set.dodgeState = "Dodge";
+            ApplySkillFeel(set);
+            // Reacao: o chefe quase nao se encolhe (quase imune, peso grande); os demais, flinch inteiro e empurrao visual curto.
+            set.hitFlinchWeight = spec == Boss ? 0.35f : 1f;
+            set.hitKickMeters = spec == Boss ? 0.03f : spec.Hero ? 0f : 0.1f;
+            if (spec.Upper.Count > 0)
+            {
+                set.upperLayer = UpperLayerName;
+                set.guardRaiseState = spec.GuardRaiseState;
+                set.guardHitState = spec.GuardHitState;
+                set.chargeState = spec.ChargeState;
+            }
             EditorUtility.SetDirty(set);
             return set;
         }
@@ -337,6 +766,7 @@ namespace Echoes.EditorTools
             sm.defaultState = loco;
             var death = sm.AddState("Death");
             death.motion = EchoesAnimationImport.Clip("AN_GhostArcher_Death");
+            AddCreepStun(c, sm, loco, EchoesAnimationImport.Clip("AN_GhostArcher_Hit"));
             var toDeath = sm.AddAnyStateTransition(death);
             toDeath.AddCondition(AnimatorConditionMode.If, 0f, "IsDead");
             toDeath.hasExitTime = false;
@@ -363,7 +793,7 @@ namespace Echoes.EditorTools
             back.hasExitTime = true;
             back.exitTime = 1f;
             back.hasFixedDuration = true;
-            back.duration = 0.08f;
+            back.duration = ExitBlendSeconds;
 
             c.AddLayer("Hit");
             layers = c.layers;
@@ -374,11 +804,12 @@ namespace Echoes.EditorTools
             hitMachine.defaultState = hitEmpty;
             var hit = hitMachine.AddState("Hit");
             hit.motion = EchoesAnimationImport.Clip("AN_GhostArcher_Hit");
+            hit.speed = 1.5f;
             var hitBack = hit.AddTransition(hitEmpty);
             hitBack.hasExitTime = true;
-            hitBack.exitTime = 1f;
+            hitBack.exitTime = 0.7f;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = 0.08f;
+            hitBack.duration = EnemyFlinchFadeSeconds;
             EditorUtility.SetDirty(c);
             return c;
         }
@@ -410,6 +841,15 @@ namespace Echoes.EditorTools
             tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundIdle), 0f);
             tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundWalk), run * 0.45f);
             tree.AddChild(EchoesAnimationImport.Clip(EchoesAnimationImport.HoundRun), run);
+            var houndMeasured = LocomotionGroundSpeed.Load(HoundControllerName);
+            if (houndMeasured != null && houndMeasured.walk > 0.01f && houndMeasured.run > 0.01f)
+            {
+                // Pe no chao: escala = velocidade do jogo / velocidade de solo medida (patas), entre 0,6 e 2,2.
+                var houndChildren = tree.children;
+                houndChildren[1].timeScale = Mathf.Clamp(run * 0.45f / houndMeasured.walk, 0.6f, 2.2f);
+                houndChildren[2].timeScale = Mathf.Clamp(run / houndMeasured.run, 0.6f, 2.2f);
+                tree.children = houndChildren;
+            }
             var loco = sm.AddState("Locomotion");
             loco.motion = tree;
             sm.defaultState = loco;
@@ -417,6 +857,7 @@ namespace Echoes.EditorTools
             flee.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundFlee);
             var death = sm.AddState("Death");
             death.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundDeath);
+            AddCreepStun(c, sm, loco, EchoesAnimationImport.Clip(EchoesAnimationImport.HoundHit));
 
             var toFlee = loco.AddTransition(flee);
             toFlee.AddCondition(AnimatorConditionMode.If, 0f, "IsFleeing");
@@ -452,7 +893,7 @@ namespace Echoes.EditorTools
             back.hasExitTime = true;
             back.exitTime = 1f;
             back.hasFixedDuration = true;
-            back.duration = 0.08f;
+            back.duration = ExitBlendSeconds;
 
             c.AddLayer("Hit");
             layers = c.layers;
@@ -463,11 +904,12 @@ namespace Echoes.EditorTools
             hitMachine.defaultState = hitEmpty;
             var hit = hitMachine.AddState("Hit");
             hit.motion = EchoesAnimationImport.Clip(EchoesAnimationImport.HoundHit);
+            hit.speed = 1.5f;
             var hitBack = hit.AddTransition(hitEmpty);
             hitBack.hasExitTime = true;
-            hitBack.exitTime = 1f;
+            hitBack.exitTime = 0.7f;
             hitBack.hasFixedDuration = true;
-            hitBack.duration = 0.08f;
+            hitBack.duration = EnemyFlinchFadeSeconds;
             EditorUtility.SetDirty(c);
             return c;
         }
@@ -487,6 +929,8 @@ namespace Echoes.EditorTools
                 anchor = "Head",
             });
             set.dodgeState = "Dodge";
+            ApplySkillFeel(set);
+            set.hitKickMeters = 0.12f;
             EditorUtility.SetDirty(set);
             return set;
         }
@@ -506,6 +950,8 @@ namespace Echoes.EditorTools
                 anchor = "Hips",
             });
             set.dodgeState = "Dodge";
+            ApplySkillFeel(set);
+            set.hitKickMeters = 0.1f;
             EditorUtility.SetDirty(set);
             return set;
         }
@@ -531,6 +977,8 @@ namespace Echoes.EditorTools
         }
 
         public static string WarriorSkillSetPath => $"{SkillSetDir}/{Warrior.SkillSet}.asset";
+        public static string ArcherHeroSkillSetPath => $"{SkillSetDir}/{HeroArcher.SkillSet}.asset";
+        public static string MageHeroSkillSetPath => $"{SkillSetDir}/{HeroMage.SkillSet}.asset";
     }
 
     /// <summary>
@@ -579,6 +1027,22 @@ namespace Echoes.EditorTools
             if (first < 0 || last <= first) return;
             windupEnd = Mathf.Clamp(first / (float)steps, 0.05f, 0.9f);
             impactEnd = Mathf.Clamp((last + 1) / (float)steps, windupEnd + 0.05f, 1f);
+        }
+
+        /// <summary>Antecedencia (s) da pose de carga em relacao ao inicio do golpe rapido: a pose congela aqui e a preparacao do core (curta) cobre so o resto.</summary>
+        public const float HoldLeadSeconds = 0.15f;
+
+        /// <summary>
+        /// Quadro "arma atras" do golpe carregado (parametro holdAt, normalizado): <see cref="HoldLeadSeconds"/> antes do fim da preparacao medida
+        /// (limitado a metade dela). E nessa pose, ja encolhida mas ainda em movimento, que o clipe congela enquanto carrega e de onde o golpe solta;
+        /// a preparacao curta do core (heavy_slash = 0,10 s) ainda mostra um trecho real do armar, sem parada seca.
+        /// </summary>
+        public static float FindHoldPose(GameObject instance, AnimationClip clip, float windupEnd)
+        {
+            if (clip.length < 0.1f) return windupEnd;
+            var windupSeconds = windupEnd * clip.length;
+            var hold = windupSeconds - Mathf.Min(HoldLeadSeconds, windupSeconds * 0.5f);
+            return Mathf.Clamp(hold / clip.length, 0.02f, windupEnd);
         }
     }
 }

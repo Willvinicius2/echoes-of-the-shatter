@@ -166,7 +166,8 @@ namespace Echoes.Gameplay
                     if (c.IsDead) continue;
                 }
 
-                Rules.TickVitals(ref c.vitals, c.Stats, c.Class, dt, IsInCombat(c));
+                // Andando, o recurso do Foco regenera menos (regenMultWhileMoving, API C 1.5); só o herói informa.
+                Rules.TickVitals(ref c.vitals, c.Stats, c.Class, dt, IsInCombat(c), c.Actor is IHeroGuardian mover && mover.IsMoving);
                 c.Actor?.FixedTick(this, dt);
             }
             Projectiles.Step(this, dt);
@@ -181,8 +182,10 @@ namespace Echoes.Gameplay
         /// monta o pedido, chama o motor de regras, aplica vida/barreira, efeitos ao acertar, recurso,
         /// hitstop e knockback, e publica os eventos. Devolve true se o golpe acertou (não evadido).
         /// Quem chama garante "no máximo 1 vez por golpe por alvo" (RF-16).
+        /// <paramref name="isHeavy"/> e <paramref name="chargeFraction"/>: golpe forte e progresso da carga (0 a 1) vindos da máquina de entrada; o core
+        /// aplica o multiplicador do kit da classe do atacante (docs/18, 1.4). Em todo outro golpe, false e 0.
         /// </summary>
-        public bool ApplySkillHit(Combatant attacker, Combatant target, SkillInfo skill, PlanarVector hitOrigin)
+        public bool ApplySkillHit(Combatant attacker, Combatant target, SkillInfo skill, PlanarVector hitOrigin, bool isHeavy = false, double chargeFraction = 0.0)
         {
             if (attacker == null || target == null || skill == null) return false;
             if (target.IsDead || ReferenceEquals(attacker, target) || !target.IsRegistered) return false;
@@ -198,6 +201,16 @@ namespace Echoes.Gameplay
                 return false;
             }
 
+            // Defesa (docs/18, 8.1): o C# faz a geometria do arco e diz ao core se ESTE golpe veio de dentro; a defesa perfeita (janela, 0 de dano,
+            // efeitos no atacante corpo a corpo, recurso) e o dreno de recurso ficam aqui, com os valores do kit.
+            var guardian = target.Actor as IHeroGuardian;
+            var fromGuardArc = guardian != null && guardian.GuardCovers(hitOrigin);
+            if (fromGuardArc && guardian.GuardPerfectOpen)
+            {
+                ApplyPerfectGuard(attacker, target, skill, guardian, hitOrigin);
+                return false;
+            }
+
             var request = new HitRequest
             {
                 Attacker = attacker.Stats,
@@ -209,8 +222,23 @@ namespace Echoes.Gameplay
                 CanBeBlocked = true,
                 DefenderLife = target.vitals.Life,
                 DefenderBarrier = target.vitals.Barrier,
+                FromGuardArc = fromGuardArc,
+                IsHeavy = isHeavy,
+                ChargeFraction = isHeavy ? chargeFraction : 0.0,
+                ClassId = isHeavy ? attacker.ContentId : null,
             };
+            // Dano evitado pela defesa = o mesmo golpe fora do arco menos o de dentro, numa cópia do fluxo (o real consome uma vez só).
+            var avoidedDamage = 0.0;
+            if (fromGuardArc && guardian.GuardDrainPerDamage > 0.0)
+            {
+                var unguarded = request;
+                unguarded.FromGuardArc = false;
+                var probe = combatRng;
+                avoidedDamage = Math.Max(0.0, Rules.ResolveHit(in unguarded, ref probe).TotalDamage);
+            }
             var result = Rules.ResolveHit(in request, ref combatRng);
+            if (avoidedDamage > 0.0) avoidedDamage = Math.Max(0.0, avoidedDamage - result.TotalDamage);
+            if (fromGuardArc) ApplyGuardCost(attacker, target, skill, guardian, avoidedDamage, ref result);
             if (target.Boss != null)
             {
                 // O chefe guarda a própria vida: escudo frontal (ângulo pela posição do atacante), rugido e limiar de fase são do core.
@@ -233,10 +261,9 @@ namespace Echoes.Gameplay
             {
                 var onHit = skill.OnHitEffects;
                 for (var i = 0; i < onHit.Count; i++) ApplyEffect(target, onHit[i], 1.0, attacker.ContentId);
-                if (attacker.Class != null)
-                    Rules.GainResource(ref attacker.vitals, attacker.Stats, attacker.Class.ResourceOnHit);
+                Rules.GainResourceOnHit(ref attacker.vitals, attacker.Stats, attacker.Class);
 
-                var hitstop = Feel.HitstopFor(result.Critical, heavy, attacker.IsBoss, target.Team == CombatTeam.Hero);
+                var hitstop = Math.Max(Feel.HitstopFor(result.Critical, heavy, attacker.IsBoss, target.Team == CombatTeam.Hero), Feel.LightHitstopFor(skill.Id));
                 if (hitstop > 0.0)
                 {
                     attacker.Hitstop.Trigger(hitstop);
@@ -245,7 +272,7 @@ namespace Echoes.Gameplay
 
                 if (target.Team == CombatTeam.Enemy && !result.Killed)
                 {
-                    var distance = Feel.KnockbackFor(target);
+                    var distance = Feel.KnockbackFor(target, WorldUnits.ToMeters(skill.KnockbackUu));
                     if (distance > 0f)
                         target.StartKnockback((target.Position - hitOrigin).NormalizedOr(attacker.Forward), distance, Feel.KnockbackSeconds);
                 }
@@ -283,6 +310,47 @@ namespace Echoes.Gameplay
             }
             if (result.Interrupted) (target.Actor as IInterruptible)?.OnInterrupted(this);
             return applied;
+        }
+
+        // Defesa perfeita: 0 de dano de qualquer atacante; corpo a corpo leva os efeitos do kit (o core trata a imunidade: elite e chefe ganham
+        // Quebra de Guarda); o recurso da perfeita substitui o do bloqueio; hitstop dos dois lados.
+        void ApplyPerfectGuard(Combatant attacker, Combatant target, SkillInfo skill, IHeroGuardian guardian, PlanarVector hitOrigin)
+        {
+            if ((skill.Tags & SkillTags.Melee) != 0)
+            {
+                var effects = guardian.GuardPerfectEffects;
+                for (var i = 0; i < effects.Count; i++) ApplyEffect(attacker, effects[i], 1.0, target.ContentId);
+            }
+            GainResource(target, guardian.GuardPerfectResource);
+            if (Feel.HitstopHeavySeconds > 0.0)
+            {
+                attacker.Hitstop.Trigger(Feel.HitstopHeavySeconds);
+                target.Hitstop.Trigger(Feel.HitstopHeavySeconds);
+            }
+            var evt = new GuardBlockEvent { Attacker = attacker, Target = target, Skill = skill, Perfect = true, Position = target.Position };
+            Events.Publish(in evt);
+        }
+
+        // Defesa comum: recurso por bloqueio da classe, dreno de recurso por ponto evitado (parcial se faltar: a parte sem cobertura vira dano).
+        void ApplyGuardCost(Combatant attacker, Combatant target, SkillInfo skill, IHeroGuardian guardian, double avoidedDamage, ref HitResult result)
+        {
+            Rules.GainResourceOnBlock(ref target.vitals, target.Stats, target.Class);
+            var drain = avoidedDamage * guardian.GuardDrainPerDamage;
+            if (drain > 0.0)
+            {
+                var spent = Math.Min(target.vitals.Resource, drain);
+                if (spent > 0.0) Rules.TrySpendResource(ref target.vitals, spent);
+                var uncovered = (drain - spent) / drain;
+                if (uncovered > 1e-9)
+                {
+                    var extra = avoidedDamage * uncovered;
+                    result.LifeLost += extra;
+                    result.DefenderLifeAfter = Math.Max(0.0, result.DefenderLifeAfter - extra);
+                    if (result.DefenderLifeAfter <= 0.0) result.Killed = true;
+                }
+            }
+            var evt = new GuardBlockEvent { Attacker = attacker, Target = target, Skill = skill, Perfect = false, Position = target.Position };
+            Events.Publish(in evt);
         }
 
         /// <summary>Sorteia o modificador de elite no fluxo de eventos (consome sempre 1 número do fluxo).</summary>

@@ -8,5 +8,7 @@ namespace Echoes.Gameplay
         public Combatant Owner;
         public PlanarVector Position;
         public PlanarVector Direction;
+        /// <summary>No fim de um projétil que explode: raio da explosão em metros, centrada em <see cref="Position"/> (0 = sem explosão).</summary>
+        public float ExplosionRadiusMeters;
     }
 }

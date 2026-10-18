@@ -1,0 +1,622 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1da0256305728e489ab62075eff0c00, type: 3}
+  m_Name: SO_SkillPresentation_Mage
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.SkillPresentationSet
+  actionLayer: Action
+  emptyState: Empty
+  strikeFallbackState: SkillStrike
+  castFallbackState: SkillCast
+  dodgeState: Dodge
+  hitLayer: Hit
+  hitState: Hit
+  upperLayer: Upper
+  guardRaiseState: GuardRaise
+  guardHitState: 
+  chargeState: ChargeHold
+  upperBlendSeconds: 0.1
+  chargeCreep: 0.7
+  maxWindupSpeed: 2.5
+  preRollHoldFraction: 0.6
+  recoveryMinSpeed: 1
+  recoveryMaxSpeed: 1.2
+  windupHoldSpeed: 0.1
+  impactCarrySeconds: 0.07
+  clipEndBlendSeconds: 0.12
+  actionExitBlendSeconds: 0.1
+  hitFlinchWeight: 1
+  hitKickMeters: 0
+  hitKickSeconds: 0.18
+  deathDissolveDelaySeconds: 0.8
+  roarState: Roar
+  roarClipSeconds: 1
+  fallbackClipSeconds: 1
+  fallbackWindupEnd: 0.3
+  fallbackImpactEnd: 0.5
+  entries:
+  - skillId: skill.mage.arcane_dart
+    animatorState: MageShoot
+    clipSeconds: 0.9333334
+    windupEnd: 0.05
+    impactEnd: 0.6666667
+    holdAt: 0
+    lungeMeters: 0.05
+    shakeMeters: 0
+    windupState: 
+    windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
+    impactState: 
+    impactClipSeconds: 0
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.mage.fireball
+    animatorState: MageShoot
+    clipSeconds: 0.9333334
+    windupEnd: 0.05
+    impactEnd: 0.6666667
+    holdAt: 0
+    lungeMeters: 0.15
+    shakeMeters: 0.02
+    windupState: 
+    windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
+    impactState: 
+    impactClipSeconds: 0
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.mage.frost_nova
+    animatorState: MageSummon
+    clipSeconds: 4.3
+    windupEnd: 0.2751938
+    impactEnd: 0.7131783
+    holdAt: 0
+    lungeMeters: 0.08
+    shakeMeters: 0
+    windupState: 
+    windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
+    impactState: 
+    impactClipSeconds: 0
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.mage.arcane_orb
+    animatorState: MageCast
+    clipSeconds: 0.6666667
+    windupEnd: 1
+    impactEnd: 1
+    holdAt: 0
+    lungeMeters: 0.1
+    shakeMeters: 0
+    windupState: MageCast
+    windupClipSeconds: 0.6666667
+    windupFrom: 0
+    windupTo: 1
+    impactState: MageShoot
+    impactClipSeconds: 0.9333334
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.mage.arcane_ray
+    animatorState: MageCast
+    clipSeconds: 0.6666667
+    windupEnd: 1
+    impactEnd: 1
+    holdAt: 0
+    lungeMeters: 0.1
+    shakeMeters: 0
+    windupState: MageCast
+    windupClipSeconds: 0.6666667
+    windupFrom: 0
+    windupTo: 1
+    impactState: MageShoot
+    impactClipSeconds: 0.9333334
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  vfx:
+  - skillId: skill.mage.arcane_dart
+    windupFx:
+    - prefab: {fileID: 4104476135807858511, guid: 9e9ba7e5466400349961cc78375f629e, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 1
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    releaseFx:
+    - prefab: {fileID: 7593454135534122996, guid: 7fca70dddd2ef2d47b4d0dcfbc106ce4, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 0.45
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 4373574700592141990, guid: 48c179354f7877a4bb77d8de9dd4c53d, type: 3}
+    projectileScale: 1
+    launchAnchor: staff_crystal
+    launchBlendMeters: 1.6
+    lingerSeconds: 0.2
+    endFx:
+    - prefab: {fileID: 7593454135534122996, guid: 7fca70dddd2ef2d47b4d0dcfbc106ce4, type: 3}
+      place: 3
+      anchor: 
+      seconds: 0.8
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    missFx: []
+    hitFx: []
+    hitHeavyFx: []
+  - skillId: skill.mage.arcane_orb
+    windupFx:
+    - prefab: {fileID: 4104476135807858511, guid: 9e9ba7e5466400349961cc78375f629e, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 1
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1.25
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    releaseFx:
+    - prefab: {fileID: 7593454135534122996, guid: 7fca70dddd2ef2d47b4d0dcfbc106ce4, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 0.7
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 6096206201062752494, guid: f8511c31802b95a41b36339aa414ee13, type: 3}
+    projectileScale: 1
+    launchAnchor: staff_crystal
+    launchBlendMeters: 1.6
+    lingerSeconds: 0.3
+    endFx:
+    - prefab: {fileID: 3308059188837900662, guid: 748041506ff1577429cd065a1363a115, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1.2
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 1.3
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    missFx:
+    - prefab: {fileID: 3308059188837900662, guid: 748041506ff1577429cd065a1363a115, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1.2
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 1.3
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitFx: []
+    hitHeavyFx: []
+  - skillId: skill.mage.fireball
+    windupFx:
+    - prefab: {fileID: 6567638010717272379, guid: 1be94cec9eb69f54ab8a9c9ad2451c9f, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 1
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    releaseFx:
+    - prefab: {fileID: 5115890622930091126, guid: 7cf6fd9691ce34f4f90106cfb385e319, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 0.7
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx:
+    - prefab: {fileID: 8288865250479689742, guid: 3d87b892e5d86ed44a035a3313d58853, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 30
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFullFx:
+    - prefab: {fileID: 6098099536950492821, guid: a5ca22644ecc61b48924ef85bd0f14ca, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 0.4
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 3232234637020180362, guid: 55c4430b912ea78418f342f32fe56df4, type: 3}
+    projectileScale: 1
+    launchAnchor: staff_crystal
+    launchBlendMeters: 1.8
+    lingerSeconds: 0.9
+    endFx:
+    - prefab: {fileID: 924414631114232599, guid: d5503f149a3a29f4d9d171acf358d623, type: 3}
+      place: 3
+      anchor: 
+      seconds: 3.8
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 2.2
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    missFx:
+    - prefab: {fileID: 924414631114232599, guid: d5503f149a3a29f4d9d171acf358d623, type: 3}
+      place: 3
+      anchor: 
+      seconds: 3.8
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 2.2
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitFx: []
+    hitHeavyFx: []
+  - skillId: skill.mage.frost_nova
+    windupFx: []
+    releaseFx:
+    - prefab: {fileID: 4354443131203390395, guid: 39d7fadacc14cc64398c13a89e7e86ce, type: 3}
+      place: 1
+      anchor: 
+      seconds: 1.8
+      follow: 0
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 3.4
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 9179532546632197542, guid: 2ce6ccb5ff5db714f8239d933dbe426f, type: 3}
+      place: 3
+      anchor: 
+      seconds: 0.9
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []
+  - skillId: skill.mage.arcane_ray
+    windupFx:
+    - prefab: {fileID: 4104476135807858511, guid: 9e9ba7e5466400349961cc78375f629e, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 1
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    releaseFx:
+    - prefab: {fileID: 3100486429962636996, guid: 395d74c6cae57474a832af3bee14b7f0, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 0.5
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    - prefab: {fileID: 2859595578479183933, guid: 58bee7e2fdf366c40a2201bada4c8eed, type: 3}
+      place: 0
+      anchor: staff_crystal
+      seconds: 0.45
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 1
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 3702160671913337145, guid: 053c2c4eabd436049bd7220e913602f2, type: 3}
+      place: 3
+      anchor: 
+      seconds: 0.9
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []
+  - skillId: class.mage#guard
+    windupFx:
+    - prefab: {fileID: 2604706387479523702, guid: 82e6df50cf2f142479cc085be774db18, type: 3}
+      place: 0
+      anchor: chest
+      seconds: 120
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 3728581802374303772, guid: 7d7c6b04c22d5564fbf8cc20f94679ca, type: 3}
+      place: 3
+      anchor: 
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []
+  - skillId: class.mage#guard_break
+    windupFx: []
+    releaseFx:
+    - prefab: {fileID: 1171748161205309843, guid: 50d3c7be82b45db429ee047979e967b1, type: 3}
+      place: 0
+      anchor: chest
+      seconds: 0.8
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx: []
+    hitHeavyFx: []

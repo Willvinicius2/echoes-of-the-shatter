@@ -36,13 +36,40 @@ namespace Echoes.EditorTools
                     new ClipSpec("Idle_A", true), new ClipSpec("Hit_A"), new ClipSpec("Hit_B"), new ClipSpec("Death_A"), new ClipSpec("Death_B"),
                 }
             },
-            { Root + "/Medium/Rig_Medium_MovementBasic.fbx", new[] { new ClipSpec("Walking_A", true), new ClipSpec("Running_A", true) } },
-            { Root + "/Medium/Rig_Medium_MovementAdvanced.fbx", new[] { new ClipSpec("Dodge_Forward") } },
+            {
+                Root + "/Medium/Rig_Medium_MovementBasic.fbx", new[]
+                {
+                    new ClipSpec("Walking_A", true), new ClipSpec("Running_A", true),
+                    new ClipSpec("Running_B", true), // Mago (docs/18, 5.3) e candidato a corrida do Guerreiro
+                }
+            },
+            {
+                Root + "/Medium/Rig_Medium_MovementAdvanced.fbx", new[]
+                {
+                    new ClipSpec("Dodge_Forward"), new ClipSpec("Dodge_Backward"), // Salto para Trás do Arqueiro usa o Dodge_Backward
+                    new ClipSpec("Running_HoldingBow", true), // locomoção do Arqueiro
+                    // Pernas de quem defende ou carrega olhando para a mira (docs/18, 5.1): frente, recuo e lados
+                    new ClipSpec("Walking_Backwards", true), new ClipSpec("Running_Strafe_Left", true), new ClipSpec("Running_Strafe_Right", true),
+                }
+            },
             {
                 Root + "/Medium/Rig_Medium_CombatMelee.fbx", new[]
                 {
                     new ClipSpec("Melee_1H_Attack_Slice_Horizontal"), new ClipSpec("Melee_1H_Attack_Chop"), new ClipSpec("Melee_1H_Attack_Stab"),
                     new ClipSpec("Melee_2H_Attack_Chop"), new ClipSpec("Melee_Block_Attack"),
+                    // Combo do Guerreiro (docs/18, 5.1): 3 leves, forte e defesa
+                    new ClipSpec("Melee_1H_Attack_Slice_Diagonal"), new ClipSpec("Melee_1H_Attack_Jump_Chop"), new ClipSpec("Melee_2H_Attack_Slice"),
+                    new ClipSpec("Melee_Block"), new ClipSpec("Melee_Blocking", true), new ClipSpec("Melee_Block_Hit"),
+                }
+            },
+            {
+                Root + "/Medium/Rig_Medium_CombatRanged.fbx", new[]
+                {
+                    // Arqueiro (docs/18, 5.2) e Mago (5.3)
+                    new ClipSpec("Ranged_Bow_Draw"), new ClipSpec("Ranged_Bow_Release"), new ClipSpec("Ranged_Bow_Aiming_Idle", true),
+                    new ClipSpec("Ranged_Bow_Draw_Up"), new ClipSpec("Ranged_Bow_Release_Up"),
+                    new ClipSpec("Ranged_Magic_Shoot"), new ClipSpec("Ranged_Magic_Spellcasting"), new ClipSpec("Ranged_Magic_Spellcasting_Long"),
+                    new ClipSpec("Ranged_Magic_Raise"), new ClipSpec("Ranged_Magic_Summon"),
                 }
             },
             { Root + "/Large/Rig_Large_General.fbx", new[] { new ClipSpec("Idle_A", true), new ClipSpec("Hit_A"), new ClipSpec("Death_A") } },
@@ -87,7 +114,7 @@ namespace Echoes.EditorTools
             }
             var wanted = specs.Select(s => s.Take).ToList();
             var current = importer.clipAnimations;
-            if (current != null && current.Length == wanted.Count && current.All(c => wanted.Contains(c.name)) && current.All(c => c.lockRootHeightY && c.heightFromFeet && c.keepOriginalOrientation)) return;
+            if (current != null && current.Length == wanted.Count && current.All(c => wanted.Contains(c.name)) && current.All(c => c.lockRootHeightY && c.heightFromFeet && c.keepOriginalOrientation) && importer.animationCompression == ModelImporterAnimationCompression.Off) return;
 
             var defaults = importer.defaultClipAnimations;
             var clips = new List<ModelImporterClipAnimation>();
@@ -113,6 +140,7 @@ namespace Echoes.EditorTools
                 clips.Add(source);
             }
             importer.clipAnimations = clips.ToArray();
+            importer.animationCompression = ModelImporterAnimationCompression.Off; // sem Keyframe Reduction: o erro alto dava tremor de pose
             importer.SaveAndReimport();
         }
 

@@ -1,0 +1,507 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1da0256305728e489ab62075eff0c00, type: 3}
+  m_Name: SO_SkillPresentation_Archer
+  m_EditorClassIdentifier: Echoes.Presentation::Echoes.Presentation.SkillPresentationSet
+  actionLayer: Action
+  emptyState: Empty
+  strikeFallbackState: SkillStrike
+  castFallbackState: SkillCast
+  dodgeState: Dodge
+  hitLayer: Hit
+  hitState: Hit
+  upperLayer: Upper
+  guardRaiseState: GuardRaise
+  guardHitState: GuardHit
+  chargeState: ChargeDraw
+  upperBlendSeconds: 0.1
+  chargeCreep: 0.7
+  maxWindupSpeed: 2.5
+  preRollHoldFraction: 0.6
+  recoveryMinSpeed: 1
+  recoveryMaxSpeed: 1.2
+  windupHoldSpeed: 0.1
+  impactCarrySeconds: 0.07
+  clipEndBlendSeconds: 0.12
+  actionExitBlendSeconds: 0.1
+  hitFlinchWeight: 1
+  hitKickMeters: 0
+  hitKickSeconds: 0.18
+  deathDissolveDelaySeconds: 0.8
+  roarState: Roar
+  roarClipSeconds: 1
+  fallbackClipSeconds: 1
+  fallbackWindupEnd: 0.3
+  fallbackImpactEnd: 0.5
+  entries:
+  - skillId: skill.archer.piercing_shot
+    animatorState: BowRelease
+    clipSeconds: 1.3333334
+    windupEnd: 0.05
+    impactEnd: 0.4125
+    holdAt: 0
+    lungeMeters: -0.08
+    shakeMeters: 0.02
+    windupState: 
+    windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
+    impactState: 
+    impactClipSeconds: 0
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.archer.back_leap
+    animatorState: BackLeap
+    clipSeconds: 0.40000004
+    windupEnd: 0.05
+    impactEnd: 0.68
+    holdAt: 0
+    lungeMeters: 0
+    shakeMeters: 0
+    windupState: 
+    windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
+    impactState: 
+    impactClipSeconds: 0
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.archer.quick_shot
+    animatorState: BowDraw
+    clipSeconds: 1.3333334
+    windupEnd: 1
+    impactEnd: 1
+    holdAt: 0
+    lungeMeters: -0.08
+    shakeMeters: 0
+    windupState: BowDraw
+    windupClipSeconds: 1.3333334
+    windupFrom: 0.33
+    windupTo: 0.62
+    impactState: BowRelease
+    impactClipSeconds: 1.3333334
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.archer.fan_shot
+    animatorState: BowDraw
+    clipSeconds: 1.3333334
+    windupEnd: 1
+    impactEnd: 1
+    holdAt: 0
+    lungeMeters: -0.08
+    shakeMeters: 0
+    windupState: BowDraw
+    windupClipSeconds: 1.3333334
+    windupFrom: 0.15
+    windupTo: 0.62
+    impactState: BowRelease
+    impactClipSeconds: 1.3333334
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.archer.arrow_rain
+    animatorState: RainDraw
+    clipSeconds: 1.3333334
+    windupEnd: 1
+    impactEnd: 1
+    holdAt: 0
+    lungeMeters: -0.08
+    shakeMeters: 0
+    windupState: RainDraw
+    windupClipSeconds: 1.3333334
+    windupFrom: 0.15
+    windupTo: 0.62
+    impactState: RainRelease
+    impactClipSeconds: 1.3666668
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  vfx:
+  - skillId: skill.archer.quick_shot
+    windupFx: []
+    releaseFx:
+    - prefab: {fileID: 3726138060627275062, guid: 15e963545015c404e9aaae0947a786ea, type: 3}
+      place: 0
+      anchor: bow_nock
+      seconds: 0.5
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 6087736116398227628, guid: 15fb884cf8d5ac54d9370001149a2f65, type: 3}
+    projectileScale: 1
+    launchAnchor: bow_nock
+    launchBlendMeters: 1.2
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 2057758778493409762, guid: ffe492840afb9784086ec6b3d508d2ed, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []
+  - skillId: skill.archer.fan_shot
+    windupFx: []
+    releaseFx:
+    - prefab: {fileID: 1211497057870290719, guid: 09dbae2c3665547409c2fb958f88eabb, type: 3}
+      place: 0
+      anchor: bow_nock
+      seconds: 0.5
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 6087736116398227628, guid: 15fb884cf8d5ac54d9370001149a2f65, type: 3}
+    projectileScale: 1
+    launchAnchor: bow_nock
+    launchBlendMeters: 1.2
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 2057758778493409762, guid: ffe492840afb9784086ec6b3d508d2ed, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []
+  - skillId: skill.archer.piercing_shot
+    windupFx: []
+    releaseFx:
+    - prefab: {fileID: 3726138060627275062, guid: 15e963545015c404e9aaae0947a786ea, type: 3}
+      place: 0
+      anchor: bow_nock
+      seconds: 0.5
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1.4
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx:
+    - prefab: {fileID: 6717606531142463148, guid: 98ff368de88268e478c10e713e6a3a5c, type: 3}
+      place: 0
+      anchor: bow_nock
+      seconds: 30
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFullFx:
+    - prefab: {fileID: 6098099536950492821, guid: a5ca22644ecc61b48924ef85bd0f14ca, type: 3}
+      place: 0
+      anchor: bow_nock
+      seconds: 0.4
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 3174476782520349817, guid: 6416f0308bb5e7044ba2956f344cab8a, type: 3}
+    projectileScale: 1
+    launchAnchor: bow_nock
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.4
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 7681708526144852315, guid: b25accd66bcfd3349adbefec20e8cb8c, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []
+  - skillId: skill.archer.back_leap
+    windupFx: []
+    releaseFx:
+    - prefab: {fileID: 5772846039117404659, guid: 98d6981566b3f1f45a7f59977e3cc48f, type: 3}
+      place: 1
+      anchor: 
+      seconds: 0.8
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    - prefab: {fileID: 3726138060627275062, guid: 15e963545015c404e9aaae0947a786ea, type: 3}
+      place: 0
+      anchor: bow_nock
+      seconds: 0.5
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 6087736116398227628, guid: 15fb884cf8d5ac54d9370001149a2f65, type: 3}
+    projectileScale: 1
+    launchAnchor: bow_nock
+    launchBlendMeters: 1.2
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 2057758778493409762, guid: ffe492840afb9784086ec6b3d508d2ed, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []
+  - skillId: skill.archer.arrow_rain
+    windupFx:
+    - prefab: {fileID: 3046876473331652414, guid: 92aebb0a775034640a6270eb0d5ae9bf, type: 3}
+      place: 2
+      anchor: 
+      seconds: 1.1
+      follow: 0
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 3
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 1
+    releaseFx:
+    - prefab: {fileID: 343835517032812416, guid: 8e8844e4f1a60f34d9a3b7b0d638fe10, type: 3}
+      place: 2
+      anchor: 
+      seconds: 1.2
+      follow: 0
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 3
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0.25
+      survivePhaseChange: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 2057758778493409762, guid: ffe492840afb9784086ec6b3d508d2ed, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []
+  - skillId: class.archer#guard
+    windupFx: []
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 7413435487672731205, guid: d60984e86f366a3448ad4aed0de82a8a, type: 3}
+      place: 0
+      anchor: bow_nock
+      seconds: 0.4
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+      survivePhaseChange: 0
+    hitHeavyFx: []

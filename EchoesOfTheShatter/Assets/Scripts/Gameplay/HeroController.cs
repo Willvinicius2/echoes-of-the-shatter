@@ -30,7 +30,7 @@ namespace Echoes.Gameplay
 
         /// <summary>Bases de item equipadas (a fonte e o save e o core; o visual modular le daqui o visualSetId pelo conjunto).</summary>
         public System.Collections.Generic.IReadOnlyList<string> EquipmentIds => equipment;
-        [Tooltip("Barra: botão esquerdo (ataque básico), botão direito, Q, E, R, F.")]
+        [Tooltip("Botão esquerdo (ataque básico) e depois as habilidades na ordem Q, E, R, F. O botão direito é a defesa (docs/18) e não entra aqui: a lógica reserva o espaço 1 da barra.")]
         [SerializeField] string[] skillBar =
         {
             "skill.warrior.iron_cut",
@@ -40,6 +40,12 @@ namespace Echoes.Gameplay
             "",
             "",
         };
+
+        [Header("Arqueiro e Mago (-hero archer|mage; docs/18): barra (esquerdo, Q, E, R, F) e equipamento de teste")]
+        [SerializeField] string[] archerBar = { "skill.archer.quick_shot", "skill.archer.back_leap", "skill.archer.arrow_rain", "", "" };
+        [SerializeField] string[] archerEquipment = { "item_base.hunter_bow" };
+        [SerializeField] string[] mageBar = { "skill.mage.arcane_dart", "skill.mage.frost_nova", "skill.mage.arcane_ray", "", "" };
+        [SerializeField] string[] mageEquipment = { };
 
         [Header("Checkpoint (RF-18)")]
         [Tooltip("Onde o herói volta ao morrer. Vazio = posição inicial.")]
@@ -78,6 +84,12 @@ namespace Echoes.Gameplay
         public PlayerInputHandler InputHandler => input;
         public float SecondsUntilRespawn => Combatant != null && Combatant.IsDead ? Mathf.Max(0f, respawnDelay - deadTime) : 0f;
 
+        /// <summary>Desvio (m) entre a posição lógica e o corpo a partir do qual a lógica ressincroniza (2 cm).</summary>
+        public const float ResyncMeters = 0.02f;
+
+        /// <summary>Diagnóstico: quadros com desvio acima de 1 mm e ressincronizações feitas (modo de gravação e testes).</summary>
+        public static int DeviationFrames, ResyncCount;
+
         PlanarVector lastSceneSync;
         bool hasSceneSync;
 
@@ -104,6 +116,15 @@ namespace Echoes.Gameplay
             }
 
             var rules = combat.Rules;
+            // A classe escolhida (-hero ou tela inicial) manda; Arqueiro e Mago nao tem save ainda e jogam com a barra e o equipamento de teste daqui.
+            var choice = Echoes.Core.HeroChoice.Id;
+            var otherClass = choice == "archer" || choice == "mage";
+            if (otherClass)
+            {
+                classId = Echoes.Core.HeroChoice.ClassId;
+                skillBar = choice == "archer" ? archerBar : mageBar;
+                equipment = choice == "archer" ? archerEquipment : mageEquipment;
+            }
             var classInfo = rules.FindClass(classId);
             if (classInfo == null)
             {
@@ -117,7 +138,7 @@ namespace Echoes.Gameplay
             // Com save (jogo normal): equipamento e atributos vem do SAVE pelo core (itens com afixos). Sem save (cena aberta direto): as bases do inspetor.
             Echoes.Interop.Native.SaveGame saveSource = null;
             var native = rules as Echoes.Interop.Native.NativeRulesCore;
-            if (native != null && Echoes.Core.GameSession.Save != null && Echoes.Core.GameSession.Save.HasSave)
+            if (!otherClass && native != null && Echoes.Core.GameSession.Save != null && Echoes.Core.GameSession.Save.HasSave)
             {
                 saveSource = Echoes.Core.GameSession.Save.Current;
                 foreach (var item in saveSource.Equipment(0))
@@ -145,8 +166,19 @@ namespace Echoes.Gameplay
 
             var build = new HeroBuild(classInfo.Id, level, equipped, saveSource, 0);
             var combatant = attributes.CreateHero(rules, in build, classInfo, weapon, controller.radius);
-            Logic = new HeroCombatLogic(combatant, rules, skillBar);
+            Logic = new HeroCombatLogic(combatant, rules, BuildLogicBar(), BasicKitSource.For(rules, classInfo.Id));
             combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
+        }
+
+        // A barra do inspetor lista o botão esquerdo e depois Q, E, R, F; a lógica tem 6 espaços e o 1 (botão direito) é a defesa, sem habilidade.
+        string[] BuildLogicBar()
+        {
+            var bar = new string[HeroCombatLogic.SlotCount];
+            for (var i = 0; i < bar.Length; i++) bar[i] = string.Empty;
+            if (skillBar == null) return bar;
+            if (skillBar.Length > 0) bar[0] = skillBar[0];
+            for (var i = 1; i < skillBar.Length && i + 1 < bar.Length; i++) bar[i + 1] = skillBar[i];
+            return bar;
         }
 
         /// <summary>
@@ -203,17 +235,44 @@ namespace Echoes.Gameplay
             Logic.MoveInput = CameraRelative(input.Move);
             if (TryGetAimPoint(out var aimPoint)) Logic.AimPoint = aimPoint;
 
+            var hasKit = Logic.HasKit;
             var pressedAny = false;
             for (var c = HeroCommand.BasicAttack; c <= HeroCommand.Potion2; c++)
             {
+                // Com kit (docs/18), o botão esquerdo e o direito entram por apertar/soltar (clique ou segurar, defesa); o resto, pelo buffer.
+                if (hasKit && (c == HeroCommand.BasicAttack || c == HeroCombatLogic.GuardButton)) continue;
                 if (!input.WasPressed(c)) continue;
                 Logic.Press(c);
                 pressedAny = true;
             }
-            // Segurar o botão do ataque básico repete o golpe assim que a ação anterior termina,
+            if (hasKit)
+            {
+                PumpButton(HeroCommand.BasicAttack, ref leftWasHeld);
+                PumpButton(HeroCombatLogic.GuardButton, ref guardWasHeld);
+            }
+            // Sem kit (entrada antiga): segurar o botão do ataque básico repete o golpe assim que a ação anterior termina,
             // sem passar por cima de outro comando pedido neste quadro ou ainda no buffer.
-            if (!pressedAny && !Logic.HasPendingCommand && Logic.IsReadyForAction && input.IsHeld(HeroCommand.BasicAttack))
+            else if (!pressedAny && !Logic.HasPendingCommand && Logic.IsReadyForAction && input.IsHeld(HeroCommand.BasicAttack))
                 Logic.Press(HeroCommand.BasicAttack);
+        }
+
+        bool leftWasHeld;
+        bool guardWasHeld;
+
+        // Transforma o estado do botão em eventos de apertar e soltar (um clique mais curto que o quadro dá os dois no mesmo quadro).
+        void PumpButton(HeroCommand button, ref bool wasHeld)
+        {
+            var held = input.IsHeld(button);
+            if (input.WasPressed(button))
+            {
+                Logic.ButtonDown(button);
+                wasHeld = true;
+            }
+            if (wasHeld && !held)
+            {
+                Logic.ButtonUp(button);
+                wasHeld = false;
+            }
         }
 
         void LateUpdate()
@@ -233,10 +292,22 @@ namespace Echoes.Gameplay
             verticalSpeed += Physics.gravity.y * dt;
             if (controller.enabled) controller.Move(delta.ToWorld(verticalSpeed * dt));
 
-            transform.rotation = Logic.FacingDirection().ToRotation(transform.rotation);
+            // Virada suave (graus/s do SO_CombatFeel): rápida ao iniciar golpe ou esquiva, mais calma ao andar.
+            var feel = combat != null ? combat.Feel : null;
+            var turnSpeed = feel == null ? 900f : (Logic.IsCasting || Logic.Dodge.IsDodging ? feel.CastTurnDegreesPerSecond : Logic.IsAiming ? feel.AimTurnDegreesPerSecond : feel.TurnDegreesPerSecond);
+            var targetRotation = Logic.FacingDirection().ToRotation(transform.rotation);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnSpeed * dt);
             // Parede ou obstáculo: a lógica volta para onde o corpo realmente ficou (sem interpolar de volta).
+            // Só resincroniza quando bateu de lado ou o desvio passa de ResyncMeters; o desvio pequeno (skin width, degrau, rampa)
+            // some sozinho no passo seguinte e não pode zerar a interpolação a cada quadro.
             var actual = transform.position.ToPlanar();
-            if (PlanarVector.Distance(actual, wanted) > 1e-3f) combatant.Teleport(actual);
+            var deviation = PlanarVector.Distance(actual, wanted);
+            if (deviation > 1e-3f) DeviationFrames++;
+            if (deviation > ResyncMeters || (deviation > 1e-3f && (controller.collisionFlags & CollisionFlags.Sides) != 0))
+            {
+                combatant.Teleport(actual);
+                ResyncCount++;
+            }
             lastSceneSync = actual;
             hasSceneSync = true;
         }
