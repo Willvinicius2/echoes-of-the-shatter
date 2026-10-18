@@ -159,7 +159,7 @@
       "required": false,
       "default": 0,
       "min": 0,
-      "desc": "Raio (uu)"
+      "desc": "Raio (uu): area de habilidade shape area; em projetil e so a LARGURA DE COLISAO do corredor (a explosao e explosionRadius)"
     },
     {
       "name": "projectiles",
@@ -305,6 +305,23 @@
       "default": 0,
       "min": 0,
       "desc": "Stagger (s) do atacante ao bater em pilar ou parede na investida (docs/13 R2.2); vazio = nao tem"
+    },
+    {
+      "name": "pierce",
+      "type": "int",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 99,
+      "desc": "Perfuracao do projetil (docs/18 8.2): 0 ou vazio = nenhuma; N = atravessa N alvos; 99 = atravessa todos. Cada projetil acerta o mesmo alvo uma vez. So para shape projectile"
+    },
+    {
+      "name": "explosionRadius",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Raio (uu) da explosao no impacto de um projetil (docs/18 8.3 a): vazio ou 0 = sem explosao. So shape projectile; separado de radius (largura de colisao)"
     }
   ],
   "checks": [

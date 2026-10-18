@@ -32,6 +32,7 @@ const char* ToString(ItemSlot s);
 struct RolledAffix {
     ContentId affixId;
     double value = 0.0;
+    std::uint8_t polish = 0;          // Lapidar (docs/16 11.4): passos já dados, 0 a polish_max_steps; só vai ao save se > 0
 };
 
 // Item concreto. Tudo por ID; nada de texto traduzido (o nome é montado na UI
@@ -44,6 +45,9 @@ struct ItemInstance {
     ContentId uniqueId;               // vazio se não for Único
     std::vector<RolledAffix> affixes; // ordem estável (prefixos antes de sufixos, ordem de rolagem)
     bool hasInscription = false;      // Fixar Inscrição: no máximo 1 por item
+    // Melhorias do Encantador (docs/16 11.6). Só vão ao save se > 0 (saves e hashes antigos não mudam).
+    std::uint16_t craftSteps = 0;     // sobe a cada Refinar, Reforjar e Adicionar afixo: entra na semente da próxima operação
+    std::uint16_t craftReforges = 0;  // Reforjares da peça: o preço do próximo sobe com ele (reforge_step_mult)
 };
 
 // Pilha de recurso (ouro, materiais, páginas, sigilos comuns...). id = "currency.gold",

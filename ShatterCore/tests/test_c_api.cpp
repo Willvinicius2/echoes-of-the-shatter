@@ -1,7 +1,9 @@
 // Fronteira da API C (docs/04_arquitetura.md, seções 9.2 e 9.7): versão e layout, argumento nulo,
 // BUFFER_TOO_SMALL sem efeito colateral, ida e volta de cada grupo de funções e o MESMO resultado do C++
 // (golpe, expedição, golden). Este executável é ligado à DLL/so shattercore.
+#include <cmath>
 #include <cstring>
+#include <filesystem>
 #include <functional>
 #include <sstream>
 
@@ -1880,4 +1882,807 @@ TEST(c_api_14_equip_compare_sell_sort_move_and_visual_set_through_the_api) {
     layout[3] += 4;
     EXPECT_EQ(shatter_layout_check_ext4(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
     EXPECT_TRUE(shatter_api_minor() >= 4u);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// API C 1.5 (docs/18, docs/09 seção 12): kits, chaves do combo, defesa com arco, regen em movimento, recurso por golpe
+// ---------------------------------------------------------------------------------------------------------------------
+namespace {
+
+const ContentDB& RealContent() {
+    static ContentDB* real = [] {
+        auto* d = new ContentDB();
+        d->LoadDirectory(tu::ContentDir());
+        d->Finalize();
+        return d;
+    }();
+    return *real;
+}
+
+// Dano de um golpe com ou sem a flag de arco; a mesma semente de combate em todas as chamadas.
+double HitDamage(const shatter_db* db, const shatter_statblock* attacker, const shatter_statblock* defender, bool fromArc) {
+    shatter_hit_input in{};
+    in.base_damage[SHATTER_DAMAGE_PHYSICAL] = 100.0;
+    in.coefficient = 1.0;
+    in.defender_life = 1000.0;
+    in.can_be_blocked = 1;
+    in.skill_tags = SHATTER_TAG_ATTACK | SHATTER_TAG_MELEE | SHATTER_TAG_PHYSICAL;
+    in.from_guard_arc = fromArc ? 1 : 0;
+    shatter_rng rng{};
+    shatter_rng_for_stream(99, SHATTER_RNG_COMBAT, 0, &rng);
+    shatter_hit_result out{};
+    if (shatter_resolve_hit_db(db, attacker, defender, &in, &rng, &out) != SHATTER_OK) FAIL("resolve_hit_db");
+    return out.total_damage;
+}
+
+}  // namespace
+
+TEST(c_api_15_minor_5_layout_combat_rules_and_basic_kits) {
+    EXPECT_EQ(SHATTER_C_API_MINOR, 7u);  // 1.5 ganhou a 1.6 e a 1.7: só adições
+    EXPECT_EQ(shatter_api_minor(), 7u);
+    EXPECT_EQ(shatter_api_version(), 1u);
+    EXPECT_EQ(static_cast<int>(SHATTER_TAG_GUARD), static_cast<int>(Mask(Tag::Guard)));
+
+    // Layout: [from_guard_arc, combat_rules, basic_kit...]; a v1 e as outras extensões não mudaram.
+    EXPECT_EQ(SHATTER_LAYOUT_COUNT, 82u);
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_layout_info_ext5(nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(needed, static_cast<std::size_t>(SHATTER_LAYOUT_EXT5_COUNT));
+    std::vector<std::uint32_t> layout(needed);
+    ASSERT_EQ(shatter_layout_info_ext5(layout.data(), layout.size(), &needed), SHATTER_OK);
+    EXPECT_EQ(layout[0], static_cast<std::uint32_t>(offsetof(shatter_hit_input, from_guard_arc)));
+    EXPECT_EQ(layout[1], static_cast<std::uint32_t>(sizeof(shatter_combat_rules)));
+    EXPECT_EQ(layout[9], static_cast<std::uint32_t>(sizeof(shatter_basic_kit)));
+    shatter_error err{};
+    EXPECT_EQ(shatter_layout_check_ext5(layout.data(), layout.size(), &err), SHATTER_OK);
+    layout[12] += 4;
+    EXPECT_EQ(shatter_layout_check_ext5(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
+    EXPECT_EQ(err.line, 13);
+    layout[12] -= 4;
+    EXPECT_EQ(shatter_layout_check_ext5(layout.data(), layout.size() - 1, &err), SHATTER_VERSION_MISMATCH);
+    EXPECT_EQ(shatter_layout_info_ext5(layout.data(), layout.size(), nullptr), SHATTER_INVALID_ARGUMENT);
+
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    const ContentDB& cdb = RealContent();
+    ASSERT_TRUE(cdb.Errors().empty());
+
+    // Chaves novas de rules.csv.
+    shatter_combat_rules cr{};
+    ASSERT_EQ(shatter_db_combat_rules(db.db, &cr), SHATTER_OK);
+    const RulesConstants& r = cdb.Rules();
+    EXPECT_NEAR(cr.combo_window, r.comboWindow, 0.0);
+    EXPECT_NEAR(cr.combo_window_after_dodge, r.comboWindowAfterDodge, 0.0);
+    EXPECT_NEAR(cr.attack_buffer, r.attackBuffer, 0.0);
+    EXPECT_NEAR(cr.heavy_hold_threshold, r.heavyHoldThreshold, 0.0);
+    EXPECT_NEAR(cr.light_windup_credit_max, r.lightWindupCreditMax, 0.0);
+    EXPECT_NEAR(cr.guard_lower_time, r.guardLowerTime, 0.0);
+    EXPECT_NEAR(cr.dash_shot_range, r.dashShotRange, 0.0);
+    EXPECT_TRUE(cr.combo_window > 0.0 && cr.dash_shot_range > 0.0);
+    EXPECT_EQ(shatter_db_combat_rules(db.db, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_db_combat_rules(nullptr, &cr), SHATTER_INVALID_ARGUMENT);
+
+    // Kit de cada classe = BasicKitData.
+    for (const char* cid : {"class.warrior", "class.archer", "class.mage"}) {
+        shatter_basic_kit kit{};
+        ASSERT_EQ(shatter_basic_kit_get(db.db, cid, std::strlen(cid), &kit), SHATTER_OK);
+        const BasicKitData* k = cdb.FindBasicKit(cid);
+        ASSERT_TRUE(k != nullptr);
+        ASSERT_EQ(static_cast<std::size_t>(kit.light_chain_count), k->lightChain.size());
+        for (std::size_t i = 0; i < k->lightChain.size(); ++i) EXPECT_EQ(std::string(kit.light_chain[i]), k->lightChain[i]);
+        EXPECT_EQ(std::string(kit.heavy_skill), k->heavySkill);
+        EXPECT_EQ(std::string(kit.charge_effect), k->chargeEffect);
+        EXPECT_EQ(std::string(kit.guard_effect), k->guardEffect);
+        EXPECT_NEAR(kit.heavy_charge_time, k->heavyChargeTime, 0.0);
+        EXPECT_NEAR(kit.heavy_max_mult, k->heavyMaxMult, 0.0);
+        EXPECT_NEAR(kit.guard_arc, k->guardArc, 0.0);
+        EXPECT_NEAR(kit.guard_max_hold, k->guardMaxHold, 0.0);
+        EXPECT_NEAR(kit.guard_cooldown, k->guardCooldown, 0.0);
+        EXPECT_NEAR(kit.guard_perfect_window, k->guardPerfectWindow, 0.0);
+        EXPECT_NEAR(kit.guard_perfect_cooldown, k->guardPerfectCooldown, 0.0);
+        EXPECT_NEAR(kit.guard_perfect_resource, k->guardPerfectResource, 0.0);
+        EXPECT_NEAR(kit.guard_drain_per_damage, k->guardDrainPerDamage, 0.0);
+        ASSERT_EQ(static_cast<std::size_t>(kit.guard_perfect_effect_count), k->guardPerfectEffects.size());
+        for (std::size_t i = 0; i < k->guardPerfectEffects.size(); ++i)
+            EXPECT_EQ(std::string(kit.guard_perfect_effects[i]), k->guardPerfectEffects[i]);
+        // O que sobra do vetor fica zerado (o C# pode ler só os `count` primeiros, sem lixo depois).
+        for (int i = kit.light_chain_count; i < 3; ++i) EXPECT_EQ(kit.light_chain[i][0], '\0');
+    }
+    shatter_basic_kit k2{};
+    EXPECT_EQ(shatter_basic_kit_get(db.db, "class.nope", 10, &k2), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_basic_kit_get(db.db, "", 0, &k2), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_basic_kit_get(db.db, nullptr, 0, &k2), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_basic_kit_get(db.db, "class.mage", 10, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_basic_kit_get(nullptr, "class.mage", 10, &k2), SHATTER_INVALID_ARGUMENT);
+    // Banco sem a tabela (fixture rico): NOT_FOUND, sem erro de carga (tabela opcional).
+    DbHandle rich(tu::RichDir());
+    EXPECT_EQ(shatter_basic_kit_get(rich.db, "class.warrior", 13, &k2), SHATTER_NOT_FOUND);
+}
+
+TEST(c_api_15_guard_flag_reduces_damage_only_from_inside_the_arc_and_lookup_exposes_pierce_and_behavior) {
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    StatHandle atk, def;
+    ASSERT_EQ(shatter_statblock_create(&atk.sb), SHATTER_OK);
+    ASSERT_EQ(shatter_statblock_create(&def.sb), SHATTER_OK);
+    ASSERT_EQ(shatter_statblock_set_base(def.sb, SHATTER_STAT_LIFE, 1000.0), SHATTER_OK);
+
+    // Sem efeito de defesa: a flag não muda nada.
+    EXPECT_NEAR(HitDamage(db.db, atk.sb, def.sb, false), 100.0, 1e-9);
+    EXPECT_NEAR(HitDamage(db.db, atk.sb, def.sb, true), 100.0, 1e-9);
+
+    // Com a defesa do Guerreiro: de fora do arco, dano cheio; de dentro, o efeito vale.
+    FxHandle fx;
+    const std::string id = "effect.guarding.warrior";
+    std::uint8_t applied = 0;
+    ASSERT_EQ(shatter_effects_apply(fx.fx, db.db, id.data(), id.size(), "self", 4, 1.0, SHATTER_TRIGGER_NONE, def.sb, &applied), SHATTER_OK);
+    EXPECT_EQ(applied, 1);
+    const json::Value fxv = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_db_lookup_json(db.db, id.data(), id.size(), o, c, n);
+    }));
+    EXPECT_EQ(fxv["tags"].At(0).AsString(), std::string("guard"));
+    double more = 0.0;
+    for (std::size_t i = 0; i < fxv["modifiers"].Size(); ++i) {
+        const json::Value& m = fxv["modifiers"].At(i);
+        if (m["stat"].AsString() == "damage_taken" || m["stat"].AsInt(-1) == SHATTER_STAT_DAMAGE_TAKEN) more = m["value"].AsDouble();
+    }
+    ASSERT_TRUE(more < 0.0);
+    const double outside = HitDamage(db.db, atk.sb, def.sb, false);
+    const double inside = HitDamage(db.db, atk.sb, def.sb, true);
+    EXPECT_NEAR(outside, 100.0, 1e-9);
+    EXPECT_NEAR(inside, 100.0 * (1.0 + more), 1e-9);
+    // Os atributos lidos pelo C# também: sem o contexto de arco o dano recebido não muda; com a tag, muda.
+    double dt = 0.0;
+    ASSERT_EQ(shatter_statblock_get(def.sb, SHATTER_STAT_DAMAGE_TAKEN, 0, &dt), SHATTER_OK);
+    EXPECT_NEAR(dt, 1.0, 0.0);
+    ASSERT_EQ(shatter_statblock_get(def.sb, SHATTER_STAT_DAMAGE_TAKEN, SHATTER_TAG_GUARD, &dt), SHATTER_OK);
+    EXPECT_NEAR(dt, 1.0 + more, 1e-12);
+    // Chamadores antigos (reserved zerado) recebem "fora do arco": o struct não mudou de tamanho.
+    EXPECT_EQ(sizeof(shatter_hit_input), static_cast<std::size_t>(64));
+
+    // Habilidades: pierce e comportamento no lookup.
+    auto skill = [&](const char* sid) {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_db_lookup_json(db.db, sid, std::strlen(sid), o, c, n);
+        }));
+    };
+    const json::Value ray = skill("skill.mage.arcane_ray");
+    EXPECT_EQ(ray["pierce"].AsInt(-1), 99);
+    EXPECT_FALSE(ray["behavior"]["explodes"].AsBool(true));
+    EXPECT_TRUE(skill("skill.mage.fireball")["behavior"]["explodes"].AsBool());
+    EXPECT_TRUE(skill("skill.archer.fan_shot")["behavior"]["fan"].AsBool());
+    EXPECT_TRUE(skill("skill.mage.frost_nova")["behavior"]["self_centered"].AsBool());
+    EXPECT_TRUE(skill("skill.archer.arrow_rain")["behavior"]["ground_targeted"].AsBool());
+    EXPECT_TRUE(skill("skill.archer.back_leap")["behavior"]["dash_back_shot"].AsBool());
+    EXPECT_FALSE(skill("skill.warrior.charge")["behavior"]["dash_back_shot"].AsBool(true));
+    EXPECT_EQ(skill("skill.warrior.iron_cut")["pierce"].AsInt(-1), 0);
+    EXPECT_NEAR(skill("skill.archer.fan_shot")["cone_angle"].AsDouble(), 28.0, 0.0);
+}
+
+TEST(c_api_15_vitals_regen_while_moving_and_resource_on_hit_and_block) {
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    const ContentDB& cdb = RealContent();
+    // Arqueiro: Foco máximo 100, regeneração 8/s; andando, a fração do classes.csv disso.
+    StatHandle archer;
+    ASSERT_EQ(shatter_statblock_create(&archer.sb), SHATTER_OK);
+    ASSERT_EQ(shatter_statblock_set_base(archer.sb, SHATTER_STAT_LIFE, 90.0), SHATTER_OK);
+    ASSERT_EQ(shatter_statblock_set_base(archer.sb, SHATTER_STAT_RESOURCE, 100.0), SHATTER_OK);
+    ASSERT_EQ(shatter_statblock_set_base(archer.sb, SHATTER_STAT_RESOURCE_REGEN, 8.0), SHATTER_OK);
+    const std::string cls = "class.archer";
+    const double mult = cdb.FindClass(cls)->regenMultWhileMoving;
+    ASSERT_TRUE(mult > 0.0 && mult < 1.0);
+    shatter_vitals still{}, moving{}, legacy{};
+    still.life = moving.life = legacy.life = 50.0;
+    ASSERT_EQ(shatter_vitals_tick_ex(db.db, &still, archer.sb, cls.data(), cls.size(), 1.0, 1, 0), SHATTER_OK);
+    ASSERT_EQ(shatter_vitals_tick_ex(db.db, &moving, archer.sb, cls.data(), cls.size(), 1.0, 1, 1), SHATTER_OK);
+    ASSERT_EQ(shatter_vitals_tick(db.db, &legacy, archer.sb, cls.data(), cls.size(), 1.0, 1), SHATTER_OK);
+    EXPECT_NEAR(still.resource, 8.0, 1e-12);
+    EXPECT_NEAR(moving.resource, 8.0 * mult, 1e-12);
+    EXPECT_NEAR(legacy.resource, still.resource, 0.0);
+    EXPECT_NEAR(moving.life, still.life, 0.0);
+    EXPECT_EQ(shatter_vitals_tick_ex(db.db, nullptr, archer.sb, cls.data(), cls.size(), 1.0, 1, 1), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_vitals_tick_ex(db.db, &moving, archer.sb, "class.nope", 10, 1.0, 1, 1), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_vitals_tick_ex(nullptr, &moving, archer.sb, cls.data(), cls.size(), 1.0, 1, 1), SHATTER_INVALID_ARGUMENT);
+    // Sem classe: andar não muda a regeneração.
+    shatter_vitals a{}, b{};
+    ASSERT_EQ(shatter_vitals_tick_ex(db.db, &a, archer.sb, nullptr, 0, 1.0, 1, 0), SHATTER_OK);
+    ASSERT_EQ(shatter_vitals_tick_ex(db.db, &b, archer.sb, nullptr, 0, 1.0, 1, 1), SHATTER_OK);
+    EXPECT_NEAR(a.resource, b.resource, 0.0);
+
+    // Guerreiro: recurso por golpe e por bloqueio, os mesmos valores do classes.csv, limitados ao máximo.
+    StatHandle warrior;
+    ASSERT_EQ(shatter_statblock_create(&warrior.sb), SHATTER_OK);
+    ASSERT_EQ(shatter_statblock_set_base(warrior.sb, SHATTER_STAT_RESOURCE, 100.0), SHATTER_OK);
+    const std::string wcls = "class.warrior";
+    const ClassData* wc = cdb.FindClass(wcls);
+    shatter_vitals v{};
+    ASSERT_EQ(shatter_vitals_gain_on_hit(db.db, &v, warrior.sb, wcls.data(), wcls.size()), SHATTER_OK);
+    EXPECT_NEAR(v.resource, wc->resourceOnHit, 0.0);
+    ASSERT_EQ(shatter_vitals_gain_on_block(db.db, &v, warrior.sb, wcls.data(), wcls.size()), SHATTER_OK);
+    EXPECT_NEAR(v.resource, wc->resourceOnHit + wc->resourceOnBlock, 1e-12);
+    for (int i = 0; i < 50; ++i) shatter_vitals_gain_on_hit(db.db, &v, warrior.sb, wcls.data(), wcls.size());
+    EXPECT_NEAR(v.resource, 100.0, 0.0);
+    // Foco/Mana não ganham por golpe; sem classe, nada; classe desconhecida é erro de argumento.
+    shatter_vitals f{};
+    f.resource = 7.0;
+    ASSERT_EQ(shatter_vitals_gain_on_hit(db.db, &f, archer.sb, cls.data(), cls.size()), SHATTER_OK);
+    EXPECT_NEAR(f.resource, 7.0, 0.0);
+    ASSERT_EQ(shatter_vitals_gain_on_block(db.db, &f, archer.sb, nullptr, 0), SHATTER_OK);
+    EXPECT_NEAR(f.resource, 7.0, 0.0);
+    EXPECT_EQ(shatter_vitals_gain_on_hit(db.db, &f, archer.sb, "class.nope", 10), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_vitals_gain_on_block(db.db, nullptr, archer.sb, cls.data(), cls.size()), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_vitals_gain_on_hit(nullptr, &f, archer.sb, cls.data(), cls.size()), SHATTER_INVALID_ARGUMENT);
+}
+
+TEST(c_api_15_charged_hit_multiplies_with_the_kit_max_mult_and_rejects_bad_charge) {
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    const BasicKitData* kit = RealContent().FindBasicKit("class.warrior");
+    ASSERT_TRUE(kit != nullptr && kit->heavyMaxMult > 1.0);
+    StatHandle atk, def;
+    ASSERT_EQ(shatter_statblock_create(&atk.sb), SHATTER_OK);
+    ASSERT_EQ(shatter_statblock_create(&def.sb), SHATTER_OK);
+    shatter_hit_input in{};
+    in.base_damage[SHATTER_DAMAGE_PHYSICAL] = 100.0;
+    in.coefficient = 1.0;
+    in.defender_life = 100000.0;
+    in.can_be_blocked = 1;
+    in.skill_tags = SHATTER_TAG_ATTACK | SHATTER_TAG_MELEE | SHATTER_TAG_PHYSICAL;
+    EXPECT_EQ(sizeof(shatter_hit_input), static_cast<std::size_t>(64));
+    const std::string cls = "class.warrior";
+    auto run = [&](double fraction, shatter_rng* rng, shatter_hit_result* out, shatter_error* err) {
+        return shatter_resolve_hit_charged(db.db, atk.sb, def.sb, &in, cls.data(), cls.size(), fraction, rng, out, err);
+    };
+    shatter_rng r0{};
+    shatter_rng_for_stream(3, SHATTER_RNG_COMBAT, 0, &r0);
+    shatter_rng ra = r0, rb = r0, rc = r0, rplain = r0;
+    shatter_hit_result plain{}, lo{}, hi{}, mid{};
+    shatter_error err{};
+    ASSERT_EQ(shatter_resolve_hit_db(db.db, atk.sb, def.sb, &in, &rplain, &plain), SHATTER_OK);
+    ASSERT_EQ(run(0.0, &ra, &lo, &err), SHATTER_OK);
+    ASSERT_EQ(run(1.0, &rb, &hi, &err), SHATTER_OK);
+    ASSERT_EQ(run(0.5, &rc, &mid, &err), SHATTER_OK);
+    EXPECT_NEAR(lo.total_damage, plain.total_damage, 1e-9);                       // carga mínima = golpe comum
+    EXPECT_NEAR(hi.total_damage, plain.total_damage * kit->heavyMaxMult, 1e-9);   // carga máxima = heavy_max_mult
+    EXPECT_NEAR(mid.total_damage, plain.total_damage * (1.0 + (kit->heavyMaxMult - 1.0) * 0.5), 1e-9);
+    EXPECT_EQ(ra.state, rplain.state);  // 3 números de rng, como o golpe comum
+
+    // Erros: nada muda (rng não avança), mensagem em err.
+    for (double bad : {-0.01, 1.01, 5.0, std::nan("")}) {
+        shatter_rng rr = r0;
+        shatter_hit_result out{};
+        out.total_damage = -5.0;
+        EXPECT_EQ(run(bad, &rr, &out, &err), SHATTER_INVALID_ARGUMENT);
+        EXPECT_EQ(rr.state, r0.state);
+        EXPECT_NEAR(out.total_damage, -5.0, 0.0);
+        EXPECT_TRUE(std::string(err.message).find("charge_fraction") != std::string::npos);
+    }
+    shatter_rng rr = r0;
+    EXPECT_EQ(shatter_resolve_hit_charged(db.db, atk.sb, def.sb, &in, "class.nope", 10, 0.5, &rr, &hi, &err), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_resolve_hit_charged(db.db, atk.sb, def.sb, &in, nullptr, 0, 0.5, &rr, &hi, &err), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_resolve_hit_charged(nullptr, atk.sb, def.sb, &in, cls.data(), cls.size(), 0.5, &rr, &hi, &err), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_resolve_hit_charged(db.db, atk.sb, def.sb, nullptr, cls.data(), cls.size(), 0.5, &rr, &hi, &err), SHATTER_INVALID_ARGUMENT);
+}
+
+TEST(c_api_15_lookup_exposes_knockback_and_explosion_radius_separate_from_radius) {
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    const ContentDB& cdb = RealContent();
+    auto skill = [&](const char* sid) {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_db_lookup_json(db.db, sid, std::strlen(sid), o, c, n);
+        }));
+    };
+    const json::Value fire = skill("skill.mage.fireball");
+    const SkillData& s = *cdb.FindSkill("skill.mage.fireball");
+    EXPECT_NEAR(fire["explosion_radius"].AsDouble(), s.explosionRadius, 0.0);
+    EXPECT_NEAR(fire["radius"].AsDouble(), s.radius, 0.0);
+    EXPECT_TRUE(fire["explosion_radius"].AsDouble() > fire["radius"].AsDouble());
+    EXPECT_NEAR(fire["knockback"].AsDouble(), s.knockback, 0.0);
+    EXPECT_TRUE(fire["behavior"]["explodes"].AsBool());
+    const json::Value finisher = skill("skill.warrior.combo_3");
+    EXPECT_NEAR(finisher["knockback"].AsDouble(), cdb.FindSkill("skill.warrior.combo_3")->knockback, 0.0);
+    EXPECT_TRUE(finisher["knockback"].AsDouble() > 0.0);
+    EXPECT_NEAR(skill("skill.warrior.iron_cut")["knockback"].AsDouble(), 0.0, 0.0);
+    EXPECT_NEAR(skill("skill.mage.arcane_dart")["explosion_radius"].AsDouble(), 0.0, 0.0);
+}
+
+// --- API 1.6: economia do protótipo (Vendedor, Frasco de Recarga, Encantador) -------------------------------------
+namespace {
+
+SaveHandle EconomySave(const SaveData& data) {
+    const std::string text = SerializeJson(data, false);
+    SaveHandle h;
+    std::int32_t load = -1;
+    shatter_error err{};
+    if (shatter_save_from_json(text.data(), text.size(), &h.save, &load, &err) != SHATTER_OK) FAIL(err.message);
+    return h;
+}
+
+std::int64_t Cur(const shatter_save* s, const char* id) {
+    std::int64_t v = -1;
+    if (shatter_currency_get(s, id, std::strlen(id), &v) != SHATTER_OK) FAIL("currency_get");
+    return v;
+}
+
+RolledAffix RA(const char* id, double value) {
+    RolledAffix a;
+    a.affixId = id;
+    a.value = value;
+    return a;
+}
+
+ItemInstance EconItem(std::uint64_t uid, const char* base, Rarity r, int lvl, std::vector<RolledAffix> aff = {}) {
+    ItemInstance it;
+    it.uid = uid;
+    it.baseId = base;
+    it.rarity = r;
+    it.itemLevel = lvl;
+    it.affixes = std::move(aff);
+    return it;
+}
+
+std::string SaveBytes(const shatter_save* s) {
+    return TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_to_json(s, 0, o, c, n); });
+}
+
+}  // namespace
+
+TEST(c_api_16_minor_6_layout_ext6_and_constants) {
+    EXPECT_TRUE(SHATTER_C_API_MINOR >= 6u);
+    EXPECT_TRUE(shatter_api_minor() >= 6u);
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_layout_info_ext6(nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(needed, static_cast<std::size_t>(SHATTER_LAYOUT_EXT6_COUNT));
+    std::vector<std::uint32_t> layout(needed);
+    ASSERT_EQ(shatter_layout_info_ext6(layout.data(), layout.size(), &needed), SHATTER_OK);
+    const std::uint32_t expected[] = {32, 0, 4, 8, 16, 24, 24, 0, 4, 8, 16, 16, 0, 4, 8, 12};
+    for (std::size_t i = 0; i < sizeof(expected) / sizeof(expected[0]); ++i) EXPECT_EQ(layout[i], expected[i]);
+    shatter_error err{};
+    EXPECT_EQ(shatter_layout_check_ext6(layout.data(), layout.size(), &err), SHATTER_OK);
+    layout[3] += 8;
+    EXPECT_EQ(shatter_layout_check_ext6(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
+    EXPECT_EQ(shatter_layout_check_ext6(layout.data(), layout.size() - 1, &err), SHATTER_VERSION_MISMATCH);
+    EXPECT_EQ(static_cast<int>(SHATTER_CRAFT_BAD_INDEX), static_cast<int>(CraftResult::BadIndex));
+    EXPECT_EQ(static_cast<int>(SHATTER_CRAFT_OP_DISMANTLE), static_cast<int>(CraftOp::Dismantle));
+}
+
+TEST(c_api_16_craft_quote_refine_offer_apply_polish_and_dismantle) {
+    DbHandle db(tu::RichDir());
+    SaveData data;
+    data.contentVersion = tu::RichDb().ContentVersion();
+    data.characters.push_back(tu::MakeWarrior(tu::RichDb(), 3));
+    data.nextItemUid = 1000;
+    data.currencies = {{kGoldId, 5000}, {kShardsId, 500}};
+    auto& bp = data.characters[0].backpack;
+    bp.push_back(EconItem(10, "item_base.iron_sword", Rarity::Normal, 1));
+    bp.push_back(EconItem(11, "item_base.bone_helm", Rarity::Magic, 1, {RA("affix.life_flat", 12.0)}));
+    bp.push_back(EconItem(12, "item_base.leather_vest", Rarity::Rare, 2,
+                          {RA("affix.life_flat", 12.0), RA("affix.armor_flat", 8.0), RA("affix.fire_res", 0.1)}));
+    SaveHandle save = EconomySave(data);
+    // Prévia não altera e traz o custo da tabela.
+    const std::string before = SaveBytes(save.save);
+    const json::Value q = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_craft_quote_json(db.db, save.save, 0, 10, SHATTER_CRAFT_OP_REFINE, 0, o, c, n);
+    }));
+    EXPECT_EQ(q["result"].AsInt(), static_cast<std::int64_t>(SHATTER_CRAFT_OK));
+    EXPECT_EQ(q["gold"].AsInt(), 40);
+    EXPECT_EQ(q["shards"].AsInt(), 10);
+    EXPECT_EQ(q["affix_count_min"].AsInt(), 1);
+    EXPECT_EQ(q["affix_count_max"].AsInt(), 2);
+    EXPECT_EQ(q["have_gold"].AsInt(), 5000);
+    EXPECT_FALSE(q["expedition_running"].AsBool(true));
+    EXPECT_EQ(SaveBytes(save.save), before);
+    const json::Value qLock = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_craft_quote_json(db.db, save.save, 0, 12, SHATTER_CRAFT_OP_REFORGE, 0, o, c, n);
+    }));
+    EXPECT_EQ(qLock["shards_no_lock"].AsInt() * 2, qLock["shards_with_lock"].AsInt());
+    EXPECT_EQ(qLock["shards"].AsInt(), qLock["shards_with_lock"].AsInt());
+    // Buffer pequeno não muda nada.
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_craft_quote_json(db.db, save.save, 0, 10, SHATTER_CRAFT_OP_REFINE, 0, nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(SaveBytes(save.save), before);
+    // Refinar.
+    shatter_craft_result r{};
+    ASSERT_EQ(shatter_craft_refine(db.db, save.save, 0, 10, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    EXPECT_EQ(r.gold_spent, 40);
+    EXPECT_EQ(r.shards_spent, 10);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), 4960);
+    EXPECT_EQ(Cur(save.save, "material.shards"), 490);
+    ASSERT_EQ(shatter_craft_refine(db.db, save.save, 0, 10, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_WRONG_RARITY);
+    EXPECT_EQ(r.gold_spent, 0);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), 4960);
+    // Adicionar afixo: a oferta repete; aplicar custa; o índice precisa existir.
+    auto offer = [&]() {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_craft_add_affix_offer(db.db, save.save, 0, 11, o, c, n);
+        }));
+    };
+    const json::Value o1 = offer(), o2 = offer();
+    EXPECT_EQ(S(o1), S(o2));
+    ASSERT_TRUE(o1["candidates"].Size() >= 1 && o1["candidates"].Size() <= 3);
+    ASSERT_EQ(shatter_craft_add_affix_apply(db.db, save.save, 0, 11, 9, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_BAD_INDEX);
+    ASSERT_EQ(shatter_craft_add_affix_apply(db.db, save.save, 0, 11, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    EXPECT_TRUE(r.changed_affix >= 0 && r.changed_affix < 2);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), 4960 - 90);
+    ASSERT_EQ(shatter_craft_add_affix_apply(db.db, save.save, 0, 11, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_AFFIX_LIMIT);
+    // Lapidar e Reforjar com trava.
+    ASSERT_EQ(shatter_craft_polish(db.db, save.save, 0, 12, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    EXPECT_EQ(r.changed_affix, 0);
+    EXPECT_EQ(r.gold_spent, 66);   // 60 no nível 2: +10%
+    ASSERT_EQ(shatter_craft_reforge(db.db, save.save, 0, 12, 7, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_BAD_INDEX);
+    ASSERT_EQ(shatter_craft_reforge(db.db, save.save, 0, 12, 0, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    // Desmontar: 11 é Mágico (5 Lascas); repetir não paga de novo.
+    const std::int64_t shards = Cur(save.save, "material.shards");
+    ASSERT_EQ(shatter_craft_dismantle(db.db, save.save, 0, 11, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_OK);
+    EXPECT_EQ(r.shards_gained, 5);
+    EXPECT_EQ(Cur(save.save, "material.shards"), shards + 5);
+    ASSERT_EQ(shatter_craft_dismantle(db.db, save.save, 0, 11, &r), SHATTER_OK);
+    EXPECT_EQ(r.result, SHATTER_CRAFT_NOT_FOUND);
+    // Argumentos inválidos.
+    EXPECT_EQ(shatter_craft_refine(db.db, save.save, 7, 10, &r), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_craft_refine(db.db, nullptr, 0, 10, &r), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_craft_refine(db.db, save.save, 0, 10, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_craft_quote_json(db.db, save.save, 0, 10, 9, 0, nullptr, 0, &needed), SHATTER_INVALID_ARGUMENT);
+    std::int64_t unused = 0;
+    EXPECT_EQ(shatter_currency_get(nullptr, "currency.gold", 13, &unused), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(Cur(save.save, "currency.nada"), 0);
+}
+
+TEST(c_api_16_vendor_sell_buyback_stock_buy_and_flask) {
+    DbHandle db(tu::RichDir());
+    SaveData data;
+    data.contentVersion = tu::RichDb().ContentVersion();
+    data.characters.push_back(tu::MakeWarrior(tu::RichDb(), 3));
+    data.characters[0].potionSlots = {{"potion.life", 1, 40.0}, {"potion.ward", 2, 0.0}};
+    data.nextItemUid = 1000;
+    data.currencies = {{kGoldId, 300}};
+    for (std::uint64_t i = 0; i < 11; ++i)
+        data.characters[0].backpack.push_back(EconItem(100 + i, "item_base.iron_sword", i == 0 ? Rarity::Rare : Rarity::Normal, 1));
+    SaveHandle save = EconomySave(data);
+    shatter_vendor_result v{};
+    for (std::uint64_t i = 0; i < 10; ++i) {
+        ASSERT_EQ(shatter_vendor_sell(db.db, save.save, 0, SHATTER_CONTAINER_BACKPACK, 100 + i, &v), SHATTER_OK);
+        EXPECT_EQ(v.result, SHATTER_VENDOR_OK);
+        EXPECT_EQ(v.evicted, 0);
+    }
+    auto buyback = [&]() {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_vendor_buyback_json(db.db, save.save, o, c, n); }));
+    };
+    json::Value b = buyback();
+    EXPECT_EQ(b["capacity"].AsInt(), 10);
+    EXPECT_EQ(b["count"].AsInt(), 10);
+    EXPECT_TRUE(b["would_evict"].AsBool(false));
+    EXPECT_EQ(b["evict_rarity"].AsInt(), static_cast<std::int64_t>(Rarity::Rare));   // o mais antigo (uid 100) é Raro
+    EXPECT_EQ(b["items"].At(0)["item"]["uid"].AsString(), std::string("109"));       // mais recente primeiro
+    ASSERT_EQ(shatter_vendor_sell(db.db, save.save, 0, SHATTER_CONTAINER_BACKPACK, 110, &v), SHATTER_OK);
+    EXPECT_EQ(v.evicted, 1);
+    EXPECT_EQ(v.evicted_rarity, static_cast<std::int32_t>(Rarity::Rare));
+    ASSERT_EQ(shatter_vendor_sell(db.db, save.save, 0, SHATTER_CONTAINER_BACKPACK, 110, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_NOT_FOUND);
+    // Recompra por uid: 4 Ouro do Comum -> 5 Ouro; repetir não cobra.
+    const std::int64_t gold = Cur(save.save, "currency.gold");
+    ASSERT_EQ(shatter_vendor_buyback(db.db, save.save, 0, 105, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_OK);
+    EXPECT_EQ(v.gold, 5);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), gold - 5);
+    ASSERT_EQ(shatter_vendor_buyback(db.db, save.save, 0, 105, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_NOT_FOUND);
+    EXPECT_EQ(Cur(save.save, "currency.gold"), gold - 5);
+    // A recompra sobrevive ao arquivo.
+    const std::string text = SaveBytes(save.save);
+    SaveHandle again;
+    std::int32_t load = -1;
+    shatter_error err{};
+    ASSERT_EQ(shatter_save_from_json(text.data(), text.size(), &again.save, &load, &err), SHATTER_OK);
+    EXPECT_EQ(SaveBytes(again.save), text);
+    // Estoque e compra.
+    const json::Value stock = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_vendor_stock_json(db.db, save.save, o, c, n); }));
+    ASSERT_EQ(stock.Size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(stock.At(0)["id"].AsString(), std::string("vendor.refill_flask"));
+    EXPECT_EQ(stock.At(0)["price_gold"].AsInt(), 50);
+    EXPECT_EQ(stock.At(0)["owned"].AsInt(), 0);
+    const char* id = "vendor.refill_flask";
+    ASSERT_EQ(shatter_vendor_buy(db.db, save.save, id, std::strlen(id), 2, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_OK);
+    EXPECT_EQ(v.gold, 100);
+    ASSERT_EQ(shatter_vendor_buy(db.db, save.save, id, std::strlen(id), 2, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_CARRY_CAP);
+    ASSERT_EQ(shatter_vendor_buy(db.db, save.save, id, std::strlen(id), 0, &v), SHATTER_OK);
+    EXPECT_EQ(v.result, SHATTER_VENDOR_BAD_QUANTITY);
+    EXPECT_EQ(shatter_vendor_buy(db.db, save.save, nullptr, 0, 1, &v), SHATTER_INVALID_ARGUMENT);
+    // Frasco: a Vida tem 1 carga; o cinto é o vivo do personagem.
+    shatter_potions* belt = nullptr;
+    ASSERT_EQ(shatter_potions_from_save(db.db, save.save, 0, &belt), SHATTER_OK);
+    shatter_flask_result f{};
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_ARENA, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_ARENA_LOCKED);
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_IDLE, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_IDLE_FORBIDDEN);
+    EXPECT_EQ(Cur(save.save, "consumable.refill_flask"), 2);
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_RUN, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_OK);
+    EXPECT_EQ(f.potion_index, 0);
+    EXPECT_EQ(f.charges_after, 2);
+    EXPECT_EQ(f.flasks_left, 1);
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_RUN, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_LOCKED_OUT);     // trava global de 1 s
+    ASSERT_EQ(shatter_potions_tick(db.db, belt, 1.5), SHATTER_OK);
+    ASSERT_EQ(shatter_flask_use(db.db, save.save, belt, SHATTER_FLASK_CTX_RUN, &f), SHATTER_OK);
+    EXPECT_EQ(f.result, SHATTER_FLASK_OK);
+    EXPECT_EQ(f.charges_after, 3);
+    EXPECT_EQ(Cur(save.save, "consumable.refill_flask"), 0);
+    EXPECT_EQ(shatter_flask_use(db.db, save.save, belt, 9, &f), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_flask_use(db.db, save.save, nullptr, SHATTER_FLASK_CTX_RUN, &f), SHATTER_INVALID_ARGUMENT);
+    shatter_potions_destroy(belt);
+}
+
+// --- API 1.7: core da Cripta (mundo, baús, encontros, XP, Fervor, tempo da arma) -----------------------------------
+TEST(c_api_17_layout_ext7_xp_info_and_fervor_info) {
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_layout_info_ext7(nullptr, 0, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(needed, static_cast<std::size_t>(SHATTER_LAYOUT_EXT7_COUNT));
+    std::vector<std::uint32_t> layout(needed);
+    ASSERT_EQ(shatter_layout_info_ext7(layout.data(), layout.size(), &needed), SHATTER_OK);
+    const std::uint32_t expected[] = {40, 0, 8, 16, 24, 28, 32, 36, 48, 0, 8, 16, 24, 32, 40};
+    for (std::size_t i = 0; i < sizeof(expected) / sizeof(expected[0]); ++i) EXPECT_EQ(layout[i], expected[i]);
+    shatter_error err{};
+    EXPECT_EQ(shatter_layout_check_ext7(layout.data(), layout.size(), &err), SHATTER_OK);
+    layout[2] += 8;
+    EXPECT_EQ(shatter_layout_check_ext7(layout.data(), layout.size(), &err), SHATTER_VERSION_MISMATCH);
+    DbHandle db(tu::RichDir());
+    shatter_fervor_info f{};
+    ASSERT_EQ(shatter_fervor_get(db.db, &f), SHATTER_OK);
+    EXPECT_NEAR(f.xp_mult, 3.0, 1e-12);
+    EXPECT_NEAR(f.xp_bonus, 2.0, 1e-12);          // XP +200%
+    EXPECT_NEAR(f.gold_mat_bonus, 0.25, 1e-12);
+    EXPECT_NEAR(f.rare_bonus, 1.0, 1e-12);
+    EXPECT_EQ(shatter_fervor_get(db.db, nullptr), SHATTER_INVALID_ARGUMENT);
+}
+
+TEST(c_api_17_world_state_visit_seed_map_info_and_encounter_roll) {
+    DbHandle db(tu::RichDir());
+    SaveHandle save = MakeSave(db.db);
+    const std::string map = "map.act1.crypt";
+    const char* chest = "chest.crypt.01";
+    std::uint8_t opened = 7;
+    ASSERT_EQ(shatter_world_object_get(save.save, map.data(), map.size(), chest, std::strlen(chest), &opened), SHATTER_OK);
+    EXPECT_EQ(opened, 0);
+    ASSERT_EQ(shatter_world_object_set(save.save, map.data(), map.size(), chest, std::strlen(chest), 1), SHATTER_OK);
+    ASSERT_EQ(shatter_world_object_get(save.save, map.data(), map.size(), chest, std::strlen(chest), &opened), SHATTER_OK);
+    EXPECT_EQ(opened, 1);
+    EXPECT_EQ(shatter_world_object_set(save.save, map.data(), map.size(), "Bad Id", 6, 1), SHATTER_INVALID_ARGUMENT);
+    const json::Value ws = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_world_state_json(save.save, map.data(), map.size(), o, c, n);
+    }));
+    EXPECT_EQ(ws["visits"].AsInt(), 0);
+    ASSERT_EQ(ws["opened"].Size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(ws["opened"].At(0).AsString(), std::string(chest));
+    // O estado vai no arquivo e volta igual.
+    const std::string text = SaveBytes(save.save);
+    SaveHandle again;
+    std::int32_t load = -1;
+    shatter_error err{};
+    ASSERT_EQ(shatter_save_from_json(text.data(), text.size(), &again.save, &load, &err), SHATTER_OK);
+    ASSERT_EQ(shatter_world_object_get(again.save, map.data(), map.size(), chest, std::strlen(chest), &opened), SHATTER_OK);
+    EXPECT_EQ(opened, 1);
+    EXPECT_EQ(SaveBytes(again.save), text);
+    // Visita: a semente nasce no core.
+    std::uint64_t s1 = 0, s2 = 0;
+    ASSERT_EQ(shatter_world_begin_visit(db.db, save.save, map.data(), map.size(), &s1), SHATTER_OK);
+    ASSERT_EQ(shatter_world_begin_visit(db.db, save.save, map.data(), map.size(), &s2), SHATTER_OK);
+    EXPECT_NE(s1, s2);
+    EXPECT_EQ(shatter_world_begin_visit(db.db, save.save, "map.none.x", 10, &s1), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_world_begin_visit(db.db, save.save, nullptr, 0, &s1), SHATTER_INVALID_ARGUMENT);
+    // Mapa.
+    const json::Value mi = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_map_info_json(db.db, map.data(), map.size(), o, c, n);
+    }));
+    EXPECT_EQ(mi["monster_level"].AsInt(), 4);
+    EXPECT_EQ(mi["area_loot_table"].AsString(), std::string("loot.crypt.area"));
+    EXPECT_EQ(mi["boss_encounter"].AsString(), std::string("enc.crypt.guardian"));
+    EXPECT_EQ(mi["encounters"].Size(), static_cast<std::size_t>(3));
+    EXPECT_EQ(mi["chests"].Size(), static_cast<std::size_t>(5));
+    // Encontro: mesma semente = mesmo JSON, formação dentro de [min,max].
+    const std::string enc = "enc.crypt.patrol_b";
+    auto roll = [&](std::uint64_t seed) {
+        return TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_encounter_roll_json(db.db, enc.data(), enc.size(), seed, o, c, n);
+        });
+    };
+    EXPECT_EQ(roll(s2), roll(s2));
+    const json::Value r = Parse(roll(s2));
+    ASSERT_EQ(r["groups"].Size(), static_cast<std::size_t>(2));
+    EXPECT_EQ(r["groups"].At(0)["enemy_id"].AsString(), std::string("enemy.hollow_sentinel"));
+    EXPECT_EQ(r["groups"].At(0)["count"].AsInt(), 1);
+    const std::int64_t spitters = r["groups"].At(1)["count"].AsInt();
+    EXPECT_TRUE(spitters >= 1 && spitters <= 2);
+    EXPECT_EQ(r["groups"].At(1)["slots"].Size(), static_cast<std::size_t>(spitters));
+    bool differs = false;
+    for (std::uint64_t seed = 1; seed < 64 && !differs; ++seed) differs = roll(seed) != roll(s2);
+    EXPECT_TRUE(differs);
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_encounter_roll_json(db.db, "enc.none.x", 10, 1, nullptr, 0, &needed), SHATTER_NOT_FOUND);
+}
+
+TEST(c_api_17_chest_opens_once_clear_loot_and_buffer_too_small_changes_nothing) {
+    DbHandle db(tu::RichDir());
+    SaveHandle save = MakeSave(db.db);
+    const std::string map = "map.act1.crypt";
+    const std::string chest = "chest.crypt.04";
+    shatter_loot_context ctx{};
+    ctx.quantity_mult = 1.0;
+    ctx.mode = SHATTER_LOOT_MANUAL;
+    ctx.area_level = 4;
+    ctx.max_rares = -1;
+    shatter_rng rng{};
+    shatter_rng_for_stream(5, SHATTER_RNG_LOOT, 0, &rng);
+    const shatter_rng start = rng;
+    std::size_t needed = 0;
+    std::int32_t result = -1;
+    shatter_error err{};
+    // Buffer pequeno: nem o baú abre, nem o rng anda.
+    EXPECT_EQ(shatter_chest_open(db.db, save.save, map.data(), map.size(), chest.data(), chest.size(), &ctx, &rng, nullptr, 0, &needed,
+                                 &result, &err), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_EQ(rng.state, start.state);
+    std::uint8_t opened = 9;
+    shatter_world_object_get(save.save, map.data(), map.size(), chest.data(), chest.size(), &opened);
+    EXPECT_EQ(opened, 0);
+    std::vector<std::uint8_t> buf(needed);
+    ASSERT_EQ(shatter_chest_open(db.db, save.save, map.data(), map.size(), chest.data(), chest.size(), &ctx, &rng, buf.data(), buf.size(),
+                                 &needed, &result, &err), SHATTER_OK);
+    EXPECT_EQ(result, SHATTER_CHEST_OPENED);
+    const json::Value loot = Parse(std::string(buf.begin(), buf.end()));
+    EXPECT_EQ(Ground(save.save)["items"].Size(), loot["items"].Size());    // o loot cai no chão
+    shatter_world_object_get(save.save, map.data(), map.size(), chest.data(), chest.size(), &opened);
+    EXPECT_EQ(opened, 1);
+    // Segunda abertura: nada rola, o rng não anda e o save não muda.
+    const std::string before = SaveBytes(save.save);
+    const shatter_rng after = rng;
+    std::vector<std::uint8_t> big(8192);
+    ASSERT_EQ(shatter_chest_open(db.db, save.save, map.data(), map.size(), chest.data(), chest.size(), &ctx, &rng, big.data(), big.size(),
+                                 &needed, &result, &err), SHATTER_OK);
+    EXPECT_EQ(result, SHATTER_CHEST_ALREADY_OPEN);
+    EXPECT_EQ(needed, static_cast<std::size_t>(0));
+    EXPECT_EQ(rng.state, after.state);
+    EXPECT_EQ(SaveBytes(save.save), before);
+    // Baú sem linha em chests.csv usa a tabela da área; mapa desconhecido e id inválido recusam.
+    ASSERT_EQ(shatter_chest_open(db.db, save.save, map.data(), map.size(), "chest.crypt.99", 14, &ctx, &rng, big.data(), big.size(), &needed,
+                                 &result, &err), SHATTER_OK);
+    EXPECT_EQ(result, SHATTER_CHEST_OPENED);
+    EXPECT_EQ(shatter_chest_open(db.db, save.save, "map.none.x", 10, "chest.crypt.98", 14, &ctx, &rng, big.data(), big.size(), &needed, &result,
+                                 &err), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_chest_open(db.db, save.save, map.data(), map.size(), "Bad Id", 6, &ctx, &rng, big.data(), big.size(), &needed, &result,
+                                 &err), SHATTER_INVALID_ARGUMENT);
+    // Loot ao limpar um encontro: areaLootTable do mapa, determinístico pelo rng.
+    auto clear = [&](std::uint64_t seed) {
+        SaveHandle s = MakeSave(db.db);
+        shatter_rng r{};
+        shatter_rng_for_stream(seed, SHATTER_RNG_LOOT, 0, &r);
+        std::size_t n = 0;
+        shatter_error e{};
+        EXPECT_EQ(shatter_encounter_clear_loot(db.db, s.save, map.data(), map.size(), &ctx, &r, nullptr, 0, &n, &e), SHATTER_BUFFER_TOO_SMALL);
+        std::vector<std::uint8_t> out(n);
+        EXPECT_EQ(shatter_encounter_clear_loot(db.db, s.save, map.data(), map.size(), &ctx, &r, out.data(), out.size(), &n, &e), SHATTER_OK);
+        return std::string(out.begin(), out.end()) + S(Ground(s.save));
+    };
+    EXPECT_EQ(clear(3), clear(3));
+    EXPECT_EQ(shatter_encounter_clear_loot(db.db, save.save, "map.none.x", 10, &ctx, &rng, big.data(), big.size(), &needed, &err), SHATTER_NOT_FOUND);
+}
+
+TEST(c_api_17_kill_xp_with_fervor_progress_and_character_level_from_the_save) {
+    DbHandle db(tu::RichDir());
+    SaveHandle save = MakeSave(db.db);   // Guerreiro nível 3 do fixture
+    const std::string map = "map.act1.crypt";
+    const std::string enemy = "enemy.hollow_sentinel";
+    shatter_xp_info p{};
+    ASSERT_EQ(shatter_character_progress(db.db, save.save, 0, map.data(), map.size(), &p), SHATTER_OK);
+    EXPECT_EQ(p.level, 3);
+    EXPECT_EQ(p.level_cap, 6);
+    EXPECT_NEAR(p.xp_to_next, tu::RichDb().XpToNextLevel(3), 1e-9);
+    shatter_xp_info x{};
+    ASSERT_EQ(shatter_xp_award_kill(db.db, save.save, 0, map.data(), map.size(), enemy.data(), enemy.size(), 4, 0, nullptr, 0, 1, &x), SHATTER_OK);
+    EXPECT_NEAR(x.awarded, 16.0 * 3.0, 1e-9);            // fervor_xp_mult 3,0: XP +200%
+    EXPECT_EQ(x.level_before, 3);
+    shatter_xp_info y{};
+    ASSERT_EQ(shatter_xp_award_kill(db.db, save.save, 0, map.data(), map.size(), enemy.data(), enemy.size(), 4, 0, nullptr, 0, 0, &y), SHATTER_OK);
+    EXPECT_NEAR(y.awarded, 16.0, 1e-9);                   // sem Fervor
+    EXPECT_NEAR(y.xp_in_level, x.xp_in_level + 16.0, 1e-9);
+    const char* mod = "modifier.elite.swift";
+    shatter_xp_info e{};
+    ASSERT_EQ(shatter_xp_award_kill(db.db, save.save, 0, map.data(), map.size(), enemy.data(), enemy.size(), 4, 1, mod, std::strlen(mod), 0, &e),
+              SHATTER_OK);
+    EXPECT_NEAR(e.awarded, 16.0 * 3.0, 1e-9);             // elite sorteado: elite_xp_mult 3,0 x modificador
+    // O nível sobe no save e o getter o devolve.
+    for (int i = 0; i < 400 && p.level < 6; ++i) {
+        ASSERT_EQ(shatter_xp_award_kill(db.db, save.save, 0, map.data(), map.size(), "enemy.crypt_guardian", 20, 4, 0, nullptr, 0, 1, &x), SHATTER_OK);
+        ASSERT_EQ(shatter_character_progress(db.db, save.save, 0, map.data(), map.size(), &p), SHATTER_OK);
+    }
+    EXPECT_EQ(p.level, 6);
+    EXPECT_NEAR(p.xp_to_next, 0.0, 1e-12);
+    const json::Value ch = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_save_character_json(save.save, 0, o, c, n); }));
+    EXPECT_EQ(ch["level"].AsInt(), 6);
+    // Recusas.
+    EXPECT_EQ(shatter_xp_award_kill(db.db, save.save, 0, map.data(), map.size(), "enemy.nope", 10, 4, 0, nullptr, 0, 1, &x), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_xp_award_kill(db.db, save.save, 9, map.data(), map.size(), enemy.data(), enemy.size(), 4, 0, nullptr, 0, 1, &x), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_xp_award_kill(db.db, save.save, 0, map.data(), map.size(), enemy.data(), enemy.size(), 0, 0, nullptr, 0, 1, &x), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_xp_award_kill(db.db, save.save, 0, map.data(), map.size(), enemy.data(), enemy.size(), 4, 1, "modifier.elite.nope", 19, 1, &x), SHATTER_NOT_FOUND);
+}
+
+TEST(c_api_17_skill_timing_weapon_makes_the_maul_slower_than_the_sword_in_the_real_content) {
+    DbHandle db(tu::ContentDir());
+    ASSERT_TRUE(db.db != nullptr);
+    shatter_statblock* sb = nullptr;
+    ASSERT_EQ(shatter_statblock_create(&sb), SHATTER_OK);
+    const char* skill = "skill.warrior.iron_cut";
+    const char* cls = "class.warrior";
+    auto timing = [&](const char* weapon) {
+        shatter_action_timing t{};
+        EXPECT_EQ(shatter_skill_timing_weapon(db.db, skill, std::strlen(skill), sb, cls, std::strlen(cls), weapon, std::strlen(weapon), &t), SHATTER_OK);
+        return t;
+    };
+    const shatter_action_timing sword = timing("item_base.iron_sword");
+    const shatter_action_timing maul = timing("item_base.stone_maul");
+    const shatter_action_timing bare = timing("");
+    shatter_action_timing plain{};
+    ASSERT_EQ(shatter_skill_timing(db.db, skill, std::strlen(skill), sb, nullptr, 0, &plain), SHATTER_OK);
+    EXPECT_NEAR(sword.windup + sword.impact + sword.recovery, plain.windup + plain.impact + plain.recovery, 1e-12);   // a inicial não muda
+    EXPECT_NEAR(bare.recovery, plain.recovery, 1e-12);
+    EXPECT_TRUE(maul.windup + maul.impact + maul.recovery > 1.4 * (sword.windup + sword.impact + sword.recovery));
+    EXPECT_NEAR(maul.cooldown, sword.cooldown, 1e-12);
+    shatter_action_timing t{};
+    EXPECT_EQ(shatter_skill_timing_weapon(db.db, skill, std::strlen(skill), sb, cls, std::strlen(cls), "item_base.nope", 14, &t), SHATTER_NOT_FOUND);
+    EXPECT_EQ(shatter_skill_timing_weapon(db.db, skill, std::strlen(skill), nullptr, cls, std::strlen(cls), "", 0, &t), SHATTER_INVALID_ARGUMENT);
+    shatter_statblock_destroy(sb);
+}
+
+TEST(c_api_17_hero_move_rules_come_from_rules_csv_with_layout_and_range_validation) {
+    DbHandle db(tu::RichDir());
+    shatter_hero_move_rules m{};
+    ASSERT_EQ(shatter_db_hero_move_rules(db.db, &m), SHATTER_OK);
+    EXPECT_NEAR(m.accel_seconds, 0.10, 1e-12);
+    EXPECT_NEAR(m.decel_seconds, 0.08, 1e-12);
+    EXPECT_EQ(shatter_db_hero_move_rules(db.db, nullptr), SHATTER_INVALID_ARGUMENT);
+    std::uint32_t layout[SHATTER_LAYOUT_EXT8_COUNT] = {};
+    std::size_t needed = 0;
+    ASSERT_EQ(shatter_layout_info_ext8(layout, SHATTER_LAYOUT_EXT8_COUNT, &needed), SHATTER_OK);
+    EXPECT_EQ(layout[0], 16u);
+    EXPECT_EQ(layout[1], 0u);
+    EXPECT_EQ(layout[2], 8u);
+    shatter_error err{};
+    EXPECT_EQ(shatter_layout_check_ext8(layout, SHATTER_LAYOUT_EXT8_COUNT, &err), SHATTER_OK);
+    layout[2] += 8;
+    EXPECT_EQ(shatter_layout_check_ext8(layout, SHATTER_LAYOUT_EXT8_COUNT, &err), SHATTER_VERSION_MISMATCH);
+    // Faixa 0 a 0,5 s: fora dela o conteudo e recusado (E_RANGE); no limite passa; chave ausente e E_REQUIRED.
+    auto load = [&](const std::string& oldLine, const std::string& newLine) {
+        const std::string rules = tu::Replace(tu::ReadFile(tu::RichDir() + "/rules.csv"), oldLine, newLine);
+        ContentDB c;
+        bool ok = true;
+        for (const char* t : tu::kTableNames) {
+            const std::string path = tu::RichDir() + "/" + t;
+            if (tu::IsOptionalTable(t) && !std::filesystem::exists(std::filesystem::u8path(path))) continue;
+            ok = c.LoadTableCsv(t, std::string(t) == "rules.csv" ? rules : tu::ReadFile(path)) && ok;
+        }
+        return ok && c.Finalize();
+    };
+    EXPECT_FALSE(load("hero_move_accel_seconds,0.10", "hero_move_accel_seconds,0.6"));
+    EXPECT_FALSE(load("hero_move_decel_seconds,0.08", "hero_move_decel_seconds,-0.01"));
+    EXPECT_TRUE(load("hero_move_accel_seconds,0.10", "hero_move_accel_seconds,0.5"));
+    EXPECT_TRUE(load("hero_move_decel_seconds,0.08", "hero_move_decel_seconds,0"));
+    EXPECT_FALSE(load("hero_move_decel_seconds,0.08\n", ""));
+    // O conteudo real tem os valores combinados.
+    DbHandle real(tu::ContentDir());
+    ASSERT_EQ(shatter_db_hero_move_rules(real.db, &m), SHATTER_OK);
+    EXPECT_NEAR(m.accel_seconds, 0.10, 1e-12);
+    EXPECT_NEAR(m.decel_seconds, 0.08, 1e-12);
 }

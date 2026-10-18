@@ -79,7 +79,7 @@ Vitals CreateVitals(const StatBlock& stats, const ClassData* cls) {
     return v;
 }
 
-void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double dt, bool inCombat) {
+void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double dt, bool inCombat, bool moving) {
     if (v.life <= 0.0 || dt <= 0.0) return;
     const double maxLife = stats.Get(StatId::Life);
     const double regen = stats.Get(StatId::LifeRegen);
@@ -87,7 +87,8 @@ void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double 
     if (v.life > maxLife) v.life = maxLife;
 
     const double maxRes = stats.Get(StatId::Resource);
-    const double resRegen = stats.Get(StatId::ResourceRegen);
+    double resRegen = stats.Get(StatId::ResourceRegen);
+    if (moving && cls != nullptr) resRegen *= cls->regenMultWhileMoving;
     if (resRegen > 0.0) v.resource = std::min(maxRes, v.resource + resRegen * dt);
     if (!inCombat && cls != nullptr && cls->resourceDecayOutOfCombat > 0.0)
         v.resource = std::max(0.0, v.resource - cls->resourceDecayOutOfCombat * dt);
@@ -148,6 +149,17 @@ void GainResource(Vitals& v, const StatBlock& stats, double amount) {
     v.resource = std::min(stats.Get(StatId::Resource), v.resource + amount);
 }
 
+bool HeavyChargeMultiplier(const BasicKitData& kit, double fraction, double& out) {
+    if (!(fraction >= 0.0 && fraction <= 1.0)) return false;  // também recusa NaN
+    out = 1.0 + (kit.heavyMaxMult - 1.0) * fraction;
+    return true;
+}
+
+double ResourceOnHit(const ClassData* cls) { return cls != nullptr ? cls->resourceOnHit : 0.0; }
+double ResourceOnBlock(const ClassData* cls) { return cls != nullptr ? cls->resourceOnBlock : 0.0; }
+void GainResourceOnHit(Vitals& v, const StatBlock& stats, const ClassData* cls) { GainResource(v, stats, ResourceOnHit(cls)); }
+void GainResourceOnBlock(Vitals& v, const StatBlock& stats, const ClassData* cls) { GainResource(v, stats, ResourceOnBlock(cls)); }
+
 bool TrySpendResource(Vitals& v, double amount) {
     if (!(amount > 0.0)) return true;
     if (v.resource + kEps < amount) return false;
@@ -158,8 +170,18 @@ bool TrySpendResource(Vitals& v, double amount) {
 // ===============================================================================================
 // Tempos de ação
 // ===============================================================================================
+double WeaponTimeFactor(const SkillData& skill, const ItemBaseData* weapon, double refAttackTime) {
+    if (!skill.scalesWithWeapon || weapon == nullptr || !(weapon->attackTime > 0.0) || !(refAttackTime > 0.0)) return 1.0;
+    return weapon->attackTime / refAttackTime;
+}
+
+double ClassRefAttackTime(const ContentDB& db, std::string_view classId) {
+    const BasicKitData* kit = db.FindBasicKit(classId);
+    return kit != nullptr ? kit->refAttackTime : 0.0;
+}
+
 ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill, const StatBlock& stats,
-                                     const EliteProfile* elite) {
+                                     const EliteProfile* elite, double weaponTimeFactor) {
     ActionTimingInfo t;
     const StatId speedStat = HasTag(skill.tags, Tag::Spell) ? StatId::CastSpeed : StatId::AttackSpeed;
     double speed = stats.Get(speedStat);
@@ -177,9 +199,10 @@ ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill
     }
     if (speed < 0.01) speed = 0.01;
     if (windupSpeed < 0.01) windupSpeed = 0.01;
-    t.windup = skill.windup / windupSpeed;
-    t.impact = skill.impact / speed;
-    t.recovery = skill.recovery * recoveryMult / speed;
+    const double wf = weaponTimeFactor > 0.0 ? weaponTimeFactor : 1.0;
+    t.windup = skill.windup * wf / windupSpeed;
+    t.impact = skill.impact * wf / speed;
+    t.recovery = skill.recovery * wf * recoveryMult / speed;
     t.cooldown = skill.cooldown > 0.0 ? EffectiveCooldown(skill.cooldown, stats.Get(StatId::CooldownRecovery), db.Rules()) : 0.0;
     t.cost = ClampMin0(skill.cost);
     return t;

@@ -82,15 +82,30 @@ void BuildEnemyStatBlock(const EnemyData& enemy, int level, StatBlock& out) {
     out = std::move(sb);
 }
 
+bool IsKitOnlySkill(const ContentDB& db, const ContentId& classId, const ContentId& skillId) {
+    const BasicKitData* kit = db.FindBasicKit(classId);
+    if (kit == nullptr) return false;
+    if (!kit->lightChain.empty() && kit->lightChain.front() == skillId) return false;  // o golpe 1 conta
+    return skillId == kit->heavySkill ||
+           std::find(kit->lightChain.begin(), kit->lightChain.end(), skillId) != kit->lightChain.end();
+}
+
 bool IsIdleCompatible(const ContentDB& db, const CharacterState& c, std::vector<ContentId>* blockingIds) {
     std::vector<ContentId> blocking;
     auto add = [&](const ContentId& id) {
         if (std::find(blocking.begin(), blocking.end(), id) == blocking.end()) blocking.push_back(id);
     };
-    for (const ContentId& id : c.skillBar) {
-        if (id.empty()) continue;
+    // docs/18 §8 item 8: o idle só joga o golpe 1 e as habilidades da barra (Q/E/R). Os outros golpes do kit da classe
+    // (golpes 2 e 3 do combo e o golpe forte, que existem só no tempo real) não exigem perfil idle, mesmo se vierem na barra.
+    const BasicKitData* kit = db.FindBasicKit(c.classId);
+    auto check = [&](const ContentId& id) {
         const SkillData* s = db.FindSkill(id);
         if (s == nullptr || !s->idle.supported) add(id);
+    };
+    if (kit != nullptr && !kit->lightChain.empty()) check(kit->lightChain.front());
+    for (const ContentId& id : c.skillBar) {
+        if (id.empty() || IsKitOnlySkill(db, c.classId, id)) continue;
+        check(id);
     }
     for (int s = 0; s < kItemSlotCount; ++s) {
         const auto& item = c.equipment[static_cast<std::size_t>(s)];

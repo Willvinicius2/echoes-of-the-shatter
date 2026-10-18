@@ -1,0 +1,147 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "basic_kits.csv",
+  "kind": "rows",
+  "optional": true,
+  "primaryKey": [
+    "classId"
+  ],
+  "desc": "Kit basico por classe (docs/18 4.6): combo de golpes leves, golpe forte carregado e defesa. Tabela opcional: classe sem linha nao tem kit.",
+  "columns": [
+    {
+      "name": "classId",
+      "type": "ref",
+      "required": true,
+      "ref": "classes.csv",
+      "desc": "Classe dona do kit (chave primaria)"
+    },
+    {
+      "name": "lightChain",
+      "type": "list",
+      "required": true,
+      "itemType": "ref",
+      "ref": "skills.csv",
+      "allowRepeat": true,
+      "minItems": 1,
+      "maxItems": 3,
+      "desc": "1 a 3 golpes leves em ordem; o mesmo ID pode repetir. Cada habilidade deve ser da propria classe"
+    },
+    {
+      "name": "heavySkill",
+      "type": "ref",
+      "required": true,
+      "ref": "skills.csv",
+      "desc": "Golpe forte (carregado)"
+    },
+    {
+      "name": "heavyChargeTime",
+      "type": "number",
+      "required": true,
+      "minExclusive": 0,
+      "desc": "Duracao (s) da carga depois do limiar heavy_hold_threshold"
+    },
+    {
+      "name": "heavyMaxMult",
+      "type": "number",
+      "required": true,
+      "min": 1,
+      "desc": "Multiplicador de dano na carga maxima (linear de 1 ate este valor)"
+    },
+    {
+      "name": "chargeEffect",
+      "type": "ref",
+      "required": true,
+      "ref": "effects.csv",
+      "desc": "Efeito reaplicado a cada tick enquanto carrega"
+    },
+    {
+      "name": "guardEffect",
+      "type": "ref",
+      "required": true,
+      "ref": "effects.csv",
+      "desc": "Efeito reaplicado a cada tick enquanto defende (tag guard: o dano recebido so cai se o golpe vem de dentro do arco)"
+    },
+    {
+      "name": "guardArc",
+      "type": "number",
+      "required": true,
+      "min": 0,
+      "max": 360,
+      "desc": "Arco total da defesa em graus (360 = cupula)"
+    },
+    {
+      "name": "guardMaxHold",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 60,
+      "desc": "Tempo maximo (s) da defesa; 0 = ilimitado"
+    },
+    {
+      "name": "guardCooldown",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 60,
+      "desc": "Espera (s) depois de soltar a defesa ou de ela cair sozinha"
+    },
+    {
+      "name": "guardPerfectWindow",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 5,
+      "desc": "Janela (s) da defesa perfeita depois de apertar; 0 = sem defesa perfeita"
+    },
+    {
+      "name": "guardPerfectCooldown",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 60,
+      "desc": "Tempo minimo (s) desde o ultimo aperto para a janela perfeita abrir de novo"
+    },
+    {
+      "name": "guardPerfectEffects",
+      "type": "list",
+      "required": false,
+      "itemType": "ref",
+      "ref": "effects.csv",
+      "desc": "Efeitos aplicados no atacante corpo a corpo pela defesa perfeita"
+    },
+    {
+      "name": "guardPerfectResource",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recurso ganho pela defesa perfeita (substitui resourceOnBlock)"
+    },
+    {
+      "name": "guardDrainPerDamage",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "Recurso gasto por ponto de dano evitado; 0 = nao gasta"
+    },
+    {
+      "name": "refAttackTime",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "attackTime (s) da arma inicial da classe (docs/19 N0): a duracao dos golpes do kit basico e multiplicada por refAttackTime / attackTime da arma equipada; 0 ou vazio = sem escala"
+    }
+  ],
+  "checks": [
+    {
+      "check": "basic_kit_rules"
+    }
+  ]
+}

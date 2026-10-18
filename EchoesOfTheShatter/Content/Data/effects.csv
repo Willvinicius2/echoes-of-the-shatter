@@ -2,3 +2,9 @@ id,duration,tickInterval,stackRule,maxStacks,damagePerTickPhysical,damagePerTick
 effect.guard_break,8,0,stack_n,3,,,,,damage_taken:increased:0.1,0,none,1,0,,false
 effect.stun,0.8,0,refresh,1,,,,,move_speed:more:-1|attack_speed:more:-1,0,none,1,0,,true
 effect.empty_throne_resolve,4,0,refresh,1,,,,,damage:more:0.2:melee,0,on_kill,1,0.25,,false
+effect.guarding.warrior,0.1,0,refresh,1,,,,,damage_taken:more:-0.65|move_speed:more:-0.6,0,none,1,0,guard,false
+effect.guarding.archer,0.1,0,refresh,1,,,,,damage_taken:more:-0.3|move_speed:more:-0.35,0,none,1,0,guard,false
+effect.guarding.mage,0.1,0,refresh,1,,,,,damage_taken:more:-0.5|move_speed:more:-0.5,0,none,1,0,guard,false
+effect.charging.heavy,0.1,0,refresh,1,,,,,move_speed:more:-0.5,0,none,1,0,,false
+effect.charging.archer,0.1,0,refresh,1,,,,,move_speed:more:-0.3,0,none,1,0,,false
+effect.chill,3,0,refresh,1,,,,,move_speed:more:-0.4,0,none,1,0,,false

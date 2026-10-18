@@ -61,11 +61,13 @@ inline const char* const kTableNames[] = {
     "effects.csv", "enemies.csv",      "enemy_attacks.csv", "affixes.csv", "item_bases.csv",
     "uniques.csv", "loot_tables.csv",  "loot_entries.csv",  "encounters.csv", "maps.csv",
     // Opcionais (docs/13): a pasta de fixtures pode não ter o arquivo.
-    "potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv"};
+    "potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv",
+    // Economia (docs/16 seção 11): opcionais de verdade.
+    "craft_costs.csv", "vendor_stock.csv", "chests.csv"};
 
 inline bool IsOptionalTable(const std::string& t) {
     return t == "potions.csv" || t == "elite_modifiers.csv" || t == "boss_phases.csv" || t == "boss_patterns.csv" ||
-           t == "enemy_ai.csv";
+           t == "enemy_ai.csv" || t == "craft_costs.csv" || t == "vendor_stock.csv" || t == "chests.csv";
 }
 
 // Carrega as 15 tabelas de uma pasta de fixtures, permitindo trocar o texto de UMA tabela.

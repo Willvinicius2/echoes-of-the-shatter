@@ -26,6 +26,39 @@ bool ParseSkillShape(std::string_view text, SkillShape& out) {
     return false;
 }
 
+SkillBehavior ClassifySkill(const SkillData& s) {
+    SkillBehavior b;
+    const bool projectile = s.shape == SkillShape::Projectile;
+    b.explodes = projectile && s.explosionRadius > 0.0;
+    b.fan = projectile && s.projectiles > 1 && s.coneAngle > 0.0;
+    b.selfCentered = s.shape == SkillShape::Area && s.range <= 0.0;
+    b.groundTargeted = s.shape == SkillShape::Area && s.range > 0.0;
+    b.dashBackShot = s.shape == SkillShape::Dash && HasTag(s.tags, Tag::Projectile);
+    b.pierce = projectile ? s.pierce : 0;
+    return b;
+}
+
+bool ParseCraftOp(std::string_view text, CraftOp& out) {
+    static constexpr struct { const char* n; CraftOp o; } kOps[] = {
+        {"refine", CraftOp::Refine}, {"reforge", CraftOp::Reforge}, {"add", CraftOp::Add}, {"polish", CraftOp::Polish},
+    };
+    for (const auto& e : kOps) {
+        if (text == e.n) { out = e.o; return true; }
+    }
+    return false;
+}
+
+const char* ToString(CraftOp op) {
+    switch (op) {
+        case CraftOp::Refine: return "refine";
+        case CraftOp::Reforge: return "reforge";
+        case CraftOp::Add: return "add";
+        case CraftOp::Polish: return "polish";
+        case CraftOp::Dismantle: return "dismantle";
+    }
+    return "refine";
+}
+
 bool ParseIdleCalibration(std::string_view text, IdleCalibration& out) {
     if (text == "none") { out = IdleCalibration::None; return true; }
     if (text == "manual_estimate") { out = IdleCalibration::ManualEstimate; return true; }
@@ -53,7 +86,7 @@ namespace {
 using detail::CsvRow;
 using detail::CsvTable;
 
-constexpr std::size_t kRuleKeyCount = 62 + 18;
+constexpr std::size_t kRuleKeyCount = 62 + 18 + 7 + 15 + 2;
 
 // --- tabela de chaves de rules.csv (faixas = validação estrutural do 06_dados.md, não balanceamento) ---
 struct RuleDef {
@@ -160,6 +193,32 @@ const RuleDef kRuleDefs[kRuleKeyCount] = {
     {"equip_slot_ring2", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[8] = v != 0.0; }},
     {"equip_slot_belt", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[9] = v != 0.0; }},
     {"equip_slot_legs", 'b', 0, 1, false, [](RulesConstants& r, double v) { r.equipSlotEnabled[10] = v != 0.0; }},
+    // Combate básico (docs/18 1.2): tempos em s (0 a 5), crédito de preparação em fração (0 a 1), alcance do tiro do dash em uu.
+    {"combo_window", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.comboWindow = v; }},
+    {"combo_window_after_dodge", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.comboWindowAfterDodge = v; }},
+    {"attack_buffer", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.attackBuffer = v; }},
+    {"heavy_hold_threshold", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.heavyHoldThreshold = v; }},
+    {"light_windup_credit_max", 'd', 0, 1, false, [](RulesConstants& r, double v) { r.lightWindupCreditMax = v; }},
+    {"guard_lower_time", 'd', 0, 5, false, [](RulesConstants& r, double v) { r.guardLowerTime = v; }},
+    {"dash_shot_range", 'd', 0, 10000, false, [](RulesConstants& r, double v) { r.dashShotRange = v; }},
+    // Economia do protótipo (docs/16 seção 11): Vendedor, Frasco de Recarga e Encantador.
+    {"vendor_buyback_slots", 'i', 1, 100, false, [](RulesConstants& r, double v) { r.vendorBuybackSlots = static_cast<int>(v); }},
+    {"vendor_buyback_price_factor", 'd', 1, 10, false, [](RulesConstants& r, double v) { r.vendorBuybackPriceFactor = v; }},
+    {"refill_flask_carry_cap", 'i', 1, 99, false, [](RulesConstants& r, double v) { r.refillFlaskCarryCap = static_cast<int>(v); }},
+    {"refill_flask_charges", 'i', 1, 10, false, [](RulesConstants& r, double v) { r.refillFlaskCharges = static_cast<int>(v); }},
+    {"craft_cost_level_factor", 'd', 0, 10, false, [](RulesConstants& r, double v) { r.craftCostLevelFactor = v; }},
+    {"reforge_step_mult", 'd', 0, 10, false, [](RulesConstants& r, double v) { r.reforgeStepMult = v; }},
+    {"reforge_mult_cap", 'd', 1, 100, false, [](RulesConstants& r, double v) { r.reforgeMultCap = v; }},
+    {"reforge_lock_cost_mult", 'd', 1, 100, false, [](RulesConstants& r, double v) { r.reforgeLockCostMult = v; }},
+    {"reforge_lock_max", 'i', 0, 1, false, [](RulesConstants& r, double v) { r.reforgeLockMax = static_cast<int>(v); }},
+    {"add_affix_candidates", 'i', 1, 8, false, [](RulesConstants& r, double v) { r.addAffixCandidates = static_cast<int>(v); }},
+    {"polish_step_fraction", 'd', 0, 1, true, [](RulesConstants& r, double v) { r.polishStepFraction = v; }},
+    {"polish_max_steps", 'i', 1, 10, false, [](RulesConstants& r, double v) { r.polishMaxSteps = static_cast<int>(v); }},
+    {"dismantle_shards_normal", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[0] = static_cast<int>(v); }},
+    {"dismantle_shards_magic", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[1] = static_cast<int>(v); }},
+    {"hero_move_accel_seconds", 'd', 0, 0.5, false, [](RulesConstants& r, double v) { r.heroMoveAccelSeconds = v; }},
+    {"hero_move_decel_seconds", 'd', 0, 0.5, false, [](RulesConstants& r, double v) { r.heroMoveDecelSeconds = v; }},
+    {"dismantle_shards_rare", 'i', 0, 1000000, false, [](RulesConstants& r, double v) { r.dismantleShards[2] = static_cast<int>(v); }},
 };
 
 // --- leitor de células tipado ----------------------------------------------------------------
@@ -344,7 +403,8 @@ const std::vector<TableDef>& TableDefs() {
           "selfEffects", "idleSupported", "idleAvgTargetsHit", "idleFractionOfGroupHit", "idleApproachTime",
           "idleUptime", "idleDodgeTelegraphedBonus", "idleDamageTakenMult", "idleParitySampleSize",
           "unlockLevel"},
-         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration", "wallStaggerSeconds"}},
+         {"coneAngle", "knockback", "projectileSpeed", "idleCalibration", "wallStaggerSeconds", "pierce",
+          "explosionRadius"}},
         {"effects.csv",
          {"id", "duration", "tickInterval", "stackRule", "maxStacks", "damagePerTickPhysical", "damagePerTickFire",
           "damagePerTickCold", "damagePerTickLightning", "modifiers", "barrier", "trigger", "triggerChance",
@@ -387,6 +447,16 @@ const std::vector<TableDef>& TableDefs() {
         {"boss_patterns.csv",
          {"id", "bossId", "phase", "skillId", "weight", "telegraphSeconds", "recoverySeconds", "cooldown", "maxRepeat",
           "playerNearWeightMult", "ignoreIfBehind"}},
+        // Tabela OPCIONAL de verdade (docs/18 4.6): arquivo ausente em LoadDirectory não é erro; classe sem linha não tem kit.
+        {"basic_kits.csv",
+         {"classId", "lightChain", "heavySkill", "heavyChargeTime", "heavyMaxMult", "chargeEffect", "guardEffect",
+          "guardArc"},
+         {"guardMaxHold", "guardCooldown", "guardPerfectWindow", "guardPerfectCooldown", "guardPerfectEffects",
+          "guardPerfectResource", "guardDrainPerDamage", "refAttackTime"}},
+        // Economia do protótipo (docs/16 seção 11): opcionais de verdade, como basic_kits.csv.
+        {"craft_costs.csv", {"id", "op", "rarity", "step", "goldCost", "shardCost"}},
+        {"vendor_stock.csv", {"id", "refId", "kind", "priceGold", "carryCap"}},
+        {"chests.csv", {"id", "mapId", "lootTable"}},
         {"enemy_ai.csv",
          {"enemyId", "aggroRange", "alertRadius", "leashRange", "leashSeconds", "preferredMin", "preferredMax",
           "retreatBelow", "retreatMaxSeconds", "circleMin", "circleMax", "circleSpeed", "attackTokens",
@@ -437,6 +507,14 @@ struct ContentImpl {
     std::vector<int> bossPhaseLines;
     std::vector<EnemyAiData> enemyAis;
     std::vector<int> enemyAiLines;
+    std::vector<BasicKitData> basicKits;
+    std::vector<int> basicKitLines;
+    std::vector<CraftCostData> craftCosts;
+    std::vector<int> craftCostLines;
+    std::vector<VendorStockData> vendorStock;
+    std::vector<int> vendorStockLines;
+    std::vector<ChestData> chests;
+    std::vector<int> chestLines;
 
     struct ClassStatRow { ContentId classId; StatGrowth g; int line = 0; };
     struct EnemyAttackRow { ContentId enemyId; EnemyAttack a; int line = 0; };
@@ -637,6 +715,8 @@ void LoadSkills(LoadCtx& c) {
         d.knockback = cell.Num("knockback", 0.0, 0.0, kInf);
         d.wallStaggerSeconds = cell.Num("wallStaggerSeconds", 0.0, 0.0, 60.0);
         d.projectileSpeed = cell.Num("projectileSpeed", 0.0, 0.0, kInf);
+        d.pierce = static_cast<int>(cell.Int("pierce", 0, 0, kPierceAll));
+        d.explosionRadius = cell.Num("explosionRadius", 0.0, 0.0, kInf);
         d.onHitEffects = cell.IdList("onHitEffects");
         d.selfEffects = cell.IdList("selfEffects");
         d.idle.supported = cell.Bool("idleSupported", false);
@@ -1049,6 +1129,112 @@ void LoadEnemyAis(LoadCtx& c) {
     }
 }
 
+// Lista de IDs onde o MESMO ID pode repetir (lightChain: Arqueiro e Mago repetem o golpe 1 no golpe 2).
+std::vector<ContentId> IdListWithRepeats(Cells& cell, std::string_view col) {
+    std::vector<ContentId> out;
+    for (std::string_view item : detail::SplitView(cell.Raw(col), '|')) {
+        if (item.empty() || !IsValidContentId(item)) {
+            cell.Err("E_ID_FORMAT", std::string(col) + ": invalid id in list");
+            continue;
+        }
+        out.emplace_back(item);
+    }
+    return out;
+}
+
+void LoadBasicKits(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        BasicKitData d;
+        d.classId = cell.Id("classId", true);
+        d.lightChain = IdListWithRepeats(cell, "lightChain");
+        if (cell.Empty("lightChain")) cell.Err("E_REQUIRED", "lightChain is required");
+        d.heavySkill = cell.Id("heavySkill", true);
+        d.heavyChargeTime = cell.Num("heavyChargeTime", 0.0, 0.0, kInf, true);
+        if (cell.Empty("heavyChargeTime")) cell.Err("E_REQUIRED", "heavyChargeTime is required");
+        d.heavyMaxMult = cell.Num("heavyMaxMult", 1.0, 1.0, kInf);
+        if (cell.Empty("heavyMaxMult")) cell.Err("E_REQUIRED", "heavyMaxMult is required");
+        d.chargeEffect = cell.Id("chargeEffect", true);
+        d.guardEffect = cell.Id("guardEffect", true);
+        d.guardArc = cell.Num("guardArc", 0.0, 0.0, 360.0);
+        if (cell.Empty("guardArc")) cell.Err("E_REQUIRED", "guardArc is required");
+        d.guardMaxHold = cell.Num("guardMaxHold", 0.0, 0.0, 60.0);
+        d.guardCooldown = cell.Num("guardCooldown", 0.0, 0.0, 60.0);
+        d.guardPerfectWindow = cell.Num("guardPerfectWindow", 0.0, 0.0, 5.0);
+        d.guardPerfectCooldown = cell.Num("guardPerfectCooldown", 0.0, 0.0, 60.0);
+        d.guardPerfectEffects = cell.IdList("guardPerfectEffects");
+        d.guardPerfectResource = cell.Num("guardPerfectResource", 0.0, 0.0, kInf);
+        d.guardDrainPerDamage = cell.Num("guardDrainPerDamage", 0.0, 0.0, kInf);
+        d.refAttackTime = cell.Num("refAttackTime", 0.0, 0.0, 100.0);
+        if (cell.bad()) continue;
+        c.impl.basicKits.push_back(std::move(d));
+        c.impl.basicKitLines.push_back(row.line);
+    }
+}
+
+bool ParseCraftRarity(std::string_view text, bool& any, Rarity& out) {
+    any = false;
+    if (text == "any") { any = true; return true; }
+    if (text == "normal" || text == "magic" || text == "rare") return ParseRarity(text, out);
+    return false;  // unique nunca tem custo de melhoria (docs/16 11.5)
+}
+
+void LoadCraftCosts(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        CraftCostData d;
+        d.id = cell.Id("id", true);
+        const std::string op = cell.Str("op", true);
+        if (!op.empty() && !ParseCraftOp(op, d.op)) cell.Err("E_ENUM", "op: unknown '" + op + "'");
+        const std::string rarity = cell.Str("rarity", true);
+        if (!rarity.empty() && !ParseCraftRarity(rarity, d.anyRarity, d.rarity))
+            cell.Err("E_ENUM", "rarity: unknown '" + rarity + "' (normal|magic|rare|any)");
+        d.step = static_cast<int>(cell.Int("step", 0, 0, 1000));
+        d.goldCost = cell.Int("goldCost", 0, 0, 1000000000000LL);
+        d.shardCost = cell.Int("shardCost", 0, 0, 1000000000000LL);
+        if (cell.Empty("step")) cell.Err("E_REQUIRED", "step is required");
+        if (cell.Empty("goldCost")) cell.Err("E_REQUIRED", "goldCost is required");
+        if (cell.Empty("shardCost")) cell.Err("E_REQUIRED", "shardCost is required");
+        if (cell.bad()) continue;
+        if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "craft.")) continue;
+        c.impl.craftCosts.push_back(std::move(d));
+        c.impl.craftCostLines.push_back(row.line);
+    }
+}
+
+void LoadVendorStock(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        VendorStockData d;
+        d.id = cell.Id("id", true);
+        d.refId = cell.Id("refId", true);
+        const std::string kind = cell.Str("kind", true);
+        if (!kind.empty() && kind != "stack") cell.Err("E_ENUM", "kind: unknown '" + kind + "' (stack)");
+        d.priceGold = cell.Int("priceGold", 0, 0, 1000000000000LL);
+        d.carryCap = static_cast<int>(cell.Int("carryCap", 1, 1, 1000000));
+        if (cell.Empty("priceGold")) cell.Err("E_REQUIRED", "priceGold is required");
+        if (cell.Empty("carryCap")) cell.Err("E_REQUIRED", "carryCap is required");
+        if (cell.bad()) continue;
+        if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "vendor.")) continue;
+        c.impl.vendorStock.push_back(std::move(d));
+        c.impl.vendorStockLines.push_back(row.line);
+    }
+}
+
+void LoadChests(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        ChestData d;
+        d.id = cell.Id("id", true);
+        d.mapId = cell.Id("mapId", true);
+        d.lootTable = cell.Id("lootTable", true);
+        if (cell.bad()) continue;
+        if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "chest.")) continue;
+        c.impl.chests.push_back(std::move(d));
+        c.impl.chestLines.push_back(row.line);
+    }
+}
+
 }  // namespace
 
 bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvText) {
@@ -1119,6 +1305,10 @@ bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvTex
     else if (table == "boss_phases.csv") LoadBossPhases(ctx);
     else if (table == "boss_patterns.csv") LoadBossPatterns(ctx);
     else if (table == "enemy_ai.csv") LoadEnemyAis(ctx);
+    else if (table == "basic_kits.csv") LoadBasicKits(ctx);
+    else if (table == "craft_costs.csv") LoadCraftCosts(ctx);
+    else if (table == "vendor_stock.csv") LoadVendorStock(ctx);
+    else if (table == "chests.csv") LoadChests(ctx);
     return errors_.size() == before;
 }
 
@@ -1135,6 +1325,9 @@ bool ContentDB::LoadDirectory(const std::string& path) {
     for (const TableDef& def : TableDefs()) {
         const fs::path file = dir / def.name;
         if (!fs::is_regular_file(file, ec)) {
+            // Tabelas opcionais de verdade: basic_kits.csv (docs/18 4.6), craft_costs.csv e vendor_stock.csv (docs/16 seção 11).
+            const std::string_view n(def.name);
+            if (n == "basic_kits.csv" || n == "craft_costs.csv" || n == "vendor_stock.csv" || n == "chests.csv") continue;
             PushErr(errors_, def.name, 0, "E_IO", "table file missing");
             continue;
         }
@@ -1199,6 +1392,33 @@ void ContentDB::Add(EnemyAiData d) {
     impl_->enemyAiLines.push_back(0);
 }
 
+void ContentDB::Add(BasicKitData d) {
+    if (impl_->finalized) { PushErr(errors_, "basicKits", 0, "E_STATE", "Add after Finalize"); return; }
+    impl_->basicKits.push_back(std::move(d));
+    impl_->basicKitLines.push_back(0);
+}
+
+void ContentDB::Add(CraftCostData d) {
+    if (impl_->finalized) { PushErr(errors_, "craftCosts", 0, "E_STATE", "Add after Finalize"); return; }
+    if (!RegisterId(*impl_, errors_, "craftCosts", 0, d.id, "craft.")) return;
+    impl_->craftCosts.push_back(std::move(d));
+    impl_->craftCostLines.push_back(0);
+}
+
+void ContentDB::Add(VendorStockData d) {
+    if (impl_->finalized) { PushErr(errors_, "vendorStock", 0, "E_STATE", "Add after Finalize"); return; }
+    if (!RegisterId(*impl_, errors_, "vendorStock", 0, d.id, "vendor.")) return;
+    impl_->vendorStock.push_back(std::move(d));
+    impl_->vendorStockLines.push_back(0);
+}
+
+void ContentDB::Add(ChestData d) {
+    if (impl_->finalized) { PushErr(errors_, "chests", 0, "E_STATE", "Add after Finalize"); return; }
+    if (!RegisterId(*impl_, errors_, "chests", 0, d.id, "chest.")) return;
+    impl_->chests.push_back(std::move(d));
+    impl_->chestLines.push_back(0);
+}
+
 // ===============================================================================================
 // Lookups
 // ===============================================================================================
@@ -1226,6 +1446,39 @@ const EnemyAiData* ContentDB::FindEnemyAi(std::string_view enemyId) const {
     }
     return nullptr;
 }
+const BasicKitData* ContentDB::FindBasicKit(std::string_view classId) const {
+    for (const BasicKitData& k : impl_->basicKits) {
+        if (k.classId == classId) return &k;
+    }
+    return nullptr;
+}
+const CraftCostData* ContentDB::FindCraftCost(CraftOp op, Rarity rarity, int step) const {
+    const CraftCostData* any = nullptr;
+    for (const CraftCostData& c : impl_->craftCosts) {
+        if (c.op != op || c.step != step) continue;
+        if (!c.anyRarity && c.rarity == rarity) return &c;
+        if (c.anyRarity && any == nullptr) any = &c;
+    }
+    return any;
+}
+const ChestData* ContentDB::FindChest(std::string_view id) const {
+    for (const ChestData& c : impl_->chests) {
+        if (c.id == id) return &c;
+    }
+    return nullptr;
+}
+const VendorStockData* ContentDB::FindVendorStock(std::string_view id) const {
+    for (const VendorStockData& v : impl_->vendorStock) {
+        if (v.id == id) return &v;
+    }
+    return nullptr;
+}
+const VendorStockData* ContentDB::FindVendorStockByRef(std::string_view refId) const {
+    for (const VendorStockData& v : impl_->vendorStock) {
+        if (v.refId == refId) return &v;
+    }
+    return nullptr;
+}
 const BossPhaseData* ContentDB::FindBossPhase(std::string_view bossId, int phase) const {
     for (const BossPhaseData& p : impl_->bossPhases) {
         if (p.bossId == bossId && p.phase == phase) return &p;
@@ -1237,6 +1490,10 @@ const std::vector<EliteModifierData>& ContentDB::EliteModifiers() const { return
 const std::vector<BossPhaseData>& ContentDB::BossPhases() const { return impl_->bossPhases; }
 const std::vector<BossPatternData>& ContentDB::BossPatterns() const { return impl_->bossPatterns; }
 const std::vector<EnemyAiData>& ContentDB::EnemyAis() const { return impl_->enemyAis; }
+const std::vector<BasicKitData>& ContentDB::BasicKits() const { return impl_->basicKits; }
+const std::vector<CraftCostData>& ContentDB::CraftCosts() const { return impl_->craftCosts; }
+const std::vector<VendorStockData>& ContentDB::VendorStock() const { return impl_->vendorStock; }
+const std::vector<ChestData>& ContentDB::Chests() const { return impl_->chests; }
 const std::vector<AffixData>& ContentDB::Affixes() const { return impl_->affixes.items; }
 const std::vector<ItemBaseData>& ContentDB::ItemBases() const { return impl_->bases.items; }
 const std::vector<MapData>& ContentDB::Maps() const { return impl_->maps.items; }
@@ -1397,6 +1654,16 @@ bool ContentDB::Finalize() {
             if (im.effects.Find(e) == nullptr) f.E("skills.csv", ln, "E_FK", "onHitEffects: '" + e + "' not in effects.csv");
         for (const ContentId& e : s.selfEffects)
             if (im.effects.Find(e) == nullptr) f.E("skills.csv", ln, "E_FK", "selfEffects: '" + e + "' not in effects.csv");
+        // Semântica de forma no tempo real (docs/18 §8 item 3): os dados precisam dizer o que o cliente vai fazer.
+        if (s.pierce > 0 && s.shape != SkillShape::Projectile)
+            f.E("skills.csv", ln, "E_RULE", "pierce > 0 requires shape projectile");
+        if (s.explosionRadius > 0.0 && s.shape != SkillShape::Projectile)
+            f.E("skills.csv", ln, "E_RULE", "explosionRadius > 0 requires shape projectile");
+        if (s.shape == SkillShape::Projectile && s.projectiles > 1 && !(s.coneAngle > 0.0))
+            f.E("skills.csv", ln, "E_RULE", "projectile with projectiles > 1 requires coneAngle > 0 (fan)");
+        if (s.shape == SkillShape::Area && !(s.radius > 0.0)) f.E("skills.csv", ln, "E_RULE", "shape area requires radius > 0");
+        if (im.rulesLoaded && s.shape == SkillShape::Dash && HasTag(s.tags, Tag::Projectile) && !(rules_.dashShotRange > 0.0))
+            f.E("skills.csv", ln, "E_RULE", "dash with tag projectile requires dash_shot_range > 0 in rules.csv");
         if (s.idle.supported) {
             if (s.idle.paritySampleSize == 0) f.E("skills.csv", ln, "E_RULE", "idleSupported requires idleParitySampleSize > 0");
             if (s.idle.avgTargetsHit <= 0.0 && s.idle.fractionOfGroupHit <= 0.0)
@@ -1692,6 +1959,108 @@ bool ContentDB::Finalize() {
         bool any = false;
         for (const BossPatternData& pt : im.bossPatterns) any = any || (pt.bossId == ph.bossId && pt.phase == ph.phase && pt.weight > 0.0);
         if (!any) f.E("boss_patterns.csv", 0, "E_RULE", "boss '" + ph.bossId + "' phase " + std::to_string(ph.phase) + " needs a pattern with weight > 0");
+    }
+    // --- kits básicos (docs/18 4.6): tabela opcional; só valida o que existe ---
+    for (std::size_t i = 0; i < im.basicKits.size(); ++i) {
+        const BasicKitData& k = im.basicKits[i];
+        const int ln = im.basicKitLines[i];
+        const char* T = "basic_kits.csv";
+        if (im.classes.Find(k.classId) == nullptr) f.E(T, ln, "E_FK", "classId '" + k.classId + "' not in classes.csv");
+        for (std::size_t j = 0; j < i; ++j) {
+            if (im.basicKits[j].classId == k.classId) f.E(T, ln, "E_DUP_ID", "class repeated in basic_kits.csv");
+        }
+        if (k.lightChain.empty() || k.lightChain.size() > kMaxLightChain)
+            f.E(T, ln, "E_RANGE", "lightChain needs 1 to " + std::to_string(kMaxLightChain) + " skills");
+        if (!(k.heavyChargeTime > 0.0)) f.E(T, ln, "E_RANGE", "heavyChargeTime must be > 0");
+        if (!(k.heavyMaxMult >= 1.0)) f.E(T, ln, "E_RANGE", "heavyMaxMult must be >= 1");
+        if (k.guardArc < 0.0 || k.guardArc > 360.0) f.E(T, ln, "E_RANGE", "guardArc must be in [0, 360]");
+        if (k.guardPerfectEffects.size() > kMaxGuardPerfectEffects)
+            f.E(T, ln, "E_RANGE", "guardPerfectEffects has more than " + std::to_string(kMaxGuardPerfectEffects) + " effects");
+        auto checkSkill = [&](const ContentId& id, const char* col) {
+            const SkillData* s = im.skills.Find(id);
+            if (s == nullptr) { f.E(T, ln, "E_FK", std::string(col) + ": '" + id + "' not in skills.csv"); return; }
+            if (s->classId != k.classId)
+                f.E(T, ln, "E_RULE", std::string(col) + ": '" + id + "' does not belong to " + k.classId);
+        };
+        for (const ContentId& id : k.lightChain) checkSkill(id, "lightChain");
+        checkSkill(k.heavySkill, "heavySkill");
+        auto checkEffect = [&](const ContentId& id, const char* col) -> const EffectData* {
+            const EffectData* e = im.effects.Find(id);
+            if (e == nullptr) f.E(T, ln, "E_FK", std::string(col) + ": '" + id + "' not in effects.csv");
+            return e;
+        };
+        checkEffect(k.chargeEffect, "chargeEffect");
+        const EffectData* guard = checkEffect(k.guardEffect, "guardEffect");
+        // Sem a tag guard o efeito reduziria o dano de golpes de FORA do arco: o arco do kit não valeria nada.
+        if (guard != nullptr && !HasTag(guard->tags, Tag::Guard))
+            f.E(T, ln, "E_RULE", "guardEffect '" + k.guardEffect + "' needs the guard tag in effects.csv");
+        for (const ContentId& id : k.guardPerfectEffects) checkEffect(id, "guardPerfectEffects");
+        // O C API copia os IDs em campos de 64 bytes.
+        auto fits = [&](const ContentId& id) { return id.size() < 64; };
+        bool idsFit = fits(k.classId) && fits(k.heavySkill) && fits(k.chargeEffect) && fits(k.guardEffect);
+        for (const ContentId& id : k.lightChain) idsFit = idsFit && fits(id);
+        for (const ContentId& id : k.guardPerfectEffects) idsFit = idsFit && fits(id);
+        if (!idsFit) f.E(T, ln, "E_RANGE", "id longer than 63 bytes (C API field size)");
+    }
+    // --- economia do protótipo (docs/16 seção 11): tabelas opcionais; só valida o que existe ---
+    {
+        const bool craftLoaded = !im.craftCosts.empty() ||
+                                 std::find(im.loadedTables.begin(), im.loadedTables.end(), "craft_costs.csv") != im.loadedTables.end();
+        const char* T = "craft_costs.csv";
+        for (std::size_t i = 0; i < im.craftCosts.size(); ++i) {
+            const CraftCostData& k = im.craftCosts[i];
+            const int ln = im.craftCostLines[i];
+            if (k.op == CraftOp::Polish ? k.step < 1 : k.step != 0)
+                f.E(T, ln, "E_RANGE", "step must be 1.. for polish and 0 for the other operations");
+            if (k.op == CraftOp::Polish && im.rulesLoaded && k.step > rules_.polishMaxSteps)
+                f.E(T, ln, "E_RANGE", "polish step above polish_max_steps");
+            if (k.op == CraftOp::Refine && (k.anyRarity || k.rarity != Rarity::Normal))
+                f.E(T, ln, "E_RULE", "refine only accepts rarity normal");
+            if ((k.op == CraftOp::Reforge || k.op == CraftOp::Add) && !k.anyRarity && k.rarity == Rarity::Normal)
+                f.E(T, ln, "E_RULE", "reforge and add accept magic, rare or any");
+            for (std::size_t j = 0; j < i; ++j) {
+                const CraftCostData& o = im.craftCosts[j];
+                if (o.op == k.op && o.step == k.step && o.anyRarity == k.anyRarity && (k.anyRarity || o.rarity == k.rarity))
+                    f.E(T, ln, "E_DUP_ID", "(op, rarity, step) repeated");
+            }
+        }
+        if (craftLoaded && im.rulesLoaded) {
+            auto need = [&](CraftOp op, Rarity r, int step) {
+                bool found = false;
+                for (const CraftCostData& k : im.craftCosts)
+                    if (k.op == op && k.step == step && (k.anyRarity || k.rarity == r)) found = true;
+                if (!found)
+                    f.E(T, 0, "E_RULE", std::string("missing cost row for ") + ToString(op) + " " + ToString(r) +
+                                            " step " + std::to_string(step));
+            };
+            need(CraftOp::Refine, Rarity::Normal, 0);
+            need(CraftOp::Reforge, Rarity::Magic, 0);
+            need(CraftOp::Reforge, Rarity::Rare, 0);
+            need(CraftOp::Add, Rarity::Magic, 0);
+            need(CraftOp::Add, Rarity::Rare, 0);
+            for (int s = 1; s <= rules_.polishMaxSteps; ++s) {
+                need(CraftOp::Polish, Rarity::Magic, s);
+                need(CraftOp::Polish, Rarity::Rare, s);
+            }
+        }
+        const char* V = "vendor_stock.csv";
+        for (std::size_t i = 0; i < im.vendorStock.size(); ++i) {
+            const VendorStockData& v = im.vendorStock[i];
+            const int ln = im.vendorStockLines[i];
+            if (!StartsWith(v.refId, "consumable.") && !StartsWith(v.refId, "material."))
+                f.E(V, ln, "E_ID_PREFIX", "refId must start with 'consumable.' or 'material.'");
+            for (std::size_t j = 0; j < i; ++j) {
+                if (im.vendorStock[j].refId == v.refId) f.E(V, ln, "E_DUP_ID", "refId repeated in vendor_stock.csv");
+            }
+            if (v.refId == "consumable.refill_flask" && im.rulesLoaded && v.carryCap != rules_.refillFlaskCarryCap)
+                f.E(V, ln, "E_RULE", "carryCap of the refill flask must equal refill_flask_carry_cap in rules.csv");
+        }
+    }
+    for (std::size_t i = 0; i < im.chests.size(); ++i) {   // baús da área (docs/14 5.2): tabela opcional
+        const ChestData& ch = im.chests[i];
+        const int ln = im.chestLines[i];
+        if (im.maps.Find(ch.mapId) == nullptr) f.E("chests.csv", ln, "E_FK", "mapId '" + ch.mapId + "' not in maps.csv");
+        if (im.loot.Find(ch.lootTable) == nullptr) f.E("chests.csv", ln, "E_FK", "lootTable '" + ch.lootTable + "' not in loot_tables.csv");
     }
     for (std::size_t i = 0; i < im.enemyAis.size(); ++i) {
         const EnemyAiData& a = im.enemyAis[i];

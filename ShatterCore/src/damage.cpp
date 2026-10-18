@@ -59,7 +59,7 @@ HitResult ResolveHit(const HitInput& in, const RulesConstants& rules, Pcg32& com
             continue;
         }
         const TagMask tags = in.skillTags | TagOf(static_cast<DamageType>(t));
-        r.afterModifiers[static_cast<std::size_t>(t)] = atk.ApplyTagged(StatId::Damage, tags, base);
+        r.afterModifiers[static_cast<std::size_t>(t)] = atk.ApplyTagged(StatId::Damage, tags, base) * in.hitMore;
     }
 
     bool evaded = false;
@@ -110,7 +110,7 @@ HitResult ResolveHit(const HitInput& in, const RulesConstants& rules, Pcg32& com
         dmg[static_cast<std::size_t>(t)] *= 1.0 - res;
     }
     // Passo 8: dano recebido.
-    const double taken = def.Get(StatId::DamageTaken);
+    const double taken = def.GetTagged(StatId::DamageTaken, in.fromGuardArc ? Mask(Tag::Guard) : TagMask{0});
     double total = 0.0;
     for (int t = 0; t < kDamageTypeCount; ++t) {
         dmg[static_cast<std::size_t>(t)] *= taken;

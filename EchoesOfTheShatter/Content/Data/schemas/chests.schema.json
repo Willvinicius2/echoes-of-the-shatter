@@ -1,0 +1,34 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "chests.csv",
+  "kind": "rows",
+  "optional": true,
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Baus de mapa (docs/14 5.2, docs/16 4.5): cada bau pertence a um mapa e abre uma tabela de loot. Tabela opcional: sem ela o mapa nao tem baus.",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "chest.",
+      "desc": "ID do bau (chest.<mapa>.<nn>)"
+    },
+    {
+      "name": "mapId",
+      "type": "ref",
+      "required": true,
+      "ref": "maps.csv",
+      "desc": "Mapa onde o bau esta"
+    },
+    {
+      "name": "lootTable",
+      "type": "ref",
+      "required": true,
+      "ref": "loot_tables.csv",
+      "desc": "Tabela de loot sorteada ao abrir"
+    }
+  ]
+}

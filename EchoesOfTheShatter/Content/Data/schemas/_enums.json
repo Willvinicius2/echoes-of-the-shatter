@@ -62,7 +62,8 @@
       "fire",
       "cold",
       "lightning",
-      "physical"
+      "physical",
+      "guard"
     ]
   }
 }

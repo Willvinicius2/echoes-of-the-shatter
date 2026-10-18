@@ -140,6 +140,12 @@ namespace Echoes.Interop.Native
             Refresh();
         }
 
+        /// <summary>Ponteiro do cinto vivo (para o Frasco de Recarga, que age sobre ele e sobre o save).</summary>
+        internal IntPtr Pointer => handle.DangerousGetHandle();
+
+        /// <summary>Marca o estado cacheado como velho (o core mexeu no cinto por fora, ex.: Frasco de Recarga).</summary>
+        internal void Invalidate() => dirty = true;
+
         public int Count
         {
             get

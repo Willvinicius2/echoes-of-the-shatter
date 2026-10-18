@@ -119,7 +119,19 @@ namespace Echoes.Interop
             Combat.DodgeCancelRecoveryFraction = PendingRule("dodge_cancel_recovery_fraction");
             Combat.PotionLockoutSeconds = PendingRule("potion_lockout");
             Combat.OutOfCombatSeconds = PendingRule("out_of_combat_seconds");
+            // Combate básico (docs/18 1.2): sem padrão próprio; ausente fica 0 (o stub não roda o combo).
+            Combat.ComboWindowSeconds = RuleOrZero("combo_window");
+            Combat.ComboWindowAfterDodgeSeconds = RuleOrZero("combo_window_after_dodge");
+            Combat.AttackBufferSeconds = RuleOrZero("attack_buffer");
+            Combat.HeavyHoldThresholdSeconds = RuleOrZero("heavy_hold_threshold");
+            Combat.LightWindupCreditMax = RuleOrZero("light_windup_credit_max");
+            Combat.GuardLowerTimeSeconds = RuleOrZero("guard_lower_time");
+            Combat.DashShotRangeUu = RuleOrZero("dash_shot_range");
+            Combat.HeroMoveAccelSeconds = RuleOrZero("hero_move_accel_seconds");
+            Combat.HeroMoveDecelSeconds = RuleOrZero("hero_move_decel_seconds");
         }
+
+        double RuleOrZero(string key) => RuleValues.TryGetValue(key, out var value) ? value : 0.0;
 
         double Required(StubCsvTable table, string key, List<RulesError> errors)
         {
@@ -192,6 +204,9 @@ namespace Echoes.Interop
                     errors.Add(new RulesError(RulesStatus.ContentInvalid, table.Name, row.Line, "unknown shape"));
                 skill.Shape = shape;
                 skill.ScalesWithWeapon = table.GetBool(row, "scalesWithWeapon", false, errors);
+                if (table.HasColumn("pierce")) skill.Pierce = table.GetInt(row, "pierce", 0, errors);
+                if (table.HasColumn("explosionRadius")) skill.ExplosionRadiusUu = table.GetDouble(row, "explosionRadius", 0, errors);
+                if (table.HasColumn("knockback")) skill.KnockbackUu = table.GetDouble(row, "knockback", 0, errors);
                 skill.BaseDamage = new DamageByType
                 {
                     Physical = table.GetDouble(row, "baseDamagePhysical", 0, errors),

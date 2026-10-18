@@ -76,6 +76,35 @@ struct RulesConstants {
     double sellLevelFactor = 0.0;              // sell_level_factor: +fração do preço por itemLevel acima de 1
     bool equipSlotEnabled[11] = {};            // equip_slot_<slot>: posição liberada no protótipo (ordem de ItemSlot)
 
+    // Combate básico (docs/18 1.2): combo, buffer, carga e defesa. A máquina de estados mora no C# (HeroCombatLogic,
+    // docs/18 8.1); o core só guarda e valida os números (faixas 0 a 5 s; light_windup_credit_max em 0 a 1).
+    double comboWindow = 0.0;                  // combo_window (s): janela depois da recuperação em que um clique continua o combo
+    double comboWindowAfterDodge = 0.0;        // combo_window_after_dodge (s): janela que reabre ao fim da esquiva
+    double attackBuffer = 0.0;                 // attack_buffer (s): clique nos últimos s da recuperação entra na fila
+    double heavyHoldThreshold = 0.0;           // heavy_hold_threshold (s): apertado por mais que isto vira ataque forte
+    double lightWindupCreditMax = 0.0;         // light_windup_credit_max: fração máxima da preparação do leve descontada pelo aperto
+    double guardLowerTime = 0.0;               // guard_lower_time (s): sem atacar depois de soltar a defesa
+    double dashShotRange = 0.0;                // dash_shot_range (uu): alcance do tiro de um dash com tag projectile
+
+    // Economia do protótipo (docs/16 seção 11: Vendedor e Encantador; valores [HIPÓTESE] em rules.csv, todas obrigatórias).
+    int vendorBuybackSlots = 0;                // vendor_buyback_slots: itens guardados na recompra (os 10 últimos vendidos)
+    double vendorBuybackPriceFactor = 0.0;     // vendor_buyback_price_factor: recomprar custa fator x o valor pago ao jogador
+    int refillFlaskCarryCap = 0;               // refill_flask_carry_cap: máximo de Frascos de Recarga levados
+    int refillFlaskCharges = 0;                // refill_flask_charges: cargas de poção que cada frasco restaura
+    double craftCostLevelFactor = 0.0;         // craft_cost_level_factor: o custo cresce fração x (itemLevel - 1)
+    double reforgeStepMult = 0.0;              // reforge_step_mult: cada Reforjar anterior da peça soma esta fração ao próximo
+    double reforgeMultCap = 0.0;               // reforge_mult_cap: teto do multiplicador de custo do Reforjar
+    double reforgeLockCostMult = 0.0;          // reforge_lock_cost_mult: travar um afixo multiplica só as Lascas
+    int reforgeLockMax = 0;                    // reforge_lock_max: afixos travados por Reforjar (0 desliga a trava)
+    int addAffixCandidates = 0;                // add_affix_candidates: cartões de Adicionar afixo
+    double polishStepFraction = 0.0;           // polish_step_fraction: cada passo de Lapidar sobe esta fração da faixa
+    int polishMaxSteps = 0;                    // polish_max_steps: passos de Lapidar por afixo
+    int dismantleShards[3] = {0, 0, 0};        // dismantle_shards_normal/magic/rare: Lascas devolvidas ao Desmontar
+
+    // Movimento do herói (aceleração e desaceleração, [HIPÓTESE]; faixa 0 a 0,5 s; 0 = instantâneo). O C# aplica a rampa.
+    double heroMoveAccelSeconds = 0.0;         // hero_move_accel_seconds: de 0 até a velocidade máxima
+    double heroMoveDecelSeconds = 0.0;         // hero_move_decel_seconds: da velocidade máxima até 0
+
     // --- Fervor (jogo manual). O idle é a taxa base = 1. ---
     double fervorXpMult = 3.0;             // fervor_xp_mult
     double fervorGoldMatMult = 1.25;       // fervor_gold_mat_mult

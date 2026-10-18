@@ -294,6 +294,130 @@ namespace Echoes.Interop.Native
             };
         }
 
+        /// <summary>
+        /// Lista do layout ext5 (API 1.5, combate basico): [offset de from_guard_arc em shatter_hit_input; tamanho de shatter_combat_rules e 7 offsets;
+        /// tamanho de shatter_basic_kit, os offsets dos 9 doubles, light_chain_count, guard_perfect_effect_count, light_chain, heavy_skill,
+        /// charge_effect, guard_effect e guard_perfect_effects] = 26 valores.
+        /// </summary>
+        public static uint[] BuildExt5()
+        {
+            ShatterHitInput h = default;
+            ShatterCombatRules c = default;
+            ShatterBasicKit k = default;
+            return new[]
+            {
+                Off(&h, &h.from_guard_arc),
+                (uint)sizeof(ShatterCombatRules), Off(&c, &c.combo_window), Off(&c, &c.combo_window_after_dodge), Off(&c, &c.attack_buffer),
+                Off(&c, &c.heavy_hold_threshold), Off(&c, &c.light_windup_credit_max), Off(&c, &c.guard_lower_time), Off(&c, &c.dash_shot_range),
+                (uint)sizeof(ShatterBasicKit), Off(&k, &k.heavy_charge_time), Off(&k, &k.heavy_max_mult), Off(&k, &k.guard_arc), Off(&k, &k.guard_max_hold),
+                Off(&k, &k.guard_cooldown), Off(&k, &k.guard_perfect_window), Off(&k, &k.guard_perfect_cooldown), Off(&k, &k.guard_perfect_resource),
+                Off(&k, &k.guard_drain_per_damage), Off(&k, &k.light_chain_count), Off(&k, &k.guard_perfect_effect_count), Off(&k, k.light_chain),
+                Off(&k, k.heavy_skill), Off(&k, k.charge_effect), Off(&k, k.guard_effect), Off(&k, k.guard_perfect_effects),
+            };
+        }
+
+        /// <summary>
+        /// Lista do layout ext6 (API 1.6, economia): [tamanho de shatter_craft_result e offsets de result, changed_affix, gold_spent, shards_spent,
+        /// shards_gained; tamanho de shatter_vendor_result e offsets de result, evicted, evicted_rarity, gold; tamanho de shatter_flask_result e
+        /// offsets de result, potion_index, charges_after, flasks_left] = 16 valores.
+        /// </summary>
+        public static uint[] BuildExt6()
+        {
+            ShatterCraftResult c = default;
+            ShatterVendorResult v = default;
+            ShatterFlaskResult f = default;
+            return new[]
+            {
+                (uint)sizeof(ShatterCraftResult), Off(&c, &c.result), Off(&c, &c.changed_affix), Off(&c, &c.gold_spent), Off(&c, &c.shards_spent), Off(&c, &c.shards_gained),
+                (uint)sizeof(ShatterVendorResult), Off(&v, &v.result), Off(&v, &v.evicted), Off(&v, &v.evicted_rarity), Off(&v, &v.gold),
+                (uint)sizeof(ShatterFlaskResult), Off(&f, &f.result), Off(&f, &f.potion_index), Off(&f, &f.charges_after), Off(&f, &f.flasks_left),
+            };
+        }
+
+        public static bool CheckExt6(out string message)
+        {
+            var values = BuildExt6();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext6(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext6 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
+        /// <summary>
+        /// Lista do layout ext7 (API 1.7, core da Cripta): [tamanho de shatter_xp_info e offsets de awarded, xp_in_level, xp_to_next, level_before, level,
+        /// level_cap, reserved; tamanho de shatter_fervor_info e offsets de xp_mult, gold_mat_mult, rare_mult, xp_bonus, gold_mat_bonus, rare_bonus] = 15 valores.
+        /// </summary>
+        public static uint[] BuildExt7()
+        {
+            ShatterXpInfo x = default;
+            ShatterFervorInfo f = default;
+            return new[]
+            {
+                (uint)sizeof(ShatterXpInfo), Off(&x, &x.awarded), Off(&x, &x.xp_in_level), Off(&x, &x.xp_to_next), Off(&x, &x.level_before), Off(&x, &x.level),
+                Off(&x, &x.level_cap), Off(&x, &x.reserved),
+                (uint)sizeof(ShatterFervorInfo), Off(&f, &f.xp_mult), Off(&f, &f.gold_mat_mult), Off(&f, &f.rare_mult), Off(&f, &f.xp_bonus), Off(&f, &f.gold_mat_bonus),
+                Off(&f, &f.rare_bonus),
+            };
+        }
+
+        public static bool CheckExt7(out string message)
+        {
+            var values = BuildExt7();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext7(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext7 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
+        /// <summary>Lista do layout ext8 (API 1.7, movimento do herói): [tamanho de shatter_hero_move_rules, offset de accel_seconds, offset de decel_seconds].</summary>
+        public static uint[] BuildExt8()
+        {
+            ShatterHeroMoveRules m = default;
+            return new[] { (uint)sizeof(ShatterHeroMoveRules), Off(&m, &m.accel_seconds), Off(&m, &m.decel_seconds) };
+        }
+
+        public static bool CheckExt8(out string message)
+        {
+            var values = BuildExt8();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext8(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext8 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
+        public static bool CheckExt5(out string message)
+        {
+            var values = BuildExt5();
+            ShatterError err = default;
+            int status;
+            fixed (uint* p = values) status = ShatterNative.shatter_layout_check_ext5(p, (nuint)values.Length, &err);
+            if (status == 0)
+            {
+                message = string.Empty;
+                return true;
+            }
+            message = $"shatter_layout_check_ext5 status {status}: {NativeBuffers.ErrorMessage(ref err)}";
+            return false;
+        }
+
         public static bool CheckExt4(out string message)
         {
             var values = BuildExt4();

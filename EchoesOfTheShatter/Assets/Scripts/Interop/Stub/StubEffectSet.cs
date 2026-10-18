@@ -251,6 +251,8 @@ namespace Echoes.Interop
                 {
                     var mod = data.Modifiers[m];
                     mod.Value *= a.Magnitude;
+                    // Efeito de defesa (tag guard): o dano recebido só cai se o golpe vem de dentro do arco (HitRequest.FromGuardArc).
+                    if ((data.Tags & SkillTags.Guard) != 0 && mod.Stat == StatId.DamageTaken) mod.RequiredTags |= SkillTags.Guard;
                     mod.Source = source;
                     target.AddModifier(mod);
                 }

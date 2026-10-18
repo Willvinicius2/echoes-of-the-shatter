@@ -20,3 +20,5 @@ dlg.tico.waiting,Ainda não deu o tempo. Calma!,Not enough time has passed. Easy
 dlg.tico.nothing,Não tenho nada para entregar ainda.,I have nothing to deliver yet.,,Tico; sem expedição; max=50; provisório,
 dlg.tico.delivery,Tudo aqui. Nada se perdeu no caminho.,All here. Nothing got lost on the way.,,Tico; entrega do loot; max=50; provisório,
 dlg.tico.farewell,Até a próxima rota!,See you on the next route!,,Tico; despedida; max=30; provisório,
+npc.vendor.name,Vendedor,Vendor,,npc; max=16; provisório,m
+npc.enchanter.name,Encantador,Enchanter,,npc; max=16; provisório,m

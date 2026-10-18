@@ -110,10 +110,13 @@ Value ItemToJson(const ItemInstance& it) {
         Value ao = Value::MakeObject();
         ao.Set("affix_id", Value(a.affixId));
         ao.Set("value", Value(a.value));
+        if (a.polish > 0) ao.Set("polish", Value(static_cast<std::int64_t>(a.polish)));
         affixes.Push(std::move(ao));
     }
     o.Set("affixes", std::move(affixes));
     o.Set("has_inscription", Value(it.hasInscription));
+    if (it.craftSteps > 0) o.Set("craft_steps", Value(static_cast<std::int64_t>(it.craftSteps)));
+    if (it.craftReforges > 0) o.Set("craft_reforges", Value(static_cast<std::int64_t>(it.craftReforges)));
     return o;
 }
 
@@ -213,9 +216,18 @@ bool ItemFromJson(const Value& o, ItemInstance& it, std::string* err) {
         RolledAffix ra;
         ra.affixId = a["affix_id"].AsString();
         ra.value = a["value"].AsDouble(0.0);
+        const std::int64_t polish = a["polish"].AsInt(0);
+        if (polish < 0 || polish > kMaxSavedPolish) return Fail(err, "item: affix polish out of range");
+        ra.polish = static_cast<std::uint8_t>(polish);
         it.affixes.push_back(std::move(ra));
     }
     it.hasInscription = o["has_inscription"].AsBool(false);
+    const std::int64_t steps = o["craft_steps"].AsInt(0);
+    const std::int64_t reforges = o["craft_reforges"].AsInt(0);
+    if (steps < 0 || steps > 65535) return Fail(err, "item: craft_steps out of range");
+    if (reforges < 0 || reforges > 65535) return Fail(err, "item: craft_reforges out of range");
+    it.craftSteps = static_cast<std::uint16_t>(steps);
+    it.craftReforges = static_cast<std::uint16_t>(reforges);
     return true;
 }
 
@@ -342,6 +354,12 @@ void AddCurrency(std::vector<StackEntry>& list, const ContentId& id, std::int64_
 
 }  // namespace
 
+int AwardXp(const ContentDB& db, CharacterState& c, double gained, int capLevel) {
+    const int before = c.level;
+    ApplyXp(db, c, gained, capLevel);
+    return c.level - before;
+}
+
 // ---------------------------------------------------------------------------
 Value SaveToJson(const SaveData& s) {
     Value o = Value::MakeObject();
@@ -378,6 +396,28 @@ Value SaveToJson(const SaveData& s) {
     o.Set("expeditions", std::move(exps));
     o.Set("codex_seen_uniques", StrList(s.codexSeenUniques));
     o.Set("books_seen", StrList(s.booksSeen));
+    if (s.craftSeed != 0) o.Set("craft_seed", json::FromUInt64(s.craftSeed));
+    if (!s.world.empty()) {
+        Value ws = Value::MakeArray();
+        for (const WorldAreaState& a : s.world) {
+            Value ao = Value::MakeObject();
+            ao.Set("map_id", Value(a.mapId));
+            ao.Set("visits", Value(static_cast<std::int64_t>(a.visits)));
+            ao.Set("opened", StrList(a.opened));
+            ws.Push(std::move(ao));
+        }
+        o.Set("world_state", std::move(ws));
+    }
+    if (!s.vendorBuyback.empty()) {
+        Value bb = Value::MakeArray();
+        for (const BuybackEntry& e : s.vendorBuyback) {
+            Value eo = Value::MakeObject();
+            eo.Set("item", ItemToJson(e.item));
+            eo.Set("paid", Value(e.paid));
+            bb.Push(std::move(eo));
+        }
+        o.Set("vendor_buyback", std::move(bb));
+    }
     return o;
 }
 
@@ -420,6 +460,37 @@ bool SaveFromJson(const Value& data, SaveData& out, std::string* error) {
     }
     s.codexSeenUniques = ReadStrList(data["codex_seen_uniques"]);
     s.booksSeen = ReadStrList(data["books_seen"]);
+    s.craftSeed = data["craft_seed"].AsUInt64(0);
+    {
+        const auto& ws = data["world_state"].Items();
+        if (ws.size() > kMaxWorldAreas) return Fail(error, "world_state has too many areas");
+        for (const Value& av : ws) {
+            WorldAreaState a;
+            a.mapId = av["map_id"].AsString();
+            const std::int64_t visits = av["visits"].AsInt(0);
+            if (a.mapId.empty() || !IsValidContentId(a.mapId)) return Fail(error, "world_state: bad map_id");
+            if (visits < 0 || visits > 4000000000LL) return Fail(error, "world_state: visits out of range");
+            a.visits = static_cast<std::uint32_t>(visits);
+            a.opened = ReadStrList(av["opened"]);
+            if (a.opened.size() > kMaxWorldObjects) return Fail(error, "world_state: too many opened objects");
+            for (const WorldAreaState& other : s.world)
+                if (other.mapId == a.mapId) return Fail(error, "world_state repeats '" + a.mapId + "'");
+            for (const ContentId& id : a.opened)
+                if (!IsValidContentId(id)) return Fail(error, "world_state: bad object id");
+            s.world.push_back(std::move(a));
+        }
+    }
+    {
+        const auto& bb = data["vendor_buyback"].Items();
+        if (bb.size() > kMaxSavedBuyback) return Fail(error, "vendor_buyback has too many items");
+        for (const Value& ev : bb) {
+            BuybackEntry e;
+            if (!ItemFromJson(ev["item"], e.item, error)) return false;
+            e.paid = ev["paid"].AsInt(0);
+            if (e.paid < 0) return Fail(error, "vendor_buyback paid out of range");
+            s.vendorBuyback.push_back(std::move(e));
+        }
+    }
     out = std::move(s);
     return true;
 }

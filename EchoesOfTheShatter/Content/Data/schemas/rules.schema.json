@@ -588,6 +588,198 @@
       "type": "bool",
       "default": true,
       "desc": "Posicao de equipamento liberada no prototipo (docs/16 4.1); false = o core recusa equipar ali"
+    },
+    {
+      "name": "combo_window",
+      "type": "number",
+      "default": 0.4,
+      "desc": "Janela (s) depois do fim da recuperacao de um golpe leve em que um clique continua o combo (docs/18 1.2) [HIPOTESE H18-01]",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "combo_window_after_dodge",
+      "type": "number",
+      "default": 0.3,
+      "desc": "Janela (s) que reabre ao fim da esquiva para retomar o combo [HIPOTESE H18-11]",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "attack_buffer",
+      "type": "number",
+      "default": 0.15,
+      "desc": "Um clique entra na fila se chegar nos ultimos attack_buffer s da recuperacao [HIPOTESE H18-01]",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "heavy_hold_threshold",
+      "type": "number",
+      "default": 0.35,
+      "desc": "Tempo (s) apertado que separa clique leve de ataque forte carregado (decisao do orquestrador)",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "light_windup_credit_max",
+      "type": "number",
+      "default": 0.7,
+      "desc": "Fracao maxima da preparacao do golpe leve descontada pelo tempo que o botao ficou apertado [HIPOTESE H18-02]",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "guard_lower_time",
+      "type": "number",
+      "default": 0.1,
+      "desc": "Tempo (s) sem atacar depois de soltar a defesa [HIPOTESE]",
+      "min": 0,
+      "max": 5
+    },
+    {
+      "name": "dash_shot_range",
+      "type": "number",
+      "default": 1000,
+      "desc": "Alcance (uu) do tiro de uma habilidade dash com tag projectile (Salto do Arqueiro) [HIPOTESE]",
+      "min": 0,
+      "max": 10000
+    },
+    {
+      "name": "vendor_buyback_slots",
+      "type": "int",
+      "default": 10,
+      "desc": "Vagas da lista de recompra do Vendedor [HIPÓTESE]",
+      "min": 1,
+      "max": 100
+    },
+    {
+      "name": "vendor_buyback_price_factor",
+      "type": "number",
+      "default": 1.25,
+      "desc": "Fator do preço de recompra sobre o valor pago [HIPÓTESE]",
+      "min": 1,
+      "max": 10
+    },
+    {
+      "name": "refill_flask_carry_cap",
+      "type": "int",
+      "default": 3,
+      "desc": "Teto de Frascos de Recarga levados [HIPÓTESE]",
+      "min": 1,
+      "max": 99
+    },
+    {
+      "name": "refill_flask_charges",
+      "type": "int",
+      "default": 1,
+      "desc": "Cargas de poção que cada Frasco restaura [HIPÓTESE]",
+      "min": 1,
+      "max": 10
+    },
+    {
+      "name": "craft_cost_level_factor",
+      "type": "number",
+      "default": 0.1,
+      "desc": "Aumento do custo de Encantar por nível de item acima de 1 [HIPÓTESE]",
+      "min": 0,
+      "max": 10
+    },
+    {
+      "name": "reforge_step_mult",
+      "type": "number",
+      "default": 0.5,
+      "desc": "Fração do custo-base somada a cada Reforjar da mesma peça [HIPÓTESE]",
+      "min": 0,
+      "max": 10
+    },
+    {
+      "name": "reforge_mult_cap",
+      "type": "number",
+      "default": 3.0,
+      "desc": "Teto do multiplicador de custo do Reforjar [HIPÓTESE]",
+      "min": 1,
+      "max": 100
+    },
+    {
+      "name": "reforge_lock_cost_mult",
+      "type": "number",
+      "default": 2.0,
+      "desc": "Multiplicador das Lascas ao travar um afixo no Reforjar [HIPÓTESE]",
+      "min": 1,
+      "max": 100
+    },
+    {
+      "name": "reforge_lock_max",
+      "type": "int",
+      "default": 1,
+      "desc": "Afixos travados por Reforjar (0 = trava desligada) [HIPÓTESE]",
+      "min": 0,
+      "max": 1
+    },
+    {
+      "name": "add_affix_candidates",
+      "type": "int",
+      "default": 3,
+      "desc": "Candidatos sorteados em Adicionar afixo [HIPÓTESE]",
+      "min": 1,
+      "max": 8
+    },
+    {
+      "name": "polish_step_fraction",
+      "type": "number",
+      "default": 0.25,
+      "desc": "Fração da faixa que cada passo de Lapidar sobe (> 0) [HIPÓTESE]",
+      "max": 1,
+      "minExclusive": 0
+    },
+    {
+      "name": "polish_max_steps",
+      "type": "int",
+      "default": 3,
+      "desc": "Máximo de passos de Lapidar por afixo [HIPÓTESE]",
+      "min": 1,
+      "max": 10
+    },
+    {
+      "name": "dismantle_shards_normal",
+      "type": "int",
+      "default": 2,
+      "desc": "Lascas devolvidas ao desmontar item Comum [HIPÓTESE]",
+      "min": 0,
+      "max": 1000000
+    },
+    {
+      "name": "dismantle_shards_magic",
+      "type": "int",
+      "default": 5,
+      "desc": "Lascas devolvidas ao desmontar item Mágico [HIPÓTESE]",
+      "min": 0,
+      "max": 1000000
+    },
+    {
+      "name": "dismantle_shards_rare",
+      "type": "int",
+      "default": 12,
+      "desc": "Lascas devolvidas ao desmontar item Raro [HIPÓTESE]",
+      "min": 0,
+      "max": 1000000
+    },
+    {
+      "name": "hero_move_accel_seconds",
+      "type": "number",
+      "default": 0.1,
+      "desc": "Tempo (s) do herói de 0 até a velocidade máxima [HIPÓTESE]",
+      "min": 0,
+      "max": 0.5
+    },
+    {
+      "name": "hero_move_decel_seconds",
+      "type": "number",
+      "default": 0.08,
+      "desc": "Tempo (s) do herói da velocidade máxima até 0 [HIPÓTESE]",
+      "min": 0,
+      "max": 0.5
     }
   ]
 }

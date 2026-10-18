@@ -111,3 +111,67 @@ modifier.elite.swift.name,Veloz,Swift,,elite modifier; max=16; provisório,m
 modifier.elite.swift.desc,Move e ataca mais rápido.,Moves and attacks faster.,,elite modifier; max=60; provisório,
 modifier.elite.volatile.name,Volátil,Volatile,,elite modifier; max=16; desligado no protótipo,m
 modifier.elite.volatile.desc,Explode ao morrer. Saia do círculo.,Explodes on death. Leave the circle.,,elite modifier; max=60; desligado no protótipo,
+class.archer.name,Arqueiro,Archer,,class; max=16,m
+class.archer.desc,Atira de longe e recua. Foco volta rápido parado.,Shoots from afar. Focus returns fast when still.,,class; max=60,
+class.mage.name,Mago,Mage,,class; max=16,m
+class.mage.desc,Frágil e perigoso. Domina a área com magia.,Fragile and dangerous. Rules the field with magic.,,class; max=60,
+resource.focus.name,Foco,Focus,,resource; max=12,m
+resource.focus.desc,Regenera sempre e mais rápido parado. Gasto pelas habilidades.,Always regenerates and faster while standing still. Spent by skills.,,resource; max=80,
+resource.mana.name,Mana,Mana,,resource; max=12,f
+resource.mana.desc,Regenera num ritmo constante. Gasta em feitiços e na Barreira Arcana.,Regenerates at a steady rate. Spent on spells and the Arcane Barrier.,,resource; max=80,
+skill.warrior.combo_2.name,Golpe de Volta,Backswing,,skill; max=24,m
+skill.warrior.combo_2.desc,Segundo golpe do combo: corte em diagonal no sentido oposto.,Second combo hit: a diagonal slash in the opposite direction.,,skill; max=90; docs/18,
+skill.warrior.combo_3.name,Golpe de Fecho,Finisher,,skill; max=24,m
+skill.warrior.combo_3.desc,Fecha o combo com um golpe pesado que empurra os inimigos.,Ends the combo with a heavy blow that knocks enemies back.,,skill; max=90; docs/18,
+skill.warrior.heavy_slash.name,Golpe Pesado,Heavy Slash,,skill; max=24,m
+skill.warrior.heavy_slash.desc,Segure para carregar. Cone largo que empurra e acumula quebra de guarda.,Hold to charge. A wide cone that pushes back and builds guard break.,,skill; max=90; docs/18,
+skill.archer.quick_shot.name,Disparo Reto,Quick Shot,,skill; max=24,m
+skill.archer.quick_shot.desc,Flecha rápida e sem custo em linha reta.,A quick and free arrow in a straight line.,,skill; max=90; docs/18,
+skill.archer.fan_shot.name,Flechas em Leque,Fan of Arrows,,skill; max=24,f
+skill.archer.fan_shot.desc,Três flechas em leque. Acerta mais de perto ou em grupos.,Three arrows in a fan. Hits harder up close or against groups.,,skill; max=90; docs/18,
+skill.archer.piercing_shot.name,Tiro Perfurante,Piercing Shot,,skill; max=24,m
+skill.archer.piercing_shot.desc,Segure para carregar. A flecha atravessa todos os inimigos da fileira.,Hold to charge. The arrow pierces every enemy in the line.,,skill; max=90; docs/18,
+skill.archer.back_leap.name,Salto para Trás,Back Leap,,skill; max=24,m
+skill.archer.back_leap.desc,Pula para trás e atira no ar. Cria distância.,Leaps backward and shoots mid-air. Creates distance.,,skill; max=90; docs/18,
+skill.archer.arrow_rain.name,Chuva de Flechas,Arrow Rain,,skill; max=24,f
+skill.archer.arrow_rain.desc,Marca uma área no cursor. As flechas caem um instante depois.,Marks an area at the cursor. Arrows fall a moment later.,,skill; max=90; docs/18,
+skill.mage.arcane_dart.name,Dardo Arcano,Arcane Dart,,skill; max=24,m
+skill.mage.arcane_dart.desc,Dardo veloz de energia. Gasta um pouco de Mana.,A fast bolt of energy. Costs a little Mana.,,skill; max=90; docs/18,
+skill.mage.arcane_orb.name,Orbe Arcano,Arcane Orb,,skill; max=24,m
+skill.mage.arcane_orb.desc,Orbe que explode no impacto e atinge os inimigos próximos.,An orb that explodes on impact and hits nearby enemies.,,skill; max=90; docs/18,
+skill.mage.fireball.name,Bola de Fogo,Fireball,,skill; max=24,f
+skill.mage.fireball.desc,Segure para carregar. Explode em área e queima o grupo.,Hold to charge. Explodes in an area and burns the group.,,skill; max=90; docs/18,
+skill.mage.frost_nova.name,Nova de Gelo,Frost Nova,,skill; max=24,f
+skill.mage.frost_nova.desc,Onda de gelo em volta do herói. Empurra e deixa os inimigos lentos.,A ring of frost around the hero. Pushes back and slows enemies.,,skill; max=90; docs/18,
+skill.mage.arcane_ray.name,Raio Arcano,Arcane Ray,,skill; max=24,m
+skill.mage.arcane_ray.desc,Raio instantâneo em linha que atravessa todos os inimigos.,An instant beam in a line that pierces every enemy.,,skill; max=90; docs/18,
+effect.guarding.warrior.name,Em Guarda,On Guard,,effect; max=24,f
+effect.guarding.archer.name,Guarda do Arco,Bow Guard,,effect; max=24,f
+effect.guarding.mage.name,Barreira Arcana,Arcane Barrier,,effect; max=24,f
+effect.charging.heavy.name,Carregando,Charging,,effect; max=24,
+effect.charging.archer.name,Mirando,Aiming,,effect; max=24,
+effect.chill.name,Enregelado,Chilled,,effect; max=24,m
+item_base.hunter_bow.name,Arco de Caçador,Hunter's Bow,,item base; max=28,m
+item_base.steel_sword.name,Espada de Aço,Steel Sword,,item base; max=28,f
+item_base.quarry_maul.name,Martelo de Cantaria,Quarry Maul,,item base; max=28,m
+item_base.wooden_shield.name,Escudo de Madeira,Wooden Shield,,item base; max=28,m
+item_base.guard_shield.name,Escudo de Guarda,Guard Shield,,item base; max=28,m
+item_base.guard_helm.name,Elmo de Guarda,Guard Helm,,item base; max=28,m
+item_base.guard_cuirass.name,Couraça de Guarda,Guard Cuirass,,item base; max=28,f
+item_base.guard_gauntlets.name,Manoplas de Guarda,Guard Gauntlets,,item base; plural; max=28,f
+item_base.guard_greaves.name,Grevas de Guarda,Guard Greaves,,item base; plural; max=28,f
+item_base.guard_sabatons.name,Escarpes de Guarda,Guard Sabatons,,item base; plural; max=28,m
+affix.ruthless.name,Impiedoso,Ruthless,,affix prefix; forma m singular,m
+affix.ruthless.name_f,Impiedosa,Ruthless,,affix prefix; forma f singular,f
+affix.ruthless.name_mp,Impiedosos,Ruthless,,affix prefix; forma m plural,m
+affix.ruthless.name_fp,Impiedosas,Ruthless,,affix prefix; forma f plural,f
+affix.resolute.name,Resoluto,Resolute,,affix prefix; forma m singular,m
+affix.resolute.name_f,Resoluta,Resolute,,affix prefix; forma f singular,f
+affix.resolute.name_mp,Resolutos,Resolute,,affix prefix; forma m plural,m
+affix.resolute.name_fp,Resolutas,Resolute,,affix prefix; forma f plural,f
+affix.of_cadence.name,de Cadência,of Cadence,,affix suffix; invariável,
+affix.of_reach.name,de Alcance,of Reach,,affix suffix; invariável,
+affix.of_the_flask.name,do Frasco,of the Flask,,affix suffix; invariável,
+affix.of_the_wall.name,do Muro,of the Wall,,affix suffix; invariável,
+consumable.refill_flask.name,Frasco de Recarga,Refill Flask,,consumível; max=20; provisório,m
+consumable.refill_flask.desc,Restaura 1 carga de poção. Não funciona na arena do Guardião,Restores 1 potion charge. Does not work in the Guardian arena,,consumível; max=70; provisório,

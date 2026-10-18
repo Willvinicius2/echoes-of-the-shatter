@@ -42,6 +42,10 @@ inline constexpr std::int64_t kMaxSavedPotionCharges = 1000;
 inline constexpr double kMaxSavedRechargeSeconds = 1.0e9;
 inline constexpr std::size_t kMaxSavedItems = 10000;             // itens por contêiner (Mochila ou Baú) lidos de um save
 inline constexpr const char* kSaveFormatTag = "echoes-of-the-shatter-save";
+inline constexpr std::size_t kMaxSavedBuyback = 100;             // itens na recompra do Vendedor (vendor_buyback_slots <= 100)
+inline constexpr std::size_t kMaxWorldAreas = 64;               // áreas com estado de mundo gravado
+inline constexpr std::size_t kMaxWorldObjects = 512;             // objetos abertos por área
+inline constexpr int kMaxSavedPolish = 10;                       // passos de Lapidar por afixo (polish_max_steps <= 10)
 
 enum class ExpeditionStatus : std::uint8_t {
     None = 0,       // nenhuma expedição
@@ -55,6 +59,21 @@ struct SavedExpedition {
     int characterIndex = -1;            // índice em SaveData::characters
     ExpeditionRequest request;          // snapshot, seed, start, duração, regras, content_version
     std::uint64_t collectedResultHash = 0;  // ExpeditionResult::resultHash da coleta (anti-duplicação)
+};
+
+// Item vendido ao Vendedor que ainda pode ser recomprado (docs/16 11.2). `paid` = Ouro que o jogador recebeu na venda.
+struct BuybackEntry {
+    ItemInstance item;
+    std::int64_t paid = 0;
+};
+
+// Estado do mundo de UMA área (docs/14 5): objetos já abertos (baús, parede secreta, atalho), por ID de objeto, e quantas
+// visitas à área já começaram (a semente da visita nasce daqui). Os baús abertos, os segredos abertos e o atalho aberto não
+// voltam ao voltar a um checkpoint nem ao reabrir o jogo.
+struct WorldAreaState {
+    ContentId mapId;
+    std::uint32_t visits = 0;
+    std::vector<ContentId> opened;
 };
 
 struct SaveData {
@@ -71,6 +90,12 @@ struct SaveData {
     std::vector<SavedExpedition> expeditions; // 0..expeditionSlots
     std::vector<ContentId> codexSeenUniques;  // Codex (Fragmentos de Eco)
     std::vector<ContentId> booksSeen;         // proteção contra azar (Irmã Odete)
+    // Economia do protótipo (docs/16 seção 11). Campos OPCIONAIS no save v2 (só gravados se != 0 / não vazios): saves
+    // antigos mantêm os mesmos bytes e hash. As pilhas de Ouro, Lascas e Frasco ficam em `currencies`.
+    std::uint64_t craftSeed = 0;              // craft_seed: base da semente das melhorias; 0 = ainda não fixada (ver EffectiveCraftSeed)
+    std::vector<BuybackEntry> vendorBuyback;  // recompra: o mais RECENTE primeiro, no máximo vendor_buyback_slots
+    // Estado do mundo por área (campo OPCIONAL `world_state`, só gravado se houver algo: saves antigos = nada aberto).
+    std::vector<WorldAreaState> world;
 };
 
 // ---------------------------------------------------------------------------
@@ -201,6 +226,10 @@ struct ExpeditionStartParams {
 // Personagem inexistente: UnknownContent. Sem vaga livre: AnotherExpeditionRunning.
 StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionStartParams& p,
                            std::vector<ContentId>* blockingIds = nullptr);
+
+// XP no jogo manual e na coleta: soma `gained` ao personagem e sobe de nível enquanto couber, até `capLevel` (no teto o XP
+// zera). Devolve quantos níveis subiu. Mesma regra da coleta de expedição.
+int AwardXp(const ContentDB& db, CharacterState& c, double gained, int capLevel);
 
 // ADIÇÃO (save v2): completa os espaços de poção de cada personagem (e do snapshot de cada expedição) com os do
 // potions.csv, na ordem do CSV: poção ausente entra cheia, ID que não existe mais sai, cargas acima do máximo são cortadas.

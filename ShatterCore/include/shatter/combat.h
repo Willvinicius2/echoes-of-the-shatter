@@ -53,9 +53,22 @@ void TickPotionBarrier(double& barrier, double& potionAmount, double& remaining,
 // Vida cheia; recurso no repouso da classe (vazio se decai fora de combate, senão cheio).
 Vitals CreateVitals(const StatBlock& stats, const ClassData* cls);
 // Regeneração de vida e recurso, decaimento do recurso fora de combate e fim da barreira temporária.
-void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double dt, bool inCombat);
+// `moving` (docs/18 §8 item 7): o herói está andando; a regeneração do RECURSO é multiplicada por
+// ClassData::regenMultWhileMoving (Foco do Arqueiro: 0,3). false (padrão) = parado, multiplicador 1. A vida não muda.
+void TickVitals(Vitals& v, const StatBlock& stats, const ClassData* cls, double dt, bool inCombat, bool moving = false);
 void GainResource(Vitals& v, const StatBlock& stats, double amount);
+// Recurso por golpe que acerta / por bloqueio (classes.csv resourceOnHit/resourceOnBlock). UMA regra para o tempo real
+// (pela API C) e para o simulador idle, que usa estes mesmos valores (docs/18 §8 item 6). 0 sem classe.
+double ResourceOnHit(const ClassData* cls);
+double ResourceOnBlock(const ClassData* cls);
+void GainResourceOnHit(Vitals& v, const StatBlock& stats, const ClassData* cls);
+void GainResourceOnBlock(Vitals& v, const StatBlock& stats, const ClassData* cls);
 bool TrySpendResource(Vitals& v, double amount);   // false (sem gastar) se faltar recurso
+
+// Multiplicador de dano do ataque forte (docs/18 1.4): 1 + (heavyMaxMult - 1) * fração da carga, linear, sem pow. `fraction` é o
+// progresso da carga de 0 a 1 (0 = carga mínima = 1, 1 = máxima = heavyMaxMult). false (e `out` intacto) se a fração for NaN
+// ou estiver fora de [0, 1]. Aplique em HitInput::hitMore.
+bool HeavyChargeMultiplier(const BasicKitData& kit, double fraction, double& out);
 
 // ---------------------------------------------------------------------------
 // Tempos de ação
@@ -67,9 +80,17 @@ struct ActionTimingInfo {
 };
 // Velocidade de ataque (ou conjuração, se Spell) sem tags, piso 0,01 (como o simulador).
 // `elite` (opcional): o telegraph (windup) NÃO encurta com attackSpeedMult do modificador e a recuperação usa recoveryMult.
+// `weaponTimeFactor` (docs/19 N0, Q19-1 A): multiplica a duração (preparação, impacto e recuperação) da habilidade; veja
+// WeaponTimeFactor. 1 = a arma não muda o tempo. A recarga não muda.
 struct EliteProfile;
 ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill, const StatBlock& stats,
-                                     const EliteProfile* elite = nullptr);
+                                     const EliteProfile* elite = nullptr, double weaponTimeFactor = 1.0);
+// N0: fator de tempo da arma = attackTime da arma / refAttackTime (o da arma inicial da classe, basic_kits.csv). Só vale para
+// habilidades que escalam com arma (scalesWithWeapon); desarmado, sem arma ou refAttackTime <= 0 = 1. A Espada inicial não
+// muda; o Martelo (attackTime maior) fica mais lento: fator > 1 = golpe mais longo.
+double WeaponTimeFactor(const SkillData& skill, const ItemBaseData* weapon, double refAttackTime);
+// refAttackTime da classe (0 se a classe não tem kit ou a coluna está vazia).
+double ClassRefAttackTime(const ContentDB& db, std::string_view classId);
 // Velocidade final em uu/s. `baseMoveSpeedUu` > 0 (inimigo: EnemyData::moveSpeed): base × atributo MoveSpeed (multiplicador).
 // `baseMoveSpeedUu` <= 0 (herói): o próprio atributo, que já vem em uu/s de class_stats.csv (move_speed = 450).
 double MoveSpeedUu(const StatBlock& stats, double baseMoveSpeedUu);

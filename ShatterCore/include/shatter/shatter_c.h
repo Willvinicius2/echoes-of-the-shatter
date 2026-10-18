@@ -122,7 +122,9 @@ enum {
 enum {
     SHATTER_TAG_ATTACK = 1 << 0, SHATTER_TAG_SPELL = 1 << 1, SHATTER_TAG_MELEE = 1 << 2,
     SHATTER_TAG_PROJECTILE = 1 << 3, SHATTER_TAG_AREA = 1 << 4, SHATTER_TAG_FIRE = 1 << 5,
-    SHATTER_TAG_COLD = 1 << 6, SHATTER_TAG_LIGHTNING = 1 << 7, SHATTER_TAG_PHYSICAL = 1 << 8
+    SHATTER_TAG_COLD = 1 << 6, SHATTER_TAG_LIGHTNING = 1 << 7, SHATTER_TAG_PHYSICAL = 1 << 8,
+    /* Tag de EFEITO de defesa (API 1.5, docs/18 8.1): ver shatter_hit_input.from_guard_arc. Não é tag de habilidade. */
+    SHATTER_TAG_GUARD = 1 << 9
 };
 /* Tipos de dano: índice dos vetores [4] (physical, fire, cold, lightning). */
 enum { SHATTER_DAMAGE_PHYSICAL = 0, SHATTER_DAMAGE_FIRE = 1, SHATTER_DAMAGE_COLD = 2, SHATTER_DAMAGE_LIGHTNING = 3 };
@@ -145,7 +147,11 @@ typedef struct shatter_hit_input {
     uint32_t skill_tags;          /* SHATTER_TAG_* */
     uint8_t is_damage_over_time;  /* tick de DoT: sem crítico/evasão/bloqueio, sem RNG */
     uint8_t can_be_blocked;
-    uint8_t reserved[2];
+    /* API 1.5 (antes reserved[0]; 0 = fora do arco, o que os chamadores antigos já mandavam): 1 = ESTE golpe veio de dentro
+     * do arco da defesa do alvo (o C# faz a geometria). Só então valem os modificadores de dano recebido dos efeitos com a
+     * tag guard (effect.guarding.*). Os demais modificadores do alvo não dependem disto. */
+    uint8_t from_guard_arc;
+    uint8_t reserved[1];
 } shatter_hit_input;
 
 enum { SHATTER_HIT = 0, SHATTER_HIT_EVADED = 1, SHATTER_HIT_BLOCKED = 2 };
@@ -543,7 +549,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 4u   /* 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 7u   /* 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -731,6 +737,14 @@ SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing(const shatter_db* d
                                                              size_t skill_id_len, const shatter_statblock* stats,
                                                              const char* modifier_id, size_t modifier_id_len,
                                                              shatter_action_timing* out) SHATTER_NOEXCEPT;
+/* API 1.7 (N0, docs/19 Q19-1 A): como shatter_skill_timing, mas o attackTime da arma equipada (weapon_base_id, vazio =
+ * desarmado) muda a duração (preparação, impacto, recuperação) das habilidades que escalam com arma: tempo x attackTime da
+ * arma / refAttackTime da classe (basic_kits.csv). Espada inicial: 1; Martelo: mais lento. A recarga não muda. */
+SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing_weapon(const shatter_db* db, const char* skill_id,
+                                                                    size_t skill_id_len, const shatter_statblock* stats,
+                                                                    const char* class_id, size_t class_id_len,
+                                                                    const char* weapon_base_id, size_t weapon_base_id_len,
+                                                                    shatter_action_timing* out) SHATTER_NOEXCEPT;
 /* base_uu_per_sec > 0 (inimigo: "move_speed" do enemies.csv): base × atributo. base_uu_per_sec <= 0 (herói): o próprio
  * atributo, que já vem em uu/s do class_stats.csv (move_speed = 450). */
 SHATTER_API shatter_status SHATTER_CALL shatter_move_speed(const shatter_statblock* stats, double base_uu_per_sec,
@@ -939,6 +953,81 @@ SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext4(uint32_t* out, 
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext4(const uint32_t* values, size_t n,
                                                                   shatter_error* err) SHATTER_NOEXCEPT;
 
+/* --- Combate básico (API 1.5; docs/18, docs/09 seção 12) ---
+ * A máquina de combate básica (combo, buffer, carga, cancelamentos) roda no C# (HeroCombatLogic, docs/18 8.1). O core
+ * guarda e valida os NÚMEROS (basic_kits.csv e as 7 chaves novas de rules.csv), resolve dano, efeitos, defesa e recurso. */
+
+/* Chaves novas de rules.csv (docs/18 1.2). Tempos em s; light_windup_credit_max é fração; dash_shot_range em uu. */
+typedef struct shatter_combat_rules {
+    double combo_window, combo_window_after_dodge, attack_buffer, heavy_hold_threshold;
+    double light_windup_credit_max, guard_lower_time, dash_shot_range;
+} shatter_combat_rules;
+SHATTER_API shatter_status SHATTER_CALL shatter_db_combat_rules(const shatter_db* db,
+                                                                shatter_combat_rules* out) SHATTER_NOEXCEPT;
+
+#define SHATTER_KIT_ID_SIZE 64u            /* cada ID cabe em 63 bytes + NUL (validado no carregamento) */
+#define SHATTER_KIT_MAX_LIGHT_CHAIN 3u
+#define SHATTER_KIT_MAX_PERFECT_EFFECTS 4u
+/* Kit básico de uma classe (basic_kits.csv). Os campos de texto são IDs de conteúdo, UTF-8, terminados em NUL. */
+typedef struct shatter_basic_kit {
+    double heavy_charge_time;          /* s da carga depois de heavy_hold_threshold */
+    double heavy_max_mult;             /* multiplicador de dano na carga máxima: 1 + (max - 1) * progresso, linear */
+    double guard_arc;                  /* graus, arco TOTAL da defesa (360 = cúpula) */
+    double guard_max_hold;             /* s; 0 = ilimitado */
+    double guard_cooldown;             /* s de espera depois de soltar (ou de cair sozinha) */
+    double guard_perfect_window;       /* s depois do aperto; 0 = sem defesa perfeita */
+    double guard_perfect_cooldown;     /* s mínimos desde o último aperto para a janela abrir de novo */
+    double guard_perfect_resource;     /* recurso ganho pela perfeita (substitui resourceOnBlock) */
+    double guard_drain_per_damage;     /* recurso gasto por ponto de dano evitado; 0 = não gasta */
+    int32_t light_chain_count;         /* 1 a 3 */
+    int32_t guard_perfect_effect_count;/* 0 a 4 */
+    char light_chain[3][64];           /* golpes leves em ordem; o mesmo ID pode repetir */
+    char heavy_skill[64];
+    char charge_effect[64];            /* reaplicado a cada tick enquanto carrega */
+    char guard_effect[64];             /* reaplicado a cada tick enquanto defende; tag guard */
+    char guard_perfect_effects[4][64]; /* aplicados no atacante corpo a corpo pela defesa perfeita */
+} shatter_basic_kit;
+/* Kit da classe. SHATTER_NOT_FOUND se a classe não existe ou não tem linha em basic_kits.csv (tabela opcional). */
+SHATTER_API shatter_status SHATTER_CALL shatter_basic_kit_get(const shatter_db* db, const char* class_id,
+                                                              size_t class_id_len, shatter_basic_kit* out) SHATTER_NOEXCEPT;
+
+/* Golpe do ATAQUE FORTE carregado (docs/18 1.4). O core calcula o multiplicador com o heavy_max_mult do kit da classe:
+ * 1 + (heavy_max_mult - 1) * charge_fraction (linear) e o aplica como `more` SÓ neste golpe (depois dos modificadores do
+ * atacante, antes do crítico). O resto é igual a shatter_resolve_hit_db (3 números de rng, constantes do banco).
+ * charge_fraction = progresso da carga, 0 (mínima) a 1 (máxima). Fora de [0, 1] ou NaN: INVALID_ARGUMENT com mensagem em
+ * err, sem efeito (o rng não avança). Classe sem kit: NOT_FOUND. Não cabe campo novo em shatter_hit_input (só sobra 1
+ * byte livre e o tamanho 64 é contrato): por isso função própria, com o ID da classe. */
+SHATTER_API shatter_status SHATTER_CALL shatter_resolve_hit_charged(
+    const shatter_db* db, const shatter_statblock* attacker, const shatter_statblock* defender,
+    const shatter_hit_input* input, const char* class_id, size_t class_id_len, double charge_fraction,
+    shatter_rng* rng, shatter_hit_result* out, shatter_error* err) SHATTER_NOEXCEPT;
+
+/* Como shatter_vitals_tick, com `moving` (!= 0: o herói está andando). A regeneração do RECURSO é multiplicada por
+ * regen_mult_while_moving da classe (Foco: 0,3); a vida não muda. moving = 0 é igual a shatter_vitals_tick. */
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_tick_ex(const shatter_db* db, shatter_vitals* vitals,
+                                                               const shatter_statblock* stats, const char* class_id,
+                                                               size_t class_id_len, double dt, uint8_t in_combat,
+                                                               uint8_t moving) SHATTER_NOEXCEPT;
+/* Recurso por golpe que acerta / por bloqueio, da classe (classes.csv resourceOnHit / resourceOnBlock), limitado ao máximo.
+ * É a MESMA regra do simulador idle. class_id pode ser nulo/vazio (sem classe: nada). */
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_gain_on_hit(const shatter_db* db, shatter_vitals* vitals,
+                                                                   const shatter_statblock* stats, const char* class_id,
+                                                                   size_t class_id_len) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_vitals_gain_on_block(const shatter_db* db, shatter_vitals* vitals,
+                                                                     const shatter_statblock* stats, const char* class_id,
+                                                                     size_t class_id_len) SHATTER_NOEXCEPT;
+
+/* Layout 1.5: [offsetof(shatter_hit_input, from_guard_arc),
+ *              sizeof(shatter_combat_rules), 7 offsets,
+ *              sizeof(shatter_basic_kit), offsets de heavy_charge_time, heavy_max_mult, guard_arc, guard_max_hold,
+ *              guard_cooldown, guard_perfect_window, guard_perfect_cooldown, guard_perfect_resource,
+ *              guard_drain_per_damage, light_chain_count, guard_perfect_effect_count, light_chain, heavy_skill,
+ *              charge_effect, guard_effect, guard_perfect_effects]. Chamar o check na inicialização, como os outros. */
+#define SHATTER_LAYOUT_EXT5_COUNT 26u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext5(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext5(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+
 /* --- Elite (docs/13, item 5) --- */
 /* Sorteia o modificador (consome SEMPRE 1 número do rng de eventos) e devolve os multiplicadores de um elite sorteado. */
 SHATTER_API shatter_status SHATTER_CALL shatter_elite_roll(const shatter_db* db, shatter_rng* events_rng,
@@ -1035,6 +1124,214 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition_trusted(
                                                                                 uint8_t* out, size_t cap,
                                                                                 size_t* needed,
                                                                                 shatter_error* err) SHATTER_NOEXCEPT;
+
+/* --- Economia do protótipo: Vendedor, Frasco de Recarga e Encantador (API 1.6; docs/16 seção 11, docs/09 seção 13) ---
+ * Tudo é regra do core. Números em rules.csv (vendor_*, refill_flask_*, craft_*, reforge_*, polish_*, dismantle_*) e nas
+ * tabelas craft_costs.csv e vendor_stock.csv. Ouro (currency.gold), Lascas (material.shards) e Frasco
+ * (consumable.refill_flask) são pilhas do save (shatter_currency_get). Itens são achados por uid na Mochila, no Baú ou no
+ * equipamento do personagem. Uma operação com resultado != OK não muda NADA (cobra e aplica juntas, ou nenhuma das duas).
+ * Sorteio só no fluxo próprio Crafting (RngStream 4): semente = função pura de (craft_seed do save, uid, craft_steps do
+ * item, operação); recarregar o save antes de confirmar não muda o resultado. O C# nunca calcula custo nem sorteia. */
+enum {
+    SHATTER_CRAFT_OK = 0, SHATTER_CRAFT_NOT_FOUND, SHATTER_CRAFT_UNIQUE, SHATTER_CRAFT_WRONG_RARITY,
+    SHATTER_CRAFT_AFFIX_LIMIT, SHATTER_CRAFT_ALREADY_INSCRIBED, SHATTER_CRAFT_POLISH_MAX, SHATTER_CRAFT_NO_CANDIDATE,
+    SHATTER_CRAFT_NO_GOLD, SHATTER_CRAFT_NO_SHARDS, SHATTER_CRAFT_EQUIPPED_DISMANTLE, SHATTER_CRAFT_UNKNOWN_CONTENT,
+    SHATTER_CRAFT_BAD_INDEX
+};
+enum { SHATTER_CRAFT_OP_REFINE = 0, SHATTER_CRAFT_OP_REFORGE = 1, SHATTER_CRAFT_OP_ADD = 2, SHATTER_CRAFT_OP_POLISH = 3,
+       SHATTER_CRAFT_OP_DISMANTLE = 4 };
+enum {
+    SHATTER_VENDOR_OK = 0, SHATTER_VENDOR_NOT_FOUND, SHATTER_VENDOR_FULL, SHATTER_VENDOR_NO_GOLD, SHATTER_VENDOR_CARRY_CAP,
+    SHATTER_VENDOR_BAD_QUANTITY, SHATTER_VENDOR_UNKNOWN_CONTENT
+};
+enum { SHATTER_FLASK_CTX_RUN = 0, SHATTER_FLASK_CTX_ARENA = 1, SHATTER_FLASK_CTX_IDLE = 2 };
+enum {
+    SHATTER_FLASK_OK = 0, SHATTER_FLASK_NO_FLASK, SHATTER_FLASK_ARENA_LOCKED, SHATTER_FLASK_IDLE_FORBIDDEN,
+    SHATTER_FLASK_POTIONS_FULL, SHATTER_FLASK_LOCKED_OUT, SHATTER_FLASK_UNKNOWN_CONTENT
+};
+typedef struct shatter_craft_result {
+    int32_t result;              /* SHATTER_CRAFT_* */
+    int32_t changed_affix;       /* Lapidar: afixo lapidado; Adicionar: afixo novo; Reforjar com trava: onde ficou o travado; senão -1 */
+    int64_t gold_spent;          /* o que foi de fato cobrado (0 se result != OK) */
+    int64_t shards_spent;
+    int64_t shards_gained;       /* Desmontar */
+} shatter_craft_result;
+typedef struct shatter_vendor_result {
+    int32_t result;              /* SHATTER_VENDOR_* */
+    int32_t evicted;             /* venda: 1 = a recompra cheia expulsou o item mais antigo */
+    int32_t evicted_rarity;      /* raridade do expulso (0 comum, 1 mágico, 2 raro, 3 único) */
+    int32_t reserved;
+    int64_t gold;                /* venda: Ouro recebido; recompra e compra: Ouro gasto */
+} shatter_vendor_result;
+typedef struct shatter_flask_result {
+    int32_t result;              /* SHATTER_FLASK_* */
+    int32_t potion_index;        /* posição da poção restaurada no cinto (ordem de potions.csv); -1 se nenhuma */
+    int32_t charges_after;       /* cargas dessa poção depois */
+    int32_t flasks_left;         /* frascos que sobraram */
+} shatter_flask_result;
+
+/* Saldo de uma pilha do save (Ouro, Lascas, frasco...). Id desconhecido = 0, OK. */
+SHATTER_API shatter_status SHATTER_CALL shatter_currency_get(const shatter_save* save, const char* id, size_t id_len,
+                                                             int64_t* amount) SHATTER_NOEXCEPT;
+
+/* Prévia SEM custo e sem mudar nada: {"op","result","gold","shards","shards_gain","affix_count_min","affix_count_max",
+ * "polish_step","polish_from","polish_to","shards_with_lock","shards_no_lock","reforges","expedition_running",
+ * "have_gold","have_shards"}. result = SHATTER_CRAFT_* (NO_GOLD/NO_SHARDS trazem os custos para mostrar em vermelho).
+ * `arg`: Reforjar = afixo travado (-1 nenhum); Lapidar = afixo; Adicionar = candidato (-1 aceito aqui); demais ignoram. */
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_quote_json(const shatter_db* db, const shatter_save* save,
+                                                                 size_t character_index, uint64_t uid, int32_t op,
+                                                                 int32_t arg, uint8_t* out, size_t cap,
+                                                                 size_t* needed) SHATTER_NOEXCEPT;
+/* Refinar: Comum vira Mágico com 1 a 2 afixos. */
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_refine(const shatter_db* db, shatter_save* save,
+                                                             size_t character_index, uint64_t uid,
+                                                             shatter_craft_result* out) SHATTER_NOEXCEPT;
+/* Reforjar: sorteia de novo os afixos mantendo a quantidade; locked_affix_index = afixo travado (-1 nenhum). */
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_reforge(const shatter_db* db, shatter_save* save,
+                                                              size_t character_index, uint64_t uid,
+                                                              int32_t locked_affix_index,
+                                                              shatter_craft_result* out) SHATTER_NOEXCEPT;
+/* Adicionar afixo, passo 1: até add_affix_candidates candidatos {"result","gold","shards","candidates":[{"affix_id",
+ * "min","max"}]}. Não altera nada; fechar e reabrir devolve os mesmos candidatos. */
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_add_affix_offer(const shatter_db* db, const shatter_save* save,
+                                                                      size_t character_index, uint64_t uid,
+                                                                      uint8_t* out, size_t cap,
+                                                                      size_t* needed) SHATTER_NOEXCEPT;
+/* Adicionar afixo, passo 2: escolhe o candidato (índice da oferta) e confirma. */
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_add_affix_apply(const shatter_db* db, shatter_save* save,
+                                                                      size_t character_index, uint64_t uid,
+                                                                      int32_t candidate_index,
+                                                                      shatter_craft_result* out) SHATTER_NOEXCEPT;
+/* Lapidar: um passo num afixo (sem sorteio). */
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_polish(const shatter_db* db, shatter_save* save,
+                                                             size_t character_index, uint64_t uid, int32_t affix_index,
+                                                             shatter_craft_result* out) SHATTER_NOEXCEPT;
+/* Desmontar: o item some (Mochila ou Baú; equipado recusa) e devolve Lascas (out->shards_gained). */
+SHATTER_API shatter_status SHATTER_CALL shatter_craft_dismantle(const shatter_db* db, shatter_save* save,
+                                                                size_t character_index, uint64_t uid,
+                                                                shatter_craft_result* out) SHATTER_NOEXCEPT;
+
+/* Vender ao Vendedor: como shatter_inventory_sell, mas o item vai para a recompra (10 últimos). A recompra cheia expulsa
+ * o mais antigo (out->evicted); a UI deve avisar antes com shatter_vendor_buyback_json (would_evict, evict_rarity). */
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_sell(const shatter_db* db, shatter_save* save,
+                                                            size_t character_index, int32_t container, uint64_t uid,
+                                                            shatter_vendor_result* out) SHATTER_NOEXCEPT;
+/* {"capacity","count","would_evict","evict_rarity","items":[{"item":ItemInstance,"paid","price"}]}, o mais recente primeiro. */
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_buyback_json(const shatter_db* db, const shatter_save* save,
+                                                                    uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Recompra o item de `uid` (idempotente: repetir dá NOT_FOUND e não cobra de novo). Cobra 1,25 x o valor pago. */
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_buyback(const shatter_db* db, shatter_save* save,
+                                                               size_t character_index, uint64_t uid,
+                                                               shatter_vendor_result* out) SHATTER_NOEXCEPT;
+/* Estoque: [{"id","ref_id","price_gold","carry_cap","owned"}]. */
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_stock_json(const shatter_db* db, const shatter_save* save,
+                                                                  uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Compra `qty` (>= 1) do estoque `stock_id`; respeita o máximo levado e o Ouro. */
+SHATTER_API shatter_status SHATTER_CALL shatter_vendor_buy(const shatter_db* db, shatter_save* save,
+                                                           const char* stock_id, size_t stock_id_len, int32_t qty,
+                                                           shatter_vendor_result* out) SHATTER_NOEXCEPT;
+/* Frasco de Recarga: restaura refill_flask_charges cargas da poção com MENOS cargas (empate: a Vida) do cinto `potions`
+ * (o cinto vivo do personagem), sem passar do máximo; gasta 1 frasco do save e inicia a trava global. context =
+ * SHATTER_FLASK_CTX_*: ARENA e IDLE recusam. Recusa não muda nada nem gasta o frasco. */
+SHATTER_API shatter_status SHATTER_CALL shatter_flask_use(const shatter_db* db, shatter_save* save, shatter_potions* potions,
+                                                          int32_t context, shatter_flask_result* out) SHATTER_NOEXCEPT;
+
+/* Layout 1.6: [sizeof(shatter_craft_result), offsets de result, changed_affix, gold_spent, shards_spent, shards_gained,
+ *              sizeof(shatter_vendor_result), offsets de result, evicted, evicted_rarity, gold,
+ *              sizeof(shatter_flask_result), offsets de result, potion_index, charges_after, flasks_left]. */
+#define SHATTER_LAYOUT_EXT6_COUNT 16u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext6(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext6(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+
+/* --- Core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte e Fervor (API 1.7; docs/09 seção 14) ---
+ * Tudo é regra do core (world.h). O estado do mundo vai no save (campo opcional `world_state`) e não volta ao voltar a um
+ * checkpoint. A semente da visita nasce no core (shatter_world_begin_visit): o chamador não a escolhe. */
+enum { SHATTER_CHEST_OPENED = 0, SHATTER_CHEST_ALREADY_OPEN = 1, SHATTER_CHEST_NO_TABLE = 2 };
+typedef struct shatter_xp_info {
+    double awarded;              /* XP concedido nesta chamada, já com o Fervor (0 em shatter_character_progress) */
+    double xp_in_level;          /* XP dentro do nível atual */
+    double xp_to_next;           /* XP que falta, do início do nível, para o próximo (0 no teto de nível da área) */
+    int32_t level_before;
+    int32_t level;               /* nível do personagem no save: o herói usa este, não um nível fixo da cena */
+    int32_t level_cap;           /* teto da área: monsterLevel + xp_cap_levels_above_area, até max_level */
+    int32_t reserved;
+} shatter_xp_info;
+typedef struct shatter_fervor_info {   /* Fervor do jogo manual (rules.csv), para a HUD */
+    double xp_mult, gold_mat_mult, rare_mult;
+    double xp_bonus, gold_mat_bonus, rare_bonus;   /* mult - 1: XP +200% = 2,0 */
+} shatter_fervor_info;
+
+/* Começa uma visita à área: incrementa o contador do save e devolve a semente da visita. Mapa desconhecido: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_world_begin_visit(const shatter_db* db, shatter_save* save,
+                                                                  const char* map_id, size_t map_id_len,
+                                                                  uint64_t* visit_seed) SHATTER_NOEXCEPT;
+/* Objeto da área (baú, parede secreta, atalho; IDs do docs/14 5): aberto? */
+SHATTER_API shatter_status SHATTER_CALL shatter_world_object_get(const shatter_save* save, const char* map_id,
+                                                                 size_t map_id_len, const char* object_id,
+                                                                 size_t object_id_len, uint8_t* opened) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_world_object_set(shatter_save* save, const char* map_id, size_t map_id_len,
+                                                                 const char* object_id, size_t object_id_len,
+                                                                 uint8_t opened) SHATTER_NOEXCEPT;
+/* {"map_id","visits","opened":[ids]} (área sem registro: visits 0 e opened vazio). */
+SHATTER_API shatter_status SHATTER_CALL shatter_world_state_json(const shatter_save* save, const char* map_id,
+                                                                 size_t map_id_len, uint8_t* out, size_t cap,
+                                                                 size_t* needed) SHATTER_NOEXCEPT;
+/* {"map_id","monster_level","tier","area_loot_table","boss_encounter","encounters":[ids na ordem do CSV],
+ *  "chests":[{"id","loot_table"}]}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_map_info_json(const shatter_db* db, const char* map_id, size_t map_id_len,
+                                                              uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Encontro da visita, determinístico pela semente: {"encounter_id","is_boss","groups":[{"enemy_id","count","slots":
+ * [{"elite":0|1,"modifier_id"}]}]}. n entre countMin e countMax por grupo e a elite (chanceElite) por espaço; um grupo de n
+ * inimigos usa os n primeiros espaços do layout. Mesma semente e encontro = mesma formação (também depois de um checkpoint). */
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json(const shatter_db* db, const char* encounter_id,
+                                                                    size_t encounter_id_len, uint64_t visit_seed,
+                                                                    uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Abre o baú: tabela de chests.csv (se faltar, a areaLootTable do mapa), rola como shatter_save_drop_loot (itens NO CHÃO,
+ * Ouro e Lascas direto no save, mesmo JSON de saída) e marca o baú aberto no estado do mundo. *result =
+ * SHATTER_CHEST_*; já aberto: nada é rolado (saída vazia "" e needed 0). Buffer pequeno: nada muda (nem o estado, nem o rng). */
+SHATTER_API shatter_status SHATTER_CALL shatter_chest_open(const shatter_db* db, shatter_save* save, const char* map_id,
+                                                           size_t map_id_len, const char* chest_id, size_t chest_id_len,
+                                                           const shatter_loot_context* ctx, shatter_rng* rng,
+                                                           uint8_t* out, size_t cap, size_t* needed, int32_t* result,
+                                                           shatter_error* err) SHATTER_NOEXCEPT;
+/* Loot ao limpar um encontro: rola a areaLootTable do mapa (como shatter_save_drop_loot). Mapa sem tabela: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_clear_loot(const shatter_db* db, shatter_save* save,
+                                                                     const char* map_id, size_t map_id_len,
+                                                                     const shatter_loot_context* ctx, shatter_rng* rng,
+                                                                     uint8_t* out, size_t cap, size_t* needed,
+                                                                     shatter_error* err) SHATTER_NOEXCEPT;
+/* XP de uma morte no jogo manual: (xpBase + xpPerLevel x (nível - 1)) do enemies.csv x multiplicador de elite x fervor_xp_mult
+ * (fervor != 0). Sobe de nível no save até o teto da área. elite_rolled = elite sorteado no encontro (modifier_id opcional);
+ * elite fixo (isElite) e chefe usam o próprio valor do inimigo. Inimigo desconhecido: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_xp_award_kill(const shatter_db* db, shatter_save* save,
+                                                              size_t character_index, const char* map_id,
+                                                              size_t map_id_len, const char* enemy_id, size_t enemy_id_len,
+                                                              int32_t monster_level, uint8_t elite_rolled,
+                                                              const char* modifier_id, size_t modifier_id_len,
+                                                              uint8_t fervor, shatter_xp_info* out) SHATTER_NOEXCEPT;
+/* Nível e XP do personagem (o herói usa o nível do save). map_id vazio = teto max_level. */
+SHATTER_API shatter_status SHATTER_CALL shatter_character_progress(const shatter_db* db, const shatter_save* save,
+                                                                   size_t character_index, const char* map_id,
+                                                                   size_t map_id_len, shatter_xp_info* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_fervor_get(const shatter_db* db, shatter_fervor_info* out) SHATTER_NOEXCEPT;
+
+/* Movimento do herói (rules.csv hero_move_accel_seconds / hero_move_decel_seconds, 0 a 0,5 s): tempo de 0 até a velocidade
+ * máxima e dela até 0. O core guarda e valida os números; o C# aplica a rampa. */
+typedef struct shatter_hero_move_rules { double accel_seconds, decel_seconds; } shatter_hero_move_rules;
+SHATTER_API shatter_status SHATTER_CALL shatter_db_hero_move_rules(const shatter_db* db, shatter_hero_move_rules* out) SHATTER_NOEXCEPT;
+/* Layout 1.7b: [sizeof(shatter_hero_move_rules), offset de accel_seconds, offset de decel_seconds] = 3 valores. */
+#define SHATTER_LAYOUT_EXT8_COUNT 3u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext8(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext8(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+
+/* Layout 1.7: [sizeof(shatter_xp_info), 7 offsets (awarded, xp_in_level, xp_to_next, level_before, level, level_cap, reserved),
+ *              sizeof(shatter_fervor_info), 6 offsets] = 15 valores. */
+#define SHATTER_LAYOUT_EXT7_COUNT 15u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext7(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext7(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
 
 #ifdef __cplusplus
 }  /* extern "C" */

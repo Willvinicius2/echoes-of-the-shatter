@@ -18,11 +18,14 @@ namespace Echoes.Interop
     {
         public readonly string AffixId;
         public readonly double Value;
+        /// <summary>Passos de Lapidar ja dados neste afixo (0 a 3; economia, docs/16 11.4).</summary>
+        public readonly int Polish;
 
-        public AffixInfo(string affixId, double value)
+        public AffixInfo(string affixId, double value, int polish = 0)
         {
             AffixId = affixId;
             Value = value;
+            Polish = polish;
         }
     }
 
@@ -36,6 +39,8 @@ namespace Echoes.Interop
         public string UniqueId = string.Empty;
         public readonly List<AffixInfo> Affixes = new List<AffixInfo>();
         public bool HasInscription;
+        /// <summary>Melhorias do Encantador (docs/16 11.6): quantas vezes a peca foi refinada, reforjada ou recebeu afixo; entra na semente do proximo sorteio.</summary>
+        public int CraftSteps, CraftReforges;
 
         public bool IsUnique => Rarity == ItemRarity.Unique;
 
@@ -60,12 +65,14 @@ namespace Echoes.Interop
                 ItemLevel = MiniJson.Int(o, "item_level", 1),
                 UniqueId = MiniJson.Str(o, "unique_id"),
                 HasInscription = MiniJson.Bool(o, "has_inscription"),
+                CraftSteps = MiniJson.Int(o, "craft_steps"),
+                CraftReforges = MiniJson.Int(o, "craft_reforges"),
             };
             ulong.TryParse(MiniJson.Str(o, "uid", "0"), NumberStyles.None, CultureInfo.InvariantCulture, out item.Uid);
             foreach (var a in MiniJson.AsArray(o.TryGetValue("affixes", out var list) ? list : null))
             {
                 var ao = MiniJson.AsObject(a);
-                item.Affixes.Add(new AffixInfo(MiniJson.Str(ao, "affix_id"), MiniJson.Num(ao, "value")));
+                item.Affixes.Add(new AffixInfo(MiniJson.Str(ao, "affix_id"), MiniJson.Num(ao, "value"), MiniJson.Int(ao, "polish")));
             }
             return item;
         }

@@ -27,12 +27,35 @@ namespace Echoes.Interop
         public double Impact { get; internal set; }
         public double Recovery { get; internal set; }
         public double RangeUu { get; internal set; }
+        /// <summary>
+        /// Raio em uu. Em habilidade de área é o raio da área; em PROJÉTIL é só a largura de colisão do corredor (a explosão no impacto é
+        /// <see cref="ExplosionRadiusUu"/>, coluna <c>explosionRadius</c>). Não use este valor como raio de explosão.
+        /// </summary>
         public double RadiusUu { get; internal set; }
+
+        /// <summary>Raio da explosão no impacto de um projétil (coluna <c>explosionRadius</c>, docs/18 8.3 a); 0 = sem explosão (<see cref="SkillBehavior.Explodes"/>).</summary>
+        public double ExplosionRadiusUu { get; internal set; }
+
+        /// <summary>Empurrão em uu aplicado no alvo por golpe (coluna <c>knockback</c>); 0 = nenhum. Elites e chefes aplicam o fator deles no gameplay.</summary>
+        public double KnockbackUu { get; internal set; }
         /// <summary>Abertura total do cone em graus (formas Cone e Melee).</summary>
         public double ConeAngleDegrees { get; internal set; }
         /// <summary>Velocidade do projétil em uu/s (forma Projectile).</summary>
         public double ProjectileSpeedUu { get; internal set; }
         public int Projectiles { get; internal set; } = 1;
+
+        /// <summary>Valor de <see cref="Pierce"/> que atravessa todos os alvos (<c>shatter::kPierceAll</c>).</summary>
+        public const int PierceAll = 99;
+
+        /// <summary>
+        /// Perfuração do projétil (coluna <c>pierce</c>, docs/18 8.2): 0 = nenhuma; N = atravessa N alvos além do primeiro;
+        /// <see cref="PierceAll"/> = todos. Cada projétil acerta o mesmo alvo uma vez (RF-16); vários projéteis do mesmo leque
+        /// podem acertar o mesmo alvo.
+        /// </summary>
+        public int Pierce { get; internal set; }
+
+        /// <summary>Comportamento determinado pelos dados (explosão, leque, área, dash com tiro), classificado pelo core. Só o núcleo nativo preenche.</summary>
+        public SkillBehavior Behavior { get; internal set; }
         public IReadOnlyList<string> OnHitEffects { get; internal set; } = NoEffects;
         public IReadOnlyList<string> SelfEffects { get; internal set; } = NoEffects;
         public int UnlockLevel { get; internal set; } = 1;
