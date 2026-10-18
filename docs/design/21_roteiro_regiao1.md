@@ -42,3 +42,8 @@ Narrativa aprovada pelo dono em 18/10 (Generais e veredito no lugar da seção 3
 - **Duelo**: à distância, forçando fechar espaço; falas `dlg.archer.*`.
 - **Reconstrução**: Exorcizar vira vila com plantações; Devorar vira posto avançado.
 - Cada General luta com o estilo do herói que foi (Ecos mostram os golpes antes).
+
+### Regiões 3 e 4 e a Fenda
+- **Cidade Submersa (O Sábio)**: Rastrear em ruas alagadas, Ecos de livros molhados; Cercar com zonas de perigo; Duelo de áreas e ilusões (`dlg.sage.*`). Reconstrução: distrito de porto.
+- **Bosque das Almas (A Curandeira)**: Ecos de ervas e almas presas; duelo que drena vida e invoca almas (`dlg.healer.*`). Reconstrução: santuário e hospitais.
+- **Fenda de Colisão (O Líder)**: duelo com a lâmina quebrada; ele conta a verdade e oferece a última escolha (`dlg.leader.*`). O final (Descanso, Herança ou Cisma) vem do total de vereditos (`ui.ending.*`). Texto completo em `22_pitch_historia.md`.
