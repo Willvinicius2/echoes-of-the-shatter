@@ -417,12 +417,18 @@ namespace Echoes.UI
         {
             var save = GameSession.Save.Current;
             var picked = 0;
-            for (var i = 0; i < 4; i++)
+            var haveCommonArmor = false;
+            var tables = new[] { "loot.crypt.guardian", "loot.crypt.elite", "loot.crypt.common" };
+            // Ate haver itens variados e ao menos uma peca de armadura Comum (o Encantador precisa dela para a prancha).
+            for (var i = 0; i < 120 && (i < 4 || !haveCommonArmor); i++)
             {
-                var json = save.DropLoot(rules, i % 2 == 0 ? "loot.crypt.guardian" : "loot.crypt.common", 3, 0, -1, (ulong)(500 + i), out _);
+                var json = save.DropLoot(rules, tables[i % tables.Length], 3, 0, -1, (ulong)(500 + i), out _);
                 foreach (var item in ItemInstanceInfo.ListFromJson(json))
                 {
-                    if (save.Pickup(rules, 0, item.Uid) != PickupDest.NotFound) picked++;
+                    if (save.Pickup(rules, 0, item.Uid) == PickupDest.NotFound) continue;
+                    picked++;
+                    var info = rules.FindItemBase(item.BaseId);
+                    if (item.Rarity == ItemRarity.Normal && info != null && info.Slot != "main_hand") haveCommonArmor = true;
                 }
             }
             return picked;

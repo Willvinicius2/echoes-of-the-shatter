@@ -35,7 +35,7 @@ namespace Echoes.UI
         public static string RarityKey(ItemRarity rarity) => "rarity." + rarity.ToString().ToLowerInvariant() + ".name";
 
         /// <summary>Atributos mostrados como porcentagem quando o valor e fracao (chance de critico, resistencias); o resto e numero.</summary>
-        static bool IsFractionStat(string stat) => stat == "crit_chance" || stat.StartsWith("resist", StringComparison.Ordinal);
+        static bool IsFractionStat(string stat) => stat == "crit_chance" || stat == "block_chance" || stat == "evasion_chance" || stat.StartsWith("resist", StringComparison.Ordinal);
 
         // ------------------------------------------------------------------------------------------------ nome
 
@@ -104,7 +104,7 @@ namespace Echoes.UI
         }
 
         /// <summary>Linhas do tooltip na ordem do docs/16 S-06: propriedades da base, afixos, efeito do Unico, nivel.</summary>
-        public static List<(string text, Color color)> BodyLines(LocalizationService loc, NativeRulesCore rules, ItemInstanceInfo item)
+        public static List<(string text, Color color)> BodyLines(LocalizationService loc, NativeRulesCore rules, ItemInstanceInfo item, bool includeAffixes = true)
         {
             var lines = new List<(string, Color)>();
             var info = rules?.FindItemBase(item.BaseId);
@@ -126,6 +126,7 @@ namespace Echoes.UI
             }
             foreach (var affix in item.Affixes)
             {
+                if (!includeAffixes) break; // o Encantador mostra os afixos em linhas proprias (valor, barra e passos)
                 var data = LookupAffix(rules, affix.AffixId);
                 lines.Add((ModLine(loc, data.Stat, data.ModKind, affix.Value), MagicColor));
             }

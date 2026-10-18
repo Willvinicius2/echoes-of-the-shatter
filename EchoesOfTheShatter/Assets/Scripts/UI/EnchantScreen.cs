@@ -153,7 +153,7 @@ namespace Echoes.UI
                 ScreenKit.Line(center, Loc.Get("ui.enchant.pick_item"), 20, ScreenKit.Muted).name = "pick-hint";
                 return;
             }
-            ItemWidgets.FillDetail(center, Loc, Rules, item);
+            ItemWidgets.FillDetail(center, Loc, Rules, item, false);
             if (IsEquipped(item.Uid)) ScreenKit.Line(center, Loc.Get("ui.inventory.equipped"), 16, ScreenKit.Muted);
             var polishMax = PolishMax();
             for (var i = 0; i < item.Affixes.Count; i++) center.Add(AffixWidget(item, i, polishMax));

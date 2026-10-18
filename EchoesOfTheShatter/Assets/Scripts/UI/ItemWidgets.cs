@@ -86,13 +86,13 @@ namespace Echoes.UI
         }
 
         /// <summary>Nome, raridade em texto e as linhas do tooltip (docs/16 S-06) do item.</summary>
-        public static void FillDetail(VisualElement panel, LocalizationService loc, NativeRulesCore rules, ItemInstanceInfo item)
+        public static void FillDetail(VisualElement panel, LocalizationService loc, NativeRulesCore rules, ItemInstanceInfo item, bool includeAffixes = true)
         {
             if (item == null) return;
             var color = ItemText.RarityColor(item.Rarity);
             ScreenKit.Line(panel, ItemText.Name(loc, rules, item), 24, color, true).name = "item-name";
             ScreenKit.Line(panel, ItemText.RarityLine(loc, rules, item), 17, color).name = "item-rarity";
-            foreach (var (text, lineColor) in ItemText.BodyLines(loc, rules, item)) ScreenKit.Line(panel, text, 18, lineColor);
+            foreach (var (text, lineColor) in ItemText.BodyLines(loc, rules, item, includeAffixes)) ScreenKit.Line(panel, text, 18, lineColor);
         }
 
         /// <summary>Faixa [minimo, maximo] de um afixo (de <c>shatter_content_json</c>); 0 e 0 se o conteudo nao existe.</summary>

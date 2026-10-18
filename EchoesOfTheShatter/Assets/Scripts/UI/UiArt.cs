@@ -49,6 +49,11 @@ namespace Echoes.UI
             { "item_base.hunter_bow", "icon_sword" },
             { "item_base.steel_sword", "icon_sword" },
             { "item_base.quarry_maul", "icon_hammer" },
+            { "item_base.guard_helm", "icon_helm" },
+            { "item_base.guard_cuirass", "icon_vest" },
+            { "item_base.guard_gauntlets", "icon_gloves" },
+            { "item_base.guard_greaves", "icon_trousers" },
+            { "item_base.guard_sabatons", "icon_boots" },
         };
 
         static readonly Dictionary<string, string> iconBySlot = new Dictionary<string, string>
