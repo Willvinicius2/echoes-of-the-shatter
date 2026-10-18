@@ -8,7 +8,7 @@ namespace Echoes.Gameplay
     /// Comportamento do herói no passo fixo: barra de 6 habilidades (fases windup/impact/recovery,
     /// recarga e custo vindos do motor de regras), esquiva com cargas, 2 poções, buffer de entrada.
     /// Pura (sem UnityEngine): o <c>HeroController</c> entrega a entrada e aplica o movimento.
-    /// Faz o papel do <c>SkillComponent</c> previsto em docs/04_arquitetura.md, seção 10.4.
+    /// Faz o papel do <c>SkillComponent</c> previsto em docs/tecnico/04_arquitetura.md, seção 10.4.
     /// </summary>
     public sealed partial class HeroCombatLogic : ICombatActor, IInterruptible, IDisposable
     {

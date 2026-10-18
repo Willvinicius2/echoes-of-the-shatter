@@ -1,8 +1,8 @@
 # 03 — Design system, especificação de arte 3D e interface
 
 Projeto: **Echoes of the Shatter** · Responsável: Art Director · reescrito em 16/10/2026
-Fontes: `docs/08_decisoes_visual_3d.md` (decisões fechadas), `docs/arte/referencias-geracao/` (folhas aprovadas 01 a 24), `docs/00_plano_existente.md` (seções 5, 6, 7, 9 e 10) e `docs/01_plano_execucao.md`.
-Tokens em formato de máquina: `docs/03_design_tokens.json` (este documento manda; se os dois divergirem, corrigir o JSON).
+Fontes: `docs/arte/08_decisoes_visual_3d.md` (decisões fechadas), `docs/arte/referencias-geracao/` (folhas aprovadas 01 a 24), `docs/design/00_plano_existente.md` (seções 5, 6, 7, 9 e 10) e `docs/requisitos-qa/01_plano_execucao.md`.
+Tokens em formato de máquina: `docs/arte/03_design_tokens.json` (este documento manda; se os dois divergirem, corrigir o JSON).
 Motor: **Unity 6 LTS com URP** (C#), Forward (ou Forward+) com MSAA, interface em **UI Toolkit** (UXML + USS; tokens viram variáveis USS, seção 2.14).
 
 > Nota de substituição (16/10/2026): este documento substitui a versão de 15/10/2026, que era pixel art com Paper2D, sprites, viewport interno de 960 × 540, filtro nearest, escala inteira, fonte pixel e paleta ocre. A versão de 16/10/2026 (manhã) tinha sido escrita para Unreal Engine 5 (UMG, Slate, Niagara); o dono trocou o motor para Unity 6 LTS com URP no mesmo dia e esta versão adapta nomes e conceitos. Nada disso vale mais. A seção 9 lista as chaves de token renomeadas ou removidas.
@@ -183,7 +183,7 @@ Fontes escolhidas (Google Fonts, todas **OFL 1.1**, uso comercial livre, com ace
 
 Por que: Source Sans 3 tem Latin estendido completo, algarismos tabulares e abre bem em 12–14 px efetivos no Steam Deck. Cinzel dá a serifa gravada em pedra da faixa de área. Lilita One é gorda e legível em movimento, boa para dano.
 
-**Teste obrigatório no dia 1** (Frontend + Narrative): renderizar a frase-teste em todos os estilos, a 1080p e a 800p (escala 0,74), e anexar a captura ao `docs/10_qa.md`. Se faltar glifo, trocar pela alternativa antes de construir tela.
+**Teste obrigatório no dia 1** (Frontend + Narrative): renderizar a frase-teste em todos os estilos, a 1080p e a 800p (escala 0,74), e anexar a captura ao `docs/requisitos-qa/10_qa.md`. Se faltar glifo, trocar pela alternativa antes de construir tela.
 Frase-teste: `Ação, coração e põe; Ñandú: ¿Qué pasó? ¡Olé! ÁÉÍÓÚ ÂÊÔ ÃÕ Çç àü ºª «» – — … 1.234,56 × ÷ % ▲▼`
 `▲▼` podem faltar: usar ícones `T_Icon_UI_arrow_up_32` e `_down_32`. Cinzel é pensada para maiúsculas e versaletes; confirmar que as minúsculas acentuadas aparecem bem em 32 px.
 
@@ -286,7 +286,7 @@ Nomes: `T_Icon_<categoria>_<id>_<tam>` (ex.: `T_Icon_Skill_warrior_iron_cut_128`
 
 ### 2.14 Tokens em USS
 
-Os tokens de `docs/03_design_tokens.json` viram variáveis USS em `Assets/UI/Styles/Tokens.uss`, num bloco `:root`, geradas por uma ferramenta de editor (a ferramenta é a única que escreve o arquivo). Regra de nome: `--` + caminho do token em kebab-case (pontos e sublinhados viram hífens). Valores: cor em `#RRGGBB` (ou `rgba()` quando há alpha), comprimento em `px` no espaço de referência 1920 × 1080, tempo em `ms`. Os valores de arte 3D (`art3d`, `juice` em cm) **não** viram variável USS.
+Os tokens de `docs/arte/03_design_tokens.json` viram variáveis USS em `Assets/UI/Styles/Tokens.uss`, num bloco `:root`, geradas por uma ferramenta de editor (a ferramenta é a única que escreve o arquivo). Regra de nome: `--` + caminho do token em kebab-case (pontos e sublinhados viram hífens). Valores: cor em `#RRGGBB` (ou `rgba()` quando há alpha), comprimento em `px` no espaço de referência 1920 × 1080, tempo em `ms`. Os valores de arte 3D (`art3d`, `juice` em cm) **não** viram variável USS.
 
 | Token JSON | Variável USS | Exemplo de uso |
 |---|---|---|
@@ -312,7 +312,7 @@ Observação: variáveis USS não valem em `@media`, e `transition-duration` ace
 
 ## 3. Especificação de arte 3D e renderização
 
-Esta seção é a referência de arte (escala, proporções, texel, pintura, cores) citada pelo `docs/04_arquitetura.md`; orçamentos técnicos ficam no 04 (seções 17.3 e 18). Valores sob "Tech Lead" são propostas que ele confirma.
+Esta seção é a referência de arte (escala, proporções, texel, pintura, cores) citada pelo `docs/tecnico/04_arquitetura.md`; orçamentos técnicos ficam no 04 (seções 17.3 e 18). Valores sob "Tech Lead" são propostas que ele confirma.
 
 ### 3.1 Escala e proporções
 
@@ -331,7 +331,7 @@ Largura de silhueta do herói ≈ 0,7 da altura (ombros, escudo e arma contam). 
 
 ### 3.2 Orçamento técnico por asset e por cena
 
-O **`docs/04_arquitetura.md` é o dono dos orçamentos técnicos**: triângulos, ossos, slots e texturas por tipo de asset na seção 17.3, e orçamento por cena (triângulos visíveis, draw calls, pool de textura, Steam Deck e PC de entrada) na seção 18. Este documento não os repete. Valores reconciliados com o 04, só para orientar a arte (em caso de divergência vale o 04):
+O **`docs/tecnico/04_arquitetura.md` é o dono dos orçamentos técnicos**: triângulos, ossos, slots e texturas por tipo de asset na seção 17.3, e orçamento por cena (triângulos visíveis, draw calls, pool de textura, Steam Deck e PC de entrada) na seção 18. Este documento não os repete. Valores reconciliados com o 04, só para orientar a arte (em caso de divergência vale o 04):
 
 | Asset | Tris LOD0 | Ossos | Notas de arte |
 |---|---|---|---|
@@ -385,7 +385,7 @@ Texturas de UI: UserInterface2D (RGBA), sRGB, mipmaps ligados nas molduras 9-sli
 
 ### 3.6 Materiais e renderização
 
-Poucos shaders mestres em Shader Graph, parametrizados (decisão 4 de `docs/08_decisoes_visual_3d.md`); cada tipo de asset usa Materials derivados (variantes por propriedade, sem texturas novas):
+Poucos shaders mestres em Shader Graph, parametrizados (decisão 4 de `docs/arte/08_decisoes_visual_3d.md`); cada tipo de asset usa Materials derivados (variantes por propriedade, sem texturas novas):
 
 | Shader Graph | Propriedades |
 |---|---|
@@ -471,7 +471,7 @@ Entrega de cada herói e inimigo: captura a 88 px (jogo), 65 px (Deck) e 512 px 
 
 ### 3.11 Raridade no equipamento modular
 
-Dono dos valores: Art Director (esta seção e `art3d.rarity_tint` em `03_design_tokens.json`); o mecanismo está em `04_arquitetura.md` 17.4. Mágico e Raro são **variação de material** das peças do conjunto (sem malha nova); o Único tem **malha e textura próprias**. Cores: as de raridade da 2.3 (Mágico azul `#6FA8FF`, Raro dourado `#FFD24A`). Nenhuma raridade usa o vermelho `#E0301E` (só ameaça) nem laranja-vermelho de fogo do jogador; o laranja `#FF8A2E` é exclusivo do Único.
+Dono dos valores: Art Director (esta seção e `art3d.rarity_tint` em `docs/arte/03_design_tokens.json`); o mecanismo está em `docs/tecnico/04_arquitetura.md` 17.4. Mágico e Raro são **variação de material** das peças do conjunto (sem malha nova); o Único tem **malha e textura próprias**. Cores: as de raridade da 2.3 (Mágico azul `#6FA8FF`, Raro dourado `#FFD24A`). Nenhuma raridade usa o vermelho `#E0301E` (só ameaça) nem laranja-vermelho de fogo do jogador; o laranja `#FF8A2E` é exclusivo do Único.
 
 **Canais da máscara nas peças de herói (e no elite do inimigo):** R = emissão, G = rim (alto por padrão no metal e na pele), **B = região de tinta** (onde a raridade age), A = reservado. A AO fica assada no albedo (3.4, item 1); isso corrige a linha "B = AO" da primeira versão da 3.3. A máscara B é pintada em **degradê de 0 a 1 com borda suave de 2 a 3 texels** (nunca serrilhada) e só em **tecido**.
 
@@ -781,7 +781,7 @@ Estados: área nova (pulso dourado), dominada (selo), bloqueada (cadeado e motiv
 **Convenção de UI Toolkit:**
 - **Tela** = documento `<Nome>View.uxml` + classe `<Nome>View.cs` (MonoBehaviour com `UIDocument`; consulta elementos por `Q<T>("nome")` e só liga dados e eventos). Ex.: `HudView.uxml` + `HudView.cs`.
 - **Componente** = `VisualElement` customizado em C# (`[UxmlElement] public partial class ShatterBar : VisualElement`), prefixo `Shatter`, com `<Nome>.uxml` de template quando tiver estrutura interna. Lógica, estados e eventos ficam na classe; aparência, no USS.
-- **Estilo:** `Tokens.uss` (só variáveis em `:root`, **gerado** de `docs/03_design_tokens.json`, nunca editado à mão), `Components.uss` (um bloco por componente, seletores BEM como `.shatter-bar--boss`) e `Screens.uss` (ajustes por tela). Nenhuma cor, tamanho ou fonte literal fora de `Tokens.uss`: tudo por `var(--...)` (2.14).
+- **Estilo:** `Tokens.uss` (só variáveis em `:root`, **gerado** de `docs/arte/03_design_tokens.json`, nunca editado à mão), `Components.uss` (um bloco por componente, seletores BEM como `.shatter-bar--boss`) e `Screens.uss` (ajustes por tela). Nenhuma cor, tamanho ou fonte literal fora de `Tokens.uss`: tudo por `var(--...)` (2.14).
 - **Estados:** pseudo-classes USS `:hover`, `:focus`, `:active`, `:disabled`, mais classes de modificador (`--selected`, `--empty`, `--low`, `--locked`).
 - **Localização:** textos por Unity Localization (String Tables pt_BR e en) ligadas no UXML; nunca texto literal.
 - **Pastas:** `Assets/UI/{Views,Components,Styles,Textures}`.
@@ -876,12 +876,12 @@ Regras: nenhum efeito usa blur de tela cheia; bloom só leve (3.6); limite de 30
 ## 7. Checklist de qualidade visual (QA / Release)
 
 **Arte 3D e render**
-- [ ] Cada tipo de asset dentro do orçamento da seção 17.3 do `docs/04_arquitetura.md`; auditoria no editor (17.4).
+- [ ] Cada tipo de asset dentro do orçamento da seção 17.3 do `docs/tecnico/04_arquitetura.md`; auditoria no editor (17.4).
 - [ ] Densidade de texel dentro de ±20% da meta (3.3), medida com um material de debug de checker de UV (ou o Rendering Debugger).
 - [ ] Nenhuma textura de personagem, prop ou kit com normal map; nenhum preto puro na paleta (valor mínimo `#0F0B14`).
 - [ ] Teste de silhueta (3.5) aprovado para as 3 classes, 8 inimigos do Ato I e 9 do endgame.
 - [ ] Contorno seletivo aparece só quando herói ou elite está oculto; nenhum outline global.
-- [ ] Captura em hardware real conforme o orçamento por cena da seção 18 do `docs/04_arquitetura.md`.
+- [ ] Captura em hardware real conforme o orçamento por cena da seção 18 do `docs/tecnico/04_arquitetura.md`.
 - [ ] Cada área exibe sua cor-assinatura de névoa (2.6); telegraph legível em todas, incluindo as de névoa vermelha (variante `dark_outline`).
 - [ ] MSAA ativo, sem serrilhado visível em borda de pedra e arma; sem TAA/STP, exposição fixa.
 
@@ -913,8 +913,8 @@ Regras: nenhum efeito usa blur de tela cheia; bloom só leve (3.6); limite de 30
 
 **Assets e licenças**
 - [ ] Todas as fontes com licença registrada (Source Sans 3, Cinzel, Lilita One: OFL 1.1) e arquivo de licença no build.
-- [ ] Modelos, texturas, ícones e molduras finais feitos ou refeitos por artista; nenhum asset do Spell Brigade no projeto ou no build; imagens geradas por IA são só conceito e o uso de IA é declarado na Steam (decisão 7 de `docs/08_decisoes_visual_3d.md`).
-- [ ] Toda cor usada nas telas existe em `03_design_tokens.json`.
+- [ ] Modelos, texturas, ícones e molduras finais feitos ou refeitos por artista; nenhum asset do Spell Brigade no projeto ou no build; imagens geradas por IA são só conceito e o uso de IA é declarado na Steam (decisão 7 de `docs/arte/08_decisoes_visual_3d.md`).
+- [ ] Toda cor usada nas telas existe em `docs/arte/03_design_tokens.json`.
 
 ---
 
@@ -922,7 +922,7 @@ Regras: nenhum efeito usa blur de tela cheia; bloom só leve (3.6); limite de 30
 
 | Plano (Godot 4) | Agora (Unity 6 LTS, URP) | Motivo |
 |---|---|---|
-| Viewport interno de resolução fixa com escala inteira | UI Toolkit em resolução nativa com PanelSettings Scale With Screen Size (1920 × 1080); mundo em 3D com URP Forward e MSAA | Decisões 1, 4 e 6 de `docs/08_decisoes_visual_3d.md` |
+| Viewport interno de resolução fixa com escala inteira | UI Toolkit em resolução nativa com PanelSettings Scale With Screen Size (1920 × 1080); mundo em 3D com URP Forward e MSAA | Decisões 1, 4 e 6 de `docs/arte/08_decisoes_visual_3d.md` |
 | Imagens 2D e tiles | Skinned Mesh com Animator e kits de malhas estáticas modulares em prefabs, com albedo pintado | Decisões 1 e 2 |
 | `tr()` e CSV de tradução | Unity Localization com String Tables (CSV exportado pelo Narrative) | Equivalente na Unity |
 | Fonte não definida | Source Sans 3, Cinzel e Lilita One (OFL 1.1) | Decisão deste documento; validar glifos no dia 1 |

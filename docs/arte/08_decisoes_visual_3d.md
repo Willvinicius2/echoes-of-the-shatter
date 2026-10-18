@@ -1,6 +1,6 @@
 # Decisões de motor, renderização e arte (orquestrador, 16/10/2026)
 
-Contexto: o dono aprovou o visual no estilo do Spell Brigade (24 referências em `docs/arte/referencias-geracao/aprovadas/`, README na mesma pasta). A pergunta P-1 de `docs/02_requisitos.md` está respondida: **3D estilizado**, não pixel art 2D.
+Contexto: o dono aprovou o visual no estilo do Spell Brigade (24 referências em `docs/arte/referencias-geracao/aprovadas/`, README na mesma pasta). A pergunta P-1 de `docs/requisitos-qa/02_requisitos.md` está respondida: **3D estilizado**, não pixel art 2D.
 
 **Motor (decisão do dono em 16/10/2026): Unity 6 LTS com URP, C#.** Substitui o Unreal Engine 5.8, que tinha substituído o Godot 4. Motivos:
 - **Ativos em texto:** cenas, prefabs e ScriptableObjects são texto, e a CLI roda compilação e testes. O desenvolvimento com agentes fica mais autônomo e revisável.
@@ -17,13 +17,13 @@ Decisões fechadas (não reabrir; detalhar e justificar):
 3. **Câmera:** fixa em 3/4 com perspectiva de FOV estreito (pseudo-isométrica), yaw 45° fixo, pitch entre -50° e -60°, sem rotação pelo jogador, segue o herói com suavização. O Tech Lead fixa os números e o zoom. Números atuais na entrada de 16/10/2026 (câmera de 56 m) abaixo.
 4. **Pipeline gráfico:** URP com Forward (ou Forward+) e MSAA (bordas limpas para o estilo pintado), sem iluminação global em tempo real. Sombras baratas (cascatas curtas ou sombra blob; o Tech Lead decide e justifica). Névoa com a cor-assinatura de cada área. Poucos shaders mestres em Shader Graph, parametrizados (personagem, cenário, VFX, UI). Meta de desempenho continua a RNF-04 (PC de entrada e Steam Deck).
 5. **VFX:** sistema de partículas da Unity com Shader Graph; o VFX Graph só onde o ganho justificar (o Tech Lead decide). Efeitos do jogador finos e translúcidos com núcleo claro; ameaças inimigas opacas e quentes (telegraphs no chão), como nas folhas 09 e 22.
-6. **UI:** UI Toolkit (UXML e USS) em resolução nativa com escala por DPI. Os tokens de `docs/03_design_tokens.json` viram variáveis USS. Estilo da UI de pedra escura com molduras orgânicas e preenchimento "lava", como as folhas 10, 11 e 12.
+6. **UI:** UI Toolkit (UXML e USS) em resolução nativa com escala por DPI. Os tokens de `docs/arte/03_design_tokens.json` viram variáveis USS. Estilo da UI de pedra escura com molduras orgânicas e preenchimento "lava", como as folhas 10, 11 e 12.
 7. **Fonte de verdade visual:** `docs/arte/referencias-geracao/` (folhas oficiais 02 a 08, 11, 21 a 24). Assets extraídos do Spell Brigade nunca entram no projeto nem no build. As imagens geradas são conceito: o plano exige assets finais feitos ou refeitos por artistas e declaração de uso de IA na Steam.
 8. **Regras do jogo não mudam:** o ShatterCore, o determinismo, os dados em CSV e as regras de combate ficam como estão. A mudança é só de apresentação.
 
 ## Donos e números reconciliados
 
-- **Dono de cada número:** o `docs/03_design_system.md` é dono da especificação de arte (proporções, alturas, densidade de texel, regras de pintura, cores). O `docs/04_arquitetura.md` é dono dos orçamentos técnicos (triângulos e texturas por asset, LOD, orçamento por cena, FPS). Um documento cita o outro e não repete o número.
+- **Dono de cada número:** o `docs/arte/03_design_system.md` é dono da especificação de arte (proporções, alturas, densidade de texel, regras de pintura, cores). O `docs/tecnico/04_arquitetura.md` é dono dos orçamentos técnicos (triângulos e texturas por asset, LOD, orçamento por cena, FPS). Um documento cita o outro e não repete o número.
 - **Altura do herói:** 150 cm (chibi, cerca de 3 cabeças). A cápsula e o enquadramento da câmera seguem essa altura.
 - **Triângulos no LOD0:**
   - Teto duro e alvo de produção (régua do Spell Brigade, `docs/arte/regua_spell_brigade.md`; o 04, seção 17.2, é o dono).

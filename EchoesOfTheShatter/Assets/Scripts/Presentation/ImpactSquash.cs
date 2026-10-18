@@ -8,7 +8,7 @@ namespace Echoes.Presentation
     /// Encolher e esticar (squash and stretch) procedural no impacto, no herói e nos inimigos: ao receber um golpe o corpo achata (menor em Y,
     /// maior em XZ) e volta com mola; no impacto do próprio golpe estica um pouco. Só escala o visual (o filho com o Animator), nunca a lógica.
     /// Desligável: <see cref="GlobalEnabled"/> (opção de acessibilidade) ou o campo do componente.
-    /// Valores: os tokens <c>juice</c> ainda não têm squash (docs/03_design_tokens.json); os padrões abaixo são de apresentação e
+    /// Valores: os tokens <c>juice</c> ainda não têm squash (docs/arte/03_design_tokens.json); os padrões abaixo são de apresentação e
     /// devem virar <c>juice.squash</c> (pedido ao design system).
     /// </summary>
     [DisallowMultipleComponent]

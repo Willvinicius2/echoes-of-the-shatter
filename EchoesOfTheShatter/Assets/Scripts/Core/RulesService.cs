@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Echoes.Core
 {
     /// <summary>
-    /// Dono do motor de regras na sessão de jogo (docs/04_arquitetura.md, seções 6.1 e 10.4).
+    /// Dono do motor de regras na sessão de jogo (docs/tecnico/04_arquitetura.md, seções 6.1 e 10.4).
     /// Carrega os CSV, guarda os erros e entrega o <see cref="IRulesCore"/> ao gameplay.
     /// Usa a DLL nativa do ShatterCore e cai no stub em C# se ela nao carregar (<see cref="RulesCoreFactory"/>).
     /// </summary>

@@ -148,7 +148,7 @@ struct ExpeditionResult {
     std::uint64_t resultHash = 0;        // hash canônico do resultado (detecção de divergência/duplicação)
 };
 
-// ADIÇÃO (docs/09_mudancas_contrato.md): chaves de localização das dicas do relatório do Tico.
+// ADIÇÃO (docs/tecnico/09_mudancas_contrato.md): chaves de localização das dicas do relatório do Tico.
 // Existem em Content/Data/Loc/expedition.csv (pt_BR e en); o core só devolve a chave (RF-61).
 // FinalizeExpedition escolhe exatamente uma, nesta prioridade:
 //   recuo com poções sobrando (morreu antes de beber) → kTipLowLife;
@@ -196,7 +196,7 @@ ExpeditionProgress SimulateRange(const ContentDB& db, const ExpeditionRequest& r
                                  const ExpeditionProgress& start,
                                  std::uint32_t firstEncounter, std::uint32_t count);
 
-// ADIÇÃO (docs/09_mudancas_contrato.md), RF-48: se a janela offline (clock.h) terminou porque o
+// ADIÇÃO (docs/tecnico/09_mudancas_contrato.md), RF-48: se a janela offline (clock.h) terminou porque o
 // relógio do PC voltou, a parada por tempo vira StopReason::ClockRollback ("o relógio voltou"; a
 // expedição encerra no último ponto conhecido). Chamar sobre o progresso final, ANTES de
 // FinalizeExpedition (o resultHash inclui o motivo). Recuo e outras paradas reais não mudam.

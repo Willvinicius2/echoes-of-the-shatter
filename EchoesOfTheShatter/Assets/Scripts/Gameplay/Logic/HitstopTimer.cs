@@ -3,7 +3,7 @@ using System;
 namespace Echoes.Gameplay
 {
     /// <summary>
-    /// Hitstop de UMA entidade (RF-17; docs/04_arquitetura.md, seções 3.3 e 6.2). Enquanto ativo, a
+    /// Hitstop de UMA entidade (RF-17; docs/tecnico/04_arquitetura.md, seções 3.3 e 6.2). Enquanto ativo, a
     /// entidade não avança timers no passo fixo e a apresentação congela o Animator dela.
     /// Nunca congela o jogo todo (sem Time.timeScale).
     /// </summary>

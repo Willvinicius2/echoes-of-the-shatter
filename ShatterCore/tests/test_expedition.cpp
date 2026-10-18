@@ -473,7 +473,7 @@ TEST(expedition_rf32_idle_is_about_35_percent_of_fervor_xp_on_the_same_receipts)
     ASSERT_TRUE(manualXp > 0.0);
     const double ratio = r.xpGained / manualXp;
     EXPECT_NEAR(ratio, 0.35, 0.05);
-    EXPECT_NEAR(ratio, 1.0 / 3.0, 1e-9);  // com Fervor ×3 a conta exata é 33,3% (06_dados.md, D2)
+    EXPECT_NEAR(ratio, 1.0 / 3.0, 1e-9);  // com Fervor ×3 a conta exata é 33,3% (docs/tecnico/06_dados.md, D2)
     // Ouro e materiais: o Fervor multiplica por exatamente fervor_gold_mat_mult (1,25) na mesma rolagem.
     ContentDB gold;
     gold.SetContentVersion(1);

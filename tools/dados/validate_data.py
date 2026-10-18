@@ -8,14 +8,14 @@ Só biblioteca padrão do Python 3 (>= 3.8). Valida:
   * arquivos de save JSON contra schemas/save*.schema.json (+ SHA-256 do envelope).
 
 Uso rápido (da raiz do repositório):
-  python3 tools/validate_data.py                         # valida EchoesOfTheShatter/Content/Data
-  python3 tools/validate_data.py --data ShatterCore/tests/data
-  python3 tools/validate_data.py --data X --expect-fail  # sucesso só se X tiver erro
-  python3 tools/validate_data.py --save slot_1.json --content EchoesOfTheShatter/Content/Data
-  python3 tools/validate_data.py --self-test             # Content/Data + todos os fixtures (CI)
+  python3 tools/dados/validate_data.py                         # valida EchoesOfTheShatter/Content/Data
+  python3 tools/dados/validate_data.py --data ShatterCore/tests/data
+  python3 tools/dados/validate_data.py --data X --expect-fail  # sucesso só se X tiver erro
+  python3 tools/dados/validate_data.py --save slot_1.json --content EchoesOfTheShatter/Content/Data
+  python3 tools/dados/validate_data.py --self-test             # Content/Data + todos os fixtures (CI)
 
 Código de saída: 0 = ok; 1 = erro de dados; 2 = erro de uso/arquivo de esquema.
-Esquema e convenções: docs/06_dados.md.
+Esquema e convenções: docs/tecnico/06_dados.md.
 """
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ import re
 import sys
 from typing import Any, Dict, List, Optional, Tuple
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_DATA = os.path.join(ROOT, "EchoesOfTheShatter", "Content", "Data")
 DEFAULT_SCHEMAS = os.path.join(DEFAULT_DATA, "schemas")
 TEST_DATA = os.path.join(ROOT, "ShatterCore", "tests", "data")
@@ -1780,7 +1780,7 @@ def self_test(schema_dir: str, quiet: bool) -> int:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="Valida CSV de conteúdo e saves do Echoes of the Shatter (docs/06_dados.md).")
+    ap = argparse.ArgumentParser(description="Valida CSV de conteúdo e saves do Echoes of the Shatter (docs/tecnico/06_dados.md).")
     ap.add_argument("--data", action="append", help="pasta com os CSV (padrão: EchoesOfTheShatter/Content/Data). Pode repetir.")
     ap.add_argument("--schemas", default=DEFAULT_SCHEMAS, help="pasta dos esquemas")
     ap.add_argument("--expect-fail", action="store_true", help="inverte o resultado: sucesso se houver erro (testes negativos)")

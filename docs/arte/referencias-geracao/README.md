@@ -81,5 +81,5 @@ Elas são a fonte de verdade de cada personagem. Toda imagem nova em que eles ap
 ## Personagem modular e cenário (aprovados em 16/10/2026)
 
 - `aprovadas/modelagem/mod_b01..b03_*_corpo.png`: corpo base de cada herói, sem equipamento. Os rostos do Guerreiro e do Arqueiro foram aprovados nessa rodada.
-- `aprovadas/modelagem/mod_a01..a03_*_inicial.png`: armadura inicial em 5 peças (head, body, hands, legs, feet), vista de frente na linha de cima e de costas na de baixo. Script: `scripts/prompts_modelagem_modular.py`; contrato técnico em `docs/04_arquitetura.md` §17.4.
+- `aprovadas/modelagem/mod_a01..a03_*_inicial.png`: armadura inicial em 5 peças (head, body, hands, legs, feet), vista de frente na linha de cima e de costas na de baixo. Script: `scripts/prompts_modelagem_modular.py`; contrato técnico em `docs/tecnico/04_arquitetura.md` §17.4.
 - `aprovadas/modelagem/c01..c06_*.png`: peças do cenário da Cripta (pisos, paredes, pilar e arco, escada e portal, decoração, entulho e abismo). Script: `scripts/prompts_modelagem_cenario.py`.

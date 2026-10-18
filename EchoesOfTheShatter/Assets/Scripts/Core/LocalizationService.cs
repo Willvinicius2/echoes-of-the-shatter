@@ -7,7 +7,7 @@ using System.Text;
 namespace Echoes.Core
 {
     /// <summary>
-    /// Textos visíveis ao jogador por chave (docs/04_arquitetura.md, seção 7; RF-61, RF-62).
+    /// Textos visíveis ao jogador por chave (docs/tecnico/04_arquitetura.md, seção 7; RF-61, RF-62).
     /// Fallback: cultura atual → en → a própria chave (com aviso uma vez por chave).
     /// Nenhum texto visível mora no C# nem no UXML: só chaves.
     /// </summary>

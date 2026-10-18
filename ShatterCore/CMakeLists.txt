@@ -20,7 +20,7 @@ option(SHATTER_SANITIZE "Ativa ASan/UBSan" OFF)
 option(SHATTER_BUILD_SHARED "Compila a DLL/so shattercore (API C para P/Invoke)" ON)
 
 # CRT estático no MSVC (/MT, /MTd) em todos os alvos: a DLL não depende de runtime instalado e a
-# biblioteca estática ligada nela usa o mesmo CRT (docs/04_arquitetura.md, seção 9.1).
+# biblioteca estática ligada nela usa o mesmo CRT (docs/tecnico/04_arquitetura.md, seção 9.1).
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 set(CMAKE_CXX_STANDARD 17)

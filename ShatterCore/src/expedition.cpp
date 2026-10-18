@@ -86,7 +86,7 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
         if (e != nullptr && e->trigger != TriggerKind::None) su.triggerEffects.push_back(e);
     }
     // Rotação de encontros: só os encontros comuns do mapa. O encontro de chefe (bossEncounter)
-    // não entra na patrulha (decisão: chefes exigem reação; ver docs/09_mudancas_contrato.md).
+    // não entra na patrulha (decisão: chefes exigem reação; ver docs/tecnico/09_mudancas_contrato.md).
     for (const ContentId& id : su.map->encounters) {
         const EncounterTemplate* e = db.FindEncounter(id);
         if (e == nullptr) return StopReason::ContentMismatch;

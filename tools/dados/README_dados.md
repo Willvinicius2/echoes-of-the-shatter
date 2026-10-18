@@ -1,20 +1,20 @@
-# Validador de dados (`tools/validate_data.py`)
+# Validador de dados (`tools/dados/validate_data.py`)
 
 Valida as tabelas CSV do ContentDB, os fixtures de teste e os saves JSON. Usa só a biblioteca padrão do Python 3 (testado com Python 3.14, no PATH). Não precisa instalar nada.
 
-Formato das tabelas, convenção de IDs e política de migração: `docs/06_dados.md`.
+Formato das tabelas, convenção de IDs e política de migração: `docs/tecnico/06_dados.md`.
 
 ## Como rodar
 
 A partir da raiz do repositório (`D:\openclaude\EchoesOfTheShatter`):
 
 ```
-python tools/validate_data.py                     # conteúdo real: EchoesOfTheShatter/Content/Data
-python tools/validate_data.py --self-test         # tudo: conteúdo real, fixtures válidos, inválidos, saves e migração
-python tools/validate_data.py --data OUTRA_PASTA  # valida outra pasta de CSV (pode repetir --data)
-python tools/validate_data.py --data X --expect-fail   # passa só se X tiver erro (testes negativos)
-python tools/validate_data.py --save slot_1.json --content EchoesOfTheShatter/Content/Data
-python tools/validate_data.py --update-lock       # grava content_lock.json: só na primeira release
+python tools/dados/validate_data.py                     # conteúdo real: EchoesOfTheShatter/Content/Data
+python tools/dados/validate_data.py --self-test         # tudo: conteúdo real, fixtures válidos, inválidos, saves e migração
+python tools/dados/validate_data.py --data OUTRA_PASTA  # valida outra pasta de CSV (pode repetir --data)
+python tools/dados/validate_data.py --data X --expect-fail   # passa só se X tiver erro (testes negativos)
+python tools/dados/validate_data.py --save slot_1.json --content EchoesOfTheShatter/Content/Data
+python tools/dados/validate_data.py --update-lock       # grava content_lock.json: só na primeira release
 ```
 
 Outras opções: `--schemas PASTA` (esquemas diferentes), `--quiet` (omite as linhas `info`).
@@ -60,7 +60,7 @@ Envelope `{format, save_version, sha256, data}`, com esquema em `schemas/save_v<
 | `E_FK` | Referência a um ID que não existe na tabela de destino |
 | `E_REQUIRED` | Coluna obrigatória vazia |
 | `E_QUOTE` | Aspas no CSV (texto livre não entra nas tabelas) |
-| `E_IDLE`, `E_WEAPON`, `E_EFFECT`, `E_LOOT`, `E_ENEMY`, `E_BOSS`, `E_CLASS` | Regras entre colunas (ver `docs/06_dados.md`, seção 4) |
+| `E_IDLE`, `E_WEAPON`, `E_EFFECT`, `E_LOOT`, `E_ENEMY`, `E_BOSS`, `E_CLASS` | Regras entre colunas (ver `docs/tecnico/06_dados.md`, seção 4) |
 | `E_CHECKSUM`, `E_SCHEMA`, `E_SAVE` | Save: hash, esquema e regra semântica |
 | `E_ID_REMOVED`, `E_VERSION` | Conteúdo publicado: ID sumiu, ou dados mudaram sem subir `content_version` |
 
@@ -68,6 +68,6 @@ Avisos (`AVISO`) não reprovam a validação. Os erros, sim.
 
 ## Limites conhecidos
 
-- O validador confere o formato dos IDs de `skills`, `loot`, `maps` e outros, mas só confere a existência quando a tabela de destino existe. Veja as pendências P2, P3 e P5 em `docs/06_dados.md`.
+- O validador confere o formato dos IDs de `skills`, `loot`, `maps` e outros, mas só confere a existência quando a tabela de destino existe. Veja as pendências P2, P3 e P5 em `docs/tecnico/06_dados.md`.
 - A checagem de localização (`Loc/`) só roda se a pasta existir. Pendência P6.
 - O `--self-test` é o que cobre os fixtures. Rodar só o modo padrão não os valida. Pendência P7.

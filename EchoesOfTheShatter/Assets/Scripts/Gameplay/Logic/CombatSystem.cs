@@ -6,7 +6,7 @@ using Echoes.Interop;
 namespace Echoes.Gameplay
 {
     /// <summary>
-    /// Combate em passo fixo (RF-11; docs/04_arquitetura.md, seções 6.2 e 10.4). Único lugar que chama
+    /// Combate em passo fixo (RF-11; docs/tecnico/04_arquitetura.md, seções 6.2 e 10.4). Único lugar que chama
     /// o golpe do motor de regras (<see cref="ApplySkillHit"/>) e aplica o resultado. Guarda os fluxos
     /// de RNG da sessão (Combat e Events, derivados do runSeed). Classe pura: sem UnityEngine, chamada
     /// pelo <c>CombatSystemHost</c> a cada quadro. Sem alocação por passo.

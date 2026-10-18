@@ -5,7 +5,7 @@ namespace Echoes.Interop
 {
     /// <summary>
     /// PROVISÓRIO (stub). Valores que o design já decidiu mas que AINDA NÃO ESTÃO nos CSV
-    /// (pedidos ao Data Engineer em docs/13_design_pendencias.md). Regra: o CSV sempre vence; estes
+    /// (pedidos ao Data Engineer em docs/design/13_design_pendencias.md). Regra: o CSV sempre vence; estes
     /// números só preenchem chave ou coluna ausente, e cada uso é registrado em
     /// <see cref="StubRulesCore.LoadWarnings"/> para aparecer no log.
     ///

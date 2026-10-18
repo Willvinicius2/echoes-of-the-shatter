@@ -115,7 +115,7 @@ const char* ToString(Rarity r);
 // Tempo de simulação
 // ---------------------------------------------------------------------------
 // Tempo em segundos (double). O tempo real do UE é convertido em passos fixos
-// antes de chegar ao motor (ver docs/04_arquitetura.md, "Determinismo").
+// antes de chegar ao motor (ver docs/tecnico/04_arquitetura.md, "Determinismo").
 using Seconds = double;
 
 // Horário Unix em segundos, sempre UTC.

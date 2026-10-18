@@ -1,6 +1,6 @@
 // RF-51: o save gerado pelo core passa no esquema do Data Engineer (schemas/save_v1.schema.json) e contém
 // todos os campos listados. Aqui roda um validador mínimo (o subconjunto de JSON Schema que o esquema usa);
-// o ctest "save_rf51_python_validator" roda também o tools/validate_data.py sobre um save gravado pelo core.
+// o ctest "save_rf51_python_validator" roda também o tools/dados/validate_data.py sobre um save gravado pelo core.
 #include <regex>
 
 #include "test_util.h"

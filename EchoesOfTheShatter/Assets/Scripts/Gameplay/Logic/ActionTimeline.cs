@@ -5,7 +5,7 @@ namespace Echoes.Gameplay
     /// <summary>
     /// Linha do tempo das 3 fases de uma ação, com os tempos que o motor de regras devolve
     /// (<see cref="ActionTiming"/>). O golpe acontece na fase de impacto do passo fixo
-    /// (docs/04_arquitetura.md, seção 3.3: animação nunca causa dano). Sobra de tempo passa para a
+    /// (docs/tecnico/04_arquitetura.md, seção 3.3: animação nunca causa dano). Sobra de tempo passa para a
     /// fase seguinte, então a duração total não depende do FPS.
     /// </summary>
     public sealed class ActionTimeline

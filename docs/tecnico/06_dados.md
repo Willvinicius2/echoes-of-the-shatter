@@ -1,10 +1,10 @@
 # 06 — Dados: esquemas, tabelas CSV e save
 
-Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (102 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds`, as 2 da rodada 2, as 18 de inventário e as 7 do combate básico de docs/18 e as 15 da economia de docs/16 seção 11), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
+Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (102 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds`, as 2 da rodada 2, as 18 de inventário e as 7 do combate básico de docs/18 e as 15 da economia de docs/16 seção 11), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/dados/validate_data.py`, guia em `tools/dados/README_dados.md`.
 
 ## 1. Fontes e escopo
 
-- Lidos: `CLAUDE.md`; `docs/02_requisitos.md` (RF-01 a RF-65 e seção 5, critérios); `docs/04_arquitetura.md` (seções 1, 6, 8, 10, 12, 13, 14, 16); `docs/00_plano_existente.md` (defesa, idle, relógio, progressão, save); headers de `ShatterCore/include/shatter/`.
+- Lidos: `CLAUDE.md`; `docs/requisitos-qa/02_requisitos.md` (RF-01 a RF-65 e seção 5, critérios); `docs/tecnico/04_arquitetura.md` (seções 1, 6, 8, 10, 12, 13, 14, 16); `docs/design/00_plano_existente.md` (defesa, idle, relógio, progressão, save); headers de `ShatterCore/include/shatter/`.
 - Fora de escopo: textos de interface (`Loc/`, Narrative & Content), código C++ e migrações de banco (não há banco; o save é um arquivo JSON).
 - Valores de teste dos fixtures (vida do Guerreiro, dano, pesos de loot) são só para exercitar o validador. Não são balanceamento e não entram no conteúdo real.
 
@@ -613,7 +613,7 @@ map.act1.crypt,1,0,enc.crypt.patrol_a,,loot.crypt.common,true
 
 ## 5a. Tabelas e colunas acrescidas (docs/13, itens 1 a 9)
 
-Fonte: `docs/13_design_pendencias.md`, seção 'Para o Data Engineer'. Nomes de tabela, coluna e chave são os do docs/13. Tabelas novas: `potions`, `elite_modifiers`, `boss_phases`, `boss_patterns`, `enemy_ai`. Colunas novas: as das seções 'Cabeçalho exato' das tabelas `skills`, `enemies`, `effects`, `uniques` e `loot_entries` (acima, já atualizadas), e `class_stats` (linha nova `class.warrior,move_speed,450,0`).
+Fonte: `docs/design/13_design_pendencias.md`, seção 'Para o Data Engineer'. Nomes de tabela, coluna e chave são os do docs/13. Tabelas novas: `potions`, `elite_modifiers`, `boss_phases`, `boss_patterns`, `enemy_ai`. Colunas novas: as das seções 'Cabeçalho exato' das tabelas `skills`, `enemies`, `effects`, `uniques` e `loot_entries` (acima, já atualizadas), e `class_stats` (linha nova `class.warrior,move_speed,450,0`).
 
 Vazio numa célula = padrão do esquema. Um peso vazio em `loot_entries` só vale com `fixedChance` > 0 (Único do Guardião, item 9).
 
@@ -1064,10 +1064,10 @@ Esse exemplo só ilustra a técnica. O desenho de slots de poção é uma pendê
 Comandos (da raiz do repositório, com Python 3.14 no PATH):
 
 ```
-python tools/validate_data.py                  # Content/Data (conteúdo real)
-python tools/validate_data.py --self-test      # conteúdo real + fixtures válidos + inválidos + saves + migração
-python tools/validate_data.py --data X         # outra pasta de CSV
-python tools/validate_data.py --save slot_1.json --content EchoesOfTheShatter/Content/Data
+python tools/dados/validate_data.py                  # Content/Data (conteúdo real)
+python tools/dados/validate_data.py --self-test      # conteúdo real + fixtures válidos + inválidos + saves + migração
+python tools/dados/validate_data.py --data X         # outra pasta de CSV
+python tools/dados/validate_data.py --save slot_1.json --content EchoesOfTheShatter/Content/Data
 ```
 
 O que é checado: cabeçalho exato; tipo, faixa e enum de cada célula; PK única; referências existentes (`ref`, listas `ref`, `groups`, `mods`); regras entre colunas (`min <= max`, pesos > 0, idle exige amostra de paridade, arma exige dano e tempo de ataque, cooldown >= `cooldown_min`, Vigor não crescente, `sim_step_fast >= sim_step`, cargas que cobrem a expedição máxima, chefe com `isBoss` e encontro de chefe no mapa, ciclo de subtabela de loot e profundidade até 8, Fragmento de Eco fora de `stack`, itens de topo com `manualOnly`); classe com `life` e `resource` e recurso válido; fixtures inválidos falhando com linha e código esperados; save com esquema, hash e regras semânticas.
@@ -1086,7 +1086,7 @@ Itens onde headers, esquemas, validador ou documentos não fecham entre si. Nenh
 - **P4. Dados de combate em tempo real sem tabela nem campo.** Esquiva (RF-15 e plano linha 548: 0,35 s, 0,2 s de invulnerabilidade, 3 cargas, 1,5 s de recarga). Telegraph de ataque de inimigo: `enemy_attacks.telegraphed` é só booleano, e RF-23 pede 0,7 a 1,2 s. Padrões por fase do chefe (plano linha 1243; arquitetura seção 10.4) e a fase 2 do Guardião (RF-23). Parâmetros de IA de RF-20 (limiar de fuga do Cão-de-Cinza, distância mínima do Arqueiro Fantasma). Variantes de elite (RF-22: escudo, veloz, explode ao morrer; plano linha 606). Nada disso está em `content.h`.
 - **P5. Único só do Guardião (RF-27) não é aplicável.** Nenhuma coluna liga `uniques` a uma tabela de chefe. Hoje uma tabela qualquer pode ter `kind = unique` com `manualOnly = true`. Pedido: regra de que único só aparece em tabela de encontro de chefe, checada pelo validador.
 - **P6. Local dos textos (`Loc/`).** A arquitetura, seção 7 (linha 273), manda `Content/Data/Loc*.csv`, na raiz de `Data`. O validador lê `Content/Data/Loc/` (`read_loc_dir`) e aceita só `key, pt_BR, en`. O `ContentDB::LoadDirectory` (`content.h:226`) lê todo `*.csv` da pasta, então um `Loc*.csv` na raiz daria `E_UNKNOWN_TABLE` no ContentDB. Pedido: confirmar a subpasta `Loc/` e atualizar a seção 7. A arquitetura, seção 16, cita `tools/build_loc.py`, que ainda não existe.
-- **P7. CI roda o validador sem o autoteste.** A arquitetura, seção 14 (linha 501), chama `python3 tools/validate_data.py`, que só valida `Content/Data`. Os fixtures inválidos, o save v1 e a migração não rodam no CI. Pedido: trocar para `python3 tools/validate_data.py --self-test`.
+- **P7. CI roda o validador sem o autoteste.** A arquitetura, seção 14 (linha 501), chama `python3 tools/dados/validate_data.py`, que só valida `Content/Data`. Os fixtures inválidos, o save v1 e a migração não rodam no CI. Pedido: trocar para `python3 tools/dados/validate_data.py --self-test`.
 - **P8. Tags de habilidade: obrigatórias no esquema, opcionais no header.** `SkillData::tags = 0` (`content.h`) é um valor válido, mas `skills.schema.json` marca `tags` como obrigatório (`E_REQUIRED`). Pedido: decidir qual vale.
 - **P9. Crescimento do inimigo inline.** Classe usa `class_stats.csv`, mas inimigo guarda o crescimento em `enemies.stats` (formato `growths`). O `content.h` não tem tabela `enemy_stats`. Pedido: confirmar a forma inline (proposta desta entrega) ou criar a tabela.
 - **P10. Exemplo de migração v1→v2 não aprovado.** O `migrate_1_to_2` do validador (`potion_slots` e `tutorial_flags`) é ilustrativo. Não é decisão de design e não entrou no core. Pedido: manter, ajustar ou remover quando houver a primeira mudança real de formato.
@@ -1094,7 +1094,7 @@ Itens onde headers, esquemas, validador ou documentos não fecham entre si. Nenh
 
 ## 10. Divergências encontradas no GDD e nos requisitos
 
-- **D1. Posições de equipamento.** RF-30 e a tabela da seção 2.1 de `02_requisitos.md` (linha 45) falam em 5 posições no protótipo. O header diz "AA usa as 8 primeiras" e o esquema aceita os 10 slots (incluindo `ring2` e `belt`, reservados para 1.0). Não é erro de dado, mas o conteúdo do protótipo pode usar `ring2` e `belt` sem o validador avisar. Confirmar.
+- **D1. Posições de equipamento.** RF-30 e a tabela da seção 2.1 de `docs/requisitos-qa/02_requisitos.md` (linha 45) falam em 5 posições no protótipo. O header diz "AA usa as 8 primeiras" e o esquema aceita os 10 slots (incluindo `ring2` e `belt`, reservados para 1.0). Não é erro de dado, mas o conteúdo do protótipo pode usar `ring2` e `belt` sem o validador avisar. Confirmar.
 - **D2. Idle ≈ 35% do XP por hora.** RF-32 e plano linha 802 dão 35%. Com Fervor ×3, a conta dá 33,3%. O 35% é meta de calibração (plano linha 1508), não chave. Por isso não há chave no `rules.csv` para ele, o que está certo.
 - **D3. Esquiva, poção e fase do chefe** não têm dados (ver P4 e P1). Os valores estão no plano e nos requisitos.
 - **D4. Único só do Guardião (RF-27)** não é garantido pelos dados (ver P5).
@@ -1103,7 +1103,7 @@ Verificado sem divergência: XP por nível (RF-05: 100, 160, 269,7 e 580), Vigor
 
 ## 11. Saída final do validador
 
-Comando: `python tools/validate_data.py --self-test` (da raiz do repositório, Python 3.14). Saída colada na íntegra:
+Comando: `python tools/dados/validate_data.py --self-test` (da raiz do repositório, Python 3.14). Saída colada na íntegra:
 
 ```
 ### validate_data.py --self-test

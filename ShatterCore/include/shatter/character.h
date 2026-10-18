@@ -56,7 +56,7 @@ struct CharacterSnapshot {
 // Implementação: src/character.cpp. Retorna false (e preenche error) se algum ID não existir.
 bool BuildStatBlock(const ContentDB& db, const CharacterState& c, StatBlock& out, std::string* error = nullptr);
 
-// ADIÇÃO (docs/09_mudancas_contrato.md): atributos de um inimigo no nível de monstro `level`
+// ADIÇÃO (docs/tecnico/09_mudancas_contrato.md): atributos de um inimigo no nível de monstro `level`
 // (base + perLevel × (nível − 1) de cada StatGrowth, sem mods). O mesmo builder no simulador idle e,
 // pela API C, no combate em tempo real. Nível < 1 conta como 1.
 void BuildEnemyStatBlock(const EnemyData& enemy, int level, StatBlock& out);

@@ -1,5 +1,5 @@
 {
-  "$comment": "Esquema do save JSON, versao 1 (save.h, character.h, expedition.h). Subconjunto de JSON Schema 2020-12 aceito por tools/validate_data.py: type, enum, const, pattern, minimum, maximum, exclusiveMinimum, minItems, maxItems, items, required, properties, additionalProperties false, oneOf, $ref para #/$defs. Ver docs/06_dados.md, secao 6.",
+  "$comment": "Esquema do save JSON, versao 1 (save.h, character.h, expedition.h). Subconjunto de JSON Schema 2020-12 aceito por tools/dados/validate_data.py: type, enum, const, pattern, minimum, maximum, exclusiveMinimum, minItems, maxItems, items, required, properties, additionalProperties false, oneOf, $ref para #/$defs. Ver docs/tecnico/06_dados.md, secao 6.",
   "x-save-version": 1,
   "title": "Echoes of the Shatter - save v1",
   "type": "object",

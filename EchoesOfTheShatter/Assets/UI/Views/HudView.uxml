@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <!-- HUD de combate (docs/03_design_system.md, seção 4.1). Sem texto literal: LocLabel por chave
+    <!-- HUD de combate (docs/arte/03_design_system.md, seção 4.1). Sem texto literal: LocLabel por chave
          e textos dinâmicos preenchidos pelo HudView.cs. Posições no espaço de referência 1920x1080. -->
     <Style src="../Styles/Tokens.uss" />
     <Style src="../Styles/Components.uss" />

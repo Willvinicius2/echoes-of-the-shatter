@@ -1,5 +1,5 @@
 {
-  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/06_dados.md, seção 3.",
+  "$comment": "Formato próprio shatter-table-schema/1 — ver docs/tecnico/06_dados.md, seção 3.",
   "format": "shatter-table-schema/1",
   "table": "skills.csv",
   "kind": "rows",

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace Echoes.Interop.Native
 {
     /// <summary>
-    /// Confere o layout das structs blittable com a DLL (docs/04_arquitetura.md, secao 9.2): monta a mesma
+    /// Confere o layout das structs blittable com a DLL (docs/tecnico/04_arquitetura.md, secao 9.2): monta a mesma
     /// lista de <c>kLayout</c> (shatter_c.cpp) — para cada struct, sizeof e depois offsetof dos campos,
     /// na ordem fixa — e chama <c>shatter_layout_check</c>.
     /// </summary>

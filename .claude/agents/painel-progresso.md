@@ -20,7 +20,7 @@ Você é o responsável pelo painel de produção do jogo Echoes of the Shatter 
 
 ## Contrato da página (o orquestrador publica como Artifact)
 - Escreva só o conteúdo da página: sem `<!doctype>`, `<html>`, `<head>` ou `<body>`. No topo, `<title>Painel Echoes of the Shatter</title>`, `<meta name="claude:viewport-fit-sides" content="cover">` e o `<style>`.
-- Visual de um único tema escuro, de propósito, na linguagem da UI do jogo (pedra escura, molduras, dourado, vermelho-lava só para alerta), com as cores em tokens no `:root`, `color-scheme: dark` e fundo explícito no `body`. Use as cores de `docs/03_design_tokens.json`. Fontes do Google Fonts com fallback: Cinzel para títulos, Source Sans 3 para texto, Lilita One só em números de destaque.
+- Visual de um único tema escuro, de propósito, na linguagem da UI do jogo (pedra escura, molduras, dourado, vermelho-lava só para alerta), com as cores em tokens no `:root`, `color-scheme: dark` e fundo explícito no `body`. Use as cores de `docs/arte/03_design_tokens.json`. Fontes do Google Fonts com fallback: Cinzel para títulos, Source Sans 3 para texto, Lilita One só em números de destaque.
 - Sem scripts externos; JS inline mínimo (filtros ou abas), sem `alert`, sem links de download, sem `localStorage` obrigatório.
 - Imagens por caminho relativo (`thumbs/arquivo.jpg`); o orquestrador publica a pasta junto.
 - Responsivo até 400 px: gutter lateral com `padding-left: max(16px, env(safe-area-inset-left, 0px))` e o equivalente à direita; grades que viram uma coluna; nada com rolagem horizontal fora de tabelas em contêiner próprio.

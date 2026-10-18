@@ -5,7 +5,7 @@ using System.Text;
 namespace Echoes.Interop.Native
 {
     /// <summary>
-    /// Texto UTF-8 e o padrao de duas chamadas da API C (docs/04_arquitetura.md, secao 9.2): a primeira
+    /// Texto UTF-8 e o padrao de duas chamadas da API C (docs/tecnico/04_arquitetura.md, secao 9.2): a primeira
     /// chamada devolve <c>BUFFER_TOO_SMALL</c> com <c>needed</c>, o C# aloca e repete. Nada muda no
     /// lado nativo entre as duas chamadas.
     /// </summary>

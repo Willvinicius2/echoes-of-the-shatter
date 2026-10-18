@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Echoes.EditorTools
 {
     /// <summary>
-    /// Gera o SO_RarityTint a partir dos tokens <c>art3d.rarity_tint</c> do docs/03_design_tokens.json (nenhum valor copiado a mão).
+    /// Gera o SO_RarityTint a partir dos tokens <c>art3d.rarity_tint</c> do docs/arte/03_design_tokens.json (nenhum valor copiado a mão).
     /// Menu: Echoes ▸ Criar SO_RarityTint (idempotente: atualiza o asset pelo mesmo caminho).
     /// </summary>
     public static class RarityTintBuilder
     {
         public const string AssetPath = "Assets/Data/Presentation/SO_RarityTint.asset";
 
-        public static string TokensPath => Path.GetFullPath(Path.Combine(Application.dataPath, "../../docs/03_design_tokens.json"));
+        public static string TokensPath => Path.GetFullPath(Path.Combine(Application.dataPath, "../../docs/arte/03_design_tokens.json"));
 
         [MenuItem("Echoes/Criar SO_RarityTint")]
         public static RarityTintAsset CreateOrUpdate()

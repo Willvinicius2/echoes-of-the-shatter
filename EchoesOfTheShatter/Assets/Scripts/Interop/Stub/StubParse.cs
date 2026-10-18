@@ -94,7 +94,7 @@ namespace Echoes.Interop
         }
 
         /// <summary>
-        /// Lista de modificadores <c>stat:kind:valor[:tag+tag]</c> separados por '|' (docs/06_dados.md, seção 1).
+        /// Lista de modificadores <c>stat:kind:valor[:tag+tag]</c> separados por '|' (docs/tecnico/06_dados.md, seção 1).
         /// </summary>
         public static bool TryModifiers(string text, string source, List<StubModifier> into, out string error)
         {

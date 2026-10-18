@@ -1,4 +1,4 @@
-/* ShatterCore — API C estável para o Unity (P/Invoke). Contrato: docs/04_arquitetura.md, seção 9.2.
+/* ShatterCore — API C estável para o Unity (P/Invoke). Contrato: docs/tecnico/04_arquitetura.md, seção 9.2.
  *
  * Regras da fronteira:
  *  - C puro, convenção cdecl; toda função devolve shatter_status (0 = OK) ou um valor simples.
@@ -17,7 +17,7 @@
  *    (simulação de expedição em Task.Run recebe só o shatter_db e JSON). shatter_save, shatter_statblock e
  *    shatter_effects pertencem a UMA thread (a main thread do Unity).
  *  - Caminho quente (golpe) em structs blittable; caminho frio (expedição, save, snapshot) em JSON UTF-8
- *    no mesmo formato do save (docs/06_dados.md, seção 6).
+ *    no mesmo formato do save (docs/tecnico/06_dados.md, seção 6).
  *  - SHATTER_C_API_VERSION sobe a cada mudança incompatível de assinatura, struct ou JSON.
  */
 #ifndef SHATTER_C_H
@@ -526,7 +526,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
                                                                        shatter_error* err) SHATTER_NOEXCEPT;
 
 /* ================================================================================================
- * API C 1.1 (SHATTER_C_API_MINOR 1) — ADIÇÃO sobre a v1 (docs/09_mudancas_contrato.md, seção 7).
+ * API C 1.1 (SHATTER_C_API_MINOR 1) — ADIÇÃO sobre a v1 (docs/tecnico/09_mudancas_contrato.md, seção 7).
  * Regras novas do protótipo (docs/13): poções, esquiva, stun e Guarda Quebrada, elite, chefe, Único, e o que o
  * IRulesCore do C# precisa para não calcular regra (docs/11, A-01). As structs e funções da v1 não mudaram.
  * As structs novas têm layout próprio, conferido por shatter_layout_info_ext/shatter_layout_check_ext (o layout da

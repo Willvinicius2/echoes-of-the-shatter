@@ -6,7 +6,7 @@ namespace Echoes.Interop.Native
 {
     /// <summary>
     /// <see cref="IRulesCore"/> sobre a DLL <c>shattercore</c> (API C 1.1, shatter_c.h): P/Invoke, SafeHandle e o
-    /// padrao de duas chamadas para buffers (docs/04_arquitetura.md, secao 9).
+    /// padrao de duas chamadas para buffers (docs/tecnico/04_arquitetura.md, secao 9).
     ///
     /// Roda NATIVO: carga e validacao do conteudo, versao do conteudo, constantes de regra (rules.csv e as chaves novas por
     /// <c>shatter_db_rules_ext</c>: esquiva, buffer, trava de pocao, fora de combate), atributos (heroi, inimigo, vazio),
@@ -1034,7 +1034,7 @@ namespace Echoes.Interop.Native
             return db;
         }
 
-        // --- JSON do personagem (formato CharacterState do save, docs/06_dados.md, secao 6) -------------
+        // --- JSON do personagem (formato CharacterState do save, docs/tecnico/06_dados.md, secao 6) -------------
 
         string BuildCharacterJson(in HeroBuild build)
         {

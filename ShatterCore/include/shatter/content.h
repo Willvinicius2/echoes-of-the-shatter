@@ -3,7 +3,7 @@
 // 1ª linha = cabeçalho, listas internas separadas por '|'). O mesmo CSV alimenta:
 //   - o ShatterCore (ContentDB::LoadTableCsv) — no jogo, nos testes e no bench;
 //   - opcionalmente DataTables no editor UE, só para visualização.
-// Esquemas das colunas: docs/06_dados.md (Data Engineer). Nomes de campo abaixo = nomes de coluna.
+// Esquemas das colunas: docs/tecnico/06_dados.md (Data Engineer). Nomes de campo abaixo = nomes de coluna.
 #pragma once
 
 #include <cstddef>

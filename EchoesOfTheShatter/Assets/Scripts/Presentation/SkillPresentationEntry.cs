@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Echoes.Presentation
 {
     /// <summary>
-    /// Habilidade → clipe e VFX (docs/04_arquitetura.md, seção 3.3). As frações dividem o clipe nas
+    /// Habilidade → clipe e VFX (docs/tecnico/04_arquitetura.md, seção 3.3). As frações dividem o clipe nas
     /// 3 fases; a velocidade de cada fase é ajustada aos tempos do CSV (a animação se adapta).
     /// </summary>
     [Serializable]

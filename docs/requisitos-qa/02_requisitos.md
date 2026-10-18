@@ -1,7 +1,7 @@
 # 02 — Requisitos e critérios de aceite (Vision Lead)
 
 Projeto: **Echoes of the Shatter** · Rodada: "base do jogo" · Data: 15/10/2026
-Fonte de verdade de design: `docs/00_plano_existente.md` (Plano Steam v2.0). Plano da equipe: `docs/01_plano_execucao.md`.
+Fonte de verdade de design: `docs/design/00_plano_existente.md` (Plano Steam v2.0). Plano da equipe: `docs/requisitos-qa/01_plano_execucao.md`.
 Mudança decidida pelo dono: motor **Unreal Engine 5** (substitui Godot 4). Onde isso altera o plano, ver seção 6.
 
 Legenda de verificação usada em todo o documento:
@@ -76,7 +76,7 @@ Corte vertical mínimo, menor que o demo do Next Fest (que tem Estrada + Cripta 
 
 ### 3.2 Cálculo de golpe
 - **RF-06** Ordem fixa: dano base (habilidade ou arma) × coeficiente → modificadores por tag → crítico (multiplicador base 150%) → evasão (só ataques, teto 70%) → bloqueio (teto 50%) → armadura (só físico) → resistência elemental (teto 75%) → barreira → vida.
-- **RF-07** A armadura reduz proporcionalmente menos os golpes grandes que os pequenos (fórmula definida pelo Tech Lead em `04_arquitetura.md`).
+- **RF-07** A armadura reduz proporcionalmente menos os golpes grandes que os pequenos (fórmula definida pelo Tech Lead em `docs/tecnico/04_arquitetura.md`).
 - **RF-08** Efeitos ao acertar: lentidão, quebra de guarda, ganho de Ímpeto (queimadura fica preparada em dados, sem uso no protótipo).
 - **RF-09** Cada efeito tem duração, intervalo de tick e regra de acúmulo (renovar, acumular até N, só o mais forte).
 - **RF-10** Gatilhos automáticos ("ao bloquear", "ao matar") têm recarga interna mínima de 0,25 s e não disparam outro efeito do mesmo tipo.
@@ -144,7 +144,7 @@ Corte vertical mínimo, menor que o demo do Next Fest (que tem Estrada + Cripta 
 ### 3.10 UI e HUD
 - **RF-57** HUD: retrato com moldura, barras de Vida e Ímpeto, faixa com nome da área, Ouro e Cargas do Marco no canto, barra inferior (habilidades, esquiva com cargas, 2 poções), números de dano.
 - **RF-58** Telas: menu principal (Novo jogo / Continuar / Opções / Sair, versão visível no canto), inventário, configuração de expedição, relatório da expedição, opções (idioma, remapeamento, tremor de tela).
-- **RF-59** Visual 3D estilizado conforme `docs/03_design_system.md` e as folhas oficiais de `docs/arte/referencias-geracao/`. A UI é renderizada na resolução nativa com escala de DPI, e as cores da UI, das raridades, dos elementos e da névoa de cada área vêm de `docs/03_design_tokens.json`.
+- **RF-59** Visual 3D estilizado conforme `docs/arte/03_design_system.md` e as folhas oficiais de `docs/arte/referencias-geracao/`. A UI é renderizada na resolução nativa com escala de DPI, e as cores da UI, das raridades, dos elementos e da névoa de cada área vêm de `docs/arte/03_design_tokens.json`.
 - **RF-60** Ao abrir o jogo com expedição vencida, mostrar "o Tico está voltando..." enquanto o simulador roda, sem travar a interface.
 
 ### 3.11 Localização
@@ -291,7 +291,7 @@ Formato: checklist objetivo. A coluna "Ver." indica onde se verifica.
 | RNF-11 | Versão visível no menu; arquivo de log criado e rotacionado | UE |
 
 ### 5.8 Aceite global da rodada
-- [ ] Todos os critérios **[SC]** passando no `ctest` (QA registra em `10_qa.md`).
+- [ ] Todos os critérios **[SC]** passando no `ctest` (QA registra em `docs/requisitos-qa/10_qa.md`).
 - [ ] Projeto UE5 revisado por leitura sem defeito bloqueante (`11_code_review.md`).
 - [ ] Roteiro manual do dono para os critérios **[UE]**, com resultado anotado em `13_aceite.md` (pode ficar pendente até o dono abrir o editor).
 - [ ] Teste de fogo do pilar 1: o dono joga 30 s contra Sentinelas na Cripta e descreve o combate como satisfatório (portão de "Combate sem graça" do plano).
@@ -304,7 +304,7 @@ Formato: checklist objetivo. A coluna "Ver." indica onde se verifica.
 
 | # | Plano (Godot 4) | Agora (UE5) | Impacto no produto |
 |---|---|---|---|
-| D-1 | Godot 4 2D em pixel art, renderer Compatibility, foco em PCs fracos | UE 5.8 em 3D estilizado pintado à mão: Forward Shading com MSAA, sem Lumen, Nanite nem Virtual Shadow Maps (`docs/08_decisoes_visual_3d.md` e `docs/04_arquitetura.md`) | Requisito mínimo de hardware sobe; a meta "60 FPS com GPU integrada" vira risco a medir cedo (RNF-04) |
+| D-1 | Godot 4 2D em pixel art, renderer Compatibility, foco em PCs fracos | UE 5.8 em 3D estilizado pintado à mão: Forward Shading com MSAA, sem Lumen, Nanite nem Virtual Shadow Maps (`docs/arte/08_decisoes_visual_3d.md` e `docs/tecnico/04_arquitetura.md`) | Requisito mínimo de hardware sobe; a meta "60 FPS com GPU integrada" vira risco a medir cedo (RNF-04) |
 | D-2 | Build < 500 MB | Build UE5 base é maior; meta mantida, mas sob vigilância | Pode exigir corte de módulos do motor; afeta download e Steam Deck no 1.0 |
 | D-3 | Regras em GDScript RefCounted, um único motor | Regras em **ShatterCore** C++17 puro, usado pelo módulo UE e pelo simulador | Fortalece o princípio "um único motor de regras"; testes rodam sem o editor |
 | D-4 | Testes GUT, parity bot em Godot headless | `ctest` no ShatterCore + Automation do UE; parity bot adiado | Nesta rodada não há prova de paridade combate × simulador; IdleProfiles ficam com valores provisórios marcados como "não calibrados" |
@@ -314,7 +314,7 @@ Formato: checklist objetivo. A coluna "Ver." indica onde se verifica.
 | D-8 | GodotSteam, Sentry para Godot | Steamworks/OnlineSubsystemSteam e plugin Sentry para UE (fora desta rodada) | Sem impacto no protótipo |
 | D-9 | Física a 60 Hz em `_physics_process` | Tick do UE é variável; combate em passo fixo dentro do ShatterCore | Necessário para RF-11 e para a paridade futura |
 | D-10 | Godot sem royalties | EULA da Epic: royalty sobre receita bruta acima do limite da Epic por produto | Entra no cálculo de preço e receita; ver P-5 |
-| D-11 | Recursos tipados (`.tres`) + `import_tables.gd` | DataTables do UE importadas dos mesmos CSV + `tools/validate_data.py` | Planilha continua a fonte de balanceamento |
+| D-11 | Recursos tipados (`.tres`) + `import_tables.gd` | DataTables do UE importadas dos mesmos CSV + `tools/dados/validate_data.py` | Planilha continua a fonte de balanceamento |
 | D-12 | Iteração rápida no editor leve | Editor e compilação C++ mais pesados | Protótipo do dono depende de compilar no Windows; prazo da F1 deve ser remedido |
 
 Simplificações de escopo desta rodada que **não** são causadas pelo UE5 (registradas para não virarem regra): habilidades liberadas por nível em vez de Livros; Fenda de Pedra no nível 3 em vez de 5; sem conferência de relógio com a Steam.
@@ -323,8 +323,8 @@ Simplificações de escopo desta rodada que **não** são causadas pelo UE5 (reg
 
 ## 7. Perguntas em aberto para o dono do projeto
 
-1. **P-1 Visual 2D no UE5:** respondida em 16/10/2026. O dono escolheu 3D estilizado pintado à mão, no estilo das referências aprovadas, e não pixel art (ver `docs/08_decisoes_visual_3d.md`).
+1. **P-1 Visual 2D no UE5:** respondida em 16/10/2026. O dono escolheu 3D estilizado pintado à mão, no estilo das referências aprovadas, e não pixel art (ver `docs/arte/08_decisoes_visual_3d.md`).
 2. **P-2 Chefe e domínio:** respondida em 16/10/2026. O Guardião é obrigatório nesta rodada: dominar a Cripta é vencer o Guardião (Regra 1 mantida).
 3. **P-3 Paridade:** respondida em 16/10/2026. O teste de paridade fica para a próxima rodada; os IdleProfiles usam valores estimados, marcados como não calibrados (selo "Estimativa" na tela).
-4. **P-4 PC de referência:** respondida em 16/10/2026. O "PC de entrada" é genérico: GPU de 4 GB do nível GTX 1050 Ti/RX 570, CPU de 4 núcleos, 8 GB de RAM, 1080p (ver `docs/04_arquitetura.md`, seção 18). O Steam Deck é medido como alvo à parte.
+4. **P-4 PC de referência:** respondida em 16/10/2026. O "PC de entrada" é genérico: GPU de 4 GB do nível GTX 1050 Ti/RX 570, CPU de 4 núcleos, 8 GB de RAM, 1080p (ver `docs/tecnico/04_arquitetura.md`, seção 18). O Steam Deck é medido como alvo à parte.
 5. **P-5 Motor e licença:** respondida em 16/10/2026. O motor passou para a Unity 6.3 LTS com a licença Unity Personal, sem royalty nem taxa por instalação. O dono está ciente de que a Personal vale enquanto a receita ou o investimento dos últimos 12 meses ficar abaixo de US$ 200 mil; acima disso, é preciso a Unity Pro.

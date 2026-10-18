@@ -1,6 +1,6 @@
 # 05 — Conteúdo do protótipo (Narrative & Content)
 
-Fonte de regras: `00_plano_existente.md` (seções 3 a 8), `02_requisitos.md` (seção 2, escopo) e `06_dados.md`. Os números vêm do plano quando ele define; o que o plano não define está marcado **PROVISÓRIO** (seção 5). A história principal é do dono do projeto: nada aqui cria arco, revelação ou lore novo. Os textos de NPC são funcionais e provisórios.
+Fonte de regras: `docs/design/00_plano_existente.md` (seções 3 a 8), `docs/requisitos-qa/02_requisitos.md` (seção 2, escopo) e `docs/tecnico/06_dados.md`. Os números vêm do plano quando ele define; o que o plano não define está marcado **PROVISÓRIO** (seção 5). A história principal é do dono do projeto: nada aqui cria arco, revelação ou lore novo. Os textos de NPC são funcionais e provisórios.
 
 ## 1. O que foi preenchido
 
@@ -82,10 +82,10 @@ Todos os valores numéricos abaixo foram escolhidos aqui porque o plano não os 
 
 ## 6. Divergências e pendências
 
-- **Nível de liberação.** O plano põe Fenda de Pedra no nível 5 e Escudada no 3; o `02_requisitos.md` (seção 2.1) põe Fenda no 3 e deixa a barra com 3 habilidades. Os dados seguem o 02: Fenda nv 3. Escudada, fora do protótipo, ficou em nv 5.
+- **Nível de liberação.** O plano põe Fenda de Pedra no nível 5 e Escudada no 3; o `docs/requisitos-qa/02_requisitos.md` (seção 2.1) põe Fenda no 3 e deixa a barra com 3 habilidades. Os dados seguem o 02: Fenda nv 3. Escudada, fora do protótipo, ficou em nv 5.
 - **Poções (P1).** Sem tabela nem chaves em `rules.csv`. Valores sugeridos: 2 poções, cura de 40% da vida máxima, 3 cargas e recarga de 20 s por carga (todos provisórios). Textos em `potion.life.*`.
 - **Esquiva (P4).** Sem tabela. Valores do plano para quem implementar: 0,35 s, invulnerável nos primeiros 0,2 s, 3 cargas, 1,5 s por carga. Texto em `dodge.*`.
 - **Padrões de fase do Guardião (P4)** (invocar 2 Sentinelas na fase 2, escudo frontal) e modificadores de elite (escudo, veloz) não têm dados. As elites fixas aproximam o "escudo" com armadura e o "veloz" com `moveSpeed`.
 - **Único só do Guardião (P5).** Garantido hoje só pelo conteúdo: o Único está apenas em `loot.crypt.guardian`.
 - **`chanceElite` dos encontros** (0 a 0,1) é provisória e não substitui as elites fixas.
-- **Validador.** O agente de conteúdo não tinha como executar shell nesta rodada. As tabelas foram conferidas à mão contra os esquemas e o `validate_data.py` (cabeçalhos, nº de colunas, IDs, referências, chaves de localização). Rodar `python tools/validate_data.py` antes de integrar.
+- **Validador.** O agente de conteúdo não tinha como executar shell nesta rodada. As tabelas foram conferidas à mão contra os esquemas e o `validate_data.py` (cabeçalhos, nº de colunas, IDs, referências, chaves de localização). Rodar `python tools/dados/validate_data.py` antes de integrar.

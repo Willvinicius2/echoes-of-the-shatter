@@ -1,6 +1,6 @@
 namespace Echoes.Gameplay
 {
-    /// <summary>Forma do aviso no chão (docs/04_arquitetura.md, seção 3.10).</summary>
+    /// <summary>Forma do aviso no chão (docs/tecnico/04_arquitetura.md, seção 3.10).</summary>
     public enum TelegraphShape : byte
     {
         Cone = 0,

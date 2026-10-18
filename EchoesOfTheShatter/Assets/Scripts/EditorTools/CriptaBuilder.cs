@@ -18,7 +18,7 @@ using Object = UnityEngine.Object;
 namespace Echoes.EditorTools
 {
     /// <summary>
-    /// Monta a Cripta jogável da Etapa 2 (Assets/Scenes/Cripta/Cripta.unity) a partir do bloco JSON do docs/14_layout_cripta.md, na escala da
+    /// Monta a Cripta jogável da Etapa 2 (Assets/Scenes/Cripta/Cripta.unity) a partir do bloco JSON do docs/tecnico/14_layout_cripta.md, na escala da
     /// zona A: 9 salas e o nicho secreto, corredores de 6 m, arena de 40 m com 8 pilares, portais, checkpoints, baús, segredo e atalho.
     /// Nenhum número do mapa mora aqui: salas, encontros, posições, pilares e raios vêm do JSON; os encontros ainda conferem com o
     /// encounters.csv (testes). Visual: kit de cenário pintado (SM_Cripta_*, ver EnvironmentKit e CriptaScenery) e os modelos dos inimigos.

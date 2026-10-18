@@ -8,7 +8,7 @@ namespace Echoes.Interop
     /// <summary>
     /// PROVISÓRIO (stub). Tabelas de conteúdo que o combate usa, lidas dos mesmos CSV do ShatterCore
     /// (<c>ContentDB</c>, content.h). Validação mínima: IDs, duplicatas e referências usadas aqui.
-    /// A validação completa é do <c>Finalize()</c> do core e do tools/validate_data.py.
+    /// A validação completa é do <c>Finalize()</c> do core e do tools/dados/validate_data.py.
     /// </summary>
     internal sealed class StubContent
     {

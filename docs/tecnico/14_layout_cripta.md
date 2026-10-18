@@ -1,6 +1,6 @@
 # 14 — Layout jogável da Cripta Partida (Game Designer)
 
-Escopo: protótipo do Guerreiro em `map.act1.crypt` (`maps.csv`), na escala aprovada pelo dono em 16/10/2026 (`13_design_pendencias.md`, bloco "Câmera e escala de mapa"): arena do Guardião de 40 × 40 m com pilares, salas de 24 a 32 m e corredores de 6 m. Este documento só especifica geometria e posições. Nenhum CSV, esquema ou código foi editado, e nenhuma lore foi criada: os nomes de sala abaixo são funcionais e provisórios.
+Escopo: protótipo do Guerreiro em `map.act1.crypt` (`maps.csv`), na escala aprovada pelo dono em 16/10/2026 (`docs/design/13_design_pendencias.md`, bloco "Câmera e escala de mapa"): arena do Guardião de 40 × 40 m com pilares, salas de 24 a 32 m e corredores de 6 m. Este documento só especifica geometria e posições. Nenhum CSV, esquema ou código foi editado, e nenhuma lore foi criada: os nomes de sala abaixo são funcionais e provisórios.
 
 Valores marcados **[HIPÓTESE]** precisam de playtest. Pilares usados (plano, seção 1): P1 Conquistar pela ação, P2 Build com identidade, P3 Planejar o retorno, P4 Respeitar o tempo.
 

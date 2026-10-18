@@ -1,4 +1,4 @@
-// Revisão do core da Etapa 2 (docs/17_revisao_core_etapa2.md): reproduções de achados nas regras de combate.
+// Revisão do core da Etapa 2 (docs/tecnico/17_revisao_core_etapa2.md): reproduções de achados nas regras de combate.
 //
 // Cada teste afirma o comportamento CORRETO do achado do docs/17 (todos corrigidos e LIGADOS; sem variável de ambiente).
 #include <memory>

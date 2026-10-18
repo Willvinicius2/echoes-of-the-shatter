@@ -9,29 +9,30 @@ Motor: **Unity 6.3 LTS (6000.3.26f1) com URP, C#** (decisão do dono em 16/10/20
 - Projeto Unity: `EchoesOfTheShatter/` (Assets, Packages, ProjectSettings), com o pacote `com.unity.pipeline` para a CLI e o MCP controlarem o editor.
 
 ## Direção de arte (aprovada em 16/10/2026)
-- O visual segue o estilo do Spell Brigade: 3D estilizado pintado à mão, heróis chibi, magia em neon e UI de pedra escura. As decisões de renderização estão em `docs/08_decisoes_visual_3d.md`.
+- O visual segue o estilo do Spell Brigade: 3D estilizado pintado à mão, heróis chibi, magia em neon e UI de pedra escura. As decisões de renderização estão em `docs/arte/08_decisoes_visual_3d.md`.
 - As referências aprovadas e as folhas oficiais de heróis, inimigos, chefes, cenários e ícones estão em `docs/arte/referencias-geracao/` (ver o README dessa pasta). Todo personagem novo deve seguir essas folhas.
 - Os assets extraídos do Spell Brigade (`D:\openclaude\spell-brigade-re`) servem só de referência de estilo. Nunca entram no projeto nem no build.
 - O Mago usa capuz e cajado com cristal, e nunca lanterna.
 - Toda arte nova vai para aprovação do dono antes de entrar no jogo.
 
 ## Onde está cada coisa
-- `docs/00_plano_existente.md` — plano de design aprovado (Plano Steam v2.0). Fonte de verdade de regras, conteúdo e escopo; as partes de pixel art e Godot ficaram como histórico.
-- `docs/01_plano_execucao.md` — equipe de agentes, fases e quem é dono de cada arquivo.
-- `docs/02_requisitos.md` — escopo do protótipo, RF-01..RF-65, RNF, critérios de aceite ([SC] = teste automático, os demais manuais no editor).
-- `docs/03_design_system.md` + `docs/03_design_tokens.json` — especificação de arte 3D, paleta, tokens (com mapeamento para USS), telas e componentes em UI Toolkit.
-- `docs/04_arquitetura.md` — arquitetura Unity 6 + URP: renderização (seção 3), estrutura do projeto e asmdefs (seção 4), integração ShatterCore ↔ Unity (seção 9), testes (seção 13), pipeline Blender → FBX → Unity (seção 17), orçamentos (seção 18).
-- `docs/05_conteudo.md`, `docs/06_dados.md` — conteúdo do protótipo e formato das tabelas.
-- `docs/08_decisoes_visual_3d.md` — decisões de motor e renderização e quem é dono de cada número (03 = arte, 04 = orçamentos técnicos).
-- `docs/10_qa.md` — matriz de rastreabilidade, roteiros de playtest e testes planejados.
-- `docs/15_etapas.md` — as 5 etapas do jogo (base técnica, fatia jogável da Cripta, ciclo do protótipo, elenco e Ato I, Acesso Antecipado) com critérios de aceite.
+- `docs/design/00_plano_existente.md` — plano de design aprovado (Plano Steam v2.0). Fonte de verdade de regras, conteúdo e escopo; as partes de pixel art e Godot ficaram como histórico.
+- `docs/requisitos-qa/01_plano_execucao.md` — equipe de agentes, fases e quem é dono de cada arquivo.
+- `docs/requisitos-qa/02_requisitos.md` — escopo do protótipo, RF-01..RF-65, RNF, critérios de aceite ([SC] = teste automático, os demais manuais no editor).
+- `docs/arte/03_design_system.md` + `docs/arte/03_design_tokens.json` — especificação de arte 3D, paleta, tokens (com mapeamento para USS), telas e componentes em UI Toolkit.
+- `docs/tecnico/04_arquitetura.md` — arquitetura Unity 6 + URP: renderização (seção 3), estrutura do projeto e asmdefs (seção 4), integração ShatterCore ↔ Unity (seção 9), testes (seção 13), pipeline Blender → FBX → Unity (seção 17), orçamentos (seção 18).
+- `docs/design/05_conteudo.md`, `docs/tecnico/06_dados.md` — conteúdo do protótipo e formato das tabelas.
+- `docs/arte/08_decisoes_visual_3d.md` — decisões de motor e renderização e quem é dono de cada número (03 = arte, 04 = orçamentos técnicos).
+- `docs/requisitos-qa/10_qa.md` — matriz de rastreabilidade, roteiros de playtest e testes planejados.
+- `docs/design/15_etapas.md` — as 5 etapas do jogo (base técnica, fatia jogável da Cripta, ciclo do protótipo, elenco e Ato I, Acesso Antecipado) com critérios de aceite.
 - `docs/pesquisa/` — pesquisas de referência externas.
 - `ShatterCore/` — motor de regras em C++17 puro, sem Unity. Headers em `include/shatter/`; `src/` e testes em andamento.
 - `EchoesOfTheShatter/Content/Data/` — CSV de conteúdo, `Loc/` e esquemas (destino previsto: `Assets/StreamingAssets/Data`, ver 04 seção 4.2).
 - `art-src/graybox/` — malhas provisórias do Blender (scripts, .blend, .fbx no Git LFS, prévias).
-- `tools/validate_data.py` — validador de dados; `tools/build_core.cmd` — build e testes do ShatterCore no Windows.
+- `tools/dados/validate_data.py` — validador de dados; `tools/core/build_core.cmd` — build e testes do ShatterCore no Windows.
 - `.claude/agents/` — agentes do projeto: `painel-progresso`, `guardiao-github`, `pesquisador-referencias`.
-- `docs/prototipo_godot_f1.md` — como rodar o protótipo Godot F1 (histórico).
+- `prototipos/godot-f1/` — protótipo Godot F1 inteiro (histórico, referência de game feel); como rodar em `COMO_RODAR.md`.
+- `docs/README.md` — índice dos documentos por assunto (`design/`, `tecnico/`, `requisitos-qa/`, `arte/`, `pesquisa/`, `progresso/`).
 
 ## Regras do projeto
 - Texto em português do Brasil; código, IDs de conteúdo e chaves em inglês (`skill.warrior.iron_cut`).
@@ -64,7 +65,7 @@ Não use o modelo mais caro para trabalho que o mais barato resolve: isso gasta 
 - Ficam fora do GitHub de propósito: caches, `venv`, saídas brutas do TripoSG em `_trabalho-claude/modelos3d/`, imagens de trabalho do Codex, packs KayKit e os assets do Spell Brigade. A arte aprovada entra no repositório.
 
 ## Como compilar e testar o ShatterCore
-Windows: `tools\build_core.cmd Release --werror` (MSVC 14.50 e CMake do Visual Studio Build Tools).
+Windows: `tools\core\build_core.cmd Release --werror` (MSVC 14.50 e CMake do Visual Studio Build Tools).
 Linux ou nuvem:
 ```
 cmake -S ShatterCore -B build -DCMAKE_BUILD_TYPE=Release -DSHATTER_WERROR=ON
@@ -81,9 +82,9 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 - Depois de mudar docs, artes aprovadas ou pendências, regerar e republicar o roteiro do sócio no mesmo link: https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8
 
 ## Pendências de decisão
-- **PRIORIDADE MÁXIMA — Alinhamento de Contexto, Dupla e Escopo (`docs/20_alinhamento_ia_e_escopo.md`):** Antes de iniciar qualquer nova frente ou disparar subagentes, leia `docs/20_alinhamento_ia_e_escopo.md` e peça ao dono para decidir as duas pendências prioritárias em `docs/progresso/estado.json` (`fluxo-agentes-contexto` e `foco-fatia-vertical`). Não aprove artes nem decisões de design em nome do dono.
-- Itens "confirmar na instalação" do `docs/04_arquitetura.md`: conferir na Unity 6.3 instalada antes de o Frontend depender deles.
-- O protótipo Godot F1 continua na raiz (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity. Como rodar: `docs/prototipo_godot_f1.md`.
+- **PRIORIDADE MÁXIMA — Alinhamento de Contexto, Dupla e Escopo (`docs/design/20_alinhamento_ia_e_escopo.md`):** Antes de iniciar qualquer nova frente ou disparar subagentes, leia `docs/design/20_alinhamento_ia_e_escopo.md` e peça ao dono para decidir as duas pendências prioritárias em `docs/progresso/estado.json` (`fluxo-agentes-contexto` e `foco-fatia-vertical`). Não aprove artes nem decisões de design em nome do dono.
+- Itens "confirmar na instalação" do `docs/tecnico/04_arquitetura.md`: conferir na Unity 6.3 instalada antes de o Frontend depender deles.
+- O protótipo Godot F1 fica em `prototipos/godot-f1/` (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity. Como rodar: `prototipos/godot-f1/COMO_RODAR.md`.
 
 ## Próximo passo
-Etapa 2, fatia jogável da Cripta (ver `docs/15_etapas.md`): regras novas no core, tabelas novas, DLL real na Unity, layout da Cripta na escala A (`docs/14_layout_cripta.md`), modelos 3D gerados pelo TripoSG a partir de `docs/arte/referencias-geracao/aprovadas/modelagem/` e cenário da Cripta.
+Etapa 2, fatia jogável da Cripta (ver `docs/design/15_etapas.md`): regras novas no core, tabelas novas, DLL real na Unity, layout da Cripta na escala A (`docs/tecnico/14_layout_cripta.md`), modelos 3D gerados pelo TripoSG a partir de `docs/arte/referencias-geracao/aprovadas/modelagem/` e cenário da Cripta.

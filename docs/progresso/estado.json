@@ -30,11 +30,11 @@
         },
         {
           "titulo": "Design system e tokens de cor da interface",
-          "arquivo": "docs/03_design_system.md, docs/03_design_tokens.json"
+          "arquivo": "docs/arte/03_design_system.md, docs/arte/03_design_tokens.json"
         },
         {
           "titulo": "Decisões de visual 3D e motor",
-          "arquivo": "docs/08_decisoes_visual_3d.md"
+          "arquivo": "docs/arte/08_decisoes_visual_3d.md"
         },
         {
           "titulo": "Folhas de modelagem m01 a m09, heróis modulares e cenário c01 a c06",
@@ -56,19 +56,19 @@
       "entregas": [
         {
           "titulo": "Decisões que travavam o protótipo (10 itens)",
-          "arquivo": "docs/13_design_pendencias.md"
+          "arquivo": "docs/design/13_design_pendencias.md"
         },
         {
           "titulo": "Layout da Cripta na escala da zona A",
-          "arquivo": "docs/14_layout_cripta.md"
+          "arquivo": "docs/tecnico/14_layout_cripta.md"
         },
         {
           "titulo": "Etapas do jogo (5 etapas)",
-          "arquivo": "docs/15_etapas.md"
+          "arquivo": "docs/design/15_etapas.md"
         },
         {
           "titulo": "Etapa 3: fluxo, 14 telas e 27 critérios",
-          "arquivo": "docs/16_etapa3_fluxo.md"
+          "arquivo": "docs/design/16_etapa3_fluxo.md"
         }
       ],
       "proximo": "Rever o balanceamento do idle: com o conteúdo real, o Guerreiro nível 4 sem equipamento recua em cerca de 1 min. Depois, as perguntas abertas do docs/15 (com você)."
@@ -86,11 +86,11 @@
         },
         {
           "titulo": "Esquemas JSON e validador",
-          "arquivo": "EchoesOfTheShatter/Content/Data/schemas/, tools/validate_data.py"
+          "arquivo": "EchoesOfTheShatter/Content/Data/schemas/, tools/dados/validate_data.py"
         },
         {
           "titulo": "Documento de dados",
-          "arquivo": "docs/06_dados.md"
+          "arquivo": "docs/tecnico/06_dados.md"
         }
       ],
       "proximo": "Ajustar números quando o Game Designer rever o balanceamento do idle."
@@ -104,7 +104,7 @@
       "entregas": [
         {
           "titulo": "Resumo do conteúdo e do tom",
-          "arquivo": "docs/05_conteudo.md"
+          "arquivo": "docs/design/05_conteudo.md"
         },
         {
           "titulo": "Textos pt_BR e en (interface, conteúdo, diálogos, expedição)",
@@ -122,7 +122,7 @@
       "entregas": [
         {
           "titulo": "Documento de arquitetura (cliente, núcleo, interop, testes)",
-          "arquivo": "docs/04_arquitetura.md"
+          "arquivo": "docs/tecnico/04_arquitetura.md"
         },
         {
           "titulo": "Interfaces do ShatterCore em C++",
@@ -130,11 +130,11 @@
         },
         {
           "titulo": "Personagem modular (04 §17.4) e proposta C-10 do slot legs",
-          "arquivo": "docs/04_arquitetura.md"
+          "arquivo": "docs/tecnico/04_arquitetura.md"
         },
         {
           "titulo": "Revisão de código: 0 crítico, 6 alto, 11 médio, 26 baixo",
-          "arquivo": "docs/11_revisao_codigo.md"
+          "arquivo": "docs/tecnico/11_revisao_codigo.md"
         }
       ],
       "proximo": "Revisar o contrato da API C ampliada."
@@ -222,7 +222,7 @@
       "entregas": [
         {
           "titulo": "Plano de QA (matriz de requisitos e casos)",
-          "arquivo": "docs/10_qa.md"
+          "arquivo": "docs/requisitos-qa/10_qa.md"
         }
       ],
       "proximo": "Rodar a suíte quando o backend e o frontend da Etapa 2 chegarem."
@@ -250,7 +250,7 @@
       "entregas": [
         {
           "titulo": "Plano de execução e próximos passos",
-          "arquivo": "docs/01_plano_execucao.md, docs/07_proximos_passos.md"
+          "arquivo": "docs/requisitos-qa/01_plano_execucao.md, docs/requisitos-qa/07_proximos_passos.md"
         },
         {
           "titulo": "Este painel",
@@ -269,7 +269,7 @@
       "contexto": [
         "A raiz da pasta docs/ acumulou 968 KB (~250.000 tokens). Quando uma única aba roda por horas como Orquestrador e os subagentes leem docs/03, 04, 16 e 19 inteiros (95 a 100 KB cada), uma única tarefa consome milhões de tokens acumulados e esgota a cota rapidamente.",
         "Além disso, com o contexto cheio na madrugada de 18/10, o próprio Orquestrador passou a assinar decisões de design e aprovações de arte sozinho ('aprovadas pelo orquestrador' nos commits 72e0086, 3a76f4c e dffbee2), contrariando a regra do CLAUDE.md.",
-        "O documento completo com o diagnóstico e os templates prontos foi salvo em docs/20_alinhamento_ia_e_escopo.md."
+        "O documento completo com o diagnóstico e os templates prontos foi salvo em docs/design/20_alinhamento_ia_e_escopo.md."
       ],
       "opcoes": [
         {
@@ -288,7 +288,7 @@
           "efeito": "Continua com leitura direta dos documentos grandes e orquestração em sessão contínua, com alto consumo da cota do Claude."
         }
       ],
-      "origem": "docs/20_alinhamento_ia_e_escopo.md"
+      "origem": "docs/design/20_alinhamento_ia_e_escopo.md"
     },
     {
       "id": "foco-fatia-vertical",
@@ -317,7 +317,7 @@
           "efeito": "Os agentes continuam gerando especificações, artes e código do Ato I enquanto a Etapa 2 e a Etapa 3 ainda estão sendo integradas na Unity."
         }
       ],
-      "origem": "docs/20_alinhamento_ia_e_escopo.md"
+      "origem": "docs/design/20_alinhamento_ia_e_escopo.md"
     },
     {
       "id": "capsulas-steam",
@@ -346,7 +346,7 @@
           "efeito": "IA para compor a cena e artista pintando por cima. Custo intermediário; o uso de IA continua tendo de ser declarado."
         }
       ],
-      "origem": "docs/15_etapas.md"
+      "origem": "docs/design/15_etapas.md"
     },
     {
       "id": "registros-quem",
@@ -378,7 +378,7 @@
           "efeito": "Contador para CNPJ e impostos; advogado só para marca e contratos. Tem custo, mas reduz o risco de erro."
         }
       ],
-      "origem": "docs/15_etapas.md"
+      "origem": "docs/design/15_etapas.md"
     },
     {
       "id": "registros-quando",
@@ -407,7 +407,7 @@
           "efeito": "Adia o gasto e a burocracia para quando o jogo estiver quase pronto. A página entra tarde e o lançamento sai com menos wishlists."
         }
       ],
-      "origem": "docs/15_etapas.md"
+      "origem": "docs/design/15_etapas.md"
     },
     {
       "id": "paginacao-windows",

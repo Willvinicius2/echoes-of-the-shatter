@@ -1,4 +1,4 @@
-// ShatterCore — regras de combate novas do protótipo (docs/13_design_pendencias.md, itens 1 a 11).
+// ShatterCore — regras de combate novas do protótipo (docs/design/13_design_pendencias.md, itens 1 a 11).
 // Usadas pelo combate em tempo real (pela API C) e pelo simulador idle, sem duplicar regra:
 //   - Vitals: vida, recurso, barreira (regeneração, decaimento fora de combate, poção de barreira);
 //   - PotionBelt: poções com cargas, recarga em série, trava global e +1 carga ao matar elite;

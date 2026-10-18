@@ -1,4 +1,4 @@
-"""Gera prompts_telas_etapa3.json: mockups das telas principais da Etapa 3 (docs/16_etapa3_fluxo.md).
+"""Gera prompts_telas_etapa3.json: mockups das telas principais da Etapa 3 (docs/design/16_etapa3_fluxo.md).
 
 Telas: S-01 tela inicial, S-05 inventario e equipamento, S-06 tooltip comparando, S-08 expedicao, S-09 relatorio.
 Uso: prompts_telas_etapa3.py [pasta aprovadas] [pasta pranchas do Spell Brigade] [saida.json]

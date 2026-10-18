@@ -4,9 +4,9 @@ Data: 17/10/2026. Base: `master` @ `b39caf3` (o `ShatterCore/` é idêntico ao d
 
 ## 0. Escopo, método e limites
 
-- **Lido:** `combat.h/.cpp`, `content.h/.cpp`, `constants.h`, `effects.h/.cpp`, `expedition.h/.cpp`, `loot.h/.cpp`, `progress.h`, `save.h/.cpp`, `save_migrations.cpp`, `shatter_c.h`, `src/c_api/shatter_c.cpp` e os testes novos (`test_potions_dodge`, `test_status_boss`, `test_elite_unique`, `test_round2`, `test_balance_probe`, `c_api_11_*`, `c_api_r2_*`). Referências: `CLAUDE.md`, `docs/04_arquitetura.md` §9, `docs/09_mudancas_contrato.md` §6 a §8, `docs/11_revisao_codigo.md`, `docs/13_design_pendencias.md`.
+- **Lido:** `combat.h/.cpp`, `content.h/.cpp`, `constants.h`, `effects.h/.cpp`, `expedition.h/.cpp`, `loot.h/.cpp`, `progress.h`, `save.h/.cpp`, `save_migrations.cpp`, `shatter_c.h`, `src/c_api/shatter_c.cpp` e os testes novos (`test_potions_dodge`, `test_status_boss`, `test_elite_unique`, `test_round2`, `test_balance_probe`, `c_api_11_*`, `c_api_r2_*`). Referências: `CLAUDE.md`, `docs/tecnico/04_arquitetura.md` §9, `docs/tecnico/09_mudancas_contrato.md` §6 a §8, `docs/tecnico/11_revisao_codigo.md`, `docs/design/13_design_pendencias.md`.
 - **Executado:** o CI do core em Linux (seção 1) e os 16 testes de reprodução da seção 6, em Release e em Debug com ASan/UBSan. Cada achado diz se foi **confirmado por teste** ou visto **só pela leitura**.
-- **Não executado:** build no Windows (MSVC, `tools\build_core.cmd`), testes do Unity (EditMode/PlayMode) e o build com `-ffast-math` (proibido; não foi testado). Nada aqui foi medido em outra CPU.
+- **Não executado:** build no Windows (MSVC, `tools\core\build_core.cmd`), testes do Unity (EditMode/PlayMode) e o build com `-ffast-math` (proibido; não foi testado). Nada aqui foi medido em outra CPU.
 
 ### Contagem
 
@@ -40,8 +40,8 @@ Máquina: contêiner Linux x86-64, 4 núcleos, 15 GB; Ubuntu 24.04, GCC 13.3.0, 
 | GCC Debug + ASan/UBSan | 0,5 s, ok | **falha** em 9,1 s | não rodam |
 | Clang Release | 1,7 s, ok | **falha** em 2,8 s (`content.cpp:316, 317, 320, 321, 340, 343, 351, 356, 357`) | não rodam |
 | Clang Debug + ASan/UBSan | 0,7 s, ok | **falha** em 3,9 s | não rodam |
-| `python3 tools/validate_data.py` | — | — | **OK** em 0,1 s (0 erros, 0 avisos; 18 tabelas, 249 chaves de Loc) |
-| `python3 tools/validate_data.py --self-test` | — | — | **OK** em 0,2 s (todas as mutações falham como esperado) |
+| `python3 tools/dados/validate_data.py` | — | — | **OK** em 0,1 s (0 erros, 0 avisos; 18 tabelas, 249 chaves de Loc) |
+| `python3 tools/dados/validate_data.py --self-test` | — | — | **OK** em 0,2 s (todas as mutações falham como esperado) |
 
 O GitHub Actions confirma: os runs #7 (`d9b8eb3`, merge de `etapa2/backend`), #9, #10 e #11 do workflow `core` falharam nos 4 jobs `core-linux` com o mesmo erro; o último verde foi o #6 (`3ad87b9`). O job `data` passa.
 
@@ -72,7 +72,7 @@ Observações:
 ### C1. O CI do core não compila no Linux desde o merge da Etapa 2
 
 - **Onde:** `ShatterCore/src/content.cpp:307-312` (`struct TableDef`: `optionalColumns` sem inicializador padrão) e `:314-381` (as 9 tabelas sem coluna opcional, como `{"rules.csv", {"key", "value"}}`, omitem o 3º campo).
-- **Cenário que falha:** `-Wextra` liga `-Wmissing-field-initializers` no GCC 13 e no Clang 18; com `SHATTER_WERROR=ON` (o CI) o build para em `content.cpp` nos 4 jobs. O MSVC (`/W4`) não tem esse aviso, por isso `tools\build_core.cmd Release --werror` passa no Windows e o problema passou despercebido. Desde então nenhuma regra da Etapa 2 (poções, esquiva, stun, chefe, elite, Único, fichas) foi testada no CI, e os achados A1 e B9 ficaram escondidos atrás deste.
+- **Cenário que falha:** `-Wextra` liga `-Wmissing-field-initializers` no GCC 13 e no Clang 18; com `SHATTER_WERROR=ON` (o CI) o build para em `content.cpp` nos 4 jobs. O MSVC (`/W4`) não tem esse aviso, por isso `tools\core\build_core.cmd Release --werror` passa no Windows e o problema passou despercebido. Desde então nenhuma regra da Etapa 2 (poções, esquiva, stun, chefe, elite, Único, fichas) foi testada no CI, e os achados A1 e B9 ficaram escondidos atrás deste.
 - **Correção:** em `content.cpp:310`, `std::vector<const char*> optionalColumns{};`. Conferido com um arquivo mínimo: GCC 13.3 e Clang 18.1 com `-Wall -Wextra -Wpedantic -Werror` compilam com `{}` e falham sem ele. Para o processo: o merge entrou direto no `master`; vale abrir PR (o workflow já roda em `pull_request`) e olhar o resultado antes de juntar.
 
 ---
@@ -183,7 +183,7 @@ Observações:
 
 ### B5. Validador e core discordam no peso de entrada fixa
 
-- **Onde:** `tools/validate_data.py:802` exige `fixedChance > 0` quando o peso está vazio; `src/content.cpp:1494` aceita peso vazio se houver qualquer campo fixo (garantia ou pity com chance 0).
+- **Onde:** `tools/dados/validate_data.py:802` exige `fixedChance > 0` quando o peso está vazio; `src/content.cpp:1494` aceita peso vazio se houver qualquer campo fixo (garantia ou pity com chance 0).
 - **Cenário (só pela leitura):** a linha `...,true,0,true,5` passa no core e falha no validador.
 - **Correção:** escolher uma regra e alinhar os dois.
 

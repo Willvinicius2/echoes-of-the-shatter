@@ -3,7 +3,7 @@ using System;
 namespace Echoes.Gameplay
 {
     /// <summary>
-    /// Acumulador explícito do passo fixo do combate (RF-11; docs/04_arquitetura.md, seção 6.2).
+    /// Acumulador explícito do passo fixo do combate (RF-11; docs/tecnico/04_arquitetura.md, seção 6.2).
     /// Converte o tempo real de cada quadro em N passos de tamanho fixo, com teto de passos por quadro
     /// para não entrar em espiral quando um quadro demora demais (o excesso é descartado e contado).
     /// </summary>

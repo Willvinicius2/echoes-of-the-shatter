@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Echoes.EditorTools
 {
     /// <summary>
-    /// Importação reproduzível de personagens (docs/04_arquitetura.md, seções 17.1 e 17.4), para tudo em
+    /// Importação reproduzível de personagens (docs/tecnico/04_arquitetura.md, seções 17.1 e 17.4), para tudo em
     /// <c>Assets/Art/Characters/</c>: escala 1 (Convert Units ligado), Humanoid com o avatar do
     /// <c>Rig_Humanoid_Chibi</c>, Optimize Game Objects desligado (heróis modulares), normais importadas, sem tangentes
     /// (sem normal map), UV0 só, sem malha legível; albedo <c>_BC</c> sRGB 1024 em alta qualidade, máscara <c>_M</c> linear 512.

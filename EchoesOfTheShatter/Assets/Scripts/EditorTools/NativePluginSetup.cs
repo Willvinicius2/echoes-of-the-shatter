@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Echoes.EditorTools
 {
     /// <summary>
-    /// Fixa o Plugin Inspector da <c>shattercore.dll</c> como em docs/04_arquitetura.md, secao 9.3: so Windows x64
+    /// Fixa o Plugin Inspector da <c>shattercore.dll</c> como em docs/tecnico/04_arquitetura.md, secao 9.3: so Windows x64
     /// ("Any Platform" desligado), Editor Windows x64, carregada na inicializacao. Idempotente: so reimporta se algo mudar.
     /// Menu Echoes/Configurar plugin nativo, ou <c>-executeMethod Echoes.EditorTools.NativePluginSetup.Apply</c>.
     /// </summary>
@@ -18,7 +18,7 @@ namespace Echoes.EditorTools
             var importer = AssetImporter.GetAtPath(AssetPath) as PluginImporter;
             if (importer == null)
             {
-                Debug.LogError("[NativePluginSetup] Plugin nao encontrado em " + AssetPath + " (rode tools\build_core.cmd Release e copie a DLL).");
+                Debug.LogError("[NativePluginSetup] Plugin nao encontrado em " + AssetPath + " (rode tools\core\build_core.cmd Release e copie a DLL).");
                 return;
             }
             if (IsConfigured(importer))

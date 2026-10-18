@@ -5,7 +5,7 @@ namespace Echoes.Gameplay
 {
     /// <summary>
     /// Números de "juice" que mexem em tempo de entidade (hitstop) ou posição (knockback). São dados
-    /// de apresentação (docs/03_design_system.md, seção 6; tokens <c>juice</c>), não de balanceamento:
+    /// de apresentação (docs/arte/03_design_system.md, seção 6; tokens <c>juice</c>), não de balanceamento:
     /// vêm do ScriptableObject <see cref="CombatFeelSettings"/>.
     /// </summary>
     public sealed class CombatFeelValues

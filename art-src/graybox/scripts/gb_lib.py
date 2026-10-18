@@ -1,6 +1,6 @@
 """Biblioteca graybox: construtor de malhas por primitivas, paleta de cores planas, exportacao FBX e previa.
 
-Convencoes (docs/04_arquitetura.md secoes 3.1, 4.4 e 17):
+Convencoes (docs/tecnico/04_arquitetura.md secoes 3.1, 4.4 e 17):
 - 1 unidade = 1 m, cena do Blender em metros (escala 1.0).
 - Os scripts descrevem personagens em "espaco do personagem": frente +Y, esquerda -X, pes em z = 0.
   Builder.build(turn=True) e o esqueleto giram 180 graus em Z, e o asset fica de frente para -Y no Blender.

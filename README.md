@@ -13,8 +13,8 @@ Três heróis no lançamento: Guerreiro, Arqueiro e Mago. O visual segue o estil
 |---|---|
 | Painel de produção: etapas, setores, perguntas para votar, decisões e galeria | https://claude.ai/artifact/7Kzo46Eyy8cQjF9HhuWMXg |
 | Roteiro: todos os documentos e as artes aprovadas | https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8 |
-| As 5 etapas do jogo e os critérios de cada uma | [`docs/15_etapas.md`](docs/15_etapas.md) |
-| Plano completo do jogo | [`docs/00_plano_existente.md`](docs/00_plano_existente.md) |
+| As 5 etapas do jogo e os critérios de cada uma | [`docs/design/15_etapas.md`](docs/design/15_etapas.md) |
+| Plano completo do jogo | [`docs/design/00_plano_existente.md`](docs/design/00_plano_existente.md) |
 
 Os links do painel e do roteiro só abrem para quem foi convidado pelo dono.
 
@@ -36,19 +36,19 @@ Os links do painel e do roteiro só abrem para quem foi convidado pelo dono.
 |---|---|
 | `EchoesOfTheShatter/` | Projeto Unity: `Assets/` (cenas, scripts, arte), `Content/Data/` (tabelas CSV, textos pt_BR e en, esquemas) |
 | `ShatterCore/` | Motor de regras em C++17, com testes |
-| `docs/` | Plano, requisitos, design system, arquitetura, dados, QA, etapas, pesquisa |
+| `docs/` | Documentos por assunto (`design/`, `tecnico/`, `requisitos-qa/`, `arte/`, `pesquisa/`); índice em `docs/README.md` |
 | `docs/arte/referencias-geracao/aprovadas/` | Artes aprovadas: heróis, inimigos, chefes, cenários, ícones e folhas de modelagem |
 | `docs/progresso/` | `estado.json` (fonte do painel) e o painel gerado |
 | `art-src/` | Arquivos de arte de origem: Blender, graybox e o pipeline de acabamento dos modelos |
 | `tools/` | Validador de dados, build do ShatterCore e geradores do painel e do roteiro |
 | `.claude/` | Agentes e configuração do Claude Code usados na produção |
 
-A raiz também guarda o protótipo antigo em Godot (`project.godot`, `core/`, `game/` etc.). Ele serve só de referência de game feel; veja [`docs/prototipo_godot_f1.md`](docs/prototipo_godot_f1.md).
+O protótipo antigo em Godot fica em `prototipos/godot-f1/`. Ele serve só de referência de game feel; veja [`prototipos/godot-f1/COMO_RODAR.md`](prototipos/godot-f1/COMO_RODAR.md).
 
 ## Testar
 
-- **ShatterCore no Windows:** `tools\build_core.cmd Release --werror` (precisa do Visual Studio Build Tools). Em Linux, ver o `CLAUDE.md`.
-- **Tabelas de dados:** `python tools/validate_data.py`
+- **ShatterCore no Windows:** `tools\core\build_core.cmd Release --werror` (precisa do Visual Studio Build Tools). Em Linux, ver o `CLAUDE.md`.
+- **Tabelas de dados:** `python tools/dados/validate_data.py`
 - **Unity:** Window > General > Test Runner, testes EditMode.
 - O CI do GitHub compila e testa o núcleo e valida as tabelas a cada push e pull request para o `master`.
 
