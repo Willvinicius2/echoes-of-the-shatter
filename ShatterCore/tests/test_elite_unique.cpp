@@ -522,3 +522,47 @@ TEST(content_real_idle_expedition_runs_the_new_rules_end_to_end) {
     while (p.stop == StopReason::None && ++guard < 100000) p = SimulateRange(real, req, p, p.nextEncounter, 7);
     EXPECT_EQ(FinalizeExpedition(real, req, p).resultHash, a.resultHash);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Volátil no idle (M8 do docs/17): a explosão pendente é esperada pelo laço e acerta o herói
+// ---------------------------------------------------------------------------------------------
+TEST(elite_fixed_volatile_explosion_hurts_hero_in_idle_and_is_deterministic) {
+    // Mesmo elite fixo da sentinela com Escudo, trocando só o modificador: Volátil (explode ao morrer) ou nenhum.
+    auto mk = [](const std::string& modifier, const std::string& explosionDamage) {
+        std::string enemies = tu::Replace(Table("enemies.csv"), ",true,,,,1.5,4,modifier.elite.shield", ",true,,,,1.5,4," + modifier);
+        std::string mods = Table("elite_modifiers.csv");
+        if (!explosionDamage.empty()) mods = tu::Replace(mods, "250,25,0.8", "250," + explosionDamage + ",0.8");
+        return MakeDb({
+            {"enemies.csv", enemies},
+            {"elite_modifiers.csv", mods},
+            {"maps.csv", "id,monsterLevel,tier,encounters,bossEncounter,areaLootTable,idleAllowed\n"
+                         "map.act1.crypt,4,0,enc.crypt.elite_shield,enc.crypt.guardian,loot.crypt.area,true\n"},
+        });
+    };
+    const std::unique_ptr<ContentDB> plain = mk("", ""), volatile25 = mk("modifier.elite.volatile", ""), volatile200 = mk("modifier.elite.volatile", "200");
+    ASSERT_TRUE(plain->Errors().empty() && volatile25->Errors().empty() && volatile200->Errors().empty());
+    auto totalTaken = [](const ContentDB& db) {
+        double taken = 0.0;
+        for (std::uint64_t seed = 1; seed <= 30; ++seed) {
+            ExpeditionRequest req = tu::MakeRequest(db, 1, seed);
+            req.effectiveSeconds = 300.0;
+            const ExpeditionProgress p = SimulateRange(db, req, ExpeditionProgress(), 0, 1);
+            EXPECT_EQ(p.receipts.size(), static_cast<std::size_t>(1));
+            EXPECT_EQ(p.receipts[0].elitesKilled, 1);  // o laço esperou a explosão pendente e fechou o encontro com o elite morto
+            taken += p.receipts[0].damageTaken;
+        }
+        return taken;
+    };
+    const double t0 = totalTaken(*plain), t25 = totalTaken(*volatile25), t200 = totalTaken(*volatile200);
+    EXPECT_TRUE(t25 >= t0);     // a explosão só soma dano (nunca tira); a esquiva pode evitá-la em algumas seeds
+    EXPECT_TRUE(t200 > t25);    // mais dano de explosão, mais dano recebido
+    EXPECT_TRUE(t200 > t0);
+    // Determinismo: a mesma seed dá o mesmo resultado e a simulação em partes bate com a inteira.
+    ExpeditionRequest req = tu::MakeRequest(*volatile200, 1, 7);
+    const ExpeditionResult whole = SimulateExpedition(*volatile200, req);
+    EXPECT_EQ(SimulateExpedition(*volatile200, req).resultHash, whole.resultHash);
+    ExpeditionProgress parts;
+    int guard = 0;
+    while (parts.stop == StopReason::None && ++guard < 100000) parts = SimulateRange(*volatile200, req, parts, parts.nextEncounter, 1);
+    EXPECT_EQ(FinalizeExpedition(*volatile200, req, parts).resultHash, whole.resultHash);
+}
