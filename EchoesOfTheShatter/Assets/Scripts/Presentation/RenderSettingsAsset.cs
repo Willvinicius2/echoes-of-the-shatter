@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Echoes.Presentation
 {
     /// <summary>
-    /// Números da câmera 3/4 e do tremor (docs/04_arquitetura.md, seção 3.2; tokens juice.shake).
+    /// Números da câmera 3/4 e do tremor (docs/tecnico/04_arquitetura.md, seção 3.2; tokens juice.shake).
     /// Dado de apresentação, fora do CSV de balanceamento. Os padrões são os do documento.
     /// Crie em Assets/Data/Presentation (Create ▸ Echoes ▸ Render Settings).
     /// </summary>

@@ -136,7 +136,7 @@ f.forEach(function(g){g.hidden=!(k==='todas'||g.dataset.k===k)})})})})();
 def main() -> None:
     THUMBS.mkdir(parents=True, exist_ok=True)
     estado = json.loads((PROG / "estado.json").read_text(encoding="utf-8"))
-    tokens = json.loads((RAIZ / "docs" / "03_design_tokens.json").read_text(encoding="utf-8"))["color"]["base"]
+    tokens = json.loads((RAIZ / "docs" / "arte" / "03_design_tokens.json").read_text(encoding="utf-8"))["color"]["base"]
     leg = estado["meta"]["legenda_estados"]
     setores = estado["setores"]
     commits = git_log()

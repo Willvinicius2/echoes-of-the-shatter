@@ -3,7 +3,7 @@ using System;
 namespace Echoes.Gameplay
 {
     /// <summary>
-    /// Máquina de estados base dos inimigos (RF-20; docs/04_arquitetura.md, seção 10.4):
+    /// Máquina de estados base dos inimigos (RF-20; docs/tecnico/04_arquitetura.md, seção 10.4):
     /// Idle → Chase (alvo dentro do aggro) → Telegraph (alvo no alcance do ataque escolhido) →
     /// Attack (impacto) → Recover → Chase/Idle. Atordoado durante o telegraph = interrompido
     /// (vai para Recover). Pura e determinística: a escolha do ataque vem de <see cref="IAttackSelector"/>.

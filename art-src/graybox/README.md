@@ -1,6 +1,6 @@
 # Graybox (malhas provisórias)
 
-Malhas provisórias geradas por script no Blender para o gameplay começar antes da arte final. Formas simples, cores planas, pivô nos pés e triângulos bem abaixo dos orçamentos do `docs/04_arquitetura.md` (seção 17.2). Nada daqui é arte aprovada: as prévias em `previews/` vão para a aprovação do dono antes de qualquer coisa entrar no jogo.
+Malhas provisórias geradas por script no Blender para o gameplay começar antes da arte final. Formas simples, cores planas, pivô nos pés e triângulos bem abaixo dos orçamentos do `docs/tecnico/04_arquitetura.md` (seção 17.2). Nada daqui é arte aprovada: as prévias em `previews/` vão para a aprovação do dono antes de qualquer coisa entrar no jogo.
 
 ## Arquivos
 

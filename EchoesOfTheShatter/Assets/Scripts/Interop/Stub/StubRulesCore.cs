@@ -6,7 +6,7 @@ namespace Echoes.Interop
     /// <summary>
     /// ============================================================================================
     ///  IMPLEMENTAÇÃO PROVISÓRIA DO MOTOR DE REGRAS — STUB EM C# PURO.
-    ///  Existe só para o protótipo rodar antes da DLL do ShatterCore (docs/04_arquitetura.md, seção 9).
+    ///  Existe só para o protótipo rodar antes da DLL do ShatterCore (docs/tecnico/04_arquitetura.md, seção 9).
     ///  Lê os mesmos CSV do core e porta as fórmulas dos headers (stats.h, damage.h, effects.h, rng.h).
     ///  NÃO é a fonte de verdade das regras: em caso de diferença, vale o ShatterCore. Quando a
     ///  implementação P/Invoke existir, troque em <see cref="RulesCoreFactory"/> e apague a pasta Stub/.

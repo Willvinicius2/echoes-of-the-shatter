@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Echoes.Presentation
 {
     /// <summary>
-    /// Conjunto de apresentação de uma classe ou família (docs/04_arquitetura.md, seção 3.3).
+    /// Conjunto de apresentação de uma classe ou família (docs/tecnico/04_arquitetura.md, seção 3.3).
     /// Habilidade sem entrada cai no estado genérico de golpe ou conjuração. Dado de apresentação.
     /// Crie em Assets/Data/Presentation (Create ▸ Echoes ▸ Skill Presentation Set).
     /// </summary>

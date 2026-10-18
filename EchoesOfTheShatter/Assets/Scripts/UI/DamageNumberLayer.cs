@@ -8,7 +8,7 @@ namespace Echoes.UI
     /// <summary>
     /// Números de dano numa única camada de tela cheia, com Labels em pool (64; tokens
     /// juice.damage_number), posicionados por <see cref="RuntimePanelUtils.CameraTransformWorldToPanel"/>
-    /// (docs/04_arquitetura.md, seção 3.11). Sobe 40 px em 700 ms e some nos últimos 200 ms; crítico
+    /// (docs/tecnico/04_arquitetura.md, seção 3.11). Sobe 40 px em 700 ms e some nos últimos 200 ms; crítico
     /// pulsa a 120% por 120 ms. Golpes no mesmo alvo dentro de 100 ms somam num número.
     /// </summary>
     [UxmlElement]

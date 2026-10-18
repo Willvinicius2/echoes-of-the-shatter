@@ -190,7 +190,7 @@ skill.mage.frost_nova,class.mage,,spell|area|cold,area,false,,,12,,1,1.15,1.3,25
 skill.mage.arcane_ray,class.mage,,spell|projectile|lightning,projectile,false,,,,26,1,1.1,1.2,30,6,0.35,0.05,0.4,900,,1,,,false,,,,,,,,3,,,9000,,,99
 ```
 
-Conferência de campos (para o Data Engineer): entre `false` (idleSupported) e o `unlockLevel` há 7 campos vazios (idle) e o `unlockLevel` fica no campo 32; `coneAngle` = 33, `knockback` = 34, `projectileSpeed` = 35, `idleCalibration` = 36, `wallStaggerSeconds` = 37, `pierce` = 38. `tools/validate_data.py` deve checar a contagem.
+Conferência de campos (para o Data Engineer): entre `false` (idleSupported) e o `unlockLevel` há 7 campos vazios (idle) e o `unlockLevel` fica no campo 32; `coneAngle` = 33, `knockback` = 34, `projectileSpeed` = 35, `idleCalibration` = 36, `wallStaggerSeconds` = 37, `pierce` = 38. `tools/dados/validate_data.py` deve checar a contagem.
 
 Escolhas de dado explicadas:
 
@@ -416,7 +416,7 @@ Nenhum efeito do jogador bloqueia a leitura de telegraph de inimigo (docs/03): o
 7. `regenMultWhileMoving` não é lido em `TickVitals` (só vai ao C API): o Foco precisa de um parâmetro "em movimento".
 8. `IsIdleCompatible` deve olhar só as habilidades equipadas nos slots Q/E/R mais o golpe 1; não pode exigir perfil idle de `combo_2`, `combo_3`, `heavy_slash` nem do kit do Arqueiro e do Mago. Arqueiro e Mago ficam bloqueados para expedição por RF-43 (esperado).
 9. `ComputeActionTiming`: confirmar que `cast_speed` tem valor base neutro (1) quando a classe não o define (Mago).
-10. Rodar `ctest` e `tools/validate_data.py` com 3 classes: testes que assumem classe única (por exemplo `test_balance_probe`) podem precisar de ajuste.
+10. Rodar `ctest` e `tools/dados/validate_data.py` com 3 classes: testes que assumem classe única (por exemplo `test_balance_probe`) podem precisar de ajuste.
 11. Empurrão por tipo de alvo (comum / elite / chefe) e ajuste de `knockback` em habilidades; o `shield_arc` do inimigo já tem o teste de ângulo que a defesa pode reaproveitar.
 12. Efeitos `effect.guarding.*` e `effect.charging.*` duram 0,1 s e são renovados a cada tick: confirmar custo (um efeito `refresh` por tick por herói é barato; só o herói usa).
 

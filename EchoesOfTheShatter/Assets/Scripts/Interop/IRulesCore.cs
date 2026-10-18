@@ -5,7 +5,7 @@ namespace Echoes.Interop
 {
     /// <summary>
     /// Fachada que o jogo usa para pedir regras ao ShatterCore. É o ÚNICO caminho do C# até as
-    /// regras (docs/04_arquitetura.md, seções 5, 9 e 10.2): nada de fórmula fora daqui.
+    /// regras (docs/tecnico/04_arquitetura.md, seções 5, 9 e 10.2): nada de fórmula fora daqui.
     ///
     /// Implementações:
     /// <list type="bullet">

@@ -1,6 +1,6 @@
 # 09 — Mudanças de contrato do ShatterCore (Backend Engineer)
 
-Os headers de `ShatterCore/include/shatter/` são a parte executável do contrato (`docs/04_arquitetura.md`, abertura). Este registro lista cada mudança feita neles depois da entrega do Tech Lead, com o motivo e o impacto. Regra: só adições ou mudanças compatíveis. Nenhuma assinatura existente mudou de forma incompatível.
+Os headers de `ShatterCore/include/shatter/` são a parte executável do contrato (`docs/tecnico/04_arquitetura.md`, abertura). Este registro lista cada mudança feita neles depois da entrega do Tech Lead, com o motivo e o impacto. Regra: só adições ou mudanças compatíveis. Nenhuma assinatura existente mudou de forma incompatível.
 
 Data: 16/10/2026. Branch: `claude/confident-archimedes-ftd7kj`.
 
@@ -21,7 +21,7 @@ Data: 16/10/2026. Branch: `claude/confident-archimedes-ftd7kj`.
 
 Mudanças de comportamento sem mudança de assinatura:
 
-- **Recuo no idle.** O encontro em que o personagem recua mantém o XP e o loot dos inimigos já mortos. Só o loot de área (o prêmio por concluir o encontro) fica de fora. Motivo: o plano diz "O loot já obtido nunca é perdido" (`00_plano_existente.md`, seção 7) e a seção 12 do 04 diz "o loot obtido fica". Antes, o encontro do recuo era descartado inteiro.
+- **Recuo no idle.** O encontro em que o personagem recua mantém o XP e o loot dos inimigos já mortos. Só o loot de área (o prêmio por concluir o encontro) fica de fora. Motivo: o plano diz "O loot já obtido nunca é perdido" (`docs/design/00_plano_existente.md`, seção 7) e a seção 12 do 04 diz "o loot obtido fica". Antes, o encontro do recuo era descartado inteiro.
 - **Encontro sem inimigo.** `Finalize` recusa `countMin < 1` (CSV ou programático) e o simulador encerra com `ContentMismatch` se receber um encontro que não gera inimigo. Antes, o encontro durava 0 s e a simulação não terminava.
 - **Golden.** Nenhum caso de `tests/data/golden/expeditions.txt` recua, então nenhum `resultHash` de referência mudou. O arquivo continua o mesmo.
 
@@ -44,7 +44,7 @@ Mudanças de comportamento sem mudança de assinatura:
 - **Save.** `shatter_save_read` (backup + `content_version` futuro), `write` (tmp → 3 backups → rename), `to_json`/`from_json`, `summary`, `touch_last_seen`, `apply_daily_rest`, `record_area_run`, `start_expedition`, `add_loot`.
 - **Build.** O alvo `shattercore_dll` (nome de saída `shattercore`) é controlado por `SHATTER_BUILD_SHARED` (ligado por padrão). Usa CRT estático no MSVC e visibilidade oculta. No Linux, um version script deixa exportadas só as funções `shatter_*` (o teste `shattercore_dll_exports` confere as 64). Sem DLL, a mesma API vira biblioteca estática para os testes.
 
-## 4. Pendências do 06_dados.md (seção 9) e do 13_design_pendencias.md
+## 4. Pendências do docs/tecnico/06_dados.md (seção 9) e do docs/design/13_design_pendencias.md
 
 | Pendência | Situação no core |
 |---|---|
@@ -75,7 +75,7 @@ Essas funções são o próximo passo do Backend. A saída provisória seria o C
 
 ## 6. Proposta de mudança de contrato C-10: personagem modular e espaço `legs` (Tech Lead, 16/10/2026)
 
-Decisão do dono em 16/10/2026: heróis modulares (corpo base mais peças de armadura) e **novo espaço de equipamento `legs`** com atributos. O detalhe visual está em `docs/04_arquitetura.md`, seção 17.4. **É uma proposta: Backend e Dados implementam depois, nas suas worktrees; nada foi alterado em código ou CSV.** Muda o formato do save, então a versão sobe (compatível para trás por migração).
+Decisão do dono em 16/10/2026: heróis modulares (corpo base mais peças de armadura) e **novo espaço de equipamento `legs`** com atributos. O detalhe visual está em `docs/tecnico/04_arquitetura.md`, seção 17.4. **É uma proposta: Backend e Dados implementam depois, nas suas worktrees; nada foi alterado em código ou CSV.** Muda o formato do save, então a versão sobe (compatível para trás por migração).
 
 | # | Onde | Mudança | Dono |
 |---|---|---|---|
@@ -83,16 +83,16 @@ Decisão do dono em 16/10/2026: heróis modulares (corpo base mais peças de arm
 | C-10b | `character.h`, equipar e desequipar | `equipment` passa a ter 11 posições; `legs` aceita só item de `slot = legs`, com as regras de `head/body/hands/feet`; o AA usa as 9 primeiras posições | Backend |
 | C-10c | `save.h` | `kCurrentSaveVersion` de 1 para 2. `migrate_1_to_2`: para cada personagem, `equipment.legs = null` e recálculo do `sha256`. Serializar e parsear `legs`. Save v1 abre e é regravado em v2; save v2 em jogo v1 é recusado (RNF-10). Fixtures: manter `save_v1.json` como entrada e criar `save_v2.json`. A migração de poções (P10) é independente; se coincidirem, entram na mesma v2 | Backend |
 | C-10d | `item_bases.csv`, `uniques.csv`, parser de conteúdo | Coluna nova **opcional** `visualSetId` (ID `vset.*`) em `item_bases.csv`, e a mesma em `uniques.csv` (prevalece sobre a da base). `ItemBaseData::visualSetId` (texto; vazio = fallback `vset.starter`), fora do `resultHash` e do simulador. O cabeçalho exato do CSV muda: o parser aceita a coluna nova. Getter no `RulesService` e na API C para o C# ler (04, 9.6). Alternativa: `item_visuals.csv` separado (`baseId,visualSetId`) | Backend (parser e API), Dados (CSV) |
-| C-10e | `schemas/_enums.json`, `affixes.csv`, `item_bases.csv`, `tools/validate_data.py` | `@slots` ganha `legs`; `allowedSlots` aceita `legs`; `item_bases.slot` aceita `legs` (sem dano de arma, `attackTime` nem `weaponTags`); prefixo `vset.` na lista de prefixos de ID; save com 11 posições; RF-30 e D1 do `06_dados.md` atualizados. Afixos com `allowedSlots` vazio passam a valer em `legs`: revisão do Game Designer | Dados |
+| C-10e | `schemas/_enums.json`, `affixes.csv`, `item_bases.csv`, `tools/dados/validate_data.py` | `@slots` ganha `legs`; `allowedSlots` aceita `legs`; `item_bases.slot` aceita `legs` (sem dano de arma, `attackTime` nem `weaponTags`); prefixo `vset.` na lista de prefixos de ID; save com 11 posições; RF-30 e D1 do `docs/tecnico/06_dados.md` atualizados. Afixos com `allowedSlots` vazio passam a valer em `legs`: revisão do Game Designer | Dados |
 
-Impactos: o conteúdo atual, que usa os 10 slots, continua válido (`legs` vazio). Enquanto não houver base de item e afixo para `legs`, o espaço fica vazio na UI e sem afixo possível. O ajuste de RF-30 no `02_requisitos.md` (posições do protótipo) fica com o dono desse documento e está fora desta proposta. Teste novo sugerido no core: migração v1 para v2 e rejeição de item de outro slot em `legs`.
+Impactos: o conteúdo atual, que usa os 10 slots, continua válido (`legs` vazio). Enquanto não houver base de item e afixo para `legs`, o espaço fica vazio na UI e sem afixo possível. O ajuste de RF-30 no `docs/requisitos-qa/02_requisitos.md` (posições do protótipo) fica com o dono desse documento e está fora desta proposta. Teste novo sugerido no core: migração v1 para v2 e rejeição de item de outro slot em `legs`.
 
 
 ---
 
 ## 7. Etapa 2: regras novas do protótipo e API C 1.1 (Backend Engineer, 16/10/2026, branch `etapa2/backend`)
 
-Origem: itens 1 a 11 de "Para o Tech Lead" em `13_design_pendencias.md`, achados A-01, A-05, A-06 e M-03 de `11_revisao_codigo.md` (master) e a decisão do dono sobre a calça (`legs`, C-10 da seção 6). Números só nos CSV; o core lê as tabelas e colunas com os nomes exatos de `13`, "Para o Data Engineer", e do `06_dados.md` seção 5a (branch `etapa2/dados`).
+Origem: itens 1 a 11 de "Para o Tech Lead" em `docs/design/13_design_pendencias.md`, achados A-01, A-05, A-06 e M-03 de `docs/tecnico/11_revisao_codigo.md` (master) e a decisão do dono sobre a calça (`legs`, C-10 da seção 6). Números só nos CSV; o core lê as tabelas e colunas com os nomes exatos de `13`, "Para o Data Engineer", e do `docs/tecnico/06_dados.md` seção 5a (branch `etapa2/dados`).
 
 ### 7.1 Mudanças nos headers
 
@@ -166,7 +166,7 @@ Retiradas (comportamento): `shatter_save_start_expedition` e `shatter_save_colle
 
 ## 8. Rodada 2: balanceamento e dados (Backend + Dados, 16/10/2026, `etapa2/backend`)
 
-Origem: `13_design_pendencias.md`, "Balanceamento e dados — rodada 2". Core, CSV, esquemas, validador e `06_dados.md` no mesmo branch.
+Origem: `docs/design/13_design_pendencias.md`, "Balanceamento e dados — rodada 2". Core, CSV, esquemas, validador e `docs/tecnico/06_dados.md` no mesmo branch.
 
 ### 8.1 Mudanças
 
@@ -181,7 +181,7 @@ Origem: `13_design_pendencias.md`, "Balanceamento e dados — rodada 2". Core, C
 | C-27 | `enemies.csv` `patrolSpeedMult`, `enemy_ai.csv` `requireOnScreen` | lidos, validados (`patrolSpeedMult` em (0,1]) e expostos no `lookup_json` (`patrol_speed_mult`, `ai.require_on_screen`); quem usa é o cliente (patrulha e R-VIS-1 com o frustum e a margem) |
 | C-28 | `shatter_c.h` | aditivo: `shatter_rules_ext2` (+ `shatter_layout_info_ext2/_check_ext2`, `SHATTER_LAYOUT_EXT2_COUNT` 3; o layout ext anterior, 37, não mudou), `shatter_skill_base_damage`, `shatter_boss_wall_hit`; `lookup_json` com `wall_stagger_seconds`, `phases[].summon_at_fraction` |
 
-Dados: `rules.csv` (+2 chaves, 62), `skills.csv` (`wallStaggerSeconds`; `idleDamageTakenMult` 0,85 nas 4 habilidades do Guerreiro), `enemies.csv` (`patrolSpeedMult`), `enemy_ai.csv` (`requireOnScreen`), `boss_phases.csv` (`summonAtFraction`), os 5 esquemas, `validate_data.py` (`E_BOSS` para `summonAtFraction`; 3 mutações novas no `--self-test`) e `06_dados.md`. Fixtures de `tests/data` alinhadas; golden regravado.
+Dados: `rules.csv` (+2 chaves, 62), `skills.csv` (`wallStaggerSeconds`; `idleDamageTakenMult` 0,85 nas 4 habilidades do Guerreiro), `enemies.csv` (`patrolSpeedMult`), `enemy_ai.csv` (`requireOnScreen`), `boss_phases.csv` (`summonAtFraction`), os 5 esquemas, `validate_data.py` (`E_BOSS` para `summonAtFraction`; 3 mutações novas no `--self-test`) e `docs/tecnico/06_dados.md`. Fixtures de `tests/data` alinhadas; golden regravado.
 
 ### 8.2 Medição (item 2): 20 sementes de 12 h, Guerreiro nível 4, conteúdo real, `ShatterCore/tests/test_balance_probe.cpp`
 
@@ -233,7 +233,7 @@ Save v2 (leitura recusa com `BadData`, sem migração; saves honestos nunca caem
 - `potion_slots`: `charges` fora de 0..1000, `recharge_remaining` fora de 0..1e9 s, `potion_id` repetido. Na carga, `recharge_remaining` é limitado a `rechargeSeconds` da poção.
 - Expedição: `start_utc` fora de 0..253402300799; `character_index` fora da faixa ou inexistente quando o status não é `none`.
 
-Conteúdo (CSV): as **62 chaves** de `rules.csv` agora são obrigatórias quando o conteúdo vem de CSV (chave faltando = erro de validação `E_REQUIRED`); `constants.h` guarda só 0 neutro, nenhum número de balanceamento escondido. `potions.csv`, `elite_modifiers.csv`, `boss_phases.csv`, `boss_patterns.csv` e `enemy_ai.csv` são obrigatórias (arquivo ausente em `LoadDirectory` = E_IO; carregar regras sem uma delas = `E_REQUIRED` no `Finalize`). Entrada de loot fixa só vale na tabela de topo de um chefe (fora disso `E_RULE`); `tools/validate_data.py` aceita peso vazio em entrada fixa por `fixedChance`, `guaranteeFirstKill` ou `pityKills`, e rejeita entrada fixa fora da tabela de topo (`E_FIXED_TABLE`).
+Conteúdo (CSV): as **62 chaves** de `rules.csv` agora são obrigatórias quando o conteúdo vem de CSV (chave faltando = erro de validação `E_REQUIRED`); `constants.h` guarda só 0 neutro, nenhum número de balanceamento escondido. `potions.csv`, `elite_modifiers.csv`, `boss_phases.csv`, `boss_patterns.csv` e `enemy_ai.csv` são obrigatórias (arquivo ausente em `LoadDirectory` = E_IO; carregar regras sem uma delas = `E_REQUIRED` no `Finalize`). Entrada de loot fixa só vale na tabela de topo de um chefe (fora disso `E_RULE`); `tools/dados/validate_data.py` aceita peso vazio em entrada fixa por `fixedChance`, `guaranteeFirstKill` ou `pityKills`, e rejeita entrada fixa fora da tabela de topo (`E_FIXED_TABLE`).
 
 Regras: barreira da poção igual no manual e no idle (`ApplyPotionBarrier`/`TickPotionBarrier`, uma só implementação); poção cheia não é gasta ao ganhar carga de elite e a carga vai para a poção com `refillOnEliteKill` que não estava cheia; DoT do herói no idle respeita a barreira do elite; explosão do Volátil e DoT recebido no idle usam `idleDamageTakenMult`; `ComputeExpeditionWindow` usa `double` na janela (sem estouro com `start_utc` extremo).
 
@@ -287,7 +287,7 @@ Fora do escopo desta rodada (decisão do dono ou UI): requisito de nível do ite
 
 ## 12. API C 1.5: combate básico com combo, ataque forte e defesa (Backend, 17/10/2026, `etapa3/combate-core`)
 
-Origem: `docs/18_combate_combo.md` (seção 8 e as decisões do orquestrador em 8.1). `SHATTER_C_API_MINOR` vai para **5** (só adições; o C# deve exigir `shatter_api_minor() >= 5`). **A máquina de combate básica fica no C#** (`HeroCombatLogic`, passo fixo de 60 Hz): índice do combo, buffer, janelas, limiar de segurar, carga com multiplicador linear, cancelamentos e a geometria do arco da defesa. O core guarda e valida os NÚMEROS (`basic_kits.csv` e 7 chaves de `rules.csv`) e continua resolvendo dano, efeitos, defesa e recurso. O item 4 do docs/18 seção 8 (máquina no core) não vale.
+Origem: `docs/design/18_combate_combo.md` (seção 8 e as decisões do orquestrador em 8.1). `SHATTER_C_API_MINOR` vai para **5** (só adições; o C# deve exigir `shatter_api_minor() >= 5`). **A máquina de combate básica fica no C#** (`HeroCombatLogic`, passo fixo de 60 Hz): índice do combo, buffer, janelas, limiar de segurar, carga com multiplicador linear, cancelamentos e a geometria do arco da defesa. O core guarda e valida os NÚMEROS (`basic_kits.csv` e 7 chaves de `rules.csv`) e continua resolvendo dano, efeitos, defesa e recurso. O item 4 do docs/18 seção 8 (máquina no core) não vale.
 
 ### 12.1 Dados
 
@@ -341,7 +341,7 @@ Testes novos em `test_combat_basic.cpp` (18) e `test_c_api.cpp` (3, `c_api_15_*`
 
 ## 13. API C 1.6: economia do protótipo, Vendedor, Frasco de Recarga e Encantador (Backend, 18/10/2026, `etapa3/economia`)
 
-Origem: `docs/16_etapa3_fluxo.md` seção 11, com as decisões Q3-5 A (2 afixos novos de arma) e Q3-6 A (Reforjar sem desfazer, com trava de 1 afixo e aviso). `SHATTER_C_API_MINOR` vai para **6** (só adições; o C# deve exigir `shatter_api_minor() >= 6` e chamar `shatter_layout_check_ext6`). Código novo: `craft.h/.cpp` (Encantador), `vendor.h/.cpp` (Vendedor e frasco); o resto é adição em `rng.h`, `item.h`, `constants.h`, `content.*`, `loot.*` e `save.*`.
+Origem: `docs/design/16_etapa3_fluxo.md` seção 11, com as decisões Q3-5 A (2 afixos novos de arma) e Q3-6 A (Reforjar sem desfazer, com trava de 1 afixo e aviso). `SHATTER_C_API_MINOR` vai para **6** (só adições; o C# deve exigir `shatter_api_minor() >= 6` e chamar `shatter_layout_check_ext6`). Código novo: `craft.h/.cpp` (Encantador), `vendor.h/.cpp` (Vendedor e frasco); o resto é adição em `rng.h`, `item.h`, `constants.h`, `content.*`, `loot.*` e `save.*`.
 
 ### 13.1 Dados
 

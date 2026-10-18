@@ -1,4 +1,4 @@
-// Fronteira da API C (docs/04_arquitetura.md, seções 9.2 e 9.7): versão e layout, argumento nulo,
+// Fronteira da API C (docs/tecnico/04_arquitetura.md, seções 9.2 e 9.7): versão e layout, argumento nulo,
 // BUFFER_TOO_SMALL sem efeito colateral, ida e volta de cada grupo de funções e o MESMO resultado do C++
 // (golpe, expedição, golden). Este executável é ligado à DLL/so shattercore.
 #include <cmath>

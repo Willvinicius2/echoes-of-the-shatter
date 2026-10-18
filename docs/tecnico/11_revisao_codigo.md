@@ -7,7 +7,7 @@ Data: 16/10/2026. Base: `master` @ `e1df5c4`. Outras pessoas mexem no Interop e 
 Revisado, só leitura:
 - C#: `EchoesOfTheShatter/Assets/Scripts/` inteiro (Interop com Stub, Core, Gameplay com Logic, Presentation com Dev, UI, EditorTools) e os testes de `Assets/Tests/EditMode/`.
 - API C: `ShatterCore/include/shatter/shatter_c.h`, `ShatterCore/src/c_api/shatter_c.cpp` (1806 linhas), `shatter_c.map` e `tests/test_c_api.cpp`. Para confirmar comportamento, li também trechos de `damage.cpp`, `effects.cpp`, `save.cpp`, `expedition.cpp`, `content.cpp`, `file_io.cpp` e `rng.h`.
-- Referência: `CLAUDE.md` e `docs/04_arquitetura.md` seções 4, 9, 10 e 13.
+- Referência: `CLAUDE.md` e `docs/tecnico/04_arquitetura.md` seções 4, 9, 10 e 13.
 
 Não executei nada: nem os testes do Unity (EditMode), nem o build e o `ctest` do ShatterCore. As conclusões vêm de leitura de código; onde um cenário depende de execução, escrevi "pela leitura". Não há wrapper P/Invoke no `master` (nenhum `DllImport`, `SafeHandle` nem `Assets/Plugins/`), então a fronteira C# ↔ C ainda não foi exercitada de ponta a ponta.
 
@@ -45,7 +45,7 @@ Nenhum.
 - Onde: `Interop/IRulesCore.cs:57-108`, `Interop/CombatRules.cs:1-33`, `Interop/Stub/StubRulesCore.cs:140-250`, contra `include/shatter/shatter_c.h:98-110` e `:259-518`.
 - Problema: a fachada `IRulesCore` promete `TickVitals`, `CreateVitals`, `ResolvePotion`, `GainResource`/`TrySpendResource`, `GetActionTiming`, `GetEffectiveCost`, `GetMoveSpeedUu`, `CanAct`/`CanMove`, `PickAttack`, os dados de `PotionInfo`, `ClassInfo`, `EnemyInfo` e as constantes de `CombatRules` (esquiva, buffer, poção, fora de combate). Nada disso existe em `shatter_c.h`. Em `shatter_rules` faltam `dodge_*`, `potion_lockout`, `out_of_combat_seconds` e `dodge_buffer`. Não há `shatter_resolve_potion`, regeneração, nem consulta de tempos de ação com velocidade de ataque (só `shatter_effective_cooldown`). `CanAct` é "velocidade de ataque > 0": o core não tem o conceito de atordoamento.
 - Cenário: o agente de Integração implementa `IRulesCore` sobre o header. Para cada método sem função C ele tem duas saídas: copiar a fórmula do stub para dentro do wrapper (viola "o C# não calcula regra", 04 seção 10.2 e `CLAUDE.md`) ou abrir mudança no contrato da API C, que está sendo editada em outro branch. Se escolher a primeira, o jogo manual e o simulador passam a divergir sem ninguém notar.
-- Correção: antes de escrever o wrapper, decidir método a método (tabela em 04 seção 9.2): ou o core ganha a função (`shatter_vitals_*`, `shatter_potion_resolve`, `shatter_skill_timing`, `shatter_rules` com os campos de combate), ou o método sai da interface e vira dado de leitura (`shatter_db_lookup_json`). Subir `SHATTER_C_API_VERSION` e `SHATTER_LAYOUT_COUNT` junto. Registrar a lista em `docs/09_mudancas_contrato.md`.
+- Correção: antes de escrever o wrapper, decidir método a método (tabela em 04 seção 9.2): ou o core ganha a função (`shatter_vitals_*`, `shatter_potion_resolve`, `shatter_skill_timing`, `shatter_rules` com os campos de combate), ou o método sai da interface e vira dado de leitura (`shatter_db_lookup_json`). Subir `SHATTER_C_API_VERSION` e `SHATTER_LAYOUT_COUNT` junto. Registrar a lista em `docs/tecnico/09_mudancas_contrato.md`.
 
 ### A-02. O stub é um segundo motor de regras sem teste de paridade com o C++
 

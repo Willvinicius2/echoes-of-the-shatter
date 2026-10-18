@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Echoes.Core
 {
     /// <summary>
-    /// Ponto de entrada da cena (docs/04_arquitetura.md, seção 6.1). Cria os serviços em ordem fixa e
+    /// Ponto de entrada da cena (docs/tecnico/04_arquitetura.md, seção 6.1). Cria os serviços em ordem fixa e
     /// os entrega por referência; não há localizador global de serviços. Descarta o motor de regras
     /// ao sair do Play.
     /// </summary>

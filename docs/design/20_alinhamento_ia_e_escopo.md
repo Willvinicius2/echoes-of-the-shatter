@@ -15,16 +15,16 @@
 
 | Arquivo em `docs/` | Tamanho | Tokens Estimados | Problema Atual |
 |---|---:|---:|---|
-| `04_arquitetura.md` | 100,5 KB | ~26.000 tokens | Lido inteiro por quase todo subagente de código |
-| `03_design_system.md` | 95,4 KB | ~25.000 tokens | Lido inteiro por subagentes de UI e Arte |
-| `16_etapa3_fluxo.md` | 95,1 KB | ~25.000 tokens | Gerado e relido inteiro nas tarefas da Etapa 3 |
-| `19_itens_e_habilidades.md` | 94,9 KB | ~25.000 tokens | Gerado na madrugada de 18/10 (~25k tokens de saída!) |
-| `10_qa.md` | 79,9 KB | ~21.000 tokens | Matriz completa lida a cada rodada de QA |
-| `06_dados.md` | 74,8 KB | ~19.500 tokens | Lido inteiro pelos agentes de Dados e Narrativa |
-| `00_plano_existente.md` | 57,2 KB | ~15.000 tokens | Contém histórico antigo de Godot e Pixel Art |
-| `09_mudancas_contrato.md` | 48,9 KB | ~13.000 tokens | Histórico acumulado de contratos da API C |
-| `13_design_pendencias.md` | 47,7 KB | ~12.500 tokens | Histórico de decisões já tomadas |
-| `18_combate_combo.md` | 47,2 KB | ~12.500 tokens | Gerado em 17/10 com todas as linhas de CSV |
+| `docs/tecnico/04_arquitetura.md` | 100,5 KB | ~26.000 tokens | Lido inteiro por quase todo subagente de código |
+| `docs/arte/03_design_system.md` | 95,4 KB | ~25.000 tokens | Lido inteiro por subagentes de UI e Arte |
+| `docs/design/16_etapa3_fluxo.md` | 95,1 KB | ~25.000 tokens | Gerado e relido inteiro nas tarefas da Etapa 3 |
+| `docs/design/19_itens_e_habilidades.md` | 94,9 KB | ~25.000 tokens | Gerado na madrugada de 18/10 (~25k tokens de saída!) |
+| `docs/requisitos-qa/10_qa.md` | 79,9 KB | ~21.000 tokens | Matriz completa lida a cada rodada de QA |
+| `docs/tecnico/06_dados.md` | 74,8 KB | ~19.500 tokens | Lido inteiro pelos agentes de Dados e Narrativa |
+| `docs/design/00_plano_existente.md` | 57,2 KB | ~15.000 tokens | Contém histórico antigo de Godot e Pixel Art |
+| `docs/tecnico/09_mudancas_contrato.md` | 48,9 KB | ~13.000 tokens | Histórico acumulado de contratos da API C |
+| `docs/design/13_design_pendencias.md` | 47,7 KB | ~12.500 tokens | Histórico de decisões já tomadas |
+| `docs/design/18_combate_combo.md` | 47,2 KB | ~12.500 tokens | Gerado em 17/10 com todas as linhas de CSV |
 | `progresso/estado.json` | 46,5 KB | ~12.000 tokens | Lido e reescrito a cada atualização do painel |
 | **Total na raiz de `docs/`** | **968,3 KB** | **~250.000 tokens** | **Maior que a janela inteira de 200k do Claude!** |
 
@@ -60,14 +60,14 @@ Em vez de ler os documentos de 95 KB de ponta a ponta, criamos a pasta `docs/con
 
 | Cartão de Contexto (≤ 5 KB) | Quem lê | O que contém (e o que fica de fora) |
 |---|---|---|
-| `docs/contexto/core_cpp.md` | Backend, Integração, QA | Regras de determinismo C++17, flags `-Werror` do GCC/Clang (`-Wmissing-field-initializers`, `-Wtype-limits`, `-Wrange-loop-construct`), convenções de `shatter_c.h` e comando `tools\build_core.cmd`. |
-| `docs/contexto/dados_csv.md` | Data Engineer, Narrative | Lista das tabelas CSV atuais, formato de cabeçalhos, regras de IDs em inglês, ponto decimal obrigatório e uso do `python tools/validate_data.py`. |
+| `docs/contexto/core_cpp.md` | Backend, Integração, QA | Regras de determinismo C++17, flags `-Werror` do GCC/Clang (`-Wmissing-field-initializers`, `-Wtype-limits`, `-Wrange-loop-construct`), convenções de `shatter_c.h` e comando `tools\core\build_core.cmd`. |
+| `docs/contexto/dados_csv.md` | Data Engineer, Narrative | Lista das tabelas CSV atuais, formato de cabeçalhos, regras de IDs em inglês, ponto decimal obrigatório e uso do `python tools/dados/validate_data.py`. |
 | `docs/contexto/unity_csharp.md` | Frontend, UI, Code Reviewer | Grafo de `asmdefs` (`Echoes.Interop`, `Core`, `Gameplay`, `Presentation`, `UI`), proibições (`MaterialPropertyBlock`, `Time.timeScale`, cálculo de regra em C#, strings literais) e uso de `tokens.uss` + `LocLabel`. |
 | `docs/contexto/arte_3d.md` | Art Director, Arte Técnica | Câmera de 56m (pitch 55°, yaw 45°, FOV 14,2°), régua de escala (88px em 1080p), orçamentos de triângulos/ossos e pipeline Blender → FBX no Git LFS. |
 
 > [!TIP]
 > **E os documentos grandes (`docs/00` a `docs/19`)?**
-> Eles continuam no repositório como **Enciclopédia de Referência**. Se um agente precisar consultar os números da seção `4.5` do `docs/16_etapa3_fluxo.md`, ele usa `grep` para achar a linha exata e lê apenas 60 linhas (`StartLine`/`EndLine`), **nunca o arquivo inteiro de 95 KB**.
+> Eles continuam no repositório como **Enciclopédia de Referência**. Se um agente precisar consultar os números da seção `4.5` do `docs/design/16_etapa3_fluxo.md`, ele usa `grep` para achar a linha exata e lê apenas 60 linhas (`StartLine`/`EndLine`), **nunca o arquivo inteiro de 95 KB**.
 
 ### 2.3 Regra #3: Seleção de Modelos por Papel (Economia de 70%+ da Cota)
 
@@ -143,13 +143,13 @@ Ao inspecionar as 3 branches do GitHub (`master`, `etapa3/combate-core` e `etapa
 
 ### 4.2 Decisões Tomadas pelo "Orquestrador" na Madrugada (Revisar!)
 Como o agente ficou rodando sozinho à noite, ele próprio aprovou itens que o `CLAUDE.md` exige que passem por vocês. Vale vocês dois darem um "de acordo" rápido nestes 4 commits recentes do `master`:
-- `de0b6a2`: Decisões de combo, ataque forte, defesa e kits do Arqueiro/Mago em `docs/18_combate_combo.md`.
+- `de0b6a2`: Decisões de combo, ataque forte, defesa e kits do Arqueiro/Mago em `docs/design/18_combate_combo.md`.
 - `72e0086` e `812cfdd`: Folha de modelagem do conjunto Raro do Guerreiro (`m10`, aço claro com frisos dourados).
-- `3a76f4c`: Especificação de itens e habilidades do Ato I em `docs/19_itens_e_habilidades.md`.
+- `3a76f4c`: Especificação de itens e habilidades do Ato I em `docs/design/19_itens_e_habilidades.md`.
 - `dffbee2`: Folhas de modelagem dos 4 NPCs do Refúgio (Ilsa, Tico, Vendedor, Encantador).
 
 ### 4.3 Limpezas Recomendadas no Repositório
-- **`docs/01_plano_execucao.md` e `docs/07_proximos_passos.md`:** Ainda mencionam **Unreal Engine 5** e prompts antigos que mandam os agentes lerem dezenas de arquivos. Devem ser atualizados ou marcados como `[HISTÓRICO]` no topo.
+- **`docs/requisitos-qa/01_plano_execucao.md` e `docs/requisitos-qa/07_proximos_passos.md`:** Ainda mencionam **Unreal Engine 5** e prompts antigos que mandam os agentes lerem dezenas de arquivos. Devem ser atualizados ou marcados como `[HISTÓRICO]` no topo.
 - **Arquivos do protótipo antigo em Godot na raiz (`project.godot`, `core/`, `game/`, `scenes/`):** Embora documentados como histórico, pastas chamadas `core/` e `scenes/` na raiz confundem buscas por `glob`/`grep` dos agentes. Movê-las para uma subpasta `_historico_godot/` evita que subagentes leiam arquivos `.gd` por engano e gastem tokens.
 - **Compatibilidade Dupla (`CLAUDE.md` + `AGENTS.md`):** Criar um arquivo `AGENTS.md` na raiz apontando para o `CLAUDE.md` (ou espelhando as regras de contexto enxuto), para que tanto o **Claude Code** (William) quanto o **Antigravity** (Leo) sigam exatamente o mesmo protocolo.
 

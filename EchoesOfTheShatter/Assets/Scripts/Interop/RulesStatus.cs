@@ -2,7 +2,7 @@ namespace Echoes.Interop
 {
     /// <summary>
     /// Status devolvido pelas chamadas ao motor de regras. Espelha o <c>shatter_status</c>
-    /// da API C (docs/04_arquitetura.md, seção 9.2), para a troca do stub pela DLL ser direta.
+    /// da API C (docs/tecnico/04_arquitetura.md, seção 9.2), para a troca do stub pela DLL ser direta.
     /// </summary>
     public enum RulesStatus
     {

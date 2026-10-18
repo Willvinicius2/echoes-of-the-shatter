@@ -1,5 +1,5 @@
-/* Componentes reutilizáveis (docs/03_design_system.md, seção 5). Cores, fontes e tamanhos sempre por
-   var(--...) do Tokens.uss (gerado por tools/gen_tokens.py). Molduras 9-slice entram quando as
+/* Componentes reutilizáveis (docs/arte/03_design_system.md, seção 5). Cores, fontes e tamanhos sempre por
+   var(--...) do Tokens.uss (gerado por tools/arte/gen_tokens.py). Molduras 9-slice entram quando as
    texturas existirem; até lá, bordas lisas nas cores dos tokens. */
 
 /* ---- Barra (ShatterBar) ---- */

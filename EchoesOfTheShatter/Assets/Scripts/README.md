@@ -1,6 +1,6 @@
 # Scripts do protótipo — Guerreiro na Cripta
 
-Código C# do protótipo jogável (docs/02_requisitos.md, seção 2): o Guerreiro com movimento WASD e mira no mouse, ataque básico e as 4 habilidades, esquiva com 3 cargas, 2 poções, inimigos com a máquina de estados parado → perseguir → telegraph → atacar → recuperar, hitstop por entidade, números de dano e o HUD em UI Toolkit.
+Código C# do protótipo jogável (docs/requisitos-qa/02_requisitos.md, seção 2): o Guerreiro com movimento WASD e mira no mouse, ataque básico e as 4 habilidades, esquiva com 3 cargas, 2 poções, inimigos com a máquina de estados parado → perseguir → telegraph → atacar → recuperar, hitstop por entidade, números de dano e o HUD em UI Toolkit.
 
 Nenhuma cena, prefab, `.asset` ou `.meta` foi criado fora do editor. Este README diz como montar a cena de teste no editor.
 
@@ -21,16 +21,16 @@ Nenhuma cena, prefab, `.asset` ou `.meta` foi criado fora do editor. Este README
 Outros arquivos novos:
 - `Assets/Settings/Echoes.inputactions`: mapa `Gameplay` com `Move`, `Aim`, `BasicAttack`, `Skill1..5`, `Dodge`, `Potion1..2`, `Inventory`, `PassiveTree`, `Map`, `Pause` (teclas do RF-64).
 - `Assets/UI/Views/HudView.uxml`, `Assets/UI/Styles/Components.uss`, `Screens.uss` e `Tokens.uss`.
-- `tools/gen_tokens.py`: gera `Tokens.uss` a partir de `docs/03_design_tokens.json`. Não edite o `Tokens.uss` à mão: mude o JSON e rode `python3 tools/gen_tokens.py`.
+- `tools/arte/gen_tokens.py`: gera `Tokens.uss` a partir de `docs/arte/03_design_tokens.json`. Não edite o `Tokens.uss` à mão: mude o JSON e rode `python3 tools/arte/gen_tokens.py`.
 
-Direção das dependências: `Interop ← Core ← Gameplay ← Presentation ← UI` (docs/04_arquitetura.md, seção 4.3). A ordem de execução vem de `[DefaultExecutionOrder]` no código (GameRoot −1000, entrada −950, herói −940, inimigos −930, combate −900); não é preciso mexer em Project Settings. A ordem em que as entidades rodam no passo fixo (e consomem o RNG) é: herói, depois inimigos pela posição na hierarquia da cena; com `Fixed Run Seed` fixo, a mesma cena repete a mesma luta.
+Direção das dependências: `Interop ← Core ← Gameplay ← Presentation ← UI` (docs/tecnico/04_arquitetura.md, seção 4.3). A ordem de execução vem de `[DefaultExecutionOrder]` no código (GameRoot −1000, entrada −950, herói −940, inimigos −930, combate −900); não é preciso mexer em Project Settings. A ordem em que as entidades rodam no passo fixo (e consomem o RNG) é: herói, depois inimigos pela posição na hierarquia da cena; com `Fixed Run Seed` fixo, a mesma cena repete a mesma luta.
 
 ## 2. Primeira abertura
 
 1. Abra o projeto `EchoesOfTheShatter/` na Unity 6.3 (6000.3.26f1). O editor gera os `.meta` dos arquivos novos; faça commit deles depois.
 2. Espere a compilação. Se aparecer erro, veja a seção 7 (riscos já mapeados).
 3. Rode os testes: **Window ▸ General ▸ Test Runner ▸ EditMode ▸ Run All**. Todos devem passar.
-   Pela CLI (docs/04_arquitetura.md, seção 13.2):
+   Pela CLI (docs/tecnico/04_arquitetura.md, seção 13.2):
    ```
    "%UNITY_EDITOR_PATH%" -batchmode -nographics -projectPath EchoesOfTheShatter ^
       -runTests -testPlatform EditMode -testResults TestResults/editmode.xml -logFile -
@@ -165,7 +165,7 @@ O código foi compilado fora do Unity contra os assemblies de referência do Uni
 
 ## 8. DLL nativa e o que ainda é do stub
 
-`Assets/Plugins/x86_64/shattercore.dll` (Git LFS; `.meta` só para Windows x64, carregada na inicialização). Gerada por `tools\build_core.cmd Release` (saída em `build\Release\shattercore.dll`) e copiada para a pasta do plugin. O editor trava a DLL carregada: feche-o antes de trocar o arquivo.
+`Assets/Plugins/x86_64/shattercore.dll` (Git LFS; `.meta` só para Windows x64, carregada na inicialização). Gerada por `tools\core\build_core.cmd Release` (saída em `build\Release\shattercore.dll`) e copiada para a pasta do plugin. O editor trava a DLL carregada: feche-o antes de trocar o arquivo.
 
 `RulesCoreFactory.CreateDefault()` devolve o `NativeRulesCore`. Se a DLL não carregar (ausente, ponteiro do LFS, versão ou layout diferentes) cai no `StubRulesCore` e escreve um aviso no Console com o motivo (`RulesCoreFactory.LastFallbackReason`). O `GameRoot` loga `shattercore-native` quando o nativo está em uso.
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace Echoes.Gameplay
 {
     /// <summary>
-    /// Projéteis em passo fixo, em pool (limite de 300 ativos; docs/04_arquitetura.md, seção 10.4).
+    /// Projéteis em passo fixo, em pool (limite de 300 ativos; docs/tecnico/04_arquitetura.md, seção 10.4).
     /// Cada projétil acerta o primeiro alvo hostil que tocar e some (1 acerto por projétil).
     /// </summary>
     public sealed class ProjectileSystem

@@ -7,7 +7,7 @@ using UnityEditor;
 namespace Echoes.Core
 {
     /// <summary>
-    /// Dono do ciclo de vida dos handles da DLL no processo da Unity (docs/04_arquitetura.md, secao 9.4, e A-06 da revisao).
+    /// Dono do ciclo de vida dos handles da DLL no processo da Unity (docs/tecnico/04_arquitetura.md, secao 9.4, e A-06 da revisao).
     /// Cada <c>SafeHandle</c> tem dono (quem criou descarta: RulesService, AttributeComponent, TestWorld); este hook e a rede de
     /// seguranca para tudo que sobrou: descarta os nucleos nativos vivos ao fechar o jogo, ao sair do Play e antes da recarga
     /// de dominio do editor. Com "Enter Play Mode Options" (sem recarga) nenhum static guarda handle entre sessoes de Play.

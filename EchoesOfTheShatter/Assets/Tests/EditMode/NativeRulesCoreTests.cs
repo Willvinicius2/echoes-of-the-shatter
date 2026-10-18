@@ -11,7 +11,7 @@ namespace Echoes.Tests.EditMode
 {
     /// <summary>
     /// A DLL nativa do ShatterCore (P/Invoke) contra o stub em C#: os mesmos cenarios rodam nos dois e o
-    /// golpe tem de dar o mesmo dano com a mesma seed (docs/04_arquitetura.md, secoes 9.7 e 13.2).
+    /// golpe tem de dar o mesmo dano com a mesma seed (docs/tecnico/04_arquitetura.md, secoes 9.7 e 13.2).
     /// Se a DLL nao carregar (ausente, ponteiro do Git LFS), so <see cref="NativeLibraryLoads"/> falha;
     /// os demais ficam ignorados com o motivo.
     /// </summary>

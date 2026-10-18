@@ -570,7 +570,7 @@ namespace Echoes.EditorTools
         internal static string ReadTokens()
         {
             // O arquivo mora em docs/ ao lado da pasta do repositório do projeto Unity.
-            var path = Path.GetFullPath(Path.Combine(Application.dataPath, "../../docs/03_design_tokens.json"));
+            var path = Path.GetFullPath(Path.Combine(Application.dataPath, "../../docs/arte/03_design_tokens.json"));
             return File.Exists(path) ? File.ReadAllText(path) : string.Empty;
         }
 

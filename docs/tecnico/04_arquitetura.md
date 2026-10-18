@@ -1,6 +1,6 @@
 # 04 — Arquitetura e contratos técnicos (Tech Lead)
 
-Projeto: **Echoes of the Shatter**. Fonte de design: `docs/00_plano_existente.md` (Plano Steam v2.0). Motor: **Unity 6 LTS com URP, C#** (decisão do dono em 16/10/2026, ver `docs/08_decisoes_visual_3d.md`), que substitui o Godot 4 da seção 10 do plano (houve uma escolha intermediária de outro motor, registrada na seção 15).
+Projeto: **Echoes of the Shatter**. Fonte de design: `docs/design/00_plano_existente.md` (Plano Steam v2.0). Motor: **Unity 6 LTS com URP, C#** (decisão do dono em 16/10/2026, ver `docs/arte/08_decisoes_visual_3d.md`), que substitui o Godot 4 da seção 10 do plano (houve uma escolha intermediária de outro motor, registrada na seção 15).
 
 Este documento é o contrato técnico de todos os agentes. Os headers em `ShatterCore/include/shatter/` são a parte executável deste contrato: se o texto e o header discordarem, **vale o header** e este documento deve ser corrigido. Itens marcados **confirmar na instalação** dependem da versão do Unity instalada e não devem ser tratados como contrato até serem testados.
 
@@ -41,7 +41,7 @@ Como isso fica no Unity:
 
 ## 3. Renderização 3D estilizada (URP, câmera 3/4, forward + MSAA)
 
-Fonte das decisões: `docs/08_decisoes_visual_3d.md` (fechadas, não reabertas aqui). Esta seção só fixa números e mecanismos. Proporções, densidade de texel, cores-assinatura de área e estilo da UI são do `docs/03_design_system.md` e de `docs/03_design_tokens.json`; aqui não são repetidos.
+Fonte das decisões: `docs/arte/08_decisoes_visual_3d.md` (fechadas, não reabertas aqui). Esta seção só fixa números e mecanismos. Proporções, densidade de texel, cores-assinatura de área e estilo da UI são do `docs/arte/03_design_system.md` e de `docs/arte/03_design_tokens.json`; aqui não são repetidos.
 
 **Princípio:** a renderização só desenha. Nenhuma regra, tempo de fase ou número de balanceamento mora na apresentação; animação, VFX e hitstop seguem os eventos e as fases do `CombatSystem`/`SkillComponent` (seção 6.2), nunca o contrário.
 
@@ -50,7 +50,7 @@ Fonte das decisões: `docs/08_decisoes_visual_3d.md` (fechadas, não reabertas a
 | Item | Valor |
 |---|---|
 | Unidade | **1 unidade Unity = 1 m** (importação 1:1 do Blender, seção 17.1) |
-| Herói | altura **1,50 m** (proporções: `docs/03_design_system.md`); `CharacterController` com raio **0,30 m**, altura 1,50 m e centro (0, 0,75, 0) |
+| Herói | altura **1,50 m** (proporções: `docs/arte/03_design_system.md`); `CharacterController` com raio **0,30 m**, altura 1,50 m e centro (0, 0,75, 0) |
 | Grade de cenário | **1 m**; peças de 2 e 4 m |
 | Eixos | Y para cima; gameplay no plano **XZ**; o personagem "olha" para **+Z**; pivô nos pés |
 | Física | Sem Rigidbody de gameplay. `Physics.simulationMode = Script` (nunca simulada); só consultas (`Overlap*NonAlloc`, `Raycast`) e `CharacterController`/`NavMeshAgent` para movimento. **Confirmar na instalação** que o `CharacterController` anda sem simulação automática |
@@ -120,7 +120,7 @@ Quatro mestres em **Shader Graph** (alvo URP), todos parametrizados; os assets r
 | `SG_VFX` | Unlit; keywords para Additive, Translucent, Masked/opaco "quente" e Telegraph | Forma/ruído, núcleo claro (emissivo > 1) + borda colorida, soft particles opcional, cor por partícula (Vertex Color) |
 | UI | UI Toolkit (sem Shader Graph) | Moldura e preenchimento "lava" por 9-slice e uma textura animada (3.11) |
 
-Propriedades globais (`Shader.SetGlobal*`): `_EchoesHeroPos`, `_EchoesTime` (tremulação), `_EchoesFadeRadius`. Texturas: mipmaps ligados, sRGB para albedo, linear para máscara, filtro Trilinear com Aniso 4 (padrão). Densidade de texel: `docs/03_design_system.md`; tamanhos máximos na seção 17.2.
+Propriedades globais (`Shader.SetGlobal*`): `_EchoesHeroPos`, `_EchoesTime` (tremulação), `_EchoesFadeRadius`. Texturas: mipmaps ligados, sRGB para albedo, linear para máscara, filtro Trilinear com Aniso 4 (padrão). Densidade de texel: `docs/arte/03_design_system.md`; tamanhos máximos na seção 17.2.
 
 ### 3.6 Sombras
 
@@ -136,7 +136,7 @@ Paredes entre a câmera e o herói não podem esconder o combate. **Decisão:** 
 
 ### 3.8 Névoa por área
 
-`AreaProfile` (`ScriptableObject`, um por área: `SO_Area_<Area>`) guarda a cor-assinatura (valores do `docs/03_design_system.md`), o modo e a densidade da névoa (`RenderSettings.fog`, `FogMode.ExponentialSquared`), cor, intensidade e rotação da luz direcional, cor de ambiente, faixa de zoom permitida e música. Um `AreaVisuals` (um por cena de área) aplica o perfil em `Start` e interpola ao cruzar portais de área. A névoa do Unity é de distância; névoa de altura, se a arte pedir, é feita com planos de névoa (quads com `SG_VFX`) por área. O perfil é dado de apresentação (fora do CSV de balanceamento); a ligação área → perfil é por ID de conteúdo da área.
+`AreaProfile` (`ScriptableObject`, um por área: `SO_Area_<Area>`) guarda a cor-assinatura (valores do `docs/arte/03_design_system.md`), o modo e a densidade da névoa (`RenderSettings.fog`, `FogMode.ExponentialSquared`), cor, intensidade e rotação da luz direcional, cor de ambiente, faixa de zoom permitida e música. Um `AreaVisuals` (um por cena de área) aplica o perfil em `Start` e interpola ao cruzar portais de área. A névoa do Unity é de distância; névoa de altura, se a arte pedir, é feita com planos de névoa (quads com `SG_VFX`) por área. O perfil é dado de apresentação (fora do CSV de balanceamento); a ligação área → perfil é por ID de conteúdo da área.
 
 ### 3.9 VFX (Particle System)
 
@@ -164,7 +164,7 @@ Nenhum VFX translúcido do jogador esconde um telegraph inimigo: o telegraph nã
 
 ### 3.11 Interface (UI Toolkit)
 
-UI Toolkit (UXML e USS) com um `UIDocument` e um `PanelSettings` em resolução **nativa**, sem escala inteira nem fonte de pixel. Escala do painel: **Scale With Screen Size**, referência 1920×1080, casamento pela altura (1080p = 1,0; 16:9 e 16:10 testados, 1440p, 4K e Deck 1280×800). O modo "Constant Physical Size" (DPI do sistema) **não** é o padrão, porque o DPI reportado no Windows e no Proton é pouco confiável; **confirmar na instalação** e na F1 qual dos dois escala melhor, mantendo a decisão 6 (resolução nativa, sem escala inteira). Tokens: `Assets/UI/Theme/tokens.uss` é **gerado** de `docs/03_design_tokens.json` pelo script `tools/gen_tokens.py` (variáveis USS `--color-...`, `--space-...`); ninguém edita à mão. Estilo (pedra escura, molduras orgânicas, preenchimento "lava"), fonte e acentos: `docs/03_design_system.md`. Textos por chave de localização via `LocLabel` (seção 7). Números de dano e barras de vida de inimigos: `DamageNumberLayer`, um único `VisualElement` de tela cheia com elementos em pool, posicionados por `RuntimePanelUtils.CameraTransformWorldToPanel`; sem um painel por inimigo.
+UI Toolkit (UXML e USS) com um `UIDocument` e um `PanelSettings` em resolução **nativa**, sem escala inteira nem fonte de pixel. Escala do painel: **Scale With Screen Size**, referência 1920×1080, casamento pela altura (1080p = 1,0; 16:9 e 16:10 testados, 1440p, 4K e Deck 1280×800). O modo "Constant Physical Size" (DPI do sistema) **não** é o padrão, porque o DPI reportado no Windows e no Proton é pouco confiável; **confirmar na instalação** e na F1 qual dos dois escala melhor, mantendo a decisão 6 (resolução nativa, sem escala inteira). Tokens: `Assets/UI/Theme/tokens.uss` é **gerado** de `docs/arte/03_design_tokens.json` pelo script `tools/arte/gen_tokens.py` (variáveis USS `--color-...`, `--space-...`); ninguém edita à mão. Estilo (pedra escura, molduras orgânicas, preenchimento "lava"), fonte e acentos: `docs/arte/03_design_system.md`. Textos por chave de localização via `LocLabel` (seção 7). Números de dano e barras de vida de inimigos: `DamageNumberLayer`, um único `VisualElement` de tela cheia com elementos em pool, posicionados por `RuntimePanelUtils.CameraTransformWorldToPanel`; sem um painel por inimigo.
 
 ---
 
@@ -231,7 +231,7 @@ EchoesOfTheShatter/
 └─ DataSchemas/                     esquemas das tabelas (Data Engineer); fora de Assets para não irem ao build
 ```
 
-**Destino dos CSV (proposta, sem mover agora):** `Content/Data/*.csv` → `EchoesOfTheShatter/Assets/StreamingAssets/Data/`, `Content/Data/Loc/` → `.../StreamingAssets/Data/Loc/`, `Content/Data/schemas/` → `EchoesOfTheShatter/DataSchemas/`. Motivo: `StreamingAssets` é copiado cru para o build (arquivos soltos que a DLL lê por caminho, sem importação nem conversão), e o Game Designer edita o CSV sem abrir o editor. A mudança é um único commit com `git mv`, seguido de ajuste de `SHATTER_CONTENT_DIR`, `tools/validate_data.py` e do `README_dados.md` (Data Engineer). Até lá, a fonte continua em `EchoesOfTheShatter/Content/Data/`. O Unity gera um `.meta` para cada arquivo em `Assets/`: aceitável, mas o validador deve ignorá-los.
+**Destino dos CSV (proposta, sem mover agora):** `Content/Data/*.csv` → `EchoesOfTheShatter/Assets/StreamingAssets/Data/`, `Content/Data/Loc/` → `.../StreamingAssets/Data/Loc/`, `Content/Data/schemas/` → `EchoesOfTheShatter/DataSchemas/`. Motivo: `StreamingAssets` é copiado cru para o build (arquivos soltos que a DLL lê por caminho, sem importação nem conversão), e o Game Designer edita o CSV sem abrir o editor. A mudança é um único commit com `git mv`, seguido de ajuste de `SHATTER_CONTENT_DIR`, `tools/dados/validate_data.py` e do `README_dados.md` (Data Engineer). Até lá, a fonte continua em `EchoesOfTheShatter/Content/Data/`. O Unity gera um `.meta` para cada arquivo em `Assets/`: aceitável, mas o validador deve ignorá-los.
 
 ### 4.3 Assembly definitions e namespaces
 
@@ -321,11 +321,11 @@ abrir → janela offline (clock.h) → SimulateExpedition → FinalizeExpedition
 ## 7. Localização
 
 - Fonte: `StreamingAssets/Data/Loc/Loc*.csv` com colunas `key, pt_BR, en, es, context, gender` (Narrative & Content). Chaves no formato do plano: `ui.inventory.title`, `skill.warrior.iron_cut.name`.
-- O `LocalizationService` (Echoes.Core) lê os CSV na inicialização com um leitor próprio (RFC 4180, UTF-8, `CultureInfo.InvariantCulture`) e guarda um dicionário por cultura. **Sem `build_loc.py` e sem `.po`**: o Unity Localization não é adotado (dependência e tabelas extras sem ganho para 3 idiomas). `tools/validate_data.py` continua validando chaves duplicadas, chaves referenciadas pelos CSV de conteúdo e colunas vazias.
+- O `LocalizationService` (Echoes.Core) lê os CSV na inicialização com um leitor próprio (RFC 4180, UTF-8, `CultureInfo.InvariantCulture`) e guarda um dicionário por cultura. **Sem `build_loc.py` e sem `.po`**: o Unity Localization não é adotado (dependência e tabelas extras sem ganho para 3 idiomas). `tools/dados/validate_data.py` continua validando chaves duplicadas, chaves referenciadas pelos CSV de conteúdo e colunas vazias.
 - UXML e C# **não** têm texto literal visível ao jogador: `LocLabel` (`Label` com atributo `loc-key`) e `LocalizationService.Get(key)`. Fallback: cultura → `en` → a própria chave (com aviso no log de desenvolvimento).
 - ShatterCore não tem texto: só IDs e chaves (`ExpeditionResult::tipKeys`).
 - Nomes de item com gênero: a base tem `grammaticalGender` (`content.h`); `LocalizationService.Format(key, args)` aceita `{nome}` e a forma `{gender:Flamejante|Flamejante}` (variantes separadas por `|`, escolhidas pelo gênero). Nunca concatenar pedaços. Se a F1 mostrar que isso não basta (plurais), reavaliar o Unity Localization (decisão do orquestrador).
-- Fontes e acentos: `docs/03_design_system.md`; teste automático de EditMode garante que todos os glifos pt-BR/es existem na fonte.
+- Fontes e acentos: `docs/arte/03_design_system.md`; teste automático de EditMode garante que todos os glifos pt-BR/es existem na fonte.
 
 ---
 
@@ -351,7 +351,7 @@ Detalhes:
 
 ## 9. Integração do ShatterCore com o Unity (DLL nativa + P/Invoke)
 
-**Decisão:** o ShatterCore continua em C++17 e é compilado também como **DLL nativa x64** (`shattercore.dll`), chamada pelo C# por P/Invoke sobre uma **API C estável**. Este capítulo é só desenho; a implementação é do agente de Integração (prompt em `docs/07_proximos_passos.md`).
+**Decisão:** o ShatterCore continua em C++17 e é compilado também como **DLL nativa x64** (`shattercore.dll`), chamada pelo C# por P/Invoke sobre uma **API C estável**. Este capítulo é só desenho; a implementação é do agente de Integração (prompt em `docs/requisitos-qa/07_proximos_passos.md`).
 
 Alternativas consideradas: (a) portar as regras para C# (descartada: duplica o motor, perde os testes e o determinismo já definidos em C++); (b) C++/CLI ou ponte COM (descartadas: só Windows e sem ganho); (c) processo separado com IPC (descartada: latência por golpe e mais um binário). P/Invoke para uma DLL C é o caminho nativo do Unity.
 
@@ -565,20 +565,20 @@ Notas: não passar `-quit` junto com `-runTests`; o código de saída é diferen
 |---|---|---|---|
 | `core-linux` | `ubuntu-latest` (GCC e Clang) | todo push/PR | `cmake -DSHATTER_WERROR=ON` → build → `ctest`; variante com `SHATTER_SANITIZE=ON` |
 | `core-windows` | `windows-latest` (MSVC) | manual (`workflow_dispatch`) | mesmo, com MSVC (o compilador da DLL do jogo); gera `shattercore.dll` como artefato |
-| `data` | `ubuntu-latest` | todo push/PR | `python3 tools/validate_data.py` + teste `test_content` sobre o CSV real |
+| `data` | `ubuntu-latest` | todo push/PR | `python3 tools/dados/validate_data.py` + teste `test_content` sobre o CSV real |
 | `bench` | `ubuntu-latest` | manual (`workflow_dispatch`) | `SHATTER_BUILD_BENCH=ON`; falha se 12 h de expedição > 2 s |
 | `unity-tests` | PC do dono (fora do CI) | sob demanda | Confere que a DLL do repositório é a do artefato `core-windows` (versão e hash); EditMode e PlayMode pela CLI (13.2) |
 | `unity-build` | PC do dono (fora do CI) | sob demanda | Build Windows IL2CPP em batchmode (`-executeMethod Echoes.EditorTools.Build.Windows`) + `Player.Smoke` |
 | `unity-nightly` | PC do dono (fora do CI) | sob demanda | Paridade + Smoke longo + teste de desempenho da seção 18 + loot de 1 milhão |
 | `steam-upload` | PC do dono (fora do CI) | quando houver build de release | Build de release → `steamcmd` sobe para a branch **beta**; promover para default é manual no Steamworks |
 
-**Decisão do dono (16/10/2026): só o núcleo roda no GitHub Actions**, em runners Linux hospedados e dentro da cota grátis do repositório privado (`core-linux` e `data` a cada push/PR; `bench` sob demanda). O `core-windows` fica manual porque minuto de Windows conta em dobro na cota; no dia a dia a DLL sai de `tools\build_core.cmd` no PC do dono. Os jobs `unity-*` e `steam-upload` não são CI por enquanto: rodam no PC do dono pela Unity CLI quando ele pedir, com a licença Personal já ativada na máquina. Runner self-hosted ou GameCI só voltam se o dono pedir. Versão visível no menu: `0.3.1-ea+<hash>` (injetada pelo CI em `PlayerSettings.bundleVersion` pelo script de build).
+**Decisão do dono (16/10/2026): só o núcleo roda no GitHub Actions**, em runners Linux hospedados e dentro da cota grátis do repositório privado (`core-linux` e `data` a cada push/PR; `bench` sob demanda). O `core-windows` fica manual porque minuto de Windows conta em dobro na cota; no dia a dia a DLL sai de `tools\core\build_core.cmd` no PC do dono. Os jobs `unity-*` e `steam-upload` não são CI por enquanto: rodam no PC do dono pela Unity CLI quando ele pedir, com a licença Personal já ativada na máquina. Runner self-hosted ou GameCI só voltam se o dono pedir. Versão visível no menu: `0.3.1-ea+<hash>` (injetada pelo CI em `PlayerSettings.bundleVersion` pelo script de build).
 
 ---
 
 ## 15. Desvios do plano (Godot → motor intermediário → Unity 6)
 
-O plano original usava Godot 4 (seção 10). Uma revisão intermediária adotou outro motor (segunda coluna, mantida só como registro). Em 16/10/2026 o dono decidiu por **Unity 6 LTS com URP e C#** (`docs/08_decisoes_visual_3d.md`): ativos em texto e CLI para agentes, build e editor mais leves, referência visual feita em URP e custo.
+O plano original usava Godot 4 (seção 10). Uma revisão intermediária adotou outro motor (segunda coluna, mantida só como registro). Em 16/10/2026 o dono decidiu por **Unity 6 LTS com URP e C#** (`docs/arte/08_decisoes_visual_3d.md`): ativos em texto e CLI para agentes, build e editor mais leves, referência visual feita em URP e custo.
 
 | Plano (seção 10) | UE 5.8 (superado) | Agora (Unity 6) | Motivo / impacto |
 |---|---|---|---|
@@ -635,7 +635,7 @@ Todas ficam em `rules.csv` e podem mudar sem tocar no código.
 | `shatter_c.h` | API C estável para P/Invoke (seção 9.2): handles opacos, status, buffers do chamador | `c_api/shatter_c.cpp` (+ `c_api/shatter_c.map`, exports no Linux) |
 | `shatter.h` | Inclui tudo (C++) | — |
 
-Mudanças nos headers depois da entrega do Tech Lead (adições em `save.h`, `expedition.h`, `character.h`, `rng.h` e a API C) estão registradas, com o motivo, em `docs/09_mudancas_contrato.md`.
+Mudanças nos headers depois da entrega do Tech Lead (adições em `save.h`, `expedition.h`, `character.h`, `rng.h` e a API C) estão registradas, com o motivo, em `docs/tecnico/09_mudancas_contrato.md`.
 
 Verificação: todo header compila sozinho com `g++ -std=c++17 -fsyntax-only -Wall -Wextra -Wpedantic -Wshadow -Wconversion` e com `clang++` (o CMake tem o alvo `shattercore_header_check`, que faz isso em todo build).
 
@@ -645,7 +645,7 @@ Verificação: todo header compila sozinho com `g++ -std=c++17 -fsyntax-only -Wa
 
 ## 17. Pipeline de assets 3D (Blender → FBX → Unity)
 
-A estrutura de pastas e os prefixos estão nas seções 4.2 e 4.4. Esta seção fixa o pipeline e os orçamentos por tipo de asset. Os números de arte (proporções, texel, pintura) são do `docs/03_design_system.md`; aqui ficam só os orçamentos técnicos.
+A estrutura de pastas e os prefixos estão nas seções 4.2 e 4.4. Esta seção fixa o pipeline e os orçamentos por tipo de asset. Os números de arte (proporções, texel, pintura) são do `docs/arte/03_design_system.md`; aqui ficam só os orçamentos técnicos.
 
 ### 17.1 Pipeline de importação
 
@@ -671,7 +671,7 @@ A estrutura de pastas e os prefixos estão nas seções 4.2 e 4.4. Esta seção 
 
 ### 17.2 Orçamento por tipo de asset
 
-Triângulos (LOD0) e texturas. Os tamanhos máximos assumem a câmera da seção 3.2 (herói com ~88 px de altura em 1080p a 56 m); a **densidade de texel** vem do `docs/03_design_system.md`. Metas iniciais, revisadas pela medição da F1. **Alvos de produção** vêm da régua medida no Spell Brigade (`docs/arte/regua_spell_brigade.md`); os **tetos duros** são os valores anteriores e a auditoria 17.3 reprova acima deles (abaixo do alvo é só aviso de que a peça passou do alvo). O piso antigo (7.000, 3.500, 15.000) deixa de valer: a 56 m o herói tem ~88 px de altura e o detalhe extra não aparece. **Texturas de personagem: decisão do 04, mantidas em herói 1024² (máscara 512²) e inimigo 512² (máscara 256²); a proposta do 03 (herói 2048² a 8 texel/cm, inimigo 1024² a 5 texel/cm, como o Spell Brigade) não foi adotada.** Motivos: (1) a 56 m o herói tem ~88 px de altura em 1080p (~65 px no Deck) e o inimigo é parecido; 8 texel/cm dão ~1.200 texels de altura para 88 px, ~13 vezes de sobreamostragem, e o mip usado em jogo seria o de 256² a 512²; os mips altos só custam disco, import e VRAM no momento da carga; (2) memória: 2048² em BC7 ocupa ~5,6 MB com mips contra ~1,4 MB do 1024² (4 vezes), e o inimigo 1024² contra 512² também 4 vezes, tanto no build (teto de 120 MB por área) quanto na VRAM do Deck, que divide memória com a CPU; o Mipmap Streaming recupera a VRAM mas não o disco nem a carga, e adiciona tráfego de streaming; (3) o Spell Brigade usa texturas grandes por ter câmera mais próxima e herói maior na tela, o que não é o nosso caso. Exceção a reavaliar: se um dia houver visão de perto do herói (prévia 3D no menu, cena de diálogo), essa visão usa um mip fixo ou uma variante 2048² carregada só nela, não o asset de jogo. O 03 precisa trocar a densidade de texel para a ordem de **~4 texel/cm no herói e ~2,5 texel/cm no inimigo** (1024² e 512² com ~60% de aproveitamento do atlas, a confirmar na pintura) e as máscaras para 512² e 256².
+Triângulos (LOD0) e texturas. Os tamanhos máximos assumem a câmera da seção 3.2 (herói com ~88 px de altura em 1080p a 56 m); a **densidade de texel** vem do `docs/arte/03_design_system.md`. Metas iniciais, revisadas pela medição da F1. **Alvos de produção** vêm da régua medida no Spell Brigade (`docs/arte/regua_spell_brigade.md`); os **tetos duros** são os valores anteriores e a auditoria 17.3 reprova acima deles (abaixo do alvo é só aviso de que a peça passou do alvo). O piso antigo (7.000, 3.500, 15.000) deixa de valer: a 56 m o herói tem ~88 px de altura e o detalhe extra não aparece. **Texturas de personagem: decisão do 04, mantidas em herói 1024² (máscara 512²) e inimigo 512² (máscara 256²); a proposta do 03 (herói 2048² a 8 texel/cm, inimigo 1024² a 5 texel/cm, como o Spell Brigade) não foi adotada.** Motivos: (1) a 56 m o herói tem ~88 px de altura em 1080p (~65 px no Deck) e o inimigo é parecido; 8 texel/cm dão ~1.200 texels de altura para 88 px, ~13 vezes de sobreamostragem, e o mip usado em jogo seria o de 256² a 512²; os mips altos só custam disco, import e VRAM no momento da carga; (2) memória: 2048² em BC7 ocupa ~5,6 MB com mips contra ~1,4 MB do 1024² (4 vezes), e o inimigo 1024² contra 512² também 4 vezes, tanto no build (teto de 120 MB por área) quanto na VRAM do Deck, que divide memória com a CPU; o Mipmap Streaming recupera a VRAM mas não o disco nem a carga, e adiciona tráfego de streaming; (3) o Spell Brigade usa texturas grandes por ter câmera mais próxima e herói maior na tela, o que não é o nosso caso. Exceção a reavaliar: se um dia houver visão de perto do herói (prévia 3D no menu, cena de diálogo), essa visão usa um mip fixo ou uma variante 2048² carregada só nela, não o asset de jogo. O 03 precisa trocar a densidade de texel para a ordem de **~4 texel/cm no herói e ~2,5 texel/cm no inimigo** (1024² e 512² com ~60% de aproveitamento do atlas, a confirmar na pintura) e as máscaras para 512² e 256².
 **Triângulos:** o Art Director apontou que o herói de 7 a 10 mil está acima da régua (2,5 a 5,6 mil no Spell Brigade). Aceito: o alvo de produção do herói é 4.000 a 6.500, o teto duro de 10.000 só serve de folga para o equipamento, e o piso antigo de 7.000 foi removido. Se a pintura mostrar que 6.500 sobra, o 04 reduz o teto depois da medição na F1.
 
 | Tipo | Triângulos LOD0: alvo de produção (teto duro) | Materiais | Texturas (por asset) | Observação |
@@ -686,7 +686,7 @@ Triângulos (LOD0) e texturas. Os tamanhos máximos assumem a câmera da seção
 | Prop pequeno (vaso, osso, caixão) | 100 a 800 | 1 (kit) | Atlas do kit | Sem colisor quando decorativo |
 | Kit de área (atlas) | — | — | até 4 folhas de 2048² (albedo BC1) + 1 máscara de emissivo 1024² BC1 | Todas as peças da área compartilham as folhas |
 | Textura de VFX | — | — | 256² a 512², canal único sempre que possível | Reutilizada entre sistemas |
-| Ícones e UI | — | — | Segundo `docs/03_design_system.md` | Sem mipmap |
+| Ícones e UI | — | — | Segundo `docs/arte/03_design_system.md` | Sem mipmap |
 
 Sem normal map em nenhum tipo de asset. Teto de assets de uma área carregada: ≤ 120 MB no build (também garante carga < 3 s, RNF-04, e ajuda na meta de instalador < 500 MB; **confirmar na instalação** o tamanho base do player IL2CPP).
 
@@ -748,13 +748,13 @@ Um conjunto completo custa ~0,7 MB de textura e ~0,5 a 1 MB de malha; um herói 
 - O `visualSetId` é **dado de apresentação**: o core o carrega e o expõe pelo getter do `RulesService` (9.6), mas ele não entra no `resultHash`, no simulador nem no save. O save guarda só o `baseId` do item.
 - **Alternativa**, se o Backend preferir não tocar o parser de `item_bases.csv`: arquivo próprio `item_visuals.csv` (`baseId,visualSetId`). Recomendo a coluna, porque dá uma linha por item e um só lugar para o Game Designer.
 
-**Tingimento por raridade.** Normal usa as cores pintadas. **Mágico e Raro** são variações de **material**, sem malha nova: o `SG_Character` já tem a região B da máscara (tinta), e o `ModularCharacter` aplica `_TintColor`, `_TintStrength` e `_AccentEmissive` (máscara R) na instância do material da peça, com valores de um `SO_RarityTint` (presentação). Proposta: Mágico = tinta azulada leve e sem emissivo; Raro = tinta amarelada forte e acento emissivo suave; os valores finais são do Art Director (`docs/03_design_system.md`). A raridade vem de `ItemInstance.rarity`, que o save já guarda. **Único** tem **malha e texturas próprias** (conjunto `vset.unq_<id>`, peça `Unq<Id>`) e não usa tingimento por raridade. Como cada instância de material é do personagem (3.3), a troca de raridade é `SetColor`/`SetFloat`, sem `MaterialPropertyBlock`.
+**Tingimento por raridade.** Normal usa as cores pintadas. **Mágico e Raro** são variações de **material**, sem malha nova: o `SG_Character` já tem a região B da máscara (tinta), e o `ModularCharacter` aplica `_TintColor`, `_TintStrength` e `_AccentEmissive` (máscara R) na instância do material da peça, com valores de um `SO_RarityTint` (presentação). Proposta: Mágico = tinta azulada leve e sem emissivo; Raro = tinta amarelada forte e acento emissivo suave; os valores finais são do Art Director (`docs/arte/03_design_system.md`). A raridade vem de `ItemInstance.rarity`, que o save já guarda. **Único** tem **malha e texturas próprias** (conjunto `vset.unq_<id>`, peça `Unq<Id>`) e não usa tingimento por raridade. Como cada instância de material é do personagem (3.3), a troca de raridade é `SetColor`/`SetFloat`, sem `MaterialPropertyBlock`.
 
 **Novo espaço `legs` no contrato e nos dados.**
 - `ItemSlot` (core, `item.h`) e o enum `@slots` ganham `legs` (string `"legs"`). Ordem proposta: `MainHand, OffHand, Head, Body, Hands, Legs, Feet, Amulet, Ring, Ring2, Belt` (11); `kItemSlotCount` passa de 10 para 11. O valor numérico do enum **não é persistido** (o save usa o nome), mas o Backend confere se `shatter_c.h` e os testes usam índices; se usarem, a alternativa é acrescentar `Legs` no fim, sem renumerar. O AA passa a usar as 9 primeiras posições (até `Ring`); `Ring2` e `Belt` continuam reservadas.
 - `allowedSlots` dos afixos aceita `legs`. Afixos com `allowedSlots` vazio (= todas as posições) passam a valer em `legs` e precisam de revisão do Game Designer. `item_bases.csv` aceita `slot = legs`, com as regras de `head/body/hands/feet` (sem dano de arma, `attackTime` nem `weaponTags`).
 - **Save: `equipment` passa de 10 para 11 posições** (chave nova `legs`, `null` ou `ItemInstance`). **`save_version` sobe de 1 para 2**, com a migração `1→2` no core (`save.h`), que acrescenta `equipment.legs = null` em cada personagem e recalcula o `sha256`. Nada é apagado: o save v1 continua legível e é regravado em v2 no primeiro save. Um save v2 não abre em jogo v1 (RNF-10). Fixtures: `save_v1.json` fica como entrada da migração e nasce `save_v2.json`. A migração ilustrativa de poções (`potion_slots`, pendência P10) é independente; se as duas mudanças chegarem juntas, entram na mesma v2.
-- Esquemas, `@slots`, `tools/validate_data.py`, RF-30 e D1 do `docs/06_dados.md` precisam do slot novo (Data Engineer). O contrato fechado está na proposta C-10 do `docs/09_mudancas_contrato.md`.
+- Esquemas, `@slots`, `tools/dados/validate_data.py`, RF-30 e D1 do `docs/tecnico/06_dados.md` precisam do slot novo (Data Engineer). O contrato fechado está na proposta C-10 do `docs/tecnico/09_mudancas_contrato.md`.
 
 **O que acontece com o graybox `SK_Warrior`.** `art-src/graybox/fbx/SK_Warrior.fbx` (e `SK_Mage`, `SK_Archer`) é uma malha única provisória. Continua servindo de teste de câmera e escala até os modelos chegarem. Quando chegar o corpo base, a Arte técnica o parte no Blender (script em `art-src/graybox/scripts/`) em `SK_<Heroi>_Body` (6 regiões) e 5 peças `starter` provisórias, só para exercitar o `ModularCharacter` e a máscara de regiões, e depois troca pelos modelos reais. O arquivo antigo fica no Git até a substituição e é **removido** quando nenhum prefab o referenciar (buscar as referências antes). O `Rig_Humanoid_Chibi.fbx` não muda: é a base de tudo.
 
@@ -762,7 +762,7 @@ Um conjunto completo custa ~0,7 MB de textura e ~0,5 a 1 MB de malha; um herói 
 
 ## 18. Orçamentos de desempenho por cena (RNF-04)
 
-Alvo: 60 FPS estáveis (quadro ≤ 16,6 ms) na Cripta com 30 inimigos ativos, e carga da área < 3 s. **Hardware de referência (P-4 do `docs/02_requisitos.md`, decidido pelo dono em 16/10/2026)**: o "PC de entrada" é uma GPU de 4 GB do nível de uma GTX 1050 Ti/RX 570 (ou GPU integrada moderna), CPU de 4 núcleos, 8 GB de RAM, 1080p. O Steam Deck é medido como alvo próprio. Os números abaixo são **metas iniciais a validar na F1** com Profiler, Frame Debugger e Stats, não resultados medidos.
+Alvo: 60 FPS estáveis (quadro ≤ 16,6 ms) na Cripta com 30 inimigos ativos, e carga da área < 3 s. **Hardware de referência (P-4 do `docs/requisitos-qa/02_requisitos.md`, decidido pelo dono em 16/10/2026)**: o "PC de entrada" é uma GPU de 4 GB do nível de uma GTX 1050 Ti/RX 570 (ou GPU integrada moderna), CPU de 4 núcleos, 8 GB de RAM, 1080p. O Steam Deck é medido como alvo próprio. Os números abaixo são **metas iniciais a validar na F1** com Profiler, Frame Debugger e Stats, não resultados medidos.
 
 **Efeito da câmera de 56 m (16/10/2026):** a tela mostra ~24,8 × 14,0 m em vez de ~18,6 × 10,5 m, ou seja ~1,8 vez mais chão e cenário visíveis. Os limites da tabela ficam **mantidos como teto**, mas o cenário passa a ocupar uma fatia maior deles: espere mais batches e triângulos de cenário na mesma sala (props por tela ×~1,8). Orçamento sugerido para a Cripta de 40 m (zona A): 30 inimigos a ~2.500 tri médios (~75 mil) + herói e chefe (~25 mil) deixam quase todo o 1,2 M para cenário, então o freio real é batches (≤ 1.200) e SetPass; mitigação: kits com Static Batching e atlas único, e peças fora da tela cortadas pelo frustum. Inimigos espalhados em área maior reduzem sobreposição e o custo de overdraw de VFX por tela. Medir na F1 com a zona A, tela cheia de inimigos, a 48, 56 e 66 m.
 

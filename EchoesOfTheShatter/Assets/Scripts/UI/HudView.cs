@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 namespace Echoes.UI
 {
     /// <summary>
-    /// HUD de combate (RF-57; docs/03_design_system.md, seção 4.1) sobre <c>HudView.uxml</c>: barras e
+    /// HUD de combate (RF-57; docs/arte/03_design_system.md, seção 4.1) sobre <c>HudView.uxml</c>: barras e
     /// orbes de Vida e Ímpeto, barra de 6 habilidades com recarga e cadeado, esquiva com os pontos de
     /// carga, 2 poções, números de dano e a tela "Você caiu". Só lê estado e eventos; nunca calcula
     /// regra. Textos por chave de localização; cores e tamanhos nas variáveis USS dos tokens.

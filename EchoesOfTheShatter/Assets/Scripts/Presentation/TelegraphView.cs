@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Echoes.Presentation
 {
     /// <summary>
-    /// Mesh plano do telegraph no chão (docs/04_arquitetura.md, seção 3.10): cone, círculo ou linha
+    /// Mesh plano do telegraph no chão (docs/tecnico/04_arquitetura.md, seção 3.10): cone, círculo ou linha
     /// com as dimensões reais da consulta, a +0,02 m do piso. O material (SG_VFX variante Telegraph)
     /// recebe <c>_Progress</c> de 0 a 1 durante o windup. Em pool no <see cref="TelegraphPresenter"/>.
     /// </summary>

@@ -4,7 +4,7 @@ namespace Echoes.Gameplay
 {
     /// <summary>
     /// Vetor no plano do chão (XZ do Unity, em metros). A lógica de combate vive neste plano
-    /// (docs/04_arquitetura.md, seção 3.1) e não depende de UnityEngine, para rodar em teste puro.
+    /// (docs/tecnico/04_arquitetura.md, seção 3.1) e não depende de UnityEngine, para rodar em teste puro.
     /// </summary>
     [Serializable]
     public struct PlanarVector : IEquatable<PlanarVector>

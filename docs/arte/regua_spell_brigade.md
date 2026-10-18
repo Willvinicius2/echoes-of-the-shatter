@@ -228,7 +228,7 @@ Padrão: laço de movimento de 0,5 a 2,0 s; telegráfico explícito de **0,33 a 
 
 Padrão de chefe: todo golpe tem **par Charge + Ação** (carga 0,9 a 1,75 s, ação 0,8 a 1,0 s); morte de 5 a 6 s; Hit/stagger de ~1,3 a 1,7 s; 18 a 19 clipes por chefe. Taxa 60 quadros/s.
 
-## 7. Comparação com os orçamentos do Echoes (`docs/04_arquitetura.md`)
+## 7. Comparação com os orçamentos do Echoes (`docs/tecnico/04_arquitetura.md`)
 
 Os orçamentos por tipo de asset estão na seção 17.2; a seção 18 traz os totais por cena e por `SkinnedMeshRenderer`. Compararam-se as duas.
 

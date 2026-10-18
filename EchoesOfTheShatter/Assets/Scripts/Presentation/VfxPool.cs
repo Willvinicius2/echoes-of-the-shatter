@@ -5,7 +5,7 @@ using UnityEngine.Pool;
 namespace Echoes.Presentation
 {
     /// <summary>
-    /// Pool de VFX por prefab (docs/04_arquitetura.md, seção 3.9: nada de Instantiate/Destroy por golpe).
+    /// Pool de VFX por prefab (docs/tecnico/04_arquitetura.md, seção 3.9: nada de Instantiate/Destroy por golpe).
     /// Devolve cada instância depois do tempo pedido; uma instância pode acompanhar um Transform (osso da mão, cristal do cajado) e ser
     /// encerrada antes (<see cref="Fade"/>: para de emitir e devolve quando as partículas morrerem). Uma instância por cena basta.
     /// </summary>

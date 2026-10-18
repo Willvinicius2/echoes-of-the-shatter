@@ -1,6 +1,6 @@
 # 13 — Decisões de design que travavam o protótipo (Game Designer)
 
-Escopo: protótipo jogável do Guerreiro na Cripta Partida (`02_requisitos.md`, seção 2). Este documento só decide e especifica; nenhum CSV, esquema ou header foi editado. Onde um dado precisa existir, a seção "Impacto em dados" diz qual tabela ou coluna, e o fechamento lista o pedido ao Data Engineer e ao Tech Lead.
+Escopo: protótipo jogável do Guerreiro na Cripta Partida (`docs/requisitos-qa/02_requisitos.md`, seção 2). Este documento só decide e especifica; nenhum CSV, esquema ou header foi editado. Onde um dado precisa existir, a seção "Impacto em dados" diz qual tabela ou coluna, e o fechamento lista o pedido ao Data Engineer e ao Tech Lead.
 
 Convenções: unidades de distância em uu (1 uu = 1 cm no Unreal; o Guerreiro anda a ~450 uu/s, ver item 12). Tempos em segundos. Valores marcados **[HIPÓTESE]** precisam de playtest. "Provisório: sim" quer dizer que o plano não fecha o número e a decisão vale até o primeiro playtest. A história não é tocada: nada aqui cria lore.
 
@@ -21,11 +21,11 @@ Pilares usados (plano, seção 1): P1 Conquistar pela ação, P2 Build com ident
 | 9 | Único do Guardião | 1ª vitória garantida, depois 20% por vitória, garantido na 5ª sem drop | Sim |
 | 10 | Valores de `rules.csv` | Manter 4 dos 5; `retreat_life_fraction` 0,20 para 0,25 | Sim |
 
-**Respostas do dono (16/10/2026).** Escudada no nível 4 (o dono não teve preferência; vale a recomendação deste documento). Segunda poção = Poção de Resguardo. Arena do Guardião com pilares, então o bônus da investida no item 4 fica. Guardião obrigatório nesta rodada (P-2 do `02_requisitos.md`). Os números continuam provisórios até o playtest.
+**Respostas do dono (16/10/2026).** Escudada no nível 4 (o dono não teve preferência; vale a recomendação deste documento). Segunda poção = Poção de Resguardo. Arena do Guardião com pilares, então o bônus da investida no item 4 fica. Guardião obrigatório nesta rodada (P-2 do `docs/requisitos-qa/02_requisitos.md`). Os números continuam provisórios até o playtest.
 
-**Câmera e escala de mapa (dono, 16/10/2026, depois de jogar a cena base `Base_Escala`).** Câmera a 56 m (ver `04_arquitetura.md`, seção 3.2). Escala de mapa da zona A: arena do Guardião de 40 × 40 m com pilares, salas de 24 a 32 m e corredores de 6 m de largura. Todo layout de área parte dessas medidas; distâncias em uu deste documento (1 uu = 1 cm) continuam válidas.
+**Câmera e escala de mapa (dono, 16/10/2026, depois de jogar a cena base `Base_Escala`).** Câmera a 56 m (ver `docs/tecnico/04_arquitetura.md`, seção 3.2). Escala de mapa da zona A: arena do Guardião de 40 × 40 m com pilares, salas de 24 a 32 m e corredores de 6 m de largura. Todo layout de área parte dessas medidas; distâncias em uu deste documento (1 uu = 1 cm) continuam válidas.
 
-**Checkpoint e arena (dono, 16/10/2026).** Ao voltar ao checkpoint (por morte ou saída), os inimigos já mortos REAPARECEM, no estilo Souls. A porta da arena do Guardião fecha atrás do herói e só reabre quando a luta acaba (vitória ou morte). Ver `14_layout_cripta.md`.
+**Checkpoint e arena (dono, 16/10/2026).** Ao voltar ao checkpoint (por morte ou saída), os inimigos já mortos REAPARECEM, no estilo Souls. A porta da arena do Guardião fecha atrás do herói e só reabre quando a luta acaba (vitória ou morte). Ver `docs/tecnico/14_layout_cripta.md`.
 
 ---
 
@@ -72,7 +72,7 @@ Pilares usados (plano, seção 1): P1 Conquistar pela ação, P2 Build com ident
 
 **Como enchem.** (a) Tempo: a recarga acima, em combate e no idle. (b) Matar uma elite: +1 carga na poção com menos cargas (empate: Vida). (c) Encher tudo ao chegar ao Refúgio, ao passar num checkpoint, ao reiniciar a luta do Guardião depois de morrer. Não enchem ao matar comuns.
 
-**Motivo.** Cura e proteção respondem a problemas diferentes: Vida repara dano já tomado, Resguardo prepara um golpe grande do Guardião (martelo de 30, ver item 4) ou entra numa regra de IA do idle. Isso cria decisão de rota/regra (P3: "poção abaixo de 35%" contra "Resguardo se há elite"). A recarga lenta de 40 s é mais dura que os 20 s sugeridos em `05_conteudo.md` porque 3 cargas + 20 s dariam ~9 curas de 40% numa luta de 150 s e esvaziariam o chefe. Com 40 s o chefe dá 3 + ~3 curas. A fonte de carga por elite premia ler o modificador (plano seção 5) e dá ao idle um jeito de "gastar menos" quando a rota tem elites. O 2º tipo é Resguardo (e não mana, que o Guerreiro não tem): usa a regra de barreira que já está no cálculo de defesa.
+**Motivo.** Cura e proteção respondem a problemas diferentes: Vida repara dano já tomado, Resguardo prepara um golpe grande do Guardião (martelo de 30, ver item 4) ou entra numa regra de IA do idle. Isso cria decisão de rota/regra (P3: "poção abaixo de 35%" contra "Resguardo se há elite"). A recarga lenta de 40 s é mais dura que os 20 s sugeridos em `docs/design/05_conteudo.md` porque 3 cargas + 20 s dariam ~9 curas de 40% numa luta de 150 s e esvaziariam o chefe. Com 40 s o chefe dá 3 + ~3 curas. A fonte de carga por elite premia ler o modificador (plano seção 5) e dá ao idle um jeito de "gastar menos" quando a rota tem elites. O 2º tipo é Resguardo (e não mana, que o Guerreiro não tem): usa a regra de barreira que já está no cálculo de defesa.
 
 **Impacto em dados.** Tabela nova `potions.csv`: `id,kind(heal|barrier),fractionOfMaxLife,duration,maxCharges,rechargeSeconds,useTime,moveSpeedWhileUsing,globalLockout,refillOnEliteKill,hotkeySlot`. `potion_heal_fraction` do `ExpeditionRequest` sai do pedido e vem desta tabela. `AiRule.use_potion` precisa de `ref_id` (qual poção). Save: `potions` (int) vira `potion_slots` (ver pendência P10: o exemplo `migrate_1_to_2` serve de base: `{potion_id, charges, recharge_remaining}`).
 
@@ -97,7 +97,7 @@ Pilares usados (plano, seção 1): P1 Conquistar pela ação, P2 Build com ident
 | Imunidade a nova Guarda Quebrada | 8 s no chefe, 4 s em elite e Arauto (evita lock) |
 | Comuns | recebem os acúmulos (+dano), mas já têm o stun; aos 3 acúmulos não há stagger extra |
 
-**Motivo.** Cada tipo de inimigo tem uma resposta diferente (plano seção 5): comuns -> stun (agrupar e usar área), constructos -> quebra de guarda no tempo certo, elites com escudo -> quebra remove a barreira, chefe -> abre a janela. Isso dá à Escudada um papel que a Fenda e o Corte não cobrem (P2). Como a recarga é 4 s e o timer único dura 8 s, três Escudadas cabem na janela (0, 4, 8). Alternativa sem Escudada: contornar o escudo por trás (item 4), então a Escudada é um atalho, não um bloqueio. O stun de 0,8 s e a ausência de stun no chefe vêm de `05_conteudo.md` (seção 4) e do plano ("atordoa comuns").
+**Motivo.** Cada tipo de inimigo tem uma resposta diferente (plano seção 5): comuns -> stun (agrupar e usar área), constructos -> quebra de guarda no tempo certo, elites com escudo -> quebra remove a barreira, chefe -> abre a janela. Isso dá à Escudada um papel que a Fenda e o Corte não cobrem (P2). Como a recarga é 4 s e o timer único dura 8 s, três Escudadas cabem na janela (0, 4, 8). Alternativa sem Escudada: contornar o escudo por trás (item 4), então a Escudada é um atalho, não um bloqueio. O stun de 0,8 s e a ausência de stun no chefe vêm de `docs/design/05_conteudo.md` (seção 4) e do plano ("atordoa comuns").
 
 **Impacto em dados.**
 - `enemies.csv`: colunas `stunImmune` (bool), `guardBreakStaggerSeconds`, `guardBreakImmunitySeconds`.
@@ -268,7 +268,7 @@ Sem isso a expedição fica bloqueada (RF-43), o que mata o pilar P3 do protóti
 
 ### 8.2 Meta ≈ 35%
 
-`06_dados.md` D2 mostra que, com Fervor x3, o equilíbrio natural é 33,3% (idle igual ao manual sem Fervor). A meta de 35% quer dizer **idle ~1,05x o ritmo manual sem Fervor**, medido nas horas 1–4 (Vigor 100%). Nenhuma constante nova: o ritmo vem de quanto dura o encontro simulado (que depende dos perfis) e de `travelTime` dos encontros (4 a 8 s). Estimativa do plano: ciclo manual 15–30 s de combate + 5–10 s de respiro ≈ 33 s; o simulador luta ~25–30% mais devagar que um humano e soma ~6 s de travessia ≈ 32 s, que dá ~33–37%. Ordem de ajuste se fugir de 30–40% (critério RF-32 ±5 p.p.): 1) `travelTime` dos encontros, 2) `idleUptime`/`idleApproachTime` das habilidades, 3) `idleDamageTakenMult`. Não ajustar o Fervor (x3 é regra fechada).
+`docs/tecnico/06_dados.md` D2 mostra que, com Fervor x3, o equilíbrio natural é 33,3% (idle igual ao manual sem Fervor). A meta de 35% quer dizer **idle ~1,05x o ritmo manual sem Fervor**, medido nas horas 1–4 (Vigor 100%). Nenhuma constante nova: o ritmo vem de quanto dura o encontro simulado (que depende dos perfis) e de `travelTime` dos encontros (4 a 8 s). Estimativa do plano: ciclo manual 15–30 s de combate + 5–10 s de respiro ≈ 33 s; o simulador luta ~25–30% mais devagar que um humano e soma ~6 s de travessia ≈ 32 s, que dá ~33–37%. Ordem de ajuste se fugir de 30–40% (critério RF-32 ±5 p.p.): 1) `travelTime` dos encontros, 2) `idleUptime`/`idleApproachTime` das habilidades, 3) `idleDamageTakenMult`. Não ajustar o Fervor (x3 é regra fechada).
 
 **Provisório:** sim.
 
@@ -331,7 +331,7 @@ Sem isso a expedição fica bloqueada (RF-43), o que mata o pilar P3 do protóti
 9. **`loot_entries.csv`:** `fixedChance`, `guaranteeFirstKill`, `pityKills`; remover a linha de peso do Único em `loot.crypt.guardian` (item 9) e validar que Único só aparece em tabela de chefe (P5).
 10. **`class_stats.csv`:** `class.warrior,move_speed,450,0`.
 11. **Save (`save_v1` -> proposta v2):** `potion_slots` (substitui `potions`), `boss_progress`; as cargas de esquiva não são salvas (reiniciam cheias ao carregar). Não aprovo `tutorial_flags` do exemplo de migração; só `potion_slots`.
-12. **Loc:** chaves de poções, Guarda Quebrada, selo de estimativa; `potion.life.*` já existe em `05_conteudo.md`.
+12. **Loc:** chaves de poções, Guarda Quebrada, selo de estimativa; `potion.life.*` já existe em `docs/design/05_conteudo.md`.
 
 ## Para o Tech Lead
 
@@ -351,7 +351,7 @@ Sem isso a expedição fica bloqueada (RF-43), o que mata o pilar P3 do protóti
 
 ## Balanceamento e dados — rodada 2 (16/10/2026)
 
-Origem: `09_mudancas_contrato.md` seção 7 (7.2 item 5, 7.6) e os pedidos do Frontend. Base: CSV de `Content/Data/` e a leitura de `ShatterCore/src/expedition.cpp`, `damage.cpp`, `combat.cpp`. **Não rodei o simulador**: as contas abaixo são à mão e todo número derivado é **[HIPÓTESE]** até o Backend rodar as sementes pedidas em R2.1.4.
+Origem: `docs/tecnico/09_mudancas_contrato.md` seção 7 (7.2 item 5, 7.6) e os pedidos do Frontend. Base: CSV de `Content/Data/` e a leitura de `ShatterCore/src/expedition.cpp`, `damage.cpp`, `combat.cpp`. **Não rodei o simulador**: as contas abaixo são à mão e todo número derivado é **[HIPÓTESE]** até o Backend rodar as sementes pedidas em R2.1.4.
 
 ### R2.1 Por que o Guerreiro nível 4 sem equipamento recua em cerca de 1 minuto
 
@@ -403,14 +403,14 @@ Leitura: o problema real com o conteúdo atual é uma margem de ~0 (dano ≈ gan
 | Número | Onde estava | Tabela | Coluna ou chave | Valor | Observação |
 |---|---|---|---|---|---|
 | Momento da invocação do Guardião (fração do rugido) | `kSummonAtFractionOfTransition` em `combat.cpp` | `boss_phases.csv` | `summonAtFraction` (nova, 0 < x < 1) | fase 2: **0,5** (1,0 s de 2,0 s, docs/13 item 4.4); fase 1: vazio | obrigatória quando `summonCount` > 0 |
-| Stagger da Investida do Escudo que bate em pilar ou parede | só no texto (docs/13 item 4.3, [HIPÓTESE]) | `skills.csv` | `wallStaggerSeconds` (nova, s) | `skill.enemy.guardian_shield_charge`: **2,0**; vazio nas demais | a queda do escudo por 5 s já é `rules.csv` `boss_shield_down_seconds` (5). O valor sai do JSON de `14_layout_cripta.md` (`arenaCharge.wallStaggerSeconds`) para ter um dono só |
+| Stagger da Investida do Escudo que bate em pilar ou parede | só no texto (docs/13 item 4.3, [HIPÓTESE]) | `skills.csv` | `wallStaggerSeconds` (nova, s) | `skill.enemy.guardian_shield_charge`: **2,0**; vazio nas demais | a queda do escudo por 5 s já é `rules.csv` `boss_shield_down_seconds` (5). O valor sai do JSON de `docs/tecnico/14_layout_cripta.md` (`arenaCharge.wallStaggerSeconds`) para ter um dono só |
 | Velocidade de patrulha | 0,5 da perseguição, no código | `enemies.csv` | `patrolSpeedMult` (nova) | `enemy.hollow_sentinel`: **0,5** (110 uu/s = 1,1 m/s, docs/14); vazio nos demais = não patrulha | só as Sentinelas patrulham (`patrol_a`, `patrol_b`); Sentinela Escudada fica parada |
 | R-VIS-1: atirador só mira dentro da tela | só no texto (docs/14 8.2) | `enemy_ai.csv` | `requireOnScreen` (nova, bool) | `enemy.ghost_archer`: **true**; Cães: vazio (false) | |
 | Margem interna da área visível de R-VIS-1 | 1 m no texto | `rules.csv` | `require_on_screen_margin` (nova, uu) | **100** | margem sobre o retângulo do frustum, medida na tela (ver docs/14 seção 8.2) |
 
 ### R2.3 Câmera com yaw de 45 graus (docs/14)
 
-Correção em `14_layout_cripta.md`: seção 1 (eixos e retângulo visível), 8.2 (R-VIS-1 e R-VIS-3), 9 (itens 1 e 4), 10 (itens 1 e 3) e o bloco JSON. Resumo: o retângulo visível (±12,4 m na horizontal da tela, ±8,5 m na vertical) está **girado 45 graus em relação aos eixos do mundo**, então o limite no mundo é `|dx+dz| <= 12,0` e `|dx-dz| <= 17,5` (ou os dois trocados, conforme o sinal do yaw). Um critério que vale para os dois sinais: **`|dx| + |dz| <= 12,0 m`** cabe sempre na tela. Os arqueiros continuam a +-7,5 m da linha de chegada, mas deixam de ser posicionados para "acordar visíveis" (impossível com aggro 14 m); a garantia passa a ser só R-VIS-1.
+Correção em `docs/tecnico/14_layout_cripta.md`: seção 1 (eixos e retângulo visível), 8.2 (R-VIS-1 e R-VIS-3), 9 (itens 1 e 4), 10 (itens 1 e 3) e o bloco JSON. Resumo: o retângulo visível (±12,4 m na horizontal da tela, ±8,5 m na vertical) está **girado 45 graus em relação aos eixos do mundo**, então o limite no mundo é `|dx+dz| <= 12,0` e `|dx-dz| <= 17,5` (ou os dois trocados, conforme o sinal do yaw). Um critério que vale para os dois sinais: **`|dx| + |dz| <= 12,0 m`** cabe sempre na tela. Os arqueiros continuam a +-7,5 m da linha de chegada, mas deixam de ser posicionados para "acordar visíveis" (impossível com aggro 14 m); a garantia passa a ser só R-VIS-1.
 
 ### R2.4 Voltar ao checkpoint: reset total (confirmação da interpretação do Frontend)
 

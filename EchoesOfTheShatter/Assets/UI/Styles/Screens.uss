@@ -1,4 +1,4 @@
-/* Ajustes por tela (docs/03_design_system.md, seção 4). Posições = coordenadas da seção 4.1 no
+/* Ajustes por tela (docs/arte/03_design_system.md, seção 4). Posições = coordenadas da seção 4.1 no
    espaço de referência 1920x1080 (PanelSettings Scale With Screen Size, Match = 1). */
 
 /* ---- HUD de combate ---- */

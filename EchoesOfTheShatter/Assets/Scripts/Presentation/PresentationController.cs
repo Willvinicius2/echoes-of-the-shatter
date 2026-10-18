@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Echoes.Presentation
 {
     /// <summary>
-    /// Reage aos eventos do combate para UMA entidade (docs/04_arquitetura.md, seções 3.3 e 10.4):
+    /// Reage aos eventos do combate para UMA entidade (docs/tecnico/04_arquitetura.md, seções 3.3 e 10.4):
     /// hitstop congela o Animator e as partículas presas a ela, flash de dano (<c>_HitFlash</c>),
     /// dissolução da morte (<c>_Dissolve</c>), estados de ação ajustados aos tempos do CSV e VFX do
     /// impacto. Nunca decide regra. Cada material é instanciado uma vez; sem MaterialPropertyBlock

@@ -6,7 +6,7 @@ namespace Echoes.Gameplay
 {
     /// <summary>
     /// Lê o Input System pelas ações nomeadas do <c>Echoes.inputactions</c> (RF-64, RF-65). Carrega o
-    /// remapeamento salvo em <c>persistentDataPath/bindings.json</c> (docs/04_arquitetura.md, seção 8).
+    /// remapeamento salvo em <c>persistentDataPath/bindings.json</c> (docs/tecnico/04_arquitetura.md, seção 8).
     /// Leitura por polling no Update (sem callbacks, sem alocação por quadro).
     /// </summary>
     /// <summary>Fonte de entrada roteirizada (gravação de vídeo e testes): mesma forma que o teclado e o mouse entregam.</summary>

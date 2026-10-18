@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Echoes.Core
 {
     /// <summary>
-    /// Barramento de eventos tipado e sem alocação no <see cref="Publish{T}"/> (docs/04_arquitetura.md,
+    /// Barramento de eventos tipado e sem alocação no <see cref="Publish{T}"/> (docs/tecnico/04_arquitetura.md,
     /// seção 10.4). É uma instância guardada pelo GameRoot, nunca estática: com "Enter Play Mode
     /// Options" sem recarga de domínio, nada sobrevive entre sessões de Play.
     /// Assinar e desassinar durante uma publicação é seguro.

@@ -3,7 +3,7 @@ using System;
 namespace Echoes.Presentation
 {
     /// <summary>
-    /// Conta geométrica da câmera 3/4 (docs/04_arquitetura.md, seção 3.2), sem UnityEngine para testar
+    /// Conta geométrica da câmera 3/4 (docs/tecnico/04_arquitetura.md, seção 3.2), sem UnityEngine para testar
     /// fora da engine. Largura e altura perpendiculares ao eixo da câmera, à distância do alvo; a
     /// profundidade no chão é a altura perpendicular dividida pelo seno do pitch (42 m dá ~18,6 × 10,5 m
     /// e ~12,8 m de chão, ou 6,4 módulos de 2 m).

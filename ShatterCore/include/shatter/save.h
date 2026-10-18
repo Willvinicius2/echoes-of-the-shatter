@@ -106,7 +106,7 @@ json::Value SaveToJson(const SaveData& s);
 // Lê o objeto "data" já migrado para kCurrentSaveVersion. Campos ausentes → padrão.
 bool SaveFromJson(const json::Value& data, SaveData& out, std::string* error);
 
-// ADIÇÃO (docs/09_mudancas_contrato.md): as partes do save em JSON, no MESMO formato de "data"
+// ADIÇÃO (docs/tecnico/09_mudancas_contrato.md): as partes do save em JSON, no MESMO formato de "data"
 // (snake_case, uint64 como texto decimal). Usadas pela API C para o snapshot e o pedido de expedição.
 json::Value ItemToJson(const ItemInstance& item);
 bool ItemFromJson(const json::Value& v, ItemInstance& out, std::string* error = nullptr);
@@ -141,7 +141,7 @@ enum class LoadStatus : std::uint8_t {
 // Parse do envelope + checagem de hash + migração até kCurrentSaveVersion + SaveFromJson.
 LoadStatus ParseJson(std::string_view fileText, SaveData& out, std::string* error = nullptr);
 
-// ADIÇÃO (docs/09_mudancas_contrato.md): RNF-10. false se o save foi gravado com um content_version
+// ADIÇÃO (docs/tecnico/09_mudancas_contrato.md): RNF-10. false se o save foi gravado com um content_version
 // maior que o do jogo (o chamador recusa com aviso e NÃO altera o arquivo).
 bool SaveContentVersionSupported(const SaveData& s, const ContentDB& db);
 
@@ -190,7 +190,7 @@ inline std::string SaveTmpPath(const std::string& base) { return base + ".tmp"; 
 inline std::string SaveBackupPath(const std::string& base, int n) { return base + ".bak" + std::to_string(n); }
 
 // ---------------------------------------------------------------------------
-// ADIÇÃO (docs/09_mudancas_contrato.md): progresso manual e início de expedição.
+// ADIÇÃO (docs/tecnico/09_mudancas_contrato.md): progresso manual e início de expedição.
 // O jogo informa o que aconteceu; as regras de cargas e domínio ficam aqui, não no C#.
 // ---------------------------------------------------------------------------
 struct AreaRunOutcome {

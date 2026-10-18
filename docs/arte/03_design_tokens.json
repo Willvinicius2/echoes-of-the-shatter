@@ -4,11 +4,11 @@
     "version": "0.3.0",
     "date": "2026-10-16",
     "owner": "Art Director",
-    "source": "docs/03_design_system.md",
+    "source": "docs/arte/03_design_system.md",
     "units": "UI: unidades de layout USS no espaco de referencia 1920x1080 (PanelSettings Scale With Screen Size, Match=1). Arte 3D: medidas em cm; 1 unidade Unity = 100 cm.",
     "color_format": "#RRGGBB em sRGB; alpha separado em 'alpha' (0-1) quando houver",
     "naming": "Chaves em snake_case; sugestao C++: namespace ShatterTokens { constexpr FColor Color_Text_Primary = ...; }",
-    "visual_direction": "3D estilizado pintado a mao (docs/08_decisoes_visual_3d.md); fonte visual: docs/arte/referencias-geracao/aprovadas/",
+    "visual_direction": "3D estilizado pintado a mao (docs/arte/08_decisoes_visual_3d.md); fonte visual: docs/arte/referencias-geracao/aprovadas/",
     "replaced_note": "Substituido em 16/10/2026: a v0.1.0 (15/10/2026) era pixel art, Paper2D e paleta ocre; nao vale mais. A v0.2.0 matinal era para Unreal (UMG/Slate); adaptada para Unity na v0.3.0.",
     "engine": "Unity 6 LTS, URP, UI Toolkit (UXML + USS)"
   },
@@ -652,7 +652,7 @@
         48,
         66
       ],
-      "note": "numeros finais: Tech Lead (docs/04_arquitetura.md)"
+      "note": "numeros finais: Tech Lead (docs/tecnico/04_arquitetura.md)"
     },
     "heads_tall": {
       "hero": 3,
@@ -710,7 +710,7 @@
         10000,
         16000
       ],
-      "note": "Dono: docs/04_arquitetura.md secao 17.3 (assets) e 18 (cena). Valores aqui so orientam a arte.",
+      "note": "Dono: docs/tecnico/04_arquitetura.md secao 17.3 (assets) e 18 (cena). Valores aqui so orientam a arte.",
       "hero_hard_cap": 10000,
       "enemy_cap": 5000,
       "enemy_swarm": [
@@ -765,7 +765,7 @@
       "mask_channels": "R=emissao, G=rim, B=regiao de tinta, A=reservado (AO assada no albedo)"
     },
     "rarity_tint": {
-      "source": "docs/03_design_system.md secao 3.11; consumido pelo SO_RarityTint (04, 17.4)",
+      "source": "docs/arte/03_design_system.md secao 3.11; consumido pelo SO_RarityTint (04, 17.4)",
       "formula": "base = lerp(albedo, luma, desat*B); rgb = base * lerp(1, tint*gain, strength*B)",
       "gain_note": "valores iniciais; calibrar para luminancia da area B a +-15% do Normal",
       "normal": {
@@ -872,12 +872,12 @@
       "same_mesh_as_common": true,
       "scale_max": 1.15
     },
-    "tech_budget_owner": "docs/04_arquitetura.md secoes 17.3 e 18",
+    "tech_budget_owner": "docs/tecnico/04_arquitetura.md secoes 17.3 e 18",
     "unit_note": "heroi = 1,5 unidades Unity"
   },
   "uss": {
     "tokens_file": "Assets/UI/Styles/Tokens.uss",
-    "generated_from": "docs/03_design_tokens.json (arquivo gerado por ferramenta de editor; nao editar a mao)",
+    "generated_from": "docs/arte/03_design_tokens.json (arquivo gerado por ferramenta de editor; nao editar a mao)",
     "naming": "-- + caminho do token em kebab-case (ponto e sublinhado viram hifen); cor #RRGGBB ou rgba(); comprimento em px no espaco 1920x1080; tempo em ms",
     "excluded_groups": [
       "art3d",

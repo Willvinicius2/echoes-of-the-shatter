@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Echoes.Presentation
 {
     /// <summary>
-    /// Câmera 3/4 própria, sem Cinemachine (docs/04_arquitetura.md, seção 3.2). Fica na raiz
+    /// Câmera 3/4 própria, sem Cinemachine (docs/tecnico/04_arquitetura.md, seção 3.2). Fica na raiz
     /// <c>CameraRig</c> (rotação fixa: pitch e yaw); a <see cref="Camera"/> é filha a −distância no Z local.
     /// Segue o alvo com suavização exponencial e atraso máximo; tremor aditivo só em impactos grandes.
     /// </summary>

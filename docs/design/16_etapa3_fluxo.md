@@ -1,10 +1,10 @@
 # 16 — Etapa 3: fluxo do protótipo, telas, loot e aceite (Game Designer)
 
-Projeto: **Echoes of the Shatter** · Documento criado em 17/10/2026 · Dono do texto: Game Designer · Escopo: Etapa 3 de `docs/15_etapas.md` ("Ciclo completo do protótipo").
+Projeto: **Echoes of the Shatter** · Documento criado em 17/10/2026 · Dono do texto: Game Designer · Escopo: Etapa 3 de `docs/design/15_etapas.md` ("Ciclo completo do protótipo").
 
 Este documento só especifica. Nenhum CSV, esquema, header ou código foi alterado. Onde um dado ou uma API precisa existir, a seção 9 lista o pedido ao Data Engineer, ao Backend e ao Tech Lead (propostas, não imposições). A história é do dono do projeto: nada aqui cria personagem, arco ou lore; todo texto de NPC já existe em `Loc/dialogue.csv` e continua provisório.
 
-Fontes lidas: `CLAUDE.md`, `docs/15_etapas.md` (Etapa 3), `docs/00_plano_existente.md` (seções 3, 6, 7), `docs/02_requisitos.md` (RF-25 a RF-65), `docs/03_design_system.md` (2.3, 3.11, 4.1 a 4.6), `docs/04_arquitetura.md` (17.4), `docs/05_conteudo.md`, `docs/06_dados.md`, `docs/13_design_pendencias.md`, `docs/14_layout_cripta.md` (portais, baús), `Content/Data/*.csv` e o código em `Assets/Scripts` e `ShatterCore/include`.
+Fontes lidas: `CLAUDE.md`, `docs/design/15_etapas.md` (Etapa 3), `docs/design/00_plano_existente.md` (seções 3, 6, 7), `docs/requisitos-qa/02_requisitos.md` (RF-25 a RF-65), `docs/arte/03_design_system.md` (2.3, 3.11, 4.1 a 4.6), `docs/tecnico/04_arquitetura.md` (17.4), `docs/design/05_conteudo.md`, `docs/tecnico/06_dados.md`, `docs/design/13_design_pendencias.md`, `docs/tecnico/14_layout_cripta.md` (portais, baús), `Content/Data/*.csv` e o código em `Assets/Scripts` e `ShatterCore/include`.
 
 Convenções: **[SC]** teste automático no ShatterCore, **[Unity]** conferido no editor ou num build, **[Manual]** roteiro anotado. **[HIPÓTESE]** = número ou regra que só o playtest valida. IDs deste documento: `F-xx` (passos do fluxo), `S-xx` (telas), `A3-xx` (critérios de aceite), `H3-xx` (hipóteses), `Q3-x` (perguntas ao dono). Eles não mudam depois de publicados.
 
@@ -71,7 +71,7 @@ Notas do fluxo:
 
 ## 3. Telas
 
-Medidas em 1920 × 1080, estilo UI de pedra escura e tokens de `docs/03` (`nine_panel_ornate`, cores de `03_design_tokens.json`). A posição de cada bloco já está em `docs/03`, seção 4; aqui ficam objetivo, informação, ação e estado. Toda string vem de chave de localização (RF-61); chaves **novas** estão marcadas com (nova).
+Medidas em 1920 × 1080, estilo UI de pedra escura e tokens de `docs/03` (`nine_panel_ornate`, cores de `docs/arte/03_design_tokens.json`). A posição de cada bloco já está em `docs/03`, seção 4; aqui ficam objetivo, informação, ação e estado. Toda string vem de chave de localização (RF-61); chaves **novas** estão marcadas com (nova).
 
 ### S-00 Carregando
 - **Objetivo:** esconder a carga da DLL e do conteúdo e dar erro legível se algo falhar.
@@ -371,7 +371,7 @@ Todos verificáveis; **[SC]** roda em `ctest`, **[Unity]** exige editor ou build
 | A3-24 | Todas as telas em pt_BR sem texto cortado a 1920 × 1080 e a 1280 × 800; `ç ã õ á é ê` corretos | RF-63 | [Unity] captura |
 | A3-25 | Fechar, reabrir e continuar mantém personagem, equipamento, Mochila, Baú, Ouro, cargas, domínio e contador do chefe iguais; 1000 ciclos salvar/carregar sem divergência | RF-51, RNF-05 | [SC] + [Unity] |
 | A3-26 | O ciclo inteiro roda com a rede desligada | RNF-06 | [Unity] |
-| A3-27 | Playtest do dono: completa o ciclo (menu → Cripta → Guardião → Refúgio → expedição → relatório → coleta → vestir o loot) e anota o que não entendeu; roteiro novo em `docs/10_qa.md` | Pilar P3 | [Manual] |
+| A3-27 | Playtest do dono: completa o ciclo (menu → Cripta → Guardião → Refúgio → expedição → relatório → coleta → vestir o loot) e anota o que não entendeu; roteiro novo em `docs/requisitos-qa/10_qa.md` | Pilar P3 | [Manual] |
 
 ---
 

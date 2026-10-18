@@ -5,7 +5,7 @@ namespace Echoes.Core
 {
     /// <summary>
     /// Leitor de CSV próprio (RFC 4180: vírgula, aspas duplas com "" de escape, quebra de linha dentro
-    /// de aspas, UTF-8 com ou sem BOM). Usado pela localização (docs/04_arquitetura.md, seção 7).
+    /// de aspas, UTF-8 com ou sem BOM). Usado pela localização (docs/tecnico/04_arquitetura.md, seção 7).
     /// Não interpreta números: a localização só lê texto.
     /// </summary>
     public static class CsvReader

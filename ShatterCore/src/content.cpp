@@ -88,7 +88,7 @@ using detail::CsvTable;
 
 constexpr std::size_t kRuleKeyCount = 62 + 18 + 7 + 15 + 2;
 
-// --- tabela de chaves de rules.csv (faixas = validação estrutural do 06_dados.md, não balanceamento) ---
+// --- tabela de chaves de rules.csv (faixas = validação estrutural do docs/tecnico/06_dados.md, não balanceamento) ---
 struct RuleDef {
     const char* key;
     char type;  // 'd' número, 'i' inteiro, 'b' booleano

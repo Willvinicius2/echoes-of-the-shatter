@@ -12,7 +12,7 @@ namespace Echoes.Presentation
     }
 
     /// <summary>
-    /// SO_RarityTint (docs/03 seção 3.11; tokens em <c>art3d.rarity_tint</c> do 03_design_tokens.json; mecanismo no 04, 17.4): os valores de
+    /// SO_RarityTint (docs/03 seção 3.11; tokens em <c>art3d.rarity_tint</c> do docs/arte/03_design_tokens.json; mecanismo no 04, 17.4): os valores de
     /// tinta, rim e acento por raridade, iguais em qualquer herói e slot. Mágico e Raro são variação de material do <c>SG_Character</c>
     /// (sem malha nova); o Único tem malha própria, sem tinta, com acento laranja pulsando devagar. Dado de apresentação: os valores NÃO
     /// são balanceamento; o asset é gerado dos tokens pelo menu Echoes ▸ Criar SO_RarityTint.

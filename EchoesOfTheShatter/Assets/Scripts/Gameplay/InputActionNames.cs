@@ -2,7 +2,7 @@ namespace Echoes.Gameplay
 {
     /// <summary>
     /// Nomes das ações do <c>Assets/Settings/Echoes.inputactions</c> (mapa Gameplay;
-    /// docs/04_arquitetura.md, seções 2 e 10.4). Nenhuma tecla fica no código (RF-65).
+    /// docs/tecnico/04_arquitetura.md, seções 2 e 10.4). Nenhuma tecla fica no código (RF-65).
     /// </summary>
     public static class InputActionNames
     {

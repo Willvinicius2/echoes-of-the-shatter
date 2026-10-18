@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 namespace Echoes.UI
 {
     /// <summary>
-    /// Label com texto por chave de localização (docs/04_arquitetura.md, seção 7). No UXML:
+    /// Label com texto por chave de localização (docs/tecnico/04_arquitetura.md, seção 7). No UXML:
     /// <c>&lt;Echoes.UI.LocLabel loc-key="ui.hud.dodge" /&gt;</c>. A tela chama <see cref="ApplyAll"/>
     /// ao abrir e quando o idioma muda; o UXML nunca tem texto literal.
     /// </summary>

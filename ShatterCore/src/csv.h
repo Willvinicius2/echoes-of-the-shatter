@@ -1,6 +1,6 @@
 // ShatterCore — leitor de CSV do conteúdo (interno). UTF-8, vírgula, 1ª linha = cabeçalho.
 // Aceita LF e CRLF e ignora BOM e linhas em branco (a numeração de linhas continua exata).
-// Sem aspas: célula com '"' é erro (convenção do 06_dados.md, E_QUOTE).
+// Sem aspas: célula com '"' é erro (convenção do docs/tecnico/06_dados.md, E_QUOTE).
 #pragma once
 
 #include <string>

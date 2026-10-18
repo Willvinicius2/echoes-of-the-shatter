@@ -1,0 +1,12 @@
+# Documentos do projeto
+
+| Pasta | O que tem |
+|---|---|
+| `design/` | Plano do jogo (00), conteúdo (05), pendências de design (13), etapas (15), fluxo da Etapa 3 (16), combate e combo (18), itens e habilidades (19), alinhamento de IA e escopo (20) |
+| `tecnico/` | Arquitetura Unity (04), formato dos dados (06), mudanças de contrato da API C (09), revisões de código (11, 17), layout da Cripta (14) |
+| `requisitos-qa/` | Plano de execução (01), requisitos (02), próximos passos (07), QA e matriz de rastreio (10) |
+| `arte/` | Design system e tokens (03), decisões de visual 3D (08), régua do Spell Brigade, animação Mixamo e `referencias-geracao/` (artes aprovadas e prompts) |
+| `pesquisa/` | Pesquisas de referência externas |
+| `progresso/` | `estado.json` e `painel.html` (painel de produção) |
+
+Os números nos nomes dos arquivos (00 a 20) são fixos: os documentos se citam por eles. O protótipo Godot antigo está em `../prototipos/godot-f1/`.

@@ -4,7 +4,7 @@ namespace Echoes.Interop
 {
     /// <summary>
     /// PROVISÓRIO (stub). Porte do <c>shatter::ResolveHit</c> (src/damage.cpp) na ordem do damage.h e da seção 11 do
-    /// docs/04_arquitetura.md. Consome SEMPRE 3 números do RNG (crítico, evasão, bloqueio), exceto DoT.
+    /// docs/tecnico/04_arquitetura.md. Consome SEMPRE 3 números do RNG (crítico, evasão, bloqueio), exceto DoT.
     /// Quando a DLL existir, esta classe sai e o golpe passa a ser <c>shatter_resolve_hit</c>.
     /// </summary>
     internal static class StubDamage

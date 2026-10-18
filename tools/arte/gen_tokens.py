@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Gera o arquivo de variáveis USS a partir de docs/03_design_tokens.json.
+"""Gera o arquivo de variáveis USS a partir de docs/arte/03_design_tokens.json.
 
-Regra (docs/03_design_system.md, seção 2.14): "--" + caminho do token em kebab-case
+Regra (docs/arte/03_design_system.md, seção 2.14): "--" + caminho do token em kebab-case
 (pontos e sublinhados viram hífens); cor em #RRGGBB ou rgba(); comprimento em px no espaço
 de referência 1920x1080; tempo em ms. Os grupos de arte 3D (art3d, juice) não viram variável.
 
@@ -9,8 +9,8 @@ O destino vem do próprio JSON (uss.tokens_file). Ninguém edita o arquivo gerad
 mude o JSON e rode de novo.
 
 Uso (da raiz do repositório):
-    python3 tools/gen_tokens.py            # escreve o arquivo
-    python3 tools/gen_tokens.py --check    # falha se o arquivo estiver desatualizado
+    python3 tools/arte/gen_tokens.py            # escreve o arquivo
+    python3 tools/arte/gen_tokens.py --check    # falha se o arquivo estiver desatualizado
 
 Sem dependências externas.
 """
@@ -21,8 +21,8 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-TOKENS = ROOT / "docs" / "03_design_tokens.json"
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+TOKENS = ROOT / "docs" / "arte" / "03_design_tokens.json"
 PROJECT = ROOT / "EchoesOfTheShatter"
 
 # Classe que também recebe as variáveis: o seletor :root do UI Toolkit casa com a raiz do painel,
@@ -115,7 +115,7 @@ def build(tokens):
 def render(tokens, variables):
     meta = tokens.get("meta", {})
     lines = [
-        "/* ARQUIVO GERADO por tools/gen_tokens.py a partir de docs/03_design_tokens.json. */",
+        "/* ARQUIVO GERADO por tools/arte/gen_tokens.py a partir de docs/arte/03_design_tokens.json. */",
         "/* Não edite à mão: mude o JSON e rode o script de novo. */",
         f"/* Tokens {meta.get('name', '')} v{meta.get('version', '')} ({meta.get('date', '')}). */",
         "",
@@ -141,7 +141,7 @@ def main():
     if args.check:
         current = target.read_text(encoding="utf-8") if target.exists() else ""
         if current != text:
-            print(f"desatualizado: {target.relative_to(ROOT)} (rode python3 tools/gen_tokens.py)")
+            print(f"desatualizado: {target.relative_to(ROOT)} (rode python3 tools/arte/gen_tokens.py)")
             return 1
         print(f"ok: {target.relative_to(ROOT)}")
         return 0

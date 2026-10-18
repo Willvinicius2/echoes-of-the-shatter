@@ -8,12 +8,12 @@ using UnityEngine;
 namespace Echoes.EditorTools
 {
     /// <summary>
-    /// Layout da Cripta (docs/14_layout_cripta.md, seção 11): o bloco JSON legível por máquina, lido direto do documento. O builder e os
+    /// Layout da Cripta (docs/tecnico/14_layout_cripta.md, seção 11): o bloco JSON legível por máquina, lido direto do documento. O builder e os
     /// testes usam só estes dados; nenhum número do mapa é copiado para o código. Coordenadas em metros, <c>rect</c> = x0, z0, x1, z1.
     /// </summary>
     public sealed class CriptaLayout
     {
-        public const string DocumentRelativePath = "docs/14_layout_cripta.md";
+        public const string DocumentRelativePath = "docs/tecnico/14_layout_cripta.md";
 
         public sealed class RoomData
         {

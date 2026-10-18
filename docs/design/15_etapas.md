@@ -2,17 +2,17 @@
 
 Projeto: **Echoes of the Shatter** · Documento criado em 16/10/2026 · Dono: william
 
-Este documento divide o projeto em 5 etapas, na ordem em que acontecem. Ele não traz datas: uma etapa só começa a ser medida em prazo depois que a anterior fechar e o tempo real dela for conhecido (regra de `docs/00_plano_existente.md`, seção 11).
+Este documento divide o projeto em 5 etapas, na ordem em que acontecem. Ele não traz datas: uma etapa só começa a ser medida em prazo depois que a anterior fechar e o tempo real dela for conhecido (regra de `docs/design/00_plano_existente.md`, seção 11).
 
-Fontes: `docs/00_plano_existente.md` (regras e escopo do jogo), `docs/01_plano_execucao.md` (agentes e donos de arquivo), `docs/02_requisitos.md` (RF, RNF e critérios), `docs/07_proximos_passos.md` (estado da equipe), `docs/03_design_system.md` e `docs/04_arquitetura.md` (arte e orçamentos).
+Fontes: `docs/design/00_plano_existente.md` (regras e escopo do jogo), `docs/requisitos-qa/01_plano_execucao.md` (agentes e donos de arquivo), `docs/requisitos-qa/02_requisitos.md` (RF, RNF e critérios), `docs/requisitos-qa/07_proximos_passos.md` (estado da equipe), `docs/arte/03_design_system.md` e `docs/tecnico/04_arquitetura.md` (arte e orçamentos).
 
 ## Convenções
 
-- **[SC]** teste automático no ShatterCore (`ctest`). **[UE]** é o rótulo antigo de `docs/02_requisitos.md` para "conferido no motor"; vale hoje para o editor Unity ou um build. Neste documento, "[Unity]" substitui "[UE]".
-- Um critério só conta como atendido com evidência registrada (comando e saída, captura de tela ou roteiro anotado). Quem registra: QA em `docs/10_qa.md`, Release & Verification em `docs/13_aceite.md`.
+- **[SC]** teste automático no ShatterCore (`ctest`). **[UE]** é o rótulo antigo de `docs/requisitos-qa/02_requisitos.md` para "conferido no motor"; vale hoje para o editor Unity ou um build. Neste documento, "[Unity]" substitui "[UE]".
+- Um critério só conta como atendido com evidência registrada (comando e saída, captura de tela ou roteiro anotado). Quem registra: QA em `docs/requisitos-qa/10_qa.md`, Release & Verification em `docs/13_aceite.md`.
 - Regra do `CLAUDE.md`: toda arte nova vai para aprovação do dono antes de entrar no jogo. Em todas as etapas, "o dono aprova" inclui isso.
 - Agentes de design do jogo (conteúdo, narrativa, UI, revisões de design) usam no máximo Sonnet 5.5.
-- Mapa de agentes e arquivos: tabela de `docs/01_plano_execucao.md`. Além dela, existe o engenheiro de **Integração ShatterCore ↔ Unity** (prompt em `docs/07_proximos_passos.md`) e a função de **Arte técnica** (graybox, modelos, rig).
+- Mapa de agentes e arquivos: tabela de `docs/requisitos-qa/01_plano_execucao.md`. Além dela, existe o engenheiro de **Integração ShatterCore ↔ Unity** (prompt em `docs/requisitos-qa/07_proximos_passos.md`) e a função de **Arte técnica** (graybox, modelos, rig).
 
 ## Visão geral
 
@@ -33,26 +33,26 @@ Fontes: `docs/00_plano_existente.md` (regras e escopo do jogo), `docs/01_plano_e
 ### Escopo
 **Dentro (entregue):**
 - **ShatterCore** em C++17 puro, com a **API C** (`shatter_c.h`) e a DLL que o Unity chama por P/Invoke. Cobre atributos e modificadores, golpe, RNG por fluxos, simulador de expedição, regras do idle, relógio offline e save com checksum e migração.
-- **Tabelas de dados** em `EchoesOfTheShatter/Content/Data/` (CSV, localização pt_BR e en, esquemas) e o validador `tools/validate_data.py`.
+- **Tabelas de dados** em `EchoesOfTheShatter/Content/Data/` (CSV, localização pt_BR e en, esquemas) e o validador `tools/dados/validate_data.py`.
 - **C# do protótipo** em `EchoesOfTheShatter/Assets/Scripts/` (módulos `Interop`, `Core`, `Gameplay`, `Presentation`, `UI`).
 - **Cena base no Unity 6.3 LTS com URP** (`6000.3.26f1`), com os pacotes e o `.gitignore`/LFS configurados.
-- **Câmera de 56 m** (pitch 55°, yaw 45°, FOV vertical 14,2°, faixa 48 a 66 m) e **escala de mapa** decididas (`docs/03_design_system.md`, seção de escala; `docs/04_arquitetura.md`, seção 3).
+- **Câmera de 56 m** (pitch 55°, yaw 45°, FOV vertical 14,2°, faixa 48 a 66 m) e **escala de mapa** decididas (`docs/arte/03_design_system.md`, seção de escala; `docs/tecnico/04_arquitetura.md`, seção 3).
 - **Graybox provisório** do herói, dos inimigos e do cenário (`art-src/graybox/`).
-- Documentação de base: `docs/02` a `docs/10`, `docs/13_design_pendencias.md`.
+- Documentação de base: `docs/02` a `docs/10`, `docs/design/13_design_pendencias.md`.
 
 **Fora:** qualquer regra nova de combate, arte final, conteúdo além do recorte do protótipo.
 
 ### Critérios de aceite (já verificados no fechamento; Release reconfere ao final da etapa 2)
 | Critério | Ligação | Como verificar |
 |---|---|---|
-| ShatterCore compila e testa sem nenhum header do Unity | RNF-08 | `tools\build_core.cmd Release --werror` e `ctest` passam |
+| ShatterCore compila e testa sem nenhum header do Unity | RNF-08 | `tools\core\build_core.cmd Release --werror` e `ctest` passam |
 | Mesma seed + dados + snapshot = mesmo `resultHash`; 1 parte = N partes | RNF-01, RNF-02 | Testes de determinismo e de partes no `ctest` |
-| Dados validados (IDs, referências, faixas, pesos) | RNF-07 | `python tools/validate_data.py` passa; fixtures inválidos falham |
+| Dados validados (IDs, referências, faixas, pesos) | RNF-07 | `python tools/dados/validate_data.py` passa; fixtures inválidos falham |
 | Unity chama o core pela DLL (versão e layout conferidos) | RF-12 | Testes EditMode `Interop.VersionAndLayout` e `Rules.LoadContent` |
 | Câmera e escala de mapa registradas | RF-59 | Valores presentes em `docs/03` e `docs/04`; `RenderSettingsAsset` rejeita valor fora de 48 a 66 m |
 
 ### Agentes e dependências
-Fase 1 de `docs/01`: Vision Lead, Tech Lead, Art Director. Fase 2: Data Engineer, Backend Engineer, Frontend Engineer, Integração, Arte técnica. Sem dependências anteriores além de `docs/00_plano_existente.md`.
+Fase 1 de `docs/01`: Vision Lead, Tech Lead, Art Director. Fase 2: Data Engineer, Backend Engineer, Frontend Engineer, Integração, Arte técnica. Sem dependências anteriores além de `docs/design/00_plano_existente.md`.
 
 ### O que o dono aprovou
 Motor (Unity 6.3 LTS), direção visual 3D (folhas em `docs/arte/referencias-geracao/`), câmera de 56 m e escala de mapa.
@@ -64,7 +64,7 @@ Motor (Unity 6.3 LTS), direção visual 3D (folhas em `docs/arte/referencias-ger
 **Objetivo:** o dono joga a Cripta Partida do início ao Guardião, no Unity, com o Guerreiro e os inimigos finais, e o combate passa no teste de fogo do pilar 1.
 
 ### Em produção agora
-Todas as frentes abaixo estão abertas. Nenhuma está marcada como concluída neste documento; o fechamento de cada uma é registrado em `docs/10_qa.md` e `docs/13_aceite.md`.
+Todas as frentes abaixo estão abertas. Nenhuma está marcada como concluída neste documento; o fechamento de cada uma é registrado em `docs/requisitos-qa/10_qa.md` e `docs/13_aceite.md`.
 
 | Frente | O que é | Responsável | RF/RNF |
 |---|---|---|---|
@@ -111,7 +111,7 @@ Todas as frentes abaixo estão abertas. Nenhuma está marcada como concluída ne
 
 ### Agentes e dependências
 - **Backend** (core) e **Data Engineer** + **Narrative & Content** (dados e textos) começam juntos; os dados dependem dos nomes de campo do core.
-- **Integração** depende do core estável na API C; qualquer mudança de contrato vai em `docs/09_mudancas_contrato.md`.
+- **Integração** depende do core estável na API C; qualquer mudança de contrato vai em `docs/tecnico/09_mudancas_contrato.md`.
 - **Frontend** (layout, HUD, controle de personagem) depende da DLL real e dos textos.
 - **Arte técnica** (modelos e cenário) depende das folhas aprovadas; a integração dos modelos no Frontend só começa depois da aprovação do dono.
 - **QA**, **Code Reviewer** e **Performance** entram sobre o que cada frente entregar; **Release & Verification** fecha a etapa.
@@ -121,7 +121,7 @@ Todas as frentes abaixo estão abertas. Nenhuma está marcada como concluída ne
 2. Cenário da Cripta (arte e atmosfera).
 3. Layout da Cripta (ordem das salas, encontros, arena).
 4. Teste de fogo do combate (30 s contra Sentinelas) e o aceite final da etapa.
-5. Decisões provisórias do core ainda abertas em `docs/07_proximos_passos.md`: fórmula de armadura, se o bloqueio anula o golpe inteiro, limiar de recuo do idle.
+5. Decisões provisórias do core ainda abertas em `docs/requisitos-qa/07_proximos_passos.md`: fórmula de armadura, se o bloqueio anula o golpe inteiro, limiar de recuo do idle.
 
 ---
 
@@ -137,7 +137,7 @@ Todas as frentes abaixo estão abertas. Nenhuma está marcada como concluída ne
 - **Menus**: principal, opções (idioma, remapeamento, tremor de tela), inventário, configuração e relatório (RF-58, RF-62, RF-64, RF-65, RNF-11).
 - **Loot e inventário**: tabelas, afixos, nomes com gênero, feixes por raridade, 5 posições de equipamento, comparação (RF-25 a RF-30).
 - **Único do Guardião** (RF-27) com coluna de luz e som próprios.
-- **Playtest do dono** com roteiro (docs/10_qa.md).
+- **Playtest do dono** com roteiro (docs/requisitos-qa/10_qa.md).
 
 **Fora:** Steam, Arqueiro, Mago, áreas além da Cripta, crafting com o Bram, livros e Sigilos, árvore passiva, espanhol, teste de paridade com bot (adiado em P-3 de `docs/02`, seção 7).
 
@@ -167,7 +167,7 @@ Todas as frentes abaixo estão abertas. Nenhuma está marcada como concluída ne
 | Telas abrem e fecham por mouse e Esc; trocar idioma sem reiniciar; remapear esquiva persiste | RF-58, RF-62, RF-65 | [Unity] |
 | Simulação de 12 h ao abrir o jogo não congela a tela | RF-60, RNF-03 | [Unity] |
 | Jogo funciona com a rede desligada | RNF-06 | [Unity] |
-| Playtest do dono: completa o ciclo e anota o que não entendeu | Pilar "planejar o retorno" | Roteiro de `docs/10_qa.md` |
+| Playtest do dono: completa o ciclo e anota o que não entendeu | Pilar "planejar o retorno" | Roteiro de `docs/requisitos-qa/10_qa.md` |
 
 ### Agentes e dependências
 Depende da etapa 2 fechada (domínio só existe se o Guardião estiver vencível). **Backend** (save, relógio, loot), **Data Engineer** + **Narrative & Content** (tabelas de loot, afixos, textos de relatório), **Frontend** (menus, inventário, expedição), **Arte técnica** (ícones, feixes, Único), **QA**, **Code Reviewer**, **Performance** e **Release & Verification**.
@@ -182,7 +182,7 @@ Telas de menu, inventário e relatório; ícones; modelo e efeito do Único; tex
 **Objetivo:** o jogo cobre o Ato I inteiro com as três classes e os quatro chefes, no ritmo do plano (8 a 12 h de campanha, em conjunto com o endgame inicial a decidir).
 
 ### Escopo
-**Dentro** (fonte: `docs/00_plano_existente.md`, seções 2 a 5):
+**Dentro** (fonte: `docs/design/00_plano_existente.md`, seções 2 a 5):
 - **Arqueiro** (Foco) e **Mago** (Mana), com as habilidades de cada classe, e IdleProfiles de cada habilidade jogável.
 - **Demais inimigos** das 4 famílias do Ato I e elites.
 - **Chefes do Ato I**: Tecelã de Cascalho, Carrasco do Voto e Vigia do Sino (o Guardião vem da etapa 2).
@@ -193,7 +193,7 @@ Telas de menu, inventário e relatório; ícones; modelo e efeito do Único; tex
 **Fora:** Steam, Assassino e Necromante, Atos II e III, endgame (Carta dos Marcos, Predador dos Marcos) a menos que o dono decida incluí-lo nesta etapa (pergunta aberta abaixo), coop, espanhol.
 
 ### Critérios de aceite
-Os RF/RNF de `docs/02_requisitos.md` cobrem só o protótipo. **Antes de a etapa começar, o Vision Lead estende `docs/02_requisitos.md`** com RF novos para classes, livros, Sigilos, crafting, árvore e chefes; a lista abaixo é o que já se sabe verificar.
+Os RF/RNF de `docs/requisitos-qa/02_requisitos.md` cobrem só o protótipo. **Antes de a etapa começar, o Vision Lead estende `docs/requisitos-qa/02_requisitos.md`** com RF novos para classes, livros, Sigilos, crafting, árvore e chefes; a lista abaixo é o que já se sabe verificar.
 
 | Critério | Origem | Verificação |
 |---|---|---|
@@ -229,7 +229,7 @@ Cada classe nova (modelo, habilidades, sensação), cada chefe, cada área (arte
 - **Desempenho**: metas finais de `docs/04` seção 18 e do plano (60 FPS, 80 inimigos, carga abaixo de 3 s, 12 h de idle abaixo de 2 s, build abaixo de 500 MB).
 - **Build** Windows IL2CPP, SteamPipe, branches `default`, `beta` e `playtest`, versão visível no menu.
 - **Página da loja**: pitch em inglês reescrito para 3D (o do plano ainda diz pixel art), cápsulas, trailer, capturas, classificação indicativa, declaração de uso de IA, política de privacidade.
-- Registros e conformidade do checklist F3 a F5 de `docs/00_plano_existente.md`, seção 13.
+- Registros e conformidade do checklist F3 a F5 de `docs/design/00_plano_existente.md`, seção 13.
 
 **Fora:** Atos II e III, Assassino, Necromante, coop, marketplace, microtransações, cosméticos pagos.
 

@@ -4,7 +4,7 @@ namespace Echoes.Gameplay
 {
     /// <summary>
     /// Dados de "juice" que afetam tempo e posição das entidades: hitstop e knockback
-    /// (docs/03_design_system.md, seção 6; tokens <c>juice</c> de docs/03_design_tokens.json).
+    /// (docs/arte/03_design_system.md, seção 6; tokens <c>juice</c> de docs/arte/03_design_tokens.json).
     /// É apresentação, não balanceamento; os padrões abaixo são os dos tokens.
     /// Crie em Assets/Data/Presentation (Create ▸ Echoes ▸ Combat Feel Settings).
     /// </summary>

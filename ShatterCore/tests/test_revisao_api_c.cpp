@@ -1,4 +1,4 @@
-// Revisão do core da Etapa 2 (docs/17_revisao_core_etapa2.md): reproduções de achados na API C 1.1.
+// Revisão do core da Etapa 2 (docs/tecnico/17_revisao_core_etapa2.md): reproduções de achados na API C 1.1.
 //
 // Ligação: o CMake põe tests/*.cpp em shattercore_tests, que liga só a biblioteca estática (sem a API C; só
 // test_c_api.cpp vai para o executável ligado à DLL). Para não mexer no CMakeLists.txt, este arquivo compila a própria

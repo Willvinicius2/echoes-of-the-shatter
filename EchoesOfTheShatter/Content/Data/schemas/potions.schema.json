@@ -1,5 +1,5 @@
 {
-  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/tecnico/06_dados.md, secao 3.",
   "format": "shatter-table-schema/1",
   "table": "potions.csv",
   "kind": "rows",

@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace Echoes.Tests.EditMode
 {
     /// <summary>
-    /// Casos automáticos de docs/10_qa.md, seção 8, que valem para o cliente: o gameplay consulta e avança o estado pelo core
+    /// Casos automáticos de docs/requisitos-qa/10_qa.md, seção 8, que valem para o cliente: o gameplay consulta e avança o estado pelo core
     /// (cinto de poções, esquiva, actor de stun e Guarda Quebrada, chefe, elite). Os números vêm dos CSV; nada é fixado aqui.
     /// Os de cinto e esquiva rodam no stub e no nativo; os de stun, chefe e elite só no nativo (o stub não os tem).
     /// </summary>

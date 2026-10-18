@@ -5,7 +5,7 @@ namespace Echoes.Interop.Native
 {
     /// <summary>
     /// P/Invoke para <c>shattercore.dll</c> (API C v1, shatter_c.h). Unica classe que declara
-    /// <c>[DllImport]</c> (docs/04_arquitetura.md, secao 9.3). Assinaturas so com tipos blittable e
+    /// <c>[DllImport]</c> (docs/tecnico/04_arquitetura.md, secao 9.3). Assinaturas so com tipos blittable e
     /// ponteiros; sem string, bool ou array gerenciado; sem callbacks da DLL para o C#.
     /// Declara so o que o <see cref="NativeRulesCore"/> usa; o resto do header (save, expedicao, loot,
     /// relogio) entra quando a camada de save/idle precisar.

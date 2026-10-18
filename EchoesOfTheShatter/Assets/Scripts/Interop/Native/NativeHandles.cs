@@ -4,7 +4,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Echoes.Interop.Native
 {
-    // Dono de cada handle opaco da API C: o C# (docs/04_arquitetura.md, secao 9.2). Descartar libera a
+    // Dono de cada handle opaco da API C: o C# (docs/tecnico/04_arquitetura.md, secao 9.2). Descartar libera a
     // memoria da DLL; uma chamada em andamento segura o handle por DangerousAddRef/DangerousRelease.
 
     /// <summary><c>shatter_db</c>: ContentDB imutavel depois de finalizado.</summary>

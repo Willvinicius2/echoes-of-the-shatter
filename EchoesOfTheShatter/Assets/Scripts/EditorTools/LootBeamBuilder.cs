@@ -25,7 +25,7 @@ namespace Echoes.EditorTools
                 so = ScriptableObject.CreateInstance<LootBeamSettings>();
                 AssetDatabase.CreateAsset(so, AssetPath);
             }
-            var tokensPath = Path.GetFullPath(Path.Combine(Application.dataPath, "../../docs/03_design_tokens.json"));
+            var tokensPath = Path.GetFullPath(Path.Combine(Application.dataPath, "../../docs/arte/03_design_tokens.json"));
             var root = Echoes.Interop.MiniJson.AsObject(Echoes.Interop.MiniJson.Parse(File.ReadAllText(tokensPath)));
             var colors = Echoes.Interop.MiniJson.AsObject(Echoes.Interop.MiniJson.AsObject(root["color"])["rarity"]);
             var beams = Echoes.Interop.MiniJson.AsObject(Echoes.Interop.MiniJson.AsObject(root["juice"])["loot_beam"]);

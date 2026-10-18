@@ -1,4 +1,4 @@
-# CI do núcleo (docs/04_arquitetura.md, seção 14). Só Linux, sem segredos, sem Unity.
+# CI do núcleo (docs/tecnico/04_arquitetura.md, seção 14). Só Linux, sem segredos, sem Unity.
 name: core
 
 on:
@@ -7,7 +7,7 @@ on:
     paths:
       - "ShatterCore/**"
       - "EchoesOfTheShatter/Content/Data/**"
-      - "data/**"
+      - "prototipos/godot-f1/data/**"
       - "tools/**"
       - ".github/workflows/core.yml"
   pull_request:
@@ -16,7 +16,7 @@ on:
     paths:
       - "ShatterCore/**"
       - "EchoesOfTheShatter/Content/Data/**"
-      - "data/**"
+      - "prototipos/godot-f1/data/**"
       - "tools/**"
       - ".github/workflows/core.yml"
 
@@ -104,6 +104,6 @@ jobs:
         with:
           python-version: "3.x"
       - name: Validar conteúdo
-        run: python3 tools/validate_data.py
+        run: python3 tools/dados/validate_data.py
       - name: Autoteste do validador
-        run: python3 tools/validate_data.py --self-test
+        run: python3 tools/dados/validate_data.py --self-test

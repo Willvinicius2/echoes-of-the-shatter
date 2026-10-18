@@ -1,4 +1,4 @@
-// SG_Character: mestre de personagem (docs/04_arquitetura.md, secao 3.5), estilo medido em
+// SG_Character: mestre de personagem (docs/tecnico/04_arquitetura.md, secao 3.5), estilo medido em
 // docs/arte/regua_spell_brigade.md (secoes 4 e 8, item 7): albedo pintado, iluminacao suave (half-lambert, sem
 // rampa), rim suave e discreto (polimento da etapa 3: forca 1,0, smoothstep (0,65; 0), mistura 0,5), emissao HDR pela mascara,
 // _HitFlash (liga/desliga + cor), dissolucao e variacao por tinta (regiao B da mascara).

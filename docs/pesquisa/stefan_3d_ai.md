@@ -6,7 +6,7 @@ Data da pesquisa: 16/10/2026. Pesquisador: agente pesquisador-referencias. Nada 
 
 - O canal é de Stefan Vaskevich ("Stefan 3D AI"). Pelos posts dele no X e por terceiros, ele faz jogos 3D com Claude Code (Opus 5.5), Unity, Blender e Higgsfield, empacota o próprio fluxo em skills e abriu o workspace dele em repositório público.
 - **Não foi possível listar os vídeos do canal.** A página `/videos` do YouTube devolve só o rodapé (título "Stefan 3D AI - YouTube"); o id do canal e o feed RSS não puderam ser obtidos. Só 3 vídeos foram identificados, por fontes indiretas. Nenhuma descrição de vídeo foi lida, então a lista de links das descrições é desconhecida.
-- Ponto de atenção do projeto: o `CLAUDE.md` diz **Unreal Engine 5.8, C++** (decisão de 15 e 16/10/2026), mas `docs/04_arquitetura.md` (seções 2, 9 e 17) ainda descreve **Unity 6 + URP + P/Invoke + FBX**. O pedido citou Unity. As recomendações abaixo valem para os dois motores quando possível e marcam onde dependem da decisão. Isso precisa ser resolvido pelo orquestrador e pelo dono.
+- Ponto de atenção do projeto: o `CLAUDE.md` diz **Unreal Engine 5.8, C++** (decisão de 15 e 16/10/2026), mas `docs/tecnico/04_arquitetura.md` (seções 2, 9 e 17) ainda descreve **Unity 6 + URP + P/Invoke + FBX**. O pedido citou Unity. As recomendações abaixo valem para os dois motores quando possível e marcam onde dependem da decisão. Isso precisa ser resolvido pelo orquestrador e pelo dono.
 
 ## 2. Vídeos e itens analisados
 

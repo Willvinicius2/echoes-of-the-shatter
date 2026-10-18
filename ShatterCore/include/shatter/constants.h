@@ -1,5 +1,5 @@
 // ShatterCore — constantes de regra.
-// Os valores padrão abaixo são os do plano (docs/00_plano_existente.md) e servem
+// Os valores padrão abaixo são os do plano (docs/design/00_plano_existente.md) e servem
 // para os testes unitários. No jogo, TODOS vêm de Content/Data/rules.csv (colunas
 // key,value) e sobrescrevem estes; o nome da chave no CSV está no comentário.
 #pragma once
