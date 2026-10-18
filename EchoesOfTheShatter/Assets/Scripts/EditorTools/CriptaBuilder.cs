@@ -108,17 +108,7 @@ namespace Echoes.EditorTools
             var ctx = new Context { Layout = layout, Mats = mats, Palette = CreatePaletteMaterial(), MonsterLevel = ReadMonsterLevel(layout.MapId) };
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            RenderSettings.skybox = null;
-            RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.55f, 0.52f, 0.58f);
-            RenderSettings.fog = false;
-            var lightGo = new GameObject("Directional Light");
-            lightGo.transform.rotation = Quaternion.Euler(50f, -25f, 0f);
-            var light = lightGo.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.color = new Color(1f, 0.95f, 0.88f);
-            light.intensity = 1.1f;
-            light.shadows = LightShadows.Soft;
+            SceneryBuilder.ApplyLook(null); // sol, ambiente em gradiente e Volume de pos (a camera liga o pos em BuildHero)
 
             // ---- Nivel: so a geometria andavel e as paredes entram no NavMesh
             var level = new GameObject("Level").transform;
@@ -207,6 +197,7 @@ namespace Echoes.EditorTools
             camGo.AddComponent<AudioListener>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.059f, 0.043f, 0.078f);
+            SceneryBuilder.EnablePostProcessing(cam);
             ctx.Camera = cam;
 
             var hero = new GameObject("Hero");

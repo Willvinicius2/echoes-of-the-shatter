@@ -9,10 +9,12 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Echoes.Tests.EditMode
 {
-    /// <summary>Kit de cenario pintado da Cripta: 26 pecas com material, json e pivo conferidos; a Cripta e o Refugio montados com o kit (sem graybox), props que nao bloqueiam a rota, luzes de fogo em pool.</summary>
+    /// <summary>Kit de cenario pintado da Cripta: 26 pecas com material, json e pivo conferidos; a Cripta e o Refugio montados com o kit (sem graybox), piso por projecao no mundo, simbolos so em checkpoint e portal, Volume de pos, props que nao bloqueiam a rota, luzes de fogo em pool.</summary>
     [Category("Cenario")]
     public sealed class CriptaSceneryTests
     {
@@ -25,7 +27,7 @@ namespace Echoes.Tests.EditMode
         // ------------------------------------------------------------------------------------------------ o kit
 
         [Test]
-        public void KitHasTwentySixPiecesEachWithMaterialInSgCharacterAndJson()
+        public void KitHasTwentySixPiecesEachWithMaterialInEnvSceneryAndJson()
         {
             Assert.AreEqual(26, EnvironmentKit.Names.Length);
             foreach (var name in EnvironmentKit.Names)
@@ -33,7 +35,7 @@ namespace Echoes.Tests.EditMode
                 Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>($"{EnvironmentKit.Dir}/SM_Cripta_{name}.fbx"), name + " fbx");
                 Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<TextAsset>($"{EnvironmentKit.Dir}/SM_Cripta_{name}.json"), name + " json");
                 var piece = EnvironmentKit.Get(name);
-                StringAssert.EndsWith("SG_Character", piece.Material.shader.name, name + ": material no SG_Character (nao ha SG_Environment)");
+                StringAssert.EndsWith("Env_Scenery", piece.Material.shader.name, name + ": material no Env_Scenery");
                 Assert.IsNotNull(piece.Material.GetTexture("_BaseMap"), name + " albedo");
                 Assert.IsNotNull(piece.Material.GetTexture("_MaskMap"), name + " mascara");
                 Assert.IsNotNull(piece.Mesh, name + " malha");
@@ -147,7 +149,7 @@ namespace Echoes.Tests.EditMode
             foreach (var r in level)
                 Assert.IsFalse(r.sharedMaterial != null && r.sharedMaterial.name.StartsWith("M_Graybox"), r.name + " ainda usa graybox");
             var materials = level.Select(r => r.sharedMaterial.name).Distinct().ToList();
-            foreach (var wanted in new[] { "M_Cripta_PisoLiso", "M_Cripta_ParedeReta", "M_Cripta_ParedeCantoA", "M_Cripta_PilarInteiro", "M_Cripta_ArcoRuina", "M_Cripta_Braseiro", "M_Cripta_SarcofagoFechado" })
+            foreach (var wanted in new[] { "M_Env_Piso", "M_Env_Glifo", "M_Cripta_ParedeReta", "M_Cripta_ParedeCantoA", "M_Cripta_PilarInteiro", "M_Cripta_ArcoRuina", "M_Cripta_Braseiro", "M_Cripta_SarcofagoFechado" })
                 CollectionAssert.Contains(materials, wanted);
 
             foreach (var room in l.Rooms)
@@ -158,12 +160,16 @@ namespace Echoes.Tests.EditMode
                 var cells = Mathf.RoundToInt(room.Rect.width / 2f) * Mathf.RoundToInt(room.Rect.height / 2f);
                 var holes = l.Vistas.Where(v => v.Id.Contains("pit") && room.Rect.Overlaps(v.Rect)).Sum(v => Mathf.RoundToInt(v.Rect.width / 2f) * Mathf.RoundToInt(v.Rect.height / 2f));
                 var tris = floors.Sum(f => f.sharedMesh.triangles.Length / 3);
-                Assert.GreaterOrEqual(tris, (cells - holes) * 220, room.Id + " triangulos do piso");
-                Assert.LessOrEqual(tris, (cells - holes) * 290, room.Id);
-                Assert.IsTrue(floors.Any(f => f.name.Contains("PisoLiso")) , room.Id + ": ha PisoLiso");
+                Assert.AreEqual((cells - holes) * 2, tris, room.Id + ": piso plano, 2 triangulos por celula de 2 m");
+                Assert.AreEqual("M_Env_Piso", floors[0].GetComponent<Renderer>().sharedMaterial.name, room.Id);
             }
-            var variantsSeen = GameObject.Find("Rooms").GetComponentsInChildren<MeshFilter>().Select(f => f.name).Distinct().Count();
-            Assert.AreEqual(3, variantsSeen, "as 3 variacoes de piso aparecem");
+            foreach (var r in level) StringAssert.EndsWith("Env_Scenery", r.sharedMaterial.shader.name, r.name + ": todo o cenario no Env_Scenery");
+
+            // Simbolos de bussola: so em checkpoint e portal (nunca sorteados), no maximo 2 por sala.
+            var glyphs = Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None).Where(f => f.name.EndsWith(".glyph")).ToList();
+            Assert.AreEqual(l.Checkpoints.Count + l.Portals.Count, glyphs.Count, "um simbolo por checkpoint e por portal");
+            foreach (var room in l.Rooms)
+                Assert.LessOrEqual(glyphs.Count(g => room.Rect.Contains(new Vector2(g.transform.position.x, g.transform.position.z))), 2, room.Id + ": no maximo 2 simbolos");
 
             var arena = l.Room("room.crypt.r09_arena");
             Assert.IsNotNull(GameObject.Find("Props").transform.Cast<Transform>().FirstOrDefault(t => t.name.StartsWith(arena.Id) && t.name.EndsWith("brazier")), "braseiros na arena");
@@ -247,9 +253,26 @@ namespace Echoes.Tests.EditMode
             var level = Renderers("Level", "Decor").ToList();
             Assert.Greater(level.Count, 40);
             foreach (var r in level) Assert.IsFalse(r.sharedMaterial.name.StartsWith("M_Graybox"), r.name);
-            CollectionAssert.Contains(level.Select(r => r.sharedMaterial.name).ToList(), "M_Cripta_PisoLiso");
+            CollectionAssert.Contains(level.Select(r => r.sharedMaterial.name).ToList(), "M_Env_Piso");
             Assert.IsNotNull(Object.FindFirstObjectByType<FirePool>());
             Assert.IsNotEmpty(Object.FindObjectsByType<FireSource>(FindObjectsSortMode.None));
+        }
+
+        [Test]
+        public void SceneHasTheGlobalPostVolumeAndTheCameraRendersPost()
+        {
+            CriptaBuilder.BuildScene();
+            EditorSceneManager.OpenScene(CriptaBuilder.ScenePath, OpenSceneMode.Single);
+            var volume = Object.FindFirstObjectByType<Volume>();
+            Assert.IsNotNull(volume, "Volume global");
+            Assert.IsTrue(volume.isGlobal);
+            var profile = volume.sharedProfile;
+            Assert.IsTrue(profile.TryGet(out Tonemapping tone) && tone.mode.value == TonemappingMode.ACES, "ACES");
+            Assert.IsTrue(profile.TryGet(out Bloom bloom) && bloom.intensity.value > 0f && bloom.threshold.value >= 1f, "bloom");
+            Assert.IsTrue(profile.TryGet(out Vignette _), "vinheta");
+            Assert.IsTrue(profile.TryGet(out ColorAdjustments adjust) && adjust.saturation.value < 0f, "color grading");
+            Assert.IsTrue(Camera.main.GetComponent<UniversalAdditionalCameraData>().renderPostProcessing, "a camera liga o pos-processamento");
+            Assert.AreEqual(AmbientMode.Trilight, RenderSettings.ambientMode);
         }
 
         [Test]

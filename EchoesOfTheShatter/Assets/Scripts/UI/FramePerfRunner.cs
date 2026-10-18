@@ -42,6 +42,8 @@ namespace Echoes.UI
             hero.transform.position = new Vector3(arena.Trigger.center.x, 0f, arena.Trigger.center.y);
             controller.enabled = true;
             yield return new WaitForSecondsRealtime(5f); // a porta fecha e o chefe comeca a lutar
+            // Sem janela (batchmode) a camera nao renderia para a tela: aponta para um RenderTexture 1920x1080 para que o custo de GPU exista.
+            if (Application.isBatchMode && Camera.main != null && Camera.main.targetTexture == null) Camera.main.targetTexture = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
 
             var report = new StringBuilder();
             var shippedVsync = QualitySettings.vSyncCount;

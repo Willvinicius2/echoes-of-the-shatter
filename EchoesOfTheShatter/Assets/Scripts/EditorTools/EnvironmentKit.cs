@@ -10,17 +10,51 @@ namespace Echoes.EditorTools
 {
     /// <summary>
     /// Kit de cenario pintado da Cripta (26 pecas SM_Cripta_* na grade de 2 m, com T_Cripta_*_BC/_M e um json de colisor e pivo por peca).
-    /// Importa de <c>modelos3d/cenario_final</c> para Assets/Art/Environment/Cripta, cria um material por peca (M_Cripta_&lt;Peca&gt;) no
-    /// <c>SG_Character</c> (nao existe SG_Environment ainda: albedo + mascara R emissao, G rim, B tinta, igual aos personagens) e instancia as
-    /// pecas na cena com os colisores do json (caixas simples; a rampa da escada e uma cunha convexa; nunca a malha visual).
+    /// Importa de <c>modelos3d/cenario_final</c> (ou, quando existe, da peca com chanfro em <c>art-src/modelos/cenario_chanfro</c>, gerada por
+    /// <c>env_bevel_kit.py</c>) para Assets/Art/Environment/Cripta, cria um material por peca (M_Cripta_&lt;Peca&gt;) no <c>Env_Scenery</c> e instancia as
+    /// pecas na cena com os colisores do json (caixas simples; a rampa da escada e uma cunha convexa; nunca a malha visual). O piso nao usa mais as
+    /// pecas PisoLiso/PisoQuebrado/PisoRuna: e uma malha plana por sala com as 2 lajotas projetadas no mundo (<see cref="SceneryBuilder.BuildFloor"/>).
+    /// Alvenaria (parede, canto, pilar, bloco, arco, ruina) usa as texturas novas projetadas no mundo; o resto (braseiro, sarcofago, estandarte...) segue
+    /// com o albedo pintado da peca.
     /// </summary>
     public static class EnvironmentKit
     {
         public const string Dir = "Assets/Art/Environment/Cripta";
         public const string MaterialDir = "Assets/Art/Materials/Environment";
         public const string GeneratedDir = "Assets/Art/Generated/Cripta";
-        public const string ShaderUsed = "SG_Character";
+        public const string ShaderUsed = "Env_Scenery";
+        public const string ShaderPath = "Assets/Art/Materials/Masters/Env_Scenery.shader";
+        public const string TextureDir = "Assets/Art/Environment/Textures";
         const string DefaultSource = "D:/openclaude/_trabalho-claude/modelos3d/cenario_final";
+
+        /// <summary>Pecas com chanfro e normais suaves (saida do env_bevel_kit.py), versionadas no repositorio; vencem a peca de origem.</summary>
+        public static string BeveledDir => Path.GetFullPath(Path.Combine(Application.dataPath, "../../art-src/modelos/cenario_chanfro"));
+
+        public enum Look { Kit, Floor, Wall, Band, Decal }
+
+        /// <summary>Como cada peca recebe o albedo: faixa (parede reta), alvenaria (projecao no mundo) ou o albedo pintado da peca (kit).</summary>
+        public static Look LookOf(string name)
+        {
+            switch (name)
+            {
+                case "ParedeReta":
+                case "ParedeRuina":
+                    return Look.Band;
+                case "ParedeCantoA":
+                case "PilarInteiro":
+                case "PilarQuebrado":
+                case "BlocoA":
+                case "BlocoB":
+                case "BlocoC":
+                case "BlocoD":
+                case "ArcoRuina":
+                case "RuinaGrande":
+                case "AbismoBordo":
+                    return Look.Wall;
+                default:
+                    return Look.Kit;
+            }
+        }
 
         public static readonly string[] Names =
         {
@@ -72,6 +106,8 @@ namespace Echoes.EditorTools
                     foreach (var file in new[] { $"SM_Cripta_{name}.fbx", $"SM_Cripta_{name}.json", $"T_Cripta_{name}_BC.png", $"T_Cripta_{name}_M.png" })
                     {
                         var source = Path.Combine(SourceDir, file);
+                        var beveled = Path.Combine(BeveledDir, file);
+                        if (File.Exists(beveled)) source = beveled;
                         var target = Path.Combine(Application.dataPath, "../" + Dir, file);
                         if (!File.Exists(source)) continue;
                         if (File.Exists(target) && new FileInfo(target).Length == new FileInfo(source).Length) continue;
@@ -81,6 +117,7 @@ namespace Echoes.EditorTools
                 }
             }
             if (changed) AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            EnsureTextures();
             cache.Clear();
             wedge = null;
         }
@@ -128,26 +165,107 @@ namespace Echoes.EditorTools
 
         static Vector3 V(float[] a) => new Vector3(a[0], a[1], a[2]);
 
-        /// <summary>M_Cripta_&lt;Peca&gt;: SG_Character com o albedo e a mascara da peca (sem tinta de raridade).</summary>
-        public static Material EnsureMaterial(string name)
+        /// <summary>Texturas do cenario: sRGB, mipmap, aniso 4x, repeat (glifo: clamp, com alfa); 2048 no PC.</summary>
+        public static void EnsureTextures()
+        {
+            foreach (var file in new[] { "T_Env_PisoA", "T_Env_PisoB", "T_Env_Parede", "T_Env_Faixa", "T_Env_Glifo" })
+            {
+                var path = $"{TextureDir}/{file}.png";
+                if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) continue;
+                var glyph = file == "T_Env_Glifo";
+                var wantWrap = glyph ? TextureWrapMode.Clamp : TextureWrapMode.Repeat;
+                if (importer.sRGBTexture && importer.mipmapEnabled && importer.anisoLevel == 4 && importer.wrapMode == wantWrap && importer.maxTextureSize == 2048 && importer.alphaIsTransparency == glyph) continue;
+                importer.textureType = TextureImporterType.Default;
+                importer.sRGBTexture = true;
+                importer.mipmapEnabled = true;
+                importer.anisoLevel = 4;
+                importer.wrapMode = wantWrap;
+                importer.filterMode = FilterMode.Trilinear;
+                importer.maxTextureSize = 2048;
+                importer.alphaSource = glyph ? TextureImporterAlphaSource.FromInput : TextureImporterAlphaSource.None;
+                importer.alphaIsTransparency = glyph;
+                importer.textureCompression = TextureImporterCompression.Compressed;
+                importer.SaveAndReimport();
+            }
+        }
+
+        static Texture2D Tex(string file) => AssetDatabase.LoadAssetAtPath<Texture2D>($"{TextureDir}/{file}.png");
+
+        static Shader EnvShader()
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
+            if (shader == null) throw new InvalidOperationException("Shader ausente: " + ShaderPath);
+            return shader;
+        }
+
+        static Material LoadOrCreate(string path)
         {
             SandboxBuilder.EnsureDir(MaterialDir);
-            var shader = AssetDatabase.LoadAssetAtPath<Shader>(CharacterPrefabBuilder.ShaderPath);
-            if (shader == null) throw new InvalidOperationException("Shader ausente: " + CharacterPrefabBuilder.ShaderPath);
-            var path = $"{MaterialDir}/M_Cripta_{name}.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (mat == null)
             {
-                mat = new Material(shader);
+                mat = new Material(EnvShader());
                 AssetDatabase.CreateAsset(mat, path);
             }
-            mat.shader = shader;
+            mat.shader = EnvShader();
+            return mat;
+        }
+
+        static void SetLook(Material mat, Look look)
+        {
+            foreach (var k in new[] { "_ENV_FLOOR", "_ENV_WALL", "_ENV_BAND", "_ENV_DECAL" }) mat.DisableKeyword(k);
+            switch (look)
+            {
+                case Look.Floor: mat.EnableKeyword("_ENV_FLOOR"); break;
+                case Look.Wall: mat.EnableKeyword("_ENV_WALL"); break;
+                case Look.Band: mat.EnableKeyword("_ENV_BAND"); break;
+                case Look.Decal: mat.EnableKeyword("_ENV_DECAL"); break;
+            }
+            mat.SetFloat("_PoolStrength", 1.5f);
+            // As faces verticais pegam pouco do sol de cima-esquerda: parede, faixa e pecas pintadas sobem na tinta para ler como pedra clara do alvo.
+            var gain = look == Look.Wall || look == Look.Band ? 1.4f : look == Look.Floor || look == Look.Decal ? 1f : 1.3f;
+            mat.SetColor("_Tint", new Color(gain, gain, gain, 1f));
+            mat.SetTexture("_MapA", Tex("T_Env_PisoA"));
+            mat.SetTexture("_MapB", Tex("T_Env_PisoB"));
+            mat.SetTexture("_WallMap", Tex("T_Env_Parede"));
+            mat.SetTexture("_BandMap", Tex("T_Env_Faixa"));
+            var decal = look == Look.Decal;
+            mat.SetFloat("_SrcBlend", decal ? (float)BlendMode.SrcAlpha : (float)BlendMode.One);
+            mat.SetFloat("_DstBlend", decal ? (float)BlendMode.OneMinusSrcAlpha : (float)BlendMode.Zero);
+            mat.SetFloat("_ZWrite", decal ? 0f : 1f);
+            mat.renderQueue = decal ? (int)RenderQueue.Geometry + 50 : (int)RenderQueue.Geometry;
+            mat.SetOverrideTag("RenderType", decal ? "Transparent" : "Opaque");
+        }
+
+        /// <summary>M_Env_Piso: o piso das salas e corredores (lajotas A e B projetadas no mundo, mistura por ruido de baixa frequencia).</summary>
+        public static Material EnsureFloorMaterial()
+        {
+            EnsureTextures();
+            var mat = LoadOrCreate(MaterialDir + "/M_Env_Piso.mat");
+            SetLook(mat, Look.Floor);
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>M_Env_Glifo: simbolo de bussola dourado no chao (so em checkpoint e portal).</summary>
+        public static Material EnsureGlyphMaterial()
+        {
+            EnsureTextures();
+            var mat = LoadOrCreate(MaterialDir + "/M_Env_Glifo.mat");
+            mat.SetTexture("_BaseMap", Tex("T_Env_Glifo"));
+            SetLook(mat, Look.Decal);
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>M_Cripta_&lt;Peca&gt;: Env_Scenery, em modo faixa/alvenaria (texturas novas no mundo) ou kit (albedo e mascara da peca).</summary>
+        public static Material EnsureMaterial(string name)
+        {
+            EnsureTextures();
+            var mat = LoadOrCreate($"{MaterialDir}/M_Cripta_{name}.mat");
             mat.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir}/T_Cripta_{name}_BC.png"));
             mat.SetTexture("_MaskMap", AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir}/T_Cripta_{name}_M.png"));
-            mat.SetFloat("_HitFlash", 0f);
-            mat.SetFloat("_Dissolve", 0f);
-            mat.SetFloat("_RimMaskInfluence", 1f);
-            RarityTintBuilder.CreateOrUpdate().Apply(mat, Echoes.Presentation.RarityTier.Normal);
+            SetLook(mat, LookOf(name));
             EditorUtility.SetDirty(mat);
             return mat;
         }
