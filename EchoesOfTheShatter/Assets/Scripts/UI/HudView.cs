@@ -56,6 +56,16 @@ namespace Echoes.UI
         [SerializeField, Min(0f)] float toastSeconds = 3f;
         [Tooltip("Opção \"Sempre mostrar valores\" (docs/03, seção 4.1).")]
         [SerializeField] bool alwaysShowValues = true;
+        [Tooltip("Segundos entre leituras do save para Ouro, Cargas, nível e XP (técnico).")]
+        [SerializeField, Min(0.1f)] float readoutSeconds = 1f;
+        [Tooltip("Segundos do brilho do checkpoint (F-07).")]
+        [SerializeField, Min(0.1f)] float flashSeconds = 0.5f;
+
+        /// <summary>
+        /// Fração da barra de XP do nível atual. Quem calcula é o core (curva de XP); enquanto o Backend não expõe a API a barra fica oculta e
+        /// só aparecem nível e XP total. Ligue aqui a função (nível, XP) → [0,1] quando existir.
+        /// </summary>
+        public static System.Func<int, double, float> XpFraction;
 
         sealed class SkillSlotView
         {
@@ -92,6 +102,12 @@ namespace Echoes.UI
         VisualElement dodgePips;
         Label dodgeKey;
         VisualElement deathOverlay;
+        Label deathDetail;
+        VisualElement goldIcon, chargesIcon, fervorBox, levelBox, xpBar, xpFill, checkpointFlash;
+        Label goldValue, chargesValue, levelValue, xpValue;
+        ArenaController arena;
+        float readoutTimeLeft;
+        bool wasDead;
         VisualElement toast;
         Label toastLabel;
         DamageNumberLayer damageLayer;
@@ -125,6 +141,7 @@ namespace Echoes.UI
             if (hudRoot == null) QueryElements(); // o UIDocument pode montar a árvore depois do nosso OnEnable
             if (root == null) root = FindAnyObjectByType<GameRoot>();
             if (hero == null) hero = FindAnyObjectByType<HeroController>();
+            if (arena == null) arena = FindAnyObjectByType<ArenaController>();
             if (worldCamera == null) worldCamera = Camera.main;
             if (root == null) return;
             localization = root.Localization;
@@ -134,6 +151,7 @@ namespace Echoes.UI
             {
                 events.Subscribe<HitEvent>(OnHit);
                 events.Subscribe<ActionDeniedEvent>(OnDenied);
+                events.Subscribe<CheckpointReachedEvent>(OnCheckpoint);
                 subscribed = true;
             }
             LocLabel.ApplyAll(hudRoot, localization);
@@ -145,6 +163,7 @@ namespace Echoes.UI
             if (!subscribed || events == null) return;
             events.Unsubscribe<HitEvent>(OnHit);
             events.Unsubscribe<ActionDeniedEvent>(OnDenied);
+            events.Unsubscribe<CheckpointReachedEvent>(OnCheckpoint);
         }
 
         void Update()
@@ -165,6 +184,9 @@ namespace Echoes.UI
             UpdateDodge(logic);
             UpdatePotions(logic);
             deathOverlay?.EnableInClassList(HiddenClass, !self.IsDead);
+            if (self.IsDead && !wasDead) ShowDeathDetail();
+            wasDead = self.IsDead;
+            UpdateReadout(Time.unscaledDeltaTime);
 
             var dt = Time.deltaTime;
             if (toastTimeLeft > 0f)
@@ -191,6 +213,22 @@ namespace Echoes.UI
             dodgePips = r.Q<VisualElement>("dodge-pips");
             dodgeKey = r.Q<Label>("dodge-key");
             deathOverlay = r.Q<VisualElement>("death-overlay");
+            deathDetail = r.Q<Label>("death-detail");
+            goldIcon = r.Q<VisualElement>("gold-icon");
+            chargesIcon = r.Q<VisualElement>("charges-icon");
+            goldValue = r.Q<Label>("gold-value");
+            chargesValue = r.Q<Label>("charges-value");
+            levelBox = r.Q<VisualElement>("level-box");
+            levelValue = r.Q<Label>("level-value");
+            xpBar = r.Q<VisualElement>("xp-bar");
+            xpFill = r.Q<VisualElement>("xp-fill");
+            xpValue = r.Q<Label>("xp-value");
+            fervorBox = r.Q<VisualElement>("fervor");
+            checkpointFlash = r.Q<VisualElement>("checkpoint-flash");
+            var goldTexture = UiArt.Icon("icon_gold");
+            if (goldIcon != null && goldTexture != null) goldIcon.style.backgroundImage = new StyleBackground(goldTexture);
+            if (chargesIcon != null) chargesIcon.style.backgroundColor = new Color(0.43f, 0.66f, 1f, 1f); // TODO(asset ui.icon.marker_charge): icone das Cargas do Marco ainda nao existe
+            readoutTimeLeft = 0f;
             toast = r.Q<VisualElement>("toast");
             toastLabel = r.Q<Label>("toast-label");
             damageLayer = r.Q<DamageNumberLayer>("damage-layer");
@@ -218,6 +256,13 @@ namespace Echoes.UI
                     Key = slot?.Q<Label>("key"),
                     Recharge = slot?.Q<VisualElement>("recharge"),
                 };
+                var flask = slot?.Q<VisualElement>("flask");
+                var flaskTexture = UiArt.Icon(i == 0 ? "icon_potion_life" : "icon_potion_ward");
+                if (flask != null && flaskTexture != null)
+                {
+                    flask.style.backgroundImage = new StyleBackground(flaskTexture);
+                    flask.style.unityBackgroundScaleMode = ScaleMode.ScaleToFit;
+                }
             }
             boundLogic = null;
         }
@@ -435,12 +480,59 @@ namespace Echoes.UI
             toastTimeLeft = toastSeconds;
         }
 
+        /// <summary>Ouro, Cargas, nível e XP lidos do save (a cada <see cref="readoutSeconds"/>) e o ícone do Fervor quando ativo.</summary>
+        void UpdateReadout(float dt)
+        {
+            fervorBox?.EnableInClassList(HiddenClass, !RunState.FervorActive);
+            readoutTimeLeft -= dt;
+            if (readoutTimeLeft > 0f || localization == null) return;
+            readoutTimeLeft = readoutSeconds;
+            var snap = SaveReadout.Read();
+            if (!snap.Valid) return;
+            if (goldValue != null) goldValue.text = localization.FormatInteger(snap.Gold);
+            if (chargesValue != null) chargesValue.text = snap.Charges + "/12";
+            if (levelValue != null) levelValue.text = ScreenKit.Fmt(localization, "ui.common.level", ("level", snap.Level.ToString()));
+            if (xpValue != null) xpValue.text = ScreenKit.Fmt(localization, "ui.hud.xp_total", ("xp", localization.FormatInteger((long)System.Math.Floor(snap.Xp))));
+            var fraction = XpFraction != null ? XpFraction(snap.Level, snap.Xp) : -1f;
+            if (xpBar != null) xpBar.style.display = fraction >= 0f ? DisplayStyle.Flex : DisplayStyle.None;
+            if (fraction >= 0f) SetWidth(xpFill, fraction);
+        }
+
+        /// <summary>"Você caiu": a linha de baixo diz o que acontece (a luta recomeça na arena; senão, volta ao checkpoint). Nada foi perdido vem do UXML.</summary>
+        void ShowDeathDetail()
+        {
+            if (deathDetail == null || localization == null) return;
+            var inArena = arena != null && arena.Phase == ArenaPhase.Fighting;
+            deathDetail.text = localization.Get(inArena ? "ui.death.boss_restart" : "ui.death.checkpoint");
+        }
+
+        void OnCheckpoint(in CheckpointReachedEvent evt)
+        {
+            if (checkpointFlash == null) return;
+            if (!UserSettings.ReduceFlashes) // opcao de acessibilidade: sem o clarao, fica so o aviso
+            {
+                checkpointFlash.AddToClassList("hud__flash--on");
+                checkpointFlash.schedule.Execute(() => checkpointFlash.RemoveFromClassList("hud__flash--on")).StartingIn((long)(flashSeconds * 1000f));
+            }
+            if (localization != null) ShowToast(localization.Get("ui.hud.checkpoint"));
+        }
+
+        void ShowToast(string text)
+        {
+            if (toast == null || toastLabel == null) return;
+            toastLabel.text = text;
+            toast.AddToClassList(ToastVisibleClass);
+            toastTimeLeft = toastSeconds;
+        }
+
         void OnCultureChanged()
         {
             LocLabel.ApplyAll(hudRoot, localization);
             boundLogic = null; // reaplica nomes das habilidades no próximo quadro
             lastLifeShown = long.MinValue;
             lastResourceShown = long.MinValue;
+            readoutTimeLeft = 0f;
+            if (wasDead) ShowDeathDetail();
             for (var i = 0; i < skillViews.Length; i++)
             {
                 if (skillViews[i] != null) skillViews[i].LastCooldownKey = int.MinValue;

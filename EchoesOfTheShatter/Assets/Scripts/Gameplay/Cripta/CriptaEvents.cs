@@ -7,6 +7,13 @@ namespace Echoes.Gameplay
         public string LootTableId;
     }
 
+    /// <summary>O herói passou num checkpoint novo (F-07): poções cheias, salvar e mostrar o retorno visual.</summary>
+    public struct CheckpointReachedEvent
+    {
+        public string CheckpointId;
+        public UnityEngine.Vector3 Position;
+    }
+
     /// <summary>O herói entrou num portal. O Refúgio ainda não existe: o portal devolve ao checkpoint (TODO area.refuge).</summary>
     public struct PortalUsedEvent
     {

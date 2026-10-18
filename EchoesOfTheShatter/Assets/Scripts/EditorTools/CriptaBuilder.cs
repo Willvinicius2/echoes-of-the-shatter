@@ -156,6 +156,7 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(director, "arena", arena);
             SetObjectArray(director, "enemies", ctx.Enemies);
             if (arena != null) SetBossOf(arena, ctx);
+            if (arena != null) BuildSummoner(ctx, arena, enemies);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings();
@@ -292,6 +293,8 @@ namespace Echoes.EditorTools
             var travel = go.AddComponent<AreaTravel>();
             SandboxBuilder.SetRef(travel, "root", ctx.GameRoot);
             // Inventario (tecla I; botao no Refugio) com o boneco modular; o loot no chao so na Cripta.
+            var areaBanner = go.AddComponent<AreaBanner>();
+            SandboxBuilder.SetRef(areaBanner, "root", ctx.GameRoot);
             var inventory = go.AddComponent<InventoryController>();
             SandboxBuilder.SetRef(inventory, "root", ctx.GameRoot);
             SandboxBuilder.SetRef(inventory, "hero", ctx.Hero);
@@ -307,6 +310,9 @@ namespace Echoes.EditorTools
             {
                 var recorder = go.AddComponent<RunRecorder>();
                 SandboxBuilder.SetRef(recorder, "root", ctx.GameRoot);
+                var saveHooks = go.AddComponent<CriptaSaveHooks>();
+                SandboxBuilder.SetRef(saveHooks, "root", ctx.GameRoot);
+                SandboxBuilder.SetRef(saveHooks, "hero", ctx.Hero);
                 var shot = go.AddComponent<BossShotRunner>();
                 SandboxBuilder.SetRef(shot, "root", ctx.GameRoot);
                 var perf = go.AddComponent<FramePerfRunner>();
@@ -328,6 +334,7 @@ namespace Echoes.EditorTools
             {
                 var go = Marker(root, cp.Id, cp.Pos, ctx.Mats.Checkpoint, 1.2f);
                 var zone = go.AddComponent<CheckpointZone>();
+                SandboxBuilder.SetRef(zone, "combatHost", ctx.Host);
                 SandboxBuilder.SetRef(zone, "hero", ctx.Hero);
                 SandboxBuilder.SetString(zone, "checkpointId", cp.Id);
                 if (firstCheckpoint == null) firstCheckpoint = go.transform;
@@ -614,6 +621,27 @@ namespace Echoes.EditorTools
             body.transform.localPosition = new Vector3(0f, boss ? 1.5f : 0.9f, 0f);
             body.transform.localScale = boss ? new Vector3(2f, 1.5f, 2f) : new Vector3(1f, 0.9f, 1f);
             SandboxBuilder.Apply(body, boss ? ctx.Mats.Boss : ctx.Mats.Enemy, true);
+        }
+
+        /// <summary>Fase 2 do Guardiao: molde desativado da Sentinela e os pontos summonMarks do layout (BossSummoner invoca quando o core sinaliza).</summary>
+        static void BuildSummoner(Context ctx, ArenaController arena, Transform enemiesRoot)
+        {
+            var encounter = ctx.Layout.Encounters.Find(e => e.IsBoss);
+            if (encounter == null || encounter.SummonMarks.Count == 0) return;
+            var group = new CriptaLayout.GroupData { EnemyId = "enemy.hollow_sentinel", Min = 1, Max = 1, Facing = "+z" };
+            group.Slots.Add(encounter.SummonMarks[0]);
+            var template = SpawnEnemy(ctx, enemiesRoot, encounter, group, 0);
+            template.gameObject.name = "SentinelTemplate";
+            template.gameObject.SetActive(false);
+            var go = new GameObject("BossSummoner");
+            go.transform.SetParent(ctx.Interactives, false);
+            var summoner = go.AddComponent<BossSummoner>();
+            SandboxBuilder.SetRef(summoner, "combatHost", ctx.Host);
+            SandboxBuilder.SetRef(summoner, "arena", arena);
+            SandboxBuilder.SetRef(summoner, "template", template);
+            var marks = new List<Vector3>();
+            foreach (var m in encounter.SummonMarks) marks.Add(new Vector3(m.x, 0f, m.y));
+            SetVector3Array(summoner, "marks", marks);
         }
 
         static void SetBossOf(ArenaController arena, Context ctx)

@@ -213,6 +213,9 @@ namespace Echoes.Gameplay
             self.IsInvulnerable = false;
         }
 
+        /// <summary>Enche as poções pela regra do core (checkpoint alcançado, F-07).</summary>
+        public void RefillPotions() => belt.Refill();
+
         public void OnRevive(CombatSystem combat)
         {
             // docs/13, item 2: poções enchem no checkpoint e no reinício da luta.

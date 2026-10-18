@@ -9,6 +9,7 @@
         "Echoes.Gameplay",
         "Echoes.Presentation",
         "Echoes.UI",
+        "Unity.InputSystem",
         "Echoes.EditorTools"
     ],
     "includePlatforms": [

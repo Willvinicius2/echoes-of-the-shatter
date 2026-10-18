@@ -66,6 +66,15 @@ namespace Echoes.Gameplay
 
         public Transform Checkpoint => checkpoint;
 
+        /// <summary>Teste e captura: zera a vida do herói (a morte segue o fluxo normal: tela "Você caiu", retorno ao checkpoint).</summary>
+        public void ForceDeathForTest()
+        {
+            if (Combatant == null) return;
+            var vitals = Combatant.Vitals;
+            vitals.Life = 0.0;
+            Combatant.SetVitals(in vitals);
+        }
+
         /// <summary>Define o checkpoint atual (as zonas de checkpoint e a arena chamam).</summary>
         public void SetCheckpoint(Transform point)
         {

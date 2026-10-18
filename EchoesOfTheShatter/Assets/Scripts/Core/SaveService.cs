@@ -77,9 +77,15 @@ namespace Echoes.Core
         public readonly int Level, MarkerCharges;
         public readonly bool ExpeditionRunning;
         public readonly int UsedBackup;
+        /// <summary>Ultimo save (segundos Unix UTC), para o "Continuar" escolher o slot mais recente.</summary>
+        public readonly long LastSeenUtc;
+        /// <summary>Ha expedicao em curso que ja terminou: o menu mostra o selo "Expedicao pronta".</summary>
+        public readonly bool ExpeditionReady;
 
-        public SlotInfo(int slot, LoadOutcome outcome, string name, int level, int charges, bool running, int usedBackup)
+        public SlotInfo(int slot, LoadOutcome outcome, string name, int level, int charges, bool running, int usedBackup, long lastSeenUtc = 0, bool ready = false)
         {
+            LastSeenUtc = lastSeenUtc;
+            ExpeditionReady = ready;
             Slot = slot;
             Outcome = outcome;
             CharacterName = name;
@@ -123,7 +129,12 @@ namespace Echoes.Core
             {
                 var character = MiniJson.AsObject(MiniJson.Parse(save.CharacterJson(0)));
                 var summary = save.Summary;
-                return new SlotInfo(slot, outcome, MiniJson.Str(character, "name"), MiniJson.Int(character, "level", 1), summary.MarkerCharges, summary.HasRunningExpedition, backup);
+                var ready = false;
+                if (summary.HasRunningExpedition)
+                {
+                    ready = save.ExpeditionRequest(rules, summary.RunningExpedition, new ClockInput(Clock.NowUtc, summary.LastSeenUtc), out _, out var finished, out _) && finished;
+                }
+                return new SlotInfo(slot, outcome, MiniJson.Str(character, "name"), MiniJson.Int(character, "level", 1), summary.MarkerCharges, summary.HasRunningExpedition, backup, summary.LastSeenUtc, ready);
             }
         }
 
