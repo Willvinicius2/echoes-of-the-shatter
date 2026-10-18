@@ -450,10 +450,11 @@ const std::vector<TableDef>& TableDefs() {
          {"classId", "lightChain", "heavySkill", "heavyChargeTime", "heavyMaxMult", "chargeEffect", "guardEffect",
           "guardArc"},
          {"guardMaxHold", "guardCooldown", "guardPerfectWindow", "guardPerfectCooldown", "guardPerfectEffects",
-          "guardPerfectResource", "guardDrainPerDamage"}},
+          "guardPerfectResource", "guardDrainPerDamage", "refAttackTime"}},
         // Economia do protótipo (docs/16 seção 11): opcionais de verdade, como basic_kits.csv.
         {"craft_costs.csv", {"id", "op", "rarity", "step", "goldCost", "shardCost"}},
         {"vendor_stock.csv", {"id", "refId", "kind", "priceGold", "carryCap"}},
+        {"chests.csv", {"id", "mapId", "lootTable"}},
         {"enemy_ai.csv",
          {"enemyId", "aggroRange", "alertRadius", "leashRange", "leashSeconds", "preferredMin", "preferredMax",
           "retreatBelow", "retreatMaxSeconds", "circleMin", "circleMax", "circleSpeed", "attackTokens",
@@ -510,6 +511,8 @@ struct ContentImpl {
     std::vector<int> craftCostLines;
     std::vector<VendorStockData> vendorStock;
     std::vector<int> vendorStockLines;
+    std::vector<ChestData> chests;
+    std::vector<int> chestLines;
 
     struct ClassStatRow { ContentId classId; StatGrowth g; int line = 0; };
     struct EnemyAttackRow { ContentId enemyId; EnemyAttack a; int line = 0; };
@@ -1160,6 +1163,7 @@ void LoadBasicKits(LoadCtx& c) {
         d.guardPerfectEffects = cell.IdList("guardPerfectEffects");
         d.guardPerfectResource = cell.Num("guardPerfectResource", 0.0, 0.0, kInf);
         d.guardDrainPerDamage = cell.Num("guardDrainPerDamage", 0.0, 0.0, kInf);
+        d.refAttackTime = cell.Num("refAttackTime", 0.0, 0.0, 100.0);
         if (cell.bad()) continue;
         c.impl.basicKits.push_back(std::move(d));
         c.impl.basicKitLines.push_back(row.line);
@@ -1212,6 +1216,20 @@ void LoadVendorStock(LoadCtx& c) {
         if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "vendor.")) continue;
         c.impl.vendorStock.push_back(std::move(d));
         c.impl.vendorStockLines.push_back(row.line);
+    }
+}
+
+void LoadChests(LoadCtx& c) {
+    for (const CsvRow& row : c.csv.rows) {
+        Cells cell(c.csv, row, c.errs, c.table);
+        ChestData d;
+        d.id = cell.Id("id", true);
+        d.mapId = cell.Id("mapId", true);
+        d.lootTable = cell.Id("lootTable", true);
+        if (cell.bad()) continue;
+        if (!RegisterId(c.impl, c.errs, c.table, row.line, d.id, "chest.")) continue;
+        c.impl.chests.push_back(std::move(d));
+        c.impl.chestLines.push_back(row.line);
     }
 }
 
@@ -1288,6 +1306,7 @@ bool ContentDB::LoadTableCsv(std::string_view tableName, std::string_view csvTex
     else if (table == "basic_kits.csv") LoadBasicKits(ctx);
     else if (table == "craft_costs.csv") LoadCraftCosts(ctx);
     else if (table == "vendor_stock.csv") LoadVendorStock(ctx);
+    else if (table == "chests.csv") LoadChests(ctx);
     return errors_.size() == before;
 }
 
@@ -1306,7 +1325,7 @@ bool ContentDB::LoadDirectory(const std::string& path) {
         if (!fs::is_regular_file(file, ec)) {
             // Tabelas opcionais de verdade: basic_kits.csv (docs/18 4.6), craft_costs.csv e vendor_stock.csv (docs/16 seção 11).
             const std::string_view n(def.name);
-            if (n == "basic_kits.csv" || n == "craft_costs.csv" || n == "vendor_stock.csv") continue;
+            if (n == "basic_kits.csv" || n == "craft_costs.csv" || n == "vendor_stock.csv" || n == "chests.csv") continue;
             PushErr(errors_, def.name, 0, "E_IO", "table file missing");
             continue;
         }
@@ -1391,6 +1410,13 @@ void ContentDB::Add(VendorStockData d) {
     impl_->vendorStockLines.push_back(0);
 }
 
+void ContentDB::Add(ChestData d) {
+    if (impl_->finalized) { PushErr(errors_, "chests", 0, "E_STATE", "Add after Finalize"); return; }
+    if (!RegisterId(*impl_, errors_, "chests", 0, d.id, "chest.")) return;
+    impl_->chests.push_back(std::move(d));
+    impl_->chestLines.push_back(0);
+}
+
 // ===============================================================================================
 // Lookups
 // ===============================================================================================
@@ -1433,6 +1459,12 @@ const CraftCostData* ContentDB::FindCraftCost(CraftOp op, Rarity rarity, int ste
     }
     return any;
 }
+const ChestData* ContentDB::FindChest(std::string_view id) const {
+    for (const ChestData& c : impl_->chests) {
+        if (c.id == id) return &c;
+    }
+    return nullptr;
+}
 const VendorStockData* ContentDB::FindVendorStock(std::string_view id) const {
     for (const VendorStockData& v : impl_->vendorStock) {
         if (v.id == id) return &v;
@@ -1459,6 +1491,7 @@ const std::vector<EnemyAiData>& ContentDB::EnemyAis() const { return impl_->enem
 const std::vector<BasicKitData>& ContentDB::BasicKits() const { return impl_->basicKits; }
 const std::vector<CraftCostData>& ContentDB::CraftCosts() const { return impl_->craftCosts; }
 const std::vector<VendorStockData>& ContentDB::VendorStock() const { return impl_->vendorStock; }
+const std::vector<ChestData>& ContentDB::Chests() const { return impl_->chests; }
 const std::vector<AffixData>& ContentDB::Affixes() const { return impl_->affixes.items; }
 const std::vector<ItemBaseData>& ContentDB::ItemBases() const { return impl_->bases.items; }
 const std::vector<MapData>& ContentDB::Maps() const { return impl_->maps.items; }
@@ -2020,6 +2053,12 @@ bool ContentDB::Finalize() {
             if (v.refId == "consumable.refill_flask" && im.rulesLoaded && v.carryCap != rules_.refillFlaskCarryCap)
                 f.E(V, ln, "E_RULE", "carryCap of the refill flask must equal refill_flask_carry_cap in rules.csv");
         }
+    }
+    for (std::size_t i = 0; i < im.chests.size(); ++i) {   // baús da área (docs/14 5.2): tabela opcional
+        const ChestData& ch = im.chests[i];
+        const int ln = im.chestLines[i];
+        if (im.maps.Find(ch.mapId) == nullptr) f.E("chests.csv", ln, "E_FK", "mapId '" + ch.mapId + "' not in maps.csv");
+        if (im.loot.Find(ch.lootTable) == nullptr) f.E("chests.csv", ln, "E_FK", "lootTable '" + ch.lootTable + "' not in loot_tables.csv");
     }
     for (std::size_t i = 0; i < im.enemyAis.size(); ++i) {
         const EnemyAiData& a = im.enemyAis[i];

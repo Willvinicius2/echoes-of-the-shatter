@@ -20,3 +20,4 @@
 #include "shatter/inventory.h"
 #include "shatter/craft.h"
 #include "shatter/vendor.h"
+#include "shatter/world.h"

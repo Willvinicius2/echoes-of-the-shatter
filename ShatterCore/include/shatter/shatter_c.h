@@ -549,7 +549,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 6u   /* 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 7u   /* 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -737,6 +737,14 @@ SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing(const shatter_db* d
                                                              size_t skill_id_len, const shatter_statblock* stats,
                                                              const char* modifier_id, size_t modifier_id_len,
                                                              shatter_action_timing* out) SHATTER_NOEXCEPT;
+/* API 1.7 (N0, docs/19 Q19-1 A): como shatter_skill_timing, mas o attackTime da arma equipada (weapon_base_id, vazio =
+ * desarmado) muda a duração (preparação, impacto, recuperação) das habilidades que escalam com arma: tempo x attackTime da
+ * arma / refAttackTime da classe (basic_kits.csv). Espada inicial: 1; Martelo: mais lento. A recarga não muda. */
+SHATTER_API shatter_status SHATTER_CALL shatter_skill_timing_weapon(const shatter_db* db, const char* skill_id,
+                                                                    size_t skill_id_len, const shatter_statblock* stats,
+                                                                    const char* class_id, size_t class_id_len,
+                                                                    const char* weapon_base_id, size_t weapon_base_id_len,
+                                                                    shatter_action_timing* out) SHATTER_NOEXCEPT;
 /* base_uu_per_sec > 0 (inimigo: "move_speed" do enemies.csv): base × atributo. base_uu_per_sec <= 0 (herói): o próprio
  * atributo, que já vem em uu/s do class_stats.csv (move_speed = 450). */
 SHATTER_API shatter_status SHATTER_CALL shatter_move_speed(const shatter_statblock* stats, double base_uu_per_sec,
@@ -1234,6 +1242,85 @@ SHATTER_API shatter_status SHATTER_CALL shatter_flask_use(const shatter_db* db, 
 #define SHATTER_LAYOUT_EXT6_COUNT 16u
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext6(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext6(const uint32_t* values, size_t n,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+
+/* --- Core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte e Fervor (API 1.7; docs/09 seção 14) ---
+ * Tudo é regra do core (world.h). O estado do mundo vai no save (campo opcional `world_state`) e não volta ao voltar a um
+ * checkpoint. A semente da visita nasce no core (shatter_world_begin_visit): o chamador não a escolhe. */
+enum { SHATTER_CHEST_OPENED = 0, SHATTER_CHEST_ALREADY_OPEN = 1, SHATTER_CHEST_NO_TABLE = 2 };
+typedef struct shatter_xp_info {
+    double awarded;              /* XP concedido nesta chamada, já com o Fervor (0 em shatter_character_progress) */
+    double xp_in_level;          /* XP dentro do nível atual */
+    double xp_to_next;           /* XP que falta, do início do nível, para o próximo (0 no teto de nível da área) */
+    int32_t level_before;
+    int32_t level;               /* nível do personagem no save: o herói usa este, não um nível fixo da cena */
+    int32_t level_cap;           /* teto da área: monsterLevel + xp_cap_levels_above_area, até max_level */
+    int32_t reserved;
+} shatter_xp_info;
+typedef struct shatter_fervor_info {   /* Fervor do jogo manual (rules.csv), para a HUD */
+    double xp_mult, gold_mat_mult, rare_mult;
+    double xp_bonus, gold_mat_bonus, rare_bonus;   /* mult - 1: XP +200% = 2,0 */
+} shatter_fervor_info;
+
+/* Começa uma visita à área: incrementa o contador do save e devolve a semente da visita. Mapa desconhecido: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_world_begin_visit(const shatter_db* db, shatter_save* save,
+                                                                  const char* map_id, size_t map_id_len,
+                                                                  uint64_t* visit_seed) SHATTER_NOEXCEPT;
+/* Objeto da área (baú, parede secreta, atalho; IDs do docs/14 5): aberto? */
+SHATTER_API shatter_status SHATTER_CALL shatter_world_object_get(const shatter_save* save, const char* map_id,
+                                                                 size_t map_id_len, const char* object_id,
+                                                                 size_t object_id_len, uint8_t* opened) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_world_object_set(shatter_save* save, const char* map_id, size_t map_id_len,
+                                                                 const char* object_id, size_t object_id_len,
+                                                                 uint8_t opened) SHATTER_NOEXCEPT;
+/* {"map_id","visits","opened":[ids]} (área sem registro: visits 0 e opened vazio). */
+SHATTER_API shatter_status SHATTER_CALL shatter_world_state_json(const shatter_save* save, const char* map_id,
+                                                                 size_t map_id_len, uint8_t* out, size_t cap,
+                                                                 size_t* needed) SHATTER_NOEXCEPT;
+/* {"map_id","monster_level","tier","area_loot_table","boss_encounter","encounters":[ids na ordem do CSV],
+ *  "chests":[{"id","loot_table"}]}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_map_info_json(const shatter_db* db, const char* map_id, size_t map_id_len,
+                                                              uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Encontro da visita, determinístico pela semente: {"encounter_id","is_boss","groups":[{"enemy_id","count","slots":
+ * [{"elite":0|1,"modifier_id"}]}]}. n entre countMin e countMax por grupo e a elite (chanceElite) por espaço; um grupo de n
+ * inimigos usa os n primeiros espaços do layout. Mesma semente e encontro = mesma formação (também depois de um checkpoint). */
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json(const shatter_db* db, const char* encounter_id,
+                                                                    size_t encounter_id_len, uint64_t visit_seed,
+                                                                    uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Abre o baú: tabela de chests.csv (se faltar, a areaLootTable do mapa), rola como shatter_save_drop_loot (itens NO CHÃO,
+ * Ouro e Lascas direto no save, mesmo JSON de saída) e marca o baú aberto no estado do mundo. *result =
+ * SHATTER_CHEST_*; já aberto: nada é rolado (saída vazia "" e needed 0). Buffer pequeno: nada muda (nem o estado, nem o rng). */
+SHATTER_API shatter_status SHATTER_CALL shatter_chest_open(const shatter_db* db, shatter_save* save, const char* map_id,
+                                                           size_t map_id_len, const char* chest_id, size_t chest_id_len,
+                                                           const shatter_loot_context* ctx, shatter_rng* rng,
+                                                           uint8_t* out, size_t cap, size_t* needed, int32_t* result,
+                                                           shatter_error* err) SHATTER_NOEXCEPT;
+/* Loot ao limpar um encontro: rola a areaLootTable do mapa (como shatter_save_drop_loot). Mapa sem tabela: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_clear_loot(const shatter_db* db, shatter_save* save,
+                                                                     const char* map_id, size_t map_id_len,
+                                                                     const shatter_loot_context* ctx, shatter_rng* rng,
+                                                                     uint8_t* out, size_t cap, size_t* needed,
+                                                                     shatter_error* err) SHATTER_NOEXCEPT;
+/* XP de uma morte no jogo manual: (xpBase + xpPerLevel x (nível - 1)) do enemies.csv x multiplicador de elite x fervor_xp_mult
+ * (fervor != 0). Sobe de nível no save até o teto da área. elite_rolled = elite sorteado no encontro (modifier_id opcional);
+ * elite fixo (isElite) e chefe usam o próprio valor do inimigo. Inimigo desconhecido: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_xp_award_kill(const shatter_db* db, shatter_save* save,
+                                                              size_t character_index, const char* map_id,
+                                                              size_t map_id_len, const char* enemy_id, size_t enemy_id_len,
+                                                              int32_t monster_level, uint8_t elite_rolled,
+                                                              const char* modifier_id, size_t modifier_id_len,
+                                                              uint8_t fervor, shatter_xp_info* out) SHATTER_NOEXCEPT;
+/* Nível e XP do personagem (o herói usa o nível do save). map_id vazio = teto max_level. */
+SHATTER_API shatter_status SHATTER_CALL shatter_character_progress(const shatter_db* db, const shatter_save* save,
+                                                                   size_t character_index, const char* map_id,
+                                                                   size_t map_id_len, shatter_xp_info* out) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_fervor_get(const shatter_db* db, shatter_fervor_info* out) SHATTER_NOEXCEPT;
+
+/* Layout 1.7: [sizeof(shatter_xp_info), 7 offsets (awarded, xp_in_level, xp_to_next, level_before, level, level_cap, reserved),
+ *              sizeof(shatter_fervor_info), 6 offsets] = 15 valores. */
+#define SHATTER_LAYOUT_EXT7_COUNT 15u
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext7(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext7(const uint32_t* values, size_t n,
                                                                   shatter_error* err) SHATTER_NOEXCEPT;
 
 #ifdef __cplusplus

@@ -170,8 +170,18 @@ bool TrySpendResource(Vitals& v, double amount) {
 // ===============================================================================================
 // Tempos de ação
 // ===============================================================================================
+double WeaponTimeFactor(const SkillData& skill, const ItemBaseData* weapon, double refAttackTime) {
+    if (!skill.scalesWithWeapon || weapon == nullptr || !(weapon->attackTime > 0.0) || !(refAttackTime > 0.0)) return 1.0;
+    return weapon->attackTime / refAttackTime;
+}
+
+double ClassRefAttackTime(const ContentDB& db, std::string_view classId) {
+    const BasicKitData* kit = db.FindBasicKit(classId);
+    return kit != nullptr ? kit->refAttackTime : 0.0;
+}
+
 ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill, const StatBlock& stats,
-                                     const EliteProfile* elite) {
+                                     const EliteProfile* elite, double weaponTimeFactor) {
     ActionTimingInfo t;
     const StatId speedStat = HasTag(skill.tags, Tag::Spell) ? StatId::CastSpeed : StatId::AttackSpeed;
     double speed = stats.Get(speedStat);
@@ -189,9 +199,10 @@ ActionTimingInfo ComputeActionTiming(const ContentDB& db, const SkillData& skill
     }
     if (speed < 0.01) speed = 0.01;
     if (windupSpeed < 0.01) windupSpeed = 0.01;
-    t.windup = skill.windup / windupSpeed;
-    t.impact = skill.impact / speed;
-    t.recovery = skill.recovery * recoveryMult / speed;
+    const double wf = weaponTimeFactor > 0.0 ? weaponTimeFactor : 1.0;
+    t.windup = skill.windup * wf / windupSpeed;
+    t.impact = skill.impact * wf / speed;
+    t.recovery = skill.recovery * wf * recoveryMult / speed;
     t.cooldown = skill.cooldown > 0.0 ? EffectiveCooldown(skill.cooldown, stats.Get(StatId::CooldownRecovery), db.Rules()) : 0.0;
     t.cost = ClampMin0(skill.cost);
     return t;

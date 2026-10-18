@@ -280,6 +280,17 @@ struct BasicKitData {
     std::vector<ContentId> guardPerfectEffects;  // aplicados no atacante corpo a corpo (no máximo kMaxGuardPerfectEffects)
     double guardPerfectResource = 0.0;     // recurso ganho pela perfeita (substitui resourceOnBlock)
     double guardDrainPerDamage = 0.0;      // recurso gasto por ponto de dano evitado; 0 = não gasta
+    // Coluna OPCIONAL `refAttackTime` (docs/19 N0, Q19-1 A): attackTime da arma inicial da classe. Com ela, o attackTime da arma
+    // equipada escala a duração (preparação, impacto e recuperação) das habilidades que escalam com arma: tempo x attackTime /
+    // refAttackTime. 0 = sem escala (a arma não muda o tempo).
+    double refAttackTime = 0.0;
+};
+
+// Baú da área (chests.csv, docs/14 5.2): qual tabela de loot ele rola. TABELA OPCIONAL. Baú sem linha usa a areaLootTable do mapa.
+struct ChestData {
+    ContentId id;                          // "chest.crypt.01"
+    ContentId mapId;                       // "map.act1.crypt"
+    ContentId lootTable;                   // "loot.crypt.area" | "loot.crypt.elite"
 };
 
 // Economia do protótipo (docs/16 seção 11). Tabelas OPCIONAIS: sem craft_costs.csv o Encantador não tem preço (as
@@ -409,7 +420,7 @@ public:
     //  "loot_tables.csv", "loot_entries.csv", "encounters.csv", "maps.csv", "meta.csv";
     //  ADIÇÃO, opcionais: "potions.csv", "elite_modifiers.csv", "boss_phases.csv", "boss_patterns.csv", "enemy_ai.csv";
     //  docs/18, opcional de verdade: "basic_kits.csv"; docs/16 seção 11, opcionais de verdade: "craft_costs.csv",
-    //  "vendor_stock.csv").
+    //  "vendor_stock.csv", "chests.csv").
     // Erros são acumulados; retorna false se houve algum nesta tabela.
     bool LoadTableCsv(std::string_view tableName, std::string_view csvText);
     // Conveniência fora do UE (testes, bench, ferramentas): lê todos os *.csv de uma pasta.
@@ -445,6 +456,7 @@ public:
     // Custo base de uma operação do Encantador (craft_costs.csv): a linha da raridade exata; senão a de rarity = any.
     // `step` é 0, ou o passo (1..polish_max_steps) da Lapidar. nullptr se não existir.
     const CraftCostData* FindCraftCost(CraftOp op, Rarity rarity, int step) const;
+    const ChestData* FindChest(std::string_view id) const;
     const VendorStockData* FindVendorStock(std::string_view id) const;
     const VendorStockData* FindVendorStockByRef(std::string_view refId) const;
     // Fase `phase` do chefe (nullptr se não existir).
@@ -462,6 +474,7 @@ public:
     const std::vector<BasicKitData>& BasicKits() const;                // ordem do CSV
     const std::vector<CraftCostData>& CraftCosts() const;              // ordem do CSV
     const std::vector<VendorStockData>& VendorStock() const;           // ordem do CSV
+    const std::vector<ChestData>& Chests() const;                      // ordem do CSV
     // Mapa de efeitos para EffectContainer::Tick.
     const std::unordered_map<ContentId, const EffectData*>& EffectLookup() const;
 
@@ -489,6 +502,7 @@ public:
     void Add(BasicKitData d);
     void Add(CraftCostData d);
     void Add(VendorStockData d);
+    void Add(ChestData d);
 
 private:
     struct Impl;                       // tabelas e índices; definido em src/content.cpp

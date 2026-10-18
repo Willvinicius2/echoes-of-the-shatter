@@ -44,6 +44,7 @@ struct Setup {
     std::vector<const SkillData*> bar;      // habilidades da barra (posições não vazias, em ordem)
     std::vector<int> ranks;                 // rank de cada uma (1..3)
     const ItemBaseData* weapon = nullptr;   // arma equipada; nullptr = desarmado (unarmed_weapon_damage_physical)
+    double refAttackTime = 0.0;             // attackTime da arma inicial da classe (basic_kits.csv; docs/19 N0); 0 = a arma não muda o tempo
     std::vector<const EffectData*> triggerEffects;  // ruleEffect dos Únicos equipados com gatilho
     std::vector<const EncounterTemplate*> encounters;
     std::vector<double> encounterWeights;
@@ -76,6 +77,7 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
     if (mh) {
         su.weapon = db.FindItemBase(mh->baseId);
     }
+    su.refAttackTime = ClassRefAttackTime(db, ch.classId);
     for (const auto& item : ch.equipment) {
         if (!item || item->uniqueId.empty()) continue;
         const UniqueData* u = db.FindUnique(item->uniqueId);
@@ -393,7 +395,7 @@ private:
         const int rank = su_.ranks[static_cast<std::size_t>(slot)];
         activeSlot_ = slot;
 
-        const ActionTimingInfo tm = ComputeActionTiming(db_, s, ps_);
+        const ActionTimingInfo tm = ComputeActionTiming(db_, s, ps_, nullptr, WeaponTimeFactor(s, su_.weapon, su_.refAttackTime));
         double d = tm.windup + tm.impact + tm.recovery;
         const double uptime = prof.uptime > 0.0 ? prof.uptime : 1.0;
         d /= uptime;

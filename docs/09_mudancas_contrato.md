@@ -349,7 +349,7 @@ Origem: `docs/16_etapa3_fluxo.md` seção 11, com as decisões Q3-5 A (2 afixos 
 |---|---|
 | `rules.csv` | 15 chaves obrigatórias (102 no total): `vendor_buyback_slots`, `vendor_buyback_price_factor`, `refill_flask_carry_cap`, `refill_flask_charges`, `craft_cost_level_factor`, `reforge_step_mult`, `reforge_mult_cap`, `reforge_lock_cost_mult`, `reforge_lock_max`, `add_affix_candidates`, `polish_step_fraction`, `polish_max_steps`, `dismantle_shards_normal/magic/rare`. `RulesConstants` ganha os campos (0 neutro) |
 | `craft_costs.csv`, `vendor_stock.csv` | Tabelas NOVAS e OPCIONAIS (como `basic_kits.csv`: arquivo ausente não é erro; sem `craft_costs` o Encantador recusa com `UnknownContent`). Validação no `Finalize` (`E_RULE`, `E_RANGE`, `E_DUP_ID`, `E_ID_PREFIX`): passo 1.. só na Lapidar, Refinar só `normal`, linha de custo para cada operação e raridade e para cada passo de Lapidar até `polish_max_steps`, `carryCap` do frasco igual a `refill_flask_carry_cap` |
-| `affixes.csv` | `craftInscription = true` nos afixos do protótipo; afixos novos de arma `affix.scorching` (dano de fogo aumentado) e `affix.of_ruin` (multiplicador de crítico). "Vida por acerto" não existe como atributo: criar exigiria mexer no combate e no idle |
+| `affixes.csv` | `craftInscription = true` nos afixos do protótipo; afixos novos de arma `affix.scorching` (dano de fogo aumentado) e `affix.of_ruin` (multiplicador de crítico), depois trocados em `Content/Data` por `affix.ruthless` e `affix.of_cadence` do docs/19 (a seção 14); o fixture de teste `tests/data/rich` mantém os dois. "Vida por acerto" não existe como atributo: criar exigiria mexer no combate e no idle |
 | Loc | Vendedor e Encantador por chave provisória (`npc.*.name`, `ui.vendor.*`, `ui.enchant.*`, `consumable.refill_flask.*`), sem lore |
 
 ### 13.2 Save (v2, campos OPCIONAIS; sem novo `save_version` e sem migração)
@@ -395,3 +395,45 @@ C# em `Assets/Scripts/Interop`: `EconomyTypes.cs` (tipos), `Native/ShatterNative
 ### 13.6 Testes e pendências
 
 `test_economy.cpp` (29 testes: dados e erros, RNG puro, cada operação e cada recusa, custo por nível e por Reforjar, atomicidade, 1000 ciclos salvar/carregar, recompra e frasco, save e a propriedade de **1 milhão de operações aleatórias** sem violar a lista "nunca pode acontecer" do docs/16 11.5) e `c_api_16_*` (3 testes na fronteira da DLL). Pendências: a falha injetada é por `PlanCraft` sem `CommitCraft` (não há ponto de falha dentro do Commit); a medição de ritmo H3-20 (A3-37) depende do `batch_sim`; `content_version` precisa de bump na próxima release (os dados mudam o loot de arma).
+
+## 14. API C 1.7: core da Cripta (Backend, 18/10/2026, `etapa3/economia`)
+
+Origem: auditoria do orquestrador (lacunas do jogo manual da Cripta) e `docs/19` (N0, Q19-1 A). `SHATTER_C_API_MINOR` vai para **7** (só adições; o C# deve exigir `shatter_api_minor() >= 7` e chamar `shatter_layout_check_ext7`). Código novo: `world.h/.cpp`; adições em `save.*`, `content.*`, `combat.*` e `expedition.cpp`.
+
+### 14.1 O que entrou
+
+| # | Lacuna | Como ficou |
+|---|---|---|
+| 1 | XP no jogo manual | `shatter_xp_award_kill`: `(xpBase + xpPerLevel x (nível - 1))` do `enemies.csv` x multiplicador de elite (elite sorteado: `elite_xp_mult` x modificador; elite fixo e chefe: o valor do próprio inimigo) x `fervor_xp_mult` (flag). Sobe de nível NO SAVE até o teto da área (`monsterLevel + xp_cap_levels_above_area`, até `max_level`; no teto o XP não entra), com a mesma regra da coleta de expedição (`AwardXp`). `shatter_character_progress` devolve nível, XP e XP para o próximo: o herói usa o nível do save, não um nível fixo da cena |
+| 2 | Estado do mundo no save | `SaveData::world` (`world_state`: por mapa `{map_id, visits, opened[]}`). `shatter_world_object_get/set` por ID de objeto (`chest.crypt.01`, `secret.crypt.cracked_wall`, `shortcut.crypt.a`...), `shatter_world_state_json`. Limites 64 áreas e 512 objetos por área. **Migração:** o campo é opcional no save v2 (ausente = nada aberto), então não houve novo `save_version`: um save v2 sem o campo abre, grava os mesmos bytes e só passa a ter `world_state` depois do primeiro objeto aberto ou da primeira visita; testado (`world_state_survives_the_save_file_and_old_saves_load_with_nothing_opened`) |
+| 3 | Baús | Tabela nova opcional `chests.csv` (`id,mapId,lootTable`). `shatter_chest_open`: tabela do baú (sem linha, ou de outro mapa: `areaLootTable` do mapa), rola como `shatter_save_drop_loot` (itens no chão, Ouro/Lascas no save), marca o baú aberto. Já aberto: nada rola, `SHATTER_CHEST_ALREADY_OPEN`. Buffer pequeno: nada muda (nem estado, nem rng) |
+| 4 | Loot ao limpar um encontro | `shatter_encounter_clear_loot`: rola a `areaLootTable` do mapa (como `drop_loot`) |
+| 5 | Encontros | `shatter_world_begin_visit` (incrementa as visitas e devolve a semente, função pura de craft_seed efetivo, mapa e contador: o chamador não a escolhe) e `shatter_encounter_roll_json`: n entre min e max por grupo e a elite (`chanceElite`) por espaço com o modificador, fluxo `Events`, determinístico pela semente da visita (a mesma formação depois de um checkpoint). Chefe e elite fixo nunca viram "elite sorteado". `shatter_map_info_json`: encontros na ordem do CSV, tabela da área e baús |
+| 6 | Fervor | `shatter_fervor_get` para a HUD (multiplicadores e bônus: XP +200% com o CSV atual). XP usa a flag `fervor`; Ouro, materiais e chance de Raro já usavam o modo Manual do loot |
+| N0 | Tempo da arma | `ComputeActionTiming` ganhou `weaponTimeFactor`; `WeaponTimeFactor` = `attackTime` da arma / `refAttackTime` da classe, só para habilidades `scalesWithWeapon` (preparação, impacto e recuperação; a recarga não muda). Coluna nova opcional `refAttackTime` em `basic_kits.csv` (0 ou ausente = sem escala). Espada inicial: fator 1; Martelo: 1,4/0,9 (a duração do golpe cresce 56%, a velocidade cai 36%). O simulador idle usa o mesmo fator para o herói. API: `shatter_skill_timing_weapon` (o `shatter_skill_timing` antigo não muda). Interpretação: "x refAttackTime / attackTime" do docs/19 é a VELOCIDADE; a duração é o inverso |
+| 7 | Dados do docs/16 4.5 | `worn_trousers`, `stone_maul` e itens de baixo peso nas tabelas da Cripta, mais as linhas F1 do Guerreiro do docs/19 (bases, afixos, `off_hand` ligado, `vset.warrior_rare_01`); `affix.ruthless` e `affix.of_cadence` substituem `scorching` e `of_ruin` em `Content/Data` (o fixture `tests/data/rich` mantém os seus). **N5 (`skill_ranks.csv`) fica para a Etapa 4** |
+
+### 14.2 API C 1.7
+
+| Função | Contrato |
+|---|---|
+| `shatter_world_begin_visit(db, save, map, len, uint64* seed)` | mapa desconhecido = `NOT_FOUND` |
+| `shatter_world_object_get/set(save, map, len, object, len[, opened])` | ID inválido ou limite = `INVALID_ARGUMENT` |
+| `shatter_world_state_json(save, map, len, buf...)` | `{map_id,visits,opened:[...]}` |
+| `shatter_map_info_json(db, map, len, buf...)` | `{map_id,monster_level,tier,area_loot_table,boss_encounter,encounters,chests:[{id,loot_table}]}` |
+| `shatter_encounter_roll_json(db, enc, len, visit_seed, buf...)` | `{encounter_id,is_boss,groups:[{enemy_id,count,slots:[{elite,modifier_id}]}]}`; um grupo de n inimigos usa os n primeiros espaços do layout |
+| `shatter_chest_open(db, save, map, len, chest, len, ctx, rng, buf..., int32* result, err)` | `result` = `SHATTER_CHEST_OPENED/ALREADY_OPEN/NO_TABLE`; saída = JSON do loot |
+| `shatter_encounter_clear_loot(db, save, map, len, ctx, rng, buf..., err)` | mapa sem tabela = `NOT_FOUND` |
+| `shatter_xp_award_kill(db, save, ci, map, len, enemy, len, monster_level, elite_rolled, modifier, len, fervor, shatter_xp_info*)` | inimigo ou modificador desconhecido = `NOT_FOUND` |
+| `shatter_character_progress(db, save, ci, map, len, shatter_xp_info*)` | `map` vazio = teto `max_level` |
+| `shatter_fervor_get(db, shatter_fervor_info*)` | multiplicadores e bônus |
+| `shatter_skill_timing_weapon(db, skill, len, stats, class, len, weapon_base, len, shatter_action_timing*)` | `weapon_base` vazio = desarmado |
+| `shatter_layout_info_ext7` / `shatter_layout_check_ext7` (`SHATTER_LAYOUT_EXT7_COUNT` = 15) | `[sizeof(shatter_xp_info), 7 offsets, sizeof(shatter_fervor_info), 6 offsets]` |
+
+### 14.3 Para o Frontend / Integração
+
+C# em `Assets/Scripts/Interop`: `CryptTypes.cs`, `Native/ShatterNative.Crypt.cs`, `Native/SaveGame.Crypt.cs`: `BeginAreaVisit`, `IsWorldObjectOpen`, `SetWorldObjectOpen`, `WorldState`, `MapInfoOf`, `RollEncounter`, `OpenChest`, `EncounterClearLoot`, `AwardKillXp`, `CharacterProgress`; em `NativeRulesCore`: `Fervor()` e `GetActionTimingWithWeapon`. O herói deve usar `CharacterProgress(...).Level` (hoje a cena fixa 5). Grave o save depois de abrir baú, abrir segredo ou atalho e depois de uma melhoria (o chão não é salvo).
+
+### 14.4 Testes
+
+`test_world.cpp` (13 testes: estado do mundo e limites, save antigo sem o campo, semente da visita, formação determinística e distribuição de elite em 20 mil sementes, tabela de baú e fallback, erros de `chests.csv`, XP de cada tipo, Fervor, teto de nível, N0 com o conteúdo real: Martelo mais lento que a Espada e DPS na faixa do docs/19) e `c_api_17_*` (5 testes na fronteira da DLL).
