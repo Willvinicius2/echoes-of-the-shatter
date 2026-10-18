@@ -1,0 +1,55 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "vendor_stock.csv",
+  "kind": "rows",
+  "optional": true,
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Estoque fixo do Vendedor (docs/16 11.8): pilhas compraveis com Ouro. Tabela opcional: sem ela o Vendedor so compra e recompra.",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "vendor.",
+      "desc": "ID da oferta"
+    },
+    {
+      "name": "refId",
+      "type": "string",
+      "required": true,
+      "pattern": "^(consumable|material)(\\.[a-z0-9_]+)+$",
+      "desc": "ID da pilha vendida (consumable.* ou material.*; a existencia nao e validada, nao ha tabela de consumiveis)"
+    },
+    {
+      "name": "kind",
+      "type": "enum",
+      "required": true,
+      "values": [
+        "stack"
+      ],
+      "desc": "Tipo da oferta (so stack)"
+    },
+    {
+      "name": "priceGold",
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "desc": "Preco em Ouro por unidade"
+    },
+    {
+      "name": "carryCap",
+      "type": "int",
+      "required": true,
+      "min": 1,
+      "desc": "Maximo que o jogador pode levar desta pilha"
+    }
+  ],
+  "checks": [
+    {
+      "check": "vendor_stock_rules"
+    }
+  ]
+}

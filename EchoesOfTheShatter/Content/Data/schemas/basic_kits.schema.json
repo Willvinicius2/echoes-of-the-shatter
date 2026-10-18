@@ -129,6 +129,14 @@
       "default": 0,
       "min": 0,
       "desc": "Recurso gasto por ponto de dano evitado; 0 = nao gasta"
+    },
+    {
+      "name": "refAttackTime",
+      "type": "number",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "desc": "attackTime (s) da arma inicial da classe (docs/19 N0): a duracao dos golpes do kit basico e multiplicada por refAttackTime / attackTime da arma equipada; 0 ou vazio = sem escala"
     }
   ],
   "checks": [

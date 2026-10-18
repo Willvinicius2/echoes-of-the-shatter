@@ -1,6 +1,6 @@
 # 06 — Dados: esquemas, tabelas CSV e save
 
-Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (87 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds`, as 2 da rodada 2, as 18 de inventário e as 7 do combate básico de docs/18), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
+Responsável: Data Engineer. Status desta entrega: conteúdo real com `rules.csv` (102 chaves: as 41 de `constants.h`, as 17 de docs/13, `dodge_cancel_recovery_fraction`, `out_of_combat_seconds`, as 2 da rodada 2, as 18 de inventário e as 7 do combate básico de docs/18 e as 15 da economia de docs/16 seção 11), `meta.csv` (`content_version = 1`) e as tabelas do GDD preenchidas. Tabelas novas e colunas novas: seção 5a. Fixtures de teste em `ShatterCore/tests/data/`. Validador em `tools/validate_data.py`, guia em `tools/README_dados.md`.
 
 ## 1. Fontes e escopo
 
@@ -132,8 +132,8 @@ Chaves de `RulesConstants` (`constants.h`). O validador exige as 62, nomes exato
 | `sell_price_rare` | int | ≥ 0 | 35 | idem, Raro |
 | `sell_price_unique` | int | ≥ 0 | 100 | idem, Único (só tira duplicatas; protegido na UI) |
 | `sell_level_factor` | number | 0 a 10 | 0.1 | [HIPÓTESE]: venda = preço da raridade x (1 + fator x (itemLevel − 1)), arredondado. O Ouro ainda não tem uso (docs/16 Q3-3): é só o valor calculável |
-| `equip_slot_main_hand` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
-| `equip_slot_off_hand` | bool | — | false | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_main_hand` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, mão secundária, elmo, peitoral, luvas, calça e botas; `off_hand` ligada em docs/19 Q19-3 A, só o escudo do Guerreiro); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
+| `equip_slot_off_hand` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
 | `equip_slot_head` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
 | `equip_slot_body` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
 | `equip_slot_hands` | bool | — | true | docs/16 4.1: posição liberada no protótipo (arma, elmo, peitoral, luvas, calça e botas); `false` = o core recusa equipar ali (SLOT_LOCKED). Um anel (`ring`) serve em `ring` e `ring2` |
@@ -423,7 +423,7 @@ enemy.hollow_sentinel,skill.enemy.sentinel_strike,1,true
 | `weight` | número (ponto decimal) | não | > 0 | 1 | Peso de sorteio (> 0) |
 | `allowedSlots` | lista (`\|`) de enum: `main_hand`, `off_hand`, `head`, `body`, `hands`, `legs`, `feet`, `amulet`, `ring`, `ring2`, `belt` | não | — | — | Posições permitidas (vazio = todas) |
 | `group` | texto (regex `^[a-z0-9_]+$`) | não | — | — | Grupo exclusivo |
-| `craftInscription` | bool (`true`/`false`) | não | — | false | Disponível em Fixar Inscrição |
+| `craftInscription` | bool (`true`/`false`) | não | — | false | Pode ser sorteado como candidato de Adicionar afixo no Encantador (docs/16 11.4). Hoje `true` nos 14 afixos do protótipo |
 
 Regras de conteúdo:
 
@@ -753,7 +753,7 @@ Checagens do validador: `enemy_ai_rules`.
 Kit básico por classe: combo de golpes leves, golpe forte carregado e defesa. **Única tabela opcional de verdade**: o arquivo pode faltar (classe sem linha não tem kit, `shatter_basic_kit_get` devolve NOT_FOUND). As outras tabelas de 5a são obrigatórias. O core lê, valida e expõe os números; a máquina de combate básica (índice do combo, buffer, janelas, carga, cancelamentos) roda no C# (`HeroCombatLogic`, docs/18 8.1).
 
 - Chave primária: `classId` (uma linha por classe).
-- Cabeçalho exato: `classId,lightChain,heavySkill,heavyChargeTime,heavyMaxMult,chargeEffect,guardEffect,guardArc,guardMaxHold,guardCooldown,guardPerfectWindow,guardPerfectCooldown,guardPerfectEffects,guardPerfectResource,guardDrainPerDamage`. No core, as 7 últimas colunas podem faltar no cabeçalho (valor neutro); o validador exige o cabeçalho completo.
+- Cabeçalho exato: `classId,lightChain,heavySkill,heavyChargeTime,heavyMaxMult,chargeEffect,guardEffect,guardArc,guardMaxHold,guardCooldown,guardPerfectWindow,guardPerfectCooldown,guardPerfectEffects,guardPerfectResource,guardDrainPerDamage,refAttackTime`. No core, as 8 últimas colunas podem faltar no cabeçalho (valor neutro); o validador exige o cabeçalho completo.
 
 | Coluna | Tipo | Obrig. | Faixa | Padrão | Descrição |
 |---|---|---|---|---|---|
@@ -772,8 +772,9 @@ Kit básico por classe: combo de golpes leves, golpe forte carregado e defesa. *
 | `guardPerfectEffects` | lista de ref `effects.csv` | não | até 4 itens | vazio | Aplicados no atacante corpo a corpo |
 | `guardPerfectResource` | número | não | ≥ 0 | 0 | Recurso ganho pela perfeita (substitui `resourceOnBlock`) |
 | `guardDrainPerDamage` | número | não | ≥ 0 | 0 | Recurso gasto por ponto de dano evitado; 0 = não gasta |
+| `refAttackTime` | número | não | ≥ 0 | 0 | `attackTime` (s) da arma inicial da classe (docs/19 N0): a duração dos golpes do kit básico (`lightChain` e `heavySkill`) é multiplicada por `refAttackTime / attackTime` da arma equipada; 0 ou vazio = sem escala. Conteúdo: Guerreiro 0.9 (`iron_sword`), Arqueiro 0.8 (`hunter_bow`), Mago 1 (cajado, F2; o Mago não escala com arma) |
 
-Checagens do validador: `basic_kit_rules` (habilidade de outra classe, `guardEffect` sem a tag `guard`, janela perfeita menor que a espera). Os IDs do kit cabem em 63 bytes (campos do C API).
+Checagens do validador: `basic_kit_rules` (habilidade de outra classe, `guardEffect` sem a tag `guard`, janela perfeita menor que a espera; aviso `W_KIT` se `refAttackTime` difere do `attackTime` das armas de nível 1 do mesmo estilo, só para habilidade que escala com arma). Os IDs do kit cabem em 63 bytes (campos do C API).
 
 **Tag `guard` em `effects.csv`** (docs/18 8.1): um efeito com a tag `guard` (`effect.guarding.*`) só reduz o dano recebido (`damage_taken`) quando o chamador informa que o golpe veio de dentro do arco da defesa (`HitInput::fromGuardArc`, `shatter_hit_input.from_guard_arc`). A lentidão do mesmo efeito (`move_speed`) vale sempre. O C# faz a geometria (`ShapeQuery`); o core aplica o modificador.
 
@@ -802,11 +803,87 @@ Esquema em `schemas/save_v2.schema.json`, ao lado de `save_v1`. Não é usado pe
 - O loot no chão **não é salvo** (vale até sair da Cripta, docs/16 4.2). A Mochila não entra no snapshot da expedição.
 - `item_bases.csv.slot` precisa estar liberado em `rules.csv` (`equip_slot_<slot>`); o validador acusa `E_SLOT_LOCKED` se uma base ficar numa posição bloqueada.
 
+## 5c. Economia do protótipo: Vendedor e Encantador (docs/16 seção 11)
+
+Todos os números são [HIPÓTESE]. Nada disso exige `save_version` novo (ver "Save" abaixo).
+
+### `rules.csv`: 15 chaves novas (todas obrigatórias)
+
+| Chave | Tipo | Faixa | Padrão | Descrição |
+|---|---|---|---|---|
+| `vendor_buyback_slots` | int | 1 a 100 | 10 | Vagas da lista de recompra |
+| `vendor_buyback_price_factor` | number | 1 a 10 | 1.25 | Recompra custa este fator sobre o valor pago |
+| `refill_flask_carry_cap` | int | 1 a 99 | 3 | Teto de Frascos de Recarga levados |
+| `refill_flask_charges` | int | 1 a 10 | 1 | Cargas de poção que cada Frasco restaura |
+| `craft_cost_level_factor` | number | 0 a 10 | 0.1 | Custo cresce por nível de item acima de 1 |
+| `reforge_step_mult` | number | 0 a 10 | 0.5 | Cada Reforjar da mesma peça soma esta fração do custo-base |
+| `reforge_mult_cap` | number | 1 a 100 | 3.0 | Teto do multiplicador de custo do Reforjar |
+| `reforge_lock_cost_mult` | number | 1 a 100 | 2.0 | Multiplicador das Lascas ao travar um afixo |
+| `reforge_lock_max` | int | 0 a 1 | 1 | Afixos travados por Reforjar (0 = sem trava) |
+| `add_affix_candidates` | int | 1 a 8 | 3 | Candidatos de Adicionar afixo |
+| `polish_step_fraction` | number | > 0, ≤ 1 | 0.25 | Fração da faixa por passo de Lapidar |
+| `polish_max_steps` | int | 1 a 10 | 3 | Passos de Lapidar por afixo |
+| `dismantle_shards_normal` | int | 0 a 1000000 | 2 | Lascas ao desmontar Comum |
+| `dismantle_shards_magic` | int | 0 a 1000000 | 5 | Lascas ao desmontar Mágico |
+| `dismantle_shards_rare` | int | 0 a 1000000 | 12 | Lascas ao desmontar Raro |
+
+Avisos do validador (`W_RULES`): `polish_step_fraction x polish_max_steps > 1`; Lascas de Desmontar não crescentes com a raridade; `reforge_step_mult = 0` com `reforge_mult_cap > 1`.
+
+### `craft_costs.csv` (tabela OPCIONAL)
+
+- Chave primária: `id` (prefixo `craft.`). Cabeçalho exato: `id,op,rarity,step,goldCost,shardCost`.
+- `op`: `refine`, `reforge`, `add`, `polish` (Desmontar não tem custo). `rarity`: `normal`, `magic`, `rare`, `any`. `step`, `goldCost`, `shardCost`: inteiros ≥ 0.
+- Regras (`craft_cost_rules`, código `E_CRAFT`): par (`op`, `rarity`, `step`) único; `refine` só `normal`; `reforge` e `add` só `magic`/`rare`; `polish` aceita qualquer raridade; só `polish` usa `step` ≥ 1 e as outras usam 0; toda operação tem ao menos uma linha; `polish` tem linha para cada passo 1 a `polish_max_steps`. Aviso `W_CRAFT`: `dismantle_shards_normal` ≥ Lascas de Refinar (ciclo infinito).
+- Conteúdo: 8 linhas (`craft.refine.normal`, `craft.reforge.magic`, `craft.reforge.rare`, `craft.add.magic`, `craft.add.rare`, `craft.polish.1/2/3`), valores em docs/16 11.8.
+
+### `vendor_stock.csv` (tabela OPCIONAL)
+
+- Chave primária: `id` (prefixo `vendor.`). Cabeçalho exato: `id,refId,kind,priceGold,carryCap`.
+- `kind`: `stack`. `refId`: `consumable.*` ou `material.*` (a existência não é validada: não há tabela de consumíveis). `priceGold` ≥ 0; `carryCap` ≥ 1.
+- Regras (`vendor_stock_rules`, código `E_VENDOR`): `refId` único; se `refId = consumable.refill_flask`, `carryCap` deve ser igual a `refill_flask_carry_cap`.
+- Conteúdo: 1 linha, `vendor.refill_flask,consumable.refill_flask,stack,50,3`.
+
+### `chests.csv` (tabela OPCIONAL)
+
+- Chave primária: `id` (prefixo `chest.`). Cabeçalho exato: `id,mapId,lootTable`. `mapId` referencia `maps.csv`; `lootTable` referencia `loot_tables.csv`. Sem checagem própria: prefixo, referências e ID único vêm do esquema (`E_ID`, `E_FK`, `E_DUP_ID`).
+- Conteúdo (docs/14 5.2, docs/16 4.2): `chest.crypt.01` a `03` -> `loot.crypt.area`; `chest.crypt.04` e `05` -> `loot.crypt.elite`, todos em `map.act1.crypt`. A posição de cada baú no mapa é do layout (docs/14), não desta tabela.
+- O fixture `tests/data/rich/chests.csv` usa `loot.crypt.common` nos baús 04 e 05 porque o fixture não tem `loot.crypt.elite`.
+
+As tabelas `craft_costs.csv` e `vendor_stock.csv` também existem em `ShatterCore/tests/data/rich/` (cópia das mesmas linhas). Os fixtures raiz e `invalid/*` não as têm (opcionais), mas ganharam as 15 chaves de `rules.csv`.
+
+### Itens do Guerreiro e core da Cripta (docs/19 F1, docs/16 4.5)
+
+Todos os números são [HIPÓTESE] de docs/19. Só Guerreiro e só o que a Etapa 3 usa; F2 (Arqueiro, Mago, T2 de afixo, `stone_plate`, Únicos novos, `skill_ranks.csv`) fica fora.
+
+- `item_bases.csv`: +`steel_sword`, `quarry_maul`, `wooden_shield`, `guard_shield` e as cinco peças `guard_*` (`guard_helm`, `guard_cuirass`, `guard_gauntlets`, `guard_greaves`, `guard_sabatons`). As `guard_*` usam `vset.warrior_rare_01` (conjunto visual do Guerreiro; no docs/19 1.6.3 o G1 se chama `vset.iron_guard`, o nome adotado é o do arquivo de arte). Os `vset.*` não têm tabela própria: existem pelo `visualSetId` das bases e pelo catálogo de peças da Unity (`SO_HeroPartCatalog_<Heroi>`); um conjunto exclusivo de um herói se declara `vset.<heroi>_*`.
+- `affixes.csv`: `allowedSlots` ganhou `off_hand` em `sturdy`, `plated`, `of_mending` e `of_the_furnace` (peso desta última 8 -> 5); novos `ruthless` (multiplicador de crítico), `of_cadence` (recarga), `of_reach` (área), `resolute` (vida aumentada), `of_the_flask` (poção) e `of_the_wall` (bloqueio, só `off_hand`). `ruthless` e `of_cadence` substituem `scorching` e `of_ruin` do conteúdo real (que seguem só no fixture `rich`).
+- `rules.csv`: `equip_slot_off_hand = true`.
+- `loot_entries.csv`: pesos e janelas de docs/19 3.5.1 nas tabelas `common`, `elite` e `guardian` (peças `guard_*` com `minAreaLevel 3`, `maxAreaLevel 7`; `worn_trousers`, `wooden_shield` e, na `common`, `stone_maul`). Em `loot.crypt.area` entram os mesmos itens com peso 1 cada (docs/16 4.5, ponto 3) [HIPÓTESE]: 7 de 107 de peso, ou ~6,5% por sorteio, que acontece com `dropChance` 10%.
+- Sem Único do Guerreiro marcado F1 (`bulwark_shield` é F2) e sem `effects.csv` novo.
+- Loc: nomes de todas as bases e afixos novos em `Loc/content.csv` (prefixos com 4 formas de gênero e número).
+
+### Save (campos OPCIONAIS, sem `save_version` novo)
+
+Todos em snake_case, gravados só quando há valor; save sem eles mantém os mesmos bytes e o mesmo hash. Esquema: `save_v2.schema.json` (a v1 não muda).
+
+| Onde | Campo | Tipo | Quando aparece |
+|---|---|---|---|
+| `ItemInstance` (personagens, equipamento, `backpack`, `stash`) | `craft_steps` | inteiro ≥ 0 (uint) | só se > 0 |
+| `ItemInstance` | `craft_reforges` | inteiro ≥ 0 (uint) | só se > 0 |
+| `RolledAffix` | `polish` | inteiro, 0 a `polish_max_steps` | só se > 0 |
+| `SaveData` | `craft_seed` | uint64 em texto decimal | só se != 0 |
+| `SaveData` | `vendor_buyback` | lista de `{item: ItemInstance, paid: int ≥ 0}`, até `vendor_buyback_slots` | só se não vazia |
+
+Pilhas ficam em `currencies`: `currency.gold`, `material.shards`, `consumable.refill_flask`. O validador de save não restringe o prefixo do `id` em `currencies` (aceita `consumable.`). Checagens semânticas (`E_SAVE`): `polish` ≤ `polish_max_steps`; `vendor_buyback` ≤ `vendor_buyback_slots`; `paid` ≥ 0 e `craft_*` ≥ 0 (esquema); os itens da recompra e da Mochila passam pela checagem comum de item (limite de afixos por raridade, referências).
+
+### Loc
+Chaves novas: nomes dos afixos `affix.scorching` e `affix.of_ruin` (`content.csv`; substituídos por `ruthless` e `of_cadence`, ver "Itens do Guerreiro"), `consumable.refill_flask.name/.desc` (`content.csv`), `npc.vendor.name`, `npc.enchanter.name` (`dialogue.csv`) e `ui.vendor.*`, `ui.enchant.*` (`ui.csv`, incluindo `.err.*`). Placeholders por nome (`{amount}`, `{rarity}`, `{n}`, `{total}`), como no resto de `ui.csv`. Textos provisórios.
+
 ## 5b. Espaço `legs`, `visualSetId` e save v2 (C-10, decisão do dono 16/10/2026)
 
 - `@slots` (`schemas/_enums.json`) ganhou `legs` no fim da lista. `item_bases.slot` e `affixes.allowedSlots` aceitam `legs`.
 - Afixos de armadura `affix.sturdy`, `affix.plated`, `affix.of_mending` e `affix.of_the_furnace` passaram a valer em `legs`. Afixos com `allowedSlots` vazio também passam a valer em `legs`: precisam de revisão do Game Designer (C-10e).
-- Base inicial de calça: `item_base.worn_trousers`, slot `legs`, itemLevel 1, implícito `armor:flat:4` **[HIPÓTESE]** (coerente com o elmo `armor:flat:8` e com o peitoral `life:flat:12`), gênero `f`, `visualSetId` `vset.starter`. Ela ainda não está em nenhuma tabela de loot, então não cai.
+- Base inicial de calça: `item_base.worn_trousers`, slot `legs`, itemLevel 1, implícito `armor:flat:4` **[HIPÓTESE]** (coerente com o elmo `armor:flat:8` e com o peitoral `life:flat:12`), gênero `f`, `visualSetId` `vset.starter`. Entra nas tabelas de loot da Cripta com docs/19 F1 (ver "Itens do Guerreiro e core da Cripta").
 - Coluna opcional `visualSetId` (`vset.*`) em `item_bases.csv` e `uniques.csv`. Vazio = fallback `vset.starter`. As bases de armadura iniciais (`iron_helm`, `leather_vest`, `leather_gloves`, `worn_boots`, `worn_trousers`) usam `vset.starter`. É dado de apresentação: fora do `resultHash`, do simulador e do save.
 - `save_v2` (proposta, `schemas/save_v2.schema.json`) reúne três mudanças numa versão só: `equipment` com 11 posições (inclui `legs`, `null` ou item), `potion_slots` (lista de `{potion_id, charges, recharge_remaining}`, uma por linha de `potions.csv`) e `boss_progress`. Sem `potion_heal_fraction` no pedido e sem `tutorial_flags`.
 - Migração `1→2` (`migrate_1_to_2` do validador, espelho da migração do core): `potions` vira `potion_slots` com `charges` = o antigo valor no 1º slot (Vida) e o máximo de `potions.csv` nos demais, `recharge_remaining` = 0; `equipment.legs = null`; `boss_progress = []`; `potion_heal_fraction` sai de cada pedido de expedição. O resultado valida contra `save_v2` (conferido com o save_v1 do fixture do core).
@@ -882,6 +959,8 @@ Envelope (raiz): `format`, `save_version`, `sha256`, `data`, exatamente nessa or
 | `unique_id` | ID ou vazio | sim | — | Vazio, salvo se `rarity = unique`. |
 | `affixes` | lista de objeto `RolledAffix` | sim | — | Limite por raridade: normal 0, mágico 2, raro 4, único 0. |
 | `has_inscription` | bool | sim | — |  |
+| `craft_steps` | inteiro (uint) | não (v2) | ≥ 0 | Só aparece se > 0 (seção 5c) |
+| `craft_reforges` | inteiro (uint) | não (v2) | ≥ 0 | Só aparece se > 0 (seção 5c) |
 
 #### `RolledAffix`
 
@@ -889,6 +968,7 @@ Envelope (raiz): `format`, `save_version`, `sha256`, `data`, exatamente nessa or
 |---|---|---|---|---|
 | `affix_id` | ID (texto) | sim | — |  |
 | `value` | número | sim | — |  |
+| `polish` | inteiro | não (v2) | 0 a `polish_max_steps` | Só aparece se > 0 (seção 5c) |
 
 #### `StackEntry`
 

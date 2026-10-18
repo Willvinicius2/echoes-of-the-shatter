@@ -112,7 +112,7 @@ namespace Echoes.Interop.Native
                 var minor = ShatterNative.shatter_api_minor();
                 if (minor < ShatterNative.ExpectedApiMinor)
                 {
-                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (combate basico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento; fuga do inimigo, vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
+                    reason = $"shattercore.dll tem API 1.{minor}, o C# espera 1.{ShatterNative.ExpectedApiMinor} (core da Cripta: mundo, baus, encontros, XP, Fervor; economia: Vendedor, recompra, Frasco de Recarga e Encantador; combate basico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento; fuga do inimigo, vitals com potion_barrier, relogio no inicio da expedicao, layout 114 valores)";
                     return false;
                 }
                 if (!NativeLayout.CheckExt(out var extMessage))
@@ -138,6 +138,21 @@ namespace Echoes.Interop.Native
                 if (!NativeLayout.CheckExt5(out var ext5Message))
                 {
                     reason = "layout ext5 (combate basico) das structs diverge da DLL: " + ext5Message;
+                    return false;
+                }
+                if (!NativeLayout.CheckExt6(out var ext6Message))
+                {
+                    reason = "layout ext6 (economia) das structs diverge da DLL: " + ext6Message;
+                    return false;
+                }
+                if (!NativeLayout.CheckExt7(out var ext7Message))
+                {
+                    reason = "layout ext7 (core da Cripta) das structs diverge da DLL: " + ext7Message;
+                    return false;
+                }
+                if (!NativeLayout.CheckExt8(out var ext8Message))
+                {
+                    reason = "layout ext8 (movimento do heroi) das structs diverge da DLL: " + ext8Message;
                     return false;
                 }
                 core = new NativeRulesCore(version);
@@ -278,6 +293,15 @@ namespace Echoes.Interop.Native
                 return (RulesStatus)combatRulesStatus;
             }
 
+            ShatterHeroMoveRules heroMove = default;
+            var heroMoveStatus = ShatterNative.shatter_db_hero_move_rules(raw, &heroMove);
+            if (heroMoveStatus != 0)
+            {
+                handle.Dispose();
+                errors.Add(new RulesError((RulesStatus)heroMoveStatus, "rules.csv", 0, "shatter_db_hero_move_rules failed"));
+                return (RulesStatus)heroMoveStatus;
+            }
+
             var stubErrors = new List<RulesError>();
             var stubStatus = stub.LoadContent(dataDirectory, stubErrors);
             if (stubStatus != RulesStatus.Ok)
@@ -314,6 +338,8 @@ namespace Echoes.Interop.Native
             combat.LightWindupCreditMax = combatRules.light_windup_credit_max;
             combat.GuardLowerTimeSeconds = combatRules.guard_lower_time;
             combat.DashShotRangeUu = combatRules.dash_shot_range;
+            combat.HeroMoveAccelSeconds = heroMove.accel_seconds;
+            combat.HeroMoveDecelSeconds = heroMove.decel_seconds;
             ApplyCoreEnemyData();
             ApplyCoreSkillData();
             ApplyCoreBasicKits();

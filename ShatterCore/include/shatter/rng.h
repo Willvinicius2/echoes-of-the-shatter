@@ -14,6 +14,7 @@ enum class RngStream : std::uint32_t {
     Combat = 1,  // crítico, evasão, bloqueio, chance de efeito, esquiva da IA
     Loot   = 2,  // raridade, base, afixos, valores, quantidade de ouro
     Events = 3,  // escolha do encontro, elites, modificadores de encontro
+    Crafting = 4,  // melhorias do Encantador (docs/16 11.6): semente por (craft_seed, uid, craft_steps, operação); não consome Loot
 };
 
 // Passo do SplitMix64 (Steele, Lea, Flood 2014). Avança o estado e devolve 64 bits.

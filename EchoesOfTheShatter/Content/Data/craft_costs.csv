@@ -1,0 +1,9 @@
+id,op,rarity,step,goldCost,shardCost
+craft.refine.normal,refine,normal,0,40,10
+craft.reforge.magic,reforge,magic,0,60,12
+craft.reforge.rare,reforge,rare,0,120,20
+craft.add.magic,add,magic,0,90,15
+craft.add.rare,add,rare,0,200,25
+craft.polish.1,polish,any,1,60,0
+craft.polish.2,polish,any,2,120,0
+craft.polish.3,polish,any,3,240,0

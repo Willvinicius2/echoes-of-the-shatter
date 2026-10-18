@@ -1,0 +1,70 @@
+{
+  "$comment": "Formato proprio shatter-table-schema/1 - ver docs/06_dados.md, secao 3.",
+  "format": "shatter-table-schema/1",
+  "table": "craft_costs.csv",
+  "kind": "rows",
+  "optional": true,
+  "primaryKey": [
+    "id"
+  ],
+  "desc": "Custos de Encantar (docs/16 11.8): Ouro e Lascas por operacao, raridade e passo. Tabela opcional: sem ela o Encantador nao cobra operacoes. Todos os numeros sao [HIPOTESE].",
+  "columns": [
+    {
+      "name": "id",
+      "type": "id",
+      "required": true,
+      "prefix": "craft.",
+      "desc": "ID do custo (craft.<op>.<raridade ou passo>)"
+    },
+    {
+      "name": "op",
+      "type": "enum",
+      "required": true,
+      "values": [
+        "refine",
+        "reforge",
+        "add",
+        "polish"
+      ],
+      "desc": "Operacao: refine, reforge, add ou polish (desmontar nao tem custo)"
+    },
+    {
+      "name": "rarity",
+      "type": "enum",
+      "required": true,
+      "values": [
+        "normal",
+        "magic",
+        "rare",
+        "any"
+      ],
+      "desc": "Raridade do item de entrada; any = qualquer raridade permitida"
+    },
+    {
+      "name": "step",
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "desc": "Passo (so a Lapidar usa 1..polish_max_steps; as outras usam 0)"
+    },
+    {
+      "name": "goldCost",
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "desc": "Custo-base em Ouro"
+    },
+    {
+      "name": "shardCost",
+      "type": "int",
+      "required": true,
+      "min": 0,
+      "desc": "Custo-base em Lascas"
+    }
+  ],
+  "checks": [
+    {
+      "check": "craft_cost_rules"
+    }
+  ]
+}
