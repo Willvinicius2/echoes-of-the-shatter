@@ -163,7 +163,8 @@ namespace Echoes.Tests.EditMode
                 Assert.AreEqual((cells - holes) * 2, tris, room.Id + ": piso plano, 2 triangulos por celula de 2 m");
                 Assert.AreEqual("M_Env_Piso", floors[0].GetComponent<Renderer>().sharedMaterial.name, room.Id);
             }
-            foreach (var r in level) StringAssert.EndsWith("Env_Scenery", r.sharedMaterial.shader.name, r.name + ": todo o cenario no Env_Scenery");
+            // O abismo (vista) e o vazio preto sem luz (Unlit) de proposito; todo o resto do cenario usa o Env_Scenery.
+            foreach (var r in level.Where(r => !r.name.Contains("abyss"))) StringAssert.EndsWith("Env_Scenery", r.sharedMaterial.shader.name, r.name + ": todo o cenario no Env_Scenery");
 
             // Simbolos de bussola: so em checkpoint e portal (nunca sorteados), no maximo 2 por sala.
             var glyphs = Object.FindObjectsByType<MeshFilter>(FindObjectsSortMode.None).Where(f => f.name.EndsWith(".glyph")).ToList();
