@@ -140,9 +140,13 @@ namespace Echoes.Tests.EditMode
                 hero.logic.Press(HeroCommand.Potion1);
                 world.Run(world.Step);
                 Assert.IsTrue(hero.logic.IsDrinking);
+                // A rampa de movimento (API C 1.7) leva a velocidade ao alvo em accel s; depois dela vale a velocidade do uso.
+                world.Run(world.Rules.Combat.HeroMoveAccelSeconds * 2.0);
+                Assert.IsTrue(hero.logic.IsDrinking);
                 Assert.AreEqual(walk * potion.MoveSpeedWhileUsing, hero.logic.CurrentVelocity().Magnitude, 1e-3, "velocidade durante o uso");
                 world.Run(potion.UseTime + world.Step);
                 Assert.IsFalse(hero.logic.IsDrinking, "o uso dura use_time");
+                world.Run(world.Rules.Combat.HeroMoveAccelSeconds * 2.0);
                 Assert.AreEqual(walk, hero.logic.CurrentVelocity().Magnitude, 1e-3);
             }
         }

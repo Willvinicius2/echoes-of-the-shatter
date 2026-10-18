@@ -106,6 +106,47 @@ namespace Echoes.Gameplay
         /// <summary>true se um ataque básico novo sairia agora (para o botão segurado repetir).</summary>
         public bool IsReadyForAction => !self.IsDead && !action.IsActive && !Dodge.IsDodging && drinking == null;
 
+        // Rampa de movimento (API C 1.7): hero_move_accel_seconds e hero_move_decel_seconds vêm de CombatRules (o core guarda e valida; o C# aplica).
+        // Estado de passo fixo: só muda em StepMoveVelocity. Sem passo ainda (consulta antes do primeiro FixedTick), vale a velocidade livre.
+        PlanarVector moveVelocity;
+        bool moveRampStarted;
+
+        /// <summary>Velocidade livre de caminhada (m/s) para a entrada atual, sem rampa: direção da entrada × velocidade (poção incluída).</summary>
+        PlanarVector FreeVelocity() => MoveInput.ClampMagnitude(1f) * FreeMaxSpeed();
+
+        float FreeMaxSpeed()
+        {
+            var speed = WalkSpeed;
+            if (drinking != null) speed *= (float)drinking.Potion.MoveSpeedWhileUsing;
+            return speed;
+        }
+
+        /// <summary>Estados em que o herói não anda livre (morte, hitstop, esquiva, golpe, atordoamento): a velocidade é a do estado e a rampa recomeça de zero.</summary>
+        bool IsFreeWalking => !self.IsDead && !self.Hitstop.IsActive && !Dodge.IsDodging && !action.IsActive && rules.CanMove(self.Stats);
+
+        /// <summary>Um passo da rampa linear: velocidade += máxima × dt ÷ tempo (acelerando) ou −= (parando); 0 s = instantâneo.</summary>
+        void StepMoveVelocity(double dt)
+        {
+            moveRampStarted = true;
+            if (!IsFreeWalking)
+            {
+                moveVelocity = PlanarVector.Zero;
+                return;
+            }
+            var target = FreeVelocity();
+            var gaining = target.SqrMagnitude >= moveVelocity.SqrMagnitude;
+            var seconds = gaining ? combatRules.HeroMoveAccelSeconds : combatRules.HeroMoveDecelSeconds;
+            if (seconds <= 1e-9)
+            {
+                moveVelocity = target;
+                return;
+            }
+            var delta = target - moveVelocity;
+            var distance = delta.Magnitude;
+            var maxStep = (float)(FreeMaxSpeed() * dt / seconds);
+            moveVelocity = distance <= maxStep ? target : moveVelocity + delta * (maxStep / distance);
+        }
+
         /// <summary>Velocidade no plano deste instante (m/s). Integrada em <see cref="FixedTick"/>; a cena só segue <see cref="Combatant.Position"/>.</summary>
         public PlanarVector CurrentVelocity()
         {
@@ -118,12 +159,7 @@ namespace Echoes.Gameplay
                 return PlanarVector.Zero;
             }
             if (!rules.CanMove(self.Stats)) return PlanarVector.Zero;
-            var speed = WalkSpeed;
-            if (drinking != null) speed *= (float)drinking.Potion.MoveSpeedWhileUsing;
-            // TODO(etapa3/economia): aceleração e desaceleração suaves. Quando o Backend entregar hero_move_accel_seconds (0,10) e hero_move_decel_seconds (0,08)
-            // em CombatRules, trocar este retorno por uma velocidade suavizada (estado no passo fixo, MoveTowards pelo tempo do core; nada de número aqui)
-            // e cobrir com teste de lógica (zero ao máximo em accel s, máximo a zero em decel s, parado sem entrada).
-            return MoveInput.ClampMagnitude(1f) * speed;
+            return moveRampStarted ? moveVelocity : FreeVelocity();
         }
 
         /// <summary>
@@ -143,6 +179,7 @@ namespace Echoes.Gameplay
         public void FixedTick(CombatSystem combat, double dt)
         {
             // Deslocamento no passo fixo (A-04): andar, esquiva e Investida integram aqui, nunca por quadro.
+            StepMoveVelocity(dt);
             self.Position += CurrentVelocity() * (float)dt;
             for (var i = 0; i < SlotCount; i++)
             {
