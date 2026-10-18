@@ -72,6 +72,7 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 - Depois de mudar docs, artes aprovadas ou pendências, regerar e republicar o roteiro do sócio no mesmo link: https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8
 
 ## Pendências de decisão
+- **PRIORIDADE MÁXIMA — Alinhamento de Contexto, Dupla e Escopo (`docs/20_alinhamento_ia_e_escopo.md`):** Antes de iniciar qualquer nova frente ou disparar subagentes, leia `docs/20_alinhamento_ia_e_escopo.md` e peça ao dono para decidir as duas pendências prioritárias em `docs/progresso/estado.json` (`fluxo-agentes-contexto` e `foco-fatia-vertical`). Não aprove artes nem decisões de design em nome do dono.
 - Itens "confirmar na instalação" do `docs/04_arquitetura.md`: conferir na Unity 6.3 instalada antes de o Frontend depender deles.
 - O protótipo Godot F1 continua na raiz (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity. Como rodar: `docs/prototipo_godot_f1.md`.
 

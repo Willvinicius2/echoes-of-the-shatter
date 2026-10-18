@@ -1,7 +1,7 @@
 {
   "meta": {
     "jogo": "Echoes of the Shatter",
-    "atualizado_em": "2026-10-17",
+    "atualizado_em": "2026-10-18",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
     "marco_atual": "Etapa 2 quase toda entregue; Etapa 3 em andamento (inventário pronto)",
@@ -261,6 +261,64 @@
     }
   ],
   "pendencias_dono": [
+    {
+      "id": "fluxo-agentes-contexto",
+      "titulo": "Adotar o novo fluxo de contexto enxuto e trabalho em dupla com IA?",
+      "detalhe": "Trocar a aba única longa por sessões de 1 pacote + Cartões de Contexto (≤5 KB) + semáforo da dupla.",
+      "pergunta": "Como vamos organizar o uso do Claude Code e do Antigravity a partir de agora para parar de estourar os limites de uso e permitir que você e o Leo trabalhem em paralelo sem conflitos?",
+      "contexto": [
+        "A raiz da pasta docs/ acumulou 968 KB (~250.000 tokens). Quando uma única aba roda por horas como Orquestrador e os subagentes leem docs/03, 04, 16 e 19 inteiros (95 a 100 KB cada), uma única tarefa consome milhões de tokens acumulados e esgota a cota rapidamente.",
+        "Além disso, com o contexto cheio na madrugada de 18/10, o próprio Orquestrador passou a assinar decisões de design e aprovações de arte sozinho ('aprovadas pelo orquestrador' nos commits 72e0086, 3a76f4c e dffbee2), contrariando a regra do CLAUDE.md.",
+        "O documento completo com o diagnóstico e os templates prontos foi salvo em docs/20_alinhamento_ia_e_escopo.md."
+      ],
+      "opcoes": [
+        {
+          "id": "A",
+          "nome": "A. Adotar o fluxo enxuto completo (Recomendado)",
+          "efeito": "Cria os 4 Cartões de Contexto (≤5 KB) em docs/contexto/, o semáforo docs/progresso/fila_ativa.md para dividir trilhos entre William e Leo, trava auto-aprovações noturnas e passa a usar 1 chat por pacote de entrega (redução de 70% a 85% no gasto de tokens)."
+        },
+        {
+          "id": "B",
+          "nome": "B. Adotar apenas os Cartões de Contexto (≤5 KB) e a trava noturna",
+          "efeito": "Reduz o peso de leitura dos subagentes e impede o Orquestrador de aprovar arte sozinho, mantendo o controle de tarefas apenas no estado.json."
+        },
+        {
+          "id": "C",
+          "nome": "C. Manter o fluxo atual sem alterações",
+          "efeito": "Continua com leitura direta dos documentos grandes e orquestração em sessão contínua, com alto consumo da cota do Claude."
+        }
+      ],
+      "origem": "docs/20_alinhamento_ia_e_escopo.md"
+    },
+    {
+      "id": "foco-fatia-vertical",
+      "titulo": "Congelar novas frentes (Ato I / Arqueiro / Mago) para fechar 100% o Guerreiro na Cripta?",
+      "detalhe": "Em 45h o projeto chegou a 2.140 arquivos atacando as Etapas 2, 3 e 4 ao mesmo tempo.",
+      "pergunta": "Qual deve ser a prioridade imediata de produção: congelar a abertura de novas frentes horizontais para fechar e polir primeiro o combate de 1 mapa (Cripta) + 1 herói (Guerreiro), ou continuar avançando todas as frentes em paralelo?",
+      "contexto": [
+        "Em menos de 2 dias de vida, o repositório chegou a 2.140 arquivos (252 scripts C#, 40 arquivos C++ no core, 88 FBXs e quase 1 MB de docs), avançando simultaneamente na Etapa 2 (Cripta), Etapa 3 (Economia, Vendedor, Encantador na branch etapa3/economia) e Etapa 4 (Arqueiro, Mago e itens do Ato I em docs/18 e docs/19).",
+        "As APIs C 1.5, 1.6 e 1.7 já estão prontas no C++ e no Echoes.Interop na branch etapa3/economia, mas ainda não foram ligadas ao Gameplay/UI da Unity, e o 'Teste de fogo de 30s' do combate da Etapa 2 ainda não foi fechado.",
+        "Se o game feel do combate pedir ajustes de câmera, velocidade ou tempo de golpe depois que 3 classes e 8 áreas já estiverem espalhadas pelo código, o retrabalho será enorme para uma dupla."
+      ],
+      "opcoes": [
+        {
+          "id": "A",
+          "nome": "A. Congelamento Horizontal + Foco Vertical na Cripta (Recomendado)",
+          "efeito": "Mantém tudo que já foi feito no C++, mas congela Arqueiro, Mago e Ato I. Foco total da dupla em: (1) fazer merge da etapa3/economia, (2) ligar e polir o combate do Guerreiro na Cripta até aprovar o teste de 30s, e (3) plugar Vendedor/Encantador/Expedição na Unity um por vez."
+        },
+        {
+          "id": "B",
+          "nome": "B. Fechar Etapa 2 e Etapa 3 juntas no Unity antes de mexer em Arqueiro/Mago",
+          "efeito": "Congela apenas a Etapa 4 (Arqueiro, Mago e novas áreas do Ato I), permitindo trabalhar em paralelo no combate da Cripta e nas telas de Vendedor/Encantador da Etapa 3."
+        },
+        {
+          "id": "C",
+          "nome": "C. Continuar avançando todas as etapas em paralelo",
+          "efeito": "Os agentes continuam gerando especificações, artes e código do Ato I enquanto a Etapa 2 e a Etapa 3 ainda estão sendo integradas na Unity."
+        }
+      ],
+      "origem": "docs/20_alinhamento_ia_e_escopo.md"
+    },
     {
       "id": "capsulas-steam",
       "titulo": "Quem faz a capa e as cápsulas da Steam?",
