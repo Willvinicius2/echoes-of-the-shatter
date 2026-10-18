@@ -586,6 +586,16 @@
       "data": "2026-10-18",
       "titulo": "Combate básico: combo, ataque forte e defesa para as 3 classes",
       "detalhe": "docs/18; o botão direito vira defesa, e Investida, Fenda e Escudada vão para Q, E e R. Q18-1 a Q18-4 com a opção (a)."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Itens e habilidades do Ato I (docs/19)",
+      "detalhe": "Recomendações Q19-1 a Q19-11 aceitas: o attackTime da arma muda o tempo dos golpes, entra o slot off_hand, o rank 3 tem perk e há 3 Únicos novos."
+    },
+    {
+      "data": "2026-10-18",
+      "titulo": "Conjunto Raro do Guerreiro em 3D",
+      "detalhe": "vset.warrior_rare_01, 5 peças cortadas do modelo da folha m10 (aço claro com frisos dourados)."
     }
   ],
   "nuvem": [
