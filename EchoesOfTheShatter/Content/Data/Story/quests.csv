@@ -1,0 +1,5 @@
+id,regionId,giver,objectiveType,objectiveTarget,objectiveCount,requires,reward
+quest.r1.first_call,region.r1.crypt,npc.ilsa,talk,npc.ilsa,1,,unlock.return_marker
+quest.r1.echoes,region.r1.crypt,npc.tico,collect_echo,region.r1.crypt,3,quest.r1.first_call,reveal.general_weakness
+quest.r1.siege,region.r1.crypt,npc.ilsa,reach_map_boss,map.act1.crypt,1,quest.r1.first_call,unlock.duel
+quest.r1.verdict,region.r1.crypt,,verdict,region.r1.crypt,1,quest.r1.siege,verdict_choice
