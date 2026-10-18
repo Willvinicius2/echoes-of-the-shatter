@@ -61,8 +61,9 @@ Material:
     - _EmissionIntensity: 0.6
     - _FloorContrast: 1.2
     - _FloorTile: 8
+    - _PoolSoftClip: 0.3
     - _PoolStrength: 1.5
-    - _RuneIntensity: 2.4
+    - _RuneIntensity: 0.55
     - _ShadeSoftness: 0.6
     - _SrcBlend: 1
     - _Variation: 0.07
@@ -71,7 +72,7 @@ Material:
     - _WarpFreq: 0.09
     - _ZWrite: 1
     m_Colors:
-    - _RuneColor: {r: 1, g: 0.72, b: 0.3, a: 1}
+    - _RuneColor: {r: 1, g: 0.52, b: 0.1, a: 1}
     - _ShadowTint: {r: 0.34999996, g: 0.29999998, b: 0.54999995, a: 1}
     - _Tint: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

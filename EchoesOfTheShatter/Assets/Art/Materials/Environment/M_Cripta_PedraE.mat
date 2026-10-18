@@ -72,6 +72,7 @@ Material:
     - _MixFreq: 0.06
     - _MixHigh: 0.58
     - _MixLow: 0.42
+    - _PoolSoftClip: 1.2
     - _PoolStrength: 1
     - _RimIntensity: 0.5
     - _RimMaskInfluence: 1

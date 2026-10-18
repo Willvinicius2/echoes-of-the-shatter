@@ -45,6 +45,7 @@ Material:
     - _FresnelStrength: 1
     - _HitFlash: 0
     - _RimIntensity: 0.2
+    - _RimLitInfluence: 1
     - _RimMaskInfluence: 1
     - _RimTintMix: 0
     - _ShadeSoftness: 0.6
@@ -59,6 +60,7 @@ Material:
     - _FresnelSmoothStepRange: {r: 0.65, g: 0, b: 0, a: 0}
     - _HitColor: {r: 0.6, g: 0.34999996, b: 0.38999996, a: 1}
     - _RimColor: {r: 0.45, g: 0.85, b: 0.95, a: 1}
+    - _RimNoiseRange: {r: 0.12, g: 0.35, b: 0, a: 0}
     - _RimTint: {r: 1, g: 1, b: 1, a: 1}
     - _ShadowTint: {r: 0.41999996, g: 0.35999998, b: 0.5, a: 1}
     - _TintColor: {r: 1, g: 1, b: 1, a: 1}

@@ -70,6 +70,7 @@ Material:
     - _FresnelBlend: 0.5
     - _FresnelStrength: 2.5
     - _HitFlash: 0
+    - _PoolSoftClip: 0.7
     - _PoolStrength: 1.5
     - _RimIntensity: 0.5
     - _RimMaskInfluence: 1
