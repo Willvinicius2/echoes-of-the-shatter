@@ -19,6 +19,12 @@ MonoBehaviour:
   dodgeState: Dodge
   hitLayer: Hit
   hitState: Hit
+  upperLayer: Upper
+  guardRaiseState: GuardRaise
+  guardHitState: GuardHit
+  chargeState: ChargeHold
+  upperBlendSeconds: 0.1
+  chargeCreep: 0.7
   roarState: Roar
   roarClipSeconds: 1
   fallbackClipSeconds: 1
@@ -30,9 +36,64 @@ MonoBehaviour:
     clipSeconds: 1.3666668
     windupEnd: 0.072289154
     impactEnd: 0.21686748
+    holdAt: 0
     windupState: 
     windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
     impactState: 
+    impactClipSeconds: 0
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.warrior.combo_2
+    animatorState: Combo2
+    clipSeconds: 1
+    windupEnd: 0.05
+    impactEnd: 0.48333332
+    holdAt: 0
+    windupState: 
+    windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
+    impactState: 
+    impactClipSeconds: 0
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.warrior.combo_3
+    animatorState: Combo3
+    clipSeconds: 1.3333334
+    windupEnd: 0.05
+    impactEnd: 0.5625
+    holdAt: 0
+    windupState: 
+    windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
+    impactState: 
+    impactClipSeconds: 0
+    recoveryState: 
+    recoveryClipSeconds: 1
+    impactVfx: {fileID: 0}
+    vfxSeconds: 1
+    anchor: socket_weapon_r
+  - skillId: skill.warrior.heavy_slash
+    animatorState: HeavyRelease
+    clipSeconds: 1.1
+    windupEnd: 0.3181818
+    impactEnd: 0.3939394
+    holdAt: 0.18181817
+    windupState: 
+    windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
+    impactState: 
+    impactClipSeconds: 0
     recoveryState: 
     recoveryClipSeconds: 1
     impactVfx: {fileID: 0}
@@ -43,9 +104,13 @@ MonoBehaviour:
     clipSeconds: 1.6000001
     windupEnd: 0.20618556
     impactEnd: 0.25773194
+    holdAt: 0
     windupState: 
     windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
     impactState: 
+    impactClipSeconds: 0
     recoveryState: 
     recoveryClipSeconds: 1
     impactVfx: {fileID: 0}
@@ -56,9 +121,13 @@ MonoBehaviour:
     clipSeconds: 1.6333334
     windupEnd: 0.3838384
     impactEnd: 0.5252525
+    holdAt: 0
     windupState: 
     windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
     impactState: 
+    impactClipSeconds: 0
     recoveryState: 
     recoveryClipSeconds: 1
     impactVfx: {fileID: 0}
@@ -69,11 +138,429 @@ MonoBehaviour:
     clipSeconds: 1.0666667
     windupEnd: 0.09375
     impactEnd: 0.59375
+    holdAt: 0
     windupState: 
     windupClipSeconds: 1
+    windupFrom: 0
+    windupTo: 1
     impactState: 
+    impactClipSeconds: 0
     recoveryState: 
     recoveryClipSeconds: 1
     impactVfx: {fileID: 0}
     vfxSeconds: 1
     anchor: socket_weapon_r
+  vfx:
+  - skillId: skill.warrior.iron_cut
+    windupFx: []
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 4263081802510589374, guid: 106d32d94f80e4348a211a8bac71475a, type: 3}
+      place: 0
+      anchor: 
+      seconds: 0.5
+      follow: 0
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 0.7
+    trailEmitSeconds: 0.22
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 3931834985377717455, guid: 9823be49034016d49a0a2e13b42b3af9, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    hitHeavyFx: []
+  - skillId: skill.warrior.combo_2
+    windupFx: []
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 1803231671707342728, guid: 77f224ffc07501d43a0a8630e96bd587, type: 3}
+      place: 0
+      anchor: 
+      seconds: 0.5
+      follow: 0
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 0.7
+    trailEmitSeconds: 0.22
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 3931834985377717455, guid: 9823be49034016d49a0a2e13b42b3af9, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    hitHeavyFx: []
+  - skillId: skill.warrior.combo_3
+    windupFx: []
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 2411748463537298359, guid: fbe14bc6a4f8fd74c8f8b98169344050, type: 3}
+      place: 0
+      anchor: 
+      seconds: 0.65
+      follow: 0
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.3
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 8932868562012567550, guid: c332b048697b0cf4594de0c3fe9cd121, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    hitHeavyFx: []
+  - skillId: skill.warrior.heavy_slash
+    windupFx: []
+    releaseFx: []
+    chargeFx:
+    - prefab: {fileID: 3172763661028963610, guid: f2dbf524cc0b249448b10e29ec6de4d3, type: 3}
+      place: 0
+      anchor: weapon_tip
+      seconds: 30
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    - prefab: {fileID: 5451213736464640363, guid: dfa4c06756fbdfd4b8e4891aeb006ab1, type: 3}
+      place: 1
+      anchor: 
+      seconds: 30
+      follow: 1
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    chargeFullFx:
+    - prefab: {fileID: 6098099536950492821, guid: a5ca22644ecc61b48924ef85bd0f14ca, type: 3}
+      place: 0
+      anchor: weapon_tip
+      seconds: 0.4
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trail:
+      prefab: {fileID: 5744723909051989209, guid: 0aed0b2ca7f3d7d4e8c559ed477c11b5, type: 3}
+      place: 0
+      anchor: 
+      seconds: 0.8
+      follow: 0
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.34
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 8932868562012567550, guid: c332b048697b0cf4594de0c3fe9cd121, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    hitHeavyFx: []
+  - skillId: skill.warrior.charge
+    windupFx: []
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 1803231671707342728, guid: 77f224ffc07501d43a0a8630e96bd587, type: 3}
+      place: 0
+      anchor: 
+      seconds: 0.5
+      follow: 0
+      alignToDirection: 0
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 0.7
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 3931834985377717455, guid: 9823be49034016d49a0a2e13b42b3af9, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    hitHeavyFx: []
+  - skillId: skill.warrior.stone_rift
+    windupFx: []
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 8932868562012567550, guid: c332b048697b0cf4594de0c3fe9cd121, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    hitHeavyFx: []
+  - skillId: skill.warrior.shield_bash
+    windupFx: []
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 8932868562012567550, guid: c332b048697b0cf4594de0c3fe9cd121, type: 3}
+      place: 3
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 1
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    hitHeavyFx: []
+  - skillId: class.warrior#guard
+    windupFx:
+    - prefab: {fileID: 8410298191121070331, guid: 96fc605d9fade1543afd21c1265a74b8, type: 3}
+      place: 0
+      anchor: shield_face
+      seconds: 60
+      follow: 1
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    releaseFx: []
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx:
+    - prefab: {fileID: 6424109126738322144, guid: b17263dccd26179498fc8ae60927c8e7, type: 3}
+      place: 3
+      anchor: 
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    hitHeavyFx: []
+  - skillId: class.warrior#perfect
+    windupFx: []
+    releaseFx:
+    - prefab: {fileID: 4113293953692768953, guid: 5ce8e0659a85d9b448eaed13dc0a69d7, type: 3}
+      place: 3
+      anchor: 
+      seconds: 0.6
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    chargeFx: []
+    chargeFullFx: []
+    trail:
+      prefab: {fileID: 0}
+      place: 0
+      anchor: 
+      seconds: 1
+      follow: 0
+      alignToDirection: 1
+      yOffset: 0
+      scale: 1
+      authoredRadiusMeters: 0
+      lengthFromRange: 0
+      endsWithPhaseAfter: 0
+    trailBase: weapon_base
+    trailTip: weapon_tip
+    trailWidth: 1
+    trailEmitSeconds: 0.2
+    projectile: {fileID: 0}
+    projectileScale: 1
+    launchAnchor: 
+    launchBlendMeters: 1.5
+    lingerSeconds: 0.25
+    endFx: []
+    missFx: []
+    hitFx: []
+    hitHeavyFx: []

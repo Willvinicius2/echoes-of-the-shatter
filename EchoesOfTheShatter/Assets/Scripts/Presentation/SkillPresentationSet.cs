@@ -31,6 +31,12 @@ namespace Echoes.Presentation
         public string chargeState = "ChargeHold";
         [Tooltip("Transição de entrada e de saída dos estados da camada de tronco e braços, em segundos.")]
         [Min(0f)] public float upperBlendSeconds = 0.1f;
+        [Tooltip("Carga do golpe forte: a pose congelada vai se armando devagar, do holdAt até esta fração do caminho até o fim da preparação, conforme a carga do core. 0 = pose parada.")]
+        [Range(0f, 1f)] public float chargeCreep = 0.7f;
+
+        [Header("Recuperação")]
+        [Tooltip("Velocidade máxima do clipe na recuperação do golpe. A cauda do clipe (a volta lenta à guarda) é longa; apertá-la na recuperação curta do core corre o clipe e termina numa pose parada. Com o limite, toca só o começo da cauda e a saída mistura com a locomoção.")]
+        [Range(0.5f, 4f)] public float recoveryMaxSpeed = 1.5f;
 
         [Header("Chefe: rugido de fase (BossStateEvent.PhaseStart)")]
         public string roarState = "Roar";

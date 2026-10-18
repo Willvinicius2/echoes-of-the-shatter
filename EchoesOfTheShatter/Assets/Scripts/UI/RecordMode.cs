@@ -91,6 +91,7 @@ namespace Echoes.UI
             if (!string.IsNullOrEmpty(speedEnv) && float.TryParse(speedEnv, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var devSpeed) && devSpeed > 0f)
                 TestSettings.HeroSpeedOverrideMetersPerSecond = devSpeed;
             input.Script = this;
+            ApplyCameraDistance();
             if (closeup != null) yield return RunCloseup(hero);
             else if (!string.IsNullOrEmpty(scenario) && !string.Equals(scenario, "run", StringComparison.OrdinalIgnoreCase)) yield return RunScenario(hero, scenario.ToLowerInvariant());
             else yield return RunRecord(hero);
@@ -121,8 +122,10 @@ namespace Echoes.UI
             cam.transform.rotation = Quaternion.LookRotation(focus - cam.transform.position, Vector3.up);
             for (var i = 0; i < 30; i++) yield return null;
             yield return new WaitForEndOfFrame();
-            ScreenCapture.CaptureScreenshot(closeup);
-            for (var i = 0; i < 20; i++) yield return null;
+            var shot = Grab();
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(closeup)));
+            File.WriteAllBytes(closeup, shot.EncodeToPNG());
+            Destroy(shot);
             Debug.Log("[Record] closeup: " + closeup + (rimOld ? " (rim antigo)" : ""));
         }
 
@@ -132,7 +135,10 @@ namespace Echoes.UI
             var cam = Camera.main;
             var enemy = NearestEnemy(hero.transform.position);
             if (enemy != null) PlaceHeroAtDistance(hero, enemy.transform.position, 11f);
+            SnapCamera(hero);
             for (var i = 0; i < 30; i++) yield return null; // assenta o corpo no novo lugar
+            SnapCamera(hero);
+            traceHero = hero;
 
             HeroController.DeviationFrames = 0;
             HeroController.ResyncCount = 0;
@@ -188,9 +194,7 @@ namespace Echoes.UI
                 Aim = new Vector2(screen.x, screen.y);
 
                 yield return new WaitForEndOfFrame();
-                var texture = ScreenCapture.CaptureScreenshotAsTexture();
-                File.WriteAllBytes(Path.Combine(folder, $"frame_{f:D5}.png"), texture.EncodeToPNG());
-                Destroy(texture);
+                SaveFrame(f);
             }
             Time.captureFramerate = 0;
             var text = new StringBuilder();
@@ -200,6 +204,7 @@ namespace Echoes.UI
             text.AppendLine($"deviationFrames(>1mm)={HeroController.DeviationFrames}");
             text.AppendLine($"resyncs={HeroController.ResyncCount}");
             File.WriteAllText(Path.Combine(folder, "stats.txt"), text.ToString());
+            File.WriteAllText(Path.Combine(folder, "trace.csv"), trace.ToString());
             Debug.Log("[Record] gravado em " + folder + "\n" + text);
         }
 
@@ -235,6 +240,22 @@ namespace Echoes.UI
         }
 
         readonly List<(HeroCommand command, int frame)> tapRelease = new List<(HeroCommand, int)>();
+
+        // Anda ate ficar a 'range' m do inimigo mais proximo (o golpe recebido empurra; o roteiro de defesa precisa dele ao alcance).
+        float approachRange;
+
+        IEnumerator<Func<bool>> Approach(HeroController hero, float range)
+        {
+            approachRange = range;
+            var deadline = Time.time + 3f;
+            yield return Until(() =>
+            {
+                var near = NearestEnemy(hero.transform.position);
+                return near == null || Vector3.Distance(near.transform.position, hero.transform.position) <= range + 0.15f || Time.time > deadline;
+            });
+            approachRange = 0f;
+            yield return Frames(4);
+        }
 
         IEnumerator<Func<bool>> Strike(HeroController hero)
         {
@@ -276,12 +297,17 @@ namespace Echoes.UI
                     var heavy = Charge(hero, 1.5f); // carga cheia: solta sozinho em 1,25 s
                     while (heavy.MoveNext()) yield return heavy.Current;
                     yield return Sec(0.6f);
+                    var close1 = Approach(hero, 1.5f);
+                    while (close1.MoveNext()) yield return close1.Current;
                     Hold(HeroCombatLogic.GuardButton); // defesa recebendo golpe
                     yield return Sec(3.0f);
                     Release(HeroCombatLogic.GuardButton);
                     yield return Sec(0.6f);
+                    var close2 = Approach(hero, 1.5f);
+                    while (close2.MoveNext()) yield return close2.Current;
                     perfectArmed = true; // defesa perfeita: aperta perto do impacto do telegraph do inimigo
-                    yield return Until(() => Time.time >= perfectAt && perfectAt > 0f);
+                    var perfectDeadline = Time.time + 6f; // o inimigo pode demorar a atacar; nao trava o roteiro
+                    yield return Until(() => (Time.time >= perfectAt && perfectAt > 0f) || Time.time > perfectDeadline);
                     Hold(HeroCombatLogic.GuardButton);
                     yield return Sec(0.8f);
                     Release(HeroCombatLogic.GuardButton);
@@ -340,7 +366,10 @@ namespace Echoes.UI
             host.Events.Subscribe<SkillPhaseEvent>(OnPhase);
             var first = NearestEnemy(hero.transform.position);
             if (first != null) PlaceHeroAtDistance(hero, first.transform.position, name == "warrior" ? 1.5f : 5f);
+            SnapCamera(hero);
             for (var i = 0; i < 30; i++) yield return null;
+            SnapCamera(hero);
+            traceHero = hero;
             if (!hero.Logic.HasKit) Debug.LogError("[Record] O herói não tem kit básico (o roteiro precisa do core nativo).");
 
             Time.captureFramerate = Fps;
@@ -368,12 +397,19 @@ namespace Echoes.UI
                 var screen = cam.WorldToScreenPoint(aimWorld);
                 Aim = new Vector2(screen.x, screen.y);
                 Move = Vector2.zero;
+                if (approachRange > 0f && target != null)
+                {
+                    var toTarget = target.transform.position - hero.transform.position;
+                    toTarget.y = 0f;
+                    if (toTarget.magnitude > approachRange) Move = ScreenDirection(cam, toTarget.normalized);
+                }
 
                 yield return new WaitForEndOfFrame();
                 SaveFrame(frame);
             }
             Time.captureFramerate = 0;
             host.Events.Unsubscribe<SkillPhaseEvent>(OnPhase);
+            File.WriteAllText(Path.Combine(folder, "trace.csv"), trace.ToString());
             var heroId = Echoes.Core.HeroChoice.Id;
             var file = (string.IsNullOrEmpty(videoName) ? name + "_" + heroId : videoName) + ".mp4";
             Encode(Path.Combine(folder, file));
@@ -389,11 +425,117 @@ namespace Echoes.UI
 
         const int ScenarioMaxFrames = 900;
 
+        // trace.csv: uma linha por quadro (posicao, velocidade, giro, fase do core, estado/clipes por camada do Animator) para medir deslize, giro e transicoes.
+        readonly StringBuilder trace = new StringBuilder("frame,t,x,z,speed_mps,yaw_deg,turn_dps,combo,casting,phase,skill,charging,guarding,dodging,animSpeed,enemyDist,L0,L0w,L1,L1w,L2,L2w\n");
+        Vector3 tracePos;
+        float traceYaw;
+        bool traceFirst = true;
+        HeroController traceHero;
+
+        void TraceRow(int index)
+        {
+            var hero = traceHero;
+            if (hero == null) return;
+            var dt = 1f / Fps;
+            var pos = hero.transform.position;
+            var yaw = hero.transform.eulerAngles.y;
+            var speed = traceFirst ? 0f : new Vector2(pos.x - tracePos.x, pos.z - tracePos.z).magnitude / dt;
+            var turn = traceFirst ? 0f : Mathf.DeltaAngle(traceYaw, yaw) / dt;
+            tracePos = pos;
+            traceYaw = yaw;
+            traceFirst = false;
+            var logic = hero.Logic;
+            var near = NearestEnemy(pos);
+            var animator = hero.GetComponentInChildren<Animator>();
+            string Layer(int layer, out float weight)
+            {
+                weight = 0f;
+                if (animator == null || layer >= animator.layerCount) return "";
+                var infos = animator.GetCurrentAnimatorClipInfo(layer);
+                if (infos.Length == 0) return "-";
+                var best = infos[0];
+                foreach (var info in infos) if (info.weight > best.weight) best = info;
+                weight = best.weight;
+                return best.clip.name;
+            }
+            var l0 = Layer(0, out var w0);
+            var l1 = Layer(1, out var w1);
+            var l2 = Layer(2, out var w2);
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            trace.Append(index).Append(',').Append((index * dt).ToString("F3", inv)).Append(',').Append(pos.x.ToString("F3", inv)).Append(',').Append(pos.z.ToString("F3", inv))
+                .Append(',').Append(speed.ToString("F2", inv)).Append(',').Append(yaw.ToString("F1", inv)).Append(',').Append(turn.ToString("F0", inv))
+                .Append(',').Append(logic.ComboIndex).Append(',').Append(logic.IsCasting ? 1 : 0).Append(',').Append(logic.Action.Phase)
+                .Append(',').Append(logic.CurrentSkill != null ? logic.CurrentSkill.Id : "").Append(',').Append(logic.IsCharging ? 1 : 0).Append(',').Append(logic.IsGuarding ? 1 : 0)
+                .Append(',').Append(logic.Dodge.IsDodging ? 1 : 0).Append(',').Append(animator != null ? animator.speed.ToString("F2", inv) : "").Append(',').Append(near != null ? Vector3.Distance(near.transform.position, pos).ToString("F1", inv) : "")
+                .Append(',').Append(l0).Append(',').Append(w0.ToString("F2", inv)).Append(',').Append(l1).Append(',').Append(w1.ToString("F2", inv)).Append(',').Append(l2).Append(',').Append(w2.ToString("F2", inv)).Append('\n');
+        }
+
         void SaveFrame(int index)
         {
-            var texture = ScreenCapture.CaptureScreenshotAsTexture();
+            TraceRow(index);
+            var texture = Grab();
             File.WriteAllBytes(Path.Combine(folder, $"frame_{index:D5}.png"), texture.EncodeToPNG());
             Destroy(texture);
+        }
+
+        // Sem janela (o dono nao pode ver nada na tela): a camera principal desenha num RenderTexture e o quadro sai por ReadPixels, nao por captura de tela.
+        // Funciona em -batchmode (sem -nographics). Tamanho: -recwidth/-recheight (padrao 1280x720).
+        RenderTexture captureTarget;
+
+        Texture2D Grab()
+        {
+            var cam = Camera.main;
+            if (captureTarget == null)
+            {
+                var width = Mathf.Max(64, ArgInt("-recwidth", 1280));
+                var height = Mathf.Max(64, ArgInt("-recheight", 720));
+                captureTarget = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32) { name = "RecordTarget" };
+                captureTarget.Create();
+            }
+            var previous = cam.targetTexture;
+            cam.targetTexture = captureTarget;
+            cam.aspect = captureTarget.width / (float)captureTarget.height;
+            cam.Render();
+            var texture = new Texture2D(captureTarget.width, captureTarget.height, TextureFormat.RGB24, false);
+            var active = RenderTexture.active;
+            RenderTexture.active = captureTarget;
+            texture.ReadPixels(new Rect(0, 0, captureTarget.width, captureTarget.height), 0, 0);
+            texture.Apply(false);
+            RenderTexture.active = active;
+            cam.targetTexture = previous;
+            cam.ResetAspect();
+            return texture;
+        }
+
+        // -camdist METROS: aproxima a camera so para o video (o padrao do jogo, 56 m, deixa o heroi minusculo para revisar a animacao). Nao toca o asset.
+        static void ApplyCameraDistance()
+        {
+            var value = GameFlow.ArgValue("-camdist");
+            if (value == null || !float.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var meters) || meters <= 0f) return;
+            var cam = Camera.main;
+            if (cam == null) return;
+            var tuner = FindAnyObjectByType<CameraDistanceTuner>();
+            if (tuner != null) tuner.enabled = false;
+            cam.transform.localPosition = new Vector3(0f, 0f, -meters);
+            // -campitch GRAUS: inclinacao da camera (so para revisar a pose; o jogo usa o pitch do asset).
+            var pitchArg = GameFlow.ArgValue("-campitch");
+            var follow = FindAnyObjectByType<FollowCamera>();
+            if (follow != null && pitchArg != null && float.TryParse(pitchArg, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pitch))
+                follow.transform.rotation = Quaternion.Euler(pitch, follow.transform.eulerAngles.y, 0f);
+            Debug.Log("[Record] camera a " + meters + " m");
+        }
+
+        // Depois do teleporte do roteiro a camera nao deve "voar" ate o heroi dentro do video.
+        static void SnapCamera(HeroController hero)
+        {
+            var follow = FindAnyObjectByType<FollowCamera>();
+            if (follow != null) follow.SetTarget(hero.transform, true);
+        }
+
+        static int ArgInt(string name, int fallback)
+        {
+            var value = GameFlow.ArgValue(name);
+            return value != null && int.TryParse(value, out var parsed) ? parsed : fallback;
         }
 
         // Junta os quadros num MP4 (ffmpeg no PATH) e apaga os PNG se deu certo.

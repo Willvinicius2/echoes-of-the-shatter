@@ -49,6 +49,9 @@ namespace Echoes.EditorTools
             public string Clip;
             public string Next;       // estado para onde vai ao terminar o clipe (vazio = segura o ultimo quadro)
             public bool TimeParam;    // o tempo do clipe e o parametro HoldAt (pose congelada)
+            public float Speed = 1f;  // velocidade de reproducao do estado (erguer a defesa e armar a carga sao curtos: docs/18, 5.1)
+            public float ExitTime = 1f; // fracao do clipe em que passa para Next (o clipe chega na pose final antes do fim: medido com DevPipeline.Diagnose)
+            public float FreezeAt;    // > 0: estado parado (velocidade 0) neste ponto normalizado do clipe, para segurar a pose enquanto o botao esta apertado
         }
 
         /// <summary>Golpe em fases (preparacao, impacto e recuperacao em estados separados, cada um com o seu clipe): usa estados de Actions.</summary>
@@ -58,6 +61,8 @@ namespace Echoes.EditorTools
             public string WindupState;
             public string ImpactState;
             public string RecoveryState;
+            public float WindupFrom;      // trecho do clipe da preparacao que toca (fracao): o puxar da corda, nao o clipe inteiro (medido com DevPipeline.Diagnose)
+            public float WindupTo = 1f;
         }
 
         public sealed class ControllerSpec
@@ -79,6 +84,12 @@ namespace Echoes.EditorTools
             public string GuardRaiseState = "GuardRaise";
             public string GuardHitState = "GuardHit";       // vazio = a defesa nao tem reacao propria
         }
+
+        /// <summary>
+        /// Erguer a defesa (Melee_Block) chega na pose de Melee_Blocking em 0,333 s (31% do clipe, medido); passa para o laco ai e toca a 2x
+        /// (0,17 s de entrada), para a defesa parecer firme e nao um levantar lento. Arte, nao balanceamento.
+        /// </summary>
+        public const float BlockPoseTime = 0.313f, GuardRaiseSpeed = 2f;
 
         public const string UpperLayerName = "Upper";
         public const string UpperMaskPath = ControllerDir + "/AM_UpperBody.mask";
@@ -106,7 +117,7 @@ namespace Echoes.EditorTools
             },
             Upper =
             {
-                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatMelee"), Clip = "Melee_Block", Next = "GuardHold" },
+                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatMelee"), Clip = "Melee_Block", Next = "GuardHold", Speed = GuardRaiseSpeed, ExitTime = BlockPoseTime },
                 new UpperSpec { State = "GuardHold", Fbx = Medium("CombatMelee"), Clip = "Melee_Blocking" },
                 new UpperSpec { State = "GuardHit", Fbx = Medium("CombatMelee"), Clip = "Melee_Block_Hit", Next = "GuardHold" },
                 new UpperSpec { State = "ChargeHold", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Slice", TimeParam = true },
@@ -138,16 +149,16 @@ namespace Echoes.EditorTools
             },
             PhaseSkills =
             {
-                new PhaseSkillSpec { SkillId = "skill.archer.quick_shot", WindupState = "BowDraw", ImpactState = "BowRelease" },
-                new PhaseSkillSpec { SkillId = "skill.archer.fan_shot", WindupState = "BowDraw", ImpactState = "BowRelease" },
-                new PhaseSkillSpec { SkillId = "skill.archer.arrow_rain", WindupState = "RainDraw", ImpactState = "RainRelease" },
+                new PhaseSkillSpec { SkillId = "skill.archer.quick_shot", WindupState = "BowDraw", ImpactState = "BowRelease", WindupFrom = 0.33f, WindupTo = 0.62f }, // Bow_Draw: ajusta a flecha em 0,44 s e puxa ate 0,83 s (62%)
+                new PhaseSkillSpec { SkillId = "skill.archer.fan_shot", WindupState = "BowDraw", ImpactState = "BowRelease", WindupFrom = 0.15f, WindupTo = 0.62f },
+                new PhaseSkillSpec { SkillId = "skill.archer.arrow_rain", WindupState = "RainDraw", ImpactState = "RainRelease", WindupFrom = 0.15f, WindupTo = 0.62f },
             },
             Upper =
             {
-                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatMelee"), Clip = "Melee_Block", Next = "GuardHold" },
+                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatMelee"), Clip = "Melee_Block", Next = "GuardHold", Speed = GuardRaiseSpeed, ExitTime = BlockPoseTime },
                 new UpperSpec { State = "GuardHold", Fbx = Medium("CombatMelee"), Clip = "Melee_Blocking" },
                 new UpperSpec { State = "GuardHit", Fbx = Medium("CombatMelee"), Clip = "Melee_Block_Hit", Next = "GuardHold" },
-                new UpperSpec { State = "ChargeDraw", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Draw", Next = "ChargeHold" },
+                new UpperSpec { State = "ChargeDraw", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Draw", Next = "ChargeHold", Speed = 1.25f, ExitTime = 0.65f }, // a puxada assenta na mira em 65% do clipe (medido)
                 new UpperSpec { State = "ChargeHold", Fbx = Medium("CombatRanged"), Clip = "Ranged_Bow_Aiming_Idle" },
             },
         };
@@ -173,8 +184,12 @@ namespace Echoes.EditorTools
             },
             Upper =
             {
-                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Raise" },
-                new UpperSpec { State = "ChargeHold", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Spellcasting_Long" },
+                // Raise: os bracos chegam na pose em 0,67 s (32% do clipe) e o resto do clipe baixa de novo; a pose fica parada enquanto segura.
+                new UpperSpec { State = "GuardRaise", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Raise", Next = "GuardHold", Speed = 2f, ExitTime = 0.32f },
+                new UpperSpec { State = "GuardHold", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Raise", FreezeAt = 0.32f },
+                // Spellcasting_Long: o armar vai ate ~1,3 s (51%), depois vem o gesto de lancar (so no solto); a carga para o armar nessa pose.
+                new UpperSpec { State = "ChargeHold", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Spellcasting_Long", Next = "ChargeFreeze", Speed = 1.6f, ExitTime = 0.5f },
+                new UpperSpec { State = "ChargeFreeze", Fbx = Medium("CombatRanged"), Clip = "Ranged_Magic_Spellcasting_Long", FreezeAt = 0.5f },
             },
         };
 
@@ -420,6 +435,8 @@ namespace Echoes.EditorTools
             {
                 var state = machine.AddState(upper.State);
                 state.motion = Clip(upper.Fbx, upper.Clip);
+                state.speed = upper.FreezeAt > 0f ? 0f : upper.Speed;
+                if (upper.FreezeAt > 0f) state.cycleOffset = upper.FreezeAt;
                 if (upper.TimeParam)
                 {
                     state.timeParameterActive = true;
@@ -432,7 +449,7 @@ namespace Echoes.EditorTools
                 if (string.IsNullOrEmpty(upper.Next) || !states.TryGetValue(upper.Next, out var next)) continue;
                 var t = states[upper.State].AddTransition(next);
                 t.hasExitTime = true;
-                t.exitTime = 1f;
+                t.exitTime = upper.ExitTime;
                 t.hasFixedDuration = true;
                 t.duration = 0.06f;
             }
@@ -541,7 +558,7 @@ namespace Echoes.EditorTools
                     {
                         skillId = phase.SkillId, animatorState = phase.WindupState, clipSeconds = windupClip.length,
                         windupEnd = 1f, impactEnd = 1f, anchor = "socket_weapon_r",
-                        windupState = phase.WindupState, windupClipSeconds = windupClip.length,
+                        windupState = phase.WindupState, windupClipSeconds = windupClip.length, windupFrom = phase.WindupFrom, windupTo = phase.WindupTo,
                         impactState = phase.ImpactState ?? string.Empty, impactClipSeconds = impactClip != null ? impactClip.length : 0f,
                         recoveryState = phase.RecoveryState ?? string.Empty, recoveryClipSeconds = recoveryClip != null ? recoveryClip.length : 1f,
                     });
@@ -850,32 +867,20 @@ namespace Echoes.EditorTools
             impactEnd = Mathf.Clamp((last + 1) / (float)steps, windupEnd + 0.05f, 1f);
         }
 
+        /// <summary>Antecedencia (s) da pose de carga em relacao ao inicio do golpe rapido: a pose congela aqui e a preparacao do core (curta) cobre so o resto.</summary>
+        public const float HoldLeadSeconds = 0.15f;
+
         /// <summary>
-        /// Quadro "arma atras" do golpe carregado (parametro holdAt, normalizado): ate o fim da preparacao, o instante em que a mao da arma esta mais
-        /// atras do corpo (menor projecao no eixo da frente do personagem). E nessa pose que o clipe congela enquanto carrega e de onde o golpe solta.
-        /// Sem mao detectavel, o fim da preparacao.
+        /// Quadro "arma atras" do golpe carregado (parametro holdAt, normalizado): <see cref="HoldLeadSeconds"/> antes do fim da preparacao medida
+        /// (limitado a metade dela). E nessa pose, ja encolhida mas ainda em movimento, que o clipe congela enquanto carrega e de onde o golpe solta;
+        /// a preparacao curta do core (heavy_slash = 0,10 s) ainda mostra um trecho real do armar, sem parada seca.
         /// </summary>
         public static float FindHoldPose(GameObject instance, AnimationClip clip, float windupEnd)
         {
-            var hand = CharacterPrefabBuilder.FindDeep(instance.transform, "RightHand");
-            if (hand == null || clip.length < 0.1f) return windupEnd;
-            const float fps = 60f;
-            var steps = Mathf.Max(2, Mathf.CeilToInt(clip.length * fps));
-            var limit = Mathf.Clamp(Mathf.RoundToInt(windupEnd * steps) + 2, 2, steps);
-            var forward = instance.transform.forward;
-            var best = float.MaxValue;
-            var bestIndex = 0;
-            for (var i = 0; i <= limit; i++)
-            {
-                clip.SampleAnimation(instance, Mathf.Min(clip.length, i / fps));
-                var behind = Vector3.Dot(hand.position - instance.transform.position, forward);
-                if (behind < best)
-                {
-                    best = behind;
-                    bestIndex = i;
-                }
-            }
-            return Mathf.Clamp01(bestIndex / (float)steps);
+            if (clip.length < 0.1f) return windupEnd;
+            var windupSeconds = windupEnd * clip.length;
+            var hold = windupSeconds - Mathf.Min(HoldLeadSeconds, windupSeconds * 0.5f);
+            return Mathf.Clamp(hold / clip.length, 0.02f, windupEnd);
         }
     }
 }

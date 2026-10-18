@@ -195,7 +195,7 @@ namespace Echoes.Gameplay
                 var edge = edges[i];
                 if (edge.Button == HeroCommand.BasicAttack)
                 {
-                    if (edge.Down) OnLeftDown(edge.Stamp);
+                    if (edge.Down) OnLeftDown(combat, edge.Stamp);
                     else OnLeftUp(combat, edge.Stamp);
                 }
                 else if (edge.Down) OnGuardPress(edge.Stamp);
@@ -222,7 +222,7 @@ namespace Echoes.Gameplay
             return rules.GetEffectiveCost(self.Stats, heavySlot.Skill) <= self.Resource + Eps;
         }
 
-        void OnLeftDown(long stamp)
+        void OnLeftDown(CombatSystem combat, long stamp)
         {
             if (left != PressState.Idle) return;
             if (drinking != null || Dodge.IsDodging || guarding || guardWanted) return;
@@ -235,6 +235,9 @@ namespace Echoes.Gameplay
             left = PressState.Pending;
             leftPressStamp = stamp;
             pendingIndex = comboIndex;
+            // Só avisa: a apresentação começa a antecipação do golpe já no aperto (o core só decide na soltura ou no limiar de segurar).
+            var pending = chainSlots != null && pendingIndex < chainSlots.Length ? chainSlots[pendingIndex].Skill : null;
+            if (pending != null) PublishBasic(combat, BasicInputKind.LightPressed, pending, 0.0);
         }
 
         void OnLeftUp(CombatSystem combat, long stamp)

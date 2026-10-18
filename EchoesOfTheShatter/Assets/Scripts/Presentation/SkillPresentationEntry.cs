@@ -26,6 +26,9 @@ namespace Echoes.Presentation
         [Tooltip("Estado da preparação. Vazio = o golpe usa só animatorState, dividido por windupEnd e impactEnd.")]
         public string windupState = string.Empty;
         [Min(0.01f)] public float windupClipSeconds = 1f;
+        [Tooltip("Trecho do clipe da preparação que toca (fração). A preparação do core é curta (0,1 a 0,25 s): tocar o clipe inteiro vira um estalo; o trecho útil (ex.: o puxar da corda do arco) fica legível.")]
+        [Range(0f, 1f)] public float windupFrom;
+        [Range(0f, 1f)] public float windupTo = 1f;
         [Tooltip("Estado do impacto (laço): toca com velocidade 1 enquanto durar a fase de impacto.")]
         public string impactState = string.Empty;
         [Tooltip("Duração autoral do clipe do estado de impacto. Com recoveryState vazio, o clipe cobre impacto e recuperação (a velocidade é ajustada às duas fases).")]

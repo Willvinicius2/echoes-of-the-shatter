@@ -30,7 +30,7 @@ namespace Echoes.Tests.PlayMode
             {
                 held.Add(command);
                 pressedThisFrame.Add(command);
-                pressFrame = Time.frameCount;
+                pressFrame = Time.frameCount + 1; // o Update do heroi vê o aperto no quadro seguinte
             }
 
             public void Release(HeroCommand command) => held.Remove(command);
@@ -69,7 +69,7 @@ namespace Echoes.Tests.PlayMode
                 Assert.IsTrue(hero.Logic.IsGuarding);
                 Assert.IsTrue(sawRaise, "a defesa tocou na camada Upper");
                 Assert.Greater(maxSpeed, 0.5f, "as pernas andam enquanto defende");
-                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("Locomotion"));
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("AimLocomotion"), "defendendo, as pernas usam o blend 2D da mira (AimLocomotion) e seguem andando");
                 Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(action).IsName("Empty"), "a defesa não ocupa a camada Action");
 
                 input.Release(HeroCombatLogic.GuardButton);

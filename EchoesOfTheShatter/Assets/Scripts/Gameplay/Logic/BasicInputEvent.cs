@@ -20,6 +20,8 @@ namespace Echoes.Gameplay
         GuardBroke = 7,
         /// <summary>O combo voltou ao primeiro golpe (janela perdida, cancelamento ou golpe de fecho).</summary>
         ComboReset = 8,
+        /// <summary>Apertou o botão esquerdo e o golpe leve é possível; <see cref="BasicInputEvent.Skill"/> = o próximo golpe do combo. Pode virar carga (ChargeStarted) em seguida.</summary>
+        LightPressed = 9,
     }
 
     /// <summary>
