@@ -47,3 +47,6 @@ Narrativa aprovada pelo dono em 18/10 (Generais e veredito no lugar da seção 3
 - **Cidade Submersa (O Sábio)**: Rastrear em ruas alagadas, Ecos de livros molhados; Cercar com zonas de perigo; Duelo de áreas e ilusões (`dlg.sage.*`). Reconstrução: distrito de porto.
 - **Bosque das Almas (A Curandeira)**: Ecos de ervas e almas presas; duelo que drena vida e invoca almas (`dlg.healer.*`). Reconstrução: santuário e hospitais.
 - **Fenda de Colisão (O Líder)**: duelo com a lâmina quebrada; ele conta a verdade e oferece a última escolha (`dlg.leader.*`). O final (Descanso, Herança ou Cisma) vem do total de vereditos (`ui.ending.*`). Texto completo em `22_pitch_historia.md`.
+
+## Dados da Região 1 (18/10)
+Tabelas em `EchoesOfTheShatter/Content/Data/Story/` (`regions`, `echoes`, `quests`, `verdicts`) e textos em `Loc/story.csv`. Ficam em subpasta de propósito: o core ainda não as lê (ele recusa CSV desconhecido na raiz). Validação: `python3 tools/dados/validate_story.py`. Valores de Fome e bônus (`hungerDelta`, `statBonusPct`) são provisórios. O próximo passo é o core carregar as tabelas e guardar a escolha, a Fome e os Ecos no save (save v3), decisão de contrato a revisar com Opus.

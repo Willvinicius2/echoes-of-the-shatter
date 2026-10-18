@@ -1,0 +1,15 @@
+key,pt_BR,en,es,context,gender
+region.r1.crypt.name,Cripta Partida,Broken Crypt,,região; max=24; provisório,f
+echo.r1.broken_hammer.name,Martelo Quebrado,Broken Hammer,,eco; max=24; provisório,m
+echo.r1.shield_memory.name,Memória do Escudo,Shield Memory,,eco; max=24; provisório,f
+echo.r1.charge_memory.name,Memória da Investida,Charge Memory,,eco; max=24; provisório,f
+quest.r1.first_call.name,O chamado,The Call,,missão; max=24; provisório,m
+quest.r1.echoes.name,Cacos da Queda,Shards of the Fall,,missão; max=24; provisório,m
+quest.r1.siege.name,Cerco,The Siege,,missão; max=24; provisório,m
+quest.r1.verdict.name,Veredito,Verdict,,missão; max=24; provisório,m
+verdict.r1.exorcise.name,Exorcizar,Exorcise,,veredito; max=16; provisório,
+verdict.r1.devour.name,Devorar,Devour,,veredito; max=16; provisório,
+relic.r1.rest.name,Relíquia do Descanso,Relic of Rest,,relíquia; max=24; provisório,f
+skill.devoured.guardian_slam.name,Golpe do Guardião,Guardian Slam,,habilidade devorada; max=24; provisório,m
+hub.fortified_village.name,Vila fortificada,Fortified village,,hub; max=24; provisório,f
+hub.fortified_garrison.name,Refúgio com guarnição,Garrisoned Refuge,,hub; max=24; provisório,m

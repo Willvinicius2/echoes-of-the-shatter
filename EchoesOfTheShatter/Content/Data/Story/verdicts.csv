@@ -1,0 +1,3 @@
+id,regionId,choice,hungerDelta,statBonusPct,grantsRelic,grantsSignature,regionState,hubState,lastWordsKey
+verdict.r1.exorcise,region.r1.crypt,exorcise,0,0,relic.r1.rest,,purified,hub.fortified_village,dlg.guardian.last_words
+verdict.r1.devour,region.r1.crypt,devour,1,10,,skill.devoured.guardian_slam,stain,hub.fortified_garrison,
