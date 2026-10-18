@@ -44,6 +44,15 @@ Motor: **Unity 6.3 LTS (6000.3.26f1) com URP, C#** (decisão do dono em 16/10/20
 - Git LFS ligado para `.blend`, `.fbx`, `.dll` e outros binários (ver `.gitattributes`).
 - **Agentes de design do jogo (conteúdo, narrativa, UI, revisões de design) usam no máximo o modelo Sonnet 5.5.**
 
+## Modelo certo para cada tarefa (regra do dono, 18/10/2026)
+Não use o modelo mais caro para trabalho que o mais barato resolve: isso gasta o limite de uso à toa. Na dúvida, comece pelo menor e suba só se falhar.
+- **Haiku** (`model: haiku`): tarefa mecânica de terminal. Git, LFS, `guardiao-github`, conferir envio, listar arquivos, rodar script pronto.
+- **Sonnet 5.5** (`model: sonnet`): o padrão do projeto. Implementar C++/C# com regra já especificada, CSV e dados, localização, UI Toolkit, `painel-progresso`, pesquisa de referências, revisão de design e texto. É também o teto dos agentes de design.
+- **Opus**: só para decisão difícil. Contrato novo da API C, bug de memória ou comportamento indefinido, revisão final de uma branch antes do merge no `master`.
+- **Fable**: só quando o dono pedir. Nunca para agentes, subagentes, revisões rotineiras ou tarefas de arquivo e Git.
+- Todo agente em `.claude/agents/` declara `model:` no cabeçalho. Subagente disparado sem modelo herdaria o da sessão principal, então sempre informe o modelo ao disparar.
+- A sessão principal (orquestrador) também deve rodar em Sonnet no dia a dia. Subir de modelo é decisão pontual do dono.
+
 ## Git e GitHub
 - Repositório: https://github.com/Willvinicius2/echoes-of-the-shatter (privado, com Git LFS), branch principal `master`. O sócio do dono também acompanha e trabalha por ele, então o GitHub precisa ter sempre o estado real do projeto.
 - O dono autorizou enviar ao GitHub todo commit do projeto. Ao fechar uma tarefa, faça o commit na branch da tarefa (Conventional Commits, mensagem em português) e o `git push` em seguida (`git push -u origin <branch>` na primeira vez). Trabalho terminado não fica só no PC.
