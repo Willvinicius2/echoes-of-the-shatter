@@ -78,10 +78,32 @@ namespace Echoes.EditorTools
             }
             foreach (var corridor in layout.Corridors) BuildCorridorWalls(walls, corridor);
 
+            BuildGlyphs(layout, decor);
             foreach (var p in layout.Pillars) BuildPillar(pillars, p);
             BuildVistas(ctx, level, decor);
             BuildCorridorArches(layout, props);
             BuildProps(ctx, props, small);
+        }
+
+        /// <summary>
+        /// Simbolo de bussola so onde marca algo de jogo: checkpoint e portal (no maximo 2 por sala; corredor conta como a propria area). Nunca sorteado,
+        /// nunca em grade, e os props e inimigos ja ficam longe desses pontos (Spots).
+        /// </summary>
+        static void BuildGlyphs(CriptaLayout layout, Transform decor)
+        {
+            var perArea = new Dictionary<string, int>();
+            void Mark(string id, Vector2 pos)
+            {
+                var area = "";
+                foreach (var r in layout.Rooms) if (r.Rect.Contains(pos)) area = r.Id;
+                foreach (var c in layout.Corridors) if (c.Rect.Contains(pos)) area = c.Id;
+                perArea.TryGetValue(area, out var n);
+                if (n >= 2) return;
+                perArea[area] = n + 1;
+                SceneryBuilder.Glyph(decor, pos, 0f, id + ".glyph", 0.012f, 2.0f); // dentro do circulo de pedra
+            }
+            foreach (var cp in layout.Checkpoints) Mark(cp.Id, cp.Pos);
+            foreach (var portal in layout.Portals) Mark(portal.Id, portal.Pos);
         }
 
         static Transform Group(Transform parent, string name)
@@ -350,14 +372,15 @@ namespace Echoes.EditorTools
                     spots.Add(pos, 1.3f);
                 }
 
-                // Entulho e ossos pelo chao: sem colisor e fora da NavMesh (Decor), longe dos espacos de inimigo e da rota.
-                var scatter = boss ? 6 : 8 + rng.Next(0, 4);
-                for (var i = 0; i < scatter; i++)
+                // Entulho: poucos montes de pedra e osso encostados na parede (nunca espalhados pelo meio do chao nem em grade).
+                var rubble = boss ? 2 : 2 + rng.Next(0, 2);
+                for (var i = 0; i < rubble; i++)
                 {
-                    var p = new Vector2(Mathf.Lerp(r.xMin + 1.5f, r.xMax - 1.5f, (float)rng.NextDouble()), Mathf.Lerp(r.yMin + 1.5f, r.yMax - 1.5f, (float)rng.NextDouble()));
-                    if (!spots.Free(p, 0.8f)) continue;
-                    var name = new[] { "PedraE", "PedraF", "Ossos", "PedraE" }[rng.Next(0, 4)];
-                    EnvironmentKit.Place(name, small, new Vector3(p.x, 0f, p.y), (float)rng.NextDouble() * 360f, colliders: false, instanceName: room.Id + "." + name);
+                    if (!TryWallSpot(layout, room, rng, spots, 0.8f, 0.9f, out var rubblePos, out var rubbleYaw)) continue;
+                    var name = i % 2 == 0 ? "PedraE" : "PedraF";
+                    EnvironmentKit.Place(name, small, new Vector3(rubblePos.x, 0f, rubblePos.y), (float)rng.NextDouble() * 360f, colliders: false, instanceName: room.Id + "." + name);
+                    spots.Add(rubblePos, 0.9f);
+                    SmallNear(small, rng, rubblePos, rubbleYaw, "Ossos", false);
                 }
             }
 
@@ -366,6 +389,21 @@ namespace Echoes.EditorTools
             {
                 var go = EnvironmentKit.Place("Braseiro", props, new Vector3(cp.Pos.x + 1.8f, 0f, cp.Pos.y), 0f, instanceName: cp.Id + ".brazier");
                 SceneryBuilder.AddBrazierFire(go);
+            }
+
+            // Arena: um braseiro encostado em cada pilar, do lado do centro. O FirePool acende os 6 mais proximos do heroi, entao as pocas quentes
+            // acompanham o jogador pela arena sem passar do limite de luzes.
+            foreach (var room in layout.Rooms)
+            {
+                if (room.Role != "boss") continue;
+                foreach (var pillar in layout.Pillars)
+                {
+                    if (!room.Rect.Contains(pillar.Pos)) continue;
+                    var toCenter = (room.Rect.center - pillar.Pos).normalized;
+                    var pos = pillar.Pos + toCenter * (pillar.Radius + 0.9f);
+                    var go = EnvironmentKit.Place("Braseiro", props, new Vector3(pos.x, 0f, pos.y), Mathf.Atan2(toCenter.x, toCenter.y) * Mathf.Rad2Deg, instanceName: pillar.Id + ".brazier");
+                    SceneryBuilder.AddBrazierFire(go);
+                }
             }
 
             // Estandartes e braseiros no corredor do chefe e na porta: ja cobertos por PlaceBraziers (antecamara e arena).

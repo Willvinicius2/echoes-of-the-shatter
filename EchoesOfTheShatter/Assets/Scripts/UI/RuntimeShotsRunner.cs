@@ -73,9 +73,32 @@ namespace Echoes.UI
         {
             yield return new WaitForEndOfFrame();
             var path = Path.Combine(folder, file);
-            ScreenCapture.CaptureScreenshot(path);
+            if (Application.isBatchMode) CaptureCameraToPng(path); // sem janela: renderiza a camera do jogo num RenderTexture (a interface nao entra)
+            else ScreenCapture.CaptureScreenshot(path);
             yield return new WaitForSecondsRealtime(1.2f);
             Debug.Log("[Shots] capturada: " + path + " (" + (File.Exists(path) ? new FileInfo(path).Length + " bytes" : "AUSENTE") + ")");
+        }
+
+        /// <summary>Captura em batchmode (sem janela): Camera.Render num RenderTexture 1920x1080, ReadPixels e PNG.</summary>
+        static void CaptureCameraToPng(string path)
+        {
+            var cam = Camera.main;
+            if (cam == null) return;
+            var rt = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            var previousTarget = cam.targetTexture;
+            cam.targetTexture = rt;
+            cam.Render();
+            cam.targetTexture = previousTarget;
+            var previousActive = RenderTexture.active;
+            RenderTexture.active = rt;
+            var tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false, false);
+            tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0);
+            tex.Apply();
+            RenderTexture.active = previousActive;
+            File.WriteAllBytes(path, tex.EncodeToPNG());
+            Destroy(tex);
+            rt.Release();
+            Destroy(rt);
         }
 
         static void Teleport(HeroController hero, Vector3 position)

@@ -10,7 +10,9 @@
         "Echoes.Presentation",
         "Echoes.UI",
         "Unity.InputSystem",
-        "Echoes.EditorTools"
+        "Echoes.EditorTools",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [
         "Editor"

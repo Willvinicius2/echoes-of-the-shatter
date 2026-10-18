@@ -20,6 +20,7 @@ def opt(name, default):
 src = argv[0]
 dst = argv[1] if len(argv) > 1 and not argv[1].startswith("--") else None
 width, segs, angle = opt("--width", 0.04), opt("--segments", 3), opt("--angle", 35.0)
+smooth_all = "--smooth-all" in argv  # ruinas: todas as faces suaves, normais por area x angulo (sem facetas)
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 if src.lower().endswith(".fbx"):
@@ -39,9 +40,16 @@ for ob in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
     m.harden_normals = True
     bpy.ops.object.modifier_apply(modifier=m.name)
     wn = ob.modifiers.new("Normais", "WEIGHTED_NORMAL")
-    wn.keep_sharp = True
+    if smooth_all:
+        wn.mode = "FACE_AREA_WITH_ANGLE"
+        wn.weight = 50
+        wn.keep_sharp = False
+        bpy.ops.object.shade_smooth(keep_sharp_edges=False)
+    else:
+        wn.keep_sharp = True
     bpy.ops.object.modifier_apply(modifier=wn.name)
-    bpy.ops.object.shade_smooth_by_angle(angle=math.radians(60))
+    if not smooth_all:
+        bpy.ops.object.shade_smooth_by_angle(angle=math.radians(60))
     print(f"{ob.name}: bevel {w:.3f} m, tris {sum(len(p.vertices) - 2 for p in ob.data.polygons)}")
     ob.select_set(False)
 
