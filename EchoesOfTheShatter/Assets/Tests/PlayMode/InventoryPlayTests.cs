@@ -126,11 +126,24 @@ namespace Echoes.Tests.PlayMode
             Assert.IsTrue(inventory.EquipSelected());
             Assert.AreEqual(armorUid, save.Equipment(0)[ItemSlots.IndexOf("head")].Uid, "equipado");
 
-            // atributos do heroi so mudam pelo que o core comparou; o visual vem do conjunto do core
-            foreach (var delta in compare.Deltas)
+            // Atributos do heroi: o bloco ao vivo tem de ficar igual ao que o core refaz do save, no nivel do proprio heroi. A comparacao do tooltip usa o
+            // nivel do save; se os dois niveis diferem, afixos "aumentados" (ex.: Resoluto, % de Vida) pesam diferente e o delta nao e comparavel (22,4 contra
+            // 25,16 no PC do Will), entao so se confere o delta da comparacao quando os niveis batem.
+            var heroLevel = hero.Combatant.Level;
+            var saveLevel = save.CharacterProgress(rules, 0).Level;
+            if (heroLevel != saveLevel) Debug.LogWarning($"[Teste] nivel do heroi ({heroLevel}) diferente do nivel do save ({saveLevel}): o delta da comparacao nao vale");
+            using (var fresh = rules.CreateHeroStats(new HeroBuild("class.warrior", heroLevel, new List<string>(), save, 0)))
             {
-                if (delta.Stat == "life") Assert.AreEqual(delta.Change, hero.Combatant.Stats.Get(StatId.Life) - lifeBefore, 1e-6);
-                if (delta.Stat == "armor") Assert.AreEqual(delta.Change, hero.Combatant.Stats.Get(StatId.Armor) - armorBefore, 1e-6);
+                Assert.AreEqual(fresh.Get(StatId.Life), hero.Combatant.Stats.Get(StatId.Life), 1e-6, "Vida ao vivo = Vida refeita pelo core com o item equipado");
+                Assert.AreEqual(fresh.Get(StatId.Armor), hero.Combatant.Stats.Get(StatId.Armor), 1e-6, "Armadura ao vivo = Armadura refeita pelo core");
+            }
+            if (heroLevel == saveLevel)
+            {
+                foreach (var delta in compare.Deltas)
+                {
+                    if (delta.Stat == "life") Assert.AreEqual(delta.Change, hero.Combatant.Stats.Get(StatId.Life) - lifeBefore, 1e-6);
+                    if (delta.Stat == "armor") Assert.AreEqual(delta.Change, hero.Combatant.Stats.Get(StatId.Armor) - armorBefore, 1e-6);
+                }
             }
             var modular = hero.GetComponentInChildren<ModularCharacter>();
             var equippedItem = save.Equipment(0)[ItemSlots.IndexOf("head")];
