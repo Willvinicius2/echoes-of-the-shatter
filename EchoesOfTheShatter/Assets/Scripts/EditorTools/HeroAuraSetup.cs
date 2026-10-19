@@ -21,7 +21,7 @@ namespace Echoes.EditorTools
             foreach (var (name, color) in Heroes)
             {
                 if (name != prefabName) continue;
-                var ring = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Materials/M_VFX_AddRingSoft.mat");
+                var ring = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Materials/M_VFX_AddRing.mat");
                 var mote = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Materials/M_VFX_AddSoft.mat");
                 var a = root.GetComponent<HeroAura>() ?? root.AddComponent<HeroAura>();
                 a.Configure(color, ring, mote);
@@ -31,7 +31,7 @@ namespace Echoes.EditorTools
         [MenuItem("Echoes/Herois/Aura")]
         public static void Apply()
         {
-            var ring = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Materials/M_VFX_AddRingSoft.mat");
+            var ring = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Materials/M_VFX_AddRing.mat");
             var mote = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Materials/M_VFX_AddSoft.mat");
             foreach (var (name, color) in Heroes)
             {

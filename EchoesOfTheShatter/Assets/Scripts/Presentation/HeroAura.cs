@@ -12,9 +12,9 @@ namespace Echoes.Presentation
         [SerializeField] Color color = new Color(1f, 0.35f, 0.25f, 1f);
         [SerializeField] Material ringMaterial;
         [SerializeField] Material moteMaterial;
-        [SerializeField, Range(0.3f, 2f)] float ringRadius = 0.85f;
-        [SerializeField, Range(0f, 1f)] float ringAlpha = 0.45f;
-        [SerializeField, Range(0f, 30f)] float motesPerSecond = 10f;
+        [SerializeField, Range(0.3f, 2f)] float ringRadius = 0.7f;
+        [SerializeField, Range(0f, 1f)] float ringAlpha = 0.7f;
+        [SerializeField, Range(0f, 30f)] float motesPerSecond = 14f;
 
         Transform ring;
         Material ringInstance;
@@ -74,14 +74,14 @@ namespace Echoes.Presentation
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = ps.main;
             main.loop = true;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(1.1f, 1.8f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.25f, 0.5f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.04f, 0.09f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(1.6f, 2.4f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.03f, 0.07f);
             main.startColor = new Color(color.r, color.g, color.b, 0.9f);
             main.simulationSpace = ParticleSystemSimulationSpace.World;
             main.gravityModifier = -0.02f;
             var em = ps.emission; em.rateOverTime = motesPerSecond;
-            var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Circle; sh.radius = ringRadius * 0.6f; sh.rotation = new Vector3(-90f, 0f, 0f);
+            var sh = ps.shape; sh.shapeType = ParticleSystemShapeType.Circle; sh.radius = ringRadius * 0.7f; sh.rotation = new Vector3(-90f, 0f, 0f);
             var col = ps.colorOverLifetime; col.enabled = true;
             var g = new Gradient();
             g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
