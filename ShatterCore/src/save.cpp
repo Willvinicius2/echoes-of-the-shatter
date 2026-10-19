@@ -198,6 +198,10 @@ Value ExpeditionRequestToJson(const ExpeditionRequest& r) {
     o.Set("duration_hours", Value(r.durationHours));
     o.Set("effective_seconds", Value(r.effectiveSeconds));
     o.Set("content_version", Value(r.contentVersion));
+    // Campos opcionais da história: só gravados se != 0 (saves sem veredito mantêm os mesmos bytes e hash).
+    if (r.storyStatBonusPct != 0) o.Set("story_stat_bonus_pct", Value(r.storyStatBonusPct));
+    if (r.storyPotionEffectPct != 0) o.Set("story_potion_effect_pct", Value(r.storyPotionEffectPct));
+    if (r.storyEliteBonusPct != 0) o.Set("story_elite_bonus_pct", Value(r.storyEliteBonusPct));
     return o;
 }
 
@@ -323,6 +327,10 @@ bool ExpeditionRequestFromJson(const Value& o, ExpeditionRequest& r, std::string
     r.durationHours = static_cast<int>(o["duration_hours"].AsInt(1));
     r.effectiveSeconds = o["effective_seconds"].AsDouble(0.0);
     r.contentVersion = static_cast<std::uint32_t>(o["content_version"].AsInt(0));
+    auto pct = [&](const char* key) { return static_cast<int>(std::clamp<std::int64_t>(o[key].AsInt(0), 0, 100)); };
+    r.storyStatBonusPct = pct("story_stat_bonus_pct");
+    r.storyPotionEffectPct = pct("story_potion_effect_pct");
+    r.storyEliteBonusPct = pct("story_elite_bonus_pct");
     return true;
 }
 
@@ -736,6 +744,9 @@ StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionSta
     e.request.durationHours = p.durationHours;
     e.request.effectiveSeconds = 0.0;  // calculado ao abrir o jogo (clock.h)
     e.request.contentVersion = db.ContentVersion();
+    e.request.storyStatBonusPct = std::clamp(p.storyStatBonusPct, 0, 100);
+    e.request.storyPotionEffectPct = std::clamp(p.storyPotionEffectPct, 0, 100);
+    e.request.storyEliteBonusPct = std::clamp(p.storyEliteBonusPct, 0, 100);
     e.collectedResultHash = 0;
     if (slot == s.expeditions.size()) s.expeditions.push_back(std::move(e));
     else s.expeditions[slot] = std::move(e);

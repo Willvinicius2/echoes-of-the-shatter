@@ -235,6 +235,10 @@ struct ExpeditionStartParams {
     int durationHours = 1;
     std::uint64_t seed = 0;     // gerado pelo jogo (o core não tem fonte de entropia)
     UnixSeconds startUtc = 0;   // ResolveNow(...).now no momento da partida
+    // Efeitos da história (0..100), calculados pelo chamador com story.h e congelados no pedido.
+    int storyStatBonusPct = 0;
+    int storyPotionEffectPct = 0;
+    int storyEliteBonusPct = 0;
 };
 // Inicia a expedição no save (RF-31, RF-35, RF-37, RF-39, RF-43): confere CanStartExpedition com as
 // cargas do save e "outra em andamento" entre TODOS os personagens; se Ok, congela o snapshot do

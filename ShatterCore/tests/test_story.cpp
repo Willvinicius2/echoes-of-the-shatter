@@ -170,3 +170,36 @@ TEST(story_directory_errors_are_marked_as_io) {
     ASSERT_TRUE(!db.Errors().empty());
     EXPECT_TRUE(db.Errors().front().message.rfind("E_IO", 0) == 0);
 }
+
+TEST(story_repo_content_has_devoured_signature_skill) {
+    const std::string root = tu::DataDir() + "/../../../EchoesOfTheShatter/Content/Data";
+    ContentDB content;
+    ASSERT_TRUE(content.LoadDirectory(root));
+    ASSERT_TRUE(content.Finalize());
+    StoryDB story;
+    ASSERT_TRUE(story.LoadDirectory(root + "/Story"));
+    EXPECT_TRUE(story.Finalize(&content));
+    for (const ContentError& e : story.Errors()) FAIL(e.table + ": " + e.message);
+    for (const StoryVerdict& v : story.Verdicts())
+        if (!v.grantsSignature.empty()) EXPECT_TRUE(content.FindSkill(v.grantsSignature) != nullptr);
+    EXPECT_TRUE(story.RelicPotionEffectPct() > 0);
+    EXPECT_TRUE(story.StainEliteBonusPct() > 0);
+}
+
+TEST(story_relic_potion_effect_and_stain_elite_bonus) {
+    const StoryDB db = Make(kVerdicts, "key,value\nhunger_max,4\nrelic_potion_effect_pct,25\nstain_elite_bonus_pct,15\n");
+    SaveData none = SaveWithKill(true);
+    EXPECT_EQ(TotalPotionEffectPct(db, none), 0);
+    EXPECT_EQ(StainEliteBonusPctForMap(db, none, "map.act1.crypt"), 0);
+
+    SaveData purified = SaveWithKill(true);
+    ASSERT_TRUE(ApplyVerdict(db, purified, "verdict.r1.exorcise") == VerdictResult::Ok);
+    EXPECT_EQ(TotalPotionEffectPct(db, purified), 25);
+    EXPECT_EQ(StainEliteBonusPctForMap(db, purified, "map.act1.crypt"), 0);
+
+    SaveData stained = SaveWithKill(true);
+    ASSERT_TRUE(ApplyVerdict(db, stained, "verdict.r1.devour") == VerdictResult::Ok);
+    EXPECT_EQ(TotalPotionEffectPct(db, stained), 0);
+    EXPECT_EQ(StainEliteBonusPctForMap(db, stained, "map.act1.crypt"), 15);
+    EXPECT_EQ(StainEliteBonusPctForMap(db, stained, "map.other"), 0);
+}

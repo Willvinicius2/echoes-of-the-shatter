@@ -71,6 +71,10 @@ struct ExpeditionRequest {
     // Nunca maior que durationHours×3600 nem que maxOfflineHours×3600.
     double effectiveSeconds = 0.0;
     std::uint32_t contentVersion = 0;    // ContentDB::ContentVersion() no início
+    // Efeitos da história congelados no início (campos opcionais no save; 0 = sem veredito/relíquia/Mancha).
+    int storyStatBonusPct = 0;           // Devorar: "aumentado" em Vida, Dano e Armadura (story.h TotalStatBonusPct)
+    int storyPotionEffectPct = 0;        // Relíquia do Descanso: cura de poção "aumentada" (TotalPotionEffectPct)
+    int storyEliteBonusPct = 0;          // Mancha no mapa: pontos percentuais somados a eliteChance (StainEliteBonusPctForMap)
 };
 
 // Por que a expedição parou.

@@ -1645,8 +1645,9 @@ bool ContentDB::Finalize() {
                 if (!StartsWith(s.id, "skill." + seg + "."))
                     f.E("skills.csv", ln, "E_RULE", "id must start with 'skill." + seg + ".'");
             }
-        } else if (!StartsWith(s.id, "skill.enemy.") && !StartsWith(s.id, "skill.common.")) {
-            f.E("skills.csv", ln, "E_RULE", "skill without class must be skill.enemy.* or skill.common.*");
+        } else if (!StartsWith(s.id, "skill.enemy.") && !StartsWith(s.id, "skill.common.") &&
+                   !StartsWith(s.id, "skill.devoured.")) {
+            f.E("skills.csv", ln, "E_RULE", "skill without class must be skill.enemy.*, skill.common.* or skill.devoured.*");
         }
         if (s.cooldown > 0.0 && s.cooldown < rules_.minCooldown)
             f.E("skills.csv", ln, "E_RANGE", "cooldown below cooldown_min");

@@ -99,7 +99,7 @@ namespace Echoes.UI
             }
             LoadEchoRows(directory);
             // O bonus tem de estar no save ANTES de o heroi montar os atributos (HeroController.Start).
-            Save.StoryStatBonusPct = Save.ReadStory(db).StatBonusPct;
+            Save.ApplyStoryState(Save.ReadStory(db));
         }
 
         void Start()
@@ -226,7 +226,7 @@ namespace Echoes.UI
             GameSession.Save.Save(rules); // RF-54: a escolha irreversivel vai para o disco antes de qualquer efeito
             CloseVerdict();
             var state = Save.ReadStory(db);
-            Save.StoryStatBonusPct = state.StatBonusPct;
+            Save.ApplyStoryState(state);
             if (hero != null) hero.RefreshFromSave();
             RefreshHud();
             Announce(option);

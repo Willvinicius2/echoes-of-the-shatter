@@ -3,6 +3,7 @@
 // Sem exceções, sem estado global; toda função exportada é noexcept (falha de alocação é fatal).
 #include "shatter/shatter_c.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
@@ -1236,6 +1237,9 @@ bool StartParamsFromText(const char* s, std::size_t len, ExpeditionStartParams& 
     p.durationHours = hours < 0 ? 0 : (hours > 1000 ? 1000 : static_cast<int>(hours));
     p.seed = v["seed"].AsUInt64(0);
     p.startUtc = v["start_utc"].AsInt(0);
+    p.storyStatBonusPct = static_cast<int>(std::clamp<std::int64_t>(v["story_stat_bonus_pct"].AsInt(0), 0, 100));
+    p.storyPotionEffectPct = static_cast<int>(std::clamp<std::int64_t>(v["story_potion_effect_pct"].AsInt(0), 0, 100));
+    p.storyEliteBonusPct = static_cast<int>(std::clamp<std::int64_t>(v["story_elite_bonus_pct"].AsInt(0), 0, 100));
     return true;
 }
 
@@ -4302,6 +4306,13 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_s
     o.Set("hunger", Value(static_cast<std::int64_t>(st.hunger)));
     o.Set("hunger_max", Value(static_cast<std::int64_t>(story->db.HungerMax())));
     o.Set("stat_bonus_pct", Value(static_cast<std::int64_t>(TotalStatBonusPct(story->db, save->data))));
+    o.Set("potion_effect_pct", Value(static_cast<std::int64_t>(TotalPotionEffectPct(story->db, save->data))));
+    Value stainMaps = Value::MakeObject();  // mapId -> pontos de elite; só áreas com Mancha
+    for (const StoryRegion& reg : story->db.Regions()) {
+        const int bonus = StainEliteBonusPctForMap(story->db, save->data, reg.mapId);
+        if (bonus > 0) stainMaps.Set(reg.mapId, Value(static_cast<std::int64_t>(bonus)));
+    }
+    o.Set("stain_elite_bonus_by_map", std::move(stainMaps));
     Value echoes = Value::MakeArray();
     for (const ContentId& id : st.echoes) echoes.Push(Value(id));
     o.Set("echoes", std::move(echoes));

@@ -131,6 +131,10 @@ bool StoryDB::LoadTableCsv(std::string_view table, std::string_view text) {
                 if (hasHungerMax_) bad(r, "hunger_max repeated");
                 if (!Int(r.cells[1], 1, kMaxSavedHunger, hungerMax_)) bad(r, "hunger_max out of range");
                 hasHungerMax_ = true;
+            } else if (r.cells[0] == "relic_potion_effect_pct") {
+                if (!Int(r.cells[1], 0, 100, relicPotionEffectPct_)) bad(r, "relic_potion_effect_pct out of range");
+            } else if (r.cells[0] == "stain_elite_bonus_pct") {
+                if (!Int(r.cells[1], 0, 100, stainEliteBonusPct_)) bad(r, "stain_elite_bonus_pct out of range");
             } else {
                 bad(r, "unknown key");
             }
@@ -283,6 +287,24 @@ int TotalStatBonusPct(const StoryDB& story, const SaveData& s) {
         if (v != nullptr) total += v->statBonusPct;
     }
     return total;
+}
+
+int TotalPotionEffectPct(const StoryDB& story, const SaveData& s) {
+    int total = 0;
+    for (const StoryVerdictRecord& r : s.story.verdicts) {
+        const StoryVerdict* v = story.FindVerdict(r.verdictId);
+        if (v != nullptr && !v->grantsRelic.empty()) total += story.RelicPotionEffectPct();
+    }
+    return total;
+}
+
+int StainEliteBonusPctForMap(const StoryDB& story, const SaveData& s, std::string_view mapId) {
+    for (const StoryRegion& region : story.Regions()) {
+        if (region.mapId != mapId) continue;
+        const StoryVerdict* v = DecidedVerdict(story, s, region.id);
+        if (v != nullptr && v->regionState == "stain") return story.StainEliteBonusPct();
+    }
+    return 0;
 }
 
 }  // namespace shatter

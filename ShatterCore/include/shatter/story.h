@@ -59,6 +59,10 @@ public:
     const std::vector<ContentError>& Errors() const { return errors_; }
 
     int HungerMax() const { return hungerMax_; }
+    // Chaves opcionais de story_rules.csv (0 = não definida): bônus de cura de poção da Relíquia do Descanso e
+    // chance extra de elite (em pontos percentuais) nas áreas com Mancha.
+    int RelicPotionEffectPct() const { return relicPotionEffectPct_; }
+    int StainEliteBonusPct() const { return stainEliteBonusPct_; }
     const StoryRegion* FindRegion(std::string_view id) const;
     const StoryEcho* FindEcho(std::string_view id) const;
     const StoryQuest* FindQuest(std::string_view id) const;
@@ -75,6 +79,8 @@ private:
     std::vector<StoryVerdict> verdicts_;
     int hungerMax_ = 0;
     bool hasHungerMax_ = false;
+    int relicPotionEffectPct_ = 0;
+    int stainEliteBonusPct_ = 0;
     std::vector<ContentError> errors_;
 };
 
@@ -99,5 +105,10 @@ VerdictResult ApplyVerdict(const StoryDB& story, SaveData& s, std::string_view v
 const StoryVerdict* DecidedVerdict(const StoryDB& story, const SaveData& s, std::string_view regionId);
 // Soma de statBonusPct dos vereditos tomados (Devorar). O cliente aplica o bônus; o core só informa o total.
 int TotalStatBonusPct(const StoryDB& story, const SaveData& s);
+
+// Relíquias (veredito tomado com grantsRelic): soma de relic_potion_effect_pct, uma vez por relíquia.
+int TotalPotionEffectPct(const StoryDB& story, const SaveData& s);
+// Mancha: se o mapa pertence a uma região cujo veredito tomado deixou regionState "stain", devolve stain_elite_bonus_pct; senão 0.
+int StainEliteBonusPctForMap(const StoryDB& story, const SaveData& s, std::string_view mapId);
 
 }  // namespace shatter

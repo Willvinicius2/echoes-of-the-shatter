@@ -582,3 +582,42 @@ TEST(expedition_rnf02_changing_a_damage_coefficient_keeps_loot_of_identical_enco
     EXPECT_TRUE(compared > 50);
     EXPECT_TRUE(durationsDiffer > 0);  // o mesmo encontro durou outro tempo, e o loot não mudou
 }
+
+TEST(expedition_story_bonus_changes_result_and_roundtrips) {
+    const ContentDB& db = tu::RichDb();
+    const ExpeditionRequest base = tu::MakeRequest(db, 1, 7);
+    ExpeditionRequest boosted = base;
+    boosted.storyStatBonusPct = 50;
+    const ExpeditionResult a = SimulateExpedition(db, base);
+    const ExpeditionResult b = SimulateExpedition(db, boosted);
+    EXPECT_TRUE(a.resultHash != b.resultHash);
+    EXPECT_EQ(SimulateExpedition(db, boosted).resultHash, b.resultHash);   // determinístico
+    // Partes dão o mesmo hash também com o bônus.
+    EXPECT_EQ(FinalizeExpedition(db, boosted, RunChunks(db, boosted, 7)).resultHash, b.resultHash);
+
+    // Sem história, o JSON não ganha campos (saves antigos mantêm os mesmos bytes).
+    EXPECT_TRUE(json::Serialize(ExpeditionRequestToJson(base), false).find("story_") == std::string::npos);
+    ExpeditionRequest all = base;
+    all.storyStatBonusPct = 10;
+    all.storyPotionEffectPct = 25;
+    all.storyEliteBonusPct = 15;
+    ExpeditionRequest back;
+    ASSERT_TRUE(ExpeditionRequestFromJson(ExpeditionRequestToJson(all), back));
+    EXPECT_EQ(back.storyStatBonusPct, 10);
+    EXPECT_EQ(back.storyPotionEffectPct, 25);
+    EXPECT_EQ(back.storyEliteBonusPct, 15);
+}
+
+TEST(expedition_story_elite_bonus_makes_more_elites) {
+    const ContentDB& db = tu::RichDb();
+    const ExpeditionRequest base = tu::MakeRequest(db, 4, 11);
+    ExpeditionRequest stain = base;
+    stain.storyEliteBonusPct = 100;   // todo grupo vira elite
+    const ExpeditionResult a = SimulateExpedition(db, base);
+    const ExpeditionResult b = SimulateExpedition(db, stain);
+    int ea = 0, eb = 0;
+    for (const EncounterReceipt& r : a.receipts) ea += r.elitesKilled;
+    for (const EncounterReceipt& r : b.receipts) eb += r.elitesKilled;
+    EXPECT_TRUE(eb >= ea);
+    EXPECT_TRUE(a.resultHash != b.resultHash);
+}
