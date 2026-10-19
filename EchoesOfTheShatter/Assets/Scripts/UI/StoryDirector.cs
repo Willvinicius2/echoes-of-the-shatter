@@ -319,8 +319,10 @@ namespace Echoes.UI
             SpawnStoryNpcs();
             var hub = state.HubState;
             if (string.IsNullOrEmpty(hub)) return;
-            // Estado do Refugio pela escolha (hub_state do core). Provisorio: banner e um tom na luz ambiente; os modelos de cada estado
-            // dependem de arte nova, que passa pela aprovacao do dono.
+            // Estado do Refugio pela escolha (hub_state do core): banner, tom na luz ambiente e o grupo de cenario do estado (cercas, estandartes,
+            // braseiros do kit pintado, montados pelo RefugioBuilder), que fica desligado ate aqui.
+            var states = FindAnyObjectByType<RefugeHubStates>();
+            if (states != null) states.Apply(hub);
             ScreenHost.Banner(Loc.Get(hub + ".name"), Loc.Get(hub + ".desc"), PostVerdictBannerSeconds);
             ApplyHubTint(hub);
         }
