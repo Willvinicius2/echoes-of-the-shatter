@@ -14,6 +14,20 @@ namespace Echoes.EditorTools
             ("P_Hero_Archer",  new Color(0.35f, 1f, 0.55f)),
         };
 
+        /// <summary>Liga a aura no heroi recem-montado pelo CharacterPrefabBuilder (chave = nome do prefab, ex.: P_Hero_Warrior).</summary>
+        public static void AddTo(GameObject root, string prefabName)
+        {
+            if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("ECHOES_NO_AURA"))) return;
+            foreach (var (name, color) in Heroes)
+            {
+                if (name != prefabName) continue;
+                var ring = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Materials/M_VFX_AddRingSoft.mat");
+                var mote = AssetDatabase.LoadAssetAtPath<Material>("Assets/Art/VFX/Materials/M_VFX_AddSoft.mat");
+                var a = root.GetComponent<HeroAura>() ?? root.AddComponent<HeroAura>();
+                a.Configure(color, ring, mote);
+            }
+        }
+
         [MenuItem("Echoes/Herois/Aura")]
         public static void Apply()
         {

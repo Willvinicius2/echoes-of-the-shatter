@@ -194,7 +194,7 @@ namespace Echoes.EditorTools
                     animator.avatar = avatar;
                 }
             }
-            if (!string.IsNullOrEmpty(spec.ModularHero)) HeroModularBuilder.AddModularComponents(instance, spec.ModularHero);
+            if (!string.IsNullOrEmpty(spec.ModularHero)) { HeroModularBuilder.AddModularComponents(instance, spec.ModularHero); HeroAuraSetup.AddTo(instance, spec.Prefab); }
             // Eventos de clipe (release do Espectro, rugido do Guardiao) chegam ao PresentationController pelo relay (no objeto do Animator).
             if (spec.Controller != null && animatorHost.GetComponent<AnimationEventRelay>() == null) animatorHost.AddComponent<AnimationEventRelay>();
             if (spec.Prefab == "P_Enemy_GhostArcher" && instance.GetComponent<SpectralSway>() == null) instance.AddComponent<SpectralSway>();

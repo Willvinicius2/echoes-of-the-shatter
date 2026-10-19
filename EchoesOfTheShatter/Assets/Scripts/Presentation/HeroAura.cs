@@ -22,10 +22,21 @@ namespace Echoes.Presentation
 
         public void Configure(Color c, Material ringMat, Material moteMat) { color = c; ringMaterial = ringMat; moteMaterial = moteMat; }
 
-        void Awake()
+        ParticleSystem motes;
+
+        void Awake() => BuildNow();
+
+        /// <summary>Monta anel e particulas (idempotente). Publico para as capturas no Editor, onde o Awake nao roda.</summary>
+        public void BuildNow()
         {
-            if (ringMaterial != null) BuildRing();
-            if (moteMaterial != null) BuildMotes();
+            if (ring == null && ringMaterial != null) BuildRing();
+            if (motes == null && moteMaterial != null) BuildMotes();
+        }
+
+        /// <summary>Avanca as particulas sem Play (captura no Editor).</summary>
+        public void SimulatePreview(float seconds)
+        {
+            if (motes != null) motes.Simulate(seconds, true, true);
         }
 
         void BuildRing()
@@ -59,6 +70,7 @@ namespace Echoes.Presentation
             go.transform.SetParent(transform, false);
             go.transform.localPosition = new Vector3(0f, 0.05f, 0f);
             var ps = go.AddComponent<ParticleSystem>();
+            motes = ps;
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = ps.main;
             main.loop = true;
