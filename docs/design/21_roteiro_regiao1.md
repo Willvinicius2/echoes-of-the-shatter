@@ -98,3 +98,11 @@ Decisões tomadas sem perguntar (Will dormia); o número e os textos estão em `
 - **Gatilhos no cliente**: `talk` ao conversar com qualquer NPC do Refúgio (`AddStoryLines`), `reach_map_boss` quando o Guardião entra em luta (`ArenaPhase.Fighting`). `StoryDirector.ReportQuest(type, target)` é o ponto de entrada para outros gatilhos.
 - **Marca de "introdução já ouvida"**: usa `quest.r1.first_call` (falar com a Ilsa). Primeira conversa mostra `intro_1..3`; as seguintes, `general_lore`. `dlg.ilsa.crypt_done` abre a fala da Ilsa depois do veredito (`quest.r1.verdict` concluída).
 - Arquivos: `StoryDirector.Quests.cs`, `QuestJournal.cs` (novos), `StoryLines.cs`, `RefugeController.cs`, `StoryTypes.cs`, `SaveGame.Story.cs`. Testes: `story_quests_*`, `c_api_story_quests_*` (core) e `Quests_FromCore_*`, `StoryLines_IntroPlaysOnce*` (EditMode, não rodados).
+
+### Dicas do golpe do Guardião pelos Ecos (A5, 19/10, C# não compilado no editor)
+Decisões tomadas sem perguntar (Will dormia). Nenhum número de balanceamento mudou.
+- **O que fica escondido**: o desenho do aviso no chão (cone do martelo, golpe do escudo, linha da investida) dos golpes que têm Eco em `Story/echoes.csv`. Sem o Eco, o Guardião ainda faz o windup na animação, só não há aviso no chão. A leitura do core é `IsSkillRevealed` (`shatter_story_skill_revealed`), a mesma do aviso "Um golpe do General foi revelado".
+- **Como**: `TelegraphEvent.SkillId` (novo) + gate estático `TelegraphHints.Hidden` (Presentation). O `StoryDirector` liga o gate na Cripta e desliga ao ser destruído; sem história (sandbox) tudo aparece. Golpes de outros inimigos nunca entram no gate.
+- **Dica em texto**: ao recolher o Eco que revela o golpe, além do aviso existe uma faixa com a dica (`skill.enemy.guardian_*.hint` em `Loc/story.csv`: martelo em cone, escudo de frente, investida em linha).
+- **Pendência de design**: sem Eco nenhum o chefe fica mais difícil de ler. Se o teste do Will achar duro demais, basta esvaziar o gate (`TelegraphHints.Hidden = null`) ou baixar `minToReveal` em `echoes.csv`.
+- Arquivos: `TelegraphHints.cs` (novo), `TelegraphEvent.cs`, `EnemyCombatLogic.cs`, `TelegraphPresenter.cs`, `StoryDirector.cs`, teste em `StoryClientTests`.

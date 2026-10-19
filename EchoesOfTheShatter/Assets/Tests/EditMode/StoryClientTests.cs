@@ -127,6 +127,29 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void TelegraphHints_HideTheGuardianStrikeUntilItsEchoIsFound()
+        {
+            const string region = "region.r1.crypt";
+            const string hammer = "skill.enemy.guardian_hammer";
+            const string bash = "skill.enemy.guardian_shield_bash";
+            Echoes.Presentation.TelegraphHints.Hidden = id => id == hammer && !Save.StorySkillRevealed(story, region, id);
+            try
+            {
+                Assert.IsTrue(Echoes.Presentation.TelegraphHints.IsHidden(hammer));    // sem o Eco: cone escondido
+                Assert.IsFalse(Echoes.Presentation.TelegraphHints.IsHidden(bash));     // fora do gate: sempre aparece
+                Assert.IsFalse(Echoes.Presentation.TelegraphHints.IsHidden(string.Empty));
+                Assert.IsTrue(Save.StoryRecordEcho(story, "echo.r1.broken_hammer", out var isNew));
+                Assert.IsTrue(isNew);
+                Assert.IsFalse(Echoes.Presentation.TelegraphHints.IsHidden(hammer));   // Eco achado: cone liberado
+            }
+            finally
+            {
+                Echoes.Presentation.TelegraphHints.Hidden = null;
+            }
+            Assert.IsFalse(Echoes.Presentation.TelegraphHints.IsHidden(hammer));       // sem gate (sandbox): tudo aparece
+        }
+
+        [Test]
         public void Quests_FromCore_FollowTalkEchoesAndJournal()
         {
             var state = StoryState.FromJson("{}");

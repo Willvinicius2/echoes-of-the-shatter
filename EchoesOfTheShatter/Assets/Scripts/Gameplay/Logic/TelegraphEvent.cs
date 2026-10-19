@@ -17,5 +17,7 @@ namespace Echoes.Gameplay
         public float WidthMeters;
         public double DurationSeconds;
         public bool ShowOnGround;
+        /// <summary>Golpe do aviso (a apresentação pode esconder o desenho no chão até uma dica ser revelada).</summary>
+        public string SkillId;
     }
 }
