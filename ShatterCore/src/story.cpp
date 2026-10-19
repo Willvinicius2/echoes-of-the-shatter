@@ -274,6 +274,17 @@ bool StoryDB::Finalize(const ContentDB* content) {
                                                               [&](const StoryEcho& e) { return e.regionId == q.regionId; })))
             E("quests.csv", "objectiveCount above the region's echoes for '" + q.id + "'");
     }
+    // `requires` em ciclo (ou apontando para si) deixaria as missoes trancadas para sempre.
+    for (const StoryQuest& q : quests_) {
+        const StoryQuest* cur = &q;
+        for (std::size_t step = 0; step <= quests_.size() && cur != nullptr && !cur->requires_.empty(); ++step) {
+            cur = FindById(quests_, cur->requires_);
+            if (cur == &q) {
+                E("quests.csv", "requires cycle through '" + q.id + "'");
+                break;
+            }
+        }
+    }
     for (const StoryVerdict& v : verdicts_) {
         const StoryRegion* owner = FindById(regions_, v.regionId);
         if (owner != nullptr && owner->exorcizeVerdict != v.id && owner->devourVerdict != v.id)

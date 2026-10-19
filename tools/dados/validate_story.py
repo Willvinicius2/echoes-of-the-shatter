@@ -146,6 +146,15 @@ def main():
             err("quests.csv", ln, f"objectiveTarget '{r['objectiveTarget']}' não é mapa")
         if r["giver"] and f"{r['giver']}.name" not in loc:
             err("quests.csv", ln, f"giver '{r['giver']}' sem nome em Loc")
+    requires_of = {r["id"]: r["requires"] for r in t["quests.csv"]}
+    for r in t["quests.csv"]:
+        seen, cur = {r["id"]}, r["requires"]
+        while cur and cur in requires_of:
+            if cur in seen:
+                err("quests.csv", r["__line__"], f"requires em ciclo passando por '{r['id']}'")
+                break
+            seen.add(cur)
+            cur = requires_of[cur]
     for r in t["verdicts.csv"]:
         ln = r["__line__"]
         if r["regionId"] not in regions:
