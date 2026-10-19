@@ -98,6 +98,23 @@ namespace Echoes.Gameplay
             return true;
         }
 
+        const float LevelSyncSeconds = 0.25f;
+        float nextLevelSync;
+
+        // O save sobe de nível por mais de um caminho (morte na Cripta, coleta de expedição no Refúgio, XP de missão); só a morte avisava o herói,
+        // e na coleta o bloco ao vivo ficava no nível antigo até recarregar a cena (inventário e Encantador comparavam com outro nível). Em vez
+        // de cada origem lembrar de chamar, o herói confere o nível do save a cada 0,25 s (tempo real: o inventário pausa o jogo).
+        void SyncLevelWithSave()
+        {
+            if (Time.unscaledTime < nextLevelSync) return;
+            nextLevelSync = Time.unscaledTime + LevelSyncSeconds;
+            var native = combat != null ? combat.Rules as Echoes.Interop.Native.NativeRulesCore : null;
+            var session = Echoes.Core.GameSession.Save;
+            if (native == null || session == null || !session.HasSave || Echoes.Core.HeroChoice.Id != "warrior") return;
+            var progress = session.Current.CharacterProgress(native, 0);
+            if (HeroLevelSync.NeedsRefresh(Logic.Self.Level, progress.Level)) RefreshFromSave();
+        }
+
         // Veredito Devorar com o herói já em cena: o golpe-assinatura entra na barra e na trava de Fome na hora, sem precisar recarregar a cena.
         void RefreshDevoured(Echoes.Interop.Native.NativeRulesCore native, Echoes.Interop.Native.SaveGame save)
         {
@@ -289,6 +306,7 @@ namespace Echoes.Gameplay
         {
             if (Logic == null) return;
             var combatant = Logic.Self;
+            SyncLevelWithSave();
 
             if (combatant.IsDead)
             {
