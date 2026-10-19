@@ -165,6 +165,37 @@ namespace Echoes.EditorTools
             clothGo.GetComponent<MeshRenderer>().sharedMaterial = EnsureCarpetMaterial("M_Cripta_Tapete", new Color(0.36f, 0.07f, 0.12f));
         }
 
+        /// <summary>
+        /// Medalhao do checkpoint e do portal: so um aro fino rente ao piso (dourado no checkpoint, violeta no portal), sem anel de pedra nem
+        /// barras de runa. O simbolo (Glyph) fica dentro do aro.
+        /// </summary>
+        public static void Medallion(Transform parent, Vector3 center, string id, bool portal, float radius = 1.45f)
+        {
+            var d = new MeshData();
+            const int seg = 72;
+            const float w = 0.09f;
+            const float y = 0.010f;
+            for (var i = 0; i < seg; i++)
+            {
+                var a0 = i * Mathf.PI * 2f / seg;
+                var a1 = (i + 1) * Mathf.PI * 2f / seg;
+                var k = d.V.Count;
+                foreach (var (a, r) in new[] { (a0, radius), (a0, radius - w), (a1, radius - w), (a1, radius) })
+                {
+                    d.V.Add(new Vector3(Mathf.Cos(a) * r, y, Mathf.Sin(a) * r));
+                    d.N.Add(Vector3.up); d.Uv.Add(Vector2.zero);
+                }
+                var up = Vector3.Cross(d.V[k + 1] - d.V[k], d.V[k + 2] - d.V[k]).y >= 0f;
+                if (up) { d.T.Add(k); d.T.Add(k + 1); d.T.Add(k + 2); d.T.Add(k); d.T.Add(k + 2); d.T.Add(k + 3); }
+                else { d.T.Add(k); d.T.Add(k + 2); d.T.Add(k + 1); d.T.Add(k); d.T.Add(k + 3); d.T.Add(k + 2); }
+            }
+            var go = Make(parent, "Medallion", d.ToMesh("Medallion"), "Medallion_" + SceneryBuilder.Sanitize(id));
+            go.transform.position = center;
+            var mr = go.GetComponent<MeshRenderer>();
+            mr.sharedMaterial = portal ? EnsureCarpetMaterial("M_Cripta_AroPortal", new Color(0.45f, 0.33f, 0.85f)) : EnsureCarpetMaterial("M_Cripta_AroCheckpoint", new Color(0.78f, 0.56f, 0.18f));
+            mr.shadowCastingMode = ShadowCastingMode.Off;
+        }
+
         static void Strip(MeshData d, Vector2 a, Vector2 b, Vector2 n, float half, float y)
         {
             var k = d.V.Count;

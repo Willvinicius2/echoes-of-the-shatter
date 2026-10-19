@@ -428,7 +428,7 @@ namespace Echoes.EditorTools
             var go = new GameObject(id);
             go.transform.SetParent(parent, false);
             go.transform.position = new Vector3(pos.x, 0f, pos.y);
-            SceneryBuilder.StoneCircle(go.transform, go.transform.position, outerRadius, ringWidth, id + ".circle", portal);
+            CriptaStructure.Medallion(go.transform, go.transform.position, id + ".circle", portal);
             return go;
         }
 
