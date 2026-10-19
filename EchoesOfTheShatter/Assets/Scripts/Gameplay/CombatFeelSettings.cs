@@ -35,6 +35,7 @@ namespace Echoes.Gameplay
         [SerializeField] string[] lightHitstopSkills =
         {
             "skill.mage.fireball",
+            "skill.warrior.combo_2", // golpe 2 do combo: tranco leve entre o golpe 1 (sem hitstop) e o fecho (pesado, 60 ms)
         };
 
         [Header("Knockback em cm (juice.knockback_cm)")]
