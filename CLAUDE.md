@@ -73,6 +73,8 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+Cliente C# sem o editor da Unity (Linux/WSL, precisa de dotnet 8): `tools/cliente/checar_cliente.sh` compila `Assets/Scripts` contra as referências UnityEngine 2021.3 e roda os testes EditMode puros contra a shattercore real; roda no CI (`cliente.yml`). Não substitui o editor (sem Input System, URP nem Unity 6; falhas esperadas em `tools/cliente/LISTA_ESPERADA.txt`).
+
 O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como erro (`-Werror`): `-Wmissing-field-initializers` (agregado sem `{}`), `-Wtype-limits` (comparar tipo sem sinal com `< 0`, inclusive enum de base `uint8_t` convertido para `int`) e `-Wrange-loop-construct` (`for (const std::string x : ...)` em vez de `const std::string&`). Revise esses padrões antes de enviar mudanças no core e confira o CI depois do push.
 
 ## Perguntas ao dono

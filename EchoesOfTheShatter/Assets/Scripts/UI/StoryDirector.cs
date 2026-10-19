@@ -114,7 +114,7 @@ namespace Echoes.UI
             BuildHud();
             RefreshHud();
             var state = Save.ReadStory(db);
-            if (state.StatBonusPct > 0.0 && hero != null) hero.RefreshFromSave();
+            if ((state.StatBonusPct > 0.0 || state.PotionEffectPct > 0.0) && hero != null) hero.RefreshFromSave();
 
             if (SceneManager.GetActiveScene().name == GameFlow.CriptaScene) StartCrypt(state);
             else StartRefuge(state);
