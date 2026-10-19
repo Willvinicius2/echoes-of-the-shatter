@@ -31,6 +31,25 @@ namespace Echoes.Tests.EditMode
             Assert.AreEqual(15.0, state.StainEliteBonusByMap["map.act1.crypt"]);
         }
 
+        [Test]
+        public void StoryLines_follow_progress_and_verdict()
+        {
+            const string region = "region.r1.crypt";
+            var fresh = StoryState.FromJson("{\"hunger\":0,\"hunger_max\":4,\"echoes\":[],\"verdicts\":[]}");
+            Assert.AreEqual("dlg.ilsa.intro_1", StoryLines.For(InteractableNpc.Ilsa, fresh, region)[0]);
+            Assert.AreEqual("dlg.tico.intro", StoryLines.For(InteractableNpc.Tico, fresh, region)[0]);
+            var echoes = StoryState.FromJson("{\"hunger\":0,\"hunger_max\":4,\"echoes\":[\"echo.r1.broken_hammer\"],\"verdicts\":[]}");
+            Assert.AreEqual("dlg.ilsa.general_lore", StoryLines.For(InteractableNpc.Ilsa, echoes, region)[0]);
+            Assert.AreEqual("dlg.bram.echo_blade", StoryLines.For(InteractableNpc.Bram, echoes, region)[0]);
+            Assert.Contains("dlg.odete.warning", StoryLines.For(InteractableNpc.Odete, echoes, region));
+            var devoured = StoryState.FromJson(StateJson);
+            Assert.AreEqual("dlg.ilsa.after_devour", StoryLines.For(InteractableNpc.Ilsa, devoured, region)[0]);
+            Assert.Contains("dlg.ilsa.years_pass", StoryLines.For(InteractableNpc.Ilsa, devoured, region));
+            Assert.AreEqual("dlg.tico.after_years", StoryLines.For(InteractableNpc.Tico, devoured, region)[0]);
+            Assert.AreEqual("dlg.bram.after_devour", StoryLines.For(InteractableNpc.Bram, devoured, region)[0]);
+            CollectionAssert.IsEmpty(StoryLines.For(InteractableNpc.Ilsa, null, region));
+        }
+
         string dir;
         NativeRulesCore rules;
         SaveService saves;

@@ -58,11 +58,15 @@ namespace Echoes.UI
         bool subscribed;
         bool verdictQueued;
         bool applying;
+        bool guardianPhase1Said, guardianPhase2Said;
         readonly List<EchoRow> echoRows = new List<EchoRow>();
         readonly Dictionary<string, EchoPickup> pickups = new Dictionary<string, EchoPickup>();
 
         public bool IsLoaded => db != null;
         public StoryDb Db => db;
+
+        /// <summary>Progresso da historia lido do save agora (null sem historia carregada).</summary>
+        public StoryState CurrentState() => db != null ? Save.ReadStory(db) : null;
 
         LocalizationService Loc => root.Localization;
         SaveGame Save => GameSession.Save.Current;
@@ -119,7 +123,11 @@ namespace Echoes.UI
         void OnDestroy()
         {
             if (Current == this) Current = null;
-            if (subscribed && root != null && root.Events != null) root.Events.Unsubscribe<ArenaStateEvent>(OnArena);
+            if (subscribed && root != null && root.Events != null)
+            {
+                root.Events.Unsubscribe<ArenaStateEvent>(OnArena);
+                root.Events.Unsubscribe<BossStateEvent>(OnBossState);
+            }
             if (VerdictOpen)
             {
                 VerdictOpen = false;
@@ -136,6 +144,7 @@ namespace Echoes.UI
             if (root.Events != null)
             {
                 root.Events.Subscribe<ArenaStateEvent>(OnArena);
+                root.Events.Subscribe<BossStateEvent>(OnBossState);
                 subscribed = true;
             }
             SpawnEchoes(state);
@@ -177,10 +186,23 @@ namespace Echoes.UI
 
         void OnArena(in ArenaStateEvent evt)
         {
+            if (evt.Phase == ArenaPhase.Fighting && !guardianPhase1Said)
+            {
+                guardianPhase1Said = true;
+                ScreenHost.Toast(Loc.Get("dlg.guardian.phase1"), ToastKind.Banner);
+            }
             if (evt.Phase != ArenaPhase.Won || verdictQueued) return;
             verdictQueued = true;
             // O RunRecorder grava a vitoria sobre o General no save no mesmo evento; o veredito espera isso (o core recusa sem o General vencido).
             StartCoroutine(OpenVerdictAfterDelay());
+        }
+
+        // Fala da segunda fase: quando o Guardiao invoca as Sentinelas (uma vez por luta).
+        void OnBossState(in BossStateEvent evt)
+        {
+            if (evt.Kind != BossEventKind.SummonMarker || guardianPhase2Said) return;
+            guardianPhase2Said = true;
+            ScreenHost.Toast(Loc.Get("dlg.guardian.phase2"), ToastKind.Banner);
         }
 
         IEnumerator OpenVerdictAfterDelay()
@@ -252,8 +274,45 @@ namespace Echoes.UI
 
         // ------------------------------------------------------------------------------------------------ Refugio
 
+        // Bram e Odete ainda nao tem modelo nem lugar na cena montada: capsulas com rotulo, criadas aqui, perto de Ilsa e Tico (RefugioBuilder).
+        static readonly Vector3 BramPosition = new Vector3(-8f, 0f, 0f);
+        static readonly Vector3 OdetePosition = new Vector3(-12f, 0f, 0f);
+
+        void SpawnStoryNpcs()
+        {
+            var refuge = FindAnyObjectByType<RefugeController>();
+            if (refuge == null) return;
+            refuge.RegisterNpc(SpawnNpc("Bram", InteractableNpc.Bram, BramPosition, 1.8f));
+            refuge.RegisterNpc(SpawnNpc("Odete", InteractableNpc.Odete, OdetePosition, 1.6f));
+        }
+
+        InteractableNpc SpawnNpc(string label, string npcId, Vector3 position, float height)
+        {
+            var go = new GameObject(label);
+            go.transform.position = position;
+            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            body.name = "Body";
+            Destroy(body.GetComponent<Collider>());
+            body.transform.SetParent(go.transform, false);
+            body.transform.localScale = new Vector3(0.8f, height / 2f, 0.8f);
+            body.transform.localPosition = new Vector3(0f, height / 2f, 0f);
+            var npc = go.AddComponent<InteractableNpc>();
+            npc.npcId = npcId;
+            var text = new GameObject("Label");
+            text.transform.SetParent(go.transform, false);
+            text.transform.localPosition = new Vector3(0f, height + 0.5f, 0f);
+            text.transform.localRotation = Quaternion.Euler(50f, 0f, 0f);
+            var mesh = text.AddComponent<TextMesh>();
+            mesh.text = label;
+            mesh.characterSize = 0.18f;
+            mesh.fontSize = 48;
+            mesh.anchor = TextAnchor.MiddleCenter;
+            return npc;
+        }
+
         void StartRefuge(StoryState state)
         {
+            SpawnStoryNpcs();
             var hub = state.HubState;
             if (string.IsNullOrEmpty(hub)) return;
             // Estado do Refugio pela escolha (hub_state do core). Provisorio: banner e um tom na luz ambiente; os modelos de cada estado

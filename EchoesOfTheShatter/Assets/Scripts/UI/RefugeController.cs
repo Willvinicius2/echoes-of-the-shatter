@@ -204,8 +204,34 @@ namespace Echoes.UI
                 case InteractableNpc.Vendor: OpenVendor(); break;
                 case InteractableNpc.Enchanter: OpenEnchanter(); break;
                 case InteractableNpc.Stash: OpenStash(); break;
+                case InteractableNpc.Bram:
+                case InteractableNpc.Odete: TalkToStoryNpc(npcId); break;
                 default: TalkToTico(); break;
             }
+        }
+
+        /// <summary>Acrescenta um NPC criado em runtime (Bram e Odete, pelo StoryDirector) a lista de pontos de conversa.</summary>
+        public void RegisterNpc(InteractableNpc npc)
+        {
+            if (npc != null && !npcs.Contains(npc)) npcs.Add(npc);
+        }
+
+        /// <summary>Falas de historia do NPC (StoryLines) como linhas do cartao aberto; sem historia carregada nao acrescenta nada.</summary>
+        void AddStoryLines(VisualElement card, string npcId)
+        {
+            var director = StoryDirector.Current;
+            if (director == null || !director.IsLoaded) return;
+            foreach (var key in StoryLines.For(npcId, director.CurrentState(), StoryDirector.RegionId))
+                ScreenKit.Line(card, Loc.Get(key), 22);
+        }
+
+        /// <summary>Bram e Odete: so falas de historia (a funcao de jogo deles - forja e Livros - ainda nao existe).</summary>
+        public void TalkToStoryNpc(string npcId)
+        {
+            var card = OpenScreen();
+            MenuUi.Title(card, "npc." + npcId + ".name", Loc, 36);
+            AddStoryLines(card, npcId);
+            MenuUi.MakeButton(card, Loc.Get("ui.common.close"), CloseScreen);
         }
 
         VendorScreen vendorScreen;
@@ -277,6 +303,7 @@ namespace Echoes.UI
             if (rules == null) return;
             var card = OpenScreen();
             MenuUi.Title(card, "npc.ilsa.name", Loc, 36);
+            AddStoryLines(card, InteractableNpc.Ilsa);
             var state = GameSession.Expedition.State(rules);
             var busy = state.Phase == ExpeditionPhase.Running || state.Phase == ExpeditionPhase.ReadyToCollect;
             if (busy && SaveSettings.HeroBusyDuringExpedition)
@@ -470,6 +497,7 @@ namespace Echoes.UI
             if (rules == null) return;
             var card = OpenScreen();
             MenuUi.Title(card, "npc.tico.name", Loc, 36);
+            AddStoryLines(card, InteractableNpc.Tico);
             var state = GameSession.Expedition.State(rules);
             switch (state.Phase)
             {
