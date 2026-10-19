@@ -53,3 +53,15 @@ Tabelas em `EchoesOfTheShatter/Content/Data/Story/` (`regions`, `echoes`, `quest
 
 ### Core da história (18/10)
 `ShatterCore/include/shatter/story.h` carrega `Story/` (`StoryDB`) e aplica as regras: `RecordEcho`, `IsSkillRevealed`, `ApplyVerdict` (exige o General vencido, é irreversível, soma a Fome até `hunger_max` de `Story/story_rules.csv`) e `TotalStatBonusPct`. O estado vai no campo opcional `story` do save v2 (como `world_state`): saves sem história mantêm os mesmos bytes e hash, então não houve salto para save v3 nem migração. Falta expor tudo na API C (`shatter_c.h`) para o cliente Unity, contrato novo a revisar.
+
+### Cliente Unity da história (19/10)
+Código em `UI/StoryDirector.cs` (nasce sozinho nas cenas Cripta e Refúgio quando há save e a pasta `Story/`), `UI/VerdictScreen.cs`, `UI/EchoPickup.cs` e `Interop/Native/SaveGame.Story.cs` / `StoryDb`. Tudo que é regra continua no core.
+- **Ecos**: 3 brilhos provisórios na Cripta (r01, r05 e r07, um por linha de `echoes.csv`), recolhidos com Interagir (`shatter_story_record_echo`, grava o save, avisa e confirma o golpe revelado).
+- **Veredito**: depois de vencer o Guardião (o `RunRecorder` já registrou a morte no save), mostra a fala `dlg.guardian.kneel` e abre a tela com Exorcizar e Devorar, aviso de escolha irreversível e botão de segurar 1 s. O jogo pausa enquanto a tela está aberta.
+- **Fome**: marcador "Fome ●●○○" no canto da HUD, só depois do primeiro veredito.
+- **Bônus**: `stat_bonus_pct` do core vira modificador "aumentado" em Vida, Dano e Armadura do herói (`SaveGame.StoryStatBonusPct`). O simulador idle ainda não lê esse bônus.
+- **Refúgio**: faixa com `hub.*.name` e `hub.*.desc` e um tom leve na luz ambiente (verde para vila, laranja para guarnição). Os modelos de cada estado exigem arte nova e passam pela aprovação do dono.
+
+Decisões tomadas sem o Will (ele dormia): bônus em Vida, Dano e Armadura; Fome só aparece depois do primeiro veredito; pontos dos Ecos nas salas r01, r05 e r07.
+
+Pendências abertas: efeito de jogo da Relíquia do Descanso (só é anunciada, sem efeito ainda); golpe devorado do Guardião (`skill.devoured.guardian_slam` não existe em `skills.csv`); efeitos da Mancha (elites e loot exclusivos); aparência real do Refúgio por estado.

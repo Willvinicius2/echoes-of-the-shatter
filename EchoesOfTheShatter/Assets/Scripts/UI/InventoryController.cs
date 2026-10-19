@@ -75,7 +75,7 @@ namespace Echoes.UI
         {
             var keyboard = Keyboard.current;
             var pressed = input != null && input.IsReady ? input.InventoryPressed : keyboard != null && keyboard[Key.I].wasPressedThisFrame;
-            if (pressed && (open || !RefugeController.AnyScreenOpen)) Toggle();
+            if (pressed && (open || (!RefugeController.AnyScreenOpen && !StoryDirector.VerdictOpen))) Toggle();
             if (open && keyboard != null && keyboard[Key.Escape].wasPressedThisFrame)
             {
                 if (modal != null) CloseModal();
