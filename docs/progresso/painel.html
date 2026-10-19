@@ -99,7 +99,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 .votacao{--v-fundo:var(--media);--v-borda:var(--clara);--v-texto:var(--perg);--v-mut:var(--clara);--v-nome:var(--ouro-claro);--v-destaque:var(--ouro);--v-campo:var(--noite);--v-botao:var(--ouro);--v-botao-txt:var(--noite)}.v-tit{font-family:var(--f-txt)}.topo a{color:var(--ouro-claro)}</style>
 <main>
 <section class="topo"><h1>Echoes of the Shatter</h1>
-<p class="sub">Etapa 3 integrada no master em 18/10 (economia, polimento, mapa e cenário); falta o build integrado, o vídeo de gameplay e a rodada completa de testes. Atualizado em 18/10/2026.</p>
+<p class="sub">Região 1 e seus ajustes (PRs 25 a 34) integrados no master em 19/10: golpe devorado na barra, dicas dos Ecos, notas do core, Único da Mancha, trava de missão (desligada) e Fome/Mancha no idle. Tudo ainda sem compilar nem jogar no editor da Unity do dono; o PR #30 (DLL recompilada, EditMode 403/403 e PlayMode 44/44) espera o merge. Falta o teste no PC (A1 a A3, build dev3) e o Ato I inteiro da Etapa 4. Roadmap: contexto-do-jogo/08_trabalho-em-andamento/roadmap-atoI.md. Atualizado em 19/10/2026.</p>
 <p class="sub"><a href="#aguardando">Votar nas perguntas</a> · <a href="https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8" target="_blank" rel="noopener">Roteiro completo: documentos e artes ↗</a></p>
 <p class="dest"><b>Teste o jogo: abra D:\openclaude\Builds\Echoes_Cripta_dev\EchoesOfTheShatter.exe</b><span>Build jogável com menu e escolha de herói (Arqueiro e Mago como prévia visual), Refúgio com a Ilsa (expedição) e o Tico (relatório), save com backups e expedição idle de ponta a ponta. Cripta e Refúgio com cenário pintado (26 peças) e fogo; inimigos pintados e animados; Guerreiro modular com armadura em peças; HUD com barra do chefe e fila de avisos. 238 EditMode e 11 PlayMode; cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada). Controles no LEIA-ME.txt; roteiro no docs/10. Agora com inventário completo (seção 4 do LEIA-ME): loot no chão com feixe de raridade, tela na tecla I com boneco modular, tooltip com comparação e valor de venda, Mochila 40 e Baú 100 [HIPÓTESE]. Em 17 e 18/10 o master recebeu animação rev1 a rev6, VFX, economia com Vendedor e Encantador, cliente da Cripta fechado e cenário rev2; o build acima ainda não inclui esse conjunto (o integrado será Echoes_Cripta_dev3).</span></p>
 <div class="faixa">
@@ -119,7 +119,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <div>6<span>aguardando você</span></div>
 <div>0<span>sessões na nuvem</span></div>
 <div>5/11<span>setores concluídos</span></div>
-<div>19/22<span>marcos</span></div>
+<div>21/25<span>marcos</span></div>
 </div>
 <div class="etapas">
 <div class="etapa concluido"><b>Etapa 1</b>Base técnica<br><span class="pil concluido"><i></i>Concluído</span></div>
@@ -160,7 +160,10 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li class="ok"><i></i><span>Etapa 3: cenário rev1 e rev2 aprovados</span><span class="mut peq">feito</span></li>
 <li class="ok"><i></i><span>Etapa 3 integrada no master (economia, polimento, mapa, cenário)</span><span class="mut peq">feito</span></li>
 <li class="ok"><i></i><span>Repositório reorganizado (PR #5)</span><span class="mut peq">feito</span></li>
+<li class="ok"><i></i><span>História da Região 1 no master (core, cliente, falas, missões, efeitos do veredito)</span><span class="mut peq">feito</span></li>
+<li class="ok"><i></i><span>Checagem do cliente C# sem Unity no CI (PR #22)</span><span class="mut peq">feito</span></li>
 <li class=""><i></i><span>Build integrado e vídeo de gameplay da Cripta</span><span class="mut peq">falta</span></li>
+<li class=""><i></i><span>Região 1 jogável de ponta a ponta (compilar, playtest, build dev3)</span><span class="mut peq">falta</span></li>
 </ul>
 <h2>Setores</h2><div class='grade'>
 <article class="card" id="s-arte"><header><div><h3>Direção de arte</h3><span class="mut peq">Art Director</span></div><span class="pil andamento"><i></i>Em andamento</span></header>
@@ -247,11 +250,84 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </ul><p class="prox"><b>Próximo passo:</b> Build e vídeo do master integrado, depois mostrar ao dono. Perguntas abertas ao dono continuam em Aguardando você.</p></article>
 </div>
 <h2>Linha do tempo</h2><ul class='linha'>
+<li><code>e477301</code><span class="dt">19/10/2026</span><br>Merge pull request #34 from Willvinicius2/claude/project-thread-ca6jzj</li>
+<li><code>8965e58</code><span class="dt">19/10/2026</span><br>merge: master em claude/project-thread-ca6jzj (Fome/Mancha no idle vira 15.5)</li>
+<li><code>cec8aa3</code><span class="dt">19/10/2026</span><br>Merge pull request #33 from Willvinicius2/claude/a7-nuvem</li>
+<li><code>fb3ce6a</code><span class="dt">19/10/2026</span><br>feat(core): Fome e loot da Mancha na expedição idle</li>
+<li><code>ab8692d</code><span class="dt">19/10/2026</span><br>feat(core,dados): mecanismo gate_reward para travar Marco e duelo por missão (A7), desligado por padrão</li>
+<li><code>2e7d293</code><span class="dt">19/10/2026</span><br>Merge pull request #32 from Willvinicius2/claude/item-mancha</li>
+<li><code>22363b7</code><span class="dt">19/10/2026</span><br>feat(dados): Único da Mancha, Égide Sem Nome em loot.crypt.stain</li>
+<li><code>6e171d7</code><span class="dt">19/10/2026</span><br>Merge pull request #29 from Willvinicius2/claude/project-thread-n3nbq3</li>
+<li><code>10d0437</code><span class="dt">19/10/2026</span><br>merge: master em claude/project-thread-n3nbq3</li>
+<li><code>da4e614</code><span class="dt">19/10/2026</span><br>feat(historia): dicas do golpe do Guardião só depois dos Ecos (A5) (#27)</li>
+<li><code>66afa07</code><span class="dt">19/10/2026</span><br>Merge pull request #28 from Willvinicius2/claude/a6-notas-core-dados</li>
+<li><code>f995a91</code><span class="dt">19/10/2026</span><br>Merge pull request #31 from Willvinicius2/claude/nivel-heroi-save</li>
+<li><code>ad9a3fe</code><span class="dt">19/10/2026</span><br>fix(cliente): herói refaz o bloco quando o nível do save sobe fora da morte (coleta de expedição, missão)</li>
+<li><code>ef78000</code><span class="dt">19/10/2026</span><br>fix(core): progress de missão só aceita inteiro; ajusta texto do contrato</li>
+<li><code>86653cb</code><span class="dt">19/10/2026</span><br>Merge pull request #26 from Willvinicius2/claude/inventario-hitstop</li>
+<li><code>c71cdde</code><span class="dt">19/10/2026</span><br>feat(balanceamento): sonda Exorcizar x Devorar e números do Ato I</li>
+<li><code>5466412</code><span class="dt">19/10/2026</span><br>feat(cliente): golpe devorado entra na barra na hora do veredito (A4) (#25)</li>
+<li><code>8983b88</code><span class="dt">19/10/2026</span><br>fix(core): fecha as notas abertas do A6 (world_state no esquema, limite de missões, tipos do save, teto de 100%)</li>
+<li><code>29cb5a0</code><span class="dt">19/10/2026</span><br>Merge pull request #23 from Willvinicius2/claude/project-thread-lxol5b</li>
+<li><code>d331fb1</code><span class="dt">19/10/2026</span><br>fix(teste,feel): teste do inventário compara no nível do herói; hitstop leve de 35 ms no golpe 2 do combo e tremor de câmera</li>
+<li><code>2493e99</code><span class="dt">19/10/2026</span><br>fix(cliente): regra do Refúgio por estado em classe pura (testável fora da Unity)</li>
+<li><code>3c48975</code><span class="dt">19/10/2026</span><br>Merge pull request #24 from Willvinicius2/claude/roadmap-atoi</li>
+<li><code>3218cfd</code><span class="dt">19/10/2026</span><br>docs(progresso): marco da Região 1 e ponteiro para o roadmap do Ato I</li>
+<li><code>fbaa042</code><span class="dt">19/10/2026</span><br>feat(cliente): Refúgio muda de verdade por estado (vila fortificada e guarnição)</li>
+<li><code>ae37b10</code><span class="dt">19/10/2026</span><br>Merge pull request #22 from Willvinicius2/claude/revisao-csharp-sem-unity</li>
+<li><code>3a6d008</code><span class="dt">19/10/2026</span><br>Merge pull request #14 from Willvinicius2/fix/native-plugin-setup-escape</li>
+<li><code>9bf97e4</code><span class="dt">19/10/2026</span><br>fix(cliente): chmod nas referências extraídas do nupkg (acesso negado no runner)</li>
+<li><code>5523c30</code><span class="dt">19/10/2026</span><br>chore(cliente): mostra avisos de resolução de referências no diagnóstico</li>
+<li><code>a0005ca</code><span class="dt">19/10/2026</span><br>fix(core,dados): requires em ciclo nas missões vira erro; validate_story.py roda no CI (revisão do contrato 15.2)</li>
+<li><code>99eb8ec</code><span class="dt">19/10/2026</span><br>chore(cliente): diagnóstico do build separa erros de tipo não encontrado</li>
+<li><code>ef06a75</code><span class="dt">19/10/2026</span><br>fix(cliente): StoryDirector.Quests.cs sem o using Echoes.Core (GameSession) não compilava</li>
+<li><code>54a4f9b</code><span class="dt">19/10/2026</span><br>merge: master (PR #21) na branch de revisão</li>
+<li><code>1f09925</code><span class="dt">19/10/2026</span><br>fix(cliente): referências UnityEngine uma a uma com HintPath (o glob em Reference falhou no SDK do CI)</li>
+<li><code>90d4c83</code><span class="dt">18/10/2026</span><br>Merge pull request #21 from Willvinicius2/claude/missoes-regiao1</li>
+<li><code>d392814</code><span class="dt">19/10/2026</span><br>fix(cliente): script de checagem mostra as referências usadas e falha se o download do NuGet falhar</li>
+<li><code>792d8d1</code><span class="dt">19/10/2026</span><br>chore(cliente): checagem de compilação e testes EditMode sem a Unity, mais dois ajustes da Região 1</li>
+<li><code>5d04bc9</code><span class="dt">19/10/2026</span><br>feat(core,cliente): progresso das missões da Região 1 no save e diário de missões</li>
+<li><code>8cce5a3</code><span class="dt">18/10/2026</span><br>Merge pull request #20 from Willvinicius2/claude/falas-regiao1</li>
+<li><code>b7aec93</code><span class="dt">19/10/2026</span><br>feat(cliente): liga as falas da Região 1 aos NPCs do Refúgio e ao Guardião</li>
+<li><code>ba73f54</code><span class="dt">18/10/2026</span><br>Merge pull request #19 from Willvinicius2/claude/golpe-devorado-mancha</li>
+<li><code>8a36fe1</code><span class="dt">19/10/2026</span><br>docs: registra a conta de Fome no C# como decisão de protótipo</li>
+<li><code>3669532</code><span class="dt">19/10/2026</span><br>docs: corrige nome do teste na seção 15.1</li>
+<li><code>e9c2b06</code><span class="dt">19/10/2026</span><br>feat(core): golpe devorado na barra, custo em Fome e Mancha no combate manual</li>
+<li><code>9ba66b8</code><span class="dt">18/10/2026</span><br>Merge pull request #18 from Willvinicius2/claude/efeitos-veredito</li>
+<li><code>629ede9</code><span class="dt">19/10/2026</span><br>feat(core): efeitos do veredito (Relíquia do Descanso, golpe devorado, Mancha e bônus no idle)</li>
+<li><code>83ae877</code><span class="dt">18/10/2026</span><br>Merge pull request #17 from Willvinicius2/claude/regiao1-cliente</li>
+<li><code>93920bc</code><span class="dt">19/10/2026</span><br>feat(cliente): história da Região 1 no Unity (veredito, Fome, Ecos e estado do Refúgio)</li>
+<li><code>0f826af</code><span class="dt">18/10/2026</span><br>Merge pull request #15 from Willvinicius2/claude/regiao1-capi</li>
+<li><code>aa0806e</code><span class="dt">19/10/2026</span><br>test(api-c): corrige vazamento do handle da história no teste</li>
+<li><code>ed1168c</code><span class="dt">18/10/2026</span><br>Merge pull request #16 from Willvinicius2/claude/project-thread-l5ifkj</li>
+<li><code>ed74a3f</code><span class="dt">19/10/2026</span><br>fix(api-c): tira o helper de JSON da história do bloco extern C (clang -Wreturn-type-c-linkage)</li>
+<li><code>eeedcb6</code><span class="dt">19/10/2026</span><br>fix(dados): mutações do autoteste acompanham os novos valores de combo_window e attack_buffer</li>
+<li><code>648a038</code><span class="dt">19/10/2026</span><br>feat(feel): movimento e combate do Guerreiro mais responsivos (rampa, buffers, janela de combo e cancelamento por esquiva)</li>
+<li><code>bbbe3ad</code><span class="dt">19/10/2026</span><br>fix(api-c): classifica erro de E/S da história por prefixo e não perde Eco nem veredito com o save cheio</li>
+<li><code>936eeba</code><span class="dt">19/10/2026</span><br>feat(api-c): história da Região 1 (Ecos, veredito e Fome) na API C</li>
+<li><code>17d57d3</code><span class="dt">18/10/2026</span><br>Merge pull request #13 from Willvinicius2/claude/regiao1-core</li>
+<li><code>539f043</code><span class="dt">18/10/2026</span><br>fix(unity): corrige escape invalido no caminho do build_core em NativePluginSetup</li>
+<li><code>2a05e69</code><span class="dt">18/10/2026</span><br>fix(core): valida tipo e listagem dos vereditos e hunger_max repetido</li>
+<li><code>0f5af90</code><span class="dt">18/10/2026</span><br>feat(core): história da Região 1 (StoryDB, Ecos, veredito e Fome) no save</li>
+<li><code>c4b4955</code><span class="dt">18/10/2026</span><br>Merge pull request #12 from Willvinicius2/etapa3/integracao2</li>
+<li><code>e3c62c7</code><span class="dt">18/10/2026</span><br>Merge pull request #11 from Willvinicius2/claude/regiao1-dados</li>
+<li><code>5310fb0</code><span class="dt">18/10/2026</span><br>Merge pull request #10 from Willvinicius2/tmp/p03-testes-idle</li>
+<li><code>35cf63e</code><span class="dt">18/10/2026</span><br>feat(dados): tabelas da Região 1 (regiões, Ecos, missões, vereditos) e validador</li>
+<li><code>843b12e</code><span class="dt">18/10/2026</span><br>test(core): explosão do Volátil no idle (M8 do docs/17)</li>
+<li><code>6eb8e66</code><span class="dt">18/10/2026</span><br>Merge pull request #9 from Willvinicius2/claude/project-thread-nn4tz6</li>
+<li><code>7141622</code><span class="dt">18/10/2026</span><br>Merge pull request #8 from Willvinicius2/claude/project-thread-cxm0fr</li>
+<li><code>a7a8dd4</code><span class="dt">18/10/2026</span><br>docs(narrativa): pitch completo (docs/22), Regiões 3 e 4, Fenda e finais com falas provisórias</li>
+<li><code>771fc3f</code><span class="dt">18/10/2026</span><br>Merge pull request #7 from Willvinicius2/claude/project-thread-cxm0fr</li>
+<li><code>9e7b160</code><span class="dt">18/10/2026</span><br>docs(narrativa): falas de Bram e Odete e esboço da Região 2</li>
+<li><code>e8bf09f</code><span class="dt">18/10/2026</span><br>Merge pull request #6 from Willvinicius2/claude/project-thread-cxm0fr</li>
+<li><code>fca05be</code><span class="dt">18/10/2026</span><br>docs(narrativa): roteiro da Região 1 (Cripta, Guardião, veredito) e falas provisórias</li>
+<li><code>746659f</code><span class="dt">18/10/2026</span><br>docs(progresso): atualiza painel e estado com a Etapa 3 integrada e a reorganização de pastas</li>
 <li><code>09656a4</code><span class="dt">18/10/2026</span><br>Merge pull request #5 from Willvinicius2/claude/project-thread-6hxq3h</li>
 <li><code>9081b27</code><span class="dt">18/10/2026</span><br>chore: ignora __pycache__</li>
 <li><code>51917a2</code><span class="dt">18/10/2026</span><br>refactor(repo): reorganiza pastas (docs por assunto, Godot em prototipos/, tools por área)</li>
 <li><code>2afd9ab</code><span class="dt">18/10/2026</span><br>docs(claude): regra de modelo certo para cada tarefa (Haiku, Sonnet, Opus, Fable)</li>
 <li><code>938218b</code><span class="dt">18/10/2026</span><br>merge: proposta de alinhamento de contexto, dupla e escopo do Leonardo (docs/20) no master da Etapa 3</li>
+<li><code>d97b22e</code><span class="dt">18/10/2026</span><br>chore(gerados): regenera cenas, controllers, materiais, biblioteca de VFX e prefabs após a integração da Etapa 3</li>
 <li><code>7a07013</code><span class="dt">18/10/2026</span><br>chore(dados): content_version 2 para a Etapa 3 integrada</li>
 <li><code>2e7c57f</code><span class="dt">18/10/2026</span><br>merge: etapa3/cenario (cenário rev2 e rev3 parcial: piso por células, parede chanfrada, luz e pós do URP, runas e braseiros)</li>
 <li><code>22c5dd9</code><span class="dt">18/10/2026</span><br>merge: etapa3/mapa (fechamento do cliente da Cripta, Vendedor, Encantador, kit de UI e conjunto Raro)</li>
@@ -374,23 +450,8 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li><code>964d825</code><span class="dt">17/10/2026</span><br>Merge etapa2/frontend: Etapa 3 parte 1 (save e load pelo core com backups, Refúgio, expedição idle ponta a ponta com _trusted, HUD corrigido); 208 + 6 testes</li>
 <li><code>8b645f2</code><span class="dt">17/10/2026</span><br>feat(etapa3): Refugio flow end to end, expedition screens, PanelSettings reference fix (HUD was invisible in built scenes), player smoke test</li>
 <li><code>868d843</code><span class="dt">17/10/2026</span><br>feat(refuge): Refugio scene (Ilsa, Tico, crypt portal), slots menu, expedition and report screens, autosave, area travel</li>
-<li><code>fb1079e</code><span class="dt">17/10/2026</span><br>feat(save): save/load/backups/migration and trusted expedition through the core (SaveGame, SaveService, ExpeditionService, fake clock), 10 EditMode tests</li>
 <li><code>35de6f6</code><span class="dt">17/10/2026</span><br>feat(arte): opção rim_mask_cap por personagem no acabamento (Espectro com G limitado a 30%)</li>
 <li><code>0f1ad82</code><span class="dt">17/10/2026</span><br>Merge etapa2/frontend: heróis modulares na Unity (ModularCharacter, HeroPart, catálogo, visual pelo item), correção do Espectro; 198 testes</li>
-<li><code>ea63d86</code><span class="dt">17/10/2026</span><br>feat(build): menu screenshot flag for player smoke test; rebuild after modular heroes</li>
-<li><code>720d5ea</code><span class="dt">17/10/2026</span><br>feat(modular): modular heroes (ModularCharacter, HeroPart, catalogs, region masks, visualSetId resolver, dev keys), modular Warrior prefab</li>
-<li><code>a6f0ae7</code><span class="dt">17/10/2026</span><br>feat(painel): destaque da build jogável v0.1, grupo Aguardando aprovação, modelos, animações e Etapa 3</li>
-<li><code>860a71e</code><span class="dt">17/10/2026</span><br>fix(loc): remove chaves de pausa repetidas em ui_menu.csv (já estão em ui.csv com o mesmo texto)</li>
-<li><code>ed87a95</code><span class="dt">17/10/2026</span><br>Merge etapa2/frontend: build jogável de Windows (tela inicial, pausa, opções de tela, input pré-carregado, CSV no StreamingAssets) e correção das manchas do Espectro</li>
-<li><code>4158bca</code><span class="dt">17/10/2026</span><br>art: prompts finais dos mockups da Etapa 3 (slots bloqueados no protótipo)</li>
-<li><code>61a4458</code><span class="dt">17/10/2026</span><br>art: prompts dos mockups das telas da Etapa 3 (para aprovação do dono)</li>
-<li><code>b39caf3</code><span class="dt">17/10/2026</span><br>loc: 177 chaves das telas da Etapa 3 (save, Refúgio, inventário, tooltip, expedição, pausa e opções)</li>
-<li><code>5b3c062</code><span class="dt">17/10/2026</span><br>feat(build): playable Windows build (title screen, pause, display options, preloaded input actions, CSV preprocess, Build.Windows)</li>
-<li><code>5d02199</code><span class="dt">17/10/2026</span><br>docs: fluxo da Etapa 3 (docs/16), roteiro do dono para a build Cripta v0.1 e 4 perguntas novas ao dono</li>
-<li><code>1e80857</code><span class="dt">17/10/2026</span><br>fix(art): Ghost Archer white blotches (rim too strong on translucent cloth; mask G reduced, cool weak rim)</li>
-<li><code>e9e1e27</code><span class="dt">17/10/2026</span><br>feat(arte): heróis modulares por corte do modelo vestido (Guerreiro e Arqueiro: corpo em 6 regiões + 5 peças, verify_modular)</li>
-<li><code>408daa5</code><span class="dt">16/10/2026</span><br>fix(animacao): não exportar chave de escala (só relativa e opcional na morte)</li>
-<li><code>ec35dea</code><span class="dt">16/10/2026</span><br>Merge etapa2/frontend: golpes do Blender no jogo (stun, rugido, investida, Espectro), squash no impacto e balanço do Espectro; 190 + 3 testes</li>
 </ul>
 <h2>Decisões tomadas</h2><div class='grade'>
 <article class="card"><h3>Visual no estilo Spell Brigade</h3><p>3D pintado à mão, personagens chibi, no lugar da pixel art.</p><span class="arq">16/10/2026</span></article>
@@ -500,6 +561,11 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </div>
 <h2>Sessões na nuvem</h2><div class='grade'>
 <article class="card"><header><h3>1. Revisão do ShatterCore da Etapa 2 (Linux)</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Backend - iniciada em 17/10/2026</p><p>Relatório no docs/17.</p><p class="prox"><b>Resultado:</b> Concluída: achados críticos e altos corrigidos; CI do GitHub verde de novo.</p></article>
+<article class="card"><header><h3>2. Golpe devorado na barra na hora do veredito e dicas dos Ecos (A4, A5)</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Cliente - iniciada em 19/10/2026</p><p>PRs 25 e 27.</p><p class="prox"><b>Resultado:</b> Concluída e mesclada; CI do cliente verde.</p></article>
+<article class="card"><header><h3>3. Notas abertas do core e dos dados (A6)</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Backend - iniciada em 19/10/2026</p><p>PR 28: world_state no esquema, limite de 256 missões, leitor do save e totais limitados a 100.</p><p class="prox"><b>Resultado:</b> Concluída e mesclada.</p></article>
+<article class="card"><header><h3>4. Nível do herói, inventário e hitstop</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Cliente - iniciada em 19/10/2026</p><p>PRs 26 e 31.</p><p class="prox"><b>Resultado:</b> Concluída e mesclada.</p></article>
+<article class="card"><header><h3>5. Balanceamento Exorcizar x Devorar e Único da Mancha</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Dados - iniciada em 19/10/2026</p><p>PRs 29 e 32 (Égide Sem Nome).</p><p class="prox"><b>Resultado:</b> Concluída e mesclada.</p></article>
+<article class="card"><header><h3>6. Trava de recompensa de missão e Fome/Mancha no idle (A7 parcial)</h3><span class="pil nuvem"><i></i>Na nuvem</span></header><p class="mut peq">Backend - iniciada em 19/10/2026</p><p>PRs 33 e 34; contrato 15.4 e 15.5.</p><p class="prox"><b>Resultado:</b> Concluída e mesclada; trava desligada nos dados.</p></article>
 </div>
 <h2>Infraestrutura</h2><div class='tab'><table><tr><th>Item</th><th>Detalhe</th></tr>
 <tr><td>Unity 6.3 LTS (6000.3.26f1)</td><td>D:\Unity\Editors, com módulo IL2CPP</td></tr>
