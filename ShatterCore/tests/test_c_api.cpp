@@ -2695,8 +2695,9 @@ TEST(c_api_story_echoes_verdict_hunger_and_state_json) {
     shatter_error err{};
     ASSERT_EQ(shatter_story_load_directory(dir.data(), dir.size(), nullptr, &story, &err), SHATTER_OK);
     ASSERT_TRUE(story != nullptr);
-    EXPECT_EQ(shatter_story_load_directory("/nao/existe", 11, nullptr, &story, &err), SHATTER_IO_ERROR);
-    ASSERT_EQ(shatter_story_load_directory(dir.data(), dir.size(), nullptr, &story, &err), SHATTER_OK);
+    shatter_story* none = reinterpret_cast<shatter_story*>(&err);   // deve virar NULL em erro
+    EXPECT_EQ(shatter_story_load_directory("/nao/existe", 11, nullptr, &none, &err), SHATTER_IO_ERROR);
+    EXPECT_TRUE(none == nullptr);
 
     const std::string region = "region.r1.crypt";
     std::uint8_t isNew = 9;
