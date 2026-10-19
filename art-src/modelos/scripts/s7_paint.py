@@ -267,6 +267,41 @@ color[have] = acc[have] / wsum[have, None]
 tree = cKDTree(P[have])
 dist, idx = tree.query(P[~have], k=cfg.get("fill_k", 24))
 color[~have] = np.median(color[have][idx], axis=1)
+_sk = cfg.get("albedo_smooth_k", 0)       # suaviza a cor no espaco 3D (sem emendas de UV), preservando bordas entre materiais
+if _sk:
+    _t2 = cKDTree(P)
+    _d, _ix = _t2.query(P, k=_sk)
+    _sig = cfg.get("albedo_smooth_sigma", 0.11)
+    for _ in range(cfg.get("albedo_smooth_iter", 2)):
+        _nb = color[_ix]                                   # (n, k, 3)
+        _w = np.exp(-(((_nb - color[:, None]) ** 2).sum(-1)) / (2 * _sig ** 2))
+        color = (_nb * _w[..., None]).sum(1) / _w.sum(1)[:, None]
+_fk = cfg.get("albedo_flat_k", 0)         # repintura: agrupa por material e pinta chapado (cor do grupo + variacao suave de luz)
+if _fk:
+    _st = float(cfg.get("albedo_flat_strength", 0.8))
+    _lv = cfg.get("albedo_flat_light_keep", 0.45)
+    _X = color.astype(np.float32).copy()
+    _lab = cv2.cvtColor(_X.reshape(-1, 1, 3), cv2.COLOR_RGB2LAB).reshape(-1, 3)
+    _f = np.column_stack([_lab[:, 0] * 0.5, _lab[:, 1], _lab[:, 2]]).astype(np.float32)
+    cv2.setRNGSeed(5)
+    _, _lb, _ = cv2.kmeans(_f, _fk, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 40, 0.3), 3, cv2.KMEANS_PP_CENTERS)
+    _lb = _lb.ravel()
+    _new = _lab.copy()
+    for _k in range(_fk):
+        _m = _lb == _k
+        if _m.sum() < 20: continue
+        _med = np.median(_lab[_m], axis=0)
+        _l = _med[0] + (_lab[_m, 0] - _med[0]) * _lv
+        _new[_m] = np.column_stack([_l, np.full(_m.sum(), _med[1]), np.full(_m.sum(), _med[2])])
+    _flat = cv2.cvtColor(_new.reshape(-1, 1, 3).astype(np.float32), cv2.COLOR_LAB2RGB).reshape(-1, 3)
+    _stv = np.full(len(P), _st)
+    _hz = cfg.get("albedo_flat_head_z")             # acima desta altura (m) a repintura e mais fraca: preserva olhos e sobrancelhas
+    if _hz is not None:
+        _stv[P[:, 2] > _hz] = _st * cfg.get("albedo_flat_head_factor", 0.3)
+    color = color * (1 - _stv[:, None]) + _flat * _stv[:, None]
+    for _ in range(cfg.get("albedo_flat_post_iter", 1)):          # suaviza a borda entre grupos
+        _nb = color[_ix] if _sk else color
+        if _sk: color = _nb.mean(1) * 0.5 + color * 0.5
 report["texels"] = dict(total=int(len(P)), pintados_por_projecao=int(have.sum()), preenchidos=int((~have).sum()),
                         pct_preenchidos=round(100 * float((~have).sum() / len(P)), 2))
 img = np.zeros((TS, TS, 3)); img[ty, tx] = color
