@@ -1,10 +1,10 @@
 {
   "meta": {
     "jogo": "Echoes of the Shatter",
-    "atualizado_em": "2026-10-18",
+    "atualizado_em": "2026-10-19",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
-    "marco_atual": "Etapa 3 integrada no master em 18/10 (economia, polimento, mapa e cenário); falta o build integrado, o vídeo de gameplay e a rodada completa de testes",
+    "marco_atual": "Região 1 e seus ajustes (PRs 25 a 34) integrados no master em 19/10: golpe devorado na barra, dicas dos Ecos, notas do core, Único da Mancha, trava de missão (desligada) e Fome/Mancha no idle. Tudo ainda sem compilar nem jogar no editor da Unity do dono; o PR #30 (DLL recompilada, EditMode 403/403 e PlayMode 44/44) espera o merge. Falta o teste no PC (A1 a A3, build dev3) e o Ato I inteiro da Etapa 4. Roadmap: contexto-do-jogo/08_trabalho-em-andamento/roadmap-atoI.md",
     "legenda_estados": {
       "concluido": "Concluído",
       "nuvem": "Na nuvem",
@@ -743,6 +743,46 @@
       "data": "2026-10-17",
       "detalhe": "Relatório no docs/17.",
       "saida": "Concluída: achados críticos e altos corrigidos; CI do GitHub verde de novo."
+    },
+    {
+      "n": 2,
+      "titulo": "Golpe devorado na barra na hora do veredito e dicas dos Ecos (A4, A5)",
+      "setor": "Cliente",
+      "data": "2026-10-19",
+      "detalhe": "PRs 25 e 27.",
+      "saida": "Concluída e mesclada; CI do cliente verde."
+    },
+    {
+      "n": 3,
+      "titulo": "Notas abertas do core e dos dados (A6)",
+      "setor": "Backend",
+      "data": "2026-10-19",
+      "detalhe": "PR 28: world_state no esquema, limite de 256 missões, leitor do save e totais limitados a 100.",
+      "saida": "Concluída e mesclada."
+    },
+    {
+      "n": 4,
+      "titulo": "Nível do herói, inventário e hitstop",
+      "setor": "Cliente",
+      "data": "2026-10-19",
+      "detalhe": "PRs 26 e 31.",
+      "saida": "Concluída e mesclada."
+    },
+    {
+      "n": 5,
+      "titulo": "Balanceamento Exorcizar x Devorar e Único da Mancha",
+      "setor": "Dados",
+      "data": "2026-10-19",
+      "detalhe": "PRs 29 e 32 (Égide Sem Nome).",
+      "saida": "Concluída e mesclada."
+    },
+    {
+      "n": 6,
+      "titulo": "Trava de recompensa de missão e Fome/Mancha no idle (A7 parcial)",
+      "setor": "Backend",
+      "data": "2026-10-19",
+      "detalhe": "PRs 33 e 34; contrato 15.4 e 15.5.",
+      "saida": "Concluída e mesclada; trava desligada nos dados."
     }
   ],
   "infraestrutura": [
@@ -885,7 +925,19 @@
       "feito": true
     },
     {
+      "titulo": "História da Região 1 no master (core, cliente, falas, missões, efeitos do veredito)",
+      "feito": true
+    },
+    {
+      "titulo": "Checagem do cliente C# sem Unity no CI (PR #22)",
+      "feito": true
+    },
+    {
       "titulo": "Build integrado e vídeo de gameplay da Cripta",
+      "feito": false
+    },
+    {
+      "titulo": "Região 1 jogável de ponta a ponta (compilar, playtest, build dev3)",
       "feito": false
     }
   ],
@@ -1299,7 +1351,7 @@
       "n": 4,
       "titulo": "Elenco e Ato I",
       "estado": "pendente",
-      "prova": "Três classes, 8 áreas e 4 chefes jogáveis"
+      "prova": "Três classes, 8 áreas e 4 chefes jogáveis. Roteiro de pacotes em roadmap-atoI.md (Fase A: Região 1; Fase B: resto do Ato I)"
     },
     {
       "n": 5,

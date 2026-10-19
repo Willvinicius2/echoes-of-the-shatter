@@ -34,7 +34,9 @@ namespace Echoes.Tests.EditMode
             foreach (var values in new[] { asset.ToValues(), CombatFeelSettings.CreateDefaultValues() })
             {
                 Assert.AreEqual(0.035, values.LightHitstopFor("skill.mage.fireball"), 1e-9, "explosão da Bola de Fogo: hitstop leve de 35 ms");
-                Assert.AreEqual(0.0, values.LightHitstopFor("skill.warrior.iron_cut"), 1e-9);
+                Assert.AreEqual(0.0, values.LightHitstopFor("skill.warrior.iron_cut"), 1e-9, "golpe 1 do combo: sem hitstop (cadência de abertura, docs/18 item 7)");
+                Assert.AreEqual(0.035, values.LightHitstopFor("skill.warrior.combo_2"), 1e-9, "golpe 2 do combo: tranco leve de 35 ms");
+                Assert.AreEqual(0.0, values.LightHitstopFor("skill.warrior.combo_3"), 1e-9, "o fecho tem o hitstop pesado, não o leve");
                 Assert.AreEqual(0.0, values.LightHitstopFor(null), 1e-9);
                 Assert.IsFalse(values.IsHeavy("skill.mage.fireball"), "leve, não pesado");
                 Assert.IsTrue(values.IsHeavy("skill.warrior.heavy_slash"));

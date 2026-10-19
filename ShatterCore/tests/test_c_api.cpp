@@ -2752,6 +2752,10 @@ TEST(c_api_story_echoes_verdict_hunger_and_state_json) {
     EXPECT_EQ(st["hunger_max"].AsInt(), static_cast<std::int64_t>(4));
     ASSERT_EQ(st["verdicts"].Size(), static_cast<std::size_t>(1));
     EXPECT_EQ(st["verdicts"].At(0)["region_state"].AsString(), std::string("stain"));
+    // docs/09, 15.5: o que vai para a expedição idle (Fome 1, custo 1, máximo 4 = 3 usos).
+    ASSERT_EQ(st["devoured_skills"].Size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(st["devoured_skills"].At(0).AsString(), std::string("skill.devoured.guardian_slam"));
+    EXPECT_EQ(st["idle_devoured_uses"].AsInt(), static_cast<std::int64_t>(3));
     const json::Value rj = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
         return shatter_story_region_json(story, save.save, region.data(), region.size(), o, c, n);
     }));
@@ -2768,6 +2772,32 @@ TEST(c_api_story_echoes_verdict_hunger_and_state_json) {
     EXPECT_EQ(shatter_story_region_json(story, save.save, "region.none.x", 13, nullptr, 0, &needed), SHATTER_NOT_FOUND);
     shatter_story_destroy(story);
     shatter_story_destroy(nullptr);
+}
+
+TEST(c_api_story_idle_fields_go_from_start_params_to_the_saved_request) {
+    DbHandle db(tu::RichDir());
+    SaveHandle save = MakeSave(db.db);
+    shatter_error err{};
+    std::int32_t check = -1;
+    const shatter_trusted_now startNow = TrustedStart();
+    std::string bad = StartParams(1, 0);
+    bad.insert(bad.size() - 1, R"(,"story_devoured_skills":"skill.devoured.guardian_slam")");
+    EXPECT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, bad.data(), bad.size(), &startNow, &check, &err), SHATTER_PARSE_ERROR);
+    std::string params = StartParams(1, 0);
+    params.insert(params.size() - 1, R"(,"story_devoured_skills":["skill.devoured.guardian_slam"],"story_devoured_uses":3,)"
+                                     R"("story_stain_loot_table":"loot.crypt.stain")");
+    ASSERT_EQ(shatter_save_start_expedition_trusted(db.db, save.save, params.data(), params.size(), &startNow, &check, &err), SHATTER_OK);
+    ASSERT_EQ(check, SHATTER_START_OK);
+    shatter_clock_input clock{};
+    clock.local_now_utc = 1'700'000'000 + 2 * 3600;
+    shatter_offline_window window{};
+    const json::Value req = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_save_expedition_request(db.db, save.save, 0, &clock, &window, o, c, n, &err);
+    }));
+    ASSERT_EQ(req["story_devoured_skills"].Size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(req["story_devoured_skills"].At(0).AsString(), std::string("skill.devoured.guardian_slam"));
+    EXPECT_EQ(req["story_devoured_uses"].AsInt(), static_cast<std::int64_t>(3));
+    EXPECT_EQ(req["story_stain_loot_table"].AsString(), std::string("loot.crypt.stain"));
 }
 
 TEST(c_api_story_quests_event_progress_and_state_json) {
@@ -2792,6 +2822,16 @@ TEST(c_api_story_quests_event_progress_and_state_json) {
     EXPECT_EQ(shatter_story_quest_event(story, save.save, "talk", 4, "npc.ilsa", 8, &done), SHATTER_OK);
     EXPECT_EQ(done, 1u);
     EXPECT_EQ(shatter_story_quest_event(nullptr, save.save, "talk", 4, "npc.ilsa", 8, &done), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_story_quest_event(story, nullptr, "talk", 4, "npc.ilsa", 8, &done), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_story_quest_event(story, save.save, nullptr, 4, "npc.ilsa", 8, &done), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_story_quest_event(story, save.save, "talk", 4, nullptr, 8, &done), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_story_quest_event(story, save.save, "talk", 4, "npc.ilsa", 8, nullptr), SHATTER_INVALID_ARGUMENT);
+    {   // buffer pequeno: devolve o tamanho necessário sem escrever
+        std::size_t need = 0;
+        std::uint8_t tiny[4] = {0, 0, 0, 0};
+        EXPECT_EQ(shatter_story_state_json(story, save.save, tiny, sizeof tiny, &need), SHATTER_BUFFER_TOO_SMALL);
+        EXPECT_TRUE(need > sizeof tiny);
+    }
     uint8_t isNew = 0;
     ASSERT_EQ(shatter_story_record_echo(story, save.save, "echo.r1.broken_hammer", 21, &isNew), SHATTER_OK);
     const json::Value after = quests();

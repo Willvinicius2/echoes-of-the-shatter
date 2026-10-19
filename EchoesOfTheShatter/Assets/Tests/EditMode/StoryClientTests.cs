@@ -104,6 +104,21 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void StateJson_ReadsDevouredSkillsAndIdleUses_AndTheSaveKeepsThemForTheExpedition()
+        {
+            var json = "{\"hunger\":2,\"hunger_max\":4,\"devoured_hunger_cost\":1,\"devoured_skills\":[\"skill.devoured.guardian_slam\"],\"idle_devoured_uses\":2,\"echoes\":[],\"verdicts\":[]}";
+            var state = StoryState.FromJson(json);
+            CollectionAssert.AreEqual(new[] { "skill.devoured.guardian_slam" }, state.DevouredSkills);
+            Assert.AreEqual(2, state.IdleDevouredUses);
+            Save.ApplyStoryState(state);
+            CollectionAssert.AreEqual(new[] { "skill.devoured.guardian_slam" }, Save.StoryDevouredSkills);
+            Assert.AreEqual(2, Save.StoryIdleDevouredUses);
+            var fresh = Save.ReadStory(story);
+            CollectionAssert.IsEmpty(fresh.DevouredSkills);
+            Assert.AreEqual(4, fresh.IdleDevouredUses);   // save novo: Fome 0, maximo 4, custo 1 (o core calcula; sem golpe, nao vai para a expedicao)
+        }
+
+        [Test]
         public void DevouredKit_GatesTheSlamByHungerAndFillsTheLastFreeSlot()
         {
             var kit = new Echoes.Gameplay.DevouredKit(StoryState.FromJson(
@@ -124,6 +139,42 @@ namespace Echoes.Tests.EditMode
             kit.FillBar(bar);
             Assert.AreEqual(slam, bar[5]);
             Assert.AreEqual(string.Empty, bar[1]);   // o espaco 1 e a defesa
+        }
+
+        [Test]
+        public void TelegraphHints_HideTheGuardianStrikeUntilItsEchoIsFound()
+        {
+            const string region = "region.r1.crypt";
+            const string hammer = "skill.enemy.guardian_hammer";
+            const string bash = "skill.enemy.guardian_shield_bash";
+            Echoes.Presentation.TelegraphHints.Hidden = id => id == hammer && !Save.StorySkillRevealed(story, region, id);
+            try
+            {
+                Assert.IsTrue(Echoes.Presentation.TelegraphHints.IsHidden(hammer));    // sem o Eco: cone escondido
+                Assert.IsFalse(Echoes.Presentation.TelegraphHints.IsHidden(bash));     // fora do gate: sempre aparece
+                Assert.IsFalse(Echoes.Presentation.TelegraphHints.IsHidden(string.Empty));
+                Assert.IsTrue(Save.StoryRecordEcho(story, "echo.r1.broken_hammer", out var isNew));
+                Assert.IsTrue(isNew);
+                Assert.IsFalse(Echoes.Presentation.TelegraphHints.IsHidden(hammer));   // Eco achado: cone liberado
+            }
+            finally
+            {
+                Echoes.Presentation.TelegraphHints.Hidden = null;
+            }
+            Assert.IsFalse(Echoes.Presentation.TelegraphHints.IsHidden(hammer));       // sem gate (sandbox): tudo aparece
+        }
+
+        [Test]
+        public void DevouredKit_CarriesSpentHungerToTheKitReadAfterTheVerdict()
+        {
+            const string json = "{\"hunger\":0,\"hunger_max\":4,\"devoured_hunger_cost\":1,\"echoes\":[],\"verdicts\":[{\"region_id\":\"region.r1.crypt\",\"verdict_id\":\"verdict.r1.devour\",\"grants_signature\":\"skill.devoured.guardian_slam\"}]}";
+            var old = new Echoes.Gameplay.DevouredKit(StoryState.FromJson(json));
+            old.Spent("skill.devoured.guardian_slam");
+            var fresh = new Echoes.Gameplay.DevouredKit(StoryState.FromJson(json));
+            fresh.CarrySpentFrom(old);
+            Assert.AreEqual(1, fresh.Hunger);
+            fresh.CarrySpentFrom(null);   // sem kit anterior (primeiro Devorar): nada muda
+            Assert.AreEqual(1, fresh.Hunger);
         }
 
         [Test]

@@ -77,6 +77,7 @@ namespace Echoes.EditorTools
                 Melee("skill.warrior.charge", pArc2, pTrail2, 0.3f, 0.2f, 0.5f, pHitSpark),
                 new SkillVfxEntry { skillId = "skill.warrior.stone_rift", hitFx = new[] { OnTarget(pHitSparkHeavy, 1.0f) } },
                 new SkillVfxEntry { skillId = "skill.warrior.shield_bash", hitFx = new[] { OnTarget(pHitSparkHeavy, 1.0f) } },
+                new SkillVfxEntry { skillId = "skill.devoured.guardian_slam", hitFx = new[] { OnTarget(pHitSparkHeavy, 1.0f) } },
                 // Estados do kit (IDs virtuais): defesa erguida, golpe absorvido e defesa perfeita.
                 new SkillVfxEntry
                 {

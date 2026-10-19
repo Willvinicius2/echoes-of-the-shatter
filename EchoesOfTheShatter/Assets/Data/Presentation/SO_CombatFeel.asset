@@ -28,6 +28,7 @@ MonoBehaviour:
   enemyAvoidanceRadiusMeters: 0.3
   lightHitstopSkills:
   - skill.mage.fireball
+  - skill.warrior.combo_2
   knockbackCommonCm: 20
   knockbackEliteCm: 6
   knockbackBossCm: 0

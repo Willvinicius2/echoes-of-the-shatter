@@ -1,6 +1,9 @@
 // História (story.h): tabelas Story/, Ecos, veredito irreversível e o campo opcional `story` do save.
 #include <string>
 
+#include "shatter/json.h"
+#include "shatter/save.h"
+#include "shatter/sha256.h"
 #include "shatter/story.h"
 #include "test_util.h"
 
@@ -224,6 +227,29 @@ TEST(story_devoured_cost_and_stain_loot_table) {
     EXPECT_FALSE(bad);
 }
 
+TEST(story_gate_reward_locks_until_quest_done) {
+    const StoryDB open = Make();
+    SaveData s;
+    EXPECT_TRUE(IsRewardOpen(open, s, "unlock.x"));   // sem gate_reward nada trava
+    const StoryDB db = Make(kVerdicts, "key,value\nhunger_max,4\n");
+    EXPECT_TRUE(db.GatedRewards().empty());
+    const std::string rule = std::string("key,value\nhunger_max,4\ngate_reward,") + db.Quests()[0].reward + "\n";
+    bool ok = false;
+    const StoryDB gated = Make(kVerdicts, rule.c_str(), &ok);
+    ASSERT_TRUE(ok);
+    const std::string& reward = gated.Quests()[0].reward;
+    EXPECT_TRUE(gated.IsRewardGated(reward));
+    EXPECT_FALSE(IsRewardOpen(gated, s, reward));
+    EXPECT_FALSE(IsRewardUnlocked(gated, s, reward));
+    EXPECT_TRUE(IsRewardOpen(gated, s, "reward.not_gated"));
+    ReportQuestEvent(gated, s, gated.Quests()[0].objectiveType, gated.Quests()[0].objectiveTarget);
+    EXPECT_TRUE(IsRewardOpen(gated, s, reward));
+    EXPECT_FALSE(IsRewardUnlocked(gated, s, ""));
+    bool bad = true;   // gate sem missão que conceda a recompensa
+    Make(kVerdicts, "key,value\nhunger_max,4\ngate_reward,unlock.nobody\n", &bad);
+    EXPECT_FALSE(bad);
+}
+
 TEST(story_quests_chain_progress_and_early_echoes_count) {
     const StoryDB db = Make();
     SaveData s;
@@ -285,4 +311,55 @@ TEST(story_repo_quests_complete_in_order) {
     EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.verdict") == QuestStatus::Active);
     ASSERT_TRUE(ApplyVerdict(db, s, "verdict.r1.exorcise") == VerdictResult::Ok);
     EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.verdict") == QuestStatus::Done);
+}
+
+TEST(story_save_rejects_wrong_quest_field_types) {
+    SaveData s = SaveWithKill(true);
+    ReportQuestEvent(Make(), s, "talk", "npc.ilsa");
+    const std::string good = SerializeJson(s, false);
+    SaveData back;
+    ASSERT_TRUE(ParseJson(good, back) == LoadStatus::Ok);
+    // Refaz o envelope (o SHA-256 cobre os bytes) com o campo trocado de tipo: antes o leitor tolerante lia false/0.
+    auto reseal = [&](const std::string& from, const std::string& to) {
+        json::Value envIn;
+        ASSERT_TRUE(json::Parse(good, envIn));
+        std::string text = json::Serialize(envIn["data"], false);
+        ASSERT_TRUE(text.find(from) != std::string::npos);
+        text = tu::Replace(text, from, to);
+        json::Value data;
+        ASSERT_TRUE(json::Parse(text, data));
+        json::Value env = json::Value::MakeObject();
+        env.Set("format", json::Value(kSaveFormatTag));
+        env.Set("save_version", json::Value(kCurrentSaveVersion));
+        env.Set("sha256", json::Value(Sha256::HexDigest(json::Serialize(data, false))));
+        env.Set("data", data);
+        SaveData out;
+        EXPECT_TRUE(ParseJson(json::Serialize(env, false), out) == LoadStatus::BadData);
+    };
+    reseal("\"done\":true", "\"done\":\"yes\"");
+    reseal("\"progress\":1", "\"progress\":\"1\"");
+}
+
+TEST(story_percent_totals_are_capped_at_100) {
+    const std::string big =
+        "id,regionId,choice,hungerDelta,statBonusPct,grantsRelic,grantsSignature,regionState,hubState,lastWordsKey\n"
+        "verdict.r1.exorcise,region.r1.crypt,exorcise,0,0,relic.r1.rest,,purified,hub.a,dlg.x\n"
+        "verdict.r1.devour,region.r1.crypt,devour,1,900,,skill.devoured.slam,stain,hub.b,\n";
+    const StoryDB db = Make(big);
+    SaveData s = SaveWithKill(true);
+    ASSERT_TRUE(ApplyVerdict(db, s, "verdict.r1.devour") == VerdictResult::Ok);
+    EXPECT_EQ(TotalStatBonusPct(db, s), 100);   // a expedição já limita a 100; o total informado ao cliente agora também
+}
+
+TEST(story_rejects_more_quests_than_the_save_holds) {
+    std::string csv = "id,regionId,giver,objectiveType,objectiveTarget,objectiveCount,requires,reward\n";
+    for (std::size_t i = 0; i <= kMaxSavedQuests; ++i)
+        csv += "quest.r1.q" + std::to_string(i) + ",region.r1.crypt,npc.ilsa,talk,npc.ilsa,1,,unlock.x\n";
+    StoryDB db;
+    bool all = db.LoadTableCsv("regions.csv", kRegions);
+    all = db.LoadTableCsv("echoes.csv", kEchoes) && all;
+    all = db.LoadTableCsv("quests.csv", csv) && all;
+    all = db.LoadTableCsv("verdicts.csv", kVerdicts) && all;
+    all = db.LoadTableCsv("story_rules.csv", kRules) && all;
+    EXPECT_FALSE(db.Finalize() && all);
 }

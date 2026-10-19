@@ -403,6 +403,7 @@ Nenhum efeito do jogador bloqueia a leitura de telegraph de inimigo (docs/03): o
 5. Modelos: Arqueiro e Mago com `bow_nock` e `staff_crystal`; Arqueiro com arco (`item_base.hunter_bow`); Guerreiro com `shield_face`.
 6. VFX da seção 6 em pool; limite de 300 projéteis ativos.
 7. Hitstop de 60 ms só em golpe forte, fecho do combo e defesa perfeita; respeitar "Reduzir flashes".
+   Decisão de 19/10/2026 (prototipo): o golpe 2 do combo (`skill.warrior.combo_2`) leva um tranco leve de 35 ms (`lightHitstopSkills` do `SO_CombatFeel`) e a câmera treme um terço do golpe pesado; o golpe 1 segue sem hitstop, para a abertura do combo manter a cadência e o crescendo ser 0, 35 e 60 ms. Reversível pela lista do asset.
 8. Seleção de classe do protótipo: as linhas de Arqueiro e Mago ficam acessíveis por uma opção de debug até o dono aprovar a seleção.
 
 ## 8. Lista curta "Para o Backend"

@@ -69,7 +69,7 @@ namespace Echoes.Presentation
         {
             if (evt.Started)
             {
-                if (!evt.ShowOnGround) return;
+                if (!evt.ShowOnGround || TelegraphHints.IsHidden(evt.SkillId)) return;
                 var view = pool.Get();
                 var ownerObject = evt.Owner != null ? evt.Owner.Owner as Component : null;
                 var groundY = ownerObject != null ? ownerObject.transform.position.y : fallbackGroundY;

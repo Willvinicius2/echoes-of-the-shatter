@@ -30,6 +30,12 @@ namespace Echoes.Interop.Native
         /// <summary>Tabela de loot extra por mapa com Mancha (mapId -> tabela).</summary>
         public Dictionary<string, string> StoryStainLootByMap { get; set; } = new Dictionary<string, string>();
 
+        /// <summary>Golpes devorados do save, que a expedicao idle coloca na barra (docs/tecnico/09 secao 15.5).</summary>
+        public List<string> StoryDevouredSkills { get; set; } = new List<string>();
+
+        /// <summary>Usos de golpe devorado que a Fome deixa numa expedicao idle (-1 = sem limite, 0 = nenhum). Numero do core.</summary>
+        public int StoryIdleDevouredUses { get; set; }
+
         /// <summary>Copia os efeitos do estado da historia (veredito, relíquia, Mancha) para os campos que o cliente aplica.</summary>
         public void ApplyStoryState(StoryState state)
         {
@@ -37,6 +43,8 @@ namespace Echoes.Interop.Native
             StoryPotionEffectPct = state.PotionEffectPct;
             StoryStainEliteByMap = new Dictionary<string, double>(state.StainEliteBonusByMap);
             StoryStainLootByMap = new Dictionary<string, string>(state.StainLootTableByMap);
+            StoryDevouredSkills = new List<string>(state.DevouredSkills);
+            StoryIdleDevouredUses = state.IdleDevouredUses;
         }
 
         /// <summary>Registra um Eco achado. <paramref name="isNew"/> = false se ja estava registrado. Eco desconhecido ou save cheio de Ecos: false.</summary>

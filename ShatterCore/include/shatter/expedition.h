@@ -75,6 +75,15 @@ struct ExpeditionRequest {
     int storyStatBonusPct = 0;           // Devorar: "aumentado" em Vida, Dano e Armadura (story.h TotalStatBonusPct)
     int storyPotionEffectPct = 0;        // Relíquia do Descanso: cura de poção "aumentada" (TotalPotionEffectPct)
     int storyEliteBonusPct = 0;          // Mancha no mapa: pontos percentuais somados a eliteChance (StainEliteBonusPctForMap)
+    // ADIÇÃO (docs/tecnico/09, 15.5): Fome e loot da Mancha no idle.
+    // Golpes devorados (story.h DevouredSkills): entram nos espaços vazios 3..6 da barra, do último para trás, como no
+    // manual (DevouredKit.FillBar), com posto 1. Cada uso gasta 1 de storyDevouredUses na expedição inteira (a "corrida"
+    // do idle); 0 = a Fome não deixa usar (o golpe nem entra), < 0 = sem limite (custo 0). Ver IdleDevouredUses.
+    std::vector<ContentId> storyDevouredSkills;
+    int storyDevouredUses = 0;
+    // Tabela de loot extra das áreas com Mancha (StainLootTableForMap): rolada ao fim de cada encontro limpo, depois da
+    // tabela de área. Vazio = nenhuma.
+    ContentId storyStainLootTable;
 };
 
 // Por que a expedição parou.
@@ -104,6 +113,7 @@ struct EncounterReceipt {
     int potionsUsed = 0;
     int healFailures = 0;                // quis curar e não tinha poção (dica do relatório)
     int dodgesUsed = 0;                  // esquivas da IA que gastaram carga (ADIÇÃO, docs/13 item 1)
+    int devouredUses = 0;                // ADIÇÃO (docs/09, 15.5): usos de golpe devorado neste encontro (gasto de Fome)
     double damageTaken = 0.0;
     double damageDealt = 0.0;
     double xpRaw = 0.0;
@@ -127,6 +137,7 @@ struct ExpeditionProgress {
     double wardAmount = 0.0;
     double wardRemaining = 0.0;
     int raresDropped = 0;
+    int devouredUsesSpent = 0;           // ADIÇÃO (docs/09, 15.5): usos de golpe devorado na expedição até aqui
     StopReason stop = StopReason::None;
     std::vector<EncounterReceipt> receipts;  // acumulados, em ordem de índice
 };

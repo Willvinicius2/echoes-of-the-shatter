@@ -66,6 +66,10 @@ public:
     // Fome que cada uso de habilidade devorada gasta na corrida (0 = não definida) e tabela de loot extra das áreas com Mancha ("" = nenhuma).
     int DevouredHungerCost() const { return devouredHungerCost_; }
     const std::string& StainLootTable() const { return stainLootTable_; }
+    // Recompensas travadas (linhas `gate_reward,<reward>` de story_rules.csv, repetíveis): a ação que a recompensa libera
+    // (ex.: unlock.duel) só vale depois de uma missão com essa recompensa estar concluída. Sem linhas = nada travado.
+    const std::vector<std::string>& GatedRewards() const { return gatedRewards_; }
+    bool IsRewardGated(std::string_view reward) const;
     const StoryRegion* FindRegion(std::string_view id) const;
     const StoryEcho* FindEcho(std::string_view id) const;
     const StoryQuest* FindQuest(std::string_view id) const;
@@ -86,6 +90,7 @@ private:
     int stainEliteBonusPct_ = 0;
     int devouredHungerCost_ = 0;
     std::string stainLootTable_;
+    std::vector<std::string> gatedRewards_;
     std::vector<ContentError> errors_;
 };
 
@@ -126,11 +131,28 @@ int QuestProgress(const StoryDB& story, const SaveData& s, std::string_view ques
 // (inclui as que a conclusão liberou e que já estavam cumpridas). Tipo ou alvo sem missão: 0 e nada muda.
 int ReportQuestEvent(const StoryDB& story, SaveData& s, std::string_view type, std::string_view target, int amount = 1);
 
+// Recompensas de missão (campo `reward`): liberada = alguma missão com essa chave está concluída. Aberta = não travada por
+// `gate_reward` ou já liberada. O core só responde; o cliente trava o Marco de Retorno (unlock.return_marker) e o duelo (unlock.duel).
+bool IsRewardUnlocked(const StoryDB& story, const SaveData& s, std::string_view reward);
+bool IsRewardOpen(const StoryDB& story, const SaveData& s, std::string_view reward);
+
 // Relíquias (veredito tomado com grantsRelic): soma de relic_potion_effect_pct, uma vez por relíquia.
 int TotalPotionEffectPct(const StoryDB& story, const SaveData& s);
 // Mancha: se o mapa pertence a uma região cujo veredito tomado deixou regionState "stain", devolve stain_elite_bonus_pct; senão 0.
 int StainEliteBonusPctForMap(const StoryDB& story, const SaveData& s, std::string_view mapId);
 // Mancha: tabela de loot extra (stain_loot_table) das áreas com Mancha; "" se o mapa não tem Mancha ou a chave não existe.
 std::string StainLootTableForMap(const StoryDB& story, const SaveData& s, std::string_view mapId);
+
+// ---------------------------------------------------------------------------
+// Efeitos da história na expedição idle (docs/tecnico/09, 15.5)
+// ---------------------------------------------------------------------------
+// Golpes devorados que o save tem (grantsSignature skill.devoured.* dos vereditos tomados, na ordem dos vereditos).
+std::vector<ContentId> DevouredSkills(const StoryDB& story, const SaveData& s);
+// Usos de golpe devorado numa "corrida" (vida no manual, expedição inteira no idle): (hunger_max - Fome) / devoured_hunger_cost,
+// arredondado para baixo. Fome 1 a 4 com custo 1 dá 3, 2, 1 e 0. Custo 0 (ou sem hunger_max) = -1, sem limite.
+int IdleDevouredUses(const StoryDB& story, const SaveData& s);
+// Preenche os campos story* dos parâmetros de início para o mapa: bônus do veredito, Relíquia, elites e loot da Mancha, golpes
+// devorados e usos (Fome cheia = sem golpe). O cliente pode usar isto em vez de montar os campos a partir do JSON do estado.
+void ApplyStoryToExpedition(const StoryDB& story, const SaveData& s, std::string_view mapId, ExpeditionStartParams& p);
 
 }  // namespace shatter

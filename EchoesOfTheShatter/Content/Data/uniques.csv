@@ -1,2 +1,3 @@
 id,baseId,fixedMods,ruleEffectId,idleSupported,idleParitySampleSize,idleCalibration,visualSetId
 unique.empty_throne_maul,item_base.stone_maul,damage:increased:0.25:melee|move_speed:increased:-0.1,effect.empty_throne_resolve,true,20,manual_estimate,
+unique.nameless_aegis,item_base.guard_shield,armor:flat:30|block_chance:flat:0.06|life:increased:-0.08,effect.nameless_aegis_feast,false,0,none,

@@ -92,6 +92,8 @@ namespace Echoes.EditorTools
             SandboxBuilder.SetRef(refuge, "root", ctx.GameRoot);
             SandboxBuilder.SetRef(refuge, "hero", hero);
 
+            BuildHubStates();
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             Echoes.EditorTools.Build.AddSceneToBuildSettings(ScenePath);
         }
@@ -139,6 +141,54 @@ namespace Echoes.EditorTools
                 if (name == "Velas") SceneryBuilder.AddCandleFire(go);
             }
             SceneryBuilder.Glyph(decor, new Vector2(PortalPosition.x, PortalPosition.z), 0f, "portal.refuge.crypt.glyph", 0.1f);
+        }
+
+        /// <summary>
+        /// Visual do Refúgio por estado, só com peças do kit pintado, desligado até o veredito (RefugeHubStates, ligado pelo StoryDirector).
+        /// Vila fortificada (Exorcizar): paliçada de blocos junto ao portal, estandartes e braseiros de chama clara. Guarnição (Devorar):
+        /// barricada de paredes, pilares quebrados, ossos e braseiros de chama rubra. Nada fica na linha dos NPCs nem do herói.
+        /// </summary>
+        static void BuildHubStates()
+        {
+            var root = new GameObject("HubStates");
+            var village = new GameObject("Hub_Village").transform;
+            village.SetParent(root.transform, false);
+            var garrison = new GameObject("Hub_Garrison").transform;
+            garrison.SetParent(root.transform, false);
+
+            var calm = SceneryBuilder.Hex("#9FE6A0");
+            var ember = SceneryBuilder.Hex("#FF6A4A");
+            for (var i = 0; i < 5; i++) // paliçada em arco em volta do portal
+            {
+                var z = -6f + i * 3f;
+                EnvironmentKit.Place(i % 2 == 0 ? "BlocoC" : "BlocoD", village, new Vector3(17.5f, 0f, z), 90f, instanceName: "Palisade_" + i);
+            }
+            foreach (var pos in new[] { new Vector3(13f, 0f, 3f), new Vector3(13f, 0f, -3f), new Vector3(0f, 0f, 12.5f), new Vector3(-12f, 0f, 12.5f), new Vector3(0f, 0f, -12.5f) })
+                EnvironmentKit.Place("Estandarte", village, pos, pos.x > 10f ? 90f : 0f, instanceName: "Banner");
+            foreach (var pos in new[] { new Vector3(8f, 0f, 6f), new Vector3(8f, 0f, -6f) })
+            {
+                var b = EnvironmentKit.Place("Braseiro", village, pos, 0f, instanceName: "Brazier");
+                SceneryBuilder.AddFire(b, true, 1.45f, calm, 6f, 7f, 1f);
+            }
+
+            foreach (var pos in new[] { new Vector3(16f, 0f, 3.5f), new Vector3(16f, 0f, -3.5f) }) // barricada ladeando o portal
+                EnvironmentKit.Place("ParedeRuina", garrison, pos, 90f, instanceName: "Barricade");
+            foreach (var pos in new[] { new Vector3(8f, 0f, 10f), new Vector3(8f, 0f, -10f) })
+                EnvironmentKit.Place("PilarQuebrado", garrison, pos, 25f, instanceName: "BrokenPillar");
+            foreach (var pos in new[] { new Vector3(13f, 0f, 3f), new Vector3(13f, 0f, -3f), new Vector3(0f, 0f, 12.5f) })
+                EnvironmentKit.Place("Estandarte", garrison, pos, pos.x > 10f ? 90f : 0f, instanceName: "Banner");
+            EnvironmentKit.Place("Ossos", garrison, new Vector3(10f, 0f, -8f), 40f, colliders: false, instanceName: "Bones");
+            foreach (var pos in new[] { new Vector3(8f, 0f, 6f), new Vector3(8f, 0f, -6f) })
+            {
+                var b = EnvironmentKit.Place("Braseiro", garrison, pos, 0f, instanceName: "Brazier");
+                SceneryBuilder.AddFire(b, true, 1.45f, ember, 7f, 7f, 1f);
+            }
+
+            var states = root.AddComponent<RefugeHubStates>();
+            SandboxBuilder.SetRef(states, "village", village.gameObject);
+            SandboxBuilder.SetRef(states, "garrison", garrison.gameObject);
+            village.gameObject.SetActive(false);
+            garrison.gameObject.SetActive(false);
         }
 
         static void Block(Transform parent, string name, Vector3 position, Vector3 scale, Material material)

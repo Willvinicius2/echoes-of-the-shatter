@@ -291,6 +291,7 @@ namespace Echoes.Gameplay
                 Direction = attackDirection,
                 DurationSeconds = windupSeconds,
                 ShowOnGround = showOnGround,
+                SkillId = skill.Id,
             };
             switch (skill.Shape)
             {
