@@ -24,9 +24,9 @@ namespace Echoes.Interop
             { "dodge_iframes", 0.2 },            // docs/13 item 1
             { "dodge_distance", 400 },           // docs/13 item 1 [HIPÓTESE]
             { "dodge_cost_resource", 0 },        // docs/13 item 1
-            { "dodge_buffer", 0.1 },             // docs/13 item 1 [HIPÓTESE]
+            { "dodge_buffer", 0.15 },             // docs/13 item 1 [HIPÓTESE]
             { "dodge_perfect_resource", 10 },    // docs/13 item 1 [HIPÓTESE]
-            { "dodge_cancel_recovery_fraction", 0.5 }, // docs/13 item 1: "metade final da recuperação" [HIPÓTESE]
+            { "dodge_cancel_recovery_fraction", 0.35 }, // docs/13 item 1: "metade final da recuperação" [HIPÓTESE]
             { "potion_lockout", 1.0 },           // docs/13 item 2
             { "out_of_combat_seconds", 3.0 },    // RF-14 pede o valor em dados; nenhum documento fixa. [HIPÓTESE do stub]
         };

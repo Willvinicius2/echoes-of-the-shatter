@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace Echoes.Tests.EditMode
 {
     /// <summary>
-    /// Rampa de movimento do herói (API C 1.7): <c>hero_move_accel_seconds</c> (0,10) e <c>hero_move_decel_seconds</c> (0,08) de CombatRules.
+    /// Rampa de movimento do herói (API C 1.7): <c>hero_move_accel_seconds</c> (0,07) e <c>hero_move_decel_seconds</c> (0,05) de CombatRules.
     /// A lógica aplica uma rampa linear (velocidade += máxima × dt ÷ tempo); tudo em passo fixo, sem número no C#.
     /// </summary>
     public sealed class HeroMoveRampTests
@@ -14,8 +14,8 @@ namespace Echoes.Tests.EditMode
         {
             using (var world = new TestWorld(null, TestWorld.LoadNativeRules()))
             {
-                Assert.AreEqual(0.10, world.Rules.Combat.HeroMoveAccelSeconds, 1e-9);
-                Assert.AreEqual(0.08, world.Rules.Combat.HeroMoveDecelSeconds, 1e-9);
+                Assert.AreEqual(0.07, world.Rules.Combat.HeroMoveAccelSeconds, 1e-9);
+                Assert.AreEqual(0.05, world.Rules.Combat.HeroMoveDecelSeconds, 1e-9);
             }
         }
 

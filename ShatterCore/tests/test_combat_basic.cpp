@@ -96,9 +96,9 @@ StatBlock HeroStats(const std::string& classId) {
 // ---------------------------------------------------------------------------------------------------------------------
 TEST(combat_basic_rules_keys_are_read_from_rules_csv) {
     std::string rules = Table("rules.csv");
-    rules = tu::Replace(rules, "combo_window,0.4", "combo_window,1.25");
+    rules = tu::Replace(rules, "combo_window,0.5", "combo_window,1.25");
     rules = tu::Replace(rules, "combo_window_after_dodge,0.3", "combo_window_after_dodge,1.5");
-    rules = tu::Replace(rules, "attack_buffer,0.15", "attack_buffer,0.5");
+    rules = tu::Replace(rules, "attack_buffer,0.22", "attack_buffer,0.5");
     rules = tu::Replace(rules, "heavy_hold_threshold,0.35", "heavy_hold_threshold,0.75");
     rules = tu::Replace(rules, "light_windup_credit_max,0.7", "light_windup_credit_max,0.25");
     rules = tu::Replace(rules, "guard_lower_time,0.1", "guard_lower_time,0.2");
@@ -122,19 +122,19 @@ TEST(combat_basic_rules_keys_are_read_from_rules_csv) {
 
 TEST(combat_basic_rules_keys_are_required_and_range_checked) {
     const std::string rules = Table("rules.csv");
-    for (const char* key : {"combo_window,0.4\n", "combo_window_after_dodge,0.3\n", "attack_buffer,0.15\n",
+    for (const char* key : {"combo_window,0.5\n", "combo_window_after_dodge,0.3\n", "attack_buffer,0.22\n",
                             "heavy_hold_threshold,0.35\n", "light_windup_credit_max,0.7\n", "guard_lower_time,0.1\n",
                             "dash_shot_range,1000"}) {
         const std::string from = key;
         ExpectRejected(std::string("sem ") + key, "rules.csv", tu::Replace(rules, from, ""), "E_REQUIRED");
     }
-    ExpectRejected("tempo acima de 5 s", "rules.csv", tu::Replace(rules, "attack_buffer,0.15", "attack_buffer,5.5"), "E_RANGE");
-    ExpectRejected("tempo negativo", "rules.csv", tu::Replace(rules, "combo_window,0.4", "combo_window,-0.1"), "E_RANGE");
+    ExpectRejected("tempo acima de 5 s", "rules.csv", tu::Replace(rules, "attack_buffer,0.22", "attack_buffer,5.5"), "E_RANGE");
+    ExpectRejected("tempo negativo", "rules.csv", tu::Replace(rules, "combo_window,0.5", "combo_window,-0.1"), "E_RANGE");
     ExpectRejected("credito acima de 1", "rules.csv", tu::Replace(rules, "light_windup_credit_max,0.7", "light_windup_credit_max,1.5"),
                    "E_RANGE");
     ExpectRejected("alcance do tiro absurdo", "rules.csv", tu::Replace(rules, "dash_shot_range,1000", "dash_shot_range,100000"),
                    "E_RANGE");
-    ExpectRejected("chave repetida", "rules.csv", rules + "combo_window,0.5\n", "E_DUP_ID");
+    ExpectRejected("chave repetida", "rules.csv", rules + "combo_window,0.6\n", "E_DUP_ID");
     ExpectRejected("valor nao numerico", "rules.csv", tu::Replace(rules, "guard_lower_time,0.1", "guard_lower_time,abc"), "E_TYPE");
 }
 
