@@ -1366,7 +1366,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_apply_verdict(const shatte
  * "exorcise"|"devour","region_state":"purified"|"stain","hub_state","hunger_delta","stat_bonus_pct","grants_relic",
  * "grants_signature","last_words_key"}]}. É o que a HUD da Fome, o Refúgio e o fim do jogo leem. Chaves extras (só chaves, sem
  * assinatura nova): "potion_effect_pct", "stain_elite_bonus_by_map" {mapId: pontos}, "stain_loot_table_by_map" {mapId: tabela de loot
- * extra das áreas com Mancha} e "devoured_hunger_cost" (Fome que cada uso de habilidade devorada gasta na corrida). */
+ * extra das áreas com Mancha} e "devoured_hunger_cost" (Fome que cada uso de habilidade devorada gasta na corrida),
+ * "gated_rewards" [{reward, open}] (recompensas de missão travadas por `gate_reward`; vazio = nada travado). */
 SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_story* story, const shatter_save* save,
                                                                  uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 /* Uma região: {"region_id","map_id","general_id","decided","verdict_id","echoes_found","echoes_total",

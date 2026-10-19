@@ -474,3 +474,10 @@ Sem mudança de assinatura nem de layout; `SHATTER_C_API_VERSION` continua 1. Mu
 - **Esquema**: `save_v2.schema.json` descreve `world_state` (campo opcional já gravado pelo core desde a Etapa 3): `[{map_id, visits, opened}]`, no máximo 64 áreas e 512 objetos por área.
 - Testes novos: buffer pequeno e ponteiros nulos em `quest_event`/`state_json`, tipos errados no save, teto de 100 e limite de 256 missões.
 - Ainda aberto: um evento só avança em uma passada (efeito depende da ordem do CSV); `reach_map_boss` poderia ser derivado do `bossProgress`.
+
+### 15.4 Travas de recompensa de missão (19/10/2026, `claude/a7-nuvem`)
+- **Mecanismo no core, desligado nos dados**: `story_rules.csv` aceita linhas repetíveis `gate_reward,<chave de recompensa>`. Recompensa travada só vale depois de uma missão com essa recompensa estar concluída. Sem linhas, nada muda (hoje nenhuma está ativa: Marco de Retorno e duelo seguem livres).
+- Core: `StoryDB::GatedRewards/IsRewardGated`, `IsRewardUnlocked` (alguma missão com a chave está `Done`) e `IsRewardOpen` (não travada, ou liberada). `Finalize` e `validate_story.py` recusam `gate_reward` que nenhuma missão concede (a trava nunca abriria).
+- API C: `shatter_story_state_json` ganhou `gated_rewards: [{reward, open}]` (campo novo, sem assinatura nova, vazio por padrão).
+- **Para travar de verdade** falta decisão de design do Will (qual recompensa, `unlock.return_marker` e/ou `unlock.duel`) e a ligação no cliente: Marco de Retorno e entrada do duelo consultarem `gated_rewards`. Sem isso, adicionar a linha no CSV não muda o jogo.
+- Testes: `story_gate_reward_locks_until_quest_done`.

@@ -227,6 +227,29 @@ TEST(story_devoured_cost_and_stain_loot_table) {
     EXPECT_FALSE(bad);
 }
 
+TEST(story_gate_reward_locks_until_quest_done) {
+    const StoryDB open = Make();
+    SaveData s;
+    EXPECT_TRUE(IsRewardOpen(open, s, "unlock.x"));   // sem gate_reward nada trava
+    const StoryDB db = Make(kVerdicts, "key,value\nhunger_max,4\n");
+    EXPECT_TRUE(db.GatedRewards().empty());
+    const std::string rule = std::string("key,value\nhunger_max,4\ngate_reward,") + db.Quests()[0].reward + "\n";
+    bool ok = false;
+    const StoryDB gated = Make(kVerdicts, rule.c_str(), &ok);
+    ASSERT_TRUE(ok);
+    const std::string& reward = gated.Quests()[0].reward;
+    EXPECT_TRUE(gated.IsRewardGated(reward));
+    EXPECT_FALSE(IsRewardOpen(gated, s, reward));
+    EXPECT_FALSE(IsRewardUnlocked(gated, s, reward));
+    EXPECT_TRUE(IsRewardOpen(gated, s, "reward.not_gated"));
+    ReportQuestEvent(gated, s, gated.Quests()[0].objectiveType, gated.Quests()[0].objectiveTarget);
+    EXPECT_TRUE(IsRewardOpen(gated, s, reward));
+    EXPECT_FALSE(IsRewardUnlocked(gated, s, ""));
+    bool bad = true;   // gate sem missão que conceda a recompensa
+    Make(kVerdicts, "key,value\nhunger_max,4\ngate_reward,unlock.nobody\n", &bad);
+    EXPECT_FALSE(bad);
+}
+
 TEST(story_quests_chain_progress_and_early_echoes_count) {
     const StoryDB db = Make();
     SaveData s;

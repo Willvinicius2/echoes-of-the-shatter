@@ -27,7 +27,7 @@ ENUMS = {
     ("verdicts.csv", "choice"): {"exorcise", "devour"},
     ("verdicts.csv", "regionState"): {"purified", "stain"},
 }
-RULES_KEYS = {"hunger_max", "relic_potion_effect_pct", "stain_elite_bonus_pct", "devoured_hunger_cost", "stain_loot_table"}
+RULES_KEYS = {"hunger_max", "relic_potion_effect_pct", "stain_elite_bonus_pct", "devoured_hunger_cost", "stain_loot_table", "gate_reward"}
 
 
 def rows(path):
@@ -101,6 +101,10 @@ def main():
     regions = {r["id"] for r in t["regions.csv"]}
     verdicts = {r["id"] for r in t["verdicts.csv"]}
     quests = {r["id"] for r in t["quests.csv"]}
+    rewards = {r["reward"] for r in t["quests.csv"]}
+    for r in rows(rp)[1]:
+        if r["key"] == "gate_reward" and r["value"] not in rewards:
+            err("story_rules.csv", r["__line__"], f"gate_reward '{r['value']}' sem missão que a conceda")
     for r in t["regions.csv"]:
         ln = r["__line__"]
         if r["mapId"] not in ext["maps"]:
