@@ -60,6 +60,19 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
     su.map = db.FindMap(req.mapId);
     if (su.cls == nullptr || su.map == nullptr) return StopReason::ContentMismatch;
     if (!BuildStatBlock(db, ch, su.playerStats, nullptr)) return StopReason::ContentMismatch;
+    auto addStory = [&](StatId stat, int pct) {
+        if (pct <= 0) return;
+        Modifier m;
+        m.stat = stat;
+        m.kind = ModKind::Increased;
+        m.value = pct / 100.0;
+        m.source = "story:verdict";
+        su.playerStats.AddModifier(m);
+    };
+    addStory(StatId::Life, req.storyStatBonusPct);
+    addStory(StatId::Damage, req.storyStatBonusPct);
+    addStory(StatId::Armor, req.storyStatBonusPct);
+    addStory(StatId::PotionEffect, req.storyPotionEffectPct);
     if (!IsIdleCompatible(db, ch, nullptr)) return StopReason::IncompatibleBuild;
 
     for (const ContentId& id : ch.skillBar) {
@@ -190,7 +203,7 @@ public:
             for (int k = 0; k < n; ++k) {
                 EnemyInst e;
                 e.data = ed;
-                const bool chanceHit = events_.Chance(g.eliteChance);  // sempre 1 número (fluxo Events)
+                const bool chanceHit = events_.Chance(std::min(1.0, g.eliteChance + su_.req->storyEliteBonusPct / 100.0));  // sempre 1 número (fluxo Events)
                 e.rolledElite = chanceHit && !ed->isElite;
                 e.elite = chanceHit || ed->isElite;
                 BuildEnemyStatBlock(*ed, level_, e.stats);

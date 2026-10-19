@@ -59,9 +59,16 @@ Código em `UI/StoryDirector.cs` (nasce sozinho nas cenas Cripta e Refúgio quan
 - **Ecos**: 3 brilhos provisórios na Cripta (r01, r05 e r07, um por linha de `echoes.csv`), recolhidos com Interagir (`shatter_story_record_echo`, grava o save, avisa e confirma o golpe revelado).
 - **Veredito**: depois de vencer o Guardião (o `RunRecorder` já registrou a morte no save), mostra a fala `dlg.guardian.kneel` e abre a tela com Exorcizar e Devorar, aviso de escolha irreversível e botão de segurar 1 s. O jogo pausa enquanto a tela está aberta.
 - **Fome**: marcador "Fome ●●○○" no canto da HUD, só depois do primeiro veredito.
-- **Bônus**: `stat_bonus_pct` do core vira modificador "aumentado" em Vida, Dano e Armadura do herói (`SaveGame.StoryStatBonusPct`). O simulador idle ainda não lê esse bônus.
+- **Bônus**: `stat_bonus_pct` do core vira modificador "aumentado" em Vida, Dano e Armadura do herói (`SaveGame.StoryStatBonusPct`). O simulador idle também lê o bônus: o pedido da expedição guarda `story_stat_bonus_pct` (campo opcional, ver abaixo).
 - **Refúgio**: faixa com `hub.*.name` e `hub.*.desc` e um tom leve na luz ambiente (verde para vila, laranja para guarnição). Os modelos de cada estado exigem arte nova e passam pela aprovação do dono.
 
 Decisões tomadas sem o Will (ele dormia): bônus em Vida, Dano e Armadura; Fome só aparece depois do primeiro veredito; pontos dos Ecos nas salas r01, r05 e r07.
 
-Pendências abertas: efeito de jogo da Relíquia do Descanso (só é anunciada, sem efeito ainda); golpe devorado do Guardião (`skill.devoured.guardian_slam` não existe em `skills.csv`); efeitos da Mancha (elites e loot exclusivos); aparência real do Refúgio por estado.
+### Efeitos do veredito no jogo (19/10, core)
+Decisões sem o Will (ele dormia), todas com número em `Story/story_rules.csv` e `skills.csv`:
+- **Relíquia do Descanso**: cura de poção +25% (`relic_potion_effect_pct`), modificador "aumentado" em `PotionEffect`. A resistência à Cinza do pitch fica para quando a Cinza tiver mecânica.
+- **Golpe devorado**: `skill.devoured.guardian_slam` em `skills.csv` (cone físico de área, coeficientes provisórios 1,6/1,8/2,0, recarga 8 s, sem classe). IDs sem classe agora também aceitam `skill.devoured.*` no validador e no core. Ainda falta ligar o golpe à barra de habilidades do herói e o custo em Fome.
+- **Mancha**: nas áreas de uma região com veredito Devorar, a chance de elite de cada grupo sobe 15 pontos (`stain_elite_bonus_pct`) na expedição idle. Loot exclusivo e elites no combate manual ficam pendentes (o sorteio manual está em `world.cpp`; mudar a API exige revisão de contrato).
+- **Idle**: `ExpeditionRequest` ganhou `storyStatBonusPct`, `storyPotionEffectPct` e `storyEliteBonusPct` (JSON `story_*`, 0..100, só gravados se > 0; saves antigos mantêm os mesmos bytes). O cliente calcula os valores a partir de `shatter_story_state_json` (`potion_effect_pct`, `stain_elite_bonus_by_map`) e os envia nos parâmetros de início. C# não compilado nesta sessão.
+
+Pendências abertas: golpe devorado na barra de habilidades e custo em Fome; Mancha no combate manual e loot exclusivo; aparência real do Refúgio por estado.

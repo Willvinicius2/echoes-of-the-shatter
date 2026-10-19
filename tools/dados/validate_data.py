@@ -584,8 +584,8 @@ def chk_skill(c: Content, table: str, rows: List[dict], rep: Report) -> None:
             seg = r["classId"].split(".", 1)[1]
             if not r["id"].startswith(f"skill.{seg}."):
                 rep.err(table, ln, "E_ID", f"habilidade de {r['classId']} deve ter ID 'skill.{seg}.<nome>'")
-        elif not r["id"].startswith("skill.enemy.") and not r["id"].startswith("skill.common."):
-            rep.err(table, ln, "E_ID", "habilidade sem classId deve ter ID 'skill.enemy.*' ou 'skill.common.*'")
+        elif not r["id"].startswith("skill.enemy.") and not r["id"].startswith("skill.common.") and not r["id"].startswith("skill.devoured."):
+            rep.err(table, ln, "E_ID", "habilidade sem classId deve ter ID 'skill.enemy.*' , 'skill.common.*' ou 'skill.devoured.*'")
         coefs = [r["coefficientRank1"], r["coefficientRank2"], r["coefficientRank3"]]
         if not coefs[0] <= coefs[1] <= coefs[2]:
             rep.warn(table, ln, "W_COEF", "coeficientes por rank deveriam ser não decrescentes")

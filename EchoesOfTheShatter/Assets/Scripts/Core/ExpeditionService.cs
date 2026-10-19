@@ -50,13 +50,13 @@ namespace Echoes.Core
         }
 
         /// <summary>Parametros de inicio (sem "seed" nem "start_utc": proibidos, o core deriva pela chamada _trusted).</summary>
-        public string ToParamsJson(int characterIndex = 0)
+        public string ToParamsJson(int characterIndex = 0, string storyJson = "")
         {
             var sb = new StringBuilder(256);
             sb.Append("{\"character_index\":").Append(characterIndex).Append(",\"map_id\":").Append(MiniJson.Quote(MapId));
             sb.Append(",\"objective\":").Append(MiniJson.Quote(Objective)).Append(",\"rules\":[");
             for (var i = 0; i < Rules.Count; i++) sb.Append(i > 0 ? "," : string.Empty).Append(Rules[i].ToJson());
-            sb.Append("],\"duration_hours\":").Append(Hours).Append('}');
+            sb.Append("],\"duration_hours\":").Append(Hours).Append(storyJson).Append('}');
             return sb.ToString();
         }
     }
@@ -167,6 +167,23 @@ namespace Echoes.Core
 
         SaveGame Save => saves.Current;
 
+        /// <summary>Campos opcionais do veredito para o pedido da expedicao: bonus de atributos, cura de pocao e elites da Mancha (so o que for maior que zero).</summary>
+        string StoryJson(ExpeditionConfig config)
+        {
+            if (Save == null) return string.Empty;
+            Save.StoryStainEliteByMap.TryGetValue(config.MapId, out var elite);
+            return StoryFields(Save.StoryStatBonusPct, Save.StoryPotionEffectPct, elite);
+        }
+
+        static string StoryFields(double stat, double potion, double elite)
+        {
+            var sb = new StringBuilder();
+            if (stat > 0) sb.Append(",\"story_stat_bonus_pct\":").Append((int)Math.Round(stat));
+            if (potion > 0) sb.Append(",\"story_potion_effect_pct\":").Append((int)Math.Round(potion));
+            if (elite > 0) sb.Append(",\"story_elite_bonus_pct\":").Append((int)Math.Round(elite));
+            return sb.ToString();
+        }
+
         ClockInput Clock => new ClockInput(saves.Clock.NowUtc, Save != null ? Save.Summary.LastSeenUtc : 0);
 
         /// <summary>Verdadeiro se o heroi esta em rota (expedicao Running) e o setting HeroBusyDuringExpedition esta ligado.</summary>
@@ -179,7 +196,7 @@ namespace Echoes.Core
                 blockers = string.Empty;
                 return StartCheck.Error;
             }
-            return Save.CheckExpedition(rules, config.ToParamsJson(), out blockers);
+            return Save.CheckExpedition(rules, config.ToParamsJson(0, StoryJson(config)), out blockers);
         }
 
         /// <summary>Previsao em faixa com o selo de calibracao (RF-40): monta o pedido do snapshot atual e pede ao core.</summary>
@@ -194,7 +211,7 @@ namespace Echoes.Core
             rulesJson.Append(']');
             var request = "{\"snapshot\":{\"character\":" + character + ",\"content_version\":" + version + "},\"map_id\":" + MiniJson.Quote(config.MapId) +
                           ",\"objective\":" + MiniJson.Quote(config.Objective) + ",\"rules\":" + rulesJson + ",\"seed\":\"1\",\"start_utc\":0,\"duration_hours\":" + config.Hours +
-                          ",\"effective_seconds\":" + (config.Hours * 3600) + ",\"content_version\":" + version + "}";
+                          ",\"effective_seconds\":" + (config.Hours * 3600) + ",\"content_version\":" + version + StoryJson(config) + "}";
             return SaveGame.Forecast(rules, request, 64, out bands, out _);
         }
 
@@ -203,7 +220,7 @@ namespace Echoes.Core
         {
             if (Save == null) return StartCheck.Error;
             var now = SaveGame.ResolveNow(rules, Clock);
-            var check = Save.StartExpedition(rules, config.ToParamsJson(), now, out _);
+            var check = Save.StartExpedition(rules, config.ToParamsJson(0, StoryJson(config)), now, out _);
             if (check == StartCheck.Ok) saves.Save(rules);
             return check;
         }

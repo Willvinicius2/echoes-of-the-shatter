@@ -50,6 +50,10 @@ namespace Echoes.Interop
         public int Hunger;
         public int HungerMax;
         public double StatBonusPct;
+        /// <summary>Bonus de cura de pocao da Reliquia do Descanso, em %.</summary>
+        public double PotionEffectPct;
+        /// <summary>Pontos de elite somados por mapa com Mancha (mapId -> %).</summary>
+        public readonly Dictionary<string, double> StainEliteBonusByMap = new Dictionary<string, double>();
         public readonly List<string> Echoes = new List<string>();
         public readonly List<StoryVerdictInfo> Verdicts = new List<StoryVerdictInfo>();
 
@@ -63,6 +67,9 @@ namespace Echoes.Interop
             state.Hunger = MiniJson.Int(o, "hunger");
             state.HungerMax = MiniJson.Int(o, "hunger_max");
             state.StatBonusPct = MiniJson.Num(o, "stat_bonus_pct");
+            state.PotionEffectPct = MiniJson.Num(o, "potion_effect_pct");
+            if (o.TryGetValue("stain_elite_bonus_by_map", out var stain))
+                foreach (var kv in MiniJson.AsObject(stain)) state.StainEliteBonusByMap[kv.Key] = kv.Value is double d ? d : 0.0;
             if (o.TryGetValue("echoes", out var echoes))
                 foreach (var e in MiniJson.AsArray(echoes)) if (e is string s) state.Echoes.Add(s);
             if (o.TryGetValue("verdicts", out var verdicts))

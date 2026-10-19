@@ -22,6 +22,15 @@ namespace Echoes.Tests.EditMode
             "\"hub_state\":\"hub.fortified_garrison\",\"hunger_delta\":1,\"stat_bonus_pct\":10,\"grants_relic\":\"\"," +
             "\"grants_signature\":\"skill.devoured.guardian_slam\",\"last_words_key\":\"\"}]}";
 
+        [Test]
+        public void StoryState_reads_relic_and_stain_effects()
+        {
+            var json = "{\"hunger\":0,\"hunger_max\":4,\"stat_bonus_pct\":0,\"potion_effect_pct\":25,\"stain_elite_bonus_by_map\":{\"map.act1.crypt\":15},\"echoes\":[],\"verdicts\":[]}";
+            var state = StoryState.FromJson(json);
+            Assert.AreEqual(25.0, state.PotionEffectPct);
+            Assert.AreEqual(15.0, state.StainEliteBonusByMap["map.act1.crypt"]);
+        }
+
         string dir;
         NativeRulesCore rules;
         SaveService saves;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Echoes.Interop.Native
@@ -19,6 +20,20 @@ namespace Echoes.Interop.Native
         /// <see cref="ReadStory"/> ao carregar; <see cref="StatsOfCharacter"/> o soma como "aumentado" em Vida, Dano e Armadura do heroi.
         /// </summary>
         public double StoryStatBonusPct { get; set; }
+
+        /// <summary>Bonus de cura de pocao da Reliquia do Descanso, em % (modificador "aumentado" em PotionEffect).</summary>
+        public double StoryPotionEffectPct { get; set; }
+
+        /// <summary>Pontos de elite por mapa com Mancha, congelados no inicio da expedicao idle.</summary>
+        public Dictionary<string, double> StoryStainEliteByMap { get; set; } = new Dictionary<string, double>();
+
+        /// <summary>Copia os efeitos do estado da historia (veredito, relíquia, Mancha) para os campos que o cliente aplica.</summary>
+        public void ApplyStoryState(StoryState state)
+        {
+            StoryStatBonusPct = state.StatBonusPct;
+            StoryPotionEffectPct = state.PotionEffectPct;
+            StoryStainEliteByMap = new Dictionary<string, double>(state.StainEliteBonusByMap);
+        }
 
         /// <summary>Registra um Eco achado. <paramref name="isNew"/> = false se ja estava registrado. Eco desconhecido ou save cheio de Ecos: false.</summary>
         public bool StoryRecordEcho(StoryDb story, string echoId, out bool isNew)
@@ -84,22 +99,27 @@ namespace Echoes.Interop.Native
             return status == 0 && revealed != 0;
         }
 
+        static void AddStoryModifier(IntPtr handle, StatId stat, double pct, byte* source, int sourceLength)
+        {
+            if (pct <= 0.0) return;
+            ShatterModifier mod = default;
+            mod.value = pct / 100.0;
+            mod.stat = (ushort)stat;
+            mod.kind = 1; // SHATTER_MOD_INCREASED
+            ShatterNative.shatter_statblock_add_modifier(handle, &mod, source, (nuint)sourceLength);
+        }
+
         // Soma o bonus dos vereditos ao bloco de atributos do heroi (modificador "aumentado" pelo core; refazer o bloco o zera e soma de novo).
         void ApplyStoryBonus(NativeStatBlock block)
         {
-            if (StoryStatBonusPct <= 0.0 || block == null) return;
+            if (block == null || (StoryStatBonusPct <= 0.0 && StoryPotionEffectPct <= 0.0)) return;
             var source = Encoding.UTF8.GetBytes(StoryBonusSource);
             var handle = block.Handle.DangerousGetHandle();
             fixed (byte* s = source)
             {
                 foreach (var stat in StoryBonusStats)
-                {
-                    ShatterModifier mod = default;
-                    mod.value = StoryStatBonusPct / 100.0;
-                    mod.stat = (ushort)stat;
-                    mod.kind = 1; // SHATTER_MOD_INCREASED
-                    ShatterNative.shatter_statblock_add_modifier(handle, &mod, s, (nuint)source.Length);
-                }
+                    AddStoryModifier(handle, stat, StoryStatBonusPct, s, source.Length);
+                AddStoryModifier(handle, StatId.PotionEffect, StoryPotionEffectPct, s, source.Length);
             }
         }
     }
