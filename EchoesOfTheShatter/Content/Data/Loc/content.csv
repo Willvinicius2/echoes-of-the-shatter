@@ -14,6 +14,7 @@ skill.warrior.shield_bash.desc,Golpe que acumula quebra de guarda e atordoa inim
 effect.guard_break.name,Guarda Quebrada,Broken Guard,,effect; max=24,f
 effect.stun.name,Atordoado,Stunned,,effect; max=24,m
 effect.empty_throne_resolve.name,Brio do Trono Vazio,Resolve of the Empty Throne,,effect; max=28; provisório,m
+effect.nameless_aegis_feast.name,Fome do Escudo,Shield's Hunger,,effect; max=24; provisório,f
 enemy.hollow_sentinel.name,Sentinela Oca,Hollow Sentinel,,enemy; max=28,f
 enemy.ash_hound.name,Cão-de-Cinza,Ash Hound,,enemy; max=28,m
 enemy.stone_herald.name,Arauto de Pedra,Stone Herald,,enemy; max=28,m
@@ -53,6 +54,9 @@ affix.of_light_steps.name,de Passos Leves,of Light Steps,,affix suffix; invariá
 unique.empty_throne_maul.name,Martelo do Trono Vazio,Maul of the Empty Throne,,unique; max=32; nome provisório,m
 unique.empty_throne_maul.desc,Ao derrotar um inimigo: 20% a mais de dano corpo a corpo por 4 s. Velocidade de movimento reduzida em 10%.,On kill: 20% more melee damage for 4 s. Movement speed is reduced by 10%.,,unique; max=120; bate com effects.csv e uniques.csv,
 unique.empty_throne_maul.flavor,Ainda pesa como um dever que ninguém mais cobra.,It still weighs like a duty no one collects anymore.,,unique; flavor; provisório,
+unique.nameless_aegis.name,Égide Sem Nome,Nameless Aegis,,unique; max=32; nome provisório,f
+unique.nameless_aegis.desc,Ao bloquear: 15% a mais de dano corpo a corpo por 5 s. Vida máxima reduzida em 8%.,On block: 15% more melee damage for 5 s. Maximum life is reduced by 8%.,,unique; max=120; bate com effects.csv e uniques.csv,
+unique.nameless_aegis.flavor,Quem a carregava foi devorado. O escudo guardou a fome.,Whoever bore it was devoured. The shield kept the hunger.,,unique; flavor; provisório,
 currency.gold.name,Ouro,Gold,,currency; max=12,m
 material.shards.name,Lascas,Shards,,material; plural; max=12,f
 potion.life.name,Poção de Vida,Life Potion,,potion; max=20; provisório (P1),f
