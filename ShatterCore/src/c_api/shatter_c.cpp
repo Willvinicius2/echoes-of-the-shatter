@@ -1248,6 +1248,24 @@ shatter_status WriteJson(const Value& v, bool pretty, std::uint8_t* out, std::si
 // =============================================================================================
 // Funções exportadas
 // =============================================================================================
+namespace {
+
+Value VerdictJson(const StoryVerdict& v) {
+    Value o = Value::MakeObject();
+    o.Set("verdict_id", Value(v.id));
+    o.Set("choice", Value(v.choice == VerdictChoice::Devour ? "devour" : "exorcise"));
+    o.Set("hunger_delta", Value(static_cast<std::int64_t>(v.hungerDelta)));
+    o.Set("stat_bonus_pct", Value(static_cast<std::int64_t>(v.statBonusPct)));
+    o.Set("grants_relic", Value(v.grantsRelic));
+    o.Set("grants_signature", Value(v.grantsSignature));
+    o.Set("region_state", Value(v.regionState));
+    o.Set("hub_state", Value(v.hubState));
+    o.Set("last_words_key", Value(v.lastWordsKey));
+    return o;
+}
+
+}  // namespace
+
 extern "C" {
 
 SHATTER_API std::uint32_t SHATTER_CALL shatter_api_version(void) SHATTER_NOEXCEPT { return SHATTER_C_API_VERSION; }
@@ -4223,23 +4241,6 @@ SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext8(const std::uin
 }
 
 // --- História (story.h) -------------------------------------------------------------------------
-namespace {
-
-Value VerdictJson(const StoryVerdict& v) {
-    Value o = Value::MakeObject();
-    o.Set("verdict_id", Value(v.id));
-    o.Set("choice", Value(v.choice == VerdictChoice::Devour ? "devour" : "exorcise"));
-    o.Set("hunger_delta", Value(static_cast<std::int64_t>(v.hungerDelta)));
-    o.Set("stat_bonus_pct", Value(static_cast<std::int64_t>(v.statBonusPct)));
-    o.Set("grants_relic", Value(v.grantsRelic));
-    o.Set("grants_signature", Value(v.grantsSignature));
-    o.Set("region_state", Value(v.regionState));
-    o.Set("hub_state", Value(v.hubState));
-    o.Set("last_words_key", Value(v.lastWordsKey));
-    return o;
-}
-
-}  // namespace
 
 SHATTER_API shatter_status SHATTER_CALL shatter_story_load_directory(const char* path, std::size_t path_len, const shatter_db* db,
                                                                    shatter_story** out, shatter_error* err) SHATTER_NOEXCEPT {
