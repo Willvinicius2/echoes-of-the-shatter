@@ -274,6 +274,8 @@ bool StoryDB::Finalize(const ContentDB* content) {
                                                               [&](const StoryEcho& e) { return e.regionId == q.regionId; })))
             E("quests.csv", "objectiveCount above the region's echoes for '" + q.id + "'");
     }
+    // Um save guarda no máximo kMaxSavedQuests missões: com mais que isso, os eventos das últimas seriam ignorados sem aviso.
+    if (quests_.size() > kMaxSavedQuests) E("quests.csv", "more quests than the save can hold (" + std::to_string(kMaxSavedQuests) + ")");
     // `requires` em ciclo (ou apontando para si) deixaria as missoes trancadas para sempre.
     for (const StoryQuest& q : quests_) {
         const StoryQuest* cur = &q;
@@ -388,7 +390,7 @@ int TotalStatBonusPct(const StoryDB& story, const SaveData& s) {
         const StoryVerdict* v = story.FindVerdict(r.verdictId);
         if (v != nullptr) total += v->statBonusPct;
     }
-    return total;
+    return std::min(total, 100);   // mesmo teto que a expedição e shatter_story_state_json aplicam
 }
 
 int TotalPotionEffectPct(const StoryDB& story, const SaveData& s) {
@@ -397,7 +399,7 @@ int TotalPotionEffectPct(const StoryDB& story, const SaveData& s) {
         const StoryVerdict* v = story.FindVerdict(r.verdictId);
         if (v != nullptr && !v->grantsRelic.empty()) total += story.RelicPotionEffectPct();
     }
-    return total;
+    return std::min(total, 100);
 }
 
 namespace {

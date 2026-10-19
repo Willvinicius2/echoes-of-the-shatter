@@ -170,6 +170,33 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void LiveBlockMatchesTheCoreRebuildAtTheSameLevelAndTheCompareDeltaOnlyHoldsAtTheSaveLevel()
+        {
+            // Regressao do 22,4 contra 25,16 do PlayMode: afixos "aumentados" (Resoluto, % de Vida) pesam pela base do nivel, e a comparacao do core usa o
+            // nivel do save. Com o heroi no nivel do save o delta bate sempre; num nivel diferente so o bloco refeito pelo core no nivel do heroi vale.
+            var saveLevel = save.CharacterProgress(rules, 0).Level;
+            foreach (var heroLevel in new[] { saveLevel, saveLevel + 4 })
+            {
+                var item = DropItemOfSlot("head");
+                Assert.AreEqual(PickupDest.Backpack, save.Pickup(rules, 0, item.Uid));
+                using (var live = rules.CreateHeroStats(new HeroBuild("class.warrior", heroLevel, new List<string>(), save, 0)))
+                {
+                    var lifeBefore = live.Get(StatId.Life);
+                    var compare = save.Compare(rules, 0, item.Uid);
+                    Assert.IsTrue(save.Equip(rules, 0, item.Uid, -1, live).Ok);
+                    using (var fresh = rules.CreateHeroStats(new HeroBuild("class.warrior", heroLevel, new List<string>(), save, 0)))
+                    {
+                        Assert.AreEqual(fresh.Get(StatId.Life), live.Get(StatId.Life), 1e-6, "nivel " + heroLevel + ": bloco ao vivo = bloco refeito pelo core");
+                        Assert.AreEqual(fresh.Get(StatId.Armor), live.Get(StatId.Armor), 1e-6);
+                    }
+                    if (heroLevel != saveLevel) continue;
+                    foreach (var delta in compare.Deltas)
+                        if (delta.Stat == "life") Assert.AreEqual(delta.Change, live.Get(StatId.Life) - lifeBefore, 1e-6, "no nivel do save a comparacao vale");
+                }
+            }
+        }
+
+        [Test]
         public void LockedAndMismatchedSlotsAreRefusedByTheCoreWithoutChangingAnything()
         {
             var helm = DropItemOfSlot("head");
@@ -288,6 +315,20 @@ namespace Echoes.Tests.EditMode
             StringAssert.Contains("plural", loc.ContextOf("item_base.leather_gloves.name"));
             foreach (var key in new[] { "ui.item.mod", "ui.item.sell_value", "ui.inventory.sort", "ui.inventory.discard_confirm", "ui.item.pick_full", "ui.inventory.slot_locked" })
                 Assert.IsTrue(loc.TryGet(key, out _), key);
+        }
+
+        [Test]
+        public void HeroLevelFallsBehindWhenTheSaveLevelsUpOutsideTheKillPathAndTheSyncCheckSeesIt()
+        {
+            // O save sobe de nivel por kill, coleta de expedicao ou missao; o heroi em cena so e refeito se alguem avisa. A conferencia compara os dois niveis.
+            var heroLevel = save.CharacterProgress(rules, 0).Level;
+            Assert.IsFalse(Echoes.Gameplay.HeroLevelSync.NeedsRefresh(heroLevel, save.CharacterProgress(rules, 0).Level), "mesmo nivel: nada a refazer");
+            var leveled = false;
+            for (var i = 0; i < 400 && !leveled; i++)
+                leveled = save.AwardKillXp(rules, 0, ExpeditionConfig.CryptMap, "enemy.hollow_sentinel", 3, false, string.Empty, true, out _).LeveledUp;
+            Assert.IsTrue(leveled, "o XP dos kills subiu o nivel no save");
+            Assert.IsTrue(Echoes.Gameplay.HeroLevelSync.NeedsRefresh(heroLevel, save.CharacterProgress(rules, 0).Level), "heroi no nivel antigo: refazer o bloco");
+            Assert.IsFalse(Echoes.Gameplay.HeroLevelSync.NeedsRefresh(3, 0), "sem nivel no save (leitura falhou): nao mexe");
         }
     }
 }

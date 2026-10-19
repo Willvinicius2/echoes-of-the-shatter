@@ -6,6 +6,7 @@ using Echoes.Core;
 using Echoes.Gameplay;
 using Echoes.Interop;
 using Echoes.Interop.Native;
+using Echoes.Presentation;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -124,6 +125,7 @@ namespace Echoes.UI
         void OnDestroy()
         {
             if (Current == this) Current = null;
+            TelegraphHints.Hidden = null;
             if (subscribed && root != null && root.Events != null)
             {
                 root.Events.Unsubscribe<ArenaStateEvent>(OnArena);
@@ -149,6 +151,7 @@ namespace Echoes.UI
                 subscribed = true;
             }
             SpawnEchoes(state);
+            TelegraphHints.Hidden = IsStrikeHintHidden;
             var verdict = state.VerdictOf(RegionId);
             if (verdict != null) ShowRegionState(verdict);
         }
@@ -179,11 +182,24 @@ namespace Echoes.UI
                     if (Save.StorySkillRevealed(db, RegionId, skill))
                     {
                         ScreenHost.Toast(Loc.Get("ui.story.echo_skill_revealed"), ToastKind.Banner);
+                        ScreenHost.Toast(Loc.Get(skill + ".hint"), ToastKind.Banner);
                         break;
                     }
                 }
             }
             return true;
+        }
+
+        /// <summary>Golpe do General com Eco em echoes.csv: o desenho no chão só aparece depois de revelado (A5).</summary>
+        bool IsStrikeHintHidden(string skillId)
+        {
+            if (db == null) return false;
+            var gated = false;
+            foreach (var row in echoRows)
+            {
+                if (row.RevealsSkills.Contains(skillId)) { gated = true; break; }
+            }
+            return gated && !Save.StorySkillRevealed(db, RegionId, skillId);
         }
 
         void OnArena(in ArenaStateEvent evt)
@@ -319,8 +335,10 @@ namespace Echoes.UI
             SpawnStoryNpcs();
             var hub = state.HubState;
             if (string.IsNullOrEmpty(hub)) return;
-            // Estado do Refugio pela escolha (hub_state do core). Provisorio: banner e um tom na luz ambiente; os modelos de cada estado
-            // dependem de arte nova, que passa pela aprovacao do dono.
+            // Estado do Refugio pela escolha (hub_state do core): banner, tom na luz ambiente e o grupo de cenario do estado (cercas, estandartes,
+            // braseiros do kit pintado, montados pelo RefugioBuilder), que fica desligado ate aqui.
+            var states = FindAnyObjectByType<RefugeHubStates>();
+            if (states != null) states.Apply(hub);
             ScreenHost.Banner(Loc.Get(hub + ".name"), Loc.Get(hub + ".desc"), PostVerdictBannerSeconds);
             ApplyHubTint(hub);
         }

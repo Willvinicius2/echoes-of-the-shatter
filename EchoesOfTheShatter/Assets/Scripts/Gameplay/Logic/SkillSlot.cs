@@ -13,7 +13,7 @@ namespace Echoes.Gameplay
         }
 
         public int Index { get; }
-        public SkillInfo Skill { get; }
+        public SkillInfo Skill { get; internal set; }
         public bool Unlocked { get; internal set; }
         public CooldownTimer Cooldown { get; } = new CooldownTimer();
         public bool IsEmpty => Skill == null;

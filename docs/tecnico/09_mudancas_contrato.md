@@ -460,8 +460,17 @@ Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus do contrato pendente 
 - Sem struct nova, então sem `layout_info`. Testes: `world_encounter_elite_bonus_*`, `story_devoured_cost_and_stain_loot_table`, trecho novo em `c_api_17`.
 
 ### 15.2 Missões da história (19/10/2026, `claude/missoes-regiao1`)
-Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus feita em 19/10/2026: sem bloqueio. Corrigidos: `requires` em ciclo agora é erro no `StoryDB::Finalize` e no `validate_story.py`, e o `validate_story.py` roda no CI. Notas abertas: save com 256 missões ignora evento sem avisar; leitor do save tolera tipo errado em `done`/`progress`; um evento só avança em uma passada (efeito depende da ordem do CSV); `reach_map_boss` poderia ser derivado do `bossProgress` no core; faltam testes de buffer pequeno e de ponteiro nulo em `quest_event`.
+Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus feita em 19/10/2026: sem bloqueio. Corrigidos: `requires` em ciclo agora é erro no `StoryDB::Finalize` e no `validate_story.py`, e o `validate_story.py` roda no CI. Notas abertas fechadas no 15.3 (A6); restam: um evento só avança em uma passada (efeito depende da ordem do CSV); `reach_map_boss` poderia ser derivado do `bossProgress` no core.
 - **Save**: `story.quests` (opcional, só gravado se houver): `[{quest_id, progress, done}]`, no máximo 256, sem id repetido. Saves sem missões mantêm os mesmos bytes e hash. `save_v2.schema.json` atualizado.
 - **Função nova** `shatter_story_quest_event(story, save, type, type_len, target, target_len, *completed)`: `type` `talk` ou `reach_map_boss`; soma 1 às missões liberadas e não concluídas com esse objetivo e alvo; `*completed` = quantas concluiu agora. Tipo ou alvo sem missão: 0.
 - `shatter_story_record_echo` e `shatter_story_apply_verdict` sincronizam as missões `collect_echo` e `verdict`. `shatter_story_state_json` ganhou só a chave `quests` (lista na ordem de `quests.csv` com `progress`, `status` locked|active|done e `reward`).
 - Core: `GetQuestStatus`, `QuestProgress`, `ReportQuestEvent` em `story.h`. Sem struct nova, então sem `layout_info`.
+
+### 15.3 Fechamento das notas abertas do core e dos dados (19/10/2026, `claude/a6-notas-core-dados`)
+Sem mudança de assinatura nem de layout; `SHATTER_C_API_VERSION` continua 1. Mudanças de comportamento:
+- **Missões acima do limite**: `StoryDB::Finalize` recusa `quests.csv` com mais de `kMaxSavedQuests` (256) missões. Assim `GetOrAddQuestRecord` nunca encontra o save cheio e o evento deixa de ser ignorado sem aviso.
+- **Save com tipo errado**: o leitor de `story.quests` agora exige `progress` inteiro e `done` booleano; texto, nulo ou campo ausente dá `BadData` (antes lia 0/false em silêncio).
+- **Percentuais**: `TotalStatBonusPct` e `TotalPotionEffectPct` são limitados a 100, o mesmo teto que a expedição já aplicava (`storyStatBonusPct`, `storyPotionEffectPct`). Antes `shatter_story_state_json` informava, por exemplo, 130 enquanto o efeito real era 100. `RollEncounter` já limitava `eliteBonusPct` a 0..100 (sem mudança).
+- **Esquema**: `save_v2.schema.json` descreve `world_state` (campo opcional já gravado pelo core desde a Etapa 3): `[{map_id, visits, opened}]`, no máximo 64 áreas e 512 objetos por área.
+- Testes novos: buffer pequeno e ponteiros nulos em `quest_event`/`state_json`, tipos errados no save, teto de 100 e limite de 256 missões.
+- Ainda aberto: um evento só avança em uma passada (efeito depende da ordem do CSV); `reach_map_boss` poderia ser derivado do `bossProgress`.

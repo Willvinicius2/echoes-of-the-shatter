@@ -671,6 +671,37 @@
             }
           }
         },
+        "world_state": {
+          "type": "array",
+          "maxItems": 64,
+          "description": "Estado do mundo por area (world.h): visitas e objetos ja abertos. Opcional: so e gravado quando nao vazio. Sem map_id repetido.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "map_id",
+              "visits",
+              "opened"
+            ],
+            "properties": {
+              "map_id": {
+                "$ref": "#/$defs/Id"
+              },
+              "visits": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 4000000000
+              },
+              "opened": {
+                "type": "array",
+                "maxItems": 512,
+                "items": {
+                  "$ref": "#/$defs/Id"
+                }
+              }
+            }
+          }
+        },
         "story": {
           "type": "object",
           "additionalProperties": false,

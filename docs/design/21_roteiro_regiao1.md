@@ -122,3 +122,19 @@ Decisões tomadas sem o Will (ele dormia). Sonda: `ShatterCore/tests/test_balanc
 - Golpe devorado: com 1,6 o golpe rendia menos dano por segundo em alvo único que o Corte de Ferro (1,6/1,05 s contra 1,1/0,45 s), então nunca valia a Fome. Com 3,0 vira um estouro de ~2,9/s por até 3 usos (Fome 1 a 4 libera 3, 2, 1 e 0 usos por vida). Estimativa por conta, não por simulação, porque o simulador idle não aceita habilidade sem classe.
 
 **Limites da sonda (pendente):** o idle não luta contra chefe nem tem Fome; o duelo usa um clone do Guardião sem fases nem padrões, então subestima a luta real. Falta confirmar o golpe e a Fome no editor (playtest manual). Idle com a Mancha rolando `loot.crypt.stain` e Fome com efeito em jogo (perder o controle) dependem de contrato novo (Opus).
+
+### Dicas do golpe do Guardião pelos Ecos (A5, 19/10, C# não compilado no editor)
+Decisões tomadas sem perguntar (Will dormia). Nenhum número de balanceamento mudou.
+- **O que fica escondido**: o desenho do aviso no chão (cone do martelo, golpe do escudo, linha da investida) dos golpes que têm Eco em `Story/echoes.csv`. Sem o Eco, o Guardião ainda faz o windup na animação, só não há aviso no chão. A leitura do core é `IsSkillRevealed` (`shatter_story_skill_revealed`), a mesma do aviso "Um golpe do General foi revelado".
+- **Como**: `TelegraphEvent.SkillId` (novo) + gate estático `TelegraphHints.Hidden` (Presentation). O `StoryDirector` liga o gate na Cripta e desliga ao ser destruído; sem história (sandbox) tudo aparece. Golpes de outros inimigos nunca entram no gate.
+- **Dica em texto**: ao recolher o Eco que revela o golpe, além do aviso existe uma faixa com a dica (`skill.enemy.guardian_*.hint` em `Loc/story.csv`: martelo em cone, escudo de frente, investida em linha).
+- **Pendência de design**: sem Eco nenhum o chefe fica mais difícil de ler. Se o teste do Will achar duro demais, basta esvaziar o gate (`TelegraphHints.Hidden = null`) ou baixar `minToReveal` em `echoes.csv`.
+- Arquivos: `TelegraphHints.cs` (novo), `TelegraphEvent.cs`, `EnemyCombatLogic.cs`, `TelegraphPresenter.cs`, `StoryDirector.cs`, teste em `StoryClientTests`.
+
+### Golpe devorado na hora do veredito (A4, 19/10, C# não compilado localmente)
+Decisões tomadas sem perguntar (Will dormia).
+- **Antes**: o `DevouredKit` e a barra só eram montados em `HeroController.Start`, então o golpe do Guardião aparecia ao voltar à cena.
+- **Agora**: `RefreshFromSave` (que o `StoryDirector` já chama após o veredito) relê o kit, troca a trava de Fome e coloca o golpe no último espaço livre da barra pela lógica (`HeroCombatLogic.SetSlotSkill`); o HUD religa os ícones quando `BarVersion` muda.
+- **Fome gasta na corrida é mantida** ao reler o kit (`CarrySpentFrom`): subir de nível ou melhorar um item não zera a conta. Sem veredito Devorar nada muda.
+- **Bônus**: `RefugeController.Start` não duplica mais Bram e Odete quando o `StoryDirector` já os registrou (usa `RegisterNpc`).
+- Nenhum número de balanceamento mexido. Teste novo: `DevouredKit_CarriesSpentHungerToTheKitReadAfterTheVerdict`. Confirmar no editor em A2.
