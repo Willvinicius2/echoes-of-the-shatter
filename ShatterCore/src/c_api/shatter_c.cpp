@@ -4328,6 +4328,14 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_s
     }
     o.Set("stain_loot_table_by_map", std::move(stainLoot));
     o.Set("devoured_hunger_cost", Value(static_cast<std::int64_t>(story->db.DevouredHungerCost())));
+    Value gated = Value::MakeArray();   // recompensas travadas por gate_reward, com `open` = já liberada
+    for (const std::string& g : story->db.GatedRewards()) {
+        Value go = Value::MakeObject();
+        go.Set("reward", Value(g));
+        go.Set("open", Value(IsRewardOpen(story->db, save->data, g)));
+        gated.Push(std::move(go));
+    }
+    o.Set("gated_rewards", std::move(gated));
     Value echoes = Value::MakeArray();
     for (const ContentId& id : st.echoes) echoes.Push(Value(id));
     o.Set("echoes", std::move(echoes));
