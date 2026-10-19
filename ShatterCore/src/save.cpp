@@ -542,7 +542,7 @@ bool SaveFromJson(const Value& data, SaveData& out, std::string* error) {
             StoryQuestRecord q;
             q.questId = qv["quest_id"].AsString();
             const std::int64_t progress = qv["progress"].AsInt(0);
-            if (!qv["progress"].IsNumber() || qv["done"].type() != json::Type::Bool) return Fail(error, "story: bad quest field type");
+            if (qv["progress"].type() != json::Type::Int || qv["done"].type() != json::Type::Bool) return Fail(error, "story: bad quest field type");
             if (!IsValidContentId(q.questId)) return Fail(error, "story: bad quest id");
             if (progress < 0 || progress > 1000000) return Fail(error, "story: quest progress out of range");
             q.progress = static_cast<int>(progress);

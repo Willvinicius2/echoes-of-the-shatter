@@ -469,8 +469,8 @@ Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus feita em 19/10/2026: 
 ### 15.3 Fechamento das notas abertas do core e dos dados (19/10/2026, `claude/a6-notas-core-dados`)
 Sem mudança de assinatura nem de layout; `SHATTER_C_API_VERSION` continua 1. Mudanças de comportamento:
 - **Missões acima do limite**: `StoryDB::Finalize` recusa `quests.csv` com mais de `kMaxSavedQuests` (256) missões. Assim `GetOrAddQuestRecord` nunca encontra o save cheio e o evento deixa de ser ignorado sem aviso.
-- **Save com tipo errado**: o leitor de `story.quests` agora exige `progress` numérico e `done` booleano; texto, nulo ou campo ausente dá `BadData` (antes lia 0/false em silêncio).
-- **Percentuais**: `TotalStatBonusPct` e `TotalPotionEffectPct` são limitados a 100, o mesmo teto que a expedição (`storyStatBonusPct`, `storyPotionEffectPct`) e `shatter_story_state_json` já aplicavam. Antes o JSON informava, por exemplo, 130 enquanto o efeito real era 100. `RollEncounter` já limitava `eliteBonusPct` a 0..100 (sem mudança).
+- **Save com tipo errado**: o leitor de `story.quests` agora exige `progress` inteiro e `done` booleano; texto, nulo ou campo ausente dá `BadData` (antes lia 0/false em silêncio).
+- **Percentuais**: `TotalStatBonusPct` e `TotalPotionEffectPct` são limitados a 100, o mesmo teto que a expedição já aplicava (`storyStatBonusPct`, `storyPotionEffectPct`). Antes `shatter_story_state_json` informava, por exemplo, 130 enquanto o efeito real era 100. `RollEncounter` já limitava `eliteBonusPct` a 0..100 (sem mudança).
 - **Esquema**: `save_v2.schema.json` descreve `world_state` (campo opcional já gravado pelo core desde a Etapa 3): `[{map_id, visits, opened}]`, no máximo 64 áreas e 512 objetos por área.
 - Testes novos: buffer pequeno e ponteiros nulos em `quest_event`/`state_json`, tipos errados no save, teto de 100 e limite de 256 missões.
 - Ainda aberto: um evento só avança em uma passada (efeito depende da ordem do CSV); `reach_map_boss` poderia ser derivado do `bossProgress`.
