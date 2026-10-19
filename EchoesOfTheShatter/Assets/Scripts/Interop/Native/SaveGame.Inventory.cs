@@ -34,7 +34,9 @@ namespace Echoes.Interop.Native
             int status;
             fixed (byte* p = bytes) status = ShatterNative.shatter_statblock_from_character_json(rules.DbPointer, p, (nuint)bytes.Length, &raw, &err);
             if (status != 0) throw new ArgumentException("hero stats from save failed: " + NativeBuffers.ErrorMessage(ref err));
-            return new NativeStatBlock(new StatBlockHandle(raw)) { IsHero = true };
+            var block = new NativeStatBlock(new StatBlockHandle(raw)) { IsHero = true };
+            ApplyStoryBonus(block);
+            return block;
         }
 
         public InventoryInfo Inventory(NativeRulesCore rules, int characterIndex)
