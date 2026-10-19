@@ -14,6 +14,7 @@ mkdir -p "$work/lib" "$work/tst"
 if [ ! -d "$work/um/lib/net45" ]; then
   curl -fsSL -o "$work/um.nupkg" https://api.nuget.org/v3-flatcontainer/unityengine.modules/2021.3.33/unityengine.modules.2021.3.33.nupkg
   mkdir -p "$work/um" && unzip -oq "$work/um.nupkg" -d "$work/um"
+  chmod -R u+rwX,go+rX "$work/um"   # o nupkg vem sem permissoes unix: no runner o SDK recebia "acesso negado"
 fi
 echo "referencias UnityEngine: $(ls "$work"/um/lib/net45/*.dll | wc -l) dlls em $work/um/lib/net45"
 
