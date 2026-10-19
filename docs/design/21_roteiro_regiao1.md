@@ -106,3 +106,11 @@ Decisões tomadas sem perguntar (Will dormia). Nenhum número de balanceamento m
 - **Dica em texto**: ao recolher o Eco que revela o golpe, além do aviso existe uma faixa com a dica (`skill.enemy.guardian_*.hint` em `Loc/story.csv`: martelo em cone, escudo de frente, investida em linha).
 - **Pendência de design**: sem Eco nenhum o chefe fica mais difícil de ler. Se o teste do Will achar duro demais, basta esvaziar o gate (`TelegraphHints.Hidden = null`) ou baixar `minToReveal` em `echoes.csv`.
 - Arquivos: `TelegraphHints.cs` (novo), `TelegraphEvent.cs`, `EnemyCombatLogic.cs`, `TelegraphPresenter.cs`, `StoryDirector.cs`, teste em `StoryClientTests`.
+
+### Golpe devorado na hora do veredito (A4, 19/10, C# não compilado localmente)
+Decisões tomadas sem perguntar (Will dormia).
+- **Antes**: o `DevouredKit` e a barra só eram montados em `HeroController.Start`, então o golpe do Guardião aparecia ao voltar à cena.
+- **Agora**: `RefreshFromSave` (que o `StoryDirector` já chama após o veredito) relê o kit, troca a trava de Fome e coloca o golpe no último espaço livre da barra pela lógica (`HeroCombatLogic.SetSlotSkill`); o HUD religa os ícones quando `BarVersion` muda.
+- **Fome gasta na corrida é mantida** ao reler o kit (`CarrySpentFrom`): subir de nível ou melhorar um item não zera a conta. Sem veredito Devorar nada muda.
+- **Bônus**: `RefugeController.Start` não duplica mais Bram e Odete quando o `StoryDirector` já os registrou (usa `RegisterNpc`).
+- Nenhum número de balanceamento mexido. Teste novo: `DevouredKit_CarriesSpentHungerToTheKitReadAfterTheVerdict`. Confirmar no editor em A2.

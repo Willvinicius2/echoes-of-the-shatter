@@ -140,8 +140,14 @@ namespace Echoes.Presentation
 
         void OnHit(in HitEvent evt)
         {
-            if (!evt.Result.Landed || !evt.IsHeavy || evt.Attacker == null) return;
+            if (!evt.Result.Landed || evt.Attacker == null) return;
             var s = Settings;
+            // Tranco leve (golpe 2 do combo): tremor de um terço do golpe pesado, só do herói, para a câmera acompanhar o hitstop de 35 ms.
+            if (!evt.IsHeavy)
+            {
+                if (evt.IsLightHitstop && evt.Attacker.Team == CombatTeam.Hero) AddShake(s.shakeHeavyMeters * 0.35f, s.shakeHeroHeavySeconds * 0.6f);
+                return;
+            }
             if (evt.Attacker.IsBoss && evt.Target != null && evt.Target.Team == CombatTeam.Hero) AddShake(s.shakeBossMeters, s.shakeSeconds);
             else if (evt.Attacker.Team == CombatTeam.Hero) AddShake(evt.Result.Critical ? s.shakeHeavyMeters : s.shakeHeavyMeters * 0.7f, evt.Result.Critical ? s.shakeSeconds : s.shakeHeroHeavySeconds);
         }

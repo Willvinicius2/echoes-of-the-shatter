@@ -150,6 +150,19 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void DevouredKit_CarriesSpentHungerToTheKitReadAfterTheVerdict()
+        {
+            const string json = "{\"hunger\":0,\"hunger_max\":4,\"devoured_hunger_cost\":1,\"echoes\":[],\"verdicts\":[{\"region_id\":\"region.r1.crypt\",\"verdict_id\":\"verdict.r1.devour\",\"grants_signature\":\"skill.devoured.guardian_slam\"}]}";
+            var old = new Echoes.Gameplay.DevouredKit(StoryState.FromJson(json));
+            old.Spent("skill.devoured.guardian_slam");
+            var fresh = new Echoes.Gameplay.DevouredKit(StoryState.FromJson(json));
+            fresh.CarrySpentFrom(old);
+            Assert.AreEqual(1, fresh.Hunger);
+            fresh.CarrySpentFrom(null);   // sem kit anterior (primeiro Devorar): nada muda
+            Assert.AreEqual(1, fresh.Hunger);
+        }
+
+        [Test]
         public void Quests_FromCore_FollowTalkEchoesAndJournal()
         {
             var state = StoryState.FromJson("{}");

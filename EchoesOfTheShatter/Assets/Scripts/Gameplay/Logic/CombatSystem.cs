@@ -285,6 +285,7 @@ namespace Echoes.Gameplay
                 Skill = skill,
                 Result = result,
                 IsHeavy = heavy,
+                IsLightHitstop = result.Landed && !heavy && Feel.LightHitstopFor(skill.Id) > 0.0,
                 IsDamageOverTime = false,
                 Position = target.Position,
             };

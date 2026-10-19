@@ -10,6 +10,8 @@ namespace Echoes.Gameplay
         public SkillInfo Skill;
         public HitResult Result;
         public bool IsHeavy;
+        /// <summary>Acertou com hitstop leve (golpe não pesado que merece um tranco, ex.: golpe 2 do combo).</summary>
+        public bool IsLightHitstop;
         public bool IsDamageOverTime;
         public PlanarVector Position;
     }
