@@ -50,3 +50,6 @@ Narrativa aprovada pelo dono em 18/10 (Generais e veredito no lugar da seção 3
 
 ## Dados da Região 1 (18/10)
 Tabelas em `EchoesOfTheShatter/Content/Data/Story/` (`regions`, `echoes`, `quests`, `verdicts`) e textos em `Loc/story.csv`. Ficam em subpasta de propósito: o core ainda não as lê (ele recusa CSV desconhecido na raiz). Validação: `python3 tools/dados/validate_story.py`. Valores de Fome e bônus (`hungerDelta`, `statBonusPct`) são provisórios. O próximo passo é o core carregar as tabelas e guardar a escolha, a Fome e os Ecos no save (save v3), decisão de contrato a revisar com Opus.
+
+### Core da história (18/10)
+`ShatterCore/include/shatter/story.h` carrega `Story/` (`StoryDB`) e aplica as regras: `RecordEcho`, `IsSkillRevealed`, `ApplyVerdict` (exige o General vencido, é irreversível, soma a Fome até `hunger_max` de `Story/story_rules.csv`) e `TotalStatBonusPct`. O estado vai no campo opcional `story` do save v2 (como `world_state`): saves sem história mantêm os mesmos bytes e hash, então não houve salto para save v3 nem migração. Falta expor tudo na API C (`shatter_c.h`) para o cliente Unity, contrato novo a revisar.

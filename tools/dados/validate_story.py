@@ -27,7 +27,7 @@ ENUMS = {
     ("verdicts.csv", "choice"): {"exorcise", "devour"},
     ("verdicts.csv", "regionState"): {"purified", "stain"},
 }
-HUNGER_MAX = 4
+RULES_KEYS = {"hunger_max"}
 
 
 def rows(path):
@@ -56,6 +56,21 @@ def main():
     for f in sorted(os.listdir(ld)):
         if f.endswith(".csv"):
             loc |= {r["key"] for r in rows(os.path.join(ld, f))[1]}
+    hunger_max = 0
+    rp = os.path.join(sdir, "story_rules.csv")
+    if not os.path.exists(rp):
+        err("story_rules.csv", 0, "tabela ausente")
+    else:
+        head, rs = rows(rp)
+        if head != ["key", "value"]:
+            err("story_rules.csv", 1, "cabeçalho esperado key,value")
+        for r in rs:
+            if r["key"] not in RULES_KEYS:
+                err("story_rules.csv", r["__line__"], f"chave desconhecida '{r['key']}'")
+            elif r["key"] == "hunger_max":
+                hunger_max = int(r["value"]) if r["value"].isdigit() else 0
+        if hunger_max < 1:
+            err("story_rules.csv", 0, "hunger_max deve ser inteiro >= 1")
     ext = {"maps": ids(data, "maps.csv"), "enemies": ids(data, "enemies.csv"), "skills": ids(data, "skills.csv")}
     t = {}
     for name, cols in COLS.items():
@@ -95,6 +110,17 @@ def main():
         for col in ("exorcizeVerdict", "devourVerdict"):
             if r[col] not in verdicts:
                 err("regions.csv", ln, f"{col} '{r[col]}' não existe em verdicts.csv")
+    by_id = {r["id"]: r for r in t["verdicts.csv"]}
+    listed = set()
+    for r in t["regions.csv"]:
+        for col, want in (("exorcizeVerdict", "exorcise"), ("devourVerdict", "devour")):
+            v = by_id.get(r[col])
+            if v and v["choice"] != want:
+                err("regions.csv", r["__line__"], f"{col} deve ser um veredito '{want}'")
+            listed.add(r[col])
+    for r in t["verdicts.csv"]:
+        if r["id"] not in listed:
+            err("verdicts.csv", r["__line__"], f"veredito '{r['id']}' não é listado por nenhuma região")
     for r in t["echoes.csv"]:
         ln = r["__line__"]
         if r["regionId"] not in regions:
@@ -126,8 +152,8 @@ def main():
             err("verdicts.csv", ln, f"regionId '{r['regionId']}' desconhecido")
         try:
             h, b = int(r["hungerDelta"]), int(r["statBonusPct"])
-            if not 0 <= h <= HUNGER_MAX or b < 0:
-                err("verdicts.csv", ln, f"hungerDelta 0..{HUNGER_MAX} e statBonusPct >= 0")
+            if not 0 <= h <= hunger_max or b < 0:
+                err("verdicts.csv", ln, f"hungerDelta 0..{hunger_max} e statBonusPct >= 0")
             if r["choice"] == "exorcise" and (h or b or r["grantsSignature"]):
                 err("verdicts.csv", ln, "Exorcizar não dá Fome, bônus nem golpe-assinatura")
             if r["choice"] == "devour" and (h < 1 or r["grantsRelic"]):

@@ -76,6 +76,21 @@ struct WorldAreaState {
     std::vector<ContentId> opened;
 };
 
+// Progresso da história no save (campo OPCIONAL `story`; ver story.h). Vale para o save inteiro, não por herói.
+struct StoryVerdictRecord {
+    ContentId regionId;
+    ContentId verdictId;
+};
+struct StoryState {
+    int hunger = 0;                            // Fome do Caçador (0..hunger_max de story_rules.csv)
+    std::vector<StoryVerdictRecord> verdicts;  // um por região, na ordem em que foram tomados
+    std::vector<ContentId> echoes;             // Ecos da Queda achados, na ordem
+    bool Empty() const { return hunger == 0 && verdicts.empty() && echoes.empty(); }
+};
+inline constexpr std::size_t kMaxSavedVerdicts = 64;
+inline constexpr std::size_t kMaxSavedEchoes = 1024;
+inline constexpr int kMaxSavedHunger = 100;      // teto de leitura; o teto real é hunger_max (story_rules.csv)
+
 struct SaveData {
     int saveVersion = kCurrentSaveVersion;
     std::uint32_t contentVersion = 0;
@@ -96,6 +111,8 @@ struct SaveData {
     std::vector<BuybackEntry> vendorBuyback;  // recompra: o mais RECENTE primeiro, no máximo vendor_buyback_slots
     // Estado do mundo por área (campo OPCIONAL `world_state`, só gravado se houver algo: saves antigos = nada aberto).
     std::vector<WorldAreaState> world;
+    // História (campo OPCIONAL `story`, só gravado se não vazio: saves antigos = nenhum veredito, Fome 0).
+    StoryState story;
 };
 
 // ---------------------------------------------------------------------------
