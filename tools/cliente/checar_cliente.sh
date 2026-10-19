@@ -12,9 +12,10 @@ assets="$repo/EchoesOfTheShatter/Assets"
 mkdir -p "$work/lib" "$work/tst"
 
 if [ ! -d "$work/um/lib/net45" ]; then
-  curl -sSL -o "$work/um.nupkg" https://api.nuget.org/v3-flatcontainer/unityengine.modules/2021.3.33/unityengine.modules.2021.3.33.nupkg
+  curl -fsSL -o "$work/um.nupkg" https://api.nuget.org/v3-flatcontainer/unityengine.modules/2021.3.33/unityengine.modules.2021.3.33.nupkg
   mkdir -p "$work/um" && unzip -oq "$work/um.nupkg" -d "$work/um"
 fi
+echo "referencias UnityEngine: $(ls "$work"/um/lib/net45/*.dll | wc -l) dlls em $work/um/lib/net45"
 
 # stubs: Debug por namespace (o Debug da Unity nao roda fora do editor) + o que o 2021.3 nao traz
 python3 - "$assets/Scripts" "$repo/tools/cliente/stubs.cs" "$work/stubs.cs" <<'PY'
@@ -48,7 +49,7 @@ cat > "$work/lib/lib.csproj" <<XML
 </Project>
 XML
 echo "== 1/2 compilando Assets/Scripts =="
-(cd "$work/lib" && dotnet build -nologo -v q 2>&1 | grep -E "error|Build succeeded" | sed 's/ \[.*//' | sort -u) || true
+(cd "$work/lib" && dotnet build -nologo -v q 2>&1 | grep -E "error|Build succeeded" | sed 's/ \[.*//' | sort -u | head -40) || true
 if ! (cd "$work/lib" && dotnet build -nologo -v q >/dev/null 2>&1); then echo "FALHOU: erros de compilacao acima"; exit 1; fi
 
 # testes EditMode puros: tira os que dependem do UnityEditor (AnimatorController, SceneManagement, EditorTools)
