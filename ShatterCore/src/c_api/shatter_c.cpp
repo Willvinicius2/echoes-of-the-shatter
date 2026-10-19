@@ -30,6 +30,9 @@ struct shatter_save {
     shatter::SaveData data;
     std::vector<shatter::ItemInstance> ground;  // loot no chão: transitório, NÃO vai para o arquivo (docs/16 4.2)
 };
+struct shatter_story {
+    shatter::StoryDB db;
+};
 struct shatter_statblock {
     shatter::StatBlock sb;
 };
@@ -4219,5 +4222,135 @@ SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext8(const std::uin
     return SHATTER_OK;
 }
 
+// --- História (story.h) -------------------------------------------------------------------------
+namespace {
+
+Value VerdictJson(const StoryVerdict& v) {
+    Value o = Value::MakeObject();
+    o.Set("verdict_id", Value(v.id));
+    o.Set("choice", Value(v.choice == VerdictChoice::Devour ? "devour" : "exorcise"));
+    o.Set("hunger_delta", Value(static_cast<std::int64_t>(v.hungerDelta)));
+    o.Set("stat_bonus_pct", Value(static_cast<std::int64_t>(v.statBonusPct)));
+    o.Set("grants_relic", Value(v.grantsRelic));
+    o.Set("grants_signature", Value(v.grantsSignature));
+    o.Set("region_state", Value(v.regionState));
+    o.Set("hub_state", Value(v.hubState));
+    o.Set("last_words_key", Value(v.lastWordsKey));
+    return o;
+}
+
+}  // namespace
+
+SHATTER_API shatter_status SHATTER_CALL shatter_story_load_directory(const char* path, std::size_t path_len, const shatter_db* db,
+                                                                   shatter_story** out, shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (out == nullptr) return SetError(err, SHATTER_INVALID_ARGUMENT, "out is null");
+    *out = nullptr;
+    std::string_view p;
+    if (path == nullptr || !Text(path, path_len, p) || p.empty())
+        return SetError(err, SHATTER_INVALID_ARGUMENT, "path is null, empty or not valid UTF-8");
+    std::unique_ptr<shatter_story> box(new (std::nothrow) shatter_story());
+    if (!box) return SetError(err, SHATTER_INTERNAL, "out of memory");
+    box->db.LoadDirectory(std::string(p));
+    const ContentDB* content = db != nullptr ? UsableDb(db) : nullptr;
+    if (db != nullptr && content == nullptr) return SetError(err, SHATTER_CONTENT_INVALID, "db is not a valid finalized content db");
+    if (box->db.Errors().empty()) box->db.Finalize(content);
+    const auto& errs = box->db.Errors();
+    if (!errs.empty()) {
+        const ContentError& first = errs.front();
+        const bool io = first.message.find("missing") != std::string::npos;
+        return SetError(err, io ? SHATTER_IO_ERROR : SHATTER_CONTENT_INVALID,
+                        first.table + ": " + first.message + " (+" + std::to_string(errs.size() - 1) + " more)", first.line);
+    }
+    *out = box.release();
+    return SHATTER_OK;
+}
+
+SHATTER_API void SHATTER_CALL shatter_story_destroy(shatter_story* story) SHATTER_NOEXCEPT { delete story; }
+
+SHATTER_API shatter_status SHATTER_CALL shatter_story_record_echo(const shatter_story* story, shatter_save* save, const char* echo_id,
+                                                                std::size_t echo_id_len, std::uint8_t* is_new) SHATTER_NOEXCEPT {
+    std::string_view id;
+    if (story == nullptr || save == nullptr || is_new == nullptr || echo_id == nullptr || !Text(echo_id, echo_id_len, id))
+        return SHATTER_INVALID_ARGUMENT;
+    *is_new = 0;
+    if (story->db.FindEcho(id) == nullptr) return SHATTER_NOT_FOUND;
+    *is_new = RecordEcho(story->db, save->data, id) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_story_apply_verdict(const shatter_story* story, shatter_save* save,
+                                                                  const char* verdict_id, std::size_t verdict_id_len,
+                                                                  std::int32_t* result) SHATTER_NOEXCEPT {
+    std::string_view id;
+    if (story == nullptr || save == nullptr || result == nullptr || verdict_id == nullptr || !Text(verdict_id, verdict_id_len, id))
+        return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(ApplyVerdict(story->db, save->data, id));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_story* story, const shatter_save* save, std::uint8_t* out,
+                                                               std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    if (story == nullptr || save == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    const StoryState& st = save->data.story;
+    Value o = Value::MakeObject();
+    o.Set("hunger", Value(static_cast<std::int64_t>(st.hunger)));
+    o.Set("hunger_max", Value(static_cast<std::int64_t>(story->db.HungerMax())));
+    o.Set("stat_bonus_pct", Value(static_cast<std::int64_t>(TotalStatBonusPct(story->db, save->data))));
+    Value echoes = Value::MakeArray();
+    for (const ContentId& id : st.echoes) echoes.Push(Value(id));
+    o.Set("echoes", std::move(echoes));
+    Value verdicts = Value::MakeArray();
+    for (const StoryVerdictRecord& r : st.verdicts) {
+        const StoryVerdict* v = story->db.FindVerdict(r.verdictId);
+        Value vo = v != nullptr ? VerdictJson(*v) : Value::MakeObject();
+        vo.Set("region_id", Value(r.regionId));
+        vo.Set("verdict_id", Value(r.verdictId));
+        verdicts.Push(std::move(vo));
+    }
+    o.Set("verdicts", std::move(verdicts));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_story_region_json(const shatter_story* story, const shatter_save* save,
+                                                                const char* region_id, std::size_t region_id_len, std::uint8_t* out,
+                                                                std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    std::string_view id;
+    if (story == nullptr || save == nullptr || needed == nullptr || region_id == nullptr || !Text(region_id, region_id_len, id))
+        return SHATTER_INVALID_ARGUMENT;
+    const StoryRegion* r = story->db.FindRegion(id);
+    if (r == nullptr) return SHATTER_NOT_FOUND;
+    const StoryVerdict* decided = DecidedVerdict(story->db, save->data, id);
+    Value o = Value::MakeObject();
+    o.Set("region_id", Value(r->id));
+    o.Set("map_id", Value(r->mapId));
+    o.Set("general_id", Value(r->generalId));
+    o.Set("decided", Value(decided != nullptr));
+    o.Set("verdict_id", Value(decided != nullptr ? decided->id : std::string()));
+    o.Set("echoes_found", Value(static_cast<std::int64_t>(EchoesFound(story->db, save->data, id))));
+    std::int64_t total = 0;
+    for (const StoryEcho& e : story->db.Echoes()) total += e.regionId == r->id ? 1 : 0;
+    o.Set("echoes_total", Value(total));
+    Value options = Value::MakeArray();
+    for (const ContentId* vid : {&r->exorcizeVerdict, &r->devourVerdict}) {
+        const StoryVerdict* v = story->db.FindVerdict(*vid);
+        if (v != nullptr) options.Push(VerdictJson(*v));
+    }
+    o.Set("options", std::move(options));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_story_skill_revealed(const shatter_story* story, const shatter_save* save,
+                                                                   const char* region_id, std::size_t region_id_len,
+                                                                   const char* skill_id, std::size_t skill_id_len,
+                                                                   std::uint8_t* revealed) SHATTER_NOEXCEPT {
+    std::string_view region, skill;
+    if (story == nullptr || save == nullptr || revealed == nullptr || region_id == nullptr || skill_id == nullptr ||
+        !Text(region_id, region_id_len, region) || !Text(skill_id, skill_id_len, skill))
+        return SHATTER_INVALID_ARGUMENT;
+    if (story->db.FindRegion(region) == nullptr) return SHATTER_NOT_FOUND;
+    *revealed = IsSkillRevealed(story->db, save->data, region, skill) ? 1 : 0;
+    return SHATTER_OK;
+}
 
 }  // extern "C"
