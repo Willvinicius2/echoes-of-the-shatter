@@ -117,6 +117,7 @@ namespace Echoes.UI
         LocalizationService localization;
         EventBus events;
         HeroCombatLogic boundLogic;
+        int boundBarVersion;
         bool subscribed;
         float toastTimeLeft;
         float lastLifeFraction = -1f;
@@ -174,7 +175,7 @@ namespace Echoes.UI
             }
             var logic = hero != null ? hero.Logic : null;
             if (logic == null) return;
-            if (!ReferenceEquals(boundLogic, logic)) Bind(logic);
+            if (!ReferenceEquals(boundLogic, logic) || boundBarVersion != logic.BarVersion) Bind(logic);
 
             var self = logic.Self;
             UpdateVitals(self);
@@ -274,6 +275,7 @@ namespace Echoes.UI
         void Bind(HeroCombatLogic logic)
         {
             boundLogic = logic;
+            boundBarVersion = logic.BarVersion;
             var input = hero.InputHandler;
             for (var i = 0; i < skillViews.Length; i++)
             {

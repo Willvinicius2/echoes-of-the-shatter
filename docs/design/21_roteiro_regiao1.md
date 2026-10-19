@@ -98,3 +98,11 @@ Decisões tomadas sem perguntar (Will dormia); o número e os textos estão em `
 - **Gatilhos no cliente**: `talk` ao conversar com qualquer NPC do Refúgio (`AddStoryLines`), `reach_map_boss` quando o Guardião entra em luta (`ArenaPhase.Fighting`). `StoryDirector.ReportQuest(type, target)` é o ponto de entrada para outros gatilhos.
 - **Marca de "introdução já ouvida"**: usa `quest.r1.first_call` (falar com a Ilsa). Primeira conversa mostra `intro_1..3`; as seguintes, `general_lore`. `dlg.ilsa.crypt_done` abre a fala da Ilsa depois do veredito (`quest.r1.verdict` concluída).
 - Arquivos: `StoryDirector.Quests.cs`, `QuestJournal.cs` (novos), `StoryLines.cs`, `RefugeController.cs`, `StoryTypes.cs`, `SaveGame.Story.cs`. Testes: `story_quests_*`, `c_api_story_quests_*` (core) e `Quests_FromCore_*`, `StoryLines_IntroPlaysOnce*` (EditMode, não rodados).
+
+### Golpe devorado na hora do veredito (A4, 19/10, C# não compilado localmente)
+Decisões tomadas sem perguntar (Will dormia).
+- **Antes**: o `DevouredKit` e a barra só eram montados em `HeroController.Start`, então o golpe do Guardião aparecia ao voltar à cena.
+- **Agora**: `RefreshFromSave` (que o `StoryDirector` já chama após o veredito) relê o kit, troca a trava de Fome e coloca o golpe no último espaço livre da barra pela lógica (`HeroCombatLogic.SetSlotSkill`); o HUD religa os ícones quando `BarVersion` muda.
+- **Fome gasta na corrida é mantida** ao reler o kit (`CarrySpentFrom`): subir de nível ou melhorar um item não zera a conta. Sem veredito Devorar nada muda.
+- **Bônus**: `RefugeController.Start` não duplica mais Bram e Odete quando o `StoryDirector` já os registrou (usa `RegisterNpc`).
+- Nenhum número de balanceamento mexido. Teste novo: `DevouredKit_CarriesSpentHungerToTheKitReadAfterTheVerdict`. Confirmar no editor em A2.

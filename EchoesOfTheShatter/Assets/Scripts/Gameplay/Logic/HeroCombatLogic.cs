@@ -89,6 +89,20 @@ namespace Echoes.Gameplay
             }
             RefreshKitUnlocks();
         }
+
+        /// <summary>Sobe a cada troca de habilidade na barra (golpe devorado entrando); a UI religa os ícones quando muda.</summary>
+        public int BarVersion { get; private set; }
+
+        /// <summary>Põe uma habilidade num espaço da barra já em jogo (golpe devorado no veredito). Ignora índice inválido e a defesa (espaço 1 com kit).</summary>
+        public void SetSlotSkill(int index, SkillInfo skill)
+        {
+            var slot = GetSlot(index);
+            if (slot == null || skill == null) return;
+            slot.Skill = skill;
+            slot.Unlocked = self.Level >= skill.UnlockLevel;
+            BarVersion++;
+        }
+
         public IDodgeCharges Dodge { get; }
         public ActionTimeline Action => action;
         public SkillInfo CurrentSkill => currentSlot?.Skill;

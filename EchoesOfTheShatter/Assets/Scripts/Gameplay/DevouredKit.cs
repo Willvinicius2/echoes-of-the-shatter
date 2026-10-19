@@ -87,6 +87,12 @@ namespace Echoes.Gameplay
             if (skills.Contains(skillId) && cost > 0) spent += cost;
         }
 
+        /// <summary>Novo kit lido do save no meio da corrida (veredito): mantém a Fome já gasta pela corrida em curso.</summary>
+        public void CarrySpentFrom(DevouredKit previous)
+        {
+            if (previous != null) spent = previous.spent;
+        }
+
         /// <summary>O herói renasceu: a Fome da corrida volta para a do save.</summary>
         public void ResetRun() => spent = 0;
     }
