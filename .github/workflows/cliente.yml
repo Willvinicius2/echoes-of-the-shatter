@@ -1,0 +1,42 @@
+# Checagem do cliente C# sem a Unity: compila Assets/Scripts contra as referências UnityEngine 2021.3 (NuGet) e roda os testes EditMode
+# puros contra a shattercore real. Não substitui o editor (tools/cliente/checar_cliente.sh explica os limites). Só Linux, sem segredos.
+name: cliente
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "EchoesOfTheShatter/Assets/**"
+      - "EchoesOfTheShatter/Content/Data/**"
+      - "ShatterCore/**"
+      - "tools/cliente/**"
+      - ".github/workflows/cliente.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - "EchoesOfTheShatter/Assets/**"
+      - "EchoesOfTheShatter/Content/Data/**"
+      - "ShatterCore/**"
+      - "tools/cliente/**"
+      - ".github/workflows/cliente.yml"
+
+concurrency:
+  group: cliente-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cliente-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Compilar o cliente e rodar os testes EditMode puros
+        run: tools/cliente/checar_cliente.sh "$RUNNER_TEMP/cliente-check"

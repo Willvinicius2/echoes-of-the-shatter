@@ -460,7 +460,7 @@ Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus do contrato pendente 
 - Sem struct nova, então sem `layout_info`. Testes: `world_encounter_elite_bonus_*`, `story_devoured_cost_and_stain_loot_table`, trecho novo em `c_api_17`.
 
 ### 15.2 Missões da história (19/10/2026, `claude/missoes-regiao1`)
-Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus do contrato pendente.
+Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus feita em 19/10/2026: sem bloqueio. Corrigidos: `requires` em ciclo agora é erro no `StoryDB::Finalize` e no `validate_story.py`, e o `validate_story.py` roda no CI. Notas abertas: save com 256 missões ignora evento sem avisar; leitor do save tolera tipo errado em `done`/`progress`; um evento só avança em uma passada (efeito depende da ordem do CSV); `reach_map_boss` poderia ser derivado do `bossProgress` no core; faltam testes de buffer pequeno e de ponteiro nulo em `quest_event`.
 - **Save**: `story.quests` (opcional, só gravado se houver): `[{quest_id, progress, done}]`, no máximo 256, sem id repetido. Saves sem missões mantêm os mesmos bytes e hash. `save_v2.schema.json` atualizado.
 - **Função nova** `shatter_story_quest_event(story, save, type, type_len, target, target_len, *completed)`: `type` `talk` ou `reach_map_boss`; soma 1 às missões liberadas e não concluídas com esse objetivo e alvo; `*completed` = quantas concluiu agora. Tipo ou alvo sem missão: 0.
 - `shatter_story_record_echo` e `shatter_story_apply_verdict` sincronizam as missões `collect_echo` e `verdict`. `shatter_story_state_json` ganhou só a chave `quests` (lista na ordem de `quests.csv` com `progress`, `status` locked|active|done e `reward`).

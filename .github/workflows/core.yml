@@ -105,5 +105,7 @@ jobs:
           python-version: "3.x"
       - name: Validar conteúdo
         run: python3 tools/dados/validate_data.py
+      - name: Validar tabelas de história
+        run: python3 tools/dados/validate_story.py
       - name: Autoteste do validador
         run: python3 tools/dados/validate_data.py --self-test

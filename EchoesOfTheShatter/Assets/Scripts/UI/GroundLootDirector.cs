@@ -120,7 +120,9 @@ namespace Echoes.UI
         /// <summary>Mancha (veredito Devorar): o encontro limpo rola também a tabela extra da área, nomeada pelo core (<c>stain_loot_table_by_map</c>).</summary>
         void DropStainLoot(Echoes.Interop.Native.NativeRulesCore rules, Vector3 origin)
         {
-            var state = Echoes.Gameplay.DevouredKit.ReadState(root, rules, GameSession.Save.Current);
+            // O StoryDirector da cena ja tem a tabela aberta; sem ele (cena de teste), le direto do core.
+            var director = StoryDirector.Current;
+            var state = director != null && director.IsLoaded ? director.CurrentState() : Echoes.Gameplay.DevouredKit.ReadState(root, rules, GameSession.Save.Current);
             if (state == null || !state.StainLootTableByMap.TryGetValue(ExpeditionConfig.CryptMap, out var table) || string.IsNullOrEmpty(table)) return;
             var json = GameSession.Save.Current.DropLoot(rules, table, AreaLevel(rules), raresDropped, -1, NextSeed(), out var error);
             if (string.IsNullOrEmpty(json))
