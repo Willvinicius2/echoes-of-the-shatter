@@ -37,6 +37,9 @@ PY
 sed '/unitySliceScale/d' "$assets/Scripts/UI/UiArt.cs" > "$work/UiArt.patched.cs"
 printf 'public static class P { public static int Main(string[] a) => new NUnitLite.AutoRun(typeof(P).Assembly).Execute(a); }\n' > "$work/main.cs"
 
+# uma Reference com HintPath por dll (o glob direto em Reference nao e confiavel entre versoes do SDK)
+refs=""
+for dll in "$work"/um/lib/net45/*.dll; do refs="$refs<Reference Include=\"$(basename "$dll" .dll)\"><HintPath>$dll</HintPath></Reference>"; done
 props='<TargetFramework>net8.0</TargetFramework><LangVersion>9.0</LangVersion><AllowUnsafeBlocks>true</AllowUnsafeBlocks><EnableDefaultCompileItems>false</EnableDefaultCompileItems><GenerateAssemblyInfo>false</GenerateAssemblyInfo><NoWarn>CS1701;CS1702;CS0649;CS0169;CS0414;CS0618;MSB3277;CS8632</NoWarn>'
 cat > "$work/lib/lib.csproj" <<XML
 <Project Sdk="Microsoft.NET.Sdk">
@@ -44,7 +47,7 @@ cat > "$work/lib/lib.csproj" <<XML
   <ItemGroup>
     <Compile Include="$assets/Scripts/**/*.cs" Exclude="$assets/Scripts/EditorTools/**;$assets/Scripts/UI/UiArt.cs" />
     <Compile Include="$work/stubs.cs;$work/UiArt.patched.cs" />
-    <Reference Include="$work/um/lib/net45/*.dll" />
+    $refs
   </ItemGroup>
 </Project>
 XML
@@ -63,7 +66,7 @@ cat > "$work/tst/tst.csproj" <<XML
   <ItemGroup>
     <Compile Include="$work/main.cs;$assets/Tests/EditMode/**/*.cs" Exclude="${excl#;}" />
     <ProjectReference Include="../lib/lib.csproj" />
-    <Reference Include="$work/um/lib/net45/*.dll" />
+    $refs
     <PackageReference Include="NUnitLite" Version="3.14.0" />
   </ItemGroup>
 </Project>
