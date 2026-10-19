@@ -100,7 +100,7 @@ namespace Echoes.UI
 
         void Update()
         {
-            if (RefugeController.AnyScreenOpen || InventoryController.IsOpen || StoryDirector.VerdictOpen) return;
+            if (RefugeController.AnyScreenOpen || InventoryController.IsOpen || StoryDirector.VerdictOpen || StoryDirector.JournalOpen) return;
             if (options != null && options.IsOpen)
             {
                 // Esc fecha as Opcoes (e volta a pausa), a menos que o remapeamento esteja esperando uma tecla.

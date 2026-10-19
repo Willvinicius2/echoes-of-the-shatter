@@ -223,6 +223,7 @@ namespace Echoes.UI
             if (director == null || !director.IsLoaded) return;
             foreach (var key in StoryLines.For(npcId, director.CurrentState(), StoryDirector.RegionId))
                 ScreenKit.Line(card, Loc.Get(key), 22);
+            director.ReportQuest("talk", "npc." + npcId); // missao "falar com": depois das falas, para a 1a conversa mostrar a introducao
         }
 
         /// <summary>Bram e Odete: so falas de historia (a funcao de jogo deles - forja e Livros - ainda nao existe).</summary>

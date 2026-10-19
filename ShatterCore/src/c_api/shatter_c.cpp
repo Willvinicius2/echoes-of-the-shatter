@@ -4340,6 +4340,23 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_s
         verdicts.Push(std::move(vo));
     }
     o.Set("verdicts", std::move(verdicts));
+    Value quests = Value::MakeArray();
+    for (const StoryQuest& q : story->db.Quests()) {
+        Value qo = Value::MakeObject();
+        qo.Set("quest_id", Value(q.id));
+        qo.Set("region_id", Value(q.regionId));
+        qo.Set("giver", Value(q.giver));
+        qo.Set("objective_type", Value(q.objectiveType));
+        qo.Set("objective_target", Value(q.objectiveTarget));
+        qo.Set("objective_count", Value(static_cast<std::int64_t>(q.objectiveCount)));
+        qo.Set("progress", Value(static_cast<std::int64_t>(QuestProgress(story->db, save->data, q.id))));
+        const QuestStatus status = GetQuestStatus(story->db, save->data, q.id);
+        qo.Set("status", Value(status == QuestStatus::Done ? "done" : status == QuestStatus::Active ? "active" : "locked"));
+        qo.Set("requires", Value(q.requires_));
+        qo.Set("reward", Value(q.reward));
+        quests.Push(std::move(qo));
+    }
+    o.Set("quests", std::move(quests));
     return WriteJson(o, false, out, cap, needed);
 }
 
@@ -4381,6 +4398,17 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_skill_revealed(const shatt
         return SHATTER_INVALID_ARGUMENT;
     if (story->db.FindRegion(region) == nullptr) return SHATTER_NOT_FOUND;
     *revealed = IsSkillRevealed(story->db, save->data, region, skill) ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_story_quest_event(const shatter_story* story, shatter_save* save, const char* type,
+                                                                std::size_t type_len, const char* target, std::size_t target_len,
+                                                                std::uint32_t* completed) SHATTER_NOEXCEPT {
+    std::string_view ty, tg;
+    if (story == nullptr || save == nullptr || completed == nullptr || type == nullptr || target == nullptr || !Text(type, type_len, ty) ||
+        !Text(target, target_len, tg))
+        return SHATTER_INVALID_ARGUMENT;
+    *completed = static_cast<std::uint32_t>(ReportQuestEvent(story->db, save->data, ty, tg));
     return SHATTER_OK;
 }
 

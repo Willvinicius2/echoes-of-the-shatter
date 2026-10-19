@@ -5,11 +5,14 @@ namespace Echoes.UI
 {
     /// <summary>
     /// Quais falas da Regiao 1 (dialogue.csv) cada NPC do Refugio diz, conforme o progresso da historia (docs/design/21). Logica pura, sem Unity: o
-    /// estado vem do core (<see cref="StoryState"/>), nada e gravado no save. Sem marca de "ja ouvi", a introducao se repete a cada conversa
-    /// ate o jogador achar o primeiro Eco (decisao de prototipo).
+    /// estado vem do core (<see cref="StoryState"/>), nada e gravado so para as falas. A marca de "ja ouvi" e a missao quest.r1.first_call
+    /// (falar com a Ilsa), concluida pelo core: a introducao so toca na primeira conversa.
     /// </summary>
     public static class StoryLines
     {
+        const string IntroQuestId = "quest.r1.first_call";
+        const string VerdictQuestId = "quest.r1.verdict";
+
         /// <summary>Chaves de fala, em ordem, que o NPC diz agora. Vazio sem historia carregada (state null) ou NPC sem fala de historia.</summary>
         public static List<string> For(string npcId, StoryState state, string regionId)
         {
@@ -22,11 +25,12 @@ namespace Echoes.UI
                 case InteractableNpc.Ilsa:
                     if (verdict == null)
                     {
-                        if (hasEchoes) lines.Add("dlg.ilsa.general_lore");
+                        if (hasEchoes || state.QuestDone(IntroQuestId)) lines.Add("dlg.ilsa.general_lore");
                         else AddAll(lines, "dlg.ilsa.intro_1", "dlg.ilsa.intro_2", "dlg.ilsa.intro_3");
                     }
                     else
                     {
+                        if (state.QuestDone(VerdictQuestId)) lines.Add("dlg.ilsa.crypt_done");   // a Cripta foi vencida
                         lines.Add(verdict.IsDevour ? "dlg.ilsa.after_devour" : "dlg.ilsa.after_exorcise");
                         lines.Add("dlg.ilsa.years_pass");
                     }

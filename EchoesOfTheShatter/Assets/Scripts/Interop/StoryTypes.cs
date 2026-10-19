@@ -44,6 +44,44 @@ namespace Echoes.Interop
         }
     }
 
+    /// <summary>Uma missao como o core a descreve (<c>quests</c> de <c>shatter_story_state_json</c>). O core so guarda progresso e conclusao; a recompensa e uma chave que o cliente aplica.</summary>
+    public sealed class StoryQuestInfo
+    {
+        public string QuestId = string.Empty;
+        public string RegionId = string.Empty;
+        public string Giver = string.Empty;
+        /// <summary>talk, collect_echo, reach_map_boss ou verdict.</summary>
+        public string ObjectiveType = string.Empty;
+        public string ObjectiveTarget = string.Empty;
+        public int ObjectiveCount = 1;
+        public int Progress;
+        /// <summary>"locked", "active" ou "done".</summary>
+        public string Status = "locked";
+        public string Requires = string.Empty;
+        /// <summary>unlock.return_marker, reveal.general_weakness, unlock.duel ou verdict_choice.</summary>
+        public string Reward = string.Empty;
+
+        public bool IsActive => Status == "active";
+        public bool IsDone => Status == "done";
+
+        internal static StoryQuestInfo From(Dictionary<string, object> o)
+        {
+            return new StoryQuestInfo
+            {
+                QuestId = MiniJson.Str(o, "quest_id"),
+                RegionId = MiniJson.Str(o, "region_id"),
+                Giver = MiniJson.Str(o, "giver"),
+                ObjectiveType = MiniJson.Str(o, "objective_type"),
+                ObjectiveTarget = MiniJson.Str(o, "objective_target"),
+                ObjectiveCount = MiniJson.Int(o, "objective_count", 1),
+                Progress = MiniJson.Int(o, "progress"),
+                Status = MiniJson.Str(o, "status", "locked"),
+                Requires = MiniJson.Str(o, "requires"),
+                Reward = MiniJson.Str(o, "reward"),
+            };
+        }
+    }
+
     /// <summary>Progresso da historia no save (<c>shatter_story_state_json</c>): Fome, bonus total, Ecos achados e vereditos tomados.</summary>
     public sealed class StoryState
     {
@@ -60,6 +98,8 @@ namespace Echoes.Interop
         public int DevouredHungerCost;
         public readonly List<string> Echoes = new List<string>();
         public readonly List<StoryVerdictInfo> Verdicts = new List<StoryVerdictInfo>();
+        /// <summary>Todas as missoes de quests.csv, na ordem da tabela, com progresso e status.</summary>
+        public readonly List<StoryQuestInfo> Quests = new List<StoryQuestInfo>();
 
         public static StoryState FromJson(string json)
         {
@@ -81,8 +121,14 @@ namespace Echoes.Interop
                 foreach (var e in MiniJson.AsArray(echoes)) if (e is string s) state.Echoes.Add(s);
             if (o.TryGetValue("verdicts", out var verdicts))
                 foreach (var v in MiniJson.AsArray(verdicts)) state.Verdicts.Add(StoryVerdictInfo.From(MiniJson.AsObject(v), string.Empty));
+            if (o.TryGetValue("quests", out var quests))
+                foreach (var q in MiniJson.AsArray(quests)) state.Quests.Add(StoryQuestInfo.From(MiniJson.AsObject(q)));
             return state;
         }
+
+        public StoryQuestInfo QuestOf(string questId) => Quests.Find(q => q.QuestId == questId);
+
+        public bool QuestDone(string questId) => QuestOf(questId)?.IsDone ?? false;
 
         public bool HasEcho(string echoId) => Echoes.Contains(echoId);
 

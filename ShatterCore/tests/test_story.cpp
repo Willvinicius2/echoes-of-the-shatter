@@ -223,3 +223,66 @@ TEST(story_devoured_cost_and_stain_loot_table) {
     Make(kVerdicts, "key,value\nhunger_max,2\ndevoured_hunger_cost,3\n", &bad);   // custo acima da Fome máxima
     EXPECT_FALSE(bad);
 }
+
+TEST(story_quests_chain_progress_and_early_echoes_count) {
+    const StoryDB db = Make();
+    SaveData s;
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.one") == QuestStatus::Active);
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.two") == QuestStatus::Locked);
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.nope") == QuestStatus::Locked);
+    EXPECT_EQ(ReportQuestEvent(db, s, "talk", "npc.tico"), 0);          // alvo sem missão
+    EXPECT_EQ(ReportQuestEvent(db, s, "verdict", "region.r1.crypt"), 0);   // tipo derivado: o cliente não avisa
+    EXPECT_EQ(ReportQuestEvent(db, s, "talk", "npc.ilsa", 0), 0);       // quantidade inválida
+    EXPECT_TRUE(s.story.Empty());
+
+    // Ecos achados antes de liberar a missão ficam guardados e contam depois.
+    RecordEcho(db, s, "echo.r1.a");
+    RecordEcho(db, s, "echo.r1.b");
+    EXPECT_EQ(QuestProgress(db, s, "quest.r1.two"), 0);
+    EXPECT_EQ(ReportQuestEvent(db, s, "talk", "npc.ilsa"), 1);
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.one") == QuestStatus::Done);
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.two") == QuestStatus::Active);
+    EXPECT_EQ(QuestProgress(db, s, "quest.r1.two"), 2);
+    EXPECT_EQ(ReportQuestEvent(db, s, "talk", "npc.ilsa"), 0);          // já concluída
+    RecordEcho(db, s, "echo.r1.c");
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.two") == QuestStatus::Done);
+    EXPECT_EQ(QuestProgress(db, s, "quest.r1.two"), 3);
+}
+
+TEST(story_quests_save_roundtrip_and_validation) {
+    const StoryDB db = Make();
+    SaveData s = SaveWithKill(true);
+    ReportQuestEvent(db, s, "talk", "npc.ilsa");
+    RecordEcho(db, s, "echo.r1.a");
+    const std::string text = SerializeJson(s, true);
+    EXPECT_TRUE(text.find("\"quests\"") != std::string::npos);
+    SaveData back;
+    EXPECT_TRUE(ParseJson(text, back) == LoadStatus::Ok);
+    EXPECT_EQ(back.story.quests.size(), s.story.quests.size());
+    EXPECT_TRUE(GetQuestStatus(db, back, "quest.r1.one") == QuestStatus::Done);
+    EXPECT_EQ(QuestProgress(db, back, "quest.r1.two"), 1);
+    EXPECT_EQ(SerializeJson(back, false), SerializeJson(s, false));
+
+    SaveData dup = SaveWithKill(true);
+    dup.story.quests.push_back({"quest.r1.one", 1, true});
+    dup.story.quests.push_back({"quest.r1.one", 1, true});   // missão repetida
+    EXPECT_TRUE(ParseJson(SerializeJson(dup, true), back) == LoadStatus::BadData);
+    SaveData neg = SaveWithKill(true);
+    neg.story.quests.push_back({"quest.r1.one", -1, false});
+    EXPECT_TRUE(ParseJson(SerializeJson(neg, true), back) == LoadStatus::BadData);
+}
+
+TEST(story_repo_quests_complete_in_order) {
+    StoryDB db;
+    ASSERT_TRUE(db.LoadDirectory(tu::DataDir() + "/../../../EchoesOfTheShatter/Content/Data/Story"));
+    ASSERT_TRUE(db.Finalize());
+    SaveData s = SaveWithKill(true);
+    EXPECT_EQ(ReportQuestEvent(db, s, "reach_map_boss", "map.act1.crypt"), 0);   // siege ainda trancada
+    EXPECT_EQ(ReportQuestEvent(db, s, "talk", "npc.ilsa"), 1);
+    EXPECT_EQ(ReportQuestEvent(db, s, "reach_map_boss", "map.act1.crypt"), 1);
+    for (const StoryEcho& e : db.Echoes()) RecordEcho(db, s, e.id);
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.echoes") == QuestStatus::Done);
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.verdict") == QuestStatus::Active);
+    ASSERT_TRUE(ApplyVerdict(db, s, "verdict.r1.exorcise") == VerdictResult::Ok);
+    EXPECT_TRUE(GetQuestStatus(db, s, "quest.r1.verdict") == QuestStatus::Done);
+}
