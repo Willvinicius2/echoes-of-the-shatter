@@ -146,6 +146,8 @@ def main():
             err("quests.csv", ln, f"objectiveTarget '{r['objectiveTarget']}' não é mapa")
         if r["giver"] and f"{r['giver']}.name" not in loc:
             err("quests.csv", ln, f"giver '{r['giver']}' sem nome em Loc")
+    if len(t["quests.csv"]) > 256:
+        err("quests.csv", 0, "mais de 256 missões: o save não guarda tantas (kMaxSavedQuests)")
     requires_of = {r["id"]: r["requires"] for r in t["quests.csv"]}
     for r in t["quests.csv"]:
         seen, cur = {r["id"]}, r["requires"]

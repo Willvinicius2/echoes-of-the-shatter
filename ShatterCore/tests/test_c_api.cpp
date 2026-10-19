@@ -2792,6 +2792,16 @@ TEST(c_api_story_quests_event_progress_and_state_json) {
     EXPECT_EQ(shatter_story_quest_event(story, save.save, "talk", 4, "npc.ilsa", 8, &done), SHATTER_OK);
     EXPECT_EQ(done, 1u);
     EXPECT_EQ(shatter_story_quest_event(nullptr, save.save, "talk", 4, "npc.ilsa", 8, &done), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_story_quest_event(story, nullptr, "talk", 4, "npc.ilsa", 8, &done), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_story_quest_event(story, save.save, nullptr, 4, "npc.ilsa", 8, &done), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_story_quest_event(story, save.save, "talk", 4, nullptr, 8, &done), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_story_quest_event(story, save.save, "talk", 4, "npc.ilsa", 8, nullptr), SHATTER_INVALID_ARGUMENT);
+    {   // buffer pequeno: devolve o tamanho necessário sem escrever
+        std::size_t need = 0;
+        std::uint8_t tiny[4] = {0, 0, 0, 0};
+        EXPECT_EQ(shatter_story_state_json(story, save.save, tiny, sizeof tiny, &need), SHATTER_BUFFER_TOO_SMALL);
+        EXPECT_TRUE(need > sizeof tiny);
+    }
     uint8_t isNew = 0;
     ASSERT_EQ(shatter_story_record_echo(story, save.save, "echo.r1.broken_hammer", 21, &isNew), SHATTER_OK);
     const json::Value after = quests();
