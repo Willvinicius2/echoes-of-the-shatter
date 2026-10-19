@@ -62,6 +62,22 @@ namespace Echoes.Interop.Native
             return status == 0 ? (VerdictResult)result : VerdictResult.Error;
         }
 
+        /// <summary>
+        /// Avisa um evento de missao ("talk" com o id do NPC, "reach_map_boss" com o id do mapa). Devolve quantas missoes foram concluidas agora
+        /// (-1 em erro). Ecos e veredito avancam sozinhos nas chamadas proprias. Grave o save se o resultado for maior que 0.
+        /// </summary>
+        public int StoryQuestEvent(StoryDb story, string type, string target)
+        {
+            var ty = NativeBuffers.Utf8(type);
+            var tg = NativeBuffers.Utf8(target);
+            uint completed = 0;
+            int status;
+            fixed (byte* a = ty)
+            fixed (byte* b = tg)
+                status = ShatterNative.shatter_story_quest_event(story.Raw, Raw, a, (nuint)ty.Length, b, (nuint)tg.Length, &completed);
+            return status == 0 ? (int)completed : -1;
+        }
+
         /// <summary>Fome, bonus, Ecos e vereditos do save. Em erro devolve um estado vazio.</summary>
         public StoryState ReadStory(StoryDb story)
         {

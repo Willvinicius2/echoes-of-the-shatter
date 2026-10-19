@@ -83,8 +83,18 @@ Pendências abertas: aparência real do Refúgio por estado; ver a passagem de b
 ### Falas da Região 1 ligadas ao cliente (19/10, C# não compilado)
 Decisões sem o Will (ele dormia), sem tocar core nem save:
 - **Quem fala o quê**: `UI/StoryLines.cs` escolhe as chaves de `dialogue.csv` pelo estado da história (Ecos e veredito) que o core já expõe. Ilsa: `intro_1..3` até o primeiro Eco, `general_lore` com Ecos, `after_exorcise|devour` + `years_pass` depois do veredito. Tico: `intro`, `echo_found`, `after_years`. Bram: `intro`, `echo_blade`, `after_devour`, `farewell`. Odete: `intro`, `echo_read`, `warning` (só antes do veredito), `farewell`. As falas aparecem no topo do cartão de conversa; a expedição de Ilsa e Tico segue embaixo.
-- **Sem marca de "já ouvi"**: não há campo no save para isso, então a introdução se repete a cada conversa até achar o primeiro Eco. Se incomodar, a marca vira campo do core numa etapa futura.
+- **Sem marca de "já ouvi"** (substituído pelas missões, ver abaixo): não havia campo no save para isso, então a introdução se repete a cada conversa até achar o primeiro Eco. Se incomodar, a marca vira campo do core numa etapa futura.
 - **Bram e Odete**: o `StoryDirector` cria duas cápsulas com rótulo no Refúgio (-8,0 e -12,0), sem mexer na cena montada; só falas, a forja e os Livros seguem sem função. Modelos exigem arte aprovada.
 - **Guardião**: `dlg.guardian.phase1` ao começar a luta e `phase2` quando ele invoca as Sentinelas (aviso em faixa); `kneel` e `last_words` já existiam no veredito.
 - **Salto de anos**: sem arte nem gatilho próprio; por ora `years_pass` e `after_years` são falas dos NPCs depois do veredito. Mesmas falas nos dois caminhos, trocando só `after_exorcise`/`after_devour`.
-- **Missões**: nenhum gatilho de missão usado (a thread de Missões roda em paralelo); quando existirem, ligar `dlg.ilsa.crypt_done` e afins.
+- **Missões**: ligadas depois pela thread de Missões (ver seção abaixo), inclusive `dlg.ilsa.crypt_done`.
+
+### Missões da Região 1 no jogo (19/10, core testado + C# não compilado)
+Decisões tomadas sem perguntar (Will dormia); o número e os textos estão em `Story/quests.csv` e `Loc/story.csv`.
+- **Progresso é regra do core**, não só texto: `story.quests` no save (campo opcional dentro de `story`; saves sem missões mantêm os mesmos bytes). Cada missão guarda `progress` e `done` (permanente).
+- **Cadeia**: uma missão só avança depois da que ela `requires`. `collect_echo` e `verdict` avançam sozinhos (`RecordEcho`, `ApplyVerdict`); Ecos achados antes de a missão liberar contam depois. `talk` e `reach_map_boss` o cliente avisa (`shatter_story_quest_event`).
+- **Recompensa** (`unlock.return_marker`, `reveal.general_weakness`, `unlock.duel`) é só uma chave: o cliente mostra o aviso ("Recompensa: ..."). Nenhum efeito mecânico novo: o Marco de Retorno e o duelo seguem sem bloqueio, e a fraqueza do Guardião já vem dos Ecos (`IsSkillRevealed`). Travar o Marco ou o duelo por missão fica para quem decidir esse design.
+- **Diário (tecla J)**: `QuestJournal` lista as missões liberadas e as concluídas, com progresso; trancadas não aparecem. Conclusão avisa em faixa. Pausa e inventário não abrem com o diário aberto.
+- **Gatilhos no cliente**: `talk` ao conversar com qualquer NPC do Refúgio (`AddStoryLines`), `reach_map_boss` quando o Guardião entra em luta (`ArenaPhase.Fighting`). `StoryDirector.ReportQuest(type, target)` é o ponto de entrada para outros gatilhos.
+- **Marca de "introdução já ouvida"**: usa `quest.r1.first_call` (falar com a Ilsa). Primeira conversa mostra `intro_1..3`; as seguintes, `general_lore`. `dlg.ilsa.crypt_done` abre a fala da Ilsa depois do veredito (`quest.r1.verdict` concluída).
+- Arquivos: `StoryDirector.Quests.cs`, `QuestJournal.cs` (novos), `StoryLines.cs`, `RefugeController.cs`, `StoryTypes.cs`, `SaveGame.Story.cs`. Testes: `story_quests_*`, `c_api_story_quests_*` (core) e `Quests_FromCore_*`, `StoryLines_IntroPlaysOnce*` (EditMode, não rodados).

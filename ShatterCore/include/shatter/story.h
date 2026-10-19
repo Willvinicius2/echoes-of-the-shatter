@@ -111,6 +111,21 @@ const StoryVerdict* DecidedVerdict(const StoryDB& story, const SaveData& s, std:
 // Soma de statBonusPct dos vereditos tomados (Devorar). O cliente aplica o bônus; o core só informa o total.
 int TotalStatBonusPct(const StoryDB& story, const SaveData& s);
 
+// ---------------------------------------------------------------------------
+// Missões (quests.csv; progresso em `SaveData::story.quests`)
+// ---------------------------------------------------------------------------
+// Objetivos `collect_echo` (Ecos achados na região) e `verdict` (veredito tomado) avançam sozinhos: RecordEcho e ApplyVerdict
+// sincronizam as missões. Os objetivos `talk` e `reach_map_boss` dependem do cliente, que avisa com ReportQuestEvent.
+// Uma missão só avança depois de a que ela `requires` estar concluída; Ecos achados antes contam quando a missão libera.
+// O core só guarda progresso e conclusão: a recompensa (`reward`) é uma chave que o cliente lê e aplica.
+enum class QuestStatus : std::uint8_t { Locked = 0, Active = 1, Done = 2 };
+QuestStatus GetQuestStatus(const StoryDB& story, const SaveData& s, std::string_view questId);   // id desconhecido = Locked
+int QuestProgress(const StoryDB& story, const SaveData& s, std::string_view questId);            // 0..objectiveCount
+// Avisa um evento do cliente: `type` "talk" ou "reach_map_boss", `target` como em quests.csv (npc.ilsa, map.act1.crypt).
+// Soma `amount` (>= 1) a toda missão liberada e não concluída com esse objetivo. Devolve quantas missões concluiu agora
+// (inclui as que a conclusão liberou e que já estavam cumpridas). Tipo ou alvo sem missão: 0 e nada muda.
+int ReportQuestEvent(const StoryDB& story, SaveData& s, std::string_view type, std::string_view target, int amount = 1);
+
 // Relíquias (veredito tomado com grantsRelic): soma de relic_potion_effect_pct, uma vez por relíquia.
 int TotalPotionEffectPct(const StoryDB& story, const SaveData& s);
 // Mancha: se o mapa pertence a uma região cujo veredito tomado deixou regionState "stain", devolve stain_elite_bonus_pct; senão 0.

@@ -81,14 +81,22 @@ struct StoryVerdictRecord {
     ContentId regionId;
     ContentId verdictId;
 };
+// Progresso de uma missão (quests.csv). `progress` só sobe; `done` é permanente (as recompensas são lidas pelo cliente).
+struct StoryQuestRecord {
+    ContentId questId;
+    int progress = 0;
+    bool done = false;
+};
 struct StoryState {
     int hunger = 0;                            // Fome do Caçador (0..hunger_max de story_rules.csv)
     std::vector<StoryVerdictRecord> verdicts;  // um por região, na ordem em que foram tomados
     std::vector<ContentId> echoes;             // Ecos da Queda achados, na ordem
-    bool Empty() const { return hunger == 0 && verdicts.empty() && echoes.empty(); }
+    std::vector<StoryQuestRecord> quests;      // progresso das missões; só as já tocadas, na ordem em que foram tocadas
+    bool Empty() const { return hunger == 0 && verdicts.empty() && echoes.empty() && quests.empty(); }
 };
 inline constexpr std::size_t kMaxSavedVerdicts = 64;
 inline constexpr std::size_t kMaxSavedEchoes = 1024;
+inline constexpr std::size_t kMaxSavedQuests = 256;
 inline constexpr int kMaxSavedHunger = 100;      // teto de leitura; o teto real é hunger_max (story_rules.csv)
 
 struct SaveData {
