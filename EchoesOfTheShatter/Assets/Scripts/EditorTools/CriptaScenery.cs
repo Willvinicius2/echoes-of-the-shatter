@@ -345,7 +345,6 @@ namespace Echoes.EditorTools
                     spots.Add(pos, 1.4f);
                     // Ossos e velas ao pe do sarcofago, sem colisor.
                     SmallNear(small, rng, pos, yaw, "Velas", true);
-                    SmallNear(small, rng, pos, yaw, "Ossos", false);
                 }
 
                 var blocks = boss ? 4 : 2 + rng.Next(0, 3);
@@ -375,7 +374,7 @@ namespace Echoes.EditorTools
                 }
 
                 // Entulho: poucos montes de pedra e osso encostados na parede (nunca espalhados pelo meio do chao nem em grade).
-                var rubble = boss ? 2 : 2 + rng.Next(0, 2);
+                var rubble = 0; // sem entulho: pedras e ossos claros soltos quebravam a uniformidade do piso
                 for (var i = 0; i < rubble; i++)
                 {
                     if (!TryWallSpot(layout, room, rng, spots, 0.8f, 0.9f, out var rubblePos, out var rubbleYaw)) continue;

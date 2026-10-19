@@ -33,13 +33,13 @@ v = y - np.floor(y)
 # SDF de retangulo arredondado (0 no centro da juntas, cresce para dentro)
 d = np.minimum(np.minimum(u, 1 - u), np.minimum(v, 1 - v))
 grout = 0.03          # largura da junta (fracao da lajota)
-bevel = 0.12           # largura do chanfro pintado
+bevel = 0.08           # largura do chanfro pintado
 t = np.clip((d - grout) / bevel, 0, 1)
 t = t * t * (3 - 2 * t)
 
 # cor base por lajota: variacao discreta e suave
 slab_id = row * 8 + col
-tone = rng.uniform(-0.05, 0.05, 64)[slab_id]
+tone = rng.uniform(-0.02, 0.02, 64)[slab_id]
 hue = rng.uniform(-0.02, 0.02, 64)[slab_id]
 base = np.array([0.30, 0.265, 0.36])
 img = np.empty((N, N, 3))
@@ -47,14 +47,14 @@ for c in range(3):
     img[..., c] = base[c] * (1 + tone + hue * (c - 1))
 
 # mancha pintada de baixa frequencia dentro de cada lajota (pincelada, sem ruido fino)
-mott = pnoise(N, 14, 3) * 0.06 + pnoise(N, 40, 4) * 0.025 + pnoise(N, 160, 5) * 0.02
+mott = pnoise(N, 14, 3) * 0.025
 img *= (1 + mott)[..., None]
 
 # chanfro: luz de cima-esquerda (borda superior/esquerda clara, inferior/direita escura)
 edge_lit = ((u < np.minimum(1 - u, np.minimum(v, 1 - v))) | (v < np.minimum(1 - v, np.minimum(u, 1 - u)))).astype(float)
 edge_dark = 1.0 - edge_lit
 rim = (1 - t)
-shade = 1 + rim * (edge_lit * 0.20 - edge_dark * 0.16)
+shade = 1 + rim * (edge_lit * 0.12 - edge_dark * 0.10)
 img *= shade[..., None]
 
 # centro levemente abaulado (volume pintado)
