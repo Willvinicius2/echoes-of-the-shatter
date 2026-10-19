@@ -6,6 +6,7 @@ using Echoes.Core;
 using Echoes.Gameplay;
 using Echoes.Interop;
 using Echoes.Interop.Native;
+using Echoes.Presentation;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -124,6 +125,7 @@ namespace Echoes.UI
         void OnDestroy()
         {
             if (Current == this) Current = null;
+            TelegraphHints.Hidden = null;
             if (subscribed && root != null && root.Events != null)
             {
                 root.Events.Unsubscribe<ArenaStateEvent>(OnArena);
@@ -149,6 +151,7 @@ namespace Echoes.UI
                 subscribed = true;
             }
             SpawnEchoes(state);
+            TelegraphHints.Hidden = IsStrikeHintHidden;
             var verdict = state.VerdictOf(RegionId);
             if (verdict != null) ShowRegionState(verdict);
         }
@@ -179,11 +182,24 @@ namespace Echoes.UI
                     if (Save.StorySkillRevealed(db, RegionId, skill))
                     {
                         ScreenHost.Toast(Loc.Get("ui.story.echo_skill_revealed"), ToastKind.Banner);
+                        ScreenHost.Toast(Loc.Get(skill + ".hint"), ToastKind.Banner);
                         break;
                     }
                 }
             }
             return true;
+        }
+
+        /// <summary>Golpe do General com Eco em echoes.csv: o desenho no chão só aparece depois de revelado (A5).</summary>
+        bool IsStrikeHintHidden(string skillId)
+        {
+            if (db == null) return false;
+            var gated = false;
+            foreach (var row in echoRows)
+            {
+                if (row.RevealsSkills.Contains(skillId)) { gated = true; break; }
+            }
+            return gated && !Save.StorySkillRevealed(db, RegionId, skillId);
         }
 
         void OnArena(in ArenaStateEvent evt)
