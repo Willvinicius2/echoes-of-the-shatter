@@ -99,13 +99,15 @@ std::string AreaLootTable(const ContentDB& db, std::string_view mapId) {
     return m != nullptr ? m->areaLootTable : std::string();
 }
 
-bool RollEncounter(const ContentDB& db, std::string_view encounterId, std::uint64_t visitSeed, RolledEncounter& out) {
+bool RollEncounter(const ContentDB& db, std::string_view encounterId, std::uint64_t visitSeed, RolledEncounter& out,
+                   int eliteBonusPct) {
     const EncounterTemplate* enc = db.FindEncounter(encounterId);
     if (enc == nullptr) return false;
     out = RolledEncounter();
     out.encounterId = enc->id;
     out.isBoss = enc->isBoss;
     Pcg32 rng = Pcg32::ForStream(visitSeed, RngStream::Events, Fnv1a(0xCBF29CE484222325ull, encounterId));
+    const double bonus = static_cast<double>(std::clamp(eliteBonusPct, 0, 100)) / 100.0;
     for (const EncounterGroup& g : enc->groups) {
         RolledGroup rg;
         rg.enemyId = g.enemyId;
@@ -113,7 +115,7 @@ bool RollEncounter(const ContentDB& db, std::string_view encounterId, std::uint6
         const int count = rng.RangeInt(g.countMin, std::max(g.countMin, g.countMax));
         for (int i = 0; i < count; ++i) {
             RolledSlot slot;
-            const bool becameElite = rng.Chance(g.eliteChance);          // consome sempre 1 número
+            const bool becameElite = rng.Chance(std::min(1.0, g.eliteChance + bonus));          // consome sempre 1 número
             if (becameElite && enemy != nullptr && !enemy->isElite && !enemy->isBoss) {
                 slot.elite = true;
                 const EliteModifierData* mod = RollEliteModifier(db, rng);  // consome sempre 1 número

@@ -70,6 +70,9 @@ namespace Echoes.Gameplay
 
         public Combatant Self => self;
 
+        /// <summary>Trava de Fome das habilidades devoradas (null = sem custo de Fome).</summary>
+        public IHungerGate HungerGate { get; set; }
+
         /// <summary>Cinto de poções do herói (cargas e recarga do core): o Frasco de Recarga age nele.</summary>
         public IPotionBelt Belt => belt;
 
@@ -388,6 +391,12 @@ namespace Echoes.Gameplay
                 return;
             }
             var skill = slot.Skill;
+            if (HungerGate != null && !HungerGate.CanCast(skill.Id))
+            {
+                buffer.Consume();
+                Deny(combat, command, DenyReason.Hunger);
+                return;
+            }
             var cost = rules.GetEffectiveCost(self.Stats, skill);
             if (!combat.TrySpendResource(self, cost))
             {
@@ -397,6 +406,7 @@ namespace Echoes.Gameplay
             }
 
             buffer.Consume();
+            HungerGate?.Spent(skill.Id);
             if (cancelsRecovery) EndAction(combat);
             if (kit != null) CancelBasicForSkill(combat);
             BeginAction(combat, slot, 0.0, 1.0, BasicActionKind.None);

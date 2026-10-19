@@ -4058,16 +4058,17 @@ SHATTER_API shatter_status SHATTER_CALL shatter_map_info_json(const shatter_db* 
     return WriteJson(o, false, out, cap, needed);
 }
 
-SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json(const shatter_db* db, const char* encounter_id,
-                                                                  std::size_t encounter_id_len, std::uint64_t visit_seed,
-                                                                  std::uint8_t* out, std::size_t cap,
-                                                                  std::size_t* needed) SHATTER_NOEXCEPT {
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json_ex(const shatter_db* db, const char* encounter_id,
+                                                                     std::size_t encounter_id_len, std::uint64_t visit_seed,
+                                                                     std::int32_t elite_bonus_pct, std::uint8_t* out,
+                                                                     std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
     const ContentDB* d = UsableDb(db);
     std::string_view enc;
+    if (elite_bonus_pct < 0 || elite_bonus_pct > 100) return SHATTER_INVALID_ARGUMENT;
     if (needed == nullptr || encounter_id == nullptr || !Text(encounter_id, encounter_id_len, enc)) return SHATTER_INVALID_ARGUMENT;
     if (d == nullptr) return SHATTER_CONTENT_INVALID;
     RolledEncounter r;
-    if (!RollEncounter(*d, enc, visit_seed, r)) return SHATTER_NOT_FOUND;
+    if (!RollEncounter(*d, enc, visit_seed, r, elite_bonus_pct)) return SHATTER_NOT_FOUND;
     Value o = Value::MakeObject();
     o.Set("encounter_id", Value(r.encounterId));
     o.Set("is_boss", Value(r.isBoss));
@@ -4088,6 +4089,13 @@ SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json(const shatte
     }
     o.Set("groups", std::move(groups));
     return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json(const shatter_db* db, const char* encounter_id,
+                                                                  std::size_t encounter_id_len, std::uint64_t visit_seed,
+                                                                  std::uint8_t* out, std::size_t cap,
+                                                                  std::size_t* needed) SHATTER_NOEXCEPT {
+    return shatter_encounter_roll_json_ex(db, encounter_id, encounter_id_len, visit_seed, 0, out, cap, needed);
 }
 
 SHATTER_API shatter_status SHATTER_CALL shatter_chest_open(const shatter_db* db, shatter_save* save, const char* map_id,
@@ -4313,6 +4321,13 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_s
         if (bonus > 0) stainMaps.Set(reg.mapId, Value(static_cast<std::int64_t>(bonus)));
     }
     o.Set("stain_elite_bonus_by_map", std::move(stainMaps));
+    Value stainLoot = Value::MakeObject();  // mapId -> tabela de loot extra; só áreas com Mancha e com stain_loot_table
+    for (const StoryRegion& reg : story->db.Regions()) {
+        const std::string table = StainLootTableForMap(story->db, save->data, reg.mapId);
+        if (!table.empty()) stainLoot.Set(reg.mapId, Value(table));
+    }
+    o.Set("stain_loot_table_by_map", std::move(stainLoot));
+    o.Set("devoured_hunger_cost", Value(static_cast<std::int64_t>(story->db.DevouredHungerCost())));
     Value echoes = Value::MakeArray();
     for (const ContentId& id : st.echoes) echoes.Push(Value(id));
     o.Set("echoes", std::move(echoes));

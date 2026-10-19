@@ -76,15 +76,15 @@ namespace Echoes.Interop.Native
 
         /// <summary>
         /// Sorteia o encontro da visita: n entre min e max por grupo e a elite (chanceElite) por espaco, determinístico pela semente da visita.
-        /// Um grupo de n inimigos usa os n primeiros espacos do layout. Encontro desconhecido: null.
+        /// Um grupo de n inimigos usa os n primeiros espacos do layout. <paramref name="eliteBonusPct"/>: pontos de elite extras da Mancha (0..100). Encontro desconhecido: null.
         /// </summary>
-        public static RolledEncounterInfo RollEncounter(NativeRulesCore rules, string encounterId, ulong visitSeed)
+        public static RolledEncounterInfo RollEncounter(NativeRulesCore rules, string encounterId, ulong visitSeed, int eliteBonusPct = 0)
         {
             var enc = NativeBuffers.Utf8(encounterId);
             var db = rules.DbPointer;
             var status = NativeBuffers.ReadString((byte* o, nuint cap, nuint* needed) =>
             {
-                fixed (byte* e = enc) return ShatterNative.shatter_encounter_roll_json(db, e, (nuint)enc.Length, visitSeed, o, cap, needed);
+                fixed (byte* e = enc) return ShatterNative.shatter_encounter_roll_json_ex(db, e, (nuint)enc.Length, visitSeed, eliteBonusPct, o, cap, needed);
             }, out var json, 512);
             return status == 0 ? RolledEncounterInfo.FromJson(json) : null;
         }

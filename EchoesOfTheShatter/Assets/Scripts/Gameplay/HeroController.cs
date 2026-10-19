@@ -64,6 +64,11 @@ namespace Echoes.Gameplay
         /// <summary>Disparado quando o herói volta ao checkpoint (morte ou saída): inimigos mortos reaparecem, a luta do chefe reinicia.</summary>
         public event System.Action Respawned;
 
+        DevouredKit devoured;
+
+        /// <summary>Golpes devorados e Fome da corrida (null sem veredito Devorar).</summary>
+        public DevouredKit Devoured => devoured;
+
         public Transform Checkpoint => checkpoint;
 
         /// <summary>
@@ -208,7 +213,10 @@ namespace Echoes.Gameplay
             }
             var build = new HeroBuild(classInfo.Id, heroLevel, equipped, saveSource, 0);
             var combatant = attributes.CreateHero(rules, in build, classInfo, weapon, controller.radius);
+            // Veredito Devorar: o golpe-assinatura entra no espaço livre da barra e cada uso gasta Fome da corrida (docs/design/21).
+            devoured = saveSource != null ? DevouredKit.Load(FindAnyObjectByType<Echoes.Core.GameRoot>(), native, saveSource) : null;
             Logic = new HeroCombatLogic(combatant, rules, BuildLogicBar(), BasicKitSource.For(rules, classInfo.Id));
+            if (devoured != null) Logic.HungerGate = devoured;
             combat.Register(combatant, Logic, CombatOrderKey.Of(transform));
         }
 
@@ -220,6 +228,7 @@ namespace Echoes.Gameplay
             if (skillBar == null) return bar;
             if (skillBar.Length > 0) bar[0] = skillBar[0];
             for (var i = 1; i < skillBar.Length && i + 1 < bar.Length; i++) bar[i + 1] = skillBar[i];
+            if (devoured != null) devoured.FillBar(bar);
             return bar;
         }
 
@@ -365,6 +374,7 @@ namespace Echoes.Gameplay
             verticalSpeed = 0f;
             Logic.Self.Teleport(position.ToPlanar());
             combat.Revive(Logic.Self);
+            devoured?.ResetRun();
             Respawned?.Invoke();
         }
 

@@ -63,6 +63,9 @@ public:
     // chance extra de elite (em pontos percentuais) nas áreas com Mancha.
     int RelicPotionEffectPct() const { return relicPotionEffectPct_; }
     int StainEliteBonusPct() const { return stainEliteBonusPct_; }
+    // Fome que cada uso de habilidade devorada gasta na corrida (0 = não definida) e tabela de loot extra das áreas com Mancha ("" = nenhuma).
+    int DevouredHungerCost() const { return devouredHungerCost_; }
+    const std::string& StainLootTable() const { return stainLootTable_; }
     const StoryRegion* FindRegion(std::string_view id) const;
     const StoryEcho* FindEcho(std::string_view id) const;
     const StoryQuest* FindQuest(std::string_view id) const;
@@ -81,6 +84,8 @@ private:
     bool hasHungerMax_ = false;
     int relicPotionEffectPct_ = 0;
     int stainEliteBonusPct_ = 0;
+    int devouredHungerCost_ = 0;
+    std::string stainLootTable_;
     std::vector<ContentError> errors_;
 };
 
@@ -110,5 +115,7 @@ int TotalStatBonusPct(const StoryDB& story, const SaveData& s);
 int TotalPotionEffectPct(const StoryDB& story, const SaveData& s);
 // Mancha: se o mapa pertence a uma região cujo veredito tomado deixou regionState "stain", devolve stain_elite_bonus_pct; senão 0.
 int StainEliteBonusPctForMap(const StoryDB& story, const SaveData& s, std::string_view mapId);
+// Mancha: tabela de loot extra (stain_loot_table) das áreas com Mancha; "" se o mapa não tem Mancha ou a chave não existe.
+std::string StainLootTableForMap(const StoryDB& story, const SaveData& s, std::string_view mapId);
 
 }  // namespace shatter

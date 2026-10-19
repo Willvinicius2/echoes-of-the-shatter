@@ -2513,6 +2513,21 @@ TEST(c_api_17_world_state_visit_seed_map_info_and_encounter_roll) {
     EXPECT_TRUE(differs);
     std::size_t needed = 0;
     EXPECT_EQ(shatter_encounter_roll_json(db.db, "enc.none.x", 10, 1, nullptr, 0, &needed), SHATTER_NOT_FOUND);
+    // Mancha: _ex com 0 = a função antiga; com 100 todo espaço vira elite; fora de 0..100 é argumento inválido.
+    auto rollEx = [&](std::uint64_t seed, std::int32_t bonus) {
+        return TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_encounter_roll_json_ex(db.db, enc.data(), enc.size(), seed, bonus, o, c, n);
+        });
+    };
+    EXPECT_EQ(rollEx(s2, 0), roll(s2));
+    const json::Value stain = Parse(rollEx(s2, 100));
+    for (std::size_t g = 0; g < stain["groups"].Size(); ++g) {
+        const json::Value& sl = stain["groups"].At(g)["slots"];
+        for (std::size_t i = 0; i < sl.Size(); ++i)
+            if (stain["groups"].At(g)["enemy_id"].AsString() != "enemy.crypt_guardian") EXPECT_EQ(sl.At(i)["elite"].AsInt(), 1);
+    }
+    EXPECT_EQ(shatter_encounter_roll_json_ex(db.db, enc.data(), enc.size(), 1, 101, nullptr, 0, &needed), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_encounter_roll_json_ex(db.db, enc.data(), enc.size(), 1, -1, nullptr, 0, &needed), SHATTER_INVALID_ARGUMENT);
 }
 
 TEST(c_api_17_chest_opens_once_clear_loot_and_buffer_too_small_changes_nothing) {

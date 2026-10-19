@@ -392,3 +392,24 @@ TEST(weapon_time_ref_attack_time_column_is_validated) {
     EXPECT_NEAR(ClassRefAttackTime(tu::RichDb(), "class.warrior"), 0.0, 1e-12);
     EXPECT_NEAR(ClassRefAttackTime(*RealDb(), "class.nope"), 0.0, 1e-12);
 }
+
+TEST(world_encounter_elite_bonus_raises_chance_and_zero_keeps_the_old_roll) {
+    const ContentDB& db = tu::RichDb();
+    long long slots = 0, eliteBase = 0, eliteAll = 0;
+    for (std::uint64_t seed = 1; seed <= 2000; ++seed) {
+        RolledEncounter base, zero, all;
+        ASSERT_TRUE(RollEncounter(db, "enc.crypt.patrol_a", seed, base));
+        ASSERT_TRUE(RollEncounter(db, "enc.crypt.patrol_a", seed, zero, 0));
+        ASSERT_TRUE(RollEncounter(db, "enc.crypt.patrol_a", seed, all, 100));
+        ASSERT_EQ(base.groups[0].slots.size(), zero.groups[0].slots.size());
+        ASSERT_EQ(base.groups[0].slots.size(), all.groups[0].slots.size());   // a contagem usa o mesmo fluxo; a elite não muda o consumo
+        for (std::size_t i = 0; i < base.groups[0].slots.size(); ++i) {
+            EXPECT_EQ(base.groups[0].slots[i].elite, zero.groups[0].slots[i].elite);
+            ++slots;
+            eliteBase += base.groups[0].slots[i].elite ? 1 : 0;
+            eliteAll += all.groups[0].slots[i].elite ? 1 : 0;
+        }
+    }
+    EXPECT_EQ(eliteAll, slots);       // +100 pontos: todo espaço vira elite
+    EXPECT_TRUE(eliteBase < slots);
+}

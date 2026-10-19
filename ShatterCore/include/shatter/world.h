@@ -62,7 +62,10 @@ struct RolledEncounter {
 // Sorteia o encontro da visita: n entre countMin e countMax por grupo; por espaço, Chance(eliteChance) e, se virou elite, o
 // modificador (RollEliteModifier). Ordem de consumo do fluxo Events: grupos na ordem do CSV, espaços na ordem. Inimigo que já
 // é elite fixo (isElite) nunca vira "elite sorteado". false se o encontro não existe.
-bool RollEncounter(const ContentDB& db, std::string_view encounterId, std::uint64_t visitSeed, RolledEncounter& out);
+// `eliteBonusPct` (0..100, pontos percentuais): chance de elite extra da Mancha (veredito Devorar); soma-se a chanceElite do grupo,
+// limitada a 100%. Com 0 o resultado é idêntico ao de antes do parâmetro (o consumo de números aleatórios não muda).
+bool RollEncounter(const ContentDB& db, std::string_view encounterId, std::uint64_t visitSeed, RolledEncounter& out,
+                   int eliteBonusPct = 0);
 
 // ---------------------------------------------------------------------------
 // XP por morte e Fervor

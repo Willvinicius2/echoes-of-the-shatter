@@ -27,7 +27,7 @@ ENUMS = {
     ("verdicts.csv", "choice"): {"exorcise", "devour"},
     ("verdicts.csv", "regionState"): {"purified", "stain"},
 }
-RULES_KEYS = {"hunger_max"}
+RULES_KEYS = {"hunger_max", "relic_potion_effect_pct", "stain_elite_bonus_pct", "devoured_hunger_cost", "stain_loot_table"}
 
 
 def rows(path):
