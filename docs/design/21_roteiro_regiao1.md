@@ -79,3 +79,12 @@ Decisões sem o Will (ele dormia), números em `Story/story_rules.csv`, `loot_*.
 - **Loot exclusivo**: encontro limpo numa área com Mancha rola também `loot.crypt.stain` (25% de chance, só mágico e raro, conjunto do Guardião e escudo). Provisório: o exclusivo é a raridade e o escudo; um Único da Mancha fica para o design.
 
 Pendências abertas: aparência real do Refúgio por estado; ver a passagem de bastão `atoI-faltas-20261019.md` para o que falta no Ato I.
+
+### Falas da Região 1 ligadas ao cliente (19/10, C# não compilado)
+Decisões sem o Will (ele dormia), sem tocar core nem save:
+- **Quem fala o quê**: `UI/StoryLines.cs` escolhe as chaves de `dialogue.csv` pelo estado da história (Ecos e veredito) que o core já expõe. Ilsa: `intro_1..3` até o primeiro Eco, `general_lore` com Ecos, `after_exorcise|devour` + `years_pass` depois do veredito. Tico: `intro`, `echo_found`, `after_years`. Bram: `intro`, `echo_blade`, `after_devour`, `farewell`. Odete: `intro`, `echo_read`, `warning` (só antes do veredito), `farewell`. As falas aparecem no topo do cartão de conversa; a expedição de Ilsa e Tico segue embaixo.
+- **Sem marca de "já ouvi"**: não há campo no save para isso, então a introdução se repete a cada conversa até achar o primeiro Eco. Se incomodar, a marca vira campo do core numa etapa futura.
+- **Bram e Odete**: o `StoryDirector` cria duas cápsulas com rótulo no Refúgio (-8,0 e -12,0), sem mexer na cena montada; só falas, a forja e os Livros seguem sem função. Modelos exigem arte aprovada.
+- **Guardião**: `dlg.guardian.phase1` ao começar a luta e `phase2` quando ele invoca as Sentinelas (aviso em faixa); `kneel` e `last_words` já existiam no veredito.
+- **Salto de anos**: sem arte nem gatilho próprio; por ora `years_pass` e `after_years` são falas dos NPCs depois do veredito. Mesmas falas nos dois caminhos, trocando só `after_exorcise`/`after_devour`.
+- **Missões**: nenhum gatilho de missão usado (a thread de Missões roda em paralelo); quando existirem, ligar `dlg.ilsa.crypt_done` e afins.

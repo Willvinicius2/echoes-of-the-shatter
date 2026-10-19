@@ -10,6 +10,8 @@ namespace Echoes.UI
         public const string Vendor = "vendor";
         public const string Enchanter = "enchanter";
         public const string Stash = "stash";
+        public const string Bram = "bram";
+        public const string Odete = "odete";
 
         public string npcId = Ilsa;
         public float radius = 2.8f;
