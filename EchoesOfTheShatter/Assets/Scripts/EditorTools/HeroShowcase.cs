@@ -33,6 +33,15 @@ namespace Echoes.EditorTools
                 var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
                 var cam = follow.GetComponentInChildren<Camera>();
                 var hero = GameObject.Find("Hero");
+                var which = Environment.GetEnvironmentVariable("ECHOES_HERO");
+                if (!string.IsNullOrEmpty(which) && which != "Warrior")
+                {
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_Hero_" + which + ".prefab");
+                    var inst = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                    inst.name = "Hero_" + which;
+                    hero.SetActive(false);
+                    hero = inst;
+                }
                 var mc = hero.GetComponentInChildren<ModularCharacter>();
                 Debug.Log("[HeroShowcase] Hero=" + hero.name + " comps=" + string.Join(",", hero.GetComponents<Component>().Select(c => c.GetType().Name)) + " mc=" + (mc != null) + " catalog=" + (mc != null && mc.Catalog != null));
                 if (mc != null)
