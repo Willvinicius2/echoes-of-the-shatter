@@ -52,7 +52,7 @@ cat > "$work/lib/lib.csproj" <<XML
 </Project>
 XML
 echo "== 1/2 compilando Assets/Scripts =="
-(cd "$work/lib" && dotnet build -nologo -v q 2>&1 > "$work/lib_build.txt"; grep -E "error|warning MSB|Build succeeded" "$work/lib_build.txt" | grep -v "CS0246" | sed 's/ \[.*//' | sort -u | head -25; grep -c "CS0246" "$work/lib_build.txt" | sed 's/^/erros CS0246 (tipo nao encontrado): /') || true
+(cd "$work/lib" && dotnet build -nologo -v n 2>&1 > "$work/lib_build.txt"; grep -E "warning (MSB|NETSDK|NU)" "$work/lib_build.txt" | sed "s/ \[.*//" | sort -u | head -8; grep -E "error|warning MSB|Build succeeded" "$work/lib_build.txt" | grep -v "CS0246" | sed 's/ \[.*//' | sort -u | head -25; grep -c "CS0246" "$work/lib_build.txt" | sed 's/^/erros CS0246 (tipo nao encontrado): /') || true
 if ! (cd "$work/lib" && dotnet build -nologo -v q >/dev/null 2>&1); then echo "FALHOU: erros de compilacao acima"; exit 1; fi
 
 # testes EditMode puros: tira os que dependem do UnityEditor (AnimatorController, SceneManagement, EditorTools)
