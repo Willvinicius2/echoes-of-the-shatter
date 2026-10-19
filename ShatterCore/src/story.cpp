@@ -145,14 +145,14 @@ bool StoryDB::LoadDirectory(const std::string& path) {
     std::error_code ec;
     const fs::path dir = fs::u8path(path);
     if (!fs::is_directory(dir, ec)) {
-        errors_.push_back({"Story", 0, "story directory missing"});
+        errors_.push_back({"Story", 0, "E_IO story directory missing"});
         return false;
     }
     bool ok = true;
     for (const char* name : {"regions.csv", "echoes.csv", "quests.csv", "verdicts.csv", "story_rules.csv"}) {
         std::ifstream in(dir / name, std::ios::binary);
         if (!in) {
-            errors_.push_back({name, 0, "table file missing"});
+            errors_.push_back({name, 0, "E_IO table file missing"});
             ok = false;
             continue;
         }
@@ -265,7 +265,7 @@ VerdictResult ApplyVerdict(const StoryDB& story, SaveData& s, std::string_view v
         defeated = defeated || (b != nullptr && b->kills >= 1);
     }
     if (!defeated) return VerdictResult::GeneralNotDefeated;
-    if (s.story.verdicts.size() >= kMaxSavedVerdicts) return VerdictResult::UnknownVerdict;
+    if (s.story.verdicts.size() >= kMaxSavedVerdicts) return VerdictResult::SaveFull;
     s.story.verdicts.push_back({v->regionId, v->id});
     s.story.hunger = std::min(story.HungerMax(), s.story.hunger + v->hungerDelta);
     return VerdictResult::Ok;

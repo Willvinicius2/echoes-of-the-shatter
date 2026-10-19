@@ -80,6 +80,7 @@ typedef struct shatter_error {
  * ---------------------------------------------------------------------------------------------- */
 typedef struct shatter_db shatter_db;               /* ContentDB (imutável depois de finalizado) */
 typedef struct shatter_save shatter_save;           /* SaveData (mutável, main thread) */
+typedef struct shatter_story shatter_story;         /* StoryDB: regiões, Ecos, missões e vereditos (imutável depois de carregado) */
 typedef struct shatter_statblock shatter_statblock; /* StatBlock de uma entidade */
 typedef struct shatter_effects shatter_effects;     /* EffectContainer de uma entidade */
 
@@ -1332,6 +1333,44 @@ SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext8(const uint32_t
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_info_ext7(uint32_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext7(const uint32_t* values, size_t n,
                                                                   shatter_error* err) SHATTER_NOEXCEPT;
+
+/* --- História da campanha: Ecos da Queda, veredito Exorcizar/Devorar e Fome (story.h; docs/design/21 e 22) ---
+ * As tabelas ficam em Content/Data/Story/. O progresso vai no save (campo opcional `story`): vale para o save inteiro,
+ * não por herói. O veredito é irreversível; os números (Fome máxima, Fome ganha, bônus) vêm das tabelas. API aditiva: a
+ * versão da API C continua 1. Todas as funções são da main thread, como o resto da API. */
+enum { SHATTER_VERDICT_OK = 0, SHATTER_VERDICT_UNKNOWN = 1, SHATTER_VERDICT_GENERAL_NOT_DEFEATED = 2,
+       SHATTER_VERDICT_ALREADY_DECIDED = 3, SHATTER_VERDICT_SAVE_FULL = 4 };
+/* Carrega a pasta Story/ (obrigatória) e valida. `db` (pode ser NULL) confere mapas, inimigos e habilidades contra o
+ * conteúdo. Tabela inválida: SHATTER_CONTENT_INVALID com a 1ª mensagem em `err`; pasta ou arquivo faltando: SHATTER_IO_ERROR.
+ * *out fica NULL em erro. */
+SHATTER_API shatter_status SHATTER_CALL shatter_story_load_directory(const char* path, size_t path_len, const shatter_db* db,
+                                                                     shatter_story** out, shatter_error* err) SHATTER_NOEXCEPT;
+SHATTER_API void SHATTER_CALL shatter_story_destroy(shatter_story* story) SHATTER_NOEXCEPT;
+/* Registra um Eco achado. *is_new = 1 se for novo, 0 se já estava registrado. Eco desconhecido: SHATTER_NOT_FOUND; save já cheio de Ecos (1024): SHATTER_INVALID_ARGUMENT. */
+SHATTER_API shatter_status SHATTER_CALL shatter_story_record_echo(const shatter_story* story, shatter_save* save,
+                                                                  const char* echo_id, size_t echo_id_len,
+                                                                  uint8_t* is_new) SHATTER_NOEXCEPT;
+/* Aplica o veredito (id de verdicts.csv). *result = SHATTER_VERDICT_*; só OK muda o save (grava a escolha e soma a Fome,
+ * limitada a hunger_max). A tela de veredito mostra o aviso de escolha irreversível ANTES de chamar. */
+SHATTER_API shatter_status SHATTER_CALL shatter_story_apply_verdict(const shatter_story* story, shatter_save* save,
+                                                                    const char* verdict_id, size_t verdict_id_len,
+                                                                    int32_t* result) SHATTER_NOEXCEPT;
+/* {"hunger","hunger_max","stat_bonus_pct","echoes":[ids na ordem achada],"verdicts":[{"region_id","verdict_id","choice":
+ * "exorcise"|"devour","region_state":"purified"|"stain","hub_state","hunger_delta","stat_bonus_pct","grants_relic",
+ * "grants_signature","last_words_key"}]}. É o que a HUD da Fome, o Refúgio e o fim do jogo leem. */
+SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_story* story, const shatter_save* save,
+                                                                 uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Uma região: {"region_id","map_id","general_id","decided","verdict_id","echoes_found","echoes_total",
+ * "options":[{"verdict_id","choice","hunger_delta","stat_bonus_pct","grants_relic","grants_signature","region_state",
+ * "hub_state","last_words_key"}]} (as duas opções da tela de veredito, Exorcizar primeiro). Região desconhecida: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_story_region_json(const shatter_story* story, const shatter_save* save,
+                                                                  const char* region_id, size_t region_id_len, uint8_t* out,
+                                                                  size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Golpe do General revelado pelos Ecos da região? *revealed = 0|1. Região desconhecida: NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_story_skill_revealed(const shatter_story* story, const shatter_save* save,
+                                                                     const char* region_id, size_t region_id_len,
+                                                                     const char* skill_id, size_t skill_id_len,
+                                                                     uint8_t* revealed) SHATTER_NOEXCEPT;
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -441,3 +441,11 @@ C# em `Assets/Scripts/Interop`: `CryptTypes.cs`, `Native/ShatterNative.Crypt.cs`
 ### 14.5 Movimento do herói (rampa)
 
 Chaves `hero_move_accel_seconds` (0,10) e `hero_move_decel_seconds` (0,08) em `rules.csv` [HIPÓTESE], faixa 0 a 0,5 s, obrigatórias. API: `shatter_db_hero_move_rules` e `shatter_layout_check_ext8` (3 valores). C#: `CombatRules.HeroMoveAccelSeconds` e `HeroMoveDecelSeconds` (o C# aplica a rampa linear: velocidade += máxima x dt / tempo; 0 = instantâneo). Teste: `c_api_17_hero_move_rules_...`.
+
+## 15. API C: história da Região 1 (Backend, 19/10/2026, `claude/regiao1-capi`)
+Aditiva; `SHATTER_C_API_VERSION` continua 1. Regras em `ShatterCore/include/shatter/story.h`; tabelas em `Content/Data/Story/` (docs/design/21 e 22).
+- Handle novo `shatter_story` (imutável): `shatter_story_load_directory(path, db_ou_NULL, &story, err)` e `shatter_story_destroy`. Pasta faltando: `SHATTER_IO_ERROR`; tabela inválida: `SHATTER_CONTENT_INVALID`.
+- `shatter_story_record_echo` (`is_new`), `shatter_story_skill_revealed`, `shatter_story_apply_verdict` (`result` = `SHATTER_VERDICT_OK|UNKNOWN|GENERAL_NOT_DEFEATED|ALREADY_DECIDED`; só OK muda o save).
+- Leitura em JSON: `shatter_story_state_json` (Fome, bônus total, Ecos e vereditos tomados) e `shatter_story_region_json` (as duas opções da tela de veredito).
+- Save: campo opcional `story` no save v2 (só gravado se não vazio), sem migração. Vale para o save inteiro, não por herói.
+- Veredito irreversível; Fome limitada a `hunger_max` de `story_rules.csv`. Sem struct nova (só JSON), então sem `layout_info`.

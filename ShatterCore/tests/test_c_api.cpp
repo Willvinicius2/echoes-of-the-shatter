@@ -2686,3 +2686,71 @@ TEST(c_api_17_hero_move_rules_come_from_rules_csv_with_layout_and_range_validati
     EXPECT_NEAR(m.accel_seconds, 0.07, 1e-12);
     EXPECT_NEAR(m.decel_seconds, 0.05, 1e-12);
 }
+
+TEST(c_api_story_echoes_verdict_hunger_and_state_json) {
+    DbHandle db(tu::RichDir());
+    SaveHandle save = MakeSave(db.db);
+    const std::string dir = tu::DataDir() + "/../../../EchoesOfTheShatter/Content/Data/Story";
+    shatter_story* story = nullptr;
+    shatter_error err{};
+    ASSERT_EQ(shatter_story_load_directory(dir.data(), dir.size(), nullptr, &story, &err), SHATTER_OK);
+    ASSERT_TRUE(story != nullptr);
+    shatter_story* none = reinterpret_cast<shatter_story*>(&err);   // deve virar NULL em erro
+    EXPECT_EQ(shatter_story_load_directory("/nao/existe", 11, nullptr, &none, &err), SHATTER_IO_ERROR);
+    EXPECT_TRUE(none == nullptr);
+
+    const std::string region = "region.r1.crypt";
+    std::uint8_t isNew = 9;
+    ASSERT_EQ(shatter_story_record_echo(story, save.save, "echo.r1.broken_hammer", 21, &isNew), SHATTER_OK);
+    EXPECT_EQ(isNew, 1);
+    ASSERT_EQ(shatter_story_record_echo(story, save.save, "echo.r1.broken_hammer", 21, &isNew), SHATTER_OK);
+    EXPECT_EQ(isNew, 0);
+    EXPECT_EQ(shatter_story_record_echo(story, save.save, "echo.r1.nope", 12, &isNew), SHATTER_NOT_FOUND);
+    std::uint8_t revealed = 9;
+    const std::string hammer = "skill.enemy.guardian_hammer";
+    ASSERT_EQ(shatter_story_skill_revealed(story, save.save, region.data(), region.size(), hammer.data(), hammer.size(), &revealed), SHATTER_OK);
+    EXPECT_EQ(revealed, 1);
+
+    // Sem o General vencido o veredito não vale e o save não muda.
+    const std::string devour = "verdict.r1.devour";
+    std::int32_t result = -1;
+    ASSERT_EQ(shatter_story_apply_verdict(story, save.save, devour.data(), devour.size(), &result), SHATTER_OK);
+    EXPECT_EQ(result, SHATTER_VERDICT_GENERAL_NOT_DEFEATED);
+
+    // Vence o General (o contador de vitórias avança) e devora.
+    shatter_rng rng{};
+    ASSERT_EQ(shatter_rng_for_stream(31, SHATTER_RNG_LOOT, 0, &rng), SHATTER_OK);
+    const std::string boss = "enemy.crypt_guardian";
+    std::size_t needed = 0;
+    std::vector<std::uint8_t> buf(1 << 16);
+    ASSERT_EQ(shatter_save_roll_boss_loot(db.db, save.save, 0, boss.data(), boss.size(), 3, &rng, buf.data(), buf.size(), &needed, &err), SHATTER_OK);
+    ASSERT_EQ(shatter_story_apply_verdict(story, save.save, devour.data(), devour.size(), &result), SHATTER_OK);
+    EXPECT_EQ(result, SHATTER_VERDICT_OK);
+    const std::string exorcise = "verdict.r1.exorcise";
+    ASSERT_EQ(shatter_story_apply_verdict(story, save.save, exorcise.data(), exorcise.size(), &result), SHATTER_OK);
+    EXPECT_EQ(result, SHATTER_VERDICT_ALREADY_DECIDED);
+
+    const json::Value st = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_story_state_json(story, save.save, o, c, n);
+    }));
+    EXPECT_EQ(st["hunger"].AsInt(), static_cast<std::int64_t>(1));
+    EXPECT_EQ(st["hunger_max"].AsInt(), static_cast<std::int64_t>(4));
+    ASSERT_EQ(st["verdicts"].Size(), static_cast<std::size_t>(1));
+    EXPECT_EQ(st["verdicts"].At(0)["region_state"].AsString(), std::string("stain"));
+    const json::Value rj = Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+        return shatter_story_region_json(story, save.save, region.data(), region.size(), o, c, n);
+    }));
+    EXPECT_TRUE(rj["decided"].AsBool());
+    EXPECT_EQ(rj["options"].Size(), static_cast<std::size_t>(2));
+    EXPECT_EQ(rj["echoes_found"].AsInt(), static_cast<std::int64_t>(1));
+
+    // O progresso vai no arquivo e volta igual.
+    const std::string text = SaveBytes(save.save);
+    SaveHandle again;
+    std::int32_t load = -1;
+    ASSERT_EQ(shatter_save_from_json(text.data(), text.size(), &again.save, &load, &err), SHATTER_OK);
+    EXPECT_EQ(SaveBytes(again.save), text);
+    EXPECT_EQ(shatter_story_region_json(story, save.save, "region.none.x", 13, nullptr, 0, &needed), SHATTER_NOT_FOUND);
+    shatter_story_destroy(story);
+    shatter_story_destroy(nullptr);
+}

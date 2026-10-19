@@ -21,3 +21,4 @@
 #include "shatter/craft.h"
 #include "shatter/vendor.h"
 #include "shatter/world.h"
+#include "shatter/story.h"

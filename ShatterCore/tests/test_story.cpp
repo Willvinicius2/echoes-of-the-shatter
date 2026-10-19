@@ -163,3 +163,10 @@ TEST(story_save_rejects_bad_story_data) {
     h.story.hunger = 101;
     EXPECT_TRUE(ParseJson(SerializeJson(h, true), back) == LoadStatus::BadData);
 }
+
+TEST(story_directory_errors_are_marked_as_io) {
+    StoryDB db;
+    EXPECT_FALSE(db.LoadDirectory("/nao/existe/story"));
+    ASSERT_TRUE(!db.Errors().empty());
+    EXPECT_TRUE(db.Errors().front().message.rfind("E_IO", 0) == 0);
+}
