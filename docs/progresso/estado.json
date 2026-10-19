@@ -1,10 +1,10 @@
 {
   "meta": {
     "jogo": "Echoes of the Shatter",
-    "atualizado_em": "2026-10-18",
+    "atualizado_em": "2026-10-19",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
-    "marco_atual": "Etapa 3 integrada no master em 18/10 (economia, polimento, mapa e cenário); falta o build integrado, o vídeo de gameplay e a rodada completa de testes",
+    "marco_atual": "Região 1 (história, veredito, missões, falas) integrada no master em 19/10, ainda sem compilar nem jogar no editor da Unity; falta o teste no PC (compilar, regenerar cenas, playtest das duas saídas, build dev3) e o Ato I inteiro da Etapa 4. Roadmap: contexto-do-jogo/08_trabalho-em-andamento/roadmap-atoI.md",
     "legenda_estados": {
       "concluido": "Concluído",
       "nuvem": "Na nuvem",
@@ -885,7 +885,19 @@
       "feito": true
     },
     {
+      "titulo": "História da Região 1 no master (core, cliente, falas, missões, efeitos do veredito)",
+      "feito": true
+    },
+    {
+      "titulo": "Checagem do cliente C# sem Unity no CI (PR #22)",
+      "feito": true
+    },
+    {
       "titulo": "Build integrado e vídeo de gameplay da Cripta",
+      "feito": false
+    },
+    {
+      "titulo": "Região 1 jogável de ponta a ponta (compilar, playtest, build dev3)",
       "feito": false
     }
   ],
@@ -1299,7 +1311,7 @@
       "n": 4,
       "titulo": "Elenco e Ato I",
       "estado": "pendente",
-      "prova": "Três classes, 8 áreas e 4 chefes jogáveis"
+      "prova": "Três classes, 8 áreas e 4 chefes jogáveis. Roteiro de pacotes em roadmap-atoI.md (Fase A: Região 1; Fase B: resto do Ato I)"
     },
     {
       "n": 5,
