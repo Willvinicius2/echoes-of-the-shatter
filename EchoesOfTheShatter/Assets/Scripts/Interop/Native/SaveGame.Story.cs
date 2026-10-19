@@ -27,12 +27,16 @@ namespace Echoes.Interop.Native
         /// <summary>Pontos de elite por mapa com Mancha, congelados no inicio da expedicao idle.</summary>
         public Dictionary<string, double> StoryStainEliteByMap { get; set; } = new Dictionary<string, double>();
 
+        /// <summary>Tabela de loot extra por mapa com Mancha (mapId -> tabela).</summary>
+        public Dictionary<string, string> StoryStainLootByMap { get; set; } = new Dictionary<string, string>();
+
         /// <summary>Copia os efeitos do estado da historia (veredito, relíquia, Mancha) para os campos que o cliente aplica.</summary>
         public void ApplyStoryState(StoryState state)
         {
             StoryStatBonusPct = state.StatBonusPct;
             StoryPotionEffectPct = state.PotionEffectPct;
             StoryStainEliteByMap = new Dictionary<string, double>(state.StainEliteBonusByMap);
+            StoryStainLootByMap = new Dictionary<string, string>(state.StainLootTableByMap);
         }
 
         /// <summary>Registra um Eco achado. <paramref name="isNew"/> = false se ja estava registrado. Eco desconhecido ou save cheio de Ecos: false.</summary>

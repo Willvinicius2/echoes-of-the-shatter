@@ -449,3 +449,12 @@ Aditiva; `SHATTER_C_API_VERSION` continua 1. Regras em `ShatterCore/include/shat
 - Leitura em JSON: `shatter_story_state_json` (Fome, bônus total, Ecos e vereditos tomados) e `shatter_story_region_json` (as duas opções da tela de veredito).
 - Save: campo opcional `story` no save v2 (só gravado se não vazio), sem migração. Vale para o save inteiro, não por herói.
 - Veredito irreversível; Fome limitada a `hunger_max` de `story_rules.csv`. Sem struct nova (só JSON), então sem `layout_info`.
+
+### 15.1 Mancha no combate manual e custo em Fome (19/10/2026, `claude/golpe-devorado-mancha`)
+Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus do contrato pendente antes do merge (ver PR).
+- **Função nova** `shatter_encounter_roll_json_ex(db, id, len, visit_seed, elite_bonus_pct, out, cap, needed)`. `elite_bonus_pct` em 0..100 (fora disso `SHATTER_INVALID_ARGUMENT`) soma pontos à `chanceElite` de cada grupo, com teto de 100%. `shatter_encounter_roll_json` ficou como está e chama a nova com 0; com 0 o sorteio é idêntico (cada espaço continua consumindo 1 número do fluxo Events).
+- Core: `RollEncounter(..., int eliteBonusPct = 0)` em `world.h`.
+- `shatter_story_state_json` ganhou só chaves: `stain_loot_table_by_map` ({mapId: tabela}) e `devoured_hunger_cost`.
+- `story_rules.csv`: `devoured_hunger_cost` (0..`hunger_max`; cada uso de habilidade devorada gasta isso de Fome na corrida) e `stain_loot_table` (tabela de `loot_tables.csv` extra das áreas com Mancha, conferida contra o conteúdo). Novos em `story.h`: `DevouredHungerCost()`, `StainLootTable()`, `StainLootTableForMap`.
+- Dados: `loot.crypt.stain` (rolls 1, dropChance 0,25, só mágico e raro; Lascas, Ouro e o conjunto do Guardião e o escudo `item_base.guard_shield`).
+- Sem struct nova, então sem `layout_info`. Testes: `world_encounter_elite_bonus_*`, `story_devoured_cost_and_stain_loot_table`, trecho novo em `c_api_16`.

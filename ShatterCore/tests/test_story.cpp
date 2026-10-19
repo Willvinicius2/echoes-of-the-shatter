@@ -203,3 +203,23 @@ TEST(story_relic_potion_effect_and_stain_elite_bonus) {
     EXPECT_EQ(StainEliteBonusPctForMap(db, stained, "map.act1.crypt"), 15);
     EXPECT_EQ(StainEliteBonusPctForMap(db, stained, "map.other"), 0);
 }
+
+TEST(story_devoured_cost_and_stain_loot_table) {
+    bool ok = false;
+    const StoryDB db = Make(kVerdicts, "key,value\nhunger_max,4\ndevoured_hunger_cost,1\nstain_loot_table,loot.x.stain\n", &ok);
+    EXPECT_TRUE(ok);
+    EXPECT_EQ(db.DevouredHungerCost(), 1);
+    EXPECT_EQ(db.StainLootTable(), std::string("loot.x.stain"));
+    SaveData none = SaveWithKill(true);
+    EXPECT_EQ(StainLootTableForMap(db, none, "map.act1.crypt"), std::string());
+    SaveData purified = SaveWithKill(true);
+    ASSERT_TRUE(ApplyVerdict(db, purified, "verdict.r1.exorcise") == VerdictResult::Ok);
+    EXPECT_EQ(StainLootTableForMap(db, purified, "map.act1.crypt"), std::string());
+    SaveData stained = SaveWithKill(true);
+    ASSERT_TRUE(ApplyVerdict(db, stained, "verdict.r1.devour") == VerdictResult::Ok);
+    EXPECT_EQ(StainLootTableForMap(db, stained, "map.act1.crypt"), std::string("loot.x.stain"));
+    EXPECT_EQ(StainLootTableForMap(db, stained, "map.other"), std::string());
+    bool bad = true;
+    Make(kVerdicts, "key,value\nhunger_max,2\ndevoured_hunger_cost,3\n", &bad);   // custo acima da Fome máxima
+    EXPECT_FALSE(bad);
+}

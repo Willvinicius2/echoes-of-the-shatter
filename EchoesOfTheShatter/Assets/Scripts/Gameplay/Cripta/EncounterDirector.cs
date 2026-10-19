@@ -54,11 +54,15 @@ namespace Echoes.Gameplay
             var root = FindAnyObjectByType<GameRoot>();
             var rules = GameSession.NativeRules(root);
             if (rules == null || GameSession.Save == null || !GameSession.Save.HasSave || slots == null || slots.Length == 0) return;
-            ApplyRolls(rules, GameSession.Save.Current);
+            ApplyRolls(rules, GameSession.Save.Current, root);
         }
 
-        void ApplyRolls(NativeRulesCore rules, SaveGame save)
+        void ApplyRolls(NativeRulesCore rules, SaveGame save, GameRoot root)
         {
+            // Mancha (veredito Devorar): pontos de elite extras do mapa, vindos do core (docs/design/21).
+            var eliteBonus = 0;
+            var story = DevouredKit.ReadState(root, rules, save);
+            if (story != null && story.StainEliteBonusByMap.TryGetValue(ExpeditionConfig.CryptMap, out var stain)) eliteBonus = (int)stain;
             if (!save.BeginAreaVisit(rules, ExpeditionConfig.CryptMap, out var seed))
             {
                 Debug.LogWarning("[Encounters] O core nao comecou a visita; fica o maximo do layout.");
@@ -70,7 +74,7 @@ namespace Echoes.Gameplay
                 if (entry.enemy == null) continue;
                 if (!rolled.TryGetValue(entry.encounterId, out var info))
                 {
-                    info = SaveGame.RollEncounter(rules, entry.encounterId, seed);
+                    info = SaveGame.RollEncounter(rules, entry.encounterId, seed, eliteBonus);
                     rolled[entry.encounterId] = info;
                 }
                 if (info.IsBoss) continue;

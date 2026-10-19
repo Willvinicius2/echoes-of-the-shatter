@@ -135,6 +135,11 @@ bool StoryDB::LoadTableCsv(std::string_view table, std::string_view text) {
                 if (!Int(r.cells[1], 0, 100, relicPotionEffectPct_)) bad(r, "relic_potion_effect_pct out of range");
             } else if (r.cells[0] == "stain_elite_bonus_pct") {
                 if (!Int(r.cells[1], 0, 100, stainEliteBonusPct_)) bad(r, "stain_elite_bonus_pct out of range");
+            } else if (r.cells[0] == "devoured_hunger_cost") {
+                if (!Int(r.cells[1], 0, kMaxSavedHunger, devouredHungerCost_)) bad(r, "devoured_hunger_cost out of range");
+            } else if (r.cells[0] == "stain_loot_table") {
+                stainLootTable_ = r.cells[1];
+                if (!stainLootTable_.empty() && !IsValidContentId(stainLootTable_)) bad(r, "stain_loot_table is not a valid id");
             } else {
                 bad(r, "unknown key");
             }
@@ -170,6 +175,9 @@ bool StoryDB::Finalize(const ContentDB* content) {
     const std::size_t before = errors_.size();
     auto E = [&](const char* table, const std::string& msg) { errors_.push_back({table, 0, msg}); };
     if (!hasHungerMax_) E("story_rules.csv", "hunger_max missing");
+    if (hasHungerMax_ && devouredHungerCost_ > hungerMax_) E("story_rules.csv", "devoured_hunger_cost above hunger_max");
+    if (content != nullptr && !stainLootTable_.empty() && content->FindLootTable(stainLootTable_) == nullptr)
+        E("story_rules.csv", "stain_loot_table not found: '" + stainLootTable_ + "'");
     auto uniqueIds = [&](const char* table, const auto& list, const char* prefix) {
         for (std::size_t i = 0; i < list.size(); ++i) {
             const std::string& id = list[i].id;
@@ -298,13 +306,23 @@ int TotalPotionEffectPct(const StoryDB& story, const SaveData& s) {
     return total;
 }
 
-int StainEliteBonusPctForMap(const StoryDB& story, const SaveData& s, std::string_view mapId) {
+namespace {
+bool MapHasStain(const StoryDB& story, const SaveData& s, std::string_view mapId) {
     for (const StoryRegion& region : story.Regions()) {
         if (region.mapId != mapId) continue;
         const StoryVerdict* v = DecidedVerdict(story, s, region.id);
-        if (v != nullptr && v->regionState == "stain") return story.StainEliteBonusPct();
+        if (v != nullptr && v->regionState == "stain") return true;
     }
-    return 0;
+    return false;
+}
+}  // namespace
+
+int StainEliteBonusPctForMap(const StoryDB& story, const SaveData& s, std::string_view mapId) {
+    return MapHasStain(story, s, mapId) ? story.StainEliteBonusPct() : 0;
+}
+
+std::string StainLootTableForMap(const StoryDB& story, const SaveData& s, std::string_view mapId) {
+    return MapHasStain(story, s, mapId) ? story.StainLootTable() : std::string();
 }
 
 }  // namespace shatter

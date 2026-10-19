@@ -9,5 +9,6 @@ namespace Echoes.Gameplay
         PotionEmpty = 3,
         Locked = 4,
         EmptySlot = 5,
+        Hunger = 6,
     }
 }

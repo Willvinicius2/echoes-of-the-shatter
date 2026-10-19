@@ -40,6 +40,7 @@ namespace Echoes.UI
             "ui.hud.potion_empty",      // DenyReason.PotionEmpty
             "ui.hud.locked",            // DenyReason.Locked (idem)
             "",                         // DenyReason.EmptySlot: sem aviso
+            "ui.hud.no_hunger",         // DenyReason.Hunger: golpe devorado sem Fome sobrando
         };
 
         [SerializeField] GameRoot root;

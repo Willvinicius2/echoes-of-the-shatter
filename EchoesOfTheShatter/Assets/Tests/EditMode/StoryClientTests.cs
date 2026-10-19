@@ -76,6 +76,38 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void StateJson_ReadsDevouredCostAndStainLoot()
+        {
+            var json = "{\"hunger\":1,\"hunger_max\":4,\"devoured_hunger_cost\":1,\"stain_loot_table_by_map\":{\"map.act1.crypt\":\"loot.crypt.stain\"},\"echoes\":[],\"verdicts\":[]}";
+            var state = StoryState.FromJson(json);
+            Assert.AreEqual(1, state.DevouredHungerCost);
+            Assert.AreEqual("loot.crypt.stain", state.StainLootTableByMap["map.act1.crypt"]);
+        }
+
+        [Test]
+        public void DevouredKit_GatesTheSlamByHungerAndFillsTheLastFreeSlot()
+        {
+            var kit = new Echoes.Gameplay.DevouredKit(StoryState.FromJson(
+                "{\"hunger\":2,\"hunger_max\":4,\"devoured_hunger_cost\":1,\"echoes\":[],\"verdicts\":[{\"region_id\":\"region.r1.crypt\",\"verdict_id\":\"verdict.r1.devour\",\"grants_signature\":\"skill.devoured.guardian_slam\"}]}"));
+            const string slam = "skill.devoured.guardian_slam";
+            Assert.IsTrue(kit.CanCast("skill.warrior.iron_cut"));
+            Assert.IsTrue(kit.CanCast(slam));
+            kit.Spent(slam);
+            Assert.IsTrue(kit.CanCast(slam));   // Fome 3 de 4
+            kit.Spent(slam);
+            Assert.AreEqual(4, kit.Hunger);
+            Assert.IsFalse(kit.CanCast(slam));  // Fome cheia: negado
+            Assert.IsTrue(kit.CanCast("skill.warrior.iron_cut"));
+            kit.ResetRun();
+            Assert.IsTrue(kit.CanCast(slam));
+
+            var bar = new[] { "skill.warrior.iron_cut", string.Empty, "skill.warrior.charge", "skill.warrior.stone_rift", "skill.warrior.shield_bash", string.Empty };
+            kit.FillBar(bar);
+            Assert.AreEqual(slam, bar[5]);
+            Assert.AreEqual(string.Empty, bar[1]);   // o espaco 1 e a defesa
+        }
+
+        [Test]
         public void BrokenJson_GivesEmptyState()
         {
             Assert.AreEqual(0, StoryState.FromJson("{nao e json").HungerMax);

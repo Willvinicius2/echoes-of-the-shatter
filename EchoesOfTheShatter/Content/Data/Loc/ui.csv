@@ -286,3 +286,4 @@ ui.enchant.lock_hint,Clique num afixo para travá-lo (no máximo 1).,Click an af
 ui.enchant.choose_one,Escolha um afixo,Choose an affix,,motivo; max=24,
 ui.enchant.polish_pick,Clique no afixo que será lapidado.,Click the affix to polish.,,rótulo; max=48,
 ui.enchant.dismantle_gain,A peça some e devolve {n} Lascas.,The item is destroyed and returns {n} Shards.,,rótulo; max=60,
+ui.hud.no_hunger,Fome no limite,Hunger at limit,,HUD aviso; max=24,

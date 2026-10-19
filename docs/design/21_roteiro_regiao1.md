@@ -67,8 +67,15 @@ Decisões tomadas sem o Will (ele dormia): bônus em Vida, Dano e Armadura; Fome
 ### Efeitos do veredito no jogo (19/10, core)
 Decisões sem o Will (ele dormia), todas com número em `Story/story_rules.csv` e `skills.csv`:
 - **Relíquia do Descanso**: cura de poção +25% (`relic_potion_effect_pct`), modificador "aumentado" em `PotionEffect`. A resistência à Cinza do pitch fica para quando a Cinza tiver mecânica.
-- **Golpe devorado**: `skill.devoured.guardian_slam` em `skills.csv` (cone físico de área, coeficientes provisórios 1,6/1,8/2,0, recarga 8 s, sem classe). IDs sem classe agora também aceitam `skill.devoured.*` no validador e no core. Ainda falta ligar o golpe à barra de habilidades do herói e o custo em Fome.
-- **Mancha**: nas áreas de uma região com veredito Devorar, a chance de elite de cada grupo sobe 15 pontos (`stain_elite_bonus_pct`) na expedição idle. Loot exclusivo e elites no combate manual ficam pendentes (o sorteio manual está em `world.cpp`; mudar a API exige revisão de contrato).
+- **Golpe devorado**: `skill.devoured.guardian_slam` em `skills.csv` (cone físico de área, coeficientes provisórios 1,6/1,8/2,0, recarga 8 s, sem classe). IDs sem classe agora também aceitam `skill.devoured.*` no validador e no core. Ligado à barra do herói (19/10, ver "Golpe devorado na barra" abaixo).
+- **Mancha**: nas áreas de uma região com veredito Devorar, a chance de elite de cada grupo sobe 15 pontos (`stain_elite_bonus_pct`) na expedição idle. No combate manual a Mancha também entra (ver abaixo).
 - **Idle**: `ExpeditionRequest` ganhou `storyStatBonusPct`, `storyPotionEffectPct` e `storyEliteBonusPct` (JSON `story_*`, 0..100, só gravados se > 0; saves antigos mantêm os mesmos bytes). O cliente calcula os valores a partir de `shatter_story_state_json` (`potion_effect_pct`, `stain_elite_bonus_by_map`) e os envia nos parâmetros de início. C# não compilado nesta sessão.
 
-Pendências abertas: golpe devorado na barra de habilidades e custo em Fome; Mancha no combate manual e loot exclusivo; aparência real do Refúgio por estado.
+### Golpe devorado na barra, Fome e Mancha no combate manual (19/10, core + C# não compilado)
+Decisões sem o Will (ele dormia), números em `Story/story_rules.csv`, `loot_*.csv`:
+- **Golpe na barra**: com o veredito Devorar, `skill.devoured.guardian_slam` entra no último espaço livre da barra do herói (F; `DevouredKit.FillBar`). Vale para qualquer classe.
+- **Custo em Fome**: cada uso gasta `devoured_hunger_cost` (1) de Fome *da corrida*, ou seja, a Fome do save (que só sobe pelo veredito) mais os usos desde que o herói entrou ou renasceu. Passou de `hunger_max` (4), o golpe é negado com o aviso "Fome no limite" (`DenyReason.Hunger`). A Fome do save não muda com o uso, para não punir para sempre. "Perder o controle" com a Fome cheia do pitch fica para depois.
+- **Mancha no manual**: `shatter_encounter_roll_json_ex` soma `stain_elite_bonus_pct` (15) à chance de elite de cada grupo da Cripta quando a região foi Devorada. O `EncounterDirector` lê o valor direto do core no `Awake`.
+- **Loot exclusivo**: encontro limpo numa área com Mancha rola também `loot.crypt.stain` (25% de chance, só mágico e raro, conjunto do Guardião e escudo). Provisório: o exclusivo é a raridade e o escudo; um Único da Mancha fica para o design.
+
+Pendências abertas: aparência real do Refúgio por estado; ver a passagem de bastão `atoI-faltas-20261019.md` para o que falta no Ato I.

@@ -58,6 +58,11 @@ namespace Echoes.Interop.Native
         [DllImport(CryptLib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_encounter_roll_json(IntPtr db, byte* encounterId, nuint encounterIdLen, ulong visitSeed, byte* output, nuint cap, nuint* needed);
 
+        /// <summary>Igual a <see cref="shatter_encounter_roll_json"/> com pontos de elite extras (0..100) da Mancha.</summary>
+        [DllImport(CryptLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_encounter_roll_json_ex(IntPtr db, byte* encounterId, nuint encounterIdLen, ulong visitSeed, int eliteBonusPct,
+                                                                byte* output, nuint cap, nuint* needed);
+
         [DllImport(CryptLib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_chest_open(IntPtr db, IntPtr save, byte* mapId, nuint mapIdLen, byte* chestId, nuint chestIdLen,
                                                     ShatterLootContext* ctx, ShatterRng* rng, byte* output, nuint cap, nuint* needed, int* result, ShatterError* err);

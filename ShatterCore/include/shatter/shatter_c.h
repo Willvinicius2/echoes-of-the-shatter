@@ -1288,6 +1288,13 @@ SHATTER_API shatter_status SHATTER_CALL shatter_map_info_json(const shatter_db* 
 SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json(const shatter_db* db, const char* encounter_id,
                                                                     size_t encounter_id_len, uint64_t visit_seed,
                                                                     uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Igual a shatter_encounter_roll_json, com `elite_bonus_pct` (0..100, fora disso SHATTER_INVALID_ARGUMENT): pontos percentuais somados
+ * à chanceElite de cada grupo (Mancha do veredito Devorar; `stain_elite_bonus_by_map` de shatter_story_state_json), limitada a 100%.
+ * Com 0 é idêntico a shatter_encounter_roll_json. */
+SHATTER_API shatter_status SHATTER_CALL shatter_encounter_roll_json_ex(const shatter_db* db, const char* encounter_id,
+                                                                     size_t encounter_id_len, uint64_t visit_seed,
+                                                                     int32_t elite_bonus_pct, uint8_t* out, size_t cap,
+                                                                     size_t* needed) SHATTER_NOEXCEPT;
 /* Abre o baú: tabela de chests.csv (se faltar, a areaLootTable do mapa), rola como shatter_save_drop_loot (itens NO CHÃO,
  * Ouro e Lascas direto no save, mesmo JSON de saída) e marca o baú aberto no estado do mundo. *result =
  * SHATTER_CHEST_*; já aberto: nada é rolado (saída vazia "" e needed 0). Buffer pequeno: nada muda (nem o estado, nem o rng). */
@@ -1357,7 +1364,9 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_apply_verdict(const shatte
                                                                     int32_t* result) SHATTER_NOEXCEPT;
 /* {"hunger","hunger_max","stat_bonus_pct","echoes":[ids na ordem achada],"verdicts":[{"region_id","verdict_id","choice":
  * "exorcise"|"devour","region_state":"purified"|"stain","hub_state","hunger_delta","stat_bonus_pct","grants_relic",
- * "grants_signature","last_words_key"}]}. É o que a HUD da Fome, o Refúgio e o fim do jogo leem. */
+ * "grants_signature","last_words_key"}]}. É o que a HUD da Fome, o Refúgio e o fim do jogo leem. Chaves extras (só chaves, sem
+ * assinatura nova): "potion_effect_pct", "stain_elite_bonus_by_map" {mapId: pontos}, "stain_loot_table_by_map" {mapId: tabela de loot
+ * extra das áreas com Mancha} e "devoured_hunger_cost" (Fome que cada uso de habilidade devorada gasta na corrida). */
 SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_story* story, const shatter_save* save,
                                                                  uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 /* Uma região: {"region_id","map_id","general_id","decided","verdict_id","echoes_found","echoes_total",
