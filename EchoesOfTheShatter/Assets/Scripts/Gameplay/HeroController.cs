@@ -99,7 +99,7 @@ namespace Echoes.Gameplay
         }
 
         // Veredito Devorar com o herói já em cena: o golpe-assinatura entra na barra e na trava de Fome na hora, sem precisar recarregar a cena.
-        void RefreshDevoured(Echoes.Interop.Native.NativeRulesCore native, SaveGame save)
+        void RefreshDevoured(Echoes.Interop.Native.NativeRulesCore native, Echoes.Interop.Native.SaveGame save)
         {
             var kit = DevouredKit.Load(FindAnyObjectByType<Echoes.Core.GameRoot>(), native, save);
             if (kit == null) return;
