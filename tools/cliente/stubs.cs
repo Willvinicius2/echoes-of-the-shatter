@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 namespace UnityEngine.InputSystem {
-  public enum Key { None, I, Escape, F, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11 }
+  public enum Key { None, I, J, Escape, F, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11 }
   public class ButtonControl { public bool wasPressedThisFrame; public bool isPressed; public bool wasReleasedThisFrame; }
   public class Keyboard { public static Keyboard current; public ButtonControl this[Key k] => new ButtonControl();
     public ButtonControl f1Key,f2Key,f3Key,f4Key,f5Key,f6Key,f7Key,f8Key,f9Key,f10Key,pageUpKey,pageDownKey; }
