@@ -20,27 +20,27 @@ def pnoise(res, cells, seed):
     n = np.real(np.fft.ifft2(f))
     return n / np.abs(n).max()
 
-y, x = np.mgrid[0:N, 0:N].astype(np.float64) / N * 4.0   # unidades de lajota (2 m)
+y, x = np.mgrid[0:N, 0:N].astype(np.float64) / N * 8.0   # unidades de lajota (2 m)
 warp = 0.012
 x = x + pnoise(N, 6, 1) * warp
 y = y + pnoise(N, 6, 2) * warp
-row = np.floor(y).astype(int) % 4
+row = np.floor(y).astype(int) % 8
 xs = x + (row % 2) * 0.5
-col = np.floor(xs).astype(int) % 4
+col = np.floor(xs).astype(int) % 8
 u = xs - np.floor(xs)
 v = y - np.floor(y)
 
 # SDF de retangulo arredondado (0 no centro da juntas, cresce para dentro)
 d = np.minimum(np.minimum(u, 1 - u), np.minimum(v, 1 - v))
-grout = 0.022          # largura da junta (fracao da lajota)
-bevel = 0.09           # largura do chanfro pintado
+grout = 0.03          # largura da junta (fracao da lajota)
+bevel = 0.12           # largura do chanfro pintado
 t = np.clip((d - grout) / bevel, 0, 1)
 t = t * t * (3 - 2 * t)
 
 # cor base por lajota: variacao discreta e suave
-slab_id = row * 4 + col
-tone = rng.uniform(-0.07, 0.07, 16)[slab_id]
-hue = rng.uniform(-0.02, 0.02, 16)[slab_id]
+slab_id = row * 8 + col
+tone = rng.uniform(-0.05, 0.05, 64)[slab_id]
+hue = rng.uniform(-0.02, 0.02, 64)[slab_id]
 base = np.array([0.30, 0.265, 0.36])
 img = np.empty((N, N, 3))
 for c in range(3):

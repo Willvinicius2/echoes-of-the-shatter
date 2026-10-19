@@ -101,16 +101,8 @@ namespace Echoes.EditorTools
             var d = new MeshData();
             var hl = length * 0.5f;
             d.Box(new Vector3(-hl, 0f, -thickness), new Vector3(hl, height, 0f));
-            d.Box(new Vector3(-hl, 0f, -thickness - 0.08f), new Vector3(hl, Plinth, 0.10f));                          // rodape
-            d.Box(new Vector3(-hl, height - Cornice, -thickness - 0.10f), new Vector3(hl, height, 0.14f));            // cornija
-            var count = Mathf.FloorToInt(length / PilasterEvery);
-            for (var i = 0; i < count; i++)
-            {
-                var cx = -hl + (i + 0.5f) * length / count;
-                if (cx - PilasterWidth * 0.5f < -hl + 0.5f || cx + PilasterWidth * 0.5f > hl - 0.5f) continue;
-                d.Box(new Vector3(cx - PilasterWidth * 0.5f, Plinth, 0f), new Vector3(cx + PilasterWidth * 0.5f, height - Cornice, PilasterDepth));
-                d.Box(new Vector3(cx - PilasterWidth * 0.5f - 0.06f, Plinth, 0f), new Vector3(cx + PilasterWidth * 0.5f + 0.06f, Plinth + 0.18f, PilasterDepth + 0.06f)); // pe
-            }
+            d.Box(new Vector3(-hl, 0f, -thickness), new Vector3(hl, Plinth, 0.06f));                          // rodape
+            d.Box(new Vector3(-hl, height - Cornice, -thickness), new Vector3(hl, height, 0.08f));            // cornija
             var go = Make(run, "Visual", d.ToMesh("Wall_" + key), "Wall_" + key);
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
@@ -131,12 +123,10 @@ namespace Echoes.EditorTools
         public static GameObject Pillar(Transform parent, string id, Vector3 position, float radius, float height)
         {
             var d = new MeshData();
-            var b = radius * 1.45f;
-            d.Box(new Vector3(-b, 0f, -b), new Vector3(b, 0.45f, b));                                  // base
-            d.Box(new Vector3(-b * 0.88f, 0.45f, -b * 0.88f), new Vector3(b * 0.88f, 0.7f, b * 0.88f)); // degrau
-            d.Prism(Vector3.zero, radius * 1.02f, 0.7f, height - 0.75f, 8, Mathf.PI / 8f);              // fuste
-            d.Box(new Vector3(-b * 0.88f, height - 0.75f, -b * 0.88f), new Vector3(b * 0.88f, height - 0.5f, b * 0.88f)); // colarinho
-            d.Box(new Vector3(-b, height - 0.5f, -b), new Vector3(b, height, b));                       // capitel
+            var b = radius * 1.3f;
+            d.Box(new Vector3(-b, 0f, -b), new Vector3(b, 0.4f, b));                                   // base
+            d.Prism(Vector3.zero, radius * 1.05f, 0.4f, height - 0.4f, 8, Mathf.PI / 8f);              // fuste
+            d.Box(new Vector3(-b, height - 0.4f, -b), new Vector3(b, height, b));                       // capitel
             var go = Make(parent, id, d.ToMesh("Pillar"), "Pillar_" + SceneryBuilder.Sanitize(id) + "_" + Mathf.RoundToInt(position.x * 10f) + "_" + Mathf.RoundToInt(position.z * 10f));
             go.transform.position = position;
             return go;
