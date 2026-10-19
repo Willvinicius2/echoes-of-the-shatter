@@ -4258,7 +4258,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_load_directory(const char*
     const auto& errs = box->db.Errors();
     if (!errs.empty()) {
         const ContentError& first = errs.front();
-        const bool io = first.message.find("missing") != std::string::npos;
+        const bool io = StartsWith(first.message, "E_IO");
         return SetError(err, io ? SHATTER_IO_ERROR : SHATTER_CONTENT_INVALID,
                         first.table + ": " + first.message + " (+" + std::to_string(errs.size() - 1) + " more)", first.line);
     }
@@ -4275,7 +4275,11 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_record_echo(const shatter_
         return SHATTER_INVALID_ARGUMENT;
     *is_new = 0;
     if (story->db.FindEcho(id) == nullptr) return SHATTER_NOT_FOUND;
-    *is_new = RecordEcho(story->db, save->data, id) ? 1 : 0;
+    const bool added = RecordEcho(story->db, save->data, id);
+    *is_new = added ? 1 : 0;
+    // Não registrou e o Eco não estava lá: o save está cheio (kMaxSavedEchoes). Não perde em silêncio.
+    if (!added && std::find(save->data.story.echoes.begin(), save->data.story.echoes.end(), id) == save->data.story.echoes.end())
+        return SHATTER_INVALID_ARGUMENT;
     return SHATTER_OK;
 }
 

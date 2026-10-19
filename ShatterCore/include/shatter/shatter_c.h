@@ -1339,14 +1339,14 @@ SHATTER_API shatter_status SHATTER_CALL shatter_layout_check_ext7(const uint32_t
  * não por herói. O veredito é irreversível; os números (Fome máxima, Fome ganha, bônus) vêm das tabelas. API aditiva: a
  * versão da API C continua 1. Todas as funções são da main thread, como o resto da API. */
 enum { SHATTER_VERDICT_OK = 0, SHATTER_VERDICT_UNKNOWN = 1, SHATTER_VERDICT_GENERAL_NOT_DEFEATED = 2,
-       SHATTER_VERDICT_ALREADY_DECIDED = 3 };
+       SHATTER_VERDICT_ALREADY_DECIDED = 3, SHATTER_VERDICT_SAVE_FULL = 4 };
 /* Carrega a pasta Story/ (obrigatória) e valida. `db` (pode ser NULL) confere mapas, inimigos e habilidades contra o
  * conteúdo. Tabela inválida: SHATTER_CONTENT_INVALID com a 1ª mensagem em `err`; pasta ou arquivo faltando: SHATTER_IO_ERROR.
  * *out fica NULL em erro. */
 SHATTER_API shatter_status SHATTER_CALL shatter_story_load_directory(const char* path, size_t path_len, const shatter_db* db,
                                                                      shatter_story** out, shatter_error* err) SHATTER_NOEXCEPT;
 SHATTER_API void SHATTER_CALL shatter_story_destroy(shatter_story* story) SHATTER_NOEXCEPT;
-/* Registra um Eco achado. *is_new = 1 se for novo, 0 se já estava registrado. Eco desconhecido: SHATTER_NOT_FOUND. */
+/* Registra um Eco achado. *is_new = 1 se for novo, 0 se já estava registrado. Eco desconhecido: SHATTER_NOT_FOUND; save já cheio de Ecos (1024): SHATTER_INVALID_ARGUMENT. */
 SHATTER_API shatter_status SHATTER_CALL shatter_story_record_echo(const shatter_story* story, shatter_save* save,
                                                                   const char* echo_id, size_t echo_id_len,
                                                                   uint8_t* is_new) SHATTER_NOEXCEPT;

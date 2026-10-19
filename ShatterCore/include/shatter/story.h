@@ -92,6 +92,7 @@ enum class VerdictResult : std::uint8_t {
     UnknownVerdict,       // id fora de verdicts.csv
     GeneralNotDefeated,   // nenhum herói do save venceu o General da região
     AlreadyDecided,       // a região já tem veredito (irreversível)
+    SaveFull,             // o save já guarda kMaxSavedVerdicts vereditos
 };
 // Aplica o veredito da região: grava a escolha e soma a Fome (limitada a story_rules hunger_max). Sem efeito se != Ok.
 VerdictResult ApplyVerdict(const StoryDB& story, SaveData& s, std::string_view verdictId);
