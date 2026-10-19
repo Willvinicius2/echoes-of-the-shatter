@@ -316,5 +316,19 @@ namespace Echoes.Tests.EditMode
             foreach (var key in new[] { "ui.item.mod", "ui.item.sell_value", "ui.inventory.sort", "ui.inventory.discard_confirm", "ui.item.pick_full", "ui.inventory.slot_locked" })
                 Assert.IsTrue(loc.TryGet(key, out _), key);
         }
+
+        [Test]
+        public void HeroLevelFallsBehindWhenTheSaveLevelsUpOutsideTheKillPathAndTheSyncCheckSeesIt()
+        {
+            // O save sobe de nivel por kill, coleta de expedicao ou missao; o heroi em cena so e refeito se alguem avisa. A conferencia compara os dois niveis.
+            var heroLevel = save.CharacterProgress(rules, 0).Level;
+            Assert.IsFalse(Echoes.Gameplay.HeroLevelSync.NeedsRefresh(heroLevel, save.CharacterProgress(rules, 0).Level), "mesmo nivel: nada a refazer");
+            var leveled = false;
+            for (var i = 0; i < 400 && !leveled; i++)
+                leveled = save.AwardKillXp(rules, 0, ExpeditionConfig.CryptMap, "enemy.hollow_sentinel", 3, false, string.Empty, true, out _).LeveledUp;
+            Assert.IsTrue(leveled, "o XP dos kills subiu o nivel no save");
+            Assert.IsTrue(Echoes.Gameplay.HeroLevelSync.NeedsRefresh(heroLevel, save.CharacterProgress(rules, 0).Level), "heroi no nivel antigo: refazer o bloco");
+            Assert.IsFalse(Echoes.Gameplay.HeroLevelSync.NeedsRefresh(3, 0), "sem nivel no save (leitura falhou): nao mexe");
+        }
     }
 }
