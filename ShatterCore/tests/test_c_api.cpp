@@ -2683,6 +2683,6 @@ TEST(c_api_17_hero_move_rules_come_from_rules_csv_with_layout_and_range_validati
     // O conteudo real tem os valores combinados.
     DbHandle real(tu::ContentDir());
     ASSERT_EQ(shatter_db_hero_move_rules(real.db, &m), SHATTER_OK);
-    EXPECT_NEAR(m.accel_seconds, 0.10, 1e-12);
-    EXPECT_NEAR(m.decel_seconds, 0.08, 1e-12);
+    EXPECT_NEAR(m.accel_seconds, 0.07, 1e-12);
+    EXPECT_NEAR(m.decel_seconds, 0.05, 1e-12);
 }

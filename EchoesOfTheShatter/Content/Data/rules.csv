@@ -46,7 +46,7 @@ dodge_duration,0.35
 dodge_iframes,0.2
 dodge_distance,400
 dodge_cost_resource,0
-dodge_buffer,0.1
+dodge_buffer,0.15
 dodge_perfect_resource,10
 guard_break_stagger_seconds,1.5
 guard_break_stagger_damage_taken,0.3
@@ -57,7 +57,7 @@ elite_life_mult,2.0
 elite_damage_mult,1.2
 elite_xp_mult,3.0
 potion_lockout,1.0
-dodge_cancel_recovery_fraction,0.5
+dodge_cancel_recovery_fraction,0.35
 out_of_combat_seconds,3
 unarmed_weapon_damage_physical,3
 require_on_screen_margin,100
@@ -79,9 +79,9 @@ equip_slot_ring,false
 equip_slot_ring2,false
 equip_slot_belt,false
 equip_slot_legs,true
-combo_window,0.4
+combo_window,0.5
 combo_window_after_dodge,0.3
-attack_buffer,0.15
+attack_buffer,0.22
 heavy_hold_threshold,0.35
 light_windup_credit_max,0.7
 guard_lower_time,0.1
@@ -101,5 +101,5 @@ polish_max_steps,3
 dismantle_shards_normal,2
 dismantle_shards_magic,5
 dismantle_shards_rare,12
-hero_move_accel_seconds,0.10
-hero_move_decel_seconds,0.08
+hero_move_accel_seconds,0.07
+hero_move_decel_seconds,0.05
