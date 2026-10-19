@@ -1,6 +1,6 @@
 key,value
 hunger_max,4
-relic_potion_effect_pct,25
-stain_elite_bonus_pct,15
+relic_potion_effect_pct,40
+stain_elite_bonus_pct,10
 devoured_hunger_cost,1
 stain_loot_table,loot.crypt.stain

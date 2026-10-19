@@ -66,17 +66,17 @@ Decisões tomadas sem o Will (ele dormia): bônus em Vida, Dano e Armadura; Fome
 
 ### Efeitos do veredito no jogo (19/10, core)
 Decisões sem o Will (ele dormia), todas com número em `Story/story_rules.csv` e `skills.csv`:
-- **Relíquia do Descanso**: cura de poção +25% (`relic_potion_effect_pct`), modificador "aumentado" em `PotionEffect`. A resistência à Cinza do pitch fica para quando a Cinza tiver mecânica.
-- **Golpe devorado**: `skill.devoured.guardian_slam` em `skills.csv` (cone físico de área, coeficientes provisórios 1,6/1,8/2,0, recarga 8 s, sem classe). IDs sem classe agora também aceitam `skill.devoured.*` no validador e no core. Ligado à barra do herói (19/10, ver "Golpe devorado na barra" abaixo).
-- **Mancha**: nas áreas de uma região com veredito Devorar, a chance de elite de cada grupo sobe 15 pontos (`stain_elite_bonus_pct`) na expedição idle. No combate manual a Mancha também entra (ver abaixo).
+- **Relíquia do Descanso**: cura de poção +40% (`relic_potion_effect_pct`, era 25; ver Balanceamento do Ato I), modificador "aumentado" em `PotionEffect`. A resistência à Cinza do pitch fica para quando a Cinza tiver mecânica.
+- **Golpe devorado**: `skill.devoured.guardian_slam` em `skills.csv` (cone físico de área, coeficientes 3,0/3,3/3,6 (eram 1,6/1,8/2,0), recarga 8 s, sem classe). IDs sem classe agora também aceitam `skill.devoured.*` no validador e no core. Ligado à barra do herói (19/10, ver "Golpe devorado na barra" abaixo).
+- **Mancha**: nas áreas de uma região com veredito Devorar, a chance de elite de cada grupo sobe 10 pontos (`stain_elite_bonus_pct`, era 15) na expedição idle. No combate manual a Mancha também entra (ver abaixo).
 - **Idle**: `ExpeditionRequest` ganhou `storyStatBonusPct`, `storyPotionEffectPct` e `storyEliteBonusPct` (JSON `story_*`, 0..100, só gravados se > 0; saves antigos mantêm os mesmos bytes). O cliente calcula os valores a partir de `shatter_story_state_json` (`potion_effect_pct`, `stain_elite_bonus_by_map`) e os envia nos parâmetros de início. C# não compilado nesta sessão.
 
 ### Golpe devorado na barra, Fome e Mancha no combate manual (19/10, core + C# não compilado)
 Decisões sem o Will (ele dormia), números em `Story/story_rules.csv`, `loot_*.csv`:
 - **Golpe na barra**: com o veredito Devorar, `skill.devoured.guardian_slam` entra no último espaço livre da barra do herói (F; `DevouredKit.FillBar`). Vale para qualquer classe.
 - **Custo em Fome**: cada uso gasta `devoured_hunger_cost` (1) de Fome *da corrida*, ou seja, a Fome do save (que só sobe pelo veredito) mais os usos desde que o herói entrou ou renasceu. Passou de `hunger_max` (4), o golpe é negado com o aviso "Fome no limite" (`DenyReason.Hunger`). A conta da corrida fica no C# (`DevouredKit`) por ser protótipo; o número vem do core e a regra deve migrar para o core numa etapa futura (ressalva da revisão Opus). A Fome do save não muda com o uso, para não punir para sempre. "Perder o controle" com a Fome cheia do pitch fica para depois.
-- **Mancha no manual**: `shatter_encounter_roll_json_ex` soma `stain_elite_bonus_pct` (15) à chance de elite de cada grupo da Cripta quando a região foi Devorada. O `EncounterDirector` lê o valor direto do core no `Awake`.
-- **Loot exclusivo**: encontro limpo numa área com Mancha rola também `loot.crypt.stain` (25% de chance, só mágico e raro, conjunto do Guardião e escudo). Provisório: o exclusivo é a raridade e o escudo; um Único da Mancha fica para o design.
+- **Mancha no manual**: `shatter_encounter_roll_json_ex` soma `stain_elite_bonus_pct` (10) à chance de elite de cada grupo da Cripta quando a região foi Devorada. O `EncounterDirector` lê o valor direto do core no `Awake`.
+- **Loot exclusivo**: encontro limpo numa área com Mancha rola também `loot.crypt.stain` (30% de chance, só mágico e raro, conjunto do Guardião e escudo; peças de armadura com peso 3 e escudo 2). Provisório: o exclusivo é a raridade e o escudo; um Único da Mancha fica para o design.
 
 Pendências abertas: aparência real do Refúgio por estado; ver a passagem de bastão `atoI-faltas-20261019.md` para o que falta no Ato I.
 
@@ -98,6 +98,30 @@ Decisões tomadas sem perguntar (Will dormia); o número e os textos estão em `
 - **Gatilhos no cliente**: `talk` ao conversar com qualquer NPC do Refúgio (`AddStoryLines`), `reach_map_boss` quando o Guardião entra em luta (`ArenaPhase.Fighting`). `StoryDirector.ReportQuest(type, target)` é o ponto de entrada para outros gatilhos.
 - **Marca de "introdução já ouvida"**: usa `quest.r1.first_call` (falar com a Ilsa). Primeira conversa mostra `intro_1..3`; as seguintes, `general_lore`. `dlg.ilsa.crypt_done` abre a fala da Ilsa depois do veredito (`quest.r1.verdict` concluída).
 - Arquivos: `StoryDirector.Quests.cs`, `QuestJournal.cs` (novos), `StoryLines.cs`, `RefugeController.cs`, `StoryTypes.cs`, `SaveGame.Story.cs`. Testes: `story_quests_*`, `c_api_story_quests_*` (core) e `Quests_FromCore_*`, `StoryLines_IntroPlaysOnce*` (EditMode, não rodados).
+
+### Balanceamento do Ato I: Exorcizar x Devorar (19/10, números por simulação)
+Decisões tomadas sem o Will (ele dormia). Sonda: `ShatterCore/tests/test_balance_story.cpp` (`SHATTER_BALANCE_PROBE=1 shattercore_tests balance_story`), 30 sementes de 12 h de idle na Cripta com o Guerreiro, mais o duelo com um clone do Guardião e 10 mil rolagens por tabela de loot.
+
+**O que a sonda mostrou com os números antigos** (Devorar 10%, Mancha 15, Relíquia 25%): Devorar vencia em tudo no idle. A Mancha de 15 pontos triplicava os elites (57 para 133 por hora, elite vale 3x de XP), dando +20% de XP, e os 10% de atributos já protegiam tanto quanto a Relíquia. Exorcizar não tinha vantagem nenhuma.
+
+**Números novos:**
+| Chave | Antes | Agora |
+|---|---|---|
+| `relic_potion_effect_pct` | 25 | 40 |
+| `statBonusPct` do Devorar (`verdicts.csv`) | 10 | 8 |
+| `stain_elite_bonus_pct` | 15 | 10 |
+| `skill.devoured.guardian_slam` coef. posto 1/2/3 | 1,6/1,8/2,0 | 3,0/3,3/3,6 |
+| `loot.crypt.stain` chance / peso das peças | 0,25 / 1,5 (escudo 1) | 0,30 / 3 (escudo 2) |
+| `hunger_max`, Fome do Devorar, `devoured_hunger_cost` | 4, 1, 1 | iguais |
+
+**Resultado (idle 12 h, Guerreiro nível 4, kit completo e só espada):**
+- Exorcizar: nenhum XP extra, mas é o caminho seguro. Só espada nível 4: 4 de 30 expedições recuam, contra 30 de 30 sem veredito.
+- Devorar: cerca de +15% de XP e quase o dobro de elites (110 contra 57 por hora), mas é mais arriscado. Só espada nível 4: 13 de 30 recuam; nível 3, 29 de 30. Com kit completo ninguém recua em nenhum caminho.
+- Cripta: o duelo com o Guardião dura em torno de 77 s (Exorcizar) e 69 s (Devorar), sempre vitória com o kit completo nos níveis 3 a 6; o Devorar gasta menos poções, o Exorcizar termina com mais vida (0,65 contra 0,61 no nível 4).
+- Loot: `loot.crypt.stain` passou de 0,014 para 0,034 raros por encontro limpo (comum 0,003, elite 0,062, Guardião 0,31). O idle não rola a tabela da Mancha: só os elites a mais contam lá, e o teto de 4 raros por expedição iguala o loot dos dois caminhos.
+- Golpe devorado: com 1,6 o golpe rendia menos dano por segundo em alvo único que o Corte de Ferro (1,6/1,05 s contra 1,1/0,45 s), então nunca valia a Fome. Com 3,0 vira um estouro de ~2,9/s por até 3 usos (Fome 1 a 4 libera 3, 2, 1 e 0 usos por vida). Estimativa por conta, não por simulação, porque o simulador idle não aceita habilidade sem classe.
+
+**Limites da sonda (pendente):** o idle não luta contra chefe nem tem Fome; o duelo usa um clone do Guardião sem fases nem padrões, então subestima a luta real. Falta confirmar o golpe e a Fome no editor (playtest manual). Idle com a Mancha rolando `loot.crypt.stain` e Fome com efeito em jogo (perder o controle) dependem de contrato novo (Opus).
 
 ### Dicas do golpe do Guardião pelos Ecos (A5, 19/10, C# não compilado no editor)
 Decisões tomadas sem perguntar (Will dormia). Nenhum número de balanceamento mudou.
