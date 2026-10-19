@@ -18,7 +18,7 @@ namespace Echoes.EditorTools
             var importer = AssetImporter.GetAtPath(AssetPath) as PluginImporter;
             if (importer == null)
             {
-                Debug.LogError("[NativePluginSetup] Plugin nao encontrado em " + AssetPath + " (rode tools\core\build_core.cmd Release e copie a DLL).");
+                Debug.LogError("[NativePluginSetup] Plugin nao encontrado em " + AssetPath + " (rode tools/core/build_core.cmd Release e copie a DLL).");
                 return;
             }
             if (IsConfigured(importer))
