@@ -9,16 +9,16 @@ namespace Echoes.Tests.EditMode
     {
         [Test]
         public void Village_state_shows_only_village() =>
-            Assert.AreEqual((true, false), RefugeHubStates.Visible("hub.fortified_village"));
+            Assert.AreEqual((true, false), HubStateRule.Visible("hub.fortified_village"));
 
         [Test]
         public void Garrison_state_shows_only_garrison() =>
-            Assert.AreEqual((false, true), RefugeHubStates.Visible("hub.fortified_garrison"));
+            Assert.AreEqual((false, true), HubStateRule.Visible("hub.fortified_garrison"));
 
         [TestCase("")]
         [TestCase(null)]
         [TestCase("hub.unknown")]
         public void No_verdict_shows_nothing(string state) =>
-            Assert.AreEqual((false, false), RefugeHubStates.Visible(state));
+            Assert.AreEqual((false, false), HubStateRule.Visible(state));
     }
 }

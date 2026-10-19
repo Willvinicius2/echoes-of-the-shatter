@@ -9,21 +9,27 @@ namespace Echoes.UI
     /// </summary>
     public sealed class RefugeHubStates : MonoBehaviour
     {
-        public const string VillageState = "hub.fortified_village";
-        public const string GarrisonState = "hub.fortified_garrison";
-
         [SerializeField] GameObject village;
         [SerializeField] GameObject garrison;
 
-        /// <summary>Quais grupos ficam ligados para o estado dado (vila, guarnição).</summary>
-        public static (bool village, bool garrison) Visible(string hubState) =>
-            (hubState == VillageState, hubState == GarrisonState);
-
         public void Apply(string hubState)
         {
-            var (showVillage, showGarrison) = Visible(hubState);
+            var (showVillage, showGarrison) = HubStateRule.Visible(hubState);
             if (village != null) village.SetActive(showVillage);
             if (garrison != null) garrison.SetActive(showGarrison);
         }
+    }
+}
+
+namespace Echoes.UI
+{
+    /// <summary>Regra pura de quais grupos do Refúgio ficam ligados (separada do MonoBehaviour para testar sem a Unity).</summary>
+    public static class HubStateRule
+    {
+        public const string VillageState = "hub.fortified_village";
+        public const string GarrisonState = "hub.fortified_garrison";
+
+        public static (bool village, bool garrison) Visible(string hubState) =>
+            (hubState == VillageState, hubState == GarrisonState);
     }
 }
