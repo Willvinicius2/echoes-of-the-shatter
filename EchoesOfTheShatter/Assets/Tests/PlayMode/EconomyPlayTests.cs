@@ -95,7 +95,7 @@ namespace Echoes.Tests.PlayMode
         {
             yield return Load("Refugio");
             var ids = Object.FindObjectsByType<InteractableNpc>(FindObjectsSortMode.None).Select(n => n.npcId).OrderBy(x => x).ToList();
-            CollectionAssert.AreEquivalent(new[] { "enchanter", "ilsa", "stash", "tico", "vendor" }, ids);
+            CollectionAssert.AreEquivalent(new[] { "bram", "enchanter", "ilsa", "odete", "stash", "tico", "vendor" }, ids);
             var controller = Object.FindFirstObjectByType<RefugeController>();
             var hero = Object.FindFirstObjectByType<HeroController>();
             var points = Object.FindObjectsByType<InteractableNpc>(FindObjectsSortMode.None);

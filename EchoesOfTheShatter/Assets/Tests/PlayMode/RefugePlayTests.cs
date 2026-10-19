@@ -61,7 +61,8 @@ namespace Echoes.Tests.PlayMode
             var hero = Object.FindFirstObjectByType<HeroController>();
             Assert.IsNotNull(controller);
             Assert.IsNotNull(hero);
-            Assert.AreEqual(2, Object.FindObjectsByType<InteractableNpc>(FindObjectsSortMode.None).Length, "Ilsa e Tico");
+            var expeditionNpcs = Object.FindObjectsByType<InteractableNpc>(FindObjectsSortMode.None).Count(n => n.npcId == "ilsa" || n.npcId == "tico");
+            Assert.AreEqual(2, expeditionNpcs, "Ilsa e Tico");
 
             // Ilsa: antes de dominar a Cripta, a fala e dlg.ilsa.not_dominated (a configuracao nao abre).
             controller.TalkToIlsa();
