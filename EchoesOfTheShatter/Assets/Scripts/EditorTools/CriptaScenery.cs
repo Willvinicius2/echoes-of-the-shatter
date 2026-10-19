@@ -83,6 +83,7 @@ namespace Echoes.EditorTools
             BuildVistas(ctx, level, decor);
             BuildCorridorArches(layout, props);
             BuildProps(ctx, props, small);
+            CriptaStructure.Carpet(decor, layout.Route);
         }
 
         /// <summary>
@@ -365,7 +366,7 @@ namespace Echoes.EditorTools
                     EnvironmentKit.Place("Escada", props, new Vector3(sp.x, 0f, sp.y), syaw, instanceName: room.Id + ".Escada");
                     spots.Add(sp, 2.2f);
                 }
-                var banners = boss ? 4 : 2;
+                var banners = boss ? 6 : 4;
                 for (var i = 0; i < banners; i++)
                 {
                     if (!TryWallSpot(layout, room, rng, spots, 1.2f, 1.2f, out var pos, out var yaw)) continue;

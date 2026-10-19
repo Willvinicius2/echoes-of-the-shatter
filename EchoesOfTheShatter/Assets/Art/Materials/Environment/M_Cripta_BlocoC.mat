@@ -65,7 +65,7 @@ Material:
     - _DstBlend: 0
     - _EdgeWidth: 0.05
     - _EmissionIntensity: 0.6
-    - _FloorContrast: 1.2
+    - _FloorContrast: 1.35
     - _FloorTile: 8
     - _FresnelBlend: 0.5
     - _FresnelStrength: 2.5
@@ -85,7 +85,7 @@ Material:
     - _TintGain: 1
     - _TintStrength: 0
     - _Variation: 0.07
-    - _WallTile: 4
+    - _WallTile: 2.5
     - _WarpAmp: 4
     - _WarpFreq: 0.09
     - _ZWrite: 1

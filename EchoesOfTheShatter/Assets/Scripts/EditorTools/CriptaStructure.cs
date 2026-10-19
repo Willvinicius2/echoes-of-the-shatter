@@ -103,6 +103,13 @@ namespace Echoes.EditorTools
             d.Box(new Vector3(-hl, 0f, -thickness), new Vector3(hl, height, 0f));
             d.Box(new Vector3(-hl, 0f, -thickness), new Vector3(hl, Plinth, 0.06f));                          // rodape
             d.Box(new Vector3(-hl, height - Cornice, -thickness), new Vector3(hl, height, 0.08f));            // cornija
+            var count = Mathf.FloorToInt(length / PilasterEvery);
+            for (var i = 0; i < count; i++)
+            {
+                var cx = -hl + (i + 0.5f) * length / count;
+                if (cx - PilasterWidth * 0.5f < -hl + 0.8f || cx + PilasterWidth * 0.5f > hl - 0.8f) continue;
+                d.Box(new Vector3(cx - PilasterWidth * 0.5f, Plinth, 0f), new Vector3(cx + PilasterWidth * 0.5f, height - Cornice, PilasterDepth));
+            }
             var go = Make(run, "Visual", d.ToMesh("Wall_" + key), "Wall_" + key);
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
@@ -130,6 +137,63 @@ namespace Echoes.EditorTools
             var go = Make(parent, id, d.ToMesh("Pillar"), "Pillar_" + SceneryBuilder.Sanitize(id) + "_" + Mathf.RoundToInt(position.x * 10f) + "_" + Mathf.RoundToInt(position.z * 10f));
             go.transform.position = position;
             return go;
+        }
+
+        /// <summary>
+        /// Tapete cerimonial ao longo da rota principal: faixa vermelha escura de 2 m com borda dourada, a 0,7 cm do piso (abaixo dos simbolos dos checkpoints). So visual (sem colisor):
+        /// da vida ao chao e mostra o caminho ate o chefe.
+        /// </summary>
+        public static void Carpet(Transform parent, IList<Vector2> route, float width = 2.0f)
+        {
+            var trim = new MeshData();
+            var cloth = new MeshData();
+            for (var i = 0; i + 1 < route.Count; i++)
+            {
+                var a = route[i]; var b = route[i + 1];
+                var dir = (b - a).normalized;
+                var half = width * 0.5f;
+                if (i > 0) a -= dir * half; // so as juntas internas se estendem (fecha a quina); as pontas ficam onde a rota comeca e termina
+                if (i + 2 < route.Count) b += dir * half;
+                var n = new Vector2(-dir.y, dir.x);
+                Strip(trim, a, b, n, half + 0.16f, 0.004f);
+                Strip(cloth, a, b, n, half, 0.007f);
+            }
+            var trimGo = Make(parent, "Carpet_Trim", trim.ToMesh("Carpet_Trim"), "Carpet_Trim");
+            trimGo.GetComponent<MeshRenderer>().sharedMaterial = EnsureCarpetMaterial("M_Cripta_TapeteBorda", new Color(0.55f, 0.40f, 0.14f));
+            trimGo.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.Off;
+            var clothGo = Make(parent, "Carpet", cloth.ToMesh("Carpet"), "Carpet");
+            clothGo.GetComponent<MeshRenderer>().sharedMaterial = EnsureCarpetMaterial("M_Cripta_Tapete", new Color(0.36f, 0.07f, 0.12f));
+        }
+
+        static void Strip(MeshData d, Vector2 a, Vector2 b, Vector2 n, float half, float y)
+        {
+            var k = d.V.Count;
+            d.V.Add(new Vector3(a.x + n.x * half, y, a.y + n.y * half));
+            d.V.Add(new Vector3(a.x - n.x * half, y, a.y - n.y * half));
+            d.V.Add(new Vector3(b.x - n.x * half, y, b.y - n.y * half));
+            d.V.Add(new Vector3(b.x + n.x * half, y, b.y + n.y * half));
+            for (var i = 0; i < 4; i++) { d.N.Add(Vector3.up); d.Uv.Add(Vector2.zero); }
+            var up = Vector3.Cross(d.V[k + 1] - d.V[k], d.V[k + 2] - d.V[k]).y >= 0f;
+            if (up) { d.T.Add(k); d.T.Add(k + 1); d.T.Add(k + 2); d.T.Add(k); d.T.Add(k + 2); d.T.Add(k + 3); }
+            else { d.T.Add(k); d.T.Add(k + 2); d.T.Add(k + 1); d.T.Add(k); d.T.Add(k + 3); d.T.Add(k + 2); }
+        }
+
+        static Material EnsureCarpetMaterial(string name, Color color)
+        {
+            SandboxBuilder.EnsureDir(EnvironmentKit.MaterialDir);
+            var path = EnvironmentKit.MaterialDir + "/" + name + ".mat";
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
+            {
+                mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(mat, path);
+            }
+            mat.SetColor("_BaseColor", color);
+            mat.SetFloat("_Smoothness", 0.05f);
+            mat.SetFloat("_Metallic", 0f);
+            mat.SetFloat("_ReceiveShadows", 1f);
+            EditorUtility.SetDirty(mat);
+            return mat;
         }
     }
 }
