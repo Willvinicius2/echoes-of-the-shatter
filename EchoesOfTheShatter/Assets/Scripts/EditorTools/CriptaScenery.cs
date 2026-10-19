@@ -78,7 +78,7 @@ namespace Echoes.EditorTools
             }
             foreach (var corridor in layout.Corridors) BuildCorridorWalls(walls, corridor);
 
-            BuildGlyphs(layout, decor);
+            // Sem simbolo de bussola no chao: o aro do checkpoint e do portal ja marca o ponto (pedido do dono).
             foreach (var p in layout.Pillars) BuildPillar(pillars, p);
             BuildVistas(ctx, level, decor);
             BuildCorridorArches(layout, props);
