@@ -104,6 +104,21 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void StateJson_ReadsDevouredSkillsAndIdleUses_AndTheSaveKeepsThemForTheExpedition()
+        {
+            var json = "{\"hunger\":2,\"hunger_max\":4,\"devoured_hunger_cost\":1,\"devoured_skills\":[\"skill.devoured.guardian_slam\"],\"idle_devoured_uses\":2,\"echoes\":[],\"verdicts\":[]}";
+            var state = StoryState.FromJson(json);
+            CollectionAssert.AreEqual(new[] { "skill.devoured.guardian_slam" }, state.DevouredSkills);
+            Assert.AreEqual(2, state.IdleDevouredUses);
+            Save.ApplyStoryState(state);
+            CollectionAssert.AreEqual(new[] { "skill.devoured.guardian_slam" }, Save.StoryDevouredSkills);
+            Assert.AreEqual(2, Save.StoryIdleDevouredUses);
+            var fresh = Save.ReadStory(story);
+            CollectionAssert.IsEmpty(fresh.DevouredSkills);
+            Assert.AreEqual(4, fresh.IdleDevouredUses);   // save novo: Fome 0, maximo 4, custo 1 (o core calcula; sem golpe, nao vai para a expedicao)
+        }
+
+        [Test]
         public void DevouredKit_GatesTheSlamByHungerAndFillsTheLastFreeSlot()
         {
             var kit = new Echoes.Gameplay.DevouredKit(StoryState.FromJson(

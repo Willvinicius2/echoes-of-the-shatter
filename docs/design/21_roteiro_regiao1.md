@@ -121,7 +121,9 @@ Decisões tomadas sem o Will (ele dormia). Sonda: `ShatterCore/tests/test_balanc
 - Loot: `loot.crypt.stain` passou de 0,014 para 0,034 raros por encontro limpo (comum 0,003, elite 0,062, Guardião 0,31). O idle não rola a tabela da Mancha: só os elites a mais contam lá, e o teto de 4 raros por expedição iguala o loot dos dois caminhos.
 - Golpe devorado: com 1,6 o golpe rendia menos dano por segundo em alvo único que o Corte de Ferro (1,6/1,05 s contra 1,1/0,45 s), então nunca valia a Fome. Com 3,0 vira um estouro de ~2,9/s por até 3 usos (Fome 1 a 4 libera 3, 2, 1 e 0 usos por vida). Estimativa por conta, não por simulação, porque o simulador idle não aceita habilidade sem classe.
 
-**Limites da sonda (pendente):** o idle não luta contra chefe nem tem Fome; o duelo usa um clone do Guardião sem fases nem padrões, então subestima a luta real. Falta confirmar o golpe e a Fome no editor (playtest manual). Idle com a Mancha rolando `loot.crypt.stain` e Fome com efeito em jogo (perder o controle) dependem de contrato novo (Opus).
+**Limites da sonda (pendente):** o idle não luta contra chefe; o duelo usa um clone do Guardião sem fases nem padrões, então subestima a luta real. Falta confirmar o golpe e a Fome no editor (playtest manual). "Perder o controle" com a Fome cheia segue sem regra.
+
+**Fome e loot da Mancha no idle (19/10, docs/tecnico/09 seção 15.4):** decisões sem o Will (ele dormia), nenhum número do PR #29 mudou. O golpe devorado entra na barra da expedição como no manual e a Fome limita os usos por expedição (Fome 1, 2, 3 e 4 dão 3, 2, 1 e 0 usos); a IA o usa assim que fica pronto, a não ser que uma regra o cite. O encontro limpo numa área com Mancha rola também `loot.crypt.stain`. Sonda (12 h, nível 4): a Mancha sobe os itens de 48,7 para 60,6 por hora; a Fome quase não pesa no idle (1 a 3 golpes por expedição). Se o teste do Will pedir a Fome mais presente no idle, basta contar os usos por encontro.
 
 ### Dicas do golpe do Guardião pelos Ecos (A5, 19/10, C# não compilado no editor)
 Decisões tomadas sem perguntar (Will dormia). Nenhum número de balanceamento mudou.

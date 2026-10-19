@@ -133,4 +133,16 @@ int StainEliteBonusPctForMap(const StoryDB& story, const SaveData& s, std::strin
 // Mancha: tabela de loot extra (stain_loot_table) das áreas com Mancha; "" se o mapa não tem Mancha ou a chave não existe.
 std::string StainLootTableForMap(const StoryDB& story, const SaveData& s, std::string_view mapId);
 
+// ---------------------------------------------------------------------------
+// Efeitos da história na expedição idle (docs/tecnico/09, 15.4)
+// ---------------------------------------------------------------------------
+// Golpes devorados que o save tem (grantsSignature skill.devoured.* dos vereditos tomados, na ordem dos vereditos).
+std::vector<ContentId> DevouredSkills(const StoryDB& story, const SaveData& s);
+// Usos de golpe devorado numa "corrida" (vida no manual, expedição inteira no idle): (hunger_max - Fome) / devoured_hunger_cost,
+// arredondado para baixo. Fome 1 a 4 com custo 1 dá 3, 2, 1 e 0. Custo 0 (ou sem hunger_max) = -1, sem limite.
+int IdleDevouredUses(const StoryDB& story, const SaveData& s);
+// Preenche os campos story* dos parâmetros de início para o mapa: bônus do veredito, Relíquia, elites e loot da Mancha, golpes
+// devorados e usos (Fome cheia = sem golpe). O cliente pode usar isto em vez de montar os campos a partir do JSON do estado.
+void ApplyStoryToExpedition(const StoryDB& story, const SaveData& s, std::string_view mapId, ExpeditionStartParams& p);
+
 }  // namespace shatter

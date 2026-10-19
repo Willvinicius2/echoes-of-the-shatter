@@ -204,6 +204,44 @@ TEST(balance_story_idle_duel_and_stain_loot_when_requested) {
         }
     }
 
+    {
+        // docs/09, 15.4: Fome (usos do golpe devorado por expedicao) e loot da Mancha no idle, com os numeros vigentes.
+        std::printf("\n== Idle 12 h, Devorar vigente com Fome e loot da Mancha ==\ncenario | kit | recuos/%d | xp/h | elites/h | itens/h | raros/exp | golpes/exp\n", seeds);
+        struct Hunger { const char* name; int uses; bool stainLoot; };
+        const Hunger rows[] = {
+            {"so atributos e elites", 0, false},
+            {"+ loot da Mancha", 0, true},
+            {"+ Fome 1 (3 usos)", 3, true},
+            {"+ Fome 2 (2 usos)", 2, true},
+            {"+ Fome 3 (1 uso)", 1, true},
+        };
+        for (bool kit : {true, false}) {
+            for (const Hunger& hr : rows) {
+                int retreats = 0;
+                double xp = 0, elites = 0, items = 0, rares = 0, secs = 0, slams = 0;
+                for (int s = 1; s <= seeds; ++s) {
+                    ExpeditionRequest req = Hero(*db, 4, static_cast<std::uint64_t>(s), false, kit);
+                    req.storyStatBonusPct = 8;
+                    req.storyEliteBonusPct = 10;
+                    if (hr.uses > 0) {
+                        req.storyDevouredSkills = {"skill.devoured.guardian_slam"};
+                        req.storyDevouredUses = hr.uses;
+                    }
+                    if (hr.stainLoot) req.storyStainLootTable = "loot.crypt.stain";
+                    const ExpeditionResult r = SimulateExpedition(*db, req);
+                    if (r.stop == StopReason::Retreat) ++retreats;
+                    for (const EncounterReceipt& rc : r.receipts) { xp += rc.xpRaw; elites += rc.elitesKilled; slams += rc.devouredUses; }
+                    items += static_cast<double>(r.items.size());
+                    rares += r.raresDropped;
+                    secs += r.effectiveSeconds;
+                }
+                const double h = secs > 0 ? secs / 3600.0 : 1.0;
+                std::printf("%-24s | %s | %2d | %7.0f | %5.1f | %5.1f | %4.2f | %3.1f\n", hr.name, kit ? "completo" : "so espada", retreats,
+                            xp / h, elites / h, items / h, rares / seeds, slams / seeds);
+            }
+        }
+    }
+
     std::printf("\n== Duelo com o Guardiao (1o encontro, heroi cheio, idle sem padroes de chefe) ==\ncenario | nivel | vitorias/%d | duracao mediana (s) | vida ao fim (media) | pocoes (media)\n", seeds);
     const Scenario duel[] = {
         {"sem veredito", 0, 0, 0, false},

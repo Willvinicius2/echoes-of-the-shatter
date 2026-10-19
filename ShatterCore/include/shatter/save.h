@@ -45,6 +45,8 @@ inline constexpr const char* kSaveFormatTag = "echoes-of-the-shatter-save";
 inline constexpr std::size_t kMaxSavedBuyback = 100;             // itens na recompra do Vendedor (vendor_buyback_slots <= 100)
 inline constexpr std::size_t kMaxWorldAreas = 64;               // áreas com estado de mundo gravado
 inline constexpr std::size_t kMaxWorldObjects = 512;             // objetos abertos por área
+inline constexpr int kMaxStoryDevouredSkills = 8;                // golpes devorados num pedido de expedição (um por região)
+inline constexpr int kMaxStoryDevouredUses = 1000;               // usos de golpe devorado num pedido (-1 = sem limite)
 inline constexpr int kMaxSavedPolish = 10;                       // passos de Lapidar por afixo (polish_max_steps <= 10)
 
 enum class ExpeditionStatus : std::uint8_t {
@@ -139,6 +141,14 @@ json::Value CharacterToJson(const CharacterState& c);
 bool CharacterFromJson(const json::Value& v, CharacterState& out, std::string* error = nullptr);
 json::Value ExpeditionRequestToJson(const ExpeditionRequest& r);
 bool ExpeditionRequestFromJson(const json::Value& v, ExpeditionRequest& out, std::string* error = nullptr);
+// ADIÇÃO (docs/09, 15.4): campos opcionais da Fome e da Mancha no idle, iguais no pedido salvo e nos parâmetros de início.
+// Grava só o que não é padrão: "story_devoured_skills" (lista, se houver usos), "story_devoured_uses" (!= 0) e
+// "story_stain_loot_table" (não vazio). Lê: até kMaxStoryDevouredSkills textos não vazios; usos limitados a
+// -1..kMaxStoryDevouredUses. Lista com item que não é texto ou longa demais = erro.
+void WriteStoryIdleFields(json::Value& o, const std::vector<ContentId>& devouredSkills, int devouredUses,
+                          const ContentId& stainLootTable);
+bool ReadStoryIdleFields(const json::Value& o, std::vector<ContentId>& devouredSkills, int& devouredUses,
+                         ContentId& stainLootTable, std::string* error);
 // Nomes estáveis dos enums no JSON ("xp", "life_below", "use_potion", "running", "duration_reached"...).
 const char* ToString(ExpeditionObjective o);
 const char* ToString(AiCondition c);
@@ -247,6 +257,10 @@ struct ExpeditionStartParams {
     int storyStatBonusPct = 0;
     int storyPotionEffectPct = 0;
     int storyEliteBonusPct = 0;
+    // Fome e loot da Mancha no idle (docs/09, 15.4; ver ExpeditionRequest). story.h ApplyStoryToExpedition preenche todos os story*.
+    std::vector<ContentId> storyDevouredSkills;
+    int storyDevouredUses = 0;
+    ContentId storyStainLootTable;
 };
 // Inicia a expedição no save (RF-31, RF-35, RF-37, RF-39, RF-43): confere CanStartExpedition com as
 // cargas do save e "outra em andamento" entre TODOS os personagens; se Ok, congela o snapshot do

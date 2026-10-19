@@ -473,6 +473,9 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_add_loot(shatter_save* save
  *   {"character_index":0,"map_id":"map.act1.crypt","objective":"xp","rules":[AiRule...],
  *    "duration_hours":4,"seed":"123456789","start_utc":1700000000}
  * AiRule = {"condition":"life_below","param":0.35,"action":"use_potion","ref_id":""} (formato do save).
+ * Campos opcionais da história (docs/09, 15 e 15.4): "story_stat_bonus_pct", "story_potion_effect_pct", "story_elite_bonus_pct"
+ * (0..100), "story_devoured_skills" (lista de até 8 golpes devorados), "story_devoured_uses" (usos na expedição; -1 = sem
+ * limite, 0 = nenhum) e "story_stain_loot_table" (tabela extra do encontro limpo com Mancha). Valores: shatter_story_state_json.
  * ---------------------------------------------------------------------------------------------- */
 /* Só confere (não muda o save). *start_check = SHATTER_START_*; saída = IDs que bloqueiam (RF-43). */
 SHATTER_API shatter_status SHATTER_CALL shatter_expedition_check(const shatter_db* db, const shatter_save* save,
@@ -1366,7 +1369,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_apply_verdict(const shatte
  * "exorcise"|"devour","region_state":"purified"|"stain","hub_state","hunger_delta","stat_bonus_pct","grants_relic",
  * "grants_signature","last_words_key"}]}. É o que a HUD da Fome, o Refúgio e o fim do jogo leem. Chaves extras (só chaves, sem
  * assinatura nova): "potion_effect_pct", "stain_elite_bonus_by_map" {mapId: pontos}, "stain_loot_table_by_map" {mapId: tabela de loot
- * extra das áreas com Mancha} e "devoured_hunger_cost" (Fome que cada uso de habilidade devorada gasta na corrida). */
+ * extra das áreas com Mancha}, "devoured_hunger_cost" (Fome que cada uso de habilidade devorada gasta na corrida),
+ * "devoured_skills" (golpes devorados do save) e "idle_devoured_uses" (usos por corrida que a Fome deixa: -1 = sem limite). */
 SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_story* story, const shatter_save* save,
                                                                  uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
 /* Uma região: {"region_id","map_id","general_id","decided","verdict_id","echoes_found","echoes_total",

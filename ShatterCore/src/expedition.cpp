@@ -43,6 +43,11 @@ struct Setup {
     StatBlock playerStats;
     std::vector<const SkillData*> bar;      // habilidades da barra (posições não vazias, em ordem)
     std::vector<int> ranks;                 // rank de cada uma (1..3)
+    // Golpes devorados (docs/09, 15.4): devoured[i] marca as posições de `bar` que vieram de req.storyDevouredSkills;
+    // devouredRuled[i] = alguma regra da IA cita esse golpe (então só as regras o usam; senão ele é usado sozinho).
+    std::vector<bool> devoured;
+    std::vector<bool> devouredRuled;
+    const LootTableData* stainTable = nullptr;  // Mancha: tabela extra do encontro limpo (req.storyStainLootTable)
     const ItemBaseData* weapon = nullptr;   // arma equipada; nullptr = desarmado (unarmed_weapon_damage_physical)
     double refAttackTime = 0.0;             // attackTime da arma inicial da classe (basic_kits.csv; docs/19 N0); 0 = a arma não muda o tempo
     std::vector<const EffectData*> triggerEffects;  // ruleEffect dos Únicos equipados com gatilho
@@ -75,7 +80,25 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
     addStory(StatId::PotionEffect, req.storyPotionEffectPct);
     if (!IsIdleCompatible(db, ch, nullptr)) return StopReason::IncompatibleBuild;
 
-    for (const ContentId& id : ch.skillBar) {
+    // Golpes devorados: mesma regra do manual (DevouredKit.FillBar). Cada um ocupa o último espaço vazio entre o 3 e o 6
+    // da barra; sem espaço, fica de fora. Sem usos (Fome cheia) nenhum entra, e o resultado é o mesmo de antes do veredito.
+    // Todo skill.devoured.* da barra gasta a Fome, mesmo se já veio na barra do snapshot (a trava do manual é pelo id).
+    std::array<ContentId, 6> barIds = ch.skillBar;
+    if (req.storyDevouredUses != 0) {
+        for (const ContentId& id : req.storyDevouredSkills) {
+            const SkillData* s = db.FindSkill(id);
+            if (s == nullptr) return StopReason::ContentMismatch;
+            if (!s->idle.supported) continue;  // sem perfil idle o golpe só existe no manual
+            if (std::find(barIds.begin(), barIds.end(), id) != barIds.end()) continue;
+            for (std::size_t i = barIds.size(); i-- > 2;) {
+                if (!barIds[i].empty()) continue;
+                barIds[i] = id;
+                break;
+            }
+        }
+    }
+    for (std::size_t i = 0; i < barIds.size(); ++i) {
+        const ContentId& id = barIds[i];
         if (id.empty()) continue;
         const SkillData* s = db.FindSkill(id);
         if (s == nullptr) return StopReason::ContentMismatch;
@@ -85,6 +108,26 @@ StopReason BuildSetup(const ContentDB& db, const ExpeditionRequest& req, Setup& 
         }
         su.bar.push_back(s);
         su.ranks.push_back(rank);
+        const bool devoured = id.rfind("skill.devoured.", 0) == 0;
+        bool ruled = false;
+        for (const AiRule& r : req.rules) ruled = ruled || (r.action == AiAction::UseSkill && r.refId == id);
+        su.devoured.push_back(devoured);
+        su.devouredRuled.push_back(devoured && ruled);
+    }
+    // A posição 0 é o ataque básico (aproximação e reserva da IA): nunca um golpe devorado, que acaba com a Fome.
+    if (!su.bar.empty() && su.devoured.front()) {
+        std::size_t first = 0;
+        while (first < su.bar.size() && su.devoured[first]) ++first;
+        if (first == su.bar.size()) return StopReason::IncompatibleBuild;
+        std::rotate(su.bar.begin(), su.bar.begin() + static_cast<std::ptrdiff_t>(first), su.bar.end());
+        std::rotate(su.ranks.begin(), su.ranks.begin() + static_cast<std::ptrdiff_t>(first), su.ranks.end());
+        std::rotate(su.devoured.begin(), su.devoured.begin() + static_cast<std::ptrdiff_t>(first), su.devoured.end());
+        std::rotate(su.devouredRuled.begin(), su.devouredRuled.begin() + static_cast<std::ptrdiff_t>(first),
+                    su.devouredRuled.end());
+    }
+    if (!req.storyStainLootTable.empty()) {
+        su.stainTable = db.FindLootTable(req.storyStainLootTable);
+        if (su.stainTable == nullptr) return StopReason::ContentMismatch;
     }
     const auto& mh = ch.equipment[static_cast<std::size_t>(ItemSlot::MainHand)];
     if (mh) {
@@ -155,6 +198,7 @@ struct CarryState {  // o que atravessa encontros (espelho de ExpeditionProgress
     double wardAmount = 0.0;
     double wardRemaining = 0.0;
     int raresDropped = 0;
+    int devouredSpent = 0;
 };
 
 struct EncounterRun {
@@ -277,6 +321,7 @@ public:
         rc.potionsUsed = potionsUsed_;
         rc.healFailures = healFailures_;
         rc.dodgesUsed = dodgesUsed_;
+        rc.devouredUses = devouredUses_;
         rc.damageTaken = damageTaken_;
         rc.damageDealt = damageDealt_;
         rc.lifeFractionAtEnd = maxLife > 0.0 ? life_ / maxLife : 0.0;
@@ -293,6 +338,8 @@ public:
             if (su_.map && !su_.map->areaLootTable.empty()) {
                 if (const LootTableData* t = db_.FindLootTable(su_.map->areaLootTable)) RollInto(*t);
             }
+            // Mancha: o encontro limpo rola também a tabela extra, depois da de área (mesmo fluxo Loot; sem Mancha nada muda).
+            if (su_.stainTable != nullptr) RollInto(*su_.stainTable);
             rc.loot = std::move(drop_);
             out.stopRetreat = life_ < rules_.retreatLifeFraction * maxLife && !HasHealCharge();
         }
@@ -305,6 +352,7 @@ public:
         out.after.wardAmount = wardAmount_;
         out.after.wardRemaining = wardRemaining_;
         out.after.raresDropped = in_.raresDropped + rc.loot.raresDropped;
+        out.after.devouredSpent = in_.devouredSpent + devouredUses_;
         return out;
     }
 
@@ -383,7 +431,18 @@ private:
 
     bool CanUse(int slot) const {
         const std::size_t s = static_cast<std::size_t>(slot);
+        if (su_.devoured[s] && su_.req->storyDevouredUses >= 0 &&
+            in_.devouredSpent + devouredUses_ >= su_.req->storyDevouredUses)
+            return false;  // Fome: os usos da expedição acabaram
         return cooldowns_[s] <= kEps && resource_ + kEps >= su_.bar[s]->cost;
+    }
+
+    // Golpe devorado que nenhuma regra cita: a IA o usa assim que pode, no lugar da próxima habilidade (as regras de
+    // poção que vêm antes continuam valendo). -1 = nenhum pronto.
+    int AutoDevouredSlot() const {
+        for (std::size_t i = 0; i < su_.bar.size(); ++i)
+            if (su_.devoured[i] && !su_.devouredRuled[i] && CanUse(static_cast<int>(i))) return static_cast<int>(i);
+        return -1;
     }
 
     bool ConditionHolds(const AiRule& r) const {
@@ -407,6 +466,7 @@ private:
         const IdleProfile& prof = s.idle;
         const int rank = su_.ranks[static_cast<std::size_t>(slot)];
         activeSlot_ = slot;
+        if (su_.devoured[static_cast<std::size_t>(slot)]) ++devouredUses_;
 
         const ActionTimingInfo tm = ComputeActionTiming(db_, s, ps_, nullptr, WeaponTimeFactor(s, su_.weapon, su_.refAttackTime));
         double d = tm.windup + tm.impact + tm.recovery;
@@ -504,10 +564,15 @@ private:
             const int slot = FindSlot(r.refId);
             if (slot < 0 || !CanUse(slot)) continue;
             if (!potionFailedThisStep) potionFailing_ = false;
-            UseSkill(slot, dt);
+            const int devouredSlot = AutoDevouredSlot();
+            UseSkill(devouredSlot >= 0 ? devouredSlot : slot, dt);
             return;
         }
         if (!potionFailedThisStep) potionFailing_ = false;
+        if (const int devouredSlot = AutoDevouredSlot(); devouredSlot >= 0) {
+            UseSkill(devouredSlot, dt);
+            return;
+        }
         if (CanUse(0)) {
             UseSkill(0, dt);
             return;
@@ -720,7 +785,7 @@ private:
     std::int64_t actSeq_ = 0;
     bool potionFailing_ = false;
 
-    int kills_ = 0, elites_ = 0, potionsUsed_ = 0, healFailures_ = 0, dodgesUsed_ = 0;
+    int kills_ = 0, elites_ = 0, potionsUsed_ = 0, healFailures_ = 0, dodgesUsed_ = 0, devouredUses_ = 0;
     double damageTaken_ = 0.0, damageDealt_ = 0.0, xp_ = 0.0;
     LootDrop drop_;
 };
@@ -753,6 +818,7 @@ ExpeditionProgress RunRange(const ContentDB& db, const ExpeditionRequest& req, c
         carry.wardAmount = p.wardAmount;
         carry.wardRemaining = p.wardRemaining;
         carry.raresDropped = p.raresDropped;
+        carry.devouredSpent = p.devouredUsesSpent;
         EncounterSim sim(su, p.nextEncounter, carry, p.elapsed, su.limit - p.elapsed, takenByType);
         EncounterRun run = sim.Run();
         if (!run.fits) {
@@ -769,6 +835,7 @@ ExpeditionProgress RunRange(const ContentDB& db, const ExpeditionRequest& req, c
         p.wardAmount = run.after.wardAmount;
         p.wardRemaining = run.after.wardRemaining;
         p.raresDropped = run.after.raresDropped;
+        p.devouredUsesSpent = run.after.devouredSpent;
         p.receipts.push_back(std::move(run.receipt));
         ++p.nextEncounter;
         if (run.stopRetreat) p.stop = StopReason::Retreat;
@@ -984,6 +1051,7 @@ ExpeditionResult FinalizeExpedition(const ContentDB& db, const ExpeditionRequest
         h.I64(rc.potionsUsed);
         h.I64(rc.healFailures);
         h.I64(rc.dodgesUsed);
+        if (rc.devouredUses != 0) h.I64(rc.devouredUses);  // só com golpe devorado: resultados antigos mantêm o hash
         h.Dbl(rc.damageTaken);
         h.Dbl(rc.damageDealt);
         h.Dbl(rc.xpRaw);

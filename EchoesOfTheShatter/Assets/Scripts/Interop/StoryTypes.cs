@@ -96,6 +96,10 @@ namespace Echoes.Interop
         public readonly Dictionary<string, string> StainLootTableByMap = new Dictionary<string, string>();
         /// <summary>Fome que cada uso de habilidade devorada gasta na corrida (story_rules.csv).</summary>
         public int DevouredHungerCost;
+        /// <summary>Golpes devorados do save (grantsSignature skill.devoured.* dos vereditos).</summary>
+        public readonly List<string> DevouredSkills = new List<string>();
+        /// <summary>Usos de golpe devorado por corrida que a Fome deixa (-1 = sem limite); vai para a expedicao idle.</summary>
+        public int IdleDevouredUses;
         public readonly List<string> Echoes = new List<string>();
         public readonly List<StoryVerdictInfo> Verdicts = new List<StoryVerdictInfo>();
         /// <summary>Todas as missoes de quests.csv, na ordem da tabela, com progresso e status.</summary>
@@ -117,6 +121,9 @@ namespace Echoes.Interop
             state.DevouredHungerCost = MiniJson.Int(o, "devoured_hunger_cost");
             if (o.TryGetValue("stain_loot_table_by_map", out var stainLoot))
                 foreach (var kv in MiniJson.AsObject(stainLoot)) if (kv.Value is string table) state.StainLootTableByMap[kv.Key] = table;
+            if (o.TryGetValue("devoured_skills", out var devoured))
+                foreach (var d in MiniJson.AsArray(devoured)) if (d is string skill) state.DevouredSkills.Add(skill);
+            state.IdleDevouredUses = MiniJson.Int(o, "idle_devoured_uses");
             if (o.TryGetValue("echoes", out var echoes))
                 foreach (var e in MiniJson.AsArray(echoes)) if (e is string s) state.Echoes.Add(s);
             if (o.TryGetValue("verdicts", out var verdicts))
