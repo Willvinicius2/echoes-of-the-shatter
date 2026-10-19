@@ -221,7 +221,10 @@ namespace Echoes.Tests.EditMode
         {
             var c = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath("AC_Warrior"));
             var states = c.layers[1].stateMachine.states.Select(s => s.state.name).ToList();
-            foreach (var name in new[] { "Basic", "Charge", "Rift", "Bash", "Dodge" }) CollectionAssert.Contains(states, name);
+            foreach (var name in new[] { "Basic", "Charge", "Rift", "Bash", "Dodge", "DevouredSlam" }) CollectionAssert.Contains(states, name);
+            var warriorSet = AssetDatabase.LoadAssetAtPath<SkillPresentationSet>(AnimatorControllerBuilder.WarriorSkillSetPath);
+            Assert.IsTrue(warriorSet.TryGet("skill.devoured.guardian_slam", out var slam), "golpe devorado (F) precisa de entrada de apresentacao");
+            Assert.AreEqual("DevouredSlam", slam.animatorState);
             var boss = AssetDatabase.LoadAssetAtPath<AnimatorController>(AnimatorControllerBuilder.ControllerPath("AC_Boss"));
             var bossStates = boss.layers[1].stateMachine.states.Select(s => s.state.name).ToList();
             foreach (var name in new[] { "Hammer", "ShieldBash", "ChargeWindup", "ChargeRun", "ChargeRecover", "Roar" }) CollectionAssert.Contains(bossStates, name);
