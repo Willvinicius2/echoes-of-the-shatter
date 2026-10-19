@@ -43,7 +43,7 @@ namespace Echoes.UI
             input = FindAnyObjectByType<PlayerInputHandler>();
             if (root == null) root = FindAnyObjectByType<GameRoot>();
             if (hero == null) hero = FindAnyObjectByType<HeroController>();
-            npcs.AddRange(FindObjectsByType<InteractableNpc>(FindObjectsSortMode.None));
+            foreach (var found in FindObjectsByType<InteractableNpc>(FindObjectsSortMode.None)) RegisterNpc(found); // sem duplicar Bram e Odete já registrados pelo StoryDirector
             EnsureSave();
 
             var rootElement = host.Root;

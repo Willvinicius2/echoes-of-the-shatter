@@ -94,7 +94,28 @@ namespace Echoes.Gameplay
             attributes.RefreshHero(combat.Rules, in build);
             Logic.RefreshUnlocks();
             OnEquipmentChanged();
+            RefreshDevoured(native, save);
             return true;
+        }
+
+        // Veredito Devorar com o herói já em cena: o golpe-assinatura entra na barra e na trava de Fome na hora, sem precisar recarregar a cena.
+        void RefreshDevoured(Echoes.Interop.Native.NativeRulesCore native, Echoes.Interop.Native.SaveGame save)
+        {
+            var kit = DevouredKit.Load(FindAnyObjectByType<Echoes.Core.GameRoot>(), native, save);
+            if (kit == null) return;
+            kit.CarrySpentFrom(devoured);
+            devoured = kit;
+            Logic.HungerGate = kit;
+            var bar = new string[HeroCombatLogic.SlotCount];
+            for (var i = 0; i < bar.Length; i++)
+            {
+                var slot = Logic.GetSlot(i);
+                bar[i] = slot != null && slot.Skill != null ? slot.Skill.Id : string.Empty;
+            }
+            var before = (string[])bar.Clone();
+            kit.FillBar(bar);
+            for (var i = 0; i < bar.Length; i++)
+                if (bar[i] != before[i]) Logic.SetSlotSkill(i, combat.Rules.FindSkill(bar[i]));
         }
 
         /// <summary>Teste e captura: zera a vida do herói (a morte segue o fluxo normal: tela "Você caiu", retorno ao checkpoint).</summary>
