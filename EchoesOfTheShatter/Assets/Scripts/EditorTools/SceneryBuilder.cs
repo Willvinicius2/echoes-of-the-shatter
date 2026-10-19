@@ -335,16 +335,16 @@ namespace Echoes.EditorTools
         {
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = Hex("#4E5C74");
-            RenderSettings.ambientEquatorColor = Hex("#37424F");
-            RenderSettings.ambientGroundColor = Hex("#232B36");
+            RenderSettings.ambientSkyColor = Hex("#4A5E78");
+            RenderSettings.ambientEquatorColor = Hex("#323F52");
+            RenderSettings.ambientGroundColor = Hex("#202833");
             RenderSettings.fog = false;
 
             var lightGo = new GameObject("Directional Light");
             lightGo.transform.rotation = Quaternion.Euler(50f, -25f, 0f);
             var light = lightGo.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.color = Hex("#FFE2B8");
+            light.color = Hex("#F2EEE6"); // luz de cima fria: so os braseiros e velas sao quentes
             light.intensity = 0.9f;
             light.shadows = LightShadows.Soft;
 
@@ -390,7 +390,7 @@ namespace Echoes.EditorTools
             balance.temperature.Override(10f); // rev2: mais quente, menos roxo
             balance.tint.Override(-24f);
             var split = Add<SplitToning>();
-            split.shadows.Override(Hex("#9BA6B4"));
+            split.shadows.Override(Hex("#8DA0B8"));
             split.highlights.Override(Hex("#FFC88A"));
             split.balance.Override(-20f);
             var bloom = Add<Bloom>();

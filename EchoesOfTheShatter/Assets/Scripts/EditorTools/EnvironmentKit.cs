@@ -222,13 +222,13 @@ namespace Echoes.EditorTools
                 case Look.Decal: mat.EnableKeyword("_ENV_DECAL"); break;
                 case Look.Rune: mat.EnableKeyword("_ENV_RUNE"); break;
             }
-            mat.SetFloat("_PoolStrength", look == Look.Kit ? 1.0f : 1.5f); // pecas pintadas (pilares ao lado do braseiro) estouravam com 1,5
+            mat.SetFloat("_PoolStrength", look == Look.Kit ? 1.0f : 2.2f); // pecas pintadas (pilares ao lado do braseiro) estouravam com 1,5
             mat.SetFloat("_PoolSoftClip", look == Look.Kit ? 1.2f : look == Look.Wall || look == Look.Band ? 0.7f : 0.3f); // pedra clara comprime mais perto da fonte
             // As faces verticais pegam pouco do sol de cima-esquerda: parede, faixa e pecas pintadas sobem na tinta para ler como pedra clara do alvo.
             var gain = look == Look.Wall || look == Look.Band ? 1.4f : look == Look.Floor || look == Look.Decal || look == Look.Rune ? 1f : 1.0f;
             var cool = look == Look.Wall || look == Look.Band; // pedra cinza-azulada fria: a textura pintada da parede ainda e violeta, a tinta tira o roxo
-            mat.SetColor("_Tint", cool ? new Color(gain * 1.0f, gain * 1.12f, gain * 0.80f, 1f) : new Color(gain, gain, gain, 1f));
-            mat.SetColor("_ShadowTint", new Color(0.28f, 0.34f, 0.50f, 1f));
+            mat.SetColor("_Tint", cool ? new Color(gain * 0.92f, gain * 1.08f, gain * 0.98f, 1f) : new Color(gain, gain, gain, 1f));
+            mat.SetColor("_ShadowTint", new Color(0.26f, 0.33f, 0.48f, 1f));
             // Piso limpo e uniforme: uma lajota so (sem celulas A/B, giro ou espelho), contraste e manchas de brilho baixos.
             mat.SetFloat("_CellSize", look == Look.Floor ? 0f : 12f);
             mat.SetFloat("_FloorTile", 8f);
@@ -263,7 +263,7 @@ namespace Echoes.EditorTools
             EnsureTextures();
             var mat = LoadOrCreate(MaterialDir + "/M_Env_Pedra.mat");
             SetLook(mat, Look.Wall);
-            mat.SetColor("_Tint", new Color(0.84f, 0.88f, 0.84f, 1f)); // paredes e pilares da Cripta: cinza-azulado frio, sem estourar
+            mat.SetColor("_Tint", new Color(0.82f, 0.92f, 0.94f, 1f)); // paredes e pilares da Cripta: cinza-azulado frio, sem estourar
             EditorUtility.SetDirty(mat);
             return mat;
         }

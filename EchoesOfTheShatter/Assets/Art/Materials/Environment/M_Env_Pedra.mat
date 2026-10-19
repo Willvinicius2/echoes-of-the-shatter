@@ -62,7 +62,7 @@ Material:
     - _FloorContrast: 1.35
     - _FloorTile: 8
     - _PoolSoftClip: 0.7
-    - _PoolStrength: 1.5
+    - _PoolStrength: 2.2
     - _RuneIntensity: 2.5
     - _ShadeSoftness: 0.6
     - _SrcBlend: 1
@@ -73,7 +73,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _RuneColor: {r: 1, g: 0.7, b: 0.3, a: 1}
-    - _ShadowTint: {r: 0.28, g: 0.34, b: 0.5, a: 1}
-    - _Tint: {r: 0.84, g: 0.88, b: 0.84, a: 1}
+    - _ShadowTint: {r: 0.26, g: 0.33, b: 0.48, a: 1}
+    - _Tint: {r: 0.82, g: 0.92, b: 0.94, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
