@@ -100,8 +100,8 @@ Material:
     - _RimColor: {r: 1, g: 0.82, b: 0.62, a: 1}
     - _RimTint: {r: 1, g: 1, b: 1, a: 1}
     - _RuneColor: {r: 1, g: 0.7, b: 0.3, a: 1}
-    - _ShadowTint: {r: 0.41999996, g: 0.35999998, b: 0.5, a: 1}
-    - _Tint: {r: 1.4, g: 1.4, b: 1.4, a: 1}
+    - _ShadowTint: {r: 0.28, g: 0.34, b: 0.5, a: 1}
+    - _Tint: {r: 1.4, g: 1.568, b: 1.12, a: 1}
     - _TintColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

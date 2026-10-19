@@ -41,7 +41,7 @@ t = t * t * (3 - 2 * t)
 slab_id = row * 8 + col
 tone = rng.uniform(-0.02, 0.02, 64)[slab_id]
 hue = rng.uniform(-0.02, 0.02, 64)[slab_id]
-base = np.array([0.30, 0.265, 0.36])
+base = np.array([0.285, 0.285, 0.34])
 img = np.empty((N, N, 3))
 for c in range(3):
     img[..., c] = base[c] * (1 + tone + hue * (c - 1))
@@ -64,7 +64,7 @@ img *= (1 + 0.05 * (1 - np.clip(cx**2 + cy**2, 0, 1)))[..., None]
 # junta escura
 g = np.clip(d / grout, 0, 1)
 g = g * g * (3 - 2 * g)
-groutcol = np.array([0.105, 0.085, 0.145])
+groutcol = np.array([0.075, 0.09, 0.12])
 img = img * g[..., None] + groutcol * (1 - g[..., None])
 
 img = np.clip(img, 0, 1)

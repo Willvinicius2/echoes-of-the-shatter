@@ -335,9 +335,9 @@ namespace Echoes.EditorTools
         {
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = Hex("#5A5078");
-            RenderSettings.ambientEquatorColor = Hex("#403A58");
-            RenderSettings.ambientGroundColor = Hex("#2A2538");
+            RenderSettings.ambientSkyColor = Hex("#4E5C74");
+            RenderSettings.ambientEquatorColor = Hex("#37424F");
+            RenderSettings.ambientGroundColor = Hex("#232B36");
             RenderSettings.fog = false;
 
             var lightGo = new GameObject("Directional Light");
@@ -390,7 +390,7 @@ namespace Echoes.EditorTools
             balance.temperature.Override(10f); // rev2: mais quente, menos roxo
             balance.tint.Override(-24f);
             var split = Add<SplitToning>();
-            split.shadows.Override(Hex("#9A92A8"));
+            split.shadows.Override(Hex("#9BA6B4"));
             split.highlights.Override(Hex("#FFC88A"));
             split.balance.Override(-20f);
             var bloom = Add<Bloom>();
