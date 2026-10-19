@@ -2769,3 +2769,42 @@ TEST(c_api_story_echoes_verdict_hunger_and_state_json) {
     shatter_story_destroy(story);
     shatter_story_destroy(nullptr);
 }
+
+TEST(c_api_story_quests_event_progress_and_state_json) {
+    DbHandle db(tu::RichDir());
+    SaveHandle save = MakeSave(db.db);
+    const std::string dir = tu::DataDir() + "/../../../EchoesOfTheShatter/Content/Data/Story";
+    shatter_story* story = nullptr;
+    shatter_error err{};
+    ASSERT_EQ(shatter_story_load_directory(dir.data(), dir.size(), nullptr, &story, &err), SHATTER_OK);
+    auto quests = [&]() {
+        return Parse(TwoCalls([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_story_state_json(story, save.save, o, c, n); }))["quests"];
+    };
+    const json::Value fresh = quests();
+    ASSERT_EQ(fresh.Size(), static_cast<std::size_t>(4));
+    EXPECT_EQ(fresh.At(0)["quest_id"].AsString(), std::string("quest.r1.first_call"));
+    EXPECT_EQ(fresh.At(0)["status"].AsString(), std::string("active"));
+    EXPECT_EQ(fresh.At(1)["status"].AsString(), std::string("locked"));
+
+    std::uint32_t done = 99;
+    EXPECT_EQ(shatter_story_quest_event(story, save.save, "talk", 4, "npc.nobody", 10, &done), SHATTER_OK);
+    EXPECT_EQ(done, 0u);
+    EXPECT_EQ(shatter_story_quest_event(story, save.save, "talk", 4, "npc.ilsa", 8, &done), SHATTER_OK);
+    EXPECT_EQ(done, 1u);
+    EXPECT_EQ(shatter_story_quest_event(nullptr, save.save, "talk", 4, "npc.ilsa", 8, &done), SHATTER_INVALID_ARGUMENT);
+    uint8_t isNew = 0;
+    ASSERT_EQ(shatter_story_record_echo(story, save.save, "echo.r1.broken_hammer", 21, &isNew), SHATTER_OK);
+    const json::Value after = quests();
+    EXPECT_EQ(after.At(0)["status"].AsString(), std::string("done"));
+    EXPECT_EQ(after.At(1)["status"].AsString(), std::string("active"));
+    EXPECT_EQ(after.At(1)["progress"].AsInt(), static_cast<std::int64_t>(1));
+    EXPECT_EQ(after.At(2)["status"].AsString(), std::string("active"));
+
+    // O progresso vai no arquivo e volta igual.
+    const std::string text = SaveBytes(save.save);
+    SaveHandle again;
+    std::int32_t load = -1;
+    ASSERT_EQ(shatter_save_from_json(text.data(), text.size(), &again.save, &load, &err), SHATTER_OK);
+    EXPECT_EQ(SaveBytes(again.save), text);
+    shatter_story_destroy(story);
+}

@@ -428,6 +428,17 @@ Value SaveToJson(const SaveData& s) {
         }
         so.Set("verdicts", std::move(vs));
         so.Set("echoes", StrList(s.story.echoes));
+        if (!s.story.quests.empty()) {   // campo opcional dentro de `story`: saves sem missões mantêm os mesmos bytes
+            Value qs = Value::MakeArray();
+            for (const StoryQuestRecord& q : s.story.quests) {
+                Value qo = Value::MakeObject();
+                qo.Set("quest_id", Value(q.questId));
+                qo.Set("progress", Value(q.progress));
+                qo.Set("done", Value(q.done));
+                qs.Push(std::move(qo));
+            }
+            so.Set("quests", std::move(qs));
+        }
         o.Set("story", std::move(so));
     }
     if (!s.vendorBuyback.empty()) {
@@ -524,6 +535,20 @@ bool SaveFromJson(const Value& data, SaveData& out, std::string* error) {
             if (!IsValidContentId(s.story.echoes[i])) return Fail(error, "story: bad echo id");
             for (std::size_t j = 0; j < i; ++j)
                 if (s.story.echoes[j] == s.story.echoes[i]) return Fail(error, "story repeats echo '" + s.story.echoes[i] + "'");
+        }
+        const auto& qs = so["quests"].Items();
+        if (qs.size() > kMaxSavedQuests) return Fail(error, "story: too many quests");
+        for (const Value& qv : qs) {
+            StoryQuestRecord q;
+            q.questId = qv["quest_id"].AsString();
+            const std::int64_t progress = qv["progress"].AsInt(0);
+            if (!IsValidContentId(q.questId)) return Fail(error, "story: bad quest id");
+            if (progress < 0 || progress > 1000000) return Fail(error, "story: quest progress out of range");
+            q.progress = static_cast<int>(progress);
+            q.done = qv["done"].AsBool(false);
+            for (const StoryQuestRecord& other : s.story.quests)
+                if (other.questId == q.questId) return Fail(error, "story repeats quest '" + q.questId + "'");
+            s.story.quests.push_back(std::move(q));
         }
     }
     {

@@ -47,6 +47,9 @@ namespace Echoes.Interop.Native
         public static extern int shatter_story_skill_revealed(IntPtr story, IntPtr save, byte* regionId, nuint regionIdLen, byte* skillId, nuint skillIdLen, byte* revealed);
 
         [DllImport(StoryLib, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int shatter_story_quest_event(IntPtr story, IntPtr save, byte* type, nuint typeLen, byte* target, nuint targetLen, uint* completed);
+
+        [DllImport(StoryLib, CallingConvention = CallingConvention.Cdecl)]
         public static extern int shatter_statblock_add_modifier(IntPtr statblock, ShatterModifier* mod, byte* source, nuint sourceLen);
 
         [DllImport(StoryLib, CallingConvention = CallingConvention.Cdecl)]

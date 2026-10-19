@@ -46,6 +46,61 @@ const StoryVerdictRecord* FindRecord(const SaveData& s, std::string_view regionI
     return nullptr;
 }
 
+StoryQuestRecord* FindQuestRecord(SaveData& s, std::string_view id) {
+    for (StoryQuestRecord& r : s.story.quests)
+        if (r.questId == id) return &r;
+    return nullptr;
+}
+const StoryQuestRecord* FindQuestRecord(const SaveData& s, std::string_view id) {
+    for (const StoryQuestRecord& r : s.story.quests)
+        if (r.questId == id) return &r;
+    return nullptr;
+}
+// nullptr se o save já guarda kMaxSavedQuests missões.
+StoryQuestRecord* GetOrAddQuestRecord(SaveData& s, std::string_view id) {
+    if (StoryQuestRecord* r = FindQuestRecord(s, id)) return r;
+    if (s.story.quests.size() >= kMaxSavedQuests) return nullptr;
+    s.story.quests.push_back({ContentId(id), 0, false});
+    return &s.story.quests.back();
+}
+bool QuestUnlocked(const SaveData& s, const StoryQuest& q) {
+    if (q.requires_.empty()) return true;
+    const StoryQuestRecord* r = FindQuestRecord(s, q.requires_);
+    return r != nullptr && r->done;
+}
+bool QuestDone(const SaveData& s, const StoryQuest& q) {
+    const StoryQuestRecord* r = FindQuestRecord(s, q.id);
+    return r != nullptr && r->done;
+}
+void MarkProgress(StoryQuestRecord& r, const StoryQuest& q, int progress, int& newlyDone) {
+    r.progress = std::max(r.progress, std::min(progress, q.objectiveCount));
+    if (!r.done && r.progress >= q.objectiveCount) {
+        r.done = true;
+        ++newlyDone;
+    }
+}
+// Avança as missões de objetivo derivado (Ecos, veredito) até nada mudar: concluir uma pode liberar outra já cumprida.
+int SyncQuests(const StoryDB& story, SaveData& s) {
+    int newlyDone = 0;
+    for (bool changed = true; changed;) {
+        changed = false;
+        for (const StoryQuest& q : story.Quests()) {
+            if (QuestDone(s, q) || !QuestUnlocked(s, q)) continue;
+            int derived = 0;
+            if (q.objectiveType == "collect_echo") derived = EchoesFound(story, s, q.objectiveTarget);
+            else if (q.objectiveType == "verdict") derived = DecidedVerdict(story, s, q.objectiveTarget) != nullptr ? 1 : 0;
+            else continue;
+            if (derived <= 0) continue;
+            StoryQuestRecord* r = GetOrAddQuestRecord(s, q.id);
+            if (r == nullptr) continue;
+            const int before = newlyDone;
+            MarkProgress(*r, q, derived, newlyDone);
+            changed = changed || newlyDone != before;
+        }
+    }
+    return newlyDone;
+}
+
 }  // namespace
 
 bool StoryDB::LoadTableCsv(std::string_view table, std::string_view text) {
@@ -243,6 +298,7 @@ bool RecordEcho(const StoryDB& story, SaveData& s, std::string_view echoId) {
     if (std::find(s.story.echoes.begin(), s.story.echoes.end(), echoId) != s.story.echoes.end()) return false;
     if (s.story.echoes.size() >= kMaxSavedEchoes) return false;
     s.story.echoes.emplace_back(echoId);
+    SyncQuests(story, s);
     return true;
 }
 
@@ -280,12 +336,39 @@ VerdictResult ApplyVerdict(const StoryDB& story, SaveData& s, std::string_view v
     if (s.story.verdicts.size() >= kMaxSavedVerdicts) return VerdictResult::SaveFull;
     s.story.verdicts.push_back({v->regionId, v->id});
     s.story.hunger = std::min(story.HungerMax(), s.story.hunger + v->hungerDelta);
+    SyncQuests(story, s);
     return VerdictResult::Ok;
 }
 
 const StoryVerdict* DecidedVerdict(const StoryDB& story, const SaveData& s, std::string_view regionId) {
     const StoryVerdictRecord* r = FindRecord(s, regionId);
     return r != nullptr ? story.FindVerdict(r->verdictId) : nullptr;
+}
+
+QuestStatus GetQuestStatus(const StoryDB& story, const SaveData& s, std::string_view questId) {
+    const StoryQuest* q = story.FindQuest(questId);
+    if (q == nullptr) return QuestStatus::Locked;
+    if (QuestDone(s, *q)) return QuestStatus::Done;
+    return QuestUnlocked(s, *q) ? QuestStatus::Active : QuestStatus::Locked;
+}
+
+int QuestProgress(const StoryDB& story, const SaveData& s, std::string_view questId) {
+    const StoryQuest* q = story.FindQuest(questId);
+    const StoryQuestRecord* r = q != nullptr ? FindQuestRecord(s, questId) : nullptr;
+    return r != nullptr ? std::min(r->progress, q->objectiveCount) : 0;
+}
+
+int ReportQuestEvent(const StoryDB& story, SaveData& s, std::string_view type, std::string_view target, int amount) {
+    if (amount < 1 || (type != "talk" && type != "reach_map_boss")) return 0;
+    int newlyDone = 0;
+    for (const StoryQuest& q : story.Quests()) {
+        if (q.objectiveType != type || q.objectiveTarget != target || QuestDone(s, q) || !QuestUnlocked(s, q)) continue;
+        StoryQuestRecord* r = GetOrAddQuestRecord(s, q.id);
+        if (r == nullptr) continue;
+        const int capped = static_cast<int>(std::min<std::int64_t>(q.objectiveCount, static_cast<std::int64_t>(r->progress) + amount));
+        MarkProgress(*r, q, capped, newlyDone);
+    }
+    return newlyDone + SyncQuests(story, s);
 }
 
 int TotalStatBonusPct(const StoryDB& story, const SaveData& s) {

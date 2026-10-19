@@ -1381,6 +1381,18 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_skill_revealed(const shatt
                                                                      const char* skill_id, size_t skill_id_len,
                                                                      uint8_t* revealed) SHATTER_NOEXCEPT;
 
+/* --- Missões da história (quests.csv; story.h) ---
+ * O progresso vai no save (`story.quests`). Objetivos `collect_echo` e `verdict` avançam sozinhos em shatter_story_record_echo e
+ * shatter_story_apply_verdict; `talk` e `reach_map_boss` o cliente avisa com shatter_story_quest_event. Uma missão só avança com a que ela
+ * `requires` concluída. A recompensa (`reward`) é só uma chave: o cliente a lê e aplica. O estado vai em shatter_story_state_json, chave
+ * "quests": [{"quest_id","region_id","giver","objective_type","objective_target","objective_count","progress","status":
+ * "locked"|"active"|"done","requires","reward"}] na ordem de quests.csv. API aditiva (versão da API C segue 1). */
+/* Avisa um evento: `type` "talk" ou "reach_map_boss", `target` como em quests.csv (npc.ilsa, map.act1.crypt). Soma 1 às missões liberadas e não
+ * concluídas desse objetivo. *completed = quantas missões foram concluídas agora (0 se o tipo/alvo não tem missão: nada muda). */
+SHATTER_API shatter_status SHATTER_CALL shatter_story_quest_event(const shatter_story* story, shatter_save* save,
+                                                                  const char* type, size_t type_len, const char* target,
+                                                                  size_t target_len, uint32_t* completed) SHATTER_NOEXCEPT;
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

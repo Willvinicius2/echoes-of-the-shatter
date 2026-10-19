@@ -458,3 +458,10 @@ Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus do contrato pendente 
 - `story_rules.csv`: `devoured_hunger_cost` (0..`hunger_max`; cada uso de habilidade devorada gasta isso de Fome na corrida) e `stain_loot_table` (tabela de `loot_tables.csv` extra das áreas com Mancha, conferida contra o conteúdo). Novos em `story.h`: `DevouredHungerCost()`, `StainLootTable()`, `StainLootTableForMap`.
 - Dados: `loot.crypt.stain` (rolls 1, dropChance 0,25, só mágico e raro; Lascas, Ouro e o conjunto do Guardião e o escudo `item_base.guard_shield`).
 - Sem struct nova, então sem `layout_info`. Testes: `world_encounter_elite_bonus_*`, `story_devoured_cost_and_stain_loot_table`, trecho novo em `c_api_17`.
+
+### 15.2 Missões da história (19/10/2026, `claude/missoes-regiao1`)
+Aditiva; `SHATTER_C_API_VERSION` continua 1. Revisão Opus do contrato pendente.
+- **Save**: `story.quests` (opcional, só gravado se houver): `[{quest_id, progress, done}]`, no máximo 256, sem id repetido. Saves sem missões mantêm os mesmos bytes e hash. `save_v2.schema.json` atualizado.
+- **Função nova** `shatter_story_quest_event(story, save, type, type_len, target, target_len, *completed)`: `type` `talk` ou `reach_map_boss`; soma 1 às missões liberadas e não concluídas com esse objetivo e alvo; `*completed` = quantas concluiu agora. Tipo ou alvo sem missão: 0.
+- `shatter_story_record_echo` e `shatter_story_apply_verdict` sincronizam as missões `collect_echo` e `verdict`. `shatter_story_state_json` ganhou só a chave `quests` (lista na ordem de `quests.csv` com `progress`, `status` locked|active|done e `reward`).
+- Core: `GetQuestStatus`, `QuestProgress`, `ReportQuestEvent` em `story.h`. Sem struct nova, então sem `layout_info`.

@@ -18,7 +18,7 @@ namespace Echoes.UI
     /// (<see cref="StoryDb"/> / <see cref="SaveGame"/>); aqui so chamadas, UI e a ligacao com a cena. Nasce sozinho nas cenas Cripta e Refugio (nao
     /// precisa estar na cena) e fica desligado sem save carregado ou sem a pasta Story/.
     /// </summary>
-    public sealed class StoryDirector : MonoBehaviour
+    public sealed partial class StoryDirector : MonoBehaviour
     {
         public const string RegionId = "region.r1.crypt";
 
@@ -115,6 +115,7 @@ namespace Echoes.UI
             RefreshHud();
             var state = Save.ReadStory(db);
             if (state.StatBonusPct > 0.0 && hero != null) hero.RefreshFromSave();
+            InitQuests(state);
 
             if (SceneManager.GetActiveScene().name == GameFlow.CriptaScene) StartCrypt(state);
             else StartRefuge(state);
@@ -168,6 +169,7 @@ namespace Echoes.UI
             if (db == null || !Save.StoryRecordEcho(db, echoId, out var isNew)) return false;
             if (!isNew) return true;
             GameSession.Save.Save(rules);
+            AnnounceQuests();
             ScreenHost.Toast(ScreenKit.Fmt(Loc, "ui.story.echo_found", ("name", Loc.Get(echoId + ".name"))), ToastKind.Item);
             var echo = echoRows.Find(e => e.Id == echoId);
             if (echo != null)
@@ -186,6 +188,7 @@ namespace Echoes.UI
 
         void OnArena(in ArenaStateEvent evt)
         {
+            if (evt.Phase == ArenaPhase.Fighting) ReportQuest("reach_map_boss", Save.ReadStoryRegion(db, RegionId).MapId);
             if (evt.Phase == ArenaPhase.Fighting && !guardianPhase1Said)
             {
                 guardianPhase1Said = true;
@@ -247,6 +250,7 @@ namespace Echoes.UI
             }
             GameSession.Save.Save(rules); // RF-54: a escolha irreversivel vai para o disco antes de qualquer efeito
             CloseVerdict();
+            AnnounceQuests();
             var state = Save.ReadStory(db);
             Save.ApplyStoryState(state);
             if (hero != null) hero.RefreshFromSave();

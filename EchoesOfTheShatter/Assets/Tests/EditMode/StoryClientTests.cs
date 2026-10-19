@@ -127,6 +127,40 @@ namespace Echoes.Tests.EditMode
         }
 
         [Test]
+        public void Quests_FromCore_FollowTalkEchoesAndJournal()
+        {
+            var state = StoryState.FromJson("{}");
+            Assert.AreEqual(0, state.Quests.Count);   // JSON sem chave quests
+            state = Save.ReadStory(story);
+            Assert.AreEqual(4, state.Quests.Count);
+            Assert.IsTrue(state.QuestOf("quest.r1.first_call").IsActive);
+            Assert.IsTrue(state.QuestOf("quest.r1.echoes").Status == "locked");
+            Assert.AreEqual(0, Save.StoryQuestEvent(story, "talk", "npc.tico"));
+            Assert.AreEqual(1, Save.StoryQuestEvent(story, "talk", "npc.ilsa"));
+            Assert.IsTrue(Save.StoryRecordEcho(story, "echo.r1.broken_hammer", out _));
+            state = Save.ReadStory(story);
+            Assert.IsTrue(state.QuestDone("quest.r1.first_call"));
+            Assert.AreEqual(1, state.QuestOf("quest.r1.echoes").Progress);
+            Assert.AreEqual(3, state.QuestOf("quest.r1.echoes").ObjectiveCount);
+            Assert.AreEqual("unlock.return_marker", state.QuestOf("quest.r1.first_call").Reward);
+            // Diario: ativas primeiro, depois as concluidas; a trancada (verdict) nao aparece.
+            var shown = QuestJournal.Visible(state);
+            Assert.AreEqual("quest.r1.echoes", shown[0].QuestId);
+            Assert.AreEqual("quest.r1.first_call", shown[shown.Count - 1].QuestId);
+            Assert.IsNull(shown.Find(q => q.QuestId == "quest.r1.verdict"));
+        }
+
+        [Test]
+        public void StoryLines_IntroPlaysOnceAndCryptDoneAfterVerdict()
+        {
+            const string region = "region.r1.crypt";
+            var heard = StoryState.FromJson("{\"echoes\":[],\"verdicts\":[],\"quests\":[{\"quest_id\":\"quest.r1.first_call\",\"status\":\"done\"}]}");
+            Assert.AreEqual("dlg.ilsa.general_lore", StoryLines.For(InteractableNpc.Ilsa, heard, region)[0]);
+            var won = StoryState.FromJson(StateJson.Replace("}]}", "}],\"quests\":[{\"quest_id\":\"quest.r1.verdict\",\"status\":\"done\"}]}"));
+            Assert.AreEqual("dlg.ilsa.crypt_done", StoryLines.For(InteractableNpc.Ilsa, won, region)[0]);
+        }
+
+        [Test]
         public void BrokenJson_GivesEmptyState()
         {
             Assert.AreEqual(0, StoryState.FromJson("{nao e json").HungerMax);
