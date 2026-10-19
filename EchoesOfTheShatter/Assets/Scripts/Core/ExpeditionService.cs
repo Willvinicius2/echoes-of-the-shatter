@@ -167,12 +167,31 @@ namespace Echoes.Core
 
         SaveGame Save => saves.Current;
 
-        /// <summary>Campos opcionais do veredito para o pedido da expedicao: bonus de atributos, cura de pocao e elites da Mancha (so o que for maior que zero).</summary>
+        /// <summary>
+        /// Campos opcionais do veredito para o pedido da expedicao: bonus de atributos, cura de pocao e elites da Mancha (so o que for maior que zero),
+        /// mais o loot da Mancha do mapa e os golpes devorados com os usos que a Fome deixa (docs/tecnico/09 secao 15.5; numeros do core).
+        /// </summary>
         string StoryJson(ExpeditionConfig config)
         {
             if (Save == null) return string.Empty;
             Save.StoryStainEliteByMap.TryGetValue(config.MapId, out var elite);
-            return StoryFields(Save.StoryStatBonusPct, Save.StoryPotionEffectPct, elite);
+            Save.StoryStainLootByMap.TryGetValue(config.MapId, out var stainLoot);
+            return StoryFields(Save.StoryStatBonusPct, Save.StoryPotionEffectPct, elite)
+                 + StoryIdleFields(Save.StoryDevouredSkills, Save.StoryIdleDevouredUses, stainLoot);
+        }
+
+        /// <summary>Golpes devorados (so com usos != 0; -1 = sem limite) e tabela de loot da Mancha, no formato dos parametros de inicio.</summary>
+        static string StoryIdleFields(IReadOnlyList<string> devoured, int uses, string stainLoot)
+        {
+            var sb = new StringBuilder();
+            if (uses != 0 && devoured != null && devoured.Count > 0)
+            {
+                sb.Append(",\"story_devoured_skills\":[");
+                for (var i = 0; i < devoured.Count; i++) sb.Append(i > 0 ? "," : string.Empty).Append(MiniJson.Quote(devoured[i]));
+                sb.Append("],\"story_devoured_uses\":").Append(uses);
+            }
+            if (!string.IsNullOrEmpty(stainLoot)) sb.Append(",\"story_stain_loot_table\":").Append(MiniJson.Quote(stainLoot));
+            return sb.ToString();
         }
 
         static string StoryFields(double stat, double potion, double elite)

@@ -446,4 +446,32 @@ std::string StainLootTableForMap(const StoryDB& story, const SaveData& s, std::s
     return MapHasStain(story, s, mapId) ? story.StainLootTable() : std::string();
 }
 
+std::vector<ContentId> DevouredSkills(const StoryDB& story, const SaveData& s) {
+    std::vector<ContentId> out;
+    for (const StoryVerdictRecord& r : s.story.verdicts) {
+        const StoryVerdict* v = story.FindVerdict(r.verdictId);
+        if (v == nullptr || v->grantsSignature.rfind("skill.devoured.", 0) != 0) continue;
+        if (std::find(out.begin(), out.end(), v->grantsSignature) == out.end()) out.push_back(v->grantsSignature);
+    }
+    return out;
+}
+
+int IdleDevouredUses(const StoryDB& story, const SaveData& s) {
+    const int cost = story.DevouredHungerCost();
+    const int max = story.HungerMax();
+    if (cost <= 0 || max <= 0) return -1;
+    const int left = max - s.story.hunger;
+    return left > 0 ? left / cost : 0;
+}
+
+void ApplyStoryToExpedition(const StoryDB& story, const SaveData& s, std::string_view mapId, ExpeditionStartParams& p) {
+    p.storyStatBonusPct = TotalStatBonusPct(story, s);
+    p.storyPotionEffectPct = TotalPotionEffectPct(story, s);
+    p.storyEliteBonusPct = std::clamp(StainEliteBonusPctForMap(story, s, mapId), 0, 100);
+    p.storyDevouredSkills = DevouredSkills(story, s);
+    p.storyDevouredUses = p.storyDevouredSkills.empty() ? 0 : std::min(IdleDevouredUses(story, s), kMaxStoryDevouredUses);
+    if (p.storyDevouredUses == 0) p.storyDevouredSkills.clear();
+    p.storyStainLootTable = StainLootTableForMap(story, s, mapId);
+}
+
 }  // namespace shatter

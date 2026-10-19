@@ -1029,6 +1029,7 @@ Value ReceiptToJson(const EncounterReceipt& rc) {
     o.Set("potions_used", Value(rc.potionsUsed));
     o.Set("heal_failures", Value(rc.healFailures));
     o.Set("dodges_used", Value(rc.dodgesUsed));
+    if (rc.devouredUses != 0) o.Set("devoured_uses", Value(rc.devouredUses));
     o.Set("damage_taken", Value(rc.damageTaken));
     o.Set("damage_dealt", Value(rc.damageDealt));
     o.Set("xp_raw", Value(rc.xpRaw));
@@ -1060,6 +1061,7 @@ bool ReceiptFromJson(const Value& o, EncounterReceipt& rc, std::string* err) {
     rc.potionsUsed = static_cast<int>(o["potions_used"].AsInt(0));
     rc.healFailures = static_cast<int>(o["heal_failures"].AsInt(0));
     rc.dodgesUsed = static_cast<int>(o["dodges_used"].AsInt(0));
+    rc.devouredUses = static_cast<int>(std::clamp<std::int64_t>(o["devoured_uses"].AsInt(0), 0, 1000000));
     rc.damageTaken = o["damage_taken"].AsDouble(0.0);
     rc.damageDealt = o["damage_dealt"].AsDouble(0.0);
     rc.xpRaw = o["xp_raw"].AsDouble(0.0);
@@ -1092,6 +1094,7 @@ Value ProgressToJson(const ExpeditionProgress& p) {
     o.Set("ward_amount", Value(p.wardAmount));
     o.Set("ward_remaining", Value(p.wardRemaining));
     o.Set("rares_dropped", Value(p.raresDropped));
+    if (p.devouredUsesSpent != 0) o.Set("devoured_uses_spent", Value(p.devouredUsesSpent));
     o.Set("stop", Value(ToString(p.stop)));
     Value receipts = Value::MakeArray();
     for (const EncounterReceipt& rc : p.receipts) receipts.Push(ReceiptToJson(rc));
@@ -1127,6 +1130,7 @@ bool ProgressFromJson(const Value& o, ExpeditionProgress& p, std::string* err) {
     p.wardAmount = o["ward_amount"].AsDouble(0.0);
     p.wardRemaining = o["ward_remaining"].AsDouble(0.0);
     p.raresDropped = static_cast<int>(o["rares_dropped"].AsInt(0));
+    p.devouredUsesSpent = static_cast<int>(std::clamp<std::int64_t>(o["devoured_uses_spent"].AsInt(0), 0, 1000000));
     if (!ParseStopReason(o["stop"].AsString(), p.stop)) {
         if (err) *err = "progress: bad stop";
         return false;
@@ -1240,6 +1244,11 @@ bool StartParamsFromText(const char* s, std::size_t len, ExpeditionStartParams& 
     p.storyStatBonusPct = static_cast<int>(std::clamp<std::int64_t>(v["story_stat_bonus_pct"].AsInt(0), 0, 100));
     p.storyPotionEffectPct = static_cast<int>(std::clamp<std::int64_t>(v["story_potion_effect_pct"].AsInt(0), 0, 100));
     p.storyEliteBonusPct = static_cast<int>(std::clamp<std::int64_t>(v["story_elite_bonus_pct"].AsInt(0), 0, 100));
+    std::string msg;
+    if (!ReadStoryIdleFields(v, p.storyDevouredSkills, p.storyDevouredUses, p.storyStainLootTable, &msg)) {
+        status = SetError(err, SHATTER_PARSE_ERROR, "start params: " + msg);
+        return false;
+    }
     return true;
 }
 
@@ -4328,6 +4337,11 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_state_json(const shatter_s
     }
     o.Set("stain_loot_table_by_map", std::move(stainLoot));
     o.Set("devoured_hunger_cost", Value(static_cast<std::int64_t>(story->db.DevouredHungerCost())));
+    // docs/09, 15.5: o que a expedição idle recebe (story_devoured_skills / story_devoured_uses).
+    Value devoured = Value::MakeArray();
+    for (const ContentId& id : DevouredSkills(story->db, save->data)) devoured.Push(Value(id));
+    o.Set("devoured_skills", std::move(devoured));
+    o.Set("idle_devoured_uses", Value(static_cast<std::int64_t>(IdleDevouredUses(story->db, save->data))));
     Value gated = Value::MakeArray();   // recompensas travadas por gate_reward, com `open` = já liberada
     for (const std::string& g : story->db.GatedRewards()) {
         Value go = Value::MakeObject();

@@ -175,6 +175,34 @@ Value CharacterToJson(const CharacterState& c) {
     return o;
 }
 
+void WriteStoryIdleFields(Value& o, const std::vector<ContentId>& devouredSkills, int devouredUses,
+                          const ContentId& stainLootTable) {
+    if (devouredUses != 0 && !devouredSkills.empty()) {
+        Value skills = Value::MakeArray();
+        for (const ContentId& id : devouredSkills) skills.Push(Value(id));
+        o.Set("story_devoured_skills", std::move(skills));
+    }
+    if (devouredUses != 0) o.Set("story_devoured_uses", Value(devouredUses));
+    if (!stainLootTable.empty()) o.Set("story_stain_loot_table", Value(stainLootTable));
+}
+
+bool ReadStoryIdleFields(const Value& o, std::vector<ContentId>& devouredSkills, int& devouredUses,
+                         ContentId& stainLootTable, std::string* err) {
+    devouredSkills.clear();
+    const Value& skills = o["story_devoured_skills"];
+    if (skills.type() != json::Type::Null && skills.type() != json::Type::Array)
+        return Fail(err, "story_devoured_skills is not a list");
+    if (skills.Items().size() > static_cast<std::size_t>(kMaxStoryDevouredSkills))
+        return Fail(err, "story_devoured_skills: too many");
+    for (const Value& s : skills.Items()) {
+        if (s.type() != json::Type::String || s.AsString().empty()) return Fail(err, "story_devoured_skills: bad id");
+        devouredSkills.push_back(s.AsString());
+    }
+    devouredUses = static_cast<int>(std::clamp<std::int64_t>(o["story_devoured_uses"].AsInt(0), -1, kMaxStoryDevouredUses));
+    stainLootTable = o["story_stain_loot_table"].AsString();
+    return true;
+}
+
 Value ExpeditionRequestToJson(const ExpeditionRequest& r) {
     Value o = Value::MakeObject();
     Value snap = Value::MakeObject();
@@ -202,6 +230,7 @@ Value ExpeditionRequestToJson(const ExpeditionRequest& r) {
     if (r.storyStatBonusPct != 0) o.Set("story_stat_bonus_pct", Value(r.storyStatBonusPct));
     if (r.storyPotionEffectPct != 0) o.Set("story_potion_effect_pct", Value(r.storyPotionEffectPct));
     if (r.storyEliteBonusPct != 0) o.Set("story_elite_bonus_pct", Value(r.storyEliteBonusPct));
+    WriteStoryIdleFields(o, r.storyDevouredSkills, r.storyDevouredUses, r.storyStainLootTable);
     return o;
 }
 
@@ -331,7 +360,7 @@ bool ExpeditionRequestFromJson(const Value& o, ExpeditionRequest& r, std::string
     r.storyStatBonusPct = pct("story_stat_bonus_pct");
     r.storyPotionEffectPct = pct("story_potion_effect_pct");
     r.storyEliteBonusPct = pct("story_elite_bonus_pct");
-    return true;
+    return ReadStoryIdleFields(o, r.storyDevouredSkills, r.storyDevouredUses, r.storyStainLootTable, err);
 }
 
 namespace {
@@ -773,6 +802,9 @@ StartCheck StartExpedition(const ContentDB& db, SaveData& s, const ExpeditionSta
     e.request.storyStatBonusPct = std::clamp(p.storyStatBonusPct, 0, 100);
     e.request.storyPotionEffectPct = std::clamp(p.storyPotionEffectPct, 0, 100);
     e.request.storyEliteBonusPct = std::clamp(p.storyEliteBonusPct, 0, 100);
+    e.request.storyDevouredSkills = p.storyDevouredSkills;
+    e.request.storyDevouredUses = std::clamp(p.storyDevouredUses, -1, kMaxStoryDevouredUses);
+    e.request.storyStainLootTable = p.storyStainLootTable;
     e.collectedResultHash = 0;
     if (slot == s.expeditions.size()) s.expeditions.push_back(std::move(e));
     else s.expeditions[slot] = std::move(e);
