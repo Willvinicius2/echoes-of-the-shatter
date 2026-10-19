@@ -41,10 +41,10 @@ Material:
     - _Dissolve: 0
     - _DissolveEdgeWidth: 0.06
     - _EmissionIntensity: 0.6
-    - _FresnelBlend: 0.5
-    - _FresnelStrength: 1
+    - _FresnelBlend: 0
+    - _FresnelStrength: 0
     - _HitFlash: 0
-    - _RimIntensity: 0.5
+    - _RimIntensity: 0
     - _RimLitInfluence: 1
     - _RimMaskInfluence: 1
     - _RimTintMix: 0
