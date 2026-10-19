@@ -114,6 +114,8 @@ namespace Echoes.EditorTools
                 new ActionSpec { State = "Charge", Fbx = Medium("CombatMelee"), Clip = "Melee_1H_Attack_Stab", SkillId = "skill.warrior.charge" },
                 new ActionSpec { State = "Rift", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Chop", SkillId = "skill.warrior.stone_rift" },
                 new ActionSpec { State = "Bash", Fbx = Medium("CombatMelee"), Clip = "Melee_Block_Attack", SkillId = "skill.warrior.shield_bash" },
+                // Golpe devorado do Guardião (tecla F, veredito Devorar): o mesmo martelo que o chefe usa (Melee_2H_Attack_Chop), qualquer classe
+                new ActionSpec { State = "DevouredSlam", Fbx = Medium("CombatMelee"), Clip = "Melee_2H_Attack_Chop", SkillId = "skill.devoured.guardian_slam" },
                 new ActionSpec { State = "Dodge", Fbx = Medium("MovementAdvanced"), Clip = "Dodge_Forward", SkillId = "" },
             },
             Upper =
@@ -635,6 +637,7 @@ namespace Echoes.EditorTools
             { "skill.enemy.ash_bite", (0.30f, 0f) },
             { "skill.enemy.herald_slam", (0.25f, 0.03f) },
             { "skill.enemy.ghost_arrow", (-0.10f, 0f) },
+            { "skill.devoured.guardian_slam", (0.30f, 0.05f) },
             { "skill.enemy.guardian_hammer", (0.30f, 0.05f) },
             { "skill.enemy.guardian_shield_bash", (0.25f, 0.03f) },
             { "skill.enemy.guardian_shield_charge", (0f, 0.04f) },
