@@ -169,7 +169,7 @@ namespace Echoes.Core
 
         /// <summary>
         /// Campos opcionais do veredito para o pedido da expedicao: bonus de atributos, cura de pocao e elites da Mancha (so o que for maior que zero),
-        /// mais o loot da Mancha do mapa e os golpes devorados com os usos que a Fome deixa (docs/tecnico/09 secao 15.4; numeros do core).
+        /// mais o loot da Mancha do mapa e os golpes devorados com os usos que a Fome deixa (docs/tecnico/09 secao 15.5; numeros do core).
         /// </summary>
         string StoryJson(ExpeditionConfig config)
         {

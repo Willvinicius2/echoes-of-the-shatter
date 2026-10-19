@@ -141,7 +141,7 @@ json::Value CharacterToJson(const CharacterState& c);
 bool CharacterFromJson(const json::Value& v, CharacterState& out, std::string* error = nullptr);
 json::Value ExpeditionRequestToJson(const ExpeditionRequest& r);
 bool ExpeditionRequestFromJson(const json::Value& v, ExpeditionRequest& out, std::string* error = nullptr);
-// ADIÇÃO (docs/09, 15.4): campos opcionais da Fome e da Mancha no idle, iguais no pedido salvo e nos parâmetros de início.
+// ADIÇÃO (docs/09, 15.5): campos opcionais da Fome e da Mancha no idle, iguais no pedido salvo e nos parâmetros de início.
 // Grava só o que não é padrão: "story_devoured_skills" (lista, se houver usos), "story_devoured_uses" (!= 0) e
 // "story_stain_loot_table" (não vazio). Lê: até kMaxStoryDevouredSkills textos não vazios; usos limitados a
 // -1..kMaxStoryDevouredUses. Lista com item que não é texto ou longa demais = erro.
@@ -257,7 +257,7 @@ struct ExpeditionStartParams {
     int storyStatBonusPct = 0;
     int storyPotionEffectPct = 0;
     int storyEliteBonusPct = 0;
-    // Fome e loot da Mancha no idle (docs/09, 15.4; ver ExpeditionRequest). story.h ApplyStoryToExpedition preenche todos os story*.
+    // Fome e loot da Mancha no idle (docs/09, 15.5; ver ExpeditionRequest). story.h ApplyStoryToExpedition preenche todos os story*.
     std::vector<ContentId> storyDevouredSkills;
     int storyDevouredUses = 0;
     ContentId storyStainLootTable;

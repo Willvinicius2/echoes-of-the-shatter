@@ -43,7 +43,7 @@ struct Setup {
     StatBlock playerStats;
     std::vector<const SkillData*> bar;      // habilidades da barra (posições não vazias, em ordem)
     std::vector<int> ranks;                 // rank de cada uma (1..3)
-    // Golpes devorados (docs/09, 15.4): devoured[i] marca as posições de `bar` que vieram de req.storyDevouredSkills;
+    // Golpes devorados (docs/09, 15.5): devoured[i] marca as posições de `bar` que vieram de req.storyDevouredSkills;
     // devouredRuled[i] = alguma regra da IA cita esse golpe (então só as regras o usam; senão ele é usado sozinho).
     std::vector<bool> devoured;
     std::vector<bool> devouredRuled;

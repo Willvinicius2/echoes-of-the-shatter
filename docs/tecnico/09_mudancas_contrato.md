@@ -475,7 +475,14 @@ Sem mudança de assinatura nem de layout; `SHATTER_C_API_VERSION` continua 1. Mu
 - Testes novos: buffer pequeno e ponteiros nulos em `quest_event`/`state_json`, tipos errados no save, teto de 100 e limite de 256 missões.
 - Ainda aberto: um evento só avança em uma passada (efeito depende da ordem do CSV); `reach_map_boss` poderia ser derivado do `bossProgress`.
 
-### 15.4 Fome e loot da Mancha na expedição idle (19/10/2026, `claude/project-thread-ca6jzj`)
+### 15.4 Travas de recompensa de missão (19/10/2026, `claude/a7-nuvem`)
+- **Mecanismo no core, desligado nos dados**: `story_rules.csv` aceita linhas repetíveis `gate_reward,<chave de recompensa>`. Recompensa travada só vale depois de uma missão com essa recompensa estar concluída. Sem linhas, nada muda (hoje nenhuma está ativa: Marco de Retorno e duelo seguem livres).
+- Core: `StoryDB::GatedRewards/IsRewardGated`, `IsRewardUnlocked` (alguma missão com a chave está `Done`) e `IsRewardOpen` (não travada, ou liberada). `Finalize` e `validate_story.py` recusam `gate_reward` que nenhuma missão concede (a trava nunca abriria).
+- API C: `shatter_story_state_json` ganhou `gated_rewards: [{reward, open}]` (campo novo, sem assinatura nova, vazio por padrão).
+- **Para travar de verdade** falta decisão de design do Will (qual recompensa, `unlock.return_marker` e/ou `unlock.duel`) e a ligação no cliente: Marco de Retorno e entrada do duelo consultarem `gated_rewards`. Sem isso, adicionar a linha no CSV não muda o jogo.
+- Testes: `story_gate_reward_locks_until_quest_done`.
+
+### 15.5 Fome e loot da Mancha na expedição idle (19/10/2026, `claude/project-thread-ca6jzj`)
 Aditiva; `SHATTER_C_API_VERSION` continua 1. Nenhuma função nova nem struct nova (só chaves de JSON), então sem `layout_info`. Nenhum número do balanceamento do Ato I (PR #29) mudou. Decisões tomadas sem o Will (ele dormia), registradas aqui e no docs/design/21.
 - **Fome no idle**: o golpe devorado entra na barra da expedição pela mesma regra do manual (`DevouredKit.FillBar`): último espaço vazio entre o 3 e o 6, com posto 1; barra cheia, fica de fora. Cada uso gasta 1 dos usos da "corrida", que no idle é a expedição inteira (não há morte e renascimento; o recuo encerra). Usos = `(hunger_max - Fome) / devoured_hunger_cost`, arredondado para baixo: Fome 1, 2, 3 e 4 dão 3, 2, 1 e 0 usos; custo 0 = sem limite (-1). Com 0 usos o golpe nem entra e o resultado é idêntico ao de antes do veredito. Todo `skill.devoured.*` da barra gasta esses usos, inclusive um que já viesse na barra do snapshot (a trava do manual também é pelo id).
 - **Quando a IA usa o golpe**: se alguma regra da IA cita o golpe, só as regras o usam (por exemplo `target_is_elite`). Se nenhuma cita, ele é usado assim que fica pronto, no lugar da próxima habilidade; regras de poção que vêm antes continuam valendo. O golpe nunca vira o ataque básico (posição 0).

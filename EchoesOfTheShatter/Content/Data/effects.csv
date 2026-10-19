@@ -8,3 +8,4 @@ effect.guarding.mage,0.1,0,refresh,1,,,,,damage_taken:more:-0.5|move_speed:more:
 effect.charging.heavy,0.1,0,refresh,1,,,,,move_speed:more:-0.5,0,none,1,0,,false
 effect.charging.archer,0.1,0,refresh,1,,,,,move_speed:more:-0.3,0,none,1,0,,false
 effect.chill,3,0,refresh,1,,,,,move_speed:more:-0.4,0,none,1,0,,false
+effect.nameless_aegis_feast,5,0,refresh,1,,,,,damage:more:0.15:melee,0,on_block,1,0.5,,false

@@ -205,7 +205,7 @@ TEST(balance_story_idle_duel_and_stain_loot_when_requested) {
     }
 
     {
-        // docs/09, 15.4: Fome (usos do golpe devorado por expedicao) e loot da Mancha no idle, com os numeros vigentes.
+        // docs/09, 15.5: Fome (usos do golpe devorado por expedicao) e loot da Mancha no idle, com os numeros vigentes.
         std::printf("\n== Idle 12 h, Devorar vigente com Fome e loot da Mancha ==\ncenario | kit | recuos/%d | xp/h | elites/h | itens/h | raros/exp | golpes/exp\n", seeds);
         struct Hunger { const char* name; int uses; bool stainLoot; };
         const Hunger rows[] = {

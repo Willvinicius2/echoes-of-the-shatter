@@ -195,6 +195,11 @@ bool StoryDB::LoadTableCsv(std::string_view table, std::string_view text) {
             } else if (r.cells[0] == "stain_loot_table") {
                 stainLootTable_ = r.cells[1];
                 if (!stainLootTable_.empty() && !IsValidContentId(stainLootTable_)) bad(r, "stain_loot_table is not a valid id");
+            } else if (r.cells[0] == "gate_reward") {
+                const std::string reward(r.cells[1]);
+                if (reward.empty() || std::find(gatedRewards_.begin(), gatedRewards_.end(), reward) != gatedRewards_.end())
+                    bad(r, "gate_reward empty or repeated");
+                else gatedRewards_.push_back(reward);
             } else {
                 bad(r, "unknown key");
             }
@@ -233,6 +238,11 @@ bool StoryDB::Finalize(const ContentDB* content) {
     if (hasHungerMax_ && devouredHungerCost_ > hungerMax_) E("story_rules.csv", "devoured_hunger_cost above hunger_max");
     if (content != nullptr && !stainLootTable_.empty() && content->FindLootTable(stainLootTable_) == nullptr)
         E("story_rules.csv", "stain_loot_table not found: '" + stainLootTable_ + "'");
+    for (const std::string& g : gatedRewards_) {
+        bool used = false;
+        for (const StoryQuest& q : quests_) used = used || q.reward == g;
+        if (!used) E("story_rules.csv", "gate_reward without a quest that grants it: '" + g + "'");
+    }
     auto uniqueIds = [&](const char* table, const auto& list, const char* prefix) {
         for (std::size_t i = 0; i < list.size(); ++i) {
             const std::string& id = list[i].id;
@@ -382,6 +392,21 @@ int ReportQuestEvent(const StoryDB& story, SaveData& s, std::string_view type, s
         MarkProgress(*r, q, capped, newlyDone);
     }
     return newlyDone + SyncQuests(story, s);
+}
+
+bool StoryDB::IsRewardGated(std::string_view reward) const {
+    return std::find(gatedRewards_.begin(), gatedRewards_.end(), reward) != gatedRewards_.end();
+}
+
+bool IsRewardUnlocked(const StoryDB& story, const SaveData& s, std::string_view reward) {
+    if (reward.empty()) return false;
+    for (const StoryQuest& q : story.Quests())
+        if (q.reward == reward && GetQuestStatus(story, s, q.id) == QuestStatus::Done) return true;
+    return false;
+}
+
+bool IsRewardOpen(const StoryDB& story, const SaveData& s, std::string_view reward) {
+    return !story.IsRewardGated(reward) || IsRewardUnlocked(story, s, reward);
 }
 
 int TotalStatBonusPct(const StoryDB& story, const SaveData& s) {

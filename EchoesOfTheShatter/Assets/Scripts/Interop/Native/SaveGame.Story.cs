@@ -30,7 +30,7 @@ namespace Echoes.Interop.Native
         /// <summary>Tabela de loot extra por mapa com Mancha (mapId -> tabela).</summary>
         public Dictionary<string, string> StoryStainLootByMap { get; set; } = new Dictionary<string, string>();
 
-        /// <summary>Golpes devorados do save, que a expedicao idle coloca na barra (docs/tecnico/09 secao 15.4).</summary>
+        /// <summary>Golpes devorados do save, que a expedicao idle coloca na barra (docs/tecnico/09 secao 15.5).</summary>
         public List<string> StoryDevouredSkills { get; set; } = new List<string>();
 
         /// <summary>Usos de golpe devorado que a Fome deixa numa expedicao idle (-1 = sem limite, 0 = nenhum). Numero do core.</summary>

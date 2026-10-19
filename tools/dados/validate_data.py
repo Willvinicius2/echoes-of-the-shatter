@@ -428,6 +428,7 @@ class Content:
         self.rules: Dict[str, Any] = {}
         self.meta: Dict[str, Any] = {}
         self.by_id: Dict[str, Dict[str, dict]] = {}
+        self.data_dir: str = ""
 
     def ids(self, table: str) -> Dict[str, dict]:
         return self.by_id.get(table, {})
@@ -436,6 +437,7 @@ class Content:
 def validate_content(data_dir: str, schema_dir: str, rep: Report, check_loc: bool = True) -> Content:
     schemas, enums = load_table_schemas(schema_dir)
     c = Content()
+    c.data_dir = data_dir
     if not os.path.isdir(data_dir):
         rep.err(data_dir, 0, "E_DIR", "pasta de dados não existe")
         return c
@@ -799,6 +801,19 @@ def boss_tables(c: Content) -> set:
     return {e["lootTableId"] for e in c.tables.get("enemies.csv", []) if e["isBoss"] and e["lootTableId"]}
 
 
+def stain_loot_table(c: Content) -> str:
+    """Tabela da Mancha (Story/story_rules.csv, chave stain_loot_table); "" se não existir."""
+    path = os.path.join(c.data_dir, "Story", "story_rules.csv")
+    if not os.path.isfile(path):
+        return ""
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            key, _, val = line.strip().partition(",")
+            if key == "stain_loot_table":
+                return val
+    return ""
+
+
 def chk_effect(c: Content, table: str, rows: List[dict], rep: Report) -> None:
     for r in rows:
         ln = r["__line__"]
@@ -924,8 +939,8 @@ def chk_loot_entry(c: Content, table: str, rows: List[dict], rep: Report) -> Non
             rep.err(table, ln, "E_FIXED_TABLE", f"entrada fixa so vale na tabela de topo de um chefe; '{r['tableId']}' nao e")
         if fixed and any(o["kind"] == "table" and o["refId"] == r["tableId"] for o in rows):
             rep.err(table, ln, "E_FIXED_TABLE", f"entrada fixa em subtabela ('{r['tableId']}' e alvo de kind=table) nunca cai")
-        if kind == "unique" and r["tableId"] not in boss_tables(c):
-            rep.err(table, ln, "E_UNIQUE_TABLE", f"Unico so pode estar em tabela de chefe (lootTableId de enemies.csv com isBoss=true); '{r['tableId']}' nao e")
+        if kind == "unique" and r["tableId"] not in boss_tables(c) and r["tableId"] != stain_loot_table(c):
+            rep.err(table, ln, "E_UNIQUE_TABLE", f"Unico so pode estar em tabela de chefe (lootTableId de enemies.csv com isBoss=true) ou na tabela da Mancha (stain_loot_table); '{r['tableId']}' nao e")
         if kind in MANUAL_ONLY_KINDS and not r["manualOnly"]:
             rep.err(table, ln, "E_IDLE_TOP", f"kind={kind} é item de topo: manualOnly deve ser true (regra 4 do idle)")
         if kind != "stack" and (r["minAmount"] != 1 or r["maxAmount"] != 1):

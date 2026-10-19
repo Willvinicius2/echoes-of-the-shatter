@@ -2752,7 +2752,7 @@ TEST(c_api_story_echoes_verdict_hunger_and_state_json) {
     EXPECT_EQ(st["hunger_max"].AsInt(), static_cast<std::int64_t>(4));
     ASSERT_EQ(st["verdicts"].Size(), static_cast<std::size_t>(1));
     EXPECT_EQ(st["verdicts"].At(0)["region_state"].AsString(), std::string("stain"));
-    // docs/09, 15.4: o que vai para a expedição idle (Fome 1, custo 1, máximo 4 = 3 usos).
+    // docs/09, 15.5: o que vai para a expedição idle (Fome 1, custo 1, máximo 4 = 3 usos).
     ASSERT_EQ(st["devoured_skills"].Size(), static_cast<std::size_t>(1));
     EXPECT_EQ(st["devoured_skills"].At(0).AsString(), std::string("skill.devoured.guardian_slam"));
     EXPECT_EQ(st["idle_devoured_uses"].AsInt(), static_cast<std::int64_t>(3));

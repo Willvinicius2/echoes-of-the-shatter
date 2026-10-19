@@ -1,4 +1,4 @@
-// Fome e loot da Mancha na expedição idle (docs/tecnico/09, 15.4): golpes devorados limitados pela Fome e a tabela extra
+// Fome e loot da Mancha na expedição idle (docs/tecnico/09, 15.5): golpes devorados limitados pela Fome e a tabela extra
 // da Mancha rolada no encontro limpo. Usa o conteúdo real (Content/Data e Story/).
 #include <memory>
 #include <string>
