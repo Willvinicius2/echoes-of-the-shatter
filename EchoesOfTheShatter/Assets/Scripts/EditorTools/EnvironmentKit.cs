@@ -227,6 +227,11 @@ namespace Echoes.EditorTools
             // As faces verticais pegam pouco do sol de cima-esquerda: parede, faixa e pecas pintadas sobem na tinta para ler como pedra clara do alvo.
             var gain = look == Look.Wall || look == Look.Band ? 1.4f : look == Look.Floor || look == Look.Decal || look == Look.Rune ? 1f : 1.0f;
             mat.SetColor("_Tint", new Color(gain, gain, gain, 1f));
+            // Piso limpo e uniforme: uma lajota so (sem celulas A/B, giro ou espelho), contraste e manchas de brilho baixos.
+            mat.SetFloat("_CellSize", look == Look.Floor ? 0f : 12f);
+            mat.SetFloat("_FloorTile", 8f);
+            mat.SetFloat("_FloorContrast", look == Look.Floor ? 1.0f : 1.35f);
+            mat.SetFloat("_Variation", look == Look.Floor ? 0.0f : 0.07f);
             mat.SetTexture("_MapA", Tex("T_Env_PisoA"));
             mat.SetTexture("_MapB", Tex("T_Env_PisoB"));
             mat.SetTexture("_WallMap", Tex("T_Env_Parede"));
@@ -255,7 +260,7 @@ namespace Echoes.EditorTools
             EnsureTextures();
             var mat = LoadOrCreate(MaterialDir + "/M_Env_Pedra.mat");
             SetLook(mat, Look.Wall);
-            mat.SetColor("_Tint", new Color(0.95f, 0.93f, 1f, 1f)); // pedra do circulo: cinza claro, sem estourar
+            mat.SetColor("_Tint", new Color(0.85f, 0.83f, 0.92f, 1f)); // pedra do circulo, paredes e pilares da Cripta: cinza claro, sem estourar
             EditorUtility.SetDirty(mat);
             return mat;
         }

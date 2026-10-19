@@ -202,6 +202,13 @@ Shader "Echoes/Env_Scenery"
                 float2 uv = xz / _FloorTile;
                 float2 dx = ddx(uv);
                 float2 dy = ddy(uv);
+                // Piso uniforme: _CellSize <= 0 desliga a mistura de celulas (uma lajota so, sem giro, espelho nem emenda).
+                [branch] if (_CellSize <= 0.0)
+                {
+                    half3 u0 = SAMPLE_TEXTURE2D_GRAD(_MapA, sampler_MapA, uv, dx, dy).rgb;
+                    const half pv = 0.075h;
+                    return pv * pow(max(u0, 1e-4) / pv, _FloorContrast);
+                }
                 float2 warp = float2(FbmNoise(xz * _WarpFreq), FbmNoise(xz * _WarpFreq + 31.7)) - 0.5;
                 float2 p = (xz + warp * 2.0 * _WarpAmp) / _CellSize;
                 float2 id = floor(p);

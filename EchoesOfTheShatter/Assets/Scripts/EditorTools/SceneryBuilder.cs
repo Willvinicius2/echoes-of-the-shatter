@@ -161,20 +161,8 @@ namespace Echoes.EditorTools
                 var radial = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
                 var tangent = new Vector3(-radial.z, 0f, radial.x);
                 var c = radial * mid + Vector3.up * y;
-                switch (k % 3)
-                {
-                    case 0: // losango
-                        AddQuad(v, n, uv, t, c, (radial + tangent) * 0.13f, (radial - tangent) * 0.13f);
-                        break;
-                    case 1: // par de barras
-                        AddQuad(v, n, uv, t, c + tangent * 0.12f, radial * 0.22f, tangent * 0.032f);
-                        AddQuad(v, n, uv, t, c - tangent * 0.12f, radial * 0.22f, tangent * 0.032f);
-                        break;
-                    default: // chevron
-                        AddQuad(v, n, uv, t, c + (radial * 0.09f - tangent * 0.1f), (radial + tangent) * 0.12f, (radial - tangent) * 0.032f);
-                        AddQuad(v, n, uv, t, c + (radial * 0.09f + tangent * 0.1f), (radial - tangent) * 0.12f, (radial + tangent) * 0.032f);
-                        break;
-                }
+                // Marca uniforme: uma barra radial curta por runa (sem losango nem chevron soltos no anel).
+                AddQuad(v, n, uv, t, c, radial * 0.2f, tangent * 0.03f);
             }
             var runeMesh = new Mesh { name = "Runes_" + name };
             runeMesh.SetVertices(v); runeMesh.SetNormals(n); runeMesh.SetUVs(0, uv); runeMesh.SetTriangles(t, 0);
@@ -279,7 +267,7 @@ namespace Echoes.EditorTools
         /// perpendicular). O pivo do kit e a face interna; 2 m por peca (escala so no comprimento, para fechar trechos que nao sao multiplos de 2).
         /// Um colisor de caixa por trecho.
         /// </summary>
-        public static void WallRun(Transform parent, string owner, bool alongX, float line, float from, float to, bool positiveOutside)
+        public static void WallRun(Transform parent, string owner, bool alongX, float line, float from, float to, bool positiveOutside, bool clean = false)
         {
             var length = to - from;
             if (length < 0.1f) return;
@@ -295,6 +283,12 @@ namespace Echoes.EditorTools
             var box = run.AddComponent<BoxCollider>(); // colisor simples do trecho (nunca a malha visual)
             box.center = new Vector3(0f, reta.Size.y * 0.5f, -reta.Size.z * 0.5f);
             box.size = new Vector3(length, reta.Size.y, reta.Size.z);
+            if (clean)
+            {
+                CriptaStructure.WallVisual(run.transform, Sanitize(owner) + (alongX ? "X" : "Z") + line.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "_" + from.ToString("F1", System.Globalization.CultureInfo.InvariantCulture), length, reta.Size.y, reta.Size.z);
+                GameObjectUtility.SetStaticEditorFlags(run, StaticEditorFlags.BatchingStatic);
+                return;
+            }
             for (var i = 0; i < n; i++)
             {
                 var local = (i + 0.5f) * tile - length * 0.5f;
@@ -307,13 +301,14 @@ namespace Echoes.EditorTools
         }
 
         /// <summary>Poste de canto (ParedeCantoA, 1 x 3 x 1) fora de cada canto convexo do retangulo: fecha a quina onde duas paredes de 0,6 m se encontram.</summary>
-        public static void CornerPosts(Transform parent, string owner, Rect r)
+        public static void CornerPosts(Transform parent, string owner, Rect r, bool clean = false)
         {
             foreach (var sx in new[] { -1, 1 })
             {
                 foreach (var sz in new[] { -1, 1 })
                 {
                     var corner = new Vector3(sx < 0 ? r.xMin : r.xMax, 0f, sz < 0 ? r.yMin : r.yMax);
+                    if (clean) { CriptaStructure.CornerPost(parent, owner, corner + new Vector3(sx * 0.5f, 0f, sz * 0.5f), 3f); continue; }
                     var go = EnvironmentKit.Place("ParedeCantoA", parent, corner + new Vector3(sx * 0.5f, 0f, sz * 0.5f), 0f, instanceName: owner + "_corner");
                     go.name = owner + "_corner";
                 }

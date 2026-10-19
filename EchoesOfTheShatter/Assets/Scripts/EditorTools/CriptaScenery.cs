@@ -74,7 +74,7 @@ namespace Echoes.EditorTools
             foreach (var room in layout.Rooms)
             {
                 BuildRoomWalls(layout, walls, room);
-                SceneryBuilder.CornerPosts(walls, room.Id, room.Rect);
+                SceneryBuilder.CornerPosts(walls, room.Id, room.Rect, clean: true);
             }
             foreach (var corridor in layout.Corridors) BuildCorridorWalls(walls, corridor);
 
@@ -162,10 +162,10 @@ namespace Echoes.EditorTools
                 var cursor = a;
                 foreach (var o in Openings(layout, room, side))
                 {
-                    if (o.x > cursor + eps) SceneryBuilder.WallRun(parent, room.Id, alongX, line, cursor, o.x, outsidePositive);
+                    if (o.x > cursor + eps) SceneryBuilder.WallRun(parent, room.Id, alongX, line, cursor, o.x, outsidePositive, clean: true);
                     cursor = Mathf.Max(cursor, o.y);
                 }
-                if (b > cursor + eps) SceneryBuilder.WallRun(parent, room.Id, alongX, line, cursor, b, outsidePositive);
+                if (b > cursor + eps) SceneryBuilder.WallRun(parent, room.Id, alongX, line, cursor, b, outsidePositive, clean: true);
             }
         }
 
@@ -174,13 +174,13 @@ namespace Echoes.EditorTools
             var r = c.Rect;
             if (c.AlongX)
             {
-                SceneryBuilder.WallRun(parent, c.Id, true, r.yMin, r.xMin, r.xMax, false);
-                SceneryBuilder.WallRun(parent, c.Id, true, r.yMax, r.xMin, r.xMax, true);
+                SceneryBuilder.WallRun(parent, c.Id, true, r.yMin, r.xMin, r.xMax, false, clean: true);
+                SceneryBuilder.WallRun(parent, c.Id, true, r.yMax, r.xMin, r.xMax, true, clean: true);
             }
             else
             {
-                SceneryBuilder.WallRun(parent, c.Id, false, r.xMin, r.yMin, r.yMax, false);
-                SceneryBuilder.WallRun(parent, c.Id, false, r.xMax, r.yMin, r.yMax, true);
+                SceneryBuilder.WallRun(parent, c.Id, false, r.xMin, r.yMin, r.yMax, false, clean: true);
+                SceneryBuilder.WallRun(parent, c.Id, false, r.xMax, r.yMin, r.yMax, true, clean: true);
             }
         }
 
@@ -189,9 +189,8 @@ namespace Echoes.EditorTools
         /// <summary>Pilar pintado (PilarInteiro) na escala do raio e da altura do layout; o colisor e a capsula do layout (cobertura contra flecha e Investida).</summary>
         static void BuildPillar(Transform parent, CriptaLayout.PillarData p)
         {
-            var piece = EnvironmentKit.Get("PilarInteiro");
-            var xz = 2f * p.Radius / Mathf.Max(0.01f, piece.Size.x);
-            var go = EnvironmentKit.Place("PilarInteiro", parent, new Vector3(p.Pos.x, 0f, p.Pos.y), 0f, new Vector3(xz, p.Height / Mathf.Max(0.01f, piece.Size.y), xz), colliders: false, instanceName: p.Id);
+            var go = CriptaStructure.Pillar(parent, p.Id, new Vector3(p.Pos.x, 0f, p.Pos.y), p.Radius, p.Height);
+            const float xz = 1f;
             var capsule = go.AddComponent<CapsuleCollider>();
             capsule.radius = p.Radius / xz;
             capsule.height = p.Height / go.transform.lossyScale.y;
@@ -245,12 +244,15 @@ namespace Echoes.EditorTools
                 else if (vista.Id.Contains("colonnade"))
                 {
                     // Colunata: pilares altos (6 m, cortados pelo topo da tela) ao longo da faixa junto a parede oeste; colisor de caixa fina.
-                    var piece = EnvironmentKit.Get("PilarInteiro");
                     var count = Mathf.Max(2, Mathf.RoundToInt(r.height / 4f));
                     for (var i = 0; i < count; i++)
                     {
                         var z = r.yMin + (i + 0.5f) * r.height / count;
-                        var go = EnvironmentKit.Place("PilarInteiro", level, new Vector3(r.center.x, 0f, z), 0f, new Vector3(1f, 1.5f, 1f), colliders: true, instanceName: vista.Id + ".col");
+                        var col = CriptaStructure.Pillar(level, vista.Id + ".col", new Vector3(r.center.x, 0f, z), 0.6f, 6f);
+                        var cc = col.AddComponent<CapsuleCollider>();
+                        cc.radius = 0.7f;
+                        cc.height = 6f;
+                        cc.center = new Vector3(0f, 3f, 0f);
                     }
                 }
                 else if (vista.Id.Contains("gate"))

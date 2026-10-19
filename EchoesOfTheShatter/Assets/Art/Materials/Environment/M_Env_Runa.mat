@@ -59,7 +59,7 @@ Material:
     - _DstBlend: 0
     - _EdgeWidth: 0.05
     - _EmissionIntensity: 0.6
-    - _FloorContrast: 1.2
+    - _FloorContrast: 1.35
     - _FloorTile: 8
     - _PoolSoftClip: 0.3
     - _PoolStrength: 1.5
