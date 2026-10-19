@@ -344,8 +344,24 @@ namespace Echoes.EditorTools
             var victory = new List<GameObject>();
             foreach (var portal in layout.Portals)
             {
-                var go = StoneMarker(root, portal.Id, portal.Pos, 2.5f, 0.55f, true);
-                var frame = EnvironmentKit.Place("PortalAberto", go.transform, go.transform.position, 0f, instanceName: "PortalFrame");
+                // O portal fica encostado na parede mais proxima da sala, como uma porta de pedra, e nao solto no meio do chao.
+                var portalPos = portal.Pos;
+                var portalYaw = 0f;
+                foreach (var room in layout.Rooms)
+                {
+                    if (!room.Rect.Contains(portal.Pos)) continue;
+                    var r = room.Rect;
+                    var dW = portal.Pos.x - r.xMin; var dE = r.xMax - portal.Pos.x; var dS = portal.Pos.y - r.yMin; var dN = r.yMax - portal.Pos.y;
+                    var m = Mathf.Min(Mathf.Min(dW, dE), Mathf.Min(dS, dN));
+                    const float inset = 0.75f;
+                    if (m == dW) { portalPos = new Vector2(r.xMin + inset, portal.Pos.y); portalYaw = 90f; }
+                    else if (m == dE) { portalPos = new Vector2(r.xMax - inset, portal.Pos.y); portalYaw = 90f; }
+                    else if (m == dS) { portalPos = new Vector2(portal.Pos.x, r.yMin + inset); portalYaw = 0f; }
+                    else { portalPos = new Vector2(portal.Pos.x, r.yMax - inset); portalYaw = 0f; }
+                    break;
+                }
+                var go = StoneMarker(root, portal.Id, portalPos, 2.5f, 0.55f, true);
+                var frame = EnvironmentKit.Place("PortalAberto", go.transform, go.transform.position, portalYaw, instanceName: "PortalFrame");
                 SceneryBuilder.AddFire(frame, false, 2.2f, new Color(0.62f, 0.5f, 1f), 1.6f, 7f);
                 var zone = go.AddComponent<PortalZone>();
                 SandboxBuilder.SetRef(zone, "combatHost", ctx.Host);
@@ -428,7 +444,7 @@ namespace Echoes.EditorTools
             var go = new GameObject(id);
             go.transform.SetParent(parent, false);
             go.transform.position = new Vector3(pos.x, 0f, pos.y);
-            CriptaStructure.Medallion(go.transform, go.transform.position, id + ".circle", portal);
+            // Sem aro nem simbolo no chao: o checkpoint e marcado pelo braseiro ao lado e o portal e um arco de pedra na parede.
             return go;
         }
 

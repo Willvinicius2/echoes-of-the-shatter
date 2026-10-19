@@ -38,6 +38,8 @@ namespace Echoes.EditorTools
                 var hero = GameObject.Find("Hero");
 
                 Shot(follow, cam, hero, new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y), Path.Combine(dir, "cripta3_entrada.png"));
+                var portal = layout.Portals.First();
+                Shot(follow, cam, hero, new Vector3(portal.Pos.x + 4f, 0f, portal.Pos.y), Path.Combine(dir, "cripta3_portal.png"));
                 // Encontro 4 (Sentinelas e Arqueiros Espectrais): o heroi chega de leste.
                 var e4 = layout.Encounters.First(e => e.Id == "enc.crypt.patrol_b");
                 var slot = e4.Groups[0].Slots[0];
