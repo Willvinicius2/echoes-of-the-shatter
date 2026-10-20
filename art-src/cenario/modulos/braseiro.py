@@ -114,6 +114,10 @@ body = bpy.context.object; body.name = "SM_Cripta_Braseiro_Novo"
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 bpy.ops.object.shade_flat()
 bpy.ops.export_scene.fbx(filepath=OUT, use_selection=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Z', axis_up='Y', mesh_smooth_type='FACE', add_leaf_bones=False)
+import os
+GLB = os.environ.get("BRASEIRO_GLB")
+if GLB:
+    bpy.ops.export_scene.gltf(filepath=GLB, use_selection=True, export_format='GLB', export_yup=True)
 print("tris", sum(len(p.vertices) - 2 for p in body.data.polygons), "->", OUT)
 
 if PREVIEW:
