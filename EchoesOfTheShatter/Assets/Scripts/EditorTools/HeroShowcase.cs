@@ -60,7 +60,7 @@ namespace Echoes.EditorTools
                         insts[i].transform.rotation = Quaternion.Euler(0f, 180f, 0f);
                     }
                     follow.transform.position = sp + new Vector3(0f, 0.9f, 0f); follow.ApplySettings();
-                    cam.transform.localPosition = new Vector3(0f, 0f, -14f); cam.fieldOfView = 35f;
+                    cam.transform.localPosition = new Vector3(0f, 0f, -Mathf.Max(14f, insts.Length * 2.4f)); cam.fieldOfView = 35f;
                     Capture(cam, Path.Combine(dir, tag + "_fila.png"), 1920, 1080);
                     cam.transform.localPosition = o5; cam.fieldOfView = f5;
                     Debug.Log("[HeroShowcase] Fila em " + dir + " (" + tag + ")");

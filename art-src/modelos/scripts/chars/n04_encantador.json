@@ -1,0 +1,131 @@
+{
+  "id": "n04_encantador",
+  "asset": "SK_NPC_Enchanter",
+  "kind": "humanoid",
+  "height_ref": "crown",
+  "crown_z_src": 0.81,
+  "body_height_m": 1.65,
+  "tris_target": 6000,
+  "tris_range": [
+    5500,
+    6500
+  ],
+  "tex_size": 1024,
+  "min_component_ratio": 0.005,
+  "mesh_name": "SK_NPC_Enchanter_Body",
+  "bake_shards": 1,
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/n04_encantador/n04_encantador.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/n04_encantador.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/n04_encantador/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/n04_encantador/final",
+  "tint_hues": [
+    [
+      255,
+      290
+    ]
+  ],
+  "cloth_hues": [
+    [
+      255,
+      290
+    ]
+  ],
+  "sat_keep_hues": [
+    [
+      255,
+      290
+    ],
+    [
+      170,
+      195
+    ]
+  ],
+  "markers": {
+    "hips": [
+      0,
+      0,
+      0.68
+    ],
+    "spine": [
+      0,
+      0,
+      0.82
+    ],
+    "chest": [
+      0,
+      0,
+      0.95
+    ],
+    "neck": [
+      0,
+      0,
+      1.24
+    ],
+    "head": [
+      0,
+      0,
+      1.29
+    ],
+    "head_top": [
+      0,
+      0,
+      1.65
+    ],
+    "shoulder": [
+      0.1,
+      0,
+      1.1
+    ],
+    "upperarm": [
+      0.2,
+      0,
+      1.05
+    ],
+    "lowerarm": [
+      0.34,
+      0,
+      0.82
+    ],
+    "hand": [
+      0.47,
+      -0.02,
+      0.65
+    ],
+    "hand_tip": [
+      0.5,
+      -0.03,
+      0.6
+    ],
+    "upperleg": [
+      0.1,
+      0,
+      0.6
+    ],
+    "lowerleg": [
+      0.15,
+      0,
+      0.33
+    ],
+    "foot": [
+      0.17,
+      0.02,
+      0.08
+    ],
+    "toes": [
+      0.17,
+      -0.06,
+      0.04
+    ],
+    "toe_tip": [
+      0.17,
+      -0.14,
+      0.02
+    ]
+  },
+  "emissive_hues": [
+    [
+      170,
+      195
+    ]
+  ]
+}

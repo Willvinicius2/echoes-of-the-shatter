@@ -1,0 +1,120 @@
+{
+  "id": "n02_tico",
+  "asset": "SK_NPC_Tico",
+  "kind": "humanoid",
+  "height_ref": "bbox",
+  "body_height_m": 1.0,
+  "tris_target": 6000,
+  "tris_range": [
+    5500,
+    6500
+  ],
+  "tex_size": 1024,
+  "min_component_ratio": 0.005,
+  "mesh_name": "SK_NPC_Tico_Body",
+  "bake_shards": 1,
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/n02_tico/n02_tico.glb",
+  "sheet": "D:/openclaude/EchoesOfTheShatter/docs/arte/referencias-geracao/aprovadas/modelagem/n02_tico.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/n02_tico/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/n02_tico/final",
+  "tint_hues": [
+    [
+      38,
+      60
+    ]
+  ],
+  "cloth_hues": [
+    [
+      38,
+      60
+    ]
+  ],
+  "sat_keep_hues": [
+    [
+      38,
+      60
+    ]
+  ],
+  "markers": {
+    "hips": [
+      0,
+      0.02,
+      0.385
+    ],
+    "spine": [
+      0,
+      0.02,
+      0.44
+    ],
+    "chest": [
+      0,
+      0.02,
+      0.5
+    ],
+    "neck": [
+      0,
+      0.02,
+      0.646
+    ],
+    "head": [
+      0,
+      0.02,
+      0.69
+    ],
+    "head_top": [
+      0,
+      0.02,
+      1.0
+    ],
+    "shoulder": [
+      0.04,
+      0.02,
+      0.58
+    ],
+    "upperarm": [
+      0.12,
+      0.02,
+      0.57
+    ],
+    "lowerarm": [
+      0.19,
+      0.02,
+      0.45
+    ],
+    "hand": [
+      0.24,
+      0.0,
+      0.37
+    ],
+    "hand_tip": [
+      0.26,
+      -0.01,
+      0.34
+    ],
+    "upperleg": [
+      0.09,
+      0.02,
+      0.33
+    ],
+    "lowerleg": [
+      0.11,
+      0.02,
+      0.2
+    ],
+    "foot": [
+      0.13,
+      0.04,
+      0.07
+    ],
+    "toes": [
+      0.13,
+      -0.05,
+      0.04
+    ],
+    "toe_tip": [
+      0.13,
+      -0.13,
+      0.02
+    ]
+  }
+}

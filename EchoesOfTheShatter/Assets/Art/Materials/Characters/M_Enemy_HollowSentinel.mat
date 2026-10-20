@@ -40,7 +40,7 @@ Material:
     - _AmbientStrength: 1
     - _Dissolve: 0
     - _DissolveEdgeWidth: 0.06
-    - _EmissionIntensity: 0.6
+    - _EmissionIntensity: 1.8
     - _FresnelBlend: 0
     - _FresnelStrength: 0
     - _HitFlash: 0

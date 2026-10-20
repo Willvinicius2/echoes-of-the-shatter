@@ -34,11 +34,12 @@ namespace Echoes.EditorTools
             public string Dir;        // pasta do FBX e das texturas (vazio = Characters/<Folder>)
             public bool GenericArmature; // Generic com a armature dentro de um container (Animator no container: caminhos dos clipes comecam em "root")
             public string ModularHero; // herois modulares (17.4): Warrior/Archer; liga o ModularCharacter
+            public float Scale = 1f; // escala visual do prefab (inimigo pequeno/ameacador)
             public string Controller; // AC_* (null = sem animacao ainda: Arqueiro Espectral)
             public WeaponSpec[] Weapons = Array.Empty<WeaponSpec>();
         }
 
-        public const float ArcherRimIntensity = 0.2f;
+        public const float ArcherRimIntensity = 0f;
         static readonly string[] RightSockets = { "socket_weapon_r", "RightHand" };
         static readonly string[] LeftSockets = { "socket_weapon_l", "LeftHand" };
 
@@ -51,12 +52,12 @@ namespace Echoes.EditorTools
         /// <summary>Cao de Cinza (e o Cao Veloz, que so ganha a tinta de elite): quadrupede Generic de 22 ossos, AC_Hound.</summary>
         public static readonly Spec HoundSpec = new Spec
         {
-            Folder = "AshHound", Model = "SK_Enemy_AshHound", Textures = "T_Enemy_AshHound", Prefab = "P_Enemy_AshHound", Material = "M_Enemy_AshHound", Controller = "AC_Hound", GenericArmature = true,
+            Folder = "AshHound", Model = "SK_Enemy_AshHound", Textures = "T_Enemy_AshHound", Prefab = "P_Enemy_AshHound", Material = "M_Enemy_AshHound", Controller = "AC_Hound", GenericArmature = true, Scale = 1.5f,
         };
 
         static readonly Dictionary<string, Spec> EnemySpecs = new Dictionary<string, Spec>
         {
-            { "enemy.hollow_sentinel", new Spec { Folder = "HollowSentinel", Model = "SK_Enemy_HollowSentinel", Textures = "T_Enemy_HollowSentinel", Prefab = "P_Enemy_HollowSentinel", Material = "M_Enemy_HollowSentinel", Controller = "AC_EnemyHumanoid" } },
+            { "enemy.hollow_sentinel", new Spec { Folder = "HollowSentinel", Model = "SK_Enemy_HollowSentinel", Textures = "T_Enemy_HollowSentinel", Prefab = "P_Enemy_HollowSentinel", Material = "M_Enemy_HollowSentinel", Controller = "AC_EnemyHumanoid", Scale = 1.25f } },
             { "enemy.shielded_sentinel", null },
             { "enemy.ash_hound", HoundSpec },
             { "enemy.swift_ash_hound", HoundSpec },
@@ -69,6 +70,15 @@ namespace Echoes.EditorTools
                     Weapons = new[] { new WeaponSpec { Name = "GuardianHammer", Sockets = RightSockets }, new WeaponSpec { Name = "GuardianShield", Sockets = LeftSockets } },
                 }
             },
+        };
+
+        /// <summary>NPCs do Refugio (modelos pintados, sem animacao ainda): P_Npc_*.</summary>
+        public static readonly Spec[] NpcSpecs =
+        {
+            new Spec { Folder = "Ilsa", Model = "SK_NPC_Ilsa", Textures = "T_NPC_Ilsa", Prefab = "P_Npc_Ilsa", Material = "M_Npc_Ilsa" },
+            new Spec { Folder = "Tico", Model = "SK_NPC_Tico", Textures = "T_NPC_Tico", Prefab = "P_Npc_Tico", Material = "M_Npc_Tico" },
+            new Spec { Folder = "Vendor", Model = "SK_NPC_Vendor", Textures = "T_NPC_Vendor", Prefab = "P_Npc_Vendedor", Material = "M_Npc_Vendedor" },
+            new Spec { Folder = "Enchanter", Model = "SK_NPC_Enchanter", Textures = "T_NPC_Enchanter", Prefab = "P_Npc_Encantador", Material = "M_Npc_Encantador" },
         };
 
         [MenuItem("Echoes/Montar prefabs de personagens")]
@@ -87,6 +97,10 @@ namespace Echoes.EditorTools
                 var prefab = Build(pair.Value);
                 if (pair.Key == "enemy.hollow_sentinel") sentinel = prefab;
                 if (pair.Key == "enemy.crypt_guardian") boss = prefab;
+            }
+            foreach (var npc in NpcSpecs)
+            {
+                if (AssetDatabase.LoadAssetAtPath<GameObject>($"{CharactersDir}/{npc.Folder}/{npc.Model}.fbx") != null) Build(npc); // modelo ainda nao entregue = capsula no Refugio
             }
             AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.Warrior, warrior);
             AnimatorControllerBuilder.BuildSkillSet(AnimatorControllerBuilder.HeroArcher, archer); // AC_Archer e AC_Mage: kits do docs/18; os prefabs passam a usa-los com os kits do core
@@ -149,6 +163,10 @@ namespace Echoes.EditorTools
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{folder}/{spec.Model}.fbx");
             if (model == null) throw new InvalidOperationException($"FBX ausente: {folder}/{spec.Model}.fbx");
             var material = EnsureMaterial(spec.Material, $"{folder}/{spec.Textures}_BC.png", $"{folder}/{spec.Textures}_M.png");
+            // Regra comum (docs/arte/09): sem brilho de borda; era ele o contorno branco em volta dos personagens.
+            material.SetFloat("_RimIntensity", 0f);
+            if (spec.Prefab != "P_Enemy_GhostArcher") { material.SetFloat("_FresnelStrength", 0f); material.SetFloat("_FresnelBlend", 0f); }
+            EditorUtility.SetDirty(material);
             if (spec.Prefab == "P_Enemy_GhostArcher")
             {
                 // Tecido translucido: o rim quente e forte lavava o corpo e a capa de branco. Rim fraco e frio (mascara G reduzida a 30%).
@@ -159,6 +177,7 @@ namespace Echoes.EditorTools
 
             var instance = UnityEngine.Object.Instantiate(model);
             instance.name = spec.Prefab;
+            instance.transform.localScale = Vector3.one * spec.Scale;
             // Animator com o avatar Humanoid (copiado do Rig_Humanoid_Chibi) ou Generic (Arqueiro Espectral, sem animacao ainda: sem controller)
             // e o AC_* do KayKit (animacoes CC0); o PresentationController toca os estados a partir dos eventos do combate.
             var animator = instance.GetComponent<Animator>();

@@ -205,7 +205,21 @@ namespace Echoes.EditorTools
         {
             var go = new GameObject(name);
             go.transform.position = position;
-            var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Art/Prefabs/P_Npc_{name}.prefab");
+            GameObject body;
+            if (model != null)
+            {
+                // Modelo pintado do NPC (de frente para a camera, que olha do sul).
+                body = (GameObject)PrefabUtility.InstantiatePrefab(model);
+                body.name = "Body";
+                body.transform.SetParent(go.transform, false);
+                body.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                var npcRoot = go.AddComponent<InteractableNpc>();
+                npcRoot.npcId = npcId;
+                MakeLabel(go.transform, name, new Vector3(0f, height + 0.5f, 0f));
+                return;
+            }
+            body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             body.name = "Body";
             UnityEngine.Object.DestroyImmediate(body.GetComponent<Collider>());
             body.transform.SetParent(go.transform, false);
