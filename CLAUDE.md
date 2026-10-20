@@ -1,12 +1,11 @@
 # Echoes of the Shatter — instruções para o Claude Code
 
 ARPG single-player em 3D estilizado (câmera fixa 3/4) com expedições idle, para Steam (Acesso Antecipado).
-Motor: **Unity 6.3 LTS (6000.3.26f1) com URP, C#** (decisão do dono em 16/10/2026; antes UE 5.8 e, no plano original, Godot 4). O ShatterCore (C++17) vira DLL nativa chamada por P/Invoke.
+Motor: **Godot 4 (.NET, C#)** (decisão do dono em 20/10/2026; antes Unity 6.3, UE 5.8 e o Godot 4 do plano original). O ShatterCore (C++17) vira biblioteca nativa chamada por P/Invoke. Plano e o que mudou: `docs/tecnico/23_migracao_godot.md`. O último estado da Unity está no branch `arquivo/unity-final`; não restaure Unity no `master`.
 
 ## Máquina e disco
 - O disco C está cheio: tudo do projeto fica no disco D. Repositório em `D:\openclaude\EchoesOfTheShatter`, arquivos de trabalho em `D:\openclaude\_trabalho-claude`.
-- Unity: editor em `D:\Unity\Editors\6000.3.26f1`, Unity CLI em `D:\Unity\cli\bin` (versão do script oficial, não a do winget), cache de downloads em `D:\Unity\downloads`. Licença Unity Personal ativa.
-- Projeto Unity: `EchoesOfTheShatter/` (Assets, Packages, ProjectSettings), com o pacote `com.unity.pipeline` para a CLI e o MCP controlarem o editor.
+- Godot e MCP do Godot ficam no disco D. O projeto Godot fica em `godot/` (criado pela migração). A pasta Unity antiga do PC só é apagada quando o dono confirmar.
 
 ## Direção de arte (aprovada em 16/10/2026)
 - O visual segue o estilo do Spell Brigade: 3D estilizado pintado à mão, heróis chibi, magia em neon e UI de pedra escura. As decisões de renderização estão em `docs/arte/08_decisoes_visual_3d.md`.
@@ -19,15 +18,17 @@ Motor: **Unity 6.3 LTS (6000.3.26f1) com URP, C#** (decisão do dono em 16/10/20
 - `docs/design/00_plano_existente.md` — plano de design aprovado (Plano Steam v2.0). Fonte de verdade de regras, conteúdo e escopo; as partes de pixel art e Godot ficaram como histórico.
 - `docs/requisitos-qa/01_plano_execucao.md` — equipe de agentes, fases e quem é dono de cada arquivo.
 - `docs/requisitos-qa/02_requisitos.md` — escopo do protótipo, RF-01..RF-65, RNF, critérios de aceite ([SC] = teste automático, os demais manuais no editor).
-- `docs/arte/03_design_system.md` + `docs/arte/03_design_tokens.json` — especificação de arte 3D, paleta, tokens (com mapeamento para USS), telas e componentes em UI Toolkit.
-- `docs/tecnico/04_arquitetura.md` — arquitetura Unity 6 + URP: renderização (seção 3), estrutura do projeto e asmdefs (seção 4), integração ShatterCore ↔ Unity (seção 9), testes (seção 13), pipeline Blender → FBX → Unity (seção 17), orçamentos (seção 18).
+- `docs/arte/03_design_system.md` + `docs/arte/03_design_tokens.json` — especificação de arte 3D, paleta, tokens (telas e componentes; o mapeamento para USS é histórico, no Godot vira Theme).
+- `docs/tecnico/04_arquitetura.md` — arquitetura do core, dados e contratos (partes de Unity/URP são histórico). `docs/tecnico/23_migracao_godot.md` — migração para o Godot: o que fica, o que sai, pastas e ordem.
 - `docs/design/05_conteudo.md`, `docs/tecnico/06_dados.md` — conteúdo do protótipo e formato das tabelas.
 - `docs/arte/08_decisoes_visual_3d.md` — decisões de motor e renderização e quem é dono de cada número (03 = arte, 04 = orçamentos técnicos).
 - `docs/requisitos-qa/10_qa.md` — matriz de rastreabilidade, roteiros de playtest e testes planejados.
 - `docs/design/15_etapas.md` — as 5 etapas do jogo (base técnica, fatia jogável da Cripta, ciclo do protótipo, elenco e Ato I, Acesso Antecipado) com critérios de aceite.
 - `docs/pesquisa/` — pesquisas de referência externas.
 - `ShatterCore/` — motor de regras em C++17 puro, sem Unity. Headers em `include/shatter/`; `src/` e testes em andamento.
-- `EchoesOfTheShatter/Content/Data/` — CSV de conteúdo, `Loc/` e esquemas (destino previsto: `Assets/StreamingAssets/Data`, ver 04 seção 4.2).
+- `EchoesOfTheShatter/Content/Data/` — CSV de conteúdo, `Loc/` e esquemas (destino previsto: `godot/Data`, ver 23).
+- `ShatterCore/bindings/csharp/` — P/Invoke em C# puro (herdado da Unity), usado pelo Godot .NET.
+- `art-src/herdado-unity/` — modelos FBX, texturas e JSON do kit da Cripta tirados da Unity, para importar no Godot.
 - `art-src/graybox/` — malhas provisórias do Blender (scripts, .blend, .fbx no Git LFS, prévias).
 - `tools/dados/validate_data.py` — validador de dados; `tools/core/build_core.cmd` — build e testes do ShatterCore no Windows.
 - `.claude/agents/` — agentes do projeto: `painel-progresso`, `guardiao-github`, `pesquisador-referencias`.
@@ -73,7 +74,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-Cliente C# sem o editor da Unity (Linux/WSL, precisa de dotnet 8): `tools/cliente/checar_cliente.sh` compila `Assets/Scripts` contra as referências UnityEngine 2021.3 e roda os testes EditMode puros contra a shattercore real; roda no CI (`cliente.yml`). Não substitui o editor (sem Input System, URP nem Unity 6; falhas esperadas em `tools/cliente/LISTA_ESPERADA.txt`).
+Cliente Godot: testes headless a definir (ver `docs/tecnico/23_migracao_godot.md`). O `checar_cliente.sh` e o CI `cliente.yml` da Unity foram removidos.
 
 O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como erro (`-Werror`): `-Wmissing-field-initializers` (agregado sem `{}`), `-Wtype-limits` (comparar tipo sem sinal com `< 0`, inclusive enum de base `uint8_t` convertido para `int`) e `-Wrange-loop-construct` (`for (const std::string x : ...)` em vez de `const std::string&`). Revise esses padrões antes de enviar mudanças no core e confira o CI depois do push.
 
@@ -85,8 +86,8 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 
 ## Pendências de decisão
 - **PRIORIDADE MÁXIMA — Alinhamento de Contexto, Dupla e Escopo (`docs/design/20_alinhamento_ia_e_escopo.md`):** Antes de iniciar qualquer nova frente ou disparar subagentes, leia `docs/design/20_alinhamento_ia_e_escopo.md` e peça ao dono para decidir as duas pendências prioritárias em `docs/progresso/estado.json` (`fluxo-agentes-contexto` e `foco-fatia-vertical`). Não aprove artes nem decisões de design em nome do dono.
-- Itens "confirmar na instalação" do `docs/tecnico/04_arquitetura.md`: conferir na Unity 6.3 instalada antes de o Frontend depender deles.
-- O protótipo Godot F1 fica em `prototipos/godot-f1/` (`project.godot`, `autoload/`, `core/`, `data/`, `game/`, `scenes/`, `tests/`) como referência de game feel. Ele não faz parte do jogo Unity. Como rodar: `prototipos/godot-f1/COMO_RODAR.md`.
+- Versão do Godot 4.x/.NET e o carregamento da biblioteca nativa no export: definir ao criar o projeto (doc 23).
+- O protótipo Godot F1 fica em `prototipos/godot-f1/` como referência de game feel (2D, GDScript). Não é a base do jogo atual. Como rodar: `prototipos/godot-f1/COMO_RODAR.md`.
 
 ## Próximo passo
-Etapa 2, fatia jogável da Cripta (ver `docs/design/15_etapas.md`): regras novas no core, tabelas novas, DLL real na Unity, layout da Cripta na escala A (`docs/tecnico/14_layout_cripta.md`), modelos 3D gerados pelo TripoSG a partir de `docs/arte/referencias-geracao/aprovadas/modelagem/` e cenário da Cripta.
+Etapa 2, fatia jogável da Cripta, agora no Godot (ver `docs/design/15_etapas.md` e `docs/tecnico/23_migracao_godot.md`): primeiro a Cripta montada no Godot via MCP, depois o Guerreiro, ligados ao core. Layout da Cripta na escala A (`docs/tecnico/14_layout_cripta.md`), modelos 3D gerados pelo TripoSG a partir de `docs/arte/referencias-geracao/aprovadas/modelagem/` e cenário da Cripta.
