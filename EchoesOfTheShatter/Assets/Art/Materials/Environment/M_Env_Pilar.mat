@@ -46,7 +46,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _WallMap:
-        m_Texture: {fileID: 2800000, guid: ba4a9320e900ff74ba76989fc9dcd084, type: 3}
+        m_Texture: {fileID: 2800000, guid: 32f1b727bafbdfb4a913ef5e0fb0b55c, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
@@ -67,13 +67,13 @@ Material:
     - _ShadeSoftness: 0.6
     - _SrcBlend: 1
     - _Variation: 0.07
-    - _WallTile: 3
+    - _WallTile: 4
     - _WarpAmp: 4
     - _WarpFreq: 0.09
     - _ZWrite: 1
     m_Colors:
     - _RuneColor: {r: 1, g: 0.7, b: 0.3, a: 1}
     - _ShadowTint: {r: 0.26, g: 0.33, b: 0.48, a: 1}
-    - _Tint: {r: 2, g: 1.75, b: 1.2, a: 1}
+    - _Tint: {r: 1.15, g: 1.1, b: 1.02, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

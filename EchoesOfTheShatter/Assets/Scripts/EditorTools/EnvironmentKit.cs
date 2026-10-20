@@ -168,7 +168,7 @@ namespace Echoes.EditorTools
         /// <summary>Texturas do cenario: sRGB, mipmap, aniso 4x, repeat (glifo: clamp, com alfa); 2048 no PC.</summary>
         public static void EnsureTextures()
         {
-            foreach (var file in new[] { "T_Env_PisoA", "T_Env_PisoB", "T_Env_Parede", "T_Env_Faixa", "T_Env_Glifo" })
+            foreach (var file in new[] { "T_Env_PisoA", "T_Env_PisoB", "T_Env_Parede", "T_Env_Faixa", "T_Env_Glifo", "T_Env_Pilar" })
             {
                 var path = $"{TextureDir}/{file}.png";
                 if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) continue;
@@ -274,8 +274,9 @@ namespace Echoes.EditorTools
             EnsureTextures();
             var mat = LoadOrCreate(MaterialDir + "/M_Env_Pilar.mat");
             SetLook(mat, Look.Wall);
-            mat.SetColor("_Tint", new Color(2.0f, 1.75f, 1.2f, 1f)); // a textura da parede e escura e violeta: o ganho leva para areia clara
-            mat.SetFloat("_WallTile", 3f);
+            mat.SetTexture("_WallMap", Tex("T_Env_Pilar")); // pedra lisa e inteira (sem tijolos): o pilar e uma peca unica
+            mat.SetColor("_Tint", new Color(1.15f, 1.1f, 1.02f, 1f));
+            mat.SetFloat("_WallTile", 4f);
             EditorUtility.SetDirty(mat);
             return mat;
         }
