@@ -136,6 +136,7 @@ namespace Echoes.EditorTools
             d.Box(new Vector3(-b, height - 0.4f, -b), new Vector3(b, height, b));                       // capitel
             var go = Make(parent, id, d.ToMesh("Pillar"), "Pillar_" + SceneryBuilder.Sanitize(id) + "_" + Mathf.RoundToInt(position.x * 10f) + "_" + Mathf.RoundToInt(position.z * 10f));
             go.transform.position = position;
+            go.GetComponent<MeshRenderer>().sharedMaterial = EnvironmentKit.EnsurePillarMaterial();
             return go;
         }
 

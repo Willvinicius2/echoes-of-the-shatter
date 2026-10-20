@@ -268,6 +268,18 @@ namespace Echoes.EditorTools
             return mat;
         }
 
+        /// <summary>M_Env_Pilar: pedra clara e quente (areia) so para colunas e pilares, para destacar do piso e das paredes azul-ardosia.</summary>
+        public static Material EnsurePillarMaterial()
+        {
+            EnsureTextures();
+            var mat = LoadOrCreate(MaterialDir + "/M_Env_Pilar.mat");
+            SetLook(mat, Look.Wall);
+            mat.SetColor("_Tint", new Color(2.0f, 1.75f, 1.2f, 1f)); // a textura da parede e escura e violeta: o ganho leva para areia clara
+            mat.SetFloat("_WallTile", 3f);
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         /// <summary>M_Env_Runa / M_Env_RunaPortal: runas que acendem (emissao pura com pulso). Ambar no checkpoint, violeta no portal.</summary>
         public static Material EnsureRuneMaterial(bool portal)
         {
