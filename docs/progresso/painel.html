@@ -99,7 +99,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 .votacao{--v-fundo:var(--media);--v-borda:var(--clara);--v-texto:var(--perg);--v-mut:var(--clara);--v-nome:var(--ouro-claro);--v-destaque:var(--ouro);--v-campo:var(--noite);--v-botao:var(--ouro);--v-botao-txt:var(--noite)}.v-tit{font-family:var(--f-txt)}.topo a{color:var(--ouro-claro)}</style>
 <main>
 <section class="topo"><h1>Echoes of the Shatter</h1>
-<p class="sub">Região 1 e seus ajustes (PRs 25 a 34) integrados no master em 19/10: golpe devorado na barra, dicas dos Ecos, notas do core, Único da Mancha, trava de missão (desligada) e Fome/Mancha no idle. Tudo ainda sem compilar nem jogar no editor da Unity do dono; o PR #30 (DLL recompilada, EditMode 403/403 e PlayMode 44/44) espera o merge. Falta o teste no PC (A1 a A3, build dev3) e o Ato I inteiro da Etapa 4. Roadmap: contexto-do-jogo/08_trabalho-em-andamento/roadmap-atoI.md. Atualizado em 19/10/2026.</p>
+<p class="sub">Migração para o Godot 4 (.NET) em 20/10/2026: Unity arquivada em arquivo/unity-final, projeto remapeado, Cripta no Godot é o próximo passo. Antes: Região 1 e seus ajustes (PRs 25 a 34) integrados no master em 19/10: golpe devorado na barra, dicas dos Ecos, notas do core, Único da Mancha, trava de missão (desligada) e Fome/Mancha no idle. Tudo ainda sem compilar nem jogar no editor da Unity do dono; o PR #30 (DLL recompilada, EditMode 403/403 e PlayMode 44/44) espera o merge. Falta o teste no PC (A1 a A3, build dev3) e o Ato I inteiro da Etapa 4. Roadmap: contexto-do-jogo/08_trabalho-em-andamento/roadmap-atoI.md. Atualizado em 19/10/2026.</p>
 <p class="sub"><a href="#aguardando">Votar nas perguntas</a> · <a href="https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8" target="_blank" rel="noopener">Roteiro completo: documentos e artes ↗</a></p>
 <p class="dest"><b>Teste o jogo: abra D:\openclaude\Builds\Echoes_Cripta_dev\EchoesOfTheShatter.exe</b><span>Build jogável com menu e escolha de herói (Arqueiro e Mago como prévia visual), Refúgio com a Ilsa (expedição) e o Tico (relatório), save com backups e expedição idle de ponta a ponta. Cripta e Refúgio com cenário pintado (26 peças) e fogo; inimigos pintados e animados; Guerreiro modular com armadura em peças; HUD com barra do chefe e fila de avisos. 238 EditMode e 11 PlayMode; cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada). Controles no LEIA-ME.txt; roteiro no docs/10. Agora com inventário completo (seção 4 do LEIA-ME): loot no chão com feixe de raridade, tela na tecla I com boneco modular, tooltip com comparação e valor de venda, Mochila 40 e Baú 100 [HIPÓTESE]. Em 17 e 18/10 o master recebeu animação rev1 a rev6, VFX, economia com Vendedor e Encantador, cliente da Cripta fechado e cenário rev2; o build acima ainda não inclui esse conjunto (o integrado será Echoes_Cripta_dev3).</span></p>
 <div class="faixa">
@@ -250,6 +250,12 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 </ul><p class="prox"><b>Próximo passo:</b> Build e vídeo do master integrado, depois mostrar ao dono. Perguntas abertas ao dono continuam em Aguardando você.</p></article>
 </div>
 <h2>Linha do tempo</h2><ul class='linha'>
+<li><code>ed26f98</code><span class="dt">20/10/2026</span><br>chore(arte): traz da PR 37 os geradores de piso e pilar da Cripta e as texturas para o Godot</li>
+<li><code>14730cc</code><span class="dt">20/10/2026</span><br>chore: migra o cliente da Unity para o Godot 4 (.NET)</li>
+<li><code>61a5a20</code><span class="dt">19/10/2026</span><br>Merge pull request #36 from Willvinicius2/claude/guerreiro-anim-devorado</li>
+<li><code>6946e87</code><span class="dt">19/10/2026</span><br>Merge pull request #35 from Willvinicius2/claude/a9-painel-fechar-casa</li>
+<li><code>3ada096</code><span class="dt">19/10/2026</span><br>feat(anim): estado e apresentação do golpe devorado no Guerreiro</li>
+<li><code>ae18fc4</code><span class="dt">19/10/2026</span><br>docs(progresso): painel e estado com os PRs 25 a 34 do Ato I</li>
 <li><code>e477301</code><span class="dt">19/10/2026</span><br>Merge pull request #34 from Willvinicius2/claude/project-thread-ca6jzj</li>
 <li><code>8965e58</code><span class="dt">19/10/2026</span><br>merge: master em claude/project-thread-ca6jzj (Fome/Mancha no idle vira 15.5)</li>
 <li><code>cec8aa3</code><span class="dt">19/10/2026</span><br>Merge pull request #33 from Willvinicius2/claude/a7-nuvem</li>
@@ -448,14 +454,10 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <li><code>d99cd39</code><span class="dt">17/10/2026</span><br>feat(etapa3): Interact action, real Guardian PlayMode with core boss loot, async sliced collect, boss bar HUD</li>
 <li><code>09a6431</code><span class="dt">17/10/2026</span><br>loc: revisão do ui_menu.csv (sem duplicata de &#x27;menu principal&#x27;); pausa usa ui.pause.main_menu</li>
 <li><code>964d825</code><span class="dt">17/10/2026</span><br>Merge etapa2/frontend: Etapa 3 parte 1 (save e load pelo core com backups, Refúgio, expedição idle ponta a ponta com _trusted, HUD corrigido); 208 + 6 testes</li>
-<li><code>8b645f2</code><span class="dt">17/10/2026</span><br>feat(etapa3): Refugio flow end to end, expedition screens, PanelSettings reference fix (HUD was invisible in built scenes), player smoke test</li>
-<li><code>868d843</code><span class="dt">17/10/2026</span><br>feat(refuge): Refugio scene (Ilsa, Tico, crypt portal), slots menu, expedition and report screens, autosave, area travel</li>
-<li><code>35de6f6</code><span class="dt">17/10/2026</span><br>feat(arte): opção rim_mask_cap por personagem no acabamento (Espectro com G limitado a 30%)</li>
-<li><code>0f1ad82</code><span class="dt">17/10/2026</span><br>Merge etapa2/frontend: heróis modulares na Unity (ModularCharacter, HeroPart, catálogo, visual pelo item), correção do Espectro; 198 testes</li>
 </ul>
 <h2>Decisões tomadas</h2><div class='grade'>
 <article class="card"><h3>Visual no estilo Spell Brigade</h3><p>3D pintado à mão, personagens chibi, no lugar da pixel art.</p><span class="arq">16/10/2026</span></article>
-<article class="card"><h3>Motor: Unity 6 + URP</h3><p>Antes Godot 4, depois Unreal 5.8.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Motor: Unity 6 + URP (histórico, substituído pelo Godot 4 .NET em 20/10)</h3><p>Antes Godot 4, depois Unreal 5.8.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Mago com capuz e cajado de cristal</h3><p>Sem lanterna.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Fogo do Mago vermelho-laranja</h3><p>Como na arte aprovada.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Tudo do projeto no disco D</h3><p>O disco C está cheio.</p><span class="arq">16/10/2026</span></article>
@@ -469,7 +471,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <article class="card"><h3>Licença Unity Personal ciente</h3><p>Vale até US$ 200 mil de receita ou investimento em 12 meses; acima disso, Unity Pro (P-5).</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>CI só do núcleo na nuvem</h3><p>GitHub Actions em Linux para o ShatterCore e a validação das tabelas; builds e testes da Unity rodam no PC do dono quando ele pedir.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Câmera a 56 m (faixa de 48 a 66 m)</h3><p>Escala de mapa da zona A: arena de 40 m com pilares, salas de 24 a 32 m, corredores de 6 m.</p><span class="arq">16/10/2026</span></article>
-<article class="card"><h3>Motor continua Unity</h3><p>A Unreal não resolveria; o Spell Brigade é Unity 6 com URP.</p><span class="arq">16/10/2026</span></article>
+<article class="card"><h3>Motor continua Unity (substituída em 20/10 pelo Godot)</h3><p>A Unreal não resolveria; o Spell Brigade é Unity 6 com URP.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Packs KayKit recusados como provisórios</h3><p>Não entram nem como arte temporária.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Modelos 3D pelo TripoSG (licença MIT)</h3><p>Gerados a partir das folhas de modelagem aprovadas.</p><span class="arq">16/10/2026</span></article>
 <article class="card"><h3>Heróis modulares</h3><p>Corpo base mais peças; a calça é espaço de equipamento próprio (legs) e a aparência aprovada vira a armadura inicial.</p><span class="arq">16/10/2026</span></article>
@@ -500,6 +502,7 @@ table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:6px 10px
 <article class="card"><h3>Regra de modelo por tarefa</h3><p>Haiku para terminal e Git, Sonnet 5.5 como padrão, Opus só para decisão difícil, Fable só quando o dono pedir (CLAUDE.md).</p><span class="arq">18/10/2026</span></article>
 <article class="card"><h3>Reorganização do repositório</h3><p>Docs em design, tecnico, requisitos-qa, arte, pesquisa e progresso; Godot em prototipos/godot-f1; tools por área (PR #5).</p><span class="arq">18/10/2026</span></article>
 <article class="card"><h3>Autonomia sobre a arte</h3><p>O orquestrador aprova a arte; ao dono vai o resultado final, de preferência em vídeo de dentro do jogo.</p><span class="arq">18/10/2026</span></article>
+<article class="card"><h3>Motor: migração da Unity para o Godot 4 (.NET)</h3><p>Will decidiu abandonar a Unity e fazer tudo no Godot (C#, Godot MCP), começando pela Cripta. Core, dados e arte se reaproveitam; o cliente é refeito. Unity arquivada no branch arquivo/unity-final. Plano em docs/tecnico/23_migracao_godot.md.</p><span class="arq">20/10/2026</span></article>
 </div>
 <h2>Galeria de arte</h2>
 <div class="abas"><button data-f="todas" aria-pressed="true">Todas (49)</button>

@@ -4,7 +4,7 @@
     "atualizado_em": "2026-10-19",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
-    "marco_atual": "Região 1 e seus ajustes (PRs 25 a 34) integrados no master em 19/10: golpe devorado na barra, dicas dos Ecos, notas do core, Único da Mancha, trava de missão (desligada) e Fome/Mancha no idle. Tudo ainda sem compilar nem jogar no editor da Unity do dono; o PR #30 (DLL recompilada, EditMode 403/403 e PlayMode 44/44) espera o merge. Falta o teste no PC (A1 a A3, build dev3) e o Ato I inteiro da Etapa 4. Roadmap: contexto-do-jogo/08_trabalho-em-andamento/roadmap-atoI.md",
+    "marco_atual": "Migração para o Godot 4 (.NET) em 20/10/2026: Unity arquivada em arquivo/unity-final, projeto remapeado, Cripta no Godot é o próximo passo. Antes: Região 1 e seus ajustes (PRs 25 a 34) integrados no master em 19/10: golpe devorado na barra, dicas dos Ecos, notas do core, Único da Mancha, trava de missão (desligada) e Fome/Mancha no idle. Tudo ainda sem compilar nem jogar no editor da Unity do dono; o PR #30 (DLL recompilada, EditMode 403/403 e PlayMode 44/44) espera o merge. Falta o teste no PC (A1 a A3, build dev3) e o Ato I inteiro da Etapa 4. Roadmap: contexto-do-jogo/08_trabalho-em-andamento/roadmap-atoI.md",
     "legenda_estados": {
       "concluido": "Concluído",
       "nuvem": "Na nuvem",
@@ -511,7 +511,7 @@
     },
     {
       "data": "2026-10-16",
-      "titulo": "Motor: Unity 6 + URP",
+      "titulo": "Motor: Unity 6 + URP (histórico, substituído pelo Godot 4 .NET em 20/10)",
       "detalhe": "Antes Godot 4, depois Unreal 5.8."
     },
     {
@@ -581,7 +581,7 @@
     },
     {
       "data": "2026-10-16",
-      "titulo": "Motor continua Unity",
+      "titulo": "Motor continua Unity (substituída em 20/10 pelo Godot)",
       "detalhe": "A Unreal não resolveria; o Spell Brigade é Unity 6 com URP."
     },
     {
@@ -733,6 +733,11 @@
       "data": "2026-10-18",
       "titulo": "Autonomia sobre a arte",
       "detalhe": "O orquestrador aprova a arte; ao dono vai o resultado final, de preferência em vídeo de dentro do jogo."
+    },
+    {
+      "data": "2026-10-20",
+      "titulo": "Motor: migração da Unity para o Godot 4 (.NET)",
+      "detalhe": "Will decidiu abandonar a Unity e fazer tudo no Godot (C#, Godot MCP), começando pela Cripta. Core, dados e arte se reaproveitam; o cliente é refeito. Unity arquivada no branch arquivo/unity-final. Plano em docs/tecnico/23_migracao_godot.md."
     }
   ],
   "nuvem": [
