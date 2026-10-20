@@ -68,6 +68,27 @@ namespace Echoes.EditorTools
                 else { T.Add(k); T.Add(k + 2); T.Add(k + 1); T.Add(k); T.Add(k + 3); T.Add(k + 2); }
             }
 
+            /// <summary>Desgaste: desloca cada vertice por um ruido deterministico da posicao (vertices coincidentes andam juntos, sem rachar a malha).</summary>
+            public void Weather(float amount, int seed)
+            {
+                for (var i = 0; i < V.Count; i++)
+                {
+                    var p = V[i];
+                    var h = Hash(Mathf.RoundToInt(p.x * 50f), Mathf.RoundToInt(p.y * 50f), Mathf.RoundToInt(p.z * 50f), seed);
+                    V[i] = p + new Vector3(Rand(h, 1) - 0.5f, (Rand(h, 2) - 0.5f) * 0.6f, Rand(h, 3) - 0.5f) * 2f * amount;
+                }
+            }
+
+            static int Hash(int x, int y, int z, int seed)
+            {
+                unchecked { var h = seed * 73856093 ^ x * 19349663 ^ y * 83492791 ^ z * 2654435761u.GetHashCode(); h ^= h >> 13; h *= 1274126177; h ^= h >> 16; return h; }
+            }
+
+            static float Rand(int h, int k)
+            {
+                unchecked { var v = (h + k * 668265263) * 374761393; v ^= v >> 15; v *= 668265263; v ^= v >> 13; return (v & 0xFFFF) / 65535f; }
+            }
+
             public Mesh ToMesh(string name)
             {
                 var m = new Mesh { name = name, indexFormat = IndexFormat.UInt32 };
@@ -102,7 +123,17 @@ namespace Echoes.EditorTools
             var hl = length * 0.5f;
             d.Box(new Vector3(-hl, 0f, -thickness), new Vector3(hl, height, 0f));
             d.Box(new Vector3(-hl, 0f, -thickness), new Vector3(hl, Plinth, 0.06f));                          // rodape
-            d.Box(new Vector3(-hl, height - Cornice, -thickness), new Vector3(hl, height, 0.08f));            // cornija
+            var key32 = key.GetHashCode();
+            var wr = new System.Random(key32);
+            var notchAt = length > 6f && wr.NextDouble() < 0.6 ? (float)(wr.NextDouble() * (length - 5f) - hl + 1.5f) : float.NaN;
+            if (float.IsNaN(notchAt)) d.Box(new Vector3(-hl, height - Cornice, -thickness), new Vector3(hl, height, 0.08f));
+            else
+            {
+                var nw = 1.0f + (float)wr.NextDouble() * 1.2f; // trecho de cornija quebrado, mais baixo
+                d.Box(new Vector3(-hl, height - Cornice, -thickness), new Vector3(notchAt, height, 0.08f));
+                d.Box(new Vector3(notchAt, height - Cornice, -thickness), new Vector3(notchAt + nw, height - Cornice * 0.35f, 0.08f));
+                d.Box(new Vector3(notchAt + nw, height - Cornice, -thickness), new Vector3(hl, height, 0.08f));
+            }            // cornija
             var count = Mathf.FloorToInt(length / PilasterEvery);
             for (var i = 0; i < count; i++)
             {
@@ -110,6 +141,7 @@ namespace Echoes.EditorTools
                 if (cx - PilasterWidth * 0.5f < -hl + 0.8f || cx + PilasterWidth * 0.5f > hl - 0.8f) continue;
                 d.Box(new Vector3(cx - PilasterWidth * 0.5f, Plinth, 0f), new Vector3(cx + PilasterWidth * 0.5f, height - Cornice, PilasterDepth));
             }
+            d.Weather(0.018f, key32);
             var go = Make(run, "Visual", d.ToMesh("Wall_" + key), "Wall_" + key);
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
@@ -129,14 +161,33 @@ namespace Echoes.EditorTools
         /// <summary>Coluna octogonal: base e capitel quadrados, fuste de 8 lados. O colisor e posto por quem chama.</summary>
         public static GameObject Pillar(Transform parent, string id, Vector3 position, float radius, float height)
         {
+            var seed = (id + Mathf.RoundToInt(position.x * 10f) + "_" + Mathf.RoundToInt(position.z * 10f)).GetHashCode();
+            var r = new System.Random(seed);
             var d = new MeshData();
-            var b = radius * 1.3f;
-            d.Box(new Vector3(-b, 0f, -b), new Vector3(b, 0.4f, b));                                   // base
-            d.Prism(Vector3.zero, radius * 1.05f, 0.4f, height - 0.4f, 8, Mathf.PI / 8f);              // fuste
-            d.Box(new Vector3(-b, height - 0.4f, -b), new Vector3(b, height, b));                       // capitel
+            var b = radius * (1.25f + (float)r.NextDouble() * 0.12f);
+            var shaft = radius * (1.0f + (float)(r.NextDouble() - 0.5) * 0.08f);
+            d.Box(new Vector3(-b, 0f, -b), new Vector3(b, 0.4f, b));                                           // base
+            d.Prism(Vector3.zero, shaft * 1.05f, 0.4f, height - 0.4f, 8, Mathf.PI / 8f + (float)r.NextDouble() * 0.1f); // fuste
+            // capitel lascado: um canto mais baixo e menor, o resto inteiro
+            var h0 = height - 0.4f;
+            var cut = 0.18f + (float)r.NextDouble() * 0.12f;
+            d.Box(new Vector3(-b, h0, -b), new Vector3(b - cut, height, b));
+            d.Box(new Vector3(b - cut, h0, -b), new Vector3(b, height - 0.12f - cut * 0.5f, b)); // lado lascado, mais baixo
+            // fragmento caido na base (pedaco do capitel), sem colisor
+            var frag = new MeshData();
+            var fs = 0.18f + (float)r.NextDouble() * 0.12f;
+            frag.Box(new Vector3(-fs, 0f, -fs * 0.7f), new Vector3(fs, fs * 1.1f, fs * 0.7f));
+            frag.Weather(0.03f, seed + 1);
+            d.Weather(0.02f, seed);
             var go = Make(parent, id, d.ToMesh("Pillar"), "Pillar_" + SceneryBuilder.Sanitize(id) + "_" + Mathf.RoundToInt(position.x * 10f) + "_" + Mathf.RoundToInt(position.z * 10f));
             go.transform.position = position;
+            go.transform.rotation = Quaternion.Euler((float)(r.NextDouble() - 0.5) * 2.4f, (float)r.NextDouble() * 45f, (float)(r.NextDouble() - 0.5) * 2.4f);
             go.GetComponent<MeshRenderer>().sharedMaterial = EnvironmentKit.EnsurePillarMaterial();
+            var fragGo = Make(parent, id + ".fragment", frag.ToMesh("Fragment"), "Fragment_" + SceneryBuilder.Sanitize(id) + "_" + Mathf.RoundToInt(position.x * 10f) + "_" + Mathf.RoundToInt(position.z * 10f));
+            var ang = (float)r.NextDouble() * Mathf.PI * 2f;
+            fragGo.transform.position = position + new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang)) * (b + 0.45f);
+            fragGo.transform.rotation = Quaternion.Euler(0f, (float)r.NextDouble() * 360f, 0f);
+            fragGo.GetComponent<MeshRenderer>().sharedMaterial = EnvironmentKit.EnsurePillarMaterial();
             return go;
         }
 

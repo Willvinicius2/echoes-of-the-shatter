@@ -294,6 +294,16 @@ namespace Echoes.EditorTools
 
         // ============================================================================================== props
 
+        /// <summary>Desgaste dos props do kit: escala nao uniforme, inclinacao leve e giro, deterministicos pelo nome, para nenhuma peca repetir a outra.</summary>
+        static GameObject Worn(GameObject go, float tilt = 1.6f, float scale = 0.07f)
+        {
+            var r = new System.Random((go.name + go.transform.position.x.ToString("F2") + go.transform.position.z.ToString("F2")).GetHashCode());
+            float J(float a) => (float)(r.NextDouble() * 2.0 - 1.0) * a;
+            go.transform.localScale = Vector3.Scale(go.transform.localScale, new Vector3(1f + J(scale), 1f + J(scale * 0.8f), 1f + J(scale)));
+            go.transform.rotation = Quaternion.Euler(J(tilt), go.transform.eulerAngles.y + J(8f), J(tilt)) ;
+            return go;
+        }
+
         static void BuildProps(CriptaBuilder.Context ctx, Transform props, Transform small)
         {
             var layout = ctx.Layout;
@@ -342,7 +352,7 @@ namespace Echoes.EditorTools
                 {
                     var name = rng.NextDouble() < 0.4 ? "SarcofagoAberto" : "SarcofagoFechado";
                     if (!TryWallSpot(layout, room, rng, spots, 1.0f, 1.5f, out var pos, out var yaw)) continue;
-                    var go = EnvironmentKit.Place(name, props, new Vector3(pos.x, 0f, pos.y), yaw, instanceName: room.Id + "." + name);
+                    var go = Worn(EnvironmentKit.Place(name, props, new Vector3(pos.x, 0f, pos.y), yaw, instanceName: room.Id + "." + name), 1.2f, 0.05f);
                     spots.Add(pos, 1.4f);
                     // Ossos e velas ao pe do sarcofago, sem colisor.
                     SmallNear(small, rng, pos, yaw, "Velas", true);
@@ -353,7 +363,7 @@ namespace Echoes.EditorTools
                 {
                     var name = new[] { "BlocoA", "BlocoB", "BlocoC", "BlocoD" }[rng.Next(0, 4)];
                     if (!TryWallSpot(layout, room, rng, spots, 1.0f, 1.0f, out var pos, out var yaw)) continue;
-                    EnvironmentKit.Place(name, props, new Vector3(pos.x, 0f, pos.y), yaw + (float)rng.Next(-20, 21), instanceName: room.Id + "." + name);
+                    Worn(EnvironmentKit.Place(name, props, new Vector3(pos.x, 0f, pos.y), yaw + (float)rng.Next(-20, 21), instanceName: room.Id + "." + name), 3f, 0.12f);
                     spots.Add(pos, 1.0f);
                 }
                 if (Mathf.Max(r.width, r.height) >= 28f && TryWallSpot(layout, room, rng, spots, 1.7f, 1.6f, out var rp, out var ryaw))
@@ -370,7 +380,7 @@ namespace Echoes.EditorTools
                 for (var i = 0; i < banners; i++)
                 {
                     if (!TryWallSpot(layout, room, rng, spots, 1.2f, 1.2f, out var pos, out var yaw)) continue;
-                    EnvironmentKit.Place("Estandarte", props, new Vector3(pos.x, 0f, pos.y), yaw, instanceName: room.Id + ".Estandarte");
+                    Worn(EnvironmentKit.Place("Estandarte", props, new Vector3(pos.x, 0f, pos.y), yaw, instanceName: room.Id + ".Estandarte"), 3.5f, 0.08f);
                     spots.Add(pos, 1.3f);
                 }
 
@@ -425,7 +435,7 @@ namespace Echoes.EditorTools
             {
                 var pos = corners[(i + start * 2) % 4];
                 if (!spots.Free(pos, 0.9f)) continue;
-                var go = EnvironmentKit.Place("Braseiro", parent, new Vector3(pos.x, 0f, pos.y), (float)rng.Next(0, 4) * 90f, instanceName: room.Id + ".brazier");
+                var go = Worn(EnvironmentKit.Place("Braseiro", parent, new Vector3(pos.x, 0f, pos.y), (float)rng.Next(0, 4) * 90f, instanceName: room.Id + ".brazier"), 2.5f, 0.06f);
                 SceneryBuilder.AddBrazierFire(go);
                 spots.Add(pos, 1.2f);
             }
