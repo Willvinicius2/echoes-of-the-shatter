@@ -20,6 +20,7 @@ const ESPESSURA := 1.2
 var raiz: Node3D
 var mat_piso: StandardMaterial3D
 var mat_parede: StandardMaterial3D
+var mat_degrau: StandardMaterial3D
 var mat_fogo: StandardMaterial3D
 var fogo_proc: ParticleProcessMaterial
 var fogo_malha: QuadMesh
@@ -48,7 +49,9 @@ func _init() -> void:
 		props.add_child(cl)
 	_tapetes(props)
 	var niveis := Node3D.new(); niveis.name = "Desniveis"; raiz.add_child(niveis)
-	_tablado(niveis, "Tablado_Arena", 76.0, 153.0, 16.0, 8.0, 0.9, 1)
+	for k in SALAS:
+		if not k.begins_with("s01"): _escadaria_norte(niveis, "Escadaria_" + k, SALAS[k])
+	_tablado(niveis, "Tablado_Arena", 76.0, 146.0, 12.0, 6.0, 0.9, 1)
 	_tablado(niveis, "Tablado_Atrio", 0.0, 21.0, 12.0, 5.0, 0.6, 1)
 	_tablado(niveis, "Tablado_Antecamara", 76.0, 101.0, 10.0, 4.0, 0.45, 1)
 	var cam := Camera3D.new(); cam.name = "CameraEstudio"; cam.fov = 38.0; cam.far = 400.0; cam.current = true
@@ -83,13 +86,16 @@ func _materiais() -> void:
 	mat_parede.albedo_texture = _tex("res://art/textures/T_Cripta_Pedra.png"); mat_parede.albedo_color = Color(0.42, 0.42, 0.46)
 	mat_parede.roughness = 0.85
 	mat_parede.uv1_triplanar = true; mat_parede.uv1_world_triplanar = true; mat_parede.uv1_scale = Vector3.ONE / 5.0
+	mat_degrau = StandardMaterial3D.new()
+	mat_degrau.albedo_texture = _tex("res://art/textures/T_Cripta_Pedra.png"); mat_degrau.albedo_color = Color(0.95, 0.9, 0.85)
+	mat_degrau.roughness = 0.7; mat_degrau.uv1_triplanar = true; mat_degrau.uv1_world_triplanar = true; mat_degrau.uv1_scale = Vector3.ONE / 3.0
 	var g := GradientTexture2D.new(); g.fill = GradientTexture2D.FILL_RADIAL; g.fill_from = Vector2(0.5, 0.5); g.fill_to = Vector2(0.5, 0.0)
 	var gr := Gradient.new(); gr.set_color(0, Color(1, 1, 1, 1)); gr.set_color(1, Color(1, 1, 1, 0)); g.gradient = gr; g.width = 64; g.height = 64
 	mat_fogo = StandardMaterial3D.new()
 	mat_fogo.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; mat_fogo.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mat_fogo.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; mat_fogo.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	mat_fogo.vertex_color_use_as_albedo = true; mat_fogo.albedo_texture = load("res://art/textures/T_Cripta_Chama.png")
-	fogo_malha = QuadMesh.new(); fogo_malha.size = Vector2(0.75, 1.15); fogo_malha.material = mat_fogo
+	mat_fogo.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; mat_fogo.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	mat_fogo.vertex_color_use_as_albedo = true; mat_fogo.billboard_keep_scale = true; mat_fogo.albedo_texture = load("res://art/textures/T_Cripta_Chama.png")
+	fogo_malha = QuadMesh.new(); fogo_malha.size = Vector2(1.0, 1.7); fogo_malha.material = mat_fogo
 	fogo_proc = ParticleProcessMaterial.new()
 	fogo_proc.direction = Vector3(0, 1, 0); fogo_proc.spread = 8.0
 	fogo_proc.initial_velocity_min = 0.2; fogo_proc.initial_velocity_max = 0.6
@@ -238,13 +244,18 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	if braseiro_cena:
 		var m := braseiro_cena.instantiate(); m.name = "Modelo"; n.add_child(m)
 	var luz := OmniLight3D.new(); luz.name = "Luz"; luz.position = Vector3(0, 1.9, 0)
-	luz.light_color = Color(1.0, 0.62, 0.25); luz.light_energy = 11.0; luz.omni_range = 15.0; luz.omni_attenuation = 1.6
+	luz.light_color = Color(1.0, 0.62, 0.25); luz.light_energy = 8.0; luz.omni_range = 15.0; luz.omni_attenuation = 1.6
 	luz.set_script(load("res://scripts/cripta/BraseiroLuz.cs"))
 	n.add_child(luz)
-	var fp := GPUParticles3D.new(); fp.name = "Chama"; fp.position = Vector3(0, 1.55, 0)
-	fp.amount = 18; fp.lifetime = 0.8; fp.process_material = fogo_proc; fp.draw_pass_1 = fogo_malha
-	fp.visibility_aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 4, 2))
-	n.add_child(fp)
+	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.38, 0); ch.set_script(load("res://scripts/cripta/ChamaCartao.cs"))
+	var cores := [Color(0.9, 0.22, 0.03, 0.5), Color(1.0, 0.5, 0.1, 0.45), Color(1.0, 0.8, 0.4, 0.35)]
+	for k in 3:
+		var qm := QuadMesh.new(); qm.size = Vector2(1.3, 1.5) * (1.0 - 0.2 * k)
+		var mt := mat_fogo.duplicate() as StandardMaterial3D; mt.albedo_color = cores[k]; mt.vertex_color_use_as_albedo = false
+		qm.material = mt
+		var mi := MeshInstance3D.new(); mi.name = "Cartao%d" % k; mi.mesh = qm; mi.position = Vector3(0, 0.62 * (1.0 - 0.2 * k), 0)
+		ch.add_child(mi)
+	n.add_child(ch)
 	pai.add_child(n)
 
 func _tapete(pai: Node3D, nome: String, x: float, z: float, larg: float, comp: float) -> void:
@@ -263,9 +274,23 @@ func _tapetes(pai: Node3D) -> void:
 
 # tablado elevado com 3 degraus voltados para -Z do doc (sul); (x,z) = centro do topo
 func _tablado(pai: Node3D, nome: String, x: float, z: float, larg: float, prof: float, altura: float, _d: int) -> void:
-	_caixa(pai, nome, _p(x, z, altura / 2.0), Vector3(larg, altura, prof), mat_piso)
-	for i in 3:
-		var h: float = altura * (3 - i) / 4.0 + altura * 0.0
-		var off: float = prof / 2.0 + 0.5 * (i + 1) - 0.25
-		var hh: float = altura * (3 - i - 1 + 0.5) / 3.0
-		_caixa(pai, "%s_Degrau%d" % [nome, i], _p(x, z - off, hh / 2.0), Vector3(larg, hh, 0.5), mat_piso)
+	_caixa(pai, nome, _p(x, z, altura / 2.0), Vector3(larg, altura, prof), mat_degrau)
+	_degraus(pai, nome, x, z - prof / 2.0, larg, altura, 3, -1.0)
+
+# degraus descendo para o sul (-1) a partir da aresta z_borda; cada degrau tem 0.5 m de profundidade
+func _degraus(pai: Node3D, nome: String, x: float, z_borda: float, larg: float, altura: float, n: int, dir: float) -> void:
+	for i in n:
+		var hh: float = altura * float(n - i) / float(n + 1)
+		_caixa(pai, "%s_Degrau%d" % [nome, i], _p(x, z_borda + dir * (0.25 + 0.5 * i), hh / 2.0), Vector3(larg, hh, 0.5), mat_degrau)
+
+# plataforma elevada junto à parede norte, em duas metades, com dois degraus voltados ao centro da sala
+func _escadaria_norte(pai: Node3D, nome: String, r: Array) -> void:
+	var cx: float = (r[0] + r[2]) / 2.0
+	for lado in [-1.0, 1.0]:
+		var xa: float = (r[0] + 6.0) if lado < 0 else (cx + 5.0)
+		var xb: float = (cx - 5.0) if lado < 0 else (r[2] - 6.0)
+		var larg := xb - xa
+		var prof := 2.6
+		var zc: float = r[3] - prof / 2.0
+		_caixa(pai, "%s_%d" % [nome, int(lado)], _p((xa + xb) / 2.0, zc, 0.35), Vector3(larg, 0.7, prof), mat_degrau)
+		_degraus(pai, "%s_%d" % [nome, int(lado)], (xa + xb) / 2.0, r[3] - prof, larg, 0.7, 2, -1.0)

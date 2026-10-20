@@ -20,7 +20,7 @@ def mat(name, color, metal=0.0, rough=0.85, emit=None, strength=3.0):
     return m
 
 def make_mats():
-    global M_PEDRA, M_ESCURA, M_MUSGO, M_TECIDO, M_OURO, M_CERA, M_CHAMA, M_FERRO
+    global M_ESTATUA, M_PEDRA, M_ESCURA, M_MUSGO, M_TECIDO, M_OURO, M_CERA, M_CHAMA, M_FERRO
     M_PEDRA = mat("M_Pedra", (0.42, 0.42, 0.46))
     M_ESCURA = mat("M_PedraEscura", (0.16, 0.16, 0.19))
     M_MUSGO = mat("M_Musgo", (0.08, 0.12, 0.05), rough=1.0)
@@ -28,6 +28,7 @@ def make_mats():
     M_OURO = mat("M_Ouro", (0.72, 0.52, 0.16), metal=0.9, rough=0.4)
     M_CERA = mat("M_Cera", (0.88, 0.82, 0.66), rough=0.7)
     M_CHAMA = mat("M_Chama", (1.0, 0.6, 0.15), rough=0.5, emit=(1.0, 0.55, 0.12), strength=6.0)
+    M_ESTATUA = mat("M_Estatua", (0.22, 0.21, 0.20), rough=0.9)
     M_FERRO = mat("M_Ferro", (0.075, 0.07, 0.08), metal=0.7, rough=0.5)
 
 objs = []
@@ -65,19 +66,19 @@ def sphere(loc, r, scale=(1, 1, 1), m=None, seg=16):
 def estatua(x, y, z, esc=1.0):
     """Figura encapuzada: manto largo em camadas, ombros, braços cruzados à frente, capuz pontudo com rosto na sombra."""
     e = esc
-    cyl((x, y, z + 0.30 * e), 0.50 * e, 0.60 * e, M_PEDRA, 14, r2=0.42 * e)     # barra do manto
-    cyl((x, y, z + 0.85 * e), 0.42 * e, 0.60 * e, M_PEDRA, 14, r2=0.33 * e)     # tronco
-    cyl((x, y, z + 1.30 * e), 0.33 * e, 0.35 * e, M_PEDRA, 12, r2=0.30 * e)     # peito
-    sphere((x, y, z + 1.45 * e), 0.30 * e, (1.2, 0.75, 0.45), M_PEDRA, 14)      # ombros
+    cyl((x, y, z + 0.30 * e), 0.50 * e, 0.60 * e, M_ESTATUA, 14, r2=0.42 * e)     # barra do manto
+    cyl((x, y, z + 0.85 * e), 0.42 * e, 0.60 * e, M_ESTATUA, 14, r2=0.33 * e)     # tronco
+    cyl((x, y, z + 1.30 * e), 0.33 * e, 0.35 * e, M_ESTATUA, 12, r2=0.30 * e)     # peito
+    sphere((x, y, z + 1.45 * e), 0.30 * e, (1.2, 0.75, 0.45), M_ESTATUA, 14)      # ombros
     for sx in (-1, 1):                                                            # braços caindo e dobrando para a frente
-        cyl((x + sx * 0.30 * e, y + 0.04 * e, z + 1.15 * e), 0.075 * e, 0.55 * e, M_PEDRA, 8, rot=(0.25, sx * 0.12, 0))
-        cyl((x + sx * 0.14 * e, y + 0.30 * e, z + 0.95 * e), 0.07 * e, 0.34 * e, M_PEDRA, 8, rot=(1.25, 0, sx * 0.6))
-    sphere((x, y + 0.34 * e, z + 0.92 * e), 0.085 * e, (1.4, 0.8, 0.8), M_PEDRA, 8)  # mãos juntas
-    cyl((x, y, z + 1.52 * e), 0.17 * e, 0.12 * e, M_PEDRA, 10)                     # gola do capuz
-    sphere((x, y - 0.02 * e, z + 1.70 * e), 0.22 * e, (1, 1.05, 1.1), M_PEDRA, 14)  # capuz
-    cyl((x, y - 0.10 * e, z + 1.92 * e), 0.15 * e, 0.28 * e, M_PEDRA, 10, r2=0.0)    # ponta do capuz
+        cyl((x + sx * 0.30 * e, y + 0.04 * e, z + 1.15 * e), 0.075 * e, 0.55 * e, M_ESTATUA, 8, rot=(0.25, sx * 0.12, 0))
+        cyl((x + sx * 0.14 * e, y + 0.30 * e, z + 0.95 * e), 0.07 * e, 0.34 * e, M_ESTATUA, 8, rot=(1.25, 0, sx * 0.6))
+    sphere((x, y + 0.34 * e, z + 0.92 * e), 0.085 * e, (1.4, 0.8, 0.8), M_ESTATUA, 8)  # mãos juntas
+    cyl((x, y, z + 1.52 * e), 0.17 * e, 0.12 * e, M_ESTATUA, 10)                     # gola do capuz
+    sphere((x, y - 0.02 * e, z + 1.70 * e), 0.22 * e, (1, 1.05, 1.1), M_ESTATUA, 14)  # capuz
+    cyl((x, y - 0.10 * e, z + 1.92 * e), 0.15 * e, 0.28 * e, M_ESTATUA, 10, r2=0.0)    # ponta do capuz
     sphere((x, y + 0.12 * e, z + 1.68 * e), 0.13 * e, (0.9, 0.55, 1.1), M_ESCURA, 10)  # rosto na sombra
-    box((x, y, z + 0.06 * e), (0.9 * e, 0.9 * e, 0.12 * e), M_PEDRA, bev=0.015)
+    box((x, y, z + 0.06 * e), (0.9 * e, 0.9 * e, 0.12 * e), M_ESTATUA, bev=0.015)
 
 def musgo(x, y, z, sx, sy):
     sphere((x, y, z), 0.5, (sx, sy, 0.12), M_MUSGO, 8)
@@ -111,11 +112,11 @@ def pilar():
     box((0, 0, 1.0), (2.3, 2.3, 0.32), M_ESCURA, bev=0.02)     # moldura escura
     box((0, 0, 3.55), (1.9, 1.9, 4.8), M_PEDRA)                # fuste
     # nicho na frente (+Y): fundo escuro, moldura e arco
-    box((0, 0.93, 2.35), (1.0, 0.1, 2.0), M_ESCURA, bev=0.01)
+    box((0, 0.93, 2.45), (1.1, 0.1, 2.3), M_ESCURA, bev=0.01)
     box((-0.58, 0.95, 2.3), (0.14, 0.12, 2.1), M_PEDRA, bev=0.01); box((0.58, 0.95, 2.3), (0.14, 0.12, 2.1), M_PEDRA, bev=0.01)
     box((0, 0.95, 3.4), (1.3, 0.12, 0.16), M_PEDRA, bev=0.01)
     sphere((0, 0.94, 3.25), 0.5, (1, 0.12, 0.55), M_ESCURA, 12)  # arco
-    estatua(0, 0.7, 1.15, 0.95)
+    estatua(0, 0.72, 1.15, 1.08)
     # vigas de faixa horizontais e capitel
     box((0, 0, 4.9), (2.1, 2.1, 0.18), M_ESCURA, bev=0.02)
     box((0, 0, 5.5), (2.35, 2.35, 0.45), M_PEDRA)
