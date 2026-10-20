@@ -44,7 +44,7 @@ Material:
     - _FresnelBlend: 0.5
     - _FresnelStrength: 1
     - _HitFlash: 0
-    - _RimIntensity: 0.2
+    - _RimIntensity: 0
     - _RimLitInfluence: 1
     - _RimMaskInfluence: 1
     - _RimTintMix: 0

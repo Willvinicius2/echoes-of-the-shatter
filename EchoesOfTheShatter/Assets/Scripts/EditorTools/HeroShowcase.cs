@@ -33,6 +33,40 @@ namespace Echoes.EditorTools
                 var follow = UnityEngine.Object.FindAnyObjectByType<FollowCamera>();
                 var cam = follow.GetComponentInChildren<Camera>();
                 var hero = GameObject.Find("Hero");
+                var lineup = Environment.GetEnvironmentVariable("ECHOES_LINEUP");
+                if (!string.IsNullOrEmpty(lineup))
+                {
+                    hero.SetActive(false);
+                    var names = lineup.Split(',');
+                    var sp = new Vector3(layout.HeroSpawn.x, 0f, layout.HeroSpawn.y);
+                    var insts = names.Select(n => (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Prefabs/P_" + n + ".prefab"))).ToArray();
+                    var o5 = cam.transform.localPosition; var f5 = cam.fieldOfView;
+                    for (int i = 0; i < insts.Length; i++)
+                    {
+                        foreach (var x in insts) x.SetActive(false);
+                        var inst = insts[i]; inst.SetActive(true);
+                        inst.transform.position = sp; inst.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+                        follow.transform.position = sp + new Vector3(0f, 0.9f, 0f); follow.ApplySettings();
+                        var big = names[i].StartsWith("Boss");
+                        cam.fieldOfView = 35f; cam.transform.localPosition = new Vector3(0f, 0f, big ? -12f : -5f);
+                        Capture(cam, Path.Combine(dir, tag + "_" + names[i] + "_frente.png"), 1920, 1080);
+                        inst.transform.rotation = Quaternion.identity;
+                        Capture(cam, Path.Combine(dir, tag + "_" + names[i] + "_costas.png"), 1920, 1080);
+                    }
+                    for (int i = 0; i < insts.Length; i++)
+                    {
+                        insts[i].SetActive(true);
+                        insts[i].transform.position = sp + new Vector3((i - (insts.Length - 1) / 2f) * 2.6f, 0f, 0f);
+                        insts[i].transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+                    }
+                    follow.transform.position = sp + new Vector3(0f, 0.9f, 0f); follow.ApplySettings();
+                    cam.transform.localPosition = new Vector3(0f, 0f, -14f); cam.fieldOfView = 35f;
+                    Capture(cam, Path.Combine(dir, tag + "_fila.png"), 1920, 1080);
+                    cam.transform.localPosition = o5; cam.fieldOfView = f5;
+                    Debug.Log("[HeroShowcase] Fila em " + dir + " (" + tag + ")");
+                    if (Application.isBatchMode) EditorApplication.Exit(0);
+                    return;
+                }
                 var which = Environment.GetEnvironmentVariable("ECHOES_HERO");
                 if (!string.IsNullOrEmpty(which) && which != "Warrior")
                 {
