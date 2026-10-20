@@ -54,7 +54,7 @@ namespace Echoes.EditorTools
                     {
                         vertices.Add(new Vector3(c.x, 0f, c.y));
                         normals.Add(Vector3.up);
-                        uvs.Add(c / 8f);
+                        uvs.Add(c / 16f);
                     }
                     triangles.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
                 }

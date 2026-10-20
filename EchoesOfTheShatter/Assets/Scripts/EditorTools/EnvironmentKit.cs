@@ -231,7 +231,7 @@ namespace Echoes.EditorTools
             mat.SetColor("_ShadowTint", new Color(0.26f, 0.33f, 0.48f, 1f));
             // Piso limpo e uniforme: uma lajota so (sem celulas A/B, giro ou espelho), contraste e manchas de brilho baixos.
             mat.SetFloat("_CellSize", look == Look.Floor ? 0f : 12f);
-            mat.SetFloat("_FloorTile", 8f);
+            mat.SetFloat("_FloorTile", 16f); // textura do piso: ardosia da referencia, 16 m por tile (gen_piso_ardosia.py)
             mat.SetFloat("_WallTile", 2.5f); // alvenaria mais fina: o heroi (chibi) nao parece pequeno ao lado dos blocos
             mat.SetFloat("_FloorContrast", look == Look.Floor ? 1.0f : 1.35f);
             mat.SetFloat("_Variation", look == Look.Floor ? 0.0f : 0.07f);

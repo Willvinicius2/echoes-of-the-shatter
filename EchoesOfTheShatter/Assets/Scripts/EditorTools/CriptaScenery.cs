@@ -42,6 +42,9 @@ namespace Echoes.EditorTools
             public void Add(Vector2 p, float radius) => Keeps.Add(new Keep { Pos = p, Radius = radius });
         }
 
+        /// <summary>ECHOES_TERRAIN_ONLY=1: so piso e paredes (terreno isolado); pilares, vistas, tapete e props ficam de fora para entrarem depois como modulos 3D separados.</summary>
+        static bool TerrainOnly => System.Environment.GetEnvironmentVariable("ECHOES_TERRAIN_ONLY") == "1";
+
         public static void Build(CriptaBuilder.Context ctx, Transform level, Transform decor)
         {
             var layout = ctx.Layout;
@@ -79,6 +82,7 @@ namespace Echoes.EditorTools
             foreach (var corridor in layout.Corridors) BuildCorridorWalls(walls, corridor);
 
             // Sem simbolo de bussola no chao: o aro do checkpoint e do portal ja marca o ponto (pedido do dono).
+            if (TerrainOnly) return;
             foreach (var p in layout.Pillars) BuildPillar(pillars, p);
             BuildVistas(ctx, level, decor);
             BuildCorridorArches(layout, props);
