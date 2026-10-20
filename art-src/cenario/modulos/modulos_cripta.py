@@ -63,13 +63,21 @@ def sphere(loc, r, scale=(1, 1, 1), m=None, seg=16):
     return add(o, m)
 
 def estatua(x, y, z, esc=1.0):
-    """Figura encapuzada de mãos postas (robe, ombros, capuz, rosto escuro)."""
-    cyl((x, y, z + 0.75 * esc), 0.38 * esc, 1.5 * esc, M_PEDRA, 12, r2=0.2 * esc)
-    sphere((x, y, z + 1.42 * esc), 0.3 * esc, (1.15, 0.8, 0.55), M_PEDRA)            # ombros
-    sphere((x, y, z + 1.68 * esc), 0.2 * esc, (1, 1, 1.15), M_PEDRA, 14)              # capuz
-    sphere((x, y + 0.11 * esc, z + 1.66 * esc), 0.12 * esc, (0.9, 0.7, 1.0), M_ESCURA, 10)  # sombra do rosto
-    box((x, y + 0.2 * esc, z + 1.15 * esc), (0.16 * esc, 0.12 * esc, 0.2 * esc), M_PEDRA, bev=0.01)  # mãos
-    box((x, y, z + 0.06 * esc), (0.62 * esc, 0.62 * esc, 0.12 * esc), M_PEDRA, bev=0.015)  # base
+    """Figura encapuzada: manto largo em camadas, ombros, braços cruzados à frente, capuz pontudo com rosto na sombra."""
+    e = esc
+    cyl((x, y, z + 0.30 * e), 0.50 * e, 0.60 * e, M_PEDRA, 14, r2=0.42 * e)     # barra do manto
+    cyl((x, y, z + 0.85 * e), 0.42 * e, 0.60 * e, M_PEDRA, 14, r2=0.33 * e)     # tronco
+    cyl((x, y, z + 1.30 * e), 0.33 * e, 0.35 * e, M_PEDRA, 12, r2=0.30 * e)     # peito
+    sphere((x, y, z + 1.45 * e), 0.30 * e, (1.2, 0.75, 0.45), M_PEDRA, 14)      # ombros
+    for sx in (-1, 1):                                                            # braços caindo e dobrando para a frente
+        cyl((x + sx * 0.30 * e, y + 0.04 * e, z + 1.15 * e), 0.075 * e, 0.55 * e, M_PEDRA, 8, rot=(0.25, sx * 0.12, 0))
+        cyl((x + sx * 0.14 * e, y + 0.30 * e, z + 0.95 * e), 0.07 * e, 0.34 * e, M_PEDRA, 8, rot=(1.25, 0, sx * 0.6))
+    sphere((x, y + 0.34 * e, z + 0.92 * e), 0.085 * e, (1.4, 0.8, 0.8), M_PEDRA, 8)  # mãos juntas
+    cyl((x, y, z + 1.52 * e), 0.17 * e, 0.12 * e, M_PEDRA, 10)                     # gola do capuz
+    sphere((x, y - 0.02 * e, z + 1.70 * e), 0.22 * e, (1, 1.05, 1.1), M_PEDRA, 14)  # capuz
+    cyl((x, y - 0.10 * e, z + 1.92 * e), 0.15 * e, 0.28 * e, M_PEDRA, 10, r2=0.0)    # ponta do capuz
+    sphere((x, y + 0.12 * e, z + 1.68 * e), 0.13 * e, (0.9, 0.55, 1.1), M_ESCURA, 10)  # rosto na sombra
+    box((x, y, z + 0.06 * e), (0.9 * e, 0.9 * e, 0.12 * e), M_PEDRA, bev=0.015)
 
 def musgo(x, y, z, sx, sy):
     sphere((x, y, z), 0.5, (sx, sy, 0.12), M_MUSGO, 8)

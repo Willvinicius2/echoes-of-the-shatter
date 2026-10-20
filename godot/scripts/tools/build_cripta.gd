@@ -44,9 +44,13 @@ func _init() -> void:
 	for k in CORREDORES:
 		var cr: Array = CORREDORES[k]
 		var cl := OmniLight3D.new(); cl.name = "LuzCorredor_" + k; cl.position = _p((cr[0] + cr[2]) / 2.0, (cr[1] + cr[3]) / 2.0, 2.6)
-		cl.light_color = Color(1.0, 0.6, 0.3); cl.light_energy = 2.2; cl.omni_range = 9.0
+		cl.light_color = Color(1.0, 0.6, 0.3); cl.light_energy = 5.0; cl.omni_range = 10.0
 		props.add_child(cl)
 	_tapetes(props)
+	var niveis := Node3D.new(); niveis.name = "Desniveis"; raiz.add_child(niveis)
+	_tablado(niveis, "Tablado_Arena", 76.0, 153.0, 16.0, 8.0, 0.9, 1)
+	_tablado(niveis, "Tablado_Atrio", 0.0, 21.0, 12.0, 5.0, 0.6, 1)
+	_tablado(niveis, "Tablado_Antecamara", 76.0, 101.0, 10.0, 4.0, 0.45, 1)
 	var cam := Camera3D.new(); cam.name = "CameraEstudio"; cam.fov = 38.0; cam.far = 400.0; cam.current = true
 	cam.set_script(load("res://scripts/cripta/CameraEstudio.cs"))
 	cam.set("Alvo", Vector3(0, 0, -11))
@@ -84,13 +88,13 @@ func _materiais() -> void:
 	mat_fogo = StandardMaterial3D.new()
 	mat_fogo.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; mat_fogo.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	mat_fogo.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; mat_fogo.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	mat_fogo.vertex_color_use_as_albedo = true; mat_fogo.albedo_texture = g
-	fogo_malha = QuadMesh.new(); fogo_malha.size = Vector2(0.9, 0.9); fogo_malha.material = mat_fogo
+	mat_fogo.vertex_color_use_as_albedo = true; mat_fogo.albedo_texture = load("res://art/textures/T_Cripta_Chama.png")
+	fogo_malha = QuadMesh.new(); fogo_malha.size = Vector2(0.75, 1.15); fogo_malha.material = mat_fogo
 	fogo_proc = ParticleProcessMaterial.new()
-	fogo_proc.direction = Vector3(0, 1, 0); fogo_proc.spread = 14.0
-	fogo_proc.initial_velocity_min = 0.5; fogo_proc.initial_velocity_max = 1.1
+	fogo_proc.direction = Vector3(0, 1, 0); fogo_proc.spread = 8.0
+	fogo_proc.initial_velocity_min = 0.2; fogo_proc.initial_velocity_max = 0.6
 	fogo_proc.gravity = Vector3(0, 0.9, 0)
-	fogo_proc.scale_min = 0.45; fogo_proc.scale_max = 1.0
+	fogo_proc.scale_min = 0.6; fogo_proc.scale_max = 1.2
 	fogo_proc.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE; fogo_proc.emission_sphere_radius = 0.22
 	var rampa := Gradient.new()
 	rampa.set_color(0, Color(1.0, 0.85, 0.35, 0.9)); rampa.set_color(1, Color(0.9, 0.12, 0.02, 0.0))
@@ -238,7 +242,7 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	luz.set_script(load("res://scripts/cripta/BraseiroLuz.cs"))
 	n.add_child(luz)
 	var fp := GPUParticles3D.new(); fp.name = "Chama"; fp.position = Vector3(0, 1.55, 0)
-	fp.amount = 28; fp.lifetime = 0.9; fp.process_material = fogo_proc; fp.draw_pass_1 = fogo_malha
+	fp.amount = 18; fp.lifetime = 0.8; fp.process_material = fogo_proc; fp.draw_pass_1 = fogo_malha
 	fp.visibility_aabb = AABB(Vector3(-1, -1, -1), Vector3(2, 4, 2))
 	n.add_child(fp)
 	pai.add_child(n)
@@ -256,3 +260,12 @@ func _tapetes(pai: Node3D) -> void:
 	_tapete(pai, "Tapete_Atrio", 0.0, 12.0, 4.0, 23.0)
 	_tapete(pai, "Tapete_C09", 76.0, 113.0, 3.0, 12.0)
 	_tapete(pai, "Tapete_Arena", 76.0, 139.0, 5.0, 38.0)
+
+# tablado elevado com 3 degraus voltados para -Z do doc (sul); (x,z) = centro do topo
+func _tablado(pai: Node3D, nome: String, x: float, z: float, larg: float, prof: float, altura: float, _d: int) -> void:
+	_caixa(pai, nome, _p(x, z, altura / 2.0), Vector3(larg, altura, prof), mat_piso)
+	for i in 3:
+		var h: float = altura * (3 - i) / 4.0 + altura * 0.0
+		var off: float = prof / 2.0 + 0.5 * (i + 1) - 0.25
+		var hh: float = altura * (3 - i - 1 + 0.5) / 3.0
+		_caixa(pai, "%s_Degrau%d" % [nome, i], _p(x, z - off, hh / 2.0), Vector3(larg, hh, 0.5), mat_piso)
