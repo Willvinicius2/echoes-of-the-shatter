@@ -1,0 +1,10 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://art/textures/T_Cripta_Pedra.png" id="1_6gktf"]
+
+[resource]
+albedo_color = Color(0.46, 0.46, 0.5, 1)
+albedo_texture = ExtResource("1_6gktf")
+roughness = 0.8
+uv1_scale = Vector3(0.4, 0.4, 0.4)
+uv1_triplanar = true
