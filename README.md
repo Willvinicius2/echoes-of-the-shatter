@@ -3,8 +3,8 @@
 ARPG single-player em 3D estilizado, com câmera fixa 3/4 e expedições idle, para PC (Steam, Acesso Antecipado).
 Três heróis no lançamento: Guerreiro, Arqueiro e Mago. O visual segue o estilo pintado à mão do Spell Brigade.
 
-- **Motor:** Unity 6.3 LTS (`6000.3.26f1`) com URP, em C#.
-- **Regras do jogo:** ShatterCore, em C++17, compilado como DLL e chamado pela Unity. Combate e simulador idle usam o mesmo motor.
+- **Motor:** Godot 4 (.NET, C#). Migrado da Unity em 20/10/2026; ver [`docs/tecnico/23_migracao_godot.md`](docs/tecnico/23_migracao_godot.md). O último estado da Unity está no branch `arquivo/unity-final`.
+- **Regras do jogo:** ShatterCore, em C++17, compilado como biblioteca nativa e chamado pelo Godot por P/Invoke. Combate e simulador idle usam o mesmo motor.
 - **Estado atual:** etapa 2 de 5, a fatia jogável da Cripta. O andamento de cada setor está no painel.
 
 ## Acompanhar sem abrir o código
@@ -27,19 +27,19 @@ Os links do painel e do roteiro só abrem para quem foi convidado pelo dono.
    cd echoes-of-the-shatter
    git lfs pull
    ```
-3. Instale pelo Unity Hub exatamente a versão **6000.3.26f1**. Outra versão reimporta o projeto inteiro e gera mudanças em centenas de arquivos.
-4. No Unity Hub, use **Add** e escolha a pasta `EchoesOfTheShatter/`, que fica dentro do repositório.
+3. Instale o Godot 4 (edição .NET) e o .NET SDK. O projeto Godot fica em `godot/` (criado na migração; veja `docs/tecnico/23_migracao_godot.md`).
 
 ## Pastas
 
 | Pasta | Conteúdo |
 |---|---|
-| `EchoesOfTheShatter/` | Projeto Unity: `Assets/` (cenas, scripts, arte), `Content/Data/` (tabelas CSV, textos pt_BR e en, esquemas) |
-| `ShatterCore/` | Motor de regras em C++17, com testes |
+| `godot/` | Projeto Godot (cenas, scripts, UI); criado na migração |
+| `EchoesOfTheShatter/Content/Data/` | Tabelas CSV, textos pt_BR e en e esquemas (vão para `godot/Data/` depois) |
+| `ShatterCore/` | Motor de regras em C++17, com testes; `bindings/csharp/` tem o P/Invoke em C# para o Godot |
 | `docs/` | Documentos por assunto (`design/`, `tecnico/`, `requisitos-qa/`, `arte/`, `pesquisa/`); índice em `docs/README.md` |
 | `docs/arte/referencias-geracao/aprovadas/` | Artes aprovadas: heróis, inimigos, chefes, cenários, ícones e folhas de modelagem |
 | `docs/progresso/` | `estado.json` (fonte do painel) e o painel gerado |
-| `art-src/` | Arquivos de arte de origem: Blender, graybox e o pipeline de acabamento dos modelos |
+| `art-src/` | Arquivos de arte de origem: Blender, graybox, pipeline de acabamento e `herdado-unity/` (modelos e texturas vindos da Unity) |
 | `tools/` | Validador de dados, build do ShatterCore e geradores do painel e do roteiro |
 | `.claude/` | Agentes e configuração do Claude Code usados na produção |
 
@@ -49,7 +49,7 @@ O protótipo antigo em Godot fica em `prototipos/godot-f1/`. Ele serve só de re
 
 - **ShatterCore no Windows:** `tools\core\build_core.cmd Release --werror` (precisa do Visual Studio Build Tools). Em Linux, ver o `CLAUDE.md`.
 - **Tabelas de dados:** `python tools/dados/validate_data.py`
-- **Unity:** Window > General > Test Runner, testes EditMode.
+- **Cliente Godot:** testes ainda a definir (ver doc 23).
 - O CI do GitHub compila e testa o núcleo e valida as tabelas a cada push e pull request para o `master`.
 
 ## Como trabalhamos
@@ -58,5 +58,5 @@ O protótipo antigo em Godot fica em `prototipos/godot-f1/`. Ele serve só de re
 - Todo commit vai para o GitHub logo depois de feito, para o repositório sempre mostrar o estado real.
 - Mensagens de commit seguem o padrão Conventional Commits, em português (`feat(...)`, `fix(...)`, `docs(...)`).
 - Arte nova só entra no jogo depois da aprovação do dono.
-- Evite que duas pessoas mexam na mesma cena ou no mesmo prefab da Unity ao mesmo tempo: conflito nesses arquivos é difícil de resolver.
+- Evite que duas pessoas editem a mesma cena `.tscn` ao mesmo tempo.
 - As regras completas do projeto, para pessoas e para o Claude Code, estão no [`CLAUDE.md`](CLAUDE.md).

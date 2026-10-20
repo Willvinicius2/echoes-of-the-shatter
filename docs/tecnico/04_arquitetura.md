@@ -1,5 +1,7 @@
 # 04 — Arquitetura e contratos técnicos (Tech Lead)
 
+> **Aviso (20/10/2026):** o jogo migrou da Unity para o Godot 4 (.NET). As partes que falam de Unity, URP, asmdef e UI Toolkit são histórico; o que vale hoje está em `docs/tecnico/23_migracao_godot.md`. Core, dados e contratos continuam válidos.
+
 Projeto: **Echoes of the Shatter**. Fonte de design: `docs/design/00_plano_existente.md` (Plano Steam v2.0). Motor: **Unity 6 LTS com URP, C#** (decisão do dono em 16/10/2026, ver `docs/arte/08_decisoes_visual_3d.md`), que substitui o Godot 4 da seção 10 do plano (houve uma escolha intermediária de outro motor, registrada na seção 15).
 
 Este documento é o contrato técnico de todos os agentes. Os headers em `ShatterCore/include/shatter/` são a parte executável deste contrato: se o texto e o header discordarem, **vale o header** e este documento deve ser corrigido. Itens marcados **confirmar na instalação** dependem da versão do Unity instalada e não devem ser tratados como contrato até serem testados.
