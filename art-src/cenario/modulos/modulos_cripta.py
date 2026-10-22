@@ -207,5 +207,5 @@ def estatua_avulsa():
     estatua(0, 0, 0.6, 1.25)
     exportar("SM_Cripta_Estatua")
 
-for fn in (pilar, estandarte, velas, corrente_dupla, entulho, estatua_avulsa):
+for fn in (pilar, estandarte, velas, entulho, estatua_avulsa):  # coluna com corrente: coluna_corrente.py
     fn()
