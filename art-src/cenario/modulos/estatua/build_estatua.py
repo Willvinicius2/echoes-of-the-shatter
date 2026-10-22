@@ -74,6 +74,7 @@ if PREV:
         s = bpy.data.objects.new("s", bpy.data.lights.new("s", 'SUN')); s.data.energy = e; s.data.color = color; s.rotation_euler = rot; bpy.context.collection.objects.link(s)
     sun((math.radians(55), 0, math.radians(215)), 3.0, (1.0, 0.85, 0.7)); sun((math.radians(70), 0, math.radians(40)), 1.2, (0.55, 0.65, 1.0))
     views = {"frente": ((0, 8.5, 2.1), (0, 0, 1.55), 700, 900), "tres_quartos": ((5.2, 6.3, 3.0), (0, 0, 1.55), 700, 900), "tras": ((-1.5, -8.5, 2.3), (0, 0, 1.55), 700, 900),
+             "lado": ((9.0, 0.3, 2.1), (0, 0, 1.55), 700, 900), "cima": ((0.8, 2.2, 10.0), (0, 0, 1.5), 800, 800),
              "close_capuz": ((0.4, 3.2, 3.0), (0, 0, 2.75), 800, 800), "close_maos": ((0.5, 2.6, 1.9), (0, 0.2, 1.8), 800, 800), "close_plinto": ((1.8, 3.2, 0.9), (0, 0, 0.5), 800, 800)}
     only_v = os.environ.get("VISTAS")
     for nome, (loc, tgt, rx, ry) in views.items():
