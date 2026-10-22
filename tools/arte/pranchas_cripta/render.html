@@ -1,0 +1,159 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>html,body{margin:0;background:#12151c}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const TILE = 480, COLS = 4, ROWS = 4, HEAD = 64;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(TILE, TILE);
+renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.75;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+function loadGlb(url) {
+  return new Promise((ok, err) => new GLTFLoader().load(url, g => ok(g.scene), undefined, err));
+}
+
+function makeMannequin(h = 1.8) {
+  const m = new THREE.MeshStandardMaterial({ color: 0x6f8fb0, roughness: .6, transparent: true, opacity: .92 });
+  const g = new THREE.Group();
+  const w = h * 0.12;
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(w * 1.1, w * .85, h * .45, 16), m); body.position.y = h * .62; g.add(body);
+  for (const s of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(w * .45, w * .38, h * .42, 12), m); leg.position.set(s * w * .55, h * .21, 0); g.add(leg);
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(w * .3, w * .26, h * .38, 12), m); arm.position.set(s * w * 1.5, h * .64, 0); g.add(arm);
+  }
+  const head = new THREE.Mesh(new THREE.SphereGeometry(h * .062, 20, 16), m); head.position.y = h * .93; g.add(head);
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; } });
+  return g;
+}
+
+function label(ctx, text, x, y, size = 15, color = '#e8e2d0', align = 'left') {
+  ctx.font = `600 ${size}px sans-serif`; ctx.fillStyle = color; ctx.textAlign = align; ctx.fillText(text, x, y);
+}
+
+window.makeSheet = async (glbUrl, nome) => {
+  const obj = await loadGlb(glbUrl);
+  const scene = new THREE.Scene();
+  scene.environment = envTex; scene.environmentIntensity = 0.5;
+  scene.background = new THREE.Color(0x232a38);
+  scene.add(obj);
+  obj.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; if (o.material) { o.material.side = THREE.DoubleSide; if (o.material.roughness !== undefined && o.material.roughness < 0.25) o.material.roughness = 0.25; } } });
+  const box = new THREE.Box3().setFromObject(obj);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
+  const floorY = box.min.y;
+
+  // piso de referencia (grade de 1 m) e luzes
+  const gridSpan = Math.max(6, Math.ceil(Math.max(size.x, size.z) * 1.6));
+  const grid = new THREE.GridHelper(gridSpan, gridSpan, 0x6a7691, 0x3d465a); grid.position.set(center.x, floorY - 0.002, center.z); scene.add(grid);
+  const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(gridSpan, gridSpan), new THREE.ShadowMaterial({ opacity: .35 }));
+  shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.set(center.x, floorY - 0.001, center.z); shadowPlane.receiveShadow = true; scene.add(shadowPlane);
+  const sun = new THREE.DirectionalLight(0xfff0d8, 1.7);
+  sun.position.set(center.x + radius * 1.5, floorY + radius * 2.4, center.z + radius * 1.1);
+  sun.target.position.copy(center); scene.add(sun, sun.target);
+  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  const sc = sun.shadow.camera; const e = radius * 1.8; sc.left = -e; sc.right = e; sc.top = e; sc.bottom = -e; sc.near = .1; sc.far = radius * 8; sc.updateProjectionMatrix();
+  sun.shadow.bias = -0.0004;
+  const fill = new THREE.DirectionalLight(0x9db4ff, 0.4); fill.position.set(center.x - radius * 2, floorY + radius, center.z - radius * 1.5); scene.add(fill);
+
+  // manequim de 1,8 m ao lado, so nas vistas de escala
+  const man = makeMannequin(1.8);
+  man.position.set(box.max.x + 0.55, floorY, center.z);
+  man.visible = false; scene.add(man);
+
+  const cam = new THREE.PerspectiveCamera(35, 1, 0.05, 500);
+  const dist = (radius / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2))) * 1.08;
+  const place = (azDeg, elDeg, d = dist) => {
+    const az = THREE.MathUtils.degToRad(azDeg), el = THREE.MathUtils.degToRad(elDeg);
+    cam.position.set(center.x + d * Math.sin(az) * Math.cos(el), center.y + d * Math.sin(el), center.z + d * Math.cos(az) * Math.cos(el));
+    cam.up.set(0, 1, 0); cam.lookAt(center); cam.updateProjectionMatrix();
+  };
+
+  const sheet = document.createElement('canvas');
+  sheet.width = TILE * COLS; sheet.height = TILE * ROWS + HEAD;
+  const ctx = sheet.getContext('2d');
+  ctx.fillStyle = '#12151c'; ctx.fillRect(0, 0, sheet.width, sheet.height);
+
+  const views = [
+    ['VISTA +Z', 0, 12], ['VISTA -Z', 180, 12], ['VISTA +X', 90, 12], ['VISTA -X', 270, 12],
+    ['3/4 +X +Z', 45, 28], ['3/4 -X +Z', 315, 28], ['3/4 +X -Z', 135, 28], ['3/4 -X -Z', 225, 28],
+    ['DE CIMA', 0, 89], ['RASANTE', 30, 5], ['3/4 ALTO (JOGO)', 45, 50],
+  ];
+  let i = 0;
+  const cell = (n) => [(n % COLS) * TILE, HEAD + Math.floor(n / COLS) * TILE];
+  const draw = (title, n) => {
+    const [x, y] = cell(n);
+    ctx.drawImage(renderer.domElement, x, y, TILE, TILE);
+    ctx.strokeStyle = '#0c0e13'; ctx.lineWidth = 2; ctx.strokeRect(x, y, TILE, TILE);
+    label(ctx, title, x + 10, y + 22, 15);
+  };
+  for (const [title, az, el] of views) {
+    man.visible = false; place(az, el); renderer.render(scene, cam); draw(title, i++);
+  }
+
+  // vistas de escala ortograficas com manequim de 1,8 m
+  man.visible = true;
+  const half = Math.max(size.y * 0.62 + 0.3, 1.2, Math.max(size.x, size.z) / 2 + 1.3);
+  const ocam = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 500);
+  ocam.position.set(center.x + 0.25, floorY + half - 0.15, center.z + radius * 4);
+  ocam.lookAt(center.x + 0.25, floorY + half - 0.15, center.z); ocam.updateProjectionMatrix();
+  renderer.render(scene, ocam); draw('ESCALA — vista +Z (boneco 1,8 m)', i++);
+  man.position.set(center.x, floorY, box.max.z + 0.55);
+  const ocam2 = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 500);
+  ocam2.position.set(center.x + radius * 4, floorY + half - 0.15, center.z + 0.25);
+  ocam2.lookAt(center.x, floorY + half - 0.15, center.z + 0.25); ocam2.updateProjectionMatrix();
+  man.rotation.y = Math.PI / 2;
+  renderer.render(scene, ocam2); draw('ESCALA — vista +X (boneco 1,8 m)', i++);
+
+  // 3/4 em perspectiva com o boneco ao lado, para sentir a escala
+  man.rotation.y = 0; man.position.set(box.max.x + 0.55, floorY, center.z); man.visible = true;
+  place(35, 18, dist * 1.12); renderer.render(scene, cam); draw('ESCALA — 3/4 (boneco 1,8 m)', i++);
+
+  // vista de cima ortografica com cotas (grade = 1 m)
+  man.visible = false;
+  const half3 = Math.max(size.x, size.z) * 0.62 + 0.3;
+  const ocam3 = new THREE.OrthographicCamera(-half3, half3, half3, -half3, 0.01, 500);
+  ocam3.position.set(center.x, floorY + radius * 4, center.z); ocam3.up.set(0, 0, -1); ocam3.lookAt(center.x, floorY, center.z); ocam3.updateProjectionMatrix();
+  renderer.render(scene, ocam3); draw('PLANTA (ortográfica)', i++);
+
+  // painel de medidas
+  const [px, py] = cell(i);
+  ctx.fillStyle = '#1b2130'; ctx.fillRect(px, py, TILE, TILE);
+  ctx.strokeStyle = '#0c0e13'; ctx.strokeRect(px, py, TILE, TILE);
+  let ty = py + 36;
+  label(ctx, 'MEDIDAS (m)', px + 16, ty, 20, '#ffd479'); ty += 36;
+  const f = v => v.toFixed(2).replace('.', ',');
+  label(ctx, `Largura (X):    ${f(size.x)} m`, px + 16, ty, 18); ty += 28;
+  label(ctx, `Profundidade (Z): ${f(size.z)} m`, px + 16, ty, 18); ty += 28;
+  label(ctx, `Altura (Y):      ${f(size.y)} m`, px + 16, ty, 18); ty += 40;
+  let tris = 0, meshes = 0;
+  obj.traverse(o => { if (o.isMesh) { meshes++; const g = o.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
+  label(ctx, `Triângulos: ${Math.round(tris).toLocaleString('pt-BR')}`, px + 16, ty, 16, '#cfd6e6'); ty += 24;
+  label(ctx, `Malhas: ${meshes}`, px + 16, ty, 16, '#cfd6e6'); ty += 24;
+  label(ctx, `Pé do objeto em Y = ${f(floorY)} m`, px + 16, ty, 16, '#cfd6e6'); ty += 36;
+  label(ctx, 'Eixos do glTF: Y para cima, 1 un = 1 m.', px + 16, ty, 14, '#9aa6bf'); ty += 22;
+  label(ctx, 'Grade do chão = 1 m. Boneco = 1,80 m.', px + 16, ty, 14, '#9aa6bf'); ty += 22;
+  label(ctx, 'A frente do objeto varia: veja qual vista mostra a face principal.', px + 16, ty, 12, '#9aa6bf'); ty += 20;
+  label(ctx, 'Render de apoio à montagem no Godot;', px + 16, ty, 14, '#9aa6bf'); ty += 20;
+  label(ctx, 'não substitui a prancha de aprovação.', px + 16, ty, 14, '#9aa6bf');
+
+  ctx.fillStyle = '#1b2130'; ctx.fillRect(0, 0, sheet.width, HEAD);
+  label(ctx, nome, 18, 40, 28, '#ffd479');
+  label(ctx, 'Prancha de ângulos — Cripta', sheet.width - 18, 40, 18, '#9aa6bf', 'right');
+  return sheet.toDataURL('image/png');
+};
+window.ready = true;
+</script>
