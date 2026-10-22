@@ -49,7 +49,7 @@ def vela_torneada(x, y, r, h):
         prof.append((r * (1.14 - 0.15 * t ** 0.7), Z0 + h * t * 0.985))
     top = Z0 + h
     prof += [(r * 0.98, top - 0.004), (r * 1.02, top + 0.012), (r * 0.94, top + 0.018), (r * 0.80, top + 0.008),
-             (r * 0.62, top - 0.014), (r * 0.38, top - 0.026), (r * 0.16, top - 0.030), (0.016, top - 0.024)]
+             (r * 0.62, top - 0.014), (r * 0.38, top - 0.018), (r * 0.16, top - 0.022), (0.016, top - 0.024)]
     bm = bmesh.new(); rings = []
     n_drip = 9 + int(r * 70)
     drip_ang = sorted(random.uniform(0, 2 * math.pi) for _ in range(n_drip))
@@ -63,10 +63,10 @@ def vela_torneada(x, y, r, h):
                 k += 0.018 * noise.noise(Vector((math.cos(a) * 8, math.sin(a) * 8, z * 5)))
             zz = z
             if z > top - 0.02:                    # lábio ondulado e rebaixado onde a cera transbordou
-                zz += 0.006 * math.sin(a * 2 + x * 25) + 0.002 * noise.noise(Vector((a * 3, x * 9, 1.7)))
+                zz += 0.004 * math.sin(a * 2 + x * 25) + 0.002 * noise.noise(Vector((a * 3, x * 9, 1.7)))
                 for da in drip_ang:
                     d = abs((a - da + math.pi) % (2 * math.pi) - math.pi)
-                    if d < 0.4: zz -= 0.010 * math.cos(d / 0.4 * math.pi / 2) ** 2 * (1 if rr > r * 0.7 else 0.3)
+                    if d < 0.4: zz -= 0.006 * math.cos(d / 0.4 * math.pi / 2) ** 2 * (1 if rr > r * 0.7 else 0.3)
             ring.append(bm.verts.new((x + rr * k * math.cos(a), y + rr * k * math.sin(a), zz)))
         rings.append(ring)
     base = [bm.verts.new((x, y, Z0))]
@@ -91,9 +91,15 @@ for (x, y, r, h, tom) in VELAS:
         w = random.uniform(0.011, 0.020)
         e = (0, 0, a)
         cx, cy = x + rr * math.cos(a), y + rr * math.sin(a)
-        blob((cx, cy, top - 0.02 - ln * 0.18), (0.012, w * 1.5, ln * 0.2), e, 3)          # lençol largo saindo do lábio
-        blob((cx, cy, top - 0.012 - ln / 2), (0.010, w * 0.75, ln / 2), e, 3)             # fio que afina
-        blob((cx, cy, top - 0.012 - ln), (0.014, w * 1.1, w * 1.4), e, 3)                 # bulbo
+        n_seg = 11                                                                            # escorrido = corrente de gotas que afina, com leve ondulação
+        wob = random.uniform(-0.01, 0.01)
+        for k in range(n_seg):
+            t = k / (n_seg - 1)
+            wk = w * (1.6 - 1.0 * t)
+            zc = top - 0.014 - ln * t * 0.92
+            sh = wob * math.sin(t * 3.0)
+            blob((cx - sh * math.sin(a), cy + sh * math.cos(a), zc), (0.012 - 0.003 * t, wk, max(0.014, ln / n_seg * 1.9)), e, 3)
+        blob((cx, cy, top - 0.014 - ln), (0.0135, w * 0.95, w * 1.25), e, 3)               # bulbo na ponta
         if random.random() < 0.35:                # gota suspensa solta, quase caindo
             blob((cx + 0.004 * math.cos(a), cy + 0.004 * math.sin(a), top - 0.012 - ln - w * 2.6), (0.011, 0.011, w * 1.2), e, 3)
 
@@ -153,6 +159,9 @@ for i, v in enumerate(alta.data.vertices):
     rel = (p.z - 0.0) / max(hv, 0.05)
     if p.z > 0.1 and d < 0.1:                                       # fuligem no cimo da vela e na borda
         c = c.lerp(soot, max(0.0, (rel - 0.93) * 8) * (0.5 + 0.5 * (noise.noise(p * 40) * 0.5 + 0.5)))
+    for (x, y, r, h, t) in VELAS:                                   # brilho quente de translucidez perto da chama (pintado, glb não leva SSS)
+        dq = math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2 + (p.z - (h + 0.02)) ** 2)
+        c = c.lerp(Vector((1.0, 0.72, 0.36)), 0.75 * math.exp(-(dq / 0.07) ** 2))
     c = c * (0.9 + 0.1 * (noise.noise(p * 60) * 0.5 + 0.5))
     col.data[i].color = (c.x, c.y, c.z, 1)
 
