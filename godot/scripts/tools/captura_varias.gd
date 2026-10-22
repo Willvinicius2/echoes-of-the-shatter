@@ -10,7 +10,9 @@ func _init() -> void:
 	var cam := inst.get_node("CameraEstudio") as Camera3D
 	for k in range(3, a.size()):
 		var p := String(a[k]).split(":")
-		cam.set("Alvo", Vector3(float(p[1]), float(p[6]) if p.size() > 7 else 0.0, -float(p[2])))
+		cam.set("seguir_chao", false)
+		var ax := float(p[1]); var az := float(p[2])
+		cam.set("Alvo", Vector3(ax, load("res://scripts/terreno/terreno_cripta.gd").chao(ax, az) + (float(p[6]) if p.size() > 7 else 0.0), -az))
 		cam.set("Distancia", float(p[3])); cam.set("Yaw", float(p[4])); cam.set("Pitch", float(p[5]))
 		if p.size() > 7: cam.fov = float(p[7])
 		cam.call("aplicar")

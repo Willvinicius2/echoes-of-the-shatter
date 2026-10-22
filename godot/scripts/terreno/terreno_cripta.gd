@@ -4,8 +4,9 @@
 class_name TerrenoCripta
 extends RefCounted
 
-const PROFUNDIDADE_SUBSOLO := 3.2   # queda do nível alto para o subsolo (m)
-const TOPO_ROCHA := 4.6             # altura média do topo da rocha ao redor
+const QUEDA_ANDAR := 4.0            # desnível entre andares (m), guia docs/arte/24
+const PE_DIREITO_SALA := 5.4        # altura da parede da sala acima do piso (m)
+const PE_DIREITO_CORREDOR := 4.5
 const K_UNIAO := 2.6                # suavização da união de salas e corredores (m)
 
 # Primitivas por sala: ["b", cx, cz, meia_larg, meia_prof, raio_canto] ou ["e", cx, cz, rx, rz]
@@ -26,22 +27,26 @@ const SALAS := {
 const CORREDORES := {
 	"c01": [[[12.0, 13.0], [18.0, 15.0], [24.0, 13.0]], 3.0],
 	"c02": [[[52.0, 13.0], [58.0, 11.0], [64.0, 13.0]], 3.0],
-	"c03": [[[80.0, 28.0], [82.0, 34.0], [80.0, 40.0]], 3.0],
+	"c03": [[[80.0, 28.0], [80.0, 40.0]], 3.0],
 	"c04": [[[64.0, 54.0], [58.0, 56.0], [52.0, 54.0]], 3.0],
 	"c05": [[[24.0, 54.0], [12.0, 54.0]], 3.0],
 	"c06": [[[-4.0, 68.0], [-4.0, 80.0]], 3.0],
 	"c07": [[[10.0, 94.0], [16.0, 96.0], [22.0, 94.0]], 3.0],
 	"c08": [[[52.0, 94.0], [58.0, 92.0], [64.0, 94.0]], 3.0],
-	"c09": [[[76.0, 107.0], [75.0, 113.0], [76.0, 119.0]], 3.0],
+	"c09": [[[76.0, 107.0], [76.0, 119.0]], 3.0],
 	"sa": [[[0.0, 24.0], [0.0, 40.0]], 3.0],
 	"s01": [[[82.0, -1.0], [82.0, 3.0]], 3.0],
 }
-# Escadarias: topo e fundo em doc, largura útil. O vão é o próprio corredor; o glb da escada encaixa nestas âncoras.
+# Escadarias (desnível de 4 m = 22 degraus de 0,18 m, ~7 m de comprimento, largura útil 4 m): topo e fundo em doc.
+# O vão é o próprio corredor; o glb da escada encaixa nestas âncoras. andar = andar de cima.
 const ESCADAS := {
-	"c05": {"topo": [22.0, 54.0], "fundo": [13.0, 54.0], "largura": 4.0},
-	"sa": {"topo": [0.0, 26.0], "fundo": [0.0, 37.0], "largura": 4.0},
-	"c06": {"topo": [-4.0, 78.0], "fundo": [-4.0, 69.0], "largura": 4.0},
+	"c03": {"topo": [80.0, 30.5], "fundo": [80.0, 37.5], "largura": 4.0, "andar": 0},
+	"sa": {"topo": [0.0, 29.5], "fundo": [0.0, 36.5], "largura": 4.0, "andar": 0},
+	"c06": {"topo": [-4.0, 70.5], "fundo": [-4.0, 77.5], "largura": 4.0, "andar": 1},
+	"c09": {"topo": [76.0, 109.5], "fundo": [76.0, 116.5], "largura": 4.0, "andar": 2},
 }
+# Andares: retângulos [x0, z0, x1, z1] por andar (A0 superfície, A1 subsolo, A2 profundeza, A3 arena)
+const ANDARES := {1: [-24.0, 40.0, 100.0, 68.0], 2: [-24.0, 80.0, 100.0, 112.0], 3: [52.0, 119.0, 100.0, 162.0]}
 # Ondulações largas: [x, z, raio, amplitude]
 const MONTES := [
 	[38.0, 14.0, 7.0, 0.35], [-6.0, 4.0, 5.0, -0.22], [80.0, 54.0, 9.0, 0.28], [72.0, 20.0, 6.0, -0.25],
@@ -50,8 +55,9 @@ const MONTES := [
 ]
 # Praças planas (pisos e tapetes assentam aqui): [cx, cz, meia_x, meia_z]
 const PRACAS := [
-	[0.0, 12.0, 13.0, 9.0], [76.0, 137.0, 13.0, 9.0], [80.0, 54.0, 9.5, 5.0],
-	[76.0, 95.0, 3.2, 4.4], [75.5, 113.0, 3.0, 4.6],
+	[0.0, 12.0, 13.0, 9.0], [76.0, 137.0, 13.0, 9.0], [80.0, 54.0, 9.5, 5.0], [76.0, 95.0, 5.0, 9.0],
+	[18.0, 15.0, 2.6, 1.7], [58.0, 11.0, 2.6, 1.7], [58.0, 56.0, 2.6, 1.7], [18.0, 54.0, 2.6, 1.7],
+	[16.0, 96.0, 2.6, 1.7], [58.0, 92.0, 2.6, 1.7],
 ]
 
 static var _ruido_a := _novo_ruido(7, 0.07)
@@ -96,41 +102,50 @@ static func sdf_sala(px: float, pz: float, nome: String) -> float:
 		d = _smin(d, v, 3.0)
 	return d
 
-# distância assinada do vazio caminhável: negativo = chão, positivo = rocha
-static func sdf(px: float, pz: float) -> float:
-	var d := 1e9
-	for nome in SALAS: d = _smin(d, sdf_sala(px, pz, nome), K_UNIAO)
+# distância assinada do vazio caminhável: negativo = chão, positivo = rocha. Devolve (d, d_salas, d_corredores)
+static func sdf3(px: float, pz: float) -> Vector3:
+	var ds := 1e9
+	for nome in SALAS: ds = _smin(ds, sdf_sala(px, pz, nome), K_UNIAO)
+	var dc := 1e9
 	for nome in CORREDORES:
 		var c: Array = CORREDORES[nome]
 		var pts: Array = c[0]
-		for i in pts.size() - 1: d = _smin(d, _sd_segmento(px, pz, pts[i], pts[i + 1], c[1]), K_UNIAO)
+		for i in pts.size() - 1: dc = _smin(dc, _sd_segmento(px, pz, pts[i], pts[i + 1], c[1]), K_UNIAO)
 	# contorno irregular: não existe linha reta nem canto idêntico
-	return d + _ruido_c.get_noise_2d(px, pz) * 1.6
+	var r := _ruido_c.get_noise_2d(px, pz) * 1.6
+	return Vector3(_smin(ds, dc, K_UNIAO) + r, ds + r, dc + r)
+
+static func sdf(px: float, pz: float) -> float:
+	return sdf3(px, pz).x
 
 static func _banda(px: float, pz: float, x0: float, z0: float, x1: float, z1: float, suave: float = 1.0) -> float:
-	var dx: float = maxf(maxf(x0 - px, px - x1), 0.0)
-	var dz: float = maxf(maxf(z0 - pz, pz - z1), 0.0)
+	var dx := maxf(maxf(x0 - px, px - x1), 0.0)
+	var dz := maxf(maxf(z0 - pz, pz - z1), 0.0)
 	return 1.0 - smoothstep(0.0, suave, Vector2(dx, dz).length())
 
-# 0 = nível alto, 1 = subsolo
-static func subsolo(px: float, pz: float) -> float:
-	var u := _banda(px, pz, -20.0, 40.0, 12.0, 68.0, 3.0)
-	u = maxf(u, _banda(px, pz, 12.0, 49.0, 24.0, 59.0) * clampf((22.0 - px) / 9.0, 0.0, 1.0))
-	u = maxf(u, _banda(px, pz, -5.0, 24.0, 5.0, 40.0) * clampf((pz - 26.0) / 11.0, 0.0, 1.0))
-	u = maxf(u, _banda(px, pz, -9.0, 68.0, 1.0, 80.0) * clampf((78.0 - pz) / 9.0, 0.0, 1.0))
-	return u
+# andar contínuo: 0 = superfície, 1 = subsolo, 2 = profundeza, 3 = arena (fração dentro das escadarias)
+static func andar(px: float, pz: float, suave: float = 3.0) -> float:
+	var a := 0.0
+	for k in ANDARES:
+		var r: Array = ANDARES[k]
+		a = maxf(a, float(k) * _banda(px, pz, r[0], r[1], r[2], r[3], suave))
+	for k in ESCADAS:
+		var e: Dictionary = ESCADAS[k]
+		var t: Array = e["topo"]; var f: Array = e["fundo"]
+		var l := float(e["andar"])
+		var rampa := clampf(Vector2(px - t[0], pz - t[1]).dot(Vector2(f[0] - t[0], f[1] - t[1]).normalized()) / Vector2(f[0] - t[0], f[1] - t[1]).length(), 0.0, 1.0)
+		var m := _banda(px, pz, minf(t[0], f[0]) - 4.5, minf(t[1], f[1]) - 3.0, maxf(t[0], f[0]) + 4.5, maxf(t[1], f[1]) + 3.0, 1.0)
+		a = maxf(a, (l + rampa) * m)
+	return a
 
+# 1 dentro do trecho inclinado de uma escadaria
 static func em_escada(px: float, pz: float) -> float:
 	var w := 0.0
-	w = maxf(w, _banda(px, pz, 12.0, 49.0, 24.0, 59.0, 1.5))
-	w = maxf(w, _banda(px, pz, -5.0, 24.0, 5.0, 40.0, 1.5))
-	w = maxf(w, _banda(px, pz, -9.0, 68.0, 1.0, 80.0, 1.5))
-	# só vale dentro do trecho inclinado
-	var t := 0.0
-	if px > 12.0 and px < 24.0 and pz > 49.0 and pz < 59.0: t = 1.0
-	if absf(px) < 5.0 and pz > 24.0 and pz < 40.0: t = 1.0
-	if px > -9.0 and px < 1.0 and pz > 68.0 and pz < 80.0: t = 1.0
-	return w * t
+	for k in ESCADAS:
+		var e: Dictionary = ESCADAS[k]
+		var t: Array = e["topo"]; var f: Array = e["fundo"]
+		w = maxf(w, _banda(px, pz, minf(t[0], f[0]) - 3.0, minf(t[1], f[1]), maxf(t[0], f[0]) + 3.0, maxf(t[1], f[1]), 1.5))
+	return w
 
 static func _praca(px: float, pz: float) -> float:
 	var w := 0.0
@@ -138,40 +153,41 @@ static func _praca(px: float, pz: float) -> float:
 		w = maxf(w, _banda(px, pz, p[0] - p[2], p[1] - p[3], p[0] + p[2], p[1] + p[3], 3.0))
 	return w
 
+static func nivel(px: float, pz: float) -> float:
+	return -QUEDA_ANDAR * andar(px, pz)
+
+static func _ondas(px: float, pz: float) -> float:
+	var h := 0.0
+	for m in MONTES: h += m[3] * exp(-pow(Vector2(px - m[0], pz - m[1]).length() / m[2], 2.0))
+	return h
+
 # altura do chão (sem rocha)
 static func chao(px: float, pz: float) -> float:
-	var ondas := 0.0
-	for m in MONTES:
-		ondas += m[3] * exp(-pow(Vector2(px - m[0], pz - m[1]).length() / m[2], 2.0))
 	var pequeno := _ruido_a.get_noise_2d(px, pz) * 0.24 + _ruido_b.get_noise_2d(px, pz) * 0.06
-	var base := ondas + pequeno
-	var nivel := -PROFUNDIDADE_SUBSOLO * subsolo(px, pz)
+	var base := _ondas(px, pz) + pequeno
+	var lvl := nivel(px, pz)
 	var e := em_escada(px, pz)
 	var plano := _praca(px, pz)
-	var h := nivel + base * (1.0 - clampf(maxf(e, plano), 0.0, 1.0))
-	h = lerpf(h, nivel + altura_praca(px, pz), plano)
-	return h - 0.12 * e   # sob a escadaria: o glb da escada assenta 12 cm acima
+	var h := lvl + base * (1.0 - clampf(maxf(e, plano), 0.0, 1.0))
+	h = lerpf(h, lvl, plano)
+	return h - 0.1 * e   # sob a escadaria: o glb da escada assenta 10 cm acima
 
-static func altura_praca(px: float, pz: float) -> float:
-	var h := 0.0
-	for p in PRACAS:
-		if absf(px - p[0]) < p[2] + 4.0 and absf(pz - p[1]) < p[3] + 4.0:
-			for m in MONTES: h += m[3] * exp(-pow(Vector2(p[0] - m[0], p[1] - m[1]).length() / m[2], 2.0))
-			return h
-	return 0.0
-
-# altura final: chão dentro do vazio, parede de rocha fora
+# altura final: chão dentro do vazio, parede de rocha fora (pé-direito 5,4 m em sala, 4,5 m em corredor, relativo ao andar)
 static func altura(px: float, pz: float) -> float:
-	var s := sdf(px, pz)
+	var d := sdf3(px, pz)
+	var s := d.x
 	var f := chao(px, pz)
-	var parede := TOPO_ROCHA + _ruido_rocha.get_noise_2d(px, pz) * 1.3 + minf(s, 8.0) * 0.08
+	var sala := clampf((d.z - d.y) / 4.0 + 0.5, 0.0, 1.0)
+	var pe := lerpf(PE_DIREITO_CORREDOR, PE_DIREITO_SALA, sala)
+	# longe do chão a rocha desce em rampa suave entre andares (sem degraus retos no topo da pedra)
+	var nv := lerpf(nivel(px, pz), -QUEDA_ANDAR * andar(px, pz, 16.0), smoothstep(2.0, 8.0, s))
+	var parede := nv + pe + _ruido_rocha.get_noise_2d(px, pz) * 0.9 + minf(s, 8.0) * 0.06
 	var t := smoothstep(-0.1, 3.0, s)
-	# lábio gasto na base da parede: o chão sobe um pouco antes da rocha
-	var lab := smoothstep(-1.2, 0.0, s) * 0.12
+	var lab := smoothstep(-1.2, 0.0, s) * 0.12   # lábio gasto na base da parede
 	return lerpf(f + lab, parede, t)
 
 static func normal(px: float, pz: float) -> Vector3:
 	var e := 0.3
-	var dx: float = altura(px + e, pz) - altura(px - e, pz)
-	var dz: float = altura(px, pz + e) - altura(px, pz - e)
+	var dx := altura(px + e, pz) - altura(px - e, pz)
+	var dz := altura(px, pz + e) - altura(px, pz - e)
 	return Vector3(-dx, 2.0 * e, -dz).normalized()

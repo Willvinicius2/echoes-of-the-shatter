@@ -78,7 +78,7 @@ func _clima(pai: Node3D) -> void:
 	e.volumetric_fog_enabled = true; e.volumetric_fog_density = 0.006; e.volumetric_fog_albedo = Color(0.45, 0.55, 0.8)
 	e.volumetric_fog_emission = Color(0.02, 0.03, 0.06); e.volumetric_fog_length = 60.0; e.volumetric_fog_anisotropy = 0.5
 	e.adjustment_enabled = true; e.adjustment_saturation = 1.08; e.adjustment_contrast = 1.06
-	var we := WorldEnvironment.new(); we.name = "Ambiente"; we.environment = e; pai.add_child(we)
+	var we := WorldEnvironment.new(); we.name = "Ambiente"; we.environment = e; we.set_script(load("res://scripts/cripta/clima_andar.gd")); pai.add_child(we)
 	var lua := DirectionalLight3D.new(); lua.name = "LuarFrio"; lua.light_color = Color(0.55, 0.65, 1.0); lua.light_energy = 0.28
 	lua.rotation_degrees = Vector3(-62, -35, 0); lua.shadow_enabled = true; lua.directional_shadow_max_distance = 90.0
 	pai.add_child(lua)
@@ -155,12 +155,25 @@ func _glb(nome: String) -> PackedScene:
 	if not cenas.has(nome): cenas[nome] = load(MODELOS % nome) as PackedScene
 	return cenas[nome]
 
+# escala uniforme de montagem (guia docs/arte/24_direcao_visual_cripta.md, seção 2) e raio da base para assentar no chão
+const ESCALAS := {"Pilar": 0.70, "Braseiro": 0.75, "Estandarte": 0.90, "Estatua": 0.80, "ColunaCorrente": 0.90, "Entulho": 0.60, "Tapete": 0.65, "Velas": 1.0, "Piso": 1.0, "Tapete_Grande": 1.0}
+const RAIOS := {"Pilar": 1.2, "Braseiro": 0.6, "Estandarte": 0.5, "Estatua": 0.7, "ColunaCorrente": 1.2, "Entulho": 0.8, "Velas": 0.3}
+
+func _base_y(x: float, z: float, r: float) -> float:
+	var y := T.chao(x, z)
+	for d in [Vector2(r, 0), Vector2(-r, 0), Vector2(0, r), Vector2(0, -r)]: y = minf(y, T.chao(x + d.x, z + d.y))
+	return y
+
 func _inst(pai: Node3D, nome: String, modelo: String, x: float, z: float, yaw: float, dy: float = 0.0, y_abs: float = NAN) -> Node3D:
 	var cena := _glb(modelo)
 	if cena == null: return null
 	var n := cena.instantiate() as Node3D; n.name = nome
+	var esc: float = float(ESCALAS.get(modelo, 1.0))
+	if esc != 1.0 and modelo != "Tapete": esc *= rng.randf_range(0.93, 1.07)   # variação de ±7%, menos tapete
 	n.position = _p(x, z, dy)
+	n.position.y = _base_y(x, z, float(RAIOS.get(modelo, 0.0))) + dy - 0.03 if RAIOS.has(modelo) else n.position.y
 	if not is_nan(y_abs): n.position.y = y_abs
+	n.scale = Vector3.ONE * esc
 	n.rotation.y = yaw
 	pai.add_child(n)
 	contagem[modelo] = int(contagem.get(modelo, 0)) + 1
@@ -191,11 +204,11 @@ func _escadas(raiz: Node3D) -> void:
 		var comp := Vector2(dir.x, dir.z).length()
 		var queda := topo.y - fundo.y
 		ancora.rotation.y = Basis.looking_at(Vector3(dir.x, 0, dir.z).normalized(), Vector3.UP).get_euler().y
-		ancora.set_meta("comprimento", comp); ancora.set_meta("queda", queda); ancora.set_meta("largura", e["largura"])
+		ancora.set_meta("comprimento", comp); ancora.set_meta("queda", queda); ancora.set_meta("largura", e["largura"]); ancora.set_meta("andar_topo", e["andar"])
 		gp.add_child(ancora)
 		# frente local = -Z desce; o glb da escada substitui o filho "Placeholder"
 		var ph := Node3D.new(); ph.name = "Placeholder"; ancora.add_child(ph)
-		var n := 14
+		var n := 22
 		var larg: float = e["largura"]
 		for i in n:
 			var topo_y := -queda * (i + 0.5) / n
@@ -204,18 +217,16 @@ func _escadas(raiz: Node3D) -> void:
 			_caixa(ph, "Degrau%d" % i, Vector3(0, base_y + alt * 0.5, -(i + 0.5) * comp / n), Vector3(larg, alt, comp / n + 0.02), mat_degrau)
 		for lado in [-1.0, 1.0]:
 			var off: float = lado * (larg * 0.5 + 0.08)
-			_caixa(ph, "Corrimao_%d" % int(lado), Vector3(off, 1.0 - queda * 0.5, -comp * 0.5), Vector3(0.08, 0.08, 1.0), mat_degrau).look_at_from_position(
-				Vector3(off, 1.0 - queda * 0.5, -comp * 0.5), Vector3(off, 1.0 - queda * 0.5 - queda * 0.5 + queda * 0.5, -comp * 0.5), Vector3.UP) if false else null
 			var cx := off
 			var comp3 := Vector3(0, -queda, -comp)
 			var corr := MeshInstance3D.new(); corr.name = "Corrimao_%d" % int(lado)
 			var bm := BoxMesh.new(); bm.size = Vector3(0.08, 0.08, comp3.length()); bm.material = mat_degrau
 			corr.mesh = bm
-			corr.transform = Transform3D(Basis.looking_at(comp3.normalized(), Vector3.UP), Vector3(cx, 0.95 + comp3.y * 0.5, comp3.z * 0.5))
+			corr.transform = Transform3D(Basis.looking_at(comp3.normalized(), Vector3.UP), Vector3(cx, 0.9 + comp3.y * 0.5, comp3.z * 0.5))
 			ph.add_child(corr)
 			for m in 5:
 				var tt := m / 4.0
-				_caixa(ph, "Poste_%d_%d" % [int(lado), m], Vector3(cx, 0.475 - queda * tt, -comp * tt), Vector3(0.1, 0.95, 0.1), mat_degrau)
+				_caixa(ph, "Poste_%d_%d" % [int(lado), m], Vector3(cx, 0.45 - queda * tt, -comp * tt), Vector3(0.1, 0.9, 0.1), mat_degrau)
 
 func _caixa(pai: Node3D, nome: String, centro: Vector3, tam: Vector3, mat: Material) -> MeshInstance3D:
 	var mi := MeshInstance3D.new(); mi.name = nome; mi.position = centro
@@ -233,15 +244,15 @@ func _pracas(props: Node3D) -> void:
 	for t in tiles:
 		var cx: float = t[2] + t[0]
 		var cz: float = t[1]
-		if t[2] == 0.0: cz = t[1]
-		var g := T.chao(cx, cz)
-		_inst(gp, "Piso_%d" % i, "Piso", cx, cz, deg_to_rad(90.0 * (i % 4)), 0.0, g - 0.047); i += 1
+		_inst(gp, "Piso_%d" % i, "Piso", cx, cz, deg_to_rad(90.0 * (i % 4)), 0.0, T.chao(cx, cz) - 0.047); i += 1
 	for p in [[76.0, 54.0], [84.0, 54.0]]:
 		_inst(gp, "Piso_%d" % i, "Piso", p[0], p[1], deg_to_rad(90.0 * (i % 4)), 0.0, T.chao(p[0], p[1]) - 0.047); i += 1
-	_inst(gt, "TapeteGrande_Atrio", "Tapete_Grande", 0.0, 12.0, 0.0, 0.0, T.chao(0.0, 12.0) + 0.05)
-	_inst(gt, "TapeteGrande_Arena", "Tapete_Grande", 76.0, 137.0, 0.0, 0.0, T.chao(76.0, 137.0) + 0.05)
-	_inst(gt, "Tapete_Antecamara", "Tapete", 76.0, 95.0, 0.0, 0.05)
-	_inst(gt, "Tapete_C09", "Tapete", 75.5, 113.0, 0.0, 0.05)
+	# tapete grande só em Átrio, Antecâmara e Arena
+	for t in [["Atrio", 0.0, 12.0], ["Antecamara", 76.0, 95.0], ["Arena", 76.0, 137.0]]:
+		_inst(gt, "TapeteGrande_" + t[0], "Tapete_Grande", t[1], t[2], 0.0, 0.0, T.chao(t[1], t[2]) + 0.05)
+	# tapete de corredor (2,3 x 4,1 m) deitado no sentido do corredor, no centro de cada trecho reto
+	for t in [["c01", 18.0, 15.0], ["c02", 58.0, 11.0], ["c04", 58.0, 56.0], ["c05", 18.0, 54.0], ["c07", 16.0, 96.0], ["c08", 58.0, 92.0]]:
+		_inst(gt, "Tapete_" + t[0], "Tapete", t[1], t[2], PI * 0.5, 0.0, T.chao(t[1], t[2]) + 0.05)
 
 # ------------------------------------------------------------------ salas
 func _centro_sala(nome: String) -> Vector2:
@@ -284,27 +295,27 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 	for k in n:
 		var ang := fase + k * TAU / n + rng.randf_range(-0.07, 0.07)
 		if k % 2 == 0:
-			var q = _ponto_parede(nome, ang, 2.1)
+			var q = _ponto_parede(nome, ang, 1.7)
 			if q == null: continue
 			var yaw := _yaw_para(q.x, q.y, c.x, c.y)
 			var pilar := _inst(grupo, "Pilar_%d" % k, "Pilar", q.x, q.y, yaw)
 			if pilar:
-				var luz := OmniLight3D.new(); luz.name = "LuzNicho"; luz.position = Vector3(0.0, 2.7, -1.5)
+				var luz := OmniLight3D.new(); luz.name = "LuzNicho"; luz.position = Vector3(0.0, 2.0, -1.2)
 				luz.light_color = Color(1.0, 0.78, 0.5); luz.light_energy = 1.6; luz.omni_range = 3.2; luz.omni_attenuation = 1.4
 				pilar.add_child(luz)
 			var tang := Vector2(-sin(ang), cos(ang))
 			for s in [-1.0, 1.0]:
-				var qv = _ponto_parede(nome, ang + s * 0.2, 1.7)
+				var qv = _ponto_parede(nome, ang + s * 0.2, 1.4)
 				if qv != null and rng.randf() < 0.6:
 					_inst(grupo, "Velas_%d_%d" % [k, int(s)], "Velas", qv.x, qv.y, rng.randf() * TAU)
 		else:
-			var qb = _ponto_parede(nome, ang, 3.7)
+			var qb = _ponto_parede(nome, ang, 3.0)
 			if qb != null: _braseiro(grupo, "Braseiro_%d" % k, qb.x, qb.y)
-			var qs = _ponto_parede(nome, ang, 0.9)
+			var qs = _ponto_parede(nome, ang, 0.8)
 			if qs != null: _inst(grupo, "Estandarte_%d" % k, "Estandarte", qs.x, qs.y, _yaw_para(qs.x, qs.y, c.x, c.y))
 	# entulho espalhado
 	for k in 3 if raio < 14.0 else 5:
-		var q = _ponto_parede(nome, rng.randf() * TAU, rng.randf_range(2.6, 5.5))
+		var q = _ponto_parede(nome, rng.randf() * TAU, rng.randf_range(2.2, 5.0))
 		if q != null: _inst(grupo, "Entulho_%d" % k, "Entulho", q.x, q.y, rng.randf() * TAU)
 	if nome == "r00_atrio":
 		_inst(grupo, "ColunaCorrente_Atrio", "ColunaCorrente", 0.0, 21.0, _yaw_para(0.0, 21.0, 0.0, 0.0))
@@ -319,16 +330,16 @@ func _corredores(props: Node3D) -> void:
 		var cl := OmniLight3D.new(); cl.name = "LuzCorredor_" + k; cl.position = _p(meio[0], meio[1], 2.6)
 		cl.light_color = Color(1.0, 0.6, 0.3); cl.light_energy = 5.0; cl.omni_range = 10.0
 		g.add_child(cl)
-		if k == "c05" or k == "sa" or k == "c06" or k == "s01": continue
+		if T.ESCADAS.has(k) or k == "s01": continue
 		var a: Array = pts[0]; var b: Array = pts[pts.size() - 1]
 		var dir := Vector2(b[0] - a[0], b[1] - a[1]).normalized()
 		var perp := Vector2(-dir.y, dir.x)
-		_braseiro(g, "Braseiro_" + k, meio[0] + perp.x * 1.9, meio[1] + perp.y * 1.9)
+		_braseiro(g, "Braseiro_" + k, meio[0] + perp.x * 2.2, meio[1] + perp.y * 2.2)
 
 # marcos: nós vazios onde o glb da escadaria e as portas vão entrar
 func _marcos(raiz: Node3D) -> void:
 	var m := Node3D.new(); m.name = "Marcos"; raiz.add_child(m)
-	var pontos := {"PontoInicial_Atrio": [0.0, 3.0], "Boss_Arena": [76.0, 152.0], "Subsolo_Centro": [-4.0, 54.0]}
+	var pontos := {"PontoInicial_Atrio": [0.0, 3.0], "Boss_Arena": [76.0, 152.0], "Subsolo_Centro": [-4.0, 54.0], "Profundeza_Centro": [37.0, 95.0]}
 	for k in pontos:
 		var mk := Marker3D.new(); mk.name = k; mk.position = _p(pontos[k][0], pontos[k][1]); m.add_child(mk)
 
@@ -341,15 +352,16 @@ var _fumaca_proc: ParticleProcessMaterial
 
 func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	var n := Node3D.new(); n.name = nome; n.position = _p(x, z)
+	n.position.y = _base_y(x, z, 0.5) - 0.02
 	n.rotation.y = rng.randf() * TAU
 	var cena := _glb("Braseiro")
 	if cena:
-		var m := cena.instantiate(); m.name = "Modelo"; n.add_child(m)
-	var luz := OmniLight3D.new(); luz.name = "Luz"; luz.position = Vector3(0, 1.9, 0)
-	luz.light_color = Color(1.0, 0.62, 0.25); luz.light_energy = 8.0; luz.omni_range = 15.0; luz.omni_attenuation = 1.6
+		var m := cena.instantiate() as Node3D; m.name = "Modelo"; m.scale = Vector3.ONE * 0.75; n.add_child(m)
+	var luz := OmniLight3D.new(); luz.name = "Luz"; luz.position = Vector3(0, 1.45, 0)
+	luz.light_color = Color(1.0, 0.72, 0.42); luz.light_energy = 8.0; luz.omni_range = 8.0; luz.omni_attenuation = 1.6
 	luz.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(luz)
-	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.17, 0)
+	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 0.88, 0); ch.scale = Vector3.ONE * 0.75
 	var tam := [Vector2(1.5, 1.35), Vector2(1.05, 0.95), Vector2(1.05, 0.95), Vector2(0.6, 0.7), Vector2(0.55, 0.6), Vector2(0.6, 0.62)]
 	var desl := [Vector3(0, 0, 0), Vector3(-0.2, 0, 0.03), Vector3(0.2, 0, 0.05), Vector3(0.1, 0, 0.1), Vector3(-0.12, 0, 0.12), Vector3(0.02, 0, -0.1)]
 	for k in tam.size():
@@ -361,7 +373,7 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ch.add_child(mi)
 	n.add_child(ch)
-	var lb := OmniLight3D.new(); lb.name = "LuzBacia"; lb.position = Vector3(0, 1.3, 0)
+	var lb := OmniLight3D.new(); lb.name = "LuzBacia"; lb.position = Vector3(0, 0.98, 0)
 	lb.light_color = Color(1.0, 0.45, 0.12); lb.light_energy = 3.0; lb.omni_range = 2.6; lb.omni_attenuation = 1.3
 	lb.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(lb)
@@ -402,10 +414,10 @@ func _particulas_braseiro(n: Node3D) -> void:
 		var cu := Curve.new(); cu.add_point(Vector2(0, 0.4)); cu.add_point(Vector2(1, 1.6))
 		var cut := CurveTexture.new(); cut.curve = cu; _fumaca_proc.scale_curve = cut
 	var f := GPUParticles3D.new(); f.name = "Faiscas"; f.amount = 20; f.lifetime = 1.8; f.local_coords = false
-	f.position = Vector3(0, 1.3, 0); f.process_material = _faisca_proc; f.draw_pass_1 = _faisca_malha
+	f.position = Vector3(0, 0.98, 0); f.process_material = _faisca_proc; f.draw_pass_1 = _faisca_malha
 	f.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF; f.randomness = 1.0
 	n.add_child(f)
 	var u := GPUParticles3D.new(); u.name = "Fumaca"; u.amount = 8; u.lifetime = 3.6; u.local_coords = false
-	u.position = Vector3(0, 2.1, 0); u.process_material = _fumaca_proc; u.draw_pass_1 = _fumaca_malha
+	u.position = Vector3(0, 1.6, 0); u.process_material = _fumaca_proc; u.draw_pass_1 = _fumaca_malha
 	u.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF; u.randomness = 1.0
 	n.add_child(u)
