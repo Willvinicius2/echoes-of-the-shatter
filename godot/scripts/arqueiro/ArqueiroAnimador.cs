@@ -61,7 +61,7 @@ public partial class ArqueiroAnimador : Node
                 mistura = ArqueiroStats.F("anim_mistura_esquiva");
                 break;
             case Estado.Carregando:
-                if (carga01 >= 1f && _atual != "Draw") alvo = "AimIdle";
+                if (carga01 >= ArqueiroStats.F("evt_corda_cheia_quadro") / ArqueiroStats.F("evt_draw_quadros") && _atual != "Draw") alvo = "AimIdle";
                 else if (_atual == "AimIdle") alvo = "AimIdle";
                 else
                 {
@@ -92,7 +92,8 @@ public partial class ArqueiroAnimador : Node
                 else
                 {
                     alvo = "Run";
-                    escala = Mathf.Min(velHoriz / ArqueiroStats.F("anim_ref_correr"), ArqueiroStats.F("anim_escala_max"));
+                    escala = Mathf.Min(velHoriz / ArqueiroStats.F("anim_ref_correr"), ArqueiroStats.F("anim_escala_max_correr"));
+                    escala = Mathf.Max(escala, ArqueiroStats.F("anim_escala_min_correr"));
                 }
                 break;
         }

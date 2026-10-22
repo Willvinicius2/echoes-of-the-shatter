@@ -5,10 +5,10 @@ using Godot;
 namespace EchoesOfTheShatter.Arqueiro;
 
 /// <summary>
-/// Monta o corpo do arqueiro (Arqueiro_Corpo.glb) e os módulos de equipamento por ID (equipamento.csv).
-/// Módulos "pele" têm o mesmo esqueleto do corpo: a malha skinada é reparentada sob o Skeleton3D do corpo.
-/// Módulos "anexo" (arco, aljava) vão num BoneAttachment3D.
-/// Sem o corpo no disco, usa o esqueleto de um módulo (sem animações) para o jogo continuar jogável.
+/// Monta o corpo do arqueiro (Arqueiro_Corpo.glb) e os mÃ³dulos de equipamento por ID (equipamento.csv).
+/// MÃ³dulos "pele" tÃªm o mesmo esqueleto do corpo: a malha skinada Ã© reparentada sob o Skeleton3D do corpo.
+/// MÃ³dulos "anexo" (arco, aljava) vÃ£o num BoneAttachment3D.
+/// Sem o corpo no disco, usa o esqueleto de um mÃ³dulo (sem animaÃ§Ãµes) para o jogo continuar jogÃ¡vel.
 /// </summary>
 public partial class ArqueiroModular : Node3D
 {
@@ -41,7 +41,7 @@ public partial class ArqueiroModular : Node3D
             CorpoReal = Esqueleto != null;
             return;
         }
-        GD.PushWarning("Arqueiro_Corpo.glb ausente: usando esqueleto de um módulo (sem animações de clipe).");
+        GD.PushWarning("Arqueiro_Corpo.glb ausente: usando esqueleto de um mÃ³dulo (sem animaÃ§Ãµes de clipe).");
         var rig = GD.Load<PackedScene>("res://art/models/personagens/arqueiro/Arqueiro_Capuz.glb").Instantiate<Node3D>();
         AddChild(rig);
         Esqueleto = rig.FindChild("Skeleton3D", true, false) as Skeleton3D;
@@ -49,23 +49,39 @@ public partial class ArqueiroModular : Node3D
             if (m is MeshInstance3D) m.QueueFree();
     }
 
-    /// <summary>Troca todo o equipamento pela lista de IDs (a ordem decide: o último ID sobrescreve o slot).</summary>
+    /// <summary>Troca todo o equipamento pela lista de IDs (a ordem decide: o Ãºltimo ID sobrescreve o slot).</summary>
     public void Equipar(IEnumerable<string> ids)
     {
         foreach (var n in _porSlot.Values) n.QueueFree();
         _porSlot.Clear();
+        _escondePorSlot.Clear();
         if (Esqueleto == null) return;
         var linhas = CsvLeitor.Ler(CaminhoEquip, out _);
         foreach (var id in ids)
             foreach (var l in linhas)
                 if (l[0] == id) EquiparLinha(l);
+        AplicarEsconde();
+    }
+
+    // Partes do corpo base escondidas por cada modulo (coluna esconde do CSV, nomes de malha separados por |).
+    readonly Dictionary<string, string[]> _escondePorSlot = new();
+
+    void AplicarEsconde()
+    {
+        if (Esqueleto == null) return;
+        var ocultas = new HashSet<string>();
+        foreach (var v in _escondePorSlot.Values) foreach (var n in v) ocultas.Add(n);
+        foreach (var m in Esqueleto.GetChildren())
+            if (m is MeshInstance3D mi) mi.Visible = !ocultas.Contains(mi.Name.ToString());
     }
 
     void EquiparLinha(string[] l)
     {
         string slot = l[1], tipo = l[2], osso = l[3], cena = l[4];
-        if (!ResourceLoader.Exists(cena)) { GD.PushWarning($"Módulo ausente: {cena}"); return; }
+        if (!ResourceLoader.Exists(cena)) { GD.PushWarning($"MÃ³dulo ausente: {cena}"); return; }
         if (_porSlot.TryGetValue(slot, out var antigo)) antigo.QueueFree();
+        _escondePorSlot[slot] = l.Length > 12 && l[12].Length > 0 ? l[12].Split('|') : System.Array.Empty<string>();
+        _escondePorSlot[slot] = l.Length > 12 && l[12].Length > 0 ? l[12].Split('|') : System.Array.Empty<string>();
         var inst = GD.Load<PackedScene>(cena).Instantiate<Node3D>();
         if (tipo == "pele")
         {
@@ -99,3 +115,4 @@ public partial class ArqueiroModular : Node3D
 
     static float F(string s) => float.Parse(s, CultureInfo.InvariantCulture);
 }
+

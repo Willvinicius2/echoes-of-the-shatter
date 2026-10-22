@@ -6,10 +6,10 @@ uid="uid://veu563jp841h"
 
 [deps]
 
-files=["res://data/arqueiro/equipamento.slot.translation", "res://data/arqueiro/equipamento.tipo.translation", "res://data/arqueiro/equipamento.osso.translation", "res://data/arqueiro/equipamento.cena.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.escala.translation"]
+files=["res://data/arqueiro/equipamento.slot.translation", "res://data/arqueiro/equipamento.tipo.translation", "res://data/arqueiro/equipamento.osso.translation", "res://data/arqueiro/equipamento.cena.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.escala.translation", "res://data/arqueiro/equipamento.esconde.translation"]
 
 source_file="res://data/arqueiro/equipamento.csv"
-dest_files=["res://data/arqueiro/equipamento.slot.translation", "res://data/arqueiro/equipamento.tipo.translation", "res://data/arqueiro/equipamento.osso.translation", "res://data/arqueiro/equipamento.cena.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.escala.translation"]
+dest_files=["res://data/arqueiro/equipamento.slot.translation", "res://data/arqueiro/equipamento.tipo.translation", "res://data/arqueiro/equipamento.osso.translation", "res://data/arqueiro/equipamento.cena.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.off.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.rot.translation", "res://data/arqueiro/equipamento.escala.translation", "res://data/arqueiro/equipamento.esconde.translation"]
 
 [params]
 

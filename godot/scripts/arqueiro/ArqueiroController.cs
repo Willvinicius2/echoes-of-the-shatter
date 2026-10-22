@@ -32,6 +32,8 @@ public partial class ArqueiroController : CharacterBody3D
     float _yawModelo;
     Vector2 _mouse;
     bool _usaMouse;
+    bool _flechaPendente;
+    float _cargaSolta;
     Vector3? _mouseForcado;
 
     public override void _Ready()
@@ -100,7 +102,7 @@ public partial class ArqueiroController : CharacterBody3D
                 float vel = media * Mathf.Lerp(1f + k, 1f - k, Mathf.Clamp(_tEstado / T, 0f, 1f));
                 horiz = _dirEsquiva * vel;
                 alvoGiro = _dirEsquiva;
-                if (_iframeAtraso > 0f) { _iframeAtraso -= dt; if (_iframeAtraso <= 0f) _iframe = ArqueiroStats.F("esq_iframe_tempo"); }
+                if (_iframeAtraso > 0f) { _iframeAtraso -= dt; if (_iframeAtraso <= 0f) _iframe = TempoEvento("evt_esq_iframe_fim_quadro", "evt_esq_quadros", "esq_tempo") - TempoEvento("evt_esq_iframe_ini_quadro", "evt_esq_quadros", "esq_tempo"); }
                 if (_tEstado >= T) Mudar(Estado.Locomocao);
                 break;
             }
@@ -110,12 +112,13 @@ public partial class ArqueiroController : CharacterBody3D
                 horiz = Mover(horiz, dirMov, velMax * ArqueiroStats.F("mov_mult_mirando"), dt);
                 alvoGiro = DirMira;
                 if (esquiva && _cdEsquiva <= 0f) IniciarEsquiva(dirMov);
-                else if (!atira) Disparar();
+                else if (!atira) IniciarDisparo();
                 break;
 
             case Estado.Disparo:
                 horiz = Mover(horiz, dirMov, velMax * ArqueiroStats.F("mov_mult_disparo"), dt);
                 alvoGiro = DirMira;
+                if (_flechaPendente && _tEstado >= TempoEvento("evt_solta_quadro", "evt_release_quadros", "tiro_tempo_solta")) Soltar();
                 if (esquiva && _cdEsquiva <= 0f) IniciarEsquiva(dirMov);
                 else if (_tEstado >= ArqueiroStats.F("tiro_tempo_solta")) Mudar(Estado.Locomocao);
                 break;
@@ -181,8 +184,9 @@ public partial class ArqueiroController : CharacterBody3D
         _dirEsquiva = dirMov.LengthSquared() > 0.0001f ? dirMov.Normalized()
             : new Vector3(Mathf.Sin(_yawModelo), 0, Mathf.Cos(_yawModelo));
         _cdEsquiva = ArqueiroStats.F("esq_recarga");
-        _iframeAtraso = ArqueiroStats.F("esq_iframe_inicio");
-        if (_iframeAtraso <= 0f) _iframe = ArqueiroStats.F("esq_iframe_tempo");
+        if (_flechaPendente) Soltar(); // esquivar antes do quadro "solta" nao perde o tiro
+        _iframeAtraso = TempoEvento("evt_esq_iframe_ini_quadro", "evt_esq_quadros", "esq_tempo");
+        if (_iframeAtraso <= 0f) _iframe = TempoEvento("evt_esq_iframe_fim_quadro", "evt_esq_quadros", "esq_tempo");
         Carga01 = 0f;
         Mudar(Estado.Esquiva);
         Efeitos.Poeira(GetTree().CurrentScene, GlobalPosition);
@@ -225,9 +229,22 @@ public partial class ArqueiroController : CharacterBody3D
         }
     }
 
-    void Disparar()
+    /// <summary>Tempo (s) de um evento do clipe: quadro / quadros do clipe * duracao do estado (o clipe e esticado ao estado).</summary>
+    static float TempoEvento(string quadro, string quadros, string duracao)
+        => ArqueiroStats.F(quadro) / ArqueiroStats.F(quadros) * ArqueiroStats.F(duracao);
+
+    // Ao soltar o botao entra em Disparo (clipe Release); a flecha sai no evento "solta" do clipe.
+    void IniciarDisparo()
     {
-        float c = Mathf.Max(Carga01, ArqueiroStats.F("tiro_carga_min"));
+        _cargaSolta = Mathf.Max(Carga01, ArqueiroStats.F("tiro_carga_min"));
+        _flechaPendente = true;
+        Mudar(Estado.Disparo);
+    }
+
+    void Soltar()
+    {
+        _flechaPendente = false;
+        float c = _cargaSolta;
         float vel = Mathf.Lerp(ArqueiroStats.F("flecha_vel_min"), ArqueiroStats.F("flecha_vel_max"), c);
         float dano = Mathf.Lerp(ArqueiroStats.F("flecha_dano_min"), ArqueiroStats.F("flecha_dano_max"), c);
         float alc = Mathf.Lerp(ArqueiroStats.F("flecha_alcance_min"), ArqueiroStats.F("flecha_alcance_max"), c);
@@ -239,7 +256,6 @@ public partial class ArqueiroController : CharacterBody3D
         Disparos++;
         _cam?.AdicionarTrauma(Mathf.Lerp(ArqueiroStats.F("cam_trauma_tiro_min"), ArqueiroStats.F("cam_trauma_tiro_max"), c));
         _cam?.Recuo(-DirMira * ArqueiroStats.F("cam_recuo") * c);
-        Mudar(Estado.Disparo);
     }
 
     // ---------- dano / morte
@@ -281,6 +297,7 @@ public partial class ArqueiroController : CharacterBody3D
 
     void Mudar(Estado e)
     {
+        if (e != Estado.Disparo) _flechaPendente = false;
         EstadoAtual = e;
         _tEstado = 0f;
     }

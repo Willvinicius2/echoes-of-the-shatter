@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://scripts/arqueiro/Arrow.cs" id="1_arr"]
 
 [sub_resource type="CylinderMesh" id="Haste"]
-top_radius = 0.012
-bottom_radius = 0.012
+top_radius = 0.018
+bottom_radius = 0.018
 height = 0.9
 
 [sub_resource type="CylinderMesh" id="Ponta"]
@@ -13,7 +13,10 @@ bottom_radius = 0.04
 height = 0.14
 
 [sub_resource type="StandardMaterial3D" id="Mat_madeira"]
-albedo_color = Color(0.55, 0.38, 0.2, 1)
+albedo_color = Color(0.7, 0.5, 0.28, 1)
+emission_enabled = true
+emission = Color(0.9, 0.6, 0.25, 1)
+emission_energy_multiplier = 0.6
 
 [sub_resource type="StandardMaterial3D" id="Mat_ferro"]
 albedo_color = Color(0.75, 0.78, 0.82, 1)

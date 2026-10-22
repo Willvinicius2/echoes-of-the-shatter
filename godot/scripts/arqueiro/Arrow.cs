@@ -16,6 +16,8 @@ public partial class Arrow : Node3D
     bool _cravada;
     GpuParticles3D _rastro;
 
+    public bool Cravada => _cravada;
+
     public void Lancar(Vector3 origem, Vector3 dir, float vel, float dano, float alcance, float carga, Rid excluir)
     {
         GlobalPosition = origem;
