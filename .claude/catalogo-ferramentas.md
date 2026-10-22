@@ -16,7 +16,7 @@ Haiku: Git, LFS, conferir envio, rodar script pronto. Sonnet 5.5: padrão (model
 | Godot: shader/VFX/neon | `godot-shaders`, `shader-programming`, `game-feel` | `prototipos/godot-f1/` (game feel) | Godot MCP | Sonnet |
 | Godot: UI de pedra escura | `godot-ui-control`, `game-ui-ux` | `docs/arte/03_design_system.md` + tokens | Theme do Godot | Sonnet |
 | Gameplay C# e ligação ao core | `godot-csharp`, `input-systems`, `physics-tuning`, `godot-physics`, `game-ai` | `ShatterCore/bindings/csharp/` | `dotnet`, Godot | Sonnet |
-| Animação e feel de combate | `godot-animation`, `game-feel`, `physics-tuning` | `docs/animacao_mixamo.md` (Mixamo, KayKit CC0) | Blender, Godot | Sonnet |
+| Animação e feel de combate | `godot-animation`, `game-feel`, `physics-tuning` | `docs/arte/animacao_mixamo.md` (Mixamo, KayKit CC0) | Blender, Godot | Sonnet |
 | Core C++ (ShatterCore) | nenhuma skill de Godot; seguir regras do `CLAUDE.md` (sem exceções, RTTI, estado global, `std::rand`) | `ShatterCore/include/shatter/`, `docs/tecnico/09_mudancas_contrato.md` | CMake + ctest (ver CLAUDE.md); olhar os avisos do GCC/Clang | Sonnet; Opus só para contrato da API C ou bug de memória |
 | Dados CSV/JSON | `rpg`, `roguelike` (design de itens, afixos, loot) | `EchoesOfTheShatter/Content/Data/`, `docs/tecnico/06_dados.md` | `tools/dados/validate_data.py` | Sonnet |
 | Textos, diálogos, localização | `dialogue-systems`, `rpg` | `Content/Data/Loc/`, `docs/design/05_conteudo.md` | só chaves de loc no código | Sonnet (teto dos agentes de design) |
@@ -48,9 +48,21 @@ Haiku: Git, LFS, conferir envio, rodar script pronto. Sonnet 5.5: padrão (model
 - Orçamentos técnicos de `docs/tecnico/04_arquitetura.md`. Nada do Spell Brigade.
 - Só passa ao Will o que estiver bonito; o Will aprova a arte, nunca o revisor.
 
-## Repositórios e fontes
-- Skills: awesome-gamedev-agent-skills (Apache-2.0), já em `.claude/skills/`.
-- Post original: https://x.com/doncoderlione/status/2112638459089150151 (repositórios citados nele: conferir no PR 41 e, se faltar algum baixado, avisar o Will em vez de baixar).
+## Repositórios do post do X (https://x.com/doncoderlione/status/2112638459089150151)
+| Repositório | Status | Uso |
+|---|---|---|
+| gamedev-skills/awesome-gamedev-agent-skills | instalado (26 skills em `.claude/skills/`, PR 41) | tabela principal acima |
+| Coding-Solo/godot-mcp | já em uso | montar cenas, nós, rodar o projeto e ler o debug no Godot |
+| VAST-AI-Research/TripoSR | não usar | só protótipo e exige GPU de ~6 GB; usamos o TripoSG, mais novo |
+| CoderGamester/mcp-unity | descartado | o projeto saiu da Unity |
+| pmndrs/drei, react-three-rapier, react-postprocessing; Alchemist0823/three.quarks | descartados | bibliotecas React/three.js; bloom e partículas saem nativos no Godot (`godot-shaders`, `game-feel`) |
+| Mugen87/yuka | descartado | IA de NPC em JS; a nossa fica no ShatterCore (`game-ai` só para o cliente) |
+| colyseus/colyseus | descartado | multiplayer; o jogo é single-player |
+
+Ferramentas de Blender não vieram do post: o ciclo é Blender com Python (`bpy`) em modo sem janela, como nos scripts de `art-src/`. Se surgir um MCP de Blender útil, o `pesquisador-referencias` avalia e o Will decide antes de instalar.
+
+## Outras fontes
 - Artefato do sócio: https://claude.ai/artifact/RYEaZih9sQMAiYu8HNJ9D2 (concurso de 10 agentes, pilar gótico no Blender).
 - Processo RafaxLab: piloto pequeno, refino por rodadas, crítico, referência neutra.
+- **Régua interna**: o estandarte v2 (PR 48) foi aprovado pelo Will; é o modelo de método (3 agentes, textura e normal pintadas, 6 a 8 ciclos) e de qualidade para os demais objetos.
 - Referência de estilo apenas: Spell Brigade (nunca entra no build).
