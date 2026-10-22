@@ -1,12 +1,12 @@
-"""Tapete da Cripta (módulo 2,4 x 6,0 m, deitado no piso). Partes: padrao (albedo+normal pintados), pano (grade com dobras e bordas viradas), franjas.
+"""Tapete da Cripta (módulo 3,6 x 6,0 m, deitado no piso). Partes: padrao (albedo+normal pintados), pano (grade com dobras e bordas viradas), franjas.
 bpy: python tapete.py -- <saida.glb> [pasta_previas]    PARTES=padrao,pano,franjas  VISTAS=...  AMOSTRAS=16
 Pivô no centro do tapete, +Z para cima, comprimento no eixo Y, metros."""
 import sys, os, math, json, struct, random
 import numpy as np
 from PIL import Image, ImageDraw
 
-LW, LL = 2.4, 6.0                      # largura x comprimento (m)
-TW, TH = 1024, 2560                    # textura (px): 1 px = 2,34 mm
+LW, LL = 3.6, 6.0                      # largura x comprimento (m)
+TW, TH = 1536, 2560                    # textura (px): 1 px = 2,34 mm
 TEX = os.environ.get("TAPETE_TEX", "/tmp/tapete_tex")
 os.makedirs(TEX, exist_ok=True)
 
@@ -78,6 +78,67 @@ def motif(w, h, seed, rings=True):
     full = np.concatenate([top, top[::-1]], 0)                # espelha p/ baixo
     return np.asarray(Image.fromarray((full * 255).astype(np.uint8)).resize((w, h), Image.LANCZOS), np.float32) / 255
 
+def rosette(w, h, seed, petals=7, scrolls=True):
+    """Medalhão em losango com rosácea central, pétalas em anéis, arabescos e pérolas (bilateral, 4 quadrantes)."""
+    S = 3; r = random.Random(seed); qw, qh = w * S // 2, h * S // 2
+    im = Image.new("L", (qw, qh), 0); d = ImageDraw.Draw(im)
+    def P(x, y): return (x, qh - y)
+    def disk(x, y, rad): d.ellipse([P(x - rad, y + rad), P(x + rad, y - rad)], fill=255)
+    def leaf(x, y, ang, ln, wd, tip=0.8):
+        pts = [(ln * i / 20, wd * math.sin(math.pi * (i / 20) ** tip) * (1 - 0.25 * i / 20)) for i in range(21)]
+        pts = pts + [(a, -b) for a, b in reversed(pts)]
+        ca, sa = math.cos(ang), math.sin(ang)
+        d.polygon([P(x + a * ca - b * sa, y + a * sa + b * ca) for a, b in pts], fill=255)
+    def line(p0, p1, wd):
+        n = int(max(abs(p1[0] - p0[0]), abs(p1[1] - p0[1]))) + 1
+        for i in range(n + 1):
+            t = i / n; disk(p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t, wd)
+    def spiral(cx, cy, R, turns, wd, sign, phi0):
+        n = int(turns * 90)
+        for i in range(n + 1):
+            t = i / n; rad = R * (1 - t * 0.88); phi = phi0 + sign * turns * 2 * math.pi * t
+            disk(cx + rad * math.cos(phi), cy + rad * math.sin(phi), max(1.2 * S, wd * (1 - t * 0.6)))
+    A, B = qw, qh                        # semi-eixos do losango
+    for k, wd in ((1.0, 3.4), (0.93, 1.6), (0.60, 1.8)):       # losangos concêntricos
+        line((A * k, 0), (0, B * k), wd * S)
+    R = min(A, B) * 0.40
+    for i in range(9):                                   # anel externo de pétalos longos, alternados
+        ang = (math.pi / 2) * (i + 0.5) / 8 if 0 < i < 8 else (math.pi / 2) * (i / 8)
+        leaf(R * 0.46 * math.cos(ang), R * 0.46 * math.sin(ang), ang, R * 0.52, R * 0.52 * 0.24)
+    for i in range(0, 9):                                # anel interno
+        ang = (math.pi / 2) * i / 8
+        leaf(R * 0.14 * math.cos(ang), R * 0.14 * math.sin(ang), ang, R * 0.34, R * 0.34 * 0.34, tip=0.65)
+    d.ellipse([P(-R * 0.12, R * 0.12), P(R * 0.12, -R * 0.12)], fill=0)      # miolo vazado
+    disk(0, 0, R * 0.07); d.ellipse([P(-R * 0.11, R * 0.11), P(R * 0.11, -R * 0.11)], outline=255, width=2 * S)
+    for i in range(24):                                  # pérolas em anel
+        a_ = (math.pi / 2) * (i + 0.5) / 24; disk(R * 1.02 * math.cos(a_), R * 1.02 * math.sin(a_), 2.2 * S)
+    # hastes nos eixos com folhas
+    for i in range(int(R * 0.9), int(B * 0.92)):
+        disk(0, i, 2.4 * S * (1 - 0.35 * i / B) + 1)
+    for i in range(int(R * 0.9), int(A * 0.92)):
+        disk(i, 0, 2.4 * S * (1 - 0.35 * i / A) + 1)
+    for t in (0.50, 0.62, 0.74, 0.85):
+        y = t * B; ln = (1.15 - 0.45 * t) * A * 0.15
+        leaf(0, y, math.radians(46), ln, ln * 0.26); leaf(0, y, math.radians(134), ln, ln * 0.26)
+    for t in (0.55, 0.72, 0.87):
+        x = t * A; ln = (1.15 - 0.45 * t) * A * 0.13
+        leaf(x, 0, math.radians(44), ln, ln * 0.26)
+    leaf(0, B * 0.82, math.pi / 2, B * 0.1, 9 * S); leaf(A * 0.82, 0, 0, A * 0.1, 8 * S)
+    ca, sa = A / math.hypot(A, B), B / math.hypot(A, B)       # folhas na diagonal do losango
+    for t in (0.35, 0.5, 0.65):
+        x, y = A * 0.62 * (1 - t) + 0, B * 0.62 * t
+        leaf(x, y, math.atan2(B, A) * 0 + math.pi / 4, A * 0.07, A * 0.02)
+    if scrolls:                          # arabescos nas diagonais dentro do losango
+        for i, (fx, fy, sg) in enumerate(((0.66, 0.15, 1), (0.14, 0.62, -1), (0.40, 0.32, -1))):
+            cx, cy = A * fx, B * fy
+            spiral(cx, cy, R * (0.34 - 0.04 * i), 1.3, 3.6 * S, sg, math.atan2(cy, cx) + math.pi)
+            spiral(cx, cy, R * (0.26 - 0.04 * i), 1.1, 3.0 * S, -sg, math.atan2(cy, cx))
+    for i in range(10):                  # pérolas ao longo do losango interno
+        t = (i + 0.5) / 10; disk(A * 0.80 * (1 - t), B * 0.80 * t, 1.8 * S)
+    q = np.asarray(im, np.float32) / 255
+    top = np.concatenate([q[:, ::-1], q], 1); full = np.concatenate([top, top[::-1]], 0)
+    return np.asarray(Image.fromarray((full * 255).astype(np.uint8)).resize((w, h), Image.LANCZOS), np.float32) / 255
+
 def gen_padrao():
     """Albedo RGBA (alfa = silhueta rasgada e furos) + normal. Retorna (albedo, normal, alfa) e grava PNGs."""
     W, H = TW, TH; rr = np.random.default_rng(11)
@@ -86,8 +147,8 @@ def gen_padrao():
     n_l, n_m, n_s = noise(H, W, 6, 1), noise(H, W, 40, 2), noise(H, W, 220, 3)
     # ---- silhueta: borda rasgada com mordidas e furos de desgaste
     bite = np.zeros_like(dedge)
-    for _ in range(14):
-        side = rr.integers(0, 4); depth = rr.uniform(14, 48); width = rr.uniform(20, 90)
+    for _ in range(26):
+        side = rr.integers(0, 4); depth = rr.uniform(14, 95); width = rr.uniform(20, 150)
         t = rr.uniform(0.08, 0.92)
         cx, cy = (t * W, 0) if side == 0 else (t * W, H) if side == 1 else (0, t * H) if side == 2 else (W, t * H)
         bite = np.maximum(bite, depth * np.exp(-(((xx - cx) ** 2 + (yy - cy) ** 2) / (2 * width ** 2))))
@@ -98,20 +159,23 @@ def gen_padrao():
         wear = np.maximum(wear, np.exp(-(((xx - cx) ** 2 + (yy - cy) ** 2) / (2 * rad ** 2))) * rr.uniform(0.6, 1.1))
     wear = np.clip(wear + 0.35 * n_m * 0.5, 0, 1.3) * (0.7 + 0.5 * n_l)
     hole = np.zeros(dedge.shape, bool)
-    n_h = noise(H, W, 90, 21)
-    for _ in range(9):               # aglomerados de furos, mais perto das bordas e de dois cantos
+    n_h = noise(H, W, 16, 21) * 0.6 + noise(H, W, 60, 22) * 0.4
+    for _ in range(14):              # aglomerados de furos, mais perto das bordas e de dois cantos
         side = rr.random()
         cx = rr.uniform(0.1, 0.9) * W; cy = rr.uniform(0.04, 0.96) * H
         if side < 0.5: cx = rr.choice((0.1, 0.9)) * W + rr.uniform(-60, 60)
-        rad = rr.uniform(45, 120)
-        f = np.exp(-(((xx - cx) ** 2 + ((yy - cy) * 1.3) ** 2) / (2 * rad ** 2))) + 0.6 * n_h + 0.10 * n_s
-        hole |= f > 1.02
+        rad = rr.uniform(70, 190)
+        f = np.exp(-(((xx - cx) ** 2 + ((yy - cy) * 1.3) ** 2) / (2 * rad ** 2))) + 0.55 * n_h + 0.12 * n_s
+        hole |= f > 0.97
+    for _ in range(5):                # buracos grandes de bordas rasgadas, 2 deles encostados na lateral
+        cx = rr.choice((0.12, 0.88, rr.uniform(0.25, 0.75))) * W; cy = rr.uniform(0.12, 0.88) * H; rad = rr.uniform(70, 125)
+        hole |= (np.exp(-(((xx - cx) ** 2 + ((yy - cy) * rr.uniform(0.7, 1.6)) ** 2) / (2 * rad ** 2))) + 0.6 * n_h + 0.12 * n_s) > 0.75
     for _ in range(18):               # furtinhos e cortes
         cx, cy = rr.uniform(0.05, 0.95) * W, rr.uniform(0.04, 0.96) * H; rad = rr.uniform(9, 26)
         hole |= ((xx - cx) ** 2 + ((yy - cy) * rr.uniform(0.5, 2.2)) ** 2) < rad ** 2 * (0.5 + 1.0 * np.abs(n_s))
-    for _ in range(2):                # cortes finos rasgados (como na referência)
+    for _ in range(5):                # cortes finos rasgados (como na referência)
         cx, cy = rr.uniform(0.3, 0.7) * W, rr.uniform(0.1, 0.9) * H
-        hole |= (np.abs(xx - cx - 0.0 * (yy - cy)) < 5 * (1 - np.abs(yy - cy) / 110)) & (np.abs(yy - cy) < 110)
+        hole |= (np.abs(xx - cx - 0.0 * (yy - cy)) < 7 * (1 - np.abs(yy - cy) / 170)) & (np.abs(yy - cy) < 170)
     alive = (dedge > inset) & ~hole
     alpha = smooth(0, 1.6, (dedge - inset)) * (~hole)
     hole_d = gauss(hole.astype(np.float32), 3.0)
@@ -149,8 +213,10 @@ def gen_padrao():
         h, w = mk.shape; x0, y0 = int(cx - w / 2), int(cy - h / 2)
         img_mask[y0:y0 + h, x0:x0 + w] = np.maximum(img_mask[y0:y0 + h, x0:x0 + w], mk)
     orn = np.zeros((H, W), np.float32)
-    stamp(orn, W / 2, H / 2, motif(560, 1080, 1))
-    for dy in (-780, 780): stamp(orn, W / 2, H / 2 + dy, motif(420, 520, 2 + (dy > 0)))
+    stamp(orn, W / 2, H / 2, rosette(1060, 1340, 1))
+    for dy in (-860, 860): stamp(orn, W / 2, H / 2 + dy, motif(560, 440, 2 + (dy > 0), rings=True))
+    for sx in (-1, 1):                                   # cantos do campo e meios-medalhões laterais
+        for sy in (-1, 1): stamp(orn, W / 2 + sx * 440, H / 2 + sy * 905, rosette(150, 150, 7, petals=4, scrolls=False))
     gold_mask = np.maximum(gold_mask, orn)
     # ---- ouro: fios de cetim, relevo, desgaste
     stitch = 0.88 + 0.12 * np.sin(yy * math.pi / 3.0 + xx * 0.35) + 0.12 * n_s
@@ -162,7 +228,14 @@ def gen_padrao():
     A *= (1 - 0.45 * sh[..., None])
     A = A * (1 - gm[..., None]) + gcol * gm[..., None]
     # ---- desgaste: pelo gasto mostra trama de fundo marrom; sujeira; manchas
+    cen = np.exp(-(((xx - W / 2) / (W * 0.40)) ** 2 + ((yy - H / 2) / (H * 0.30)) ** 2))      # centro mais gasto e desbotado
+    wear = np.clip(wear + 0.55 * cen * (0.6 + 0.5 * n_l + 0.3 * n_m), 0, 1.4)
     wear_c = np.clip((wear - 0.4) * 1.5, 0, 1) * (0.6 + 0.5 * np.abs(n_s))
+    fade = np.clip(cen * (0.55 + 0.4 * n_m) , 0, 1)
+    A = A * (1 - 0.45 * fade[..., None]) + np.array((0.62, 0.38, 0.34), np.float32) * (0.45 * fade[..., None])    # desbotado rosado
+    pale = smooth(0.55, 0.85, noise(H, W, 70, 41) * 0.6 + 0.5 * n_s) * (0.5 + 0.8 * wear)
+    A = A * (1 - 0.6 * pale[..., None]) + np.array((0.70, 0.52, 0.46), np.float32) * (0.6 * pale[..., None])      # manchas claras
+    A *= (0.9 + 0.2 * (0.5 + 0.5 * noise(H, W, 9, 43)))[..., None] * np.array((1.0, 0.95 + 0.1 * 0, 1.0))
     under = np.array((0.20, 0.13, 0.10), np.float32) * (0.7 + 0.4 * weave[..., None])
     A = A * (1 - 0.8 * wear_c[..., None]) + under * (0.8 * wear_c[..., None])
     dirt = smooth(-0.1, 0.7, n_l * 0.7 + n_m * 0.5)
@@ -174,12 +247,14 @@ def gen_padrao():
     A *= (1 - 0.6 * (np.clip(hole_d * 1.6, 0, 1))[..., None] * alive[..., None])  # aro escuro dos furos
     A = np.clip(A, 0, 1)
     # ---- altura -> normal
-    ht = weave * 0.12 + n_s * 0.30 + 0.20 * n_m
+    fib = noise(H, W, 420, 31) * 0.5 + gauss(np.random.default_rng(5).standard_normal((H, W)).astype(np.float32), 0.8) * 1.3
+    fibl = gauss(np.random.default_rng(6).standard_normal((H, W)).astype(np.float32), 0.0) * 0.0
+    ht = weave * 0.14 + n_s * 0.30 + 0.20 * n_m + 0.55 * fib
     ht += 0.9 * gauss(gold_mask, 0.8) + 0.3 * stitch * gold_mask       # bordado em relevo
     ht -= 0.8 * wear_c + 1.2 * frays
     ht -= 0.5 * lat.astype(np.float32) * field
     gx = np.gradient(ht, axis=1); gy = np.gradient(ht, axis=0)
-    k = 5.0
+    k = 7.0
     N = np.dstack([-gx * k, gy * k, np.ones_like(ht)]); N /= np.linalg.norm(N, axis=2, keepdims=True)
     N = (N * 0.5 + 0.5)
     rgba = np.dstack([A, alpha])
@@ -224,9 +299,9 @@ def blender_part():
         z += 0.016 * math.sin(y * 3.1 + 0.8 * math.sin(x * 2.3)) * math.exp(-((x - 0.5) ** 2) / 0.8)        # ondas longitudinais
         z += 0.010 * math.sin(x * 13 + y * 5.5) * math.sin(y * 2.9 + 1)                                       # pregas curtas
         # prega alta cruzando o tapete (dobra esmagada)
-        for (yc, ang, h0) in ((-1.4, 0.35, 0.075), (1.9, -0.25, 0.055), (0.2, 0.1, 0.03)):
+        for (yc, ang, h0) in ((-1.4, 0.35, 0.075), (1.9, -0.25, 0.055), (0.2, 0.1, 0.03), (-0.6, -0.5, 0.12), (1.0, 0.45, 0.10)):
             dd = (y - yc) - math.tan(ang) * x
-            z += h0 * math.exp(-(dd / 0.14) ** 2) * (0.6 + 0.4 * math.sin(x * 4))
+            z += h0 * math.exp(-(dd / 0.17) ** 2) * (0.6 + 0.4 * math.sin(x * 4))
         # bordas viradas para cima, mais em alguns trechos
         d = min(LW / 2 - abs(x), LL / 2 - abs(y))
         rng_ = 0.5 + 0.5 * math.sin(x * 5.3 + y * 3.7) * math.sin(x * 1.7 - y * 2.3)
@@ -238,7 +313,7 @@ def blender_part():
         return max(z + 0.014, 0.004)
 
     if "pano" in ONLY:
-        NX, NY = 60, 150; cell = LW / NX
+        NX, NY = 90, 150; cell = LW / NX
         bm = bmesh.new(); uv = bm.loops.layers.uv.new()
         vs = [[bm.verts.new((((i / NX) - 0.5) * LW, ((j / NY) - 0.5) * LL, height(((i / NX) - 0.5) * LW, ((j / NY) - 0.5) * LL))) for i in range(NX + 1)] for j in range(NY + 1)]
         for j in range(NY):
@@ -258,21 +333,25 @@ def blender_part():
         mf = mat("M_TapeteFranja", (0.50, 0.33, 0.15), 1.0)
         bm = bmesh.new()
         for sgn in (-1, 1):
-            n = 150
-            for k in range(n):
-                if r.random() < 0.14: continue                    # falhas
-                x0 = ((k + 0.5) / n - 0.5) * (LW * 0.975) + r.uniform(-0.004, 0.004)
-                ln = r.uniform(0.075, 0.115) * (0.45 if r.random() < 0.15 else 1)
-                ang = r.uniform(-0.28, 0.28); ph = r.uniform(0, 6.3); wd = 0.0055
-                y0 = sgn * (LL / 2 - 0.03); rows = []
-                for s_ in range(8):
-                    t = s_ / 7; yy = y0 + sgn * (ln + 0.03) * t * math.cos(ang); xx = x0 + (ln + 0.03) * t * math.sin(ang) + 0.006 * math.sin(t * 7 + ph)
-                    zz = max(0.0035, height(xx, max(min(abs(yy), LL / 2 - 0.001), 0) * sgn) * (1 - t) ** 1.5 + 0.0035 + 0.004 * math.sin(t * 9 + ph) ** 2)
-                    ww = wd * (1 - 0.25 * t)
-                    rows.append((bm.verts.new((xx - ww, yy, zz)), bm.verts.new((xx + ww, yy, zz + 0.002))))
-                for s_ in range(7):
-                    q = (rows[s_][0], rows[s_][1], rows[s_ + 1][1], rows[s_ + 1][0])
-                    bm.faces.new(q if sgn > 0 else q[::-1])
+            ntuf = 70
+            for k in range(ntuf):
+                if r.random() < 0.16: continue                    # tufos faltando
+                xt = ((k + r.uniform(0.2, 0.8)) / ntuf - 0.5) * (LW * 0.975)
+                tl = r.uniform(0.06, 0.18) * (0.35 if r.random() < 0.15 else 1); tang = r.uniform(-0.5, 0.5); tcurl = r.uniform(-0.05, 0.05)
+                for th in range(r.randint(5, 9)):
+                    if r.random() < 0.12: continue                # fio solto/faltando
+                    x0 = xt + r.uniform(-0.012, 0.012); ln = tl * r.uniform(0.6, 1.1); ang = tang + r.uniform(-0.2, 0.2)
+                    ph = r.uniform(0, 6.3); wd = 0.0016; y0 = sgn * (LL / 2 - 0.03); rows = []
+                    tangle = r.random() < 0.2
+                    for s_ in range(8):
+                        t = s_ / 7; yy = y0 + sgn * (ln + 0.03) * t * math.cos(ang * (0.5 + t))
+                        xx = x0 + (ln + 0.03) * t * math.sin(ang) + (tcurl + (0.03 if tangle else 0.008)) * math.sin(t * (11 if tangle else 6) + ph) * t
+                        zz = max(0.003, height(xx, max(min(abs(yy), LL / 2 - 0.001), 0) * sgn) * (1 - t) ** 1.5 + 0.003 + 0.003 * math.sin(t * 9 + ph) ** 2)
+                        ww = wd * (1 - 0.3 * t)
+                        rows.append((bm.verts.new((xx - ww, yy, zz)), bm.verts.new((xx + ww, yy, zz + 0.0015))))
+                    for s_ in range(7):
+                        q = (rows[s_][0], rows[s_][1], rows[s_ + 1][1], rows[s_ + 1][0])
+                        bm.faces.new(q if sgn > 0 else q[::-1])
         new("Tapete_Franjas", bm, mf)
     return bpy, objs
 
@@ -313,7 +392,7 @@ def render(bpy, o, PREV):
     def sun(rot, e, c):
         s = bpy.data.objects.new("s", bpy.data.lights.new("s", "SUN")); s.data.energy = e; s.data.color = c; s.rotation_euler = rot; bpy.context.collection.objects.link(s)
     sun((math.radians(50), 0, math.radians(35)), 3.2, (1.0, 0.85, 0.7)); sun((math.radians(65), 0, math.radians(-140)), 1.0, (0.55, 0.65, 1.0))
-    views = {"cima": ((0, 0, 11), (0, 0, 0), 560, 1000), "tres_quartos": ((3.5, -7.5, 5.5), (0, 0, 0), 900, 650), "jogo_3q": ((0, -9, 8), (0, 0, 0), 900, 650),
+    views = {"cima": ((0, 0, 11), (0, 0, 0), 560, 1000), "tres_quartos": ((3.5, -7.5, 5.5), (0, 0, 0), 900, 650), "jogo_3q": ((0, -10, 8.5), (0, 0, 0), 900, 650),
              "close_medalhao": ((0.9, -1.4, 1.6), (0, 0, 0), 800, 800), "close_borda": ((1.25, -2.7, 0.55), (1.0, -2.85, 0), 800, 800), "close_franja": ((0.2, -3.5, 0.45), (0, -3.1, 0), 800, 800), "rasante": ((-5.5, -2.5, 0.9), (0, 0, 0), 900, 500), "wire": ((0, -4.5, 7.5), (0, 0, 0), 900, 650)}
     only_v = os.environ.get("VISTAS")
     for nome, (loc, tgt, rx, ry) in views.items():
@@ -326,7 +405,7 @@ def render(bpy, o, PREV):
             ou = nt.nodes.new("ShaderNodeOutputMaterial"); nt.links.new(em.outputs[0], ou.inputs[0])
             w_.data.materials.clear(); w_.data.materials.append(wm); o.hide_render = True; fl.hide_render = True
         cam = bpy.data.cameras.new("c"); co = bpy.data.objects.new("c", cam); bpy.context.collection.objects.link(co)
-        if nome == "cima": cam.type = "ORTHO"; cam.ortho_scale = 6.6
+        if nome == "cima": cam.type = "ORTHO"; cam.ortho_scale = 6.8
         if nome.startswith("close"): cam.lens = 35
         co.location = loc; co.rotation_euler = (Vector(tgt) - Vector(loc)).to_track_quat("-Z", "Y").to_euler()
         sc.camera = co; sc.render.resolution_x = rx; sc.render.resolution_y = ry
