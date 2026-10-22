@@ -72,7 +72,7 @@ func _clima(pai: Node3D) -> void:
 	e.background_mode = Environment.BG_COLOR; e.background_color = Color(0.015, 0.02, 0.04)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; e.ambient_light_color = Color(0.20, 0.25, 0.38); e.ambient_light_energy = 0.55
 	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC; e.tonemap_exposure = 1.15
-	e.glow_enabled = true; e.glow_intensity = 0.6; e.glow_bloom = 0.05; e.glow_hdr_threshold = 1.3
+	e.glow_enabled = true; e.glow_intensity = 0.45; e.glow_bloom = 0.05; e.glow_hdr_threshold = 1.3
 	e.ssr_enabled = true; e.ssr_max_steps = 64; e.ssr_fade_in = 0.15; e.ssr_fade_out = 2.0; e.ssr_depth_tolerance = 0.3
 	e.ssil_enabled = true; e.ssil_intensity = 0.8
 	e.ssao_enabled = true; e.ssao_intensity = 2.0; e.ssao_radius = 1.5
@@ -322,11 +322,11 @@ func _pracas(props: Node3D) -> void:
 		_inst(gp, "Piso_%d" % i, "Piso", p[0], p[1], deg_to_rad(90.0 * (i % 4)), 0.0, T.chao(p[0], p[1]) - 0.047); i += 1
 	# tapete grande só em Átrio, Antecâmara e Arena; fica sobre praça plana, no mesmo nível do chão (+5 cm)
 	for t in [["Atrio", 0.0, 12.0], ["Antecamara", 76.0, 95.0], ["Arena", 76.0, 137.0]]:
-		_inst(gt, "TapeteGrande_" + t[0], "Tapete_Grande", t[1], t[2], 0.0, 0.0, T.chao(t[1], t[2]) + 0.05)
+		_inst(gt, "TapeteGrande_" + t[0], "Tapete_Grande", t[1], t[2], 0.0, 0.0, T.chao(t[1], t[2]) + 0.075)
 		tapetes.append([t[1], t[2], 4.0, 8.2])
 	# tapete de corredor (2,3 x 4,1 m) deitado no sentido do corredor, no centro de cada trecho reto
 	for t in [["c01", 18.0, 15.0], ["c02", 58.0, 11.0], ["c04", 58.0, 56.0], ["c05", 18.0, 54.0], ["c07", 16.0, 96.0], ["c08", 58.0, 92.0]]:
-		_inst(gt, "Tapete_" + t[0], "Tapete", t[1], t[2], PI * 0.5, 0.0, T.chao(t[1], t[2]) + 0.05)
+		_inst(gt, "Tapete_" + t[0], "Tapete", t[1], t[2], PI * 0.5, 0.0, T.chao(t[1], t[2]) + 0.075)
 		tapetes.append([t[1], t[2], 2.05, 1.15])
 
 # ------------------------------------------------------------------ salas
@@ -497,7 +497,7 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	if cena:
 		var m := cena.instantiate() as Node3D; m.name = "Modelo"; m.scale = Vector3.ONE * 0.75; n.add_child(m); _colisor(m, "Braseiro")
 	var luz := OmniLight3D.new(); luz.name = "Luz"; luz.position = Vector3(0, 1.45, 0)
-	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 2.0; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
+	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 1.6; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
 	luz.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(luz)
 	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 0.88, 0); ch.scale = Vector3.ONE * 0.75
