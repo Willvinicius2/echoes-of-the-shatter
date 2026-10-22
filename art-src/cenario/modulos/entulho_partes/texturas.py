@@ -24,7 +24,7 @@ def aplicar(M, pasta, tam=1024):
     os.makedirs(pasta, exist_ok=True); pintar_pedra.gerar(pasta, tam=tam)
     pa, pn = os.path.join(pasta, "pedra_albedo.png"), os.path.join(pasta, "pedra_normal.png")
     ma, mn = os.path.join(pasta, "musgo_albedo.png"), os.path.join(pasta, "musgo_normal.png")
-    novos = dict(pedra=_mat_img("M_Pedra", pa, pn), escura=_mat_img("M_PedraEscura", pa, pn, tint=(0.6, 0.6, 0.66)),
+    novos = dict(pedra=_mat_img("M_Pedra", pa, pn, tint=(0.82, 0.9, 1.0)), escura=_mat_img("M_PedraEscura", pa, pn, tint=(0.5, 0.56, 0.66)),
                  musgo=_mat_img("M_Musgo", ma, mn, tint=(2.6, 2.9, 1.7), rough=1.0), terra=_mat_img("M_Terra", pa, pn, tint=(0.28, 0.22, 0.17), rough=1.0))
     return novos
 
@@ -33,6 +33,15 @@ def trocar_materiais(o, antigos, novos):
         for k, a in antigos.items():
             if m == a: o.data.materials[i] = novos[k]
 
+def preparar(o, tint=(1, 1, 1), tamanho=0.7):
+    """UV em cubo com deslocamento aleatório por peça (a textura única não se repete igual) e cor de vértice 'TINT' por peça."""
+    import random, zlib
+    uv_cubo(o, tamanho)
+    r = random.Random(zlib.crc32(o.name.encode())); du, dv = r.random(), r.random()
+    for l in o.data.uv_layers[0].data: l.uv = (l.uv[0] + du, l.uv[1] + dv)
+    at = o.data.color_attributes.new("TINT", 'FLOAT_COLOR', 'POINT')
+    for i in range(len(o.data.vertices)): at.data[i].color = (*tint, 1)
+
 def uv_cubo(o, tamanho=0.7):
     bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
     bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
@@ -40,11 +49,11 @@ def uv_cubo(o, tamanho=0.7):
 
 def oclusao_vertice(o, raios=10):
     """AO barato por vértice (atributo de cor 'AO'): escurece frestas e a base, clareia o topo."""
-    import random
+    import random, zlib
     r = random.Random(3)
     bvh = BVHTree.FromObject(o, bpy.context.evaluated_depsgraph_get())
     me = o.data; attr = me.color_attributes.new("AO", 'FLOAT_COLOR', 'POINT')
-    me.calc_normals_split() if hasattr(me, "calc_normals_split") else None
+    tint = me.color_attributes["TINT"]
     nrm = [Vector() for _ in me.vertices]
     for p in me.polygons:
         for vi in p.vertices: nrm[vi] += p.normal
@@ -54,6 +63,7 @@ def oclusao_vertice(o, raios=10):
             d = (n + Vector((r.gauss(0, .8), r.gauss(0, .8), r.gauss(0, .8)))).normalized()
             if d.dot(n) < 0.1: d = n
             if bvh.ray_cast(p0, d, 0.5)[0] is None: livre += 1
-        a = 0.35 + 0.65 * livre / raios
-        a *= 0.8 + 0.2 * min(1.0, max(0.0, v.co.z / 0.6))     # base mais escura que o topo
-        attr.data[v.index].color = (a, a, a, 1)
+        a = 0.55 + 0.45 * livre / raios
+        a *= 0.88 + 0.12 * min(1.0, max(0.0, v.co.z / 0.6))     # base mais escura que o topo
+        tc = tint.data[v.index].color
+        attr.data[v.index].color = (a * tc[0], a * tc[1], a * tc[2], 1)

@@ -14,16 +14,16 @@ void vertex() {
 void fragment() {
 	vec2 uv = UV;
 	float t = TIME * speed + seed;
-	vec2 p = vec2(uv.x * 3.0, uv.y * 2.2 - t);
+	vec2 p = vec2(uv.x * 5.0, uv.y * 3.4 - t);                // frequência maior: línguas menores
 	float n = fbm(p + vec2(0.0, 0.0)) ;
 	float n2 = fbm(p * 1.9 + vec2(4.3, -t * 0.6));
 	float h = 1.0 - uv.y;                                    // 0 na base, 1 na ponta
 	float sway = (n - 0.5) * 0.55 * h;                       // oscilação lateral cresce com a altura
 	float x = (uv.x - 0.5) * 2.0 + sway;
-	float width = (0.82 - 0.78 * pow(h, 1.15)) * (1.0 + 0.35 * (n2 - 0.5));
+	float width = (0.8 - 0.76 * pow(h, 1.4)) * (1.0 + 0.35 * (n2 - 0.5));
 	float body = smoothstep(width, width * 0.25, abs(x));
 	float tip = smoothstep(1.0, 0.55, h + (n2 - 0.5) * 0.45);
-	float f = body * tip * smoothstep(0.0, 0.08, h);
+	float f = body * tip * smoothstep(0.0, 0.3, h);        // base some devagar entre as brasas, sem corte serrilhado
 	float hot = pow(f, 2.2) * (1.0 - h * 0.6);
 	vec3 col = mix(edge_color, core_color, hot);
 	ALBEDO = col * f * intensity;

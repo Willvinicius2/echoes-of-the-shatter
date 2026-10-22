@@ -161,7 +161,7 @@ def stone_preview():
         tc = N.new("ShaderNodeTexCoord"); mp = N.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (2.2, 2.2, 2.2)
         L.new(tc.outputs["Object"], mp.inputs["Vector"])
         n1 = N.new("ShaderNodeTexNoise"); n1.inputs["Scale"].default_value = 3.0; n1.inputs["Detail"].default_value = 6
-        n2 = N.new("ShaderNodeTexVoronoi"); n2.inputs["Scale"].default_value = 6.0
+        n2 = N.new("ShaderNodeTexVoronoi"); n2.inputs["Scale"].default_value = 9.0
         L.new(mp.outputs[0], n1.inputs["Vector"]); L.new(mp.outputs[0], n2.inputs["Vector"])
         ramp = N.new("ShaderNodeValToRGB")
         ramp.color_ramp.elements[0].color = (base[0] * 0.55, base[1] * 0.52, base[2] * 0.5, 1)
@@ -173,7 +173,7 @@ def stone_preview():
         mv = N.new("ShaderNodeMixRGB"); mv.blend_type = 'MULTIPLY'; mv.inputs["Fac"].default_value = 1.0
         L.new(mix.outputs["Color"], mv.inputs[1]); L.new(ca.outputs["Color"], mv.inputs[2])
         L.new(mv.outputs["Color"], b.inputs["Base Color"])
-        bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.25; bump.inputs["Distance"].default_value = 0.03
+        bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.5; bump.inputs["Distance"].default_value = 0.03
         L.new(n2.outputs["Distance"], bump.inputs["Height"]); L.new(bump.outputs["Normal"], b.inputs["Normal"])
 
 

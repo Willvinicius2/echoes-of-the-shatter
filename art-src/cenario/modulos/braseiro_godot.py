@@ -68,17 +68,33 @@ print("tris", tris, "->", OUT)
 
 if PREV:
     for m in body.data.materials:           # prévia: cor do vértice multiplica o albedo, como no Godot
-        if m.name == "M_Braseiro_Brasa" or m.name == "M_Braseiro_Cinza": continue
+        if m.name.startswith("M_Braseiro_Brasa") or m.name == "M_Braseiro_Cinza": continue
         nt = m.node_tree; b = nt.nodes["Principled BSDF"]
         src = b.inputs["Base Color"].links[0].from_socket
         a = nt.nodes.new("ShaderNodeVertexColor"); a.layer_name = "Col"
         mx = nt.nodes.new("ShaderNodeMix"); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'; mx.inputs[0].default_value = 1.0
         nt.links.new(src, mx.inputs[6]); nt.links.new(a.outputs["Color"], mx.inputs[7]); nt.links.new(mx.outputs[2], b.inputs["Base Color"])
+    # chama só para a prévia (no Godot é cartão com shader + partículas): 3 cartões cruzados, emissivos com alfa
+    if os.environ.get("CHAMA", "1") == "1":
+        fp = _lib.tex_chama("chama_preview", 4)
+        fm = bpy.data.materials.new("chama_prev"); fm.use_nodes = True; nt = fm.node_tree
+        for nd in list(nt.nodes): nt.nodes.remove(nd)
+        img = nt.nodes.new("ShaderNodeTexImage"); img.image = bpy.data.images.load(fp)
+        em = nt.nodes.new("ShaderNodeEmission"); em.inputs["Strength"].default_value = 2.6
+        tr = nt.nodes.new("ShaderNodeBsdfTransparent"); mx = nt.nodes.new("ShaderNodeMixShader"); out = nt.nodes.new("ShaderNodeOutputMaterial")
+        nt.links.new(img.outputs["Color"], em.inputs["Color"]); nt.links.new(img.outputs["Alpha"], mx.inputs[0])
+        nt.links.new(tr.outputs[0], mx.inputs[1]); nt.links.new(em.outputs[0], mx.inputs[2]); nt.links.new(mx.outputs[0], out.inputs[0])
+        for k, (w, h, yaw, dx) in enumerate(((1.2, 0.85, 0.0, 0.0), (1.2, 0.85, 1.05, 0.03), (0.9, 0.65, 2.1, -0.03))):
+            bpy.ops.mesh.primitive_plane_add(size=1, location=(dx, 0, 1.36 + h / 2 - 0.1), rotation=(math.pi / 2, 0, yaw))
+            c = bpy.context.object; c.scale = (w, h, 1); c.data.materials.append(fm)
+            c.visible_shadow = False
     sc = setup_render(800)
     shot(sc, "braseiro_tres_quartos", (2.6, -2.6, 2.2), (0, 0, 0.8))
     shot(sc, "braseiro_frente", (0, -3.6, 1.0), (0, 0, 0.8))
     shot(sc, "braseiro_close_borda", (0.6, -1.5, 1.7), (0.1, 0, 1.3), 60)
+    shot(sc, "braseiro_lado", (3.6, 0, 1.0), (0, 0, 0.9))
     shot(sc, "braseiro_cima", (0.01, -0.8, 3.0), (0, 0, 1.2))
+    shot(sc, "braseiro_brasas_close", (0.0, -1.1, 2.15), (0, 0, 1.25), 50)
     shot(sc, "braseiro_pernas_close", (1.1, -1.3, 0.55), (0.35, -0.35, 0.45), 55)
     wf = body.modifiers.new("wf", 'WIREFRAME'); wf.thickness = 0.004
     shot(sc, "braseiro_wireframe", (2.6, -2.6, 2.2), (0, 0, 0.8))
