@@ -489,7 +489,7 @@ def _statue(L):
 
 def build(L):
     """Tudo que fica dentro e em volta do nicho. O núcleo do fuste e o cortador ficam fora daqui."""
-    L.MAT["sombra"] = L.mat("M_Sombra", (0.012, 0.012, 0.016), rough=1.0)
+    L.MAT["sombra"] = L.mat("M_Sombra", (0.075, 0.07, 0.075), rough=1.0)
     _frame(L)
     _tympanum(L)
     _back(L)

@@ -196,9 +196,9 @@ def render(o, prev, nome, view, res=720, samples=40):
     cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
     sc.camera = cam
     if view != "nicho": cam.data.lens = 60
-    sun = bpy.data.objects.new("s", bpy.data.lights.new("s", 'SUN')); sun.data.energy = 4.0; sun.rotation_euler = (0.9, 0.25, 0.7)
+    sun = bpy.data.objects.new("s", bpy.data.lights.new("s", 'SUN')); sun.data.energy = 4.0; sun.data.color = (1.0, 0.88, 0.72); sun.rotation_euler = (0.9, 0.25, 0.7)
     bpy.context.collection.objects.link(sun)
-    fill = bpy.data.objects.new("f", bpy.data.lights.new("f", 'SUN')); fill.data.energy = 0.8; fill.rotation_euler = (1.2, 0, -2.2)
+    fill = bpy.data.objects.new("f", bpy.data.lights.new("f", 'SUN')); fill.data.energy = 1.2; fill.data.color = (0.8, 0.85, 1.0); fill.rotation_euler = (1.2, 0, -2.2)
     bpy.context.collection.objects.link(fill)
     w = bpy.data.worlds.new("w"); w.use_nodes = True
     w.node_tree.nodes["Background"].inputs[0].default_value = (0.12, 0.13, 0.17, 1); sc.world = w
@@ -285,6 +285,12 @@ def pintar_vertices(o, raios=14, alcance=0.7, seed=5):
         sujo = max(0.0, 1.0 - (p.z / 6.5)) ** 2 * 0.35 + (1 - ao) * 0.3  # sujeira embaixo e nas juntas
         k = (0.55 + 0.45 * ao ** 1.2) * (0.8 + 0.25 * reg) * (0.92 + 0.12 * fin) * (1 - sujo * (0.5 + 0.5 * face))
         warm = 0.12 * (reg - 0.5)
+        vd = noise.voronoi(p * 2.4 + off)[0]  # distâncias aos pontos mais próximos                             # rachaduras finas: arestas de células de Voronoi
+        edge = abs(vd[1] - vd[0])
+        rach = 0.55 + 0.45 * min(1.0, edge / 0.07)
+        k *= rach * 1.18
+        if p.y > 0.5 and abs(p.x) < 0.62 and 1.2 < p.z < 3.9:             # interior do nicho mais claro para a estátua aparecer
+            k = max(k, 0.78 - 0.1 * (1 - ao))
         cols[v.index] = (min(1, k * (1 + warm)), min(1, k), min(1, k * (1 - warm)), 1.0)
     bm.free()
     tom = me.color_attributes.get("Tom")
