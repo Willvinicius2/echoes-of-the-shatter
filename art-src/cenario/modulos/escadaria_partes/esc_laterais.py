@@ -8,7 +8,7 @@ def _wall_x(lado):
 
 
 def build(M):
-    esc = M['escura']; pedra = M['pedra']
+    esc = M['escura']; pedra = M['pedra']; par = M['parede']
     for lado in (-1, 1):
         x0, x1 = _wall_x(lado)
         s = 'L' if lado < 0 else 'R'
@@ -16,17 +16,21 @@ def build(M):
             r = L.rng(500 + i * 7 + (lado > 0))
             ya, yb = L.YF - (i + 1) * L.T, L.YF - i * L.T
             zt = (i + 1) * L.R
-            # fiada de baixo, em degraus
-            L.bloco(f"par{s}{i}_a", x0 + r.uniform(-.012, .012), x1 + r.uniform(-.012, .012), ya + 0.005, yb - 0.005, L.BAIXO, zt,
-                    esc, 600 + i + 40 * (lado > 0), sub=(1, 1, 1), jit=0.007, lascas=3, tam=0.08, bis=0.014, tira=('-z',))
+            # fiadas de baixo: duas pedras empilhadas com altura da junta variável
+            zs = L.BAIXO + (zt - L.BAIXO) * r.uniform(0.3, 0.7)
+            xa0, xb0 = x0 + r.uniform(-.012, .012), x1 + r.uniform(-.012, .012)
+            L.bloco(f"par{s}{i}_a0", xa0, xb0, ya + 0.005, yb - 0.005, L.BAIXO, zs - 0.004, par, 600 + i + 40 * (lado > 0),
+                    sub=(1, 1, 1), jit=0.008, lascas=3, tam=0.09, bis=0.014, tira=('-z',))
+            L.bloco(f"par{s}{i}_a", xa0 + r.uniform(-.01, .01), xb0 + r.uniform(-.01, .01), ya + 0.005 + r.uniform(0, .01), yb - 0.005 - r.uniform(0, .01), zs, zt,
+                    par, 650 + i + 40 * (lado > 0), sub=(1, 1, 1), jit=0.008, lascas=3, tam=0.09, bis=0.014)
             # fiada de cima, com topo inclinado paralelo à rampa (perfil y,z)
             za, zb = L.linha(ya) + L.H0, L.linha(yb) + L.H0
             perfil = [(ya + 0.005, zt + 0.003), (yb - 0.005, zt + 0.003), (yb - 0.005, zb), (ya + 0.005, za)]
             L.prisma(f"par{s}{i}_b", x0 + r.uniform(-.015, .01) if lado < 0 else x0 + 0.0, x1 + (0 if lado < 0 else r.uniform(-.01, .015)),
-                     perfil, esc, 700 + i + 40 * (lado > 0), jit=0.006, lascas=2, tam=0.07, bis=0.013)
+                     perfil, par, 700 + i + 40 * (lado > 0), jit=0.006, lascas=2, tam=0.07, bis=0.013)
         # parede do patamar (reta, mais alta, retém o terreno)
         zt = L.linha(L.YT) + L.H0
-        L.bloco(f"par{s}_pat", x0, x1, L.YT - L.LAND, L.YT - 0.005, L.BAIXO, zt, esc, 800 + (lado > 0),
+        L.bloco(f"par{s}_pat", x0, x1, L.YT - L.LAND, L.YT - 0.005, L.BAIXO, zt, par, 800 + (lado > 0),
                 sub=(1, 3, 2), jit=0.008, lascas=4, tam=0.1, bis=0.015, tira=('-z',))
         # capeamento: lajes inclinadas, uma por dois degraus, com juntas e lascas
         for k in range(0, L.N, 2):

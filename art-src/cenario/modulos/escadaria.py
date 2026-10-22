@@ -5,7 +5,7 @@ Partes (um arquivo cada, em escadaria_partes/):
   esc_corrimao.py  corrimão martelado, balaústres torcidos, barra baixa, cintas, ponteiras, volutas
   esc_musgo.py     musgo e sujeira
 Materiais, bake e prévias: cc_materiais.py (mesma régua da coluna com corrente).
-python3 escadaria.py <pasta_glb> [pasta_previas] [--sem-bake] [--tam 2048] [--degraus 11] [--largura 4.0] [--altura 0.18] [--piso 0.32]
+python3 escadaria.py <pasta_glb> [pasta_previas] [--sem-bake] [--tam 2048] [--degraus 22] [--pivo-pe] [--largura 4.0] [--altura 0.18] [--piso 0.32]
 Parametrico em número de degraus e largura. Metros; pivô no meio da corrida, z=0 no piso do pé; o pé da escada
 fica em +Y do Blender (-Z do Godot), a escada sobe para -Y (+Z do Godot)."""
 import sys, os, math
@@ -19,7 +19,7 @@ import esc_degraus, esc_laterais, esc_corrimao, esc_musgo
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 def opt(nome, padrao, tipo=float):
     return tipo(sys.argv[sys.argv.index(nome) + 1]) if nome in sys.argv else padrao
-N, LARG, TAM = opt("--degraus", 11, int), opt("--largura", 4.0), opt("--tam", 2048, int)
+N, LARG, TAM = opt("--degraus", 22, int), opt("--largura", 4.0), opt("--tam", 2048, int)
 ALT, PISO = opt("--altura", 0.18), opt("--piso", 0.32)
 OUT = args[0] if args else "."
 PREV = args[1] if len(args) > 1 else None
@@ -41,6 +41,18 @@ def montar():
     L.configurar(N, LARG, ALT, PISO)
     cc_materiais._PEDRA['musgo_qtd'] = 0.55; cc_materiais._ESCURA['musgo_qtd'] = 0.4   # menos musgo que na coluna
     M = cc_materiais.criar_materiais()
+    zt = N * ALT   # altura total da rampa: musgo e umidade dependem dela
+    # degraus: musgo escuro nas juntas e cantos, cresce para baixo; sombra suave
+    for nome, ps in (("pedra", cc_materiais._PEDRA),):
+        ps.update(quente=(1.0, 0.97, 1.02), frio=(0.88, 0.92, 1.10), musgo_lim=(0.44, 0.58), musgo_k=0.55, musgo_h=(zt + 0.5, 0.0, 0.08), ao_g_min=0.78)
+        cc_materiais._montar_pedra(M[nome], ps)
+    # paredes: pedra maior, cor por bloco bem variada (violeta frio e alguns quentes), umidade escorrendo e sujeira no pé
+    par = dict(cc_materiais._ESCURA, nome="M_PedraParede", escala=0.6, v_min=0.6, v_max=1.38,
+               quente=(1.16, 1.0, 0.88), frio=(0.86, 0.90, 1.14), ao_g_min=0.8,
+               musgo_lim=(0.46, 0.6), musgo_k=0.55, musgo_h=(zt + 0.5, 0.0, 0.05), escorre=0.4, sujo_base=(0.0, 1.4))
+    M['parede'] = bpy.data.materials.new("M_PedraParede"); M['parede'].use_nodes = True
+    cc_materiais._montar_pedra(M['parede'], par)
+    M['parede'].use_fake_user = True
     for parte in (esc_degraus, esc_laterais, esc_corrimao, esc_musgo):
         parte.build(M)
     ferro_m = {M['ferro'], M['ferro_escuro']}
@@ -57,7 +69,7 @@ def montar():
     # ferro fica fora do bake (barras finas dão ruído na textura): material liso, só pedra e musgo viram textura
     mf = bpy.data.materials.new("M_FerroForjado"); mf.use_nodes = True
     bs = mf.node_tree.nodes["Principled BSDF"]
-    bs.inputs["Base Color"].default_value = (0.045, 0.036, 0.034, 1); bs.inputs["Metallic"].default_value = 0.45; bs.inputs["Roughness"].default_value = 0.5
+    bs.inputs["Base Color"].default_value = (0.030, 0.030, 0.040, 1); bs.inputs["Metallic"].default_value = 0.25; bs.inputs["Roughness"].default_value = 0.62
     return M, op, of, mf
 
 
@@ -68,6 +80,9 @@ def fundir(op, of, mf):
     bpy.context.view_layer.objects.active = op
     bpy.ops.object.join()
     o = bpy.context.object; o.name = NOME
+    if "--pivo-pe" not in sys.argv:   # pivô no topo da rampa, no nível do patamar: encaixa na âncora Ancora_Escadaria_* do terreno
+        o.location = (0.0, -L.YT, -L.N * L.R)
+        bpy.ops.object.transform_apply(location=True)
     return o
 
 

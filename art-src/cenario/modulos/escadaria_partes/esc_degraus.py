@@ -35,3 +35,12 @@ def build(M):
         L.bloco(f"patamar{j}", xa + 0.006, xb - 0.006, L.YT - L.LAND, L.YT + 0.035, L.BAIXO, ztop + (0.004 if j == 1 else -0.004),
                 pedra, 400 + j, sub=(2, 3, 0), jit=0.007, lascas=3, tam=0.09, bis=0.014, tira=('-z', '-y', '-x', '+x'),
                 desgaste=0.012, gira=(-0.01, 0.015, -0.008)[j])
+    # contenção atrás do patamar (face de trás visível de fora): três fiadas de blocos grandes
+    par = M['parede']; r = L.rng(55)
+    xs = [-hw - L.WT, -hw / 2 + r.uniform(-.2, .2), hw / 3 + r.uniform(-.2, .2), hw + L.WT]
+    zs = [L.BAIXO, ztop * 0.38, ztop * 0.7, ztop]
+    for k in range(3):
+        for j in range(3):
+            jj = (j + k) % 3
+            L.bloco(f"conten{k}{j}", xs[j] + 0.004, xs[j + 1] - 0.004, L.YT - L.LAND - 0.34, L.YT - L.LAND + 0.01, zs[k] + 0.004, zs[k + 1] - 0.004,
+                    par, 500 + k * 3 + j, sub=(1, 1, 1), jit=0.01, lascas=3, tam=0.1, bis=0.016, tira=('-z',))
