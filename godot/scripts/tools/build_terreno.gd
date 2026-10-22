@@ -478,6 +478,14 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 			for p in [[-10.0, 91.0], [-10.0, 98.0]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1]), p[0], p[1], c.x, c.y, true)
 		"r07_elite_veloz":
 			for p in [[37.0, 88.0], [37.0, 102.0]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1]), p[0], p[1], c.x, c.y, true)
+	if T.SALAS[nome][0][0] == "b" and not nome.begins_with("s01"):
+		# quatro pilares v6 espelhados em torno dos eixos da sala, encostados nas paredes (mesmas linhas da grade)
+		var pq: Array = T.SALAS[nome][0]
+		for sx in [-1.0, 1.0]:
+			for sz in [-1.0, 1.0]:
+				var px: float = pq[1] + sx * (float(pq[3]) - 2.0); var pz: float = pq[2] + sz * float(pq[4]) * 0.62
+				if _livre(px, pz, 1.4):
+					_inst(grupo, "PilarParede_%d_%d" % [int(sx), int(sz)], "Pilar", px, pz, _yaw_para(px, pz, pq[1], pz)); _reservar(px, pz, 1.4)
 	if not ["r00_atrio", "r08_antecamara", "r09_arena"].has(nome):
 		var pr: Array = T.SALAS[nome][0]
 		for sx in [-1.0, 1.0]:
@@ -545,10 +553,6 @@ func _fila(g: Node3D, sala: String, a: Vector2, d: Vector2, fora: Vector2, s0: f
 		if not baixo and i % 4 == 0:
 			var ep := _ponto_lado(a, d, fora, sc, -0.9)
 			_inst(g, "Estandarte_%s_%d" % [pref, i], "Estandarte", ep.x, ep.y, _yaw_normal(fora))
-	if not baixo:
-		for j in range(2, n, 2):   # pilastra a cada 2 módulos, na junta
-			var pp := _ponto_lado(a, d, fora, s0 + j * w, -1.5)   # pilar v6 aprovado, encostado na parede
-			_inst(g, "Pilar_%s_%d" % [pref, j], "Pilar", pp.x, pp.y, _yaw_normal(fora)); _reservar(pp.x, pp.y, 1.4)
 
 func _lado(g: Node3D, sala: String, idx: int, a: Vector2, b: Vector2, cont: Array) -> void:
 	var d := b - a; var l := d.length(); d /= l
