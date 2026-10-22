@@ -68,3 +68,14 @@ Ferramentas de Blender não vieram do post: o ciclo é Blender com Python (`bpy`
 - **Método de modelagem (obrigatório para arte 3D)**: `art-src/cenario/METODO_MODELAGEM_3D.md` (PR 53), documentado a partir do estandarte v2.
 - **Régua interna**: o estandarte v2 (PR 48) foi aprovado pelo Will; é o modelo de método (3 agentes, textura e normal pintadas, 6 a 8 ciclos) e de qualidade para os demais objetos.
 - Referência de estilo apenas: Spell Brigade (nunca entra no build).
+
+## Mods do Claude Code (custo de tokens, conflitos, contexto)
+Mods rodam só no Claude Code local do Will (v2.1.287+, liberados na conta; teste com `claude plugin test`). Fontes baixadas em `D:\openclaude\_trabalho-claude\mods-video\`. Instalação (um chat novo carrega o mod):
+```
+claude plugin marketplace add nateherkai/claude-code-mods
+claude plugin install cache-keeper@nateherk-mods     # cache quente/frio, /board, /handoff
+claude plugin install collision-guard@nateherk-mods  # avisa antes de editar arquivo mexido por outro chat
+claude plugin install goal-meter@nateherk-mods       # progresso do /goal
+claude plugin install recording-mode@nateherk-mods   # mascara dados ao gravar (opcional)
+```
+Segunda leva, se precisar: `VedantAndhale/claude-pro-kit` (budget-guard, read-cap, reread-guard, compact-keeper, turn-budget) e `hamzafer/claude-code-mods` (context-bar, token-weather, usage-meter, session-saver). Estado da instalação: ver o relatório da thread "Mods instalados no Claude".
