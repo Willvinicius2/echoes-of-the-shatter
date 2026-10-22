@@ -1,0 +1,7 @@
+{
+  "name": "pranchas-cripta",
+  "private": true,
+  "type": "module",
+  "description": "Gera pranchas de varios angulos dos .glb da Cripta (three.js + Chromium headless).",
+  "dependencies": { "three": "0.170.0", "playwright": "1.56.1" }
+}

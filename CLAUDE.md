@@ -18,6 +18,7 @@ Motor: **Godot 4 (.NET, C#)** (decisão do dono em 20/10/2026; antes Unity 6.3, 
 - `docs/design/00_plano_existente.md` — plano de design aprovado (Plano Steam v2.0). Fonte de verdade de regras, conteúdo e escopo; as partes de pixel art e Godot ficaram como histórico.
 - `docs/requisitos-qa/01_plano_execucao.md` — equipe de agentes, fases e quem é dono de cada arquivo.
 - `docs/requisitos-qa/02_requisitos.md` — escopo do protótipo, RF-01..RF-65, RNF, critérios de aceite ([SC] = teste automático, os demais manuais no editor).
+- `docs/arte/24_direcao_visual_cripta.md` — direção visual da Cripta (escala, luz, andares); agente `diretor-visual`.
 - `docs/arte/03_design_system.md` + `docs/arte/03_design_tokens.json` — especificação de arte 3D, paleta, tokens (telas e componentes; o mapeamento para USS é histórico, no Godot vira Theme).
 - `docs/tecnico/04_arquitetura.md` — arquitetura do core, dados e contratos (partes de Unity/URP são histórico). `docs/tecnico/23_migracao_godot.md` — migração para o Godot: o que fica, o que sai, pastas e ordem.
 - `docs/design/05_conteudo.md`, `docs/tecnico/06_dados.md` — conteúdo do protótipo e formato das tabelas.

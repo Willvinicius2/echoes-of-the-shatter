@@ -1,0 +1,13 @@
+chave,pt-BR
+hud.estado.locomocao,Livre
+hud.estado.esquiva,Esquiva
+hud.estado.carregando,Carregando
+hud.estado.disparo,Disparo
+hud.estado.dano,Atingido
+hud.estado.morte,Caido
+hud.vida,Vida
+hud.carga,Carga
+hud.esquiva,Esquiva
+hud.camera.arqueiro,Camera: Arqueiro
+hud.camera.estudio,Camera: Estudo
+hud.dica,"WASD mover | Espaco esquivar | Mouse mirar | Botao esquerdo segurar e soltar atira | C camera | H dano de teste | R renascer"

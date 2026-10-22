@@ -1,0 +1,34 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/arqueiro/CriptaJogavel.cs" id="1_cj"]
+[ext_resource type="PackedScene" path="res://scenes/cripta/Cripta.tscn" id="2_cripta"]
+[ext_resource type="PackedScene" path="res://scenes/arqueiro/Arqueiro.tscn" id="3_arq"]
+[ext_resource type="Script" path="res://scripts/arqueiro/CameraArqueiro.cs" id="4_cam"]
+[ext_resource type="PackedScene" path="res://scenes/arqueiro/Dummy.tscn" id="5_dum"]
+[ext_resource type="Script" path="res://scripts/arqueiro/ArqueiroHud.cs" id="6_hud"]
+
+[node name="CriptaJogavel" type="Node3D"]
+script = ExtResource("1_cj")
+
+[node name="Cripta" parent="." instance=ExtResource("2_cripta")]
+
+[node name="Arqueiro" parent="." instance=ExtResource("3_arq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -3)
+
+[node name="CameraArqueiro" type="Camera3D" parent="."]
+current = true
+script = ExtResource("4_cam")
+
+[node name="Alvos" type="Node3D" parent="."]
+
+[node name="Dummy1" parent="Alvos" instance=ExtResource("5_dum")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -13)
+
+[node name="Dummy2" parent="Alvos" instance=ExtResource("5_dum")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, -10)
+
+[node name="Dummy3" parent="Alvos" instance=ExtResource("5_dum")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, -16)
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("6_hud")

@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://qhx6t1ix5iuu"
+
+[deps]
+
+files=["res://data/arqueiro/arqueiro.valor.translation", "res://data/arqueiro/arqueiro.unidade.translation", "res://data/arqueiro/arqueiro.nota.translation"]
+
+source_file="res://data/arqueiro/arqueiro.csv"
+dest_files=["res://data/arqueiro/arqueiro.valor.translation", "res://data/arqueiro/arqueiro.unidade.translation", "res://data/arqueiro/arqueiro.nota.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
