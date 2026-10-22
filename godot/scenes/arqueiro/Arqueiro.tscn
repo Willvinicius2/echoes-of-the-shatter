@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/arqueiro/ArqueiroController.cs" id="1_ctl"]
+[ext_resource type="Script" path="res://scripts/arqueiro/ArqueiroModular.cs" id="2_mod"]
+[ext_resource type="PackedScene" path="res://scenes/arqueiro/Arrow.tscn" id="3_arrow"]
+
+[sub_resource type="CapsuleShape3D" id="Capsule_heroi"]
+radius = 0.35
+height = 1.8
+
+[node name="Arqueiro" type="CharacterBody3D"]
+script = ExtResource("1_ctl")
+CenaFlecha = ExtResource("3_arrow")
+
+[node name="Colisao" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("Capsule_heroi")
+
+[node name="Modelo" type="Node3D" parent="."]
+
+[node name="Corpo" type="Node3D" parent="Modelo"]
+script = ExtResource("2_mod")
