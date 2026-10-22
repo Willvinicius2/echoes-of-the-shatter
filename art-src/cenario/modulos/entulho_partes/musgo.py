@@ -9,13 +9,13 @@ def _tufo(c, nw, r, M):
         v.co = Vector((v.co.x * rnd.uniform(0.6, 2.0), v.co.y * rnd.uniform(0.6, 2.0), v.co.z * 0.38 * rnd.uniform(0.6, 1.8)))
     me = bpy.data.meshes.new("m"); bm.to_mesh(me); bm.free()
     o = bpy.data.objects.new("m", me); bpy.context.collection.objects.link(o)
-    o.location = c + nw * 0.012 + Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), 0)) * r * 0.5
+    o.location = c - nw * 0.004 + Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), 0)) * r * 0.5
     o.rotation_euler = (rnd.uniform(-.2, .2), rnd.uniform(-.2, .2), rnd.uniform(0, 6.28))
     me.materials.append(M["musgo"])
     for p in me.polygons: p.use_smooth = False
     return o
 
-def construir(M, blocos, n=26):
+def construir(M, blocos, n=22):
     cand = []
     for o in blocos:
         mw = o.matrix_world
@@ -26,6 +26,6 @@ def construir(M, blocos, n=26):
     out = []
     for _ in range(n):
         c, nw, _a = rnd.choices(cand, weights=[a for *_x, a in cand])[0]
-        for _k in range(2):      # dois blobs por ponto: mancha de borda irregular
-            out.append(_tufo(c, nw, rnd.uniform(0.06, 0.15), M))
+        for _k in range(3):      # dois blobs por ponto: mancha de borda irregular
+            out.append(_tufo(c, nw, rnd.uniform(0.035, 0.085), M))
     return out
