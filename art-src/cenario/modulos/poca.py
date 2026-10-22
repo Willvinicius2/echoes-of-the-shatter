@@ -5,6 +5,7 @@ B alongada com rabo, C rim de dois lóbulos). Cada variante é um .glb com 3 mal
   - Agua: lâmina rasa de contorno irregular e nítido, borda com menisco; UV2 = (profundidade, opacidade) para o shader.
   - Anel: faixa de pedra molhada escurecendo o piso em volta (alfa degradê, falhando com ruído).
   - Limo: calotas de musgo junto à borda (M_Limo). Variantes: A pequena, B média alongada, C grande com ilha de pedra.
+  - (PEDRAS=1 gera também as pedrinhas, hoje um objeto separado)
   - Pedrinhas: seixos facetados e blocos da ilha (C) (material M_PedraEscura, o Godot troca pela pedra triplanar).
 Materiais por nome (o Godot troca): M_Agua -> cripta_agua.gdshader; M_AnelMolhado -> M_Cripta_AnelMolhado.tres."""
 import bpy, bmesh, math, os, random, sys
@@ -21,7 +22,7 @@ VAR = {
     "B": dict(seed=23, R=0.34, sx=1.7, sy=0.55, lobes=[(3.2, 0.45, 0.35), (0.2, 0.18, 0.5)], ring=0.24, n_peb=7, tongues=4, musgo=2, ilha=0),  # média alongada
     "C": dict(seed=37, R=0.62, sx=1.12, sy=0.9, lobes=[(1.1, 0.4, 0.45), (4.3, 0.35, 0.5)], ring=0.32, n_peb=8, tongues=5, musgo=3, ilha=1),   # grande com ilha de pedra
 }
-Z_BORDA, Z_MENISCO, Z_AGUA = 0.003, 0.017, 0.013     # perfil da lâmina (m)
+Z_BORDA, Z_MENISCO, Z_AGUA = 0.003, 0.0145, 0.013     # perfil da lâmina (m)
 Z_ANEL = 0.0015
 
 def seno_periodico(seed, n, amp_ini, decai):
@@ -70,11 +71,18 @@ def tri_fan(bm, aneis, cor):
                 face = bm.faces.new(f)
                 for lp in face.loops: lp[lay] = cor[lp.vert.index]
 
-def parte_agua(v, M, f, S=128, N=12):
+def parte_agua(v, M, f, S=160, N=26):
     bm = bmesh.new(); bm.loops.layers.color.new("Col"); cor = {}
     rnd = random.Random(v["seed"] + 100); fase = [rnd.uniform(0, 6.28) for _ in range(4)]
     def vert(x, y, z, depth, alpha):
         vv = bm.verts.new((x, y, z)); bm.verts.index_update(); cor[vv.index] = (depth, 0.0, 0.0, alpha); return vv
+    rr = random.Random(v["seed"] + 150); gotas = [(rr.uniform(-0.45, 0.45) * v["R"] * v["sx"], rr.uniform(-0.4, 0.4) * v["R"] * v["sy"], rr.uniform(0.04, 0.12)) for _ in range(1 + (v["seed"] % 3))]
+    def onda(x, y):
+        z = 0.0009 * math.sin(x * 33 + fase[0] + 1.7 * math.sin(y * 17)) + 0.0007 * math.sin(y * 41 + fase[1] + x * 11)      # ondulação rasa e cruzada
+        for gx, gy, r0 in gotas:                                                                                        # anéis de gota que se abrem
+            d = math.hypot(x - gx, y - gy)
+            for q in range(3): z += 0.0022 * math.exp(-((d - r0 * (1 + q * 0.55)) / 0.012) ** 2) * math.cos((d - r0) * 150) * (0.8 ** q)
+        return z
     c = vert(0, 0, Z_AGUA, 1.0, 1.0); aneis = [[c]]
     for i in range(1, N + 1):
         t = i / N; anel = []
@@ -82,7 +90,7 @@ def parte_agua(v, M, f, S=128, N=12):
             th = 6.2832 * s / S; p = f(th)
             if t >= 0.999: z, d, al = Z_BORDA, 0.0, 0.0                         # pé do menisco: some no piso
             else:
-                z = Z_AGUA if t < 0.92 else Z_MENISCO + (Z_BORDA - Z_MENISCO) * ((t - 0.92) / 0.08) ** 2
+                z = Z_AGUA + onda(p.x * t, p.y * t) * min(1, (0.92 - t) * 12 + 0.0) if t < 0.92 else Z_MENISCO + (Z_BORDA - Z_MENISCO) * ((t - 0.92) / 0.08) ** 2
                 prof = (1 - t) ** 0.7 + 0.12 * math.sin(th * 5 + fase[2]) * math.sin(t * 6 + fase[3])
                 d, al = max(0.0, min(1.0, prof)), 1.0 if t < 0.97 else 0.85
             anel.append(vert(p.x * t, p.y * t, z, d, al))
@@ -100,7 +108,7 @@ def parte_agua(v, M, f, S=128, N=12):
     for p in me.polygons: p.use_smooth = True
     o = bpy.data.objects.new("Agua", me); bpy.context.collection.objects.link(o); me.materials.append(M["agua"]); return o
 
-def parte_anel(v, M, f, S=128, N=9):
+def parte_anel(v, M, f, S=180, N=12):
     bm = bmesh.new(); bm.loops.layers.color.new("Col"); cor = {}
     sem = v["seed"] + 200
     def vert(x, y, z, a):
@@ -110,15 +118,15 @@ def parte_anel(v, M, f, S=128, N=9):
         u = j / N; anel = []
         for s in range(S):
             th = 6.2832 * s / S; p = f(th)
-            alcance = v["ring"] * (0.55 + 0.45 * (ruido_t(sem, th, 6) * 0.5 + 0.5) ** 1.2 + 0.25 * ruido_t(sem + 3, th * 3.1, 4))
+            alcance = v["ring"] * (0.45 + 0.55 * (ruido_t(sem, th, 6) * 0.5 + 0.5) ** 1.4 + 0.3 * ruido_t(sem + 3, th * 3.1, 4) + 0.12 * ruido_t(sem + 9, th * 9, 5))
             for k in range(v["tongues"]):
                 ang = random.Random(sem + 50 + k).uniform(0, 6.2832); d = math.atan2(math.sin(th - ang), math.cos(th - ang))
                 alcance += v["ring"] * 1.9 * math.exp(-(d / 0.11) ** 2)      # escorrido que segue a junta das lajes
             alcance = max(0.05, alcance)
             n = p.normalized() if p.length > 1e-6 else Vector((1, 0)); lado = Vector((n.x / v["sx"], n.y / v["sy"])).normalized()
             q = p * 0.97 + lado * (alcance * u)
-            fur = 0.5 + 0.5 * math.sin(th * 23 + u * 7 + sem) * math.sin(th * 11 - u * 4)     # falhas na mancha: pedra seca aparecendo
-            a = 0.92 * (1 - u) ** 1.35 * (0.72 + 0.28 * fur)
+            fur = 0.5 + 0.5 * math.sin(th * 23 + u * 7 + sem) * math.sin(th * 11 - u * 4) * (0.6 + 0.4 * math.sin(th * 47 + u * 15))     # falhas na mancha: pedra seca aparecendo
+            a = (0.55 * (1 - u) ** 0.8 + 0.4 * (1 - u) ** 2.6) * (0.55 + 0.45 * fur)
             if j == N: a = 0.0
             anel.append(vert(q.x, q.y, Z_ANEL, a))
         aneis.append(anel)
@@ -187,13 +195,13 @@ def parte_limo(v, M, f):
     import mathutils
     for k in range(v["musgo"]):
         th = rnd.uniform(0, 6.2832); p = f(th)
-        for j in range(rnd.randint(8, 13)):       # tufo = muitas calotas apertadas ao longo da borda
+        for j in range(rnd.randint(12, 20)):       # tufo = muitas calotas apertadas ao longo da borda
             t = rnd.uniform(0.97, 1.06); a2 = th + rnd.uniform(-0.28, 0.28); q = f(a2) * t
-            r2 = rnd.uniform(0.012, 0.034) * (0.8 + v["R"]); alt = rnd.uniform(0.25, 0.6) * r2 * 1.5
+            r2 = rnd.choice((0.008, 0.011, 0.016, 0.024, 0.036)) * (0.8 + v["R"]); alt = rnd.uniform(0.25, 0.6) * r2 * 1.2; alongar = rnd.choice((1, 1, 2.2)); tg = Vector((-math.sin(a2), math.cos(a2)))
             g = bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1, matrix=mathutils.Matrix.Translation((q.x, q.y, 0.0)))
             for vv in g["verts"]:
                 dx, dy, dz = vv.co.x - q.x, vv.co.y - q.y, vv.co.z
-                vv.co = Vector((q.x + dx * r2 * rnd.uniform(0.85, 1.2), q.y + dy * r2 * rnd.uniform(0.85, 1.2), max(dz, 0.0) * alt))
+                ex = (dx * tg.x + dy * tg.y) * alongar; ey = -dx * tg.y + dy * tg.x; vv.co = Vector((q.x + (ex * tg.x - ey * tg.y) * r2 * rnd.uniform(0.85, 1.2), q.y + (ex * tg.y + ey * tg.x) * r2 * rnd.uniform(0.85, 1.2), max(dz, 0.0) * alt))
             tons.append((g["verts"], rnd.random() < 0.4))
     me = bpy.data.meshes.new("Limo"); bm.to_mesh(me); bm.free()
     me.materials.append(M["limo"]); me.materials.append(M["limo2"])
@@ -206,11 +214,12 @@ def parte_limo(v, M, f):
 def materiais():
     return dict(agua=mat("M_Agua", (0.012, 0.02, 0.04), 0.0, alpha=0.88, vcol=True),
                 anel=mat("M_AnelMolhado", (0.02, 0.025, 0.035), 0.12, alpha=1.0, vcol=True),
-                pedra=mat("M_PedraEscura", (0.034, 0.036, 0.048), 0.5), limo=mat("M_Limo", (0.008, 0.016, 0.007), 0.92), limo2=mat("M_LimoClaro", (0.022, 0.034, 0.012), 0.88))
+                pedra=mat("M_PedraEscura", (0.034, 0.036, 0.048), 0.5), limo=mat("M_Limo", (0.006, 0.012, 0.006), 0.92), limo2=mat("M_LimoClaro", (0.014, 0.024, 0.01), 0.88))
 
 def construir(nome):
     v = VAR[nome]; M = materiais(); f = contorno(v)
-    partes = [parte_anel(v, M, f), parte_agua(v, M, f), parte_pedrinhas(v, M, f), parte_limo(v, M, f)]
+    partes = [parte_anel(v, M, f), parte_agua(v, M, f), parte_limo(v, M, f)]
+    if os.environ.get("PEDRAS"): partes.append(parte_pedrinhas(v, M, f))      # as pedras serão um objeto separado
     return v, partes
 
 def exportar(nome, partes):
