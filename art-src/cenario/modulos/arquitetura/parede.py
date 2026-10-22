@@ -105,6 +105,8 @@ def crack(L, m_host, pts, width, depth, seed):
 
 def build(L):
     r = random.Random(2026)
+    # tons mais escuros e frios (mesmos nomes de material; o Godot troca pela pedra triplanar)
+    L.mat("M_PedraEscura", (0.125, 0.13, 0.19), 0.0, 0.9); L.mat("M_PedraClara", (0.19, 0.195, 0.27), 0.0, 0.85)
     E, C, F = L.stone("escura"), L.stone("clara"), L.stone("ferro")
     def pick(p=0.16): return C if r.random() < p else E
 
@@ -145,12 +147,12 @@ def build(L):
                 ga = 0.014 if i else 0.0; gb = 0.014 if i < len(xs) - 1 else 0.0
                 zj0 = zb + 0.008 + r.uniform(0, 0.012); zj1 = zt - 0.008 - r.uniform(0, 0.012)
                 if front:
-                    fy = FACE + r.uniform(-0.035, 0.05)
+                    fy = FACE + r.choice((-0.11, -0.07, -0.03, 0.0, 0.03, 0.07)) + r.uniform(-0.015, 0.015)
                     o = rblock(L, pick(), xa + ga, xb - gb, 0.0, fy, zj0, zj1, r.randint(1, 10 ** 6),
                                jit=0.008, bulge=0.016, bev=0.022, nchip=r.choice((1, 2, 2, 3)), csize=r.uniform(0.09, 0.15), front=True)
                     row_front.append((o, xa + ga, xb - gb, zj0, zj1, fy))
                 else:
-                    fy = BACK - r.uniform(0, 0.03)
+                    fy = BACK + r.choice((0.07, 0.03, 0.0, -0.03, -0.06)) + r.uniform(-0.01, 0.01)
                     rblock(L, pick(0.1), xa + ga, xb - gb, fy, 0.0, zj0, zj1, r.randint(1, 10 ** 6),
                            jit=0.005, bulge=0.008, bev=0.016, nchip=r.choice((0, 1)), csize=0.09, front=False, cuts=2)
         fiadas.append(row_front)
@@ -180,7 +182,7 @@ def build(L):
     if not _manifold_ok(o, v0):
         bad = o.data; o.data = backup; bpy.data.meshes.remove(bad)
     else: bpy.data.meshes.remove(backup)
-    cx = xb - 0.35
+    cx = max(-0.85, min(0.85, xb - 0.35))
     # pedaços caídos sobre o degrau do rodapé (z=0.45)
     for k, (dx, w, h, yv, rz, tx) in enumerate(((0.0, 0.46, 0.20, 0.40, 0.35, 0.10), (0.42, 0.20, 0.12, 0.43, -0.7, -0.15),
                                                   (-0.36, 0.16, 0.11, 0.44, 0.3, 0.2), (0.22, 0.12, 0.08, 0.47, 1.0, 0.1),
@@ -210,7 +212,7 @@ def build(L):
     scale = (4.05 - zc) / sum(segs)
     for i, h in enumerate(segs):
         h *= scale
-        rblock(L, C if i % 5 != 2 else E, px - pw / 2 + r.uniform(-0.01, 0.01), px + pw / 2 + r.uniform(-0.01, 0.01), 0.10, 0.535 + r.uniform(-0.01, 0.015),
+        rblock(L, C if i % 5 != 2 else E, px - pw / 2 + r.uniform(-0.01, 0.01), px + pw / 2 + r.uniform(-0.01, 0.01), 0.10, 0.555 + r.uniform(-0.01, 0.01),
                zc + 0.008, zc + h - 0.008, 400 + i, jit=0.006, bulge=0.014, bev=0.02, nchip=2, csize=0.08, front=True, cuts=2)
         zc += h
     # capitel em três camadas
@@ -242,6 +244,13 @@ def build(L):
         L.box((mx, 0.43, 4.93), (0.34, 0.24, 0.12), C, bev=0.014)
         L.box((mx, 0.45, 4.99), (0.26, 0.22, 0.10), C, bev=0.014)
         L.box((mx, 0.46, 5.05), (0.18, 0.20, 0.10), C, bev=0.014)
+
+    # boolean deixa um slot vazio (cinza padrão): normaliza para um único material por objeto
+    for o in L.objs:
+        ms = [m for m in o.data.materials if m]
+        if not ms: continue
+        o.data.materials.clear(); o.data.materials.append(ms[-1])
+        for p in o.data.polygons: p.material_index = 0
 
     # ---------------------------------------------------------------- colisão
     L.col_box((0, 0, 2.7), (3.0, 1.2, 5.4))

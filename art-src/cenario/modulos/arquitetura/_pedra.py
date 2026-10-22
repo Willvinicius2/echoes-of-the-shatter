@@ -91,3 +91,41 @@ def diamond(L, name, c, nx, ny, half=0.035, thick=0.012, m=None, bev=0.003):
         j = (i + 1) % 4; bm.faces.new((back[i], back[j], front[j], front[i]))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return finish(L, name, bm, m, bev, 1)
+
+def fiada(L, hx, hy, z0, h, prof, wmin, wmax, seed, m, mdark=None, bev=0.016, chip=0.45, core=True):
+    """Anel de blocos de pedra (frente +Y e laterais; atrás encosta na parede): larguras variadas, desalinho, bisel e lascas."""
+    import random
+    r = random.Random(seed)
+    objs = []
+    def bloco(cx, cy, sx, sy, sz):
+        sx -= 0.012; sy -= 0.0
+        cz = z0 + sz / 2 + r.uniform(0, 0.004)
+        o = L.box((cx + r.uniform(-0.004, 0.004), cy + r.uniform(-0.008, 0.008), cz), (sx, sy, sz * r.uniform(0.97, 1.0)),
+                  mdark if (mdark and r.random() < 0.15) else m, rot=(0, 0, r.uniform(-0.01, 0.01)), bev=bev, seg=2)
+        if r.random() < chip:
+            L.chip_corners(o, r.choice((1, 2)), 0.3 * min(sx, sy, sz) * r.uniform(0.7, 1.1), r.randint(0, 9999))
+        objs.append(o)
+    # frente
+    u = -hx
+    while u < hx - 0.05:
+        w = min(r.uniform(wmin, wmax), hx - u)
+        if hx - u - w < wmin * 0.5: w = hx - u
+        bloco(u + w / 2, hy - prof / 2, w, prof, h); u += w
+    # laterais (da frente até a parede)
+    for sx in (-1, 1):
+        v = hy - prof
+        while v > -hy + 0.05:
+            w = min(r.uniform(wmin, wmax), v + hy)
+            if v - w < -hy + wmin * 0.5: w = v + hy
+            bloco(sx * (hx - prof / 2), v - w / 2, prof, w, h); v -= w
+    if core:
+        L.box((0, 0, z0 + h / 2), (2 * (hx - prof * 0.6), 2 * (hy - prof * 0.6), h), mdark or m, bev=0)
+    return objs
+
+def garantir_material(L, fallback):
+    """Boolean/bevel podem perder o slot: todo objeto sai com exatamente 1 material (o que tinha, senão fallback)."""
+    for o in L.objs:
+        ms = [m for m in o.data.materials if m]
+        m = ms[0] if ms else fallback
+        o.data.materials.clear(); o.data.materials.append(m)
+        for p in o.data.polygons: p.material_index = 0

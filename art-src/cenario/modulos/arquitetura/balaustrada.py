@@ -48,6 +48,10 @@ def build(L):
         pr = prof
         if i == 5:   # quebrado: perde o topo, ponta irregular
             pr = prof[:6] + [(0.075, 0.55), (0.04, 0.585)]
+        elif i == 4: pr = prof[:7] + [(0.05, 0.60), (0.03, 0.63)]   # trinca no alto
+        elif i == 6: pr = prof[:5] + [(0.07, 0.50), (0.035, 0.54)]  # só o bojo restou
+        elif i == 3: pr = [(rr, z * 0.97) for rr, z in prof]
+        elif i == 7: pr = [(rr, z * 0.985) for rr, z in prof]
         o = lathe(L, f"bal{i}", pr, (x, 0, 0), sd, 12)
         o.rotation_euler = (0, 0, r.uniform(0, 1))
         bpy.context.view_layer.objects.active = o
@@ -73,9 +77,13 @@ def build(L):
     cbox(L, (qx, 0, 0.945), (0.5, 0.5, 0.09), sc, (5, 0.09, 33), bev=0.013)
     cbox(L, (qx, 0, 1.01), (0.38, 0.38, 0.05), sd, (3, 0.08, 34), bev=0.01)
     lathe(L, "colo", [(0.0001, 1.03), (0.12, 1.035), (0.08, 1.055), (0.07, 1.07), (0.0001, 1.07)], (qx, 0, 0), sc, 16)
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.12, segments=36, ring_count=22, location=(qx, 0, 1.08))
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.12, segments=36, ring_count=22, location=(0, 0, 0))
     sp = bpy.context.object
-    for p in sp.data.polygons: p.use_smooth = True
     L.add(sp, sc)
+    L.chip_corners(sp, 4, 0.1, 5)   # lascas reais na esfera
+    cut(sp, (0.04, 0.09, 0.06), (0.015, 0.1, 0.012), rot=(0.5, 0.4, 0.9))   # rachadura
+    cut(sp, (-0.05, 0.1, 0.0), (0.012, 0.08, 0.01), rot=(0.2, 0.0, 0.5))
+    sp.location = (qx, 0, 1.08)
+    for p in sp.data.polygons: p.use_smooth = True
     bpy.ops.mesh.primitive_torus_add(major_radius=0.1205, minor_radius=0.007, major_segments=36, minor_segments=8, location=(qx, 0, 1.08)); L.add(bpy.context.object, sd)
     L.col_box((0, 0, 0.6), (W, D, 1.2))

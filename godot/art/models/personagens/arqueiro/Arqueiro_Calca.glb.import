@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://dq2e6wdib28ed"
-path="res://.godot/imported/Arqueiro_Calca.glb-a100f0f9b2f10963933277fd2937f09b.scn"
+valid=false
 
 [deps]
 
 source_file="res://art/models/personagens/arqueiro/Arqueiro_Calca.glb"
-dest_files=["res://.godot/imported/Arqueiro_Calca.glb-a100f0f9b2f10963933277fd2937f09b.scn"]
 
 [params]
 

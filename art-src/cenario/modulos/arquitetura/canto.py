@@ -46,13 +46,13 @@ def _chip(L, o, pos, size, seed):
 
 def build(L):
     R = L.rng(11)
-    esc, cla = L.stone('escura'), L.stone('clara')
+    esc = L.stone('escura'); cla = esc   # mesmo tom azul-violeta do nicho/arco (a pedra clara lia marrom sob o sol quente)
     H = L.WALL_H; P = L.PLINTH; CZ = L.CORNICE_Z; h = L.WALL_T / 2   # 0.6
     S = h - INSET   # face da sala do fuste
     GAP = 0.014
     quoins = []
 
-    def blk(x0, x1, y0, y1, z0, z1, m, jit=0.012, bev=0.018, seed_out=True):
+    def blk(x0, x1, y0, y1, z0, z1, m, jit=0.012, bev=0.024, seed_out=True):
         # deslocamentos aleatórios nas faces expostas (+X,+Y), pequenas variações de altura
         dx = R.uniform(0, jit) if x1 >= S - 0.001 else 0
         dy = R.uniform(0, jit) if y1 >= S - 0.001 else 0
@@ -64,13 +64,11 @@ def build(L):
         return o
 
     # ---------- rodapé escalonado (3 degraus: 1,2 / 1,16 / fuste recuado)
-    blk(-h, h, -h, h, 0, 0.20, cla, jit=0, bev=0.03)
+    plint = blk(-h, h, -h, h, 0, 0.20, cla, jit=0, bev=0.03)
     blk(-h, h - 0.025, -h, h - 0.025, 0.20, 0.34, esc, jit=0.004, bev=0.025)
     blk(-h, h - 0.04, -h, h - 0.04, 0.34, P - 0.05, cla, jit=0.004, bev=0.02)
     blk(-h, S + 0.015, -h, S + 0.015, P - 0.05, P, esc, jit=0, bev=0.012)  # filete de arremate
     # lajes de rodapé partidas: junta vertical no degrau baixo (fenda estreita)
-    L.box((0.15, h - 0.01, 0.10), (0.012, 0.03, 0.20), L.stone('ferro'), bev=0)
-    L.box((h - 0.01, -0.2, 0.10), (0.03, 0.012, 0.20), L.stone('ferro'), bev=0)
 
     # ---------- fuste: fiadas com quinas alternadas
     z = P
@@ -83,7 +81,7 @@ def build(L):
     for k, (z0, z1) in enumerate(alturas):
         zz0, zz1 = z0 + GAP / 2, z1 - GAP / 2
         cut = R.uniform(-0.12, 0.10)
-        m_q = cla if R.random() < 0.7 else esc
+        m_q = esc
         if k % 2 == 0:
             # bloco longo ao longo de X na face +Y (quina), restante em duas peças atrás
             yc = S - R.uniform(0.50, 0.58)
@@ -114,49 +112,48 @@ def build(L):
         t = -h + 0.1 + i * 0.165
         L.box((t, h - 0.025, cz0 + 0.235), (0.10, 0.05, 0.10 + R.uniform(0, 0.02)), cla, bev=0.01)
         L.box((h - 0.025, t, cz0 + 0.235), (0.05, 0.10, 0.10 + R.uniform(0, 0.02)), cla, bev=0.01)
-    blk(-h, h, -h, h, cz0 + 0.30, cz0 + 0.46, cla, jit=0.0, bev=0.025)
+    corn = blk(-h, h, -h, h, cz0 + 0.30, cz0 + 0.46, cla, jit=0.0, bev=0.025)
     blk(-h, h - 0.02, -h, h - 0.02, cz0 + 0.46, cz0 + 0.56, esc, jit=0.003, bev=0.02)
     blk(-h, h, -h, h, cz0 + 0.56, H, esc, jit=0.0, bev=0.03)
     L.box((0, 0, H - 0.01), (1.2, 1.2, 0.02), esc, bev=0)
 
-    # ---------- musgo/sujeira baixa: calotas escuras na base
-    for i in range(6):
-        t = R.uniform(-0.45, 0.45)
-        L.box((t, h - 0.015, 0.45 + R.uniform(0, 0.05)), (R.uniform(0.1, 0.22), 0.03, R.uniform(0.03, 0.06)), L.stone('ferro'), bev=0.006)
-
-    # ---------- rachaduras: sulcos finos em zigue-zague nas faces da sala
-    ferro = L.stone('ferro')
-    def crack(axis, x0, z0, n, seed):
-        r = L.rng(seed); x, zz = x0, z0
+    # ---------- rachaduras: sulcos reais (boolean fino e raso) nas pedras da face da sala
+    blocks = [o for o in L.objs if o.dimensions.z > 0.2 and o.dimensions.z < 0.7]
+    def groove(axis, u0, z0, n, seed):
+        r = L.rng(seed); u, zz = u0, z0
         for i in range(n):
-            nx = x + r.uniform(-0.06, 0.06); nz = zz + r.uniform(0.07, 0.15)
-            ang = math.atan2(nx - x, nz - zz); ln = math.hypot(nx - x, nz - zz)
-            if axis == 'y':
-                L.box(((x + nx) / 2, S + 0.012, (zz + nz) / 2), (0.014, 0.012, ln), ferro, rot=(0, -ang, 0), bev=0)
-            else:
-                L.box((S + 0.012, (x + nx) / 2, (zz + nz) / 2), (0.012, 0.014, ln), ferro, rot=(-ang, 0, 0), bev=0)
-            x, zz = nx, nz
-    crack('y', -0.15, 1.2, 9, 3)
-    crack('x', 0.2, 2.6, 8, 5)
-    crack('y', 0.3, 3.3, 6, 9)
+            nu = u + r.uniform(-0.05, 0.05); nz = zz + r.uniform(0.06, 0.13)
+            ang = math.atan2(nu - u, nz - zz); ln = math.hypot(nu - u, nz - zz) + 0.012
+            mu, mz = (u + nu) / 2, (zz + nz) / 2
+            w = 0.010 if i % 3 else 0.007
+            if axis == 'y': loc, sz, rot = (mu, S, mz), (w, 0.04, ln), (0, ang, 0)
+            else: loc, sz, rot = (S, mu, mz), (0.04, w, ln), (-ang, 0, 0)
+            bpy.ops.mesh.primitive_cube_add(size=1, location=loc, rotation=rot)
+            cut = bpy.context.object; cut.scale = sz; bpy.ops.object.transform_apply(scale=True)
+            for o in blocks:
+                bb = [o.matrix_world @ Vector(c) for c in o.bound_box]
+                if all(min(v[k] for v in bb) - 0.05 < loc[k] < max(v[k] for v in bb) + 0.05 for k in range(3)) and max(v.y if axis == 'y' else v.x for v in bb) > S - 0.03:
+                    md = o.modifiers.new("g", 'BOOLEAN'); md.operation = 'DIFFERENCE'; md.object = cut; md.solver = 'EXACT'
+                    bpy.context.view_layer.objects.active = o; bpy.ops.object.modifier_apply(modifier="g")
+            bpy.data.objects.remove(cut, do_unlink=True)
+            u, zz = nu, nz
+    groove('y', -0.15, 1.2, 9, 3); groove('x', 0.2, 2.6, 8, 5); groove('y', 0.3, 3.3, 6, 9)
+    groove('x', -0.25, 0.7, 5, 12); groove('y', 0.1, 4.0, 4, 14)
 
     # ---------- lascas na quina externa (+X,+Y): vertical, topo e base das pedras escolhidas
     for q, k in quoins:
-        if k in (1, 2, 4, 6, 9):
+        if k in (0, 1, 2, 3, 4, 5, 6, 8, 9, 10):
             z0, z1 = alturas[k]
             for attempt in range(4):
                 bak = q.data.copy(); v0 = _vol(q)
                 pos = (S, S, (z1 + 0.02) if k % 2 else (z0 - 0.02))
-                _chip(L, q, pos, 0.42 if k != 4 else 0.5, 40 + k + attempt * 7)
+                _chip(L, q, pos, 0.34 + 0.05 * (k % 3), 40 + k + attempt * 7)
+                L.bevel_obj(q, 0.01, 1, 40)
                 if _bm_check(q) and 0.6 * v0 < _vol(q) < 0.99 * v0: break
                 q.data = bak
-    # cornija: lasca no canto superior frontal
-    for o in list(L.objs):
-        if abs(o.location.z - (cz0 + 0.38)) < 0.1 and o.dimensions.x > 1.1 and o.dimensions.y > 1.1:
-            _chip(L, o, (h, h, cz0 + 0.46), 0.3, 77); break
-
-
-    for o in L.objs:
-        bb = [o.matrix_world @ Vector(c) for c in o.bound_box]
-        if max(v.x for v in bb) > 0.61 or max(v.y for v in bb) > 0.61: print("OVER", o.name, [round(c,3) for c in o.dimensions], [round(c,2) for c in (sum(v.z for v in bb)/8,)], [round(max(v.x for v in bb), 3), round(max(v.y for v in bb), 3)])
+    # cornija e rodapé: lascas nas quinas
+    for obj, pos, sz, sd in ((corn, (h, h, cz0 + 0.46), 0.3, 77), (corn, (-h + 0.02, h, cz0 + 0.30), 0.22, 78), (plint, (h, h, 0.2), 0.3, 79)):
+        bak = obj.data.copy(); v0 = _vol(obj)
+        _chip(L, obj, pos, sz, sd); L.bevel_obj(obj, 0.008, 1, 40)
+        if not (_bm_check(obj) and 0.6 * v0 < _vol(obj) < 0.995 * v0): obj.data = bak
     L.col_box((0, 0, H / 2), (1.2, 1.2, H))

@@ -31,6 +31,7 @@ func _init() -> void:
 	_zonas_proibidas()
 	_pracas(props)
 	for nome in T.SALAS: _decorar_sala(props, nome)
+	_arquitetura(props)
 	_corredores(props)
 	_pocas(props)
 	_marcos(raiz)
@@ -159,7 +160,7 @@ func _glb(nome: String) -> PackedScene:
 
 # escala uniforme de montagem (guia docs/arte/24_direcao_visual_cripta.md, seção 2) e raio da base para assentar no chão
 const ESCALAS := {"Pilar": 0.70, "Braseiro": 0.75, "Estandarte": 0.90, "Estatua": 0.80, "ColunaCorrente": 0.90, "Entulho": 0.60, "Tapete": 0.65, "Velas": 1.0, "Piso": 1.0, "Tapete_Grande": 1.0}
-const RAIOS := {"Pilar": 1.2, "Braseiro": 0.6, "Estandarte": 0.5, "Estatua": 0.7, "ColunaCorrente": 1.2, "Entulho": 0.8, "Velas": 0.3}
+const RAIOS := {"Parede": 1.0, "MuroBaixo": 0.6, "Nicho": 1.0, "Canto": 0.6, "Pilastra": 0.5, "Pedestal": 0.3, "Altar": 1.3, "Arco": 1.0, "Pilar": 1.2, "Braseiro": 0.6, "Estandarte": 0.5, "Estatua": 0.7, "ColunaCorrente": 1.2, "Entulho": 0.8, "Velas": 0.3}
 
 func _base_y(x: float, z: float, r: float) -> float:
 	var y := T.chao(x, z)
@@ -274,7 +275,7 @@ func _zonas_proibidas() -> void:
 
 # colisão simples por AABB da malha: cilindro (pilar, braseiro, velas) ou caixa. Camada Mundo (1).
 # estandartes só entram quando houver parede de arquitetura para pendurar (hoje ficam no chão da rocha e parecem lixo)
-const COM_PAREDE := false
+const COM_PAREDE := true
 const COLISAO := {"Pilar": "cil", "Braseiro": "cil", "Velas": "cil", "ColunaCorrente": "caixa", "Estatua": "caixa", "Entulho": "caixa", "Estandarte": "caixa"}
 
 func _aabb(n: Node, inv: Transform3D, acc: Array) -> void:
@@ -382,9 +383,9 @@ func _entulho_cantos(grupo: Node3D, nome: String, quantos: int) -> void:
 		_inst(grupo, "Entulho_%d" % n, "Entulho", q.x, q.y, rng.randf() * TAU); _reservar(q.x, q.y, 1.0); n += 1
 
 # estátua em nicho; as velas só existem aqui, em volta da base (motivo: oferenda)
-func _estatua(grupo: Node3D, nome: String, q: Vector2, centro: Vector2) -> void:
-	if not _livre(q.x, q.y, 1.1): return
-	_inst(grupo, nome, "Estatua", q.x, q.y, _yaw_para(q.x, q.y, centro.x, centro.y)); _reservar(q.x, q.y, 1.1)
+func _estatua(grupo: Node3D, nome: String, q: Vector2, centro: Vector2, y_abs: float = NAN) -> void:
+	if is_nan(y_abs) and not _livre(q.x, q.y, 1.1): return
+	_inst(grupo, nome, "Estatua", q.x, q.y, _yaw_para(q.x, q.y, centro.x, centro.y), 0.0, y_abs); _reservar(q.x, q.y, 1.1)
 	var f := (centro - q).normalized(); var lado := Vector2(-f.y, f.x)
 	for k in 3:
 		var v := q + f * (1.6 + 0.15 * (k % 2)) + lado * (k - 1) * 0.95
@@ -406,7 +407,9 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 	if nome.begins_with("s01"):
 		# nicho: estátua no altar com as velas, braseiros nos quatro cantos do espaço
 		var qe = _ponto_parede(nome, PI * 1.5, 2.6)
-		if qe != null: _estatua(grupo, "Estatua", qe, c)
+		if qe != null:
+			_inst(grupo, "Altar", "Altar", qe.x, qe.y, _yaw_para(qe.x, qe.y, c.x, c.y)); _reservar(qe.x, qe.y, 1.8)
+			_estatua(grupo, "Estatua", qe, c, T.chao(qe.x, qe.y) + 0.8)
 		for k in 4:
 			var q = _ponto_parede(nome, k * TAU / 4.0 + 0.6, 2.4)
 			if q != null: _braseiro_se(grupo, "Braseiro_%d" % k, q.x, q.y)
@@ -424,13 +427,13 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 			for s in [-1.0, 1.0]:
 				for dz in [-4.5, 4.5]: _braseiro_se(grupo, "BraseiroTapete_%d_%d" % [int(s), int(dz)], 5.9 * s, 12.0 + dz)
 			_inst(grupo, "ColunaCorrente_Atrio", "ColunaCorrente", -8.8, 22.3, _yaw_para(-8.8, 22.3, 0.0, 10.0)); _reservar(-8.8, 22.3, 2.7)
-			var q = _ponto_parede(nome, PI, 1.8)
-			if q != null: _estatua(grupo, "Estatua_Atrio", q, c)
+			_nicho(grupo, nome, PI, "Estatua_Atrio")
+			_nicho(grupo, nome, PI * 0.5, "Estatua_Atrio_N")
 		"r08_antecamara":
 			for s in [-1.0, 1.0]:
 				for dz in [-5.5, 5.5]: _braseiro_se(grupo, "BraseiroTapete_%d_%d" % [int(s), int(dz)], 76.0 + 5.9 * s, 95.0 + dz)
-			var q = _ponto_parede(nome, 0.0, 1.8)
-			if q != null: _estatua(grupo, "Estatua_Antecamara", q, c)
+			_nicho(grupo, nome, 0.0, "Estatua_Antecamara")
+			_nicho(grupo, nome, PI, "Estatua_Antecamara_O")
 		"r09_arena":
 			_inst(grupo, "ColunaCorrente_Arena", "ColunaCorrente", 76.0, 156.0, _yaw_para(76.0, 156.0, 76.0, 139.0)); _reservar(76.0, 156.0, 2.8)
 			for k in 8:   # anel de cobertura: pilares simétricos com chão aberto entre eles
@@ -452,15 +455,137 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 	for k in n:
 		var ang := fase + k * TAU / n + rng.randf_range(-0.07, 0.07)
 		if k % 2 == 0:
-			var q = _ponto_parede(nome, ang, 1.7)
-			if q != null and nome != "r09_arena": _pilar_se(grupo, "Pilar_%d" % k, q.x, q.y, c.x, c.y)
+			var q = _ponto_parede(nome, ang, 0.2)
+			if q != null and nome != "r09_arena": _pilastra_se(grupo, "Pilastra_%d" % k, q.x, q.y)
 		else:
 			var qb = _ponto_parede(nome, ang, 3.0)
 			if qb != null: _braseiro_se(grupo, "Braseiro_%d" % k, qb.x, qb.y)
-			var qs = _ponto_parede(nome, ang + 0.12, 0.8)
+			var qs = _ponto_parede(nome, ang + 0.12, 1.0)
 			if COM_PAREDE and qs != null and _livre(qs.x, qs.y, 0.9):
 				_inst(grupo, "Estandarte_%d" % k, "Estandarte", qs.x, qs.y, _yaw_para(qs.x, qs.y, c.x, c.y)); _reservar(qs.x, qs.y, 0.9)
 	_entulho_cantos(grupo, nome, 2 if raio < 14.0 else 4)
+
+# ------------------------------------------------------------------ arquitetura (paredes, nichos, arcos, pilastras, pedestais)
+# normal do contorno apontando para a rocha (gradiente do campo de distância), em doc
+func _normal_rocha(x: float, z: float) -> Vector2:
+	var e := 1.2
+	var g := Vector2(T.sdf(x + e, z) - T.sdf(x - e, z), T.sdf(x, z + e) - T.sdf(x, z - e))
+	return g.normalized() if g.length() > 0.001 else Vector2(0, 1)
+
+# yaw de um módulo cuja frente (-Z local) olha para o lado oposto à rocha, ou seja, para dentro da sala
+func _yaw_normal(n: Vector2) -> float:
+	return _yaw_para(0.0, 0.0, -n.x, -n.y)
+
+func _pilastra_se(grupo: Node3D, nome: String, x: float, z: float) -> void:
+	var n := _normal_rocha(x, z)
+	if n.dot(LADO_CAMERA) > 0.35: return
+	var p := Vector2(x, z) + n * 0.3
+	if not _livre(x - n.x * 0.8, z - n.y * 0.8, 0.6): return
+	_inst(grupo, nome, "Pilastra", p.x, p.y, _yaw_normal(n)); _reservar(x - n.x * 0.8, z - n.y * 0.8, 1.0)
+
+# nicho na parede (substitui um trecho de parede reta) com a estátua encapuzada em cima do pedestal interno
+func _nicho(grupo: Node3D, sala: String, ang: float, nome: String) -> void:
+	var q = _ponto_parede(sala, ang, 0.2)
+	if q == null: return
+	var n := _normal_rocha(q.x, q.y)
+	var p: Vector2 = q + n * 0.4
+	_inst(grupo, "Nicho_" + nome, "Nicho", p.x, p.y, _yaw_normal(n)); _reservar(p.x - n.x * 0.8, p.y - n.y * 0.8, 1.6)
+	nichos.append(Vector3(p.x, p.y, 1.9))
+	var s := p - n * 0.25
+	var base := _base_y(p.x, p.y, 1.0) - 0.05
+	_inst(grupo, nome, "Estatua", s.x, s.y, _yaw_normal(n), 0.0, base + 0.55 * 1.0)
+
+var paredes_pos: Array = []
+var nichos: Array = []   # [x, z, raio]: segmentos de parede reta pulam estes pontos
+
+# direção (doc) para o lado da câmera de estudo (yaw 45): paredes cuja rocha fica deste lado viram muro baixo e não tapam a sala
+const LADO_CAMERA := Vector2(0.7071, -0.7071)
+
+# projeta p sobre o contorno (sdf ≈ -0,2); devolve null se não converge (abertura, corredor)
+func _projeta(p: Vector2) -> Variant:
+	for k in 4:
+		var d := T.sdf(p.x, p.y) + 0.2
+		var n := _normal_rocha(p.x, p.y)
+		p -= n * d
+	return p if absf(T.sdf(p.x, p.y) + 0.2) < 0.15 else null
+
+func _aberto(p: Vector2, c: Vector2) -> bool:
+	var d := (p - c).normalized()
+	return T.sdf(p.x + d.x * 2.4, p.y + d.y * 2.4) < 0.2
+
+func _parede_seg(g: Node3D, p: Vector2, i: int) -> void:
+	var n := _normal_rocha(p.x, p.y)
+	var baixo := n.dot(LADO_CAMERA) > 0.35
+	for nc in nichos:
+		if Vector2(p.x - nc.x, p.y - nc.y).length() < nc.z: return
+	for o in paredes_pos:
+		if o.distance_to(p) < 1.9: return
+	paredes_pos.append(p)
+	var q := p + n * (0.1 if baixo else 0.4)
+	_inst(g, "%s_%d" % ["MuroBaixo" if baixo else "Parede", i], "MuroBaixo" if baixo else "Parede", q.x, q.y, _yaw_normal(n))
+
+func _arquitetura(props: Node3D) -> void:
+	var g := _grupo(props, "Arquitetura")
+	var i := 0
+	for nome in T.SALAS:
+		var c := _centro_sala(nome)
+		var ang := 0.0
+		while ang < TAU:
+			var q = _ponto_parede(nome, ang, 0.2)
+			if q == null:
+				ang += 0.03; continue
+			# trecho contínuo: marcha ao longo do contorno em passos de 3 m
+			var p: Vector2 = q
+			var a0 := ang
+			var varrido := 0.0
+			var ult := p
+			while varrido < TAU - ang + 0.1 and i < 4000:
+				if _aberto(p, c): break
+				_parede_seg(g, p, i); i += 1
+				ult = p
+				var n := _normal_rocha(p.x, p.y)
+				var t := Vector2(-n.y, n.x)
+				if t.dot(Vector2(-(p.y - c.y), p.x - c.x)) < 0.0: t = -t      # sentido anti-horário
+				var nx = _projeta(p + t * 2.6)
+				if nx == null: break
+				var da := fposmod((nx - c).angle() - (p - c).angle(), TAU)
+				if da > 1.5: break
+				varrido += da; p = nx
+			ang += maxf(varrido, 0.0) + 0.05
+			# canto de pedra fecha a ponta do trecho ao lado da abertura (só do lado que não é muro baixo)
+			var nn := _normal_rocha(ult.x, ult.y)
+			if nn.dot(LADO_CAMERA) <= 0.35:
+				var tt := Vector2(-nn.y, nn.x)
+				if tt.dot(Vector2(-(ult.y - c.y), ult.x - c.x)) < 0.0: tt = -tt
+				var cp := ult + nn * 0.4 + tt * 2.1
+				if T.sdf(cp.x, cp.y) > -1.0 and _aberto(ult + tt * 3.0, c):
+					_inst(g, "Canto_%d" % i, "Canto", cp.x, cp.y, _yaw_normal(nn)); i += 1
+	# arcos nas bocas dos corredores comuns (sem escada)
+	for k in T.CORREDORES:
+		if T.ESCADAS.has(k) or k == "s01": continue
+		var pts: Array = T.CORREDORES[k][0]
+		for fim in [0, pts.size() - 1]:
+			var a := Vector2(pts[fim][0], pts[fim][1])
+			var b := Vector2(pts[1 if fim == 0 else pts.size() - 2][0], pts[1 if fim == 0 else pts.size() - 2][1])
+			var dir := (b - a).normalized()          # para dentro do corredor
+			var pa := a
+			var passos := 0
+			while passos < 40 and _em_sala(pa.x, pa.y): pa -= dir * 0.5; passos += 1
+			pa += dir * 0.5 * 5.0 + dir * 1.2
+			_inst(g, "Arco_%s_%d" % [k, fim], "Arco", pa.x, pa.y, _yaw_para(pa.x, pa.y, pa.x - dir.x, pa.y - dir.y)); i += 1
+	# pedestais ladeando os tapetes grandes (pares a cada 6 m)
+	for t in tapetes:
+		if t[2] < 3.0: continue
+		var z0: float = t[1] - t[3] + 1.5
+		while z0 <= t[1] + t[3] - 1.0:
+			for s in [-1.0, 1.0]:
+				_inst(g, "Pedestal_%d" % i, "Pedestal", t[0] + s * (t[2] + 0.8), z0, 0.0); i += 1
+			z0 += 6.0
+
+func _em_sala(x: float, z: float) -> bool:
+	for nome in T.SALAS:
+		if T.sdf_sala(x, z, nome) < 0.0: return true
+	return false
 
 func _corredores(props: Node3D) -> void:
 	var g := _grupo(props, "Corredores")

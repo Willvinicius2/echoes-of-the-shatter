@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://b1fhcqnsx2b2"
-path="res://.godot/imported/Arqueiro_Capuz.glb-6cd0b54d6c1a8348457e5b54f6f85233.scn"
+valid=false
 
 [deps]
 
 source_file="res://art/models/personagens/arqueiro/Arqueiro_Capuz.glb"
-dest_files=["res://.godot/imported/Arqueiro_Capuz.glb-6cd0b54d6c1a8348457e5b54f6f85233.scn"]
 
 [params]
 

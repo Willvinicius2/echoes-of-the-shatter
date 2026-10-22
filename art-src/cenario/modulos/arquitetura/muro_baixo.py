@@ -48,8 +48,8 @@ def build(L):
             if w < 0.12: break
             depth = D - 0.10 + r.uniform(-0.015, 0.015)
             hh = h - 0.012 + r.uniform(-0.005, 0.005)
-            ch = (r.choice((1, 2, 3)), r.uniform(0.07, 0.13), 100 + fi * 10 + i) if r.random() < 0.6 else None
-            cbox(L, (x + w / 2, r.uniform(-0.008, 0.008), z + h / 2), (w - 0.014, depth, hh), sd, ch, bev=0.011)
+            ch = (r.choice((1, 2, 3)), r.uniform(0.09, 0.16), 100 + fi * 10 + i) if r.random() < 0.9 else None
+            cbox(L, (x + w / 2, r.uniform(-0.008, 0.008), z + h / 2), (w - 0.014, depth, hh), sd, ch, bev=0.016)
             x += w; i += 1
         z += h; fi += 1
     # cordão (0,75-0,86)
@@ -60,7 +60,7 @@ def build(L):
     for k, (cx, hh, w) in enumerate(zip(xs, alt, wid)):
         cx += r.uniform(-0.03, 0.03); tilt = r.uniform(-0.04, 0.04)
         z0 = 0.86 + hh / 2
-        cbox(L, (cx, r.uniform(-0.01, 0.01), z0), (w, D - 0.14, hh), sd, (5 if k != 2 else 8, 0.14 if k != 2 else 0.2, 30 + k), rot=(0, tilt, 0), bev=0.014)
+        cbox(L, (cx, r.uniform(-0.01, 0.01), z0), (w, D - 0.14, hh), sd, (7 if k != 2 else 10, 0.16 if k != 2 else 0.22, 30 + k), rot=(0, tilt, 0), bev=0.014)
         if k != 2:
             cbox(L, (cx, 0, 0.86 + hh + 0.025), (w + 0.02, D - 0.1, 0.05), sc, (5, 0.12, 20 + k), rot=(0, tilt, 0), bev=0.014)
         else:   # quebrado: fragmentos caídos sobre o cordão
@@ -76,5 +76,5 @@ def build(L):
         cbox(L, (px, 0, 0.96), (0.17, D - 0.08, 0.08), sd, (3, 0.08, 72 + sx), bev=0.012)
     # entulho junto ao pé
     for (x, y, s) in ((-0.62, 0.34, 0.06), (0.75, 0.33, 0.08), (0.2, -0.33, 0.055)):
-        cbox(L, (x, y, s / 2), (s * 1.4, s * 1.1, s), sd, rot=(0.1, 0.2, r.uniform(0, 3)), bev=0.01)
+        cbox(L, (x, y, s / 2), (s * 1.4, s * 1.1, s), sd, (2, 0.03, 90), rot=(0.1, 0.2, r.uniform(0, 3)), bev=0.012)
     L.col_box((0, 0, 0.55), (W, D, 1.1))

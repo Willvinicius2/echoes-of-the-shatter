@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://d21nrcgl8l1sy"
-path="res://.godot/imported/Arqueiro_Peitoral.glb-3a45d57252b4306faaa3c4b8bf0427a8.scn"
+valid=false
 
 [deps]
 
 source_file="res://art/models/personagens/arqueiro/Arqueiro_Peitoral.glb"
-dest_files=["res://.godot/imported/Arqueiro_Peitoral.glb-3a45d57252b4306faaa3c4b8bf0427a8.scn"]
 
 [params]
 

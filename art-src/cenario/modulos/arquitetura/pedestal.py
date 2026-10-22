@@ -1,6 +1,6 @@
 """Pedestal baixo 0,6 x 0,6 x 1,4 m: base escalonada, fuste chanfrado com painéis e runa, topo moldurado, esfera de pedra clara."""
 import bpy, math
-from _pedra import poly_loft, profile_loft, curve_levels, rect, cut, crack, diamond
+from _pedra import garantir_material, poly_loft, profile_loft, curve_levels, rect, cut, crack, diamond
 GLB = 'SM_Cripta_Pedestal'
 VISTAS = {
     "frente": ((0, 5.0, 0.8), (0, 0, 0.7), 700, 900),
@@ -12,14 +12,14 @@ HEROI_X, HEROI_Y = 1.2, 1.1
 
 def build(L):
     sd, sc = L.stone('escura'), L.stone('clara')
-    p1 = poly_loft(L, "p1", rect(0.60, 0.60, 0.04), 0, 0.15, m=sd, bev=0.016)
-    p2 = poly_loft(L, "p2", rect(0.54, 0.54, 0.035), 0.15, 0.25, m=sd, bev=0.012)
+    p1 = poly_loft(L, "p1", rect(0.60, 0.60, 0.04), 0, 0.15, m=sd, bev=0.02)
+    p2 = poly_loft(L, "p2", rect(0.54, 0.54, 0.035), 0.15, 0.25, m=sd, bev=0.015)
     profile_loft(L, "toro", [(0.25, 0.50, 0.50, 0.04), (0.27, 0.52, 0.52, 0.04), (0.30, 0.52, 0.52, 0.04), (0.33, 0.48, 0.48, 0.04)], m=sc, bev=0.006)
     profile_loft(L, "escocia", curve_levels(0.33, 0.42, (0.48, 0.48), (0.42, 0.42), 4, "cove", 0.07), m=sd, bev=0.004)
     # fuste chanfrado, dois tambores
-    f1 = poly_loft(L, "fuste1", rect(0.42, 0.42, 0.08), 0.42, 0.70, 0.97, 0.97, m=sd, bev=0.007)
+    f1 = poly_loft(L, "fuste1", rect(0.42, 0.42, 0.08), 0.42, 0.70, 0.97, 0.97, m=sd, bev=0.011)
     poly_loft(L, "junta", rect(0.45, 0.45, 0.085), 0.69, 0.725, m=sc, bev=0.005)
-    f2 = poly_loft(L, "fuste2", rect(0.41, 0.41, 0.078), 0.72, 0.93, 0.98, 0.98, m=sd, bev=0.007)
+    f2 = poly_loft(L, "fuste2", rect(0.41, 0.41, 0.078), 0.72, 0.93, 0.98, 0.98, m=sd, bev=0.011)
     # painéis rebaixados com runa em losango nas 4 faces
     for ang in (0, 90, 180, 270):
         a = math.radians(ang); s, c = math.sin(a), math.cos(a)
@@ -31,7 +31,7 @@ def build(L):
     # colar + topo: ovolo + cornija clara + plinto
     profile_loft(L, "colar", [(0.93, 0.43, 0.43, 0.08), (0.97, 0.45, 0.45, 0.08), (1.00, 0.43, 0.43, 0.08)], m=sc, bev=0.005)
     profile_loft(L, "ovolo", curve_levels(1.00, 1.08, (0.41, 0.41), (0.54, 0.54), 5, "ovolo", 0.05), m=sd, bev=0.004)
-    top = profile_loft(L, "cornija", [(1.08, 0.58, 0.58, 0.035), (1.16, 0.60, 0.60, 0.035)], m=sc, bev=0.012)
+    top = profile_loft(L, "cornija", [(1.08, 0.58, 0.58, 0.035), (1.16, 0.60, 0.60, 0.035)], m=sc, bev=0.015)
     poly_loft(L, "plinto_topo", rect(0.46, 0.46, 0.035), 1.16, 1.19, m=sd, bev=0.006)
     # pescoço + esfera de pedra clara com cinta
     profile_loft(L, "colo", [(1.19, 0.2, 0.2, 0.05), (1.22, 0.16, 0.16, 0.04), (1.27, 0.16, 0.16, 0.04)], m=sc, bev=0.005)
@@ -44,4 +44,10 @@ def build(L):
     L.chip_corners(f2, 3, 0.06, 43); L.chip_corners(top, 3, 0.1, 44)
     crack(f1, (0.09, 0.45), (-0.03, 0.67), w=0.012, depth=0.03, seed=2, n=5)
     crack(p1, (-0.18, 0.02), (-0.12, 0.13), w=0.012, depth=0.03, seed=7, n=3)
+    # lasca e rachadura reais na esfera
+    cut(sp, (-0.075, 0.08, 1.335), (0.075, 0.075, 0.075), rot=(0.6, 0.5, 0.7))
+    cut(sp, (0.03, 0.125, 1.30), (0.012, 0.03, 0.2), rot=(0, 0.25, 0.35))
+    cut(sp, (0.05, 0.115, 1.36), (0.012, 0.03, 0.09), rot=(0, 0.0, -0.5))
+    L.chip_corners(f1, 3, 0.07, 51); L.chip_corners(p2, 2, 0.07, 52)
+    garantir_material(L, sd)
     L.col_box((0, 0, 0.7), (0.6, 0.6, 1.4))

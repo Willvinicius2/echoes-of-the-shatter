@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://d18w21oprm1iv"
-path="res://.godot/imported/Arqueiro_Aljava.glb-e4856048158822ed5cf7800acf9c2809.scn"
+valid=false
 
 [deps]
 
 source_file="res://art/models/personagens/arqueiro/Arqueiro_Aljava.glb"
-dest_files=["res://.godot/imported/Arqueiro_Aljava.glb-e4856048158822ed5cf7800acf9c2809.scn"]
 
 [params]
 

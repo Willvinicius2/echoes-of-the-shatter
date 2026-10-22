@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://q6b5hdkidebb"
-path="res://.godot/imported/Arqueiro_Botas.glb-ab2616987dcaccdb6347ab21babfde4d.scn"
+valid=false
 
 [deps]
 
 source_file="res://art/models/personagens/arqueiro/Arqueiro_Botas.glb"
-dest_files=["res://.godot/imported/Arqueiro_Botas.glb-ab2616987dcaccdb6347ab21babfde4d.scn"]
 
 [params]
 
