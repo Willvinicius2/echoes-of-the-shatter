@@ -83,7 +83,7 @@ public partial class AutoTeste : Node
 
     async System.Threading.Tasks.Task Teleporta(Vector3 p)
     {
-        _h.GlobalPosition = p; _h.Velocity = Vector3.Zero;
+        _h.GlobalPosition = p; _h.Velocity = Vector3.Zero; _h.ResetPhysicsInterpolation();
         await Espera(0.9f); // a câmera (suavizada) alcança
     }
 

@@ -30,7 +30,8 @@ public partial class CameraArqueiro : Camera3D
         _heroi ??= GetTree().GetFirstNodeInGroup(Camadas.GrupoJogador) as ArqueiroController;
         if (_heroi == null) return;
 
-        var foco = _heroi.GlobalPosition;
+        // posição interpolada: o corpo anda no passo físico (60 Hz) e a câmera desenha em taxa maior; sem isso há tranco
+        var foco = _heroi.GetGlobalTransformInterpolated().Origin;
         var lead = _heroi.PontoMira - foco; lead.Y = 0;
         if (_heroi.EstadoAtual == Estado.Carregando || _heroi.EstadoAtual == Estado.Disparo)
             foco += (lead * ArqueiroStats.F("cam_adianta_mira")).LimitLength(ArqueiroStats.F("cam_adianta_max"));
