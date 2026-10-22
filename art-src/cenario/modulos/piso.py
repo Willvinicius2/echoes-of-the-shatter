@@ -9,12 +9,13 @@ from piso_partes import comum, lajotas, desgaste, pocas, textura
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
 OUT = argv[0] if argv else "."
-PREV = argv[1] if len(argv) > 1 else None
+PREV = argv[1] if len(argv) > 1 and not argv[1].startswith('--') else None
+COM_POCAS = "--sem-pocas" not in sys.argv   # --sem-pocas: poças viram objeto separado
 
 comum.limpar_cena()
 objs = []
 for parte in (lajotas, desgaste, pocas):
-    objs += parte.construir()
+    objs += parte.construir(COM_POCAS) if parte is pocas else parte.construir()
 textura.aplicar(objs)
 bpy.ops.object.select_all(action='DESELECT')
 for o in objs:

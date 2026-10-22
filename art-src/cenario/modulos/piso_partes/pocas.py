@@ -330,7 +330,8 @@ def _raizes(r, lajes, M):
 
 
 # ---------------------------------------------------------------- API
-def construir():
+def construir(com_pocas=True):
+    """com_pocas=False omite água, anel molhado e pedrinhas das poças (musgo e raízes ficam); poças viram objeto separado."""
     r = random.Random(SEED_P)
     M = _mats()
     lajes = comum.layout()
@@ -350,9 +351,10 @@ def construir():
         escolhidos.append((cx, cy, rad, f, fh))
     objs = []; pocas = []
     for i, (cx, cy, rad, f, fh) in enumerate(escolhidos):
-        objs += [_agua(i, cx, cy, f, r, M), _umido(i, cx, cy, f, fh, r, M)]
+        if com_pocas: objs += [_agua(i, cx, cy, f, r, M), _umido(i, cx, cy, f, fh, r, M)]
+        else: r.random(); r.random()
         pocas.append((cx, cy, f))
-    objs.append(_pedrinhas(r, pocas, M))
+    if com_pocas: objs.append(_pedrinhas(r, pocas, M))
     objs += _musgo(r, lajes, pocas, M)
     objs += _raizes(r, lajes, M)
     return objs
