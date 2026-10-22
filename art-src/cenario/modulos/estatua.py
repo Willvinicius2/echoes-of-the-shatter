@@ -18,11 +18,15 @@ def mat(name, color, metal=0.0, rough=0.85):
     b = m.node_tree.nodes["Principled BSDF"]
     b.inputs["Base Color"].default_value = (*color, 1)
     b.inputs["Metallic"].default_value = metal; b.inputs["Roughness"].default_value = rough
+    # a cor de vértice multiplica a cor-base (igual ao Godot) para a prévia refletir o resultado
+    nt = m.node_tree; ca = nt.nodes.new("ShaderNodeVertexColor"); ca.layer_name = "Color"
+    mx = nt.nodes.new("ShaderNodeMix"); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'; mx.inputs[0].default_value = 1.0
+    mx.inputs[6].default_value = (*color, 1); nt.links.new(ca.outputs["Color"], mx.inputs[7]); nt.links.new(mx.outputs[2], b.inputs["Base Color"])
     return m
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
-M_ESTATUA = mat("M_Estatua", (0.22, 0.21, 0.20), rough=0.9)
-M_MUSGO = mat("M_Musgo", (0.08, 0.12, 0.05), rough=1.0)
+M_ESTATUA = mat("M_Estatua", (0.50, 0.49, 0.54), rough=0.9)
+M_MUSGO = mat("M_Musgo", (0.20, 0.34, 0.10), rough=1.0)
 M_ESCURA = mat("M_PedraEscura", (0.05, 0.05, 0.06))
 M_OURO = mat("M_Ouro", (0.72, 0.52, 0.16), metal=0.9, rough=0.4)
 MATS = [M_ESTATUA, M_MUSGO, M_ESCURA, M_OURO]
@@ -239,6 +243,60 @@ def plinto():
     objs.append(o)
     return objs
 
+
+def tubo_fechado(pts, raio, sides=10):
+    bm = tubo(pts, [raio] * len(pts), sides, cap_end=True); return bm
+
+def adornos(fig):
+    # capa curta sobre os ombros, com barra recortada
+    rings = []
+    for k in range(24):
+        h = k / 23; z = 1.02 + h * 0.5; a = prof([(1.02, 0.43), (1.3, 0.40), (1.5, 0.28)], z) + 0.035; b = prof([(1.02, 0.34), (1.3, 0.27), (1.5, 0.20)], z) + 0.035
+        ring = []
+        for i in range(N):
+            t = i / N * math.tau
+            zz = z + (abs(math.sin(5.5 * t + 0.3)) * 0.07 - 0.07) * (1 - h) ** 1.5
+            rr = 1 + 0.03 * math.sin(9 * t) * (1 - h)
+            ring.append(Vector((a * math.cos(t) * rr, b * math.sin(t) * rr - 0.03, zz)))
+        rings.append(ring)
+    bm = loft(rings, True, True); subdiv(bm, 1); displace(bm, lambda co, n: stone(co, n, 0.006)); fig.append(new_obj("capa", bm))
+    # corda do cinto com nó e pontas pendentes
+    a, b = prof(A_T, 0.97) + 0.012, prof(B_T, 0.97) + 0.012
+    pts = [Vector((a * math.cos(t), b * math.sin(t) - 0.02, 0.97 + 0.012 * math.sin(t * 6))) for t in [i / 56 * math.tau * 0.985 for i in range(57)]]
+    bm = tubo_fechado(pts, 0.022, 10); subdiv(bm, 1); displace(bm, lambda co, n: fbm(co, 70, 2) * 0.004); fig.append(new_obj("cinto", bm))
+    for sx, dz in ((-1, 0.55), (1, 0.42)):
+        p0 = Vector((sx * 0.03, b - 0.02, 0.96)); path = [p0 + Vector((sx * 0.05 * math.sin(i / 20 * 2.5), 0.02 * i / 20 + 0.01, -dz * i / 20)) for i in range(21)]
+        bm = tubo(path, [0.02 - 0.004 * i / 20 for i in range(21)], 8, True); subdiv(bm, 1); displace(bm, lambda co, n: fbm(co, 70, 2) * 0.004)
+        fig.append(new_obj("corda", bm))
+        bm2 = bmesh.new(); bmesh.ops.create_uvsphere(bm2, u_segments=10, v_segments=8, radius=0.035)
+        for v in bm2.verts: v.co *= Vector((1, 1, 1.4)); v.co += path[-1]
+        fig.append(new_obj("no", bm2))
+    # medalhão de ouro com estilhaço de pedra no peito
+    bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=6, radius1=0.085, radius2=0.085, depth=0.022)
+    for v in bm.verts: v.co = Vector((v.co.x, v.co.z * -1 + 0.236, v.co.y + 1.2))
+    bmesh.ops.bevel(bm, geom=bm.edges[:], offset=0.004, segments=1, affect='EDGES')
+    o = new_obj("medalhao", bm)
+    for p in o.data.polygons: p.material_index = IDX["ouro"]
+    fig.append(o)
+    bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=5, radius1=0.04, radius2=0.0, depth=0.1)
+    for v in bm.verts: v.co = Vector((v.co.x * 0.9, v.co.z * -1 + 0.262, v.co.y + 1.2)); 
+    fig.append(new_obj("estilhaco", bm))
+    # barra de ouro gasta no fim do manto
+    rings = [[Vector((prof(A_T, 0.04) * (1.005 + 0.0 * h) * math.cos(i / N * math.tau) * (1 + 0.02), prof(B_T, 0.04) * 1.025 * math.sin(i / N * math.tau), h * 0.035 + 0.02 + 0.05 * math.sin(5 * i / N * math.tau + 0.4) * 0.0)) for i in range(N)] for h in (0, 1)]
+    bm = loft(rings, False, False)
+    o = new_obj("barra_ouro", bm)
+    for p in o.data.polygons: p.material_index = IDX["ouro"]
+    fig.append(o)
+
+def dedos(sx, c):
+    """Quatro dedos e polegar sobre o punho, sugerindo mãos juntas."""
+    out = []
+    for i in range(4):
+        pts = [c + Vector((sx * (-0.05 + 0.033 * i), 0.0 + 0.012 * j, 0.0 - 0.012 * j * j)) for j in range(4)]
+        bm = tubo(pts, [0.015 - 0.002 * j for j in range(4)], 6, True)
+        out.append(new_obj("dedo", bm))
+    return out
+
 def montar():
     fig = []
     fig.append(manto()); fig.append(capuz())
@@ -249,6 +307,8 @@ def montar():
     bm = loft([[Vector((0.255 * math.cos(i / N * math.tau), 0.215 * math.sin(i / N * math.tau) - 0.01, 1.44 + h)) * 1
                 for i in range(N)] for h in (0.0, 0.05, 0.10)], True, True)
     subdiv(bm, 1); displace(bm, lambda co, n: stone(co, n, 0.01)); fig.append(new_obj("gola", bm))
+    adornos(fig)
+    fig += dedos(1, pts_l[-1] + Vector((0.0, 0.10, 0.045)))
     # une a figura e leva ao mundo
     bpy.ops.object.select_all(action='DESELECT')
     for o in fig: o.select_set(True)
@@ -286,6 +346,28 @@ def musgo(o):
         if up > 0.45 and v > thr + 0.1: p.material_index = IDX["musgo"]
         elif c.z < 0.3 and v > 0.2: p.material_index = IDX["musgo"]
 
+
+def pintar(o):
+    """Cor de vértice (COLOR_0): cavidades escuras, arestas gastas, sujeira embaixo e variação de pedra. Multiplica a cor-base no Godot."""
+    bm = bmesh.new(); bm.from_mesh(o.data); bm.normal_update()
+    cav = {}
+    for v in bm.verts:
+        viz = [e.other_vert(v).co for e in v.link_edges]
+        if viz:
+            m = sum(viz, Vector()) / len(viz); cav[v.index] = (m - v.co).dot(v.normal)   # >0 côncavo
+        else: cav[v.index] = 0.0
+    layer = bm.loops.layers.float_color.new("Color")
+    for f in bm.faces:
+        for l in f.loops:
+            v = l.vert; c = o.matrix_world @ v.co
+            k = max(-1.0, min(1.0, cav[v.index] * 90))
+            val = 0.82 + 0.45 * (-k if k < 0 else 0) - 0.50 * (k if k > 0 else 0)          # arestas claras, cavidades escuras
+            val *= 0.85 + 0.25 * (fbm(c + Vector((3.1, 1.7, 0.4)), 3.2, 3) + 0.5)          # manchas largas
+            val *= 0.75 + 0.25 * min(1.0, c.z / 1.2)                                       # sujeira perto do chão
+            tom = 0.04 * fbm(c * 2.0, 2, 2)
+            l[layer] = (max(0.05, min(1.4, val)) * (1 - tom), max(0.05, min(1.4, val)), max(0.05, min(1.4, val)) * (1 + tom), 1)
+    bm.to_mesh(o.data); bm.free()
+
 def exportar(parts):
     bpy.ops.object.select_all(action='DESELECT')
     for o in parts: o.select_set(True)
@@ -293,8 +375,9 @@ def exportar(parts):
     o = bpy.context.object; o.name = "SM_Cripta_Estatua"
     for p in o.data.polygons: p.use_smooth = True
     musgo(o)
+    pintar(o)
     bpy.ops.object.select_all(action='DESELECT'); o.select_set(True)
-    bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, "SM_Cripta_Estatua.glb"), use_selection=True, export_format='GLB', export_yup=True)
+    bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, "SM_Cripta_Estatua.glb"), use_selection=True, export_format='GLB', export_yup=True, export_vertex_color='ACTIVE')
     print("exportado SM_Cripta_Estatua", len(o.data.polygons), "faces, altura", round(o.dimensions.z, 2), "m")
     return o
 
