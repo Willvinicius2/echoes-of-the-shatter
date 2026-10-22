@@ -53,7 +53,7 @@ def lascas(r, W, H):
     r.shuffle(cantos)
     for px, py, sx, sy in cantos[:r.choice([1, 2, 2, 3, 3])]:
         ang = math.atan2(sy, sx) + r.uniform(-0.35, 0.35)
-        out.append((px, py, math.cos(ang), math.sin(ang), r.uniform(0.10, 0.30), r.uniform(0.035, 0.075), r.uniform(0.7, 1.3)))
+        out.append((px, py, math.cos(ang), math.sin(ang), r.uniform(0.22, 0.55), r.uniform(0.05, 0.10), r.uniform(0.7, 1.3)))
     def na_borda(medio):
         lado = r.choice("lrbt")
         if lado in "lr":
@@ -61,7 +61,7 @@ def lascas(r, W, H):
         else:
             px = r.uniform(0.04, W - 0.04); py = 0 if lado == "b" else H; nx0, ny0 = (0, 1) if lado == "b" else (0, -1)
         ang = math.atan2(ny0, nx0) + r.uniform(-0.5, 0.5)
-        if medio: return (px, py, math.cos(ang), math.sin(ang), r.uniform(0.10, 0.22), r.uniform(0.03, 0.06), r.uniform(0.9, 1.6))
+        if medio: return (px, py, math.cos(ang), math.sin(ang), r.uniform(0.20, 0.40), r.uniform(0.04, 0.08), r.uniform(0.9, 1.6))
         return (px, py, math.cos(ang), math.sin(ang), r.uniform(0.03, 0.08), r.uniform(0.012, 0.03), r.uniform(1.0, 1.8))
     for _ in range(r.choice([1, 2, 2, 3])): out.append(na_borda(True))
     for _ in range(r.randint(5, 9)): out.append(na_borda(False))

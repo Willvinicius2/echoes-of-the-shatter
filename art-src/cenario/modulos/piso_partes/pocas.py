@@ -13,7 +13,7 @@ Z_UMIDO = 0.0010
 
 
 def _mat_agua():
-    m = comum.material("M_Piso_Agua", (0.008, 0.020, 0.040), rough=0.03)
+    m = comum.material("M_Piso_Agua", (0.025, 0.060, 0.110), rough=0.02)
     b = m.node_tree.nodes["Principled BSDF"]
     b.inputs["Alpha"].default_value = 0.82
     for attr, val in (("blend_method", 'BLEND'), ("surface_render_method", 'BLENDED')):
