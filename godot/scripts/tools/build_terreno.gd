@@ -82,7 +82,7 @@ func _clima(pai: Node3D) -> void:
 	e.background_mode = Environment.BG_COLOR; e.background_color = Color(0.015, 0.02, 0.04)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; e.ambient_light_color = Color(0.20, 0.25, 0.38); e.ambient_light_energy = 0.55
 	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC; e.tonemap_exposure = 1.15
-	e.glow_enabled = true; e.glow_intensity = 0.3; e.glow_bloom = 0.05; e.glow_hdr_threshold = 1.3
+	e.glow_enabled = true; e.glow_intensity = 0.15; e.glow_bloom = 0.02; e.glow_hdr_threshold = 1.8
 	e.ssr_enabled = true; e.ssr_max_steps = 64; e.ssr_fade_in = 0.15; e.ssr_fade_out = 2.0; e.ssr_depth_tolerance = 0.3
 	e.ssil_enabled = true; e.ssil_intensity = 0.8
 	e.ssao_enabled = true; e.ssao_intensity = 2.0; e.ssao_radius = 1.5
@@ -658,14 +658,24 @@ func _corredores(props: Node3D) -> void:
 # poças aprovadas (decal v7, cenas Poca_A/B/C): em chão plano, fora de tapete, de peças e das bocas de corredor
 func _pocas(props: Node3D) -> void:
 	var g := _grupo(props, "Pocas")
-	var onde := [["A", -3.0, 6.0], ["B", 5.0, 18.5], ["C", 12.0, 17.0], ["A", -4.0, 54.0], ["B", -12.0, 52.0], ["C", 33.0, 56.0], ["A", 40.0, 51.0],
-		["B", -4.0, 89.0], ["C", 41.0, 98.0], ["A", 33.0, 91.0], ["B", 72.0, 56.0], ["C", 66.0, 131.0], ["A", 84.0, 146.0], ["B", 76.0, 122.0]]
+	# duas poças por sala retangular, em pontos fixos e espelhados (A/B/C alternando), três na arena; as antigas ficam nas bordas
+	var onde: Array = []
+	var tipos := ["A", "B", "C"]
+	var q := 0
+	for nome in T.SALAS:
+		var p: Array = T.SALAS[nome][0]
+		if p[0] == "b":
+			onde.append([tipos[q % 3], p[1] - 0.45 * float(p[3]), p[2] + 0.3 * float(p[4])]); q += 1
+			onde.append([tipos[q % 3], p[1] + 0.45 * float(p[3]), p[2] - 0.3 * float(p[4])]); q += 1
+		else:
+			for k in 3:
+				onde.append([tipos[k], p[1] + cos(k * TAU / 3.0 + 0.5) * 9.0, p[2] + sin(k * TAU / 3.0 + 0.5) * 9.0])
 	var i := 0
 	for p in onde:
 		var cena := load("res://scenes/cripta/Poca_%s.tscn" % p[0]) as PackedScene
-		if cena != null and _livre(p[1], p[2], 1.3):
+		if cena != null and _livre(p[1], p[2], 0.9):
 			var n := cena.instantiate() as Node3D; n.name = "Poca_%s_%d" % [p[0], i]
-			n.position = Vector3(p[1], T.chao(p[1], p[2]) + 0.05, -p[2]); n.rotation.y = rng.randf() * TAU
+			n.position = Vector3(p[1], T.chao(p[1], p[2]) + 0.05, -p[2]); n.rotation.y = rng.randf() * TAU; n.scale = Vector3.ONE * 1.6
 			g.add_child(n); _reservar(p[1], p[2], 1.3); contagem["Poca"] = int(contagem.get("Poca", 0)) + 1
 		i += 1
 
@@ -691,7 +701,7 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	if cena:
 		var m := cena.instantiate() as Node3D; m.name = "Modelo"; m.scale = Vector3.ONE * 0.75; n.add_child(m); _colisor(m, "Braseiro")
 	var luz := OmniLight3D.new(); luz.name = "Luz"; luz.position = Vector3(0, 1.45, 0)
-	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 0.7; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
+	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 0.35; luz.omni_range = 5.0; luz.omni_attenuation = 1.5
 	luz.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(luz)
 	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 0.88, 0); ch.scale = Vector3.ONE * 0.75
@@ -700,14 +710,14 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	for k in tam.size():
 		var qm := QuadMesh.new(); qm.size = tam[k]; qm.center_offset = Vector3(0, tam[k].y * 0.5, 0)
 		var sm := ShaderMaterial.new(); sm.shader = load("res://art/shaders/chama.gdshader")
-		sm.set_shader_parameter("seed", float(hash(nome + str(x)) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.0 + 0.35 * k); sm.set_shader_parameter("intensity", 0.055)
+		sm.set_shader_parameter("seed", float(hash(nome + str(x)) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.0 + 0.35 * k); sm.set_shader_parameter("intensity", 0.04)
 		qm.material = sm
 		var mi := MeshInstance3D.new(); mi.name = "Cartao%d" % k; mi.mesh = qm; mi.position = desl[k]
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ch.add_child(mi)
 	n.add_child(ch)
 	var lb := OmniLight3D.new(); lb.name = "LuzBacia"; lb.position = Vector3(0, 0.98, 0)
-	lb.light_color = Color(1.0, 0.45, 0.12); lb.light_energy = 0.4; lb.omni_range = 2.2; lb.omni_attenuation = 1.3
+	lb.light_color = Color(1.0, 0.45, 0.12); lb.light_energy = 0.2; lb.omni_range = 2.0; lb.omni_attenuation = 1.3
 	lb.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(lb)
 	_particulas_braseiro(n)
