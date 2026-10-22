@@ -1,0 +1,26 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Texture2D" path="res://art/textures/T_Poca_A_albedo.png" id="1"]
+[ext_resource type="Texture2D" path="res://art/textures/T_Poca_A_orm.png" id="2"]
+[ext_resource type="Texture2D" path="res://art/textures/T_Poca_A_n.png" id="3"]
+[ext_resource type="Material" path="res://art/materials/M_Cripta_Gotas.tres" id="4"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_gotas"]
+size = Vector2(1.800, 1.400)
+
+[node name="Poca_A" type="Node3D"]
+
+[node name="Decal" type="Decal" parent="."]
+size = Vector3(1.800, 1.0, 1.400)
+texture_albedo = ExtResource("1")
+texture_orm = ExtResource("2")
+texture_normal = ExtResource("3")
+upper_fade = 0.3
+lower_fade = 0.3
+normal_fade = 0.3
+
+[node name="Gotas" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.004, 0)
+mesh = SubResource("PlaneMesh_gotas")
+surface_material_override/0 = ExtResource("4")
+cast_shadow = 0

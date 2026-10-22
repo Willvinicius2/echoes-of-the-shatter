@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://art/shaders/cripta_gotas.gdshader" id="1_gotas"]
+
+[resource]
+render_priority = 2
+shader = ExtResource("1_gotas")
+shader_parameter/intensidade = 0.35
+shader_parameter/densidade = 0.22
+shader_parameter/velocidade = 0.6
+shader_parameter/tamanho = 0.1
