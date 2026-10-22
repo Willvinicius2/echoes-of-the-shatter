@@ -31,7 +31,7 @@ Motor: **Godot 4 (.NET, C#)** (decisão do dono em 20/10/2026; antes Unity 6.3, 
 - `art-src/herdado-unity/` — modelos FBX, texturas e JSON do kit da Cripta tirados da Unity, para importar no Godot.
 - `art-src/graybox/` — malhas provisórias do Blender (scripts, .blend, .fbx no Git LFS, prévias).
 - `tools/dados/validate_data.py` — validador de dados; `tools/core/build_core.cmd` — build e testes do ShatterCore no Windows.
-- `.claude/agents/` — agentes do projeto: `painel-progresso`, `guardiao-github`, `pesquisador-referencias`.
+- `.claude/agents/` — agentes do projeto: `escolhedor-ferramentas`, `painel-progresso`, `guardiao-github`, `pesquisador-referencias`. `.claude/catalogo-ferramentas.md` — catálogo atividade → skills/repos/ferramentas/modelo.
 - `prototipos/godot-f1/` — protótipo Godot F1 inteiro (histórico, referência de game feel); como rodar em `COMO_RODAR.md`.
 - `docs/README.md` — índice dos documentos por assunto (`design/`, `tecnico/`, `requisitos-qa/`, `arte/`, `pesquisa/`, `progresso/`).
 
@@ -83,6 +83,10 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 - Em `estado.json`, cada pendência tem `id` (fixo, nunca reaproveitado), `titulo`, `detalhe` (resumo de uma linha), `pergunta`, `contexto` (lista de parágrafos), `opcoes` (`id` = letra, `nome` e `efeito`) e `origem`. Uma pergunta = uma escolha; dois assuntos viram duas pendências. O painel e o roteiro (`tools/roteiro/gerar_roteiro.py`) mostram esses campos.
 - O painel (https://claude.ai/artifact/7Kzo46Eyy8cQjF9HhuWMXg) tem votação e comentários por pergunta: componente `tools/votacao/` (embutido pelo `gerar_painel.py`), gravado no banco do artifact (coleção `votos`, um documento por pessoa com `respostas.<id da pergunta>` = `{opcao, comentario, em}`). Para ler: ArtifactData `list` em `votos` no link do painel. Ao republicar o painel, omitir `capabilities` para manter o banco. O roteiro só mostra as perguntas, com link para votar no painel. Ao decidir, a pendência sai do `estado.json` e entra em `decisoes`.
 - Depois de mudar docs, artes aprovadas ou pendências, regerar e republicar o roteiro do sócio no mesmo link: https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8
+
+## Escolha de ferramentas (automática)
+- **Toda tarefa começa consultando `.claude/catalogo-ferramentas.md`** (ou disparando o agente `escolhedor-ferramentas`, Sonnet) para saber, sem o dono pedir, quais skills de `.claude/skills/`, repositórios, ferramentas, subagentes e modelo usar. No relatório final, diga quais usou.
+- Arte 3D: o `escolhedor-ferramentas` também é o revisor crítico; o que ia para aprovação do dono passa antes por ele, e só chega ao dono o que estiver bonito. O dono continua sendo quem aprova a arte.
 
 ## Pendências de decisão
 - **PRIORIDADE MÁXIMA — Alinhamento de Contexto, Dupla e Escopo (`docs/design/20_alinhamento_ia_e_escopo.md`):** Antes de iniciar qualquer nova frente ou disparar subagentes, leia `docs/design/20_alinhamento_ia_e_escopo.md` e peça ao dono para decidir as duas pendências prioritárias em `docs/progresso/estado.json` (`fluxo-agentes-contexto` e `foco-fatia-vertical`). Não aprove artes nem decisões de design em nome do dono.
