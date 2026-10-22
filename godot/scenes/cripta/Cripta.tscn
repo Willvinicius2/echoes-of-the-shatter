@@ -17,6 +17,9 @@
 [ext_resource type="PackedScene" path="res://art/models/SM_Cripta_Estatua.glb" id="15_7x5r6"]
 [ext_resource type="Texture2D" path="res://art/textures/T_Cripta_Tapete.png" id="16_g5il5"]
 [ext_resource type="Script" path="res://scripts/cripta/CameraEstudio.cs" id="17_l6t58"]
+[ext_resource type="PackedScene" path="res://scenes/cripta/Poca_A.tscn" id="poca_A"]
+[ext_resource type="PackedScene" path="res://scenes/cripta/Poca_B.tscn" id="poca_B"]
+[ext_resource type="PackedScene" path="res://scenes/cripta/Poca_C.tscn" id="poca_C"]
 
 [sub_resource type="Environment" id="Environment_3xp4p"]
 background_mode = 1
@@ -7859,3 +7862,20 @@ fov = 38.0
 far = 400.0
 script = ExtResource("17_l6t58")
 Alvo = Vector3(0, 0, -11)
+
+[node name="Pocas" type="Node3D" parent="."]
+
+[node name="Poca_A_0" parent="Pocas" instance=ExtResource("poca_A")]
+transform = Transform3D(0.92106, 0, 0.38942, 0, 1, 0, -0.38942, 0, 0.92106, -3.0, 0, -3.2)
+
+[node name="Poca_B_1" parent="Pocas" instance=ExtResource("poca_B")]
+transform = Transform3D(0.95534, 0, -0.29552, 0, 1, 0, 0.29552, 0, 0.95534, 2.6, 0, -6.5)
+
+[node name="Poca_C_2" parent="Pocas" instance=ExtResource("poca_C")]
+transform = Transform3D(0.98007, 0, 0.19867, 0, 1, 0, -0.19867, 0, 0.98007, 0.5, 0, -10.0)
+
+[node name="Poca_A_3" parent="Pocas" instance=ExtResource("poca_A")]
+transform = Transform3D(-0.41615, 0, 0.90930, 0, 1, 0, -0.90930, 0, -0.41615, -6.5, 0, -12.0)
+
+[node name="Poca_B_4" parent="Pocas" instance=ExtResource("poca_B")]
+transform = Transform3D(0.36236, 0, 0.93204, 0, 1, 0, -0.93204, 0, 0.36236, 5.5, 0, -12.5)
