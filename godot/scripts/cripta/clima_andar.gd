@@ -6,7 +6,7 @@ const T := preload("res://scripts/terreno/terreno_cripta.gd")
 const DENSIDADE := [0.006, 0.008, 0.011, 0.014]
 const COR_NEVOA := [Color(0.09, 0.13, 0.24), Color(0.11, 0.12, 0.26), Color(0.10, 0.07, 0.20), Color(0.05, 0.03, 0.07)]
 const COR_AMBIENTE := [Color(0.20, 0.25, 0.38), Color(0.22, 0.24, 0.40), Color(0.20, 0.17, 0.34), Color(0.12, 0.10, 0.16)]
-const ENERGIA := [0.55, 0.50, 0.42, 0.32]
+const ENERGIA := [0.85, 0.78, 0.66, 0.5]
 @export var alvo_path: NodePath = ^"../CameraEstudio"
 var _atual := 0.0
 

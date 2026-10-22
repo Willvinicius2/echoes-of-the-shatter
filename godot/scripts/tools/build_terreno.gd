@@ -81,7 +81,7 @@ func _clima(pai: Node3D) -> void:
 	e.volumetric_fog_emission = Color(0.02, 0.03, 0.06); e.volumetric_fog_length = 60.0; e.volumetric_fog_anisotropy = 0.5
 	e.adjustment_enabled = true; e.adjustment_saturation = 1.08; e.adjustment_contrast = 1.06
 	var we := WorldEnvironment.new(); we.name = "Ambiente"; we.environment = e; we.set_script(load("res://scripts/cripta/clima_andar.gd")); pai.add_child(we)
-	var lua := DirectionalLight3D.new(); lua.name = "LuarFrio"; lua.light_color = Color(0.55, 0.65, 1.0); lua.light_energy = 0.28
+	var lua := DirectionalLight3D.new(); lua.name = "LuarFrio"; lua.light_color = Color(0.55, 0.65, 1.0); lua.light_energy = 0.5
 	lua.rotation_degrees = Vector3(-62, -35, 0); lua.shadow_enabled = true; lua.directional_shadow_max_distance = 90.0
 	pai.add_child(lua)
 
@@ -333,7 +333,7 @@ func _pracas(props: Node3D) -> void:
 var _mat_forro: StandardMaterial3D
 func _forro(pai: Node3D, nome: String, x: float, z: float, tx: float, tz: float) -> void:
 	if _mat_forro == null:
-		_mat_forro = StandardMaterial3D.new(); _mat_forro.albedo_color = Color(0.13, 0.025, 0.03); _mat_forro.roughness = 1.0
+		_mat_forro = StandardMaterial3D.new(); _mat_forro.albedo_color = Color(0.30, 0.05, 0.06); _mat_forro.roughness = 1.0
 	var mi := MeshInstance3D.new(); mi.name = nome
 	var pm := PlaneMesh.new(); pm.size = Vector2(tx, tz); pm.material = _mat_forro; mi.mesh = pm
 	mi.position = Vector3(x, T.chao(x, z) + 0.06, -z)
@@ -357,23 +357,25 @@ func _ponto_parede(nome: String, ang: float, dentro: float) -> Variant:
 	if T.sdf(q.x + d.x * (dentro + 1.2), q.y + d.y * (dentro + 1.2)) < 0.2: return null
 	return q
 
-# canto = ponto de parede cercado de rocha em mais de 58% do círculo de 2,5 m (parede reta dá ~50%)
-func _eh_canto(x: float, z: float) -> bool:
+# pontuação de canto: fração de rocha no círculo de 3 m em volta do ponto (parede reta ~50%, canto >60%)
+func _pont_canto(x: float, z: float) -> float:
 	var rocha := 0
 	for k in 16:
 		var a := k * TAU / 16.0
-		if T.sdf(x + cos(a) * 2.5, z + sin(a) * 2.5) > 0.0: rocha += 1
-	return rocha >= 10
+		if T.sdf(x + cos(a) * 3.0, z + sin(a) * 3.0) > 0.0: rocha += 1
+	return rocha / 16.0
 
+# entulho: pega os pontos mais "canto" da sala (por pontuação, então sempre existe), colado à parede
 func _entulho_cantos(grupo: Node3D, nome: String, quantos: int) -> void:
 	var cand: Array = []
-	for k in 48:
-		var q = _ponto_parede(nome, k * TAU / 48.0 + rng.randf_range(-0.03, 0.03), 1.4)
-		if q != null and _eh_canto(q.x, q.y): cand.append(q)
-	cand.shuffle()
+	for k in 72:
+		var q = _ponto_parede(nome, k * TAU / 72.0, 1.3)
+		if q != null: cand.append([_pont_canto(q.x, q.y), q])
+	cand.sort_custom(func(a, b): return a[0] > b[0])
 	var n := 0
-	for q in cand:
+	for c in cand:
 		if n >= quantos: break
+		var q: Vector2 = c[1]
 		if not _livre(q.x, q.y, 1.0): continue
 		_inst(grupo, "Entulho_%d" % n, "Entulho", q.x, q.y, rng.randf() * TAU); _reservar(q.x, q.y, 1.0); n += 1
 
@@ -391,9 +393,9 @@ func _braseiro_se(grupo: Node3D, nome: String, x: float, z: float) -> void:
 	if not _livre(x, z, 0.8): return
 	_braseiro(grupo, nome, x, z); _reservar(x, z, 0.8)
 
-func _pilar_se(grupo: Node3D, nome: String, x: float, z: float, ax: float, az: float) -> bool:
+func _pilar_se(grupo: Node3D, nome: String, x: float, z: float, ax: float, az: float, alinhado: bool = false) -> bool:
 	if not _livre(x, z, 1.4): return false
-	_inst(grupo, nome, "Pilar", x, z, _yaw_para(x, z, ax, az)); _reservar(x, z, 1.4)
+	_inst(grupo, nome, "Pilar", x, z, 0.0 if alinhado else _yaw_para(x, z, ax, az)); _reservar(x, z, 1.4)
 	return true
 
 func _decorar_sala(props: Node3D, nome: String) -> void:
@@ -436,11 +438,11 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 				var q = _ponto_parede(nome, k * TAU / 6.0 + 0.5, 3.0)
 				if q != null: _braseiro_se(grupo, "BraseiroBorda_%d" % k, q.x, q.y)
 		"r05_linha_tiro":
-			for p in [[-10.0, 50.5], [-10.0, 57.5], [2.0, 50.5], [2.0, 57.5]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1] + p[0]), p[0], p[1], c.x, c.y)
+			for p in [[-10.0, 50.5], [-10.0, 57.5], [2.0, 50.5], [2.0, 57.5]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1] + p[0]), p[0], p[1], c.x, c.y, true)
 		"r06_elite_escudada":
-			for p in [[-10.0, 91.0], [-10.0, 98.0]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1]), p[0], p[1], c.x, c.y)
+			for p in [[-10.0, 91.0], [-10.0, 98.0]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1]), p[0], p[1], c.x, c.y, true)
 		"r07_elite_veloz":
-			for p in [[37.0, 88.0], [37.0, 102.0]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1]), p[0], p[1], c.x, c.y)
+			for p in [[37.0, 88.0], [37.0, 102.0]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1]), p[0], p[1], c.x, c.y, true)
 	# parede: pilares-pilastra emoldurando estandarte e braseiro, alternados e com espaço
 	var n := clampi(int(round(TAU * raio / 9.5)), 6, 14)
 	if n % 2 == 1: n += 1
