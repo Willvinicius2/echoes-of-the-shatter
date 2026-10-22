@@ -216,7 +216,14 @@ func _escadas(raiz: Node3D) -> void:
 		rampa.add_child(rs)
 		rampa.position = Vector3(0, -queda * 0.5 - 0.1, -comp * 0.5); rampa.rotation.x = -atan2(queda, comp)
 		ancora.add_child(rampa)
-		# frente local = -Z desce; o glb da escada substitui o filho "Placeholder"
+		# glb aprovado da escadaria (pivô no nível do patamar, desce para -Z; 7,04 m de rampa, 3,96 m de queda); a colisão é a rampa acima
+		var escada := _glb("Escadaria")
+		if escada != null:
+			var g := escada.instantiate() as Node3D; g.name = "Escadaria"
+			g.position = Vector3(0, -0.12, 0); g.scale = Vector3(1.0, queda / 3.96, comp / 7.04)
+			ancora.add_child(g)
+			continue
+		# sem o glb: placeholder de caixas (frente local = -Z desce)
 		var ph := Node3D.new(); ph.name = "Placeholder"; ancora.add_child(ph)
 		var n := 22
 		var larg: float = e["largura"]
