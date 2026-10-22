@@ -1,16 +1,23 @@
-"""Parte do braseiro: brasas. build() acrescenta as malhas a _lib.objs."""
+"""Leito de brasas: cinza irregular no fundo, carvão rachado com veios incandescentes e gravetos carbonizados."""
 from ._lib import *
 
-
 def build():
-    random.seed(11)
-    # ---- cinza no fundo e brasas irregulares
-    bpy.ops.mesh.primitive_cylinder_add(vertices=24, radius=0.60, depth=0.05, location=(0, 0, 1.17))
-    finish(bpy.context.object, ASH, 0, 0.012, 0.1, 7)
-    for i in range(11):
-        r = 0.36 * math.sqrt(random.random()); a = random.random() * 2 * math.pi
-        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=0.09 + random.random() * 0.07, location=(r * math.cos(a), r * math.sin(a), 1.22 + random.random() * 0.08))
-        o = bpy.context.object; o.scale = (1, 1, 0.65); o.rotation_euler = (random.random() * 3, random.random() * 3, random.random() * 3)
-        bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
-        finish(o, EMBER, 0, 0.03, 0, i)
-
+    r = rng(601)
+    # cinza: disco subdividido e ondulado
+    bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=28, radius1=0.60, radius2=0.60, depth=0.06)
+    subdiv(bm, 2)
+    for v in bm.verts:
+        if v.co.z > 0: v.co.z += 0.02 * math.sin(v.co.x * 11) * math.cos(v.co.y * 9) + r.uniform(-.008, .008)
+    new("cinza", bm, (0, 0, 1.19), (0, 0, 0), CINZA, 0, flat=False)
+    # carvão: poliedros irregulares com variação de tamanho
+    for i in range(14):
+        rr = 0.33 * math.sqrt(r.random()); a = r.random() * 2 * math.pi
+        sz = r.uniform(0.07, 0.15)
+        bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=2, radius=sz)
+        for v in bm.verts:
+            f = 1 + r.uniform(-0.28, 0.28); v.co *= f; v.co.z *= 0.65
+        new("carvao", bm, (rr * math.cos(a), rr * math.sin(a), 1.22 + r.uniform(0, 0.07)), (r.uniform(0, 3), r.uniform(0, 3), r.uniform(0, 3)), BRASA, 0.01, seg=1, ang=40)
+    # gravetos carbonizados
+    for i in range(4):
+        a = r.random() * math.pi
+        fcyl(FUL, (0.12 * r.uniform(-1, 1), 0.12 * r.uniform(-1, 1), 1.24 + 0.02 * i), 0.022, 0.45, rot=(math.pi / 2 + r.uniform(-.15, .15), r.uniform(-.25, .25), a), sides=7, cuts=3, amp=0.006, bev=0.004, seed=610 + i)

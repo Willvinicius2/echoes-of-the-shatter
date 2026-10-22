@@ -6,7 +6,8 @@ A cor de desgaste (arestas vivas, fuligem, ferrugem) vai em vertex color (COLOR_
 import bpy, bmesh, math, sys, os, random
 from mathutils import Vector, noise
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from braseiro import _lib, pernas, bacia, gaiola, correntes, brasas
+import importlib
+from braseiro import _lib
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = argv[0] if argv else "SM_Cripta_Braseiro.glb"
@@ -14,10 +15,13 @@ PREV = argv[1] if len(argv) > 1 else None
 SAMPLES = int(os.environ.get("SAMPLES", "24"))
 objs = _lib.objs
 
-PARTS = [("pernas", pernas), ("bacia", bacia), ("gaiola", gaiola), ("correntes", correntes), ("brasas", brasas)]
+ONLY = os.environ.get("PARTES", "pernas,bacia,gaiola,correntes,brasas").split(",")
+PARTS = [(n, importlib.import_module("braseiro." + n)) for n in ONLY]
 ranges = {}
 for name, mod in PARTS:
-    a = len(objs); mod.build(); ranges[name] = objs[a:]
+    a = len(objs); _lib.PARTE[0] = name; mod.build(); ranges[name] = objs[a:]; print("parte", name, "ok;", len(objs) - a, "objetos")
+_lib.uv_todos()
+print("SEM MAT", [(o.name, o.parent) for o in objs if not o.data.materials][:5])
 
 def setup_render(res=800):
     sc = bpy.context.scene
@@ -63,15 +67,18 @@ bpy.ops.export_scene.gltf(filepath=OUT, use_selection=True, export_format='GLB',
 print("tris", tris, "->", OUT)
 
 if PREV:
-    for m in body.data.materials:           # prévia: cor do vértice multiplica o material, como no Godot
-        if m.name in ("M_Braseiro_Brasa", "M_Braseiro_Cinza"): continue
+    for m in body.data.materials:           # prévia: cor do vértice multiplica o albedo, como no Godot
+        if m.name == "M_Braseiro_Brasa" or m.name == "M_Braseiro_Cinza": continue
         nt = m.node_tree; b = nt.nodes["Principled BSDF"]
+        src = b.inputs["Base Color"].links[0].from_socket
         a = nt.nodes.new("ShaderNodeVertexColor"); a.layer_name = "Col"
         mx = nt.nodes.new("ShaderNodeMix"); mx.data_type = 'RGBA'; mx.blend_type = 'MULTIPLY'; mx.inputs[0].default_value = 1.0
-        mx.inputs[6].default_value = b.inputs["Base Color"].default_value
-        nt.links.new(a.outputs["Color"], mx.inputs[7]); nt.links.new(mx.outputs[2], b.inputs["Base Color"])
+        nt.links.new(src, mx.inputs[6]); nt.links.new(a.outputs["Color"], mx.inputs[7]); nt.links.new(mx.outputs[2], b.inputs["Base Color"])
     sc = setup_render(800)
     shot(sc, "braseiro_tres_quartos", (2.6, -2.6, 2.2), (0, 0, 0.8))
     shot(sc, "braseiro_frente", (0, -3.6, 1.0), (0, 0, 0.8))
     shot(sc, "braseiro_close_borda", (0.6, -1.5, 1.7), (0.1, 0, 1.3), 60)
     shot(sc, "braseiro_cima", (0.01, -0.8, 3.0), (0, 0, 1.2))
+    shot(sc, "braseiro_pernas_close", (1.1, -1.3, 0.55), (0.35, -0.35, 0.45), 55)
+    wf = body.modifiers.new("wf", 'WIREFRAME'); wf.thickness = 0.004
+    shot(sc, "braseiro_wireframe", (2.6, -2.6, 2.2), (0, 0, 0.8))
