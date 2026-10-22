@@ -242,8 +242,8 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	luz.set_script(load("res://scripts/cripta/BraseiroLuz.cs"))
 	n.add_child(luz)
 	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.32, 0)
-	var tam := [Vector2(1.15, 1.75), Vector2(0.8, 1.25)]
-	for k in 2:
+	var tam := [Vector2(1.15, 1.75), Vector2(0.8, 1.25), Vector2(0.55, 0.95)]
+	for k in 3:
 		var qm := QuadMesh.new(); qm.size = tam[k]; qm.center_offset = Vector3(0, tam[k].y * 0.5, 0)
 		var sm := ShaderMaterial.new(); sm.shader = load("res://art/shaders/chama.gdshader")
 		sm.set_shader_parameter("seed", float(hash(nome) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.2 + 0.5 * k)
@@ -252,7 +252,58 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ch.add_child(mi)
 	n.add_child(ch)
+	_particulas_braseiro(n)
 	pai.add_child(n)
+
+var _tex_ponto: GradientTexture2D
+var _faisca_malha: QuadMesh
+var _faisca_proc: ParticleProcessMaterial
+var _fumaca_malha: QuadMesh
+var _fumaca_proc: ParticleProcessMaterial
+
+# Faíscas e brasas subindo, mais fumaça leve: partículas compartilhadas por todos os braseiros (recursos criados uma vez).
+func _particulas_braseiro(n: Node3D) -> void:
+	if _tex_ponto == null:
+		_tex_ponto = GradientTexture2D.new(); _tex_ponto.fill = GradientTexture2D.FILL_RADIAL
+		_tex_ponto.fill_from = Vector2(0.5, 0.5); _tex_ponto.fill_to = Vector2(0.5, 0.0); _tex_ponto.width = 64; _tex_ponto.height = 64
+		var gp := Gradient.new(); gp.set_color(0, Color(1, 1, 1, 1)); gp.set_color(1, Color(1, 1, 1, 0)); _tex_ponto.gradient = gp
+		# faíscas: pontos amarelos que esfriam para laranja e somem
+		var mf := StandardMaterial3D.new()
+		mf.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; mf.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		mf.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA; mf.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+		mf.vertex_color_use_as_albedo = true; mf.albedo_texture = _tex_ponto
+		_faisca_malha = QuadMesh.new(); _faisca_malha.size = Vector2(1, 1); _faisca_malha.material = mf
+		_faisca_proc = ParticleProcessMaterial.new()
+		_faisca_proc.direction = Vector3(0, 1, 0); _faisca_proc.spread = 30.0
+		_faisca_proc.initial_velocity_min = 0.7; _faisca_proc.initial_velocity_max = 1.8
+		_faisca_proc.gravity = Vector3(0, 0.35, 0); _faisca_proc.scale_min = 0.025; _faisca_proc.scale_max = 0.06
+		_faisca_proc.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE; _faisca_proc.emission_sphere_radius = 0.32
+		_faisca_proc.turbulence_enabled = true; _faisca_proc.turbulence_noise_strength = 0.6; _faisca_proc.turbulence_noise_scale = 2.0
+		var rf := Gradient.new(); rf.set_color(0, Color(1.0, 0.9, 0.45, 1.0)); rf.set_color(1, Color(1.0, 0.25, 0.03, 0.0)); rf.add_point(0.4, Color(1.0, 0.55, 0.12, 0.9))
+		var rft := GradientTexture1D.new(); rft.gradient = rf; _faisca_proc.color_ramp = rft
+		# fumaça: nuvens escuras e suaves que sobem devagar e crescem
+		var mu := StandardMaterial3D.new()
+		mu.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED; mu.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mu.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES; mu.vertex_color_use_as_albedo = true; mu.albedo_texture = _tex_ponto
+		_fumaca_malha = QuadMesh.new(); _fumaca_malha.size = Vector2(1, 1); _fumaca_malha.material = mu
+		_fumaca_proc = ParticleProcessMaterial.new()
+		_fumaca_proc.direction = Vector3(0, 1, 0); _fumaca_proc.spread = 12.0
+		_fumaca_proc.initial_velocity_min = 0.25; _fumaca_proc.initial_velocity_max = 0.5
+		_fumaca_proc.gravity = Vector3(0, 0.15, 0); _fumaca_proc.scale_min = 0.5; _fumaca_proc.scale_max = 0.9
+		_fumaca_proc.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE; _fumaca_proc.emission_sphere_radius = 0.25
+		_fumaca_proc.turbulence_enabled = true; _fumaca_proc.turbulence_noise_strength = 0.3
+		var ru := Gradient.new(); ru.set_color(0, Color(0.10, 0.09, 0.09, 0.0)); ru.set_color(1, Color(0.06, 0.06, 0.07, 0.0)); ru.add_point(0.3, Color(0.10, 0.09, 0.09, 0.16))
+		var rut := GradientTexture1D.new(); rut.gradient = ru; _fumaca_proc.color_ramp = rut
+		var cu := Curve.new(); cu.add_point(Vector2(0, 0.4)); cu.add_point(Vector2(1, 1.6))
+		var cut := CurveTexture.new(); cut.curve = cu; _fumaca_proc.scale_curve = cut
+	var f := GPUParticles3D.new(); f.name = "Faiscas"; f.amount = 20; f.lifetime = 1.8; f.local_coords = false
+	f.position = Vector3(0, 1.4, 0); f.process_material = _faisca_proc; f.draw_pass_1 = _faisca_malha
+	f.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF; f.randomness = 1.0
+	n.add_child(f)
+	var u := GPUParticles3D.new(); u.name = "Fumaca"; u.amount = 8; u.lifetime = 3.6; u.local_coords = false
+	u.position = Vector3(0, 2.1, 0); u.process_material = _fumaca_proc; u.draw_pass_1 = _fumaca_malha
+	u.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF; u.randomness = 1.0
+	n.add_child(u)
 
 func _tapete(pai: Node3D, nome: String, x: float, z: float, larg: float, comp: float) -> void:
 	var m := MeshInstance3D.new(); m.name = nome

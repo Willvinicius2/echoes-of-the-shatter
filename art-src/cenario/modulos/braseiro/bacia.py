@@ -19,7 +19,7 @@ def build():
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z > 0.01], context='VERTS')
     for v in bm.verts: v.co.z *= 0.52
     bmesh.ops.reverse_faces(bm, faces=bm.faces[:]); jitter(bm, 0.006, r)
-    new("forro", bm, (0, 0, 1.125), (0, 0, 0), FUL, 0)
+    new("forro", bm, (0, 0, 1.125), (0, 0, 0), FORRO, 0)
     # lábio enrolado irregular
     bpy.ops.mesh.primitive_torus_add(major_radius=0.70, minor_radius=0.032, major_segments=40, minor_segments=8, location=(0, 0, 1.125))
     t = bpy.context.object
