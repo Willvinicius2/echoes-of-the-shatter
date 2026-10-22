@@ -1,0 +1,15 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://art/shaders/cripta_pedra.gdshader" id="1_2hevb"]
+[ext_resource type="Texture2D" path="res://art/textures/T_Cripta_Pedra.png" id="2_vr53k"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_2hevb")
+shader_parameter/albedo_tex = ExtResource("2_vr53k")
+shader_parameter/tint = Color(0.5, 0.5, 0.54, 1)
+shader_parameter/tex_scale = 0.4
+shader_parameter/moss_amount = 0.3
+shader_parameter/grime_height = null
+shader_parameter/world_space = null
+shader_parameter/bump = null
