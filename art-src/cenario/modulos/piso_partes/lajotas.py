@@ -1,4 +1,8 @@
-"""Piso da Cripta, parte LAJOTAS E JUNTAS.
+"""Piso da Cripta, parte LAJOTAS E JUNTAS (v2: desnivel, rachaduras abertas, quinas faltando).
+Cada lajota e um contorno XY proprio (quinas mordidas, entalhes, juntas de largura irregular), topo triangulado por Delaunay
+com altura propria (desnivel, inclinacao, afundadas, lascas rasas) e chanfro irregular; algumas se partem ao meio por uma
+fenda aberta com as metades defasadas. plano() expoe o que foi decidido (usado pelo desgaste para pôr cascalho).
+VELHO:
 Cada lajota do comum.layout() vira uma malha real: topo ondulado com altura propria, chanfro irregular e desigual
 por aresta (largura e profundidade variam ao longo da aresta), lascas/dentes, cantos arredondados e gastos, laterais
 verticais ruidosas. A junta e uma placa de argamassa/terra afundada ~3 cm, com ruido de altura periodico (emenda sem costura).
@@ -18,97 +22,309 @@ CORES = {                  # azul-ardosia escuro, linear sRGB; tons diferentes p
 }
 COR_JUNTA = (0.011, 0.010, 0.010)
 
-# ---------------------------------------------------------------- utilidades de ruido
+# ---------------------------------------------------------------- utilidades
+from mathutils import Vector, geometry
+
 class Onda:
-    """Ruido suave 1D/2D como soma de senos com fases aleatorias (barato e deterministico)."""
+    """Ruido suave 2D como soma de senos com fases aleatorias (barato e deterministico)."""
     def __init__(self, r, n=4, f0=1.0, f1=9.0):
-        self.t = [(r.uniform(f0, f1), r.uniform(0, 6.283), r.uniform(0.4, 1.0), r.uniform(0, 6.283), r.uniform(-1, 1)) for _ in range(n)]
-        self.norm = sum(a for _, _, a, _, _ in self.t)
-    def v1(self, t):
-        return sum(a * math.sin(f * t + p) for f, p, a, _, _ in self.t) / self.norm
+        self.t = [(r.uniform(f0, f1), r.uniform(0, 6.283), r.uniform(0.4, 1.0), r.uniform(0, 6.283)) for _ in range(n)]
+        self.norm = sum(a for _, _, a, _ in self.t)
     def v2(self, x, y):
-        return sum(a * math.sin(f * (x * math.cos(q) + y * math.sin(q)) + p) for f, p, a, q, _ in self.t) / self.norm
+        return sum(a * math.sin(f * (x * math.cos(q) + y * math.sin(q)) + p) for f, p, a, q in self.t) / self.norm
 
-def smooth(x):
-    x = max(0.0, min(1.0, x)); return x * x * (3 - 2 * x)
+Z_BASE = -0.13
+Z_MEIO = -0.06
 
-def linhas(L, r):
-    """Coordenadas das linhas da grade em [0,L]: densas perto das arestas (onde esta o chanfro), grossas no miolo."""
-    borda = [0.0, 0.010, 0.024, 0.044, 0.070, 0.105, 0.150]
-    n = max(2, round((L - 2 * 0.150) / 0.20))
-    miolo = [0.150 + (L - 0.300) * k / n for k in range(1, n)]
-    return borda + miolo + [L - b for b in reversed(borda)]
+# ---------------------------------------------------------------- planejamento (quem e desnivelada, rachada, mordida)
+_PLANO = {}
 
-# ---------------------------------------------------------------- uma lajota
-def linhas(L):
-    """Grade fina (3-4 cm) para resolver as facetas das lascas; depois os planos coplanares sao dissolvidos."""
-    borda = [0.0, 0.010, 0.020]
-    n = max(2, round((L - 0.040) / 0.022))
-    return borda + [0.020 + (L - 0.040) * k / n for k in range(1, n)] + [L - b for b in reversed(borda)]
+def _jag(r, a, b, n=None):
+    """Caminho irregular de (a,0) a (0,b) em coords locais do canto (mordida angulosa que entra na lajota)."""
+    n = n or r.choice([3, 4, 4, 5])
+    pts = [(a, 0.0)]
+    for k in range(1, n + 1):
+        t = k / (n + 1)
+        bulge = r.uniform(0.55, 1.15) * (1 - t) ** 0.6 * t ** 0.6 * 2.0   # puxa para dentro
+        px = a * (1 - t) * r.uniform(0.75, 1.1) + a * 0.0
+        py = b * t * r.uniform(0.75, 1.1)
+        px = a * (1 - t); py = b * t
+        px += bulge * 0.22 * a * r.uniform(0.3, 1.0); py += bulge * 0.22 * b * r.uniform(0.3, 1.0)
+        px += r.uniform(-0.12, 0.12) * a; py += r.uniform(-0.12, 0.12) * b
+        pts.append((max(px, 0.01), max(py, 0.01)))
+    pts.append((0.0, b))
+    return pts
 
-def lascas(r, W, H):
-    """Quinas quebradas e dentes: cunhas angulosas (plano inclinado + abertura em V). (px,py,nx,ny,tamanho,profundidade,kl)"""
+def plano():
+    """dict indice_da_lajota -> spec. Cacheado, deterministico."""
+    if _PLANO: return _PLANO
+    lajes = comum.layout()
+    r = random.Random(SEED + 5)
+    cand = [i for i, l in enumerate(lajes) if not l["cortada"] and min(l["x1"] - l["x0"], l["y1"] - l["y0"]) > 0.8]
+    r.shuffle(cand)
+    sunk = set(cand[:2]); tilt = set(cand[2:9]); low = set(cand[9:16])
+    crackable = [i for i in cand[16:] if max(lajes[i]["x1"] - lajes[i]["x0"], lajes[i]["y1"] - lajes[i]["y0"]) > 1.25 and min(lajes[i]["x1"] - lajes[i]["x0"], lajes[i]["y1"] - lajes[i]["y0"]) > 0.85]
+    crack = set(crackable[:13])
+    # garante rachadas tambem entre as inclinadas/baixas para legibilidade variada
+    for i, l in enumerate(lajes):
+        rl = random.Random(SEED * 131 + i * 17 + 3)
+        W = l["x1"] - l["x0"]; H = l["y1"] - l["y0"]
+        s = dict(i=i, l=l, rng_seed=SEED * 977 + i * 31, dz=-rl.uniform(0.0, 0.004), tx=0.0, ty=0.0, bites=[], flat=True, crack=None,
+                 inset={k: (rl.uniform(0.0, 0.006) if rl.random() < 0.6 else rl.uniform(0.012, 0.026)) for k in "lrbt"})
+        if l["cortada"]:
+            s["dz"] = -random.Random(SEED + l["id"] * 13).uniform(0.0, 0.004)
+            s["inset"] = {k: 0.0 for k in "lrbt"}
+            _PLANO[i] = s; continue
+        if i in sunk:
+            s["dz"] = -rl.uniform(0.032, 0.040); s["tx"] = rl.uniform(-0.012, 0.012) / W; s["ty"] = rl.uniform(-0.012, 0.012) / H; s["flat"] = False
+        elif i in tilt:
+            m = rl.uniform(0.022, 0.038); ang = rl.uniform(0, 6.283)   # queda maxima nos cantos (m)
+            s["tx"] = math.cos(ang) * m / (W / 2); s["ty"] = math.sin(ang) * m / (H / 2); s["dz"] = -m * 0.55; s["flat"] = False
+        elif i in low:
+            s["dz"] = -rl.uniform(0.024, 0.040); s["flat"] = False
+        elif rl.random() < 0.3:
+            s["dz"] = -rl.uniform(0.010, 0.018); s["flat"] = False
+        # mordidas de canto
+        cantos = [(l["x0"], l["y0"], 1, 1), (l["x1"], l["y0"], -1, 1), (l["x1"], l["y1"], -1, -1), (l["x0"], l["y1"], 1, -1)]
+        big = rl.random() < 0.25
+        for ci, (cx, cy, sx, sy) in enumerate(cantos):
+            if rl.random() < (0.4 if not big else 0.8):
+                a = rl.uniform(0.14, 0.36) * (1.4 if big and rl.random() < 0.5 else 1.0); b = rl.uniform(0.14, 0.36) * (1.4 if big and rl.random() < 0.5 else 1.0)
+                a = min(a, W * 0.45); b = min(b, H * 0.45)
+                s["bites"].append(dict(ci=ci, cx=cx, cy=cy, sx=sx, sy=sy, a=a, b=b, path=_jag(rl, a, b)))
+        if i in crack:
+            horiz = H > W
+            if horiz: P = (l["x0"], l["y0"] + rl.uniform(0.35, 0.65) * H); Q = (l["x1"], l["y0"] + rl.uniform(0.35, 0.65) * H)
+            else:     P = (l["x0"] + rl.uniform(0.35, 0.65) * W, l["y0"]); Q = (l["x0"] + rl.uniform(0.35, 0.65) * W, l["y1"])
+            s["crack"] = dict(P=P, Q=Q, gap=rl.uniform(0.022, 0.034), d1=rl.uniform(-0.016, 0.0), d2=rl.uniform(-0.016, 0.004),
+                              t1=rl.uniform(-0.012, 0.012), t2=rl.uniform(-0.012, 0.012)); s["flat"] = False
+        _PLANO[i] = s
+    return _PLANO
+
+def altura_base(s, x, y):
+    """altura do plano da lajota (sem ruido) no ponto; para apoiar cascalho."""
+    l = s["l"]; cx = (l["x0"] + l["x1"]) / 2; cy = (l["y0"] + l["y1"]) / 2
+    return s["dz"] + s["tx"] * (x - cx) + s["ty"] * (y - cy)
+
+# ---------------------------------------------------------------- contorno XY
+def _edge(r, A, B, n_in, notch=None):
+    """pontos intermediarios entre A e B (exclusivos), densos o bastante para variar o chanfro; n_in = normal interna."""
+    A = Vector(A); B = Vector(B); L = (B - A).length; d = (B - A) / max(L, 1e-9)
     out = []
-    cantos = [(0, 0, 1, 1), (W, 0, -1, 1), (W, H, -1, -1), (0, H, 1, -1)]
-    r.shuffle(cantos)
-    for px, py, sx, sy in cantos[:r.choice([1, 2, 2, 3, 3])]:
-        ang = math.atan2(sy, sx) + r.uniform(-0.35, 0.35)
-        out.append((px, py, math.cos(ang), math.sin(ang), r.uniform(0.22, 0.55), r.uniform(0.05, 0.10), r.uniform(0.7, 1.3)))
-    def na_borda(medio):
-        lado = r.choice("lrbt")
-        if lado in "lr":
-            py = r.uniform(0.04, H - 0.04); px = 0 if lado == "l" else W; nx0, ny0 = (1, 0) if lado == "l" else (-1, 0)
-        else:
-            px = r.uniform(0.04, W - 0.04); py = 0 if lado == "b" else H; nx0, ny0 = (0, 1) if lado == "b" else (0, -1)
-        ang = math.atan2(ny0, nx0) + r.uniform(-0.5, 0.5)
-        if medio: return (px, py, math.cos(ang), math.sin(ang), r.uniform(0.20, 0.40), r.uniform(0.04, 0.08), r.uniform(0.9, 1.6))
-        return (px, py, math.cos(ang), math.sin(ang), r.uniform(0.03, 0.08), r.uniform(0.012, 0.03), r.uniform(1.0, 1.8))
-    for _ in range(r.choice([1, 2, 2, 3])): out.append(na_borda(True))
-    for _ in range(r.randint(5, 9)): out.append(na_borda(False))
+    ts = []
+    n = max(1, int(L / 0.16)); ts = [(k + r.uniform(-0.2, 0.2)) / n for k in range(1, n)]
+    if notch:
+        tc, w, dep = notch; ts = [t for t in ts if abs(t - tc) > (w * 1.2) / L]
+        for f, dd in ((-1.0, 0.0), (-0.55, 0.45), (-0.2, 1.0), (0.25, 0.85), (0.6, 0.4), (1.0, 0.0)):
+            ts.append(tc + f * w / L)
+        ts = sorted(ts)
+        pts = []
+        for t in ts:
+            p = A + d * (t * L)
+            if abs(t - tc) <= w / L * 1.0001:
+                f = (t - tc) * L / w; dd = max(0.0, 1 - abs(f)) ** 0.7 * dep * r.uniform(0.8, 1.15)
+                p = p + n_in * dd
+            pts.append(p)
+        return [(p.x, p.y) for p in pts]
+    for t in ts:
+        p = A + d * (t * L) + n_in * r.uniform(-0.003, 0.003); out.append((p.x, p.y))
     return out
 
-def lajota(bm, l, r):
-    W = l["x1"] - l["x0"]; H = l["y1"] - l["y0"]
-    xs = linhas(W); ys = linhas(H)
-    h0 = -r.uniform(0.0, 0.014)                        # micro-desnivel entre lajotas
-    if r.random() < 0.28: tx, ty = r.uniform(-0.009, 0.009) / W, r.uniform(-0.009, 0.009) / H   # algumas levemente inclinadas
-    else: tx = ty = 0.0
-    cw = {k: r.choice((0.010, 0.020)) for k in "lrbt"}  # chanfro pequeno e nitido, 1-2 cm
-    ch = lascas(r, W, H)
-    nx, ny = len(xs), len(ys)
-    V = [[None] * ny for _ in range(nx)]
-    for i, u in enumerate(xs):
-        for j, v in enumerate(ys):
-            z = h0 + tx * (u - W / 2) + ty * (v - H / 2)
-            for k, d in (("l", u), ("r", W - u), ("b", v), ("t", H - v)):
-                if d < cw[k]: z -= (cw[k] - d) * 0.9
-            for px, py, nxx, nyy, s, dep, kl in ch:
-                dx, dy = u - px, v - py
-                t = dx * nxx + dy * nyy; lat = abs(-dx * nyy + dy * nxx)
-                zc = h0 - dep + (max(t, 0.0) + kl * lat) * dep / s * 1.1
-                if zc < z: z = zc
-            V[i][j] = bm.verts.new((l["x0"] + u, l["y0"] + v, z))
-    faces = [bm.faces.new((V[i][j], V[i + 1][j], V[i + 1][j + 1], V[i][j + 1])) for i in range(nx - 1) for j in range(ny - 1)]
-    bm.normal_update()
-    bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(1.2), verts=[v for row in V for v in row], edges=list({e for f in faces if f.is_valid for e in f.edges}), use_dissolve_boundaries=False, delimit=set())
-    loop = [V[i][0] for i in range(nx)] + [V[nx - 1][j] for j in range(1, ny)] + \
-           [V[i][ny - 1] for i in range(nx - 2, -1, -1)] + [V[0][j] for j in range(ny - 2, 0, -1)]
-    loop = [v for v in loop if v.is_valid]
-    n = len(loop)
-    cx = l["x0"] + W / 2; cy = l["y0"] + H / 2
-    zb = -0.075
-    aneis = [loop]
-    for frac, amp in ((0.0, 0.0),):
-        pass
-    for z_alvo, amp in ((-0.022, 0.0015), (zb, 0.0)):
-        aneis.append([bm.verts.new((v.co.x + r.uniform(-amp, amp), v.co.y + r.uniform(-amp, amp), z_alvo)) for v in loop])
-    for a in range(2):
-        for k in range(n):
-            k2 = (k + 1) % n
-            try: bm.faces.new((aneis[a][k], aneis[a][k2], aneis[a + 1][k2], aneis[a + 1][k]))
+def _contorno(s, r):
+    """Poligono CCW da lajota inteira (sem rachadura): retangulo com insets irregulares, mordidas e entalhes."""
+    l = s["l"]; ins = s["inset"]
+    x0, x1 = l["x0"] + ins["l"], l["x1"] - ins["r"]; y0, y1 = l["y0"] + ins["b"], l["y1"] - ins["t"]
+    W = x1 - x0; H = y1 - y0
+    corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    bites = {b["ci"]: b for b in s["bites"]}
+    # pontos de saida/entrada de cada canto, em CCW: entrada (vindo da aresta anterior) e saida (indo para a proxima)
+    entr, said, meio = {}, {}, {}
+    for ci in range(4):
+        cx, cy = corners[ci]; sx = 1 if ci in (0, 3) else -1; sy = 1 if ci in (0, 1) else -1
+        b = bites.get(ci)
+        if not b: entr[ci] = [(cx, cy)]; continue
+        a, bb = b["a"], b["b"]
+        loc = [(cx + sx * px, cy + sy * py) for px, py in b["path"]]       # de (a,0) [perna x] a (0,b) [perna y]
+        entr[ci] = loc if ci in (1, 3) else list(reversed(loc))             # BR,TL: x->y ; BL,TR: y->x
+    out = []
+    notch_done = False
+    for ci in range(4):
+        out += entr[ci]
+        cj = (ci + 1) % 4
+        A = entr[ci][-1]; B = entr[cj][0]
+        n_in = [Vector((0, 1)), Vector((-1, 0)), Vector((0, -1)), Vector((1, 0))][ci]
+        notch = None
+        if not b_has_crack(s) and not notch_done and r.random() < 0.28 and (Vector(B) - Vector(A)).length > 0.7:
+            L = (Vector(B) - Vector(A)).length
+            notch = (r.uniform(0.3, 0.7), r.uniform(0.05, 0.11), r.uniform(0.035, 0.085)); notch_done = True
+            tp = Vector(A) + (Vector(B) - Vector(A)) * notch[0]
+            s["bites"].append(dict(ci=-1, cx=tp.x, cy=tp.y, sx=0, sy=0, a=notch[1], b=notch[2], path=None))
+        out += _edge(r, A, B, n_in, notch)
+    return out
+
+def b_has_crack(s): return s["crack"] is not None
+
+def _meia_pecas(s, poly, r):
+    """Divide o contorno pela rachadura; devolve [(poly, dz_extra, tx, ty)]. Sem rachadura: [(poly,0,0,0)]."""
+    c = s["crack"]
+    if not c: return [(poly, 0.0, 0.0, 0.0)]
+    P, Q = Vector(c["P"]), Vector(c["Q"])
+    # caminho em ziguezague de P a Q
+    L = (Q - P).length; d = (Q - P) / L; n = Vector((-d.y, d.x))
+    m = max(5, int(L / 0.075)); path = [P]
+    off = 0.0
+    for k in range(1, m):
+        off += r.gauss(0, 0.014); off *= 0.8
+        if r.random() < 0.15: off += r.choice([-1, 1]) * r.uniform(0.02, 0.045)
+        off = max(-0.12, min(0.12, off))
+        path.append(P + d * (L * k / m + r.uniform(-0.01, 0.01)) + n * off)
+    path.append(Q)
+    # insere P e Q (projetados) no contorno
+    def inserir(poly, p):
+        best = None
+        for k in range(len(poly)):
+            a = Vector(poly[k]); b = Vector(poly[(k + 1) % len(poly)]); ab = b - a
+            t = max(0.0, min(1.0, (p - a).dot(ab) / max(ab.dot(ab), 1e-12))); q = a + ab * t
+            dd = (q - p).length
+            if best is None or dd < best[0]: best = (dd, k, q, ab.normalized())
+        _, k, q, ed = best
+        poly = poly[:k + 1] + [(q.x, q.y)] + poly[k + 1:]
+        return poly, k + 1, q, ed
+    poly, ip, Pp, edP = inserir(list(poly), P)
+    poly, iq, Qp, edQ = inserir(poly, Q)
+    if iq <= ip: ip += 1 if False else 0
+    # reencontra indices (a insercao de Q pode ter deslocado ip)
+    ip = next(k for k, p in enumerate(poly) if abs(p[0] - Pp.x) < 1e-9 and abs(p[1] - Pp.y) < 1e-9)
+    iq = next(k for k, p in enumerate(poly) if abs(p[0] - Qp.x) < 1e-9 and abs(p[1] - Qp.y) < 1e-9)
+    def trecho(i, j):
+        out = [poly[i]]; k = i
+        while k != j: k = (k + 1) % len(poly); out.append(poly[k])
+        return out
+    g = c["gap"] / 2
+    def lado(sign, ini, fim):
+        # caminho deslocado para o lado 'sign' (+1 esquerda de P->Q)
+        pp = []
+        for k, p in enumerate(path):
+            a = path[max(k - 1, 0)]; b = path[min(k + 1, len(path) - 1)]
+            t = (b - a).normalized(); nn = Vector((-t.y, t.x)) * sign
+            pp.append(p + nn * g * r.uniform(0.75, 1.25) if 0 < k < len(path) - 1 else p + nn * g)
+        pp[0] = Pp + edP * ((pp[0] - Pp).dot(edP)); pp[-1] = Qp + edQ * ((pp[-1] - Qp).dot(edQ))
+        return pp
+    # metade A = contorno de P a Q (CCW) + caminho de volta; metade B = contorno de Q a P + caminho de ida
+    A = trecho(ip, iq); B = trecho(iq, ip)
+    cA = Vector(c_centroide(A)); sA = 1 if (cA - P).dot(n) > 0 else -1
+    pa = lado(sA, 0, 0); pb = lado(-sA, 0, 0)
+    pecaA = A[1:-1] if False else A
+    # troca extremos pelas pontas deslocadas
+    pecaA = [(pa[0].x, pa[0].y)] + A[1:-1] + [(pa[-1].x, pa[-1].y)] + [(p.x, p.y) for p in reversed(pa[1:-1])]
+    pecaB = [(pb[-1].x, pb[-1].y)] + B[1:-1] + [(pb[0].x, pb[0].y)] + [(p.x, p.y) for p in pb[1:-1]]
+    return [(pecaA, c["d1"], c["t1"], c["t1"] * 0.4), (pecaB, c["d2"], -c["t2"], c["t2"] * 0.7)]
+
+def c_centroide(pts):
+    return (sum(p[0] for p in pts) / len(pts), sum(p[1] for p in pts) / len(pts))
+
+# ---------------------------------------------------------------- uma peca (poligono CCW -> malha)
+def _area(poly):
+    return 0.5 * sum(poly[k][0] * poly[(k + 1) % len(poly)][1] - poly[(k + 1) % len(poly)][0] * poly[k][1] for k in range(len(poly)))
+
+def _dentro(poly, x, y):
+    c = False; n = len(poly)
+    for k in range(n):
+        ax, ay = poly[k]; bx, by = poly[(k + 1) % n]
+        if (ay > y) != (by > y) and x < (bx - ax) * (y - ay) / (by - ay) + ax: c = not c
+    return c
+
+def _dist_borda(poly, x, y):
+    best = 9.0; n = len(poly)
+    for k in range(n):
+        ax, ay = poly[k]; bx, by = poly[(k + 1) % n]; dx, dy = bx - ax, by - ay
+        t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / max(dx * dx + dy * dy, 1e-12)))
+        best = min(best, math.hypot(x - ax - dx * t, y - ay - dy * t))
+    return best
+
+def _inset(poly, ch):
+    n = len(poly); out = []
+    for k in range(n):
+        p0 = Vector(poly[k - 1]); p1 = Vector(poly[k]); p2 = Vector(poly[(k + 1) % n])
+        e1 = (p1 - p0).normalized(); e2 = (p2 - p1).normalized()
+        n1 = Vector((-e1.y, e1.x)); n2 = Vector((-e2.y, e2.x))      # normal interna (CCW)
+        m = n1 + n2
+        if m.length < 1e-6: m = n1
+        m.normalize(); k_ = ch[k] / max(0.5, m.dot(n1))
+        out.append((p1.x + m.x * k_, p1.y + m.y * k_))
+    return out
+
+def peca(bm, poly, s, r, dz, tx, ty):
+    """poly CCW. Topo: anel externo (pe do chanfro) + anel interno + Delaunay com pontos internos; paredes ate a base."""
+    if _area(poly) < 0: poly = list(reversed(poly))
+    # limpa pontos quase repetidos
+    lim = []
+    for p in poly:
+        if not lim or math.hypot(p[0] - lim[-1][0], p[1] - lim[-1][1]) > 0.006: lim.append(p)
+    if len(lim) > 2 and math.hypot(lim[0][0] - lim[-1][0], lim[0][1] - lim[-1][1]) <= 0.006: lim.pop()
+    poly = lim
+    l = s["l"]; cx0 = (l["x0"] + l["x1"]) / 2; cy0 = (l["y0"] + l["y1"]) / 2
+    on = Onda(r, 3, 2.0, 9.0)
+    flakes = []
+    for _ in range(r.choice([0, 1, 1, 2]) if not l["cortada"] else r.choice([0, 1])):
+        k = r.randrange(len(poly)); px, py = poly[k]
+        ang = r.uniform(0, 6.283); flakes.append((px, py, math.cos(ang), math.sin(ang), r.uniform(0.12, 0.28), r.uniform(0.012, 0.028), r.uniform(0.8, 1.4)))
+    def zf(x, y):
+        z = s["dz"] + dz + (tx + s["tx"]) * (x - cx0) + (ty + s["ty"]) * (y - cy0) + 0.0022 * on.v2(x, y)
+        for px, py, nx, ny, sz, dep, kl in flakes:
+            dx, dy = x - px, y - py; t = dx * nx + dy * ny; lat = abs(-dx * ny + dy * nx)
+            zc = s["dz"] + dz - dep + (max(t, 0.0) + kl * lat) * dep / sz * 1.1
+            if zc < z: z = zc
+        return min(z, 0.0)
+    n = len(poly)
+    ch = [0.009 + 0.011 * (0.5 + 0.5 * math.sin(k * 1.7 + r.uniform(0, 6))) * r.uniform(0.6, 1.2) for k in range(n)]
+    inner = _inset(poly, ch)
+    if _area(inner) <= 0.002: inner = _inset(poly, [min(c, 0.004) for c in ch])
+    # pontos internos
+    xs = [p[0] for p in inner]; ys = [p[1] for p in inner]
+    step = 0.105; pts = list(inner)
+    gx = min(xs) + step / 2
+    while gx < max(xs):
+        gy = min(ys) + step / 2
+        while gy < max(ys):
+            x = gx + r.uniform(-0.03, 0.03); y = gy + r.uniform(-0.03, 0.03)
+            if _dentro(inner, x, y) and _dist_borda(inner, x, y) > 0.05: pts.append((x, y))
+            gy += step
+        gx += step
+    vin = [Vector(p) for p in pts]
+    res = geometry.delaunay_2d_cdt(vin, [(k, (k + 1) % len(inner)) for k in range(len(inner))], [], 3, 1e-5)
+    rv, rf = res[0], res[2]
+    # tipo 3 = apenas triangulos dentro do contorno fechado (arestas obrigatorias)
+    top = [bm.verts.new((v.x, v.y, zf(v.x, v.y))) for v in rv]
+    for f in rf:
+        if len(f) == 3:
+            ff = [top[f[0]], top[f[1]], top[f[2]]]
+            a_, b_, c_ = (v.co for v in ff)
+            if (b_ - a_).cross(c_ - a_).z < 0: ff.reverse()
+            try: bm.faces.new(ff)
             except ValueError: pass
-    try: bm.faces.new(list(reversed(aneis[2])))
-    except ValueError: pass
+    # anel externo (pe do chanfro), meio e base
+    O = [bm.verts.new((p[0], p[1], zf(p[0], p[1]) - ch[k] * r.uniform(0.7, 1.3) * 0.9)) for k, p in enumerate(poly)]
+    M = [bm.verts.new((p[0] + r.uniform(-0.002, 0.002), p[1] + r.uniform(-0.002, 0.002), Z_MEIO + r.uniform(-0.004, 0.004))) for p in poly]
+    B = [bm.verts.new((p[0], p[1], Z_BASE)) for p in poly]
+    for k in range(n):
+        k2 = (k + 1) % n
+        for a, b, c, d in ((O[k], O[k2], top[k2], top[k]), (M[k], M[k2], O[k2], O[k]), (B[k], B[k2], M[k2], M[k])):
+            try: bm.faces.new((a, b, c, d))
+            except ValueError: pass
+
+def preparar():
+    """Calcula contornos (e entalhes) de todas as lajotas uma vez; desgaste chama isto antes de ler plano()."""
+    for i, s in plano().items():
+        if "_c" not in s:
+            r = random.Random(s["rng_seed"]); s["_c"] = _contorno(s, r); s["_rs"] = r.getstate()
+
+def lajota(bm, s):
+    preparar()
+    r = random.Random(); r.setstate(s["_rs"])
+    poly = s["_c"]
+    for pol, dz, tx, ty in _meia_pecas(s, poly, r):
+        peca(bm, pol, s, r, dz, tx, ty)
 
 # ---------------------------------------------------------------- junta
 def junta(bm):
@@ -142,12 +358,11 @@ def construir():
     mats = {k: comum.material("M_Piso_Laje_" + k, c, rough=0.78) for k, c in CORES.items()}
     mj = comum.material("M_Piso_Junta", COR_JUNTA, rough=1.0)
     bms = {k: bmesh.new() for k in CORES}
-    for l in comum.layout():
-        rl = random.Random(SEED * 31 + l["id"] * 7 + (1 if l["cortada"] else 0) * 3 + int(l["x0"] * 100) % 97 + int(l["y0"] * 100) * 13)
-        k = rl.choice("ABCD")
-        # lajotas cortadas pela borda: mesma cor da irma (usa o id) para a emenda parecer uma lajota so
-        if l["cortada"]: k = "ABCD"[(l["id"] * 5 + 1) % 4]
-        lajota(bms[k], l, rl)
+    sp = plano()
+    for i in sorted(sp):
+        l = sp[i]["l"]
+        k = "ABCD"[(l["id"] * 5 + 1) % 4] if l["cortada"] else random.Random(SEED * 31 + i * 7).choice("ABCD")
+        lajota(bms[k], sp[i])
     objs = []
     for k, bm in bms.items():
         _aresta_viva(bm)

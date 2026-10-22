@@ -1,6 +1,8 @@
-"""Piso da Cripta, parte POCAS E MUSGO: poças rasas, anéis de umidade, tufos de musgo e raízes finas.
-Materiais: M_Piso_Agua, M_Piso_Umido, M_Piso_Musgo, M_Piso_Musgo_Claro, M_Piso_Raiz.
-Periodicidade de 8 m: nada fica a menos de 0,3 m da borda do módulo (poças e musgo); raízes idem."""
+"""Piso da Cripta, parte POCAS E MUSGO: poças rasas com ondas, anéis de umidade em gradiente, pedrinhas,
+manchas planas de musgo com tufos, umidade nas juntas e raízes finas.
+Materiais: M_Piso_Agua, M_Piso_Umido, M_Piso_Musgo, M_Piso_Musgo_Claro, M_Piso_Pedra, M_Piso_Raiz.
+Cor por vértice (atributo "Col"; alfa = gradiente da umidade/água) nos materiais com vértice-cor; base branca no glb.
+Periodicidade de 8 m: nada fica a menos de 0,3 m da borda do módulo."""
 import bpy, bmesh, math, os, random, sys
 from mathutils import Vector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -8,147 +10,273 @@ import comum
 
 SEED_P = 5207
 BORDA = 0.30
-Z_AGUA = 0.0026      # topo da água (+2,6 mm)
+Z_AGUA = 0.0026
 Z_UMIDO = 0.0010
 
 
-def _mat_agua():
-    m = comum.material("M_Piso_Agua", (0.025, 0.060, 0.110), rough=0.02)
-    b = m.node_tree.nodes["Principled BSDF"]
-    b.inputs["Alpha"].default_value = 0.82
+def _blend(m):
     for attr, val in (("blend_method", 'BLEND'), ("surface_render_method", 'BLENDED')):
         try: setattr(m, attr, val)
         except Exception: pass
-    try: b.inputs["Specular IOR Level"].default_value = 0.8
+    try: m.use_backface_culling = False
     except Exception: pass
+
+
+def _mat_vc(nome, cor, rough, alpha=False, metal=0.0):
+    """Material cujo Base Color (e, se alpha, o Alpha) vêm do atributo de cor por vértice 'Col'."""
+    m = comum.material(nome, cor, rough=rough, metal=metal)
+    nt = m.node_tree; b = nt.nodes["Principled BSDF"]
+    vc = nt.nodes.new("ShaderNodeVertexColor"); vc.layer_name = "Col"
+    nt.links.new(vc.outputs["Color"], b.inputs["Base Color"])
+    if alpha:
+        nt.links.new(vc.outputs["Alpha"], b.inputs["Alpha"]); _blend(m)
     return m
 
+
 def _mats():
+    agua = _mat_vc("M_Piso_Agua", (0.04, 0.09, 0.15), rough=0.02, alpha=True)   # metallic 0, rough 0.02, alfa ~0.7 por vértice
+    try: agua.node_tree.nodes["Principled BSDF"].inputs["Specular IOR Level"].default_value = 0.9
+    except Exception: pass
     return dict(
-        agua=_mat_agua(),
-        umido=comum.material("M_Piso_Umido", (0.013, 0.018, 0.028), rough=0.18),
-        musgo=comum.material("M_Piso_Musgo", (0.016, 0.048, 0.030), rough=0.95),
-        musgo2=comum.material("M_Piso_Musgo_Claro", (0.030, 0.075, 0.032), rough=0.95),
+        agua=agua,
+        umido=_mat_vc("M_Piso_Umido", (0.01, 0.014, 0.022), rough=0.12, alpha=True),
+        musgo=_mat_vc("M_Piso_Musgo", (0.016, 0.048, 0.030), rough=0.95),
+        musgo2=_mat_vc("M_Piso_Musgo_Claro", (0.030, 0.075, 0.032), rough=0.95),
+        pedra=_mat_vc("M_Piso_Pedra", (0.050, 0.062, 0.085), rough=0.7),
         raiz=comum.material("M_Piso_Raiz", (0.060, 0.042, 0.032), rough=0.90),
     )
 
 
-# ---------------------------------------------------------------- blobs
+def _obj(nome, bm, vc, mat, suave=False):
+    lay = bm.loops.layers.color.new("Col")
+    for f in bm.faces:
+        for l in f.loops:
+            c = vc.get(l.vert, (1, 1, 1, 1))
+            l[lay] = (min(1.0, c[0]) ** 0.4545, min(1.0, c[1]) ** 0.4545, min(1.0, c[2]) ** 0.4545, c[3])   # camada byte é sRGB
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    o = comum.novo_objeto(nome, bm, [mat])
+    if suave:
+        for p in o.data.polygons: p.use_smooth = True
+    return o
+
+
+def _sm(a, b, x):
+    t = min(1.0, max(0.0, (x - a) / (b - a))); return t * t * (3 - 2 * t)
+
+
+def _mix(a, b, t): return tuple(a[i] + (b[i] - a[i]) * t for i in range(len(a)))
+
+
+# ---------------------------------------------------------------- poças
 def _blob(r, raio):
-    """Contorno orgânico em coordenadas polares: elipse + harmônicos. Retorna f(theta)->raio."""
     el = r.uniform(1.0, 1.5); rot = r.uniform(0, math.pi)
     har = [(k, r.uniform(0.04, 0.16) / (k * 0.6), r.uniform(0, 6.28)) for k in (2, 3, 4, 5, 7)]
     def f(t):
         a = t - rot
-        e = 1.0 / math.sqrt((math.cos(a) / el) ** 2 + (math.sin(a) * el) ** 2 + 1e-9) * 1.0
+        e = 1.0 / math.sqrt((math.cos(a) / el) ** 2 + (math.sin(a) * el) ** 2 + 1e-9)
         k = 1.0 + sum(A * math.cos(n * t + p) for n, A, p in har)
         return raio * min(e, 1.6) * k * 0.85
     return f
 
 
-def _anel(bm, cx, cy, f_in, f_out, z_in, z_out, n=64, passos=3, ruido=None):
-    """Faixa entre dois contornos polares (f_in..f_out), com 'passos' anéis intermediários; z interpolado."""
-    linhas = []
-    for i in range(passos + 1):
-        u = i / passos
-        v = []
+def _forma(r, raio):
+    f = _blob(r, raio)
+    h = [(k, r.uniform(0.05, 0.14), r.uniform(0, 6.28)) for k in (2, 3, 5, 6)]
+    ex = r.uniform(1.25, 1.5)
+    def f_halo(t): return f(t) * (ex + sum(A * math.cos(n_ * t + p) for n_, A, p in h))
+    rmax = max(f_halo(2 * math.pi * i / 90) for i in range(90))
+    return f, f_halo, rmax
+
+
+def _dentro(f, cx, cy, x, y, k=0.88):
+    dx, dy = x - cx, y - cy
+    return math.hypot(dx, dy) < f(math.atan2(dy, dx)) * k
+
+
+def _agua(idx, cx, cy, f, r, M):
+    bm = bmesh.new(); vc = {}; n = 72; Z = Z_AGUA
+    fundo = (0.012, 0.030, 0.062); raso = (0.040, 0.080, 0.120)
+    def col(t): return (*_mix(fundo, raso, _sm(0.2, 1.0, t)), 0.76 - 0.42 * _sm(0.62, 1.0, t))
+    c = bm.verts.new((cx, cy, Z)); vc[c] = col(0)
+    aneis = []; J = 7
+    for j in range(1, J + 1):
+        t_ = j / J; v = []
         for k in range(n):
             t = 2 * math.pi * k / n
-            ri = f_in(t); ro = f_out(t); rr = ri + (ro - ri) * u
-            z = z_in + (z_out - z_in) * u
-            if ruido: z += ruido.uniform(-0.0002, 0.0002)
-            v.append(bm.verts.new((cx + rr * math.cos(t), cy + rr * math.sin(t), z)))
+            vv = bm.verts.new((cx + f(t) * t_ * math.cos(t), cy + f(t) * t_ * math.sin(t), Z - 0.0006 * t_ ** 6))
+            vc[vv] = col(t_); v.append(vv)
+        aneis.append(v)
+    for k in range(n): bm.faces.new((c, aneis[0][k], aneis[0][(k + 1) % n]))
+    for j in range(J - 1):
+        for k in range(n):
+            k2 = (k + 1) % n; bm.faces.new((aneis[j][k], aneis[j + 1][k], aneis[j + 1][k2], aneis[j][k2]))
+    # ondas: anéis finos de crista nos pontos de gota + arco de ondinhas rente à margem
+    crista = (0.12, 0.19, 0.28)
+    def fita(pts, w, alfas):
+        rows = []
+        for (x, y, nx, ny), a in zip(pts, alfas):
+            a1 = bm.verts.new((x - nx * w, y - ny * w, Z + 0.0002)); a2 = bm.verts.new((x, y, Z + 0.0016)); a3 = bm.verts.new((x + nx * w, y + ny * w, Z + 0.0002))
+            vc[a1] = (*crista, 0.0); vc[a2] = (*crista, a); vc[a3] = (*crista, 0.0); rows.append((a1, a2, a3))
+        return rows
+    def ligar(rows, fechar):
+        m = len(rows)
+        for i in range(m if fechar else m - 1):
+            A, B = rows[i], rows[(i + 1) % m]
+            for q in range(2): bm.faces.new((A[q], A[q + 1], B[q + 1], B[q]))
+    for _ in range(2 + (f(0) > 0.6)):
+        for _t in range(12):
+            a = r.uniform(0, 6.28); d = r.uniform(0, 0.4) * f(a)
+            ox, oy = cx + d * math.cos(a), cy + d * math.sin(a)
+            if _dentro(f, cx, cy, ox, oy, 0.5): break
+        else: continue
+        el = r.uniform(0.75, 1.0); rot = r.uniform(0, 3.14); rs = [0.045, 0.095, 0.15, 0.215][:r.randint(3, 4)]
+        for qi, rr in enumerate(rs):
+            pts = []; ok = True
+            for k in range(30):
+                t = 2 * math.pi * k / 30
+                lx, ly = rr * math.cos(t), rr * el * math.sin(t)
+                x = ox + lx * math.cos(rot) - ly * math.sin(rot); y = oy + lx * math.sin(rot) + ly * math.cos(rot)
+                if not _dentro(f, cx, cy, x, y, 0.9): ok = False; break
+                pts.append((x, y, math.cos(t), math.sin(t)))
+            if ok: ligar(fita(pts, 0.0065, [0.6 - 0.12 * qi] * len(pts)), True)
+    t0 = r.uniform(0, 6.28); span = r.uniform(1.0, 1.7); pts = []; al = []
+    for k in range(26):
+        u = k / 25; t = t0 + span * u; rr = f(t) * 0.86
+        pts.append((cx + rr * math.cos(t), cy + rr * math.sin(t), -math.cos(t), -math.sin(t))); al.append(0.55 * math.sin(math.pi * u))
+    ligar(fita(pts, 0.007, al), False)
+    return _obj(f"Poca_{idx}", bm, vc, M["agua"], suave=True)
+
+
+def _faixa(bm, vc, cx, cy, f_in, f_out, z_in, z_out, n, passos, perfil, rgb, ruido=None):
+    linhas = []
+    for i in range(passos + 1):
+        u = i / passos; v = []
+        for k in range(n):
+            t = 2 * math.pi * k / n; rr = f_in(t) + (f_out(t) - f_in(t)) * u
+            z = z_in + (z_out - z_in) * u + (ruido.uniform(-0.0001, 0.0001) if ruido else 0)
+            vv = bm.verts.new((cx + rr * math.cos(t), cy + rr * math.sin(t), z))
+            vc[vv] = (*rgb, perfil(u) * (ruido.uniform(0.85, 1.0) if ruido else 1)); v.append(vv)
         linhas.append(v)
     for i in range(passos):
         for k in range(n):
-            k2 = (k + 1) % n
-            bm.faces.new((linhas[i][k], linhas[i][k2], linhas[i + 1][k2], linhas[i + 1][k]))
-    return linhas
+            k2 = (k + 1) % n; bm.faces.new((linhas[i][k], linhas[i][k2], linhas[i + 1][k2], linhas[i + 1][k]))
 
 
-def _poca(idx, cx, cy, raio, r, M):
-    f = _blob(r, raio)
-    # água: leque de anéis do centro até o contorno, com leve queda na borda (menisco)
-    bm = bmesh.new(); n = 72
-    c = bm.verts.new((cx, cy, Z_AGUA))
-    aneis = []
-    for j in range(1, 6):
-        t_ = j / 5.0
-        v = []
-        for k in range(n):
-            t = 2 * math.pi * k / n
-            rr = f(t) * (t_ if j < 5 else 1.0)
-            z = Z_AGUA - (0.0006 * t_ ** 6)         # menisco: cai de leve na beirada
-            v.append(bm.verts.new((cx + rr * math.cos(t), cy + rr * math.sin(t), z)))
-        aneis.append(v)
-    for k in range(n):
-        bm.faces.new((c, aneis[0][k], aneis[0][(k + 1) % n]))
-    for j in range(4):
-        for k in range(n):
-            k2 = (k + 1) % n
-            bm.faces.new((aneis[j][k], aneis[j + 1][k], aneis[j + 1][k2], aneis[j][k2]))
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    o_agua = comum.novo_objeto(f"Poca_{idx}", bm, [M["agua"]])
+def _umido(idx, cx, cy, f, f_halo, r, M):
+    """Borda molhada escura fina + anel de umidade largo com alfa em gradiente suave (sem degrau)."""
+    bm = bmesh.new(); vc = {}; n = 72
+    _faixa(bm, vc, cx, cy, lambda t: f(t) * 0.99, f_halo, Z_AGUA - 0.0005, Z_UMIDO - 0.0002, n, 9,
+           lambda u: 0.95 * (1 - u) ** 1.4, (0.008, 0.012, 0.02), ruido=r)
+    return _obj(f"Umido_{idx}", bm, vc, M["umido"], suave=True)
 
-    # umidade: borda molhada fina e escura (menisco) + halo largo irregular
-    h = [(k, r.uniform(0.05, 0.14), r.uniform(0, 6.28)) for k in (2, 3, 5, 6)]
-    ex = r.uniform(1.12, 1.35)
-    def f_halo(t): return f(t) * (ex + sum(A * math.cos(n_ * t + p) for n_, A, p in h))
-    def f_borda(t): return f(t) * 1.05 + 0.012
-    bm = bmesh.new()
-    _anel(bm, cx, cy, lambda t: f(t) * 0.995, f_borda, Z_AGUA - 0.0006, Z_UMIDO + 0.0004, n=n, passos=1)
-    _anel(bm, cx, cy, f_borda, f_halo, Z_UMIDO + 0.0004, Z_UMIDO - 0.0004, n=n, passos=3, ruido=r)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    o_um = comum.novo_objeto(f"Umido_{idx}", bm, [M["umido"]])
-    return [o_agua, o_um], f
+
+def _umido_juntas(r, lajes, pocas, M):
+    """Faixas escuras de umidade ao longo das juntas perto das poças (alfa cai nas pontas e para os lados)."""
+    bm = bmesh.new(); vc = {}; j = comum.JUNTA / 2
+    for l in lajes:
+        for (xa, ya, xb, yb, nx, ny) in ((l["x0"], l["y0"], l["x1"], l["y0"], 0, -1), (l["x1"], l["y0"], l["x1"], l["y1"], 1, 0),
+                                         (l["x1"], l["y1"], l["x0"], l["y1"], 0, 1), (l["x0"], l["y1"], l["x0"], l["y0"], -1, 0)):
+            mx, my = (xa + xb) / 2, (ya + yb) / 2
+            d = _dist_pocas(mx, my, pocas); p = 0.9 if d < 0.9 else (0.45 if d < 1.8 else 0.1)
+            if r.random() > p: continue
+            comp = math.hypot(xb - xa, yb - ya); t0 = r.uniform(0.0, 0.3); t1 = r.uniform(0.7, 1.0)
+            m = max(4, int(comp * (t1 - t0) / 0.2)); larg = r.uniform(0.05, 0.11) * (1.3 if d < 0.9 else 1.0)
+            rows = []
+            for i in range(m + 1):
+                u = i / m; t = t0 + (t1 - t0) * u
+                x = xa + (xb - xa) * t + nx * j; y = ya + (yb - ya) * t + ny * j
+                if not _livre(x, y, 0.35): rows = None; break
+                w = larg * (0.7 + 0.5 * math.sin(i * 1.7 + t0 * 9)); a = 0.62 * math.sin(math.pi * u) ** 0.7
+                z = 0.0006 + r.uniform(0, 0.0002)
+                rows.append((x, y, z, w, a))
+            if not rows: continue
+            horiz = (ya == yb); lin = []
+            for (x, y, z, w, a) in rows:
+                if horiz: pts = ((x, y - w), (x, y), (x, y + w))
+                else: pts = ((x - w, y), (x, y), (x + w, y))
+                row = []
+                for (px, py), al in zip(pts, (0.0, a, 0.0)):
+                    vv = bm.verts.new((px, py, z)); vc[vv] = (0.008, 0.012, 0.02, al); row.append(vv)
+                lin.append(row)
+            for i in range(len(lin) - 1):
+                for q in range(2): bm.faces.new((lin[i][q], lin[i][q + 1], lin[i + 1][q + 1], lin[i + 1][q]))
+    return _obj("Umido_juntas", bm, vc, M["umido"], suave=True)
+
+
+def _dist_pocas(x, y, pocas):
+    return min((math.hypot(x - cx, y - cy) - f(math.atan2(y - cy, x - cx)) for (cx, cy, f) in pocas), default=9.0)
+
+
+# ---------------------------------------------------------------- pedrinhas
+def _pedra(bm, vc, x, y, rad, r, z0, tom):
+    g = bmesh.ops.create_icosphere(bm, subdivisions=1, radius=1.0)
+    ach = r.uniform(0.35, 0.6); el = r.uniform(0.8, 1.3); rot = r.uniform(0, 3.14)
+    for v in g["verts"]:
+        s = r.uniform(0.75, 1.15); px, py, pz = v.co.x * s * el, v.co.y * s / el, v.co.z * s * ach
+        v.co = Vector((x + (px * math.cos(rot) - py * math.sin(rot)) * rad, y + (px * math.sin(rot) + py * math.cos(rot)) * rad, z0 + pz * rad))
+        v.co.z = max(v.co.z, z0 - 0.004)
+        k = 0.8 + 0.4 * (pz > 0) * r.random()
+        vc[v] = (tom[0] * k, tom[1] * k, tom[2] * k, 1.0)
+
+
+def _pedrinhas(r, pocas, M):
+    bm = bmesh.new(); vc = {}
+    for (cx, cy, f) in pocas:
+        for i in range(r.randint(13, 20)):
+            if i < 4:    # dentro da água, quase submersas
+                a = r.uniform(0, 6.28); d = r.uniform(0.15, 0.8) * f(a)
+            else:        # na borda, dentro e fora
+                a = r.uniform(0, 6.28); d = f(a) * r.uniform(0.84, 1.18)
+            x, y = cx + d * math.cos(a), cy + d * math.sin(a)
+            if not _livre(x, y): continue
+            rad = r.choice([0.012, 0.018, 0.026, 0.035, 0.048, 0.065]) * r.uniform(0.85, 1.2)
+            t = r.uniform(0.3, 0.75)
+            _pedra(bm, vc, x, y, rad, r, 0.0016 if i < 4 else 0.0006, (0.05 * t, 0.062 * t, 0.085 * t))
+    return _obj("Pedrinhas", bm, vc, M["pedra"])
 
 
 # ---------------------------------------------------------------- musgo
-def _lamina(bm, base, r, altura, larg, inclina):
-    """Lâmina fina de musgo/líquen: base triangular, um anel intermediário curvado e ponta. ~9 triângulos."""
-    ang = r.uniform(0, 6.28)
-    dirv = Vector((math.cos(ang), math.sin(ang), 0))
-    curva = inclina * altura
-    def anel(t, w):
-        cen = Vector(base) + dirv * (curva * t * t) + Vector((0, 0, altura * t))
-        vs = []
-        for k in range(3):
-            a = ang + 2.094 * k + r.uniform(-0.3, 0.3)
-            vs.append(bm.verts.new(cen + Vector((math.cos(a), math.sin(a), 0)) * w * r.uniform(0.8, 1.2)))
-        return vs
-    a0 = anel(0.0, larg); a1 = anel(0.55, larg * 0.6)
-    tip = bm.verts.new(Vector(base) + dirv * curva * 1.1 + Vector((0, 0, altura)))
-    for k in range(3):
-        k2 = (k + 1) % 3
-        bm.faces.new((a0[k], a0[k2], a1[k2], a1[k]))
-        bm.faces.new((a1[k], a1[k2], tip))
-    bm.faces.new(a0[::-1])
+TONS = [((0.009, 0.030, 0.018), 0.45), ((0.020, 0.050, 0.020), 0.30), ((0.007, 0.024, 0.024), 0.25)]   # verde, oliva, azulado
 
 
-def _monte(bm, cx, cy, raio, alt, r):
-    """Montinho irregular achatado (icosfera deformada por ruído e esmagada), sem cara de esfera lisa."""
-    g = bmesh.ops.create_icosphere(bm, subdivisions=1, radius=1.0)
-    vs = g["verts"]
-    for v in vs:
-        s = r.uniform(0.55, 1.15)
-        v.co = Vector((v.co.x * raio * s * r.uniform(0.8, 1.25), v.co.y * raio * s * r.uniform(0.8, 1.25),
-                       v.co.z * alt * r.uniform(0.6, 1.2)))
-        v.co.x += cx; v.co.y += cy
-        v.co.z = max(v.co.z, -0.002) + alt * 0.1
-    # recorta o fundo: tudo abaixo de -2 mm vira -2 mm (assenta no piso)
-    for v in vs:
-        if v.co.z < 0.0: v.co.z = -0.002
+def _manta(bm, vc, cx, cy, ra, ang, along, r):
+    """Mancha plana irregular (leque de 3 anéis) com cor variada, centro levemente abaulado, borda escura."""
+    n = max(9, min(15, 7 + int(ra * 70))); sorte = r.random(); acc = 0
+    for tom, pr in TONS:
+        acc += pr
+        if sorte <= acc: break
+    har = [(k, r.uniform(0.05, 0.2) / (k * 0.5), r.uniform(0, 6.28)) for k in (2, 3, 5, 7)]
+    ca, sa = math.cos(ang), math.sin(ang)
+    c = bm.verts.new((cx, cy, 0.0042)); vc[c] = (*[min(1, x * 1.6) for x in tom], 1.0)
+    prev = None; ringu = (0.6, 1.0)
+    for ui, u in enumerate(ringu):
+        v = []
+        for k in range(n):
+            t = 2 * math.pi * k / n; rad = ra * u * (1 + sum(A * math.cos(m * t + p) for m, A, p in har)) * r.uniform(0.92, 1.08)
+            lx, ly = rad * math.cos(t) * along, rad * math.sin(t)
+            z = 0.0006 + 0.0034 * (1 - u) ** 0.8 + r.uniform(0, 0.0016) * (u < 1)
+            vv = bm.verts.new((cx + lx * ca - ly * sa, cy + lx * sa + ly * ca, z))
+            kk = 1.5 - 0.9 * u + r.uniform(-0.35, 0.3); vc[vv] = (tom[0] * kk, tom[1] * kk, tom[2] * kk, 1.0); v.append(vv)
+        if prev is None:
+            for k in range(n): bm.faces.new((c, v[k], v[(k + 1) % n]))
+        else:
+            for k in range(n):
+                k2 = (k + 1) % n; bm.faces.new((prev[k], prev[k2], v[k2], v[k]))
+        prev = v
+    return tom
 
 
-def _tufo(bm, bm2, x, y, r, escala=1.0):
-    n = r.randint(11, 19)
-    raio = r.uniform(0.030, 0.065) * escala
-    _monte(bm2, x, y, raio * 1.2, r.uniform(0.012, 0.024) * escala, r)
-    for _ in range(n):
-        a = r.uniform(0, 6.28); d = abs(r.gauss(0, raio))
-        px, py = x + d * math.cos(a), y + d * math.sin(a)
-        alt = r.uniform(0.012, 0.032) * escala * (1.0 - 0.5 * d / (raio * 2.5 + 1e-6))
-        _lamina(bm, (px, py, 0.0), r, max(alt, 0.010), r.uniform(0.0035, 0.0070), r.uniform(0.0, 0.6))
+def _tufo(bm, vc, x, y, r, escala, tom):
+    for _ in range(r.randint(5, 8)):
+        a = r.uniform(0, 6.28); d = abs(r.gauss(0, 0.014 * escala)); px, py = x + d * math.cos(a), y + d * math.sin(a)
+        h = r.uniform(0.010, 0.026) * escala; b = r.uniform(0.0022, 0.0040); ang = r.uniform(0, 6.28); inc = r.uniform(0.2, 0.9) * h
+        z0 = 0.0030
+        bs = [bm.verts.new((px + b * math.cos(ang + 2.094 * k), py + b * math.sin(ang + 2.094 * k), z0)) for k in range(3)]
+        tip = bm.verts.new((px + inc * math.cos(a), py + inc * math.sin(a), z0 + h))
+        kk = r.uniform(0.9, 1.3)
+        for v in bs: vc[v] = (tom[0] * kk, tom[1] * kk, tom[2] * kk, 1.0)
+        vc[tip] = (min(1, tom[0] * 2.8 + 0.01), min(1, tom[1] * 2.4 + 0.02), min(1, tom[2] * 1.8), 1.0)
+        for k in range(3): bm.faces.new((bs[k], bs[(k + 1) % 3], tip))
 
 
 def _livre(x, y, margem=BORDA):
@@ -156,42 +284,40 @@ def _livre(x, y, margem=BORDA):
 
 
 def _musgo(r, lajes, pocas, M):
-    bm1 = bmesh.new(); bm2 = bmesh.new(); bm_m = bmesh.new()   # lâminas escuras, lâminas claras, montinhos
-    pontos = []
-    for l in lajes:
-        # quinas: quase sempre, com probabilidade; bordas: pontos ao longo da junta
-        for (x, y) in ((l["x0"], l["y0"]), (l["x1"], l["y0"]), (l["x1"], l["y1"]), (l["x0"], l["y1"])):
-            if r.random() < 0.32: pontos.append((x, y, 1.0))
-        for (xa, ya, xb, yb) in ((l["x0"], l["y0"], l["x1"], l["y0"]), (l["x1"], l["y0"], l["x1"], l["y1"]),
-                                 (l["x1"], l["y1"], l["x0"], l["y1"]), (l["x0"], l["y1"], l["x0"], l["y0"])):
-            comp = math.hypot(xb - xa, yb - ya)
-            if r.random() < 0.32:
-                # trecho contínuo de musgo ao longo da junta
-                t0 = r.uniform(0.05, 0.6); t1 = min(0.97, t0 + r.uniform(0.15, 0.35))
-                m = max(2, int(comp * (t1 - t0) / 0.12))
-                for i in range(m):
-                    t = t0 + (t1 - t0) * (i + r.random()) / m
-                    pontos.append((xa + (xb - xa) * t, ya + (yb - ya) * t, 0.8))
-    # musgo extra perto das poças (mais umidade)
-    for (cx, cy, f) in pocas:
-        for _ in range(26):
-            t = r.uniform(0, 6.28); rr = f(t) * r.uniform(1.15, 1.9)
-            pontos.append((cx + rr * math.cos(t), cy + rr * math.sin(t), 0.7))
+    bm1 = bmesh.new(); bm2 = bmesh.new(); vc1 = {}; vc2 = {}
+    cand = []
+    for (cx, cy, f) in pocas:        # musgo colado na borda molhada das poças
+        for _ in range(r.randint(13, 18)):
+            t = r.uniform(0, 6.28); rr = f(t) * r.uniform(1.02, 1.4)
+            cand.append((cx + rr * math.cos(t), cy + rr * math.sin(t), t + 1.5708 + r.uniform(-0.4, 0.4), r.uniform(0.04, 0.12), r.uniform(1.0, 1.8)))
+    for l in lajes:                   # juntas: mais perto das poças, esparso longe
+        for (xa, ya, xb, yb, nx, ny) in ((l["x0"], l["y0"], l["x1"], l["y0"], 0, -1), (l["x1"], l["y0"], l["x1"], l["y1"], 1, 0),
+                                         (l["x1"], l["y1"], l["x0"], l["y1"], 0, 1), (l["x0"], l["y1"], l["x0"], l["y0"], -1, 0)):
+            mx, my = (xa + xb) / 2, (ya + yb) / 2; d = _dist_pocas(mx, my, pocas)
+            p = 0.5 if d < 1.0 else (0.26 if d < 2.0 else 0.09)
+            if r.random() > p: continue
+            ang = math.atan2(yb - ya, xb - xa); comp = math.hypot(xb - xa, yb - ya)
+            for _ in range(r.randint(1, 3) if d < 2.0 else 1):
+                t = r.uniform(0.08, 0.92); x = xa + (xb - xa) * t + nx * comum.JUNTA / 2; y = ya + (yb - ya) * t + ny * comum.JUNTA / 2
+                cand.append((x, y, ang, r.uniform(0.03, 0.09), r.uniform(1.6, 3.0)))
+        for (x, y) in ((l["x0"], l["y0"]), (l["x1"], l["y1"])):
+            if r.random() < 0.22: cand.append((x, y, r.uniform(0, 3.14), r.uniform(0.05, 0.11), 1.2))
+    extra = []
+    for (x, y, ang, ra, al) in cand:   # aglomerados: cada mancha ganha 1-3 vizinhas menores, de outro tom
+        for _ in range(r.randint(0, 2)):
+            d = ra * al * r.uniform(0.5, 1.2); a = r.uniform(0, 6.28)
+            extra.append((x + d * math.cos(a), y + d * math.sin(a), ang + r.uniform(-0.6, 0.6), ra * r.uniform(0.4, 0.8), al * r.uniform(0.6, 1.0)))
+    cand += extra
     cont = 0
-    for (x, y, e) in pontos:
-        # puxa o ponto para a junta mais próxima? Já está nas arestas; só um desvio mínimo para dentro da junta
-        x += r.uniform(-0.012, 0.012); y += r.uniform(-0.012, 0.012)
-        if not _livre(x, y): continue
-        alvo = bm2 if r.random() < 0.3 else bm1
-        _tufo(alvo, bm_m, x, y, r, escala=e * r.uniform(0.8, 1.5))
+    for (x, y, ang, ra, al) in cand:
+        if not _livre(x, y, 0.3 + ra * al + 0.05) or _dist_pocas(x, y, pocas) < 0.03 + ra * 0.6: continue
+        tom = _manta(bm1, vc1, x, y, ra, ang, al, r)
+        for _ in range(int(2 + ra * 45 * r.random())):
+            a = r.uniform(0, 6.28); d = abs(r.gauss(0, 0.45)) * ra
+            lx, ly = d * math.cos(a) * al, d * math.sin(a)
+            _tufo(bm2, vc2, x + lx * math.cos(ang) - ly * math.sin(ang), y + lx * math.sin(ang) + ly * math.cos(ang), r, r.uniform(0.7, 1.5), tom)
         cont += 1
-    for b in (bm1, bm2, bm_m):
-        bmesh.ops.recalc_face_normals(b, faces=b.faces)
-    # montinhos usam o material escuro
-    objs = [comum.novo_objeto("Musgo_laminas", bm1, [M["musgo"]]),
-            comum.novo_objeto("Musgo_claro", bm2, [M["musgo2"]]),
-            comum.novo_objeto("Musgo_montes", bm_m, [M["musgo"]])]
-    return objs
+    return [_obj("Musgo_mantas", bm1, vc1, M["musgo"], suave=True), _obj("Musgo_tufos", bm2, vc2, M["musgo2"])]
 
 
 # ---------------------------------------------------------------- raízes
@@ -246,22 +372,26 @@ def construir():
     r = random.Random(SEED_P)
     M = _mats()
     lajes = comum.layout()
-    # centros das poças: preferencialmente em cruzamentos de juntas (quinas de lajotas), longe da borda
     cantos = [(l["x1"] + comum.JUNTA / 2, l["y1"] + comum.JUNTA / 2) for l in lajes]
-    cantos = [c for c in cantos if 1.3 <= c[0] <= 6.7 and 1.3 <= c[1] <= 6.7]
+    cantos = [c for c in cantos if 0.6 <= c[0] <= 7.4 and 0.6 <= c[1] <= 7.4]
     r.shuffle(cantos)
-    alvo = [(1.0, 1.0)]  # raios nominais
     raios = [0.95, 0.70, 0.55, 0.80, 0.50]
     escolhidos = []
     for c in cantos:
-        rad = raios[len(escolhidos)]
-        if all(math.hypot(c[0] - e[0], c[1] - e[1]) > 1.9 for e in escolhidos):
-            escolhidos.append((c[0] + r.uniform(-0.15, 0.15), c[1] + r.uniform(-0.15, 0.15), rad))
         if len(escolhidos) == len(raios): break
+        rad = raios[len(escolhidos)]
+        cx = c[0] + r.uniform(-0.15, 0.15); cy = c[1] + r.uniform(-0.15, 0.15)
+        if not all(math.hypot(cx - e[0], cy - e[1]) > 1.9 for e in escolhidos): continue
+        est = r.getstate(); f, fh, rmax = _forma(r, rad)
+        if not (BORDA + 0.05 <= cx - rmax and cx + rmax <= comum.TILE - BORDA - 0.05 and BORDA + 0.05 <= cy - rmax and cy + rmax <= comum.TILE - BORDA - 0.05):
+            r.setstate(est); continue
+        escolhidos.append((cx, cy, rad, f, fh))
     objs = []; pocas = []
-    for i, (cx, cy, rad) in enumerate(escolhidos):
-        o, f = _poca(i, cx, cy, rad, r, M)
-        objs += o; pocas.append((cx, cy, f))
+    for i, (cx, cy, rad, f, fh) in enumerate(escolhidos):
+        objs += [_agua(i, cx, cy, f, r, M), _umido(i, cx, cy, f, fh, r, M)]
+        pocas.append((cx, cy, f))
+    objs.append(_umido_juntas(r, lajes, pocas, M))
+    objs.append(_pedrinhas(r, pocas, M))
     objs += _musgo(r, lajes, pocas, M)
     objs += _raizes(r, lajes, M)
     return objs
@@ -271,7 +401,7 @@ def construir():
 def _lajotas_previa():
     """Só para a prévia: caixas simples (topo z=0) a partir do layout; NÃO faz parte de construir()."""
     r = random.Random(11)
-    m = comum.material("M_Previa_Laje", (0.07, 0.09, 0.13), rough=0.7)
+    m = comum.material("M_Previa_Laje", (0.035, 0.045, 0.07), rough=0.7)
     for l in comum.layout():
         bm = bmesh.new()
         v = [bm.verts.new((x, y, z)) for z in (0.0, -comum.ESPESSURA) for (x, y) in ((l["x0"], l["y0"]), (l["x1"], l["y0"]), (l["x1"], l["y1"]), (l["x0"], l["y1"]))]
@@ -288,27 +418,49 @@ def _lajotas_previa():
 
 
 def _tris(objs):
-    return sum(len(o.data.polygons) if False else sum(len(p.vertices) - 2 for p in o.data.polygons) for o in objs)
+    return sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in objs)
+
+
+def _previa(png, olhar, cam, res=(960, 640), amostras=32, lente=35):
+    """Igual a comum.previa, mas com céu em gradiente no world (SÓ prévia) para o reflexo da água aparecer."""
+    sc = bpy.context.scene
+    sc.render.engine = 'CYCLES'; sc.cycles.samples = amostras; sc.cycles.use_denoising = True
+    try: sc.cycles.device = 'CPU'
+    except Exception: pass
+    sc.render.resolution_x, sc.render.resolution_y = res
+    w = bpy.data.worlds.new("ceu"); w.use_nodes = True; nt = w.node_tree; bg = nt.nodes["Background"]
+    tc = nt.nodes.new("ShaderNodeTexCoord"); sep = nt.nodes.new("ShaderNodeSeparateXYZ"); rp = nt.nodes.new("ShaderNodeValToRGB")
+    ns = nt.nodes.new("ShaderNodeTexNoise"); ns.inputs["Scale"].default_value = 2.2; ns.inputs["Detail"].default_value = 4
+    mul = nt.nodes.new("ShaderNodeMix"); mul.data_type = 'RGBA'; mul.blend_type = 'MULTIPLY'; mul.inputs[0].default_value = 0.6
+    nt.links.new(tc.outputs["Generated"], sep.inputs[0]); nt.links.new(sep.outputs["Z"], rp.inputs[0])
+    nt.links.new(tc.outputs["Generated"], ns.inputs["Vector"])
+    el = rp.color_ramp.elements; el[0].position = 0.35; el[0].color = (0.02, 0.03, 0.06, 1); el[1].position = 1.0; el[1].color = (0.55, 0.7, 1.0, 1)
+    e2 = el.new(0.6); e2.color = (0.16, 0.24, 0.42, 1)
+    nt.links.new(rp.outputs["Color"], mul.inputs[6]); nt.links.new(ns.outputs["Color"], mul.inputs[7])
+    nt.links.new(mul.outputs[2], bg.inputs[0]); bg.inputs[1].default_value = 1.1
+    sc.world = w
+    sol = bpy.data.objects.new("lua", bpy.data.lights.new("lua", 'SUN')); sol.data.energy = 1.6; sol.data.color = (0.6, 0.7, 1.0)
+    sol.rotation_euler = (math.radians(55), 0, math.radians(35)); bpy.context.collection.objects.link(sol)
+    t = bpy.data.objects.new("tocha", bpy.data.lights.new("tocha", 'POINT')); t.data.energy = 350; t.data.color = (1.0, 0.6, 0.25); t.data.shadow_soft_size = 0.3
+    t.location = (olhar[0] - 1.5, olhar[1] + 1.0, 1.1); bpy.context.collection.objects.link(t)
+    c = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); c.data.lens = lente; bpy.context.collection.objects.link(c); sc.camera = c
+    c.location = cam; c.rotation_euler = (Vector(olhar) - c.location).to_track_quat('-Z', 'Y').to_euler()
+    os.makedirs(os.path.dirname(png), exist_ok=True); sc.render.filepath = png; bpy.ops.render.render(write_still=True)
 
 
 if __name__ == "__main__":
     comum.limpar_cena()
     objs = construir()
     print("TRIANGULOS", _tris(objs), {o.name: sum(len(p.vertices) - 2 for p in o.data.polygons) for o in objs})
+    xs = [v.co.x for o in objs for v in o.data.vertices]; ys = [v.co.y for o in objs for v in o.data.vertices]
+    print("EXTENSAO x", round(min(xs), 3), round(max(xs), 3), "y", round(min(ys), 3), round(max(ys), 3))
     _lajotas_previa()
-    saida = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "previas", "piso")
-    saida = os.path.normpath(saida)
-    p0 = objs[0].location
-    # centro da primeira poça para close
-    ce = None
-    for o in objs:
-        if o.name == "Poca_0":
-            vs = [v.co for v in o.data.vertices]; ce = sum(vs, Vector()) / len(vs)
-    ce = ce or Vector((4, 4, 0))
+    saida = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "previas", "piso"))
+    vs = [v.co for o in objs if o.name == "Poca_0" for v in o.data.vertices]
+    ce = sum(vs, Vector()) / len(vs) if vs else Vector((4, 4, 0))
     def _lp():
         for o in [o for o in bpy.data.objects if o.name.startswith(("lua", "tocha", "cam"))]: bpy.data.objects.remove(o)
-    comum.previa(os.path.join(saida, "pocas_3q.png"), olhar=(4, 4, 0), cam=(4 + 5.5, 4 - 7.5, 8.5), amostras=32)
-    _lp()
-    comum.previa(os.path.join(saida, "pocas_rasante.png"), olhar=(ce.x, ce.y, 0), cam=(ce.x + 1.2, ce.y - 2.6, 0.35), amostras=32, lente=35)
-    _lp()
-    comum.previa(os.path.join(saida, "pocas_close.png"), olhar=(ce.x, ce.y, 0), cam=(ce.x + 0.9, ce.y - 1.5, 1.1), amostras=48, lente=40)
+    qual = sys.argv[1:] or ["3q", "rasante", "close"]
+    if "3q" in qual: _previa(os.path.join(saida, "pocas_3q.png"), (4, 4, 0), (9.5, -3.5, 8.5)); _lp()
+    if "rasante" in qual: _previa(os.path.join(saida, "pocas_rasante.png"), (ce.x, ce.y, 0), (ce.x + 1.2, ce.y - 2.6, 0.35), lente=35); _lp()
+    if "close" in qual: _previa(os.path.join(saida, "pocas_close.png"), (ce.x, ce.y, 0), (ce.x + 0.9, ce.y - 1.5, 1.1), amostras=48, lente=40); _lp()

@@ -7,7 +7,7 @@ import os, sys, math, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy, bmesh
 from mathutils import Vector
-import comum
+import comum, lajotas
 
 Z_SUJEIRA, Z_ARRANHAO, Z_LASCA_S, Z_LASCA_M, Z_RACHA = 0.0016, 0.0020, 0.0024, 0.0029, 0.0035
 T = comum.TILE
@@ -25,8 +25,12 @@ def _mats():
     )
 
 
+NAO_PLANAS = set()   # ids de lajotas desniveladas/rachadas/mordidas: nada plano flutua sobre elas
+
+
 def _in_tile(p, lajes, folga=0.0):
     for l in lajes:
+        if l["id"] in NAO_PLANAS: continue
         if l["x0"] - folga <= p[0] <= l["x1"] + folga and l["y0"] - folga <= p[1] <= l["y1"] + folga:
             return l["id"]
     return None
@@ -203,7 +207,7 @@ def _tira(bm, pts, larg, z):
         except ValueError: pass
 
 
-def _sujeira(bm, lajes, r, n=150):
+def _sujeira(bm, lajes, r, n=0):
     """manchas escuras rasas e geometricas (tiras facetadas, afinando nas pontas) ao longo de juntas reais."""
     J = comum.JUNTA
     for _ in range(n):
@@ -255,35 +259,56 @@ def _pedra(bm, r, x, y, z0, tam, sink=0.0):
 
 
 def _escombros(bm, lajes, lascas_pos, r):
+    """cascalho: nas juntas (apoiado no fundo da junta), dentro das quinas faltando (sobre a base escura) e em volta delas."""
+    sp = lajotas.plano(); ZJ = -lajotas.PROF_JUNTA
     ys = sorted({round(l["y1"] + comum.JUNTA / 2, 4) for l in lajes}); xs = sorted({round(l["x1"] + comum.JUNTA / 2, 4) for l in lajes})
     cont = 0
     def ok(x, y): return 0.07 < x < T - 0.07 and 0.07 < y < T - 0.07
-    for _ in range(170):                                       # nas juntas
+    for _ in range(110):                                       # nas juntas
         if r.random() < 0.5: x = r.uniform(0.1, T - 0.1); y = r.choice(ys) + r.uniform(-0.012, 0.012)
         else: x = r.choice(xs) + r.uniform(-0.012, 0.012); y = r.uniform(0.1, T - 0.1)
         if not ok(x, y): continue
-        t = r.choice([0.012, 0.015, 0.02, 0.025, 0.03, 0.04, 0.06]) if r.random() < 0.8 else r.uniform(0.05, 0.07)
-        _pedra(bm, r, x, y, 0.0, t, sink=t * 0.18); cont += 1
-    for (cx, cy, sx, sy) in lascas_pos:                        # em volta das lascas
-        for _ in range(r.randint(3, 7)):
-            d = r.uniform(0.02, 0.2); a = r.uniform(0, 2 * math.pi)
-            x = cx + sx * abs(math.cos(a)) * d + r.uniform(-0.02, 0.02); y = cy + sy * abs(math.sin(a)) * d + r.uniform(-0.02, 0.02)
-            if not ok(x, y): continue
-            _pedra(bm, r, x, y, 0.0, r.choice([0.01, 0.014, 0.02, 0.028, 0.035, 0.05]), sink=0.002); cont += 1
-    for _ in range(30):                                        # alguns pedregulhos soltos no meio de lajotas
-        l = r.choice(lajes); x = r.uniform(l["x0"] + 0.08, l["x1"] - 0.08); y = r.uniform(l["y0"] + 0.08, l["y1"] - 0.08)
-        if ok(x, y): _pedra(bm, r, x, y, 0.0, r.uniform(0.015, 0.045), sink=0.002); cont += 1
+        t = r.choice([0.012, 0.015, 0.02, 0.025, 0.03, 0.04]) if r.random() < 0.85 else r.uniform(0.045, 0.06)
+        _pedra(bm, r, x, y, ZJ, t, sink=t * 0.15); cont += 1
+    for i, s in sp.items():                                    # quinas faltando e entalhes: blocos caidos + cascalho
+        for b in s["bites"]:
+            if b["path"] is not None:
+                cx, cy, sx, sy, a, bb = b["cx"], b["cy"], b["sx"], b["sy"], b["a"], b["b"]
+                def ponto():
+                    u, v = r.uniform(0.1, 0.8), r.uniform(0.1, 0.8)
+                    if u + v > 0.95: u, v = 0.9 - u, 0.9 - v
+                    return cx + sx * a * max(u, 0.05), cy + sy * bb * max(v, 0.05)
+            else:
+                cx, cy, a, bb = b["cx"], b["cy"], b["a"], b["b"]
+                def ponto(): return cx + r.uniform(-a, a), cy + r.uniform(-0.01, 0.05) * 0 + r.uniform(-bb, bb)
+            for _ in range(r.randint(1, 2)):                   # blocos grandes (a lasca que caiu), legiveis na camera de jogo
+                x, y = ponto()
+                if ok(x, y): _pedra(bm, r, x, y, ZJ, r.uniform(0.07, 0.12) * (min(a, bb) / 0.2) ** 0.5, sink=0.012); cont += 1
+            for _ in range(r.randint(4, 8)):
+                x, y = ponto()
+                if ok(x, y): _pedra(bm, r, x, y, ZJ, r.choice([0.015, 0.022, 0.03, 0.04, 0.05]), sink=0.004); cont += 1
+            for _ in range(r.randint(1, 3)):                   # farelo que rolou para cima da lajota vizinha / da propria
+                x, y = ponto(); x += r.uniform(-0.15, 0.15); y += r.uniform(-0.15, 0.15)
+                l = s["l"]
+                if ok(x, y) and l["x0"] < x < l["x1"] and l["y0"] < y < l["y1"] and s["tx"] == 0 and s["ty"] == 0:
+                    _pedra(bm, r, x, y, s["dz"], r.choice([0.012, 0.018, 0.025]), sink=0.002); cont += 1
+    for _ in range(14):                                        # pedregulhos soltos em lajotas planas
+        l = r.choice([l for l in lajes if l["id"] not in NAO_PLANAS]); x = r.uniform(l["x0"] + 0.08, l["x1"] - 0.08); y = r.uniform(l["y0"] + 0.08, l["y1"] - 0.08)
+        if ok(x, y): _pedra(bm, r, x, y, 0.0, r.uniform(0.015, 0.04), sink=0.002); cont += 1
     return cont
 
 
 def construir():
     r = random.Random(1744 + 17)
     lajes = comum.layout()
+    lajotas.preparar()
+    sp = lajotas.plano()
+    NAO_PLANAS.clear(); NAO_PLANAS.update(sp[i]["l"]["id"] for i in sp if not sp[i]["flat"] or sp[i]["bites"] or sp[i]["dz"] < -0.0045)
     m = _mats()
     bm_rac, bm_ls, bm_lm, bm_arr, bm_casc, bm_suj = [bmesh.new() for _ in range(6)]
 
     cruzadas = _rachaduras(bm_rac, lajes, r)
-    nl = _lascas(bm_ls, bm_lm, lajes, r)
+    nl = sum(len(sp[i]["bites"]) for i in sp)
     _arranhoes(bm_arr, lajes, r)
     _sujeira(bm_suj, lajes, r)
     # posicoes de lascas para espalhar cascalho (recalcula de forma deterministica a partir do layout, sem consumir r)
@@ -293,7 +318,7 @@ def construir():
         for cx, cy, sx, sy in [(l["x0"], l["y0"], 1, 1), (l["x1"], l["y0"], -1, 1), (l["x1"], l["y1"], -1, -1), (l["x0"], l["y1"], 1, -1)]:
             if min(cx, T - cx) < 0.04 or min(cy, T - cy) < 0.04: continue
             if rp.random() < 0.4: lpos.append((cx, cy, sx, sy))
-    nc = _escombros(bm_casc, lajes, lpos, r)
+    nc = _escombros(bm_casc, lajes, [], r)
 
     objs = []
     for nome, bm, mat in (("Desgaste_Sujeira", bm_suj, "sujeira"), ("Desgaste_Arranhoes", bm_arr, "lasca"), ("Desgaste_LascaSombra", bm_ls, "rachadura"),
@@ -304,6 +329,7 @@ def construir():
                 if f.normal.z < 0: f.normal_flip()
         else:
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        if not bm.faces: bm.free(); continue
         objs.append(comum.novo_objeto(nome, bm, [m[mat]]))
     construir.info = dict(lajotas_com_rachadura=len(cruzadas), lascas=nl, escombros=nc)
     return objs
