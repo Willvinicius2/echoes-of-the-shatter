@@ -237,7 +237,7 @@ def _montar_pedra(m, p):
     cav = b.mapr(ao_p, 0.25, 1.0, 0.0, 1.0)
     cav = b.math('POWER', cav, 1.4)
     cav2 = b.mapr(ao_g, 0.2, 1.0, 0.0, 1.0)
-    escur = b.math('MULTIPLY', b.mapr(cav, 0.0, 1.0, 0.18, 1.0), b.mapr(cav2, 0.0, 1.0, 0.45, 1.0))
+    escur = b.math('MULTIPLY', b.mapr(cav, 0.0, 1.0, 0.18, 1.0), b.mapr(cav2, 0.0, 1.0, p.get("ao_g_min", 0.45), 1.0))
     esc3 = b.n("ShaderNodeCombineColor")
     for k in ("Red", "Green", "Blue"):
         b.nt.links.new(escur, esc3.inputs[k])
@@ -254,15 +254,28 @@ def _montar_pedra(m, p):
     musgo = b.math('MAXIMUM', m1, b.math('MULTIPLY', fre, p.get("musgo_fresta", 0.9)))
     musgo = b.math('MULTIPLY', musgo, p.get("musgo_qtd", 1.0))
     musgo = b.math('ADD', musgo, b.math('MULTIPLY', b.math('SUBTRACT', pat2, 0.5), 0.25))
-    musgo = b.mapr(musgo, 0.34, 0.52, 0.0, 1.0)
+    if p.get("musgo_h"):   # musgo cresce para baixo: (z de cima, z de baixo, peso em cima)
+        zalto, zbaixo, wtopo = p["musgo_h"]
+        musgo = b.math('MULTIPLY', musgo, b.mapr(b.sep_xyz(obj)["Z"], zalto, zbaixo, wtopo, 1.0))
+    lim = p.get("musgo_lim", (0.34, 0.52))
+    musgo = b.mapr(musgo, lim[0], lim[1], 0.0, 1.0)
     mus_cor = b.ramp(b.mapr(b.noise(obj, 9 * sz, 5, 0.6), 0.3, 0.7, 0.0, 1.0),
-                     [(0.0, (0.030, 0.050, 0.012)), (0.5, (0.075, 0.105, 0.024)), (1.0, (0.135, 0.165, 0.040))])
+                     [(0.0, tuple(c * p.get("musgo_k", 1.0) for c in (0.030, 0.050, 0.012))), (0.5, tuple(c * p.get("musgo_k", 1.0) for c in (0.075, 0.105, 0.024))), (1.0, tuple(c * p.get("musgo_k", 1.0) for c in (0.135, 0.165, 0.040)))])
     base = b.mixc(musgo, base, mus_cor)
 
     # ---- sujeira escura de chuva embaixo de saliências (pouca) em tons frios
     suj = b.mapr(b.noise(obj, 3.0 * sz, 6, 0.55), 0.45, 0.70, 0.0, 0.62)
     suj = b.math('MULTIPLY', suj, b.mapr(nrm["Z"], 0.4, -0.5, 0.0, 1.0))
     base = b.mixc(suj, base, p["suja"])
+    if p.get("escorre"):   # umidade escorrendo de cima em faixas verticais, e sujeira que sobe do pé
+        ov = b.n("ShaderNodeVectorMath", operation='MULTIPLY'); ov.inputs[1].default_value = (3.0, 6.0, 0.8)
+        b.nt.links.new(obj, ov.inputs[0])
+        fx = b.mapr(b.noise(ov.outputs[0], 2.2 * sz, 4, 0.55), 0.42, 0.66, 0.0, 1.0)
+        lateral = b.mapr(nrm["Z"], 0.6, 0.1, 0.0, 1.0)
+        base = b.mixc(b.math('MULTIPLY', b.math('MULTIPLY', fx, lateral), p["escorre"]), base, p["suja"])
+        zb = p.get("sujo_base", (0.0, 1.2))
+        pe = b.mapr(b.sep_xyz(obj)["Z"], zb[1], zb[0], 0.0, 1.0)
+        base = b.mixc(b.math('MULTIPLY', pe, b.mapr(b.noise(obj, 3.5 * sz, 4, 0.6), 0.3, 0.7, 0.2, 0.7)), base, p["suja"])
 
     # ---- relevo: facetas + grão + rachaduras
     alt = b.math('ADD', b.math('MULTIPLY', facet_e, 0.16), b.math('MULTIPLY', fino, 0.12))
@@ -689,11 +702,17 @@ def render_preview(obj_ou_cena, caminho, vista="tres_quartos", res=(800, 800), s
     sc.collection.objects.link(cam)
     sc.camera = cam
     criados += [cam, cam_d]
-    if vista == "frente":
+    if isinstance(vista, tuple):   # (alvo, direção da câmera, distância, lente) em coordenadas do mundo
+        alvo = Vector(vista[0]); d = Vector(vista[1]); dist = vista[2]; cam_d.lens = vista[3] if len(vista) > 3 else 50
+    elif vista == "frente":
         d = Vector((0.0, 1.0, 0.18)); alvo = cen; dist = 1.55 * k; cam_d.lens = 50
     elif vista == "close":
         d = Vector((0.25, 1.0, 0.30)); alvo = cen + Vector((-0.34 * dim.x, 0, 0.22 * dim.z)); dist = 0.5 * k
         cam_d.lens = 50
+    elif vista == "lado":
+        d = Vector((1.0, 0.05, 0.12)); alvo = cen; dist = 1.55 * k; cam_d.lens = 50
+    elif vista == "topo":
+        d = Vector((0.0, 0.35, 1.0)); alvo = cen; dist = 1.5 * k; cam_d.lens = 50
     else:
         d = Vector((0.62, 0.78, 0.42)); alvo = cen; dist = 1.5 * k; cam_d.lens = 50
     d.normalize()
