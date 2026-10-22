@@ -1,0 +1,75 @@
+[
+ {
+  "id": "c1_atrio",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Pilar.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_ColunaCorrente.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Estandarte.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\braseiro_prancha.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Estatua.png",
+   "D:\\openclaude\\_trabalho-claude\\capturas-godot\\cripta_atrio_01.png"
+  ],
+  "prompt": "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet moonlight and shadow, warm orange light ONLY from braziers, flat clean worn flagstone floor with no bumps, every object placed with a clear purpose and nothing floating, nothing inside another object, no candles loose on the floor, rubble only against walls and in corners, never on the carpet, no pillar in front of stairs or doorways, a clear 6 m wide walkable lane through the middle, a 1.8 m chibi hero for scale (small figure, optional). Use the attached images only as the exact look of each asset (pillar, chain column, banner, brazier, carpet, candles, rubble, hooded statue, floor). No text, no UI. Scene: entrance hall 24x24 m, wide runner carpet down the center from the entrance to a single big chain-wrapped column at the far end, pillars only set into wall alcoves along both side walls, two pairs of braziers flanking the carpet, banners on the walls between pillars, rubble only in two corners, a hooded statue in a side niche with candles only at its base, a clear staircase going down at the far end with nothing in front: NO brazier, chain column, or any object on or directly in front of the stairs, the stairs are fully open and free."
+ },
+ {
+  "id": "c2_escadaria",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\braseiro_prancha.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\piso\\prancha_piso.png",
+   "D:\\openclaude\\_trabalho-claude\\capturas-godot\\cripta_atrio_01.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Pilar.png"
+  ],
+  "prompt": "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet moonlight and shadow, warm orange light ONLY from braziers, flat clean worn flagstone floor with no bumps, every object placed with a clear purpose and nothing floating, nothing inside another object, no candles loose on the floor, rubble only against walls and in corners, never on the carpet, no pillar in front of stairs or doorways, a clear 6 m wide walkable lane through the middle, a 1.8 m chibi hero for scale (small figure, optional). Use the attached images only as the exact look of each asset (pillar, chain column, banner, brazier, carpet, candles, rubble, hooded statue, floor). No text, no UI. Scene: a straight 4 m wide stone staircase descending 4 m with a handrail on both sides, a brazier at each side at the top landing, narrow runner carpet on the landing only, flat floor around, nothing blocking the top or bottom."
+ },
+ {
+  "id": "c3_subsolo",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Pilar.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\braseiro_prancha.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Estandarte.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Entulho.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\piso\\prancha_piso.png"
+  ],
+  "prompt": "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet moonlight and shadow, warm orange light ONLY from braziers, flat clean worn flagstone floor with no bumps, every object placed with a clear purpose and nothing floating, nothing inside another object, no candles loose on the floor, rubble only against walls and in corners, never on the carpet, no pillar in front of stairs or doorways, a clear 6 m wide walkable lane through the middle, a 1.8 m chibi hero for scale (small figure, optional). Use the attached images only as the exact look of each asset (pillar, chain column, banner, brazier, carpet, candles, rubble, hooded statue, floor). No text, no UI. Scene: lower level 'firing line' room, wet dark stone with a few cyan puddles, 4 pillars as cover arranged symmetrically in two offset rows, braziers on the walls, banners, rubble in corners, no carpet in the combat area."
+ },
+ {
+  "id": "c4_antecamara",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Pilar.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\braseiro_prancha.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Estandarte.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\piso\\prancha_piso.png",
+   "D:\\openclaude\\_trabalho-claude\\capturas-godot\\cripta_atrio_01.png"
+  ],
+  "prompt": "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet moonlight and shadow, warm orange light ONLY from braziers, flat clean worn flagstone floor with no bumps, every object placed with a clear purpose and nothing floating, nothing inside another object, no candles loose on the floor, rubble only against walls and in corners, never on the carpet, no pillar in front of stairs or doorways, a clear 6 m wide walkable lane through the middle, a 1.8 m chibi hero for scale (small figure, optional). Use the attached images only as the exact look of each asset (pillar, chain column, banner, brazier, carpet, candles, rubble, hooded statue, floor). No text, no UI. Scene: antechamber before the boss, narrow tall room, long carpet down the center, gold runes on the walls, braziers in pairs, banners, pillars only in wall alcoves, a big staircase down at the far end."
+ },
+ {
+  "id": "c5_arena",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Pilar.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_ColunaCorrente.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\braseiro_prancha.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Entulho.png",
+   "D:\\openclaude\\_trabalho-claude\\capturas-godot\\cripta_arena_01.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\piso\\prancha_piso.png"
+  ],
+  "prompt": "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet moonlight and shadow, warm orange light ONLY from braziers, flat clean worn flagstone floor with no bumps, every object placed with a clear purpose and nothing floating, nothing inside another object, no candles loose on the floor, rubble only against walls and in corners, never on the carpet, no pillar in front of stairs or doorways, a clear 6 m wide walkable lane through the middle, a 1.8 m chibi hero for scale (small figure, optional). Use the attached images only as the exact look of each asset (pillar, chain column, banner, brazier, carpet, candles, rubble, hooded statue, floor). No text, no UI. Scene: round 40 m boss arena, huge carpet in the center, six pillars in a symmetric ring as cover with open ground between them, a big chain column at the back wall, red ember braziers around the rim, rubble only along the edge walls, nearly black stone."
+ },
+ {
+  "id": "c6_nicho",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Estatua.png",
+   "D:\\openclaude\\_trabalho-claude\\modulos-cripta-godot\\previas\\SM_Cripta_Velas.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\braseiro_prancha.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\arqueiro\\art-src\\cenario\\modulos\\previas\\piso\\prancha_piso.png",
+   "D:\\openclaude\\_trabalho-claude\\capturas-godot\\cripta_atrio_01.png"
+  ],
+  "prompt": "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet moonlight and shadow, warm orange light ONLY from braziers, flat clean worn flagstone floor with no bumps, every object placed with a clear purpose and nothing floating, nothing inside another object, no candles loose on the floor, rubble only against walls and in corners, never on the carpet, no pillar in front of stairs or doorways, a clear 6 m wide walkable lane through the middle, a 1.8 m chibi hero for scale (small figure, optional). Use the attached images only as the exact look of each asset (pillar, chain column, banner, brazier, carpet, candles, rubble, hooded statue, floor). No text, no UI. Scene: small side chamber, a hooded statue on a stone altar in an alcove with candles ONLY on the altar steps around it, four braziers around the room, a plain stone floor with a small round rug."
+ }
+]

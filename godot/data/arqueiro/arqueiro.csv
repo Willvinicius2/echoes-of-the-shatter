@@ -1,0 +1,109 @@
+﻿chave,valor,unidade,nota
+mov_vel_max,3.8,m/s,velocidade maxima do heroi (era 4.5; o clipe Run casa a 2.17 m/s e ficava frenetico)
+mov_aceleracao,38,m/s2,aceleracao ao mover
+mov_atrito,46,m/s2,desaceleracao ao soltar
+mov_giro,16,1/s,suavidade do giro do corpo (maior = mais rapido)
+mov_gravidade,28,m/s2,gravidade
+mov_snap_chao,0.6,m,distancia de aderencia ao chao (rampas)
+mov_inclinacao_max,56,graus,inclinacao maxima caminhavel
+mov_razao_andar,0.4,razao,abaixo disso da velocidade maxima usa Walk; acima Run
+mov_mult_mirando,0.55,razao,multiplicador de velocidade enquanto carrega o arco
+mov_mult_disparo,0.7,razao,multiplicador de velocidade durante o disparo
+anim_ref_andar,0.6,m/s,velocidade em que o clipe Walk casa com o chao
+anim_ref_correr,2.17,m/s,velocidade em que o clipe Run casa com o chao
+anim_escala_max,2.6,razao,limite do multiplicador do clipe Walk
+anim_escala_max_correr,1.6,razao,limite do multiplicador do clipe Run
+anim_escala_min_correr,0.7,razao,piso do multiplicador do clipe Run (logo apos trocar de Walk)
+anim_vel_parado,0.15,m/s,abaixo disso fica em Idle
+anim_mistura,0.14,s,tempo de mistura entre clipes
+anim_mistura_esquiva,0.06,s,mistura ao entrar na esquiva
+modelo_yaw_extra,0,graus,correcao de yaw do modelo
+esq_distancia,4.0,m,deslocamento da esquiva (doc 13)
+esq_tempo,0.35,s,duracao da esquiva
+esq_recarga,0.8,s,recarga da esquiva (conta a partir do inicio)
+anim_fps,30,fps,quadros por segundo dos clipes (art-src/animacao/arqueiro_eventos.json)
+evt_esq_quadros,14,quadros,duracao do clipe Dodge
+evt_esq_iframe_ini_quadro,2,quadro,Dodge iframes_inicio: comeca a invulnerabilidade
+evt_esq_iframe_fim_quadro,12,quadro,Dodge iframes_fim: termina a invulnerabilidade
+evt_draw_quadros,15,quadros,duracao do clipe Draw
+evt_corda_cheia_quadro,15,quadro,Draw corda_cheia: passa para AimIdle
+evt_release_quadros,9,quadros,duracao do clipe Release
+evt_solta_quadro,2,quadro,Release solta: instante em que a flecha sai
+esq_curva,0.6,razao,quanto a esquiva e rapida no inicio e lenta no fim
+mira_giro,26,1/s,suavidade do giro ao mirar
+mira_deadzone_stick,0.3,razao,zona morta do analogico direito
+mira_dist_min,0.3,m,distancia minima do ponto de mira para ter direcao
+tiro_altura,1.15,m,altura da saida da flecha e do plano de mira
+tiro_frente,0.55,m,avanco da saida da flecha
+tiro_tempo_carga,0.8,s,tempo para carga total
+tiro_carga_min,0.18,razao,carga minima aplicada ao soltar rapido
+tiro_recarga,0.3,s,intervalo minimo entre disparos
+tiro_tempo_solta,0.28,s,duracao do estado Release
+flecha_vel_min,16,m/s,velocidade com carga minima
+flecha_vel_max,44,m/s,velocidade com carga total
+flecha_dano_min,8,dano,dano com carga minima
+flecha_dano_max,34,dano,dano com carga total
+flecha_alcance_min,14,m,alcance com carga minima
+flecha_alcance_max,42,m,alcance com carga total
+flecha_gravidade,0,m/s2,queda da flecha (0 = reta)
+flecha_cravada_tempo,4.0,s,quanto tempo a flecha fica cravada na parede
+flecha_cravada_fundo,0.3,m,quanto a flecha entra na parede
+flecha_empurrao,2.5,m/s,empurrao no alvo com carga total
+vida_max,100,pv,vida do arqueiro
+dano_atordoa,0.4,s,duracao do estado Hit
+dano_iframe,0.8,s,invulnerabilidade apos levar dano
+dano_empurrao,4,m/s,empurrao ao levar dano
+morte_renasce,3.0,s,tempo ate renascer apos a morte
+dano_teste,20,pv,dano da tecla de teste
+spawn_x,-2.5,m,entrada da Cripta (layout x)
+spawn_z,-3,m,entrada da Cripta (Godot z = -layout z)
+spawn_y,1.0,m,altura inicial (cai ate o chao)
+cam_dist,12,m,distancia da camera
+cam_yaw,45,graus,yaw da camera 3/4
+cam_pitch,-52,graus,pitch da camera
+cam_fov,38,graus,campo de visao
+cam_atraso,9,1/s,suavidade de seguir o heroi
+cam_adianta_mira,0.18,razao,quanto a camera adianta em direcao a mira
+cam_adianta_max,5,m,limite do avanco para a mira
+cam_trauma_queda,2.6,1/s,velocidade com que o tremor acalma
+cam_tremor_pos,0.35,m,deslocamento maximo do tremor
+cam_tremor_rot,0.9,graus,rotacao maxima do tremor
+cam_tremor_freq,38,Hz,frequencia do tremor
+cam_trauma_tiro_min,0.08,razao,tremor do disparo com carga minima
+cam_trauma_tiro_max,0.38,razao,tremor do disparo com carga total
+cam_trauma_acerto,0.3,razao,tremor ao acertar alvo
+cam_trauma_esquiva,0.1,razao,tremor ao esquivar
+cam_trauma_dano,0.5,razao,tremor ao levar dano
+cam_recuo,0.35,m,recuo da camera no disparo com carga total
+cam_recuo_volta,10,1/s,velocidade da volta do recuo
+fb_hitstop_tempo,0.07,s,duracao real do hit stop
+fb_hitstop_escala,0.04,razao,escala de tempo durante o hit stop
+fb_hitstop_min_carga,0.5,razao,carga minima para haver hit stop
+alvo_vida,120,pv,vida do boneco de treino
+alvo_flash,0.14,s,duracao do flash ao acertar
+alvo_balanco,14,graus,inclinacao do boneco ao ser acertado
+alvo_balanco_tempo,0.3,s,duracao do balanco
+alvo_renasce,2.5,s,tempo para o boneco voltar
+alvo_numero_tempo,0.7,s,tempo do numero de dano flutuante
+alvo_numero_sobe,1.2,m,quanto o numero sobe
+fx_faisca_qtd,14,un,particulas da faisca
+fx_faisca_vida,0.35,s,vida da faisca
+fx_faisca_vel,5,m/s,velocidade inicial da faisca
+fx_faisca_abertura,55,graus,abertura do cone da faisca
+fx_faisca_tamanho,0.07,m,tamanho da faisca
+fx_poeira_qtd,12,un,particulas da poeira
+fx_poeira_vida,0.55,s,vida da poeira
+fx_poeira_vel,1.6,m/s,velocidade da poeira
+fx_poeira_tamanho,0.45,m,tamanho da poeira
+fx_rastro_qtd,18,un,particulas do rastro da flecha
+fx_rastro_vida,0.22,s,vida do rastro
+fx_rastro_tamanho,0.05,m,tamanho do rastro
+fx_gravidade,9,m/s2,gravidade das particulas de faisca
+flecha_queda_altura,0.4,m,queda da flecha ao fim do alcance
+flecha_queda_tempo,0.25,s,tempo da queda ao fim do alcance
+fx_folga,0.3,s,folga antes de apagar particulas
+fx_vel_min_razao,0.35,razao,velocidade minima das particulas / maxima
+fx_poeira_abertura,80,graus,abertura do cone da poeira
+fx_poeira_escala_min,0.5,razao,escala minima da poeira
+fx_poeira_escala_max,1.4,razao,escala maxima da poeira
+fx_rastro_deriva,0.2,m/s,deriva das particulas do rastro

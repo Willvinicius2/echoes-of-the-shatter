@@ -1,0 +1,87 @@
+{
+ "AN_Arqueiro_Idle": {
+  "frames": 60,
+  "segundos": 2.0,
+  "loop": true,
+  "eventos": {},
+  "nota": "Respiracao leve, arco relaxado na mao esquerda; 2,0 s"
+ },
+ "AN_Arqueiro_Walk": {
+  "frames": 30,
+  "segundos": 1.0,
+  "loop": true,
+  "eventos": {
+   "passo_esq": 0,
+   "passo_dir": 15
+  },
+  "nota": "Caminhada 1,0 s, passada 0,60 m (0,60 m/s)"
+ },
+ "AN_Arqueiro_Run": {
+  "frames": 18,
+  "segundos": 0.6,
+  "loop": true,
+  "eventos": {
+   "passo_esq": 0,
+   "passo_dir": 9
+  },
+  "nota": "Corrida 0,6 s, passada 1,30 m (2,17 m/s)"
+ },
+ "AN_Arqueiro_Dodge": {
+  "frames": 14,
+  "segundos": 0.467,
+  "loop": false,
+  "eventos": {
+   "iframes_inicio": 2,
+   "iframes_fim": 12,
+   "impulso": 3,
+   "aterrissagem": 12
+  },
+  "nota": "Rolamento a frente 14 quadros (0,47 s)"
+ },
+ "AN_Arqueiro_AimIdle": {
+  "frames": 60,
+  "segundos": 2.0,
+  "loop": true,
+  "eventos": {},
+  "nota": "Mira parada, arco estendido a esquerda, corda levemente puxada; 2,0 s"
+ },
+ "AN_Arqueiro_Draw": {
+  "frames": 15,
+  "segundos": 0.5,
+  "loop": false,
+  "eventos": {
+   "corda_cheia": 15
+  },
+  "nota": "Puxar a corda 0,5 s: da AimIdle (quadro 0) a corda cheia (quadro 15)"
+ },
+ "AN_Arqueiro_Release": {
+  "frames": 9,
+  "segundos": 0.3,
+  "loop": false,
+  "eventos": {
+   "solta": 2,
+   "volta_aim_idle": 9
+  },
+  "nota": "Soltura: corda cheia (0) -> solta no 2 -> AimIdle (9); 9 quadros = 0,3 s"
+ },
+ "AN_Arqueiro_Hit": {
+  "frames": 9,
+  "segundos": 0.3,
+  "loop": false,
+  "eventos": {
+   "impacto": 2
+  },
+  "nota": "Reacao a dano 0,3 s (9 quadros)"
+ },
+ "AN_Arqueiro_Death": {
+  "frames": 36,
+  "segundos": 1.2,
+  "loop": false,
+  "eventos": {
+   "impacto": 4,
+   "joelhos_no_chao": 12,
+   "corpo_no_chao": 28
+  },
+  "nota": "Morte 1,2 s: cai de joelhos e de costas, fica no chao"
+ }
+}
