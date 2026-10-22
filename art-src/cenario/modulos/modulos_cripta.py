@@ -128,7 +128,7 @@ def pilar():
     musgo(-0.9, 1.45, 0.44, 1.0, 0.7); musgo(0.8, 1.4, 0.82, 0.6, 0.5); musgo(0.95, 0.4, 3.0, 0.2, 1.0)
     exportar("SM_Cripta_Pilar")
 
-def estandarte():
+def estandarte():  # obsoleta: o estandarte agora é gerado por estandarte/build_estandarte.py
     reset()
     cyl((0, 0, 0.1), 0.2, 0.2, M_PEDRA, 10)
     cyl((0, 0, 1.6), 0.05, 3.0, M_FERRO, 8)                                  # mastro
@@ -207,5 +207,5 @@ def estatua_avulsa():
     estatua(0, 0, 0.6, 1.25)
     exportar("SM_Cripta_Estatua")
 
-for fn in (pilar, estandarte, velas, entulho, estatua_avulsa):  # coluna com corrente: coluna_corrente.py
+for fn in (pilar, velas, entulho, estatua_avulsa):  # coluna com corrente: coluna_corrente.py
     fn()
