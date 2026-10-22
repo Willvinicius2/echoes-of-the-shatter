@@ -20,7 +20,7 @@ VARS = os.environ.get("VARIANTES", "A,B,C").split(",")
 VAR = {
     "A": dict(seed=11, R=0.27, sx=1.0, sy=0.85, lobes=[(0.6, 0.3, 0.5)], ring=0.14, n_peb=4, tongues=2, musgo=1, ilha=0),    # pequena
     "B": dict(seed=23, R=0.34, sx=1.7, sy=0.55, lobes=[(3.2, 0.45, 0.35), (0.2, 0.18, 0.5)], ring=0.24, n_peb=7, tongues=4, musgo=2, ilha=0),  # média alongada
-    "C": dict(seed=37, R=0.62, sx=1.12, sy=0.9, lobes=[(1.1, 0.4, 0.45), (4.3, 0.35, 0.5)], ring=0.32, n_peb=8, tongues=5, musgo=3, ilha=1),   # grande com ilha de pedra
+    "C": dict(seed=37, R=0.62, sx=1.12, sy=0.9, lobes=[(1.1, 0.4, 0.45), (4.3, 0.35, 0.5)], ring=0.32, n_peb=8, tongues=5, musgo=3, ilha=1, fino=True),   # grande com ilha de pedra
 }
 Z_BORDA, Z_MENISCO, Z_AGUA = 0.003, 0.0145, 0.013     # perfil da lâmina (m)
 Z_ANEL = 0.0015
@@ -72,6 +72,8 @@ def tri_fan(bm, aneis, cor):
                 for lp in face.loops: lp[lay] = cor[lp.vert.index]
 
 def parte_agua(v, M, f, S=160, N=26):
+    Z_BORDA, Z_MENISCO, Z_AGUA = (0.0008, 0.0032, 0.0042) if v.get("fino") else (0.003, 0.0145, 0.013)    # C: lâmina quase zero, afinando até o piso
+    amp = 0.45 if v.get("fino") else 1.0
     bm = bmesh.new(); bm.loops.layers.color.new("Col"); cor = {}
     rnd = random.Random(v["seed"] + 100); fase = [rnd.uniform(0, 6.28) for _ in range(4)]
     def vert(x, y, z, depth, alpha):
@@ -90,7 +92,7 @@ def parte_agua(v, M, f, S=160, N=26):
             th = 6.2832 * s / S; p = f(th)
             if t >= 0.999: z, d, al = Z_BORDA, 0.0, 0.0                         # pé do menisco: some no piso
             else:
-                z = Z_AGUA + onda(p.x * t, p.y * t) * min(1, (0.92 - t) * 12 + 0.0) if t < 0.92 else Z_MENISCO + (Z_BORDA - Z_MENISCO) * ((t - 0.92) / 0.08) ** 2
+                z = Z_AGUA + amp * onda(p.x * t, p.y * t) * min(1, (0.92 - t) * 12 + 0.0) if t < 0.92 else Z_MENISCO + (Z_BORDA - Z_MENISCO) * ((t - 0.92) / 0.08) ** 2
                 prof = (1 - t) ** 0.7 + 0.12 * math.sin(th * 5 + fase[2]) * math.sin(t * 6 + fase[3])
                 d, al = max(0.0, min(1.0, prof)), 1.0 if t < 0.97 else 0.85
             anel.append(vert(p.x * t, p.y * t, z, d, al))
@@ -196,7 +198,8 @@ def parte_limo(v, M, f):
     for k in range(v["musgo"]):
         th = rnd.uniform(0, 6.2832); p = f(th)
         for j in range(rnd.randint(12, 20)):       # tufo = muitas calotas apertadas ao longo da borda
-            t = rnd.uniform(0.97, 1.06); a2 = th + rnd.uniform(-0.28, 0.28); q = f(a2) * t
+            if v.get("fino") and rnd.random() < 0.45: rnd.random(); continue                   # falhas: tufos esparsos, não um colar
+            t = rnd.uniform(0.97, 1.06) + (rnd.uniform(0.0, 0.09) if v.get("fino") else 0); a2 = th + rnd.uniform(-0.28, 0.28) * (2.2 if v.get("fino") else 1); q = f(a2) * t
             r2 = rnd.choice((0.008, 0.011, 0.016, 0.024, 0.036)) * (0.8 + v["R"]); alt = rnd.uniform(0.25, 0.6) * r2 * 1.2; alongar = rnd.choice((1, 1, 2.2)); tg = Vector((-math.sin(a2), math.cos(a2)))
             g = bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1, matrix=mathutils.Matrix.Translation((q.x, q.y, 0.0)))
             for vv in g["verts"]:
@@ -211,13 +214,14 @@ def parte_limo(v, M, f):
     o = bpy.data.objects.new("Limo", me); bpy.context.collection.objects.link(o); return o
 
 # ---------------------------------------------------------------- montagem / exportação / prévias
-def materiais():
-    return dict(agua=mat("M_Agua", (0.012, 0.02, 0.04), 0.0, alpha=0.88, vcol=True),
+def materiais(v=None):
+    fino = bool(v and v.get("fino"))
+    return dict(agua=mat("M_Agua", (0.012, 0.02, 0.04), 0.07 if fino else 0.0, alpha=0.5 if fino else 0.88, vcol=True),
                 anel=mat("M_AnelMolhado", (0.02, 0.025, 0.035), 0.12, alpha=1.0, vcol=True),
                 pedra=mat("M_PedraEscura", (0.034, 0.036, 0.048), 0.5), limo=mat("M_Limo", (0.006, 0.012, 0.006), 0.92), limo2=mat("M_LimoClaro", (0.014, 0.024, 0.01), 0.88))
 
 def construir(nome):
-    v = VAR[nome]; M = materiais(); f = contorno(v)
+    v = VAR[nome]; M = materiais(v); f = contorno(v)
     partes = [parte_anel(v, M, f), parte_agua(v, M, f), parte_limo(v, M, f)]
     if os.environ.get("PEDRAS"): partes.append(parte_pedrinhas(v, M, f))      # as pedras serão um objeto separado
     return v, partes
