@@ -53,7 +53,7 @@ def vela_torneada(x, y, r, h):
     prof += [(r * 0.98, top - 0.004), (r * 1.02, top + 0.012), (r * 0.94, top + 0.018), (r * 0.80, top + 0.008),
              (r * 0.62, top - 0.014), (r * 0.38, top - 0.018), (r * 0.16, top - 0.022), (0.016, top - 0.024)]
     bm = bmesh.new(); rings = []
-    n_drip = 5 + int(r * 45)
+    n_drip = 7 + int(r * 85)
     drip_ang = sorted(random.uniform(0, 2 * math.pi) for _ in range(n_drip))
     bend = (random.uniform(-1, 1) * 0.012, random.uniform(-1, 1) * 0.012)      # leve curvatura do fuste
     tilt = random.uniform(0.12, 0.34); phi = random.uniform(0, 6.28)           # corte inclinado do topo (vela gasta de um lado)
@@ -145,14 +145,7 @@ for i in range(7):                                # pedaços endurecidos de cera
     a = random.uniform(0, 6.28); d = random.uniform(0.2, 0.36)
     parts.append(blob((math.cos(a) * d, -0.05 + math.sin(a) * d * 0.85, 0.006), (random.uniform(0.015, 0.035), random.uniform(0.012, 0.025), random.uniform(0.008, 0.016)),
                       (random.random(), random.random(), random.random() * 6), 2))
-bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1.0)                       # lajota de pedra rachada sob tudo
-for v in bm.verts: v.co.x *= 0.85; v.co.y *= 0.78; v.co.z = v.co.z * 0.07 - 0.035
-bmesh.ops.bevel(bm, geom=bm.edges[:], offset=0.012, segments=2, affect='EDGES')
-for v in bm.verts:
-    if v.co.x > 0.38 and v.co.y > 0.3: v.co.x -= 0.1; v.co.y -= 0.07                       # canto quebrado
-    v.co.x += 0.012 * noise.noise(v.co * 6); v.co.y += 0.012 * noise.noise(v.co * 6 + Vector((3, 3, 3)))
-bm.verts.ensure_lookup_table()
-parts.append(from_bm(bm, "lajota")); parts[-1].location = (0, -0.05, 0)
+# sem lajota: a cera termina em poça irregular (a placa quadrada virava pedestal no jogo)
 
 bpy.ops.object.select_all(action='DESELECT')
 for o in parts: o.select_set(True)
@@ -174,21 +167,17 @@ for i, v in enumerate(alta.data.vertices):
         dd = math.hypot(p.x - x, p.y - y)
         if dd < d: d, tom, hv = dd, t, h
     low = max(0.0, min(1.0, 1 - p.z / 0.07))
-    c = ivory.lerp(aged, max(0.0, min(1.0, tom * 0.35 + 0.25 * (fbm(p * 14) * 0.5 + 0.5) - 0.12)))
-    c = c.lerp(amber, min(1.0, low * 0.35 + max(0.0, fbm(p * 5 + Vector((5, 5, 5)))) * 0.1))        # poça âmbar, escorridos mais escuros
+    c = ivory.lerp(aged, max(0.0, min(1.0, tom * 0.7 + 0.35 * (fbm(p * 11) * 0.5 + 0.5) - 0.2)))
+    c = c.lerp(amber, min(1.0, low * 0.4 + max(0.0, fbm(p * 5 + Vector((5, 5, 5)))) * 0.22))        # poça âmbar, escorridos mais escuros
     rel = (p.z - 0.0) / max(hv, 0.05)
     if p.z > 0.1 and d < 0.1:                                       # fuligem no cimo da vela e na borda
         c = c.lerp(soot, max(0.0, (rel - 0.93) * 8) * (0.5 + 0.5 * (noise.noise(p * 40) * 0.5 + 0.5)))
     sk = fbm(Vector((p.x * 45, p.y * 45, p.z * 5)), 3)                 # veios verticais de sujeira (esticados em Z)
-    c = c.lerp(Vector((0.60, 0.55, 0.47)), max(0.0, sk - 0.1) * 0.45)
-    if p.z < 0.0015:                                                # lajota: pedra escura rachada, musgo no canto
-        st = 0.14 + 0.12 * (fbm(p * 22) * 0.5 + 0.5) + 0.05 * max(0.0, fbm(p * 70))
-        c = Vector((st, st * 0.97, st * 1.03))
-        if fbm(p * 9 + Vector((2, 7, 1))) > 0.25: c = c.lerp(Vector((0.10, 0.15, 0.06)), 0.5)
+    c = c.lerp(Vector((0.60, 0.55, 0.47)), max(0.0, sk - 0.05) * 0.7)
     for (x, y, r, h, t) in VELAS:                                   # brilho quente de translucidez perto da chama (pintado, glb não leva SSS)
         dq = math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2 + (p.z - (h + 0.02)) ** 2)
         c = c.lerp(Vector((1.0, 0.72, 0.36)), 0.8 * math.exp(-(dq / 0.085) ** 2) * (1 if p.z > 0.02 else 0))
-    if 0.0015 <= p.z < 0.05:                                        # fuligem e sujeira acumulada na base e nas bordas da poça
+    if p.z < 0.05:                                        # fuligem e sujeira acumulada na base e nas bordas da poça
         sj = max(0.0, fbm(p * 18 + Vector((9, 2, 4))) - 0.05) * 2.2 * (1 - p.z / 0.05)
         c = c.lerp(Vector((0.30, 0.20, 0.12)), min(0.75, sj))
     c = c * (0.9 + 0.1 * (noise.noise(p * 60) * 0.5 + 0.5))
@@ -285,10 +274,10 @@ M_PAVIO = bpy.data.materials.new("M_Pavio"); M_PAVIO.use_nodes = True
 M_PAVIO.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.02, 0.016, 0.012, 1)
 M_PAVIO.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.95
 M_CHAMA = mat_chama("M_Chama", 3.0)
-M_NUCLEO = mat_chama("M_ChamaNucleo", 7.0, usa_tex=False, cor=(1.0, 0.93, 0.65))
-M_HALO = mat_chama("M_ChamaHalo", 1.5, alpha=0.28, usa_tex=False, cor=(1.0, 0.35, 0.05))
+M_NUCLEO = mat_chama("M_ChamaNucleo", 12.0, usa_tex=False, cor=(1.0, 0.93, 0.65))
+M_HALO = mat_chama("M_ChamaHalo", 1.0, alpha=0.09, usa_tex=False, cor=(1.0, 0.35, 0.05))
 
-def chama(x, y, base_z, alt, larg, mat, flexao):
+def chama(x, y, base_z, alt, larg, mat, flexao, cruz=False):
     """Gota com volume: bojo embaixo, ponta fina curvada; UV com v = altura para o gradiente."""
     bm = bmesh.new(); R = 16; N = 18; rows = []
     uvl = bm.loops.layers.uv.new("UVMap")
@@ -296,14 +285,15 @@ def chama(x, y, base_z, alt, larg, mat, flexao):
         t = i / N
         w = larg * (math.sin(math.pi * min(1.0, t) ** 0.62) ** 0.9) * (1 - t ** 3) if t > 0 else larg * 0.45
         w = max(w, 0.0006)
-        cx = flexao * t ** 2.2
+        cx = flexao * t ** 2.2 + 0.0035 * math.sin(t * 6.5 + x * 40) * t
         z = base_z + alt * t
-        rows.append([bm.verts.new((x + cx + w * math.cos(j / R * 6.2832), y + w * math.sin(j / R * 6.2832) * 0.9, z)) for j in range(R)])
+        if cruz: rows.append([bm.verts.new((x + w * math.cos(j / R * 6.2832) * 0.9, y + cx + w * math.sin(j / R * 6.2832), z)) for j in range(R)])
+        else: rows.append([bm.verts.new((x + cx + w * math.cos(j / R * 6.2832), y + w * math.sin(j / R * 6.2832) * 0.9, z)) for j in range(R)])
     for i in range(N):
         for j in range(R):
             f = bm.faces.new((rows[i][j], rows[i][(j + 1) % R], rows[i + 1][(j + 1) % R], rows[i + 1][j]))
             for lp, (uu, vv) in zip(f.loops, ((j, i), (j + 1, i), (j + 1, i + 1), (j, i + 1))): lp[uvl].uv = (uu / R, vv / N)
-    top = bm.verts.new((x + flexao, y, base_z + alt))
+    top = bm.verts.new((x, y + flexao, base_z + alt)) if cruz else bm.verts.new((x + flexao, y, base_z + alt))
     for j in range(R):
         f = bm.faces.new((top, rows[-1][j], rows[-1][(j + 1) % R]))
         for lp in f.loops: lp[uvl].uv = (0.5, 1.0)
@@ -339,7 +329,9 @@ for (x, y, r, h, tom) in VELAS:
     base = top + 0.012
     extras.append(chama(wx, y, base, (0.115 + 0.01 * r * 10) * k, 0.020 * random.uniform(0.9, 1.15), M_CHAMA, ff))
     extras.append(chama(wx, y, base + 0.004, 0.065 * k, 0.010, M_NUCLEO, ff * 0.5))
-    extras.append(chama(wx, y, base - 0.004, (0.14 + 0.01 * r * 10) * k, 0.030, M_HALO, ff * 1.1))
+    extras.append(chama(wx, y, base - 0.004, (0.15 + 0.01 * r * 10) * k, 0.036, M_HALO, ff * 1.1))      # halo bem suave, sem borda dura
+    extras.append(chama(wx, y, base - 0.002, (0.13 + 0.01 * r * 10) * k, 0.046, M_HALO, ff * 1.0))
+    extras.append(chama(wx, y, base, (0.115 + 0.01 * r * 10) * k, 0.020, M_CHAMA, ff, cruz=True))   # segundo cartão cruzado para não sumir de lado
 
 bpy.ops.object.select_all(action='DESELECT')
 bpy.data.objects.remove(alta, do_unlink=True)
@@ -362,7 +354,7 @@ if PREV:
     cam = bpy.data.objects.new("c", bpy.data.cameras.new("c")); sc.collection.objects.link(cam)
     cam.location = (0.95, -1.25, 0.8); cam.rotation_euler = (Vector((0, -0.05, 0.25)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
     sc.camera = cam
-    sc.cycles.samples = 40; sc.cycles.use_denoising = False
+    sc.cycles.samples = 96; sc.cycles.use_denoising = True
     sc.render.resolution_x = 900; sc.render.resolution_y = 900
     sc.render.filepath = PREV; bpy.ops.render.render(write_still=True)
     if CLOSE:
