@@ -2,7 +2,7 @@
 fuste estriado em tambores, capitel em degraus com sino ovolo, quadrifólio e volutas, friso com losangos, dentículos e cornija.
 Pivô no centro da base; parede atrás (-Y), frente +Y."""
 import bpy, math, random
-from _pedra import garantir_material, poly_loft, profile_loft, curve_levels, rect, cut, crack, fiada
+from _pedra import garantir_material, seguro, poly_loft, profile_loft, curve_levels, rect, cut, crack, fiada
 GLB = 'SM_Cripta_Pilastra'
 VISTAS = {
     "frente": ((0, 9.5, 2.7), (0, 0, 2.7), 700, 1000),
@@ -60,10 +60,9 @@ def build(L):
         if i < 2:
             poly_loft(L, f"junta{i}", rect(1.05 * k, 0.60, 0.06), b - 0.024, b + 0.02, m=sc, bev=0.008)
     for t, n, s, sd_ in ((sh[0], 7, 0.17, 21), (sh[1], 5, 0.14, 22), (sh[2], 5, 0.14, 24)):
-        L.chip_corners(t, n, s, sd_)
-    crack(sh[1], (0.17, 2.3), (-0.08, 3.1), w=0.025, depth=0.06, seed=3, n=8)
-    crack(sh[0], (-0.3, 1.15), (-0.14, 2.05), w=0.022, depth=0.06, seed=5, n=7)
-    crack(sh[2], (0.28, 3.3), (0.1, 4.05), w=0.022, depth=0.06, seed=8, n=7)
+        seguro(t, lambda k, t=t, n=n, s=s, sd_=sd_: L.chip_corners(t, n, s, sd_ + 97 * k))
+    for t, p0, p1, w, sd_, n in ((sh[1], (0.17, 2.3), (-0.08, 3.1), 0.025, 3, 8), (sh[0], (-0.3, 1.15), (-0.14, 2.05), 0.022, 5, 7), (sh[2], (0.28, 3.3), (0.1, 4.05), 0.022, 8, 7)):
+        seguro(t, lambda k, t=t, p0=p0, p1=p1, w=w, sd_=sd_, n=n: crack(t, p0, p1, w=w, depth=0.06, seed=sd_ + k, n=n), 2)
     # ---- capitel: colarinho em degraus, sino ovolo, quadrifólio, volutas
     profile_loft(L, "colar", [(4.15, 1.05, 0.58, 0.06), (4.22, 1.09, 0.62, 0.06), (4.30, 1.09, 0.62, 0.06), (4.34, 1.04, 0.57, 0.06)], m=sc, bev=0.008)
     profile_loft(L, "colar2", [(4.34, 1.12, 0.66, 0.06), (4.44, 1.14, 0.68, 0.06)], m=sd, bev=0.01)

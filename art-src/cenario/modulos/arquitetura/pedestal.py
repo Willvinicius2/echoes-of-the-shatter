@@ -14,7 +14,7 @@ def build(L):
     sd, sc = L.stone('escura'), L.stone('clara')
     p1 = poly_loft(L, "p1", rect(0.60, 0.60, 0.04), 0, 0.15, m=sd, bev=0.02)
     p2 = poly_loft(L, "p2", rect(0.54, 0.54, 0.035), 0.15, 0.25, m=sd, bev=0.015)
-    profile_loft(L, "toro", [(0.25, 0.50, 0.50, 0.04), (0.27, 0.52, 0.52, 0.04), (0.30, 0.52, 0.52, 0.04), (0.33, 0.48, 0.48, 0.04)], m=sc, bev=0.006)
+    profile_loft(L, "toro", [(0.25, 0.50, 0.50, 0.04), (0.27, 0.52, 0.52, 0.04), (0.30, 0.52, 0.52, 0.04), (0.33, 0.48, 0.48, 0.04)], m=sd, bev=0.006)
     profile_loft(L, "escocia", curve_levels(0.33, 0.42, (0.48, 0.48), (0.42, 0.42), 4, "cove", 0.07), m=sd, bev=0.004)
     # fuste chanfrado, dois tambores
     f1 = poly_loft(L, "fuste1", rect(0.42, 0.42, 0.08), 0.42, 0.70, 0.97, 0.97, m=sd, bev=0.011)
@@ -31,7 +31,7 @@ def build(L):
     # colar + topo: ovolo + cornija clara + plinto
     profile_loft(L, "colar", [(0.93, 0.43, 0.43, 0.08), (0.97, 0.45, 0.45, 0.08), (1.00, 0.43, 0.43, 0.08)], m=sc, bev=0.005)
     profile_loft(L, "ovolo", curve_levels(1.00, 1.08, (0.41, 0.41), (0.54, 0.54), 5, "ovolo", 0.05), m=sd, bev=0.004)
-    top = profile_loft(L, "cornija", [(1.08, 0.58, 0.58, 0.035), (1.16, 0.60, 0.60, 0.035)], m=sc, bev=0.015)
+    top = profile_loft(L, "cornija", [(1.08, 0.58, 0.58, 0.035), (1.16, 0.60, 0.60, 0.035)], m=sd, bev=0.015)
     poly_loft(L, "plinto_topo", rect(0.46, 0.46, 0.035), 1.16, 1.19, m=sd, bev=0.006)
     # pescoço + esfera de pedra clara com cinta
     profile_loft(L, "colo", [(1.19, 0.2, 0.2, 0.05), (1.22, 0.16, 0.16, 0.04), (1.27, 0.16, 0.16, 0.04)], m=sc, bev=0.005)

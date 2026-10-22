@@ -129,3 +129,17 @@ def garantir_material(L, fallback):
         m = ms[0] if ms else fallback
         o.data.materials.clear(); o.data.materials.append(m)
         for p in o.data.polygons: p.material_index = 0
+
+def seguro(o, fn, tentativas=4):
+    """Executa fn(seed_extra) (chip/crack, boolean EXACT) e valida: malha não vazia e sem crescer o bbox.
+    Se falhar, restaura a malha e tenta outra variação; se esgotar, devolve o objeto intacto."""
+    d0 = o.dimensions.copy(); bak = o.data.copy(); ok = False
+    for k in range(tentativas):
+        try: fn(k)
+        except Exception: pass
+        d = o.dimensions
+        if len(o.data.polygons) > 0 and d.x <= d0.x * 1.01 and d.y <= d0.y * 1.01 and d.z <= d0.z * 1.01 and d.z >= d0.z * 0.9:
+            ok = True; break
+        o.data = bak.copy()
+    if not ok: o.data = bak
+    return o

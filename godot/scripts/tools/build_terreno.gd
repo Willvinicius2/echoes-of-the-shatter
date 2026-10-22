@@ -179,9 +179,24 @@ func _inst(pai: Node3D, nome: String, modelo: String, x: float, z: float, yaw: f
 	n.scale = Vector3.ONE * esc
 	n.rotation.y = yaw
 	pai.add_child(n)
+	if ARQUITETURA.has(modelo): _escurecer(n)
 	_colisor(n, modelo)
 	contagem[modelo] = int(contagem.get(modelo, 0)) + 1
 	return n
+
+# módulos de arquitetura: a pedra clara (tampas, arcos, molduras) escurece para o violeta-cinza da cripta e não vira lilás quase branco sob o luar
+const ARQUITETURA := ["Parede", "MuroBaixo", "Nicho", "Canto", "Arco", "Pilastra", "Pedestal", "Altar", "Balaustrada"]
+const FATOR_CLARA := 0.58
+func _escurecer(n: Node) -> void:
+	if n is MeshInstance3D and (n as MeshInstance3D).mesh != null:
+		var mi := n as MeshInstance3D
+		for k in mi.mesh.get_surface_count():
+			var m := mi.mesh.surface_get_material(k) as BaseMaterial3D
+			if m != null and m.resource_name == "M_PedraClara":
+				var d := m.duplicate() as BaseMaterial3D
+				d.albedo_color = Color(m.albedo_color.r * FATOR_CLARA, m.albedo_color.g * FATOR_CLARA, m.albedo_color.b * FATOR_CLARA, 1.0)
+				mi.set_surface_override_material(k, d)
+	for c in n.get_children(): _escurecer(c)
 
 # yaw para o -Z local (frente do módulo) apontar do ponto (x,z) ao alvo (ax,az), tudo em doc
 func _yaw_para(x: float, z: float, ax: float, az: float) -> float:
@@ -492,6 +507,10 @@ func _nicho(grupo: Node3D, sala: String, ang: float, nome: String) -> void:
 	_inst(grupo, "Nicho_" + nome, "Nicho", p.x, p.y, _yaw_normal(n)); _reservar(p.x - n.x * 0.8, p.y - n.y * 0.8, 1.6)
 	nichos.append(Vector3(p.x, p.y, 1.9))
 	var s := p - n * 0.25
+	var luz := OmniLight3D.new(); luz.name = "LuzNicho_" + nome; luz.light_color = Color(0.62, 0.72, 1.0); luz.light_energy = 0.9
+	luz.omni_range = 4.5; luz.omni_attenuation = 1.2
+	luz.position = Vector3(p.x - n.x * 0.9, _base_y(p.x, p.y, 1.0) + 2.4, -(p.y - n.y * 0.9))
+	grupo.add_child(luz)
 	var base := _base_y(p.x, p.y, 1.0) - 0.05
 	_inst(grupo, nome, "Estatua", s.x, s.y, _yaw_normal(n), 0.0, base + 0.55 * 1.0)
 
@@ -573,14 +592,12 @@ func _arquitetura(props: Node3D) -> void:
 			while passos < 40 and _em_sala(pa.x, pa.y): pa -= dir * 0.5; passos += 1
 			pa += dir * 0.5 * 5.0 + dir * 1.2
 			_inst(g, "Arco_%s_%d" % [k, fim], "Arco", pa.x, pa.y, _yaw_para(pa.x, pa.y, pa.x - dir.x, pa.y - dir.y)); i += 1
-	# pedestais ladeando os tapetes grandes (pares a cada 6 m)
+	# pedestais junto aos braseiros que ladeiam os tapetes grandes (um por braseiro, entre ele e o tapete)
 	for t in tapetes:
 		if t[2] < 3.0: continue
-		var z0: float = t[1] - t[3] + 1.5
-		while z0 <= t[1] + t[3] - 1.0:
-			for s in [-1.0, 1.0]:
-				_inst(g, "Pedestal_%d" % i, "Pedestal", t[0] + s * (t[2] + 0.8), z0, 0.0); i += 1
-			z0 += 6.0
+		for dz in [-1.0, 1.0]:
+			for sx in [-1.0, 1.0]:
+				_inst(g, "Pedestal_%d" % i, "Pedestal", t[0] + sx * (t[2] + 0.5), t[1] + dz * 4.8, 0.0); i += 1
 
 func _em_sala(x: float, z: float) -> bool:
 	for nome in T.SALAS:
@@ -637,7 +654,7 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	if cena:
 		var m := cena.instantiate() as Node3D; m.name = "Modelo"; m.scale = Vector3.ONE * 0.75; n.add_child(m); _colisor(m, "Braseiro")
 	var luz := OmniLight3D.new(); luz.name = "Luz"; luz.position = Vector3(0, 1.45, 0)
-	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 1.2; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
+	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 0.85; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
 	luz.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(luz)
 	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 0.88, 0); ch.scale = Vector3.ONE * 0.75
@@ -646,14 +663,14 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	for k in tam.size():
 		var qm := QuadMesh.new(); qm.size = tam[k]; qm.center_offset = Vector3(0, tam[k].y * 0.5, 0)
 		var sm := ShaderMaterial.new(); sm.shader = load("res://art/shaders/chama.gdshader")
-		sm.set_shader_parameter("seed", float(hash(nome + str(x)) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.0 + 0.35 * k)
+		sm.set_shader_parameter("seed", float(hash(nome + str(x)) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.0 + 0.35 * k); sm.set_shader_parameter("intensity", 0.10)
 		qm.material = sm
 		var mi := MeshInstance3D.new(); mi.name = "Cartao%d" % k; mi.mesh = qm; mi.position = desl[k]
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ch.add_child(mi)
 	n.add_child(ch)
 	var lb := OmniLight3D.new(); lb.name = "LuzBacia"; lb.position = Vector3(0, 0.98, 0)
-	lb.light_color = Color(1.0, 0.45, 0.12); lb.light_energy = 0.7; lb.omni_range = 2.2; lb.omni_attenuation = 1.3
+	lb.light_color = Color(1.0, 0.45, 0.12); lb.light_energy = 0.4; lb.omni_range = 2.2; lb.omni_attenuation = 1.3
 	lb.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(lb)
 	_particulas_braseiro(n)
