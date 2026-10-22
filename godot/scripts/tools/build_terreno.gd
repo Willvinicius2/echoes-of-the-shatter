@@ -323,11 +323,22 @@ func _pracas(props: Node3D) -> void:
 	# tapete grande só em Átrio, Antecâmara e Arena; fica sobre praça plana, no mesmo nível do chão (+5 cm)
 	for t in [["Atrio", 0.0, 12.0], ["Antecamara", 76.0, 95.0], ["Arena", 76.0, 137.0]]:
 		_inst(gt, "TapeteGrande_" + t[0], "Tapete_Grande", t[1], t[2], 0.0, 0.0, T.chao(t[1], t[2]) + 0.075)
-		tapetes.append([t[1], t[2], 4.0, 8.2])
+		tapetes.append([t[1], t[2], 4.0, 8.2]); _forro(gt, "Forro_" + t[0], t[1], t[2], 7.6, 16.0)
 	# tapete de corredor (2,3 x 4,1 m) deitado no sentido do corredor, no centro de cada trecho reto
 	for t in [["c01", 18.0, 15.0], ["c02", 58.0, 11.0], ["c04", 58.0, 56.0], ["c05", 18.0, 54.0], ["c07", 16.0, 96.0], ["c08", 58.0, 92.0]]:
 		_inst(gt, "Tapete_" + t[0], "Tapete", t[1], t[2], PI * 0.5, 0.0, T.chao(t[1], t[2]) + 0.075)
-		tapetes.append([t[1], t[2], 2.05, 1.15])
+		tapetes.append([t[1], t[2], 2.05, 1.15]); _forro(gt, "Forro_" + t[0], t[1], t[2], 3.9, 2.1)
+
+# forro escuro sob o tapete: os furos de desgaste do tapete mostram tecido escuro e não o piso azul (parecia chão atravessando o tapete)
+var _mat_forro: StandardMaterial3D
+func _forro(pai: Node3D, nome: String, x: float, z: float, tx: float, tz: float) -> void:
+	if _mat_forro == null:
+		_mat_forro = StandardMaterial3D.new(); _mat_forro.albedo_color = Color(0.13, 0.025, 0.03); _mat_forro.roughness = 1.0
+	var mi := MeshInstance3D.new(); mi.name = nome
+	var pm := PlaneMesh.new(); pm.size = Vector2(tx, tz); pm.material = _mat_forro; mi.mesh = pm
+	mi.position = Vector3(x, T.chao(x, z) + 0.06, -z)
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	pai.add_child(mi)
 
 # ------------------------------------------------------------------ salas
 func _centro_sala(nome: String) -> Vector2:
