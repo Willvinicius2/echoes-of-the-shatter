@@ -37,3 +37,5 @@ EchoesOfTheShatter/crashlytics-build.properties
 
 __pycache__/
 *.pyc
+
+node_modules/
