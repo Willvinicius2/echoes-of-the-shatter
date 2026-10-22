@@ -9,7 +9,6 @@ from mathutils import Vector
 OUT = sys.argv[1] if len(sys.argv) > 1 else "."
 os.makedirs(OUT, exist_ok=True)
 o = pilar.montar()
-L.stone_preview()
 sc = bpy.context.scene
 
 

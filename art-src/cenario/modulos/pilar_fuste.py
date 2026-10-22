@@ -66,13 +66,29 @@ def crack(L, u, v, ang, nseg, w0, w1, a, wid=0.014):
     return ribbon(L, pts, wd, w0, w1, a), pts
 
 
-def quadrifolio(L, u0, v0, wf, a, r=0.05, dep=0.075):
-    """Cutter do quadrifólio: 4 lóbulos redondos + losango central, voltado para fora (w)."""
-    bm = bmesh.new(); off = r * 0.95
-    for du, dv in ((off, 0), (-off, 0), (0, off), (0, -off)):
-        bmesh.ops.create_cone(bm, cap_ends=True, segments=12, radius1=r, radius2=r, depth=dep * 2,
-                              matrix=Matrix.Translation((u0 + du, 0, v0 + dv)) @ Matrix.Rotation(PI / 2, 4, 'X'))
-    bmesh.ops.create_cube(bm, size=1.0, matrix=Matrix.Translation((u0, 0, v0)) @ Matrix.Diagonal((r * 1.5, dep * 2, r * 1.5, 1)))
+def quadrifolio(L, u0, v0, wf, a, r=0.075, dep=0.085):
+    """Cutter da cruz trilobada (quadrifólio): contorno = união de 4 lóbulos (cúspides entre eles), em 3 anéis:
+    boca larga (bisel/chanfro), borda e fundo a `dep` m de profundidade. Malha única fechada, voltada para fora (w)."""
+    c = r * 0.9
+    n = 72
+    def rad(t):
+        best = 0.0
+        for k in range(4):
+            ph = k * PI / 2
+            d = t - ph
+            disc = r * r - (c * math.sin(d)) ** 2
+            if disc > 0:
+                best = max(best, c * math.cos(d) + math.sqrt(disc))
+        return best
+    base = [rad(2 * PI * i / n) for i in range(n)]
+    bm = bmesh.new()
+    rings = []
+    for (w, sc) in ((0.035, 1.28), (-0.03, 1.0), (-dep, 0.88)):
+        rings.append([bm.verts.new((u0 + base[i] * sc * math.cos(2 * PI * i / n), w, v0 + base[i] * sc * math.sin(2 * PI * i / n))) for i in range(n)])
+    for j in range(2):
+        for i in range(n):
+            bm.faces.new((rings[j][i], rings[j][(i + 1) % n], rings[j + 1][(i + 1) % n], rings[j + 1][i]))
+    bm.faces.new(rings[0][::-1]); bm.faces.new(rings[2])
     bmesh.ops.transform(bm, matrix=Matrix.Translation((0, wf, 0)), verts=bm.verts)
     bmesh.ops.transform(bm, matrix=Matrix.Rotation(a, 4, 'Z'), verts=bm.verts)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
@@ -89,25 +105,40 @@ def bool_self(o, cutters):
 
 def coluneta(L, u0, a, lado):
     wc = 0.99
-    # base em degraus
-    blk(L, u0, wc, 1.16, 0.42, 0.36, 0.12, a, bev=0.012, chip=0.02, cuts_pre=1, seg=1)
-    blk(L, u0, wc, 1.27, 0.35, 0.29, 0.10, a, bev=0.01, chip=0.015, cuts_pre=1, seg=1)
-    blk(L, u0, wc, 1.345, 0.30, 0.25, 0.05, a, bev=0.01, seg=1)   # filete da base
-    # fuste em tambores com junta, filete no meio
-    zs = [1.37, 2.30, 3.20, 3.94]
+    # base em 3 degraus + toro (anel) + filete
+    blk(L, u0, wc, 1.16, 0.44, 0.38, 0.12, a, bev=0.012, chip=0.02, cuts_pre=1, seg=1)
+    blk(L, u0, wc, 1.265, 0.37, 0.31, 0.09, a, bev=0.01, seg=1)
+    blk(L, u0, wc, 1.335, 0.32, 0.27, 0.05, a, bev=0.008, seg=1)
+    blk(L, u0, wc, 1.375, 0.285, 0.235, 0.03, a, bev=0.006, seg=1)   # anel fino
+    # fuste em tambores com junta; filetes (anéis) nas emendas e entre-eixos
+    zs = [1.39, 2.30, 3.20, 3.92]
     for i in range(3):
-        h = zs[i + 1] - zs[i] - 0.014
-        blk(L, u0, wc, (zs[i] + zs[i + 1]) / 2, 0.25, 0.21, h, a, bev=0.012, chip=0.018, rough=0.006,
-            cuts_pre=2, seg=1, jit=0.004)
-    blk(L, u0, wc, 2.30, 0.30, 0.25, 0.06, a, bev=0.01, seg=1)
-    blk(L, u0, wc, 3.97, 0.30, 0.25, 0.07, a, bev=0.01, seg=1)      # colarinho
-    # corpo do capitel + quadrifólio
-    cap = blk(L, u0, wc, 4.27, 0.38, 0.30, 0.40, a, bev=0.012, chip=0.025, cuts_pre=3, seg=1)
-    q = quadrifolio(L, 0, 0, 0.0, a)   # criado na origem, move para a posição certa
-    q.location = W(u0, wc + 0.15 - 0.06, 4.29, a) - Vector((0, 0, 0))
+        h = zs[i + 1] - zs[i] - 0.02
+        blk(L, u0, wc, (zs[i] + zs[i + 1]) / 2, 0.24, 0.20, h, a, bev=0.010, chip=0.016, rough=0.005,
+            cuts_pre=2, seg=1, jit=0.003)
+    for z in (2.30, 3.20):
+        blk(L, u0, wc, z, 0.305, 0.255, 0.05, a, bev=0.008, seg=1)
+        blk(L, u0, wc, z + 0.05, 0.27, 0.225, 0.03, a, bev=0.006, seg=1)
+    # colarinho do capitel em degraus
+    blk(L, u0, wc, 3.95, 0.30, 0.25, 0.05, a, bev=0.008, seg=1)
+    blk(L, u0, wc, 3.995, 0.34, 0.285, 0.04, a, bev=0.008, seg=1)
+    # sino do capitel, mais largo em cima, + quadrifólio vazado com bisel
+    blk(L, u0, wc, 4.10, 0.29, 0.245, 0.17, a, bev=0.008, seg=1)
+    cap = blk(L, u0, wc, 4.33, 0.40, 0.32, 0.32, a, bev=0.012, seg=1)
+    q = quadrifolio(L, 0, 0, 0.0, a)
+    q.location = W(u0, wc + 0.16, 4.33, a)
     bool_self(cap, [q]); bpy.data.objects.remove(q, do_unlink=True); L.objs.remove(q)
-    # ábaco
-    blk(L, u0, wc, 4.62, 0.44, 0.33, 0.26, a, bev=0.014, chip=0.03, rough=0.006, cuts_pre=3, seg=1)
+    # paredes e fundo do vazado em pedra escura (fundo escuro legível)
+    cap.data.materials.append(L.MAT["escura"]); ie = len(cap.data.materials) - 1
+    ca_, sa_ = math.cos(a), math.sin(a)
+    for p in cap.data.polygons:
+        c = p.center
+        uu = c.x * ca_ + c.y * sa_ - u0; ww = -c.x * sa_ + c.y * ca_
+        if abs(uu) < 0.17 and abs(c.z - 4.33) < 0.17 and ww < wc + 0.16 - 0.012:
+            p.material_index = ie
+    # ábaco em 2 lajes (a de baixo recuada)
+    blk(L, u0, wc, 4.535, 0.46, 0.36, 0.09, a, bev=0.01, chip=0.02, cuts_pre=2, seg=1)
+    blk(L, u0, wc, 4.65, 0.50, 0.39, 0.13, a, bev=0.012, chip=0.03, rough=0.005, cuts_pre=2, seg=1)
 
 
 def fiadas(L, total0, total1, rng, lo=0.30, hi=0.46):
@@ -119,51 +150,51 @@ def fiadas(L, total0, total1, rng, lo=0.30, hi=0.46):
     return [h * k for h in hs]
 
 
-def painel(L, a):
-    """Mortar escuro + blocos irregulares com juntas fundas + fissuras na face a."""
-    rng = L.rnd
-    g = 0.035
-    start = len(L.objs)
-    # camada de argamassa escura (juntas fundas)
-    L.rock(W(0, 0.945, (Z0 + Z1) / 2 + 0.02, a), (1.92, 0.04, Z1 - Z0 - 0.02), L.MAT["escura"], rot=(0, 0, a), bev=0.0)
-    mort = L.objs[-1]
+def painel(L, a, face_seed):
+    """Alvenaria: fiadas horizontais retas de alturas diferentes, blocos retos de larguras variadas (aparelho
+    com juntas desencontradas), peças grandes ocasionais, juntas fundas na argamassa escura, cantos lascados e
+    fissuras. Cada face usa uma semente própria (assimétrica)."""
+    import random
+    rng = random.Random(face_seed)
+    g = 0.045
+    # argamassa escura recuada
+    L.rock(W(0, 0.935, (Z0 + Z1) / 2 + 0.02, a), (1.92, 0.04, Z1 - Z0 - 0.02), L.MAT["escura"], rot=(0, 0, a), bev=0.0)
     start_b = len(L.objs)
-    zc = Z0 + 0.06
-    spans = [(-0.97, -0.87), (-0.55, 0.55), (0.87, 0.97)]
-    for h in fiadas(L, Z0 + 0.06, Z1 - 0.02, rng, 0.28, 0.46):
-        zmid = zc + h / 2
-        for (u_a, u_b) in spans:
-            wsp = u_b - u_a
-            n = max(1, round(wsp / rng.uniform(0.36, 0.55))) if wsp > 0.3 else 1
-            cuts = sorted(rng.uniform(0.3, 0.7) for _ in range(n - 1)) if n > 1 else []
-            edges = [u_a] + [u_a + c * wsp for c in cuts] + [u_b]
-            # equaliza para não sair bloco minúsculo
-            edges = [u_a + (u_b - u_a) * i / n + (rng.uniform(-0.08, 0.08) if 0 < i < n else 0) for i in range(n + 1)]
-            for i in range(n):
-                bw = edges[i + 1] - edges[i] - g
-                if bw < 0.04: continue
-                partes = [(h, 0.0)]
-                if h > 0.34 and bw > 0.3 and rng.random() < 0.3:
-                    f = rng.uniform(0.42, 0.58); partes = [(h * f, -h * (1 - f) / 2), (h * (1 - f), h * f / 2)]
-                for ph, dz in partes:
-                    bh = ph - g + rng.uniform(-0.015, 0.015)
-                    proud = rng.uniform(0.04, 0.07)
-                    th = 0.12
-                    blk(L, (edges[i] + edges[i + 1]) / 2, 0.945 + proud - th / 2 + 0.02, zmid + dz, bw, th, bh, a,
-                        chip=min(0.04, bw * 0.3, bh * 0.3), rough=0.009, cuts_pre=1 if (bw < 0.25 or bh < 0.2) else 2, seg=1, jit=0.012)
-        zc += h
+    z = Z0 + 0.05
+    top = Z1 - 0.01
+    hs = []; zz = z
+    while zz < top - 0.25:
+        h = rng.choice([0.24, 0.30, 0.36, 0.44, 0.52, 0.28, 0.40]); hs.append(h); zz += h
+    k = (top - z) / sum(hs); hs = [h * k for h in hs]
+    for ci, h in enumerate(hs):
+        # larguras da fiada; começa deslocada para desencontrar as juntas
+        x = -0.97; widths = []
+        x += -rng.uniform(0.0, 0.35)
+        while x < 0.97:
+            w = rng.choice([0.42, 0.55, 0.70, 0.90, 1.05, 0.48, 0.64])
+            widths.append((x, x + w)); x += w
+        for (xa, xb) in widths:
+            xa = max(xa, -0.97); xb = min(xb, 0.97)
+            bw = xb - xa - g
+            if bw < 0.2: continue
+            bh = h - g + rng.uniform(-0.012, 0.012)
+            proud = rng.uniform(0.035, 0.085)
+            th = 0.12
+            ch = min(0.03, bw * 0.08, bh * 0.1)
+            blk(L, (xa + xb) / 2, 0.935 + proud + 0.02 - th / 2 + 0.02, z + h / 2 + rng.uniform(-0.004, 0.004), bw, th, bh, a,
+                chip=ch, rough=0.006, cuts_pre=1 if (bw < 0.5 or bh < 0.34) else 2, seg=1, jit=0.0, ez=rng.uniform(-0.006, 0.006))
+        z += h
     blocos = join_from(L, start_b, "painel_blocos")
-    # fissuras: sulcos reais
+    # fissuras: sulcos reais (poucas, uma delas longa)
     cut = []
-    for i in range(3):
-        u = rng.uniform(-0.45, 0.45); v = rng.uniform(2.4, 4.4)
-        c, pts = crack(L, u, v, rng.uniform(-2.2, -1.0), rng.randint(6, 9), 0.99, 1.1, a, 0.02)
+    for i in range(2):
+        u = rng.uniform(-0.6, 0.6); v = rng.uniform(2.2, 4.3)
+        c, pts = crack(L, u, v, rng.uniform(-2.2, -1.0), rng.randint(6, 9), 0.985, 1.2, a, 0.02)
         cut.append(c)
-        if rng.random() < 0.8:   # ramificação
-            k = rng.randint(2, 4); p = pts[k]
-            c2, _ = crack(L, p.x, p.y, rng.uniform(-0.6, 0.6) + (PI if rng.random() < 0.5 else 0), 4, 0.99, 1.1, a, 0.014)
+        if rng.random() < 0.8:
+            kk = rng.randint(2, 4); p = pts[kk]
+            c2, _ = crack(L, p.x, p.y, rng.uniform(-0.6, 0.6) + (PI if rng.random() < 0.5 else 0), 4, 0.985, 1.2, a, 0.014)
             cut.append(c2)
-    # cutters separados do mundo: cada um num boolean (evita auto-interseção)
     for c in cut: L.objs.remove(c)
     bpy.ops.object.select_all(action='DESELECT')
     for c in cut: c.select_set(True)
@@ -173,27 +204,44 @@ def painel(L, a):
     return blocos
 
 
-def anel(L, H, t, z0, z1, a_n, rng, m=None, quebra=False):
-    """Barras de cornija formando um anel quadrado de meia largura H, espessura t."""
+def anel(L, H, z0, z1, rng, m=None, nmin=2, chip=0.012):
+    """Anel de cornija: barras de comprimento variado (juntas desencontradas), frente/costas inteiras e
+    laterais entre elas; espessura t chega ao núcleo."""
+    t = H - 0.90
     for a in (0.0, PI, PI / 2, -PI / 2):
-        n = a_n
-        L_ = 2 * H
-        for i in range(n):
-            lw = L_ / n
-            u = -H + lw * (i + 0.5)
-            sx = lw + (0.02 if i < n - 1 else 0)
-            blk(L, u, H - t / 2, (z0 + z1) / 2, sx - 0.012, t, z1 - z0, a, m, bev=0.012, chip=0.012, rough=0.0,
-                cuts_pre=1, seg=1, jit=0.0)
+        span = H if a in (0.0, PI) else H - t
+        pos = -span; cuts = [-span]
+        while pos < span - 0.35:
+            pos += rng.uniform(0.55, 1.0); cuts.append(min(pos, span))
+        if cuts[-1] < span: cuts.append(span)
+        if cuts[-1] - cuts[-2] < 0.3 and len(cuts) > 2: cuts.pop(-2)
+        for i in range(len(cuts) - 1):
+            lw = cuts[i + 1] - cuts[i]
+            blk(L, (cuts[i] + cuts[i + 1]) / 2, H - t / 2, (z0 + z1) / 2, lw - 0.02, t, z1 - z0, a, m, bev=0.008,
+                chip=chip, rough=0.0, cuts_pre=1, seg=1, jit=0.0)
+
+
+def calota(L, x, y, z, s, rot=0.0):
+    """Calota de musgo: meia esfera facetada achatada, meio enterrada."""
+    r = L.rnd
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=1, radius=0.5)
+    for v in bm.verts:
+        n = 1 + r.uniform(-0.16, 0.16)
+        v.co = Vector((v.co.x * n, v.co.y * n, v.co.z * r.uniform(0.8, 1.15)))
+    sx, sy, sz = s * r.uniform(1.1, 1.7), s * r.uniform(1.1, 1.7), s * r.uniform(0.28, 0.5)
+    bmesh.ops.transform(bm, matrix=Matrix.Translation(Vector((x, y, z))) @ Matrix.Rotation(rot, 4, 'Z') @ Matrix.Diagonal((sx, sy, sz, 1)), verts=bm.verts)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    return L.from_bm(bm, L.MAT["musgo"], "musgo")
 
 
 def musgo(L, x, y, z, s, rot=0.0):
-    """Tufo: 2 gomos achatados e arredondados juntos."""
+    """Tufo irregular: calotas sobrepostas de tamanhos diferentes."""
     r = L.rnd
-    for k in range(2):
-        d = s * 0.45
-        L.rock(Vector((x + r.uniform(-d, d), y + r.uniform(-d, d), z + r.uniform(0, s * 0.12))),
-               (s * r.uniform(0.7, 1.1), s * r.uniform(0.7, 1.1), s * r.uniform(0.35, 0.6)), L.MAT["musgo"],
-               rot=(0, 0, rot + r.uniform(0, 6)), jit=0.2, bev=0.04, cuts=0, seg=1)
+    for k in range(r.choice([2, 3, 3, 4])):
+        d = s * 0.55
+        calota(L, x + r.uniform(-d, d), y + r.uniform(-d, d), z + r.uniform(0, s * 0.12),
+               s * (1.0 if k == 0 else r.uniform(0.45, 0.8)), rot + r.uniform(0, 6))
 
 
 def build(L):
@@ -207,8 +255,8 @@ def build(L):
     join_from(L, s0, "fuste_nucleo")
 
     # (3) painéis nas 3 faces sem nicho
-    for nome in ("esq", "costas", "dir"):
-        painel(L, FACES[nome])
+    for nome, sd in (("esq", 101), ("costas", 202), ("dir", 303)):
+        painel(L, FACES[nome], sd)
 
     # (2) 8 colunetas
     for nome, a in FACES.items():
@@ -216,9 +264,8 @@ def build(L):
             coluneta(L, lado, a, lado)
 
     # (4) cornija em degraus
-    anel(L, 1.18, 0.34, 4.75, 4.88, 3, rng)
-    anel(L, 1.24, 0.36, 4.88, 5.00, 3, rng)
-    anel(L, 1.30, 0.40, 5.00, 5.10, 4, rng)
+    for (H_, z0_, z1_) in ((1.12, 4.75, 4.82), (1.19, 4.82, 4.92), (1.14, 4.92, 4.98), (1.25, 4.98, 5.04), (1.31, 5.04, 5.10)):
+        anel(L, H_, z0_, z1_, rng)
 
     # (5) coroamento: preenchimento + anel de blocos grandes (alguns faltando)
     L.rock(Vector((0, 0, 5.30)), (1.90, 1.90, 0.40), L.MAT["escura"], bev=0.0)
@@ -241,14 +288,14 @@ def build(L):
         sx = lw - 0.03
         if st == "quebrado":
             h *= 0.55; sx *= 0.75; u += rng.uniform(-0.1, 0.1)
-        blk(L, u, H - t / 2, 5.1 + h / 2, sx, t, h, a, bev=0.0, chip=0.07, rough=0.012, cuts_pre=3, seg=1,
-            jit=0.02, ez=rng.uniform(-0.08, 0.08))
+        blk(L, u, H - t / 2, 5.1 + h / 2, sx, t, h, a, bev=0.0, chip=0.05, rough=0.008, cuts_pre=3, seg=1,
+            jit=0.01, ez=rng.uniform(-0.04, 0.04))
     # coroamento desabado: lajes quebradas de borda irregular, em camadas, algumas inclinadas
     def laje(x, y, zc, w, tilt, mat=None):
         # laje retangular de borda reta com cantos lascados, assentada quase plana
         L.rock(Vector((x, y, zc)), (w * rng.uniform(0.95, 1.15), w * rng.uniform(0.7, 0.95), 0.2 + 0.1 * w), mat,
-               rot=(rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt), rng.choice([0, 1.5708]) + rng.uniform(-0.18, 0.18)),
-               bev=0.01, chip=0.09, rough=0.012, cuts_pre=3, seg=1, jit=0.02)
+               rot=(rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt), rng.choice([0, 1.5708]) + rng.uniform(-0.09, 0.09)),
+               bev=0.01, chip=0.06, rough=0.008, cuts_pre=3, seg=1, jit=0.008)
     L.rock(Vector((0, 0, 5.62)), (1.9, 1.9, 0.12), L.MAT["escura"], bev=0.0, chip=0.05, rough=0.01, cuts_pre=3, seg=1, jit=0.03)  # terra entre as lajes
     for (x, y) in ((-0.55, -0.55), (0.55, -0.55), (-0.55, 0.55), (0.55, 0.55), (0.0, 0.0), (0.0, -0.85)):
         laje(x + rng.uniform(-.12, .12), y + rng.uniform(-.12, .12), 5.72, rng.uniform(0.85, 1.05), 0.03)
@@ -264,17 +311,20 @@ def build(L):
     # blocos caídos na cornija (frente e costas)
     laje(0.7, 1.22, 5.2, 0.35, 0.15); laje(-0.6, -1.25, 5.2, 0.32, 0.15)
 
-    # (6) musgo em tufos
+    # (6) musgo em tufos de calotas: cantos, base das colunetas, topo da cornija, frestas e topo
     cantos = [(HALF + 0.03, HALF + 0.03), (-HALF - 0.03, HALF + 0.03), (HALF + 0.03, -HALF - 0.03), (-HALF - 0.03, -HALF - 0.03)]
     for cx, cy in cantos:
-        for _ in range(4):
-            musgo(L, cx + rng.uniform(-0.03, 0.03), cy + rng.uniform(-0.03, 0.03), rng.uniform(1.4, 4.4), rng.uniform(0.12, 0.2))
+        for _ in range(3):
+            musgo(L, cx + rng.uniform(-0.03, 0.03), cy + rng.uniform(-0.03, 0.03), rng.uniform(1.4, 4.4), rng.uniform(0.10, 0.18))
     for a in FACES.values():
         for u0 in (-0.70, 0.70):
-            p = W(u0, 0.99, 1.37, a); musgo(L, p.x, p.y, p.z, 0.16)
-            p = W(u0 + rng.uniform(-.1, .1), 1.0, 1.25, a); musgo(L, p.x, p.y, p.z, 0.12)
-        for z in (4.9, 5.02):
-            p = W(rng.uniform(-1.0, 1.0), 1.1, z + 0.02, a); musgo(L, p.x, p.y, p.z, 0.2)
-        p = W(rng.uniform(-0.9, 0.9), 1.15, 5.1, a); musgo(L, p.x, p.y, p.z, 0.22)
-    for _ in range(8):
-        musgo(L, rng.uniform(-1.0, 1.0), rng.uniform(-1.0, 1.0), rng.uniform(5.6, 6.1), rng.uniform(0.14, 0.24))
+            p = W(u0 + rng.uniform(-.12, .12), 1.05, 1.42, a); musgo(L, p.x, p.y, p.z, 0.15)
+            p = W(u0 + rng.uniform(-.1, .1), 1.18, 1.22, a); musgo(L, p.x, p.y, p.z, 0.12)
+        for z, w_ in ((4.82, 1.0), (5.10, 1.05)):   # topo dos degraus da cornija
+            for _ in range(2):
+                p = W(rng.uniform(-1.0, 1.0), w_ + rng.uniform(0.0, 0.2), z, a); musgo(L, p.x, p.y, p.z, rng.uniform(0.18, 0.3))
+        for _ in range(3):   # frestas entre fiadas nas faces sem nicho
+            if a == 0.0: continue
+            p = W(rng.uniform(-0.9, 0.9), 1.03, rng.uniform(1.5, 3.9), a); musgo(L, p.x, p.y, p.z, rng.uniform(0.07, 0.12))
+    for _ in range(9):
+        musgo(L, rng.uniform(-1.0, 1.0), rng.uniform(-1.0, 1.0), rng.uniform(5.7, 6.1), rng.uniform(0.2, 0.34))

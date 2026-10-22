@@ -22,17 +22,17 @@ def _fiada(L, half, z0, h, prof, minw, maxw, falta=0.08, desal=0.025):
             uc = u + w / 2
             u += w
             if r.random() < falta: continue          # bloco faltando
-            hh = h * r.uniform(0.93, 1.0)
+            hh = h * r.uniform(0.97, 1.0)
             pp = prof * r.uniform(0.96, 1.0)
             vv = half - pp / 2 + r.uniform(-desal, desal)
-            if r.random() < 0.18:                    # bloco quebrado: mais baixo e curto
+            if r.random() < 0.10:                    # bloco quebrado: mais baixo e curto
                 hh *= r.uniform(0.7, 0.88); w *= r.uniform(0.8, 0.95)
             c, s_ = math.cos(a), math.sin(a)
             x = uc * c - vv * s_; y = uc * s_ + vv * c
             m = L.MAT["escura"] if r.random() < 0.12 else L.MAT["pedra"]
-            _r(L, (x, y, z0 + hh / 2 + r.uniform(0, 0.012)), (w - 0.035, pp, hh), m,
-                   rot=(r.uniform(-0.012, 0.012), r.uniform(-0.012, 0.012), a + r.uniform(-0.02, 0.02)),
-                   jit=0.012, bev=0.012, seg=1, chip=r.uniform(0.02, 0.04), rough=0.01, cuts_pre=2 if w > 0.75 else 1)
+            _r(L, (x, y, z0 + hh / 2 + r.uniform(0, 0.004)), (w - 0.035, pp, hh), m,
+                   rot=(0, 0, a + r.uniform(-0.006, 0.006)),
+                   jit=0.004, bev=0.02, seg=1, chip=r.uniform(0.02, 0.04) if r.random() < 0.55 else 0.0, rough=0.0, cuts_pre=1)
 
 
 def _laje(L, half, z0, h, nx=3, ny=3):
@@ -50,37 +50,7 @@ def _laje(L, half, z0, h, nx=3, ny=3):
             if r.random() < 0.1: continue
             _r(L, ((xs[i] + xs[i + 1]) / 2, (ys[j] + ys[j + 1]) / 2, z0 - h / 2 + r.uniform(0, 0.02)),
                    (w - 0.03, d - 0.03, h), L.MAT["pedra"], rot=(0, 0, r.uniform(-0.02, 0.02)),
-                   jit=0.01, bev=0.01, seg=1, chip=0.05, rough=0.01, cuts_pre=1)
-
-
-def _entulho(L, n, rmin, rmax, zmax_fn, tam=(0.1, 0.34), musgo_p=0.3):
-    """Pedaços caídos e lascas em volta; alguns com musgo por cima."""
-    r = L.rnd
-    for _ in range(n):
-        a = r.uniform(0, 2 * math.pi); d = r.uniform(rmin, rmax)
-        x, y = d * math.cos(a), d * math.sin(a)
-        s = r.uniform(*tam)
-        sz = (s * r.uniform(0.8, 1.5), s * r.uniform(0.7, 1.3), s * r.uniform(0.5, 1.0))
-        z = zmax_fn(x, y) + max(sz) * 0.5 + 0.03
-        m = L.MAT["escura"] if r.random() < 0.2 else L.MAT["pedra"]
-        L.boulder((x, y, z), (s * 1.6, s * 1.5, s * 1.3), m, rot=(r.uniform(-.4, .4), r.uniform(-.4, .4), r.uniform(0, 6.28)), pts=r.randint(10, 16), bev=0.008 + 0.02 * s)
-        if r.random() < musgo_p:
-            _r(L, (x, y, z + sz[2] * 0.4), (sz[0] * 0.7, sz[1] * 0.7, 0.035), L.MAT["musgo"],
-                   rot=(0, 0, r.uniform(0, 6.28)), jit=0.12, bev=0.0, cuts=1)
-
-
-def _musgo(L, n, rmin, rmax, zfn):
-    """Tufos de musgo: montinhos achatados de várias camadas."""
-    r = L.rnd
-    for _ in range(n):
-        a = r.uniform(0, 2 * math.pi); d = r.uniform(rmin, rmax)
-        x, y = d * math.cos(a), d * math.sin(a)
-        z = zfn(x, y)
-        for k in range(r.randint(2, 4)):
-            s = r.uniform(0.07, 0.2)
-            _r(L, (x + r.uniform(-.1, .1), y + r.uniform(-.1, .1), z + 0.012 + k * 0.012),
-                   (s, s * r.uniform(.7, 1.3), r.uniform(0.03, 0.06)), L.MAT["musgo"],
-                   rot=(0, 0, r.uniform(0, 6.28)), jit=0.12, bev=0.0, cuts=1)
+                   jit=0.004, bev=0.01, seg=1, chip=0.05, rough=0.004, cuts_pre=1)
 
 
 def _rachadura(L, x, y, z, comp, a):
@@ -94,40 +64,86 @@ def _rachadura(L, x, y, z, comp, a):
            L.MAT["escura"], rot=(0, ty + r.uniform(-.3, .3), a), jit=0.05, bev=0.0, cuts=0)
 
 
+def _calota(L, x, y, z, rx, ry, rz, ph=0.0):
+    """Calota de musgo: meia esfera achatada de poucas faces, meio enterrada."""
+    import bmesh
+    from mathutils import Matrix
+    lim = 1.69 - max(rx, ry) * 1.1
+    x = max(-lim, min(lim, x)); y = max(-lim, min(lim, y))
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=4, radius=1.0)
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.calc_center_median().z < -0.15], context='FACES')
+    for v in bm.verts:
+        v.co.x *= rx; v.co.y *= ry; v.co.z *= rz
+        v.co.x += L.rnd.uniform(-.1, .1) * rx; v.co.y += L.rnd.uniform(-.1, .1) * ry
+    bmesh.ops.transform(bm, matrix=Matrix.Translation((x, y, z)) @ Matrix.Rotation(ph, 4, 'Z'), verts=bm.verts)
+    return L.from_bm(bm, L.MAT["musgo"], "musgo")
+
+
+def _tufo(L, x, y, z, r, n=5, dir=None):
+    """Tufo irregular: várias calotas pequenas sobrepostas. dir=(dx,dy): empurra para fora (musgo em junta de face vertical)."""
+    rr = L.rnd
+    for _ in range(n):
+        ox, oy = rr.uniform(-r, r), rr.uniform(-r, r)
+        s = r * rr.uniform(0.45, 0.9)
+        _calota(L, x + ox, y + oy, z + rr.uniform(0, 0.02), s, s * rr.uniform(.7, 1.3), s * rr.uniform(.35, .6), rr.uniform(0, 6.28))
+
+
+def _pedaco(L, x, y, z, s, grande=False):
+    """Pedaço caído: casco lascado achatado."""
+    r = L.rnd
+    lim = 1.69 - s * 1.4
+    x = max(-lim, min(lim, x)); y = max(-lim, min(lim, y))
+    m = L.MAT["escura"] if r.random() < 0.15 else L.MAT["pedra"]
+    L.boulder((x, y, z + s * 0.35), (s * 1.5, s * 1.3, s * 1.1), m,
+              rot=(r.uniform(-.3, .3), r.uniform(-.3, .3), r.uniform(0, 6.28)), pts=r.randint(12, 16), bev=0.01, flat=0.3)
+
+
 def build(L):
     r = L.rnd
-    # degraus: (meia pegada, z0, altura da fiada, profundidade, largura min, max)
-    deg = [(1.6, 0.0, 0.40, 0.55, 0.45, 0.95),
-           (1.38, 0.40, 0.30, 0.45, 0.35, 0.8),
-           (1.15, 0.70, 0.27, 0.40, 0.35, 0.7)]
+    # degraus de lajes retas: (meia pegada, z0, altura total, profundidade, largura min, max)
+    deg = [(1.68, 0.0, 0.38, 0.50, 0.55, 1.05),
+           (1.50, 0.38, 0.32, 0.45, 0.5, 0.95),
+           (1.30, 0.70, 0.27, 0.40, 0.45, 0.85)]
     for half, z0, h, prof, mn, mx in deg:
-        _fiada(L, half, z0, h, prof, mn, mx)
-    # miolos escuros por degrau (aparecem nas juntas e onde falta bloco)
-    for hf, z0, z1 in ((1.12, 0, 0.4), (0.96, 0.4, 0.7), (0.80, 0.7, 0.99)):
+        if z0 == 0.0:      # 1.º degrau em duas fiadas com juntas desencontradas
+            _fiada(L, half, z0, h / 2, prof, mn, mx, falta=0.0, desal=0.015)
+            _fiada(L, half, z0 + h / 2, h / 2, prof, mn * 0.9, mx, falta=0.0, desal=0.015)
+        else:
+            _fiada(L, half, z0, h, prof, mn, mx, falta=0.0, desal=0.015)
+    # miolos escuros por degrau (aparecem nas juntas)
+    for hf, z0, z1 in ((1.30, 0, 0.38), (1.12, 0.38, 0.70), (0.95, 0.70, 0.97)):
         _r(L, (0, 0, (z0 + z1) / 2), (2 * hf, 2 * hf, z1 - z0), L.MAT["escura"], bev=0.0, cuts=0)
-    # lajes do tampo do 3.º degrau (z=0.97) sob a cornija
-    _laje(L, 0.8, 1.0, 0.06, 3, 3)
+    _laje(L, 0.95, 1.0, 0.06, 3, 3)
     # cornija de base do fuste: 2 fiadas (1.0-1.07 e 1.07-1.15)
     _fiada(L, 1.05, 0.97, 0.10, 0.28, 0.35, 0.7, falta=0.0, desal=0.01)
     _fiada(L, 0.97, 1.06, 0.09, 0.22, 0.3, 0.6, falta=0.0, desal=0.01)
-    # zonas: z do chão/degrau em função da posição (para o entulho)
-    def zf(x, y):
-        m = max(abs(x), abs(y))
-        return 0.0 if m > 1.6 else 0.4 if m > 1.38 else 0.7 if m > 1.15 else 0.97
-    _entulho(L, 6, 1.68, 1.75, lambda x, y: 0.0, (0.12, 0.3))        # no chão, em volta
-    _entulho(L, 4, 1.42, 1.58, lambda x, y: 0.4, (0.1, 0.24))         # sobre o 1.º degrau
-    _entulho(L, 3, 1.2, 1.34, lambda x, y: 0.7, (0.08, 0.2))        # sobre o 2.º
-    _entulho(L, 2, 1.08, 1.14, lambda x, y: 0.97, (0.07, 0.15))      # sobre o 3.º
-    # lascas pequenas espalhadas
-    _entulho(L, 12, 1.0, 1.72, zf, (0.04, 0.08), 0.1)
+    # entulho pouco: só nos 4 cantos (1 médio + 1-2 pequenos) e 2 lascas nas bordas
+    for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+        _pedaco(L, sx * 1.52, sy * 1.52, 0.38, r.uniform(0.17, 0.22))
+        _pedaco(L, sx * 1.60, sy * 1.36, 0.38, r.uniform(0.07, 0.1))
+        if r.random() < 0.6: _pedaco(L, sx * 1.36, sy * 1.60, 0.38, r.uniform(0.06, 0.09))
+    _pedaco(L, 0.5, 1.62, 0.38, 0.08)
+    _pedaco(L, -0.9, -1.44, 0.70, 0.07)
     # rachaduras nas faces do soco
     for a in (0.0, 1.57, 3.14, 4.71):
         c, s = math.cos(a), math.sin(a)
-        for (rad, z) in ((1.62, 0.2), (1.4, 0.55), (1.17, 0.83)):
+        for (rad, z) in ((1.68, 0.19), (1.50, 0.54), (1.30, 0.83)):
             u = r.uniform(-0.5, 0.5)
             _rachadura(L, u * c - (rad + 0.005) * s, u * s + (rad + 0.005) * c, z, r.uniform(.2, .4), a)
-    # musgo nas juntas, nos degraus e na base
-    _musgo(L, 12, 1.3, 1.7, lambda x, y: 0.0)
-    _musgo(L, 10, 1.2, 1.5, lambda x, y: 0.4)
-    _musgo(L, 8, 1.0, 1.3, lambda x, y: 0.7)
-    _musgo(L, 6, 0.9, 1.1, lambda x, y: 0.97)
+    # musgo: concentrado nos cantos e na base, tufos nas frestas
+    for sx, sy in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+        _tufo(L, sx * 1.58, sy * 1.58, 0.38, 0.17, 7)
+        _tufo(L, sx * 1.38, sy * 1.38, 0.70, 0.14, 6)
+        _tufo(L, sx * 1.14, sy * 1.14, 0.97, 0.11, 5)
+    for half, z in ((1.62, 0.38), (1.42, 0.70), (1.22, 0.97)):
+        for _ in range(6):
+            a = r.randint(0, 3) * math.pi / 2; u = r.uniform(-half * .8, half * .8)
+            c, s = math.cos(a), math.sin(a)
+            _tufo(L, u * c - half * s, u * s + half * c, z, 0.1, 4)
+    # junta vertical da face do 1.º degrau (musgo colado à pedra)
+    for a in (0.0, 1.57, 3.14, 4.71):
+        c, s = math.cos(a), math.sin(a)
+        for _ in range(2):
+            u = r.uniform(-1.3, 1.3)
+            _tufo(L, u * c - 1.66 * s, u * s + 1.66 * c, r.uniform(0.06, 0.2), 0.09, 4)

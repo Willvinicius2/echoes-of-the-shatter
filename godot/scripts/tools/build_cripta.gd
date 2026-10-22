@@ -206,7 +206,8 @@ func _decorar_sala(pai: Node3D, nome: String, r: Array) -> void:
 			if i == 2: _modulo(pai, "Estatua_%s" % nome, "SM_Cripta_Estatua", c[0] + sx * 1.6, c[1] + sz * 1.6, cx, cz)
 			i += 1
 			continue
-		_modulo(pai, "Pilar_%s_%d" % [nome, i], "SM_Cripta_Pilar", c[0] + sx * 2.0, c[1] + sz * 2.0, cx, cz)
+		var pilar := _modulo(pai, "Pilar_%s_%d" % [nome, i], "SM_Cripta_Pilar", c[0] + sx * 2.0, c[1] + sz * 2.0, cx, cz)
+		if pilar: _luz_nicho(pilar)
 		_braseiro(pai, "Braseiro_%s_%d" % [nome, i], c[0] + sx * 4.6, c[1] + sz * 4.6)
 		_modulo(pai, "Velas_%s_%d" % [nome, i], "SM_Cripta_Velas", c[0] + sx * 3.3, c[1] + sz * 1.0, cx, cz, rng.randf() * 360.0)
 		_modulo(pai, "Velas_%s_%db" % [nome, i], "SM_Cripta_Velas", c[0] + sx * 1.0, c[1] + sz * 3.4, cx, cz, rng.randf() * 360.0)
@@ -224,14 +225,21 @@ func _decorar_sala(pai: Node3D, nome: String, r: Array) -> void:
 	if nome == "r00_atrio": _modulo(pai, "Corrente_Atrio", "SM_Cripta_ColunaCorrente", cx, 6.0, cx, cz + 50.0)
 	if nome == "r09_arena": _modulo(pai, "Corrente_Arena", "SM_Cripta_ColunaCorrente", cx, 123.0, cx, cz + 50.0)
 
-func _modulo(pai: Node3D, nome: String, modulo: String, x: float, z: float, alvo_x: float, alvo_z: float, yaw_extra: float = 0.0) -> void:
+func _modulo(pai: Node3D, nome: String, modulo: String, x: float, z: float, alvo_x: float, alvo_z: float, yaw_extra: float = 0.0) -> Node3D:
 	var cena := _carregar_cena("res://art/models/%s.glb" % modulo)
-	if cena == null: return
+	if cena == null: return null
 	var n := cena.instantiate() as Node3D; n.name = nome; n.position = _p(x, z)
 	var dir := Vector3(alvo_x - x, 0.0, -(alvo_z - z))
 	if dir.length() > 0.01: n.basis = Basis.looking_at(dir.normalized(), Vector3.UP)
 	if yaw_extra != 0.0: n.rotate_y(deg_to_rad(yaw_extra))
 	pai.add_child(n)
+	return n
+
+# luz própria no nicho do pilar: quente e baixa, para a estátua ler a silhueta (frente do módulo = -Z local no Godot)
+func _luz_nicho(pilar: Node3D) -> void:
+	var luz := OmniLight3D.new(); luz.name = "LuzNicho"; luz.position = Vector3(0.0, 2.7, -1.5)
+	luz.light_color = Color(1.0, 0.78, 0.5); luz.light_energy = 1.6; luz.omni_range = 3.2; luz.omni_attenuation = 1.4
+	pilar.add_child(luz)
 
 func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	var n := Node3D.new(); n.name = nome; n.position = _p(x, z)
