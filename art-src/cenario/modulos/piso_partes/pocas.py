@@ -100,16 +100,17 @@ def _dentro(f, cx, cy, x, y, k=0.88):
 
 def _agua(idx, cx, cy, f, r, M):
     bm = bmesh.new(); vc = {}; n = 72; Z = Z_AGUA
-    fundo = (0.018, 0.026, 0.036); raso = (0.045, 0.058, 0.070)
-    def col(t): return (*_mix(fundo, raso, _sm(0.2, 1.0, t)), 0.72 * (1 - _sm(0.45, 1.0, t)) ** 1.1)
+    fundo = (0.040, 0.052, 0.070); raso = (0.070, 0.088, 0.110)
+    def col(t): return (*_mix(fundo, raso, _sm(0.3, 1.0, t)), 0.9)
     c = bm.verts.new((cx, cy, Z)); vc[c] = col(0)
     aneis = []; J = 7
     for j in range(1, J + 1):
         t_ = j / J; v = []
         for k in range(n):
             t = 2 * math.pi * k / n
-            vv = bm.verts.new((cx + f(t) * t_ * math.cos(t), cy + f(t) * t_ * math.sin(t), Z - 0.0003 * t_ ** 4))
-            vc[vv] = col(t_); v.append(vv)
+            vv = bm.verts.new((cx + f(t) * t_ * math.cos(t), cy + f(t) * t_ * math.sin(t), Z))
+            q = col(t_); kk = 0.78 + 0.45 * (0.5 + 0.5 * math.sin(3.1 * vv.co.x + 1.7 * math.sin(2.3 * vv.co.y)))
+            vc[vv] = (q[0] * kk, q[1] * kk, q[2] * kk, q[3]); v.append(vv)
         aneis.append(v)
     for k in range(n): bm.faces.new((c, aneis[0][k], aneis[0][(k + 1) % n]))
     for j in range(J - 1):
@@ -134,10 +135,10 @@ def _faixa(bm, vc, cx, cy, f_in, f_out, z_in, z_out, n, passos, perfil, rgb, rui
 
 
 def _umido(idx, cx, cy, f, f_halo, r, M):
-    """Borda molhada escura fina + anel de umidade largo com alfa em gradiente suave (sem degrau)."""
-    bm = bmesh.new(); vc = {}; n = 72
-    _faixa(bm, vc, cx, cy, lambda t: f(t) * 0.99, f_halo, Z_AGUA - 0.0005, Z_UMIDO - 0.0002, n, 9,
-           lambda u: 0.5 * (1 - u) ** 1.8, (0.008, 0.012, 0.02), ruido=r)
+    """Só uma linha fina de umidade escura (1,5 cm) colada na borda da poça, borda nítida."""
+    bm = bmesh.new(); vc = {}
+    _faixa(bm, vc, cx, cy, lambda t: f(t) * 0.998, lambda t: f(t) + 0.016, Z_AGUA - 0.0004, Z_UMIDO, 72, 1,
+           lambda u: 0.85, (0.006, 0.009, 0.015), ruido=None)
     return _obj(f"Umido_{idx}", bm, vc, M["umido"], suave=True)
 
 
@@ -243,7 +244,7 @@ def _tufo_vol(bm, vc, x, y, rad, r, tom):
         k = r.uniform(0.7, 1.4) * (1.0 if v.co.z > 0.0016 else 0.6); vc[v] = (tom[0] * k, tom[1] * k, tom[2] * k, 1.0)
     for _ in range(r.randint(7, 9)):
         a = r.uniform(0, 6.28); d = abs(r.gauss(0, rad * 0.55)); px, py = x + d * math.cos(a), y + d * math.sin(a)
-        h = r.uniform(0.014, 0.038) * (1.25 - min(1.0, d / (rad * 1.4)) * 0.6) * (rad / 0.03) ** 0.5
+        h = r.uniform(0.022, 0.055) * (1.25 - min(1.0, d / (rad * 1.4)) * 0.6) * (rad / 0.03) ** 0.5
         _lamina(bm, vc, px, py, h, r.uniform(0.0016, 0.0030), r.uniform(0, 6.28), a + r.uniform(-0.5, 0.5), r.uniform(0.15, 0.9) * h, tom, r.uniform(0.8, 1.35))
 
 
@@ -257,13 +258,13 @@ def _musgo(r, lajes, pocas, M):
     for l in lajes:                   # juntas e quinas: denso perto das poças, esparso longe
         for (xa, ya, xb, yb, nx, ny) in ((l["x0"], l["y0"], l["x1"], l["y0"], 0, -1), (l["x1"], l["y0"], l["x1"], l["y1"], 1, 0),
                                          (l["x1"], l["y1"], l["x0"], l["y1"], 0, 1), (l["x0"], l["y1"], l["x0"], l["y0"], -1, 0)):
-            d = _dist_pocas((xa + xb) / 2, (ya + yb) / 2, pocas); p = 0.33 if d < 1.0 else (0.15 if d < 2.0 else 0.04)
+            d = _dist_pocas((xa + xb) / 2, (ya + yb) / 2, pocas); p = 0.5 if d < 1.0 else (0.3 if d < 2.0 else 0.14)
             if r.random() > p: continue
             for _ in range(r.randint(1, 2)):
                 t = r.uniform(0.05, 0.95)
-                cand.append((xa + (xb - xa) * t + nx * comum.JUNTA / 2, ya + (yb - ya) * t + ny * comum.JUNTA / 2, r.randint(3, 5), 0.06))
+                cand.append((xa + (xb - xa) * t + nx * comum.JUNTA / 2, ya + (yb - ya) * t + ny * comum.JUNTA / 2, r.randint(3, 5), 0.08))
         for (x, y) in ((l["x0"], l["y0"]), (l["x1"], l["y0"]), (l["x1"], l["y1"]), (l["x0"], l["y1"])):
-            if r.random() < 0.2: cand.append((x, y, r.randint(3, 4), 0.05))
+            if r.random() < 0.4: cand.append((x, y, r.randint(3, 4), 0.07))
     for (x, y, nt, esp) in cand:
         if not _livre(x, y, 0.4) or _dist_pocas(x, y, pocas) < 0.02: continue
         sorte = r.random(); acc = 0
@@ -274,7 +275,7 @@ def _musgo(r, lajes, pocas, M):
         for _ in range(nt):
             a = r.uniform(0, 6.28); d = r.uniform(0, esp)
             t2 = tom if r.random() < 0.6 else TONS[r.randrange(3)][0]
-            _tufo_vol(bm2, vc2, x + d * math.cos(a), y + d * math.sin(a), r.uniform(0.022, 0.05), r, t2)
+            _tufo_vol(bm2, vc2, x + d * math.cos(a), y + d * math.sin(a), r.uniform(0.03, 0.06), r, t2)
     return [_obj("Musgo_base", bm1, vc1, M["musgo"]), _obj("Musgo_tufos", bm2, vc2, M["musgo2"], suave=True)]
 
 
@@ -348,7 +349,6 @@ def construir():
     for i, (cx, cy, rad, f, fh) in enumerate(escolhidos):
         objs += [_agua(i, cx, cy, f, r, M), _umido(i, cx, cy, f, fh, r, M)]
         pocas.append((cx, cy, f))
-    objs.append(_umido_juntas(r, lajes, pocas, M))
     objs.append(_pedrinhas(r, pocas, M))
     objs += _musgo(r, lajes, pocas, M)
     objs += _raizes(r, lajes, M)

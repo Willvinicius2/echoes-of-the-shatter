@@ -124,7 +124,7 @@ def gerar(objs, N=2048):
         # matiz: desloca azul <-> verde-acinzentado/violeta por lajota
         img[..., c] = base[c] * (1 + t) * (1 + m * np.array([-0.9, 0.1, 0.9])[c]) * (1 + (s_ - 1) * (c - 1) * 0.3)
     # ---- manchas pintadas por lajota: 4 campos de ruído diferentes escolhidos por lajota (sem repetição visível)
-    F = [_ruido(N, 9, 20 + i) * 0.6 + _ruido(N, 28, 30 + i) * 0.4 for i in range(4)]
+    F = [_ruido(N, 5, 20 + i) * 0.75 + _ruido(N, 14, 30 + i) * 0.25 for i in range(4)]
     mancha = np.choose(campo[idx], F)
     img *= (1 + 0.16 * mancha)[..., None]
     img *= (1 + 0.10 * _ruido(N, 70, 5) + 0.06 * _ruido(N, 200, 6))[..., None]
@@ -141,20 +141,24 @@ def gerar(objs, N=2048):
     sinal = np.where(_ruido(N, 6, 53) > 0, 0.9, -0.6)
     img *= (1 + 0.22 * veio * sinal)[..., None]
     # grão de cor: pontos claros/escuros de pedra (cristais) e poeira
-    gr = _ruido(N, 420, 55); img *= (1 + 0.22 * gr + 0.18 * np.clip(_ruido(N, 260, 56) * 2.2 - 1.2, 0, 1) - 0.10 * np.clip(-_ruido(N, 300, 57) * 2 - 0.6, 0, 1))[..., None]
+    gr = _ruido(N, 420, 55); img *= (1 + 0.07 * gr + 0.10 * np.clip(_ruido(N, 260, 56) * 2.2 - 1.2, 0, 1) - 0.10 * np.clip(-_ruido(N, 300, 57) * 2 - 0.6, 0, 1))[..., None]
     # ---- altura base (metros fictícios; escala aplicada no normal)
     h = np.zeros((N, N))
     # grão de pedra
-    h += 0.0007 * _ruido(N, 300, 60) + 0.0010 * _ruido(N, 110, 61) + 0.0016 * _ruido(N, 35, 62)
+    h += 0.00015 * _ruido(N, 420, 60) + 0.0009 * _ruido(N, 150, 61) + 0.0050 * _ruido(N, 60, 62)
+    # poros e crateras pequenas (espalhados e mais densos perto das bordas)
+    poro = np.clip(_ruido(N, 230, 90) * 3.0 - 2.1, 0, 1) + 0.9 * np.clip(_ruido(N, 150, 91) * 3.0 - 1.9, 0, 1) * np.clip(1 - dist / 0.25, 0, 1)
+    poro = np.clip(poro, 0, 1) * (~junta)
+    h -= 0.0035 * poro
     # ondulação de cada lajota (alturas suavemente diferentes, topo irregular)
     h += 0.0030 * _ruido(N, 12, 63) + 0.003 * (r.uniform(-1, 1, nl + 1)[idx]) * 0.4
     # ---- chanfro irregular nas arestas: largura varia ao longo da aresta
-    lar = 0.030 + 0.030 * (0.5 + 0.5 * _ruido(N, 50, 64)) + 0.022 * np.clip(_ruido(N, 14, 65), 0, 1)
+    lar = 0.030 + 0.030 * (0.5 + 0.5 * _ruido(N, 50, 64)) + 0.022 * np.clip(_ruido(N, 14, 65), 0, 1) + 0.012 * _ruido(N, 160, 92)
     ch = np.clip(1 - dist / lar, 0, 1)
     h -= 0.020 * ch ** 1.6
     # arestas gastas: borda clareada e rugosa
     gasto = np.clip(1 - dist / (0.05 + 0.05 * np.clip(_ruido(N, 22, 66), -0.2, 1)), 0, 1) * np.clip(0.5 + 0.8 * _ruido(N, 100, 67), 0, 1)
-    h += 0.004 * gasto * _ruido(N, 140, 68)
+    h += 0.010 * gasto * _ruido(N, 200, 68)
     # ---- lascas: quinas e pedaços na borda (blobs onde dist pequeno), fundos e claros
     lasca = np.clip(_ruido(N, 26, 69) * 2.4 - 1.35, 0, 1) * np.clip(1 - dist / 0.14, 0, 1)
     lasca = np.clip(lasca * 2, 0, 1)
@@ -213,7 +217,7 @@ def gerar(objs, N=2048):
     img[..., 2] *= 1 + 0.1 * gasto
     img *= (1 + 0.25 * lasca)[..., None]
     # riscos e rachaduras escuros pintados
-    img *= (1 - 0.55 * risco)[..., None] * (1 - 0.85 * rach)[..., None]
+    img *= (1 - 0.55 * risco)[..., None] * (1 - 0.35 * poro)[..., None] * (1 - 0.85 * rach)[..., None]
     # ---- juntas: terra escura com cascalho, grão, manchas
     terra = np.array([0.020, 0.022, 0.030])
     jc = terra[None, None, :] * (1 + 0.9 * _ruido(N, 160, 80) + 0.6 * _ruido(N, 25, 81))[..., None]
@@ -253,7 +257,7 @@ def aplicar(objs, N=2048):
     tx = nt.nodes.new("ShaderNodeTexImage"); tx.image = im; tx.interpolation = 'Linear'
     nt.links.new(tx.outputs["Color"], bsdf.inputs["Base Color"])
     tn = nt.nodes.new("ShaderNodeTexImage"); tn.image = nm; tn.interpolation = 'Linear'
-    nmn = nt.nodes.new("ShaderNodeNormalMap"); nmn.inputs["Strength"].default_value = 1.0
+    nmn = nt.nodes.new("ShaderNodeNormalMap"); nmn.inputs["Strength"].default_value = 1.4
     nt.links.new(tn.outputs["Color"], nmn.inputs["Color"]); nt.links.new(nmn.outputs["Normal"], bsdf.inputs["Normal"])
     for o in objs:
         if not any(s.material and s.material.name.startswith("M_Piso_Laje") for s in o.material_slots): continue
