@@ -36,6 +36,11 @@ _subresources={
 "use_external/fallback_path": "res://art/materials/M_Cripta_Limo.tres",
 "use_external/path": "res://art/materials/M_Cripta_Limo.tres"
 },
+"M_LimoClaro": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/M_Cripta_LimoClaro.tres",
+"use_external/path": "res://art/materials/M_Cripta_LimoClaro.tres"
+},
 "M_PedraEscura": {
 "use_external/enabled": true,
 "use_external/fallback_path": "res://art/materials/M_PedraEscura.tres",

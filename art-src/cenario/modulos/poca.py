@@ -17,11 +17,11 @@ VARS = os.environ.get("VARIANTES", "A,B,C").split(",")
 
 # ---- contrato de medidas por variante: (semente, raio base, escala x, escala y, lóbulos[(ângulo, força, largura)])
 VAR = {
-    "A": dict(seed=11, R=0.21, sx=1.0, sy=0.85, lobes=[(0.6, 0.3, 0.5)], ring=0.16, n_peb=4, tongues=2, musgo=1, ilha=0),    # pequena
+    "A": dict(seed=11, R=0.27, sx=1.0, sy=0.85, lobes=[(0.6, 0.3, 0.5)], ring=0.14, n_peb=4, tongues=2, musgo=1, ilha=0),    # pequena
     "B": dict(seed=23, R=0.34, sx=1.7, sy=0.55, lobes=[(3.2, 0.45, 0.35), (0.2, 0.18, 0.5)], ring=0.24, n_peb=7, tongues=4, musgo=2, ilha=0),  # média alongada
     "C": dict(seed=37, R=0.62, sx=1.12, sy=0.9, lobes=[(1.1, 0.4, 0.45), (4.3, 0.35, 0.5)], ring=0.32, n_peb=8, tongues=5, musgo=3, ilha=1),   # grande com ilha de pedra
 }
-Z_BORDA, Z_MENISCO, Z_AGUA = 0.003, 0.011, 0.014     # perfil da lâmina (m)
+Z_BORDA, Z_MENISCO, Z_AGUA = 0.003, 0.017, 0.013     # perfil da lâmina (m)
 Z_ANEL = 0.0015
 
 def seno_periodico(seed, n, amp_ini, decai):
@@ -84,7 +84,7 @@ def parte_agua(v, M, f, S=128, N=12):
             else:
                 z = Z_AGUA if t < 0.92 else Z_MENISCO + (Z_BORDA - Z_MENISCO) * ((t - 0.92) / 0.08) ** 2
                 prof = (1 - t) ** 0.7 + 0.12 * math.sin(th * 5 + fase[2]) * math.sin(t * 6 + fase[3])
-                d, al = max(0.0, min(1.0, prof)), 1.0 if t < 0.97 else 0.55
+                d, al = max(0.0, min(1.0, prof)), 1.0 if t < 0.97 else 0.85
             anel.append(vert(p.x * t, p.y * t, z, d, al))
         aneis.append(anel)
     bm.verts.ensure_lookup_table(); tri_fan(bm, aneis, {k: val for k, val in cor.items()})
@@ -182,25 +182,31 @@ def parte_pedrinhas(v, M, f):
     return o
 
 def parte_limo(v, M, f):
-    """Limo/musgo escuro em calotas baixas e irregulares junto à borda (de vez em quando)."""
-    rnd = random.Random(v["seed"] + 400); bm = bmesh.new()
+    """Limo/musgo em calotas com volume (domos de 1–3 cm) concentradas na borda, em dois tons (M_Limo escuro, M_LimoClaro amarelado)."""
+    rnd = random.Random(v["seed"] + 400); bm = bmesh.new(); tons = []
+    import mathutils
     for k in range(v["musgo"]):
-        th = rnd.uniform(0, 6.2832); p = f(th) * rnd.uniform(1.0, 1.12); rr = rnd.uniform(0.05, 0.09) * (v["R"] / 0.4 + 0.5)
-        for j in range(rnd.randint(4, 7)):       # tufo = várias calotas
-            q = p + Vector((rnd.uniform(-rr, rr), rnd.uniform(-rr, rr))); r2 = rr * rnd.uniform(0.3, 0.6)
-            g = bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1, matrix=__import__("mathutils").Matrix.Translation((q.x, q.y, 0.0)))
+        th = rnd.uniform(0, 6.2832); p = f(th)
+        for j in range(rnd.randint(8, 13)):       # tufo = muitas calotas apertadas ao longo da borda
+            t = rnd.uniform(0.97, 1.06); a2 = th + rnd.uniform(-0.28, 0.28); q = f(a2) * t
+            r2 = rnd.uniform(0.012, 0.034) * (0.8 + v["R"]); alt = rnd.uniform(0.25, 0.6) * r2 * 1.5
+            g = bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1, matrix=mathutils.Matrix.Translation((q.x, q.y, 0.0)))
             for vv in g["verts"]:
-                if vv.co.z < 0.0 or True:
-                    dz = vv.co.z; vv.co = Vector((q.x + (vv.co.x - q.x) * r2, q.y + (vv.co.y - q.y) * r2, max(dz, 0.0) * 0.016 + rnd.uniform(-0.002, 0.003)))
+                dx, dy, dz = vv.co.x - q.x, vv.co.y - q.y, vv.co.z
+                vv.co = Vector((q.x + dx * r2 * rnd.uniform(0.85, 1.2), q.y + dy * r2 * rnd.uniform(0.85, 1.2), max(dz, 0.0) * alt))
+            tons.append((g["verts"], rnd.random() < 0.4))
     me = bpy.data.meshes.new("Limo"); bm.to_mesh(me); bm.free()
-    for pp in me.polygons: pp.use_smooth = True
-    me.materials.append(M["limo"]); o = bpy.data.objects.new("Limo", me); bpy.context.collection.objects.link(o); return o
+    me.materials.append(M["limo"]); me.materials.append(M["limo2"])
+    # tom por calota: faces ligadas por vértices contíguos de 42 vértices (icosfera subdiv 2)
+    for i, pl in enumerate(me.polygons):
+        pl.use_smooth = True; pl.material_index = 1 if tons[min(pl.vertices[0] // 42, len(tons) - 1)][1] else 0
+    o = bpy.data.objects.new("Limo", me); bpy.context.collection.objects.link(o); return o
 
 # ---------------------------------------------------------------- montagem / exportação / prévias
 def materiais():
-    return dict(agua=mat("M_Agua", (0.012, 0.02, 0.04), 0.0, alpha=0.72, vcol=True),
+    return dict(agua=mat("M_Agua", (0.012, 0.02, 0.04), 0.0, alpha=0.88, vcol=True),
                 anel=mat("M_AnelMolhado", (0.02, 0.025, 0.035), 0.12, alpha=1.0, vcol=True),
-                pedra=mat("M_PedraEscura", (0.034, 0.036, 0.048), 0.5), limo=mat("M_Limo", (0.022, 0.034, 0.016), 0.9))
+                pedra=mat("M_PedraEscura", (0.034, 0.036, 0.048), 0.5), limo=mat("M_Limo", (0.008, 0.016, 0.007), 0.92), limo2=mat("M_LimoClaro", (0.022, 0.034, 0.012), 0.88))
 
 def construir(nome):
     v = VAR[nome]; M = materiais(); f = contorno(v)
@@ -218,8 +224,15 @@ def exportar(nome, partes):
 def cena_previa(partes, piso_tex):
     sc = bpy.context.scene; sc.render.engine = 'CYCLES'; sc.cycles.samples = int(os.environ.get("AMOSTRAS", 24)); sc.cycles.use_denoising = True
     sc.render.film_transparent = False
-    w = bpy.data.worlds.new("w"); w.use_nodes = True; nt = w.node_tree
-    bg = nt.nodes["Background"]; bg.inputs[0].default_value = (0.11, 0.13, 0.2, 1); bg.inputs[1].default_value = 1.0; sc.world = w
+    w = bpy.data.worlds.new("w"); w.use_nodes = True; nt = w.node_tree; sc.world = w
+    bg = nt.nodes["Background"]; tc = nt.nodes.new("ShaderNodeTexCoord"); sep = nt.nodes.new("ShaderNodeSeparateXYZ"); rp = nt.nodes.new("ShaderNodeValToRGB")
+    nt.links.new(tc.outputs["Generated"], sep.inputs[0]); nt.links.new(sep.outputs["Z"], rp.inputs[0]); nt.links.new(rp.outputs[0], bg.inputs[0])
+    cr = rp.color_ramp; cr.elements[0].position = 0.45; cr.elements[0].color = (0.02, 0.025, 0.05, 1); cr.elements[1].position = 0.78; cr.elements[1].color = (0.55, 0.7, 1.0, 1)
+    e = cr.elements.new(0.58); e.color = (0.5, 0.62, 0.9, 1); bg.inputs[1].default_value = 0.85      # horizonte claro e frio (arcos/janelas da Cripta), topo escuro
+    for k, (x, y, z) in enumerate(((2.4, -0.6, 1.1), (-1.0, 2.6, 1.3), (2.8, 1.6, 1.0))):      # tochas: esferas laranja que só aparecem no reflexo
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.12, location=(x, y, z)); t = bpy.context.object; t.name = f"tocha_vis{k}"
+        mm = bpy.data.materials.new(f"tv{k}"); mm.use_nodes = True; nn = mm.node_tree; nn.nodes.clear(); em = nn.nodes.new("ShaderNodeEmission"); em.inputs[0].default_value = (1.0, 0.5, 0.15, 1); em.inputs[1].default_value = 220
+        oo = nn.nodes.new("ShaderNodeOutputMaterial"); nn.links.new(em.outputs[0], oo.inputs[0]); t.data.materials.append(mm); t.visible_camera = False; t.visible_shadow = False
     # piso de referência: lajotas escuras com textura do jogo
     bm = bmesh.new(); bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=2.2)
     uv = bm.loops.layers.uv.new("UVMap")
@@ -233,13 +246,29 @@ def cena_previa(partes, piso_tex):
         m.node_tree.links.new(t.outputs["Color"], mix.inputs[6]); m.node_tree.links.new(mix.outputs[2], b.inputs["Base Color"])
     else: b.inputs["Base Color"].default_value = (0.08, 0.08, 0.1, 1)
     g.data.materials.append(m)
+    for o in partes:                       # água da prévia: ondulação leve (bump) e especular máximo
+        for slot in o.material_slots:
+            if slot.material.name.startswith("M_Agua"):
+                nt3 = slot.material.node_tree; bs = nt3.nodes["Principled BSDF"]; bs.inputs["Specular IOR Level"].default_value = 1.0
+                co = nt3.nodes.new("ShaderNodeTexCoord"); nz = nt3.nodes.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = 14; nz.inputs["Detail"].default_value = 3
+                bp = nt3.nodes.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.06; bp.inputs["Distance"].default_value = 0.02
+                nt3.links.new(co.outputs["Object"], nz.inputs[0]); nt3.links.new(nz.outputs["Fac"], bp.inputs["Height"]); nt3.links.new(bp.outputs[0], bs.inputs["Normal"])
+    for o in partes:                       # pedras da prévia: textura das lajes, projeção por caixa (o Godot troca por M_PedraEscura)
+        for slot in o.material_slots:
+            if slot.material.name.startswith("M_PedraEscura") and os.path.exists(piso_tex):
+                nt2 = slot.material.node_tree; bsdf = nt2.nodes["Principled BSDF"]
+                tx = nt2.nodes.new("ShaderNodeTexImage"); tx.image = bpy.data.images.load(piso_tex); tx.projection = 'BOX'; tx.projection_blend = 0.2
+                co = nt2.nodes.new("ShaderNodeTexCoord"); mp = nt2.nodes.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (7, 7, 7)
+                nt2.links.new(co.outputs["Object"], mp.inputs[0]); nt2.links.new(mp.outputs[0], tx.inputs[0])
+                mx2 = nt2.nodes.new("ShaderNodeMix"); mx2.data_type = 'RGBA'; mx2.blend_type = 'MULTIPLY'; mx2.inputs[0].default_value = 1; mx2.inputs[7].default_value = (0.5, 0.52, 0.62, 1)
+                nt2.links.new(tx.outputs["Color"], mx2.inputs[6]); nt2.links.new(mx2.outputs[2], bsdf.inputs["Base Color"])
     # luzes: tocha quente de um lado (reflexo na água), azul frio de preenchimento
     def luz(nome, tipo, e, loc, cor, size=1.0):
         d = bpy.data.lights.new(nome, tipo); d.energy = e; d.color = cor
         if tipo == 'AREA': d.size = size
         o = bpy.data.objects.new(nome, d); o.location = loc; bpy.context.collection.objects.link(o)
         o.rotation_euler = (Vector((0, 0, 0)) - Vector(loc)).to_track_quat('-Z', 'Y').to_euler(); return o
-    luz("tocha", 'AREA', 105, (1.7, -0.9, 1.5), (1.0, 0.5, 0.18), 0.5)
+    luz("tocha", 'AREA', 70, (1.7, -0.9, 1.5), (1.0, 0.55, 0.25), 0.5)
     for l in (luz("frio", 'AREA', 120, (-1.8, 1.4, 2.2), (0.45, 0.6, 1.0), 1.4), luz("topo", 'AREA', 60, (0.2, -0.3, 3.0), (0.8, 0.85, 1.0), 1.5)):
         l.visible_glossy = False         # preenchimento não vira lençol branco refletido na água
     cam = bpy.data.objects.new("c", bpy.data.cameras.new("c")); bpy.context.collection.objects.link(cam); sc.camera = cam
