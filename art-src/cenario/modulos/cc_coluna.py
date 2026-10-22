@@ -535,23 +535,15 @@ def _montar(C):
     hb = 0.165
     pyr = [Vector((sx * hb, sy * hb, 0)) for sx in (-1, 1) for sy in (-1, 1)]
     pyr = [p + Vector((r.uniform(-.006, .006), r.uniform(-.006, .006), 0)) for p in pyr]
-    pyr += [apex]
+    if dano > 0.8:   # ponta quebrada: vários picos baixos e irregulares em vez do vértice
+        pyr += [Vector((0.035, 0.02, 0.255)), Vector((-0.05, -0.015, 0.20)), Vector((0.0, -0.06, 0.225)), Vector((-0.02, 0.05, 0.19))]
+    else:
+        pyr += [apex]
     for sx, sy in ((0, 1), (0, -1), (1, 0), (-1, 0)):
         pyr.append(Vector((sx * (hb * 0.55 + .004) + sy * r.uniform(-.02, .02), sy * (hb * 0.55 + .004) + sx * r.uniform(-.02, .02), 0.17)))
     bm = _hull_bm(pyr, 0.006, 1, 0.3)
     _xf(bm, Matrix.Translation((0, 0, 3.16)))
     pyr_o = C.add(bm, 'pedra', "piramide")
-    ck = cutter_obj(C, _hull_bm(box_pts(r, (0.26, 0.2, 0.2), 0.02), 0.0))
-    ck.location = (lado * 0.15, 0.16, 3.20)
-    ck.rotation_euler = (0.55, 0.45, 0.6)
-    bpy.context.view_layer.update()
-    boolean(pyr_o, ck)
-    if dano > 0.8:  # ponta quebrada
-        ck2 = cutter_obj(C, _hull_bm(box_pts(r, (0.5, 0.5, 0.3), 0.0), 0.0))
-        ck2.location = (0.0, 0.0, 3.16 + 0.34 + 0.02)
-        ck2.rotation_euler = (0.55, -0.35, 0.0)
-        bpy.context.view_layer.update()
-        boolean(pyr_o, ck2)
     # --- entulho ao pé e nos degraus: poucas peças grandes, muitas pequenas e cascalho, em aglomerados
     clusters = [(r.uniform(0, 2 * math.pi), r.uniform(0.7, 0.95)) for _ in range(3 + int(2 * dano))]
     def pile_pos():

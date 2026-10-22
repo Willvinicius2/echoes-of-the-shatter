@@ -213,12 +213,12 @@ def _montar_pedra(m, p):
 
     # ---- veios de rachadura finos (Voronoi distância à aresta) + máscara para não cobrir tudo
     crk = b.voro(pv, 3.2 * sz, 'DISTANCE_TO_EDGE')
-    crk_m = b.mapr(crk.outputs["Distance"], 0.0, 0.008, 1.0, 0.0)
-    crk_gate = b.mapr(b.noise(obj, 1.8 * sz, 3, 0.5), 0.56, 0.68, 0.0, 1.0)
+    crk_m = b.mapr(crk.outputs["Distance"], 0.0, 0.014, 1.0, 0.0)
+    crk_gate = b.mapr(b.noise(obj, 1.8 * sz, 3, 0.5), 0.42, 0.55, 0.0, 1.0)
     crk_m = b.math('MULTIPLY', crk_m, crk_gate)
     crk2 = b.voro(pv, 11 * sz, 'DISTANCE_TO_EDGE')
-    crk2_m = b.mapr(crk2.outputs["Distance"], 0.0, 0.006, 1.0, 0.0)
-    crk2_gate = b.mapr(b.noise(obj, 4.0 * sz, 3, 0.5), 0.62, 0.74, 0.0, 1.0)
+    crk2_m = b.mapr(crk2.outputs["Distance"], 0.0, 0.010, 1.0, 0.0)
+    crk2_gate = b.mapr(b.noise(obj, 4.0 * sz, 3, 0.5), 0.50, 0.62, 0.0, 1.0)
     crk2_m = b.math('MULTIPLY', crk2_m, crk2_gate)
     rach = b.math('MAXIMUM', crk_m, b.math('MULTIPLY', crk2_m, 0.7))
     base = b.mixc(b.math('MULTIPLY', rach, 0.85), base, p["fenda"])
@@ -254,13 +254,13 @@ def _montar_pedra(m, p):
     musgo = b.math('MAXIMUM', m1, b.math('MULTIPLY', fre, p.get("musgo_fresta", 0.9)))
     musgo = b.math('MULTIPLY', musgo, p.get("musgo_qtd", 1.0))
     musgo = b.math('ADD', musgo, b.math('MULTIPLY', b.math('SUBTRACT', pat2, 0.5), 0.25))
-    musgo = b.mapr(musgo, 0.42, 0.62, 0.0, 1.0)
+    musgo = b.mapr(musgo, 0.34, 0.52, 0.0, 1.0)
     mus_cor = b.ramp(b.mapr(b.noise(obj, 9 * sz, 5, 0.6), 0.3, 0.7, 0.0, 1.0),
-                     [(0.0, (0.020, 0.040, 0.010)), (0.5, (0.050, 0.085, 0.020)), (1.0, (0.085, 0.115, 0.025))])
+                     [(0.0, (0.030, 0.050, 0.012)), (0.5, (0.075, 0.105, 0.024)), (1.0, (0.135, 0.165, 0.040))])
     base = b.mixc(musgo, base, mus_cor)
 
     # ---- sujeira escura de chuva embaixo de saliências (pouca) em tons frios
-    suj = b.mapr(b.noise(obj, 3.0 * sz, 6, 0.55), 0.55, 0.8, 0.0, 0.45)
+    suj = b.mapr(b.noise(obj, 3.0 * sz, 6, 0.55), 0.45, 0.70, 0.0, 0.62)
     suj = b.math('MULTIPLY', suj, b.mapr(nrm["Z"], 0.4, -0.5, 0.0, 1.0))
     base = b.mixc(suj, base, p["suja"])
 
@@ -399,17 +399,17 @@ def _montar_ferro(m, p):
 # ---------------------------------------------------------------- API pública
 _PEDRA = dict(
     nome="M_Pedra",
-    c0=(0.022, 0.020, 0.019), c1=(0.082, 0.077, 0.070), c2=(0.150, 0.140, 0.125), c3=(0.265, 0.250, 0.222),
-    quente=(1.03, 1.0, 0.94), frio=(0.95, 0.98, 1.03), v_min=0.68, v_max=1.28,
+    c0=(0.030, 0.026, 0.021), c1=(0.115, 0.098, 0.076), c2=(0.225, 0.196, 0.152), c3=(0.400, 0.355, 0.285),
+    quente=(1.08, 1.0, 0.86), frio=(0.97, 0.97, 0.95), v_min=0.66, v_max=1.30,
     fenda=(0.010, 0.008, 0.008), quina_mult=2.6, quina_cor=(0.55, 0.52, 0.45),
-    suja=(0.02, 0.02, 0.025), rug_min=0.72, rug_max=0.95, bump=0.8, musgo_qtd=1.0,
+    suja=(0.035, 0.030, 0.024), rug_min=0.72, rug_max=0.95, bump=0.8, musgo_qtd=2.0,
 )
 _ESCURA = dict(
     nome="M_PedraEscura",
-    c0=(0.020, 0.022, 0.032), c1=(0.060, 0.066, 0.088), c2=(0.115, 0.125, 0.155), c3=(0.20, 0.215, 0.255),
-    quente=(1.04, 1.0, 0.96), frio=(0.86, 0.96, 1.12), v_min=0.82, v_max=1.15,
+    c0=(0.024, 0.022, 0.022), c1=(0.075, 0.068, 0.062), c2=(0.140, 0.128, 0.115), c3=(0.235, 0.215, 0.190),
+    quente=(1.06, 1.0, 0.92), frio=(0.92, 0.96, 1.02), v_min=0.82, v_max=1.15,
     fenda=(0.004, 0.004, 0.007), quina_mult=2.1, quina_cor=(0.34, 0.37, 0.46),
-    suja=(0.01, 0.012, 0.02), rug_min=0.65, rug_max=0.9, bump=0.7, musgo_qtd=0.45,
+    suja=(0.01, 0.012, 0.02), rug_min=0.65, rug_max=0.9, bump=0.7, musgo_qtd=1.0,
 )
 _FERRO = dict(
     nome="M_Ferro", b0=(0.018, 0.012, 0.010), b1=(0.055, 0.032, 0.024), v_min=0.7, v_max=1.25,
