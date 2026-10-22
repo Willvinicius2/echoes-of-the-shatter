@@ -41,6 +41,11 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "materials": {
+"M_Estatua": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/M_Estatua.tres",
+"use_external/path": "res://art/materials/M_Estatua.tres"
+},
 "M_Pedra": {
 "use_external/enabled": true,
 "use_external/fallback_path": "res://art/materials/M_Pedra.tres",

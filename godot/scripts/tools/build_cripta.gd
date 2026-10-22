@@ -18,9 +18,9 @@ const ALTURA_PAREDE := 4.5
 const ESPESSURA := 1.2
 
 var raiz: Node3D
-var mat_piso: StandardMaterial3D
-var mat_parede: StandardMaterial3D
-var mat_degrau: StandardMaterial3D
+var mat_piso: ShaderMaterial
+var mat_parede: ShaderMaterial
+var mat_degrau: ShaderMaterial
 var mat_fogo: StandardMaterial3D
 var fogo_proc: ParticleProcessMaterial
 var fogo_malha: QuadMesh
@@ -76,19 +76,11 @@ func _carregar_cena(p: String) -> PackedScene:
 func _tex(p: String) -> Texture2D: return load(p) as Texture2D
 
 func _materiais() -> void:
-	mat_piso = StandardMaterial3D.new()
-	mat_piso.albedo_texture = _tex("res://art/textures/T_Cripta_Piso.png")
-	mat_piso.normal_enabled = true; mat_piso.normal_texture = _tex("res://art/textures/T_Cripta_Piso_n.png"); mat_piso.normal_scale = 1.2
-	mat_piso.albedo_color = Color(0.78, 0.78, 0.82); mat_piso.roughness = 0.4; mat_piso.metallic_specular = 0.6
-	mat_piso.clearcoat_enabled = true; mat_piso.clearcoat = 0.45; mat_piso.clearcoat_roughness = 0.25
-	mat_piso.uv1_triplanar = true; mat_piso.uv1_world_triplanar = true; mat_piso.uv1_scale = Vector3.ONE / 16.0
-	mat_parede = StandardMaterial3D.new()
-	mat_parede.albedo_texture = _tex("res://art/textures/T_Cripta_Pedra.png"); mat_parede.albedo_color = Color(0.42, 0.42, 0.46)
-	mat_parede.roughness = 0.85
-	mat_parede.uv1_triplanar = true; mat_parede.uv1_world_triplanar = true; mat_parede.uv1_scale = Vector3.ONE / 5.0
-	mat_degrau = StandardMaterial3D.new()
-	mat_degrau.albedo_texture = _tex("res://art/textures/T_Cripta_Pedra.png"); mat_degrau.albedo_color = Color(0.95, 0.9, 0.85)
-	mat_degrau.roughness = 0.7; mat_degrau.uv1_triplanar = true; mat_degrau.uv1_world_triplanar = true; mat_degrau.uv1_scale = Vector3.ONE / 3.0
+	mat_piso = ShaderMaterial.new(); mat_piso.shader = load("res://art/shaders/cripta_piso.gdshader")
+	mat_piso.set_shader_parameter("albedo_tex", _tex("res://art/textures/T_Cripta_Piso.png"))
+	mat_piso.set_shader_parameter("normal_tex", _tex("res://art/textures/T_Cripta_Piso_n.png"))
+	mat_parede = _pedra_mat(Color(0.36, 0.35, 0.37), 0.28, 0.18, 1)
+	mat_degrau = _pedra_mat(Color(0.62, 0.60, 0.58), 0.08, 0.3, 1)
 	var g := GradientTexture2D.new(); g.fill = GradientTexture2D.FILL_RADIAL; g.fill_from = Vector2(0.5, 0.5); g.fill_to = Vector2(0.5, 0.0)
 	var gr := Gradient.new(); gr.set_color(0, Color(1, 1, 1, 1)); gr.set_color(1, Color(1, 1, 1, 0)); g.gradient = gr; g.width = 64; g.height = 64
 	mat_fogo = StandardMaterial3D.new()
@@ -117,6 +109,8 @@ func _clima(pai: Node3D) -> void:
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; e.ambient_light_color = Color(0.20, 0.25, 0.38); e.ambient_light_energy = 0.5
 	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC; e.tonemap_exposure = 1.15
 	e.glow_enabled = true; e.glow_intensity = 1.0; e.glow_bloom = 0.12; e.glow_hdr_threshold = 0.9
+	e.ssr_enabled = true; e.ssr_max_steps = 64; e.ssr_fade_in = 0.15; e.ssr_fade_out = 2.0; e.ssr_depth_tolerance = 0.3
+	e.ssil_enabled = true; e.ssil_intensity = 0.8
 	e.ssao_enabled = true; e.ssao_intensity = 2.0; e.ssao_radius = 1.5
 	e.fog_enabled = true; e.fog_light_color = Color(0.09, 0.13, 0.24); e.fog_density = 0.003
 	e.volumetric_fog_enabled = true; e.volumetric_fog_density = 0.006; e.volumetric_fog_albedo = Color(0.45, 0.55, 0.8)
@@ -247,13 +241,15 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	luz.light_color = Color(1.0, 0.62, 0.25); luz.light_energy = 8.0; luz.omni_range = 15.0; luz.omni_attenuation = 1.6
 	luz.set_script(load("res://scripts/cripta/BraseiroLuz.cs"))
 	n.add_child(luz)
-	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.38, 0); ch.set_script(load("res://scripts/cripta/ChamaCartao.cs"))
-	var cores := [Color(0.9, 0.22, 0.03, 0.5), Color(1.0, 0.5, 0.1, 0.45), Color(1.0, 0.8, 0.4, 0.35)]
-	for k in 3:
-		var qm := QuadMesh.new(); qm.size = Vector2(1.3, 1.5) * (1.0 - 0.2 * k)
-		var mt := mat_fogo.duplicate() as StandardMaterial3D; mt.albedo_color = cores[k]; mt.vertex_color_use_as_albedo = false
-		qm.material = mt
-		var mi := MeshInstance3D.new(); mi.name = "Cartao%d" % k; mi.mesh = qm; mi.position = Vector3(0, 0.62 * (1.0 - 0.2 * k), 0)
+	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.32, 0)
+	var tam := [Vector2(1.15, 1.75), Vector2(0.8, 1.25)]
+	for k in 2:
+		var qm := QuadMesh.new(); qm.size = tam[k]; qm.center_offset = Vector3(0, tam[k].y * 0.5, 0)
+		var sm := ShaderMaterial.new(); sm.shader = load("res://art/shaders/chama.gdshader")
+		sm.set_shader_parameter("seed", float(hash(nome) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.2 + 0.5 * k)
+		qm.material = sm
+		var mi := MeshInstance3D.new(); mi.name = "Cartao%d" % k; mi.mesh = qm; mi.position = Vector3(0.0, 0.0, 0.02 * k)
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ch.add_child(mi)
 	n.add_child(ch)
 	pai.add_child(n)
@@ -294,3 +290,10 @@ func _escadaria_norte(pai: Node3D, nome: String, r: Array) -> void:
 		var zc: float = r[3] - prof / 2.0
 		_caixa(pai, "%s_%d" % [nome, int(lado)], _p((xa + xb) / 2.0, zc, 0.35), Vector3(larg, 0.7, prof), mat_degrau)
 		_degraus(pai, "%s_%d" % [nome, int(lado)], (xa + xb) / 2.0, r[3] - prof, larg, 0.7, 2, -1.0)
+
+func _pedra_mat(cor: Color, musgo: float, escala: float, mundo: int) -> ShaderMaterial:
+	var m := ShaderMaterial.new(); m.shader = load("res://art/shaders/cripta_pedra.gdshader")
+	m.set_shader_parameter("albedo_tex", _tex("res://art/textures/T_Cripta_Pedra.png"))
+	m.set_shader_parameter("tint", cor); m.set_shader_parameter("moss_amount", musgo)
+	m.set_shader_parameter("tex_scale", escala); m.set_shader_parameter("world_space", float(mundo))
+	return m
