@@ -243,22 +243,24 @@ def build(L):
             h *= 0.55; sx *= 0.75; u += rng.uniform(-0.1, 0.1)
         blk(L, u, H - t / 2, 5.1 + h / 2, sx, t, h, a, bev=0.0, chip=0.07, rough=0.012, cuts_pre=3, seg=1,
             jit=0.02, ez=rng.uniform(-0.08, 0.08))
-    # entulho em camadas
-    def pedra(x, y, zc, s):
-        sx, sy, sz = (s * rng.uniform(0.8, 1.25), s * rng.uniform(0.8, 1.25), s * rng.uniform(0.6, 1.0))
-        L.boulder(Vector((x, y, zc)), (sx * 1.35, sy * 1.35, sz * 1.1), None, rot=(rng.uniform(-.5, .5), rng.uniform(-.5, .5), rng.uniform(0, 6.28)), pts=rng.randint(11, 17), bev=0.02)
-    for _ in range(8):
-        pedra(rng.uniform(-1.0, 1.0), rng.uniform(-1.0, 1.0), rng.uniform(5.60, 5.78), rng.uniform(0.38, 0.55))
-    for _ in range(14):  # cascalho miúdo entre os blocos grandes
-        pedra(rng.uniform(-1.05, 1.05), rng.uniform(-1.05, 1.05), rng.uniform(5.6, 6.05), rng.uniform(0.12, 0.24))
+    # coroamento desabado: lajes quebradas de borda irregular, em camadas, algumas inclinadas
+    def laje(x, y, zc, w, tilt, mat=None):
+        L.boulder(Vector((x, y, zc)), (w * rng.uniform(0.9, 1.2), w * rng.uniform(0.75, 1.0), 0.27 + 0.12 * w), mat,
+                  rot=(rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt), rng.uniform(0, 6.28)), pts=rng.randint(14, 20), bev=0.015, flat=0.65)
+    L.rock(Vector((0, 0, 5.62)), (1.9, 1.9, 0.12), L.MAT["escura"], bev=0.0, chip=0.05, rough=0.01, cuts_pre=3, seg=1, jit=0.03)  # terra entre as lajes
+    for (x, y) in ((-0.55, -0.55), (0.55, -0.55), (-0.55, 0.55), (0.55, 0.55), (0.0, 0.0), (0.0, -0.85)):
+        laje(x + rng.uniform(-.12, .12), y + rng.uniform(-.12, .12), 5.72, rng.uniform(0.85, 1.05), 0.09)
     for v in vazios:
-        pedra(v.x * 0.8, v.y * 0.8, 5.6, 0.5)
-    for _ in range(5):
-        pedra(rng.uniform(-0.8, 0.8), rng.uniform(-0.8, 0.8), rng.uniform(5.95, 6.1), rng.uniform(0.38, 0.55))
-    for _ in range(3):
-        pedra(rng.uniform(-0.45, 0.45), rng.uniform(-0.45, 0.45), rng.uniform(6.2, 6.28), rng.uniform(0.32, 0.45))
+        laje(v.x * 0.85, v.y * 0.85, 5.68, 0.8, 0.12)
+    for (x, y) in ((-0.3, 0.2), (0.4, -0.1), (-0.1, -0.5), (0.3, 0.55)):
+        laje(x + rng.uniform(-.1, .1), y + rng.uniform(-.1, .1), 5.92, rng.uniform(0.6, 0.8), 0.2)
+    for (x, y) in ((0.1, 0.1), (-0.3, -0.25)):
+        laje(x, y, 6.12, rng.uniform(0.45, 0.6), 0.32)
+    for _ in range(6):  # cascalho miúdo nas fendas
+        L.boulder(Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(5.7, 5.95))), (0.16, 0.14, 0.1), None,
+                  rot=(0, 0, rng.uniform(0, 6)), pts=10, bev=0.006)
     # blocos caídos na cornija (frente e costas)
-    pedra(0.7, 1.22, 5.2, 0.3); pedra(-0.6, -1.25, 5.2, 0.28)
+    laje(0.7, 1.22, 5.2, 0.35, 0.15); laje(-0.6, -1.25, 5.2, 0.32, 0.15)
 
     # (6) musgo em tufos
     cantos = [(HALF + 0.03, HALF + 0.03), (-HALF - 0.03, HALF + 0.03), (HALF + 0.03, -HALF - 0.03), (-HALF - 0.03, -HALF - 0.03)]
