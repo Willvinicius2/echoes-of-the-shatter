@@ -27,8 +27,8 @@ def _tmp(nome, bm):
     me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
     o = bpy.data.objects.new(nome, me); bpy.context.collection.objects.link(o); return o
 
-def _bool(a, b, op):
-    m = a.modifiers.new("b", 'BOOLEAN'); m.operation = op; m.solver = 'EXACT'; m.object = b
+def _bool(a, b, op, solver='EXACT'):
+    print("  antes", len(a.data.polygons), "cutter", len(b.data.polygons), "nm cutter", _nonmanifold(b)); m = a.modifiers.new("b", 'BOOLEAN'); m.operation = op; m.solver = solver; m.object = b
     bpy.context.view_layer.objects.active = a; bpy.ops.object.modifier_apply(modifier="b")
     bpy.data.objects.remove(b, do_unlink=True)
     print("  bool", op, len(a.data.polygons), "nm", _nonmanifold(a))
@@ -54,13 +54,13 @@ def _casca(L):
 
 def _lamina(L):
     """Drapeado caindo nas costas e ombros: lâmina grossa com pregas em vinco agudo e barra recortada."""
-    N, R = 76, 12; ph0, ph1 = math.radians(-90 - 118), math.radians(-90 + 118)
-    perfil_o = [(2.14, (0.475, 0.31)), (2.40, (0.46, 0.285)), (2.62, (0.335, 0.25)), (2.74, (0.20, 0.17)), (2.92, (0.15, 0.12))]
+    N, R = 64, 10; ph0, ph1 = math.radians(-90 - 84), math.radians(-90 + 84)
+    perfil_o = [(2.14, (0.43, 0.30)), (2.40, (0.44, 0.27)), (2.62, (0.335, 0.25)), (2.74, (0.20, 0.17)), (2.92, (0.15, 0.12))]
     esp = 0.075
     def rr(z, k): return _lp([(p[0], p[1][k]) for p in perfil_o], z)
     zb = []
     for j in range(N + 1):
-        u = j / N * 9.2; ip = int(u); r = L.rng(ip + 11).random()
+        u = j / N * 7.0; ip = int(u); r = L.rng(ip + 11).random()
         zb.append(2.10 + 0.17 * r * r + 0.09 * (1 - (u - ip)) * (0.4 + r))
     top = 2.90
     bm = bmesh.new(); ext = []; inn = []
@@ -134,15 +134,22 @@ def _cavidade(L):
         rings.append([Vector((cx + rx * f * math.cos(i / 26 * math.tau), cy + ry * f * math.sin(i / 26 * math.tau), zz)) for i in range(26)])
     return L.loft(rings)
 
+DY = 0.07   # avanço da máscara em y (rosto mais perto da abertura, para pegar luz)
+
 def _mascara(L):
-    """Máscara de pedra sugerida: queixo, boca, nariz em cunha, maçãs, brow e testa em planos geométricos. Embutida na parede de trás."""
-    # (z, meia largura, y plano frontal, y do nariz/centro)
-    niv = [(2.625, 0.045, 0.100, 0.108), (2.675, 0.062, 0.128, 0.138), (2.735, 0.082, 0.115, 0.122), (2.795, 0.104, 0.122, 0.170),
-           (2.850, 0.100, 0.114, 0.160), (2.890, 0.097, 0.104, 0.128), (2.935, 0.100, 0.136, 0.140), (2.985, 0.090, 0.124, 0.126), (3.030, 0.062, 0.095, 0.095)]
+    """Máscara de pedra em planos vivos (tabela feita à mão): queixo, boca, nariz em cunha, maçãs, órbitas fundas, arcada e testa.
+    As bordas laterais (x=0.17) ficam enterradas na parede da cavidade: o rosto nasce da casca, sem folga preta ao redor."""
+    xs = [0.0, 0.035, 0.07, 0.105, 0.14, 0.17]
+    linhas = [(2.55, [.09, .09, .08, .07, .05, .04]), (2.60, [.15, .145, .13, .11, .09, .07]), (2.64, [.14, .135, .125, .105, .09, .07]),
+              (2.68, [.115, .115, .11, .10, .085, .07]), (2.72, [.13, .13, .125, .115, .10, .08]), (2.76, [.19, .16, .14, .15, .12, .09]),
+              (2.80, [.21, .17, .12, .14, .115, .09]), (2.84, [.17, .12, .06, .09, .10, .085]), (2.88, [.16, .14, .13, .17, .14, .10]),
+              (2.92, [.17, .17, .165, .165, .14, .10]), (2.97, [.15, .15, .145, .14, .12, .09]), (3.00, [.10, .10, .10, .09, .08, .07])]
     yb = -0.13; rings = []
-    for z, w, yf, yn in niv:
-        z += ZC - 2.79; yf += 0.06; yn += 0.06; ys = yf - 0.05; w *= 1.18
-        rings.append([Vector(p) for p in [(0, yn, z), (w * 0.38, yf + (yn - yf) * 0.25, z), (w * 0.72, yf, z), (w, ys, z), (w * 0.8, yb, z), (0, yb, z), (-w * 0.8, yb, z), (-w, ys, z), (-w * 0.72, yf, z), (-w * 0.38, yf + (yn - yf) * 0.25, z)]])
+    esc = [0.40, 0.46, 0.55, 0.62, 0.78, 0.92, 0.88, 0.92, 1.0, 0.95, 0.80, 0.55]   # contorno do rosto: queixo estreito, maçãs e arcada largas
+    for (z, ys), e in zip(linhas, esc):
+        ys = [y + DY for y in ys]; xe = [x * e for x in xs]
+        fr = [Vector((-x, y, z)) for x, y in zip(xe[:0:-1], ys[:0:-1])] + [Vector((x, y, z)) for x, y in zip(xe, ys)]
+        rings.append(fr + [Vector((xe[-1], yb, z)), Vector((-xe[-1], yb, z))])
     return L.loft(rings)
 
 def _corta(o, ponto, normal):
@@ -164,18 +171,68 @@ def _z_corte(p):
         n = Vector(n); zs.append(q[2] - (n.x * (p.x - q[0]) + n.y * (p.y - q[1])) / n.z)
     return min(zs)
 
-def _faixa_ouro():
-    """Filete de ouro sobre a crista do rolo, com falhas (segmentos ausentes)."""
-    cam = _caminho(a=A_ROLO + 0.002, b=B_ROLO + 0.002, n=60); out = []; seg = []
-    def fecha():
-        if len(seg) >= 3: out.append(_tubo(list(seg), [0.0085] * len(seg), False, 6, 0.8))
-        seg.clear()
+PERFIL_OURO = [(-0.016, -0.012), (0.016, -0.012), (0.016, 0.001), (0.0105, 0.0085), (-0.0105, 0.0085), (-0.016, 0.001)]   # (lado, altura): trapézio chanfrado
+
+def _perfil_tubo(centros, nrms, perfil, fechado, esc=1.0, fundo=0.0):
+    """Varre um perfil (lado, altura) ao longo da curva; esc alarga o perfil e fundo o desce (para a canaleta)."""
+    bm = bmesh.new(); n = len(centros); an = []
+    for i, c in enumerate(centros):
+        t = (centros[(i + 1) % n] - centros[i - 1]).normalized() if fechado else (centros[min(i + 1, n - 1)] - centros[max(i - 1, 0)]).normalized()
+        nr = nrms[i]; sd = t.cross(nr).normalized(); up = sd.cross(t).normalized()
+        an.append([bm.verts.new(c + sd * (a * esc) + up * (h * esc + (fundo if h < 0 else 0.0))) for a, h in perfil])
+    m = len(perfil)
+    for i in range(n if fechado else n - 1):
+        a, b = an[i], an[(i + 1) % n]
+        for k in range(m): bm.faces.new((a[k], a[(k + 1) % m], b[(k + 1) % m], b[k]))
+    if not fechado: bm.faces.new(an[0][::-1]); bm.faces.new(an[-1])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces); return bm
+
+def _crista(n=64):
+    cam = _caminho(a=A_ROLO, b=B_ROLO, n=n); cs, ns = [], []
     for i, (p, nrm) in enumerate(cam):
-        r = _raio_rolo(i / len(cam) * math.tau)
-        p2 = p + nrm * (0.012 + r * 0.78)
-        if i in (4, 22, 23, 37, 50) or p2.z > _z_corte(p2) - 0.012: fecha()
-        else: seg.append(p + nrm * (0.012 + r * 0.92))
+        r = _raio_rolo(i / n * math.tau); cs.append(p + nrm * (0.012 + r * 0.8)); ns.append(nrm)
+    return cs, ns
+
+def _canaleta():
+    """Canaleta contínua na crista do rolo, onde a moldura de ouro assenta."""
+    cs, ns = _crista(); return _perfil_tubo(cs, ns, [(a, h + (0.02 if h > 0 else 0)) for a, h in PERFIL_OURO], True, 1.12)
+
+def _moldura_ouro():
+    """Moldura de ouro com espessura e perfil chanfrado, embutida na canaleta; faltam trechos (falhas) onde a canaleta fica vazia."""
+    cs, ns = _crista(); n = len(cs); out = []; seg = []
+    faltas = set(range(5, 8)) | {23, 24} | set(range(37, 40)) | set(range(51, 53)) | {60}
+    def fecha():
+        if len(seg) >= 3:
+            ci = [c for c, _ in seg]; ni = [q for _, q in seg]; out.append(_perfil_tubo(ci, ni, PERFIL_OURO, False))
+        seg.clear()
+    for i in range(n):
+        if i in faltas or cs[i].z > _z_corte(cs[i]) - 0.02: fecha()
+        else: seg.append((cs[i], ns[i]))
     fecha(); return out
+
+def _superficie(o, ang, z):
+    """Ponto na casca do capuz (raio de fora para o eixo na altura z, ângulo ang em graus; 90 = frente)."""
+    d = Vector((math.cos(math.radians(ang)), math.sin(math.radians(ang)), 0)); ori = Vector((0, 0.0, z)) + d * 0.6
+    ok, loc, nor, idx = o.ray_cast(ori, -d)
+    return (loc, nor) if ok else (None, None)
+
+def _rachadura(o, ang0, z0, passos, rad=0.0055):
+    """Sulco fino (prisma triangular) que desce em zigue-zague pela casca a partir da fratura."""
+    cs, ns = [], []; ang = ang0; z = z0
+    for k, (da, dz) in enumerate(passos):
+        ang += da; z -= dz; loc, nor = _superficie(o, ang, z)
+        if loc is None: continue
+        cs.append(loc + nor * 0.002); ns.append(nor)
+    if len(cs) < 3: return None
+    return _perfil_tubo(cs, ns, [(-rad, -rad * 0.2), (rad, -rad * 0.2), (0.0, rad * 1.1)], False, 1.0, 0.0)
+
+def _marca_corte(o):
+    """Faces coplanares aos planos de fratura recebem o material 'corte' (índice 2)."""
+    for p in o.data.polygons:
+        ctr = p.center
+        for q, n in CORTES:
+            n = Vector(n).normalized()
+            if abs(n.dot(ctr - Vector(q))) < 1e-4 and abs(n.dot(p.normal)) > 0.98: p.material_index = 2; break
 
 def build(L):
     base = _tmp("capuz_casca", _casca(L))
@@ -183,18 +240,27 @@ def build(L):
     _bool(base, _tmp("capuz_rolo", _rolo()), 'UNION')
     _bool(base, _tmp("capuz_cav", _cavidade(L)), "DIFFERENCE")
     _bool(base, _tmp("capuz_rosto", _mascara(L)), 'UNION')
-    # ponta quebrada: três planos de fratura facetados (a ponta mais alta fica em Z_TOP)
-    for p, n in CORTES:
-        _corta(base, p, n)
+    for p, n in CORTES: _corta(base, p, n)
     print("capuz: não-manifold", _nonmanifold(base), "faces", len(base.data.polygons), "zmax", round(max(v.co.z for v in base.data.vertices), 3))
-    L.bevel_obj(base, 0.006, 2, 38)
-    # 'vazio' só no teto/fundo da cavidade, atrás e acima do rosto
     base.data.materials.clear()
-    base.data.materials.append(L.M['pedra']); base.data.materials.append(L.M['vazio'])
+    for k in ('pedra', 'vazio', 'corte'): base.data.materials.append(L.M[k])
+    _marca_corte(base)
+    _bool(base, _tmp("capuz_canaleta", _canaleta()), "DIFFERENCE")
+    for ang, z, passos in [(80, 3.02, [(-5, .06), (4, .08), (-6, .07), (3, .09), (-4, .08)]), (150, 3.0, [(5, .07), (-4, .08), (6, .09), (-3, .07)]),
+                           (-30, 3.0, [(-4, .08), (5, .06), (-5, .1), (3, .08), (-3, .07)]), (260, 2.98, [(3, .07), (-5, .08), (4, .09)]),
+                           (35, 2.95, [(4, .06), (-3, .07), (5, .06)])]:
+        r = _rachadura(base, ang, z, passos)
+        if r: _bool(base, _tmp("capuz_rach", r), "DIFFERENCE", "EXACT")
+    L.bevel_obj(base, 0.007, 1, 38)
+    print("  pós-bevel nm", _nonmanifold(base), len(base.data.polygons))
+    # sombra funda e contínua: só as faces do teto da cavidade acima da testa
     for p in base.data.polygons:
         c = p.center
-        if (2.93 < c.z < 3.04 and -0.08 < c.y < 0.03 and abs(c.x) < 0.12) or (0.075 < abs(c.x) < 0.14 and -0.08 < c.y < 0.0 and 2.66 < c.z < 2.95):
-            p.material_index = 1
+        if p.material_index == 0 and 3.0 < c.z < 3.03 and -0.06 < c.y < 0.05 and abs(c.x) < 0.1: p.material_index = 1
+    for p in base.data.polygons:
+        if p.material_index > 2: p.material_index = 0
+    base.data.materials.clear()
+    for k in ('pedra', 'vazio', 'corte'): base.data.materials.append(L.M[k])
     L.objs.append(base)
-    for i, bmo in enumerate(_faixa_ouro()): L.new_obj(f"capuz_ouro_{i}", bmo, "ouro")
+    for i, bmo in enumerate(_moldura_ouro()): L.new_obj(f"capuz_ouro_{i}", bmo, "ouro")
     print("capuz:", L.stats(base))

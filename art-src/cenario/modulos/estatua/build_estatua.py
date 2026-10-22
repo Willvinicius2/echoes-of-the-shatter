@@ -28,7 +28,7 @@ def pintar(o):
     mats = [m.name for m in o.data.materials]
     layer = bm.loops.layers.float_color.new("Color")
     for f in bm.faces:
-        ouro = mats[f.material_index] == "M_Ouro" if f.material_index < len(mats) else False
+        nm = mats[f.material_index] if f.material_index < len(mats) else ""; ouro = nm == "M_Ouro"; corte = nm == "M_PedraCorte"
         for l in f.loops:
             v = l.vert; c = mw @ v.co; k = max(-1.0, min(1.0, cav[v.index] * 70))
             val = 0.86 + 0.40 * (-k if k < 0 else 0) - 0.55 * (k if k > 0 else 0)
@@ -37,10 +37,12 @@ def pintar(o):
             r = g = b = val
             if ouro:
                 d = 0.75 + 0.35 * (fbm(c, 9, 2) + 0.5); r = g = b = d * (0.9 + 0.2 * (fbm(c + Vector((7, 1, 2)), 22, 2)))
+            elif corte:
+                r = g = b = min(1.0, val * 0.95) * (0.9 + 0.1 * fbm(c, 14, 2))                 # corte claro, sem líquen
             else:
                 n = fbm(c + Vector((0.37, 0.71, 0.13)), 2.6, 3)                               # líquen: manchas suaves, mais em cima e na base
                 up = max(0.0, v.normal.z) if False else max(0.0, (mw.to_3x3() @ v.normal).z)
-                m = max(0.0, min(1.0, (n - 0.10 + 0.12 * up + 0.22 * max(0.0, 1 - c.z / 1.1)) * 5)) * (0.4 + 0.6 * up)
+                m = max(0.0, min(1.0, (n - 0.30 + 0.10 * up + 0.45 * max(0.0, 1 - c.z / 1.5)) * 5)) * (0.4 + 0.6 * up) * (0.35 if c.z > 1.8 else 1.0)
                 r, g, b = r * (1 - 0.45 * m), g * (1 + 0.05 * m), b * (1 - 0.65 * m)
             l[layer] = (max(0.05, min(1.4, r)), max(0.05, min(1.4, g)), max(0.05, min(1.4, b)), 1)
     bm.to_mesh(o.data); bm.free()
@@ -69,10 +71,10 @@ print("exportado", OUT, L.stats(o))
 if PREV:
     os.makedirs(PREV, exist_ok=True); sc = bpy.context.scene
     sc.render.engine = 'CYCLES'; sc.cycles.samples = int(os.environ.get("AMOSTRAS", "24")); sc.cycles.device = 'CPU'; sc.cycles.use_denoising = True
-    w = bpy.data.worlds.new("w"); w.use_nodes = True; w.node_tree.nodes["Background"].inputs[0].default_value = (0.05, 0.055, 0.08, 1); sc.world = w
+    w = bpy.data.worlds.new("w"); w.use_nodes = True; w.node_tree.nodes["Background"].inputs[0].default_value = (0.09, 0.10, 0.14, 1); sc.world = w
     def sun(rot, e, color=(1, 1, 1)):
         s = bpy.data.objects.new("s", bpy.data.lights.new("s", 'SUN')); s.data.energy = e; s.data.color = color; s.rotation_euler = rot; bpy.context.collection.objects.link(s)
-    sun((math.radians(55), 0, math.radians(215)), 3.0, (1.0, 0.85, 0.7)); sun((math.radians(70), 0, math.radians(40)), 1.2, (0.55, 0.65, 1.0))
+    sun((math.radians(55), 0, math.radians(215)), 5.0, (1.0, 0.88, 0.75)); sun((math.radians(70), 0, math.radians(40)), 2.2, (0.6, 0.7, 1.0)); sun((math.radians(30), 0, math.radians(100)), 1.2, (1, 1, 1))
     views = {"frente": ((0, 8.5, 2.1), (0, 0, 1.55), 700, 900), "tres_quartos": ((5.2, 6.3, 3.0), (0, 0, 1.55), 700, 900), "tras": ((-1.5, -8.5, 2.3), (0, 0, 1.55), 700, 900),
              "lado": ((9.0, 0.3, 2.1), (0, 0, 1.55), 700, 900), "cima": ((0.8, 2.2, 10.0), (0, 0, 1.5), 800, 800),
              "close_capuz": ((0.4, 3.2, 3.0), (0, 0, 2.75), 800, 800), "close_maos": ((0.5, 2.6, 1.9), (0, 0.2, 1.8), 800, 800), "close_plinto": ((1.8, 3.2, 0.9), (0, 0, 0.5), 800, 800)}
