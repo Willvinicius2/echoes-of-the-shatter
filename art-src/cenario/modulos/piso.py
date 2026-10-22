@@ -29,6 +29,9 @@ if PREV:
     comum.previa(os.path.join(PREV, "piso_jogo.png"), olhar=(0, 0, 0), cam=(5.5, -7.5, 8.5), luz_quente=False)
     comum.previa(os.path.join(PREV, "piso_rasante.png"), olhar=(0, 0, 0), cam=(3.0, -3.5, 1.2), lente=40, luz_quente=False)
     comum.previa(os.path.join(PREV, "piso_close.png"), olhar=(0.5, 0.5, 0), cam=(1.6, -1.6, 1.4), lente=45, luz_quente=False)
+    comum.previa(os.path.join(PREV, "piso_frente.png"), olhar=(0, 0, 0), cam=(0, -9, 2.2), lente=40, luz_quente=False)
+    comum.previa(os.path.join(PREV, "piso_lado.png"), olhar=(0, 0, 0), cam=(9, 0, 2.2), lente=40, luz_quente=False)
+    comum.previa(os.path.join(PREV, "piso_cima.png"), olhar=(0, 0, 0), cam=(0, -0.01, 12), lente=40, luz_quente=False, res=(800, 800))
     # wireframe: material de sobreposição (Cycles) com nó Wireframe sobre fundo escuro
     ov = bpy.data.materials.new("wire"); ov.use_nodes = True; nt = ov.node_tree; nt.nodes.clear()
     wf = nt.nodes.new("ShaderNodeWireframe"); wf.inputs["Size"].default_value = 0.012

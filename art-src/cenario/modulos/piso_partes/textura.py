@@ -34,63 +34,112 @@ def _linhas(N, segs, esp=1.0):
         m[ys, xs] = 1
     return _borra(m, esp) * (4 * esp) if esp > 0.4 else m
 
-def _mapas(N):
-    """Devolve dict com idx, dist (m, até a aresta da lajota), e as máscaras de composição."""
-    px = comum.TILE / N
-    ys, xs = (np.mgrid[0:N, 0:N] + 0.5) * px
-    idx = np.full((N, N), -1, int); dist = np.zeros((N, N))
-    lajes = comum.layout()
-    for i, l in enumerate(lajes):
-        a, b = int(round(l["x0"] / px)), int(round(l["x1"] / px)); c, d = int(round(l["y0"] / px)), int(round(l["y1"] / px))
-        idx[c:d, a:b] = i
-        yy, xx = ys[c:d, a:b], xs[c:d, a:b]
-        dist[c:d, a:b] = np.minimum(np.minimum(xx - l["x0"], l["x1"] - xx), np.minimum(yy - l["y0"], l["y1"] - yy))
-    # distância para dentro da junta (m): aproximada pela distância às lajotas vizinhas, via dilatação do campo
-    d_junta = np.zeros((N, N))
-    j = idx < 0
-    # dentro da junta: distância ao pixel de lajota mais próximo (juntas têm ~11 px, basta checar até 8 px)
-    dj = np.full((N, N), 9.0)
-    for s in range(1, 9):
-        viz = np.zeros((N, N), bool)
-        for dx, dy in ((s, 0), (-s, 0), (0, s), (0, -s)):
-            viz |= np.roll(np.roll(~j, dx, 1), dy, 0)
-        dj = np.where(viz & (dj > 8), s, dj)
-    d_junta = dj * px
-    return idx, dist, d_junta, len(lajes), lajes
+def _chanfro(fonte, it):
+    """Distância (px) até a máscara fonte, por propagação chanfro 8-vizinhos (periódica), saturada em it."""
+    d = np.where(fonte, 0.0, 1e3)
+    for _ in range(it):
+        for dx, dy, w in ((1, 0, 1), (-1, 0, 1), (0, 1, 1), (0, -1, 1), (1, 1, 1.414), (-1, -1, 1.414), (1, -1, 1.414), (-1, 1, 1.414)):
+            d = np.minimum(d, np.roll(np.roll(d, dx, 1), dy, 0) + w)
+    return np.minimum(d, it)
 
-def gerar(N=2048):
-    """Retorna (albedo linear HxWx3 em [0,1], altura HxW em metros ficticios)."""
+def _bilin(a, N):
+    """Reamostra um campo periódico MxM para NxN (bilinear)."""
+    M = a.shape[0]
+    if M == N: return a
+    c = (np.arange(N) + 0.5) * M / N - 0.5
+    i0 = np.floor(c).astype(int); f = c - i0; i1 = (i0 + 1) % M; i0 %= M
+    t = a[i0] * (1 - f)[:, None] + a[i1] * f[:, None]
+    return t[:, i0] * (1 - f)[None, :] + t[:, i1] * f[None, :]
+
+def _mapas(objs, N, M=1024):
+    """Lança raios -Z na MESMA malha das lajotas (Lajotas_* e Junta), grade MxM periódica de 8 m, e devolve em NxN:
+    idx (ilha conectada de cada lajota; -1 = junta), dist (m, dentro da lajota até a junta), dj (m, dentro da junta até a lajota),
+    nl (nº de ilhas), z (altura do topo)."""
+    from mathutils.bvhtree import BVHTree
+    verts = []; polys = []; info = []                # info[poly] = (é_junta, ilha global)
+    ilha_base = 0
+    for o in objs:
+        if not (o.name.startswith("Lajotas_") or o.name == "Junta"): continue
+        me = o.data; off = len(verts); eh_j = o.name == "Junta"
+        verts += [tuple(v.co + o.location) for v in me.vertices]
+        pai = list(range(len(me.vertices)))
+        def raiz(x):
+            while pai[x] != x: pai[x] = pai[pai[x]]; x = pai[x]
+            return x
+        for p in me.polygons:
+            vs = list(p.vertices)
+            for v in vs[1:]: pai[raiz(v)] = raiz(vs[0])
+        mapa = {}
+        for p in me.polygons:
+            polys.append(tuple(off + v for v in p.vertices))
+            if eh_j: info.append((True, -1)); continue
+            rt = raiz(p.vertices[0]); mapa.setdefault(rt, ilha_base + len(mapa))
+            info.append((False, mapa[rt]))
+        ilha_base += len(mapa)
+    bvh = BVHTree.FromPolygons(verts, polys)
+    from mathutils import Vector
+    dirz = Vector((0, 0, -1)); px = comum.TILE / M
+    idx = np.full((M, M), -1, int); z = np.full((M, M), -0.2); jm = np.ones((M, M), bool)
+    for j in range(M):
+        y = (j + 0.5) * px
+        for i in range(M):
+            h = bvh.ray_cast(Vector(((i + 0.5) * px, y, 1.0)), dirz)
+            if h[0] is None: continue
+            eh_j, il = info[h[2]]
+            z[j, i] = h[0].z
+            if not eh_j:
+                idx[j, i] = il; jm[j, i] = False
+    # ilhas minúsculas (cacos) viram junta p/ não poluir; limpa buracos de 1 px
+    din = _chanfro(jm, 22) * px; dj = _chanfro(~jm, 12) * px
+    jf = _bilin(jm.astype(float), N)
+    jf = _borra(jf, 1.0)
+    junta = jf > 0.5
+    # índice: vizinho mais próximo reamostrado, depois forçado à máscara suave
+    ii = np.repeat(np.repeat(idx, N // M, 0), N // M, 1)
+    ii = np.where(junta, -1, ii)
+    ii = np.where((ii < 0) & ~junta, _vizinho(ii, junta), ii)
+    din = _bilin(din, N); dj = _bilin(dj, N)
+    din = np.where(junta, 0, din); dj = np.where(junta, dj, 0)
+    return ii, din, dj, ilha_base, _bilin(z, N), junta
+
+def _vizinho(ii, junta):
+    out = ii.copy()
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        v = np.roll(np.roll(ii, dx, 1), dy, 0); out = np.where(out < 0, v, out)
+    return np.where(out < 0, 0, out)
+
+def gerar(objs, N=2048):
+    """Retorna (albedo linear HxWx3 em [0,1], altura HxW em metros ficticios), a partir da malha real das lajotas."""
     px = comum.TILE / N
-    idx, dist, dj, nl, lajes = _mapas(N)
-    junta = idx < 0
+    idx, dist, dj, nl, zm, junta = _mapas(objs, N)
     r = np.random.default_rng(comum.SEED)
     # ---- por lajota: tom, matiz, escolha de campo de manchas, inclinação suave
-    tom = r.uniform(-0.38, 0.30, nl + 1); matiz = r.uniform(-0.12, 0.12, nl + 1)
+    tom = r.uniform(-0.10, 0.12, nl + 1); matiz = r.uniform(-0.10, 0.10, nl + 1)
     sat = r.uniform(0.75, 1.25, nl + 1); campo = r.integers(0, 4, nl + 1)
     tom[-1] = matiz[-1] = 0; sat[-1] = 1                    # índice -1 (junta) cai no último
-    base = np.array([0.050, 0.072, 0.125])                   # azul-ardósia escuro (linear)
+    base = np.array([0.215, 0.205, 0.192])                   # cinza-ardósia quente dessaturado (linear)
     t = tom[idx]; m = matiz[idx]; s_ = sat[idx]
     img = np.empty((N, N, 3))
     for c in range(3):
         # matiz: desloca azul <-> verde-acinzentado/violeta por lajota
-        img[..., c] = base[c] * (1 + t) * (1 + m * np.array([-1.2, 0.6, 1.0])[c]) * (1 + (s_ - 1) * (c - 1) * 0.8)
+        img[..., c] = base[c] * (1 + t) * (1 + m * np.array([-0.9, 0.1, 0.9])[c]) * (1 + (s_ - 1) * (c - 1) * 0.3)
     # ---- manchas pintadas por lajota: 4 campos de ruído diferentes escolhidos por lajota (sem repetição visível)
     F = [_ruido(N, 9, 20 + i) * 0.6 + _ruido(N, 28, 30 + i) * 0.4 for i in range(4)]
     mancha = np.choose(campo[idx], F)
-    img *= (1 + 0.50 * mancha)[..., None]
+    img *= (1 + 0.16 * mancha)[..., None]
     img *= (1 + 0.10 * _ruido(N, 70, 5) + 0.06 * _ruido(N, 200, 6))[..., None]
     # tom levemente mais quente/escuro em manchas de matiz (frio <-> neutro)
     quente = np.clip(np.choose(campo[idx], [_ruido(N, 14, 40 + i) for i in range(4)]), 0, 1)
-    img[..., 0] *= 1 + 0.35 * quente; img[..., 1] *= 1 + 0.12 * quente
+    img[..., 0] *= 1 + 0.10 * quente; img[..., 1] *= 1 + 0.04 * quente
     # ---- veios: bandas finas curvas, claras e escuras, ruído deformado
     tem = ((campo[idx] % 2) == 0)
     veio = np.zeros((N, N))
     for k, (cel, sd) in enumerate(((5, 50), (7, 54))):
         n = _ruido(N, cel, sd) + 0.12 * _ruido(N, 30, sd + 1)
-        veio = np.maximum(veio, np.clip(1 - np.abs(n) / 0.035, 0, 1) ** 1.5 * (0.5 + 0.5 * k))
+        veio = np.maximum(veio, np.clip(1 - np.abs(n) / 0.015, 0, 1) ** 1.5 * (0.5 + 0.5 * k))
     veio *= tem * np.clip(_ruido(N, 4, 52) * 2.5 + 0.3, 0, 1)
     sinal = np.where(_ruido(N, 6, 53) > 0, 0.9, -0.6)
-    img *= (1 + 0.8 * veio * sinal)[..., None]
+    img *= (1 + 0.22 * veio * sinal)[..., None]
     # grão de cor: pontos claros/escuros de pedra (cristais) e poeira
     gr = _ruido(N, 420, 55); img *= (1 + 0.22 * gr + 0.18 * np.clip(_ruido(N, 260, 56) * 2.2 - 1.2, 0, 1) - 0.10 * np.clip(-_ruido(N, 300, 57) * 2 - 0.6, 0, 1))[..., None]
     # ---- altura base (metros fictícios; escala aplicada no normal)
@@ -112,17 +161,27 @@ def gerar(N=2048):
     h -= 0.014 * lasca
     # ---- riscos e rachaduras finas por lajota (pintados escuros + fundos no relevo)
     segs = []; segs_f = []
+    ys_, xs_ = np.nonzero(idx >= 0); ordem = np.argsort(idx[ys_, xs_], kind="stable")
+    ys_, xs_ = ys_[ordem], xs_[ordem]; cortes = np.searchsorted(idx[ys_, xs_], np.arange(nl + 1))
+    lajes = []
+    for i in range(nl):
+        a_, b_ = cortes[i], cortes[i + 1]
+        if b_ - a_ < 400: lajes.append(None); continue
+        lajes.append(dict(x=xs_[a_:b_], y=ys_[a_:b_]))
+    def pt(l):
+        k = r.integers(0, len(l["x"])); return float(l["x"][k]), float(l["y"][k])
     for i, l in enumerate(lajes):
+        if l is None: continue
         if r.random() < 0.45:
             for _ in range(r.integers(1, 3)):
-                cx = r.uniform(l["x0"], l["x1"]) / px; cy = r.uniform(l["y0"], l["y1"]) / px
+                cx, cy = pt(l)
                 a = r.uniform(0, np.pi); L = r.uniform(25, 120)
                 x0, y0 = cx, cy
                 for k in range(r.integers(2, 5)):                    # polilinha quebrada
                     a += r.uniform(-0.6, 0.6); x1, y1 = x0 + np.cos(a) * L / 3, y0 + np.sin(a) * L / 3
                     segs.append((x0, y0, x1, y1)); x0, y0 = x1, y1
         if r.random() < 0.22:                                         # rachadura funda
-            cx = r.uniform(l["x0"], l["x1"]) / px; cy = r.uniform(l["y0"], l["y1"]) / px
+            cx, cy = pt(l)
             a = r.uniform(0, np.pi); x0, y0 = cx, cy
             for k in range(r.integers(4, 9)):
                 a += r.uniform(-0.7, 0.7); L = r.uniform(14, 38); x1, y1 = x0 + np.cos(a) * L, y0 + np.sin(a) * L
@@ -135,12 +194,12 @@ def gerar(N=2048):
     h -= 0.0025 * risco + 0.012 * rach
     # ---- umidade escura (manchas grandes, concentradas ao longo das juntas) e musgo
     umid = np.clip(_ruido(N, 8, 70) * 1.5 - 0.15, 0, 1) * np.clip(0.4 + 0.6 * np.clip(1 - dist / 0.5, 0, 1), 0, 1)
-    img *= (1 - 0.55 * umid)[..., None]
-    img[..., 2] *= 1 + 0.10 * umid                                      # umidade puxa para azul frio
+    img *= (1 - 0.18 * umid)[..., None]
+    img[..., 0] *= 1 - 0.18 * umid; img[..., 2] *= 1 + 0.30 * umid                                      # umidade puxa para azul frio
     # sujeira irregular escorrendo da junta para a lajota
     sujo_lim = 0.016 + 0.07 * np.clip(0.5 + 0.7 * _ruido(N, 50, 71) + 0.5 * _ruido(N, 130, 72), 0, 1)
     sujo = np.clip(1 - dist / sujo_lim, 0, 1) ** 0.8
-    img *= (1 - 0.8 * sujo)[..., None]
+    img *= (1 - 0.6 * sujo)[..., None]
     img[..., 0] *= 1 + 0.25 * sujo; img[..., 1] *= 1 + 0.18 * sujo      # sujeira puxa para terra
     # musgo: verde-musgo escuro nas juntas e primeiros cm das lajotas, por trechos
     musgo_t = np.clip(_ruido(N, 11, 73) * 2.6 - 0.25, 0, 1) * np.clip(_ruido(N, 90, 74) * 0.5 + 0.8, 0, 1)
@@ -150,9 +209,9 @@ def gerar(N=2048):
     cor_musgo = np.array([0.045, 0.085, 0.045]) * (1 + 0.4 * _ruido(N, 250, 77))[..., None]
     img = img * (1 - 0.7 * musgo)[..., None] + cor_musgo * (0.7 * musgo)[..., None]
     # ---- bordas: aresta viva clara (fio de luz de pedra gasta) e lascas expondo pedra mais clara
-    img *= (1 + 0.55 * gasto)[..., None]
+    img *= (1 + 0.3 * gasto)[..., None]
     img[..., 2] *= 1 + 0.1 * gasto
-    img *= (1 + 0.5 * lasca)[..., None]
+    img *= (1 + 0.25 * lasca)[..., None]
     # riscos e rachaduras escuros pintados
     img *= (1 - 0.55 * risco)[..., None] * (1 - 0.85 * rach)[..., None]
     # ---- juntas: terra escura com cascalho, grão, manchas
@@ -180,7 +239,7 @@ def _normal(h, N, forca=1.0):
 
 def aplicar(objs, N=2048):
     """Cria M_Piso_Laje com cor + normal embutidos, troca nas lajotas (M_Piso_Laje_*) e põe UV planar."""
-    img, h = gerar(N)
+    img, h = gerar(objs, N)
     im = bpy.data.images.new("T_Cripta_Piso_Cor", N, N, alpha=False)
     rgba = np.concatenate([img, np.ones((N, N, 1))], axis=2)
     srgb = np.where(rgba <= 0.0031308, rgba * 12.92, 1.055 * np.power(rgba, 1 / 2.4) - 0.055); srgb[..., 3] = 1
