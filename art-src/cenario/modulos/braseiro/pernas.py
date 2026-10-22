@@ -1,28 +1,31 @@
-"""Parte do braseiro: pernas. build() acrescenta as malhas a _lib.objs."""
+"""Pernas: sapatas de pedra lascada, fustes de ferro afunilados, cintas enferrujadas, capitéis, rebites, travessas em X."""
 from ._lib import *
 
+LEG = 0.42
 
 def build():
-    random.seed(11)
-    # ---- pernas: 4 colunas com sapata escalonada, cintas, rebites, capitel e ponta de canto
-    LEG = 0.42
+    r = rng(101)
     for i, (sx, sy) in enumerate([(-1, -1), (-1, 1), (1, -1), (1, 1)]):
-        x, y = sx * LEG, sy * LEG
-        box((x, y, 0.045), (0.46, 0.46, 0.09), m=IRON, bev=0.02, wear=0.01, seed=i)                 # sapata baixa
-        box((x, y, 0.145), (0.38, 0.38, 0.11), m=TRIM, bev=0.016, seed=i + 4)                       # sapata alta
-        box((x, y, 0.62), (0.22, 0.22, 0.80), m=IRON, bev=0.018, wear=0.008, seed=i + 8)            # fuste
-        box((x, y, 0.30), (0.27, 0.27, 0.05), m=WORN, bev=0.01, seed=i + 12)                        # cinta de ferro vivo
-        box((x, y, 0.80), (0.27, 0.27, 0.05), m=WORN, bev=0.01, seed=i + 16)
-        box((x, y, 0.96), (0.32, 0.32, 0.10), m=TRIM, bev=0.016, seed=i + 20)                       # capitel
-        cone((x, y, 1.01), 0.11, 0.22, rot=(0, 0, math.pi / 4), seed=i)                              # ponta de canto
-        for k in range(4):                                                                           # rebites nas faces do fuste
-            a = k * math.pi / 2
-            for z in (0.40, 0.70):
-                rivet((x + 0.114 * math.cos(a), y + 0.114 * math.sin(a), z), rot=(0, math.pi / 2, a))
-    # ---- travessas em X e diamante central
+        x, y = sx * LEG + r.uniform(-.012, .012), sy * LEG + r.uniform(-.012, .012)
+        k = r.uniform(0.97, 1.05); yaw = r.uniform(-0.04, 0.04); lean = (r.uniform(-.015, .015), r.uniform(-.015, .015), yaw)
+        # sapata: dois blocos de pedra empilhados e lascados (boolean real)
+        b1 = fbox(PEDRA, (x, y, 0.05), (0.50 * k, 0.48 * k, 0.10), (0, 0, yaw), cuts=1, amp=0.004, bev=0.012, seed=10 + i)
+        chip_corners(b1, 6, 0.07, 20 + i)
+        b2 = fbox(PEDRA, (x, y, 0.15), (0.40 * k, 0.40 * k, 0.10), (0, 0, yaw + 0.05), cuts=1, amp=0.004, bev=0.012, seed=30 + i)
+        chip_corners(b2, 5, 0.055, 40 + i)
+        # fuste afunilado em ferro, com facetas de martelo
+        fbox(FERRO, (x, y, 0.60), (0.23 * k, 0.23 * k, 0.86), lean, cuts=4, amp=0.004, bev=0.010, seed=50 + i, taper=0.9)
+        for z, mm in ((0.30, ENVELH), (0.80, ENVELH)):                     # cintas
+            fbox(mm, (x, y, z + r.uniform(-.015, .015)), (0.29 * k, 0.29 * k, 0.05), (0, 0, yaw), cuts=2, amp=0.003, bev=0.008, seed=60 + i)
+        fbox(ENVELH, (x, y, 0.965), (0.33 * k, 0.33 * k, 0.10), (0, 0, yaw), cuts=2, amp=0.004, bev=0.012, seed=70 + i)   # capitel
+        fbox(FERRO, (x, y, 1.03), (0.26 * k, 0.26 * k, 0.04), (0, 0, yaw + math.pi / 4), cuts=1, amp=0.003, bev=0.008, seed=80 + i)
+        espigao(FERRO, (x, y, 1.05), (r.uniform(-.06, .06), r.uniform(-.06, .06), 1), 0.095 * k, 0.20 + r.uniform(-.02, .04), seed=90 + i)
+        for kf in range(4):
+            a = kf * math.pi / 2 + yaw
+            for z in (0.42, 0.68):
+                rebite(ENVELH, (x + 0.12 * k * math.cos(a), y + 0.12 * k * math.sin(a), z + r.uniform(-.01, .01)), (math.cos(a), math.sin(a), 0), 0.017, seed=100 + i * 10 + kf)
+    # travessas em X + diamante central
     for j, ang in enumerate((math.pi / 4, -math.pi / 4)):
-        box((0, 0, 0.38), (1.28, 0.075, 0.075), rot=(0, 0, ang), m=IRON, bev=0.012, seed=30 + j, cut=0.1)
-    box((0, 0, 0.38), (0.22, 0.22, 0.22), rot=(math.pi / 4, 0, math.pi / 4), m=TRIM, bev=0.02, seed=33)
-    cone((0, 0, 0.14), 0.12, 0.24, rot=(math.pi, 0, math.pi / 4), seed=34)
-    ring(0.38, 0.17, 0.018, m=WORN, seg=16)
-
+        fbox(FERRO, (0, 0, 0.38 + j * 0.004), (1.30, 0.075, 0.075), (0, 0, ang), cuts=6, amp=0.003, bev=0.008, seed=120 + j)
+    fbox(ENVELH, (0, 0, 0.38), (0.20, 0.20, 0.20), (math.pi / 4, 0, math.pi / 4), cuts=2, amp=0.004, bev=0.014, seed=130)
+    espigao(FERRO, (0, 0, 0.27), (0, 0, -1), 0.10, 0.18, seed=131)

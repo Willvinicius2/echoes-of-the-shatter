@@ -11,7 +11,7 @@ def mat(name, color, rough=0.9):
     return m
 
 def criar_materiais():
-    return dict(pedra=mat("M_Pedra", (0.42, 0.40, 0.38)), escura=mat("M_PedraEscura", (0.20, 0.19, 0.19)), musgo=mat("M_Musgo", (0.12, 0.17, 0.05), 1.0))
+    return dict(pedra=mat("M_Pedra", (0.42, 0.40, 0.38)), escura=mat("M_PedraEscura", (0.20, 0.19, 0.19)), musgo=mat("M_Musgo", (0.12, 0.17, 0.05), 1.0), terra=mat("M_Terra", (0.07, 0.055, 0.045), 1.0))
 
 class Altura:
     """Assentamento por raio: cada pedra nova desce até o primeiro contato com o que já está na pilha (sem flutuar nem afundar)."""

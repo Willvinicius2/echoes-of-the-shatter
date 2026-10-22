@@ -295,15 +295,18 @@ def _bez(p0, p1, p2, p3, t):
 
 
 def _sleeve(L, side):
-    p0 = P(side * 0.27, -0.01, 1.31); p1 = P(side * 0.345, 0.02, 1.08); p2 = P(side * 0.30, 0.15, 0.98); p3 = P(side * 0.085, 0.205, 0.955)
-    n = 22; sides = 18
+    """Manga larga: do ombro, cotovelo para fora, antebraço cruzando o peito até o lado oposto (esquerda por baixo, direita por cima)."""
+    over = side > 0
+    e = P(-side * 0.055, 0.245 if over else 0.20, 1.035 if over else 1.07)
+    p0 = P(side * 0.27, -0.01, 1.31); p1 = P(side * 0.40, 0.0, 1.06); p2 = P(side * 0.20, 0.17, 1.06 + (0.0 if over else 0.03)); p3 = e
+    n = 26; sides = 20
     path = [_bez(p0, p1, p2, p3, i / (n - 1)) for i in range(n)]
     fr = _sweep_pts(path)
     rings = []
     for i, p in enumerate(path):
         t = i / (n - 1)
-        r = _prof([(0, 0.085), (0.3, 0.092), (0.6, 0.105), (0.88, 0.12), (0.96, 0.128), (1.0, 0.118)], t)
-        depth = 0.030 + 0.04 * t
+        r = _prof([(0, 0.09), (0.25, 0.095), (0.55, 0.09), (0.8, 0.105), (0.93, 0.125), (1.0, 0.105)], t)   # boca da manga alargada
+        depth = 0.026 + 0.05 * t
         nn, bb = fr[i]
         ring = []
         for k in range(sides):
@@ -312,8 +315,7 @@ def _sleeve(L, side):
             rr = r - d
             ring.append(p + (nn * math.cos(a) * rr * 1.0 + bb * math.sin(a) * rr * 0.86))
         rings.append(ring)
-    o = _grid(L, rings, [L.MAT["estatua"], L.MAT["escura"]], "manga", cap0=True, cap1=True, midx=lambda j, i: 1 if j == n - 2 and False else 0)
-    # boca da manga escura: faz a última faixa mais fina e escura (abertura)
+    o = _grid(L, rings, [L.MAT["estatua"]], "manga", cap0=True, cap1=True)
     _chisel(o, 0.002)
     return o
 
@@ -395,7 +397,7 @@ def _sword(L):
 
 
 HZ0, HZ1 = 1.08, 1.98          # base do capelo (sobre os ombros) e ponta do capuz
-FZ, FA, FB = 1.64, 0.15, 0.60  # centro e semieixos (z, ângulo) da abertura do rosto
+FZ, FA, FB = 1.63, 0.165, 0.74  # centro e semieixos (z, ângulo) da abertura do rosto
 
 
 def _sm(a, b, x):
@@ -405,7 +407,7 @@ def _sm(a, b, x):
 
 def _hood_r(t, z):
     """Posição (x,y) da superfície do capuz+capelo em ângulo t e altura z; devolve também a máscara da abertura (0..1)."""
-    Rr = _prof([(1.08, 0.215), (1.30, 0.205), (1.42, 0.215), (1.55, 0.225), (1.70, 0.205), (1.84, 0.13), (1.94, 0.05), (1.98, 0.012)], z)
+    Rr = _prof([(1.08, 0.215), (1.30, 0.205), (1.42, 0.215), (1.55, 0.235), (1.70, 0.228), (1.84, 0.16), (1.94, 0.07), (1.98, 0.012)], z)
     sh = max(0.0, min(1.0, (1.42 - z) / 0.30))             # 1 = ombros (largos), 0 = cabeça
     rx = Rr * (0.98 + 0.52 * sh); ry = Rr * (1.17 - 0.38 * sh)
     t01 = max(0.0, (z - 1.5) / (HZ1 - 1.5))
@@ -416,7 +418,10 @@ def _hood_r(t, z):
     front = math.exp(-(dt / 0.8) ** 2) * (1 - sh * 0.3)
     depth = (0.020 + 0.060 * sh + 0.018 * (1 - t01)) * (1 - 0.5 * front * (1 - sh))
     pl = _pleat(t, z, 6, depth, 0.4, 0.14) + _pleat(t, z, 11, depth * 0.35, 1.1, 0.2)
-    k = 1 - 0.66 * math.sqrt(cave)
+    dtf = dt / 0.46; zf = (z - (FZ - 0.02)) / 0.125
+    face = max(0.0, 1.0 - dtf * dtf - zf * zf)                # volume liso do rosto dentro da cavidade
+    pl *= 1.0 - min(1.0, cave * 3.0)                          # interior liso, sem pregas
+    k = 1 - 0.40 * math.sqrt(cave) + 0.15 * face ** 0.8
     x, y = (rx - pl) * math.cos(t), cy + (ry - pl) * math.sin(t)
     # barra do capelo se junta ao manto
     jb = 1 - _sm(1.08, 1.17, z)
@@ -489,7 +494,8 @@ def _statue(L):
 
 def build(L):
     """Tudo que fica dentro e em volta do nicho. O núcleo do fuste e o cortador ficam fora daqui."""
-    L.MAT["sombra"] = L.mat("M_Sombra", (0.012, 0.012, 0.016), rough=1.0)
+    L.MAT["sombra"] = L.mat("M_Sombra", (0.22, 0.21, 0.20), rough=1.0)     # interior do capuz: cinza-pedra, não preto
+    L.MAT["estatua"].node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.52, 0.50, 0.47, 1)  # estátua clara contra o fundo escuro
     _frame(L)
     _tympanum(L)
     _back(L)

@@ -1,34 +1,39 @@
-"""Parte do braseiro: gaiola. build() acrescenta as malhas a _lib.objs."""
+"""Gaiola do aro: dois anéis, ripas com rebites e losangos, cantoneiras altas e espigões de alturas variadas."""
 from ._lib import *
 
+Z0, Z1 = 1.12, 1.40
+
+def anel(z, R, rr, m, seed, seg=36):
+    bpy.ops.mesh.primitive_torus_add(major_radius=R, minor_radius=rr, major_segments=seg, minor_segments=8, location=(0, 0, z))
+    t = bpy.context.object; r = rng(seed)
+    for v in t.data.vertices: v.co += Vector((r.uniform(-.004, .004), r.uniform(-.004, .004), r.uniform(-.004, .004)))
+    return add(t, m, PARTE[0])
 
 def build():
-    random.seed(11)
-    # ---- gaiola: dois anéis, ripas com rebites e cintas verticais
-    Z0, Z1 = 1.12, 1.40
-    ring(Z0 + 0.03, 0.68, 0.04); ring(Z1 - 0.03, 0.68, 0.04)
-    ring(Z0 + 0.075, 0.70, 0.014, m=WORN, seg=32)
+    r = rng(301)
+    anel(Z0 + 0.03, 0.68, 0.042, ENVELH, 1); anel(Z1 - 0.03, 0.68, 0.042, ENVELH, 2); anel(Z0 + 0.09, 0.705, 0.014, FERRO, 3, 48)
     N = 14
     for i in range(N):
-        a = i * 2 * math.pi / N
+        a = i * 2 * math.pi / N + r.uniform(-.015, .015)
         x, y = 0.68 * math.cos(a), 0.68 * math.sin(a)
-        box((x, y, (Z0 + Z1) / 2), (0.05, 0.05, Z1 - Z0), rot=(0, 0, a), m=IRON, bev=0.008, wear=0.003, seed=50 + i, cut=0.2)
+        fbox(FERRO, (x, y, (Z0 + Z1) / 2), (0.05, 0.05, Z1 - Z0 + r.uniform(-.01, .01)), (0, 0, a), cuts=3, amp=0.0025, bev=0.006, seed=310 + i)
         if i % 2 == 0:
-            box((x, y, (Z0 + Z1) / 2 + 0.02), (0.075, 0.075, 0.075), rot=(math.pi / 4, 0, a), m=TRIM, bev=0.008, wear=0.003, seed=70 + i, cut=0.2)
+            fbox(ENVELH, (x, y, (Z0 + Z1) / 2 + 0.02), (0.075, 0.075, 0.075), (math.pi / 4, 0, a), cuts=1, amp=0.002, bev=0.007, seed=330 + i)
         else:
-            rivet((x + 0.027 * math.cos(a), y + 0.027 * math.sin(a), (Z0 + Z1) / 2), r=0.018, rot=(0, math.pi / 2, a))
-    # ---- espigões no aro: 8 médios + 4 altos nos cantos com espinhos laterais
+            rebite(ENVELH, (x + 0.027 * math.cos(a), y + 0.027 * math.sin(a), (Z0 + Z1) / 2 + r.uniform(-.02, .02)), (math.cos(a), math.sin(a), 0), 0.018, seed=350 + i)
+    # espigões do aro: 8, alturas e inclinações variadas
     for i in range(8):
-        a = (i + 0.5) * 2 * math.pi / 8
-        cone((0.70 * math.cos(a), 0.70 * math.sin(a), Z1 - 0.02), 0.075, 0.20 + 0.04 * ((i * 7) % 3), sides=4, rot=(0, 0, a), seed=80 + i)
+        a = (i + 0.5) * 2 * math.pi / 8 + r.uniform(-.05, .05)
+        tilt = r.uniform(0.0, 0.18)
+        espigao(FERRO, (0.70 * math.cos(a), 0.70 * math.sin(a), Z1 - 0.02), (math.cos(a) * tilt, math.sin(a) * tilt, 1), 0.075, r.uniform(0.18, 0.28), seed=370 + i)
+    # cantoneiras altas com espinhos laterais
     for i, (sx, sy) in enumerate([(-1, -1), (-1, 1), (1, -1), (1, 1)]):
-        a = math.atan2(sy, sx)
-        x, y = 0.74 * math.cos(a), 0.74 * math.sin(a)
-        box((x, y, 1.20), (0.14, 0.14, 0.40), rot=(0, 0, a), m=IRON, bev=0.016, wear=0.008, seed=90 + i)
-        box((x, y, 1.40), (0.18, 0.18, 0.04), rot=(0, 0, a), m=WORN, bev=0.008, seed=94 + i)
-        cone((x, y, 1.42), 0.11, 0.30, sides=4, rot=(0, 0, a), seed=98 + i)
+        a = math.atan2(sy, sx); x, y = 0.74 * math.cos(a), 0.74 * math.sin(a)
+        fbox(FERRO, (x, y, 1.20), (0.14, 0.14, 0.40), (0, 0, a), cuts=3, amp=0.003, bev=0.010, seed=390 + i)
+        fbox(ENVELH, (x, y, 1.40), (0.19, 0.19, 0.045), (0, 0, a), cuts=1, amp=0.003, bev=0.008, seed=395 + i)
+        espigao(FERRO, (x, y, 1.42), (0, 0, 1), 0.11, r.uniform(0.27, 0.34), seed=400 + i)
         for sgn in (-1, 1):
-            cone((x + sgn * 0.11 * -math.sin(a), y + sgn * 0.11 * math.cos(a), 1.26), 0.05, 0.16, sides=4, rot=(sgn * math.pi / 2 * 0.9, 0, a), seed=100 + i)
+            d = (sgn * -math.sin(a) * 1.0, sgn * math.cos(a) * 1.0, 0.25)
+            espigao(FERRO, (x + sgn * 0.075 * -math.sin(a), y + sgn * 0.075 * math.cos(a), 1.26), d, 0.05, r.uniform(0.13, 0.19), seed=410 + i * 2 + (sgn > 0))
         for z in (1.12, 1.30):
-            rivet((x + 0.073 * math.cos(a), y + 0.073 * math.sin(a), z), r=0.02, rot=(0, math.pi / 2, a))
-
+            rebite(ENVELH, (x + 0.073 * math.cos(a), y + 0.073 * math.sin(a), z), (math.cos(a), math.sin(a), 0), 0.02, seed=420 + i)

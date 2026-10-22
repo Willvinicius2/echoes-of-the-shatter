@@ -38,7 +38,7 @@ void fragment() {
 	float up = smoothstep(0.55, 0.95, wnrm.y);
 	float mossmask = clamp(up * 0.9 + low * 0.6, 0.0, 1.0) * smoothstep(0.45, 0.7, fbm(q * 1.3 + 5.0)) * moss_amount;
 	col = mix(col, vec3(0.17, 0.19, 0.07) * (0.6 + 0.6 * patches), mossmask);
-	ALBEDO = col;
+	ALBEDO = col * COLOR.rgb; // cor de vértice (AO e sujeira pintadas no Blender); branco nos módulos sem cor
 	ROUGHNESS = mix(0.82, 0.45, low * 0.6);
 	float h = fbm(q * 4.0) ;
 	NORMAL_MAP = vec3(0.5 + (h - 0.5) * 0.35 * bump, 0.5 + (fbm(q * 4.0 + 9.0) - 0.5) * 0.35 * bump, 1.0);

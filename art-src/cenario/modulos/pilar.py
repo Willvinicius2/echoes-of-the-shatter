@@ -23,7 +23,9 @@ def montar():
     assert nucleo, "pilar_fuste deve criar o objeto fuste_nucleo"
     L.boolean(nucleo[0], [pilar_nicho.cutter(L)])
     pilar_nicho.build(L)
-    return L.juntar("SM_Cripta_Pilar")
+    o = L.juntar("SM_Cripta_Pilar")
+    L.pintar_vertices(o)
+    return o
 
 
 if __name__ == "__main__":
