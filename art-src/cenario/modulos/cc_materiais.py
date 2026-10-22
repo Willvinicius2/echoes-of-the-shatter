@@ -694,6 +694,10 @@ def render_preview(obj_ou_cena, caminho, vista="tres_quartos", res=(800, 800), s
     elif vista == "close":
         d = Vector((0.25, 1.0, 0.30)); alvo = cen + Vector((-0.34 * dim.x, 0, 0.22 * dim.z)); dist = 0.5 * k
         cam_d.lens = 50
+    elif vista == "lado":
+        d = Vector((1.0, 0.05, 0.12)); alvo = cen; dist = 1.55 * k; cam_d.lens = 50
+    elif vista == "topo":
+        d = Vector((0.0, 0.35, 1.0)); alvo = cen; dist = 1.5 * k; cam_d.lens = 50
     else:
         d = Vector((0.62, 0.78, 0.42)); alvo = cen; dist = 1.5 * k; cam_d.lens = 50
     d.normalize()
