@@ -20,3 +20,6 @@ Corpo base (outro agente): 2.500 triângulos medidos no FBX (cabeça 1.020). Pio
 Um único arquivo `T_Archer_Starter_BC.png` 512x512 (514 KB) e `T_Archer_Starter_M.png` 256x256, em `godot/art/models/personagens/arqueiro/`, gerados por `grade_traje.py` a partir da fonte 1024 (gradação de cor + redução com nitidez). Os 4 GLBs referenciam esse arquivo por uri externo (não vai mais embutido: GLBs de 26 KB a 166 KB, antes ~1,4 a 1,6 MB cada). O Capuz ainda embute a textura 1024 original (outro agente); para unificar basta usar `textura=c.TEX_TRAJE` em `build_capuz.py`. Os arquivos `Arqueiro_<Peca>_T_Archer_Starter_BC.png(.import)` antigos (extraídos pelo Godot) ficaram obsoletos e podem ser apagados.
 
 Outros desvios: 17.4 prevê Chest 512², Legs 256², Hands/Feet 128²; o traje compartilha 512² (atlas único, as 4 peças juntas), aceitável como um material só. Altura do modelo: 1,50 m (pé em y=0), não 1,82 m.
+
+## Proporcao chibi (proporcao.py)
+Todo FBX do rig passa por `proporcao.aplicar(arm, malhas)` (cabeca x1,4, pernas x0,8, tronco x0,88, maos/pes x1,15-1,18, ombros caidos 10 graus, cotovelos e joelhos levemente flexionados; novo repouso). Altura final 1,494 m (corpo) / 1,527 m (capuz), sola em y=0. No Godot a escala do no e 1,0 (Arqueiro.tscn nao escala): a altura em jogo e a do GLB, igual a de antes (1,5 m).

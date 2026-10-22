@@ -435,6 +435,7 @@ def main():
     print("TRIS_TOTAL", tris)
     vs = [v.co for o in (ob, mk, ro) for v in o.data.vertices]
     print("BOUNDS", [round(min(v[i] for v in vs), 3) for i in range(3)], [round(max(v[i] for v in vs), 3) for i in range(3)])
+    c.proporcao.aplicar(arm, [ob, mk, ro])   # mesma deformacao chibi do corpo: a cabeca maior leva o capuz junto
     c.exportar("Arqueiro_Capuz.glb", [arm, ob, mk, ro])
 
 
