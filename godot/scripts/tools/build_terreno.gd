@@ -48,6 +48,15 @@ func _dono(n: Node, dono: Node) -> void:
 	for c in n.get_children():
 		c.owner = dono
 		if c.scene_file_path == "": _dono(c, dono)
+		else: _dono_sobrescritos(c, c, dono)
+
+# mesh de módulo instanciado com material sobrescrito: dono na cena raiz (e nos pais até o módulo) para o override ser salvo
+func _dono_sobrescritos(n: Node, modulo: Node, dono: Node) -> bool:
+	var tem := n.has_meta("sobrescrito")
+	for c in n.get_children():
+		if _dono_sobrescritos(c, modulo, dono): tem = true
+	if tem and n != modulo: n.owner = dono
+	return tem
 
 func _tex(p: String) -> Texture2D: return load(p) as Texture2D
 
@@ -195,7 +204,7 @@ func _escurecer(n: Node) -> void:
 			if m != null and m.resource_name == "M_PedraClara":
 				var d := m.duplicate() as BaseMaterial3D
 				d.albedo_color = Color(m.albedo_color.r * FATOR_CLARA, m.albedo_color.g * FATOR_CLARA, m.albedo_color.b * FATOR_CLARA, 1.0)
-				mi.set_surface_override_material(k, d)
+				mi.set_surface_override_material(k, d); mi.set_meta("sobrescrito", true)
 	for c in n.get_children(): _escurecer(c)
 
 # yaw para o -Z local (frente do módulo) apontar do ponto (x,z) ao alvo (ax,az), tudo em doc
