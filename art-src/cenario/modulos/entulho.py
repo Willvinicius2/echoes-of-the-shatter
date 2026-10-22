@@ -23,19 +23,39 @@ M_PEDRA = mat("M_Pedra", (0.42, 0.40, 0.38))
 M_ESCURA = mat("M_PedraEscura", (0.20, 0.19, 0.19))
 M_MUSGO = mat("M_Musgo", (0.12, 0.17, 0.05), 1.0)
 
-def bloco(loc, size, rot, m, jit=0.05, bev=0.035):
-    """Cubo subdividido com vértices deslocados e chanfro: pedra cortada e gasta, não caixa perfeita."""
+def bloco(loc, size, rot, m, jit=0.0, bev=0.02, lascas=3):
+    """Bloco cortado: cubo com quinas e arestas lascadas por planos de corte aleatórios (facetas retas, arestas vivas),
+    chanfro fino de 1 segmento e sombreamento chapado. Nada de ruído suave: a pedra quebra em planos."""
     bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1.0)
-    bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=1, use_grid_fill=True)
     for v in bm.verts:
         v.co = Vector((v.co.x * size[0], v.co.y * size[1], v.co.z * size[2]))
-        v.co += Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), rnd.uniform(-1, 1))) * jit * min(size)
-    bmesh.ops.bevel(bm, geom=bm.edges[:], offset=bev * min(size), segments=2, affect='EDGES')
+    mn = min(size)
+    for _ in range(lascas):
+        # plano de corte perto de uma quina ou aresta: tira uma lasca
+        n = Vector((rnd.choice((-1, 1)) * rnd.uniform(0.2, 1), rnd.choice((-1, 1)) * rnd.uniform(0.2, 1), rnd.choice((-1, 1)) * rnd.uniform(0.2, 1)))
+        if rnd.random() < 0.5: n[rnd.randrange(3)] = 0
+        if n.length < 0.1: continue
+        n.normalize()
+        corner = Vector((n.x * size[0] / 2, n.y * size[1] / 2, n.z * size[2] / 2))
+        depth = rnd.uniform(0.04, 0.16) * mn
+        pt = corner - n * depth
+        bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=pt, plane_no=n, clear_outer=True, clear_inner=False)
+        bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary]) if any(e.is_boundary for e in bm.edges) else None
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    # relevo de pedra cortada: grade de faces, cada uma recuada ou saliente alguns milímetros, com borda viva
+    bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=1, use_grid_fill=True)
+    for f in bm.faces[:]:
+        if f.calc_area() < 0.0009: continue
+        r = bmesh.ops.inset_individual(bm, faces=[f], thickness=0.012 * mn, use_even_offset=True)
+        d = rnd.uniform(-0.03, 0.015) * mn
+        if f.normal.z > 0.5 and rnd.random() < 0.55:       # tufo de musgo: face levantada e marcada
+            d = rnd.uniform(0.03, 0.07) * mn; f.material_index = 1
+        for v in f.verts: v.co += f.normal * d
+    bmesh.ops.bevel(bm, geom=bm.edges[:], offset=bev * mn, segments=1, affect='EDGES')
     me = bpy.data.meshes.new("b"); bm.to_mesh(me); bm.free()
     o = bpy.data.objects.new("b", me); bpy.context.collection.objects.link(o)
     o.location = loc; o.rotation_euler = rot
-    me.materials.append(m)
-    bpy.context.view_layer.objects.active = o; o.select_set(True)
+    me.materials.append(m); me.materials.append(M_MUSGO)
     for p in me.polygons: p.use_smooth = False
     objs.append(o); return o
 
@@ -52,16 +72,16 @@ bloco((-0.25, -0.05, 0.22), (0.80, 0.70, 0.44), (0, 0, H(12)), M_PEDRA)
 bloco((0.40, 0.10, 0.19), (0.62, 0.66, 0.38), (0, H(3), H(-20)), M_ESCURA)
 bloco((-0.10, 0.50, 0.17), (0.55, 0.45, 0.34), (H(4), 0, H(35)), M_PEDRA)
 bloco((0.10, -0.50, 0.15), (0.60, 0.40, 0.30), (0, H(-4), H(-8)), M_ESCURA)
-bloco((-0.20, 0.00, 0.60), (0.58, 0.52, 0.40), (H(6), H(-8), H(28)), M_PEDRA)
-bloco((0.38, 0.12, 0.50), (0.46, 0.42, 0.34), (H(-9), H(7), H(-40)), M_PEDRA)
+bloco((-0.20, 0.00, 0.56), (0.58, 0.52, 0.40), (H(6), H(-8), H(28)), M_PEDRA)
+bloco((0.38, 0.12, 0.46), (0.46, 0.42, 0.34), (H(-9), H(7), H(-40)), M_PEDRA)
 bloco((0.00, -0.38, 0.42), (0.40, 0.36, 0.30), (H(10), H(12), H(52)), M_ESCURA)
-bloco((-0.05, 0.05, 0.92), (0.34, 0.30, 0.26), (H(14), H(-10), H(15)), M_PEDRA)   # cume torto
+bloco((-0.05, 0.05, 0.84), (0.34, 0.30, 0.26), (H(14), H(-10), H(15)), M_PEDRA)   # cume torto
 # ---- pedras soltas ao redor e lascas
 for _ in range(14):
     a = rnd.uniform(0, 6.283); r = rnd.uniform(0.7, 1.0)
     s = rnd.uniform(0.07, 0.2)
     bloco((math.cos(a) * r * 1.1, math.sin(a) * r * 0.85, s * 0.45), (s * rnd.uniform(1.0, 1.7), s * rnd.uniform(0.8, 1.4), s * rnd.uniform(0.6, 1.0)),
-          (rnd.uniform(-.3, .3), rnd.uniform(-.3, .3), rnd.uniform(0, 6.28)), M_PEDRA if rnd.random() > 0.4 else M_ESCURA, jit=0.12, bev=0.08)
+          (rnd.uniform(-.3, .3), rnd.uniform(-.3, .3), rnd.uniform(0, 6.28)), M_PEDRA if rnd.random() > 0.4 else M_ESCURA, bev=0.05, lascas=8)
 # ---- musgo nos topos e nas fendas
 for _ in range(8):
     a = rnd.uniform(0, 6.283); r = rnd.uniform(0.3, 0.9)
@@ -77,14 +97,6 @@ bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
 zs = [v.co.z for v in o.data.vertices]
 for v in o.data.vertices: v.co.z -= min(zs)
 o.name = "SM_Cripta_Entulho"
-# musgo: faces voltadas para cima, em manchas (ruído por posição), pelo slot M_Musgo
-if M_MUSGO.name not in [m.name for m in o.data.materials]: o.data.materials.append(M_MUSGO)
-mi = [m.name for m in o.data.materials].index(M_MUSGO.name)
-from mathutils import noise
-for p in o.data.polygons:
-    c = p.center
-    if p.normal.z > 0.55 and c.z > 0.08 and noise.noise(c * 4.0) > -0.15:
-        p.material_index = mi
 for p in o.data.polygons: p.use_smooth = False
 os.makedirs(OUT, exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, "SM_Cripta_Entulho.glb"), use_selection=True, export_format='GLB', export_yup=True)
@@ -93,15 +105,25 @@ print("exportado SM_Cripta_Entulho", len(o.data.polygons), "faces", tuple(round(
 # ---- prévia: materiais procedurais só para o render (o .glb sai com cores sólidas)
 if PREV:
     os.makedirs(PREV, exist_ok=True)
-    def proc(m, base, mossy=False):
+    def proc(m, base, musgo=False):
         nt = m.node_tree; b = nt.nodes["Principled BSDF"]
-        tc = nt.nodes.new("ShaderNodeTexCoord"); n = nt.nodes.new("ShaderNodeTexNoise"); n.inputs["Scale"].default_value = 9; n.inputs["Detail"].default_value = 8
-        cr = nt.nodes.new("ShaderNodeValToRGB"); cr.color_ramp.elements[0].color = (*[c * 0.7 for c in base], 1); cr.color_ramp.elements[1].color = (*[min(1, c * 1.3) for c in base], 1)
-        nt.links.new(tc.outputs["Object"], n.inputs["Vector"]); nt.links.new(n.outputs["Fac"], cr.inputs["Fac"])
-        nt.links.new(cr.outputs["Color"], b.inputs["Base Color"])
-        bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.6
+        tc = nt.nodes.new("ShaderNodeTexCoord")
+        n = nt.nodes.new("ShaderNodeTexNoise"); n.inputs["Scale"].default_value = 14; n.inputs["Detail"].default_value = 12; n.inputs["Roughness"].default_value = 0.7
+        v = nt.nodes.new("ShaderNodeTexVoronoi"); v.feature = 'DISTANCE_TO_EDGE'; v.inputs["Scale"].default_value = 5 if not musgo else 25
+        cr = nt.nodes.new("ShaderNodeValToRGB"); cr.color_ramp.elements[0].color = (*[c * 0.45 for c in base], 1); cr.color_ramp.elements[1].color = (*[min(1, c * 1.5) for c in base], 1)
+        ve = nt.nodes.new("ShaderNodeMath"); ve.operation = 'SMOOTH_MIN' if False else 'MULTIPLY'
+        crk = nt.nodes.new("ShaderNodeMapRange"); crk.inputs[1].default_value = 0.0; crk.inputs[2].default_value = 0.06; crk.inputs[3].default_value = 0.6; crk.inputs[4].default_value = 1.0
+        mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = 'RGBA'; mix.blend_type = 'MULTIPLY'; mix.inputs[0].default_value = 1.0
+        nt.links.new(tc.outputs["Object"], n.inputs["Vector"]); nt.links.new(tc.outputs["Object"], v.inputs["Vector"])
+        nt.links.new(n.outputs["Fac"], cr.inputs["Fac"]); nt.links.new(v.outputs["Distance"], crk.inputs[0])
+        nt.links.new(cr.outputs["Color"], mix.inputs[6])
+        g = nt.nodes.new("ShaderNodeCombineColor"); 
+        for i in range(3): nt.links.new(crk.outputs[0], g.inputs[i])
+        nt.links.new(g.outputs[0], mix.inputs[7])
+        nt.links.new(mix.outputs[2], b.inputs["Base Color"])
+        bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 1.2; bump.inputs["Distance"].default_value = 0.05
         nt.links.new(n.outputs["Fac"], bump.inputs["Height"]); nt.links.new(bump.outputs["Normal"], b.inputs["Normal"])
-    proc(M_PEDRA, (0.20, 0.18, 0.16)); proc(M_ESCURA, (0.09, 0.085, 0.085)); proc(M_MUSGO, (0.10, 0.11, 0.025))
+    proc(M_PEDRA, (0.20, 0.18, 0.16)); proc(M_ESCURA, (0.09, 0.085, 0.085)); proc(M_MUSGO, (0.07, 0.085, 0.02), True)
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'; sc.cycles.samples = 24; sc.cycles.use_denoising = False
     sc.render.resolution_x = 640; sc.render.resolution_y = 480
