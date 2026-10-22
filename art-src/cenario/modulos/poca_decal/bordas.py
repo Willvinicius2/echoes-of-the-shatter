@@ -64,8 +64,8 @@ def build(L, m):
     ds, dg, dm, dh = (ImageDraw.Draw(c) for c in (shad, gra, mos, hgt))
 
     # ---- cascalho
-    peri = max(1.0, float(((np.abs(sg) < 1.0 / ppm)).sum()) / ppm)
-    ng = int(min(14000, 1500 * peri + 1500))
+    peri = max(0.5, float((np.abs(sg) < 0.004).sum()) / (0.008 * ppm) / ppm)   # perímetro da água + filetes (m)
+    ng = int(min(30000, 2000 * peri))        # densidade por metro de borda (calibrada na poça A)
     pts = _pick(rng, dens_g, ng)
     base = np.array([0.21, 0.24, 0.30])
     def grain(x, y, d, big=False):
@@ -111,7 +111,7 @@ def build(L, m):
     # ---- musgo: fitas curvas em grupos
     mdens = band * (0.1 + _smooth(np.clip(n2 * 2.0 - 0.7, 0, 1))) + 0.3 * fil * _smooth(np.clip(n1 * 2 - 0.9, 0, 1))
     mdens = mdens * (water < 0.5)
-    ncl = max(6, int(peri * 5))
+    ncl = max(6, int(peri * 6.0))             # grupos de musgo por metro de borda
     centers = _pick(rng, mdens, ncl)
     greens = [np.array(c) for c in ([0.07, 0.14, 0.07], [0.11, 0.20, 0.08], [0.18, 0.26, 0.08], [0.13, 0.23, 0.10], [0.08, 0.18, 0.10], [0.21, 0.27, 0.09])]
     def ribbon(x0, y0, ang, length, wmax, base_c, leaf):

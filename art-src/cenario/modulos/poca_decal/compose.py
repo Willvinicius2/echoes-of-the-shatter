@@ -6,7 +6,7 @@ import lib
 
 RAIZ = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", ".."))
 TEX = os.path.join(RAIZ, "godot", "art", "textures"); CENA = os.path.join(RAIZ, "godot", "scenes", "cripta")
-COR_UMIDO = np.array([0.10, 0.13, 0.20], np.float32)      # azul-ardósia frio, um pouco mais escuro que a laje
+COR_UMIDO = np.array([0.13, 0.25, 0.31], np.float32)      # azul-ardósia frio, um pouco mais escuro que a laje
 
 def texturas(nome):
     import mascara, bordas, gotas
@@ -15,13 +15,13 @@ def texturas(nome):
     wet, water = np.clip(m["wet"], 0, 1), np.clip(m["water"], 0, 1)
     # albedo RGBA: escurece o piso (umidade) e escurece mais na água (o piso aparece por baixo)
     prof = np.clip(-m["signed"] / 0.25, 0, 1)                                    # 0 na borda, 1 a 25 cm para dentro
-    a = np.clip(wet * 0.5 + water * (0.1 + 0.1 * prof), 0, 0.9)
-    rgb = np.broadcast_to(COR_UMIDO * (1 - 0.35 * prof[..., None]), (L.H, L.W, 3)).copy()
+    a = np.clip(wet * 0.42 + water * (0.2 + 0.14 * prof), 0, 0.9)
+    rgb = np.broadcast_to(COR_UMIDO * (1 - 0.5 * prof[..., None]), (L.H, L.W, 3)).copy()
     ba = b["rgba"][..., 3:4]; out_a = ba + a[..., None] * (1 - ba)
     out_rgb = (b["rgba"][..., :3] * ba + rgb * a[..., None] * (1 - ba)) / np.maximum(out_a, 1e-4)
     albedo = np.concatenate([out_rgb, out_a], -1)
     # ORM: R oclusão, G rugosidade (água ~0.02, piso úmido ~0.25, cascalho/musgo ~0.75), B metálico 0
-    rough = 0.6 - 0.35 * wet; rough = rough * (1 - water) + 0.02 * water
+    rough = 0.6 - 0.35 * wet; rough = rough * (1 - water) + 0.0 * water
     rough = rough * (1 - ba[..., 0]) + 0.75 * ba[..., 0]
     orm = np.stack([np.ones_like(rough), rough, np.zeros_like(rough)], -1)
     # normal (OpenGL): relevo da água (m) e dos detalhes

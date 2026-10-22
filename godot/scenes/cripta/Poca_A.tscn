@@ -6,12 +6,12 @@
 [ext_resource type="Material" path="res://art/materials/M_Cripta_Gotas.tres" id="4"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_gotas"]
-size = Vector2(1.200, 0.950)
+size = Vector2(1.800, 1.400)
 
 [node name="Poca_A" type="Node3D"]
 
 [node name="Decal" type="Decal" parent="."]
-size = Vector3(1.200, 1.0, 0.950)
+size = Vector3(1.800, 1.0, 1.400)
 texture_albedo = ExtResource("1")
 texture_orm = ExtResource("2")
 texture_normal = ExtResource("3")

@@ -24,10 +24,10 @@ def cena(nome):
     cr = rp.color_ramp; cr.elements[0].position = 0.45; cr.elements[0].color = (0.02, 0.025, 0.05, 1); cr.elements[1].position = 0.78; cr.elements[1].color = (0.55, 0.7, 1.0, 1)
     e = cr.elements.new(0.58); e.color = (0.5, 0.62, 0.9, 1); bg.inputs[1].default_value = 1.7
     S = max(w, h) * 1.9; side = 14
-    for k, (x, y, z) in enumerate(((2.4 * S / 4, -0.6 * S / 4, 1.1), (-1.0 * S / 4, 2.6 * S / 4, 1.3), (2.8 * S / 4, 1.6 * S / 4, 1.0))):
-        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.12, location=(x, y, z)); t = bpy.context.object
-        mm = bpy.data.materials.new(f"tv{k}"); mm.use_nodes = True; n2 = mm.node_tree; n2.nodes.clear(); em = n2.nodes.new("ShaderNodeEmission"); em.inputs[0].default_value = (1.0, 0.5, 0.15, 1); em.inputs[1].default_value = 220
-        oo = n2.nodes.new("ShaderNodeOutputMaterial"); n2.links.new(em.outputs[0], oo.inputs[0]); t.data.materials.append(mm); t.visible_camera = False; t.visible_shadow = False
+    for k, (x, y, z, r) in enumerate(((2.4 * S / 4, -0.6 * S / 4, 1.1, 0.3), (-1.0 * S / 4, 2.6 * S / 4, 1.3, 0.3), (2.8 * S / 4, 1.6 * S / 4, 1.0, 0.3), (-2.4 * S / 2.2, 0.4 * S / 2.2, 0.7, 0.4), (-0.5 * S / 2.2, 2.2 * S / 2.2, 0.9, 0.4))):
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=r, location=(x, y, z)); t = bpy.context.object
+        mm = bpy.data.materials.new(f"tv{k}"); mm.use_nodes = True; n2 = mm.node_tree; n2.nodes.clear(); em = n2.nodes.new("ShaderNodeEmission"); em.inputs[0].default_value = (1.0, 0.5, 0.15, 1); em.inputs[1].default_value = 150
+        oo = n2.nodes.new("ShaderNodeOutputMaterial"); n2.links.new(em.outputs[0], oo.inputs[0]); t.data.materials.append(mm); t.visible_camera = False; t.visible_shadow = False; t.visible_diffuse = False
     def luz(nm, e, loc, cor, size):
         d = bpy.data.lights.new(nm, 'AREA'); d.energy = e; d.color = cor; d.size = size; o = bpy.data.objects.new(nm, d); o.location = loc
         bpy.context.collection.objects.link(o); o.rotation_euler = (Vector((0, 0, 0)) - Vector(loc)).to_track_quat('-Z', 'Y').to_euler(); return o
@@ -69,7 +69,7 @@ def render(sc, cam, loc, alvo, path, lente):
 for nome in NOMES:
     sc, cam, S = cena(nome); k = S / 2.2; w, h, _, _ = lib.VARIANTES[nome]
     vistas = {"tq": ((1.5 * k, -1.5 * k, 0.95 * k), 40), "frente": ((0, -1.7 * k, 0.5 * k), 40), "lado": ((1.9 * k, 0.2 * k, 0.45 * k), 40),
-              "topo": ((0.001, -0.2 * k, 2.6 * k), 36), "close": ((0.55 * k, -0.7 * k, 0.16 * k), 38)}
+              "topo": ((0.001, -0.2 * k, 2.6 * k), 36), "close": ((0.55 * k, -0.7 * k, 0.16 * k), 38), "rasante": ((1.6 * k, 0.1 * k, 0.045 * k), 50)}
     for a, (loc, lente) in vistas.items():
-        if os.environ.get("RAPIDO") and a not in ("tq", "close"): continue
+        if os.environ.get("RAPIDO") and a not in ("tq", "close", "rasante"): continue
         render(sc, cam, loc, (0, 0, 0), os.path.join(OUT, f"poca_{nome}_{a}.png"), lente)

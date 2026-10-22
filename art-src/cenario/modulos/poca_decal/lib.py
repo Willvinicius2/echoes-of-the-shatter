@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 PPM = 480                                   # pixels por metro (texel density uniforme nas 3 variantes)
 VARIANTES = {                               # nome: (largura m, altura m, semente, descrição)
-    "A": (1.2, 0.95, 11, "pequena: um recorte só, quase redonda"),
+    "A": (1.8, 1.4, 11, "pequena: um recorte só, quase redonda"),
     "B": (2.3, 1.05, 23, "média alongada, com rabo que escorre em uma junta"),
     "C": (3.5, 2.6, 37, "grande, bordas recortadas em degraus de laje"),
 }

@@ -50,14 +50,13 @@ def _field(L):
     X, Z = L.X, L.Z
     flow = np.zeros_like(X)
     if L.nome == "A":
-        # recorte quase redondo, levemente achatado e assimétrico
-        r = np.hypot(X / 1.0, Z / 0.82)
-        th = np.arctan2(Z, X)
-        R = 0.38 + 0.03 * np.sin(th * 2 + 1.1) + 0.02 * np.sin(th * 3 + 0.3)
-        f = (r - R) + _shape_noise(L, 0.10, 2.6)
-        # pequena língua leve para baixo-direita
-        flow = np.exp(-(((X - 0.28) / 0.22) ** 2 + ((Z - 0.30) / 0.14) ** 2))
-        return f, flow, False
+        # blob irregular (raio ~0.36 m) com lóbulos largos; a borda é depois quantizada por laje (ver build)
+        th = np.arctan2(Z / 0.85, X)
+        r = np.hypot(X, Z / 0.85)
+        R = 0.355 + 0.045 * np.sin(th * 2 + 2.3) + 0.03 * np.sin(th * 3 + 0.4) + 0.02 * np.sin(th * 5 + 1.7)
+        f = (r - R) + _shape_noise(L, 0.07, 1.8, 7)
+        flow = np.exp(-(((X - 0.40) / 0.22) ** 2 + ((Z - 0.10) / 0.12) ** 2))
+        return f, flow.astype(np.float32), True
     if L.nome == "B":
         r = np.hypot(X / 1.0, Z / 0.42)
         thb = np.arctan2(Z, X)
@@ -104,17 +103,17 @@ def build(L):
 
     if stepped:
         # recortes de laje só em alguns trechos: dentro das zonas "gate" a borda segue lajes (cantos arredondados), fora segue a curva suave
-        sid2, _, _, _, _ = _slabs(L, -7.0, lo=0.16, hi=0.55, semente=5)
+        sid2, _, _, _, _ = _slabs(L, -7.0, lo=0.16 if L.nome != "A" else 0.12, hi=0.55 if L.nome != "A" else 0.32, semente=5)
         ids, inv = np.unique(sid2, return_inverse=True)
         inv = inv.reshape(sid2.shape)
         fm = np.asarray(ndmean(f, labels=inv, index=np.arange(len(ids))), np.float32)
-        off = rng.normal(0, 0.05, len(ids)).astype(np.float32)
+        off = rng.normal(0, 0.05 if L.nome != "A" else 0.035, len(ids)).astype(np.float32)
         fq = (fm + off)[inv]
         # cantos arredondados de 1-3 cm: suaviza o campo por laje antes do limiar
         fq = gaussian_filter(fq, (0.012 + 0.012 * 0.5) * L.PPM)
         zona = lib.fbm(L, 2.3, 3, semente=81)
-        gate = lib.suave(np.clip((zona - 0.47) * 12, 0, 1), 0.02)
-        g = (1 - gate) * f + gate * (0.75 * fq + 0.25 * f)
+        gate = lib.suave(np.clip((zona - (0.47 if L.nome != "A" else 0.44)) * 12, 0, 1), 0.02)
+        g = (1 - gate) * f + gate * ((0.75 if L.nome != "A" else 0.8) * fq + (0.25 if L.nome != "A" else 0.2) * f)
         # algumas frestas deixam a água escorrer um pouco, só em poucos trechos
         fing = np.clip(1 - dj / (0.006 + 0.006 * lib.fbm(L, 16, 2, semente=41)), 0, 1)
         g = g - 0.05 * fing * np.clip((lib.fbm(L, 3.0, 3, semente=42) - 0.5) * 5, 0, 1) * (np.abs(f) < 0.12)
@@ -126,6 +125,15 @@ def build(L):
     # irregularidade fina da borda (sub-centímetro a poucos cm)
     g = g + (lib.fbm(L, 14, 3, semente=11) - 0.5) * (0.006 if stepped else 0.010)
 
+    if L.nome == "A":
+        # lingueta: fita fina que escorre por uma junta horizontal, para a direita
+        rowz = np.argmin(dv[:, int(L.W * 0.5)] + np.abs(L.Z[:, 0] - 0.13) * 0.6)  # junta horizontal perto de z=0.05
+        zj = L.Z[rowz, 0]
+        t = np.clip((L.X - 0.20) / 0.38, 0, 1)
+        hw = (0.034 * (1 - t) ** 1.6 + 0.004) * (0.7 + 0.6 * lib.fbm(L, 9, 2, semente=6))
+        tg = np.maximum(np.abs(L.Z - zj) - hw, L.X - 0.575 + (lib.fbm(L, 6, 2, semente=8) - 0.5) * 0.04)
+        tg = np.where(L.X < 0.0, 9, tg)
+        g = np.minimum(g, tg)
     mask = g < 0
     if stepped:  # arredonda cantos e tira espinhos finos (1-2 cm)
         mask = gaussian_filter(mask.astype(np.float32), 0.011 * L.PPM) > 0.5
@@ -142,22 +150,28 @@ def build(L):
     water = gaussian_filter(water, 0.55)
     water = np.clip((water - 0.5) * 1.35 + 0.5, 0, 1).astype(np.float32)
 
-    # ----- umidade -----
+    # ----- umidade: halo largo e difuso (10-35 cm), segue juntas em trechos, ~0.9 junto da agua -----
     d = np.maximum(signed, 0)
-    wn = np.clip((lib.fbm(L, 4, 3, semente=13) - 0.35) * 2.6, 0, 1) ** 1.6
-    wid = 0.02 + 0.09 * wn                                               # 2..11 cm
-    wid = wid + 0.07 * flow * (0.6 + 0.8 * lib.fbm(L, 4, 2, semente=14))  # mais larga onde escorre
+    wn = lib.fbm(L, 1.6, 3, semente=13)
+    wn = np.clip((wn - 0.25) * 1.9, 0, 1)
+    wid = 0.10 + 0.25 * wn                                                # 10..35 cm, varia ao longo da borda
+    wid = wid * (0.85 + 0.3 * lib.fbm(L, 5, 2, semente=14)) + 0.08 * flow  # mais largo onde escorre
     if L.nome == "B":
         gb = lib.fbm(L, 2.2, 3, semente=51)
-        wid = wid * (0.15 + 1.5 * np.clip((gb - 0.35) * 2.2, 0, 1)) + 0.012
-        wid = wid * (0.5 + 1.0 * lib.fbm(L, 6, 2, semente=52))
-    wid = np.clip(wid, 0.012, 0.17)
-    t = np.clip(d / wid, 0, 1)
-    wet_a = (1 - t) ** 1.7
-    # quebra a transição com ruído fino (manchas, não anel liso)
-    wet_a = wet_a * (0.8 + 0.4 * lib.fbm(L, 22, 3, semente=15))
-    if L.nome == "B":
-        wet_a = wet_a * np.where(d > 0.008, np.clip((lib.fbm(L, 3.3, 3, semente=53) - 0.3) * 3.5, 0, 1), 1)
+        wid = wid * (0.7 + 0.6 * np.clip((gb - 0.3) * 2.0, 0, 1))
+    wid = np.clip(wid, 0.10, 0.40)
+    # juntas puxam a umidade para longe em alguns trechos (distancia efetiva menor perto da junta)
+    jg = np.clip((lib.fbm(L, 3.0, 3, semente=21) - 0.38) * 4, 0, 1)
+    jb = np.exp(-(dj / 0.025) ** 2)
+    d_eff = d * (1 - 0.55 * jg * jb)
+    t = np.clip(d_eff / wid, 0, 1)
+    wet_a = 0.9 * (1 - (3 * t ** 2 - 2 * t ** 3)) ** 1.15                  # curva suave, sem degrau
+    wet_a = wet_a * (0.88 + 0.24 * lib.fbm(L, 6, 3, semente=15))           # manchas suaves
+    wet_a = gaussian_filter(wet_a, 0.012 * L.PPM)
+    # a umidade some antes da borda da decal
+    ed = np.minimum(np.minimum(L.X + L.w / 2, L.w / 2 - L.X), np.minimum(L.Z + L.h / 2, L.h / 2 - L.Z))
+    q = np.clip(ed / 0.07, 0, 1)
+    wet_a = wet_a * q * q * (3 - 2 * q)
     # filetes nas juntas: umidade entra nas frestas, com comprimento variável (até 30-60 cm)
     jw = 0.007 + 0.010 * lib.fbm(L, 14, 2, semente=16)                  # meia-largura 0.7..1.7 cm => 1.4..3.4 cm
     band = np.clip(1 - (dj / jw) ** 2, 0, 1) ** 0.8
