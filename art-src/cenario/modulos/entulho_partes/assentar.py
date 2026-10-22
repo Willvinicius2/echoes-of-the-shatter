@@ -3,7 +3,7 @@ umas nas outras (gravidade plausível, inclinadas, sem face colada em face). Apl
 import bpy, math
 from mathutils import Vector
 
-def simular(objs, quadros=360):
+def simular(objs, quadros=420):
     sc = bpy.context.scene
     if sc.rigidbody_world is None: bpy.ops.rigidbody.world_add()
     sc.rigidbody_world.point_cache.frame_end = quadros
@@ -22,7 +22,7 @@ def simular(objs, quadros=360):
         bpy.ops.mesh.primitive_cube_add(size=1, location=(px, py, 1.0)); w = bpy.context.object
         w.scale = (0.05, 0.42, 2.0); w.rotation_euler = (0, 0, an); bpy.ops.object.transform_apply(scale=True)
         bpy.ops.rigidbody.object_add(type='PASSIVE'); w.rigid_body.kinematic = True; w.rigid_body.friction = 0.3
-        w.keyframe_insert("location", frame=quadros - 60); w.location = (px * 3.5, py * 3.5, 1.0); w.keyframe_insert("location", frame=quadros - 40)
+        w.keyframe_insert("location", frame=quadros - 45); w.location = (px * 3.5, py * 3.5, 1.0); w.keyframe_insert("location", frame=quadros - 40)
         w.location = (px, py, 1.0); paredes.append(w)
     for o in objs:
         bpy.context.view_layer.objects.active = o; o.select_set(True)

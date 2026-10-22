@@ -20,13 +20,13 @@ def construir(M):
     for i in range(8):
         s = (rnd.uniform(0.24, 0.42), rnd.uniform(0.2, 0.34), rnd.uniform(0.14, 0.26))
         solta(forma.laje(s, fraturas=rnd.randint(2, 3), sub=0), f"media{i}", mats(), 0.28, 3.0 + i * 0.4)
-    for i in range(8):
-        solta(forma.redonda(rnd.uniform(0.11, 0.2), rnd.uniform(0.6, 0.85)), f"redonda{i}", mats(), 0.3, 6.5 + i * 0.35)
+    for i in range(12):
+        solta(forma.redonda(rnd.uniform(0.11, 0.2), rnd.uniform(0.6, 0.85)), f"redonda{i}", mats(), 0.3, 6.5 + i * 0.25)
     # camada 3: lascas e pó de pedra
-    for i in range(30):
-        solta(forma.cascalho(rnd.uniform(0.07, 0.15), 0.55, 10, sub=0), f"lasca{i}", mats(), 0.33, 9.8 + i * 0.2)
-    for i in range(36):
-        solta(forma.cascalho(rnd.uniform(0.025, 0.055), 0.6, 8), f"po{i}", mats(), 0.4, 16.5 + i * 0.15)
+    for i in range(46):
+        solta(forma.cascalho(rnd.uniform(0.07, 0.15), 0.55, 10, sub=0), f"lasca{i}", mats(), 0.33, 9.8 + i * 0.14)
+    for i in range(70):
+        solta(forma.cascalho(rnd.uniform(0.025, 0.055), 0.6, 8), f"po{i}", mats(), 0.4, 16.5 + i * 0.1)
     poses = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poses.json")
     if os.path.exists(poses) and not os.environ.get("ENTULHO_SIMULAR"):
         # pose já assentada e aprovada (a física do Blender não é determinística): reaplica por nome

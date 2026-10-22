@@ -5,7 +5,7 @@ forma (fragmentos naturais) -> monte (composição) -> assentar (física de corp
 import bpy, bmesh, math, sys, os, zlib
 from mathutils import Vector
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "entulho_partes"))
-import comum, monte, musgo, terra, texturas
+import comum, monte, musgo, terra, texturas, assentamento
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
 OUT = argv[0] if argv else "."
@@ -15,9 +15,10 @@ TEX = os.path.join(PREV or OUT, "tex") if (PREV or OUT) else "tex"
 bpy.ops.wm.read_factory_settings(use_empty=True)
 M = comum.criar_materiais()
 pedras = monte.construir(M)
-tufos = musgo.construir(M, pedras)
 cs = [sum((o.matrix_world @ v.co for v in o.data.vertices), Vector()) / len(o.data.vertices) for o in pedras]
 chao = terra.construir(M, (sum(c.x for c in cs) / len(cs), sum(c.y for c in cs) / len(cs)))
+assentamento.assentar(pedras, chao)
+tufos = musgo.construir(M, pedras)
 
 import random
 for o in pedras:   # tom por pedra: de bege quente a cinza frio, brilho variado
@@ -56,7 +57,7 @@ if PREV:
     g = bpy.data.objects.new("g", bpy.data.meshes.new("g")); bpy.context.collection.objects.link(g)
     bm = bmesh.new(); bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=4); bm.to_mesh(g.data); bm.free(); g.data.materials.append(comum.mat("g", (0.09, 0.09, 0.1)))
     cam = bpy.data.objects.new("c", bpy.data.cameras.new("c")); bpy.context.collection.objects.link(cam); sc.camera = cam
-    angulos = (("a", (2.6, -2.9, 2.0), 0.25), ("frente", (0.0, -3.6, 0.9), 0.3), ("lado", (3.6, 0.0, 0.9), 0.3), ("b", (-2.6, 1.6, 1.1), 0.2), ("cima", (0.01, -0.6, 4.2), 0.0), ("close", (1.2, -1.3, 0.8), 0.2))
+    angulos = (("a", (2.8, -3.0, 0.95), 0.4), ("frente", (0.0, -3.6, 0.55), 0.45), ("lado", (3.6, 0.0, 0.55), 0.45), ("b", (-2.8, 1.8, 0.7), 0.4), ("cima", (0.01, -0.6, 4.2), 0.0), ("close", (1.3, -1.4, 0.5), 0.35))
     for nome, (x, y, z), alvo in (angulos[:1] if RAP else angulos):
         cam.location = (x, y, z); cam.rotation_euler = (Vector((0, 0, alvo)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
         sc.render.filepath = os.path.join(PREV, f"entulho_{nome}.png"); bpy.ops.render.render(write_still=True)
