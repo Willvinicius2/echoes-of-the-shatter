@@ -38,6 +38,14 @@ ref = ref.resize((int(ref.width * h / ref.height), h), Image.LANCZOS)
 img = Image.new("RGB", (ref.width + 2 * h, h)); img.paste(ref, (0, 0)); img.paste(b, (ref.width, 0)); img.paste(a, (ref.width + h, 0))
 ImageDraw.Draw(img).text((8, 6), "folha aprovada 03_arqueiro | modelo frente | modelo 3/4", fill=(255, 255, 255))
 img.save(os.path.join(P, "comparacao_folha_aprovada.png"))
+# proporcao chibi: folha aprovada + frente, 3/4 e lado do modelo
+ref2 = Image.open(REF).convert("RGB"); ref2 = ref2.resize((int(ref2.width * h / ref2.height), h), Image.LANCZOS)
+tres = [Image.open(os.path.join(S, f"conjunto_{v}.png")).convert("RGB").resize((h, h), Image.LANCZOS) for v in ("frente", "tres_quartos", "lado")]
+img = Image.new("RGB", (ref2.width + 3 * h, h)); img.paste(ref2, (0, 0))
+for i, t in enumerate(tres):
+    img.paste(t, (ref2.width + i * h, 0))
+ImageDraw.Draw(img).text((8, 6), "folha aprovada 03_arqueiro | modelo frente | 3/4 | lado", fill=(255, 255, 255))
+img.save(os.path.join(P, "proporcao_vs_folha.png"))
 # prancha mestra
 mestra = ["conjunto_frente", "conjunto_tres_quartos", "conjunto_costas", "conjunto_rosto"] + [f"{p}_{'rosto' if p=='capuz' else 'frente'}" for p in pecas]
 cel, cols = 512, 4
