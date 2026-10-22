@@ -24,8 +24,8 @@ def aplicar(M, pasta, tam=1024):
     os.makedirs(pasta, exist_ok=True); pintar_pedra.gerar(pasta, tam=tam)
     pa, pn = os.path.join(pasta, "pedra_albedo.png"), os.path.join(pasta, "pedra_normal.png")
     ma, mn = os.path.join(pasta, "musgo_albedo.png"), os.path.join(pasta, "musgo_normal.png")
-    novos = dict(pedra=_mat_img("M_Pedra", pa, pn, tint=(0.82, 0.9, 1.0)), escura=_mat_img("M_PedraEscura", pa, pn, tint=(0.5, 0.56, 0.66)),
-                 musgo=_mat_img("M_Musgo", ma, mn, tint=(2.6, 2.9, 1.7), rough=1.0), terra=_mat_img("M_Terra", pa, pn, tint=(0.28, 0.22, 0.17), rough=1.0))
+    novos = dict(pedra=_mat_img("M_Pedra", pa, pn, tint=(1.0, 0.95, 0.86)), escura=_mat_img("M_PedraEscura", pa, pn, tint=(0.7, 0.64, 0.56)),
+                 musgo=_mat_img("M_Musgo", ma, mn, tint=(2.5, 2.4, 1.2), rough=1.0), terra=_mat_img("M_Terra", pa, pn, tint=(0.28, 0.22, 0.17), rough=1.0))
     return novos
 
 def trocar_materiais(o, antigos, novos):

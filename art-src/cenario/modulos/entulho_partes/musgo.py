@@ -19,7 +19,7 @@ def _almofada(c, nw, r, sub, M):
     for p in me.polygons: p.use_smooth = rnd.random() < 0.0
     return o
 
-def construir(M, blocos, n=16):
+def construir(M, blocos, n=8):
     cand = []
     for o in blocos:
         mw = o.matrix_world
@@ -32,7 +32,7 @@ def construir(M, blocos, n=16):
     for _ in range(n):
         c, nw, _a = rnd.choices(cand, weights=[a for *_x, a in cand])[0]
         out.append(_almofada(c, nw, rnd.uniform(0.05, 0.09), 2, M))
-        for _k in range(2):      # satélites: bordas irregulares e mistura com a pedra
+        for _k in range(4):      # satélites: bordas irregulares e mistura com a pedra
             d = Vector((rnd.uniform(-1, 1), rnd.uniform(-1, 1), 0)).normalized() * rnd.uniform(0.05, 0.1)
             q = nw.to_track_quat('Z', 'Y'); d = q @ d
             out.append(_almofada(c + d, nw, rnd.uniform(0.025, 0.045), 1, M))

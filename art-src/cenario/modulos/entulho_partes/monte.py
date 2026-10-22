@@ -12,20 +12,21 @@ def construir(M):
         o = forma.para_objeto(bm, nome, mat, (math.cos(a) * rr, math.sin(a) * rr * 0.8, z), (rnd.uniform(0, 6.28), rnd.uniform(0, 6.28), rnd.uniform(0, 6.28)))
         pecas.append(o); return o
     mats = lambda: M["pedra"] if rnd.random() > 0.35 else M["escura"]
-    # camada 1: lajes grandes (poucas)
+    # camada 1: núcleo de blocos grandes
     for i in range(4):
-        s = (rnd.uniform(0.5, 0.75), rnd.uniform(0.4, 0.55), rnd.uniform(0.22, 0.32))
-        solta(forma.laje(s, fraturas=rnd.randint(2, 3), sub=2), f"laje{i}", mats(), 0.1, 0.4 + i * 0.5)
-    # camada 2: médias
-    for i in range(14):
-        s = (rnd.uniform(0.24, 0.44), rnd.uniform(0.2, 0.36), rnd.uniform(0.14, 0.26))
-        solta(forma.laje(s, fraturas=rnd.randint(2, 3), sub=1), f"media{i}", mats(), 0.3, 2.0 + i * 0.45)
-    # camada 3: lascas e cascalho
-    for i in range(40):
-        solta(forma.cascalho(rnd.uniform(0.07, 0.15), 0.55, 10, sub=0), f"lasca{i}", mats(), 0.33, 9.5 + i * 0.22)
-    # pó de pedra: cascalho miúdo espalhado
-    for i in range(60):
-        solta(forma.cascalho(rnd.uniform(0.025, 0.055), 0.6, 8), f"po{i}", mats(), 0.4, 19.0 + i * 0.15)
+        s = (rnd.uniform(0.5, 0.75), rnd.uniform(0.4, 0.55), rnd.uniform(0.26, 0.38))
+        solta(forma.laje(s, fraturas=rnd.randint(2, 3), sub=1), f"laje{i}", mats(), 0.1, 0.4 + i * 0.5)
+    # camada 2: médias lascadas e médias arredondadas
+    for i in range(8):
+        s = (rnd.uniform(0.24, 0.42), rnd.uniform(0.2, 0.34), rnd.uniform(0.14, 0.26))
+        solta(forma.laje(s, fraturas=rnd.randint(2, 3), sub=0), f"media{i}", mats(), 0.28, 3.0 + i * 0.4)
+    for i in range(8):
+        solta(forma.redonda(rnd.uniform(0.11, 0.2), rnd.uniform(0.6, 0.85)), f"redonda{i}", mats(), 0.3, 6.5 + i * 0.35)
+    # camada 3: lascas e pó de pedra
+    for i in range(30):
+        solta(forma.cascalho(rnd.uniform(0.07, 0.15), 0.55, 10, sub=0), f"lasca{i}", mats(), 0.33, 9.8 + i * 0.2)
+    for i in range(36):
+        solta(forma.cascalho(rnd.uniform(0.025, 0.055), 0.6, 8), f"po{i}", mats(), 0.4, 16.5 + i * 0.15)
     poses = os.path.join(os.path.dirname(os.path.abspath(__file__)), "poses.json")
     if os.path.exists(poses) and not os.environ.get("ENTULHO_SIMULAR"):
         # pose já assentada e aprovada (a física do Blender não é determinística): reaplica por nome

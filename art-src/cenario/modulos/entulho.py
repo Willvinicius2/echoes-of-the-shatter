@@ -22,7 +22,7 @@ chao = terra.construir(M, (sum(c.x for c in cs) / len(cs), sum(c.y for c in cs) 
 import random
 for o in pedras:   # tom por pedra: de bege quente a cinza frio, brilho variado
     k = random.Random(zlib.crc32(o.name.encode())); b = k.uniform(1.15, 1.65); w = k.uniform(0.0, 1.0)
-    texturas.preparar(o, (b * (0.96 + 0.08 * w), b * 0.97, b * (1.02 - 0.1 * w)))
+    texturas.preparar(o, (b * (1.0 + 0.06 * w), b * (0.96 + 0.04 * w), b * (0.88 + 0.1 * (1 - w))))
 for o in tufos: texturas.preparar(o, (1, 1, 1))
 texturas.preparar(chao, (1, 1, 1))
 bpy.ops.object.select_all(action='DESELECT')
@@ -41,7 +41,7 @@ texturas.trocar_materiais(o, M, novos)
 texturas.oclusao_vertice(o)
 os.makedirs(OUT, exist_ok=True)
 bpy.ops.object.select_all(action='DESELECT'); o.select_set(True)
-bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, "SM_Cripta_Entulho.glb"), use_selection=True, export_format='GLB', export_yup=True)
+bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, "SM_Cripta_Entulho.glb"), use_selection=True, export_format='GLB', export_yup=True, export_image_format='JPEG', export_jpeg_quality=85)
 print("exportado SM_Cripta_Entulho", tris, "tris", tuple(round(d, 2) for d in o.dimensions))
 
 if PREV:

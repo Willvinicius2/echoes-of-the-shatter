@@ -3,7 +3,7 @@ import bpy, bmesh, math, random
 from mathutils import Vector
 
 import os
-rnd = random.Random(int(os.environ.get("ENTULHO_SEED", "13")))
+rnd = random.Random(int(os.environ.get("ENTULHO_SEED", "16")))
 
 def mat(name, color, rough=0.9):
     m = bpy.data.materials.new(name); m.use_nodes = True

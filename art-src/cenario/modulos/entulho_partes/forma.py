@@ -14,9 +14,9 @@ def _bevel_desigual(bm, base):
     # duas passadas com larguras diferentes: arestas “gastas” e arestas “vivas”
     gastas = [e for e in escolha if rnd.random() < 0.4]
     vivas = [e for e in escolha if e not in gastas]
-    if vivas: bmesh.ops.bevel(bm, geom=vivas, offset=base * rnd.uniform(0.02, 0.05), segments=1, affect='EDGES')
+    if vivas: bmesh.ops.bevel(bm, geom=vivas, offset=base * rnd.uniform(0.04, 0.09), segments=2, affect='EDGES')
     gastas = [e for e in gastas if e.is_valid]
-    if gastas: bmesh.ops.bevel(bm, geom=gastas, offset=base * rnd.uniform(0.06, 0.13), segments=2, affect='EDGES')
+    if gastas: bmesh.ops.bevel(bm, geom=gastas, offset=base * rnd.uniform(0.12, 0.22), segments=3, affect='EDGES')
 
 def _hull(bm):
     r = bmesh.ops.convex_hull(bm, input=bm.verts[:], use_existing_faces=False)
@@ -69,6 +69,19 @@ def cascalho(r, achatado=0.6, pontos=10, sub=0):
         bm.verts.new((v.x * rnd.uniform(0.8, 1.5), v.y, v.z))
     _hull(bm)
     _rugoso(bm, r, sub, amp=0.07)
+    return bm
+
+def redonda(r, achatado=0.7):
+    """Pedra média arredondada e lascada: icosfera achatada, deslocada por ruído, com algumas lascas planas."""
+    bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=1, radius=r)
+    ex, ey = rnd.uniform(0.8, 1.35), rnd.uniform(0.8, 1.2)
+    for v in bm.verts: v.co = Vector((v.co.x * ex, v.co.y * ey, v.co.z * achatado))
+    for _ in range(rnd.randint(1, 2)):
+        n = Vector((rnd.gauss(0, 1), rnd.gauss(0, 1), rnd.gauss(0, 1))).normalized()
+        bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=n * r * rnd.uniform(0.62, 0.8), plane_no=n, clear_outer=True)
+        bord = [e for e in bm.edges if e.is_boundary]
+        if bord: bmesh.ops.holes_fill(bm, edges=bord)
+    _rugoso(bm, r, 0, amp=0.1)
     return bm
 
 def para_objeto(bm, nome, mat, loc, rot):
