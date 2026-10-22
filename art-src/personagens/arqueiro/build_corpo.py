@@ -13,8 +13,8 @@ import clips_arqueiro as C
 sys.path.insert(0, HERE)
 import proporcao
 
-FBX = r"D:\openclaude\_trabalho-claude\modelos3d\modular_arqueiro\final\SK_Archer_Body.fbx"
-TEX = r"D:\openclaude\_trabalho-claude\modelos3d\modular_arqueiro\final\T_Archer_Body_BC.png"
+FBX = os.environ.get("ARQ_CORPO_FBX") or r"D:\openclaude\_trabalho-claude\modelos3d\modular_arqueiro\final\SK_Archer_Body.fbx"
+TEX = os.environ.get("ARQ_CORPO_TEX") or os.path.join(HERE, "tex_corpo", "T_Archer_Body_BC.png")  # repintada por pintar_corpo.py
 BOW = r"D:\openclaude\_trabalho-claude\modelos3d\m09_armas\arco\final\SM_Weapon_Bow.fbx"
 BOW_TEX = r"D:\openclaude\_trabalho-claude\modelos3d\m09_armas\arco\final\T_Weapon_Bow_BC.png"
 GLB = os.path.join(REPO, "godot", "art", "models", "personagens", "arqueiro", "Arqueiro_Corpo.glb")
