@@ -80,12 +80,12 @@ if PREV:
         fm = bpy.data.materials.new("chama_prev"); fm.use_nodes = True; nt = fm.node_tree
         for nd in list(nt.nodes): nt.nodes.remove(nd)
         img = nt.nodes.new("ShaderNodeTexImage"); img.image = bpy.data.images.load(fp)
-        em = nt.nodes.new("ShaderNodeEmission"); em.inputs["Strength"].default_value = 4.0
+        em = nt.nodes.new("ShaderNodeEmission"); em.inputs["Strength"].default_value = 2.6
         tr = nt.nodes.new("ShaderNodeBsdfTransparent"); mx = nt.nodes.new("ShaderNodeMixShader"); out = nt.nodes.new("ShaderNodeOutputMaterial")
         nt.links.new(img.outputs["Color"], em.inputs["Color"]); nt.links.new(img.outputs["Alpha"], mx.inputs[0])
         nt.links.new(tr.outputs[0], mx.inputs[1]); nt.links.new(em.outputs[0], mx.inputs[2]); nt.links.new(mx.outputs[0], out.inputs[0])
-        for k, (w, h, yaw, dx) in enumerate(((1.0, 0.95, 0.0, 0.0), (1.0, 0.95, 1.05, 0.03), (0.75, 0.7, 2.1, -0.03))):
-            bpy.ops.mesh.primitive_plane_add(size=1, location=(dx, 0, 1.26 + h / 2), rotation=(math.pi / 2, 0, yaw))
+        for k, (w, h, yaw, dx) in enumerate(((1.2, 0.85, 0.0, 0.0), (1.2, 0.85, 1.05, 0.03), (0.9, 0.65, 2.1, -0.03))):
+            bpy.ops.mesh.primitive_plane_add(size=1, location=(dx, 0, 1.36 + h / 2 - 0.1), rotation=(math.pi / 2, 0, yaw))
             c = bpy.context.object; c.scale = (w, h, 1); c.data.materials.append(fm)
             c.visible_shadow = False
     sc = setup_render(800)

@@ -241,8 +241,8 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	luz.light_color = Color(1.0, 0.62, 0.25); luz.light_energy = 8.0; luz.omni_range = 15.0; luz.omni_attenuation = 1.6
 	luz.set_script(load("res://scripts/cripta/BraseiroLuz.cs"))
 	n.add_child(luz)
-	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.32, 0)
-	var tam := [Vector2(1.15, 1.75), Vector2(0.8, 1.25), Vector2(0.55, 0.95)]
+	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.30, 0)
+	var tam := [Vector2(1.45, 1.2), Vector2(1.1, 0.95), Vector2(0.75, 0.7)]
 	for k in 3:
 		var qm := QuadMesh.new(); qm.size = tam[k]; qm.center_offset = Vector3(0, tam[k].y * 0.5, 0)
 		var sm := ShaderMaterial.new(); sm.shader = load("res://art/shaders/chama.gdshader")

@@ -100,8 +100,8 @@ def tex_forro(nome, seed, n=512):
     """Forro da bacia em projeção planar: fuligem preta nas bordas, ferro avermelhado e brilho laranja perto do centro (fogo)."""
     rg = np.random.default_rng(seed); gr = fnoise(n, 1.6, rg); fino = fnoise(n, 0.9, rg)
     y, x = np.mgrid[0:n, 0:n] / (n - 1.0); rr = np.hypot(x - 0.5, y - 0.5) * 2    # 0 centro .. 1 aro
-    quente = np.clip(1 - rr / 0.85, 0, 1) ** 1.4 * (0.7 + 0.5 * gr)
-    sujo = 0.03 + 0.04 * fino
+    quente = np.clip(1 - rr / 1.0, 0, 1) ** 1.1 * (0.7 + 0.6 * gr)
+    sujo = 0.02 + 0.05 * fino * (0.4 + rr)   # fuligem e cinza mais fortes perto do aro
     albedo = np.stack([sujo + 0.28 * quente, sujo * 0.8 + 0.07 * quente, sujo * 0.7 + 0.02 * quente], -1)
     emis = np.stack([quente * 0.85, quente * 0.22, quente * 0.03], -1)
     return _save(albedo, nome + "_albedo.png"), _normal(0.6 * fino + 0.4 * gr, nome + "_normal.png", 8.0), _save(emis, nome + "_emis.png")
@@ -111,18 +111,22 @@ def tex_chama(nome, seed, n=256):
     rg = np.random.default_rng(seed); ruido = fnoise(n, 1.8, rg)
     y, x = np.mgrid[0:n, 0:n] / (n - 1.0); h = 1 - y                      # h: 0 base .. 1 ponta
     cx = (x - 0.5) * 2 + (ruido - 0.5) * 0.7 * h
-    largura = (0.95 - 0.9 * h ** 1.2) * (1 + 0.3 * (ruido - 0.5))
-    corpo = smooth(largura - np.abs(cx), 0.0, largura * 0.7 + 1e-3) * smooth(1.0, 0.35, h + (ruido - 0.5) * 0.4) * smooth(h, 0.0, 0.05)
+    largura = (0.8 - 0.76 * h ** 1.4) * (1 + 0.45 * (ruido - 0.5))
+    corpo = smooth(largura - np.abs(cx), 0.0, largura * 0.7 + 1e-3) * smooth(1.0, 0.3, h + (ruido - 0.5) * 0.5) * smooth(h, 0.0, 0.3)   # base some devagar: sem corte serrilhado
     quente = np.clip(corpo ** 1.6 * (1 - h * 0.55), 0, 1)
     col = _rampa(0.25 + 0.75 * quente)
     a = np.concatenate([np.clip(col, 0, 1) ** (1 / 2.2), np.clip(corpo, 0, 1)[..., None]], -1)
     p = os.path.join(TEX_DIR, nome + ".png"); Image.fromarray((a * 255).astype(np.uint8), "RGBA").save(p); return p
 
 def tex_cinza(nome, seed, n=512):
-    rg = np.random.default_rng(seed); base = fnoise(n, 1.4, rg); fino = fnoise(n, 0.7, rg)
+    """Cinza do fundo (projeção planar, 0..1 = diâmetro do disco): escura, com pó claro na borda e brilho laranja de brasa no miolo."""
+    rg = np.random.default_rng(seed); base = fnoise(n, 1.4, rg); fino = fnoise(n, 0.7, rg); gr = fnoise(n, 2.2, rg)
     y, x = np.mgrid[0:n, 0:n] / (n - 1.0); rr = np.clip(np.hypot(x - 0.5, y - 0.5) * 2, 0, 1)
-    v = 0.012 + 0.02 * base + 0.02 * smooth(fino, 0.7, 0.9) + 0.045 * rr ** 2 * (0.5 + base)   # cinza clara e pó nas bordas
-    return _save(np.stack([v, v * 0.96, v * 0.93], -1), nome + "_albedo.png"), _normal(0.5 * base + 0.5 * fino, nome + "_normal.png", 6.0)
+    v = 0.008 + 0.014 * base + 0.015 * smooth(fino, 0.7, 0.9) + 0.025 * rr ** 2 * (0.5 + base)
+    quente = np.clip(1 - rr / 0.9, 0, 1) ** 1.5 * (0.35 + 0.9 * smooth(gr, 0.3, 0.8))
+    alb = np.stack([v + 0.035 * quente, v * 0.95 + 0.01 * quente, v * 0.9], -1)
+    emis = np.stack([quente * 0.8, quente * 0.2, quente * 0.025], -1)
+    return _save(alb, nome + "_albedo.png"), _normal(0.5 * base + 0.5 * fino, nome + "_normal.png", 6.0), _save(emis, nome + "_emis.png")
 
 # ---------------------------------------------------------------- materiais
 def mat(name, color=(1, 1, 1), metal=0.0, rough=0.85, image=None, normal=None, emis=None, emis_strength=0.0):
@@ -145,13 +149,13 @@ FERRO = mat("M_Braseiro_Ferro", (1, 1, 1), 0.55, 0.7, *tex_metal("ferro", 7, ful
 ENVELH = mat("M_Braseiro_FerroEnvelhecido", (1, 1, 1), 0.5, 0.78, *tex_metal("envelhecido", 23, ferrugem=(0.50, 0.66), tom=(0.075, 0.058, 0.048)))
 FUL = mat("M_Braseiro_Fuligem", (1, 1, 1), 0.3, 0.9, *tex_metal("fuligem", 41, ferrugem=(0.7, 0.85), fuligem=0.95, tom=(0.05, 0.045, 0.045)))
 _fa, _fn, _fe = tex_forro("forro", 13)
-FORRO = mat("M_Braseiro_Forro", (1, 1, 1), 0.35, 0.85, _fa, _fn, _fe, 1.6)
+FORRO = mat("M_Braseiro_Forro", (1, 1, 1), 0.35, 0.85, _fa, _fn, _fe, 1.5)
 PEDRA = mat("M_Braseiro_Pedra", (1, 1, 1), 0.0, 0.92, *tex_pedra("pedra", 5))
 _a, _n, _e = tex_brasa("brasa", 3)
 BRASA = mat("M_Braseiro_Brasa", (1, 1, 1), 0.0, 0.7, _a, _n, _e, 3.0)
 BRASA_FRIA = mat("M_Braseiro_BrasaFria", (1, 1, 1), 0.0, 0.85, _a, _n, _e, 0.9)
 BRASA_NUCLEO = mat("M_Braseiro_BrasaNucleo", (1, 1, 1), 0.0, 0.6, _a, _n, _e, 7.0)
-CINZA = mat("M_Braseiro_Cinza", (1, 1, 1), 0.0, 1.0, *tex_cinza("cinza", 9))
+CINZA = mat("M_Braseiro_Cinza", (1, 1, 1), 0.0, 1.0, *tex_cinza("cinza", 9), 0.7)
 
 # ---------------------------------------------------------------- malha
 def rng(seed): return random.Random(seed)
@@ -259,7 +263,7 @@ def uv_todos():
     for o in objs:
         for i, m in enumerate(o.data.materials):
             if m is None: o.data.materials[i] = PEDRA if 'fb' in o.name else FERRO   # slot vazio deixado pelo boolean
-        uv_plano(o) if o.name.startswith('forro') else uv_caixa(o)
+        uv_plano(o, 0.52) if o.name.startswith('cinza') else (uv_plano(o) if o.name.startswith('forro') else uv_caixa(o))
 
 def bake_vertex_colors(body):
     """Oclusão/cavidade em vertex color: arestas vivas claras, frestas e fuligem escuras (multiplica o albedo)."""
