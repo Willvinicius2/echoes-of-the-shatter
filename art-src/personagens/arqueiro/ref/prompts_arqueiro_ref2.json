@@ -1,0 +1,35 @@
+[
+    {
+        "referencias":  [
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/docs/arte/referencias-geracao/aprovadas/03_arqueiro.png",
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/docs/arte/referencias-geracao/aprovadas/modelagem/mod_a02_arqueiro_inicial.png",
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/art-src/personagens/arqueiro/ref/arq_ref_angulos.png"
+                        ],
+        "titulo":  "Arqueiro: 8 lados, cima e baixo",
+        "prompt":  "TURNAROUND REFERENCE SHEET for 3D modeling. The Archer in neutral A-pose holding the bow in the left hand. Top row, 5 full-body views same scale and ground line: FRONT, FRONT-RIGHT three-quarter, RIGHT side, BACK-RIGHT three-quarter, BACK. Second row, 5 full-body views: BACK-LEFT three-quarter, LEFT side, FRONT-LEFT three-quarter, TOP-DOWN view (seen from directly above, hood and shoulders), BOTTOM-UP view (seen from low below, soles of boots, underside of cloak). Whole body in each cell with margin. Finished stylized 3D game model look in the hand-painted chunky style of the approved sheets: sculpted, rounded, bevelled volumes, painted-on shading, NOT clay, NOT stacked blocks. Attached image 1 is the canonical design sheet of OUR Archer, image 2 the owner-approved modeling sheet, image 3 our angle reference sheet. Draw EXACTLY the same character: same chibi proportions (about 3 heads tall), same hood with bone beak mask, feather mantle, outfit, colours, bone bow and quiver. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid, no frame, no UI.",
+        "id":  "arq_ref_angulos2",
+        "tamanho":  "1536x1024"
+    },
+    {
+        "referencias":  [
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/docs/arte/referencias-geracao/aprovadas/03_arqueiro.png",
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/docs/arte/referencias-geracao/aprovadas/modelagem/mod_a02_arqueiro_inicial.png",
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/art-src/personagens/arqueiro/ref/arq_ref_angulos.png"
+                        ],
+        "titulo":  "Arqueiro: poses de combate 1",
+        "prompt":  "ANIMATION POSE REFERENCE SHEET for 3D animators, 3x2 grid, same scale, three-quarter game camera from slightly above, one pose per cell: 1 CROUCH SHOOTING (kneeling on one knee, aiming the drawn bow); 2 NOCKING / RELOADING the arrow (pulling an arrow from the back quiver, other hand holding the bow); 3 TAKING DAMAGE (flinching back, torso twisted, one arm up); 4 DYING (collapsing backwards, falling, bow dropping from hand); 5 MELEE BOW STRIKE (swinging the bow like a club, mid-swing, cloak flaring); 6 CHARGING A POWER SHOT (bow fully drawn, green energy gathering on the arrow tip, feet braced). Finished stylized 3D game model look in the hand-painted chunky style of the approved sheets: sculpted, rounded, bevelled volumes, painted-on shading, NOT clay, NOT stacked blocks. Attached image 1 is the canonical design sheet of OUR Archer, image 2 the owner-approved modeling sheet, image 3 our angle reference sheet. Draw EXACTLY the same character: same chibi proportions (about 3 heads tall), same hood with bone beak mask, feather mantle, outfit, colours, bone bow and quiver. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid, no frame, no UI.",
+        "id":  "arq_ref_poses2",
+        "tamanho":  "1536x1024"
+    },
+    {
+        "referencias":  [
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/docs/arte/referencias-geracao/aprovadas/03_arqueiro.png",
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/docs/arte/referencias-geracao/aprovadas/modelagem/mod_a02_arqueiro_inicial.png",
+                            "D:/openclaude/_trabalho-claude/wt/arqueiro/art-src/personagens/arqueiro/ref/arq_ref_angulos.png"
+                        ],
+        "titulo":  "Arqueiro: poses de movimento 2",
+        "prompt":  "ANIMATION POSE REFERENCE SHEET for 3D animators, 3x2 grid, same scale, three-quarter game camera from slightly above, one pose per cell: 1 ROLL (mid-roll, curled ball, bow tucked in); 2 JUMP (launch/apex with legs tucked, cloak flaring); 3 FALLING (arms up, legs dangling, cloak fluttering upward); 4 LANDING (deep crouch absorbing the impact, one hand on ground); 5 RUN (full-speed sprint, leaning forward); 6 IDLE (relaxed standing, breathing, bow at side). Finished stylized 3D game model look in the hand-painted chunky style of the approved sheets: sculpted, rounded, bevelled volumes, painted-on shading, NOT clay, NOT stacked blocks. Attached image 1 is the canonical design sheet of OUR Archer, image 2 the owner-approved modeling sheet, image 3 our angle reference sheet. Draw EXACTLY the same character: same chibi proportions (about 3 heads tall), same hood with bone beak mask, feather mantle, outfit, colours, bone bow and quiver. Plain flat uniform light grey background (#C8C8C8), no floor, no cast shadow, no scenery, no text, no labels, no numbers, no grid, no frame, no UI.",
+        "id":  "arq_ref_poses3",
+        "tamanho":  "1536x1024"
+    }
+]
