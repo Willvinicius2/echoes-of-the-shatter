@@ -46,6 +46,7 @@ def _chip(L, o, pos, size, seed):
 
 def build(L):
     R = L.rng(11)
+    L.mat("M_PedraEscura", (0.125, 0.13, 0.19), 0.0, 0.9); L.mat("M_PedraClara", (0.19, 0.195, 0.27), 0.0, 0.85)   # mesmo tom da parede
     esc = L.stone('escura'); cla = esc   # mesmo tom azul-violeta do nicho/arco (a pedra clara lia marrom sob o sol quente)
     H = L.WALL_H; P = L.PLINTH; CZ = L.CORNICE_Z; h = L.WALL_T / 2   # 0.6
     S = h - INSET   # face da sala do fuste
@@ -156,4 +157,12 @@ def build(L):
         bak = obj.data.copy(); v0 = _vol(obj)
         _chip(L, obj, pos, sz, sd); L.bevel_obj(obj, 0.008, 1, 40)
         if not (_bm_check(obj) and 0.6 * v0 < _vol(obj) < 0.995 * v0): obj.data = bak
+    # normais para fora em todas as peças (antes do join) e conferência
+    bad = 0
+    for o in L.objs:
+        bm = bmesh.new(); bm.from_mesh(o.data)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        bm.to_mesh(o.data); bm.free(); o.data.update()
+        if o.data.materials and o.data.materials[0] is None: print("SEM MATERIAL", o.name)
+    print("MATS", sorted({m.name for o in L.objs for m in o.data.materials if m}))
     L.col_box((0, 0, H / 2), (1.2, 1.2, H))
