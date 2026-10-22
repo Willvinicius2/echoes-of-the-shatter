@@ -7,6 +7,7 @@ extends RefCounted
 const QUEDA_ANDAR := 4.0            # desnível entre andares (m), guia docs/arte/24
 const PE_DIREITO_SALA := 5.4        # altura da parede da sala acima do piso (m)
 const PE_DIREITO_CORREDOR := 4.5
+const RELEVO := 0.15               # fração do relevo original mantida no chão jogável
 const K_UNIAO := 2.6                # suavização da união de salas e corredores (m)
 
 # Primitivas por sala: ["b", cx, cz, meia_larg, meia_prof, raio_canto] ou ["e", cx, cz, rx, rz]
@@ -163,8 +164,9 @@ static func _ondas(px: float, pz: float) -> float:
 
 # altura do chão (sem rocha)
 static func chao(px: float, pz: float) -> float:
-	var pequeno := _ruido_a.get_noise_2d(px, pz) * 0.24 + _ruido_b.get_noise_2d(px, pz) * 0.06
-	var base := _ondas(px, pz) + pequeno
+	# chão jogável quase plano: relevo forte distorce a projeção planar da textura do piso (só ~4 cm de ondulação)
+	var pequeno := (_ruido_a.get_noise_2d(px, pz) * 0.24 + _ruido_b.get_noise_2d(px, pz) * 0.06) * RELEVO
+	var base := _ondas(px, pz) * RELEVO + pequeno
 	var lvl := nivel(px, pz)
 	var e := em_escada(px, pz)
 	var plano := _praca(px, pz)

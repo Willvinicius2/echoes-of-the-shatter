@@ -4,7 +4,7 @@ render_mode unshaded, blend_add, cull_disabled, depth_draw_never;
 // Chama de braseiro: cartão billboard com máscara em gota deformada por ruído que sobe.
 uniform vec3 core_color : source_color = vec3(1.0, 0.85, 0.45);
 uniform vec3 edge_color : source_color = vec3(1.0, 0.25, 0.03);
-uniform float intensity = 1.6;
+uniform float intensity = 0.65;
 uniform float speed = 1.4;
 uniform float seed = 0.0;
 void vertex() {

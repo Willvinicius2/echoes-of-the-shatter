@@ -32,10 +32,10 @@ Tamanho do `.glb` como exportado, escala uniforme sugerida e tamanho final. O `d
 | Pilar v6 | 3,4 × 6,25 × 3,4 | 0,70 | 2,4 × 4,4 × 2,4 | Cobertura de arena; não encosta no teto (pé-direito 5,4). Em corredor de 6 m, só em nicho |
 | Coluna com corrente v3 | 5,56 × 3,55 × 2,46 | 0,90 | 5,0 × 3,2 × 2,2 | Peça de efeito, no máximo 1 por sala; conferir orientação antes |
 | Braseiro | 1,46 × 1,76 × 1,46 | 0,75 | 1,1 × 1,3 × 1,1 | Altura de cintura (0,73 do herói); fonte de luz quente |
-| Velas | 0,76 × 0,68 × 0,66 | 1,00 | 0,76 × 0,68 | Em grupos no chão e em degraus |
+| Velas | 0,76 × 0,68 × 0,66 | 1,00 | 0,76 × 0,68 | Só em altar, nicho ou junto à base da estátua (oferenda); nunca soltas no chão |
 | Estandarte v2 | 2,33 × 3,56 × 1,38 | 0,90 | 2,1 × 3,2 × 1,2 | Pendurado na parede, base a 1,6 m do chão |
 | Estátua encapuzada | 2,38 × 3,22 × 2,16 | 0,80 | 1,9 × 2,6 × 1,7 | Em nicho; 1,45 × herói, impõe sem competir com o chefe |
-| Entulho | 2,22 × 0,92 × 2,07 | 0,60 | 1,3 × 0,55 × 1,2 | Altura de joelho; nunca bloqueia a passagem de 6 m |
+| Entulho | 2,22 × 0,92 × 2,07 | 0,60 | 1,3 × 0,55 × 1,2 | Só em cantos de sala, colado à parede; nunca no tapete nem na passagem de 6 m |
 | Tapete corredor | 3,58 × 0,14 × 6,38 | 0,65 | 2,3 × 4,1 | Largura = 2/5 do corredor, centralizado |
 | Tapete grande | 8,0 × 0,25 × 16,39 | 1,00 | 8 × 16,4 | Só Átrio, Antecâmara e Arena |
 | Piso (módulo) | 8 × 0,23 × 8 | 1,00 | 8 × 8 | Lajota de 1 m; junta e desgaste variam por módulo |
@@ -84,3 +84,26 @@ Hoje `maps.csv` tem um mapa só: `map.act1.crypt`, `monsterLevel=3`, 7 encontros
 | A3 | 9 | `guardian` (chefe) | nível do chefe sobe: rebalancear `crypt_guardian` com o balanceamento |
 
 Como fica nos dados: ou 4 linhas em `maps.csv` (`map.act1.crypt.a0` … `.a3`, mesmo conteúdo, `idleAllowed` só no que o idle puder simular), ou um campo novo de andar (`floor`) em `maps.csv`; a segunda opção muda o esquema `maps.schema.json` e a API C. Recomendação: 4 linhas em `maps.csv` (não muda o core). Um pacote de dados e o designer de balanceamento decidem os números finais; este guia só fixa a ordem e a progressão +2 níveis por andar.
+
+
+## 5. Regras de composição (revisão de 22/10/2026, após o teste do Will)
+
+Cada objeto precisa de um motivo para estar onde está e de espaço livre. As regras abaixo são verificadas pelo `build_terreno.gd` (funções `_livre`, `_reservar`, `_zonas_proibidas`).
+
+| Peça | Motivo (onde pode ficar) | Proibido |
+|---|---|---|
+| Piso e tapete | Piso em toda praça; tapete grande só em Átrio, Antecâmara e Arena; tapete de corredor no centro do trecho reto. Sempre sobre chão plano, 5 cm acima | Tapete sobre relevo; qualquer peça em cima do tapete |
+| Braseiro | Em par ladeando o tapete (a 5,9 m do eixo), na parede alternado com estandarte, um por corredor e no contorno da Arena | Perto de outro braseiro (0,8 m de folga), em cima de tapete |
+| Estandarte | Pendurado na parede, entre braseiros | Solto no meio da sala |
+| Pilar | Pilastra na parede (alterna com braseiro); cobertura de combate só em Arena (anel de 8, raio 13 m), R05 (4), R06 e R07 (2 cada), sempre com chão aberto entre eles | Na frente de escada ou boca de corredor (5 m de folga), no eixo do tapete |
+| Coluna com corrente | Uma por sala de peso: no Átrio encostada à parede lateral, deixando a boca da escada livre; na Arena atrás do chefe | No eixo de escada ou porta |
+| Estátua | Em nicho na parede (Átrio, Antecâmara, nicho S01) | Em passagem |
+| Velas | Três em volta da base da estátua ou do altar | Em qualquer outro lugar, especialmente soltas no chão |
+| Entulho | Só em cantos de sala (parede cercando >58% do entorno), colado à parede | Em tapete, na passagem, perto de peça |
+| Poça (decal v7) | Em chão plano, fora de tapete e de peças | Em parede, pilar ou boca de corredor |
+
+Zonas proibidas para qualquer peça: raio de 5 m nas pontas dos corredores, 6 m nos topos e fundos de escada, 4 m no ponto inicial e 3 m na posição do chefe.
+
+Chão: o relevo foi reduzido a 15% (ondulação de ~4 cm) para a textura planar do piso não esticar; só a rocha das paredes e as rampas das escadas têm inclinação.
+Colisão: toda peça tem `StaticBody3D` na camada Mundo com forma simples tirada da caixa da malha (cilindro para pilar, braseiro e velas; caixa para coluna, estátua, entulho e estandarte); cada escada tem uma rampa lisa de colisão pela ponta dos degraus.
+Luz de fogo: braseiro 2,0 de energia e 6 m de alcance, brilho de bacia 0,7 e 2,2 m, tremulação suave de 12%, chama aditiva a 0,65 e bloom com limiar 1,3 (antes 8,0 de energia e 1,6 de chama, que estourava a tela).
