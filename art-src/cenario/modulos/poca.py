@@ -4,7 +4,8 @@ Metros, +Z para cima, pivô no centro da poça, apoiada em z=0 (piso). Três var
 B alongada com rabo, C rim de dois lóbulos). Cada variante é um .glb com 3 malhas:
   - Agua: lâmina rasa de contorno irregular e nítido, borda com menisco; UV2 = (profundidade, opacidade) para o shader.
   - Anel: faixa de pedra molhada escurecendo o piso em volta (alfa degradê, falhando com ruído).
-  - Pedrinhas: seixos na borda e dentro d'água (material M_PedraEscura, o Godot troca pela pedra triplanar).
+  - Limo: calotas de musgo junto à borda (M_Limo). Variantes: A pequena, B média alongada, C grande com ilha de pedra.
+  - Pedrinhas: seixos facetados e blocos da ilha (C) (material M_PedraEscura, o Godot troca pela pedra triplanar).
 Materiais por nome (o Godot troca): M_Agua -> cripta_agua.gdshader; M_AnelMolhado -> M_Cripta_AnelMolhado.tres."""
 import bpy, bmesh, math, os, random, sys
 from mathutils import Vector
@@ -16,9 +17,9 @@ VARS = os.environ.get("VARIANTES", "A,B,C").split(",")
 
 # ---- contrato de medidas por variante: (semente, raio base, escala x, escala y, lóbulos[(ângulo, força, largura)])
 VAR = {
-    "A": dict(seed=11, R=0.46, sx=1.0, sy=0.9, lobes=[(0.6, 0.28, 0.5)], ring=0.30, n_peb=16),
-    "B": dict(seed=23, R=0.42, sx=1.55, sy=0.62, lobes=[(3.2, 0.45, 0.35), (0.2, 0.18, 0.5)], ring=0.26, n_peb=20),
-    "C": dict(seed=37, R=0.40, sx=1.15, sy=0.85, lobes=[(1.1, 0.55, 0.45), (4.3, 0.5, 0.5)], ring=0.34, n_peb=18),
+    "A": dict(seed=11, R=0.21, sx=1.0, sy=0.85, lobes=[(0.6, 0.3, 0.5)], ring=0.16, n_peb=4, tongues=2, musgo=1, ilha=0),    # pequena
+    "B": dict(seed=23, R=0.34, sx=1.7, sy=0.55, lobes=[(3.2, 0.45, 0.35), (0.2, 0.18, 0.5)], ring=0.24, n_peb=7, tongues=4, musgo=2, ilha=0),  # média alongada
+    "C": dict(seed=37, R=0.62, sx=1.12, sy=0.9, lobes=[(1.1, 0.4, 0.45), (4.3, 0.35, 0.5)], ring=0.32, n_peb=8, tongues=5, musgo=3, ilha=1),   # grande com ilha de pedra
 }
 Z_BORDA, Z_MENISCO, Z_AGUA = 0.003, 0.011, 0.014     # perfil da lâmina (m)
 Z_ANEL = 0.0015
@@ -110,7 +111,10 @@ def parte_anel(v, M, f, S=128, N=9):
         for s in range(S):
             th = 6.2832 * s / S; p = f(th)
             alcance = v["ring"] * (0.55 + 0.45 * (ruido_t(sem, th, 6) * 0.5 + 0.5) ** 1.2 + 0.25 * ruido_t(sem + 3, th * 3.1, 4))
-            alcance = max(0.07, alcance)
+            for k in range(v["tongues"]):
+                ang = random.Random(sem + 50 + k).uniform(0, 6.2832); d = math.atan2(math.sin(th - ang), math.cos(th - ang))
+                alcance += v["ring"] * 1.9 * math.exp(-(d / 0.11) ** 2)      # escorrido que segue a junta das lajes
+            alcance = max(0.05, alcance)
             n = p.normalized() if p.length > 1e-6 else Vector((1, 0)); lado = Vector((n.x / v["sx"], n.y / v["sy"])).normalized()
             q = p * 0.97 + lado * (alcance * u)
             fur = 0.5 + 0.5 * math.sin(th * 23 + u * 7 + sem) * math.sin(th * 11 - u * 4)     # falhas na mancha: pedra seca aparecendo
@@ -137,15 +141,15 @@ def parte_anel(v, M, f, S=128, N=9):
     for p in me.polygons: p.use_smooth = True
     o = bpy.data.objects.new("Anel", me); bpy.context.collection.objects.link(o); me.materials.append(M["anel"]); return o
 
-def seixo(r, rnd, M):
-    """Pedra pequena: icosfera achatada, deslocada por ruído e com a base cortada reta."""
-    bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=3, radius=1)
-    sx, sy, sz = rnd.uniform(0.8, 1.35), rnd.uniform(0.7, 1.1), rnd.uniform(0.38, 0.62)
+def seixo(r, rnd, M, n=1):
+    """Pedra pequena com arestas: poliedro (icosfera subdiv 1) esticado, vértices deslocados, base reta, sombreado chapado."""
+    bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=n, radius=1)
+    sx, sy, sz = rnd.uniform(0.8, 1.4), rnd.uniform(0.7, 1.15), rnd.uniform(0.35, 0.6)
     for vv in bm.verts:
-        k = 1 + rnd.uniform(-0.17, 0.17); vv.co = Vector((vv.co.x * sx * k, vv.co.y * sy * k, max(vv.co.z * sz * k, -0.25 * sz))) * r
+        k = 1 + rnd.uniform(-0.28, 0.2); vv.co = Vector((vv.co.x * sx * k, vv.co.y * sy * k, max(vv.co.z * sz * k, -0.2 * sz))) * r
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     me = bpy.data.meshes.new("seixo"); bm.to_mesh(me); bm.free()
-    for p in me.polygons: p.use_smooth = True
+    for p in me.polygons: p.use_smooth = False
     me.materials.append(M["pedra"]); return me
 
 def parte_pedrinhas(v, M, f):
@@ -156,7 +160,7 @@ def parte_pedrinhas(v, M, f):
         if zona < 0.55: t = rnd.uniform(0.93, 1.1)          # na borda
         elif zona < 0.8: t = rnd.uniform(0.55, 0.9)         # dentro da água
         else: t = rnd.uniform(1.12, 1.45)                   # espalhadas fora
-        r = rnd.choice((0.012, 0.016, 0.02, 0.026, 0.034, 0.046)) * rnd.uniform(0.85, 1.2)
+        r = rnd.choice((0.016, 0.022, 0.03, 0.04)) * rnd.uniform(0.85, 1.2)
         me = seixo(r, rnd, M); o = bpy.data.objects.new(f"seixo{i}", me); bpy.context.collection.objects.link(o)
         o.location = (p.x * t, p.y * t, 0.0 if t < 0.9 else 0.001); o.rotation_euler = (rnd.uniform(-0.15, 0.15), rnd.uniform(-0.15, 0.15), rnd.uniform(0, 6.28))
         objs.append(o)
@@ -166,20 +170,41 @@ def parte_pedrinhas(v, M, f):
         me = seixo(0.07, rnd, M)
         for vv in me.vertices: vv.co.z *= 0.55
         o = bpy.data.objects.new(f"lasca{i}", me); bpy.context.collection.objects.link(o); o.location = (p.x, p.y, 0.002); o.rotation_euler = (0, 0, rnd.uniform(0, 6.28)); objs.append(o)
+    if v["ilha"]:     # ilha de pedra no meio: laje quebrada com blocos menores empilhados
+        c = f(2.0) * 0.0 + Vector((0.12, -0.05))
+        for k, (dx, dy, rr, hh) in enumerate(((0, 0, 0.15, 0.6), (0.13, 0.05, 0.085, 0.8), (-0.1, 0.09, 0.07, 0.9), (0.04, -0.12, 0.075, 0.7), (-0.02, 0.02, 0.07, 1.6))):
+            me = seixo(rr, rnd, M, 2)
+            for vv in me.vertices: vv.co.z *= hh * (1.0 if k < 4 else 0.7)
+            o = bpy.data.objects.new(f"ilha{k}", me); bpy.context.collection.objects.link(o); o.location = (c.x + dx, c.y + dy, 0.0 + (0.035 if k == 4 else 0)); o.rotation_euler = (0, 0, rnd.uniform(0, 6.28)); objs.append(o)
     bpy.ops.object.select_all(action='DESELECT')
     for o in objs: o.select_set(True)
     bpy.context.view_layer.objects.active = objs[0]; bpy.ops.object.join(); o = bpy.context.object; o.name = "Pedrinhas"
     return o
 
+def parte_limo(v, M, f):
+    """Limo/musgo escuro em calotas baixas e irregulares junto à borda (de vez em quando)."""
+    rnd = random.Random(v["seed"] + 400); bm = bmesh.new()
+    for k in range(v["musgo"]):
+        th = rnd.uniform(0, 6.2832); p = f(th) * rnd.uniform(1.0, 1.12); rr = rnd.uniform(0.05, 0.09) * (v["R"] / 0.4 + 0.5)
+        for j in range(rnd.randint(4, 7)):       # tufo = várias calotas
+            q = p + Vector((rnd.uniform(-rr, rr), rnd.uniform(-rr, rr))); r2 = rr * rnd.uniform(0.3, 0.6)
+            g = bmesh.ops.create_icosphere(bm, subdivisions=2, radius=1, matrix=__import__("mathutils").Matrix.Translation((q.x, q.y, 0.0)))
+            for vv in g["verts"]:
+                if vv.co.z < 0.0 or True:
+                    dz = vv.co.z; vv.co = Vector((q.x + (vv.co.x - q.x) * r2, q.y + (vv.co.y - q.y) * r2, max(dz, 0.0) * 0.016 + rnd.uniform(-0.002, 0.003)))
+    me = bpy.data.meshes.new("Limo"); bm.to_mesh(me); bm.free()
+    for pp in me.polygons: pp.use_smooth = True
+    me.materials.append(M["limo"]); o = bpy.data.objects.new("Limo", me); bpy.context.collection.objects.link(o); return o
+
 # ---------------------------------------------------------------- montagem / exportação / prévias
 def materiais():
-    return dict(agua=mat("M_Agua", (0.012, 0.035, 0.05), 0.02, alpha=0.62, vcol=True),
+    return dict(agua=mat("M_Agua", (0.012, 0.02, 0.04), 0.0, alpha=0.72, vcol=True),
                 anel=mat("M_AnelMolhado", (0.02, 0.025, 0.035), 0.12, alpha=1.0, vcol=True),
-                pedra=mat("M_PedraEscura", (0.07, 0.075, 0.1), 0.45))
+                pedra=mat("M_PedraEscura", (0.034, 0.036, 0.048), 0.5), limo=mat("M_Limo", (0.022, 0.034, 0.016), 0.9))
 
 def construir(nome):
     v = VAR[nome]; M = materiais(); f = contorno(v)
-    partes = [parte_anel(v, M, f), parte_agua(v, M, f), parte_pedrinhas(v, M, f)]
+    partes = [parte_anel(v, M, f), parte_agua(v, M, f), parte_pedrinhas(v, M, f), parte_limo(v, M, f)]
     return v, partes
 
 def exportar(nome, partes):
@@ -194,7 +219,7 @@ def cena_previa(partes, piso_tex):
     sc = bpy.context.scene; sc.render.engine = 'CYCLES'; sc.cycles.samples = int(os.environ.get("AMOSTRAS", 24)); sc.cycles.use_denoising = True
     sc.render.film_transparent = False
     w = bpy.data.worlds.new("w"); w.use_nodes = True; nt = w.node_tree
-    bg = nt.nodes["Background"]; bg.inputs[0].default_value = (0.05, 0.055, 0.07, 1); bg.inputs[1].default_value = 1.0; sc.world = w
+    bg = nt.nodes["Background"]; bg.inputs[0].default_value = (0.11, 0.13, 0.2, 1); bg.inputs[1].default_value = 1.0; sc.world = w
     # piso de referência: lajotas escuras com textura do jogo
     bm = bmesh.new(); bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=2.2)
     uv = bm.loops.layers.uv.new("UVMap")

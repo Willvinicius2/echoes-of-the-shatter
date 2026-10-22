@@ -3,8 +3,15 @@ render_mode blend_mix, depth_draw_opaque, cull_back, specular_schlick_ggx;
 #include "res://art/shaders/ruido.gdshaderinc"
 // Água rasa da Cripta (poça). Lê UV2 da malha: x = profundidade (0 borda, 1 centro), y = opacidade.
 // Reflexo: SSR/ambiente do WorldEnvironment (ative ssr_enabled na Cripta); o brilho de Fresnel cobre o caso sem SSR.
-uniform vec3 shallow_color : source_color = vec3(0.045, 0.095, 0.115);
-uniform vec3 deep_color : source_color = vec3(0.008, 0.026, 0.04);
+uniform sampler2D screen_tex : hint_screen_texture, repeat_disable, filter_linear_mipmap;
+uniform vec3 shallow_color : source_color = vec3(0.07, 0.09, 0.13);   // azul-ardósia, um pouco mais escuro e frio que o piso
+uniform vec3 deep_color : source_color = vec3(0.02, 0.03, 0.06);
+uniform vec3 sky_top : source_color = vec3(0.16, 0.2, 0.32);
+uniform vec3 sky_horizon : source_color = vec3(0.42, 0.5, 0.64);
+uniform vec3 torch_color : source_color = vec3(1.0, 0.55, 0.22);
+uniform vec3 torch_dir = vec3(0.6, 0.45, -0.4);   // direção (mundo) de onde vem a luz das tochas
+uniform float distortion = 0.035;
+uniform float reflection : hint_range(0.0, 2.0) = 1.0;
 uniform vec3 sheen_color : source_color = vec3(0.55, 0.7, 0.9);
 uniform float opacity : hint_range(0.0, 1.0) = 0.78;
 uniform float ripple_scale = 7.0;
@@ -40,15 +47,24 @@ void fragment() {
 	vec3 n = vec3(-g * ripple_strength * 0.35 * smoothstep(0.0, 0.2, depth), 1.0);
 	NORMAL_MAP = vec3(n.xy * 0.5 + 0.5, 1.0);
 	NORMAL_MAP_DEPTH = 1.0;
-	// cor: raso mostra a pedra, fundo escurece
+	// transparência: o piso aparece por baixo, levemente deslocado pela ondulação
+	vec2 off = g * distortion * smoothstep(0.0, 0.25, depth);
+	vec3 floor_col = textureLod(screen_tex, SCREEN_UV + off, 0.0).rgb;
 	float d = smoothstep(0.0, 0.7, depth);
-	ALBEDO = mix(shallow_color, deep_color, d);
-	ALPHA = clamp(mix(0.38, opacity, smoothstep(0.0, 0.25, depth)) * UV2.y, 0.0, 1.0);
+	vec3 tint = mix(shallow_color, deep_color, d);
+	ALBEDO = mix(floor_col * tint * 4.0, tint, 0.35 + 0.35 * d);
+	ALPHA = clamp(mix(0.45, 1.0, smoothstep(0.0, 0.2, depth)) * UV2.y, 0.0, 1.0);
 	ROUGHNESS = 0.02;
 	SPECULAR = 1.0;
 	METALLIC = 0.0;
 	// Fresnel simples + fio de luz no menisco (borda nítida da poça)
 	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
 	float rim = (1.0 - smoothstep(0.0, 0.07, depth)) * smoothstep(0.0, 0.015, depth + 0.02);
-	EMISSION = sheen_color * (fres * 0.18 + rim * 0.12 * edge_glint) + sheen_color * 0.015 * ring * ring;
+	// reflexo: céu em degradê + brilho especular da luz das tochas (refletidos pelo normal ondulado)
+	vec3 vn = normalize(vec3(n.x, n.z, n.y));
+	vec3 vv = normalize((INV_VIEW_MATRIX * vec4(-VIEW, 0.0)).xyz);
+	vec3 rv = reflect(vv, vn);
+	vec3 sky = mix(sky_horizon, sky_top, clamp(rv.y, 0.0, 1.0));
+	float torch = pow(clamp(dot(rv, normalize(torch_dir)), 0.0, 1.0), 64.0);
+	EMISSION = reflection * (sky * (0.05 + fres * 0.7) + torch_color * torch * 1.4) + sheen_color * (rim * 0.12 * edge_glint) + sheen_color * 0.015 * ring * ring;
 }
