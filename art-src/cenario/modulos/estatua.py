@@ -97,11 +97,11 @@ def manto():
     rings = []; zs = [i / 70 * 1.55 for i in range(71)]
     for z in zs:
         a, b = prof(A_T, z), prof(B_T, z); ring = []
-        fold = 0.075 * (1 - z / 1.8) + 0.012
+        fold = 0.115 * (1 - z / 1.8) + 0.012
         for i in range(N):
             t = i / N * math.tau
             c, s = math.cos(t), math.sin(t)
-            r = 1 - fold * 1.3 * abs(math.sin(4.5 * t + z * 1.6 + 0.7 * math.sin(z * 4))) + fold * 0.5 * math.sin(11 * t - z * 3) + 0.03 * math.sin(3 * t + 1)
+            r = 1 - fold * 1.3 * abs(math.sin(4.5 * t + z * 1.6 + 0.7 * math.sin(z * 4))) + fold * 0.45 * (1 - abs(math.sin(9 * t - z * 2.4 + 1.3))) - fold * 0.2 + 0.03 * math.sin(3 * t + 1)
             # barra do manto ondulada e levantada atrás
             zz = z + (0.05 * math.sin(5 * t + 0.4) if z < 0.12 else 0)
             ring.append(Vector((a * c * r, b * s * r - (0.03 if z > 1.2 else 0), zz)))
@@ -282,7 +282,7 @@ def musgo(o):
         c = mw @ p.center
         up = (mw.to_3x3() @ p.normal).z
         v = fbm(c + Vector((0.37, 0.71, 0.13)), 6.3, 3)
-        thr = 0.18 - 0.5 * max(0.0, 0.9 - c.z) + (0.0 if c.z < 0.9 else 0.12)
+        thr = 0.10 - 0.5 * max(0.0, 0.9 - c.z) + (0.0 if c.z < 0.9 else 0.06)
         if up > 0.45 and v > thr + 0.1: p.material_index = IDX["musgo"]
         elif c.z < 0.3 and v > 0.2: p.material_index = IDX["musgo"]
 
