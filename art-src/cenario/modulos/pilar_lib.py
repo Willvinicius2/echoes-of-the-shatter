@@ -22,7 +22,7 @@ def reset(seed=11):
     MAT["pedra"] = mat("M_Pedra", (0.42, 0.42, 0.46))
     MAT["escura"] = mat("M_PedraEscura", (0.16, 0.16, 0.19))
     MAT["estatua"] = mat("M_Estatua", (0.22, 0.21, 0.20), rough=0.9)
-    MAT["musgo"] = mat("M_Musgo", (0.08, 0.12, 0.05), rough=1.0)
+    MAT["musgo"] = mat("M_Musgo", (0.16, 0.19, 0.08), rough=1.0)
     MAT["ferro"] = mat("M_Ferro", (0.075, 0.07, 0.08), metal=0.7, rough=0.5)
 
 
@@ -216,6 +216,7 @@ def juntar(nome):
             bpy.context.view_layer.objects.active = o
             for md in list(o.modifiers): bpy.ops.object.modifier_apply(modifier=md.name)
         o.data.update()
+        _tom_peca(o)
         for p in o.data.polygons: p.use_smooth = bool(o.get("liso"))
     bpy.ops.object.select_all(action='DESELECT')
     for o in objs: o.select_set(True)
@@ -243,8 +244,9 @@ def boulder(loc, size, m=None, rot=(0, 0, 0), pts=14, bev=0.012, flat=0.35):
     # lascas: corta 2-3 cantos com planos aleatórios (faces quebradas menores sobre a forma maior)
     for _ in range(rnd.randint(2, 3)):
         n = Vector((rnd.gauss(0, 1), rnd.gauss(0, 1), rnd.gauss(0, 1))).normalized()
-        far = max(bm.verts, key=lambda v: v.co.dot(n))
-        d = far.co.dot(n) - rnd.uniform(0.12, 0.3) * max(size)
+        if len(bm.verts) < 6: break
+        proj = [v.co.dot(n) for v in bm.verts]
+        d = max(proj) - rnd.uniform(0.08, 0.25) * (max(proj) - min(proj))
         geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
         bmesh.ops.bisect_plane(bm, geom=geom, plane_co=n * d, plane_no=n, clear_outer=True, use_snap_center=False)
         cap = [e for e in bm.edges if e.is_boundary]
@@ -282,10 +284,28 @@ def pintar_vertices(o, raios=14, alcance=0.7, seed=5):
         face = (math.sin(p.x * 1.7 + p.y * 2.3) + 1) * 0.5              # lados com desgaste diferente
         sujo = max(0.0, 1.0 - (p.z / 6.5)) ** 2 * 0.35 + (1 - ao) * 0.3  # sujeira embaixo e nas juntas
         k = (0.55 + 0.45 * ao ** 1.2) * (0.8 + 0.25 * reg) * (0.92 + 0.12 * fin) * (1 - sujo * (0.5 + 0.5 * face))
-        warm = 0.04 * (reg - 0.5)
+        warm = 0.12 * (reg - 0.5)
         cols[v.index] = (min(1, k * (1 + warm)), min(1, k), min(1, k * (1 - warm)), 1.0)
     bm.free()
+    tom = me.color_attributes.get("Tom")
+    if tom:
+        for i in cols:
+            t = tom.data[i].color; c = cols[i]; cols[i] = (c[0] * t[0], c[1] * t[1], c[2] * t[2], 1.0)
+        me.color_attributes.remove(tom)
     if "Color" in me.color_attributes: me.color_attributes.remove(me.color_attributes["Color"])
     ca = me.color_attributes.new("Color", 'FLOAT_COLOR', 'POINT')
     for v in me.vertices:
         ca.data[v.index].color = cols[v.index]
+
+
+def _tom_peca(o):
+    """Cor própria de cada bloco antes de juntar: marrom-acinzentado quente com variação (a folha tem pedra quente)."""
+    t = rnd.random()
+    if o.data.materials and o.data.materials[0].name == "M_Musgo":
+        c = (1, 1, 1, 1)
+    else:
+        base = (1.0, 0.86, 0.72) if t < 0.55 else (0.9, 0.88, 0.86)
+        k = rnd.uniform(0.78, 1.08)
+        c = (base[0] * k, base[1] * k, base[2] * k, 1)
+    ca = o.data.color_attributes.new("Tom", 'FLOAT_COLOR', 'POINT')
+    for d in ca.data: d.color = c
