@@ -68,7 +68,7 @@ def previa(saida_png, olhar=(4, 4, 0), cam=(4 + 5.5, 4 - 7.5, 8.5), res=(960, 64
     try: sc.cycles.device = 'CPU'
     except Exception: pass
     sc.render.resolution_x, sc.render.resolution_y = res
-    w = bpy.data.worlds.new("w"); w.use_nodes = True; w.node_tree.nodes["Background"].inputs[0].default_value = (0.20, 0.25, 0.34, 1); sc.world = w
+    w = bpy.data.worlds.new("w"); w.use_nodes = True; w.node_tree.nodes["Background"].inputs[0].default_value = (0.10, 0.13, 0.19, 1); sc.world = w
     sol = bpy.data.objects.new("lua", bpy.data.lights.new("lua", 'SUN')); sol.data.energy = 1.6; sol.data.color = (0.6, 0.7, 1.0)
     sol.rotation_euler = (math.radians(55), 0, math.radians(35)); bpy.context.collection.objects.link(sol)
     if luz_quente:

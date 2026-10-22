@@ -264,7 +264,7 @@ def _escombros(bm, lajes, lascas_pos, r):
     ys = sorted({round(l["y1"] + comum.JUNTA / 2, 4) for l in lajes}); xs = sorted({round(l["x1"] + comum.JUNTA / 2, 4) for l in lajes})
     cont = 0
     def ok(x, y): return 0.07 < x < T - 0.07 and 0.07 < y < T - 0.07
-    for _ in range(110):                                       # nas juntas
+    for _ in range(70):                                       # nas juntas
         if r.random() < 0.5: x = r.uniform(0.1, T - 0.1); y = r.choice(ys) + r.uniform(-0.012, 0.012)
         else: x = r.choice(xs) + r.uniform(-0.012, 0.012); y = r.uniform(0.1, T - 0.1)
         if not ok(x, y): continue
@@ -284,7 +284,7 @@ def _escombros(bm, lajes, lascas_pos, r):
             for _ in range(r.randint(1, 2)):                   # blocos grandes (a lasca que caiu), legiveis na camera de jogo
                 x, y = ponto()
                 if ok(x, y): _pedra(bm, r, x, y, ZJ, r.uniform(0.07, 0.12) * (min(a, bb) / 0.2) ** 0.5, sink=0.012); cont += 1
-            for _ in range(r.randint(4, 8)):
+            for _ in range(r.randint(3, 6)):
                 x, y = ponto()
                 if ok(x, y): _pedra(bm, r, x, y, ZJ, r.choice([0.015, 0.022, 0.03, 0.04, 0.05]), sink=0.004); cont += 1
             for _ in range(r.randint(1, 3)):                   # farelo que rolou para cima da lajota vizinha / da propria
@@ -292,8 +292,9 @@ def _escombros(bm, lajes, lascas_pos, r):
                 l = s["l"]
                 if ok(x, y) and l["x0"] < x < l["x1"] and l["y0"] < y < l["y1"] and s["tx"] == 0 and s["ty"] == 0:
                     _pedra(bm, r, x, y, s["dz"], r.choice([0.012, 0.018, 0.025]), sink=0.002); cont += 1
-    for _ in range(14):                                        # pedregulhos soltos em lajotas planas
-        l = r.choice([l for l in lajes if l["id"] not in NAO_PLANAS]); x = r.uniform(l["x0"] + 0.08, l["x1"] - 0.08); y = r.uniform(l["y0"] + 0.08, l["y1"] - 0.08)
+    pl = [l for l in lajes if l["id"] not in NAO_PLANAS]
+    for _ in range(14 if pl else 0):                           # pedregulhos soltos em lajotas planas
+        l = r.choice(pl); x = r.uniform(l["x0"] + 0.08, l["x1"] - 0.08); y = r.uniform(l["y0"] + 0.08, l["y1"] - 0.08)
         if ok(x, y): _pedra(bm, r, x, y, 0.0, r.uniform(0.015, 0.04), sink=0.002); cont += 1
     return cont
 

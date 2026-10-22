@@ -108,134 +108,137 @@ def _vizinho(ii, junta):
         v = np.roll(np.roll(ii, dx, 1), dy, 0); out = np.where(out < 0, v, out)
     return np.where(out < 0, 0, out)
 
+def _vor(N, nc, seed, warp=0.0):
+    """Voronoi periódico (nc células por lado, nc divide N). Devolve F1, F2 (px), valor aleatório da célula mais próxima e seu id.
+    warp (px) deforma as bordas das células. Dá grãos ANGULOSOS de borda dura (ao contrário do ruído gaussiano)."""
+    r = np.random.default_rng(seed); G = N / nc
+    jit = r.random((nc, nc, 2)) * 0.8 + 0.1; val = r.random((nc, nc))
+    Y, X = np.mgrid[0:N, 0:N].astype(np.float32) + 0.5
+    if warp:
+        X = (X + warp * _ruido(N, 14, seed + 500)) % N; Y = (Y + warp * _ruido(N, 14, seed + 501)) % N
+    cx = np.floor(X / G).astype(int) % nc; cy = np.floor(Y / G).astype(int) % nc
+    f1 = np.full((N, N), 1e9, np.float32); f2 = f1.copy(); v1 = np.zeros((N, N), np.float32)
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            ix = (cx + dx) % nc; iy = (cy + dy) % nc
+            px_ = (cx + dx + jit[iy, ix, 0]) * G; py_ = (cy + dy + jit[iy, ix, 1]) * G
+            ddx = np.abs(X - px_); ddx = np.minimum(ddx, N - ddx); ddy = np.abs(Y - py_); ddy = np.minimum(ddy, N - ddy)
+            d = np.sqrt(ddx * ddx + ddy * ddy)
+            novo = d < f1
+            f2 = np.where(novo, f1, np.minimum(f2, d)); v1 = np.where(novo, val[iy, ix], v1); f1 = np.where(novo, d, f1)
+    return f1, f2, v1
+
 def gerar(objs, N=2048):
-    """Retorna (albedo linear HxWx3 em [0,1], altura HxW em metros ficticios), a partir da malha real das lajotas."""
+    """Retorna (albedo linear HxWx3 em [0,1], altura HxW em metros ficticios), a partir da malha real das lajotas.
+    Micro-relevo com feições DURAS (grãos Voronoi, poros de disco, riscos de 1 px, lascas de borda dura, patches definidos)."""
     px = comum.TILE / N
     idx, dist, dj, nl, zm, junta = _mapas(objs, N)
     r = np.random.default_rng(comum.SEED)
-    # ---- por lajota: tom, matiz, escolha de campo de manchas, inclinação suave
-    tom = r.uniform(-0.10, 0.12, nl + 1); matiz = r.uniform(-0.10, 0.10, nl + 1)
-    sat = r.uniform(0.75, 1.25, nl + 1); campo = r.integers(0, 4, nl + 1)
-    tom[-1] = matiz[-1] = 0; sat[-1] = 1                    # índice -1 (junta) cai no último
-    base = np.array([0.215, 0.205, 0.192])                   # cinza-ardósia quente dessaturado (linear)
-    t = tom[idx]; m = matiz[idx]; s_ = sat[idx]
+    laje = ~junta
+    # ---- por lajota: tom e matiz (cinza-ardósia quente da Cripta)
+    tom = r.uniform(-0.18, 0.18, nl + 1); matiz = r.uniform(-0.06, 0.06, nl + 1)
+    tom[-1] = matiz[-1] = 0
+    base = np.array([0.150, 0.140, 0.130])
+    t = tom[idx]; m = matiz[idx]
     img = np.empty((N, N, 3))
-    for c in range(3):
-        # matiz: desloca azul <-> verde-acinzentado/violeta por lajota
-        img[..., c] = base[c] * (1 + t) * (1 + m * np.array([-0.9, 0.1, 0.9])[c]) * (1 + (s_ - 1) * (c - 1) * 0.3)
-    # ---- manchas pintadas por lajota: 4 campos de ruído diferentes escolhidos por lajota (sem repetição visível)
-    F = [_ruido(N, 5, 20 + i) * 0.75 + _ruido(N, 14, 30 + i) * 0.25 for i in range(4)]
-    mancha = np.choose(campo[idx], F)
-    img *= (1 + 0.16 * mancha)[..., None]
-    img *= (1 + 0.10 * _ruido(N, 70, 5) + 0.06 * _ruido(N, 200, 6))[..., None]
-    # tom levemente mais quente/escuro em manchas de matiz (frio <-> neutro)
-    quente = np.clip(np.choose(campo[idx], [_ruido(N, 14, 40 + i) for i in range(4)]), 0, 1)
-    img[..., 0] *= 1 + 0.10 * quente; img[..., 1] *= 1 + 0.04 * quente
-    # ---- veios: bandas finas curvas, claras e escuras, ruído deformado
-    tem = ((campo[idx] % 2) == 0)
-    veio = np.zeros((N, N))
-    for k, (cel, sd) in enumerate(((5, 50), (7, 54))):
-        n = _ruido(N, cel, sd) + 0.12 * _ruido(N, 30, sd + 1)
-        veio = np.maximum(veio, np.clip(1 - np.abs(n) / 0.015, 0, 1) ** 1.5 * (0.5 + 0.5 * k))
-    veio *= tem * np.clip(_ruido(N, 4, 52) * 2.5 + 0.3, 0, 1)
-    sinal = np.where(_ruido(N, 6, 53) > 0, 0.9, -0.6)
-    img *= (1 + 0.22 * veio * sinal)[..., None]
-    # grão de cor: pontos claros/escuros de pedra (cristais) e poeira
-    gr = _ruido(N, 420, 55); img *= (1 + 0.07 * gr + 0.10 * np.clip(_ruido(N, 260, 56) * 2.2 - 1.2, 0, 1) - 0.10 * np.clip(-_ruido(N, 300, 57) * 2 - 0.6, 0, 1))[..., None]
-    # ---- altura base (metros fictícios; escala aplicada no normal)
+    for c in range(3): img[..., c] = base[c] * (1 + t) * (1 + m * np.array([-0.9, 0.1, 0.9])[c])
+    # ---- manchas definidas por lajota: patches de borda reconhecível (Voronoi grande deformado)
+    f1, f2, v = _vor(N, 16, 103, warp=26)
+    patch = (v > 0.62) & ((f2 - f1) > 0)
+    img *= np.where(patch, 0.68 + 0.62 * ((v * 7.3) % 1.0), 1.0)[..., None]
+    bp = np.clip(1 - (f2 - f1) / 2.0, 0, 1) * patch                      # contorno do patch levemente mais escuro
+    img *= (1 - 0.18 * bp)[..., None]
+    # ---- grão de pedra duro: células angulares de tom próprio, com fio escuro entre elas
+    f1, f2, v = _vor(N, 256, 101)
+    groove = np.clip(1 - (f2 - f1) / 1.3, 0, 1)
+    img *= (1 + 0.40 * (v - 0.5))[..., None] * (1 - 0.10 * groove)[..., None]
     h = np.zeros((N, N))
-    # grão de pedra
-    h += 0.00015 * _ruido(N, 420, 60) + 0.0009 * _ruido(N, 150, 61) + 0.0050 * _ruido(N, 60, 62)
-    # poros e crateras pequenas (espalhados e mais densos perto das bordas)
-    poro = np.clip(_ruido(N, 230, 90) * 3.0 - 2.1, 0, 1) + 0.9 * np.clip(_ruido(N, 150, 91) * 3.0 - 1.9, 0, 1) * np.clip(1 - dist / 0.25, 0, 1)
-    poro = np.clip(poro, 0, 1) * (~junta)
-    h -= 0.0035 * poro
-    # ondulação de cada lajota (alturas suavemente diferentes, topo irregular)
-    h += 0.0030 * _ruido(N, 12, 63) + 0.003 * (r.uniform(-1, 1, nl + 1)[idx]) * 0.4
-    # ---- chanfro irregular nas arestas: largura varia ao longo da aresta
-    lar = 0.030 + 0.030 * (0.5 + 0.5 * _ruido(N, 50, 64)) + 0.022 * np.clip(_ruido(N, 14, 65), 0, 1) + 0.012 * _ruido(N, 160, 92)
+    h += 0.0020 * v - 0.0016 * groove
+    # ---- facetas médias: placas angulares com degrau (relevo de média frequência)
+    f1, f2, v = _vor(N, 32, 102, warp=8)
+    h += 0.0045 * (v - 0.5)
+    gro2 = np.clip(1 - (f2 - f1) / 2.2, 0, 1) * (v > 0.5)
+    h -= 0.0030 * gro2; img *= (1 - 0.12 * gro2)[..., None]
+    # ondulação suave só do topo da lajota (muito baixa)
+    h += 0.0015 * _ruido(N, 10, 63)
+    # ---- poros: discos pequenos de borda dura, escuros
+    f1, f2, v = _vor(N, 256, 104)
+    rad = 1.0 + 2.0 * ((v * 13.7) % 1.0)
+    poro = ((f1 < rad) & (v > 0.86) & laje).astype(float)
+    h -= 0.0050 * poro; img *= (1 - 0.55 * poro)[..., None]
+    # ---- chanfro nas arestas (largura irregular) + desgaste serrilhado de borda dura
+    fa, fb, va = _vor(N, 128, 106)
+    lar = 0.030 + 0.030 * va
     ch = np.clip(1 - dist / lar, 0, 1)
-    h -= 0.020 * ch ** 1.6
-    # arestas gastas: borda clareada e rugosa
-    gasto = np.clip(1 - dist / (0.05 + 0.05 * np.clip(_ruido(N, 22, 66), -0.2, 1)), 0, 1) * np.clip(0.5 + 0.8 * _ruido(N, 100, 67), 0, 1)
-    h += 0.010 * gasto * _ruido(N, 200, 68)
-    # ---- lascas: quinas e pedaços na borda (blobs onde dist pequeno), fundos e claros
-    lasca = np.clip(_ruido(N, 26, 69) * 2.4 - 1.35, 0, 1) * np.clip(1 - dist / 0.14, 0, 1)
-    lasca = np.clip(lasca * 2, 0, 1)
-    h -= 0.014 * lasca
-    # ---- riscos e rachaduras finas por lajota (pintados escuros + fundos no relevo)
-    segs = []; segs_f = []
+    h -= 0.018 * ch ** 1.4
+    gasto = ((dist < 0.012 + 0.050 * va) & laje).astype(float)
+    img *= (1 + 0.40 * gasto)[..., None]
+    h += 0.0020 * gasto * (va - 0.5)
+    # ---- lascas: recortes de borda dura nas bordas, pedra clara exposta
+    fl, fl2, vl = _vor(N, 64, 105, warp=3)
+    lasca = ((vl > 0.78) & (dist < 0.025 + 0.11 * ((vl * 9.1) % 1.0)) & laje).astype(float)
+    h -= 0.012 * lasca; img *= (1 + 0.32 * lasca)[..., None]
+    lasca_b = np.clip(lasca - np.roll(lasca, 1, 0) * np.roll(lasca, 1, 1), 0, 1)
+    # ---- riscos retos de 1 px (mais claros e escuros) em direções aleatórias, por lajota
     ys_, xs_ = np.nonzero(idx >= 0); ordem = np.argsort(idx[ys_, xs_], kind="stable")
     ys_, xs_ = ys_[ordem], xs_[ordem]; cortes = np.searchsorted(idx[ys_, xs_], np.arange(nl + 1))
-    lajes = []
+    ilhas = []
     for i in range(nl):
         a_, b_ = cortes[i], cortes[i + 1]
-        if b_ - a_ < 400: lajes.append(None); continue
-        lajes.append(dict(x=xs_[a_:b_], y=ys_[a_:b_]))
+        ilhas.append(None if b_ - a_ < 400 else (xs_[a_:b_], ys_[a_:b_]))
     def pt(l):
-        k = r.integers(0, len(l["x"])); return float(l["x"][k]), float(l["y"][k])
-    for i, l in enumerate(lajes):
+        k = r.integers(0, len(l[0])); return float(l[0][k]), float(l[1][k])
+    riscos = []; rachs = []
+    for l in ilhas:
         if l is None: continue
-        if r.random() < 0.45:
-            for _ in range(r.integers(1, 3)):
-                cx, cy = pt(l)
-                a = r.uniform(0, np.pi); L = r.uniform(25, 120)
-                x0, y0 = cx, cy
-                for k in range(r.integers(2, 5)):                    # polilinha quebrada
-                    a += r.uniform(-0.6, 0.6); x1, y1 = x0 + np.cos(a) * L / 3, y0 + np.sin(a) * L / 3
-                    segs.append((x0, y0, x1, y1)); x0, y0 = x1, y1
-        if r.random() < 0.22:                                         # rachadura funda
-            cx, cy = pt(l)
-            a = r.uniform(0, np.pi); x0, y0 = cx, cy
+        for _ in range(r.integers(3, 9)):
+            cx, cy = pt(l); a = r.uniform(0, np.pi); L = r.uniform(30, 160)
+            riscos.append((cx - np.cos(a) * L / 2, cy - np.sin(a) * L / 2, cx + np.cos(a) * L / 2, cy + np.sin(a) * L / 2))
+        if r.random() < 0.30:
+            x0, y0 = pt(l); a = r.uniform(0, np.pi)
             for k in range(r.integers(4, 9)):
                 a += r.uniform(-0.7, 0.7); L = r.uniform(14, 38); x1, y1 = x0 + np.cos(a) * L, y0 + np.sin(a) * L
-                segs_f.append((x0, y0, x1, y1)); x0, y0 = x1, y1
-                if r.random() < 0.3:                                  # ramo
+                rachs.append((x0, y0, x1, y1)); x0, y0 = x1, y1
+                if r.random() < 0.3:
                     ab = a + r.choice([-1, 1]) * r.uniform(0.5, 1.1)
-                    segs_f.append((x0, y0, x0 + np.cos(ab) * L * 0.8, y0 + np.sin(ab) * L * 0.8))
-    risco = np.clip(_linhas(N, segs, 0.8) * 1.5, 0, 1) * (idx >= 0)
-    rach = np.clip(_linhas(N, segs_f, 1.1) * 1.6, 0, 1) * (idx >= 0)
-    h -= 0.0025 * risco + 0.012 * rach
-    # ---- umidade escura (manchas grandes, concentradas ao longo das juntas) e musgo
+                    rachs.append((x0, y0, x0 + np.cos(ab) * L * 0.8, y0 + np.sin(ab) * L * 0.8))
+    risco = _linhas(N, riscos, 0.0) * laje
+    rach = np.clip(_linhas(N, rachs, 0.9) * 1.8, 0, 1) * laje
+    risco_claro = (risco > 0) & (r.random((N, N)) < 0.35)
+    h -= 0.0030 * risco + 0.012 * rach
+    img *= np.where(risco_claro, 1.35, 1 - 0.40 * risco)[..., None] * (1 - 0.85 * rach)[..., None]
+    # ---- umidade escura e fria (grandes, suaves) perto das juntas + sujeira que escorre + musgo
     umid = np.clip(_ruido(N, 8, 70) * 1.5 - 0.15, 0, 1) * np.clip(0.4 + 0.6 * np.clip(1 - dist / 0.5, 0, 1), 0, 1)
-    img *= (1 - 0.18 * umid)[..., None]
-    img[..., 0] *= 1 - 0.18 * umid; img[..., 2] *= 1 + 0.30 * umid                                      # umidade puxa para azul frio
-    # sujeira irregular escorrendo da junta para a lajota
+    img *= (1 - 0.30 * umid)[..., None]
+    img[..., 0] *= 1 - 0.18 * umid; img[..., 2] *= 1 + 0.30 * umid
     sujo_lim = 0.016 + 0.07 * np.clip(0.5 + 0.7 * _ruido(N, 50, 71) + 0.5 * _ruido(N, 130, 72), 0, 1)
     sujo = np.clip(1 - dist / sujo_lim, 0, 1) ** 0.8
-    img *= (1 - 0.6 * sujo)[..., None]
-    img[..., 0] *= 1 + 0.25 * sujo; img[..., 1] *= 1 + 0.18 * sujo      # sujeira puxa para terra
-    # musgo: verde-musgo escuro nas juntas e primeiros cm das lajotas, por trechos
+    img *= (1 - 0.75 * sujo)[..., None]
+    img[..., 0] *= 1 + 0.25 * sujo; img[..., 1] *= 1 + 0.18 * sujo
     musgo_t = np.clip(_ruido(N, 11, 73) * 2.6 - 0.25, 0, 1) * np.clip(_ruido(N, 90, 74) * 0.5 + 0.8, 0, 1)
     musgo = musgo_t * np.clip(1 - dist / (0.06 + 0.07 * np.clip(_ruido(N, 60, 75), 0, 1)), 0, 1)
-    musgo += 0.25 * np.clip(_ruido(N, 6, 76) * 2 - 0.9, 0, 1) * np.clip(umid * 2, 0, 1) * (idx >= 0)
+    musgo += 0.25 * np.clip(_ruido(N, 6, 76) * 2 - 0.9, 0, 1) * np.clip(umid * 2, 0, 1) * laje
     musgo = np.clip(musgo, 0, 1)
     cor_musgo = np.array([0.045, 0.085, 0.045]) * (1 + 0.4 * _ruido(N, 250, 77))[..., None]
     img = img * (1 - 0.7 * musgo)[..., None] + cor_musgo * (0.7 * musgo)[..., None]
-    # ---- bordas: aresta viva clara (fio de luz de pedra gasta) e lascas expondo pedra mais clara
-    img *= (1 + 0.3 * gasto)[..., None]
-    img[..., 2] *= 1 + 0.1 * gasto
-    img *= (1 + 0.25 * lasca)[..., None]
-    # riscos e rachaduras escuros pintados
-    img *= (1 - 0.55 * risco)[..., None] * (1 - 0.35 * poro)[..., None] * (1 - 0.85 * rach)[..., None]
-    # ---- juntas: terra escura com cascalho, grão, manchas
+    img = np.clip(img, 0, 0.30)                                         # nunca quase branco
+    # ---- juntas: terra escura com cascalho
     terra = np.array([0.020, 0.022, 0.030])
     jc = terra[None, None, :] * (1 + 0.9 * _ruido(N, 160, 80) + 0.6 * _ruido(N, 25, 81))[..., None]
     jc = np.clip(jc, 0.005, 1)
     seixo = np.clip(_ruido(N, 350, 82) * 3 - 1.8, 0, 1)
     jc = jc * (1 + 2.0 * seixo)[..., None]
-    jc[..., 0] *= 1.0 + 0.5 * np.clip(_ruido(N, 20, 83), 0, 1)           # terra mais marrom em trechos
+    jc[..., 0] *= 1.0 + 0.5 * np.clip(_ruido(N, 20, 83), 0, 1)
     jc = jc * (1 - 0.7 * musgo)[..., None] + cor_musgo * (0.8 * musgo)[..., None]
-    # juntas mais claras e secas só nos trechos onde há seixo; sombra interna perto da lajota
     jc *= (0.55 + 0.45 * np.clip(dj / (comum.JUNTA * 0.5), 0, 1))[..., None]
     img = np.where(junta[..., None], jc, img)
-    # altura nas juntas: funda e granulada
-    h = np.where(junta, -0.035 + 0.006 * _ruido(N, 140, 84) + 0.004 * seixo, h)
+    h = np.where(junta, -0.035 + 0.004 * _ruido(N, 140, 84) + 0.004 * seixo, h)
     return np.clip(img, 0, 1), h
 
 def _normal(h, N, forca=1.0):
     """Mapa de normal (tangente, OpenGL +Y) a partir da altura em metros; periódico via roll. Pixel = TILE/N metros."""
     px = comum.TILE / N
+    h = _borra(h, 0.6)
     dx = (np.roll(h, -1, 1) - np.roll(h, 1, 1)) / (2 * px) * forca
     dy = (np.roll(h, -1, 0) - np.roll(h, 1, 0)) / (2 * px) * forca
     n = np.stack([-dx, -dy, np.ones_like(h)], axis=-1); n /= np.linalg.norm(n, axis=-1, keepdims=True)
@@ -257,7 +260,7 @@ def aplicar(objs, N=2048):
     tx = nt.nodes.new("ShaderNodeTexImage"); tx.image = im; tx.interpolation = 'Linear'
     nt.links.new(tx.outputs["Color"], bsdf.inputs["Base Color"])
     tn = nt.nodes.new("ShaderNodeTexImage"); tn.image = nm; tn.interpolation = 'Linear'
-    nmn = nt.nodes.new("ShaderNodeNormalMap"); nmn.inputs["Strength"].default_value = 1.4
+    nmn = nt.nodes.new("ShaderNodeNormalMap"); nmn.inputs["Strength"].default_value = 1.2
     nt.links.new(tn.outputs["Color"], nmn.inputs["Color"]); nt.links.new(nmn.outputs["Normal"], bsdf.inputs["Normal"])
     for o in objs:
         if not any(s.material and s.material.name.startswith("M_Piso_Laje") for s in o.material_slots): continue

@@ -41,7 +41,7 @@ _PLANO = {}
 
 def _jag(r, a, b, n=None):
     """Caminho irregular de (a,0) a (0,b) em coords locais do canto (mordida angulosa que entra na lajota)."""
-    n = n or r.choice([3, 4, 4, 5])
+    n = n or r.choice([2, 3, 3, 4])
     pts = [(a, 0.0)]
     for k in range(1, n + 1):
         t = k / (n + 1)
@@ -88,8 +88,8 @@ def plano():
         cantos = [(l["x0"], l["y0"], 1, 1), (l["x1"], l["y0"], -1, 1), (l["x1"], l["y1"], -1, -1), (l["x0"], l["y1"], 1, -1)]
         big = rl.random() < 0.25
         for ci, (cx, cy, sx, sy) in enumerate(cantos):
-            if rl.random() < (0.4 if not big else 0.8):
-                a = rl.uniform(0.14, 0.36) * (1.4 if big and rl.random() < 0.5 else 1.0); b = rl.uniform(0.14, 0.36) * (1.4 if big and rl.random() < 0.5 else 1.0)
+            if rl.random() < (0.6 if not big else 0.9):
+                a = rl.uniform(0.20, 0.45); b = rl.uniform(0.20, 0.45)
                 a = min(a, W * 0.45); b = min(b, H * 0.45)
                 s["bites"].append(dict(ci=ci, cx=cx, cy=cy, sx=sx, sy=sy, a=a, b=b, path=_jag(rl, a, b)))
         if i in crack:
@@ -144,7 +144,8 @@ def _contorno(s, r):
         b = bites.get(ci)
         if not b: entr[ci] = [(cx, cy)]; continue
         a, bb = b["a"], b["b"]
-        loc = [(cx + sx * px, cy + sy * py) for px, py in b["path"]]       # de (a,0) [perna x] a (0,b) [perna y]
+        loc = [(cx + sx * px, cy + sy * py) for px, py in b["path"]]
+        s.setdefault("_bv", set()).update(loc)       # de (a,0) [perna x] a (0,b) [perna y]
         entr[ci] = loc if ci in (1, 3) else list(reversed(loc))             # BR,TL: x->y ; BL,TR: y->x
     out = []
     notch_done = False
@@ -154,7 +155,7 @@ def _contorno(s, r):
         A = entr[ci][-1]; B = entr[cj][0]
         n_in = [Vector((0, 1)), Vector((-1, 0)), Vector((0, -1)), Vector((1, 0))][ci]
         notch = None
-        if not b_has_crack(s) and not notch_done and r.random() < 0.28 and (Vector(B) - Vector(A)).length > 0.7:
+        if not b_has_crack(s) and not notch_done and r.random() < 0.5 and (Vector(B) - Vector(A)).length > 0.7:
             L = (Vector(B) - Vector(A)).length
             notch = (r.uniform(0.3, 0.7), r.uniform(0.05, 0.11), r.uniform(0.035, 0.085)); notch_done = True
             tp = Vector(A) + (Vector(B) - Vector(A)) * notch[0]
@@ -277,7 +278,8 @@ def peca(bm, poly, s, r, dz, tx, ty):
             if zc < z: z = zc
         return min(z, 0.0)
     n = len(poly)
-    ch = [0.009 + 0.011 * (0.5 + 0.5 * math.sin(k * 1.7 + r.uniform(0, 6))) * r.uniform(0.6, 1.2) for k in range(n)]
+    bv = s.get("_bv", set())
+    ch = [(r.uniform(0.028, 0.048) if p in bv else 0.009 + 0.011 * (0.5 + 0.5 * math.sin(k * 1.7 + r.uniform(0, 6))) * r.uniform(0.6, 1.2)) for k, p in enumerate(poly)]
     inner = _inset(poly, ch)
     if _area(inner) <= 0.002: inner = _inset(poly, [min(c, 0.004) for c in ch])
     # pontos internos
@@ -304,7 +306,7 @@ def peca(bm, poly, s, r, dz, tx, ty):
             try: bm.faces.new(ff)
             except ValueError: pass
     # anel externo (pe do chanfro), meio e base
-    O = [bm.verts.new((p[0], p[1], zf(p[0], p[1]) - ch[k] * r.uniform(0.7, 1.3) * 0.9)) for k, p in enumerate(poly)]
+    O = [bm.verts.new((p[0], p[1], zf(p[0], p[1]) - ch[k] * r.uniform(0.7, 1.3) * (1.6 if poly[k] in bv else 0.9))) for k, p in enumerate(poly)]
     M = [bm.verts.new((p[0] + r.uniform(-0.002, 0.002), p[1] + r.uniform(-0.002, 0.002), Z_MEIO + r.uniform(-0.004, 0.004))) for p in poly]
     B = [bm.verts.new((p[0], p[1], Z_BASE)) for p in poly]
     for k in range(n):
