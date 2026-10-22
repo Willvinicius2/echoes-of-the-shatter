@@ -33,6 +33,7 @@ O que ele prova:
 - Flecha cravada: `06_flecha_parede.png`, `06b` (recorte ampliado) e `06c` (recorte em ~3,5 s) mostram a flecha presa numa parede; some depois de `flecha_cravada_tempo` (4 s). Corrida: `02_andando.png` e `02b_andando.png`.
 
 ## Mudanças recentes
+- Gameplay: interpolação de física ligada e câmera segue a posição interpolada (fim do tranco ao andar); o corpo já gira para a mira ao puxar a corda; o arco usa a rotação que anula a do socket `socket_weapon_l` no rig (o arco ficava de cabeça para baixo/virado). Não testado aqui (sem Godot na nuvem): rodar o `--arqueiro-teste` e conferir o arco no jogo.
 - Correr: velocidade máxima 3,8 m/s (era 4,5). Walk até 40% disso (1,5 m/s). O clipe Run toca a 0,7x–1,6x (`anim_escala_min_correr`, `anim_escala_max_correr`); o Walk, até 2,6x.
 - A flecha sai no evento `solta` do clipe Release (quadro 2 de 9, ~0,06 s depois de soltar o botão), não mais no instante do clique. Esquivar antes disso dispara a flecha na hora.
 - Os i-frames da esquiva seguem os eventos `iframes_inicio` e `iframes_fim` do clipe Dodge (quadros 2 e 12 de 14, esticados ao `esq_tempo`). A troca para a pose de corda cheia usa `corda_cheia` do Draw. Quadros e durações dos clipes estão em `arqueiro.csv` (`evt_*`), copiados de `art-src/animacao/arqueiro_eventos.json`; se o clipe mudar, atualize ali.

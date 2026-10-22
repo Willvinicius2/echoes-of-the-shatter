@@ -127,7 +127,12 @@ public partial class ArqueiroController : CharacterBody3D
                 horiz = Mover(horiz, dirMov, velMax, dt);
                 alvoGiro = dirMov.LengthSquared() > 0.0001f ? dirMov : Vector3.Zero;
                 if (esquiva && _cdEsquiva <= 0f) IniciarEsquiva(dirMov);
-                else if (atiraPress && _cdTiro <= 0f) { Mudar(Estado.Carregando); Carga01 = 0f; }
+                else if (atiraPress && _cdTiro <= 0f)
+                {
+                    // o corpo já olha para a mira ao puxar a corda: sem giro tardio com a flecha saindo de lado
+                    if (DirMira.LengthSquared() > 0.0001f) _yawModelo = Mathf.Atan2(DirMira.X, DirMira.Z);
+                    Mudar(Estado.Carregando); Carga01 = 0f;
+                }
                 break;
         }
         if (EstadoAtual != Estado.Carregando && EstadoAtual != Estado.Disparo) Carga01 = 0f;
