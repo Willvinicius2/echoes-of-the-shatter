@@ -63,8 +63,7 @@ def _entulho(L, n, rmin, rmax, zmax_fn, tam=(0.1, 0.34), musgo_p=0.3):
         sz = (s * r.uniform(0.8, 1.5), s * r.uniform(0.7, 1.3), s * r.uniform(0.5, 1.0))
         z = zmax_fn(x, y) + max(sz) * 0.5 + 0.03
         m = L.MAT["escura"] if r.random() < 0.2 else L.MAT["pedra"]
-        _r(L, (x, y, z), sz, m, rot=(r.uniform(-.5, .5), r.uniform(-.5, .5), r.uniform(0, 6.28)),
-               jit=0.1, bev=0.01, seg=1, chip=s * 0.3, rough=0.012, cuts_pre=2 if s > 0.2 else 1)
+        L.boulder((x, y, z), (s * 1.6, s * 1.5, s * 1.3), m, rot=(r.uniform(-.4, .4), r.uniform(-.4, .4), r.uniform(0, 6.28)), pts=r.randint(10, 16), bev=0.008 + 0.02 * s)
         if r.random() < musgo_p:
             _r(L, (x, y, z + sz[2] * 0.4), (sz[0] * 0.7, sz[1] * 0.7, 0.035), L.MAT["musgo"],
                    rot=(0, 0, r.uniform(0, 6.28)), jit=0.12, bev=0.0, cuts=1)

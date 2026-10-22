@@ -246,10 +246,11 @@ def build(L):
     # entulho em camadas
     def pedra(x, y, zc, s):
         sx, sy, sz = (s * rng.uniform(0.8, 1.25), s * rng.uniform(0.8, 1.25), s * rng.uniform(0.6, 1.0))
-        L.rock(Vector((x, y, zc)), (sx, sy, sz), None, rot=(rng.uniform(-.5, .5), rng.uniform(-.5, .5), rng.uniform(0, 6.28)),
-               bev=0.0, chip=0.05, rough=0.008, cuts_pre=3, seg=1, jit=0.015)
+        L.boulder(Vector((x, y, zc)), (sx * 1.35, sy * 1.35, sz * 1.1), None, rot=(rng.uniform(-.5, .5), rng.uniform(-.5, .5), rng.uniform(0, 6.28)), pts=rng.randint(11, 17), bev=0.02)
     for _ in range(8):
-        pedra(rng.uniform(-1.0, 1.0), rng.uniform(-1.0, 1.0), rng.uniform(5.60, 5.78), rng.uniform(0.42, 0.6))
+        pedra(rng.uniform(-1.0, 1.0), rng.uniform(-1.0, 1.0), rng.uniform(5.60, 5.78), rng.uniform(0.38, 0.55))
+    for _ in range(14):  # cascalho miúdo entre os blocos grandes
+        pedra(rng.uniform(-1.05, 1.05), rng.uniform(-1.05, 1.05), rng.uniform(5.6, 6.05), rng.uniform(0.12, 0.24))
     for v in vazios:
         pedra(v.x * 0.8, v.y * 0.8, 5.6, 0.5)
     for _ in range(5):

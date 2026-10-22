@@ -169,7 +169,10 @@ def stone_preview():
         L.new(n1.outputs["Fac"], ramp.inputs["Fac"])
         mix = N.new("ShaderNodeMixRGB"); mix.blend_type = 'MULTIPLY'; mix.inputs["Fac"].default_value = 0.2
         L.new(ramp.outputs["Color"], mix.inputs[1]); L.new(n2.outputs["Distance"], mix.inputs[2])
-        L.new(mix.outputs["Color"], b.inputs["Base Color"])
+        ca = N.new("ShaderNodeAttribute"); ca.attribute_name = "Color"
+        mv = N.new("ShaderNodeMixRGB"); mv.blend_type = 'MULTIPLY'; mv.inputs["Fac"].default_value = 1.0
+        L.new(mix.outputs["Color"], mv.inputs[1]); L.new(ca.outputs["Color"], mv.inputs[2])
+        L.new(mv.outputs["Color"], b.inputs["Base Color"])
         bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.25; bump.inputs["Distance"].default_value = 0.03
         L.new(n2.outputs["Distance"], bump.inputs["Height"]); L.new(bump.outputs["Normal"], b.inputs["Normal"])
 
@@ -221,3 +224,68 @@ def juntar(nome):
     o = bpy.context.object; o.name = nome
     bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
     return o
+
+
+def boulder(loc, size, m=None, rot=(0, 0, 0), pts=14, bev=0.012, flat=0.35):
+    """Pedaço de pedra caído: casco convexo de pontos aleatórios (facetas planas e quinas vivas, formato irregular).
+    flat = achatamento do eixo Z (blocos quebrados ficam deitados)."""
+    bm = bmesh.new()
+    sx, sy, sz = size
+    for _ in range(pts):
+        d = Vector((rnd.gauss(0, 1), rnd.gauss(0, 1), rnd.gauss(0, 1) * (1 - flat)))
+        if d.length < 1e-4: continue
+        d.normalize(); r = rnd.uniform(0.55, 1.0) * 0.5
+        bm.verts.new(Vector((d.x * sx, d.y * sy, d.z * sz)) * r * 2)
+    bmesh.ops.convex_hull(bm, input=bm.verts[:], use_existing_faces=False)
+    bm.faces.ensure_lookup_table()
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(8), verts=bm.verts[:], edges=bm.edges[:])
+    # lascas: corta 2-3 cantos com planos aleatórios (faces quebradas menores sobre a forma maior)
+    for _ in range(rnd.randint(2, 3)):
+        n = Vector((rnd.gauss(0, 1), rnd.gauss(0, 1), rnd.gauss(0, 1))).normalized()
+        far = max(bm.verts, key=lambda v: v.co.dot(n))
+        d = far.co.dot(n) - rnd.uniform(0.12, 0.3) * max(size)
+        geom = bm.verts[:] + bm.edges[:] + bm.faces[:]
+        bmesh.ops.bisect_plane(bm, geom=geom, plane_co=n * d, plane_no=n, clear_outer=True, use_snap_center=False)
+        cap = [e for e in bm.edges if e.is_boundary]
+        if cap: bmesh.ops.holes_fill(bm, edges=cap, sides=0)
+    if bev:
+        bevel_bm(bm, bev, 1, angle=0.4)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bmesh.ops.transform(bm, matrix=Matrix.Translation(loc) @ Matrix.Rotation(rot[2], 4, 'Z') @ Matrix.Rotation(rot[1], 4, 'Y') @ Matrix.Rotation(rot[0], 4, 'X'), verts=bm.verts)
+    return from_bm(bm, m or MAT["pedra"], "boulder")
+
+
+def pintar_vertices(o, raios=14, alcance=0.7, seed=5):
+    """Pinta o atributo de cor 'Color' (sem luz): oclusão por raios (cantos e juntas escuros), sujeira que escorre
+    para baixo, variação de cor por região e desgaste assimétrico por face. No Godot o shader multiplica o albedo por COLOR."""
+    from mathutils.bvhtree import BVHTree
+    me = o.data
+    bm = bmesh.new(); bm.from_mesh(me)
+    bvh = BVHTree.FromBMesh(bm)
+    bm.verts.ensure_lookup_table()
+    r = random.Random(seed)
+    off = Vector((r.uniform(0, 50), r.uniform(0, 50), r.uniform(0, 50)))
+    cols = {}
+    for v in bm.verts:
+        n = v.normal if v.normal.length > 0 else Vector((0, 0, 1))
+        t = n.cross(Vector((0, 0, 1)) if abs(n.z) < 0.9 else Vector((1, 0, 0))).normalized(); b = n.cross(t)
+        o_ = v.co + n * 0.01; hit = 0
+        for _ in range(raios):
+            u1, u2 = r.random(), r.random(); rr = math.sqrt(u1); ph = 2 * math.pi * u2
+            d = (t * (rr * math.cos(ph)) + b * (rr * math.sin(ph)) + n * math.sqrt(max(0.0, 1 - u1))).normalized()
+            if bvh.ray_cast(o_, d, alcance)[0] is not None: hit += 1
+        ao = 1.0 - hit / raios
+        p = v.co
+        reg = noise.noise(p * 0.9 + off) * 0.5 + 0.5                    # manchas grandes de cor
+        fin = noise.noise(p * 6.0 + off) * 0.5 + 0.5                    # grão fino
+        face = (math.sin(p.x * 1.7 + p.y * 2.3) + 1) * 0.5              # lados com desgaste diferente
+        sujo = max(0.0, 1.0 - (p.z / 6.5)) ** 2 * 0.35 + (1 - ao) * 0.3  # sujeira embaixo e nas juntas
+        k = (0.55 + 0.45 * ao ** 1.2) * (0.8 + 0.25 * reg) * (0.92 + 0.12 * fin) * (1 - sujo * (0.5 + 0.5 * face))
+        warm = 0.04 * (reg - 0.5)
+        cols[v.index] = (min(1, k * (1 + warm)), min(1, k), min(1, k * (1 - warm)), 1.0)
+    bm.free()
+    if "Color" in me.color_attributes: me.color_attributes.remove(me.color_attributes["Color"])
+    ca = me.color_attributes.new("Color", 'FLOAT_COLOR', 'POINT')
+    for v in me.vertices:
+        ca.data[v.index].color = cols[v.index]
