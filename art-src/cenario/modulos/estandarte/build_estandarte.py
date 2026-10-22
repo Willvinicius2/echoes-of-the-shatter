@@ -22,6 +22,12 @@ bpy.context.view_layer.objects.active = L.objs[0]
 bpy.ops.object.join()
 o = bpy.context.object; o.name = "SM_Cripta_Estandarte"
 bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
+# peso: dissolve de faces coplanares (não muda o visual) e triangulação final
+n0 = len(o.data.polygons)
+mod = o.modifiers.new("plano", 'DECIMATE'); mod.decimate_type = 'DISSOLVE'; mod.angle_limit = math.radians(float(os.environ.get("DISSOLVE_GRAUS", "6")))
+mod.delimit = {'MATERIAL', 'UV'}
+bpy.ops.object.modifier_apply(modifier="plano")
+print("dissolve", n0, "->", len(o.data.polygons))
 bpy.ops.export_scene.gltf(filepath=OUT, use_selection=True, export_format='GLB', export_yup=True, export_image_format='JPEG', export_jpeg_quality=88)
 print("faces", len(o.data.polygons), "dim", tuple(round(d, 2) for d in o.dimensions), "->", OUT)
 
