@@ -72,7 +72,7 @@ func _clima(pai: Node3D) -> void:
 	e.background_mode = Environment.BG_COLOR; e.background_color = Color(0.015, 0.02, 0.04)
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; e.ambient_light_color = Color(0.20, 0.25, 0.38); e.ambient_light_energy = 0.55
 	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC; e.tonemap_exposure = 1.15
-	e.glow_enabled = true; e.glow_intensity = 0.45; e.glow_bloom = 0.05; e.glow_hdr_threshold = 1.3
+	e.glow_enabled = true; e.glow_intensity = 0.3; e.glow_bloom = 0.05; e.glow_hdr_threshold = 1.3
 	e.ssr_enabled = true; e.ssr_max_steps = 64; e.ssr_fade_in = 0.15; e.ssr_fade_out = 2.0; e.ssr_depth_tolerance = 0.3
 	e.ssil_enabled = true; e.ssil_intensity = 0.8
 	e.ssao_enabled = true; e.ssao_intensity = 2.0; e.ssao_radius = 1.5
@@ -510,7 +510,7 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	if cena:
 		var m := cena.instantiate() as Node3D; m.name = "Modelo"; m.scale = Vector3.ONE * 0.75; n.add_child(m); _colisor(m, "Braseiro")
 	var luz := OmniLight3D.new(); luz.name = "Luz"; luz.position = Vector3(0, 1.45, 0)
-	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 1.6; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
+	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 1.2; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
 	luz.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(luz)
 	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 0.88, 0); ch.scale = Vector3.ONE * 0.75
