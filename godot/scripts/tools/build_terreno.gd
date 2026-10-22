@@ -273,6 +273,8 @@ func _zonas_proibidas() -> void:
 	proibidos.append(Vector3(76.0, 152.0, 3.0))   # posição do chefe
 
 # colisão simples por AABB da malha: cilindro (pilar, braseiro, velas) ou caixa. Camada Mundo (1).
+# estandartes só entram quando houver parede de arquitetura para pendurar (hoje ficam no chão da rocha e parecem lixo)
+const COM_PAREDE := false
 const COLISAO := {"Pilar": "cil", "Braseiro": "cil", "Velas": "cil", "ColunaCorrente": "caixa", "Estatua": "caixa", "Entulho": "caixa", "Estandarte": "caixa"}
 
 func _aabb(n: Node, inv: Transform3D, acc: Array) -> void:
@@ -456,7 +458,7 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 			var qb = _ponto_parede(nome, ang, 3.0)
 			if qb != null: _braseiro_se(grupo, "Braseiro_%d" % k, qb.x, qb.y)
 			var qs = _ponto_parede(nome, ang + 0.12, 0.8)
-			if qs != null and _livre(qs.x, qs.y, 0.9):
+			if COM_PAREDE and qs != null and _livre(qs.x, qs.y, 0.9):
 				_inst(grupo, "Estandarte_%d" % k, "Estandarte", qs.x, qs.y, _yaw_para(qs.x, qs.y, c.x, c.y)); _reservar(qs.x, qs.y, 0.9)
 	_entulho_cantos(grupo, nome, 2 if raio < 14.0 else 4)
 
