@@ -30,6 +30,7 @@ Haiku: Git, LFS, conferir envio, rodar script pronto. Sonnet 5.5: padrão (model
 | Painel/roteiro | — | `docs/progresso/estado.json` | `painel-progresso` | Sonnet |
 
 ## Método de arte 3D (artefato do sócio + RafaxLab)
+0. Siga `art-src/cenario/METODO_MODELAGEM_3D.md` (método do estandarte v2).
 1. **Árvore de agentes**: uma thread por objeto; dentro dela, um subagente por parte (personagem: corpo, capacete, peitoral, braços, luvas, botas; cenário: piso primeiro, depois o resto). Um script por peça (`build_<peça>.py`) reconstrói o `.blend` do zero e exporta o `.glb`; o Git LFS guarda só o resultado.
 2. **Ciclos curtos de render**: muitas chamadas pequenas de renderizar, olhar e corrigir (o vencedor do concurso fez 243; o ganho veio do número de ciclos, não do modelo). Iterar em baixa amostragem; Cycles caro só no final (render acima de 5 min expira o cache de contexto). **Um render por vez** no PC.
 3. Cada ciclo entrega: render principal, vistas ortográficas, wireframe e close da parte, lado a lado com a folha aprovada.
@@ -64,5 +65,6 @@ Ferramentas de Blender não vieram do post: o ciclo é Blender com Python (`bpy`
 ## Outras fontes
 - Artefato do sócio: https://claude.ai/artifact/RYEaZih9sQMAiYu8HNJ9D2 (concurso de 10 agentes, pilar gótico no Blender).
 - Processo RafaxLab: piloto pequeno, refino por rodadas, crítico, referência neutra.
+- **Método de modelagem (obrigatório para arte 3D)**: `art-src/cenario/METODO_MODELAGEM_3D.md` (PR 53), documentado a partir do estandarte v2.
 - **Régua interna**: o estandarte v2 (PR 48) foi aprovado pelo Will; é o modelo de método (3 agentes, textura e normal pintadas, 6 a 8 ciclos) e de qualidade para os demais objetos.
 - Referência de estilo apenas: Spell Brigade (nunca entra no build).
