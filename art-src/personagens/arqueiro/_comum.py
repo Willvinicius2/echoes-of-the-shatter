@@ -13,6 +13,7 @@ FINAL = FONTE + "/modular_arqueiro/final"
 ARCO = FONTE + "/m09_armas/arco/final"
 ALJAVA = FONTE + "/m09_armas/aljava/final"
 SAIDA = os.environ.get("ARQ_SAIDA", os.path.join(RAIZ, "godot", "art", "models", "personagens", "arqueiro"))
+TEX_TRAJE = SAIDA + "/T_Archer_Starter_BC.png"  # saida de grade_traje.py, compartilhada por Peitoral/Calca/Luvas/Botas
 
 
 def limpar():
@@ -66,8 +67,57 @@ def exportar(nome_glb, objs):
     print("EXPORTADO", caminho)
 
 
-def peca_personagem(fbx_nome, nome_malha_final, material, glb):
-    """Capuz/peitoral/calca/luvas/botas: armature Rig_Humanoid_Chibi + malha skinada, sem animacao."""
+def decimar(m, tris_alvo):
+    """Decimate (collapse, delimitado por UV) ate ~tris_alvo triangulos; pesos dos ossos sao interpolados."""
+    n0 = sum(len(p.vertices) - 2 for p in m.data.polygons)
+    if n0 <= tris_alvo:
+        return
+    bpy.ops.object.select_all(action="DESELECT")
+    m.select_set(True)
+    bpy.context.view_layer.objects.active = m
+    md = m.modifiers.new("dec", "DECIMATE")
+    md.decimate_type = "COLLAPSE"
+    md.ratio = tris_alvo / n0
+    md.delimit = {"UV"}
+    md.use_collapse_triangulate = True
+    bpy.ops.object.modifier_move_to_index(modifier="dec", index=0)
+    bpy.ops.object.modifier_apply(modifier="dec")
+    print("DECIMADO", n0, "->", sum(len(p.vertices) - 2 for p in m.data.polygons))
+
+
+def externalizar_textura(caminho_glb, uri):
+    """Troca a imagem embutida do GLB por uma referencia externa (uri) e remove os bytes do buffer.
+    Assim as pecas do traje compartilham UM arquivo de textura."""
+    import json, struct
+    b = open(caminho_glb, "rb").read()
+    n = struct.unpack("<I", b[12:16])[0]
+    j = json.loads(b[20:20 + n])
+    off = 20 + n
+    bl = struct.unpack("<I", b[off:off + 4])[0]
+    binario = bytearray(b[off + 8:off + 8 + bl])
+    for im in j["images"]:
+        bv = j["bufferViews"][im.pop("bufferView")]
+        im.pop("mimeType", None)
+        im["uri"] = uri
+        ini, tam = bv.get("byteOffset", 0), bv["byteLength"]
+        fim = (ini + tam + 3) & ~3
+        del binario[ini:fim]
+        bv["byteLength"] = 0
+        for o in j["bufferViews"]:
+            if o is not bv and o.get("byteOffset", 0) > ini:
+                o["byteOffset"] -= fim - ini
+    j["buffers"][0]["byteLength"] = len(binario)
+    js = json.dumps(j, separators=(",", ":")).encode()
+    js += b" " * (-len(js) % 4)
+    binario += b"\0" * (-len(binario) % 4)
+    out = struct.pack("<III", 0x46546C67, 2, 12 + 8 + len(js) + 8 + len(binario))
+    out += struct.pack("<II", len(js), 0x4E4F534A) + js + struct.pack("<II", len(binario), 0x004E4942) + bytes(binario)
+    open(caminho_glb, "wb").write(out)
+
+
+def peca_personagem(fbx_nome, nome_malha_final, material, glb, tris_alvo=None, textura=None):
+    """Capuz/peitoral/calca/luvas/botas: armature Rig_Humanoid_Chibi + malha skinada, sem animacao.
+    tris_alvo: decima a malha. textura: PNG compartilhado (externo ao GLB, uri relativo); padrao = fonte embutida."""
     limpar()
     importar(f"{FINAL}/{fbx_nome}")
     arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
@@ -79,8 +129,12 @@ def peca_personagem(fbx_nome, nome_malha_final, material, glb):
     arm.animation_data_clear()
     aplicar_rotacao([arm, m])
     m.name = nome_malha_final
-    material_simples(m, material, f"{FINAL}/T_Archer_Starter_BC.png")
+    if tris_alvo:
+        decimar(m, tris_alvo)
+    material_simples(m, material, textura or f"{FINAL}/T_Archer_Starter_BC.png")
     exportar(glb, [arm, m])
+    if textura:
+        externalizar_textura(os.path.join(SAIDA, glb), os.path.basename(textura))
 
 
 def arma_estatica(fbx, tex, nome, material, glb, origem=None):

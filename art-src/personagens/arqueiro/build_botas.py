@@ -3,4 +3,4 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _comum as c
 
-c.peca_personagem("SK_Archer_Feet_Starter.fbx", "SK_Archer_Botas", "M_Arqueiro_Botas", "Arqueiro_Botas.glb")
+c.peca_personagem("SK_Archer_Feet_Starter.fbx", "SK_Archer_Botas", "M_Arqueiro_Botas", "Arqueiro_Botas.glb", textura=c.TEX_TRAJE)

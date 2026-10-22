@@ -1,17 +1,19 @@
 ﻿chave,valor,unidade,nota
-mov_vel_max,4.5,m/s,velocidade maxima do heroi (doc 14 layout)
+mov_vel_max,3.8,m/s,velocidade maxima do heroi (era 4.5; o clipe Run casa a 2.17 m/s e ficava frenetico)
 mov_aceleracao,38,m/s2,aceleracao ao mover
 mov_atrito,46,m/s2,desaceleracao ao soltar
 mov_giro,16,1/s,suavidade do giro do corpo (maior = mais rapido)
 mov_gravidade,28,m/s2,gravidade
 mov_snap_chao,0.6,m,distancia de aderencia ao chao (rampas)
 mov_inclinacao_max,56,graus,inclinacao maxima caminhavel
-mov_razao_andar,0.55,razao,abaixo disso da velocidade maxima usa Walk; acima Run
+mov_razao_andar,0.4,razao,abaixo disso da velocidade maxima usa Walk; acima Run
 mov_mult_mirando,0.55,razao,multiplicador de velocidade enquanto carrega o arco
 mov_mult_disparo,0.7,razao,multiplicador de velocidade durante o disparo
 anim_ref_andar,0.6,m/s,velocidade em que o clipe Walk casa com o chao
 anim_ref_correr,2.17,m/s,velocidade em que o clipe Run casa com o chao
-anim_escala_max,2.4,razao,limite do multiplicador de velocidade dos clipes de locomocao
+anim_escala_max,2.6,razao,limite do multiplicador do clipe Walk
+anim_escala_max_correr,1.6,razao,limite do multiplicador do clipe Run
+anim_escala_min_correr,0.7,razao,piso do multiplicador do clipe Run (logo apos trocar de Walk)
 anim_vel_parado,0.15,m/s,abaixo disso fica em Idle
 anim_mistura,0.14,s,tempo de mistura entre clipes
 anim_mistura_esquiva,0.06,s,mistura ao entrar na esquiva
@@ -19,8 +21,14 @@ modelo_yaw_extra,0,graus,correcao de yaw do modelo
 esq_distancia,4.0,m,deslocamento da esquiva (doc 13)
 esq_tempo,0.35,s,duracao da esquiva
 esq_recarga,0.8,s,recarga da esquiva (conta a partir do inicio)
-esq_iframe_inicio,0.02,s,atraso ate comecar a invulnerabilidade
-esq_iframe_tempo,0.26,s,duracao da invulnerabilidade
+anim_fps,30,fps,quadros por segundo dos clipes (art-src/animacao/arqueiro_eventos.json)
+evt_esq_quadros,14,quadros,duracao do clipe Dodge
+evt_esq_iframe_ini_quadro,2,quadro,Dodge iframes_inicio: comeca a invulnerabilidade
+evt_esq_iframe_fim_quadro,12,quadro,Dodge iframes_fim: termina a invulnerabilidade
+evt_draw_quadros,15,quadros,duracao do clipe Draw
+evt_corda_cheia_quadro,15,quadro,Draw corda_cheia: passa para AimIdle
+evt_release_quadros,9,quadros,duracao do clipe Release
+evt_solta_quadro,2,quadro,Release solta: instante em que a flecha sai
 esq_curva,0.6,razao,quanto a esquiva e rapida no inicio e lenta no fim
 mira_giro,26,1/s,suavidade do giro ao mirar
 mira_deadzone_stick,0.3,razao,zona morta do analogico direito
@@ -47,7 +55,7 @@ dano_iframe,0.8,s,invulnerabilidade apos levar dano
 dano_empurrao,4,m/s,empurrao ao levar dano
 morte_renasce,3.0,s,tempo ate renascer apos a morte
 dano_teste,20,pv,dano da tecla de teste
-spawn_x,0,m,entrada da Cripta (layout x)
+spawn_x,-2.5,m,entrada da Cripta (layout x)
 spawn_z,-3,m,entrada da Cripta (Godot z = -layout z)
 spawn_y,1.0,m,altura inicial (cai ate o chao)
 cam_dist,12,m,distancia da camera
