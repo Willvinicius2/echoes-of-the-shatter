@@ -1,0 +1,7 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://art/shaders/cripta_anel_molhado.gdshader" id="1_anel"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_anel")

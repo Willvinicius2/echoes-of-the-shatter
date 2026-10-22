@@ -1,0 +1,40 @@
+[remap]
+
+importer="scene"
+importer_version=1
+type="PackedScene"
+
+[deps]
+
+source_file="res://art/models/SM_Cripta_Poca_C.glb"
+
+[params]
+
+nodes/root_type=""
+nodes/root_name=""
+nodes/apply_root_scale=true
+nodes/root_scale=1.0
+meshes/ensure_tangents=true
+meshes/generate_lods=false
+meshes/create_shadow_meshes=false
+meshes/light_baking=0
+animation/import=false
+_subresources={
+"materials": {
+"M_Agua": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/M_Cripta_Agua.tres",
+"use_external/path": "res://art/materials/M_Cripta_Agua.tres"
+},
+"M_AnelMolhado": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/M_Cripta_AnelMolhado.tres",
+"use_external/path": "res://art/materials/M_Cripta_AnelMolhado.tres"
+},
+"M_PedraEscura": {
+"use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/M_PedraEscura.tres",
+"use_external/path": "res://art/materials/M_PedraEscura.tres"
+}
+}
+}
