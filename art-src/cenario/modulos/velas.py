@@ -13,6 +13,7 @@ OUT = argv[0] if argv else "SM_Cripta_Velas.glb"
 PREV = argv[1] if len(argv) > 1 else None
 WIRE = argv[2] if len(argv) > 2 else None
 CLOSE = argv[3] if len(argv) > 3 else None
+TEXOUT = argv[4] if len(argv) > 4 else None
 TEX = 1024
 random.seed(11)
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -56,6 +57,7 @@ def vela_torneada(x, y, r, h):
     n_drip = 7 + int(r * 85)
     drip_ang = sorted(random.uniform(0, 2 * math.pi) for _ in range(n_drip))
     bend = (random.uniform(-1, 1) * 0.012, random.uniform(-1, 1) * 0.012)      # leve curvatura do fuste
+    chips = [(random.uniform(0, 6.28), random.uniform(0.12, 0.3), random.uniform(0.006, 0.018)) for _ in range(3)]
     tilt = random.uniform(0.12, 0.34); phi = random.uniform(0, 6.28)           # corte inclinado do topo (vela gasta de um lado)
     for (rr, z) in prof:
         ring = []
@@ -65,10 +67,15 @@ def vela_torneada(x, y, r, h):
             if rr > r * 0.7:
                 k += 0.055 * fbm(Vector((math.cos(a) * 2.2 + x * 11, math.sin(a) * 2.2 + y * 11, z * 1.6)), 3)   # veios compridos
                 k += 0.018 * noise.noise(Vector((math.cos(a) * 8, math.sin(a) * 8, z * 5)))
+                fz = z * 26 + 0.8 * noise.noise(Vector((math.cos(a) * 1.5 + x * 9, math.sin(a) * 1.5, z * 3)))
+                k += 0.016 * ((fz - math.floor(fz)) ** 3) * (0.4 + 0.6 * (rr / r > 0.9))      # camadas de cera: sobe devagar e cai em degrau
             zz = z
             if z > top - 0.03: zz += tilt * r * math.cos(a - phi) * (rr / r) * 0.8
             if z > top - 0.02:                    # lábio ondulado e rebaixado onde a cera transbordou
                 zz += 0.004 * math.sin(a * 2 + x * 25) + 0.002 * noise.noise(Vector((a * 3, x * 9, 1.7)))
+                for (ca, cw, cd) in chips:                                                       # lascas: cortes de borda dura no lábio
+                    d = abs((a - ca + math.pi) % (2 * math.pi) - math.pi)
+                    if d < cw: zz -= cd
                 for da in drip_ang:
                     d = abs((a - da + math.pi) % (2 * math.pi) - math.pi)
                     if d < 0.4: zz -= 0.006 * math.cos(d / 0.4 * math.pi / 2) ** 2 * (1 if rr > r * 0.7 else 0.3)
@@ -141,10 +148,6 @@ for i in range(6):
 for i in range(18):                               # respingos
     a = random.uniform(0, 6.28); d = random.uniform(0.28, 0.4); sr = random.uniform(0.008, 0.026)
     parts.append(disco(math.cos(a) * d, -0.05 + math.sin(a) * d * 0.85, sr, random.uniform(0.004, 0.009), 3))
-for i in range(7):                                # pedaços endurecidos de cera
-    a = random.uniform(0, 6.28); d = random.uniform(0.2, 0.36)
-    parts.append(blob((math.cos(a) * d, -0.05 + math.sin(a) * d * 0.85, 0.006), (random.uniform(0.015, 0.035), random.uniform(0.012, 0.025), random.uniform(0.008, 0.016)),
-                      (random.random(), random.random(), random.random() * 6), 2))
 # sem lajota: a cera termina em poça irregular (a placa quadrada virava pedestal no jogo)
 
 bpy.ops.object.select_all(action='DESELECT')
@@ -152,13 +155,14 @@ for o in parts: o.select_set(True)
 bpy.context.view_layer.objects.active = parts[0]; bpy.ops.object.join()
 alta = bpy.context.object; alta.name = "Alta"
 alta.data.remesh_voxel_size = 0.0032; bpy.ops.object.voxel_remesh()
-sm = alta.modifiers.new("s", 'SMOOTH'); sm.factor = 0.5; sm.iterations = 7
+sm = alta.modifiers.new("s", 'SMOOTH'); sm.factor = 0.3; sm.iterations = 2
 bpy.ops.object.modifier_apply(modifier="s")
 bpy.ops.object.shade_smooth()
 print("alta tris", sum(len(p.vertices) - 2 for p in alta.data.polygons))
 
 # cor por vértice na alta: tom por vela mais próxima, âmbar embaixo/nos escorridos, fuligem no topo, manchas
 col = alta.data.color_attributes.new("Col", 'FLOAT_COLOR', 'POINT')
+rcol = alta.data.color_attributes.new("Rg", 'FLOAT_COLOR', 'POINT')
 ivory = Vector((0.97, 0.92, 0.78)); aged = Vector((0.80, 0.66, 0.42)); amber = Vector((0.72, 0.45, 0.17)); soot = Vector((0.10, 0.075, 0.055))
 for i, v in enumerate(alta.data.vertices):
     p = v.co
@@ -180,8 +184,19 @@ for i, v in enumerate(alta.data.vertices):
     if p.z < 0.05:                                        # fuligem e sujeira acumulada na base e nas bordas da poça
         sj = max(0.0, fbm(p * 18 + Vector((9, 2, 4))) - 0.05) * 2.2 * (1 - p.z / 0.05)
         c = c.lerp(Vector((0.30, 0.20, 0.12)), min(0.75, sj))
+    rg = 0.55 + 0.1 * noise.noise(p * 50)                                         # rugosidade: fosca onde endureceu, brilho onde derreteu
+    nr = None
+    for (x, y, r, h, t) in VELAS:
+        dd = math.hypot(p.x - x, p.y - y)
+        if nr is None or dd < nr[0]: nr = (dd, r, h)
+    dd, rc, hc = nr
+    if dd > rc * 1.04 or p.z > Z0 + hc - 0.028: rg = 0.2 + 0.08 * noise.noise(p * 40)
+    if p.z < 0.012 and dd > rc * 1.1:                                              # fino na borda da poça: mais claro e quente (cera translúcida)
+        c = c.lerp(Vector((1.0, 0.84, 0.52)), 0.55 * (1 - p.z / 0.012))
+    if p.z > Z0 + hc - 0.03 and dd < rc * 0.28: c = c.lerp(Vector((0.14, 0.10, 0.07)), 0.75)   # fuligem em volta do pavio
+    if p.z > Z0 + hc - 0.01 and dd > rc * 0.8 and hc < 0.2: c = c.lerp(Vector((0.55, 0.53, 0.5)), 0.4)  # poeira no lábio das velas baixas
     c = c * (0.9 + 0.1 * (noise.noise(p * 60) * 0.5 + 0.5))
-    col.data[i].color = (c.x, c.y, c.z, 1)
+    col.data[i].color = (c.x, c.y, c.z, 1); rcol.data[i].color = (rg, rg, rg, 1)
 
 
 # material da alta (só para o bake): cor de vértice + poros e veios no normal
@@ -189,12 +204,32 @@ ma = bpy.data.materials.new("Alta"); ma.use_nodes = True
 nt = ma.node_tree; bsdf = nt.nodes["Principled BSDF"]
 vc = nt.nodes.new("ShaderNodeVertexColor"); vc.layer_name = "Col"
 nt.links.new(vc.outputs["Color"], bsdf.inputs["Base Color"])
-n1 = nt.nodes.new("ShaderNodeTexNoise"); n1.inputs["Scale"].default_value = 22; n1.inputs["Detail"].default_value = 3; n1.inputs["Roughness"].default_value = 0.65
-vor = nt.nodes.new("ShaderNodeTexVoronoi"); vor.inputs["Scale"].default_value = 150; vor.feature = 'DISTANCE_TO_EDGE'
-mix = nt.nodes.new("ShaderNodeMath"); mix.operation = 'ADD'
-nt.links.new(n1.outputs["Fac"], mix.inputs[0]); mix.inputs[1].default_value = 0.0
-bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.10; bump.inputs["Distance"].default_value = 0.004
-nt.links.new(mix.outputs["Value"], bump.inputs["Height"]); nt.links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+vr = nt.nodes.new("ShaderNodeVertexColor"); vr.layer_name = "Rg"
+sep = nt.nodes.new("ShaderNodeSeparateColor"); nt.links.new(vr.outputs["Color"], sep.inputs["Color"]); nt.links.new(sep.outputs["Red"], bsdf.inputs["Roughness"])
+def tex(kind, scale, **kw):
+    n = nt.nodes.new(kind); n.inputs["Scale"].default_value = scale
+    for k2, v2 in kw.items():
+        if k2 in n.inputs: n.inputs[k2].default_value = v2
+    return n
+n_low = tex("ShaderNodeTexNoise", 18, Detail=3.0)                              # ondulação larga
+n_pore = tex("ShaderNodeTexNoise", 160, Detail=2.0)                            # poros e bolhinhas
+vor_c = tex("ShaderNodeTexVoronoi", 6); vor_c.feature = 'DISTANCE_TO_EDGE'    # rachaduras finas
+vor_b = tex("ShaderNodeTexVoronoi", 70); vor_b.feature = 'N_SPHERE_RADIUS'     # bolhas pequenas
+mp = nt.nodes.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (30, 30, 3)  # riscos verticais de uso
+tc = nt.nodes.new("ShaderNodeTexCoord"); nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+n_sc = tex("ShaderNodeTexNoise", 1, Detail=1.0); nt.links.new(mp.outputs["Vector"], n_sc.inputs["Vector"])
+def mth(op, a, b, v=None):
+    m2 = nt.nodes.new("ShaderNodeMath"); m2.operation = op
+    for i2, src in enumerate((a, b)):
+        if isinstance(src, (int, float)): m2.inputs[i2].default_value = src
+        else: nt.links.new(src, m2.inputs[i2])
+    return m2.outputs["Value"]
+crack = mth('SUBTRACT', 1.0, mth('MULTIPLY', mth('MINIMUM', vor_c.outputs["Distance"], 0.04), 25.0))   # linha fina onde Distance ~ 0
+h1 = mth('MULTIPLY', n_low.outputs["Fac"], 0.9); h2 = mth('MULTIPLY', n_pore.outputs["Fac"], 0.35)
+h3 = mth('MULTIPLY', crack, -0.1); h4 = mth('MULTIPLY', vor_b.outputs["Radius"], 0.2); h5 = mth('MULTIPLY', n_sc.outputs["Fac"], 0.3)
+hh = mth('ADD', mth('ADD', mth('ADD', h1, h2), mth('ADD', h3, h4)), h5)
+bump = nt.nodes.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.75; bump.inputs["Distance"].default_value = 0.0035
+nt.links.new(hh, bump.inputs["Height"]); nt.links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
 alta.data.materials.append(ma)
 
 # ------------------------------------------------------------------ baixa resolução + UV
@@ -202,8 +237,8 @@ bpy.ops.object.select_all(action='DESELECT')
 alta.select_set(True); bpy.context.view_layer.objects.active = alta
 bpy.ops.object.duplicate(); baixa = bpy.context.object; baixa.name = "SM_Cripta_Velas_Cera"
 baixa.data.materials.clear()
-baixa.data.remesh_voxel_size = 0.0055; bpy.ops.object.voxel_remesh()
-dc = baixa.modifiers.new("d", 'DECIMATE'); dc.ratio = 0.085
+baixa.data.remesh_voxel_size = 0.0042; bpy.ops.object.voxel_remesh()
+dc = baixa.modifiers.new("d", 'DECIMATE'); dc.ratio = 0.075
 bpy.ops.object.modifier_apply(modifier="d")
 while len(baixa.data.color_attributes): baixa.data.color_attributes.remove(baixa.data.color_attributes[0])
 bpy.ops.object.select_all(action='DESELECT'); baixa.select_set(True); bpy.context.view_layer.objects.active = baixa
@@ -228,21 +263,25 @@ def bake(tipo, im, **kw):
     bpy.ops.object.bake(type=tipo, use_selected_to_active=True, cage_extrusion=0.012, max_ray_distance=0.05, margin=6, **kw)
     return n
 
-im_c = imagem("T_Velas_Cor", True); im_n = imagem("T_Velas_Normal"); im_ao = imagem("T_Velas_AO")
+im_c = imagem("T_Velas_Cor", True); im_n = imagem("T_Velas_Normal"); im_ao = imagem("T_Velas_AO"); im_r = imagem("T_Velas_MR")
 n_c = bake('DIFFUSE', im_c, pass_filter={'COLOR'})
 n_n = bake('NORMAL', im_n)
 n_ao = bake('AO', im_ao)
+n_r = bake('ROUGHNESS', im_r)
 # oclusão multiplicada na cor (suave): aprofunda as frestas entre velas e embaixo dos escorridos
 c = np.array(im_c.pixels[:]).reshape(-1, 4); ao = np.array(im_ao.pixels[:]).reshape(-1, 4)
 c[:, :3] *= (0.55 + 0.45 * ao[:, :1])
 im_c.pixels = c.ravel().tolist(); im_c.pack(); im_n.pack()
-for n in (n_c, n_ao, n_n): bt.nodes.remove(n)
+rr_ = np.array(im_r.pixels[:]).reshape(-1, 4); mr = np.ones_like(rr_); mr[:, 0] = 1.0; mr[:, 1] = rr_[:, 0]; mr[:, 2] = 0.0   # glTF: G = rugosidade, B = metálico
+im_r.pixels = mr.ravel().tolist(); im_r.pack()
+for n in (n_c, n_ao, n_n, n_r): bt.nodes.remove(n)
+tr = bt.nodes.new("ShaderNodeTexImage"); tr.image = im_r; sp = bt.nodes.new("ShaderNodeSeparateColor")
+bt.links.new(tr.outputs["Color"], sp.inputs["Color"]); bt.links.new(sp.outputs["Green"], bb.inputs["Roughness"]); bt.links.new(sp.outputs["Blue"], bb.inputs["Metallic"])
 tc = bt.nodes.new("ShaderNodeTexImage"); tc.image = im_c
 tn = bt.nodes.new("ShaderNodeTexImage"); tn.image = im_n
 nm = bt.nodes.new("ShaderNodeNormalMap")
 bt.links.new(tc.outputs["Color"], bb.inputs["Base Color"])
 bt.links.new(tn.outputs["Color"], nm.inputs["Color"]); bt.links.new(nm.outputs["Normal"], bb.inputs["Normal"])
-bb.inputs["Roughness"].default_value = 0.3
 try: bb.inputs["Specular IOR Level"].default_value = 0.6
 except KeyError: pass
 
@@ -275,7 +314,7 @@ M_PAVIO.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = 
 M_PAVIO.node_tree.nodes["Principled BSDF"].inputs["Roughness"].default_value = 0.95
 M_CHAMA = mat_chama("M_Chama", 3.0)
 M_NUCLEO = mat_chama("M_ChamaNucleo", 12.0, usa_tex=False, cor=(1.0, 0.93, 0.65))
-M_HALO = mat_chama("M_ChamaHalo", 1.0, alpha=0.09, usa_tex=False, cor=(1.0, 0.35, 0.05))
+M_HALO = mat_chama("M_ChamaHalo", 1.0, alpha=0.05, usa_tex=False, cor=(1.0, 0.35, 0.05))
 
 def chama(x, y, base_z, alt, larg, mat, flexao, cruz=False):
     """Gota com volume: bojo embaixo, ponta fina curvada; UV com v = altura para o gradiente."""
@@ -351,12 +390,17 @@ if PREV:
     for loc, en, colr in (((0.55, -0.7, 0.62), 22, (1, 0.6, 0.3)), ((-0.8, -0.4, 0.5), 9, (0.5, 0.6, 1)), ((0.0, 0.0, 0.62), 5, (1, 0.5, 0.2))):
         l = bpy.data.objects.new("l", bpy.data.lights.new("l", 'POINT')); l.data.energy = en; l.data.color = colr; l.location = loc
         sc.collection.objects.link(l)
-    cam = bpy.data.objects.new("c", bpy.data.cameras.new("c")); sc.collection.objects.link(cam)
-    cam.location = (0.95, -1.25, 0.8); cam.rotation_euler = (Vector((0, -0.05, 0.25)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
-    sc.camera = cam
-    sc.cycles.samples = 96; sc.cycles.use_denoising = True
-    sc.render.resolution_x = 900; sc.render.resolution_y = 900
-    sc.render.filepath = PREV; bpy.ops.render.render(write_still=True)
+    cam = bpy.data.objects.new("c", bpy.data.cameras.new("c")); sc.collection.objects.link(cam); sc.camera = cam
+    sc.cycles.samples = 64; sc.cycles.use_denoising = True
+    sc.render.resolution_x = 800; sc.render.resolution_y = 800
+    def olhar(loc, alvo=(0, -0.05, 0.25)):
+        cam.location = loc; cam.rotation_euler = (Vector(alvo) - Vector(loc)).to_track_quat('-Z', 'Y').to_euler()
+    for nome, loc, alvo in (("frente", (0.0, -1.5, 0.5), (0, -0.05, 0.25)), ("tres_quartos", (0.95, -1.25, 0.8), (0, -0.05, 0.25)),
+                            ("lado", (1.5, 0.0, 0.5), (0, -0.05, 0.25)), ("cima", (0.0, -0.3, 1.6), (0, -0.05, 0.2))):
+        olhar(loc, alvo); sc.render.filepath = PREV + "_" + nome + ".png"; bpy.ops.render.render(write_still=True)
+    olhar((0.95, -1.25, 0.8))
+    if TEXOUT:
+        im_c.filepath_raw = TEXOUT; im_c.file_format = 'PNG'; im_c.save()
     if CLOSE:
         cam.location = (0.42, -0.62, 0.62); cam.rotation_euler = (Vector((0.0, 0.0, 0.34)) - cam.location).to_track_quat('-Z', 'Y').to_euler()
         sc.render.filepath = CLOSE; bpy.ops.render.render(write_still=True)
