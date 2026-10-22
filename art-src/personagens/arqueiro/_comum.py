@@ -5,7 +5,11 @@ Saida: godot/art/models/personagens/arqueiro/ (ARQ_SAIDA para trocar).
 Uso: blender -b -P build_capuz.py
 """
 import os
+import sys
 import bpy
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import proporcao
 
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
 FONTE = os.environ.get("ARQ_FONTE", "D:/openclaude/_trabalho-claude/modelos3d")
@@ -128,6 +132,7 @@ def peca_personagem(fbx_nome, nome_malha_final, material, glb, tris_alvo=None, t
         bpy.data.actions.remove(a)
     arm.animation_data_clear()
     aplicar_rotacao([arm, m])
+    proporcao.aplicar(arm, [m])   # chibi, identico em todos os modulos
     m.name = nome_malha_final
     if tris_alvo:
         decimar(m, tris_alvo)

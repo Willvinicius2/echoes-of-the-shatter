@@ -10,6 +10,8 @@ REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 sys.path.insert(0, os.path.join(REPO, "art-src", "animacao"))
 import anim_lib as A
 import clips_arqueiro as C
+sys.path.insert(0, HERE)
+import proporcao
 
 FBX = r"D:\openclaude\_trabalho-claude\modelos3d\modular_arqueiro\final\SK_Archer_Body.fbx"
 TEX = r"D:\openclaude\_trabalho-claude\modelos3d\modular_arqueiro\final\T_Archer_Body_BC.png"
@@ -43,6 +45,7 @@ def textura(nome_mat, png):
 
 def preparar():
     arm = A.load_rig(FBX)
+    proporcao.aplicar(arm)   # chibi (identico em todos os modulos)
     mat = textura("M_Archer_Body", TEX)
     for o in bpy.data.objects:
         if o.type == 'MESH':

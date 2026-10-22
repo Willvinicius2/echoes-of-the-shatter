@@ -33,6 +33,11 @@ if "mao" in alvo:
     P.render(sc, "arco_na_mao", ctr, (hi.z - lo.z) * 1.1, 60, 8)
     P.render(sc, "arco_na_mao_lado", ctr, (hi.z - lo.z) * 1.1, 90, 5)
     P.render(sc, "arco_na_mao_frente", ctr, (hi.z - lo.z) * 1.1, 0, 5)
+if "pontas" in alvo:
+    sc = P.nova_cena()
+    P.montar(["Arco"])
+    P.render(sc, "arco_ponta_cima", Vector((0, 0.05, 0.47)), 0.30, 60, 12)
+    P.render(sc, "arco_ponta_baixo", Vector((0, 0.05, -0.47)), 0.30, -60, 12)
 if "maoclose" in alvo:
     sc = P.nova_cena()
     objs = P.montar(["Corpo", "Luvas", "Arco"])

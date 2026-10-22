@@ -58,9 +58,9 @@ def paint_atlas():
         base = np.array([0.86, 0.80, 0.66])
         tip = np.array([0.96, 0.93, 0.82])
         # corpo do limb em madeira/couro escuro, ponta (esporao) em osso claro
-        wood = np.array([0.42, 0.27, 0.15])
-        t0 = np.clip((v - 0.58) / 0.14, 0, 1)
-        t1 = np.clip((v - 0.78) / 0.22, 0, 1)
+        wood = np.array([0.30, 0.19, 0.105])
+        t0 = np.clip((v - 0.80) / 0.05, 0, 1)
+        t1 = np.clip((v - 0.88) / 0.12, 0, 1)
         col = wood[None, None, :] * (1 - t0[..., None]) + base[None, None, :] * t0[..., None]
         col = col * (1 - t1[..., None]) + tip[None, None, :] * t1[..., None]
         fib = noise(H, W, 40, 3, 11 if limb == "cima" else 23)  # fibras longitudinais
@@ -74,10 +74,17 @@ def paint_atlas():
         col = col * (1 - stain[..., None] * 0.5) + np.array([0.42, 0.33, 0.18]) * stain[..., None] * 0.5
         # aneis (juntas/ossos) em v = 0.28, 0.55 e marcas
         hh = np.zeros((H, W), np.float32)
-        for vv in (0.30, 0.56, 0.80):
-            band = np.exp(-((v - vv) / 0.012) ** 2)
-            col = col * (1 - 0.35 * band[..., None])
-            hh -= band * 0.5
+        for vv in (0.16, 0.44, 0.62, 0.79):
+            band = np.exp(-((v - vv) / 0.018) ** 2)
+            col = col * (1 - 0.8 * band[..., None]) + np.array([0.80, 0.72, 0.55]) * 0.8 * band[..., None]
+            hh += band * 0.5
+            edge = np.exp(-((np.abs(v - vv) - 0.022) / 0.006) ** 2)
+            col = col * (1 - 0.45 * edge[..., None])
+        # poros e veios do osso (garra) + sujeira nas ranhuras
+        pit = np.clip(noise(H, W, 5, 5, 61 + y0) - 0.62, 0, 1) * 3
+        boneZ = np.clip((v - 0.82) / 0.05, 0, 1)
+        col = col * (1 - 0.5 * pit[..., None] * boneZ[..., None])
+        hh -= pit * boneZ * 0.6
         # lascas e riscos
         rng = np.random.RandomState(3 if limb == "cima" else 4)
         for _ in range(26 if limb == "baixo" else 10):
@@ -172,17 +179,18 @@ def mk_mat(nome, img=None, nrm=None, cor=(0.8, 0.8, 0.8, 1), rough=0.7, emis=Non
 
 # ---------------------------------------------------------------- geometria
 def centerline(s):
-    """Ponto (y,z) do eixo do limb para s em [-1,1]. +Y = lado da corda."""
+    """Ponto (y,z) do eixo do limb para s em [-1,1]. +Y = lado da corda. Altura total 1,1 m (z=0.55*s)."""
     a = abs(s)
-    y = 0.30 * a ** 1.75
-    if a > 0.70:  # recurvo: a ponta volta para frente (-Y) como garra
-        k = (a - 0.70) / 0.30
-        y -= 0.115 * k ** 1.8
-    z = 0.5 * s * 0.985
+    y = 0.17 * a ** 1.8 - 0.026 * math.sin(math.pi * min(max(a - 0.15, 0.0) / 0.45, 1.0)) ** 1.5   # S: ventre para frente perto do punho
+    if a > 0.75:  # recurvo em M: reflexo suave e, na ponta, a garra volta para frente (-Y)
+        y -= 0.03 * ((a - 0.75) / 0.25) ** 2
+    if a > 0.90:
+        y -= 0.115 * ((a - 0.90) / 0.10) ** 1.5
+    z = 0.55 * s
     return y, z
 
 
-def sweep(bm, ss, rx_f, ry_f, nring, uv_layer, u_rng, v_rng, v_of_s, mat_idx, cap_end=True, cap_start=True, twist=None):
+def sweep(bm, ss, rx_f, ry_f, nring, uv_layer, u_rng, v_rng, v_of_s, mat_idx, cap_end=True, cap_start=True, twist=None, smooth=True):
     """Varre elipse (rx em X, ry na normal do plano YZ) ao longo de centerline(s). Retorna lista de aneis."""
     pts = [centerline(s) for s in ss]
     rings = []
@@ -209,7 +217,7 @@ def sweep(bm, ss, rx_f, ry_f, nring, uv_layer, u_rng, v_rng, v_of_s, mat_idx, ca
         f.material_index = mat_idx
         for lp, uv in zip(f.loops, uvs):
             lp[uvl].uv = uv
-        f.smooth = True
+        f.smooth = smooth
         return f
     for i in range(len(rings) - 1):
         va, vb = v_of_s(ss[i]), v_of_s(ss[i + 1])
@@ -274,109 +282,85 @@ def build():
     bm.loops.layers.uv.new("UVMap")
     UV = "UVMap"
 
-    # --- limbs de osso: de cima (s>0) e de baixo (s<0). Cabo cobre |s|<0.11.
-    def limb(sign):
-        n = 13
-        ss = [sign * (0.10 + 0.90 * (i / (n - 1)) ** 0.9) for i in range(n)]
-        if sign < 0:
-            ss = ss  # mesma ordem: do cabo para a ponta
-        # espessura: robusto perto do cabo, afina; recurvo vira esporao agudo
-        def rx(s):
-            a = abs(s)
-            base = 0.056 - 0.024 * a
-            if a < 0.24:  # raiz do limb entra no cabo: afunila para o diametro do couro
-                q = max(0.0, (a - 0.10) / 0.14)
-                base *= 0.70 + 0.30 * q * q * (3 - 2 * q)
-            if a > 0.80:
-                base *= max(0.04, 1 - (a - 0.80) / 0.20) ** 0.9
-            knuckle = (1 + 0.07 * math.sin(a * 22)) * (1 + 0.28 * math.exp(-((a - 0.745) / 0.05) ** 2))  # base do esporao
-            return base * knuckle * (1.18 if abs(a - 0.62) < 0.06 else 1.0)
+    # --- limbs: corpo de madeira escura (liso) + garra de osso (facetada, bisel marcado)
+    def rx(s):
+        a = abs(s)
+        base = 0.0165 - 0.0045 * a
+        base *= 1 + 0.55 * math.exp(-((a - 0.15) / 0.02) ** 2)         # virola do punho
+        base *= 0.78 + 0.22 * min(1.0, max(0.0, (a - 0.12) / 0.2))
+        for c0 in (0.44, 0.62):
+            base *= 1 + 0.16 * math.exp(-((a - c0) / 0.018) ** 2)       # aneis de osso
+        base *= 1 + 0.45 * math.exp(-((a - 0.795) / 0.020) ** 2)        # colar da garra
+        if a > 0.80:   # garra: afila em ponta
+            t = (a - 0.80) / 0.20
+            base *= max(0.03, 1 - t) ** 0.85
+        return base
 
-        def ry(s):
-            return rx(s) * 0.62
-        vr = (0.5, 1.0) if sign > 0 else (0.0, 0.5)
-        return sweep(bm, ss, rx, ry, 8, UV, (0.0, 0.5), vr, lambda s: min(1.0, (abs(s) - 0.10) / 0.90), 0,
-                     cap_end=True, cap_start=True)
+    def ry(s):
+        a = abs(s)
+        return rx(s) * (1.45 + (0.8 * (a - 0.8) / 0.2 if a > 0.8 else 0.0))  # garra achatada em lamina
+
+    def limb(sign):
+        for lo, hi, n, flat, nr in ((0.10, 0.80, 12, False, 8), (0.80, 1.0, 12, True, 6)):
+            ss = [sign * (lo + (hi - lo) * (i / (n - 1))) for i in range(n)]
+            vr = (0.5, 1.0) if sign > 0 else (0.0, 0.5)
+            sweep(bm, ss, rx, ry, nr, UV, (0.0, 0.5), vr, lambda s: min(1.0, (abs(s) - 0.10) / 0.90), 0,
+                  cap_end=True, cap_start=True, smooth=not flat)
     limb(+1); limb(-1)
 
     # --- cabo de couro (straight Z), ligeiramente bojudo, com colares de osso nas pontas
-    ssg = [(-0.125 + 0.25 * i / 6) for i in range(7)]
+    ssg = [(-0.127 + 0.254 * i / 6) for i in range(7)]
     cabo_pts = ssg
     def grx(s):
-        a = abs(s) / 0.125
-        return 0.041 * (1.0 + 0.08 * (1 - a * a)) + (0.010 if a > 0.9 else 0)
+        a = abs(s) / 0.127
+        return 0.0245 * (1.0 + 0.10 * (1 - a * a)) + (0.003 if a > 0.9 else 0)
     def gry(s):
-        return grx(s) * 0.88
-    sweep(bm, ssg, grx, gry, 10, UV, (0.5, 1.0), (0.55, 0.95), lambda s: (s + 0.125) / 0.25, 0)
+        return grx(s) * 0.90
+    sweep(bm, ssg, grx, gry, 8, UV, (0.5, 1.0), (0.55, 0.95), lambda s: (s + 0.127) / 0.254, 0)
 
     # --- enrolamento de corda trancada: aneis inclinados em torno do cabo
-    zs = [-0.070 + 0.028 * i for i in range(6)]
+    zs = [-0.058, -0.045, 0.034, 0.047, 0.060]
     for i, z in enumerate(zs):
-        tl = 0.10 if i % 2 == 0 else 0.15
-        torus_band(bm, z, 0.0445 + 0.0006 * (i % 3), 0.0395 + 0.0006 * (i % 2), 0.0085 + 0.0004 * (i % 2),
-                   tl, 10, 4, UV, (0.5, 1.0), (0.0, 0.5), 0)
+        tl = 0.03 if i % 2 == 0 else 0.05
+        torus_band(bm, z, 0.0262 + 0.0004 * (i % 3), 0.0240 + 0.0004 * (i % 2), 0.0042 + 0.0002 * (i % 2),
+                   tl, 8, 3, UV, (0.5, 1.0), (0.0, 0.5), 0)
 
-    # --- colares de corda nos nocks (laco da corda no limb) e bainhas
-    nock = {}
+    # --- nocks: dente de osso saindo do limb em +Y ate a corda; corda fina reta de ponta a ponta
+    SN = 0.905
+    yn, zn = {}, {}
     for sign in (+1, -1):
-        sn = sign * 0.90
-        y, z = centerline(sn)
-        nock[sign] = (y, z)
-
-    # --- anel de corda e nock em cada limb (colar + dente)
-    for sign in (+1, -1):
-        sn = sign * 0.865
-        y, z = centerline(sn)
-        # tangente aproximada
-        y2, z2 = centerline(sn + sign * 0.02)
-        ty, tz = y2 - y, z2 - z
-        L = math.hypot(ty, tz); ty, tz = ty / L, tz / L
-        ny, nz = -tz, ty
-        # colar de corda: anel em volta do limb (rx do limb ~ 0.0245)
-        rxl = 0.0275
-        ring = []
-        ncol = 8
-        for k in range(ncol):
-            ang = 2 * math.pi * k / ncol
-            cx, cy = math.cos(ang) * (rxl + 0.0055), math.sin(ang) * (rxl * 0.82 + 0.0055)
-            ring.append(cx)
-        # reutiliza sweep curto de torus -> usa sweep reto inclinado
-        ssc = [sn - sign * 0.012, sn, sn + sign * 0.012]
-        sweep(bm, ssc, lambda s: 0.034, lambda s: 0.025, 8, UV, (0.5, 1.0), (0.0, 0.5), lambda s: 0.5, 0, True, True)
-
-    # --- corda: 3 lados ligando os nocks (ligeiramente descentrada para dentro dos colares)
-    pa, pb = nock[+1], nock[-1]
-    ya = 0.0; za = 0.0
-    ys = [pa[0] + 0.0265, pb[0] + 0.0265]
-    zs_ = [centerline(0.865)[1], centerline(-0.865)[1]]
-    # sobe um pouco: ponta da corda atras do colar
-    cord = []
+        yn[sign], zn[sign] = centerline(sign * SN)
+    ys_ = yn[1] + ry(SN) + 0.006          # corda logo atras da face do limb
     uvl = bm.loops.layers.uv[UV]
-    segs = 3
-    pts = [(0, ys[1] + (ys[0] - ys[1]) * t / segs, zs_[1] + (zs_[0] - zs_[1]) * t / segs) for t in range(segs + 1)]
-    ncord = 4
-    rings = []
-    for (x, y, z) in pts:
-        ring = [bm.verts.new((math.cos(2 * math.pi * k / ncord) * 0.0034, y + math.sin(2 * math.pi * k / ncord) * 0.0034, z)) for k in range(ncord)]
-        rings.append(ring)
-    for i in range(len(rings) - 1):
-        for k in range(ncord):
-            k2 = (k + 1) % ncord
-            f = bm.faces.new([rings[i][k], rings[i][k2], rings[i + 1][k2], rings[i + 1][k]])
-            f.material_index = 2; f.smooth = True
-            for lp in f.loops:
-                lp[uvl].uv = (0.5, 0.5)
-    for end, rev in ((rings[0], False), (rings[-1], True)):
-        f = bm.faces.new(list(reversed(end)) if rev else end)
-        f.material_index = 2
-        for lp in f.loops:
-            lp[uvl].uv = (0.5, 0.5)
 
-    # --- pedra verde emissiva: facetada, engastada na frente do cabo (-Y), sobressai ~1,6 cm
-    gz = 0.004
-    gy0 = -0.034
-    top = bm.verts.new((0, gy0 - 0.012, gz + 0.036)); bot = bm.verts.new((0, gy0 - 0.012, gz - 0.036))
-    eq = [bm.verts.new((math.cos(a) * 0.021, gy0 - 0.016 - math.sin(a) * 0.016, gz)) for a in [i * math.pi / 3 + math.pi / 6 for i in range(6)]]
+    def cone(p0, p1, r0, r1, n, mat, smooth=False):
+        a = Vector(p0); b = Vector(p1); ax = (b - a).normalized()
+        t = Vector((1, 0, 0)) if abs(ax.x) < 0.9 else Vector((0, 1, 0))
+        u = ax.cross(t).normalized(); w = ax.cross(u).normalized()
+        rs = []
+        for c, r in ((a, r0), (b, r1)):
+            rs.append([bm.verts.new(c + (u * math.cos(2 * math.pi * k / n) + w * math.sin(2 * math.pi * k / n)) * r) for k in range(n)])
+        fs = []
+        for k in range(n):
+            k2 = (k + 1) % n
+            fs.append(bm.faces.new([rs[0][k], rs[0][k2], rs[1][k2], rs[1][k]]))
+        fs.append(bm.faces.new(list(reversed(rs[0]))))
+        if r1 > 0.0005:
+            fs.append(bm.faces.new(rs[1]))
+        for f in fs:
+            f.material_index = mat; f.smooth = smooth
+            for lp in f.loops:
+                lp[uvl].uv = (0.75, 0.25) if mat == 0 else (0.5, 0.5)
+    for sign in (+1, -1):
+        cone((0, yn[sign], zn[sign]), (0, ys_, zn[sign]), 0.0085, 0.0045, 6, 0)      # dente do nock (osso)
+        cone((0, ys_ - 0.002, zn[sign] - sign * 0.0), (0, ys_ + 0.004, zn[sign]), 0.0065, 0.0035, 6, 0)
+    cone((0, ys_, zn[-1]), (0, ys_, zn[1]), 0.0028, 0.0028, 4, 2)
+
+    # --- pedra verde emissiva: facetada, engastada na frente do cabo (-Y)
+    gz = 0.0
+    gy0 = -0.024
+    top = bm.verts.new((0, gy0 - 0.016, gz + 0.030)); bot = bm.verts.new((0, gy0 - 0.016, gz - 0.030))
+    eq = [bm.verts.new((math.cos(a) * 0.017, gy0 - 0.020 - math.sin(a) * 0.014, gz)) for a in [i * math.pi / 3 + math.pi / 6 for i in range(6)]]
     for i in range(6):
         j = (i + 1) % 6
         for tri in ([top, eq[i], eq[j]], [bot, eq[j], eq[i]]):
@@ -384,6 +368,8 @@ def build():
             f.material_index = 1
             for lp in f.loops:
                 lp[uvl].uv = (0.5, 0.5)
+    # engaste de couro/osso em volta da pedra (anel baixo)
+    cone((0, gy0 + 0.004, 0.0), (0, gy0 - 0.006, 0.0), 0.027, 0.023, 8, 0)
 
     # --- toque do cabo: saliencia de couro (dragona) pendente nao incluida (orcamento)
     bm.normal_update()

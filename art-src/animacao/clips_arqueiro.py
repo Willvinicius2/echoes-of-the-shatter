@@ -7,15 +7,36 @@ final continua sendo rotacoes por osso (euler em graus) entregues a A.make_actio
 Quadros: o ultimo quadro de um loop e copia do quadro 0 (a anim_lib grava assim; o glTF mantem a chave extra, que o Godot
 precisa para o loop linear). Velocidades de referencia (para casar com a velocidade de movimento no jogo, escalar a animacao):
 Walk 0,60 m/s (passada 0,60 m), Run 2,17 m/s (passada 1,30 m)."""
-import math
+import math, os, sys
 from mathutils import Matrix, Euler, Vector
 from anim_lib import ease
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "personagens", "arqueiro"))
+import proporcao
 
 FILL = 1.3
 CAM = (0.62, -0.78, 0.22)
 FPS = 30
 UP = Vector((0, 1, 0))
 AIM = Vector((0, 0.03, 1)).normalized()
+QN = {}                                   # rotacao de repouso acumulada por osso (proporcao.rotacoes_acumuladas)
+I3 = Matrix.Identity(3)
+ANKX, ANKY, ANKZ = 0.16, 0.09, -0.09       # tornozelo no repouso (calibrate le do esqueleto)
+
+
+def conv(bone, parent, m):
+    """Converte a rotacao D (escrita para o repouso antigo, A-pose) para o repouso chibi, mantendo a mesma pose no mundo."""
+    qp, qb = QN.get(parent, I3), QN.get(bone, I3)
+    return qp @ m @ qb.inverted()
+
+
+def calibrate(arm):
+    global QN, ANKX, ANKY, ANKZ
+    QN = proporcao.rotacoes_acumuladas(arm)
+    h = arm.data.bones["LeftFoot"].head_local
+    ANKX, ANKY, ANKZ = h.x, h.y, h.z
+    ANK["Left"] = Vector((ANKX, ANKY, ANKZ))
+    ANK["Right"] = Vector((-ANKX, ANKY, ANKZ))
 
 
 def deg(a):
@@ -43,6 +64,7 @@ class Pose:
         self.head = {b.name: Vector(b.head_local) for b in bones}
         self.parent = {b.name: (b.parent.name if b.parent else None) for b in bones}
         self.D = {}
+        self.arm_obj = arm
         self.hips_loc = Vector((0, 0, 0))
         self.raw = {}      # eulers diretos (para ossos setados sem passar por matriz, ex.: giro de 360 do rolamento)
 
@@ -50,6 +72,10 @@ class Pose:
     def rot(self, bone, rx=0.0, ry=0.0, rz=0.0):
         self.D[bone] = mat(rx, ry, rz)
         self.raw[bone] = (rx, ry, rz)
+        if QN.get(bone, I3) != I3 or QN.get(self.parent[bone], I3) != I3:
+            self.D[bone] = conv(bone, self.parent[bone], self.D[bone])
+            e = self.D[bone].to_euler('XYZ')
+            self.raw[bone] = (math.degrees(e.x), math.degrees(e.y), math.degrees(e.z))
 
     def many(self, **kw):
         for k, v in kw.items():
@@ -111,7 +137,7 @@ class Pose:
 
     def hand_level(self, side, k=1.0, tilt=(0, 0, 0)):
         """Mao com a orientacao de repouso do mundo (arco sempre na vertical); k = fracao da compensacao (0..1)."""
-        full = self.acc(side + "LowerArm").inverted() @ mat(*tilt)
+        full = self.acc(side + "LowerArm").inverted() @ mat(*tilt) @ QN.get(side + "Hand", I3).inverted()
         q = Matrix.Identity(3).to_quaternion().slerp(full.to_quaternion(), k)
         self.D[side + "Hand"] = q.to_matrix()
 
@@ -139,8 +165,8 @@ SIDE = {"Left": 1, "Right": -1}
 
 def stand(P, y=0.0, width=0.16, lz=0.0, rz=0.0, lpitch=0.0, rpitch=0.0):
     """Pes plantados no chao (tornozelo a 0,09 m), quadril abaixado y."""
-    P.leg("Left", Vector((width, 0.09, -0.09 + lz)), lpitch)
-    P.leg("Right", Vector((-width, 0.09, -0.09 + rz)), rpitch)
+    P.leg("Left", Vector((width, ANKY, ANKZ + lz)), lpitch)
+    P.leg("Right", Vector((-width, ANKY, ANKZ + rz)), rpitch)
 
 
 def hang_arms(P, lsw=0.0, rsw=0.0, lelb=-26, relb=-18):
@@ -227,18 +253,19 @@ def aim_pose(arm, draw, t=0.0, tw=0.0, kick=0.0):
     br = math.sin(2 * math.pi * t)
     twist = -18 - 4 * min(draw, 1.2) + tw
     P.hips(y=-0.05, ry=twist, rx=2)
-    P.leg("Left", Vector((0.20, 0.09, -0.09 + 0.14)), 0)
-    P.leg("Right", Vector((-0.18, 0.09, -0.09 - 0.20)), 0)
+    P.leg("Left", Vector((0.20, ANKY, ANKZ + 0.14)), 0)
+    P.leg("Right", Vector((-0.18, ANKY, ANKZ - 0.20)), 0)
     P.many(Spine=(3 + 0.8 * br, twist * 0.5, 0), Chest=(1 + 1.2 * br, twist * 0.8, 0),
            Neck=(-2, -twist * 0.55, 0), Head=(-2, -twist * 1.0 - 8, -2),
            LeftShoulder=(0, 0, 3), RightShoulder=(0, 0, -2))
     # mao do arco: braco quase reto na linha de mira, na altura do ombro
     sh = P.pos("LeftUpperArm")
-    lhand = sh + AIM * 0.315 + Vector((-0.01, 0.075 + kick * 0.05, 0))
+    reach = 0.95 * ((P.head["LeftLowerArm"] - P.head["LeftUpperArm"]).length + (P.head["LeftHand"] - P.head["LeftLowerArm"]).length)
+    lhand = sh + AIM * reach + Vector((-0.01, 0.075 + kick * 0.05, 0))
     P.arm("Left", lhand, (0.5, -1, 0.1))
     P.hand_level("Left", 1.0, (-8 * kick, 0, 0))
     # mao da corda: do ponto frouxo ate a ancora no queixo
-    anchor = P.pos("Head") + P.acc("Head") @ Vector((-0.05, 0.07, 0.10))
+    anchor = P.pos("Head") + P.acc("Head") @ Vector((-0.05, 0.05, 0.12))
     loose = lhand - AIM * 0.13 + Vector((-0.035, -0.03, 0))
     rhand = loose + (anchor - loose) * draw
     P.arm("Right", rhand, (-0.35, 0.25, -1))
@@ -324,8 +351,8 @@ def hit_pose(arm, f):
             break
     P = Pose(arm)
     P.hips(y=-0.035 - 0.03 * k, z=-0.05 * k, rx=-6 * k, ry=-6 * k, rz=3 * k)
-    P.leg("Left", Vector((0.16, 0.09, -0.09 + 0.05 * k)), 0)
-    P.leg("Right", Vector((-0.16, 0.09, -0.09 - 0.06 * k)), 0)
+    P.leg("Left", Vector((0.16, ANKY, ANKZ + 0.05 * k)), 0)
+    P.leg("Right", Vector((-0.16, ANKY, ANKZ - 0.06 * k)), 0)
     P.many(Spine=(3 - 14 * k, 8 * k, 0), Chest=(2 - 16 * k, 10 * k, 4 * k), Neck=(-2 - 8 * k, -6 * k, 0), Head=(-1 - 16 * k, -10 * k, 6 * k),
            LeftShoulder=(0, 0, 3 * k), RightShoulder=(0, 0, 3 * k))
     P.many(LeftUpperArm=(lerp(6, 28, k), 0, lerp(-22, -2, k)), LeftLowerArm=(lerp(-30, -34, k), 0, 0), LeftHand=(-8, 0, 0),
@@ -371,7 +398,13 @@ def death_pose(arm, f):
     for n, v in pose.items():
         if n == "hips_loc":
             continue
-        out[n] = tuple(v)
+        v = tuple(v)
+        b = arm.data.bones[n]
+        pn = b.parent.name if b.parent else None
+        if QN.get(n, I3) != I3 or QN.get(pn, I3) != I3:
+            e = conv(n, pn, mat(*v)).to_euler('XYZ')
+            v = (math.degrees(e.x), math.degrees(e.y), math.degrees(e.z))
+        out[n] = v
     out["Hips"] = {"rot": pose["Hips"], "loc": tuple(pose["hips_loc"])}
     return out
 
@@ -383,6 +416,7 @@ def _frames(fn, n, step=1):
 
 
 def build(A, arm):
+    calibrate(arm)
     mk = A.make_action
     out = []
 
