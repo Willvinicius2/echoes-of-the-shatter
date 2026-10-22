@@ -245,17 +245,19 @@ def build(L):
             jit=0.02, ez=rng.uniform(-0.08, 0.08))
     # coroamento desabado: lajes quebradas de borda irregular, em camadas, algumas inclinadas
     def laje(x, y, zc, w, tilt, mat=None):
-        L.boulder(Vector((x, y, zc)), (w * rng.uniform(0.9, 1.2), w * rng.uniform(0.75, 1.0), 0.27 + 0.12 * w), mat,
-                  rot=(rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt), rng.uniform(0, 6.28)), pts=rng.randint(14, 20), bev=0.015, flat=0.65)
+        # laje retangular de borda reta com cantos lascados, assentada quase plana
+        L.rock(Vector((x, y, zc)), (w * rng.uniform(0.95, 1.15), w * rng.uniform(0.7, 0.95), 0.2 + 0.1 * w), mat,
+               rot=(rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt), rng.choice([0, 1.5708]) + rng.uniform(-0.18, 0.18)),
+               bev=0.01, chip=0.09, rough=0.012, cuts_pre=3, seg=1, jit=0.02)
     L.rock(Vector((0, 0, 5.62)), (1.9, 1.9, 0.12), L.MAT["escura"], bev=0.0, chip=0.05, rough=0.01, cuts_pre=3, seg=1, jit=0.03)  # terra entre as lajes
     for (x, y) in ((-0.55, -0.55), (0.55, -0.55), (-0.55, 0.55), (0.55, 0.55), (0.0, 0.0), (0.0, -0.85)):
-        laje(x + rng.uniform(-.12, .12), y + rng.uniform(-.12, .12), 5.72, rng.uniform(0.85, 1.05), 0.09)
+        laje(x + rng.uniform(-.12, .12), y + rng.uniform(-.12, .12), 5.72, rng.uniform(0.85, 1.05), 0.03)
     for v in vazios:
-        laje(v.x * 0.85, v.y * 0.85, 5.68, 0.8, 0.12)
+        laje(v.x * 0.85, v.y * 0.85, 5.68, 0.8, 0.05)
     for (x, y) in ((-0.3, 0.2), (0.4, -0.1), (-0.1, -0.5), (0.3, 0.55)):
-        laje(x + rng.uniform(-.1, .1), y + rng.uniform(-.1, .1), 5.92, rng.uniform(0.6, 0.8), 0.2)
+        laje(x + rng.uniform(-.1, .1), y + rng.uniform(-.1, .1), 5.92, rng.uniform(0.6, 0.8), 0.06)
     for (x, y) in ((0.1, 0.1), (-0.3, -0.25)):
-        laje(x, y, 6.12, rng.uniform(0.45, 0.6), 0.32)
+        laje(x, y, 6.10, rng.uniform(0.45, 0.6), 0.1)
     for _ in range(6):  # cascalho miúdo nas fendas
         L.boulder(Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(5.7, 5.95))), (0.16, 0.14, 0.1), None,
                   rot=(0, 0, rng.uniform(0, 6)), pts=10, bev=0.006)
