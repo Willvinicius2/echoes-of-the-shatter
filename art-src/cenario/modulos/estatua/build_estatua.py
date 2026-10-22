@@ -28,7 +28,7 @@ def pintar(o):
     mats = [m.name for m in o.data.materials]
     layer = bm.loops.layers.float_color.new("Color")
     for f in bm.faces:
-        ouro = mats[f.material_index] == "M_Ouro" if f.material_index < len(mats) else False
+        nm = mats[f.material_index] if f.material_index < len(mats) else ""; ouro = nm == "M_Ouro"; corte = nm == "M_PedraCorte"
         for l in f.loops:
             v = l.vert; c = mw @ v.co; k = max(-1.0, min(1.0, cav[v.index] * 70))
             val = 0.86 + 0.40 * (-k if k < 0 else 0) - 0.55 * (k if k > 0 else 0)
@@ -37,6 +37,8 @@ def pintar(o):
             r = g = b = val
             if ouro:
                 d = 0.75 + 0.35 * (fbm(c, 9, 2) + 0.5); r = g = b = d * (0.9 + 0.2 * (fbm(c + Vector((7, 1, 2)), 22, 2)))
+            elif corte:
+                r = g = b = min(1.0, val * 0.95) * (0.9 + 0.1 * fbm(c, 14, 2))                 # corte claro, sem líquen
             else:
                 n = fbm(c + Vector((0.37, 0.71, 0.13)), 2.6, 3)                               # líquen: manchas suaves, mais em cima e na base
                 up = max(0.0, v.normal.z) if False else max(0.0, (mw.to_3x3() @ v.normal).z)

@@ -33,7 +33,7 @@ def init_materiais(com_textura=True):
     alb, nor = texturas.pedra(TEX_DIR) if com_textura else (None, None)
     M['pedra'] = _mat("M_PedraEscura", (0.45, 0.43, 0.50), rough=0.88, image=alb, normal=nor)
     M['ouro'] = _mat("M_Ouro", (0.72, 0.52, 0.16), metal=0.85, rough=0.45)
-    M['corte'] = _mat("M_PedraCorte", (0.78, 0.74, 0.72), rough=0.95)   # pedra recém-quebrada, mais clara (fraturas e lascas); sem textura, só cor de vértice
+    M['corte'] = _mat("M_PedraCorte", (0.62, 0.58, 0.56), rough=0.95)   # pedra recém-quebrada, mais clara (fraturas e lascas); sem textura, só cor de vértice
     M['vazio'] = _mat("M_Vazio", (0.02, 0.02, 0.03), rough=1.0)
 
 def _mat(name, color, metal=0.0, rough=0.85, image=None, normal=None):
