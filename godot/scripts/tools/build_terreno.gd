@@ -201,7 +201,7 @@ func _escurecer(n: Node) -> void:
 		var mi := n as MeshInstance3D
 		for k in mi.mesh.get_surface_count():
 			var m := mi.mesh.surface_get_material(k) as BaseMaterial3D
-			if m == null:
+			if m == null or m.resource_name == "":
 				# superfície sem material no glb (o Godot pintaria de branco): pedra escura da cripta
 				var e := StandardMaterial3D.new(); e.albedo_color = Color(0.14, 0.14, 0.18); e.roughness = 0.9
 				mi.set_surface_override_material(k, e); mi.set_meta("sobrescrito", true)
@@ -438,9 +438,8 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 		if qe != null:
 			_inst(grupo, "Altar", "Altar", qe.x, qe.y, _yaw_para(qe.x, qe.y, c.x, c.y)); _reservar(qe.x, qe.y, 1.8)
 			_estatua(grupo, "Estatua", qe, c, T.chao(qe.x, qe.y) + 0.8)
-		for k in 4:
-			var q = _ponto_parede(nome, k * TAU / 4.0 + 0.6, 2.4)
-			if q != null: _braseiro_se(grupo, "Braseiro_%d" % k, q.x, q.y)
+		if qe != null:
+			for sx in [-1.0, 1.0]: _braseiro_se(grupo, "BraseiroAltar_%d" % int(sx), qe.x + sx * 3.4, qe.y + 0.6)
 		return
 	var soma := 0.0
 	for k in 12:
@@ -463,15 +462,20 @@ func _decorar_sala(props: Node3D, nome: String) -> void:
 			for k in 8:   # anel de cobertura: pilares simétricos com chão aberto entre eles
 				var a := k * PI / 4.0 + PI / 8.0
 				_pilar_se(grupo, "PilarCobertura_%d" % k, 76.0 + cos(a) * 13.0, 139.0 + sin(a) * 13.0, 76.0, 139.0)
-			for k in 6:   # braseiros de brasa no contorno
-				var q = _ponto_parede(nome, k * TAU / 6.0 + 0.5, 3.0)
-				if q != null: _braseiro_se(grupo, "BraseiroBorda_%d" % k, q.x, q.y)
+			for k in 8:   # braseiros no meio de cada lado do octógono, 2,6 m para dentro
+				var ang := k * PI / 4.0
+				_braseiro_se(grupo, "BraseiroBorda_%d" % k, 76.0 + cos(ang) * 17.4, 139.0 + sin(ang) * 17.4)
 		"r05_linha_tiro":
 			for p in [[-10.0, 50.5], [-10.0, 57.5], [2.0, 50.5], [2.0, 57.5]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1] + p[0]), p[0], p[1], c.x, c.y, true)
 		"r06_elite_escudada":
 			for p in [[-10.0, 91.0], [-10.0, 98.0]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1]), p[0], p[1], c.x, c.y, true)
 		"r07_elite_veloz":
 			for p in [[37.0, 88.0], [37.0, 102.0]]: _pilar_se(grupo, "PilarCobertura_%d" % int(p[1]), p[0], p[1], c.x, c.y, true)
+	if not ["r00_atrio", "r08_antecamara", "r09_arena"].has(nome):
+		var pr: Array = T.SALAS[nome][0]
+		for sx in [-1.0, 1.0]:
+			for sz in [-1.0, 1.0]:
+				_braseiro_se(grupo, "BraseiroSala_%d_%d" % [int(sx), int(sz)], pr[1] + sx * (float(pr[3]) - 3.2), pr[2] + sz * (float(pr[4]) - 3.2))
 	_entulho_cantos(grupo, nome, 2 if raio < 14.0 else 4)
 
 # ------------------------------------------------------------------ arquitetura (anel contínuo de paredes ortogonais)
@@ -531,16 +535,13 @@ func _fila(g: Node3D, sala: String, a: Vector2, d: Vector2, fora: Vector2, s0: f
 		var sc := s0 + (i + 0.5) * w
 		_modulo_larg(g, "%s_%s_%d" % [modelo, pref, i], modelo, _ponto_lado(a, d, fora, sc, prof), fora, w / W_MOD)
 		cont[0] += 1
-		if i % 6 == 3:
-			var bp := _ponto_lado(a, d, fora, sc, -1.9)
-			_braseiro_se(g, "Braseiro_%s_%d" % [pref, i], bp.x, bp.y)
 		if not baixo and i % 4 == 0:
 			var ep := _ponto_lado(a, d, fora, sc, -0.9)
 			_inst(g, "Estandarte_%s_%d" % [pref, i], "Estandarte", ep.x, ep.y, _yaw_normal(fora))
 	if not baixo:
 		for j in range(2, n, 2):   # pilastra a cada 2 módulos, na junta
-			var pp := _ponto_lado(a, d, fora, s0 + j * w, -0.3)
-			_inst(g, "Pilastra_%s_%d" % [pref, j], "Pilastra", pp.x, pp.y, _yaw_normal(fora))
+			var pp := _ponto_lado(a, d, fora, s0 + j * w, -1.5)   # pilar v6 aprovado, encostado na parede
+			_inst(g, "Pilar_%s_%d" % [pref, j], "Pilar", pp.x, pp.y, _yaw_normal(fora)); _reservar(pp.x, pp.y, 1.4)
 
 func _lado(g: Node3D, sala: String, idx: int, a: Vector2, b: Vector2, cont: Array) -> void:
 	var d := b - a; var l := d.length(); d /= l
@@ -599,10 +600,7 @@ func _arquitetura(props: Node3D) -> void:
 				yaw_f = (fora + f0).normalized(); cpos = a + yaw_f * 0.9
 			else:
 				yaw_f = fora; cpos = a + fora * 0.6 - d * 0.6
-			if baixo_a:
-				_inst(g, "Pilarete_%s_%d" % [nome.get_slice("_", 0), k], "Pedestal", cpos.x, cpos.y, 0.0)
-			else:
-				_inst(g, "Canto_%s_%d" % [nome.get_slice("_", 0), k], "Canto", cpos.x, cpos.y, _yaw_normal(yaw_f))
+			_inst(g, "Canto_%s_%d" % [nome.get_slice("_", 0), k], "Canto", cpos.x, cpos.y, _yaw_normal(yaw_f))
 	# paredes laterais dos corredores comuns (as escadarias ficam abertas), começando depois da espessura do arco
 	for k in T.CORREDORES:
 		if T.ESCADAS.has(k) or k == "s01": continue
@@ -626,12 +624,6 @@ func _arquitetura(props: Node3D) -> void:
 				if nd != null: nd.scale.x *= w / W_MOD
 				cont[0] += 1
 	print("arquitetura: paredes=", cont[0], " arcos=", cont[1])
-	# pedestais junto aos braseiros que ladeiam os tapetes grandes (um por braseiro, entre ele e o tapete)
-	for t in tapetes:
-		if t[2] < 3.0: continue
-		for dz in [-1.0, 1.0]:
-			for sx in [-1.0, 1.0]:
-				_inst(g, "Pedestal_%d_%d_%d" % [int(t[0]), int(sx), int(dz)], "Pedestal", t[0] + sx * (t[2] + 0.5), t[1] + dz * 4.8, 0.0)
 
 func _em_sala(x: float, z: float) -> bool:
 	for nome in T.SALAS:
@@ -688,7 +680,7 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	if cena:
 		var m := cena.instantiate() as Node3D; m.name = "Modelo"; m.scale = Vector3.ONE * 0.75; n.add_child(m); _colisor(m, "Braseiro")
 	var luz := OmniLight3D.new(); luz.name = "Luz"; luz.position = Vector3(0, 1.45, 0)
-	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 0.85; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
+	luz.light_color = Color(1.0, 0.68, 0.36); luz.light_energy = 0.7; luz.omni_range = 6.0; luz.omni_attenuation = 1.5
 	luz.set_script(load("res://scripts/cripta/braseiro_luz.gd"))
 	n.add_child(luz)
 	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 0.88, 0); ch.scale = Vector3.ONE * 0.75
@@ -697,7 +689,7 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	for k in tam.size():
 		var qm := QuadMesh.new(); qm.size = tam[k]; qm.center_offset = Vector3(0, tam[k].y * 0.5, 0)
 		var sm := ShaderMaterial.new(); sm.shader = load("res://art/shaders/chama.gdshader")
-		sm.set_shader_parameter("seed", float(hash(nome + str(x)) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.0 + 0.35 * k); sm.set_shader_parameter("intensity", 0.10)
+		sm.set_shader_parameter("seed", float(hash(nome + str(x)) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.0 + 0.35 * k); sm.set_shader_parameter("intensity", 0.055)
 		qm.material = sm
 		var mi := MeshInstance3D.new(); mi.name = "Cartao%d" % k; mi.mesh = qm; mi.position = desl[k]
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
