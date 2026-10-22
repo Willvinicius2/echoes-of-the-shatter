@@ -1,0 +1,38 @@
+[
+    {
+        "id":  "t1_atrio",
+        "tamanho":  "1536x1024",
+        "referencias":  [
+                            "D:\\openclaude\\_trabalho-claude\\wt-terreno\\docs\\arte\\referencias-geracao\\conceito-cripta\\conceito_prancha.png",
+                            "D:\\openclaude\\_trabalho-claude\\terreno-conceito\\prancha_salas_v5.png"
+                        ],
+        "prompt":  "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet and grey moonlight, warm orange light ONLY from braziers. Use the attached images only as reference for the crypt architecture and painted look. No text, no UI, no letters, no loose objects, no floating or intersecting objects; props only placed flush against walls. Scene: the Atrium terrain and surroundings. A rectangular room 24x24 m with a perfectly smooth flat floor of flagstones (no raised areas, no steps, no bumps in the floor), straight continuous ashlar stone walls with sharp 90 degree corners, a 6 m wide arched doorway centered in one wall, an arched niche with a hooded statue in the center of the opposite wall, a central red carpet, two symmetric pairs of braziers flanking the carpet. Dark irregular natural rock visible only outside the walls."
+    },
+    {
+        "id":  "t2_arena",
+        "tamanho":  "1536x1024",
+        "referencias":  [
+                            "D:\\openclaude\\_trabalho-claude\\wt-terreno\\docs\\arte\\referencias-geracao\\conceito-cripta\\conceito_prancha.png",
+                            "D:\\openclaude\\_trabalho-claude\\terreno-conceito\\prancha_salas_v5.png"
+                        ],
+        "prompt":  "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet and grey moonlight, warm orange light ONLY from braziers. Use the attached images only as reference for the crypt architecture and painted look. No text, no UI, no letters, no loose objects, no floating or intersecting objects; props only placed flush against walls. Scene: a regular octagonal arena room (8 equal sides, about 40 m across) with a flat circular flagstone floor, a continuous ashlar stone wall with hooded statue niches along the sides, one 6 m wide arched corridor entering through one side, and eight cover pillars in a ring at equal angles. Flat floor, no elevations."
+    },
+    {
+        "id":  "t3_mapa",
+        "tamanho":  "1536x1024",
+        "referencias":  [
+                            "D:\\openclaude\\_trabalho-claude\\wt-terreno\\docs\\arte\\referencias-geracao\\conceito-cripta\\conceito_prancha.png",
+                            "D:\\openclaude\\_trabalho-claude\\terreno-conceito\\prancha_salas_v5.png"
+                        ],
+        "prompt":  "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet and grey moonlight, warm orange light ONLY from braziers. Use the attached images only as reference for the crypt architecture and painted look. No text, no UI, no letters, no loose objects, no floating or intersecting objects; props only placed flush against walls. Scene: overview from above of the whole level like a 3D floor plan: 11 rectangular rooms and one octagonal arena connected by straight 6 m wide corridors with arches, staircases descending between floors, everything surrounded by dark natural organic cavernous rock on the outside."
+    },
+    {
+        "id":  "t4_transicao",
+        "tamanho":  "1536x1024",
+        "referencias":  [
+                            "D:\\openclaude\\_trabalho-claude\\wt-terreno\\docs\\arte\\referencias-geracao\\conceito-cripta\\conceito_prancha.png",
+                            "D:\\openclaude\\_trabalho-claude\\terreno-conceito\\prancha_salas_v5.png"
+                        ],
+        "prompt":  "Fixed 3/4 top-down ARPG camera (like Diablo / Spell Brigade), stylized hand-painted 3D game render, dark crypt, cold blue-violet and grey moonlight, warm orange light ONLY from braziers. Use the attached images only as reference for the crypt architecture and painted look. No text, no UI, no letters, no loose objects, no floating or intersecting objects; props only placed flush against walls. Scene: close-up detail of how the flat flagstone floor meets the ashlar stone wall, with a baseboard course at the foot of the wall, and how the wall meets the natural dark rock on the outside, with broken edges. The floor stays perfectly flat, no ramps."
+    }
+]
