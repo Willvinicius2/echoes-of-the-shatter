@@ -702,7 +702,9 @@ def render_preview(obj_ou_cena, caminho, vista="tres_quartos", res=(800, 800), s
     sc.collection.objects.link(cam)
     sc.camera = cam
     criados += [cam, cam_d]
-    if vista == "frente":
+    if isinstance(vista, tuple):   # (alvo, direção da câmera, distância, lente) em coordenadas do mundo
+        alvo = Vector(vista[0]); d = Vector(vista[1]); dist = vista[2]; cam_d.lens = vista[3] if len(vista) > 3 else 50
+    elif vista == "frente":
         d = Vector((0.0, 1.0, 0.18)); alvo = cen; dist = 1.55 * k; cam_d.lens = 50
     elif vista == "close":
         d = Vector((0.25, 1.0, 0.30)); alvo = cen + Vector((-0.34 * dim.x, 0, 0.22 * dim.z)); dist = 0.5 * k

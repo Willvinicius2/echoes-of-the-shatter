@@ -54,7 +54,7 @@ def novo(nome, bm, m=None):
     objs.append(o); return o
 
 
-def bisel(bm, largura=0.012, ang=32, seg=2):
+def bisel(bm, largura=0.012, ang=32, seg=1):
     ed = [e for e in bm.edges if len(e.link_faces) == 2 and e.calc_face_angle(0) > math.radians(ang)]
     if ed:
         try: bmesh.ops.bevel(bm, geom=ed, offset=largura, segments=seg, affect='EDGES', profile=0.5)

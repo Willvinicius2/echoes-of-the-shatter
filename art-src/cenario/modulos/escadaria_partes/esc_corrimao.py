@@ -31,8 +31,8 @@ def build(M):
             z0 = L.linha(y) + L.H0 + L.COPE - 0.01
             z1 = zs[min(range(n + 1), key=lambda k: abs(ys[k] - y))] - 0.02
             L.bloco(f"colar{s}{i}", xc - 0.05, xc + 0.05, y - 0.05, y + 0.05, z0, z0 + 0.07, fx, 2100 + i, lascas=0, bis=0.012, jit=0.003)
-            ra = [0.019 + 0.017 * math.exp(-((k / 16 - c) / 0.07) ** 2) for k in range(17) for c in (0.5,)]   # barra redonda com nó no meio
-            L.tubo(f"bal{s}{i}", [(xc, y, z0 + 0.07 + (z1 - z0 - 0.07) * k / 16) for k in range(17)], ra, fe, lados=8, seed=2200 + i)
+            ra = [0.019 + 0.017 * math.exp(-((k / 8 - c) / 0.07) ** 2) for k in range(9) for c in (0.5,)]   # barra redonda com nó no meio
+            L.tubo(f"bal{s}{i}", [(xc, y, z0 + 0.07 + (z1 - z0 - 0.07) * k / 8) for k in range(9)], ra, fe, lados=6, seed=2200 + i)
             L.bloco(f"cinta{s}{i}", xc - 0.04, xc + 0.04, y - 0.04, y + 0.04, z1 - 0.045, z1 + 0.02, fx, 2300 + i, lascas=0, bis=0.008, jit=0.002)
         # cintas de ferro e ponteiras nos pilares; volutas na face voltada para a escada
         for nome, yc, zb0, ztop in (("pe", y_pe, L.BAIXO, L.linha(L.YF) + L.H0 + L.COPE + L.RAIL_H + 0.28),

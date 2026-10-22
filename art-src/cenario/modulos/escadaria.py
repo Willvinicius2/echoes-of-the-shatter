@@ -39,17 +39,16 @@ def juntar(objs, nome):
 def montar():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     L.configurar(N, LARG, ALT, PISO)
-    cc_materiais._PEDRA['musgo_qtd'] = 0.55; cc_materiais._ESCURA['musgo_qtd'] = 0.4   # menos musgo que na coluna
     M = cc_materiais.criar_materiais()
     zt = N * ALT   # altura total da rampa: musgo e umidade dependem dela
     # degraus: musgo escuro nas juntas e cantos, cresce para baixo; sombra suave
     for nome, ps in (("pedra", cc_materiais._PEDRA),):
-        ps.update(quente=(1.0, 0.97, 1.02), frio=(0.88, 0.92, 1.10), musgo_lim=(0.44, 0.58), musgo_k=0.55, musgo_h=(zt + 0.5, 0.0, 0.08), ao_g_min=0.78)
+        ps.update(c1=(0.095, 0.092, 0.120), c2=(0.19, 0.185, 0.235), c3=(0.34, 0.335, 0.42), quente=(1.04, 0.98, 1.0), frio=(0.90, 0.93, 1.10), musgo_qtd=0.95, musgo_lim=(0.40, 0.54), musgo_k=0.6, musgo_h=(zt + 0.5, 0.0, 0.08), ao_g_min=0.78)
         cc_materiais._montar_pedra(M[nome], ps)
     # paredes: pedra maior, cor por bloco bem variada (violeta frio e alguns quentes), umidade escorrendo e sujeira no pé
-    par = dict(cc_materiais._ESCURA, nome="M_PedraParede", escala=0.6, v_min=0.6, v_max=1.38,
+    par = dict(cc_materiais._ESCURA, nome="M_PedraParede", c1=(0.050, 0.048, 0.075), c2=(0.100, 0.096, 0.150), c3=(0.18, 0.175, 0.25), musgo_qtd=0.85, escala=0.6, v_min=0.6, v_max=1.38,
                quente=(1.16, 1.0, 0.88), frio=(0.86, 0.90, 1.14), ao_g_min=0.8,
-               musgo_lim=(0.46, 0.6), musgo_k=0.55, musgo_h=(zt + 0.5, 0.0, 0.05), escorre=0.4, sujo_base=(0.0, 1.4))
+               musgo_lim=(0.42, 0.56), musgo_k=0.6, musgo_h=(zt + 0.5, 0.0, 0.05), escorre=0.4, sujo_base=(0.0, 1.4))
     M['parede'] = bpy.data.materials.new("M_PedraParede"); M['parede'].use_nodes = True
     cc_materiais._montar_pedra(M['parede'], par)
     M['parede'].use_fake_user = True
@@ -73,6 +72,15 @@ def montar():
     return M, op, of, mf
 
 
+def aliviar(o, graus=6.0):
+    bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
+    n0 = len(o.data.polygons)
+    d = o.modifiers.new("alivio", 'DECIMATE'); d.decimate_type = 'DISSOLVE'; d.angle_limit = math.radians(graus)
+    d.delimit = {'MATERIAL', 'UV'}
+    bpy.ops.object.modifier_apply(modifier=d.name)
+    print("dissolve", graus, "graus:", n0, "->", len(o.data.polygons), "faces")
+
+
 def fundir(op, of, mf):
     of.data.materials.clear(); of.data.materials.append(mf)
     for p in of.data.polygons: p.material_index = 0
@@ -86,8 +94,36 @@ def fundir(op, of, mf):
     return o
 
 
-def exportar(o):
+def colisao(dy, dz):
+    """Colisão simples (Godot cria um StaticBody3D com trimesh nos nós *-colonly): rampa contínua pelo meio dos pisos,
+    para o herói subir sem trancos nem afundar, paredes e pilares. dy, dz = deslocamento do pivô."""
+    n0 = len(L.objs)
+    hw = L.W / 2
+    y0, y1 = L.YF + 0.62, L.YT - L.LAND
+    topo = [(y0, 0.045), (L.YF, 0.045), (L.YF - L.T / 2, L.R), (L.YT + L.T / 2, L.N * L.R), (y1, L.N * L.R)]
+    perfil = [(y - dy, z - dz) for y, z in topo + [(y1, L.BAIXO), (y0, L.BAIXO)]]
+    L.prisma("rampa", -hw, hw, perfil, None, 1, jit=0, lascas=0, bis=0)
+    for lado in (-1, 1):
+        xa, xb = (hw, hw + L.WT) if lado > 0 else (-hw - L.WT, -hw)
+        zt = lambda y: L.linha(y) + L.H0 + L.COPE
+        pf = [(L.YF, L.BAIXO), (L.YF, zt(L.YF)), (L.YT, zt(L.YT)), (y1, zt(L.YT)), (y1, L.BAIXO)]
+        L.prisma("parede", xa, xb, [(y - dy, z - dz) for y, z in pf], None, 2, jit=0, lascas=0, bis=0)
+        xc = (xa + xb) / 2; ph = L.POST / 2 + 0.05
+        for yc, zb, zt2 in ((L.YF + 0.24, L.BAIXO, zt(L.YF) + 0.9), (y1 + 0.24, zt(L.YT), zt(L.YT) + 1.2)):
+            L.bloco("pilar", xc - ph, xc + ph, yc - ph - dy, yc + ph - dy, zb - dz, zt2 - dz, None, 3, lascas=0, bis=0, jit=0)
+    novos = L.objs[n0:]
+    for o in novos: o.data.materials.clear()
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in novos: o.select_set(True)
+    bpy.context.view_layer.objects.active = novos[0]
+    bpy.ops.object.join()
+    c = bpy.context.object; c.name = NOME + "_Colisao-colonly"
+    return c
+
+
+def exportar(o, col=None):
     bpy.ops.object.select_all(action='DESELECT'); o.select_set(True)
+    if col is not None: col.select_set(True)
     bpy.context.view_layer.objects.active = o
     bpy.ops.export_scene.gltf(filepath=os.path.join(OUT, NOME + ".glb"), use_selection=True, export_format='GLB',
                               export_yup=True, export_image_format='JPEG', export_jpeg_quality=88)
@@ -99,9 +135,19 @@ if __name__ == "__main__":
     if PREV: os.makedirs(PREV, exist_ok=True)
     if not SEM_BAKE:
         print(cc_materiais.bake(op, tamanho=TAM, samples=12, pasta=PREV or OUT, nome="Escadaria"))
+    if not SEM_BAKE: aliviar(op)
     o = fundir(op, of, mf)
+    pivo = "--pivo-pe" not in sys.argv
+    col = colisao(L.YT if pivo else 0.0, L.N * L.R if pivo else 0.0)
     print("triângulos:", sum(len(p.vertices) - 2 for p in o.data.polygons), "dim", tuple(round(d, 2) for d in o.dimensions))
-    exportar(o)
+    exportar(o, col)
+    col.hide_render = True; col.hide_viewport = True
     if PREV:
-        for v in [x for x in os.environ.get("VISTAS", "tres_quartos,frente,lado,close").split(",") if x]:
-            cc_materiais.render_preview(o, os.path.join(PREV, f"escadaria_{v}.png"), v, (900, 900), int(os.environ.get("AMOSTRAS", 32)), "auto")
+        yp = L.YF - L.YT   # pé fica a esta distância do pivô (topo)
+        extras = {   # closes de revisão: topo do pilar de cima e degraus junto ao pilar do pé
+            "pilar_topo": ((-2.17, -0.71, 1.55), (0.75, 0.55, 0.30), 2.3),
+            "degraus_pilar_pe": ((-1.7, yp - 0.2, -L.N * L.R + 0.9), (0.45, 0.85, 0.55), 3.6),
+            "jogo": ((0, yp / 2, -L.N * L.R / 2), (0.55, 0.9, 0.95), 15.0, 35),
+        }
+        for v in [x for x in os.environ.get("VISTAS", "tres_quartos,lado,pilar_topo,degraus_pilar_pe,jogo").split(",") if x]:
+            cc_materiais.render_preview(o, os.path.join(PREV, f"escadaria_{v}.png"), extras.get(v, v), (900, 900), int(os.environ.get("AMOSTRAS", 24)), "auto")
