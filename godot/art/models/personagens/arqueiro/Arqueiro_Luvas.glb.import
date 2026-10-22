@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://eifnu5gqu6rv"
-path="res://.godot/imported/Arqueiro_Luvas.glb-c7c1f1dce946b70ef7a5b4ddbbb27dc6.scn"
+valid=false
 
 [deps]
 
 source_file="res://art/models/personagens/arqueiro/Arqueiro_Luvas.glb"
-dest_files=["res://.godot/imported/Arqueiro_Luvas.glb-c7c1f1dce946b70ef7a5b4ddbbb27dc6.scn"]
 
 [params]
 

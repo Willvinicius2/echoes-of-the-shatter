@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://bm5w5eliegpsw"
-path="res://.godot/imported/Arqueiro_Arco.glb-61ce9a256680fef3cd2fe71780a27d8e.scn"
+valid=false
 
 [deps]
 
 source_file="res://art/models/personagens/arqueiro/Arqueiro_Arco.glb"
-dest_files=["res://.godot/imported/Arqueiro_Arco.glb-61ce9a256680fef3cd2fe71780a27d8e.scn"]
 
 [params]
 

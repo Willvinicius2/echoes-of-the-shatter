@@ -12,31 +12,31 @@ const K_UNIAO := 2.6                # suavização da união de salas e corredor
 
 # Primitivas por sala: ["b", cx, cz, meia_larg, meia_prof, raio_canto] ou ["e", cx, cz, rx, rz]
 const SALAS := {
-	"r00_atrio": [["b", 0.0, 12.0, 8.5, 12.0, 4.0], ["b", 0.0, 12.0, 12.0, 7.0, 4.0]],
-	"r01_patrulha_a": [["e", 38.0, 14.0, 14.0, 12.5], ["e", 46.0, 22.0, 7.0, 6.0]],
-	"r02_caes": [["b", 80.0, 14.0, 16.0, 14.0, 9.0], ["e", 72.0, 5.0, 7.0, 5.0]],
-	"r03_arauto": [["e", 80.0, 54.0, 16.0, 14.0], ["b", 80.0, 54.0, 10.0, 14.0, 4.0]],
-	"r04_patrulha_b": [["b", 35.0, 54.0, 11.0, 14.0, 5.0], ["b", 42.0, 48.0, 10.0, 8.0, 4.0]],
-	"r05_linha_tiro": [["b", -4.0, 54.0, 16.0, 9.0, 4.0], ["e", -13.0, 47.0, 7.0, 7.0]],
-	"r06_elite_escudada": [["e", -4.0, 94.0, 14.0, 14.0], ["b", -4.0, 94.0, 9.0, 14.0, 4.0]],
-	"r07_elite_veloz": [["b", 37.0, 95.0, 15.0, 15.0, 8.0], ["e", 30.0, 86.0, 7.0, 6.0]],
-	"r08_antecamara": [["b", 76.0, 95.0, 12.0, 12.0, 6.0], ["b", 76.0, 95.0, 8.0, 12.0, 3.0]],
-	"r09_arena": [["e", 76.0, 139.0, 20.0, 20.0], ["e", 76.0, 139.0, 15.0, 19.5]],
-	"s01_nicho": [["e", 82.0, -6.0, 6.5, 6.0]],
+	"r00_atrio": [["b", 0.0, 12.0, 12.0, 12.0, 0.0]],
+	"r01_patrulha_a": [["b", 38.0, 13.0, 14.0, 13.0, 0.0]],
+	"r02_caes": [["b", 80.0, 14.0, 16.0, 14.0, 0.0]],
+	"r03_arauto": [["b", 80.0, 54.0, 16.0, 14.0, 0.0]],
+	"r04_patrulha_b": [["b", 38.0, 54.0, 14.0, 14.0, 0.0]],
+	"r05_linha_tiro": [["b", -4.0, 54.0, 16.0, 14.0, 0.0]],
+	"r06_elite_escudada": [["b", -4.0, 95.0, 14.0, 15.0, 0.0]],
+	"r07_elite_veloz": [["b", 37.0, 95.0, 15.0, 15.0, 0.0]],
+	"r08_antecamara": [["b", 76.0, 95.0, 12.0, 12.0, 0.0]],
+	"r09_arena": [["o", 76.0, 139.0, 20.0, 20.0, 0.0]],   # octógono regular: apótema 20 m (lado reto no eixo do corredor c09)
+	"s01_nicho": [["b", 82.0, -9.0, 6.5, 6.0, 0.0]],
 }
-# Corredores: pontos (x, z) e meia-largura. Escadarias (c05, sa, c06) são retas.
+# Corredores retos de 6 m: pontos (x, z) e meia-largura. Cada ponta encosta na borda reta da sala (o arco fica nessa borda).
 const CORREDORES := {
-	"c01": [[[12.0, 13.0], [18.0, 15.0], [24.0, 13.0]], 3.0],
-	"c02": [[[52.0, 13.0], [58.0, 11.0], [64.0, 13.0]], 3.0],
+	"c01": [[[12.0, 12.0], [24.0, 12.0]], 3.0],
+	"c02": [[[52.0, 14.0], [64.0, 14.0]], 3.0],
 	"c03": [[[80.0, 28.0], [80.0, 40.0]], 3.0],
-	"c04": [[[64.0, 54.0], [58.0, 56.0], [52.0, 54.0]], 3.0],
+	"c04": [[[64.0, 54.0], [52.0, 54.0]], 3.0],
 	"c05": [[[24.0, 54.0], [12.0, 54.0]], 3.0],
 	"c06": [[[-4.0, 68.0], [-4.0, 80.0]], 3.0],
-	"c07": [[[10.0, 94.0], [16.0, 96.0], [22.0, 94.0]], 3.0],
-	"c08": [[[52.0, 94.0], [58.0, 92.0], [64.0, 94.0]], 3.0],
+	"c07": [[[10.0, 95.0], [22.0, 95.0]], 3.0],
+	"c08": [[[52.0, 95.0], [64.0, 95.0]], 3.0],
 	"c09": [[[76.0, 107.0], [76.0, 119.0]], 3.0],
 	"sa": [[[0.0, 24.0], [0.0, 40.0]], 3.0],
-	"s01": [[[82.0, -1.0], [82.0, 3.0]], 3.0],
+	"s01": [[[82.0, -3.0], [82.0, 0.0]], 3.0],
 }
 # Escadarias (desnível de 4 m = 22 degraus de 0,18 m, ~7 m de comprimento, largura útil 4 m): topo e fundo em doc.
 # O vão é o próprio corredor; o glb da escada encaixa nestas âncoras. andar = andar de cima.
@@ -57,8 +57,8 @@ const MONTES := [
 # Praças planas (pisos e tapetes assentam aqui): [cx, cz, meia_x, meia_z]
 const PRACAS := [
 	[0.0, 12.0, 13.0, 9.0], [76.0, 137.0, 13.0, 9.0], [80.0, 54.0, 9.5, 5.0], [76.0, 95.0, 5.0, 9.0],
-	[18.0, 15.0, 2.6, 1.7], [58.0, 11.0, 2.6, 1.7], [58.0, 56.0, 2.6, 1.7], [18.0, 54.0, 2.6, 1.7],
-	[16.0, 96.0, 2.6, 1.7], [58.0, 92.0, 2.6, 1.7],
+	[18.0, 12.0, 2.6, 1.7], [58.0, 14.0, 2.6, 1.7], [58.0, 54.0, 2.6, 1.7], [18.0, 54.0, 2.6, 1.7],
+	[16.0, 95.0, 2.6, 1.7], [58.0, 95.0, 2.6, 1.7],
 ]
 
 static var _ruido_a := _novo_ruido(7, 0.07)
@@ -75,14 +75,20 @@ static func _novo_ruido(semente: int, freq: float) -> FastNoiseLite:
 	n.fractal_octaves = 3
 	return n
 
-static func _smin(a: float, b: float, k: float) -> float:
-	var h := maxf(k - absf(a - b), 0.0) / k
-	return minf(a, b) - h * h * k * 0.25
+# união dura: salas e corredores ortogonais, sem suavização (a forma orgânica antiga saiu a pedido do Will)
+static func _smin(a: float, b: float, _k: float) -> float:
+	return minf(a, b)
 
 static func _sd_caixa(px: float, pz: float, p: Array) -> float:
 	var qx: float = absf(px - p[1]) - (p[3] - p[5])
 	var qz: float = absf(pz - p[2]) - (p[4] - p[5])
 	return Vector2(maxf(qx, 0.0), maxf(qz, 0.0)).length() + minf(maxf(qx, qz), 0.0) - p[5]
+
+static func _sd_octogono(px: float, pz: float, p: Array) -> float:
+	# octógono regular de apótema p[3]: distância ao maior dos 4 eixos de lado (aproximação exata nas faces)
+	var x: float = absf(px - p[1]); var z: float = absf(pz - p[2])
+	var ap: float = p[3]
+	return maxf(maxf(x, z) - ap, (x + z) * 0.70710678 - ap)
 
 static func _sd_elipse(px: float, pz: float, p: Array) -> float:
 	# aproximação boa o bastante para forma de sala (distância escalada pelo menor raio)
@@ -99,7 +105,7 @@ static func _sd_segmento(px: float, pz: float, a: Array, b: Array, r: float) -> 
 static func sdf_sala(px: float, pz: float, nome: String) -> float:
 	var d := 1e9
 	for p in SALAS[nome]:
-		var v := _sd_caixa(px, pz, p) if p[0] == "b" else _sd_elipse(px, pz, p)
+		var v := _sd_caixa(px, pz, p) if p[0] == "b" else (_sd_octogono(px, pz, p) if p[0] == "o" else _sd_elipse(px, pz, p))
 		d = _smin(d, v, 3.0)
 	return d
 
@@ -113,7 +119,7 @@ static func sdf3(px: float, pz: float) -> Vector3:
 		var pts: Array = c[0]
 		for i in pts.size() - 1: dc = _smin(dc, _sd_segmento(px, pz, pts[i], pts[i + 1], c[1]), K_UNIAO)
 	# contorno irregular: não existe linha reta nem canto idêntico
-	var r := _ruido_c.get_noise_2d(px, pz) * 1.6
+	var r := 0.0   # sem ruído no contorno: paredes retas
 	return Vector3(_smin(ds, dc, K_UNIAO) + r, ds + r, dc + r)
 
 static func sdf(px: float, pz: float) -> float:
