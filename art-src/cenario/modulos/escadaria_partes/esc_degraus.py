@@ -28,7 +28,7 @@ def build(M):
     xs = [-hw - L.WT, -hw * 0.25 + r.uniform(-.1, .1), hw * 0.5 + r.uniform(-.1, .1), hw + L.WT]
     for j in range(3):
         L.bloco(f"avental{j}", xs[j] + 0.006, xs[j + 1] - 0.006, L.YF + 0.03, L.YF + 0.62, L.BAIXO, 0.045 + r.uniform(-.008, .008),
-                esc, 300 + j, sub=(2, 2, 0), jit=0.008, lascas=3, tam=0.09, bis=0.016, tira=('-z', '-y'), desgaste=0.012, gira=r.uniform(-.03, .03))
+                M["parede"], 300 + j, sub=(2, 2, 0), jit=0.008, lascas=3, tam=0.09, bis=0.016, tira=('-z', '-y'), desgaste=0.012, gira=r.uniform(-.03, .03))
     # patamar: duas lajes grandes
     ztop = L.N * L.R
     for j, (xa, xb) in enumerate(((-hw - 0.02, -hw / 3), (-hw / 3, hw / 2.5), (hw / 2.5, hw + 0.02))):

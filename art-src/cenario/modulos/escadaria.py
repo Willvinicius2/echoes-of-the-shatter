@@ -5,7 +5,7 @@ Partes (um arquivo cada, em escadaria_partes/):
   esc_corrimao.py  corrimão martelado, balaústres torcidos, barra baixa, cintas, ponteiras, volutas
   esc_musgo.py     musgo e sujeira
 Materiais, bake e prévias: cc_materiais.py (mesma régua da coluna com corrente).
-python3 escadaria.py <pasta_glb> [pasta_previas] [--sem-bake] [--tam 2048] [--degraus 22] [--pivo-pe] [--largura 4.0] [--altura 0.18] [--piso 0.32]
+python3 escadaria.py <pasta_glb> [pasta_previas] [--sem-bake] [--tam 2048] [--degraus 22] [--pivo-pe] [--colisao] [--largura 4.0] [--altura 0.18] [--piso 0.32]
 Parametrico em número de degraus e largura. Metros; pivô no meio da corrida, z=0 no piso do pé; o pé da escada
 fica em +Y do Blender (-Z do Godot), a escada sobe para -Y (+Z do Godot)."""
 import sys, os, math
@@ -43,12 +43,12 @@ def montar():
     zt = N * ALT   # altura total da rampa: musgo e umidade dependem dela
     # degraus: musgo escuro nas juntas e cantos, cresce para baixo; sombra suave
     for nome, ps in (("pedra", cc_materiais._PEDRA),):
-        ps.update(c1=(0.095, 0.092, 0.120), c2=(0.19, 0.185, 0.235), c3=(0.34, 0.335, 0.42), quente=(1.04, 0.98, 1.0), frio=(0.90, 0.93, 1.10), musgo_qtd=0.95, musgo_lim=(0.40, 0.54), musgo_k=0.6, musgo_h=(zt + 0.5, 0.0, 0.08), ao_g_min=0.78)
+        ps.update(c1=(0.095, 0.092, 0.120), c2=(0.19, 0.185, 0.235), c3=(0.34, 0.335, 0.42), quente=(1.04, 0.98, 1.0), frio=(0.90, 0.93, 1.10), musgo_qtd=0.95, musgo_lim=(0.40, 0.54), musgo_k=0.42, musgo_h=(zt + 0.5, 0.0, 0.08), ao_g_min=0.78)
         cc_materiais._montar_pedra(M[nome], ps)
     # paredes: pedra maior, cor por bloco bem variada (violeta frio e alguns quentes), umidade escorrendo e sujeira no pé
     par = dict(cc_materiais._ESCURA, nome="M_PedraParede", c1=(0.050, 0.048, 0.075), c2=(0.100, 0.096, 0.150), c3=(0.18, 0.175, 0.25), musgo_qtd=0.85, escala=0.6, v_min=0.6, v_max=1.38,
                quente=(1.16, 1.0, 0.88), frio=(0.86, 0.90, 1.14), ao_g_min=0.8,
-               musgo_lim=(0.42, 0.56), musgo_k=0.6, musgo_h=(zt + 0.5, 0.0, 0.05), escorre=0.4, sujo_base=(0.0, 1.4))
+               musgo_lim=(0.42, 0.56), musgo_k=0.42, musgo_h=(zt + 0.5, 0.0, 0.05), escorre=0.4, sujo_base=(0.0, 1.4))
     M['parede'] = bpy.data.materials.new("M_PedraParede"); M['parede'].use_nodes = True
     cc_materiais._montar_pedra(M['parede'], par)
     M['parede'].use_fake_user = True
@@ -138,10 +138,10 @@ if __name__ == "__main__":
     if not SEM_BAKE: aliviar(op)
     o = fundir(op, of, mf)
     pivo = "--pivo-pe" not in sys.argv
-    col = colisao(L.YT if pivo else 0.0, L.N * L.R if pivo else 0.0)
+    col = colisao(L.YT if pivo else 0.0, L.N * L.R if pivo else 0.0) if "--colisao" in sys.argv else None
     print("triângulos:", sum(len(p.vertices) - 2 for p in o.data.polygons), "dim", tuple(round(d, 2) for d in o.dimensions))
     exportar(o, col)
-    col.hide_render = True; col.hide_viewport = True
+    if col is not None: col.hide_render = True; col.hide_viewport = True
     if PREV:
         yp = L.YF - L.YT   # pé fica a esta distância do pivô (topo)
         extras = {   # closes de revisão: topo do pilar de cima e degraus junto ao pilar do pé
