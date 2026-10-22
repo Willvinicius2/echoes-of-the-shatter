@@ -14,26 +14,27 @@ def pedaco(r, tam, loc, mat, seed):
 
 def build():
     r = rng(601)
-    # cinza: disco irregular, mais alto no fundo da bacia
-    bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=32, radius1=0.52, radius2=0.52, depth=0.07)
-    subdiv(bm, 2)
+    # cinza: concha côncava que acompanha o fundo da bacia (metal escurecido por baixo), mais alta no aro
+    def sup(d): return 0.88 + 0.12 * (min(d, 0.6) / 0.6) ** 2
+    bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=36, radius1=0.62, radius2=0.62, depth=0.06)
+    subdiv(bm, 3)
     for v in bm.verts:
-        if v.co.z > 0: v.co.z += 0.025 * math.sin(v.co.x * 11) * math.cos(v.co.y * 9) + r.uniform(-.012, .012)
-    new("cinza", bm, (0, 0, 1.19), (0, 0, 0), CINZA, 0, flat=False)
-    # carvão em camadas: cada camada mais alta e mais estreita; núcleo quente no centro, frio no aro
-    camadas = [(0.40, 44, 0.095, 1.23, 0.03), (0.32, 34, 0.10, 1.29, 0.04), (0.23, 24, 0.10, 1.35, 0.04), (0.14, 12, 0.095, 1.41, 0.04), (0.06, 4, 0.09, 1.46, 0.03)]
-    for raio, qtd, tam, z0, dz in camadas:
+        d = math.hypot(v.co.x, v.co.y)
+        v.co.z = sup(d) + (0.0 if v.co.z > 0 else -0.04) + (r.uniform(-.006, .006) + 0.012 * math.sin(v.co.x * 13) * math.cos(v.co.y * 11) if v.co.z > 0 else 0)
+    new("cinza", bm, (0, 0, 0), (0, 0, 0), CINZA, 0, flat=False)
+    # carvão em camadas sobre a concha: cobre quase toda a área; núcleo quente no centro, frio no aro
+    camadas = [(0.50, 52, 0.09, 0.05, 0.03), (0.40, 40, 0.095, 0.11, 0.04), (0.30, 28, 0.10, 0.17, 0.04), (0.20, 16, 0.095, 0.23, 0.04), (0.09, 6, 0.09, 0.29, 0.03)]
+    for raio, qtd, tam, off, dz in camadas:
         for i in range(qtd):
             rr = raio * math.sqrt(r.random()); a = r.random() * 2 * math.pi
-            d = math.hypot(rr * math.cos(a), rr * math.sin(a))
+            d = rr
             m = BRASA_NUCLEO if d < 0.16 and r.random() < 0.7 else (BRASA if d < 0.38 else (BRASA_FRIA if r.random() < 0.8 else BRASA))
-            z = z0 + r.uniform(-dz, dz) - 0.12 * (d / 0.55) ** 2           # as bordas caem em direção à parede
-            pedaco(r, tam * r.uniform(0.6, 1.25), (rr * math.cos(a), rr * math.sin(a), z), m, 700 + i)
+            pedaco(r, tam * r.uniform(0.6, 1.25), (rr * math.cos(a), rr * math.sin(a), sup(d) + off + r.uniform(-dz, dz) * 0.5), m, 700 + i)
     # brasas miúdas, vivas
-    for i in range(34):
-        rr = 0.46 * math.sqrt(r.random()); a = r.random() * 2 * math.pi
-        pedaco(r, r.uniform(0.025, 0.05), (rr * math.cos(a), rr * math.sin(a), 1.25 + 0.18 * (1 - rr / 0.5) + r.uniform(0, 0.08)), BRASA_NUCLEO if rr < 0.3 else BRASA, 800 + i)
+    for i in range(60):
+        rr = 0.56 * math.sqrt(r.random()); a = r.random() * 2 * math.pi
+        pedaco(r, r.uniform(0.022, 0.05), (rr * math.cos(a), rr * math.sin(a), sup(rr) + 0.02 + 0.2 * max(0, 1 - rr / 0.4) * r.random()), BRASA_NUCLEO if rr < 0.3 else BRASA, 800 + i)
     # gravetos carbonizados cruzando o leito
     for i in range(5):
-        a = r.random() * math.pi; c = (0.14 * r.uniform(-1, 1), 0.14 * r.uniform(-1, 1), 1.27 + 0.03 * i)
+        a = r.random() * math.pi; c = (0.14 * r.uniform(-1, 1), 0.14 * r.uniform(-1, 1), sup(0.1) + 0.2 + 0.03 * i)
         fcyl(FUL, c, 0.02 + 0.006 * r.random(), r.uniform(0.35, 0.5), rot=(math.pi / 2 + r.uniform(-.2, .2), r.uniform(-.3, .3), a), sides=7, cuts=3, amp=0.007, bev=0.004, seed=610 + i)

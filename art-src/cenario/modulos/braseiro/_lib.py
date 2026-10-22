@@ -71,7 +71,9 @@ def tex_pedra(nome, seed, n=512):
     height = 0.5 * lasca + 0.3 * fino + 0.25 * base - 0.45 * rach
     tom = np.stack([0.085 + 0.05 * gr, 0.085 + 0.046 * gr, 0.10 + 0.05 * gr], -1) * (0.7 + 0.5 * lasca)[..., None]
     tom = tom * (1 - rach[..., None] * 0.55) + (smooth(base, 0.6, 0.8) * 0.12)[..., None] * np.array([0.3, 0.5, 0.2])
-    tom *= (0.8 + 0.3 * base)[..., None]
+    tom *= (0.55 + 0.45 * smooth(gr, 0.2, 0.8))[..., None]                       # sujeira e fuligem acumulada
+    musgo = smooth(fnoise(n, 1.3, rg) * 0.7 + fino * 0.3, 0.52, 0.70)
+    tom = tom * (1 - musgo[..., None] * 0.9) + musgo[..., None] * 0.9 * np.stack([0.035 + 0.05 * fino, 0.07 + 0.09 * fino, 0.02 + 0.03 * fino], -1)   # manchas de musgo
     return _save(tom, nome + "_albedo.png"), _normal(height, nome + "_normal.png", 12.0)
 
 def _rampa(h):
@@ -150,6 +152,8 @@ ENVELH = mat("M_Braseiro_FerroEnvelhecido", (1, 1, 1), 0.5, 0.78, *tex_metal("en
 FUL = mat("M_Braseiro_Fuligem", (1, 1, 1), 0.3, 0.9, *tex_metal("fuligem", 41, ferrugem=(0.7, 0.85), fuligem=0.95, tom=(0.05, 0.045, 0.045)))
 _fa, _fn, _fe = tex_forro("forro", 13)
 FORRO = mat("M_Braseiro_Forro", (1, 1, 1), 0.35, 0.85, _fa, _fn, _fe, 1.5)
+FERRO2 = mat("M_Braseiro_FerroB", (1, 1, 1), 0.55, 0.72, *tex_metal("ferroB", 71, ferrugem=(0.46, 0.60), fuligem=0.1))
+FERRO3 = mat("M_Braseiro_FerroC", (1, 1, 1), 0.6, 0.66, *tex_metal("ferroC", 83, ferrugem=(0.72, 0.86), fuligem=0.25, tom=(0.06, 0.055, 0.06)))
 PEDRA = mat("M_Braseiro_Pedra", (1, 1, 1), 0.0, 0.92, *tex_pedra("pedra", 5))
 _a, _n, _e = tex_brasa("brasa", 3)
 BRASA = mat("M_Braseiro_Brasa", (1, 1, 1), 0.0, 0.7, _a, _n, _e, 3.0)
@@ -263,7 +267,7 @@ def uv_todos():
     for o in objs:
         for i, m in enumerate(o.data.materials):
             if m is None: o.data.materials[i] = PEDRA if 'fb' in o.name else FERRO   # slot vazio deixado pelo boolean
-        uv_plano(o, 0.52) if o.name.startswith('cinza') else (uv_plano(o) if o.name.startswith('forro') else uv_caixa(o))
+        uv_plano(o, 0.62) if o.name.startswith('cinza') else (uv_plano(o) if o.name.startswith('forro') else uv_caixa(o))
 
 def bake_vertex_colors(body):
     """Oclusão/cavidade em vertex color: arestas vivas claras, frestas e fuligem escuras (multiplica o albedo)."""

@@ -241,17 +241,24 @@ func _braseiro(pai: Node3D, nome: String, x: float, z: float) -> void:
 	luz.light_color = Color(1.0, 0.62, 0.25); luz.light_energy = 8.0; luz.omni_range = 15.0; luz.omni_attenuation = 1.6
 	luz.set_script(load("res://scripts/cripta/BraseiroLuz.cs"))
 	n.add_child(luz)
-	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.30, 0)
-	var tam := [Vector2(1.45, 1.2), Vector2(1.1, 0.95), Vector2(0.75, 0.7)]
-	for k in 3:
+	var ch := Node3D.new(); ch.name = "Chama"; ch.position = Vector3(0, 1.17, 0)
+	# chama principal central, duas laterais médias e três línguas pequenas de base larga assentadas nas brasas
+	var tam := [Vector2(1.5, 1.35), Vector2(1.05, 0.95), Vector2(1.05, 0.95), Vector2(0.6, 0.7), Vector2(0.55, 0.6), Vector2(0.6, 0.62)]
+	var desl := [Vector3(0, 0, 0), Vector3(-0.2, 0, 0.03), Vector3(0.2, 0, 0.05), Vector3(0.1, 0, 0.1), Vector3(-0.12, 0, 0.12), Vector3(0.02, 0, -0.1)]
+	for k in tam.size():
 		var qm := QuadMesh.new(); qm.size = tam[k]; qm.center_offset = Vector3(0, tam[k].y * 0.5, 0)
 		var sm := ShaderMaterial.new(); sm.shader = load("res://art/shaders/chama.gdshader")
-		sm.set_shader_parameter("seed", float(hash(nome) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.2 + 0.5 * k)
+		sm.set_shader_parameter("seed", float(hash(nome) % 97) + k * 13.0); sm.set_shader_parameter("speed", 1.0 + 0.35 * k)
 		qm.material = sm
-		var mi := MeshInstance3D.new(); mi.name = "Cartao%d" % k; mi.mesh = qm; mi.position = Vector3(0.0, 0.0, 0.02 * k)
+		var mi := MeshInstance3D.new(); mi.name = "Cartao%d" % k; mi.mesh = qm; mi.position = desl[k]
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		ch.add_child(mi)
 	n.add_child(ch)
+	# luz laranja baixa dentro da bacia: contorno quente nas paredes internas, nos espetos e nas bordas
+	var lb := OmniLight3D.new(); lb.name = "LuzBacia"; lb.position = Vector3(0, 1.3, 0)
+	lb.light_color = Color(1.0, 0.45, 0.12); lb.light_energy = 3.0; lb.omni_range = 2.6; lb.omni_attenuation = 1.3
+	lb.set_script(load("res://scripts/cripta/BraseiroLuz.cs"))
+	n.add_child(lb)
 	_particulas_braseiro(n)
 	pai.add_child(n)
 
@@ -297,7 +304,7 @@ func _particulas_braseiro(n: Node3D) -> void:
 		var cu := Curve.new(); cu.add_point(Vector2(0, 0.4)); cu.add_point(Vector2(1, 1.6))
 		var cut := CurveTexture.new(); cut.curve = cu; _fumaca_proc.scale_curve = cut
 	var f := GPUParticles3D.new(); f.name = "Faiscas"; f.amount = 20; f.lifetime = 1.8; f.local_coords = false
-	f.position = Vector3(0, 1.4, 0); f.process_material = _faisca_proc; f.draw_pass_1 = _faisca_malha
+	f.position = Vector3(0, 1.3, 0); f.process_material = _faisca_proc; f.draw_pass_1 = _faisca_malha
 	f.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF; f.randomness = 1.0
 	n.add_child(f)
 	var u := GPUParticles3D.new(); u.name = "Fumaca"; u.amount = 8; u.lifetime = 3.6; u.local_coords = false

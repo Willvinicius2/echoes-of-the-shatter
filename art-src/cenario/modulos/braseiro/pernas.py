@@ -14,7 +14,7 @@ def build():
         b2 = fbox(PEDRA, (x, y, 0.15), (0.40 * k, 0.40 * k, 0.10), (0, 0, yaw + 0.05), cuts=1, amp=0.004, bev=0.012, seed=30 + i)
         chip_corners(b2, 5, 0.055, 40 + i)
         # fuste afunilado em ferro, com facetas de martelo
-        fbox(FERRO, (x, y, 0.60), (0.23 * k, 0.23 * k, 0.86), lean, cuts=4, amp=0.004, bev=0.010, seed=50 + i, taper=0.9)
+        fbox((FERRO, FERRO2, FERRO3, FERRO2)[i], (x, y, 0.60), (0.23 * k, 0.23 * k, 0.86), lean, cuts=4, amp=0.004, bev=0.010, seed=50 + i, taper=0.9)
         for z, mm in ((0.30, ENVELH), (0.80, ENVELH)):                     # cintas
             fbox(mm, (x, y, z + r.uniform(-.015, .015)), (0.29 * k, 0.29 * k, 0.05), (0, 0, yaw), cuts=2, amp=0.003, bev=0.008, seed=60 + i)
         fbox(ENVELH, (x, y, 0.965), (0.33 * k, 0.33 * k, 0.10), (0, 0, yaw), cuts=2, amp=0.004, bev=0.012, seed=70 + i)   # capitel

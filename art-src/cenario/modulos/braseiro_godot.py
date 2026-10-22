@@ -31,7 +31,8 @@ def setup_render(res=800):
     for loc, en, col in (((3, -3, 5), 3.0, (1, 0.95, 0.9)), ((-3, 2, 2), 1.5, (0.5, 0.6, 1.0))):
         bpy.ops.object.light_add(type='SUN', location=loc); Ln = bpy.context.object
         Ln.data.energy = en; Ln.data.color = col; Ln.rotation_euler = (Vector((0, 0, 0.8)) - Vector(loc)).to_track_quat('-Z', 'Y').to_euler()
-    bpy.ops.object.light_add(type='POINT', location=(0, 0, 1.3)); bpy.context.object.data.energy = 120; bpy.context.object.data.color = (1, 0.5, 0.15)
+    bpy.ops.object.light_add(type='POINT', location=(0, 0, 1.5)); bpy.context.object.data.energy = 45; bpy.context.object.data.color = (1, 0.5, 0.15)
+    bpy.ops.object.light_add(type='POINT', location=(0.15, 0.1, 1.15)); bpy.context.object.data.energy = 14; bpy.context.object.data.color = (1, 0.4, 0.1)
     return sc
 
 def shot(sc, name, loc, tgt, lens=45):
@@ -84,8 +85,11 @@ if PREV:
         tr = nt.nodes.new("ShaderNodeBsdfTransparent"); mx = nt.nodes.new("ShaderNodeMixShader"); out = nt.nodes.new("ShaderNodeOutputMaterial")
         nt.links.new(img.outputs["Color"], em.inputs["Color"]); nt.links.new(img.outputs["Alpha"], mx.inputs[0])
         nt.links.new(tr.outputs[0], mx.inputs[1]); nt.links.new(em.outputs[0], mx.inputs[2]); nt.links.new(mx.outputs[0], out.inputs[0])
-        for k, (w, h, yaw, dx) in enumerate(((1.2, 0.85, 0.0, 0.0), (1.2, 0.85, 1.05, 0.03), (0.9, 0.65, 2.1, -0.03))):
-            bpy.ops.mesh.primitive_plane_add(size=1, location=(dx, 0, 1.36 + h / 2 - 0.1), rotation=(math.pi / 2, 0, yaw))
+        # 4 cartões cruzados centrados (2 principais, 2 médios) + 3 línguas menores de base larga assentadas nas brasas
+        cartoes = [(1.15, 1.05, 0.0, 0, 0), (1.15, 1.05, 1.57, 0, 0), (0.85, 0.75, 0.785, 0, 0), (0.85, 0.75, 2.36, 0, 0),
+                   (0.5, 0.55, 0.4, 0.14, 0.08), (0.45, 0.5, 1.9, -0.12, 0.1), (0.5, 0.5, 1.1, 0.05, -0.14)]
+        for k, (w, h, yaw, dx, dy) in enumerate(cartoes):
+            bpy.ops.mesh.primitive_plane_add(size=1, location=(dx, dy, 1.17 + h / 2), rotation=(math.pi / 2, 0, yaw))
             c = bpy.context.object; c.scale = (w, h, 1); c.data.materials.append(fm)
             c.visible_shadow = False
     sc = setup_render(800)
@@ -98,3 +102,12 @@ if PREV:
     shot(sc, "braseiro_pernas_close", (1.1, -1.3, 0.55), (0.35, -0.35, 0.45), 55)
     wf = body.modifiers.new("wf", 'WIREFRAME'); wf.thickness = 0.004
     shot(sc, "braseiro_wireframe", (2.6, -2.6, 2.2), (0, 0, 0.8))
+
+    # prancha única: 4 ângulos, close das brasas e wireframe lado a lado
+    from PIL import Image, ImageDraw
+    nomes = [("frente", "FRENTE"), ("tres_quartos", "3/4"), ("lado", "LADO"), ("cima", "DE CIMA"), ("brasas_close", "CLOSE DAS BRASAS"), ("wireframe", "WIREFRAME")]
+    T = 560; folha = Image.new("RGB", (T * 3, T * 2 + 0), (22, 22, 26)); d = ImageDraw.Draw(folha)
+    for i, (n, rot) in enumerate(nomes):
+        im = Image.open(os.path.join(PREV, f"braseiro_{n}.png")).convert("RGB").resize((T, T)); x, y = (i % 3) * T, (i // 3) * T
+        folha.paste(im, (x, y)); d.text((x + 10, y + 8), rot, fill=(235, 220, 190))
+    folha.save(os.path.join(PREV, "braseiro_prancha.png"))
