@@ -1,0 +1,64 @@
+{
+  "id": "arq_dark_manto",
+  "asset": "SK_ArcherDark_Torso",
+  "kind": "humanoid",
+  "modular_role": "piece",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/manto/manto.glb",
+  "single_view": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/manto/manto_entrada_rgba.png",
+  "front_only": true,
+  "min_cos": 0.08,
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/manto/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/manto/final",
+  "body_height_m": 1.8,
+  "mesh_name": "SK_ArcherDark_Torso",
+  "bake_shards": 1,
+  "norm_from": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/norm.json",
+  "markers_from": "D:/openclaude/_trabalho-claude/wt/arqueiro-dark-3d/art-src/modelos/scripts/chars/arq_dark_corpo.json",
+  "body_rig_blend": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/game_rig.blend",
+  "body_fill_ply": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/game_raw.ply",
+  "occluder_ply": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/game_raw.ply",
+  "fit": {
+    "mode": "box",
+    "box": [
+      -0.6,
+      0.6,
+      -0.27,
+      0.25,
+      0.5,
+      1.64
+    ]
+  },
+  "tex_size": 2048,
+  "bake_size": 1024,
+  "tris_target": 3300,
+  "tris_range": [
+    2600,
+    4000
+  ],
+  "tris_target_pre": 7000,
+  "cull_inner": true,
+  "outer_shell": true,
+  "shell_res": 520,
+  "min_component_ratio": 0.005,
+  "tint_hues": [],
+  "cloth_hues": [],
+  "sat_max": 0.85,
+  "sat_keep_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      25,
+      55
+    ]
+  ],
+  "keep_normals": false,
+  "high_faces": 500000,
+  "back_mirror_below_z": 9.0,
+  "preserve_topology": false
+}
