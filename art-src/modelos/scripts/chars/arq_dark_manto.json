@@ -30,10 +30,10 @@
   },
   "tex_size": 2048,
   "bake_size": 1024,
-  "tris_target": 3300,
+  "tris_target": 4100,
   "tris_range": [
-    2600,
-    4000
+    3000,
+    4500
   ],
   "tris_target_pre": 7000,
   "cull_inner": true,

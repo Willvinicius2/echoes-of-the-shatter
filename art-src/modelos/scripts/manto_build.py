@@ -102,52 +102,48 @@ for i in range(NSH):
         q = [vs[i][j], vs[i + 1][j], vs[i + 1][j + 1], vs[i][j + 1]]
         face(q, [uv(R["shell"], a / NSH, b / (len(zs) - 1)) for a, b in ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1))])
 
-# ---------------- penas: cartoes curvos, 5 aneis (t = 0 .25 .5 .75 e a ponta), camada A (interna, longa) e B (externa, ombro)
+# ---------------- penas: cartoes curvos com alpha (atlas de penas com barbas), 4 aneis x 3 vertices
 LAYERS = [  # (z do topo, comprimento, n, lift0)  A: longa, por baixo; B: ombro, por cima
-    (1.28, .48, 17, .004), (1.02, .48, 20, .008), (0.80, .42, 22, .012),
-    (1.52, .34, 14, .034), (1.38, .36, 16, .040), (1.24, .38, 18, .046), (1.10, .38, 19, .052), (0.96, .38, 21, .058)]
-TS = [0.0, 0.25, 0.5, 0.75, 1.0]
-WPROF = [0.62, 1.0, 0.92, 0.58, 0.0]
+    (1.30, .46, 17, .004), (1.06, .48, 20, .008), (0.84, .44, 22, .012), (0.66, .34, 24, .016),
+    (1.52, .34, 15, .034), (1.38, .36, 17, .040), (1.24, .38, 19, .046), (1.10, .38, 21, .052), (0.96, .38, 23, .058)]
+TS = [0.0, 0.33, 0.66, 1.0]
 nfe = 0
+NCELL = FEATHER_COLS * FEATHER_ROWS
 for k, (zt, L, n, lift0) in enumerate(LAYERS):
     for j in range(n):
-        phi = PH0 + SPAN * (j + 0.5 + (0.5 if k % 2 else 0.0)) / (n + 0.5) + random.uniform(-0.03, 0.03)
+        if k < 4 and random.random() < 0.10:               # falhas na camada longa: quebra o bloco da cauda
+            continue
+        phi = PH0 + SPAN * (j + 0.5 + (0.5 if k % 2 else 0.0)) / (n + 0.5) + random.uniform(-0.035, 0.035)
         phi = min(max(phi, PH0 + 0.02), 2 * math.pi - PH0 - 0.02)
-        side = -math.sin(phi)                             # lado esquerdo (x<0) mais comprido: pontas assimetricas
-        Ln = L * random.uniform(0.80, 1.20) * (1 + 0.16 * side)
-        w = max(0.085, SPAN * mean_r(zt) / n * 1.55) * random.uniform(0.9, 1.12)
-        yaw = random.uniform(-0.14, 0.14) + 0.12 * math.sin(phi) * (zt < 1.2)
-        skew = random.uniform(-0.55, 0.55)
-        cell = random.randrange(FEATHER_COLS * FEATHER_ROWS)
+        side = -math.sin(phi)                             # lado esquerdo (x<0) mais comprido; assimetria
+        Ln = L * random.uniform(0.66, 1.34) * (1 + 0.20 * side)
+        ztk = zt + random.uniform(-0.04, 0.04)
+        cell = random.randrange(NCELL)
+        asp = FEATHER_ASPECT[cell]
+        w = max(Ln * asp * random.uniform(1.25, 1.55), SPAN * mean_r(zt) / n * 1.2)
+        yaw = random.uniform(-0.16, 0.16) + 0.12 * math.sin(phi) * (zt < 1.2)
+        flipu = random.random() < 0.5
         rings = []
-        for t, wp in zip(TS, WPROF):
-            z = zt - Ln * t
+        for t in TS:
+            z = ztk - Ln * t
             ph = phi + yaw * t
-            lift = lift0 + 0.02 * t + 0.06 * t ** 1.7
+            lift = lift0 + 0.02 * t + 0.07 * t ** 1.7
             c = ell(ph, z, lift)
             a_, b_ = interp(z, ZK, AX), interp(z, ZK, AY)
             tang = Vector((math.cos(ph) * a_, math.sin(ph) * b_, 0)).normalized()
             nrm = Vector((math.sin(ph), -math.cos(ph), 0))
-            rings.append((c, tang, nrm, w * wp, t))
+            rings.append((c, tang, nrm))
         PART[0] = 1
         rv = []
-        for c, tang, nrm, wt, t in rings:
-            if t >= 1.0:
-                rv.append([V(c + tang * skew * w * 0.45 + nrm * 0.02)])
-            else:
-                sk = skew * w * 0.25 * t
-                cv = 0.16 * wt                            # curvatura da secao: centro mais para fora que as bordas
-                rv.append([V(c + tang * (sk - wt / 2) - nrm * cv), V(c + tang * sk + nrm * 0.004), V(c + tang * (sk + wt / 2) - nrm * cv)])
+        for (c, tang, nrm), t in zip(rings, TS):
+            cv = 0.14 * w * (1 - 0.3 * t)                   # curvatura da secao
+            rv.append([V(c - tang * w / 2 - nrm * cv), V(c + nrm * 0.004), V(c + tang * w / 2 - nrm * cv)])
         for r in range(3):
             for q in range(2):
-                if r < 3:
-                    a, b, c2, d = rv[r][q], rv[r][q + 1], (rv[r + 1][q + 1] if r < 3 else None), rv[r + 1][q] if r < 3 else None
-                if r == 3:
-                    continue
-                face([a, d, c2, b], [feather_uv(cell, q / 2, TS[r]), feather_uv(cell, q / 2, TS[r + 1]),
-                                     feather_uv(cell, (q + 1) / 2, TS[r + 1]), feather_uv(cell, (q + 1) / 2, TS[r])])
-        for q in range(2):
-            face([rv[3][q], rv[4][0], rv[3][q + 1]], [feather_uv(cell, q / 2, 0.75), feather_uv(cell, 0.5, 1.0), feather_uv(cell, (q + 1) / 2, 0.75)])
+                a, b2, c2, d = rv[r][q], rv[r][q + 1], rv[r + 1][q + 1], rv[r + 1][q]
+                u0, u1 = (q / 2, (q + 1) / 2) if not flipu else (1 - q / 2, 1 - (q + 1) / 2)
+                face([a, d, c2, b2], [feather_uv(cell, u0, TS[r]), feather_uv(cell, u0, TS[r + 1]),
+                                      feather_uv(cell, u1, TS[r + 1]), feather_uv(cell, u1, TS[r])])
         nfe += 1
 PART[0] = 0
 
@@ -186,17 +182,16 @@ band([1.12, 1.20], 28, 0.032, R["belt"])
 def tube(pathfn, nseg, radfn, sides, rect, urep=3):
     rings = []
     for i in range(nseg):
-        c, rn, rv_ = pathfn(i / nseg), *radfn(i / nseg)
-        t = (pathfn(((i + 1) / nseg)) - pathfn(((i - 1) / nseg))).normalized()
+        c = pathfn(i / nseg)
+        rn, rv_ = radfn(i / nseg)
         out = Vector((c.x, c.y, 0)).normalized()
-        bn = t.cross(out).normalized()
-        out2 = bn.cross(t).normalized()
-        rings.append([V(c + (out2 * math.cos(2 * math.pi * s / sides) * rn + Vector((0, 0, 1)) * math.sin(2 * math.pi * s / sides) * rv_)) for s in range(sides)] + [c])
+        rings.append([V(c + out * math.cos(2 * math.pi * s / sides) * rn + Vector((0, 0, 1)) * math.sin(2 * math.pi * s / sides) * rv_)
+                      for s in range(sides)] + [c])
     for i in range(nseg):
-        a, b = rings[i], rings[(i + 1) % nseg]
+        a, b2 = rings[i], rings[(i + 1) % nseg]
         for s in range(sides):
             s2 = (s + 1) % sides
-            face([a[s], b[s], b[s2], a[s2]],
+            face([a[s], b2[s], b2[s2], a[s2]],
                  [uv(rect, (i / nseg * urep) % 1.0, s / sides), uv(rect, ((i + 1) / nseg * urep) % 1.0, s / sides),
                   uv(rect, ((i + 1) / nseg * urep) % 1.0, (s + 1) / sides), uv(rect, (i / nseg * urep) % 1.0, (s + 1) / sides)], ref=a[sides])
 
@@ -209,8 +204,8 @@ def loop_path(ax, ay, z0, dz, ph0):
     return f
 
 
-tube(loop_path(0.125, 0.118, 1.55, 0.035, 0.0), 20, lambda u: (0.040, 0.032), 6, R["scarf"], 2)
-tube(loop_path(0.172, 0.146, 1.495, 0.055, 0.35), 20, lambda u: (0.050 + 0.008 * math.sin(6.28 * u), 0.037), 6, R["scarf"], 2)
+tube(loop_path(0.135, 0.126, 1.55, 0.035, 0.0), 22, lambda u: (0.056 + 0.014 * math.sin(6.28 * 3 * u), 0.044 + 0.008 * math.sin(6.28 * 2 * u)), 7, R["scarf"], 2)
+tube(loop_path(0.19, 0.162, 1.488, 0.06, 0.35), 22, lambda u: (0.068 + 0.016 * math.sin(6.28 * 2 * u + 1), 0.050 + 0.01 * math.sin(6.28 * 3 * u)), 7, R["scarf"], 2)
 
 
 def drape(i, j):
@@ -229,6 +224,11 @@ for i in range(ND + 1):
         x = xl + (xr - xl) * u
         z = 1.50 - 0.20 * v - 0.025 * math.sin(u * math.pi) * (1 - v)
         off = 0.052 + 0.016 * math.sin(u * 7 + v * 4) * (0.5 + v) + 0.02 * math.sin(u * math.pi) * (1 - v)
+        if j == MD:
+            z -= 0.022 * (i % 2)
+            x += 0.008 * ((i + 1) % 2)
+        if i in (0, ND):
+            z += 0.006 * (j % 2)
         row.append(V(surf_front(x, z, off)))
     dvs.append(row)
 for i in range(ND):
@@ -279,9 +279,9 @@ def extruded(poly, depth, inset, fr, back=0.0, rect="metal"):
     ctr = V(W((c.x, c.y), depth * 1.15))
     n = len(poly)
     ref = O - Z * 0.02 + (X * c.x + Y * c.y)
-    mu = uv(R[rect], 0.5, 0.5)
     for i in range(n):
         i2 = (i + 1) % n
+        mu = uv(R[rect], random.uniform(0.1, 0.9), random.uniform(0.1, 0.9))
         face([base[i], base[i2], top[i2], top[i]], [mu] * 4, ref=ref, flat=True)
         face([top[i], top[i2], ctr], [mu] * 3, ref=ref, flat=True)
 
@@ -322,38 +322,74 @@ for (px, py, w, h, rot) in ((482, 277, .048, .042, -0.6), (460, 310, .048, .042,
     x, z = at(px, py)
     buckle(Vector((x, surf_front(x, z, 0.0).y - 0.004 if z > 1.1 else front_y(x, z), z)), FZ, w, h, rot, rivets=(w > .06))
 
-# broche do ombro (cruz com losangos) no manto
-for sxp, sz in ((5.50, 1.40),):
-    O = ell(sxp, sz, 0.075)
-    Zv = (Vector((math.sin(sxp), -math.cos(sxp), 0.15)) + Vector((0, -1.3, 0))).normalized()
-    fr = frame_from(O + Zv * 0.012, Zv)
-    cross = [(0, .085), (.014, .036), (.048, .02), (.017, .006), (.013, -.03), (.022, -.048), (0, -.09), (-.022, -.048), (-.013, -.03),
-             (-.017, .006), (-.048, .02), (-.014, .036)]
-    cross = [(x * 1.15, y * 1.15) for x, y in cross]
-    extruded(cross, 0.014, 0.5, fr)
-    extruded([(0, .036), (.022, .014), (0, -.008), (-.022, .014)], 0.02, 0.5, fr, back=0.010)
+def mirror(right):
+    """meio contorno (x >= 0) de cima para baixo, com as pontas no eixo -> contorno fechado."""
+    return right + [(-x, y) for x, y in reversed(right[1:-1])]
 
-# estrela bordada na gola (metal fino)
+
+def rivet(fr_, x, y, r=0.0055, d=0.004):
+    pent = [(x + r * math.cos(2 * math.pi * k / 5), y + r * math.sin(2 * math.pi * k / 5)) for k in range(5)]
+    extruded(pent, d, 0.4, fr_)
+
+
+# broche do ombro: cruz com pontas de seta, encaixado na borda da camada de penas do ombro (sobre a superficie, levemente afundado)
+sxp, sz = 5.40, 1.44
+O = ell(sxp, sz, 0.047)
+radial = Vector((math.sin(sxp), -math.cos(sxp), 0.12))
+Zv = (radial * 0.40 + Vector((0, -1, 0)) * 0.85).normalized()
+fr = frame_from(O - Zv * 0.004, Zv)
+S = 1.45
+cross = [(x * S, y * S) for x, y in mirror([(0, .088), (.013, .050), (.030, .044), (.052, .022), (.030, .014), (.016, .008), (.013, -.020),
+                                           (.026, -.040), (.012, -.054), (0, -.092)])]
+extruded(cross, 0.013, 0.5, fr)
+extruded([(0, .056 * S), (.022 * S, .018 * S), (0, -.016 * S), (-.022 * S, .018 * S)], 0.019, 0.5, fr, back=0.008)
+for (x, y) in ((0, .066 * S), (.040 * S, .028 * S), (-.040 * S, .028 * S), (0, -.070 * S)):
+    rivet(fr, x, y, 0.0065, 0.017)
+
+# estrela bordada na gola: estrela de 8 pontas + estrela de 4 pontas por cima + rebite
 xs, zs_ = at(540, 240)
-O = Vector((xs, front_y(xs, zs_) - 0.002, zs_)) if False else surf_front(xs, zs_, 0.078)
+O = surf_front(xs, zs_, 0.078)
 fr = frame_from(O, FZ)
 star = []
 for k in range(8):
-    r_ = 0.034 if k % 2 == 0 else 0.011
+    r_ = 0.036 if k % 2 == 0 else 0.012
     a_ = math.pi / 2 + k * math.pi / 4
     star.append((r_ * math.cos(a_), r_ * math.sin(a_)))
 extruded(star, 0.006, 0.45, fr)
+star4 = []
+for k in range(8):
+    r_ = 0.022 if k % 2 == 0 else 0.008
+    a_ = k * math.pi / 4
+    star4.append((r_ * math.cos(a_), r_ * math.sin(a_)))
+extruded(star4, 0.012, 0.45, fr, back=0.005)
+rivet(fr, 0, 0, 0.004, 0.015)
 
-# tira de couro e dois pendentes em losango
+# tira de couro e dois pendentes com ponta de seta (como na entrada)
 xp = img_to_xz(555, 0)[0]
 zt_, zb_ = 1.115, 0.64
 ys = front_y(xp, 0.9) - 0.006
 extruded(rect_poly(0.016, zt_ - zb_, 0, (zt_ + zb_) / 2), 0.004, 0.2, (Vector((xp, ys, 0)), Vector((1, 0, 0)), Vector((0, 0, 1)), Vector((0, -1, 0))), rect="leather")
-for z in (0.93, 0.70):
+arrow = mirror([(0, .078), (.012, .040), (.028, .022), (.012, .016), (.010, -.030), (.024, -.052), (0, -.082)])
+for z, sc_ in ((0.93, 1.0), (0.70, 0.85)):
     Oz = Vector((xp, front_y(xp, z) - 0.008, z))
     fr = frame_from(Oz, FZ)
-    extruded([(0, .058), (.024, .0), (0, -.052), (-.024, 0.0)], 0.011, 0.45, fr)
-    extruded([(0, .016), (.009, 0), (0, -.016), (-.009, 0)], 0.017, 0.2, fr, back=0.008)
+    extruded([(x * sc_, y * sc_) for x, y in arrow], 0.011, 0.45, fr)
+    extruded([(0, .030 * sc_), (.007, 0.0), (0, -.030 * sc_), (-.007, 0.0)], 0.017, 0.2, fr, back=0.008)
+    rivet(fr, 0, .056 * sc_, 0.0045, 0.014)
+# fivela-anel do pendente no cinto
+frp = frame_from(Vector((xp, front_y(xp, 1.115) - 0.008, 1.115)), FZ)
+for dx in (-0.012, 0.012):
+    extruded(rect_poly(0.006, 0.03, dx, 0), 0.006, 0.3, frp)
+extruded(rect_poly(0.03, 0.006, 0, 0.015), 0.006, 0.3, frp)
+extruded(rect_poly(0.03, 0.006, 0, -0.015), 0.006, 0.3, frp)
+
+# losango com rebite no cinto (esquerda)
+xl = -0.14
+Ol = surf_front(xl, 1.16, 0.044)
+frl = frame_from(Ol, (FZ + Vector((-0.45, 0, 0))).normalized())
+extruded([(0, .034), (.024, 0), (0, -.034), (-.024, 0)], 0.007, 0.4, frl)
+extruded([(0, .016), (.011, 0), (0, -.016), (-.011, 0)], 0.012, 0.3, frl, back=0.004)
+rivet(frl, 0, 0, 0.0035, 0.013)
 
 # ---------------- finalizacao da malha
 bmesh.ops.triangulate(bm, faces=bm.faces[:])

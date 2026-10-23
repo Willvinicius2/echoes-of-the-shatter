@@ -26,6 +26,12 @@ img = bpy.data.images.load(fpath(cfg, f"T_{tex}_BC.png"))
 img.colorspace_settings.name = 'sRGB'
 node = nt.nodes.new('ShaderNodeTexImage'); node.image = img
 nt.links.new(node.outputs['Color'], bsdf.inputs['Base Color'])
+# alpha-clip dos cartoes de pena: Math ROUND no alfa (o exportador glTF grava alphaMode MASK, corte 0.5)
+rnd = nt.nodes.new('ShaderNodeMath'); rnd.operation = 'ROUND'
+nt.links.new(node.outputs['Alpha'], rnd.inputs[0]); nt.links.new(rnd.outputs[0], bsdf.inputs['Alpha'])
+if hasattr(mat, "surface_render_method"):
+    mat.surface_render_method = 'DITHERED'
+bsdf.inputs['Specular IOR Level'].default_value = 0.2
 bsdf.inputs['Roughness'].default_value = 1.0
 if os.path.exists(wpath(cfg, "bake_normal.png")) and cfg.get("use_normal_map", True):      # normal map (s6n): T_<Nome>_N.png, tangente OpenGL
     shutil.copyfile(wpath(cfg, "bake_normal.png"), fpath(cfg, f"T_{tex}_N.png"))

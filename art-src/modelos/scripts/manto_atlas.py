@@ -1,8 +1,14 @@
 """Atlas 2048 do torso do arqueiro dark (manto, gola, colete, correias, metal). Retangulos (x0, y0, x1, y1) em pixels, origem no canto superior esquerdo.
 Usado por manto_build.py (UV) e manto_tex.py (pintura), sem dependencias."""
 N = 2048
-FEATHER_CELL = (128, 512)     # 8 colunas x 4 linhas em x 0..1024, y 0..2048; raiz em cima, ponta rosada embaixo
-FEATHER_COLS, FEATHER_ROWS = 8, 4
+FEATHER_CELL = (256, 1024)    # 4 colunas x 2 linhas em x 0..1024, y 0..2048 (atlas de penas gerado: barbas, recorte irregular, alpha); raiz em cima
+FEATHER_COLS, FEATHER_ROWS = 4, 2
+import json, os
+_META = os.path.join(os.path.dirname(os.path.abspath(__file__)), "manto_penas.json")
+FEATHER_RECT = [(0, 0, 256, 1024)] * 8            # retangulo (px, dentro da celula) onde a pena esta; preenchido por manto_pen_atlas.py
+if os.path.exists(_META):
+    FEATHER_RECT = [tuple(r) for r in json.load(open(_META))["rects"]]
+FEATHER_ASPECT = [(r[2] - r[0]) / max(1, r[3] - r[1]) for r in FEATHER_RECT]
 R = dict(
     vest=(1024, 0, 1536, 730),          # recorte da imagem de entrada: colete, correias, fivelas
     plain=(1536, 0, 1792, 128),         # tecido escuro liso (costas e laterais do colete)
@@ -32,6 +38,10 @@ def uv(rect, u, v, pad=6):
 
 
 def feather_uv(cell, u, t):
+    """u (0..1 na largura) e t (0..1 da raiz a ponta) dentro do retangulo da pena na celula."""
     c, r = cell % FEATHER_COLS, cell // FEATHER_COLS
     w, h = FEATHER_CELL
-    return uv((c * w, r * h, (c + 1) * w, (r + 1) * h), u, t, pad=3)
+    x0, y0, x1, y1 = FEATHER_RECT[cell]
+    x = c * w + x0 + 1 + u * (x1 - x0 - 2)
+    y = r * h + y0 + 1 + t * (y1 - y0 - 2)
+    return (x / N, 1.0 - y / N)
