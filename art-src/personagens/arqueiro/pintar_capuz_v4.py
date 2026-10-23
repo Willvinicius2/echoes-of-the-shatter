@@ -48,12 +48,12 @@ def pano(W, H, seed, escuro, medio, claro, listras=0.55):
     manch = fbm(W, H, 160, seed + 20, 1.0, 1.0)
     fina = fbm(W, H, 10, seed + 40, sx=0.35, sy=1.4, oit=2)
     trama = 0.5 + 0.5 * np.sin(xx * W * 1.1) * np.sin(yy * H * 1.1)
-    t = np.clip(0.50 * longa + 0.15 * manch + 0.35 * fina, 0, 1)
+    t = np.clip(0.45 * longa + 0.30 * manch + 0.25 * fina, 0, 1)
     t = (t - t.min()) / (t.max() - t.min() + 1e-6)
     t = np.clip((t - 0.5) * 1.5 + 0.5, 0, 1)
     c1 = mistura(np.array(escuro, np.float32), np.array(medio, np.float32), np.clip(t * 2, 0, 1))
     c2 = mistura(c1, np.array(claro, np.float32) + 0 * c1, np.clip(t * 2 - 1, 0, 1))
-    c2 = c2 * (0.80 + 0.30 * trama[..., None])
+    c2 = c2 * (0.93 + 0.14 * trama[..., None])
     return c2
 
 

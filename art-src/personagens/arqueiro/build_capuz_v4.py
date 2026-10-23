@@ -143,10 +143,10 @@ def borda_enrolada(bm, bordas, delta, mi):
 # O capuz e um loft: aneis perpendiculares a uma espinha que sobe reta pela cabeca e curva para tras ate a ponta
 # (silhueta de touca pontuda da folha). A abertura frontal e recortada depois, com friso dourado enrolado.
 NT, NS = 30, 32
-Q = (Vector((0, 0.07, 1.17)), Vector((0, 0.07, 1.34)), Vector((0.05, 0.24, 1.50)), Vector((0.20, 0.40, 1.38)))
-RAIO = [(0.0, 0.330), (0.10, 0.310), (0.20, 0.300), (0.30, 0.295), (0.40, 0.280), (0.50, 0.250), (0.60, 0.205),
-        (0.70, 0.150), (0.80, 0.100), (0.90, 0.052), (1.0, 0.004)]
-HEM_Z, HEM_T = 0.985, 0.30
+Q = (Vector((0, 0.07, 1.25)), Vector((0, 0.07, 1.42)), Vector((0.02, 0.17, 1.52)), Vector((0.10, 0.27, 1.49)))
+RAIO = [(0.0, 0.330), (0.10, 0.310), (0.20, 0.300), (0.30, 0.295), (0.40, 0.285), (0.50, 0.245), (0.60, 0.190),
+        (0.70, 0.130), (0.80, 0.082), (0.90, 0.040), (1.0, 0.004)]
+HEM_Z, HEM_T = 0.985, 0.40
 Z_ARCO, HW, Z_TOPO = 1.21, 0.178, 1.405
 
 
@@ -420,11 +420,11 @@ def rosto(m_vazio, m_olho, m_lenco, arm, m_nucleo=None):
             mor.append(f)
     bmesh.ops.delete(bl, geom=mor, context="FACES")
     for v in bl.verts:
-        v.co = Vector((v.co.x * 0.168, v.co.y * 0.150, v.co.z * 0.135)) + Vector((0, 0.035, 1.185))
+        v.co = Vector((v.co.x * 0.168, v.co.y * 0.140, v.co.z * 0.135)) + Vector((0, 0.035, 1.185))
     for v in bl.verts:   # dobras em diagonal no pano do lenco
         n = noise.noise(Vector((v.co.x * 14, v.co.z * 10 + v.co.x * 6, 2.0)))
         d = (v.co - Vector((0, 0.0, 1.185))).normalized()
-        v.co += d * 0.008 * n
+        v.co += d * (0.006 * n + 0.011 * math.sin(v.co.x * 34 + v.co.z * 20 + 0.5))
     for _ in range(12):   # alisa a escada da borda de cima
         nv = {}
         for v in bl.verts:
@@ -508,7 +508,7 @@ def main():
     m_pano = mat("M_Arqueiro_Capuz", tex="T_Capuz_BC.png", rough=0.92, dupla=True)
     m_ouro = mat("M_Arqueiro_CapuzOuro", tex="T_Ouro_BC.png", rough=0.45, metal=0.55, dupla=True)
     m_osso = mat("M_Arqueiro_Mascara", tex="T_Mascara_BC.png", rough=0.55, dupla=True)
-    m_vazio = mat("M_Arqueiro_RostoVazio", cor=(0.018, 0.034, 0.016, 1), rough=1.0, dupla=True)
+    m_vazio = mat("M_Arqueiro_RostoVazio", cor=(0.04, 0.08, 0.035, 1), rough=1.0, emis=(0.03, 0.07, 0.03, 1), emis_forca=1.0, dupla=True)
     m_olho = mat("M_Arqueiro_OlhoVerde", cor=(0.10, 0.55, 0.06, 1), rough=0.3, emis=(0.12, 0.85, 0.05, 1), emis_forca=1.0, dupla=True)
     m_nucleo = mat("M_Arqueiro_OlhoNucleo", cor=(0.8, 1.0, 0.6, 1), rough=0.3, emis=(0.75, 1.0, 0.55, 1), emis_forca=1.6, dupla=True)
     m_lenco = mat("M_Arqueiro_Lenco", tex="T_Lenco_BC.png", rough=0.95, dupla=True)
