@@ -100,10 +100,10 @@ def fold_f(psi, z):
 def dobra(p, folds=True):
     """deformacao do capuz em coordenadas unitarias: ponta curva com flop, aba da testa, dobras de pano, bainha."""
     p = p.copy()
-    k = max(0.0, p.dot(D_PONTA)) ** 3.5
+    k = max(0.0, p.dot(D_PONTA)) ** 4.0
     p += D_PONTA * 1.0 * k
-    p.y += 0.50 * k      # a ponta vai para tras
-    p.z -= 0.55 * k      # e cai (flop)
+    p.y += 0.6 * k      # a ponta vai para tras
+    p.z -= 0.85 * k      # e cai (flop)
     p.x += 0.10 * k * math.sin(p.z * 2.0 + 1.0)
     if p.y < 0 and p.z > 0.05:  # aba da testa grossa, projetada
         p.y -= 0.30 * min(1.0, (p.z - 0.05) / 0.5) * min(1.0, -p.y / 0.45)
@@ -115,7 +115,7 @@ def dobra(p, folds=True):
         env = smoothstep(0.55, 1.35, abs(psi))
         zc = max(-0.6, min(1.0, p.z))
         kt = max(0.0, p.dot(D_PONTA))
-        amp = 0.40 * env * (1 - 0.85 * smoothstep(0.35, 0.75, kt)) * (0.18 + 0.82 * smoothstep(0.85, -0.45, zc))
+        amp = 0.22 * env * (1 - 0.85 * smoothstep(0.35, 0.75, kt)) * (0.18 + 0.82 * smoothstep(0.85, -0.45, zc))
         f = fold_f(psi, zc)
         if p.z < -0.28:   # barra em ondas pendendo
             p.z -= 0.07 * env * (0.5 + 0.5 * f) * smoothstep(-0.28, -0.55, p.z)
@@ -124,7 +124,7 @@ def dobra(p, folds=True):
         vinco = math.exp(-(p.x / 0.20) ** 2) * smoothstep(0.1, 0.75, p.dot(D_PONTA))
         p *= 1 + 0.06 * vinco
         n = noise.noise(p * 1.7 + Vector((3, 1, 7)))
-        p *= 1 + 0.025 * n
+        p *= 1 + 0.010 * n
     return p
 
 
@@ -160,9 +160,9 @@ def moldura(bm, uv, linha, rng):
     cum = arco_len(linha)
     L = cum[-1]
     Q = C + Vector((0, -0.10, 0.0))
-    nplacas = 14
+    nplacas = 10
     pesos = [rng.uniform(0.55, 1.5) for _ in range(nplacas)]
-    gap = 0.0065
+    gap = 0.0035
     util = L - gap * (nplacas - 1)
     tot = sum(pesos)
     s = 0.0
@@ -171,7 +171,7 @@ def moldura(bm, uv, linha, rng):
         ta, tb = s, s + comp
         s = tb + gap
         wmul = rng.uniform(0.92, 1.18)
-        skew = (rng.uniform(-1, 1), rng.uniform(-1, 1))
+        skew = (rng.uniform(-0.3, 0.3), rng.uniform(-0.3, 0.3))
         v0 = rng.uniform(0.0, 0.7)
         aneis = []
         NR = 3
@@ -183,7 +183,7 @@ def moldura(bm, uv, linha, rng):
             n = (P - Q).normalized()
             sd = n.cross(tg).normalized()
             taper = 0.78 + 0.22 * math.sin(math.pi * (0.12 + 0.76 * fr)) ** 0.5
-            w = 0.0195 * wmul * taper
+            w = 0.026 * wmul * taper
             h = 0.009 * (0.85 + 0.15 * math.sin(math.pi * fr))
             anel = []
             for (wx, hy) in PERFIL_MOLD:
@@ -223,7 +223,7 @@ def moldura(bm, uv, linha, rng):
 def hood(rng):
     bm = bmesh.new()
     uv = bm.loops.layers.uv.verify()
-    bmesh.ops.create_uvsphere(bm, u_segments=34, v_segments=17, radius=1.0)
+    bmesh.ops.create_uvsphere(bm, u_segments=36, v_segments=20, radius=1.0)
     bm.faces.ensure_lookup_table()
     morrer, marca = [], set()
     for f in bm.faces:
@@ -312,8 +312,8 @@ def perfil(s):
     pts_w = [(0, 0.064), (0.06, 0.088), (0.13, 0.102), (0.22, 0.090), (0.32, 0.064), (0.46, 0.040), (0.60, 0.028), (0.80, 0.015), (1.0, 0.0015)]
     pts_d = [(0, 0.016), (0.15, 0.022), (0.35, 0.029), (0.60, 0.026), (0.85, 0.015), (1.0, 0.004)]
     w, dd = lerp_tab(pts_w, s), lerp_tab(pts_d, s)
-    y = Y0 - 0.125 * s ** 1.7
-    z = 1.390 - 0.225 * s - 0.012 * math.sin(s * math.pi)
+    y = Y0 - 0.075 * s ** 1.7
+    z = 1.390 - 0.160 * s - 0.012 * math.sin(s * math.pi)
     return w, dd, y, z
 
 
@@ -512,7 +512,7 @@ def rosto():
             ztopo = 1.282 + 0.030 * fr - 0.020 * (1 - fr)
             zbase = 1.212 - 0.055 * fr + 0.014 * math.sin(i * 1.3)
             z = ztopo + (zbase - ztopo) * t
-            r = (0.092 + 0.012 * t + 0.016 * abs(math.sin(3 * math.pi * t + 0.9 * a)) + 0.003 * math.sin(i * 1.7 + j))
+            r = (0.092 + 0.012 * t + 0.007 * abs(math.sin(2 * math.pi * t + 0.9 * a)) + 0.003 * math.sin(i * 1.7 + j))
             fila.append(bm.verts.new(Vector((math.sin(a) * r * 1.04, -math.cos(a) * r * 1.0 - 0.006, z))))
         gv.append(fila)
     for j in range(rows):
@@ -568,7 +568,7 @@ def main():
         bpy.data.objects.remove(o)
     m_capuz = mat("M_Arqueiro_Capuz", tex="T_Capuz_BC.png", normal="T_Capuz_N.png", rough=0.93, dupla=True)
     m_ouro = mat("M_Arqueiro_CapuzOuro", tex="T_Ouro_BC.png", normal="T_Ouro_N.png", rough=0.55, dupla=True)
-    m_int = mat("M_Arqueiro_CapuzInterior", cor=(0.022, 0.040, 0.022, 1), rough=0.95, dupla=True)
+    m_int = mat("M_Arqueiro_CapuzInterior", cor=(0.050, 0.085, 0.045, 1), rough=0.95, dupla=True)
     m_masc = mat("M_Arqueiro_Mascara", tex="T_Mascara_BC.png", normal="T_Mascara_N.png", rough=0.55)
     m_det = mat("M_Arqueiro_CapuzDetalhe", tex="T_CapuzDetalhe_BC.png", rough=0.9, dupla=True)
     m_olho = mat("M_Arqueiro_OlhoVerde", tex="T_Olho_BC.png", rough=0.2, emis_png="T_Olho_E.png", emis=0.7)
