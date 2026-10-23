@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://2qnlkpq02of1"
+
+[deps]
+
+files=["res://data/arqueiro_dark/equipamento.slot.translation", "res://data/arqueiro_dark/equipamento.tipo.translation", "res://data/arqueiro_dark/equipamento.osso.translation", "res://data/arqueiro_dark/equipamento.cena.translation", "res://data/arqueiro_dark/equipamento.off.translation", "res://data/arqueiro_dark/equipamento.off.translation", "res://data/arqueiro_dark/equipamento.off.translation", "res://data/arqueiro_dark/equipamento.rot.translation", "res://data/arqueiro_dark/equipamento.rot.translation", "res://data/arqueiro_dark/equipamento.rot.translation", "res://data/arqueiro_dark/equipamento.escala.translation"]
+
+source_file="res://data/arqueiro_dark/equipamento.csv"
+dest_files=["res://data/arqueiro_dark/equipamento.slot.translation", "res://data/arqueiro_dark/equipamento.tipo.translation", "res://data/arqueiro_dark/equipamento.osso.translation", "res://data/arqueiro_dark/equipamento.cena.translation", "res://data/arqueiro_dark/equipamento.off.translation", "res://data/arqueiro_dark/equipamento.off.translation", "res://data/arqueiro_dark/equipamento.off.translation", "res://data/arqueiro_dark/equipamento.rot.translation", "res://data/arqueiro_dark/equipamento.rot.translation", "res://data/arqueiro_dark/equipamento.rot.translation", "res://data/arqueiro_dark/equipamento.escala.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

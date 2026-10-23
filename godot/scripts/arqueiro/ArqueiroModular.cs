@@ -12,15 +12,16 @@ namespace EchoesOfTheShatter.Arqueiro;
 /// </summary>
 public partial class ArqueiroModular : Node3D
 {
-    const string CorpoCena = "res://art/models/personagens/arqueiro/Arqueiro_Corpo.glb";
-    const string CaminhoEquip = "res://data/arqueiro/equipamento.csv";
-    const string CaminhoLoadout = "res://data/arqueiro/loadout.csv";
+    // protected: ArqueiroDarkModular troca os caminhos no construtor; o valor padrao e o do arqueiro atual
+    protected string CorpoCena = "res://art/models/personagens/arqueiro/Arqueiro_Corpo.glb";
+    protected string CaminhoEquip = "res://data/arqueiro/equipamento.csv";
+    protected string CaminhoLoadout = "res://data/arqueiro/loadout.csv";
 
-    public Skeleton3D Esqueleto { get; private set; }
-    public AnimationPlayer Animacoes { get; private set; }
-    public bool CorpoReal { get; private set; }
+    public Skeleton3D Esqueleto { get; protected set; }
+    public AnimationPlayer Animacoes { get; protected set; }
+    public bool CorpoReal { get; protected set; }
 
-    readonly Dictionary<string, Node> _porSlot = new();
+    protected readonly Dictionary<string, Node> _porSlot = new();
 
     public override void _Ready()
     {
@@ -30,7 +31,7 @@ public partial class ArqueiroModular : Node3D
         Equipar(ids);
     }
 
-    void MontarCorpo()
+    protected virtual void MontarCorpo()
     {
         if (ResourceLoader.Exists(CorpoCena))
         {
@@ -61,7 +62,10 @@ public partial class ArqueiroModular : Node3D
             foreach (var l in linhas)
                 if (l[0] == id) EquiparLinha(l);
         AplicarEsconde();
+        AposEquipar();
     }
+
+    protected virtual void AposEquipar() { }
 
     // Partes do corpo base escondidas por cada modulo (coluna esconde do CSV, nomes de malha separados por |).
     readonly Dictionary<string, string[]> _escondePorSlot = new();
@@ -75,10 +79,14 @@ public partial class ArqueiroModular : Node3D
             if (m is MeshInstance3D mi) mi.Visible = !ocultas.Contains(mi.Name.ToString());
     }
 
+    /// <summary>Gancho para subclasses tratarem tipos de linha proprios. Devolve true se a linha ja foi tratada.</summary>
+    protected virtual bool EquiparEspecial(string[] l) => false;
+
     void EquiparLinha(string[] l)
     {
         string slot = l[1], tipo = l[2], osso = l[3], cena = l[4];
         if (!ResourceLoader.Exists(cena)) { GD.PushWarning($"MÃ³dulo ausente: {cena}"); return; }
+        if (EquiparEspecial(l)) return;
         if (_porSlot.TryGetValue(slot, out var antigo)) antigo.QueueFree();
         _escondePorSlot[slot] = l.Length > 12 && l[12].Length > 0 ? l[12].Split('|') : System.Array.Empty<string>();
         _escondePorSlot[slot] = l.Length > 12 && l[12].Length > 0 ? l[12].Split('|') : System.Array.Empty<string>();
