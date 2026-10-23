@@ -480,7 +480,32 @@ def montar_botas():
     pos("CUFF", cuff(*sz("CUFF")))
     pos("STRAP", strap(*sz("STRAP"), base=(0.16, 0.09, 0.05)))
     pos("METAL", metal(*sz("METAL")))
-    return A
+    return pintar_botas(A)
+
+
+def pintar_botas(A):
+    """Acabamento 'pintado a mao': tira o ruido fotografico do couro e do osso, cria bandas suaves de luz e saturacao."""
+    out = A.copy()
+    for nome, raio, bandas in (("CANO", 2.2, 5), ("UPPER", 2.2, 5), ("CUFF", 1.8, 4), ("PLATE_O", 1.6, 4),
+                               ("PLATE_I", 1.6, 4), ("PLATE_F", 1.6, 4), ("SOLE", 1.0, 0), ("SOLEW", 1.0, 0), ("STRAP", 1.0, 0)):
+        x0, y0, x1, y1 = BOTAS[nome]
+        im = Image.fromarray((np.clip(A[y0:y1, x0:x1], 0, 1) * 255 + 0.5).astype(np.uint8), "RGB")
+        if raio > 1.5:
+            im = im.filter(ImageFilter.MedianFilter(5))      # some riscos e rachaduras finas
+        im = im.filter(ImageFilter.GaussianBlur(raio)).filter(ImageFilter.UnsharpMask(2, 60, 3))
+        r = np.asarray(im, np.float32) / 255
+        lum = (r * np.array([0.3, 0.55, 0.15], np.float32)).sum(-1, keepdims=True)
+        if bandas:
+            q = np.round(lum * bandas) / bandas
+            q = lum * 0.45 + q * 0.55                       # bandas suaves de pintura
+            r = r * (q / (lum + 1e-4))
+        gray = r.mean(-1, keepdims=True)
+        r = gray + (r - gray) * 1.12                        # mais saturado, quente
+        r = 0.5 + (r - 0.5) * 1.08
+        if nome.startswith('PLATE'):
+            r = r * 1.10 + 0.02
+        out[y0:y1, x0:x1] = np.clip(r, 0, 1)
+    return out
 
 
 def salvar(A, nome):

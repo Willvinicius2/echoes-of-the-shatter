@@ -374,8 +374,8 @@ Y_HEEL, Y_TOE = 0.160, -0.275
 LEN = Y_HEEL - Y_TOE
 # t: posicao ao longo do pe (0 calcanhar, 1 bico)
 FT = [0.0, 0.22, 0.42, 0.60, 0.76, 0.90, 0.975]
-FHW = [0.090, 0.100, 0.110, 0.119, 0.120, 0.100, 0.058]
-FZT = [0.150, 0.148, 0.132, 0.116, 0.104, 0.092, 0.076]
+FHW = [0.090, 0.100, 0.110, 0.119, 0.120, 0.106, 0.072]
+FZT = [0.165, 0.168, 0.158, 0.138, 0.118, 0.104, 0.088]
 Z_SOLA = 0.040
 
 
@@ -383,7 +383,7 @@ def cl_bota(z):
     return interp(CL, z, 1), interp(CL, z, 2)  # mesma linha do osso/perna
 
 
-BR = [(0.07, 0.086, 0.090), (0.12, 0.094, 0.098), (0.17, 0.090, 0.095), (0.22, 0.090, 0.094), (0.26, 0.092, 0.096)]
+BR = [(0.07, 0.086, 0.090), (0.12, 0.094, 0.098), (0.17, 0.090, 0.095), (0.22, 0.088, 0.092), (0.28, 0.088, 0.092), (0.33, 0.094, 0.098)]
 
 
 def rad_bota(z):
@@ -402,8 +402,8 @@ def construir_botas(seed=11):
     for sx in (1, -1):
         sr = random.Random(seed + (0 if sx > 0 else 5))
         # ---- cano (com cuff dobrado no topo)
-        zc = [0.075, 0.12, 0.165, 0.21, 0.245, 0.262]
-        offc = [0.0, 0.003, -0.002, 0.004, 0.016, 0.006]
+        zc = [0.075, 0.12, 0.17, 0.22, 0.27, 0.31, 0.33]
+        offc = [0.0, 0.003, -0.002, 0.002, 0.004, 0.018, 0.008]
         nseg = 10
         aneis = []
         for z, o in zip(zc, offc):
@@ -419,9 +419,9 @@ def construir_botas(seed=11):
         parte_uv = {0: ("CANO", 0.0), 1: ("CANO", 0.2), 2: ("CANO", 0.4), 3: ("CANO", 0.6), 4: ("CANO", 0.78), 5: ("CUFF", 0.0), 6: ("CUFF", 1.0)}
 
         def uvc(i, j):
-            if i <= 3:
-                return uvmap(BOTAS["CANO"], j / nseg, i / 3)
-            return uvmap(BOTAS["CUFF"], j / nseg, 0.2 if i == 4 else 1.0)
+            if i <= 4:
+                return uvmap(BOTAS["CANO"], j / nseg, i / 4)
+            return uvmap(BOTAS["CUFF"], j / nseg, 0.2 if i == 5 else 1.0)
         M.grade(aneis, uvc, "cano", True, True, fora=lambda p, sx=sx: Vector((sx * cl_bota(p.z)[0], cl_bota(p.z)[1], p.z)))
         # ---- peito do pe (shell): aneis ao longo de Y
         nj = 10
@@ -444,12 +444,12 @@ def construir_botas(seed=11):
         M.leque(aneis[0], (sx * XC, Y_HEEL + 0.004, (FZT[0] + Z_SOLA) / 2), lambda j, p, sx=sx: planar_u(p, sx, "CANO"), "shell",
                 lambda p, sx=sx: Vector((sx * XC, 0.0, p.z)) + Vector((0, -2, 0)), True)
         # bico arredondado: leque na frente
-        yb = Y_TOE - 0.020
+        yb = Y_TOE - 0.004
         pts = aneis[-1]
         cen = (sx * XC, yb, (FZT[-1] + Z_SOLA) / 2 - 0.004)
         M.leque(pts, cen, lambda j, p, sx=sx: planar_u(p, sx, "UPPER"), "shell", lambda p, sx=sx: Vector((sx * XC, 0.0, p.z)), True)
         # ---- sola com chanfro
-        perfil = [(0.0, 0.100), (0.22, 0.114), (0.5, 0.131), (0.76, 0.133), (0.92, 0.112), (1.0, 0.066), (1.03, 0.016)]
+        perfil = [(0.0, 0.100), (0.35, 0.122), (0.72, 0.134), (0.94, 0.112), (1.03, 0.040)]
         lado_d = [(t, w) for t, w in perfil]
         pol = [(XC + w, Y_HEEL - LEN * t) for t, w in lado_d] + [(XC - w, Y_HEEL - LEN * t) for t, w in reversed(lado_d)]
         pol = [(sx * x, y) for x, y in pol]
@@ -475,18 +475,18 @@ def construir_botas(seed=11):
         def pontaS(u):
             return (0.100 + 0.028 * abs(math.sin(u * 3.1)) , 0.222 - 0.02 * (1 - math.sin(u * math.pi)))
         placa(M, sx, -0.50, 0.55, 0.0, 0.0, 3, 2, 0.010, 0.012, "PLATE", "plate", BOTAS["PLATE_O"], cl_bota, rad_bota,
-              forma=lambda u: (0.105 + 0.045 * u, 0.232 - 0.03 * u))
-        placa(M, sx, math.pi - 0.55, math.pi + 0.45, 0.0, 0.0, 3, 2, 0.010, 0.012, "PLATE", "plate", BOTAS["PLATE_I"], cl_bota, rad_bota,
-              forma=lambda u: (0.150 - 0.04 * u, 0.215 + 0.02 * u))
+              forma=lambda u: (0.150 + 0.045 * u, 0.300 - 0.03 * u))
+        placa(M, sx, math.pi - 0.55, math.pi + 0.45, 0.0, 0.0, 2, 2, 0.010, 0.012, "PLATE", "plate", BOTAS["PLATE_I"], cl_bota, rad_bota,
+              forma=lambda u: (0.190 - 0.04 * u, 0.285 + 0.02 * u))
         placa(M, sx, -math.pi * 0.5 - 0.50, -math.pi * 0.5 + 0.50, 0.0, 0.0, 4, 2, 0.011, 0.012, "PLATE", "plate", BOTAS["PLATE_F"], cl_bota, rad_bota,
-              forma=lambda u: (0.115 + 0.055 * (1 - abs(2 * u - 1)), 0.238 - 0.01 * abs(2 * u - 1)))
+              forma=lambda u: (0.130 + 0.055 * (1 - abs(2 * u - 1)), 0.305 - 0.01 * abs(2 * u - 1)))
         # ---- cintas de couro + fivela
-        for zs_, alt in ((0.182, 0.018),):
+        for zs_, alt in ((0.215, 0.018),):
             cinta(M, sx, zs_, alt, 0.021, BOTAS["STRAP"], "strap", cl_bota, rad_bota, nseg=10)
-        cx, cy = cl_bota(0.18)
-        rx, ry = rad_bota(0.18)
+        cx, cy = cl_bota(0.215)
+        rx, ry = rad_bota(0.215)
         th = -math.pi * 0.5 + 0.55
-        caixa(M, (sx * (cx + (rx + 0.030) * math.cos(th)), cy + (ry + 0.030) * math.sin(th), 0.180), (0.022, 0.009, 0.024),
+        caixa(M, (sx * (cx + (rx + 0.030) * math.cos(th)), cy + (ry + 0.030) * math.sin(th), 0.215), (0.022, 0.009, 0.024),
               BOTAS["METAL"], "strap", rot_th=(th if sx > 0 else math.pi - th) + math.pi / 2)
     return M
 
