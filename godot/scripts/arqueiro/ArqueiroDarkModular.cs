@@ -57,6 +57,13 @@ public partial class ArqueiroDarkModular : ArqueiroModular
 
     protected override void AposEquipar() => Reaplicar();
 
+    /// <summary>Equipa de novo tirando os anexos antigos da arvore na hora (QueueFree so libera no fim do frame e o nome Att_* duplicaria).</summary>
+    public void EquiparLimpo(IEnumerable<string> ids)
+    {
+        foreach (var n in _porSlot.Values) n.GetParent()?.RemoveChild(n);
+        Equipar(ids);
+    }
+
     public bool Existe(string slot) => _base.ContainsKey(slot) || _porSlot.ContainsKey(slot);
 
     public bool Visivel(string slot) => !_ocultos.Contains(slot);

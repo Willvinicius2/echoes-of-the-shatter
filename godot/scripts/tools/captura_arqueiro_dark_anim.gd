@@ -3,7 +3,7 @@
 # Tambem imprime a altura minima dos pes/dedos em cada clipe (pes nao afundam nem flutuam). Sai sozinho, tambem no erro.
 extends SceneTree
 # clipe, tempo (s) congelado
-const CAPTURAS := [["Idle", 0.5], ["AimIdle", 1.0], ["Walk", 0.25]]
+const CAPTURAS := [["Idle", 0.5], ["AimIdle", 1.0], ["Walk", 0.25], ["Dodge", 0.3]]
 # indice da vista em ArqueiroDarkTeste.Vistas, nome
 const VISTAS := [[2, "frente"], [4, "lado"], [0, "3q_jogo"], [3, "costas"]]
 func _init() -> void:

@@ -158,7 +158,7 @@ public partial class ArqueiroDarkTeste : Node3D
         Variante = (i + _variantes.Count) % _variantes.Count;
         var ids = new List<string> { "starter" };
         if (_variantes[Variante] != "") ids.Add(_variantes[Variante]);
-        Arqueiro.Equipar(ids);
+        Arqueiro.EquiparLimpo(ids);
     }
 
     public void DefinirVariante(int i) { AplicarVariante(i); AtualizarLegenda(); }
