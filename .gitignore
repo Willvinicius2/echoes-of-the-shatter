@@ -39,3 +39,7 @@ __pycache__/
 *.pyc
 
 node_modules/
+
+# KayKit (packs ficam so no PC, fora do GitHub): derivados do Ranger/animacoes
+/godot/art/models/personagens/kaykit_ranger/
+/docs/arte/referencias-geracao/arqueiro-dark/cartoon_kaykit/
