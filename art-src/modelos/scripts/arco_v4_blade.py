@@ -7,7 +7,7 @@ import os, json, math, sys
 import numpy as np
 W3 = r"D:\openclaude\_trabalho-claude\modelos3d\arqueiro_dark\arco\work4"
 cut = json.load(open(os.path.join(W3, "cut.json")))
-P = dict(L=0.23, end_deg=-18.0, pw=1.6, grow=0.35, wp=1.3, bt=1.4, thick=1.15, spur_n=3, spur_L=0.040, spur_W=0.011, spur_phi=52.0)
+P = dict(L=0.23, end_deg=-18.0, pw=1.6, grow=0.35, wp=1.3, bt=1.4, thick=1.15, spur_n=3, spur_L=0.072, spur_W=0.019, spur_phi=52.0)
 for a in sys.argv[1:]:
     k, v = a.split("="); P[k] = float(v)
 TS = [0.0, 0.12, 0.26, 0.41, 0.56, 0.70, 0.83]

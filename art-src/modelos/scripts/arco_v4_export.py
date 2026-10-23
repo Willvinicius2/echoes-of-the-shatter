@@ -49,21 +49,43 @@ bpy.ops.object.join()
 bow = bpy.context.view_layer.objects.active; bow.name = "SM_ArcherDark_Bow"; bow.data.name = "SM_ArcherDark_Bow"
 for p_ in bow.data.polygons: p_.material_index = 0
 while len(bow.data.materials) > 1: bow.data.materials.pop(index=len(bow.data.materials) - 1)
-# --- corda: reta entre as ancoras, rosa-vinho fosco
+# --- corda: crina/couro trancado, 8 lados, raio 3,5 mm; textura de torcao (normal) e cor com cavidade (AO) gerada aqui
 a = Vector(inf["1"]["anchor"]); b = Vector(inf["-1"]["anchor"])
-R = 0.0017; d = (b - a).normalized(); u = d.cross(Vector((0, 1, 0))).normalized(); w = d.cross(u).normalized()
+R = 0.0035; NS = 8; d = (b - a).normalized(); u = d.cross(Vector((0, 1, 0))).normalized(); w = d.cross(u).normalized()
 bm = bmesh.new(); ring = []
 for c in (a, b):
-    ring.append([bm.verts.new(c + (u * math.cos(2 * math.pi * j / 6) + w * math.sin(2 * math.pi * j / 6)) * R) for j in range(6)])
-for j in range(6): bm.faces.new((ring[0][j], ring[0][(j + 1) % 6], ring[1][(j + 1) % 6], ring[1][j]))
+    ring.append([bm.verts.new(c + (u * math.cos(2 * math.pi * j / NS) + w * math.sin(2 * math.pi * j / NS)) * R) for j in range(NS)])
+for j in range(NS): bm.faces.new((ring[0][j], ring[0][(j + 1) % NS], ring[1][(j + 1) % NS], ring[1][j]))
 bm.faces.new(ring[0][::-1]); bm.faces.new(ring[1])
 bmesh.ops.triangulate(bm, faces=bm.faces[:]); bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me = bpy.data.meshes.new("SM_ArcherDark_BowString"); bm.to_mesh(me); bm.free()
+# UV: u = volta em torno do cordao (padrao 3 fios, inteiro = sem emenda vertical), v = ao longo (0 na ancora 1, 1 na ancora -1)
+suv = me.uv_layers.new(name="UVMap")
+for lp in me.loops:
+    co = me.vertices[lp.vertex_index].co; tt = (co - a).dot(d); rel = co - a - d * tt
+    suv.data[lp.index].uv = (((math.atan2(rel.dot(w), rel.dot(u)) / (2 * math.pi)) % 1.0), tt / (b - a).length)
 so = bpy.data.objects.new("SM_ArcherDark_BowString", me); bpy.context.scene.collection.objects.link(so)
-sm = bpy.data.materials.new("M_ArcherDark_BowString"); sm.use_nodes = True
-b2 = sm.node_tree.nodes["Principled BSDF"]
-b2.inputs['Base Color'].default_value = (0.30, 0.025, 0.11, 1); b2.inputs['Roughness'].default_value = 0.78
-b2.inputs['Emission Color'].default_value = (0.75, 0.05, 0.26, 1); b2.inputs['Emission Strength'].default_value = 0.10
+# textura procedural de corda: 256 px, fios em diagonal (3 x 10 ciclos = repete sem emenda), fibra fina, cavidade escura, acento rosa nas cristas
+NT = 256; rr, cc = np.meshgrid(np.arange(NT) / NT, np.arange(NT) / NT, indexing="ij")   # linha = v, coluna = u
+Hh = 0.5 + 0.5 * np.cos(2 * np.pi * (3 * cc + 10 * rr)); Hf = 0.5 + 0.5 * np.cos(2 * np.pi * (12 * cc + 40 * rr))
+H = Hh + 0.22 * Hf
+gx = (np.roll(H, -1, 1) - np.roll(H, 1, 1)) / 2; gy = (np.roll(H, -1, 0) - np.roll(H, 1, 0)) / 2
+nv = np.dstack([-gx * 3.0, -gy * 3.0, np.ones_like(H)]); nv /= np.linalg.norm(nv, axis=2, keepdims=True)
+nrgb = np.dstack([nv * 0.5 + 0.5, np.ones_like(H)])
+cav = 0.42 + 0.58 * Hh ** 0.8                                                  # sombra nos sulcos
+base = np.array([0.20, 0.025, 0.09]); pink = np.array([0.62, 0.15, 0.31])
+crest = np.clip(Hh - 0.86, 0, 1) / 0.14
+bc = base[None, None, :] * cav[..., None] * (0.9 + 0.1 * Hf[..., None]) + pink[None, None, :] * (0.55 * crest[..., None])
+bcrgba = np.dstack([np.clip(bc, 0, 1), np.ones_like(H)])
+def strimg(name, arr, cs):
+    im = bpy.data.images.new(name, width=NT, height=NT, alpha=True); im.colorspace_settings.name = cs
+    im.pixels.foreach_set(arr.astype(np.float32).ravel()); im.pack(); return im
+sm = bpy.data.materials.new("M_ArcherDark_BowString"); sm.use_nodes = True; snt = sm.node_tree
+b2 = snt.nodes["Principled BSDF"]; b2.inputs['Roughness'].default_value = 0.72; b2.inputs['Metallic'].default_value = 0.0
+tbc = snt.nodes.new('ShaderNodeTexImage'); tbc.image = strimg("T_ArcherDark_Bow_String_BC", bcrgba, 'sRGB'); snt.links.new(tbc.outputs[0], b2.inputs['Base Color'])
+tnm = snt.nodes.new('ShaderNodeTexImage'); tnm.image = strimg("T_ArcherDark_Bow_String_N", nrgb, 'Non-Color')
+nmp = snt.nodes.new('ShaderNodeNormalMap'); nmp.inputs['Strength'].default_value = 0.9
+snt.links.new(tnm.outputs[0], nmp.inputs['Color']); snt.links.new(nmp.outputs[0], b2.inputs['Normal'])
 so.data.materials.append(sm)
 # --- folga corda x haste (so vertices da haste: indices antes das laminas) e dimensoes
 Pw = np.array([v.co[:] for v in bow.data.vertices]); nh = len(Pw)
