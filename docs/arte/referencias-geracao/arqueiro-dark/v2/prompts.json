@@ -1,0 +1,29 @@
+[
+ {
+  "id": "arq_v2_vistas",
+  "titulo": "Arqueiro v2 - vistas",
+  "prompt": "Character concept art for a stylized hand-painted 3D game ARPG. The attached image is only a side reference for our own equipment pieces (bow, quiver, boots), not for body proportions or outfit. DESIGN (original character): slender elegant archer, medium-length blond hair, white scarf/collar, dark layered cloak of black feathers on the shoulders falling in long points, dark leather coat with geometric embroidery and pink piping, dark leather bracers and tall dark leather boots with metal ornaments, tight dark trousers, long dark recurve bow with blades on the tips and a pink string. PROPORTION: stylized and elegant, about 5 heads tall (slimmer than chibi), readable in a 3/4 top-down game camera. FINISH: stylized hand-painted game 3D, sculpted rounded volumes with bevels, cloth with real drape, leather with real volume; NOT clay, NOT blocks, NOT photorealistic. Grim, dark mood. Palette: black/charcoal, white, dark leather, pink piping, metal details. BACKGROUND: perfectly flat uniform light gray #C8C8C8, no ground, no cast shadow, no text, no labels, no numbers, no grid, no frame, no UI. The SAME character in every view, same scale, same ground line. Model sheet. Top row: 4 full-body views in neutral pose, bow in left hand: FRONT, RIGHT PROFILE (facing the right of the image), BACK, THREE-QUARTER. Bottom row: 4 close-ups: face/hair/scarf from the front, face from the side, bracer and hand holding the bow, tall boot with metal ornament.",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arqueiro-dark\\arq_dark_vistas.png"
+  ]
+ },
+ {
+  "id": "arq_v2_poses",
+  "titulo": "Arqueiro v2 - poses",
+  "prompt": "Character concept art for a stylized hand-painted 3D game ARPG. The attached image is only a side reference for our own equipment pieces (bow, quiver, boots), not for body proportions or outfit. DESIGN (original character): slender elegant archer, medium-length blond hair, white scarf/collar, dark layered cloak of black feathers on the shoulders falling in long points, dark leather coat with geometric embroidery and pink piping, dark leather bracers and tall dark leather boots with metal ornaments, tight dark trousers, long dark recurve bow with blades on the tips and a pink string. PROPORTION: stylized and elegant, about 5 heads tall (slimmer than chibi), readable in a 3/4 top-down game camera. FINISH: stylized hand-painted game 3D, sculpted rounded volumes with bevels, cloth with real drape, leather with real volume; NOT clay, NOT blocks, NOT photorealistic. Grim, dark mood. Palette: black/charcoal, white, dark leather, pink piping, metal details. BACKGROUND: perfectly flat uniform light gray #C8C8C8, no ground, no cast shadow, no text, no labels, no numbers, no grid, no frame, no UI. The SAME character in every view, same scale, same ground line. 6 full-body poses in a 3x2 grid, game camera 3/4 from above: IDLE, WALK, RUN (body leaning, foot on the ground, cloak flying), DODGE (low side roll or leap), AIM (bow drawn, arrow nocked), SHOOT.",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arqueiro-dark\\arq_dark_vistas.png"
+  ]
+ },
+ {
+  "id": "arq_v2_equipamento",
+  "titulo": "Arqueiro v2 - equipamento",
+  "prompt": "Character concept art for a stylized hand-painted 3D game ARPG. The attached image is only a side reference for our own equipment pieces (bow, quiver, boots), not for body proportions or outfit. DESIGN (original character): slender elegant archer, medium-length blond hair, white scarf/collar, dark layered cloak of black feathers on the shoulders falling in long points, dark leather coat with geometric embroidery and pink piping, dark leather bracers and tall dark leather boots with metal ornaments, tight dark trousers, long dark recurve bow with blades on the tips and a pink string. PROPORTION: stylized and elegant, about 5 heads tall (slimmer than chibi), readable in a 3/4 top-down game camera. FINISH: stylized hand-painted game 3D, sculpted rounded volumes with bevels, cloth with real drape, leather with real volume; NOT clay, NOT blocks, NOT photorealistic. Grim, dark mood. Palette: black/charcoal, white, dark leather, pink piping, metal details. BACKGROUND: perfectly flat uniform light gray #C8C8C8, no ground, no cast shadow, no text, no labels, no numbers, no grid, no frame, no UI. The SAME character in every view, same scale, same ground line. ONLY loose equipment pieces in a grid, NO full character: long dark recurve bow with blades and pink string, layered black-feather cloak with pointed tips, dark leather coat with geometric embroidery and pink piping, leather bracer with metal ornament, tall leather boot with metal ornament, white scarf, belt with round buckle, quiver and black-feather arrows.",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arqueiro-dark\\arq_dark_vistas.png"
+  ]
+ }
+]
