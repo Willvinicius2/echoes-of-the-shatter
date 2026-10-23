@@ -1,0 +1,37 @@
+{
+  "id": "arq_dark_arco",
+  "asset": "SM_ArcherDark_Bow",
+  "kind": "static",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/arco/arco.glb",
+  "single_view": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/arco/arco_entrada_rgba.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/arco/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/arco/final",
+  "body_height_m": 1.1,
+  "pivot_frac": 0.5,
+  "tris_target": 2200,
+  "tex_size": 512,
+  "tris_range": [
+    800,
+    3000
+  ],
+  "min_component_ratio": 0.02,
+  "mesh_name": "SM_ArcherDark_Bow",
+  "bake_shards": 1,
+  "preserve_topology": true,
+  "shell_close": 1,
+  "shell_res": 640,
+  "sat_keep_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      35,
+      55
+    ]
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "id": "arq_dark_aljava",
+  "asset": "SM_ArcherDark_Quiver",
+  "kind": "static",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/aljava/aljava.glb",
+  "single_view": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/aljava/aljava_entrada_rgba.png",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/aljava/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/aljava/final",
+  "body_height_m": 0.55,
+  "pivot_frac": 0.6,
+  "tris_target": 2200,
+  "tex_size": 512,
+  "tris_range": [
+    800,
+    3000
+  ],
+  "min_component_ratio": 0.005,
+  "mesh_name": "SM_ArcherDark_Quiver",
+  "bake_shards": 1,
+  "shell_close": 2,
+  "sat_keep_hues": [
+    [
+      345,
+      360
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      35,
+      55
+    ]
+  ],
+  "shell_res": 640
+}
