@@ -67,69 +67,82 @@ def make_card(az_deg, el_deg, length, width, off0, off1, lat=0.0, fwd=0.0, grav=
 
 S2 = lambda x: 1 if x >= 0 else -1
 JIT = lambda: rng.uniform(-0.3, 0.3)
-# 1) coroa e topo: cobre o couro cabeludo, varre para tras e para os lados
-make_card(0, 84, 0.12, 0.08, 0.004, 0.03, grav=0.3)
-for el, na in ((72, 6), (60, 10), (48, 14)):
-    for i in range(na):
-        az = (i + rng.uniform(-0.3, 0.3)) * 360 / na - 180
-        front = abs(az) < 60
-        if front and el < 55: continue
-        sd = S2(math.sin(math.radians(az)))
-        make_card(az, el, rng.uniform(0.12, 0.17), rng.uniform(0.07, 0.085), 0.004, 0.032,
-                  lat=(0.9 * sd if front else 0.2) + JIT() * 0.5, fwd=(-0.25 if front else 0.0), grav=0.25, flare=rng.uniform(0.004, 0.014))
-# 2) anel medio: volume lateral
-for i in range(20):
-    az = -180 + (i + rng.uniform(-0.25, 0.25)) * 18
-    if abs(az) < 40: continue
-    make_card(az, rng.uniform(16, 28), rng.uniform(0.16, 0.22), rng.uniform(0.065, 0.08), 0.012, 0.045, lat=JIT(), grav=0.2, flare=rng.uniform(0.012, 0.028))
-# 3) nuca em camadas, pontas abertas
-for el, na, ln in ((6, 14, 0.25), (-10, 12, 0.22), (-24, 8, 0.17)):
-    for i in range(na):
-        az = (180 + (i + rng.uniform(-0.2, 0.2)) * 360 / na + 180) % 360 - 180
-        if abs(az) < 62: continue
-        make_card(az, el, ln + rng.uniform(-0.04, 0.03), rng.uniform(0.07, 0.085), 0.018, 0.05, lat=JIT(), grav=0.3, flare=rng.uniform(0.014, 0.03))
-# 4) franja repartida: cai dos dois lados da risca, deixa o centro aberto
-for i in range(14):
-    side = -1 if i % 2 == 0 else 1
-    make_card(side * rng.uniform(4, 40), rng.uniform(38, 46), rng.uniform(0.10, 0.135), rng.uniform(0.04, 0.055), 0.006, 0.026,
-              lat=1.5 * side + JIT() * 0.4, fwd=-0.05, grav=0.45, flare=rng.uniform(0.006, 0.016))
-# 5) mechas laterais na frente da orelha
-for i in range(10):
-    side = -1 if i % 2 == 0 else 1
-    make_card(side * rng.uniform(56, 80), rng.uniform(16, 30), rng.uniform(0.13, 0.18), rng.uniform(0.04, 0.052), 0.008, 0.034, fwd=0.3, grav=0.12, flare=rng.uniform(0.008, 0.02))
-# 6) fios soltos nas pontas
-for i in range(12):
-    az = rng.uniform(-180, 180)
+ATL = json.load(open(HD + r"\hair_atlas.json"))
+meta = []   # tipo de textura por cartao: ("lock", i) ou ("strand", 0)
+def lk(kind="lock"):
+    if kind == "strand": meta.append(("strand", 0)); return
+    meta.append(("lock", int(rng.integers(0, len(ATL["locks"])))))
+def add(*a, kind="lock", **k):
+    make_card(*a, **k); lk(kind)
+# camada 1: base rente ao cranio
+add(0, 86, 0.11, 0.10, 0.003, 0.012, grav=0.2)
+for az0 in (0, 60, 120, 180, 240, 300):
+    az = (az0 + JIT() * 15 + 180) % 360 - 180
     if abs(az) < 50: continue
-    make_card(az, rng.uniform(5, 32), rng.uniform(0.12, 0.18), rng.uniform(0.032, 0.042), 0.03, 0.06, lat=JIT(), grav=0.2, flare=0.02)
+    add(az, 72, 0.12, 0.10, 0.003, 0.014, grav=0.2)
+for i in range(14):
+    az = -180 + (i + JIT()) * 360 / 14
+    if abs(az) < 45: continue
+    add(az, 54, 0.15, 0.10, 0.005, 0.02, grav=0.2, flare=0.004)
+# camada 2: media
+for i in range(14):
+    az = -180 + (i + JIT()) * 360 / 14
+    if abs(az) < 50: continue
+    add(az, 34, rng.uniform(0.18, 0.22), rng.uniform(0.09, 0.105), 0.01, 0.034, lat=JIT(), grav=0.2, flare=rng.uniform(0.01, 0.02))
+# camada 3: externa, pontas se afastando, ate a base do pescoco
+for i in range(12):
+    az = -180 + (i + 0.5 + JIT()) * 30
+    if abs(az) < 55: continue
+    add(az, 16, rng.uniform(0.24, 0.29), rng.uniform(0.09, 0.105), 0.016, 0.05, lat=JIT(), grav=0.3, flare=rng.uniform(0.02, 0.035))
+for i in range(5):
+    az = (180 + (i - 2 + JIT()) * 52 + 180) % 360 - 180
+    add(az, 0, rng.uniform(0.22, 0.26), rng.uniform(0.085, 0.10), 0.022, 0.058, lat=JIT(), grav=0.35, flare=0.03)
+# laterais na frente da orelha (sem cobrir o olho)
+for side in (-1, 1):
+    add(side * 74, 20, 0.16, 0.06, 0.012, 0.035, fwd=0.2, grav=0.12, flare=0.015)
+    add(side * 62, 34, 0.14, 0.062, 0.01, 0.032, fwd=0.2, grav=0.12, flare=0.012)
+# franja repartida: raiz na risca, cai lateralmente para a testa e a tempora
+for side in (-1, 1):
+    for az, el, ln, wd in ((9, 54, 0.105, 0.065), (22, 50, 0.115, 0.07), (38, 44, 0.12, 0.07)):
+        add(side * az + JIT() * 3, el, ln, wd, 0.008, 0.024, lat=1.6 * side, fwd=-0.05, grav=0.4, flare=0.012)
+# mechas soltas
+for az in (-130, -70, 70, 130, 170):
+    add(az, 14, 0.15, 0.03, 0.028, 0.045, lat=0.2 * S2(az), grav=0.25, flare=0.01, kind="strand")
 
+BULGE = 0.007
 bm = bmesh.new(); uvl = bm.loops.layers.uv.new("UVMap"); dl = bm.verts.layers.deform.new()
-NSEG = 4
 for k, (pts, width) in enumerate(cards):
-    col = k % 8; flip = rng.random() < 0.5
+    kind, ci = meta[k]
+    u0, v0_, u1, v1_ = ATL["locks"][ci] if kind == "lock" else ATL["strands"][0]
+    if rng.random() < 0.5 and kind == "lock": u0, u1 = u1, u0
+    npt = len(pts)
     rows = []
     for i, p in enumerate(pts):
+        t = i / (npt - 1)
         n = normal_at(p)
-        tdir = (pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]); tdir /= np.linalg.norm(tdir) + 1e-9
+        tdir = pts[min(i + 1, npt - 1)] - pts[max(i - 1, 0)]; tdir /= np.linalg.norm(tdir) + 1e-9
         w = np.cross(tdir, n); w /= np.linalg.norm(w) + 1e-9
-        hw = width / 2 * (1 - 0.15 * i / (len(pts) - 1))
-        vl = bm.verts.new(Vector(p - w * hw)); vr = bm.verts.new(Vector(p + w * hw))
-        vl[dl][0] = 1.0; vr[dl][0] = 1.0
-        rows.append((vl, vr))
-    for i in range(len(pts) - 1):
-        a0, a1 = rows[i]; b0, b1 = rows[i + 1]
-        f = bm.faces.new((a0, a1, b1, b0))
-        nf = np.array(f.normal); nn = normal_at(pts[i])
-        if np.dot(nf, nn) < 0:
-            f.normal_flip()
-        u0, u1 = col / 8 + 0.004, (col + 1) / 8 - 0.004
-        if flip: u0, u1 = u1, u0
-        v0, v1 = 1 - i / (len(pts) - 1), 1 - (i + 1) / (len(pts) - 1)
-        for l in f.loops:
-            vv = l.vert
-            isL = (vv is a0 or vv is b0); isTop = (vv is a0 or vv is a1)
-            l[uvl].uv = (u0 if isL else u1, v0 if isTop else v1)
-        f.smooth = True
+        hw = width / 2 * (1 + 0.1 * t)
+        off = 0.0
+        row = []
+        for j, sx in enumerate((-1, 0, 1)):
+            q = p + w * hw * sx
+            q = q + n * (BULGE * (1 - 0.4 * t) if sx == 0 else 0.0)
+            v = bm.verts.new(Vector(q)); v[dl][0] = 1.0
+            row.append(v)
+        rows.append(row)
+    for i in range(npt - 1):
+        for j in range(2):
+            a0, a1, b1, b0 = rows[i][j], rows[i][j + 1], rows[i + 1][j + 1], rows[i + 1][j]
+            f = bm.faces.new((a0, a1, b1, b0))
+            nn = normal_at(pts[i])
+            if np.dot(np.array(f.normal), nn) < 0: f.normal_flip()
+            for l in f.loops:
+                vv = l.vert
+                col = rows[i].index(vv) if vv in rows[i] else rows[i + 1].index(vv)
+                row_i = i if vv in rows[i] else i + 1
+                l[uvl].uv = (u0 + (u1 - u0) * col / 2, (1 - v0_) - (v1_ - v0_) * row_i / (npt - 1))
+            f.smooth = True
 bm.normal_update()
 hm = bpy.data.meshes.new("SM_ArcherDark_Hair"); bm.to_mesh(hm); bm.free()
 hob = bpy.data.objects.new("SM_ArcherDark_Hair", hm); bpy.context.scene.collection.objects.link(hob)
