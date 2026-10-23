@@ -1,0 +1,41 @@
+{
+  "id": "arq_dark_botas",
+  "asset": "SK_ArcherDark_Boots",
+  "kind": "humanoid",
+  "modular_role": "piece",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/botas/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/botas/final",
+  "single_view": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/entradas/arq3d_botas.png",
+  "body_height_m": 1.8,
+  "mesh_name": "SK_ArcherDark_Boots",
+  "norm_from": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/norm.json",
+  "markers_from": "D:/openclaude/_trabalho-claude/wt/arqueiro-dark-3d/art-src/modelos/scripts/chars/arq_dark_corpo.json",
+  "body_rig_blend": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/game_rig.blend",
+  "volume_method": "script (TripoSG nao usado: volume por script sobre a pele do corpo, como o torso)",
+  "tex_size": 2048,
+  "tris_target": 2500,
+  "tris_range": [
+    1800,
+    2800
+  ],
+  "use_normal_map": true,
+  "params": {
+    "off": 0.005,
+    "z_top": 0.5,
+    "toe_ext": 0.05,
+    "toe_pinch": 0.28,
+    "toe_slope": 1.5,
+    "toe_raise": 0.014
+  },
+  "resultado": {
+    "tris": 2090,
+    "verts": 1302,
+    "ossos": 30,
+    "textura": "2048 BC + N (M zerado)",
+    "offset_pele_mm": "5,5 (minimo imposto) no volume; metais/tiras 3,5 a 20 mm acima do couro",
+    "pose_stress_max": 1.739,
+    "pose_arestas_acima_de_2": 0,
+    "folga": "so o forro interno do colarinho (parede dobrada, ate 17 mm) fica por dentro da pele, invisivel"
+  },
+  "recomendacao_esconde": "O corpo e uma malha unica e nao pode ser escondido por nome: os pes descalcos e as canelas ficam DENTRO da bota (verificado: nenhum ponto do corpo aparece pelo cano nem pelo calcanhar em pe/andar); acima do colarinho (z=0,50) o joelho do corpo aparece normalmente. Em dobra extrema do joelho (>90) o cano pode abrir mais que a pele; se aparecer pele, esconder os pes do corpo exigiria dividir a malha do corpo em regioes (Legs/Feet) - decisao do orquestrador."
+}
