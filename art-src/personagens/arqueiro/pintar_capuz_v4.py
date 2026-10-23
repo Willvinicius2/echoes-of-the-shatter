@@ -47,13 +47,13 @@ def pano(W, H, seed, escuro, medio, claro, listras=0.55):
     longa = fbm(W, H, 80, seed, sx=0.7, sy=1.0)                       # pinceladas compridas na vertical
     manch = fbm(W, H, 160, seed + 20, 1.0, 1.0)
     fina = fbm(W, H, 10, seed + 40, sx=0.35, sy=1.4, oit=2)
-    trama = 0.5 + 0.5 * np.sin(xx * W * 0.9) * np.sin(yy * H * 0.9)
-    t = np.clip(0.55 * longa + 0.35 * manch + 0.10 * fina, 0, 1)
+    trama = 0.5 + 0.5 * np.sin(xx * W * 1.1) * np.sin(yy * H * 1.1)
+    t = np.clip(0.50 * longa + 0.15 * manch + 0.35 * fina, 0, 1)
     t = (t - t.min()) / (t.max() - t.min() + 1e-6)
     t = np.clip((t - 0.5) * 1.5 + 0.5, 0, 1)
     c1 = mistura(np.array(escuro, np.float32), np.array(medio, np.float32), np.clip(t * 2, 0, 1))
     c2 = mistura(c1, np.array(claro, np.float32) + 0 * c1, np.clip(t * 2 - 1, 0, 1))
-    c2 = c2 * (1 - 0.06 * listras + 0.06 * listras * trama[..., None] * 2)
+    c2 = c2 * (0.80 + 0.30 * trama[..., None])
     return c2
 
 
@@ -78,10 +78,12 @@ def capuz():
     psi = (np.linspace(0, 1, W, dtype=np.float32)[None, :] - 0.5) * 2 * np.pi
     tt = np.clip((1 - np.linspace(0, 1, H, dtype=np.float32)[:, None] - 0.02) / 0.96, 0, 1)
     env = smooth01(0.45, 1.3, np.abs(psi))
-    cr = np.abs(np.sin(psi * 2.6 + 4.0 * tt + 0.5 * np.sin(psi * 2.0))) ** 0.55 - 0.55
+    cr = np.abs(np.sin(psi * 3.0 + 4.0 * tt + 0.5 * np.sin(psi * 2.0))) ** 0.55 - 0.55
     cr2 = np.abs(np.sin(psi * 4.7 - 3.0 * tt + 1.0)) ** 0.7 - 0.55
     f = (cr * 0.75 + cr2 * 0.35) * (0.35 + 0.65 * env)
-    img = img * (1.0 + 0.55 * f)[..., None]
+    vale = np.clip(-f * 2.2, 0, 1)
+    crista = np.clip(f * 2.0, 0, 1)
+    img = img * (1.0 - 0.55 * vale + 0.35 * crista)[..., None]
     # pinceladas de luz amarelada
     r = np.random.default_rng(5)
     im = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8))
@@ -112,16 +114,19 @@ def capuz():
 
 def ouro():
     W, H = 256, 256
-    t = fbm(W, H, 30, 31, 1.0, 0.4, 3)
-    base = mistura(np.array((140, 100, 38), np.float32) + np.zeros((H, W, 3), np.float32), np.array((226, 186, 88), np.float32) + np.zeros((H, W, 3), np.float32), t)
     r = np.random.default_rng(9)
-    im = Image.fromarray(base.astype(np.uint8))
+    z = fbm(W, H, 24, 31, 1.0, 1.0, 3)
+    couro = np.array((84, 56, 30), np.float32) + np.zeros((H, W, 3), np.float32)
+    couro = couro * (0.8 + 0.4 * fbm(W, H, 8, 33, 1, 1, 2)[..., None])
+    dour = mistura(np.array((170, 126, 48), np.float32) + np.zeros((H, W, 3), np.float32),
+                   np.array((236, 200, 98), np.float32) + np.zeros((H, W, 3), np.float32), fbm(W, H, 16, 35, 1, 1, 2))
+    m = np.clip((z - 0.42) * 6, 0, 1)[..., None]   # dourado gasto: manchas sobre o couro
+    base = couro * (1 - m) + dour * m
+    im = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8))
     d = ImageDraw.Draw(im, "RGBA")
-    for x in range(8, W, 24):  # pontos de costura
-        d.ellipse([x, 120, x + 8, 128], fill=(90, 58, 20, 150))
-    for _ in range(60):
-        x = r.integers(0, W)
-        d.line([(x, 0), (x + r.integers(-3, 4), H)], fill=(255, 230, 150, 20), width=2)
+    for _ in range(90):   # pontos de costura soltos
+        x, y = r.integers(0, W), r.integers(0, H)
+        d.ellipse([x, y, x + 5, y + 3], fill=(40, 26, 14, 170))
     salvar(np.asarray(im, np.float32), "T_Ouro_BC.png")
 
 
@@ -142,14 +147,14 @@ def mascara():
     d = ImageDraw.Draw(im, "RGBA")
     r = np.random.default_rng(13)
     # rachaduras finas e manchas verdes de musgo na base do bico
-    for _ in range(26):
+    for _ in range(34):
         x, y = r.integers(60, W - 60), r.integers(10, H - 10)
         pts = [(x, y)]
         for k in range(r.integers(4, 9)):
             x += r.integers(-14, 15)
             y += r.integers(6, 22)
             pts.append((x, y))
-        d.line(pts, fill=(88, 66, 40, 150), width=2)
+        d.line(pts, fill=(84, 60, 34, 190), width=4)
     # friso verde pintado em volta dos olhos (tracado da folha) e sobrancelha escura
     for s in (-1, 1):
         cx = (0.5 + s * 0.060 / 0.30) * W

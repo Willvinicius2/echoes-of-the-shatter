@@ -143,7 +143,7 @@ def borda_enrolada(bm, bordas, delta, mi):
 # O capuz e um loft: aneis perpendiculares a uma espinha que sobe reta pela cabeca e curva para tras ate a ponta
 # (silhueta de touca pontuda da folha). A abertura frontal e recortada depois, com friso dourado enrolado.
 NT, NS = 30, 32
-Q = (Vector((0, 0.07, 1.17)), Vector((0, 0.07, 1.40)), Vector((0, 0.27, 1.62)), Vector((0, 0.52, 1.50)))
+Q = (Vector((0, 0.07, 1.17)), Vector((0, 0.07, 1.34)), Vector((0.05, 0.24, 1.50)), Vector((0.20, 0.40, 1.38)))
 RAIO = [(0.0, 0.330), (0.10, 0.310), (0.20, 0.300), (0.30, 0.295), (0.40, 0.280), (0.50, 0.250), (0.60, 0.205),
         (0.70, 0.150), (0.80, 0.100), (0.90, 0.052), (1.0, 0.004)]
 HEM_Z, HEM_T = 0.985, 0.30
@@ -226,9 +226,9 @@ def hood(m_pano, m_ouro, arm):
             psi = psi_l[j]
             sx, sn = math.sin(psi), -math.cos(psi)         # frente = -Nn (sn=-1 em psi=0)
             env = sstep(0.45, 1.3, abs(psi))
-            cr = abs(math.sin(psi * 2.6 + 4.0 * t + 0.5 * math.sin(psi * 2.0))) ** 0.55 - 0.55
+            cr = abs(math.sin(psi * 3.0 + 4.0 * t + 0.5 * math.sin(psi * 2.0))) ** 0.55 - 0.55
             cr2 = abs(math.sin(psi * 4.7 - 3.0 * t + 1.0)) ** 0.7 - 0.55
-            amp = 0.20 * env * (0.30 + 0.70 * sstep(0.75, 0.15, t)) * (1 - sstep(0.80, 1.0, t))
+            amp = 0.30 * env * (0.30 + 0.70 * sstep(0.75, 0.15, t)) * (1 - sstep(0.80, 1.0, t))
             nz = noise.noise(Vector((psi * 1.3, t * 3.0, 5.0)))
             r = R * (1 + amp * (cr * 0.75 + cr2 * 0.35) + 0.02 * nz)
             pos = cen + X * (sx * r) + Nn * (sn * r * 0.985)
@@ -237,7 +237,7 @@ def hood(m_pano, m_ouro, arm):
             if t < 0.2 and sn > 0:                         # costas do capuz pendem para tras
                 pos.y += 0.04 * (0.2 - t) / 0.2 * sn
             if t < 0.08:                                   # barra ondulada, mais baixa nos lados
-                pos.z -= 0.055 * (1 - t / 0.08) * (0.5 + 0.5 * math.sin(psi * 5 + 1.0)) * (0.4 + 0.6 * env)
+                pos.z -= 0.075 * (1 - t / 0.08) * (0.5 + 0.5 * math.sin(psi * 7 + 1.0)) * (0.4 + 0.6 * env)
             linha.append(bm.verts.new(pos))
         an.append(linha)
     marca = set()
@@ -301,7 +301,7 @@ def mascara_pt(u, v):
     yb -= 0.012 * math.exp(-((v - 0.62) / 0.10) ** 2) * (abs(u) ** 1.2) * (1 - abs(u)) * 2.5   # maca do rosto           # sobrancelha
     yb += 0.060 * sstep(0.88, 1.0, v) ** 2                                           # testa recua
     yb += x * x * 3.6                                                                # curva em volta da cabeca
-    quilha = 0.030 * sstep(0.62, 0.45, v) * (1 - abs(u)) ** 1.4 + 0.008 * sstep(0.7, 0.6, v) * (1 - abs(u)) ** 2
+    quilha = 0.045 * sstep(0.62, 0.45, v) * (1 - abs(u)) ** 1.4 + 0.008 * sstep(0.7, 0.6, v) * (1 - abs(u)) ** 2
     yb -= quilha
     z -= 0.012 * (1 - v / 0.6) ** 2 * (v < 0.6)                                      # ponta do bico cai
     return Vector((x, yb, z))
@@ -334,7 +334,7 @@ def mascara(m_osso, arm):
     bpy.context.scene.collection.objects.link(ob)
     bpy.context.view_layer.objects.active = ob
     md = ob.modifiers.new("sol", "SOLIDIFY")
-    md.thickness = 0.011
+    md.thickness = 0.022
     md.offset = -1.0
     md.use_rim = True
     bpy.ops.object.modifier_apply(modifier="sol")
@@ -358,6 +358,13 @@ def mascara(m_osso, arm):
         bo.solver = "EXACT"
         bpy.ops.object.modifier_apply(modifier="bool")
         bpy.data.objects.remove(co)
+    bpy.context.view_layer.objects.active = ob
+    bv = ob.modifiers.new("bev", "BEVEL")
+    bv.width = 0.0035
+    bv.segments = 1
+    bv.limit_method = "ANGLE"
+    bv.angle_limit = math.radians(35)
+    bpy.ops.object.modifier_apply(modifier="bev")
     me = ob.data
     me.materials.append(m_osso)
     for p in me.polygons:
@@ -380,7 +387,7 @@ def elipsoide(bm, centro, rx, ry, rz, seg=(14, 9)):
     return r["verts"]
 
 
-def rosto(m_vazio, m_olho, m_lenco, arm):
+def rosto(m_vazio, m_olho, m_lenco, arm, m_nucleo=None):
     # 0 = vazio escuro, 1 = olhos, 2 = lenco
     bm = bmesh.new()
     elipsoide(bm, (0, -0.005, 1.285), 0.150, 0.135, 0.175, seg=(14, 8))
@@ -388,17 +395,18 @@ def rosto(m_vazio, m_olho, m_lenco, arm):
         f.material_index = 0
     fa = len(bm.faces)
     for s in (-1, 1):
-        n0 = len(bm.faces)
-        vs = elipsoide(bm, (0, 0, 0), 1, 1, 1, seg=(12, 6))
-        for v in vs:   # fenda amendoada, ponta externa para cima
-            x, y, z = v.co.x * (OLHO_RX * 0.78), v.co.y * 0.010, v.co.z * (OLHO_RZ * 0.72)
-            a = math.radians(s * OLHO_ROT)
-            xr = x * math.cos(a) + z * math.sin(a)
-            zr = -x * math.sin(a) + z * math.cos(a)
-            v.co = Vector((s * OLHO_C[0] + xr, -0.172 + y, OLHO_C[1] + zr))
-        bm.faces.ensure_lookup_table()
-        for f in bm.faces[n0:]:
-            f.material_index = 1
+        for esc_, dy, mi_ in ((0.58, -0.172, 1), (0.28, -0.178, 3)):
+            n0 = len(bm.faces)
+            vs = elipsoide(bm, (0, 0, 0), 1, 1, 1, seg=(12, 6))
+            for v in vs:   # fenda amendoada, ponta externa para cima
+                x, y, z = v.co.x * (OLHO_RX * esc_), v.co.y * 0.010, v.co.z * (OLHO_RZ * esc_ * 0.95)
+                a = math.radians(s * OLHO_ROT)
+                xr = x * math.cos(a) + z * math.sin(a)
+                zr = -x * math.sin(a) + z * math.cos(a)
+                v.co = Vector((s * OLHO_C[0] + xr, dy + y, OLHO_C[1] + zr))
+            bm.faces.ensure_lookup_table()
+            for f in bm.faces[n0:]:
+                f.material_index = mi_
     bm.faces.ensure_lookup_table()
     # lenco: faixa de pano em tigela sob o bico, subindo nas bochechas e fechando no pescoco
     bl = casca_esfera(24, 12)
@@ -407,8 +415,8 @@ def rosto(m_vazio, m_olho, m_lenco, arm):
     mor = []
     for f in bl.faces:
         p = f.calc_center_median()
-        topo = -0.10 + 1.0 * min(1.0, abs(p.x) / 0.85) ** 1.3
-        if p.z > topo or p.z < -0.85 or p.y > 0.55:
+        topo = 0.0 + 1.1 * min(1.0, abs(p.x) / 0.85) ** 1.2
+        if p.z > topo or p.z < -1.0 or p.y > 0.55:
             mor.append(f)
     bmesh.ops.delete(bl, geom=mor, context="FACES")
     for v in bl.verts:
@@ -416,8 +424,8 @@ def rosto(m_vazio, m_olho, m_lenco, arm):
     for v in bl.verts:   # dobras em diagonal no pano do lenco
         n = noise.noise(Vector((v.co.x * 14, v.co.z * 10 + v.co.x * 6, 2.0)))
         d = (v.co - Vector((0, 0.0, 1.185))).normalized()
-        v.co += d * 0.004 * n
-    for _ in range(5):   # alisa a escada da borda de cima
+        v.co += d * 0.008 * n
+    for _ in range(12):   # alisa a escada da borda de cima
         nv = {}
         for v in bl.verts:
             viz = [e.other_vert(v).co for e in v.link_edges if e.is_boundary]
@@ -426,7 +434,7 @@ def rosto(m_vazio, m_olho, m_lenco, arm):
         for v, co in nv.items():
             v.co = co
     bordas = [e for e in bl.edges if e.is_boundary]
-    topo_e = [e for e in bordas if (e.verts[0].co.z + e.verts[1].co.z) / 2 > 1.10]
+    topo_e = [e for e in bordas if (e.verts[0].co.z + e.verts[1].co.z) / 2 > 1.08]
     baixo_e = [e for e in bordas if e not in topo_e]
     borda_enrolada(bl, topo_e, lambda v: Vector((-v.co.x * 0.02, -0.014, 0.010)), 0)
     borda_enrolada(bl, baixo_e, lambda v: Vector((0, 0.0, -0.012)), 0)
@@ -442,7 +450,7 @@ def rosto(m_vazio, m_olho, m_lenco, arm):
             l_new[uvp].uv = l_old[uvl].uv
     bl.free()
     bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
-    ob = para_objeto(bm, "SK_Archer_Rosto", [m_vazio, m_olho, m_lenco], arm, "Head", subsurf=0)
+    ob = para_objeto(bm, "SK_Archer_Rosto", [m_vazio, m_olho, m_lenco, m_nucleo], arm, "Head", subsurf=0)
     # subdivisao so no lenco: aplica no objeto inteiro seria pesado nos olhos; faz por modificador de material nao existe,
     # entao o lenco recebe suavizacao pelas normais suaves e pela malha ja densa
     return ob
@@ -453,7 +461,7 @@ def gola(m_pano, m_ouro, arm):
     NU, NV = 27, 5
     bm = bmesh.new()
     uvl = bm.loops.layers.uv.verify()
-    perfil = [(1.025, 0.115), (0.990, 0.165), (0.950, 0.215), (0.915, 0.252), (0.885, 0.275), (0.865, 0.285)]
+    perfil = [(1.005, 0.120), (0.990, 0.165), (0.950, 0.215), (0.915, 0.252), (0.885, 0.275), (0.865, 0.285)]
     anel = []
     for j, (z, r) in enumerate(perfil):
         linha = []
@@ -480,7 +488,7 @@ def gola(m_pano, m_ouro, arm):
     bordas = [e for e in bm.edges if e.is_boundary]
     ap = [e for e in bordas if (e.verts[0].co.z + e.verts[1].co.z) / 2 > 1.0]
     bx = [e for e in bordas if e not in ap]
-    borda_enrolada(bm, ap, lambda v: Vector((0, 0, 0.012)), 0)
+    borda_enrolada(bm, ap, lambda v: Vector((0, 0, -0.004)), 0)
     borda_enrolada(bm, bx, lambda v: Vector((0, 0, -0.012)), 0)
     return para_objeto(bm, "SK_Archer_Gola", [m_pano, m_ouro], arm, "Neck", subsurf=0)
 
@@ -500,12 +508,13 @@ def main():
     m_pano = mat("M_Arqueiro_Capuz", tex="T_Capuz_BC.png", rough=0.92, dupla=True)
     m_ouro = mat("M_Arqueiro_CapuzOuro", tex="T_Ouro_BC.png", rough=0.45, metal=0.55, dupla=True)
     m_osso = mat("M_Arqueiro_Mascara", tex="T_Mascara_BC.png", rough=0.55, dupla=True)
-    m_vazio = mat("M_Arqueiro_RostoVazio", cor=(0.012, 0.016, 0.010, 1), rough=1.0, dupla=True)
-    m_olho = mat("M_Arqueiro_OlhoVerde", cor=(0.10, 0.55, 0.06, 1), rough=0.3, emis=(0.12, 0.85, 0.05, 1), emis_forca=1.4, dupla=True)
+    m_vazio = mat("M_Arqueiro_RostoVazio", cor=(0.018, 0.034, 0.016, 1), rough=1.0, dupla=True)
+    m_olho = mat("M_Arqueiro_OlhoVerde", cor=(0.10, 0.55, 0.06, 1), rough=0.3, emis=(0.12, 0.85, 0.05, 1), emis_forca=1.0, dupla=True)
+    m_nucleo = mat("M_Arqueiro_OlhoNucleo", cor=(0.8, 1.0, 0.6, 1), rough=0.3, emis=(0.75, 1.0, 0.55, 1), emis_forca=1.6, dupla=True)
     m_lenco = mat("M_Arqueiro_Lenco", tex="T_Lenco_BC.png", rough=0.95, dupla=True)
     hd = hood(m_pano, m_ouro, arm)
     mk = mascara(m_osso, arm)
-    ro = rosto(m_vazio, m_olho, m_lenco, arm)
+    ro = rosto(m_vazio, m_olho, m_lenco, arm, m_nucleo)
     gl = gola(m_lenco, m_ouro, arm)
     tot = 0
     for o in (hd, mk, ro, gl):
