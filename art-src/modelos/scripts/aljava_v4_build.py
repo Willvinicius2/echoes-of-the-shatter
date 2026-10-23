@@ -60,11 +60,11 @@ def mat(name, img=None, nrm=None, rough=0.7, metal=0.0, color=(0.05, 0.04, 0.04,
 
 m_body = mat("M_ArcherDark_Quiver_Body", tex + "/T_ArcherDark_Quiver_Body_BC.png", tex + "/T_ArcherDark_Quiver_Body_N.png", rough=0.72, nstr=1.6, cull=True)
 m_in = mat("M_ArcherDark_Quiver_Inside", tex + "/T_ArcherDark_Inside_BC.png", rough=0.95, cull=True)
-m_metal = mat("M_ArcherDark_Metal", tex + "/T_ArcherDark_Emblem_BC.png", tex + "/T_ArcherDark_Emblem_N.png", rough=0.42, metal=0.65, nstr=1.4)
+m_metal = mat("M_ArcherDark_Metal", tex + "/T_ArcherDark_Emblem_BC.png", tex + "/T_ArcherDark_Emblem_N.png", rough=0.62, metal=0.35, nstr=1.4)
 m_arr = mat("M_ArcherDark_Arrows", tex + "/T_ArcherDark_Arrows_BC.png", rough=0.6, alpha=True)
-m_tip = mat("M_ArcherDark_ArrowTip", rough=0.2, metal=0.85, color=(0.93, 0.20, 0.42, 1), emit=(1.0, 0.18, 0.42, 1))
-m_strap = mat("M_ArcherDark_Strap", tex + "/T_ArcherDark_Strap_BC.png", tex + "/T_ArcherDark_Strap_N.png", rough=0.7, nstr=1.3)
-m_emb = mat("M_ArcherDark_Emblem", tex + "/T_ArcherDark_Emblem_BC.png", tex + "/T_ArcherDark_Emblem_N.png", rough=0.4, metal=0.65, nstr=1.4)
+m_tip = mat("M_ArcherDark_ArrowTip", rough=0.5, metal=0.45, color=(0.62, 0.40, 0.46, 1), emit=(0.42, 0.22, 0.27, 1))
+m_strap = mat("M_ArcherDark_Strap", tex + "/T_ArcherDark_Strap_BC.png", tex + "/T_ArcherDark_Strap_N.png", rough=0.8, nstr=1.3)
+m_emb = mat("M_ArcherDark_Emblem", tex + "/T_ArcherDark_Emblem_BC.png", tex + "/T_ArcherDark_Emblem_N.png", rough=0.6, metal=0.35, nstr=1.4)
 
 UV_PLATE = (0.25, 0.75); UV_STAR = (0.75, 0.75); UV_GEM = (0.5, 0.375); UV_COLLAR = (0.25, 0.125); UV_DARK = (0.75, 0.125)
 UV_LEATHER = (0.25, 0.5); UV_MET_S = (0.75, 0.5)
@@ -81,7 +81,7 @@ class B:
 def bevbox(b, c, ax, ay, az, hx, hy, hz, bev, uv, m=0):
     bm = bmesh.new(); bmesh.ops.create_cube(bm, size=2.0)
     for v in bm.verts: v.co = Vector((v.co.x * hx, v.co.y * hy, v.co.z * hz))
-    bmesh.ops.bevel(bm, geom=list(bm.edges), offset=bev, segments=1, affect='EDGES')
+    bmesh.ops.bevel(bm, geom=list(bm.edges), offset=bev, segments=2, affect='EDGES')
     bm.verts.ensure_lookup_table(); idx = {}
     for v in bm.verts: idx[v.index] = b.vert(c + ax * v.co.x + ay * v.co.y + az * v.co.z, uv)
     flip = (ax.cross(ay)).dot(az) < 0
@@ -352,7 +352,7 @@ def anchor(zc, x_surf, outward):
         for sz in (-1, 1):
             dome(bs, c + ax_t * 0.0155 * sx + ax_z * 0.0095 * sz + ax_r * 0.0022, ax_r, 0.0026, 0.0020, UV_MET_S, 5)
     cf = c + ax_r * 0.0054
-    frame_rect(bs, cf, ax_t, ax_z, ax_r, 0.0215, 0.0085, 0.0018, 0.0032, 0.0008, UV_MET_S, 0)
+    frame_rect(bs, cf, ax_t, ax_z, ax_r, 0.0215, 0.0085, 0.0018, 0.0032, 0.0014, UV_MET_S, 0)
 
 
 anchor(Z_TOPA, 0.0475, -1)
@@ -361,8 +361,8 @@ anchor(Z_LOWA, r_low, -1)
 for t, tail in ((0.50, True),):
     p, (tg, W, N) = at(t)
     c = p + N * (HT + 0.0018)
-    frame_rect(bs, c, tg, W, N, 0.0105, HW + 0.0050, 0.0018, 0.0036, 0.0008, UV_MET_S)
-    bevbox(bs, c + N * 0.0008, tg, W, N, 0.0013, HW + 0.0010, 0.0016, 0.0005, UV_MET_S)
+    frame_rect(bs, c, tg, W, N, 0.0105, HW + 0.0050, 0.0018, 0.0036, 0.0014, UV_MET_S)
+    bevbox(bs, c + N * 0.0008, tg, W, N, 0.0013, HW + 0.0010, 0.0016, 0.0010, UV_MET_S)
     pk, (tk, Wk, Nk) = at(t + 0.08)
     frame_rect(bs, pk + Nk * (HT + 0.0014), tk, Wk, Nk, 0.0042, HW + 0.0016, 0.0013, 0.0017, 0.0005, UV_LEATHER)
     for sy in (-1, 1): dome(bs, pk + Nk * (HT + 0.0026) + Wk * (HW - 0.0004) * sy, Nk, 0.0016, 0.0013, UV_MET_S, 5)
