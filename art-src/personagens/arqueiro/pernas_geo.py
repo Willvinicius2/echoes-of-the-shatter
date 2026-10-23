@@ -228,7 +228,7 @@ def rad_calca(z):
     return interp(PR, z, 1) * 1.0, interp(PR, z, 2) * 1.0
 
 
-def ataduras(M, sx, rng, z0=0.245, z1=0.335, voltas=2.4, passos=26, larg=0.034):
+def ataduras(M, sx, rng, z0=0.245, z1=0.335, voltas=2.2, passos=20, larg=0.036):
     """Faixa verde enrolada em espiral na canela (mais folgada que a calca)."""
     aneis = []
     for k in range(passos + 1):
@@ -239,15 +239,15 @@ def ataduras(M, sx, rng, z0=0.245, z1=0.335, voltas=2.4, passos=26, larg=0.034):
         rx, ry = rad_calca(z)
         off = 0.009 + 0.002 * math.sin(s * 25 + sx)
         par = []
-        for dz in (-larg / 2, larg / 2):
+        for dz, bojo in ((-larg / 2, -0.002), (0.0, 0.004), (larg / 2, -0.002)):
             zz = z + dz
-            r = (rx + off, ry + off)
+            r = (rx + off + bojo, ry + off + bojo)
             p = pt(th, cx, cy, zz, r[0], r[1])
             par.append((sx * p[0], p[1], p[2]))
         aneis.append(par)
 
     def uvf(i, j):
-        return uvmap(CALCA["WRAP"], i / passos, j)
+        return uvmap(CALCA["WRAP"], i / passos, j / 2)
     M.grade(aneis, uvf, "wrap", False, True, fora=lambda p: Vector((sx * cl_calca(p.z)[0], cl_calca(p.z)[1], p.z)))
 
 
@@ -302,7 +302,7 @@ def pelvis(M, rng):
 
 def saia_penas(M, rng):
     """Barra de penas/folhas: lâminas de pontas variadas, comprimentos e larguras diferentes, duas camadas."""
-    camadas = [(22, 0.0, 0.0), (20, 0.5, 0.012)]
+    camadas = [(20, 0.0, 0.0), (8, 0.5, 0.012)]
     for n, fase, drop in camadas:
         for k in range(n):
             a = TAU * (k + fase + rng.uniform(-0.28, 0.28)) / n
@@ -352,9 +352,9 @@ def construir_calca(seed=7):
         perna(M, sx, rng)
         ataduras(M, sx, rng)
         # joelheira (frente do joelho)
-        placa(M, sx, -math.pi * 0.5 - 0.62, -math.pi * 0.5 + 0.62, 0.315, 0.405, 4, 3, 0.012, 0.010, "KNEE", "knee",
+        placa(M, sx, -math.pi * 0.5 - 0.62, -math.pi * 0.5 + 0.62, 0.315, 0.405, 5, 4, 0.014, 0.014, "KNEE", "knee",
               CALCA["KNEE"], cl_calca, rad_calca,
-              forma=lambda u: (0.318 + 0.012 * math.sin(u * math.pi), 0.402 - 0.012 * (1 - math.sin(u * math.pi))))
+              forma=lambda u: (0.315 + 0.045 * (1 - math.sin(u * math.pi) ** 0.6), 0.405 - 0.045 * (1 - math.sin(u * math.pi) ** 0.6)))
         # cintas de couro na atadura (base e topo) + fivela
         cinta(M, sx, 0.243, 0.016, 0.014, CALCA["STRAP"], "strapc", cl_calca, rad_calca)
         cinta(M, sx, 0.338, 0.016, 0.014, CALCA["STRAP"], "strapc", cl_calca, rad_calca)

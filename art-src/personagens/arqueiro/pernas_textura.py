@@ -160,7 +160,7 @@ def cinto_furos(im, y, xs, r=3):
 
 # ====================================================================== CALCA
 def pant(w, h):
-    a = cloth(h, w, (0.19, 0.14, 0.10), 0.7)
+    a = cloth(h, w, (0.085, 0.080, 0.075), 0.7)
     uu, tt = coords(h, w)
     # rugas longas de tecido (coxa: diagonais; canela: verticais)
     d1 = fbm(h, w, 1.8, 2.5, 0.7)
@@ -174,18 +174,18 @@ def pant(w, h):
             a *= (1 - v)[..., None]
         elif f < 0:    # bojo claro acima da dobra
             hl = vinco(h, w, t0 + 0.012, 0.03, 0.35, 1.0, z * 20)
-            a += np.array([0.3, 0.22, 0.14], np.float32) * hl[..., None]
+            a += np.array([0.11, 0.115, 0.10], np.float32) * hl[..., None]
     # sujeira na barra e nas dobras, desgaste claro nos joelhos/coxas da frente
     suj = ss(0.22 - tt, 0, 0.22)
-    a = a * (1 - 0.35 * suj)[..., None] + np.array([0.20, 0.14, 0.07], np.float32) * (0.35 * suj * (fbm(h, w, 1.5) > 0.2))[..., None]
+    a = a * (1 - 0.35 * suj)[..., None] + np.array([0.10, 0.085, 0.05], np.float32) * (0.35 * suj * (fbm(h, w, 1.5) > 0.2))[..., None]
     desg = ss(fbm(h, w, 2.4), 0.8, 2.0) * ss(np.cos((uu - 0.25) * math.tau), 0.2, 0.9) * ss(tt, 0.3, 0.7)
-    a += np.array([0.12, 0.09, 0.06], np.float32) * desg[..., None]
+    a += np.array([0.07, 0.07, 0.06], np.float32) * desg[..., None]
     im = to_img(a)
     # costuras: lateral externa (u=.5), interna (u=0/1), remendo na coxa
     for u in (0.5, 0.0):
         x = u * w
         for dx in ([-4, 4] if u == 0.5 else [4, w - 4]):
-            tracejado(im, (x + dx if u == 0.5 else dx, 4), (x + dx if u == 0.5 else dx, h - 4), (170, 140, 95), 6, 5)
+            tracejado(im, (x + dx if u == 0.5 else dx, 4), (x + dx if u == 0.5 else dx, h - 4), (120, 100, 70), 6, 5)
     d = ImageDraw.Draw(im)
     # remendo de couro costurado na coxa (frente-fora)
     px0, py0, px1, py1 = int(w * 0.60), int(h * 0.16), int(w * 0.72), int(h * 0.34)
@@ -224,11 +224,11 @@ def knee(w, h):
 
 
 def wrap(w, h):
-    a = cloth(h, w, (0.17, 0.29, 0.105), 1.3)
+    a = cloth(h, w, (0.30, 0.29, 0.15), 1.3)
     uu, tt = coords(h, w)
     fios = 0.5 + 0.5 * np.sin(uu * w * 0.9 + 6 * fbm(h, w, 2.0))
     a *= (0.88 + 0.22 * fios)[..., None]
-    a += np.array([0.18, 0.22, 0.05], np.float32) * (ss(fbm(h, w, 2.5), 0.5, 2.0) * 0.5)[..., None]
+    a += np.array([0.14, 0.12, 0.04], np.float32) * (ss(fbm(h, w, 2.5), 0.5, 2.0) * 0.5)[..., None]
     a *= (1 - 0.55 * ss(0.12 - np.minimum(tt, 1 - tt), 0, 0.12))[..., None]    # bordas sombreadas (camada sobre camada)
     # sujeira / manchas marrons
     a = a * (1 - 0.3 * ss(fbm(h, w, 2.8), 0.6, 2.0))[..., None] + np.array([0.15, 0.10, 0.05], np.float32) * (0.2 * ss(fbm(h, w, 2.8), 1.0, 2.4))[..., None]
@@ -238,7 +238,7 @@ def wrap(w, h):
     for _ in range(90):   # fios soltos nas bordas
         x = rs.uniform(0, w)
         y0 = 0 if rs.random() < 0.5 else h
-        d.line([(x, y0), (x + rs.normal(0, 4), y0 + (6 if y0 == 0 else -6) * rs.uniform(0.5, 1.5))], fill=(90, 120, 45), width=1)
+        d.line([(x, y0), (x + rs.normal(0, 4), y0 + (6 if y0 == 0 else -6) * rs.uniform(0.5, 1.5))], fill=(120, 110, 60), width=1)
     return from_img(im)
 
 
