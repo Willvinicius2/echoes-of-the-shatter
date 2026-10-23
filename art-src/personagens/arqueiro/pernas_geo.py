@@ -373,9 +373,9 @@ XC = 0.165          # centro X do pe
 Y_HEEL, Y_TOE = 0.160, -0.275
 LEN = Y_HEEL - Y_TOE
 # t: posicao ao longo do pe (0 calcanhar, 1 bico)
-FT = [0.0, 0.22, 0.42, 0.60, 0.76, 0.90, 0.975]
-FHW = [0.090, 0.100, 0.110, 0.119, 0.120, 0.100, 0.058]
-FZT = [0.150, 0.148, 0.132, 0.116, 0.104, 0.092, 0.076]
+FT = [0.0, 0.22, 0.42, 0.60, 0.76, 0.88, 0.95, 0.99]
+FHW = [0.090, 0.100, 0.110, 0.119, 0.121, 0.114, 0.095, 0.054]
+FZT = [0.150, 0.148, 0.132, 0.116, 0.104, 0.094, 0.082, 0.066]
 Z_SOLA = 0.040
 
 
@@ -402,8 +402,8 @@ def construir_botas(seed=11):
     for sx in (1, -1):
         sr = random.Random(seed + (0 if sx > 0 else 5))
         # ---- cano (com cuff dobrado no topo)
-        zc = [0.075, 0.12, 0.165, 0.21, 0.245, 0.262]
-        offc = [0.0, 0.003, -0.002, 0.004, 0.016, 0.006]
+        zc = [0.075, 0.12, 0.165, 0.21, 0.240, 0.254, 0.264]
+        offc = [0.0, 0.004, -0.001, 0.006, 0.014, 0.017, 0.007]
         nseg = 10
         aneis = []
         for z, o in zip(zc, offc):
@@ -421,7 +421,7 @@ def construir_botas(seed=11):
         def uvc(i, j):
             if i <= 3:
                 return uvmap(BOTAS["CANO"], j / nseg, i / 3)
-            return uvmap(BOTAS["CUFF"], j / nseg, 0.2 if i == 4 else 1.0)
+            return uvmap(BOTAS["CUFF"], j / nseg, {4: 0.0, 5: 0.5, 6: 1.0}[i])
         M.grade(aneis, uvc, "cano", True, True, fora=lambda p, sx=sx: Vector((sx * cl_bota(p.z)[0], cl_bota(p.z)[1], p.z)))
         # ---- peito do pe (shell): aneis ao longo de Y
         nj = 10
@@ -458,12 +458,12 @@ def construir_botas(seed=11):
 
         def escala(f):
             return [(sx * XC + (x - sx * XC) * f, ymid + (y - ymid) * f) for x, y in pol]
-        aneis = [[(x, y, z) for x, y in escala(f)] for f, z in ((0.93, 0.0), (1.0, 0.010), (1.0, 0.040))]
+        aneis = [[(x, y, z) for x, y in escala(f)] for f, z in ((0.93, 0.0), (0.955, 0.004), (0.985, 0.011), (1.0, 0.022), (1.0, 0.040))]
         per = [0.0]
         for k in range(np_):
             a, b = pol[k], pol[(k + 1) % np_]
             per.append(per[-1] + math.hypot(a[0] - b[0], a[1] - b[1]))
-        M.grade(aneis, lambda i, j: uvmap(BOTAS["SOLEW"], per[j] / per[-1], [0.0, 0.25, 1.0][i]), "sole", True, False,
+        M.grade(aneis, lambda i, j: uvmap(BOTAS["SOLEW"], per[j] / per[-1], [0.0, 0.06, 0.14, 0.22, 1.0][i]), "sole", True, False,
                 fora=lambda p, sx=sx: Vector((sx * XC, ymid, 0.017)))
         # tampas (planar): embaixo com banda de rodagem, em cima
         def planar(i, p):
@@ -474,12 +474,7 @@ def construir_botas(seed=11):
         # ---- placas de osso no cano (lado externo, interno, frente)
         def pontaS(u):
             return (0.100 + 0.028 * abs(math.sin(u * 3.1)) , 0.222 - 0.02 * (1 - math.sin(u * math.pi)))
-        placa(M, sx, -0.50, 0.55, 0.0, 0.0, 3, 2, 0.010, 0.012, "PLATE", "plate", BOTAS["PLATE_O"], cl_bota, rad_bota,
-              forma=lambda u: (0.105 + 0.045 * u, 0.232 - 0.03 * u))
-        placa(M, sx, math.pi - 0.55, math.pi + 0.45, 0.0, 0.0, 3, 2, 0.010, 0.012, "PLATE", "plate", BOTAS["PLATE_I"], cl_bota, rad_bota,
-              forma=lambda u: (0.150 - 0.04 * u, 0.215 + 0.02 * u))
-        placa(M, sx, -math.pi * 0.5 - 0.50, -math.pi * 0.5 + 0.50, 0.0, 0.0, 4, 2, 0.011, 0.012, "PLATE", "plate", BOTAS["PLATE_F"], cl_bota, rad_bota,
-              forma=lambda u: (0.115 + 0.055 * (1 - abs(2 * u - 1)), 0.238 - 0.01 * abs(2 * u - 1)))
+        # sem placas de osso: a folha 03_arqueiro.png mostra botas de couro liso, so com fivela pequena
         # ---- cintas de couro + fivela
         for zs_, alt in ((0.182, 0.018),):
             cinta(M, sx, zs_, alt, 0.021, BOTAS["STRAP"], "strap", cl_bota, rad_bota, nseg=10)

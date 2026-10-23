@@ -333,13 +333,12 @@ OSSO = (0.84, 0.74, 0.55)
 
 
 def cano(w, h):
-    a = leather(h, w, (0.34, 0.20, 0.10), rugas=1.4, ay=1.0)
+    # couro escuro e liso: as listras horizontais antigas pareciam madeira; agora so uma dobra suave no tornozelo
+    a = leather(h, w, (0.26, 0.155, 0.085), rugas=0.55, ay=1.0)
     uu, tt = coords(h, w)
-    # rugas de acordeao no tornozelo (embaixo) e dobras horizontais
-    for t0, f in ((0.12, 0.8), (0.26, 0.6), (0.40, 0.4)):
-        v = vinco(h, w, t0, 0.022, f, 1.5, t0 * 50)
-        a *= (1 - 0.6 * v)[..., None]
-        a += np.array([0.35, 0.24, 0.14], np.float32) * (vinco(h, w, t0 + 0.04, 0.03, 0.25, 1.5, t0 * 50))[..., None]
+    v = vinco(h, w, 0.14, 0.03, 0.45, 1.5, 7.0)
+    a *= (1 - 0.35 * v)[..., None]
+    a += np.array([0.20, 0.13, 0.07], np.float32) * (vinco(h, w, 0.18, 0.02, 0.2, 1.5, 7.0))[..., None]
     # sujeira embaixo, couro claro gasto na frente (u=.25), escuro atras
     a *= (1 - 0.45 * ss(0.3 - tt, 0, 0.3))[..., None]
     gasto = ss(fbm(h, w, 2.2), 0.6, 2.0) * ss(np.cos((uu - 0.25) * math.tau), 0.1, 0.9)
@@ -354,11 +353,12 @@ def cano(w, h):
     rs = rng()
     for _ in range(5):
         rachadura(im, (rs.uniform(0, w), rs.uniform(h * 0.2, h * 0.9)), 7, 5, (35, 20, 10), rs)
-    return arranhoes(from_img(im), 120, rs, (0.78, 0.58, 0.38), 45, 0.4)
+    return arranhoes(from_img(im), 60, rs, (0.78, 0.58, 0.38), 25, 0.4)
 
 
 def upper(w, h):
-    a = leather(h, w, (0.36, 0.21, 0.11), rugas=1.2, ay=1.7)
+    # ay=1.0 (antes 1.7): o ruido esticado na horizontal fazia veio de madeira
+    a = leather(h, w, (0.30, 0.175, 0.09), rugas=0.6, ax=1.0, ay=1.0)
     uu, tt = coords(h, w)
     # u=0 externo, .25 topo, .5 interno, .75 sola. t=0 calcanhar, 1 bico
     topo = np.exp(-((uu - 0.25) / 0.20) ** 2)
@@ -383,7 +383,7 @@ def upper(w, h):
     rs = rng()
     for _ in range(6):
         rachadura(im, (rs.uniform(0, w), rs.uniform(0, h)), 8, 5, (35, 20, 10), rs)
-    return arranhoes(from_img(im), 140, rs, (0.8, 0.6, 0.4), 40, 0.45)
+    return arranhoes(from_img(im), 50, rs, (0.8, 0.6, 0.4), 22, 0.4)
 
 
 def sola(w, h):
