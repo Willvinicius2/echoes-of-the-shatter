@@ -47,10 +47,8 @@ public partial class ArqueiroDarkTeste : Node3D
         AddChild(ui);
         AplicarVista(0);
         AplicarVariante(0);
-        // anima o corpo se houver clipe de Idle
-        if (Arqueiro.Animacoes != null)
-            foreach (var n in Arqueiro.Animacoes.GetAnimationList())
-                if (n.EndsWith("Idle")) { Arqueiro.Animacoes.Play(n); break; }
+        Tocar("Idle");
+        if (Arqueiro.Animacoes != null) Arqueiro.Animacoes.AnimationFinished += AoTerminarClipe;
         AtualizarLegenda();
     }
 
@@ -114,6 +112,45 @@ public partial class ArqueiroDarkTeste : Node3D
         Camera.Position = alvo + rot.Z * dist;
     }
 
+    // tecla -> clipe (nome curto do AnimationPlayer: AN_Arqueiro_<nome>). Loop: Idle, Walk, Run, AimIdle; os demais voltam ao Idle.
+    static readonly (Key tecla, string clipe, string rotulo)[] Clipes =
+    {
+        (Key.Z, "Idle", "idle"), (Key.X, "Walk", "andar"), (Key.N, "Run", "correr"), (Key.M, "AimIdle", "mirar"),
+        (Key.B, "Draw", "disparar"), (Key.E, "Dodge", "esquiva"),
+    };
+    string _clipe = "";
+    bool _disparando;
+
+    public string ClipeAtual => _clipe;
+
+    public void Tocar(string curto, double mistura = 0.12)
+    {
+        var ap = Arqueiro?.Animacoes;
+        if (ap == null) return;
+        string nome = "AN_Arqueiro_" + curto;
+        if (!ap.HasAnimation(nome)) return;
+        _disparando = curto == "Draw";
+        _clipe = curto;
+        ap.SpeedScale = 1f;
+        ap.Play(nome, mistura);
+        if (_legenda != null) AtualizarLegenda();
+    }
+
+    // captura: toca o clipe, vai para o tempo t (s) e congela
+    public void Congelar(string curto, float t)
+    {
+        var ap = Arqueiro.Animacoes;
+        Tocar(curto, 0);
+        ap.Seek(t, true);
+        ap.SpeedScale = 0f; // velocidade 0 em vez de Pause: os BoneAttachment3D continuam seguindo o osso
+    }
+
+    void AoTerminarClipe(StringName nome)
+    {
+        if (nome == "AN_Arqueiro_Draw" && _disparando) { _disparando = false; _clipe = "Release"; Arqueiro.Animacoes.Play("AN_Arqueiro_Release", 0.05); AtualizarLegenda(); }
+        else if (nome == "AN_Arqueiro_Release" || nome == "AN_Arqueiro_Dodge") Tocar("Idle");
+    }
+
     public void DefinirVista(int i) { AplicarVista(i); AtualizarLegenda(); }
 
     void AplicarVariante(int i)
@@ -141,7 +178,10 @@ public partial class ArqueiroDarkTeste : Node3D
             sb.Append($"[{i + 1}] {Slots[i]}: {estado}\n");
         }
         string var = _variantes[Variante] == "" ? "starter" : _variantes[Variante];
-        sb.Append($"[V] variante: {var}   [C] camera: {Vistas[Vista].nome}   [Esc] sair");
+        sb.Append($"[V] variante: {var}   [C] camera: {Vistas[Vista].nome}   [Esc] sair\n");
+        sb.Append("Animacao: ");
+        foreach (var c in Clipes) sb.Append($"[{c.tecla}] {c.rotulo}  ");
+        sb.Append($"(atual: {_clipe})");
         _legenda.Text = sb.ToString();
     }
 
@@ -150,6 +190,7 @@ public partial class ArqueiroDarkTeste : Node3D
         if (e is not InputEventKey { Pressed: true, Echo: false } k) return;
         int n = (int)k.Keycode - (int)Key.Key1;
         if (n >= 0 && n < Slots.Length) { Arqueiro.Alternar(Slots[n]); AtualizarLegenda(); }
+        else if (System.Array.Find(Clipes, c => c.tecla == k.Keycode) is { clipe: not null } cl) Tocar(cl.clipe);
         else if (k.Keycode == Key.V) DefinirVariante(Variante + 1);
         else if (k.Keycode == Key.C) DefinirVista(Vista + 1);
         else if (k.Keycode == Key.Escape) GetTree().Quit();

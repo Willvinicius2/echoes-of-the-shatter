@@ -34,7 +34,7 @@
       55
     ]
   ],
-  "versao": "v3",
+  "versao": "v4",
   "nos": {
     "raiz": "SM_ArcherDark_Bow_Root",
     "filhos": [
@@ -43,11 +43,9 @@
     ]
   },
   "tris": {
-    "SM_ArcherDark_Bow": 3215,
+    "SM_ArcherDark_Bow": 3431,
     "SM_ArcherDark_BowString": 20,
-    "haste": 2565,
-    "lamina_topo": 312,
-    "lamina_base": 338
+    "total": 3451
   },
   "pipeline_v3": [
     "arco_v3_geo.py 3300",
@@ -61,17 +59,19 @@
   "encaixe": {
     "osso": "socket_weapon_l",
     "pivo": "empunhadura (centro do arco, z=0, pivot_frac 0.5); origem do no raiz = onde a mao segura",
-    "rotacao_graus": [
-      0,
-      0,
-      0
-    ],
     "offset_m": [
-      0,
-      0,
-      0
+      -0.008,
+      0.003,
+      -0.059
     ],
-    "orientacao_gltf": "Y para cima (arco vertical, 1,19 m: y de -0,596 a +0,594); corda em -Z (lado do arqueiro, 'para tras'); barriga/lamina curvando para +Z; espessura do arco em X. Mesma convencao do build_arco.py: entra no socket_weapon_l sem rotacao extra",
-    "ajuste_fino": "se na cena de teste o arco ficar torto na mao, ajustar so a rotacao do BoneAttachment3D (ex.: [0,90,0] ou [0,-90,0] gira o plano do arco) e um offset de poucos cm em Z (a mao segura o cabo a ~2 cm do eixo da haste); nao precisa mexer no GLB"
+    "rotacao_graus": [
+      -73.5,
+      -45.8,
+      -148.3
+    ],
+    "escala": 1,
+    "referencia": "valores do BoneAttachment3D no socket_weapon_l do ArcherDark_Body com o clipe AimIdle: arco vertical (Y para cima), corda voltada para o arqueiro (-Z do arco = para tras), barriga para a frente; mao esquerda no centro. Calculado como inversa da rotacao do socket no AimIdle (o socket tem repouso proprio, diferente da mao). Fonte: godot/data/arqueiro_dark/equipamento.csv (linha starter arco)",
+    "orientacao_gltf": "Y para cima (arco vertical, 1,19 m: y de -0,596 a +0,594); corda em -Z (lado do arqueiro, 'para tras'); barriga/lamina curvando para +Z; espessura do arco em X",
+    "ajuste_fino": "o encaixe vale para o clipe de mirar (AimIdle). No idle e no andar o braco pende e o arco acompanha a mao com a mesma rotacao relativa, ficando inclinado ao lado do corpo; se for preciso, trocar de encaixe por estado em codigo"
   }
 }

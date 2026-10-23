@@ -35,6 +35,7 @@ public partial class ArqueiroDarkModular : ArqueiroModular
             Animacoes = corpo.FindChild("AnimationPlayer", true, false) as AnimationPlayer;
             if (Esqueleto != null)
             {
+                if (Animacoes == null) Animacoes = ArqueiroDarkAnimacoes.Gerar(corpo, Esqueleto); // clipes do arqueiro atual por retarget
                 CorpoReal = true;
                 CorpoDarkReal = true;
                 foreach (var m in Esqueleto.GetChildren())
