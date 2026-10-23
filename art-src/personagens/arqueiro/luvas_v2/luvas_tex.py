@@ -82,6 +82,10 @@ def couro(w, h, base, claro, rugas=1.0, desgaste=0.5, tracejado=True):
                 for xx2 in (m, w - 1 - m):
                     img[min(h - 1, j + k), xx2] = cor((172, 138, 96)) * 0.85
                     img[min(h - 1, j + k), min(w - 1, xx2 + 1)] = cor((60, 40, 28))
+    # pintura a mao: pinceladas largas claras/escuras e luz de cima
+    gl = ruido(h, w, 70, 2)
+    img = mistura(img, tuple(min(255, v * 1.5) for v in claro), np.clip((gl - 0.55) * 3, 0, 1) * 0.35)
+    img = mistura(img, tuple(v * 0.35 for v in base), np.clip((0.42 - gl) * 3, 0, 1) * 0.45)
     return img
 
 
@@ -131,6 +135,12 @@ def pele(w, h):
     img = np.zeros((h, w, 3)) + cor((214, 150, 118))
     img = mistura(img, (170, 112, 84), a * 0.5)
     img = mistura(img, (236, 178, 140), np.clip(ruido(h, w, 5) - 0.5, 0, 1) * 1.0)
+    # pintura a mao: gradiente quente da ponta (v alto = ponta) e vincos de articulacao
+    yy = np.arange(h)[:, None] * np.ones((1, w)); v = 1 - yy / (h - 1)
+    img = mistura(img, (238, 150, 118), np.clip(v, 0, 1) ** 2 * 0.55)
+    img = mistura(img, (120, 70, 52), np.clip(1 - v, 0, 1) ** 3 * 0.5)
+    for vc in (0.35, 0.7):
+        img = mistura(img, (132, 80, 58), np.clip(1 - np.abs(v - vc) / 0.03, 0, 1) * 0.6)
     return img
 
 

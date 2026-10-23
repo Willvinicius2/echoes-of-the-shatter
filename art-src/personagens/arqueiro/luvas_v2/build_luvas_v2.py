@@ -36,6 +36,8 @@ def pesos(ob, lado, W, ax, modo):
 def arredondar(ob, k):
     """Anti-massinha: bevel nas pecas duras (osso, fivelas), subdivisao nas macias (dedos, couro)."""
     bpy.context.view_layer.objects.active = ob
+    if k == "hard_H":
+        return
     if k.startswith("hard"):
         m = ob.modifiers.new("bv", "BEVEL"); m.width = 0.0022; m.segments = 1; m.limit_method = "ANGLE"; m.angle_limit = math.radians(45)
         nome = "bv"
@@ -44,12 +46,16 @@ def arredondar(ob, k):
         m.boundary_smooth = "PRESERVE_CORNERS"
         nome = "ss"
     bpy.ops.object.modifier_apply(modifier=nome)
+    if k.startswith("hard"):
+        d = ob.modifiers.new("pl", "DECIMATE"); d.decimate_type = "DISSOLVE"; d.angle_limit = math.radians(DIS)
+        bpy.ops.object.modifier_apply(modifier="pl")
     if not k.startswith("hard") and DEC < 1.0:
         d = ob.modifiers.new("dc", "DECIMATE"); d.ratio = DEC; d.use_collapse_triangulate = False
         bpy.ops.object.modifier_apply(modifier="dc")
 
 
-DEC = float(os.environ.get("ARQ_DEC", "0.45"))
+DIS = float(os.environ.get("ARQ_DIS", "10"))
+DEC = float(os.environ.get("ARQ_DEC", "0.35"))
 SUB = int(os.environ.get("ARQ_SUB", "1"))
 
 
