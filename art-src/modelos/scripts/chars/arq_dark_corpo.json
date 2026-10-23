@@ -13,7 +13,7 @@
   "tris_target": 4200,
   "tris_range": [
     3500,
-    5000
+    5900
   ],
   "tex_size": 2048,
   "bake_size": 1024,
@@ -123,5 +123,8 @@
     0.2,
     0.55
   ],
-  "hair_side_xmin": true
+  "hair_side_xmin": true,
+  "n_materials": 3,
+  "uv_margin": 0.12,
+  "_nota_cabeca": "Rodada de cabeca: corpo 4595 tris (cabeca 922 nova, material M_ArcherDark_Head 2048) + SM_ArcherDark_Hair 760 tris (cartoes, alpha-hash). Scripts: head_build.py, head_paint.py, hair_tex.py, head_assemble.py, head_prancha.py. Faixa de tris vale para corpo+cabelo."
 }

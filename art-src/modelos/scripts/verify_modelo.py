@@ -54,7 +54,7 @@ meshes = [o for o in bpy.context.scene.objects if o.type == 'MESH']
 arms = [o for o in bpy.context.scene.objects if o.type == 'ARMATURE']
 R = dict(file=path, file_kb=round(os.path.getsize(path) / 1024, 1), raw=raw_fbx(path))
 ok = {}
-body = meshes[0]
+body = max(meshes, key=lambda o: len(o.data.polygons))   # corpo = a maior malha (cabelo e pecas vao como malhas extras)
 mn = Vector((1e9,) * 3); mx = Vector((-1e9,) * 3)
 for o in meshes:
     for c in o.bound_box:
@@ -72,7 +72,7 @@ lo_, hi_ = cfg.get("tris_range", [5500, 6500])
 R["tris_range"] = [lo_, hi_]
 ok["tris_in_range"] = lo_ <= R["tris"] <= hi_
 mats = sorted({m.name for o in meshes for m in o.data.materials if m})
-R["materials"] = mats; ok["one_material"] = len(mats) == 1
+R["materials"] = mats; ok["one_material"] = len(mats) == cfg.get("n_materials", 1)
 imgs = sorted({os.path.basename(n.image.filepath) for m in bpy.data.materials if m.node_tree for n in m.node_tree.nodes if n.type == 'TEX_IMAGE' and n.image})
 R["textures"] = imgs
 ok["one_uv_layer"] = all(len(o.data.uv_layers) == 1 for o in meshes)
@@ -99,7 +99,8 @@ vol = float(np.einsum('ij,ij->', vw[:, 0], np.cross(vw[:, 1], vw[:, 2])) / 6)
 R["mesh"]["signed_volume"] = round(vol, 5); ok["normals_outward"] = vol > 0
 uv = np.empty(len(body.data.loops) * 2); body.data.uv_layers[0].data.foreach_get('uv', uv)
 R["uv"] = dict(min=round(float(uv.min()), 4), max=round(float(uv.max()), 4))
-ok["uv_in_0_1"] = uv.min() >= -1e-4 and uv.max() <= 1 + 1e-4
+um_ = cfg.get("uv_margin", 0.0)   # cabeca com UV cilindrica: costura atras da cabeca passa um pouco de [0,1] (textura repete)
+ok["uv_in_0_1"] = uv.min() >= -1e-4 - um_ and uv.max() <= 1 + 1e-4 + um_
 mask = rasterize_uv_mask(body, cfg["tex_size"])
 R["uv"]["atlas_coverage_pct"] = round(100 * float(mask.mean()), 1)
 
