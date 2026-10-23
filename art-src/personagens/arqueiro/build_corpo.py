@@ -43,9 +43,39 @@ def textura(nome_mat, png):
     return mat
 
 
+ARREDONDAR = {"Body_Arms": 0.55, "Body_Hands": 0.55, "Body_Feet": 0.55, "Body_Torso": 0.5, "Body_Legs": 0.5}  # cabeca fica como esta
+
+
+def arredondar():
+    """Tira o aspecto de caixa: Catmull-Clark nivel 1 (suaviza a silhueta) e reducao de volta ao orcamento.
+    Modificadores aplicados em ordem (Subdivision primeiro, depois Decimate); pesos e UV seguem a malha."""
+    for nome, ratio in ARREDONDAR.items():
+        o = bpy.data.objects.get(nome)
+        if o is None or o.type != 'MESH':
+            continue
+        bpy.context.view_layer.objects.active = o
+        o.select_set(True)
+        sub = o.modifiers.new("Arredondar_Sub", 'SUBSURF')
+        sub.levels = 1
+        sub.render_levels = 1
+        sub.subdivision_type = 'CATMULL_CLARK'
+        bpy.ops.object.modifier_move_to_index(modifier=sub.name, index=0)
+        bpy.ops.object.modifier_apply(modifier=sub.name)
+        dec = o.modifiers.new("Arredondar_Dec", 'DECIMATE')
+        dec.decimate_type = 'COLLAPSE'
+        dec.ratio = ratio
+        bpy.ops.object.modifier_move_to_index(modifier=dec.name, index=0)
+        bpy.ops.object.modifier_apply(modifier=dec.name)
+        o.select_set(False)
+        for p in o.data.polygons:
+            p.use_smooth = True
+        print("ARREDONDAR", nome, "tris", sum(max(0, len(p.vertices) - 2) for p in o.data.polygons))
+
+
 def preparar():
     arm = A.load_rig(FBX)
     proporcao.aplicar(arm)   # chibi (identico em todos os modulos)
+    arredondar()
     mat = textura("M_Archer_Body", TEX)
     for o in bpy.data.objects:
         if o.type == 'MESH':

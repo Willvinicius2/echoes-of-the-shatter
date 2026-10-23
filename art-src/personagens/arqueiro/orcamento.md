@@ -40,3 +40,10 @@ Textura propria 512x512 (`peitoral_textura.py`): 8 celulas de pena + amostras de
 - Mão direita: relaxada, indicador/médio/anelar em gancho para a corda, polegar recolhido, escala 1,16 sobre a base.
 - Sobreposição com o Peitoral (versão atual): franjas de manga a 0,03 a 0,07 m do eixo do antebraço até ~60% do comprimento; a braçadeira (raio externo 0,047 a 0,050) fica por baixo/entre as penas. Revisar quando o módulo Peitoral for fechado.
 - Os arquivos `Arqueiro_Luvas_T_Archer_Starter_BC.png(.import)` ficaram obsoletos (podem ser apagados).
+
+## Corpo base v2 (arredondado)
+- `build_corpo.py` roda `arredondar()` depois de `proporcao.aplicar`: Catmull-Clark nível 1 e reducao (collapse) para Arms 0,55, Hands 0,55, Feet 0,55, Torso 0,50 e Legs 0,50. A cabeça não muda.
+- Triângulos medidos após a redução: Arms 561, Hands 626, Feet 1.009, Torso 1.134, Legs 1.307 (corpo sem cabeça 4.637). Com a cabeça (1.020): ~5.657. Dentro do alvo do herói (4.000 a 6.500).
+- Pesos e UV seguem a malha (a subdivisão interpola). Rig de 27 ossos e ações inalterados (9 ações).
+- Textura: continua `T_Archer_Body_BC.png` (ainda não repintada à mão).
+- O objeto `Icosphere` que aparece na releitura do GLB é a esfera de forma de osso criada pelo importador do glTF; não faz parte do arquivo exportado.
