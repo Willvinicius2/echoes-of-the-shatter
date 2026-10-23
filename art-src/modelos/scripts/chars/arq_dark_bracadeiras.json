@@ -1,0 +1,23 @@
+{
+  "id": "arq_dark_bracadeiras",
+  "asset": "SK_ArcherDark_Bracers",
+  "kind": "humanoid",
+  "modular_role": "piece",
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/bracadeiras/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/bracadeiras/final",
+  "body_height_m": 1.8,
+  "mesh_name": "SK_ArcherDark_Bracers",
+  "norm_from": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/norm.json",
+  "markers_from": "D:/openclaude/_trabalho-claude/wt/arqueiro-dark-3d/art-src/modelos/scripts/chars/arq_dark_corpo.json",
+  "body_rig_blend": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/game_rig.blend",
+  "tex_size": 2048,
+  "bake_size": 1024,
+  "tris_target": 2000,
+  "tris_range": [
+    1500,
+    2000
+  ],
+  "entrada": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/entradas/arq3d_bracadeiras.png",
+  "offset_pele_m": 0.0045,
+  "metodo": "volume por script (laco de aneis medidos no corpo + luva de dedos abertos); TripoSG dispensado: a mao do corpo e um bloco sem dedos e a luva precisa de dedos legiveis; metais, cintas e fivelas em geometria a parte"
+}
