@@ -110,8 +110,27 @@ def uv_cilindro(bm, uvl, fn):
 
 def borda_enrolada(bm, bordas, delta, mi):
     """extrude as arestas de borda e puxa os vertices novos por delta(v) (lábio de pano); faces novas em mi."""
+    uvl = bm.loops.layers.uv.active
+    uv_v = {}
+    if uvl:
+        for e in bordas:
+            for v in e.verts:
+                uv_v[v] = v.link_loops[0][uvl].uv.copy()
     r = bmesh.ops.extrude_edge_only(bm, edges=bordas)
     novos = [g for g in r["geom"] if isinstance(g, bmesh.types.BMVert)]
+    if uvl:
+        for g in r["geom"]:
+            if isinstance(g, bmesh.types.BMFace):
+                for l in g.loops:
+                    v = l.vert
+                    if v in uv_v:
+                        l[uvl].uv = uv_v[v]
+                    else:
+                        for e in v.link_edges:
+                            o = e.other_vert(v)
+                            if o in uv_v and o in g.verts:
+                                l[uvl].uv = uv_v[o]
+                                break
     for v in novos:
         v.co += delta(v)
     for g in r["geom"]:
@@ -123,7 +142,7 @@ def borda_enrolada(bm, bordas, delta, mi):
 # ---------- capuz ----------
 # O capuz e um loft: aneis perpendiculares a uma espinha que sobe reta pela cabeca e curva para tras ate a ponta
 # (silhueta de touca pontuda da folha). A abertura frontal e recortada depois, com friso dourado enrolado.
-NT, NS = 40, 40
+NT, NS = 30, 32
 Q = (Vector((0, 0.07, 1.17)), Vector((0, 0.07, 1.40)), Vector((0, 0.27, 1.62)), Vector((0, 0.52, 1.50)))
 RAIO = [(0.0, 0.330), (0.10, 0.310), (0.20, 0.300), (0.30, 0.295), (0.40, 0.280), (0.50, 0.250), (0.60, 0.205),
         (0.70, 0.150), (0.80, 0.100), (0.90, 0.052), (1.0, 0.004)]
@@ -172,7 +191,7 @@ def angulos(ps_b, R=None):
     return out
 
 
-JF, FRISO = 4, 0.050
+JF, FRISO = 3, 0.060
 
 
 def hood(m_pano, m_ouro, arm):
@@ -278,17 +297,18 @@ def mascara_pt(u, v):
     else:
         yb = -0.205 + 0.010 * sstep(0.60, 1.0, v)
     yb += 0.006
-    yb -= 0.012 * math.exp(-((v - 0.80) / 0.08) ** 2) * (1 - abs(u) ** 2)           # sobrancelha
+    yb -= 0.024 * math.exp(-((v - 0.80) / 0.09) ** 2) * (1 - abs(u) ** 3)
+    yb -= 0.012 * math.exp(-((v - 0.62) / 0.10) ** 2) * (abs(u) ** 1.2) * (1 - abs(u)) * 2.5   # maca do rosto           # sobrancelha
     yb += 0.060 * sstep(0.88, 1.0, v) ** 2                                           # testa recua
-    yb += x * x * 2.3                                                                # curva em volta da cabeca
-    quilha = 0.020 * sstep(0.62, 0.45, v) * (1 - abs(u)) ** 1.4 + 0.008 * sstep(0.7, 0.6, v) * (1 - abs(u)) ** 2
+    yb += x * x * 3.6                                                                # curva em volta da cabeca
+    quilha = 0.030 * sstep(0.62, 0.45, v) * (1 - abs(u)) ** 1.4 + 0.008 * sstep(0.7, 0.6, v) * (1 - abs(u)) ** 2
     yb -= quilha
     z -= 0.012 * (1 - v / 0.6) ** 2 * (v < 0.6)                                      # ponta do bico cai
     return Vector((x, yb, z))
 
 
 def mascara(m_osso, arm):
-    NU, NV = 14, 20
+    NU, NV = 10, 14
     bm = bmesh.new()
     uvl = bm.loops.layers.uv.verify()
     grade = {}
@@ -381,7 +401,7 @@ def rosto(m_vazio, m_olho, m_lenco, arm):
             f.material_index = 1
     bm.faces.ensure_lookup_table()
     # lenco: faixa de pano em tigela sob o bico, subindo nas bochechas e fechando no pescoco
-    bl = casca_esfera(32, 14)
+    bl = casca_esfera(24, 12)
     uvl = bl.loops.layers.uv.verify()
     uv_cilindro(bl, uvl, lambda v: v.co)
     mor = []
@@ -396,7 +416,7 @@ def rosto(m_vazio, m_olho, m_lenco, arm):
     for v in bl.verts:   # dobras em diagonal no pano do lenco
         n = noise.noise(Vector((v.co.x * 14, v.co.z * 10 + v.co.x * 6, 2.0)))
         d = (v.co - Vector((0, 0.0, 1.185))).normalized()
-        v.co += d * 0.012 * n
+        v.co += d * 0.004 * n
     for _ in range(5):   # alisa a escada da borda de cima
         nv = {}
         for v in bl.verts:
@@ -430,7 +450,7 @@ def rosto(m_vazio, m_olho, m_lenco, arm):
 
 # ---------- gola ----------
 def gola(m_pano, m_ouro, arm):
-    NU, NV = 36, 5
+    NU, NV = 27, 5
     bm = bmesh.new()
     uvl = bm.loops.layers.uv.verify()
     perfil = [(1.025, 0.115), (0.990, 0.165), (0.950, 0.215), (0.915, 0.252), (0.885, 0.275), (0.865, 0.285)]
