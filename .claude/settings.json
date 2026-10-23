@@ -13,5 +13,37 @@
         ]
       }
     ]
+  },
+  "extraKnownMarketplaces": {
+    "nateherk-mods": {
+      "source": {
+        "source": "github",
+        "repo": "nateherkai/claude-code-mods"
+      }
+    },
+    "claude-pro-kit": {
+      "source": {
+        "source": "github",
+        "repo": "VedantAndhale/claude-pro-kit"
+      }
+    },
+    "claude-code-mods": {
+      "source": {
+        "source": "github",
+        "repo": "hamzafer/claude-code-mods"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "cache-keeper@nateherk-mods": true,
+    "collision-guard@nateherk-mods": true,
+    "goal-meter@nateherk-mods": true,
+    "reread-guard@claude-pro-kit": true,
+    "budget-guard@claude-pro-kit": true,
+    "compact-keeper@claude-pro-kit": true,
+    "tool-diet@claude-pro-kit": true,
+    "output-diet@claude-pro-kit": true,
+    "context-bar@claude-code-mods": true,
+    "usage-meter@claude-code-mods": true
   }
 }
