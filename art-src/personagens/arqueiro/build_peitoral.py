@@ -107,7 +107,7 @@ def pena(raiz, d, n, L, W, cel, curl=0.08, tip=0.0, w=None, rib=0.007):
     d = d.normalized()
     n = (n - d * n.dot(d)).normalized()
     side = d.cross(n).normalized()
-    perfil = [(0.0, 0.46), (0.34, 0.95), (0.68, 0.56)]
+    perfil = [(0.0, 0.50), (0.30, 1.0), (0.62, 0.90), (0.86, 0.50)]
     aneis = []
     for t, hw in perfil:
         p = raiz + d * (L * t) + n * (curl * L * t * t)
@@ -129,7 +129,7 @@ def pena(raiz, d, n, L, W, cel, curl=0.08, tip=0.0, w=None, rib=0.007):
 
 # ---------------------------------------------------------------- capa de costas
 Y0 = [(0.25, 0.380), (0.45, 0.360), (0.60, 0.335), (0.72, 0.300), (0.85, 0.255), (1.0, 0.215)]
-HWT = [(0.25, 0.36), (0.50, 0.32), (0.70, 0.275), (0.85, 0.235), (1.0, 0.19)]
+HWT = [(0.25, 0.40), (0.50, 0.37), (0.70, 0.30), (0.85, 0.245), (1.0, 0.19)]
 BEND = 0.085
 
 
@@ -147,21 +147,22 @@ def cape_frame(u, z):
 
 
 # (z da raiz, comprimento, largura) - penas curtas no ombro, longas na barra
-FILEIRAS = [(0.930, 0.095, 0.042), (0.868, 0.118, 0.049), (0.802, 0.140, 0.056), (0.726, 0.160, 0.063),
+FILEIRAS0 = [(0.930, 0.095, 0.042), (0.868, 0.118, 0.049), (0.802, 0.140, 0.056), (0.726, 0.160, 0.063),
             (0.643, 0.178, 0.070), (0.555, 0.195, 0.077), (0.465, 0.205, 0.084), (0.452, 0.185, 0.052)]
-CEL_FILEIRA = [[0, 1, 2], [0, 1, 3, 2], [1, 0, 3, 2, 5], [0, 1, 4, 2, 2, 5], [1, 2, 0, 4, 0, 5, 6], [0, 1, 2, 4, 3, 6, 5, 0], [1, 0, 3, 4, 6, 2, 7, 1], [2, 0, 3, 1, 4, 6, 5, 7]]
+FILEIRAS = [(z, L * 0.94, W * 1.38) for z, L, W in FILEIRAS0]
+CEL_FILEIRA = [[0, 1, 2], [0, 1, 3, 2], [1, 0, 3, 2, 5], [0, 1, 4, 5, 2, 5], [1, 2, 5, 4, 6, 5, 6], [0, 1, 5, 4, 3, 6, 5, 6], [1, 5, 3, 4, 6, 2, 6, 5], [2, 5, 3, 6, 4, 6, 5, 7]]
 
 
 def capa_penas():
     for k, (zr, L, Wf) in enumerate(FILEIRAS):
         hw = interp(HWT, zr)
-        n = int(round(2 * hw * 1.25 / (Wf * (0.88 if k < 7 else 1.5))))
+        n = int(round(2 * hw * 1.25 / (Wf * (0.88 if k < 7 else 1.75))))
         for j in range(n):
             u = -1 + (j + 0.5 + (0.5 if k % 2 else 0.0)) * 2.0 / (n + (0.5 if k % 2 else 0.0))
             u = max(-1.0, min(1.0, u + RNG.uniform(-0.35, 0.35) / n))
             z = zr + RNG.uniform(-0.012, 0.012)
             d, nn = cape_frame(u, z)
-            alpha = math.radians(RNG.uniform(7, 14) + 2.2 * k)
+            alpha = math.radians(RNG.uniform(6, 11) + 1.0 * k)
             d2 = (d * math.cos(alpha) + nn * math.sin(alpha)).normalized()
             d2 = rodar(d2, nn, math.radians(u * 16 + RNG.uniform(-9, 9)))
             Lf = L * RNG.uniform(0.84, 1.16)
@@ -195,7 +196,7 @@ def capa_forro():
 
 # ---------------------------------------------------------------- mantel (colar de penas na frente/ombros)
 def mantel():
-    rows = [(0.945, 0.088, 0.046, 12, [0, 1, 3, 2]), (0.895, 0.112, 0.056, 13, [1, 0, 2, 5, 4])]
+    rows = [(0.945, 0.088, 0.060, 9, [0, 1, 3, 2]), (0.895, 0.112, 0.072, 10, [1, 0, 2, 5, 4])]
     for k, (zr, L, Wf, n, cels) in enumerate(rows):
         for j in range(n):
             ph = math.radians(-125 + 250 * (j + 0.5 * (k % 2)) / n)   # 0 = frente; so a metade da frente e dos lados
@@ -218,10 +219,10 @@ def asa(side):
     cs = Vector((side * 0.172, CY, 0.862))
     sh = "LeftShoulder" if side > 0 else "RightShoulder"
     ua = "LeftUpperArm" if side > 0 else "RightUpperArm"
-    rows = [(math.radians(48), 0.118, 0.140, 0.062, 6, {sh: 0.65, "Chest": 0.35}, [0, 1, 3]),
-            (math.radians(68), 0.122, 0.180, 0.072, 6, {sh: 0.45, ua: 0.55}, [1, 0, 2, 4, 5]),
-            (math.radians(88), 0.128, 0.225, 0.082, 6, {ua: 0.8, sh: 0.2}, [0, 1, 4, 5, 6, 3]),
-            (math.radians(104), 0.130, 0.265, 0.088, 5, {ua: 1.0}, [5, 6, 1, 7, 4])]
+    rows = [(math.radians(48), 0.118, 0.140, 0.082, 5, {sh: 0.65, "Chest": 0.35}, [5, 1, 3, 6]),
+            (math.radians(68), 0.122, 0.180, 0.094, 5, {sh: 0.45, ua: 0.55}, [5, 0, 6, 4, 5]),
+            (math.radians(88), 0.128, 0.225, 0.108, 5, {ua: 0.8, sh: 0.2}, [5, 6, 4, 5, 6, 3]),
+            (math.radians(104), 0.130, 0.265, 0.116, 4, {ua: 1.0}, [5, 6, 1, 6, 4])]
     ex, ey, ez = Vector((side, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1))
     for k, (phi, R, L, Wf, n, w, cels) in enumerate(rows):
         for j in range(n):
@@ -482,7 +483,7 @@ def ombreira(side):
     # com a=Y, e0=Z, e1=a x e0 = Y x Z = +X (lado esquerdo); no direito inverte-se o sinal do eixo
     lamas = [(-0.15, 0.72, 0.066, {sh: 1.0}), (0.56, 1.22, 0.074, {sh: 0.5, ua: 0.5}), (1.06, 1.68, 0.080, {ua: 1.0})]
     for s0, s1, hl, w in lamas:
-        placa(cs, eixo, ref, 0.104, 0.021, s0, s1, -hl, hl, 0.30, w, bis=0.009, nu=3, nv=2)
+        placa(cs, eixo, ref, 0.112, 0.028, s0, s1, -hl, hl, 0.30, w, bis=0.009, nu=3, nv=2)
 
 
 def braceletes(side):
