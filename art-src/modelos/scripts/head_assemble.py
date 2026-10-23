@@ -79,15 +79,21 @@ def add(*a, kind="lock", **k):
     else: lk(kind)
 # ---- v3: penteado repartido e liso. risca no centro (frente -> tras); mechas partem da risca para os lados e para tras
 for side in (-1, 1):
-    # franja: da risca na frente cai sobre a testa e varre para a tempora (acima do olho)
-    for az, el, ln, wd, lt in ((4, 62, 0.09, 0.07, 2.2), (12, 55, 0.10, 0.07, 2.4), (22, 49, 0.105, 0.07, 2.6)):
-        add(side * az, el, ln, wd, 0.005, 0.014, lat=lt * side, fwd=-0.1, grav=0.5, flare=0.0, kind="smooth")
-    # topo: da risca, cai sobre os lados do cranio ate a altura da tempora
-    for azb, el, ln in ((176, 74, 0.18), (150, 60, 0.18), (6, 78, 0.19), (40, 68, 0.19), (80, 66, 0.15), (118, 58, 0.17)):
-        az = azb if azb < 100 or azb > 140 else azb
+    # v4 mechas soltas: cartoes finos e curvos, partem da risca (az 0) e caem para os lados e a testa.
+    # franja: mechas finas sobre a testa, pontas desviando para a tempora (acima do olho)
+    for k, (az, el, ln) in enumerate(((5, 62, 0.085), (14, 56, 0.10), (24, 50, 0.105))):
+        add(side * (az + JIT() * 2), el + JIT(), ln + JIT() * 0.01, 0.042 + rng.uniform(0, 0.008), 0.005, 0.013,
+            lat=side * (1.6 + 0.5 * k) * (1 + JIT() * 0.1), fwd=-0.1, grav=0.5, flare=0.0, kind="smooth")
+    # topo: 7 mechas finas por lado, desvio e comprimento irregulares (sobreposicao sem degraus)
+    for k in range(7):
+        azb = 10 + k * 18 + JIT() * 4
+        el = 80 - k * 3 + JIT() * 2
+        ln = 0.13 + 0.04 * ((k * 5) % 3) / 2 + rng.uniform(0, 0.02)
         azs = side * azb if azb < 140 else 180 - side * (180 - azb)
-        front = azb <= 60
-        add(azs, el, 0.12 if front else ln, 0.095, 0.004, 0.012, lat=side * (1.7 if front else 0.45), grav=0.45, flare=0.0, kind="smooth")
+        add(azs, el, ln, 0.04 + rng.uniform(0, 0.012), 0.004, 0.012, lat=side * (0.9 + 0.5 * (k % 2)) * (1 + JIT() * 0.2),
+            grav=0.45, flare=0.0, kind="smooth")
+    # mecha fina solta que sai do contorno, na altura da tempora
+    add(side * 105, 46, 0.22, 0.03, 0.006, 0.02, lat=side * 0.9, grav=0.6, flare=0.005, kind="strand")
     # laterais curtas (cobrem a regiao da orelha ate a tempora, nao descem ao ombro)
     for azb, el, ln in ((66, 36, 0.10), (88, 34, 0.11), (110, 32, 0.12), (130, 28, 0.15)):
         add(side * azb, el, ln, 0.085, 0.01, 0.03, fwd=0.1, grav=0.1, flare=0.01)
