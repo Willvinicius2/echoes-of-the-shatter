@@ -49,6 +49,23 @@ for idx, (_, _, sl) in enumerate(r0 + r1):
     ox = c * cw + (cw - nw) // 2; oy = r * chh + 3
     AT[oy:oy + nh, ox:ox + nw] = cr
     rects.append([(cw - nw) // 2, 3, (cw - nw) // 2 + nw, 3 + nh])
+# v4: rosa apagado e uniforme; raiz (em cima) quase preta, ponta vinho apagado; tom varia de pena para pena
+for idx, (rx0, ry0, rx1, ry1) in enumerate(rects):
+    c, r = idx % 4, idx // 4
+    ys0, xs0 = r * chh + ry0, c * cw + rx0
+    blk = AT[ys0:ys0 + (ry1 - ry0), xs0:xs0 + (rx1 - rx0)]
+    al = blk[..., 3] > 8
+    if not al.any():
+        continue
+    rg = np.random.default_rng(100 + idx)
+    tip = np.array((116, 60, 74), np.float32) * (0.88 + 0.24 * rg.random()) + np.array((8, -4, 6), np.float32) * rg.random()
+    base = np.array((22, 14, 19), np.float32)
+    t = np.linspace(0, 1, ry1 - ry0, dtype=np.float32)[:, None]
+    s = np.clip(t, 0, 1) ** 0.85
+    col = (base * (1 - s) + tip * s)[:, None, :]
+    lum = blk[..., :3].mean(2)
+    lumn = np.clip(lum / (lum[al].mean() + 1e-3), 0.6, 1.5)
+    blk[..., :3] = np.where(al[..., None], col * lumn[..., None], blk[..., :3])
 AT[..., :3] = np.clip(AT[..., :3], 0, 255)
 cv2.imwrite(out, np.dstack([AT[..., 2], AT[..., 1], AT[..., 0], AT[..., 3]]).astype(np.uint8))
 json.dump(dict(rects=rects), open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "manto_penas.json"), "w"))

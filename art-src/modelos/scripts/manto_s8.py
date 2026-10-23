@@ -33,6 +33,12 @@ if hasattr(mat, "surface_render_method"):
     mat.surface_render_method = 'DITHERED'
 bsdf.inputs['Specular IOR Level'].default_value = 0.2
 bsdf.inputs['Roughness'].default_value = 1.0
+# metallic-roughness (v4): G = rugosidade, B = metalico; sem mapa, fica rugoso e nao metalico
+mimg = bpy.data.images.load(fpath(cfg, f"T_{tex}_M.png")); mimg.colorspace_settings.name = 'Non-Color'
+mnode = nt.nodes.new('ShaderNodeTexImage'); mnode.image = mimg
+msep = nt.nodes.new('ShaderNodeSeparateColor')
+nt.links.new(mnode.outputs['Color'], msep.inputs['Color'])
+nt.links.new(msep.outputs['Green'], bsdf.inputs['Roughness']); nt.links.new(msep.outputs['Blue'], bsdf.inputs['Metallic'])
 if os.path.exists(wpath(cfg, "bake_normal.png")) and cfg.get("use_normal_map", True):      # normal map (s6n): T_<Nome>_N.png, tangente OpenGL
     shutil.copyfile(wpath(cfg, "bake_normal.png"), fpath(cfg, f"T_{tex}_N.png"))
     nimg = bpy.data.images.load(fpath(cfg, f"T_{tex}_N.png")); nimg.colorspace_settings.name = 'Non-Color'

@@ -10,6 +10,7 @@ rng = np.random.default_rng(7)
 SRCIMG = cv2.imread(src_png)[..., ::-1].astype(np.float32)           # RGB
 C = np.zeros((N, N, 3), np.float32); C[:] = (30, 27, 32)
 H = np.zeros((N, N), np.float32)
+MR = np.zeros((N, N, 3), np.float32); MR[..., 1] = 255        # metallic-roughness: padrao rugoso 1.0, nao metalico
 
 
 def noise(h, w, sc, amp):
@@ -85,6 +86,17 @@ weave = (np.sin(xx * 1.9) * np.sin(yy * 1.9) * 0.5 + 0.5)[..., None] * 5 + noise
 cream = np.array((214, 200, 178), np.float32) / 190.0
 C[y0:y1, x0:x1] = np.clip(flat * cream + weave, 0, 255)
 H[y0:y1, x0:x1] += (weave[..., 0] - 4) * 0.12
+# v4: sombra nas dobras (cavidade escurece os vales) e altura nas cristas; borda desfiada (franjas escurecidas e irregulares)
+lumg = cv2.GaussianBlur(C[y0:y1, x0:x1].mean(2), (0, 0), 2.0)
+lumw = cv2.GaussianBlur(C[y0:y1, x0:x1].mean(2), (0, 0), 14.0)
+cav = np.clip((lumw - lumg) / 14.0, 0, 1)
+C[y0:y1, x0:x1] *= (1 - 0.6 * cav)[..., None]
+H[y0:y1, x0:x1] += (lumg - lumw) / 10.0
+ed = np.minimum.reduce([xx, w_ - 1 - xx, yy, h_ - 1 - yy]) + noise(h_, w_, 2, 2.5)
+edge = smooth(9, 1, ed)
+fray = np.clip(0.5 + noise(h_, w_, 2, 0.7), 0, 1)
+C[y0:y1, x0:x1] *= (1 - 0.65 * edge * fray)[..., None]
+H[y0:y1, x0:x1] -= edge * 0.8
 # tabardo: painel escuro com borda rosada e losango (cores medidas; o recorte da imagem tem fundo cinza)
 h, w = rect_hw("tabard")
 yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
@@ -134,12 +146,35 @@ h, w = rect_hw("metal")
 yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
 base = np.array((190, 182, 178), np.float32)
 img = np.zeros((h, w, 3), np.float32) + base * (0.8 + 0.15 * np.sin(xx / 40 + yy / 70)[..., None]) + noise(h, w, 3, 5)[..., None]
-img = img * (0.62 + 0.38 * np.clip(0.5 + noise(h, w, 18, 0.9), 0, 1)[..., None])
-put("metal", img, noise(h, w, 3, 0.15))
+# v4 desgaste: manchas de tom, sujeira e sombra nas cavidades, riscos claros, bordas mais claras
+wear = np.clip(0.5 + noise(h, w, 40, 0.9), 0, 1)
+img = img * (0.5 + 0.5 * wear[..., None])
+lm = img.mean(2)
+lumv = cv2.GaussianBlur(lm, (0, 0), 1.5) - cv2.GaussianBlur(lm, (0, 0), 8)
+cavm = np.clip(-lumv / 12.0, 0, 1)
+dirt = np.clip(0.5 + noise(h, w, 10, 0.6), 0, 1) * (cavm > 0.05)
+img = img * (1 - 0.5 * cavm[..., None]) * (1 - 0.35 * (dirt * cavm)[..., None])
+img = img * (1 + 0.12 * np.clip(lumv / 6.0, 0, 1))[..., None]
+scr = np.zeros((h, w), np.uint8)
+for _ in range(70):
+    x, y = int(rng.integers(0, w)), int(rng.integers(0, h))
+    a = float(rng.uniform(0, np.pi)); ln = int(rng.integers(8, 50))
+    cv2.line(scr, (x, y), (int(x + ln * np.cos(a)), int(y + ln * np.sin(a))), 255, 1)
+scr = cv2.GaussianBlur(scr, (0, 0), 0.6) > 40
+img[scr] = img[scr] * 0.4 + base * 0.6
+img = np.clip(img, 0, 255)
+put("metal", img, noise(h, w, 3, 0.15) + cavm * 0.6)
+# metallic/roughness (glTF: G = roughness, B = metallic): gasto = mais rugoso e menos metalico nas sujeiras
+x0m, y0m, x1m, y1m = R["metal"]
+rough = 0.42 + 0.3 * (1 - wear) + 0.25 * dirt * cavm
+metal = 0.95 - 0.5 * dirt * cavm
+metal = np.where(scr, 1.0, metal)
+MR[y0m:y1m, x0m:x1m, 1] = np.clip(rough, 0, 1) * 255
+MR[y0m:y1m, x0m:x1m, 2] = np.clip(metal, 0, 1) * 255
 
 bc = np.clip(C, 0, 255).astype(np.uint8)
 cv2.imwrite(os.path.join(final, f"T_{tex}_BC.png"), np.dstack([bc[..., ::-1], A.astype(np.uint8)]))
-cv2.imwrite(os.path.join(final, f"T_{tex}_M.png"), np.zeros((N, N, 3), np.uint8))
+cv2.imwrite(os.path.join(final, f"T_{tex}_M.png"), np.clip(MR, 0, 255).astype(np.uint8)[..., ::-1])
 Hs = cv2.GaussianBlur(H, (0, 0), 0.8)
 dx = cv2.Sobel(Hs, cv2.CV_32F, 1, 0, ksize=3) / 8
 dy = cv2.Sobel(Hs, cv2.CV_32F, 0, 1, ksize=3) / 8
