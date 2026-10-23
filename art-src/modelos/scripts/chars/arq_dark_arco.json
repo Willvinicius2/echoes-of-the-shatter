@@ -6,13 +6,13 @@
   "single_view": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/arco/arco_entrada_rgba.png",
   "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/arco/work",
   "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/arco/final",
-  "body_height_m": 1.1,
+  "body_height_m": 1.19,
   "pivot_frac": 0.5,
-  "tris_target": 2200,
-  "tex_size": 512,
+  "tris_target": 3500,
+  "tex_size": 2048,
   "tris_range": [
     800,
-    3000
+    3500
   ],
   "min_component_ratio": 0.02,
   "mesh_name": "SM_ArcherDark_Bow",
@@ -33,5 +33,45 @@
       35,
       55
     ]
-  ]
+  ],
+  "versao": "v3",
+  "nos": {
+    "raiz": "SM_ArcherDark_Bow_Root",
+    "filhos": [
+      "SM_ArcherDark_Bow",
+      "SM_ArcherDark_BowString"
+    ]
+  },
+  "tris": {
+    "SM_ArcherDark_Bow": 3215,
+    "SM_ArcherDark_BowString": 20,
+    "haste": 2565,
+    "lamina_topo": 312,
+    "lamina_base": 338
+  },
+  "pipeline_v3": [
+    "arco_v3_geo.py 3300",
+    "arco_v3_bake.py (Blender -b)",
+    "arco_v3_blade.py",
+    "arco_v3_paint.py",
+    "arco_v3_export.py (Blender -b)",
+    "arco_v3_prancha.py",
+    "arco_v3_compor.py"
+  ],
+  "encaixe": {
+    "osso": "socket_weapon_l",
+    "pivo": "empunhadura (centro do arco, z=0, pivot_frac 0.5); origem do no raiz = onde a mao segura",
+    "rotacao_graus": [
+      0,
+      0,
+      0
+    ],
+    "offset_m": [
+      0,
+      0,
+      0
+    ],
+    "orientacao_gltf": "Y para cima (arco vertical, 1,19 m: y de -0,596 a +0,594); corda em -Z (lado do arqueiro, 'para tras'); barriga/lamina curvando para +Z; espessura do arco em X. Mesma convencao do build_arco.py: entra no socket_weapon_l sem rotacao extra",
+    "ajuste_fino": "se na cena de teste o arco ficar torto na mao, ajustar so a rotacao do BoneAttachment3D (ex.: [0,90,0] ou [0,-90,0] gira o plano do arco) e um offset de poucos cm em Z (a mao segura o cabo a ~2 cm do eixo da haste); nao precisa mexer no GLB"
+  }
 }
