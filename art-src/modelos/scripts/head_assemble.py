@@ -62,59 +62,70 @@ def make_card(az_deg, el_deg, length, width, off0, off1, lat=0.0, fwd=0.0, grav=
         off = off0 + (off1 - off0) * t ** 1.4
         p = surf(p + dirv * ds, off + flare * t * t)
         pts.append(p.copy())
-    cards.append((np.array(pts), width))
+    cards.append((np.array(pts), width)); cards_side.append(1 if pts[0][0] >= 0 else -1)
 
 
 S2 = lambda x: 1 if x >= 0 else -1
 JIT = lambda: rng.uniform(-0.3, 0.3)
 ATL = json.load(open(HD + r"\hair_atlas.json"))
+cards_side = []
 meta = []   # tipo de textura por cartao: ("lock", i) ou ("strand", 0)
 def lk(kind="lock"):
     if kind == "strand": meta.append(("strand", 0)); return
     meta.append(("lock", int(rng.integers(0, len(ATL["locks"])))))
 def add(*a, kind="lock", **k):
-    make_card(*a, **k); lk(kind)
-# camada 1: base rente ao cranio
-add(0, 86, 0.11, 0.10, 0.003, 0.012, grav=0.2)
-for az0 in (0, 60, 120, 180, 240, 300):
-    az = (az0 + JIT() * 15 + 180) % 360 - 180
-    if abs(az) < 50: continue
-    add(az, 72, 0.12, 0.10, 0.003, 0.014, grav=0.2)
-for i in range(14):
-    az = -180 + (i + JIT()) * 360 / 14
-    if abs(az) < 45: continue
-    add(az, 54, 0.15, 0.10, 0.005, 0.02, grav=0.2, flare=0.004)
-# camada 2: media
-for i in range(14):
-    az = -180 + (i + JIT()) * 360 / 14
-    if abs(az) < 50: continue
-    add(az, 34, rng.uniform(0.18, 0.22), rng.uniform(0.09, 0.105), 0.01, 0.034, lat=JIT(), grav=0.2, flare=rng.uniform(0.01, 0.02))
-# camada 3: externa, pontas se afastando, ate a base do pescoco
-for i in range(12):
-    az = -180 + (i + 0.5 + JIT()) * 30
-    if abs(az) < 55: continue
-    add(az, 16, rng.uniform(0.24, 0.29), rng.uniform(0.09, 0.105), 0.016, 0.05, lat=JIT(), grav=0.3, flare=rng.uniform(0.02, 0.035))
+    make_card(*a, **k)
+    if kind == "smooth": meta.append(("smooth", int(rng.integers(0, len(ATL["smooth"])))))
+    else: lk(kind)
+# ---- v3: penteado repartido e liso. risca no centro (frente -> tras); mechas partem da risca para os lados e para tras
+for side in (-1, 1):
+    # franja: da risca na frente cai sobre a testa e varre para a tempora (acima do olho)
+    for az, el, ln, wd, lt in ((4, 62, 0.09, 0.07, 2.2), (12, 55, 0.10, 0.07, 2.4), (22, 49, 0.105, 0.07, 2.6)):
+        add(side * az, el, ln, wd, 0.005, 0.014, lat=lt * side, fwd=-0.1, grav=0.5, flare=0.0, kind="smooth")
+    # topo: da risca, cai sobre os lados do cranio ate a altura da tempora
+    for azb, el, ln in ((176, 74, 0.18), (150, 60, 0.18), (6, 78, 0.19), (40, 68, 0.19), (80, 66, 0.15), (118, 58, 0.17)):
+        az = azb if azb < 100 or azb > 140 else azb
+        azs = side * azb if azb < 140 else 180 - side * (180 - azb)
+        front = azb <= 60
+        add(azs, el, 0.12 if front else ln, 0.095, 0.004, 0.012, lat=side * (1.7 if front else 0.45), grav=0.45, flare=0.0, kind="smooth")
+    # laterais curtas (cobrem a regiao da orelha ate a tempora, nao descem ao ombro)
+    for azb, el, ln in ((66, 36, 0.10), (88, 34, 0.11), (110, 32, 0.12), (130, 28, 0.15)):
+        add(side * azb, el, ln, 0.085, 0.01, 0.03, fwd=0.1, grav=0.1, flare=0.01)
+for side in (-1, 1):
+    for azb, el, ln in ((124, 44, 0.16), (140, 38, 0.18), (156, 36, 0.18), (130, 24, 0.20), (150, 24, 0.22)):
+        add(side * azb, el, ln, 0.095, 0.01, 0.034, lat=JIT(), grav=0.2, flare=0.015)
+# base rente (cobre o couro cabeludo) so atras
+add(180, 70, 0.12, 0.10, 0.003, 0.014, grav=0.2)
+for az0 in range(-165, 166, 33):
+    if abs(az0) < 112: continue
+    add(az0 + JIT() * 8, 52, 0.15, 0.10, 0.005, 0.02, grav=0.2, flare=0.004)
+# camada media atras
+for i in range(10):
+    az = 180 - 119 - (i + JIT()) * (122 / 10)
+    az = -az if i % 2 else az
+    az = (az + 180) % 360 - 180
+add_az = [(-170 + k * 24 + JIT() * 6) for k in range(15)]
+for az in add_az:
+    if abs(az) < 118 or abs(az) > 175 and False: continue
+    add(az, 32, rng.uniform(0.18, 0.22), rng.uniform(0.09, 0.105), 0.01, 0.034, lat=JIT(), grav=0.2, flare=rng.uniform(0.01, 0.02))
+# camada externa: nuca ate a base do pescoco
+for az in [(-172 + k * 22 + JIT() * 5) for k in range(16)]:
+    if abs(az) < 120: continue
+    add(az, 14, rng.uniform(0.24, 0.29), rng.uniform(0.09, 0.105), 0.016, 0.05, lat=JIT(), grav=0.3, flare=rng.uniform(0.02, 0.035))
 for i in range(5):
-    az = (180 + (i - 2 + JIT()) * 52 + 180) % 360 - 180
+    az = (180 + (i - 2 + JIT()) * 38 + 180) % 360 - 180
     add(az, 0, rng.uniform(0.22, 0.26), rng.uniform(0.085, 0.10), 0.022, 0.058, lat=JIT(), grav=0.35, flare=0.03)
-# laterais na frente da orelha (sem cobrir o olho)
-for side in (-1, 1):
-    add(side * 74, 20, 0.16, 0.06, 0.012, 0.035, fwd=0.2, grav=0.12, flare=0.015)
-    add(side * 62, 34, 0.14, 0.062, 0.01, 0.032, fwd=0.2, grav=0.12, flare=0.012)
-# franja repartida: raiz na risca, cai lateralmente para a testa e a tempora
-for side in (-1, 1):
-    for az, el, ln, wd in ((9, 54, 0.105, 0.065), (22, 50, 0.115, 0.07), (38, 44, 0.12, 0.07)):
-        add(side * az + JIT() * 3, el, ln, wd, 0.008, 0.024, lat=1.6 * side, fwd=-0.05, grav=0.4, flare=0.012)
 # mechas soltas
-for az in (-130, -70, 70, 130, 170):
+for az in (-150, -130, 130, 150, 172):
     add(az, 14, 0.15, 0.03, 0.028, 0.045, lat=0.2 * S2(az), grav=0.25, flare=0.01, kind="strand")
 
 BULGE = 0.007
 bm = bmesh.new(); uvl = bm.loops.layers.uv.new("UVMap"); dl = bm.verts.layers.deform.new()
 for k, (pts, width) in enumerate(cards):
     kind, ci = meta[k]
-    u0, v0_, u1, v1_ = ATL["locks"][ci] if kind == "lock" else ATL["strands"][0]
-    if rng.random() < 0.5 and kind == "lock": u0, u1 = u1, u0
+    u0, v0_, u1, v1_ = ATL["locks"][ci] if kind == "lock" else (ATL["smooth"][ci] if kind == "smooth" else ATL["strands"][0])
+    if kind in ("lock",) and rng.random() < 0.5: u0, u1 = u1, u0
+    if kind == "smooth" and cards_side[k] < 0: u0, u1 = u1, u0
     npt = len(pts)
     rows = []
     for i, p in enumerate(pts):
@@ -126,7 +137,10 @@ for k, (pts, width) in enumerate(cards):
         off = 0.0
         row = []
         for j, sx in enumerate((-1, 0, 1)):
-            q = p + w * hw * sx
+            e_ = 1.0
+            if i == npt - 1: e_ = rng.uniform(0.4, 0.8) if sx != 0 else 1.0       # ponta afilada
+            elif i > 0 and sx != 0: e_ = rng.uniform(0.82, 1.08)                     # borda irregular
+            q = p + w * hw * sx * e_ 
             q = q + n * (BULGE * (1 - 0.4 * t) if sx == 0 else 0.0)
             v = bm.verts.new(Vector(q)); v[dl][0] = 1.0
             row.append(v)
