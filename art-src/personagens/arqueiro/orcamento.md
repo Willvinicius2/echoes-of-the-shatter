@@ -45,5 +45,5 @@ Textura propria 512x512 (`peitoral_textura.py`): 8 celulas de pena + amostras de
 - `build_corpo.py` roda `arredondar()` depois de `proporcao.aplicar`: Catmull-Clark nível 1 e reducao (collapse) para Arms 0,55, Hands 0,55, Feet 0,55, Torso 0,50 e Legs 0,50. A cabeça não muda.
 - Triângulos medidos após a redução: Arms 561, Hands 626, Feet 1.009, Torso 1.134, Legs 1.307 (corpo sem cabeça 4.637). Com a cabeça (1.020): ~5.657. Dentro do alvo do herói (4.000 a 6.500).
 - Pesos e UV seguem a malha (a subdivisão interpola). Rig de 27 ossos e ações inalterados (9 ações).
-- Textura: continua `T_Archer_Body_BC.png` (ainda não repintada à mão).
+- Textura `tex_corpo/T_Archer_Body_BC.png` repintada por `pintar_corpo.py` com sombreado pela normal suavizada, luz de frente-cima-esquerda e dobras leves no tecido (semente fixa). Cabeça e cabelo mantidos da textura original.
 - O objeto `Icosphere` que aparece na releitura do GLB é a esfera de forma de osso criada pelo importador do glTF; não faz parte do arquivo exportado.

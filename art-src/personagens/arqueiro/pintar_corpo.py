@@ -25,6 +25,8 @@ def ruido(sc, n=S):
 
 N1, N2, N3 = ruido(4), ruido(16), ruido(64)
 yy, xx = np.mgrid[0:S, 0:S]
+LUZ = np.array([-0.45, -0.75, 0.55], np.float32)
+LUZ /= np.linalg.norm(LUZ)
 trama = 0.5 + 0.25 * np.sin(xx * 1.9) * np.sin(yy * 1.9)  # tecido
 PELE = np.array([0.89, 0.69, 0.55], np.float32)
 LINHO = np.array([0.74, 0.69, 0.56], np.float32)
@@ -83,9 +85,11 @@ for ob in bpy.data.objects:
     uv = me.uv_layers.active.data
     mw = ob.matrix_world
     me.calc_loop_triangles()
+    m3 = mw.to_3x3()
     for tri in me.loop_triangles:
         uvs = np.array([[uv[l].uv[0] * S, (1 - uv[l].uv[1]) * S] for l in tri.loops])
         ps = np.array([tuple(mw @ me.vertices[v].co) for v in tri.vertices])
+        ns = np.array([tuple((m3 @ me.vertices[v].normal).normalized()) for v in tri.vertices])
         x0, y0 = np.floor(uvs.min(0)).astype(int); x1, y1 = np.ceil(uvs.max(0)).astype(int)
         x0 = max(x0 - 1, 0); y0 = max(y0 - 1, 0); x1 = min(x1 + 1, S - 1); y1 = min(y1 + 1, S - 1)
         a, b, c = uvs
@@ -100,10 +104,20 @@ for ob in bpy.data.objects:
                 w2 = 1 - w0 - w1
                 if min(w0, w1, w2) < -0.08:                     # margem contra costura
                     continue
-                w = np.clip([w0, w1, w2], 0, 1); w /= w.sum()
+                wc = np.clip([w0, w1, w2], 0, 1)
+                w = wc / wc.sum()
                 p = w @ ps
                 r = cor(ob.name, p, ty, tx)
                 if r is not None:
-                    out[ty, tx] = np.clip(r, 0, 1)
+                    # sombreado: normal interpolada (malha suavizada) + luz de frente-cima-esquerda
+                    nrm = w @ ns
+                    nrm = nrm / max(np.linalg.norm(nrm), 1e-6)
+                    ndl = max(0.0, float(nrm @ LUZ))
+                    sombra = 0.68 + 0.36 * ndl
+                    # dobras leves no tecido (nao nas partes de pele/couro)
+                    dobra = 1.0
+                    if ob.name in ("Body_Torso", "Body_Legs", "Body_Arms"):
+                        dobra = 1.0 + 0.045 * np.sin(p[2] * 58.0 + 5.0 * N1[ty, tx])
+                    out[ty, tx] = np.clip(r * sombra * dobra, 0, 1)
 Image.fromarray((out * 255).astype(np.uint8)).save(tex_out)
 print("salvo", tex_out)
