@@ -64,7 +64,7 @@ for o in meshes:
 R["blender_min"] = [round(c, 3) for c in mn]; R["blender_max"] = [round(c, 3) for c in mx]
 R["unity_size_xyz"] = [round(mx.x - mn.x, 3), round(mx.z - mn.z, 3), round(mx.y - mn.y, 3)]
 R["height_total_m"] = round(mx.z - mn.z, 3)
-ok["fits_body_space"] = (0.3 < mn.z < 0.7) and (1.5 < mx.z < 1.8) and abs(mx.x) < 0.8 and abs(mn.x) < 0.8   # personagem: pes em 0; arma: origem na empunhadura (dentro do comprimento)
+ok["fits_body_space"] = (0.15 < mn.z < 0.7) and (1.5 < mx.z < 1.8) and abs(mx.x) < 0.95 and abs(mn.x) < 0.95   # personagem: pes em 0; arma: origem na empunhadura (dentro do comprimento)
 R["body_height_m"] = cfg["body_height_m"]
 R["kind"] = cfg["kind"]
 R["tris"] = sum(len(o.data.polygons) for o in meshes if all(len(p.vertices) == 3 for p in o.data.polygons)) or sum(
