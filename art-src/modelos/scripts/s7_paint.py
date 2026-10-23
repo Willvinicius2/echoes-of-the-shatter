@@ -206,6 +206,10 @@ elif cfg.get("single_view"):
     if alpha is not None:
         panel["back"] = (rgb[:, ::-1].copy(), figure_mask(rgb[:, ::-1], alpha[:, ::-1].copy()))
     views = ["front", "back"]
+    if cfg.get("front_only"):
+        # corpo gerado de 1 imagem: costas = espelho da frente SO abaixo de back_mirror_below_z (tronco/pernas);
+        # acima (nuca) o espelho mostraria o rosto, entao a nuca recebe a cor de cabelo (back_hair_z)
+        views = ["front", "back"] if cfg.get("back_mirror_below_z") else ["front"]
     side_choice = {}
 else:
     sheet = cv2.cvtColor(cv2.imread(cfg["sheet"], cv2.IMREAD_COLOR), cv2.COLOR_BGR2RGB)
@@ -257,13 +261,42 @@ for view in views:
     disc = cv2.dilate((gr > cfg.get("disc_thr", 0.4) * KS).astype(np.uint8), np.ones((5, 5), np.uint8))
     ui, vi = np.clip(np.round(u - 0.5).astype(int), 0, VG - 1), np.clip(np.round(v - 0.5).astype(int), 0, VG - 1)
     vis = (dep <= zmin[vi, ui] + cfg.get("depth_bias", 0.012) * KS) & (disc[vi, ui] == 0) & (SMASK[view][vi, ui] > 0)
-    w = np.where(vis, c ** pw, 0.0)
+    w = np.where(vis & (c > cfg.get("min_cos", 0.0)), c ** pw, 0.0)
+    if cfg.get("head_min_cos") and cfg.get("back_hair_z"):      # cabeca: sem amostragem rasante (esticaria rosto/cabelo no lado)
+        w = np.where((P[:, 2] >= cfg["back_hair_z"]) & (c < cfg["head_min_cos"]), 0.0, w)
+    if view == "back" and cfg.get("back_mirror_below_z"):
+        w = np.where(P[:, 2] < cfg["back_mirror_below_z"], w * 0.5, 0.0)
     col = np.stack([ndi.map_coordinates(SAMPLE[view][..., k], [v - 0.5, u - 0.5], order=1, mode='nearest') for k in range(3)], 1)
     acc += col * w[:, None]; wsum += w
 have = wsum > cfg.get("min_weight", 0.001)
 color = np.zeros((len(P), 3))
 color[have] = acc[have] / wsum[have, None]
 # sobras: mediana das cores pintadas mais proximas no espaco 3D (cor do material vizinho, sem listras)
+if cfg.get("back_hair_z"):
+    hz = P[:, 2] >= cfg["back_hair_z"]
+    src = have & hz & (np.abs(P[:, 0]) < 0.15)
+    hh = cv2.cvtColor(color[src][None].astype(np.float32), cv2.COLOR_RGB2HSV)[0]
+    hair = src.copy(); hair[src] = (hh[:, 0] > 25) & (hh[:, 0] < 55) & (hh[:, 1] > 0.35)
+    hc = np.median(color[hair], 0)
+    tgt = (~have) & hz
+    rng0 = np.random.default_rng(3)
+    # mechas verticais: indice por angulo ao redor do eixo da cabeca, variacao suave em z; escurece para baixo e para o fundo
+    ang = np.arctan2(P[tgt, 0], P[tgt, 1] + 0.0); sid = np.floor(ang * 55).astype(int) % 997
+    rs = np.random.default_rng(11).uniform(-1, 1, 1000)[sid]
+    zz = P[tgt, 2]
+    f = 1 + 0.13 * rs + 0.07 * np.sin(zz * 70 + rs * 6.0) + 0.05 * rng0.standard_normal(int(tgt.sum()))
+    f *= np.clip(0.80 + 0.5 * (zz - cfg["back_hair_z"]) / 0.28, 0.72, 1.05)
+    color[tgt] = hc * f[:, None]
+    have = have | tgt
+    if cfg.get("hair_side_blend"):
+        # laterais/topo da cabeca: a projecao frontal rasante borra cabelo com pele; mistura para a cor de cabelo conforme a normal sair da frente
+        lo_, hi_ = cfg["hair_side_blend"]
+        fr = -N[:, 1]
+        t = np.clip((hi_ - fr) / max(hi_ - lo_, 1e-6), 0, 1)[:, None] * hz[:, None]
+        t = t * np.clip((np.abs(P[:, 0]) - 0.03) / 0.03, 0, 1)[:, None] if cfg.get("hair_side_xmin") else t
+        nz = 1 + 0.10 * np.random.default_rng(5).standard_normal((len(P), 1))
+        color = color * (1 - t) + hc[None] * nz * t
+    report["nuca_cabelo"] = dict(texels=int(tgt.sum()), cor=[round(float(x), 3) for x in hc])
 tree = cKDTree(P[have])
 dist, idx = tree.query(P[~have], k=cfg.get("fill_k", 24))
 color[~have] = np.median(color[have][idx], axis=1)
@@ -274,8 +307,11 @@ img = np.zeros((TS, TS, 3)); img[ty, tx] = color
 # --- luz embutida
 def load_gray(name):
     a = cv2.imread(wpath(cfg, name), cv2.IMREAD_COLOR)
-    return cv2.cvtColor(a, cv2.COLOR_BGR2RGB)[..., 0].astype(np.float32) / 255.0
+    g_ = cv2.cvtColor(a, cv2.COLOR_BGR2RGB)[..., 0].astype(np.float32) / 255.0
+    return g_ if g_.shape[0] == TS else cv2.resize(g_, (TS, TS), interpolation=cv2.INTER_CUBIC)   # AO/cavidade assados em bake_size
 ao, cav = load_gray("bake_ao.png"), load_gray("bake_cavity.png")
+if cfg.get("cav_blur"):      # raios da cavidade deixam fios claros/escuros (acertos esparsos): mediana + gaussiana suaviza
+    cav = cv2.GaussianBlur(cv2.medianBlur((cav * 255).astype(np.uint8), 5).astype(np.float32) / 255.0, (0, 0), cfg["cav_blur"])
 A = np.clip((ao - 0.15) / 0.85, 0, 1)
 hx = lambda h: np.array([int(h[i:i + 2], 16) for i in (1, 3, 5)], np.float32) / 255.0
 SH, LT = hx(cfg.get("shadow_color", "#2C2A4A")), hx(cfg.get("light_color", "#FFB86B"))

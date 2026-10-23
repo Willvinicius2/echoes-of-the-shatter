@@ -161,6 +161,22 @@ for vg in list(ob.vertex_groups):
         ob.vertex_groups.remove(vg)
 bpy.context.view_layer.objects.active = ob
 bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True)
+if cfg.get("weight_smooth"):      # suaviza o calor automatico no grafo de arestas (axila/ombro/virilha esticavam em pose extrema)
+    _me = ob.data; _n = len(_me.vertices); _names = [vg.name for vg in ob.vertex_groups]
+    _W = np.zeros((_n, len(_names)))
+    for _v in _me.vertices:
+        for _g in _v.groups:
+            _W[_v.index, _g.group] = _g.weight
+    _e = np.empty(len(_me.edges) * 2, dtype=np.int64); _me.edges.foreach_get('vertices', _e); _e = _e.reshape(-1, 2)
+    _f = cfg.get("weight_smooth_factor", 0.5)
+    for _ in range(cfg["weight_smooth"]):
+        _acc = np.zeros_like(_W); _cnt = np.zeros(_n)
+        np.add.at(_acc, _e[:, 0], _W[_e[:, 1]]); np.add.at(_acc, _e[:, 1], _W[_e[:, 0]])
+        np.add.at(_cnt, _e[:, 0], 1); np.add.at(_cnt, _e[:, 1], 1)
+        _W = (1 - _f) * _W + _f * _acc / np.maximum(_cnt, 1)[:, None]
+    for _v in range(_n):
+        for _j in np.where(_W[_v] > 1e-4)[0]:
+            ob.vertex_groups[_j].add([_v], float(_W[_v, _j]), 'REPLACE')
 bpy.ops.object.vertex_group_limit_total(group_select_mode='ALL', limit=4)
 bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
 

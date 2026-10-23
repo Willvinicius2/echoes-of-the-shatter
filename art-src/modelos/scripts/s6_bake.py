@@ -19,7 +19,7 @@ from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 
 cfg = load_cfg()
-SIZE = cfg["tex_size"]
+SIZE = cfg.get("bake_size", cfg["tex_size"])      # AO/cavidade sao de baixa frequencia: bake_size 1024 mesmo com textura 2048 (s7 reamostra)
 NSH = int(cfg.get("bake_shards", 1))
 shard = os.environ.get("MDL_SHARD")
 

@@ -1,0 +1,52 @@
+{
+ "poses": [
+  {
+   "pose": "braco_lateral_90",
+   "max": 3.224,
+   "p99": 1.392,
+   "over_1_5": 46,
+   "over_2": 10,
+   "min": 0.251
+  },
+  {
+   "pose": "braco_levantado_150",
+   "max": 4.521,
+   "p99": 1.788,
+   "over_1_5": 123,
+   "over_2": 39,
+   "min": 0.089
+  },
+  {
+   "pose": "braco_levantado_150_cotovelo",
+   "max": 4.241,
+   "p99": 1.679,
+   "over_1_5": 97,
+   "over_2": 39,
+   "min": 0.089
+  },
+  {
+   "pose": "joelho_90",
+   "max": 1.657,
+   "p99": 1.209,
+   "over_1_5": 3,
+   "over_2": 0,
+   "min": 0.104
+  },
+  {
+   "pose": "torcao_tronco_55",
+   "max": 1.641,
+   "p99": 1.214,
+   "over_1_5": 4,
+   "over_2": 0,
+   "min": 0.547
+  }
+ ],
+ "worst_max": 4.521,
+ "worst_over_2": 39,
+ "edges": 6300,
+ "sinais": {
+  "braco90": 1,
+  "braco150": 1,
+  "joelho": 1
+ }
+}

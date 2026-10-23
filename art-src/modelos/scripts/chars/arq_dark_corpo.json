@@ -1,0 +1,127 @@
+{
+  "id": "arq_dark_corpo",
+  "asset": "SK_ArcherDark_Body",
+  "kind": "humanoid",
+  "src_glb": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/corpo.glb",
+  "single_view": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/entradas/arq3d_corpo.png",
+  "front_only": true,
+  "min_cos": 0.08,
+  "work_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work",
+  "final_dir": "D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/final",
+  "height_ref": "bbox",
+  "body_height_m": 1.8,
+  "tris_target": 4200,
+  "tris_range": [
+    3500,
+    5000
+  ],
+  "tex_size": 2048,
+  "bake_size": 1024,
+  "min_component_ratio": 0.005,
+  "mesh_name": "SK_ArcherDark_Body",
+  "bake_shards": 1,
+  "shell_res": 640,
+  "tint_hues": [],
+  "cloth_hues": [],
+  "sat_max": 0.78,
+  "sat_keep_hues": [
+    [
+      25,
+      55
+    ]
+  ],
+  "_nota_pecas": "Pecas (manto, bracadeiras, botas): norm_from = D:/openclaude/_trabalho-claude/modelos3d/arqueiro_dark/corpo/work/norm.json (copia em arq_dark_corpo.norm.json); markers_from = este json (chave markers); modular_role piece + body_rig_blend = corpo/work/game_rig.blend. Escala 0,947, altura 1,80 m.",
+  "markers": {
+    "hips": [
+      0,
+      0.0,
+      1.0
+    ],
+    "spine": [
+      0,
+      0.0,
+      1.14
+    ],
+    "chest": [
+      0,
+      0.0,
+      1.3
+    ],
+    "neck": [
+      0,
+      0.0,
+      1.5
+    ],
+    "head": [
+      0,
+      0.01,
+      1.58
+    ],
+    "head_top": [
+      0,
+      0.01,
+      1.8
+    ],
+    "shoulder": [
+      0.07,
+      0.0,
+      1.48
+    ],
+    "upperarm": [
+      0.2,
+      0.0,
+      1.46
+    ],
+    "lowerarm": [
+      0.33,
+      0.0,
+      1.19
+    ],
+    "hand": [
+      0.37,
+      0.0,
+      0.97
+    ],
+    "hand_tip": [
+      0.4,
+      -0.01,
+      0.76
+    ],
+    "upperleg": [
+      0.12,
+      0.0,
+      0.95
+    ],
+    "lowerleg": [
+      0.17,
+      0.0,
+      0.55
+    ],
+    "foot": [
+      0.21,
+      0.04,
+      0.1
+    ],
+    "toes": [
+      0.21,
+      -0.06,
+      0.04
+    ],
+    "toe_tip": [
+      0.21,
+      -0.14,
+      0.015
+    ]
+  },
+  "back_mirror_below_z": 1.5,
+  "back_hair_z": 1.52,
+  "cav_blur": 2.0,
+  "brush_amp": 0.0,
+  "dab_amp": 0.03,
+  "sharpen": 0.2,
+  "hair_side_blend": [
+    0.2,
+    0.55
+  ],
+  "hair_side_xmin": true
+}

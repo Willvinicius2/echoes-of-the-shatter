@@ -19,6 +19,7 @@ STAGES = [  # (id, script, interprete)
     ("s4", "s4_rig.py", "blender"),          # esqueleto por marcos + pesos
     ("s5", "s5_uv.py", "blender"),           # UV 1024 por regiao
     ("s6", "s6_bake.py", "blender"),         # AO e cavidade da malha alta
+    ("s6n", "s6n_normal.py", "blender"),     # normal map (tangente, OpenGL) da malha alta
     ("s7a", "s7a_export_geo.py", "blender"), # geometria por texel
     ("s7", "s7_paint.py", "venv"),           # pintura pela folha
     ("s8", "s8_export.py", "blender"),       # material, pose de teste, .blend e .fbx

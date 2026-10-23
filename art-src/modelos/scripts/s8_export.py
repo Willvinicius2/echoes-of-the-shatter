@@ -1,6 +1,6 @@
 """Etapa 8 (Blender): material, teste de pose, .blend final e FBX com o preset do projeto.
 
-1 material (M_<Heroi>: albedo pintado, sem normal map), malha nomeada cfg["mesh_name"], Armature modifier,
+1 material (M_<Heroi>: albedo pintado + normal map T_<Nome>_N.png se houver bake_normal.png), malha nomeada cfg["mesh_name"], Armature modifier,
 teste de pose (bracos para baixo, cabeca virada, passo) com metricas de esticamento de aresta, e exportacao
 SK_<...>.fbx pelo gb_rig.export_fbx_rigged (preset docs/04 secao 17.1). Grava final/<asset>.blend,
 final/<asset>.fbx e work/export_report.json.
@@ -27,6 +27,12 @@ img.colorspace_settings.name = 'sRGB'
 node = nt.nodes.new('ShaderNodeTexImage'); node.image = img
 nt.links.new(node.outputs['Color'], bsdf.inputs['Base Color'])
 bsdf.inputs['Roughness'].default_value = 1.0
+if os.path.exists(wpath(cfg, "bake_normal.png")) and cfg.get("use_normal_map", True):      # normal map (s6n): T_<Nome>_N.png, tangente OpenGL
+    shutil.copyfile(wpath(cfg, "bake_normal.png"), fpath(cfg, f"T_{tex}_N.png"))
+    nimg = bpy.data.images.load(fpath(cfg, f"T_{tex}_N.png")); nimg.colorspace_settings.name = 'Non-Color'
+    ntex = nt.nodes.new('ShaderNodeTexImage'); ntex.image = nimg
+    nmap = nt.nodes.new('ShaderNodeNormalMap'); nmap.inputs['Strength'].default_value = cfg.get("normal_strength", 1.0)
+    nt.links.new(ntex.outputs['Color'], nmap.inputs['Color']); nt.links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
 ob.data.materials.clear(); ob.data.materials.append(mat)
 
 # teste de pose (so com esqueleto)
