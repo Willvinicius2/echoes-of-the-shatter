@@ -89,7 +89,7 @@ def osso(w, h):
     ivory = cor((226, 210, 174))
     a = ruido(h, w, 30) * 0.6 + ruido(h, w, 8) * 0.4
     img = np.zeros((h, w, 3)) + ivory
-    img = mistura(img, (170, 142, 98), np.clip((a - 0.4) * 2.0, 0, 1) * 0.85)       # manchas ocre
+    img = mistura(img, (190, 160, 112), np.clip((a - 0.4) * 2.0, 0, 1) * 0.6)       # manchas ocre
     veio = np.clip(1 - np.abs(ruido(h, w, 6, 3) - 0.5) * 14, 0, 1) ** 2             # veios de osso
     img = mistura(img, (150, 124, 84), veio * 0.6)
     yy, xx = np.mgrid[0:h, 0:w]
@@ -110,7 +110,7 @@ def osso(w, h):
                 img[yi, xi + 1] = img[yi, xi + 1] * 0.5 + cor((74, 52, 34)) * 0.5
             if rng.random() < 0.03 and n - t > 14:
                 rach(x, y, ang + rng.choice([-1, 1]) * 0.55, (n - t) // 2, False)
-    for _ in range(9):
+    for _ in range(3):
         rach(rng.uniform(0, w), rng.uniform(0, h), rng.uniform(0, 6.28), int(rng.integers(25, 70)), True)
     # sulco gravado a 11% da borda + rebites nos cantos
     sul = np.abs(np.minimum.reduce([xx, w - 1 - xx, yy, h - 1 - yy]) - 0.11 * min(w, h)) < 2.4
@@ -128,9 +128,9 @@ def osso(w, h):
 
 def pele(w, h):
     a = ruido(h, w, 12)
-    img = np.zeros((h, w, 3)) + cor((158, 112, 84))
-    img = mistura(img, (118, 78, 58), a * 0.6)
-    img = mistura(img, (184, 136, 104), np.clip(ruido(h, w, 5) - 0.5, 0, 1) * 1.0)
+    img = np.zeros((h, w, 3)) + cor((70, 76, 46))
+    img = mistura(img, (46, 52, 32), a * 0.6)
+    img = mistura(img, (104, 102, 62), np.clip(ruido(h, w, 5) - 0.5, 0, 1) * 1.0)
     return img
 
 

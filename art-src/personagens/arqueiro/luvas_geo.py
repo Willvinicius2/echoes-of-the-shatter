@@ -68,7 +68,7 @@ def frames(pts, hint):
     return T, N, B
 
 
-def tubo(P, pts, rad, lados, z, hint, cap0=True, cap1=True, fase=0.0):
+def tubo(P, pts, rad, lados, z, hint, cap0=True, cap1=True, fase=0.0, domo=False):
     """Varredura de secao elipse (rN, rB) ao longo de pts. rad: lista de float ou (rN, rB)."""
     pts = [Vector(p) for p in pts]
     T, N, B = frames(pts, hint)
@@ -89,6 +89,20 @@ def tubo(P, pts, rad, lados, z, hint, cap0=True, cap1=True, fase=0.0):
             va = v0 + (v1 - v0) * i / (n - 1); vb = v0 + (v1 - v0) * (i + 1) / (n - 1)
             P.face([ids[i][j], ids[i][j2], ids[i + 1][j2], ids[i + 1][j]], [(uu0, va), (uu1, va), (uu1, vb), (uu0, vb)])
     cu, cv = (u0 + u1) / 2, (v0 + v1) / 2
+    if domo and cap1:  # ponta arredondada: 1 anel reduzido + polo (em vez de tampa chata)
+        r = rad[n - 1]; rn, rb = (r, r) if not isinstance(r, tuple) else r
+        pe = pts[n - 1] + T[n - 1] * (0.5 * min(rn, rb))
+        ring = []
+        for j in range(lados):
+            a = 2 * math.pi * j / lados + fase
+            ring.append(P.vert(pe + N[n - 1] * (math.cos(a) * rn * 0.72) + B[n - 1] * (math.sin(a) * rb * 0.72)))
+        pole = P.vert(pts[n - 1] + T[n - 1] * (0.95 * min(rn, rb)))
+        for j in range(lados):
+            j2 = (j + 1) % lados
+            uu0 = u0 + (u1 - u0) * j / lados; uu1 = u0 + (u1 - u0) * (j + 1) / lados
+            P.face([ids[n - 1][j], ids[n - 1][j2], ring[j2], ring[j]], [(uu0, v1), (uu1, v1), (uu1, v1), (uu0, v1)])
+            P.face([ring[j], ring[j2], pole], [(uu0, v1), (uu1, v1), (cu, v1)])
+        cap1 = False
     for flag, i, rev in ((cap0, 0, True), (cap1, n - 1, False)):
         if not flag:
             continue
@@ -201,7 +215,7 @@ def dedo_arco(S, G, phi0, comp, R, zh, rho, sinal, cortes=0.72, lados=5, hint=(0
     couro = [pt(f) for f in fr]
     tubo(S["soft_H"], couro, [(rho * 0.93, rho), (rho * 0.95, rho * 1.0), (rho * 0.95, rho * 1.06)], lados, "couro", (0, 0, 1), cap0=False, cap1=True)
     pele = [pt(f) for f in (cortes, 1.0)]
-    tubo(S["soft_H"], pele, [(rho * 0.86, rho * 0.9), (rho * 0.7, rho * 0.72)], lados, "pele", (0, 0, 1), cap0=False, cap1=True)
+    tubo(S["soft_H"], pele, [(rho * 0.93, rho * 0.97), (rho * 0.78, rho * 0.8)], lados, "pele", (0, 0, 1), cap0=False, cap1=True, domo=True)
 
 
 def dedo_livre(S, base, u, n, comp, th, rho, cortes=0.72, lados=5):
@@ -214,7 +228,7 @@ def dedo_livre(S, base, u, n, comp, th, rho, cortes=0.72, lados=5):
     # ponto de corte: 'cortes' do comprimento total, dentro do 2o/3o segmento
     pm = p[2] + (p[3] - p[2]) * 0.1
     tubo(S["soft_H"], [p[0], p[1], pm], [(rho, rho), (rho * 1.0, rho), (rho * 1.05, rho * 1.05)], lados, "couro", n, cap0=False, cap1=True)
-    tubo(S["soft_H"], [pm, p[2], p[3]], [(rho * 0.88, rho * 0.88), (rho * 0.84, rho * 0.84), (rho * 0.7, rho * 0.7)], lados, "pele", n, cap0=False, cap1=True)
+    tubo(S["soft_H"], [pm, p[2], p[3]], [(rho * 0.94, rho * 0.94), (rho * 0.9, rho * 0.9), (rho * 0.78, rho * 0.78)], lados, "pele", n, cap0=False, cap1=True, domo=True)
     return p
 
 
@@ -247,9 +261,6 @@ def construir(W, E, lado):
                    ck=[0.4, 1.0, 1.0, 0.4], flip=flip)
     placa(L * 0.07, L * 0.40, 0.0385, 0.0365, 0.0105, 96)
     placa(L * 0.53, L * 0.79, 0.0365, 0.0355, 0.0095, 96, flip=True)
-    # nervura central elevada na placa de cima
-    placa_arco(S["hard_L"], [at(d) for d in (L * 0.12, L * 0.135, L * 0.335, L * 0.35)], ax, out,
-               [0.049, 0.049, 0.0475, 0.0475], [0.0075] * 4, 24, 2, "osso", ck=[0.4, 1.0, 1.0, 0.4])
     for d, tam in ((L * 0.20, 0.022), (L * 0.31, 0.017)):
         cone(S["soft_L"], at(d) + out * 0.0555, out * 1.0 - ax * 0.45, 0.0068, tam, 4, "osso")
     # cintas de couro (elipse justa: por fora da placa e rente ao braço no lado aberto) + fivela
@@ -257,8 +268,6 @@ def construir(W, E, lado):
         cen = out * (rr - 0.0405) / 1.0
         anel(S["soft_L"], at(d - 0.0065) + cen, at(d + 0.0065) + cen, (rr + 0.037) / 2 + 0.001, 0.043, 8, "cinta", out)
     caixa(S["hard_L"], at(L * 0.465) + out * 0.0505, side, ax, out, (0.0085, 0.0075, 0.0035), "metal")
-    # tira de pano verde por baixo, aparece no lado aberto
-    tubo(S["soft_L"], [at(L * 0.10), at(L * 0.56)], [0.0345, 0.033], 6, "pano", out, cap0=False, cap1=False)
     return S, ax, out, side, L
 
 
@@ -319,7 +328,7 @@ def mao_direita(S, W, ax):
     p0 = base; p1 = p0 + d1 * 0.030; p2 = p1 + d2 * 0.028; p3 = p2 + (u * 0.3 + n * 0.95).normalized() * 0.022
     pm = p2 + (p3 - p2) * 0.2
     tubo(S["soft_H"], [p0, p1, pm], [(0.0128, 0.0128), (0.0128, 0.0128), (0.0136, 0.0136)], 5, "couro", n, cap0=False, cap1=True)
-    tubo(S["soft_H"], [pm, p2, p3], [(0.0112, 0.0112), (0.0106, 0.0106), (0.0088, 0.0088)], 5, "pele", n, cap0=False, cap1=True)
+    tubo(S["soft_H"], [pm, p2, p3], [(0.0112, 0.0112), (0.0106, 0.0106), (0.0088, 0.0088)], 5, "pele", n, cap0=False, cap1=True, domo=True)
     K = 1.16
     for Pt, i0 in ((S["soft_H"], n0), (S["hard_H"], h0)):
         for i in range(i0, len(Pt.v)):
