@@ -4,5 +4,5 @@ starter,peitoral,pele,,res://art/models/personagens/arqueiro/Arqueiro_Peitoral.g
 starter,calca,pele,,res://art/models/personagens/arqueiro/Arqueiro_Calca.glb,0,0,0,0,0,0,1,Body_Legs
 starter,luvas,pele,,res://art/models/personagens/arqueiro/Arqueiro_Luvas.glb,0,0,0,0,0,0,1,Body_Hands
 starter,botas,pele,,res://art/models/personagens/arqueiro/Arqueiro_Botas.glb,0,0,0,0,0,0,1,Body_Feet
-starter,arco,anexo,socket_weapon_l,res://art/models/personagens/arqueiro/Arqueiro_Arco.glb,0,0,0,-10,0,0,0.675,
+starter,arco,anexo,socket_weapon_l,res://art/models/personagens/arqueiro/Arqueiro_Arco.glb,0,0,0,-90,-180,0,0.9,
 starter,aljava,anexo,Chest,res://art/models/personagens/arqueiro/Arqueiro_Aljava.glb,-0.08,-0.02,-0.38,0,0,0,1,
