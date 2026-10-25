@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/arqueiro/CriptaJogavel.cs" id="1_cj"]
 [ext_resource type="PackedScene" path="res://scenes/cripta/Cripta.tscn" id="2_cripta"]
-[ext_resource type="PackedScene" path="res://scenes/arqueiro/Arqueiro.tscn" id="3_arq"]
+[ext_resource type="PackedScene" path="res://scenes/arqueiro/ArqueiroTripo.tscn" id="3_arq"]
 [ext_resource type="Script" path="res://scripts/arqueiro/CameraArqueiro.cs" id="4_cam"]
 [ext_resource type="PackedScene" path="res://scenes/arqueiro/Dummy.tscn" id="5_dum"]
 [ext_resource type="Script" path="res://scripts/arqueiro/ArqueiroHud.cs" id="6_hud"]

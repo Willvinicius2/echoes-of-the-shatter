@@ -115,7 +115,7 @@ public partial class AutoTeste : Node
         await Espera(1.5f);
         for (int i = 0; i < 300 && !_h.IsOnFloor(); i++) await Fisica();
         var spawn = _h.GlobalPosition;
-        GD.Print($"TESTE: fps={Engine.GetFramesPerSecond()} corpo_real={_h.Modular.CorpoReal} clipe={_h.ClipeAtual} no_chao={_h.IsOnFloor()} pos={_h.GlobalPosition}");
+        GD.Print($"TESTE: fps={Engine.GetFramesPerSecond()} corpo_real={(_h.Modular?.CorpoReal ?? true)} clipe={_h.ClipeAtual} no_chao={_h.IsOnFloor()} pos={_h.GlobalPosition}");
         GD.Print($"TESTE: janela={DisplayServer.WindowGetSize()} viewport={GetViewport().GetVisibleRect().Size} mouse_mode={Input.MouseMode}");
         Foto("01_parado");
 
@@ -124,7 +124,7 @@ public partial class AutoTeste : Node
         Input.ActionPress("move_up");
         await Espera(0.9f);
         Foto("02_andando");
-        var ap = _h.Modular.Animacoes;
+        var ap = _h.Modular?.Animacoes;
         GD.Print($"TESTE: corrida clipe={_h.ClipeAtual} vel={_h.Velocity.Length():0.00} m/s escala_clipe={(ap != null ? ap.SpeedScale : 0f):0.00} (ref Run {ArqueiroStats.F("anim_ref_correr")} m/s)");
         await Espera(0.17f);
         Foto("02b_andando");

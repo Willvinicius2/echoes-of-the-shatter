@@ -23,9 +23,10 @@ public partial class ArqueiroController : CharacterBody3D
     public Node3D Modelo { get; private set; }
     public ArqueiroModular Modular { get; private set; }
     public int Disparos { get; private set; }
-    public string ClipeAtual => _anim?.ClipeAtual ?? "";
+    public string ClipeAtual => _anim?.ClipeAtual ?? _animTripo?.ClipeAtual ?? "";
 
     ArqueiroAnimador _anim;
+    ArqueiroAnimadorTripo _animTripo;
     CameraArqueiro _cam;
     float _tEstado, _cdEsquiva, _cdTiro, _iframe, _iframeAtraso;
     Vector3 _dirEsquiva;
@@ -42,10 +43,20 @@ public partial class ArqueiroController : CharacterBody3D
         CollisionLayer = Camadas.Jogador;
         CollisionMask = Camadas.Mundo;
         Modelo = GetNode<Node3D>(CaminhoModelo);
-        Modular = Modelo.GetNode<ArqueiroModular>("Corpo");
-        _anim = new ArqueiroAnimador { Name = "Animador" };
-        AddChild(_anim);
-        _anim.Iniciar(Modular, Modelo);
+        var corpo = Modelo.GetNode("Corpo");
+        if (corpo is ArqueiroTripo tripo)
+        {
+            _animTripo = new ArqueiroAnimadorTripo { Name = "AnimadorTripo" };
+            AddChild(_animTripo);
+            _animTripo.Iniciar(tripo);
+        }
+        else
+        {
+            Modular = (ArqueiroModular)corpo;
+            _anim = new ArqueiroAnimador { Name = "Animador" };
+            AddChild(_anim);
+            _anim.Iniciar(Modular, Modelo);
+        }
         FloorSnapLength = ArqueiroStats.F("mov_snap_chao");
         FloorMaxAngle = Mathf.DegToRad(ArqueiroStats.F("mov_inclinacao_max"));
         FloorStopOnSlope = true;
@@ -144,7 +155,8 @@ public partial class ArqueiroController : CharacterBody3D
 
         Girar(alvoGiro, dt);
         var h = new Vector3(Velocity.X, 0, Velocity.Z);
-        _anim.Atualizar(EstadoAtual, h.Length(), Carga01, dt);
+        _anim?.Atualizar(EstadoAtual, h.Length(), Carga01, dt);
+        _animTripo?.Atualizar(EstadoAtual, h.Length(), Carga01, dt);
     }
 
     // ---------- movimento

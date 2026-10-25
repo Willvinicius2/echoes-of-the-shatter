@@ -39,3 +39,6 @@ O que ele prova:
 - Os i-frames da esquiva seguem os eventos `iframes_inicio` e `iframes_fim` do clipe Dodge (quadros 2 e 12 de 14, esticados ao `esq_tempo`). A troca para a pose de corda cheia usa `corda_cheia` do Draw. Quadros e durações dos clipes estão em `arqueiro.csv` (`evt_*`), copiados de `art-src/animacao/arqueiro_eventos.json`; se o clipe mudar, atualize ali.
 - Haste da flecha mais grossa e com leve brilho, para ler no escuro.
 - Aviso: os pilares da Cripta não têm colisão; a flecha os atravessa (assunto do cenário).
+
+## Versão Tripo (teste)
+A Cripta jogável usa o arqueiro modelado no Tripo (`scenes/arqueiro/ArqueiroTripo.tscn`, GLB em `art/models/personagens/arqueiro_tripo/`, LFS). O corpo gira para a direção do movimento (o GLB olha para +X, corrigido em `ArqueiroTripo.cs`; `Escala` ajusta o tamanho). Esquiva toca o clipe de mergulho, segurar o tiro saca o arco, soltar atira. O arqueiro modular antigo continua em `Arqueiro.tscn`.
