@@ -21,10 +21,12 @@ public partial class Arrow : Node3D
     public void Lancar(Vector3 origem, Vector3 dir, float vel, float dano, float alcance, float carga, Rid excluir)
     {
         GlobalPosition = origem;
+        ResetPhysicsInterpolation(); // sem isto a interpolação desenha a flecha vindo da origem do mundo
         _dir = dir.Normalized();
         _vel = vel; _dano = dano; _alcance = alcance; _carga = carga; _excluir = excluir;
         _viva = true;
         LookAt(origem + _dir, Vector3.Up);
+        ResetPhysicsInterpolation();
         _rastro = Efeitos.Rastro(this);
     }
 
@@ -75,6 +77,7 @@ public partial class Arrow : Node3D
         _cravada = true;
         _rastro.Emitting = false;
         GlobalPosition = pos + _dir * ArqueiroStats.F("flecha_cravada_fundo");
+        ResetPhysicsInterpolation();
     }
 
     // Alcance esgotado: a flecha cai e some (some depois do tempo de cravada, sem física).

@@ -30,6 +30,10 @@ public partial class ArqueiroAnimadorTripo : Node
     string _clipe = "locomocao";
     public string ClipeAtual => _clipe;
 
+    /// <summary>O clipe de tiro chegou ao quadro de solte (a flecha real sai agora).</summary>
+    public bool SoltouFlecha => _a != null && _a.Call("shoot_solta").AsBool();
+    public bool TiroTerminou => _a == null || _a.Call("shoot_terminou").AsBool();
+
     public void Iniciar(ArqueiroTripo corpo) => _a = corpo.Animado;
 
     public void Atualizar(Estado est, float velHoriz, float carga01, float delta)
@@ -51,12 +55,11 @@ public partial class ArqueiroAnimadorTripo : Node
             switch (est)
             {
                 case Estado.Esquiva: _a.Call("tocar", "dash"); break;
-                case Estado.Carregando: _a.Call("tocar", "sacar_arco"); break;
-                case Estado.Disparo: _a.Call("tocar", "shoot"); break;
+                case Estado.Carregando: _a.Call("tocar", "shoot"); break;
+                case Estado.Disparo: break;
                 case Estado.Dano: _a.Call("tocar", "hurt"); break;
                 case Estado.Morte: _a.Call("tocar", "fall"); break;
                 case Estado.Locomocao:
-                    if (_ant == Estado.Carregando) _a.Call("tocar", "guardar_arco");
                     break;
             }
             _ant = est;
@@ -64,8 +67,12 @@ public partial class ArqueiroAnimadorTripo : Node
         // o arco só fica guardado fora do tiro: carregando/atirando garante o arco na mão mesmo se o estado do clipe se perdeu
         bool mira = est == Estado.Carregando || est == Estado.Disparo;
         _a.Set("segurando", mira);
-        if (mira && !_a.Call("em_arco").AsBool())
-            _a.Call("tocar", est == Estado.Disparo ? "shoot" : "sacar_arco");
+        if (mira)
+        {
+            // a flecha segue o clipe shoot: carga controla a corda, o solte do clipe dispara a flecha real
+            if (_a.Call("estado_atual").AsString() != "shoot") _a.Call("tocar", "shoot");
+            _a.Call("mirar", carga01, est == Estado.Disparo);
+        }
         _clipe = _a.Call("estado_atual").AsString();
     }
 }

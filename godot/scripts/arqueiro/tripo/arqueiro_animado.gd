@@ -141,7 +141,17 @@ func _ready() -> void:
 			an2.timeline_length = RECORTE[estado][1]
 			an2.stretch_time_scale = false
 			an2.loop_mode = Animation.LOOP_LINEAR if estado == "arco" else Animation.LOOP_NONE
-		sm.add_node(estado, an2, Vector2(300, y))
+		if estado == "shoot":
+			# tiro controlado pela carga: TimeScale permite segurar a corda cheia e acelerar o solte
+			var bts := AnimationNodeBlendTree.new()
+			var ts_s := AnimationNodeTimeScale.new()
+			bts.add_node("Anim", an2, Vector2(-300, 0))
+			bts.add_node("Escala", ts_s, Vector2(0, 0))
+			bts.connect_node("Escala", 0, "Anim")
+			bts.connect_node("output", 0, "Escala")
+			sm.add_node(estado, bts, Vector2(300, y))
+		else:
+			sm.add_node(estado, an2, Vector2(300, y))
 		y += 80.0
 		var ida := AnimationNodeStateMachineTransition.new()
 		ida.xfade_time = XFADE_IN
@@ -168,6 +178,22 @@ func _ready() -> void:
 	_playback.start("Locomocao")
 
 var _mist := 0.0
+var _pos_shoot := 0.0     # posicao do clipe shoot (s), acumulada aqui com a escala de tempo aplicada
+var _solto := false
+var _carga := 0.0
+var _escala_shoot := 1.0
+
+# Chamado todo quadro pelo controlador: carga 0..1 e se o botao ja foi solto.
+# Segura a corda cheia (T_FULL) enquanto carrega; ao soltar corre ate T_REL (solte) e segue ate T_END.
+func mirar(carga: float, solto: bool) -> void:
+	_carga = carga
+	_solto = solto
+
+func shoot_solta() -> bool:
+	return estado_atual() == "shoot" and _pos_shoot >= ArcoPoses.T_REL
+
+func shoot_terminou() -> bool:
+	return estado_atual() != "shoot" or _pos_shoot >= ArcoPoses.T_END - XFADE_OUT
 
 # Camada de pernas: a maquina de estados (tronco, bracos, arco) fica em "Sm"; as pernas vem da locomocao
 # (idle/walk/run casados com a velocidade real) quando o personagem se move nos estados de arco.
@@ -197,6 +223,15 @@ func duracao(estado: String) -> float:
 	return RECORTE[estado][1] if estado in RECORTE else 0.0
 
 func tocar(estado: String) -> void:
+	if estado == "shoot":
+		_pos_shoot = 0.0
+		_solto = false
+		_fila.clear()
+		if not (estado_atual() in ESTADOS_ARCO):
+			_playback.travel("shoot")
+			return
+		if estado_atual() == "shoot":
+			return
 	# one-shot: "slash", "dash", "hurt", "jump", "turn", "fall"
 	# arco: "sacar_arco" (0.6 s) -> "arco" (guarda, loop) ; "shoot" (1.2 s) a partir de "arco" (se nao estiver, saca antes);
 	#       "guardar_arco" (0.6 s) volta o arco para as costas (tambem automatico apos ARCO_TIMEOUT s parado)
@@ -363,6 +398,18 @@ func _process(delta: float) -> void:
 	$Arvore.set("parameters/LocoPernas/blend_position", _vel_atual)
 	$Arvore.set("parameters/EscalaPernas/scale", ts_alvo)
 	var est := estado_atual()
+	if est == "shoot":
+		var alvo_pos := ArcoPoses.T_FULL * _carga
+		var esc := 1.0
+		if _solto:
+			esc = 3.0 if _pos_shoot < ArcoPoses.T_REL - 0.03 else 1.0
+		else:
+			esc = clampf((alvo_pos - _pos_shoot) / 0.05, 0.0, 2.5)
+			if _pos_shoot >= ArcoPoses.T_FULL:
+				esc = 0.0
+		_escala_shoot = esc
+		$Arvore.set("parameters/Sm/shoot/Escala/scale", esc)
+		_pos_shoot += delta * esc
 	# nos estados de arco (sacar, mirar, atirar) as pernas seguem a locomocao: anda com o arco na mao, sem patinar
 	var alvo_mist := clampf(_vel_atual * 8.0, 0.0, 1.0) if est in ESTADOS_ARCO else 0.0
 	_mist = lerpf(_mist, alvo_mist, 1.0 - exp(-14.0 * delta))
@@ -384,7 +431,10 @@ func _process(delta: float) -> void:
 	else:
 		_t_arco = 0.0
 	# ao fim do one-shot vai para o proximo estado (o AT_END automatico nao disparou nesta versao; fazemos explicitamente)
-	if est != "Locomocao" and est != "arco" and est != "":
+	if est == "shoot":
+		if _solto and _pos_shoot >= ArcoPoses.T_END - XFADE_OUT:
+			_playback.travel("Locomocao")
+	elif est != "Locomocao" and est != "arco" and est != "":
 		var restante := _playback.get_current_length() - _playback.get_current_play_position()
 		if restante <= XFADE_OUT + 0.02:
 			var prox: String = FIM.get(est, "Locomocao")
