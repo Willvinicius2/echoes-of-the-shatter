@@ -41,7 +41,7 @@ public partial class ArqueiroController : CharacterBody3D
     {
         AddToGroup(Camadas.GrupoJogador);
         CollisionLayer = Camadas.Jogador;
-        CollisionMask = Camadas.Mundo;
+        CollisionMask = Camadas.Mundo | Camadas.Alvo; // bonecos de treino tambem bloqueiam
         Modelo = GetNode<Node3D>(CaminhoModelo);
         var corpo = Modelo.GetNode("Corpo");
         if (corpo is ArqueiroTripo tripo)

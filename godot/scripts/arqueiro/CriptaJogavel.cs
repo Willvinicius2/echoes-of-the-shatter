@@ -20,8 +20,38 @@ public partial class CriptaJogavel : Node3D
         // o clima por andar segue a câmera do jogo (propriedade Alvo)
         var amb = GetNodeOrNull("Cripta/Ambiente");
         amb?.Set("alvo_path", amb.GetPathTo(_jogo));
+        CriarColisaoProps();
         Definir(false);
         if (System.Array.Exists(OS.GetCmdlineUserArgs(), a => a == "--arqueiro-teste")) AddChild(new AutoTeste());
+    }
+
+    static readonly string[] PrefixosSolidos = { "Braseiro", "PilarParede", "PilarCobertura", "Pilar_", "Coluna", "Estatua", "Pedestal", "Altar" };
+
+    // Os props da Cripta vieram sem colisao: cria uma caixa fixa (camada Mundo) em volta de cada prop solido.
+    void CriarColisaoProps()
+    {
+        var props = GetNodeOrNull("Cripta/Props");
+        if (props == null) return;
+        foreach (var n in props.FindChildren("*", "Node3D", true, false))
+        {
+            if (n is not Node3D raiz || raiz.GetChildCount() == 0) continue;
+            bool solido = false;
+            foreach (var pf in PrefixosSolidos) if (raiz.Name.ToString().StartsWith(pf)) solido = true;
+            if (!solido || raiz.GetParent().Name.ToString().StartsWith("Braseiro")) continue;
+            bool temMalha = false; Aabb caixa = default;
+            foreach (var m in raiz.FindChildren("*", "MeshInstance3D", true, false))
+            {
+                var mi = (MeshInstance3D)m;
+                var a = mi.GlobalTransform * mi.GetAabb();
+                caixa = temMalha ? caixa.Merge(a) : a; temMalha = true;
+            }
+            if (!temMalha || caixa.Size.Y < 0.3f) continue;
+            var corpo = new StaticBody3D { CollisionLayer = Camadas.Mundo, CollisionMask = 0 };
+            var forma = new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(caixa.Size.X * 0.85f, caixa.Size.Y, caixa.Size.Z * 0.85f) } };
+            corpo.AddChild(forma);
+            AddChild(corpo);
+            corpo.GlobalPosition = caixa.GetCenter();
+        }
     }
 
     void Definir(bool estudio)
