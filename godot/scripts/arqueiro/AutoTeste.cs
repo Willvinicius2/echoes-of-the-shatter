@@ -210,6 +210,18 @@ public partial class AutoTeste : Node
             }
             GD.Print($"TESTE: mira com camera em movimento: pos_heroi={_h.GlobalPosition} erro_max={maxErro:0.000} m erro_medio={somaErro / Mathf.Max(nErro, 1):0.000} m fps={Engine.GetFramesPerSecond()}; ponto de mira andou {(ultimo - primeiro).Length():0.00} m (esperado >0: mouse parado, mundo corre)");
             Clique(px, true); await Espera(0.5f);
+            {
+                // pernas devem andar enquanto carrega o arco movendo: mede a variacao do pe esquerdo no esqueleto
+                var sk = _h.Modelo.FindChild("Skeleton3D", true, false) as Skeleton3D;
+                int bi = sk?.FindBone("mixamorig_LeftFoot") ?? -1;
+                if (bi >= 0)
+                {
+                    float mn = float.MaxValue, mx = float.MinValue;
+                    for (int i = 0; i < 40; i++) { await Fisica(); if (i % 8 == 0) GD.Print($"TESTE:   t={i} estado={_h.EstadoAtual} clipe={_h.ClipeAtual}"); float z = sk.GetBoneGlobalPose(bi).Origin.Z; mn = Mathf.Min(mn, z); mx = Mathf.Max(mx, z); }
+                    var an = _h.Modelo.FindChild("ArqueiroAnimado", true, false);
+                    GD.Print($"TESTE: pernas andando com arco: estado={_h.EstadoAtual} clipe={_h.ClipeAtual} vel={new Vector2(_h.Velocity.X, _h.Velocity.Z).Length():0.00} mistura={an?.Get("_mist")} oscilacao_pe={mx - mn:0.000} (esperado > 0,05)");
+                }
+            }
             var dm = _h.DirMira; Clique(px, false);
             Arrow f = null; for (int i = 0; i < 30 && f == null; i++) { await Fisica(); f = UltimaFlecha(); }
             if (f != null) { var q0 = f.GlobalPosition; await Fisica(3); if (IsInstanceValid(f)) GD.Print($"TESTE:   tiro andando: dir_real vs DirMira = {Angulo(f.GlobalPosition - q0, dm):0.00} graus"); }

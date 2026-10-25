@@ -61,6 +61,11 @@ public partial class ArqueiroAnimadorTripo : Node
             }
             _ant = est;
         }
+        // o arco só fica guardado fora do tiro: carregando/atirando garante o arco na mão mesmo se o estado do clipe se perdeu
+        bool mira = est == Estado.Carregando || est == Estado.Disparo;
+        _a.Set("segurando", mira);
+        if (mira && !_a.Call("em_arco").AsBool())
+            _a.Call("tocar", est == Estado.Disparo ? "shoot" : "sacar_arco");
         _clipe = _a.Call("estado_atual").AsString();
     }
 }

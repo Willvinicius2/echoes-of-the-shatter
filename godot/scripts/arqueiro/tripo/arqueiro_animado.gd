@@ -52,6 +52,7 @@ const ESTADOS_ARCO := ["shoot", "arco", "sacar_arco", "guardar_arco"]
 @export var velocidade: float = 0.0   # 0 idle, 0.5 walk, 1 run (alvo)
 @export var suavizacao: float = 10.0  # 1/s, aproximacao da velocidade ao alvo
 
+@export var segurando: bool = false   # o controlador esta carregando/atirando: nao guardar o arco sozinho
 @export var flecha_visual_voo: bool = true  # false no jogo: o Arrow.tscn faz o voo
 const PASSO_WALK := 0.51
 const PASSO_RUN := 1.59
@@ -225,6 +226,9 @@ func tocar(estado: String) -> void:
 			_fila.clear()
 	_playback.travel(estado)
 
+func em_arco() -> bool:
+	return estado_atual() in ESTADOS_ARCO
+
 func estado_atual() -> String:
 	return String(_playback.get_current_node()) if _playback else ""
 
@@ -247,7 +251,7 @@ func _atualizar_props(est: String) -> void:
 	if _corda:
 		_corda.visible = na_mao
 	if _arco_costas:
-		_arco_costas.visible = not na_mao
+		_arco_costas.visible = false  # fora do tiro nenhum arco aparece nas costas
 	var em_tiro := est == "shoot"
 	if _flecha_mao:
 		_flecha_mao.visible = em_tiro and pos >= ArcoPoses.T_GRAB and pos < ArcoPoses.T_NOCK
@@ -372,7 +376,7 @@ func _process(delta: float) -> void:
 			_voo_t = -1.0
 			_flecha_voo.visible = false
 	if est == "arco":
-		_t_arco += delta
+		_t_arco = 0.0 if segurando else _t_arco + delta
 		if not _fila.is_empty():
 			_playback.travel(_fila.pop_front())
 		elif _t_arco > ARCO_TIMEOUT:
