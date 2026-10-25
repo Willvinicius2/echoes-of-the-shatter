@@ -45,7 +45,7 @@ public partial class ArqueiroAnimadorTripo : Node
                     : Mathf.Clamp(0.5f + 0.5f * (ratio - ArqueiroStats.F("mov_razao_andar")) / (1f - ArqueiroStats.F("mov_razao_andar")), 0.5f, 1f);
         }
         _a.Set("velocidade", vel);
-        _a.Set("vel_real", est == Estado.Locomocao ? velHoriz : 0f);
+        _a.Set("vel_real", est == Estado.Locomocao || est == Estado.Carregando || est == Estado.Disparo ? velHoriz : 0f);
         if (est != _ant)
         {
             switch (est)

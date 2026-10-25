@@ -159,12 +159,38 @@ func _ready() -> void:
 	sm.add_transition("Start", "Locomocao", AnimationNodeStateMachineTransition.new())
 
 	var arv: AnimationTree = $Arvore
-	arv.tree_root = sm
+	arv.tree_root = _camada_pernas(sm, loco.duplicate(true), p)
 	arv.anim_player = arv.get_path_to(p)
 	arv.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_IDLE
 	arv.active = true
-	_playback = arv.get("parameters/playback")
+	_playback = arv.get("parameters/Sm/playback")
 	_playback.start("Locomocao")
+
+var _mist := 0.0
+
+# Camada de pernas: a maquina de estados (tronco, bracos, arco) fica em "Sm"; as pernas vem da locomocao
+# (idle/walk/run casados com a velocidade real) quando o personagem se move nos estados de arco.
+func _camada_pernas(sm: AnimationNodeStateMachine, loco2: AnimationNodeBlendSpace1D, p: AnimationPlayer) -> AnimationNodeBlendTree:
+	var raiz := AnimationNodeBlendTree.new()
+	var ts2 := AnimationNodeTimeScale.new()
+	var mist := AnimationNodeBlend2.new()
+	mist.filter_enabled = true
+	if p.has_animation("walk"):
+		var a := p.get_animation("walk")
+		for i in a.get_track_count():
+			var caminho := String(a.track_get_path(i))
+			var osso := caminho.get_slice(":", 1) if ":" in caminho else ""
+			if osso.contains("Leg") or osso.contains("Foot") or osso.contains("Toe"):
+				mist.set_filter_path(a.track_get_path(i), true)
+	raiz.add_node("Sm", sm, Vector2(-400, 0))
+	raiz.add_node("LocoPernas", loco2, Vector2(-400, 200))
+	raiz.add_node("EscalaPernas", ts2, Vector2(-200, 200))
+	raiz.add_node("Mistura", mist, Vector2(0, 0))
+	raiz.connect_node("EscalaPernas", 0, "LocoPernas")
+	raiz.connect_node("Mistura", 0, "Sm")
+	raiz.connect_node("Mistura", 1, "EscalaPernas")
+	raiz.connect_node("output", 0, "Mistura")
+	return raiz
 
 func duracao(estado: String) -> float:
 	return RECORTE[estado][1] if estado in RECORTE else 0.0
@@ -328,9 +354,15 @@ func _process(delta: float) -> void:
 		_vel_atual = lerpf(_vel_atual, alvo, 1.0 - exp(-suavizacao * delta))
 	else:
 		_vel_atual = lerpf(_vel_atual, velocidade, 1.0 - exp(-suavizacao * delta))
-	$Arvore.set("parameters/Locomocao/Loco/blend_position", _vel_atual)
-	$Arvore.set("parameters/Locomocao/Escala/scale", ts_alvo)
+	$Arvore.set("parameters/Sm/Locomocao/Loco/blend_position", _vel_atual)
+	$Arvore.set("parameters/Sm/Locomocao/Escala/scale", ts_alvo)
+	$Arvore.set("parameters/LocoPernas/blend_position", _vel_atual)
+	$Arvore.set("parameters/EscalaPernas/scale", ts_alvo)
 	var est := estado_atual()
+	# nos estados de arco (sacar, mirar, atirar) as pernas seguem a locomocao: anda com o arco na mao, sem patinar
+	var alvo_mist := clampf(_vel_atual * 8.0, 0.0, 1.0) if est in ESTADOS_ARCO else 0.0
+	_mist = lerpf(_mist, alvo_mist, 1.0 - exp(-14.0 * delta))
+	$Arvore.set("parameters/Mistura/blend_amount", _mist)
 	_atualizar_props(est)
 	# voo da flecha: translacao em linha reta por FLECHA_VOO s
 	if _voo_t >= 0.0:
