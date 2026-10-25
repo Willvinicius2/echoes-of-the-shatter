@@ -7,9 +7,12 @@ extends Node3D
 #   dos estados de arco, crossfade 0.12 s ida / 0.2 s volta.
 
 const ArcoPoses := preload("res://scripts/arqueiro/tripo/arco_poses.gd")
+const RetargetUal := preload("res://scripts/arqueiro/tripo/retarget_ual.gd")
+const UAL_GLB := "res://art/models/personagens/ual/ual_standard.glb"
+const ROLL_DUR := 0.42  # s: o Roll do Quaternius (CC0) retargetado e comprimido para casar com a esquiva
 const LOOPS := ["idle", "walk", "run", "arco_segurando"]
-const ONE_SHOTS := {
-	"slash": "slash", "shoot": "shoot", "dash": "dive", "hurt": "hurt_pe",
+var ONE_SHOTS := {
+	"slash": "slash", "shoot": "shoot", "dash": "roll", "hurt": "hurt_pe",
 	"jump": "jump", "turn": "turn", "fall": "fall", "arco": "arco_segurando",
 	"sacar_arco": "sacar_arco", "guardar_arco": "guardar_arco",
 }
@@ -17,7 +20,7 @@ const ONE_SHOTS := {
 const RECORTE := {
 	"slash": [1.2, 0.8],
 	"shoot": [0.0, 1.2],
-	"dash": [0.05, 0.55],
+	"dash": [0.0, 0.42],
 	"hurt": [0.0, 0.45],
 	"jump": [0.0, 0.8],
 	"turn": [0.0, 0.8],
@@ -47,6 +50,8 @@ const HURT_W := [0.0, 1.0, 0.55, 0.2, 0.0]
 const REST_Y := 0.48  # altura do Hips em idle (o hurt do mocap e todo sentado no chao: y=0.09)
 const XFADE_IN := 0.12
 const XFADE_OUT := 0.2
+# quanto falta do one-shot (s) para iniciar a saida (padrao XFADE_OUT + 0.02); o rolamento termina junto da esquiva
+const SAIDA_ANT := {"dash": 0.08}
 const ESTADOS_ARCO := ["shoot", "arco", "sacar_arco", "guardar_arco"]
 
 @export var velocidade: float = 0.0   # 0 idle, 0.5 walk, 1 run (alvo)
@@ -74,6 +79,20 @@ var _disparou := false
 var _fila: Array = []
 var _t_arco := 0.0
 
+# esquiva: rolamento da Universal Animation Library (Quaternius, CC0) retargetado para o esqueleto do arqueiro
+func _criar_roll(p: AnimationPlayer) -> void:
+	var sk0 := $Modelo.find_child("Skeleton3D", true, false) as Skeleton3D
+	if sk0 == null or not ResourceLoader.exists(UAL_GLB):
+		ONE_SHOTS["dash"] = "dive"
+		return
+	var ual: Node = (load(UAL_GLB) as PackedScene).instantiate()
+	var a := RetargetUal.gerar(sk0, ual, "Roll", ROLL_DUR)
+	ual.free()
+	if a == null:
+		ONE_SHOTS["dash"] = "dive"
+		return
+	p.get_animation_library("").add_animation("roll", a)
+
 func player() -> AnimationPlayer:
 	return $Modelo.find_child("AnimationPlayer", true, false) as AnimationPlayer
 
@@ -81,6 +100,7 @@ func _ready() -> void:
 	var p := player()
 	if p == null:
 		return
+	_criar_roll(p)
 	for n in p.get_animation_list():
 		var a := p.get_animation(n)
 		a.loop_mode = Animation.LOOP_LINEAR if n in LOOPS else Animation.LOOP_NONE
@@ -436,7 +456,7 @@ func _process(delta: float) -> void:
 			_playback.travel("Locomocao")
 	elif est != "Locomocao" and est != "arco" and est != "":
 		var restante := _playback.get_current_length() - _playback.get_current_play_position()
-		if restante <= XFADE_OUT + 0.02:
+		if restante <= SAIDA_ANT.get(est, XFADE_OUT + 0.02):
 			var prox: String = FIM.get(est, "Locomocao")
 			if est == "sacar_arco" and not _fila.is_empty():
 				prox = _fila.pop_front()
