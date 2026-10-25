@@ -14,11 +14,13 @@ const CIMA := Vector3(0, 1, 0)
 const FINGERS := ["Index", "Middle", "Ring", "Pinky", "Thumb"]
 
 # parametros ajustaveis (espaco do esqueleto, relativos aos ombros / cabeca)
-var L_HOLD := Vector3(0.14, -0.10, 0.045)     # pulso esquerdo relativo ao ombro esquerdo (arco em guarda)
+var L_HOLD := Vector3(0.11, -0.22, -0.075)     # pulso esquerdo relativo ao ombro esquerdo (arco em guarda)
 var L_AIM := Vector3(0.215, 0.025, 0.06)      # pulso esquerdo no tiro (estendido, levemente erguido)
 var L_COSTAS := Vector3(-0.11, 0.03, -0.09)   # mao esquerda atras do ombro (sacar/guardar)
 var R_QUIVER := Vector3(-0.075, 0.115, 0.04)  # nocas da mao direita relativas ao ombro direito (aljava)
 var ANCHOR := Vector3(0.105, 0.845, 0.04)     # posicao absoluta da mao direita no queixo
+# arco em guarda: pendurado ao lado do corpo, ponta de cima inclinada para frente (nao tampa o rosto)
+const HOLD_LONGO := Vector3(0.30, 0.954, 0.0)
 const POLE_L := Vector3(0.0, -1.0, -0.4)
 const POLE_R := Vector3(-0.5, -0.1, 1.0)
 
@@ -233,7 +235,7 @@ func _construir(base_anim: Animation, dur: float, fl: Callable, fr: Callable, no
 
 # ----- especificacoes por tempo -----
 func _hold_L(_t: float) -> Dictionary:
-	return {"off": L_HOLD, "long": CIMA, "belly": FRENTE, "w": 1.0, "curl": 1.0}
+	return {"off": L_HOLD, "long": HOLD_LONGO, "belly": FRENTE, "w": 1.0, "curl": 1.0}
 
 func _hold_R(_t: float, _c: Dictionary) -> Dictionary:
 	return {"w": 0.0}
@@ -253,7 +255,7 @@ const T_END := 1.2
 func _shoot_L(t: float) -> Dictionary:
 	var kl := _seg(t, 0.22, 0.62) * (1.0 - _seg(t, 1.0, 1.2))
 	var belly := FRENTE.lerp(draw_dir(), kl).normalized()
-	return {"off": L_HOLD.lerp(L_AIM, kl), "long": CIMA, "belly": belly, "w": 1.0, "curl": 1.0}
+	return {"off": L_HOLD.lerp(L_AIM, kl), "long": HOLD_LONGO.lerp(CIMA, kl).normalized(), "belly": belly, "w": 1.0, "curl": 1.0}
 
 func _shoot_R(t: float, c: Dictionary) -> Dictionary:
 	var w := _seg(t, 0.0, 0.1) * (1.0 - _seg(t, 1.08, 1.2))
@@ -308,7 +310,7 @@ func _sacar_L(t: float) -> Dictionary:
 		off = Vector3(0.10, -0.20, -0.04).lerp(L_COSTAS, up)
 	else:
 		off = L_COSTAS.lerp(L_HOLD, fw)
-		lg = LONG_COSTAS.lerp(CIMA, fw).normalized()
+		lg = LONG_COSTAS.lerp(HOLD_LONGO, fw).normalized()
 		bl = BELLY_COSTAS.lerp(FRENTE, fw).normalized()
 	return {"off": off, "long": lg, "belly": bl, "w": _seg(t, 0.0, 0.12), "curl": _seg(t, 0.12, T_SWAP_SACAR)}
 
