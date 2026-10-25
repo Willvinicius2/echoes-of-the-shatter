@@ -253,14 +253,33 @@ public partial class ArqueiroController : CharacterBody3D
         float vel = Mathf.Lerp(ArqueiroStats.F("flecha_vel_min"), ArqueiroStats.F("flecha_vel_max"), c);
         float dano = Mathf.Lerp(ArqueiroStats.F("flecha_dano_min"), ArqueiroStats.F("flecha_dano_max"), c);
         float alc = Mathf.Lerp(ArqueiroStats.F("flecha_alcance_min"), ArqueiroStats.F("flecha_alcance_max"), c);
-        var origem = GlobalPosition + Vector3.Up * ArqueiroStats.F("tiro_altura") + DirMira * ArqueiroStats.F("tiro_frente");
+        var origem = PontoSaida();
+        // direção sempre do ponto de saída (arco/mão) até o ponto de mira, no plano horizontal:
+        // a flecha nasce sempre do mesmo ponto e converge na mira, sem desvio lateral
+        var dir = PontoMira - origem; dir.Y = 0;
+        dir = dir.Length() > ArqueiroStats.F("mira_dist_min") ? dir.Normalized() : DirMira;
+        // se o ponto de saída ficou atrás de uma parede (corpo colado nela), recua para antes dela
+        var centro = new Vector3(GlobalPosition.X, origem.Y, GlobalPosition.Z);
+        var q = PhysicsRayQueryParameters3D.Create(centro, origem, Camadas.Mundo);
+        q.Exclude = new Godot.Collections.Array<Rid> { GetRid() };
+        var hit = GetWorld3D().DirectSpaceState.IntersectRay(q);
+        if (hit.Count > 0) origem = (Vector3)hit["position"] - dir * 0.05f;
         var f = CenaFlecha.Instantiate<Arrow>();
         GetTree().CurrentScene.AddChild(f);
-        f.Lancar(origem, DirMira, vel, dano, alc, c, GetRid());
+        f.Lancar(origem, dir, vel, dano, alc, c, GetRid());
         _cdTiro = ArqueiroStats.F("tiro_recarga");
         Disparos++;
         _cam?.AdicionarTrauma(Mathf.Lerp(ArqueiroStats.F("cam_trauma_tiro_min"), ArqueiroStats.F("cam_trauma_tiro_max"), c));
         _cam?.Recuo(-DirMira * ArqueiroStats.F("cam_recuo") * c);
+    }
+
+    /// <summary>Ponto de onde a flecha sai: marcador "PontoFlecha" no modelo, senão o arco na mão; senão à frente do corpo.</summary>
+    Vector3 PontoSaida()
+    {
+        var m = Modelo.FindChild("PontoFlecha", true, false) as Node3D
+                ?? Modelo.FindChild("Att_arco", true, false) as Node3D;
+        if (m != null && m.IsInsideTree()) return m.GlobalPosition;
+        return GlobalPosition + Vector3.Up * ArqueiroStats.F("tiro_altura") + DirMira * ArqueiroStats.F("tiro_frente");
     }
 
     // ---------- dano / morte
