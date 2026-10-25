@@ -58,7 +58,7 @@ dano_teste,20,pv,dano da tecla de teste
 spawn_x,-2.5,m,entrada da Cripta (layout x)
 spawn_z,-3,m,entrada da Cripta (Godot z = -layout z)
 spawn_y,1.0,m,altura inicial (cai ate o chao)
-cam_dist,12,m,distancia da camera
+cam_dist,18,m,distancia da camera
 cam_yaw,45,graus,yaw da camera 3/4
 cam_pitch,-52,graus,pitch da camera
 cam_fov,38,graus,campo de visao

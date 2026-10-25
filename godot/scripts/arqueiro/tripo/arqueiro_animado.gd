@@ -1,4 +1,4 @@
-﻿extends Node3D
+extends Node3D
 # Arqueiro animado: AnimationTree com AnimationNodeStateMachine.
 #   Locomocao = BlendSpace1D (idle 0.0, walk 0.5, run 1.0) -> velocidade normalizada 0..1
 #   one-shots: slash, shoot, dash (anim "dive"), hurt, jump, turn, fall, arco (anim "arco_segurando")
@@ -53,6 +53,10 @@ const ESTADOS_ARCO := ["shoot", "arco", "sacar_arco", "guardar_arco"]
 @export var suavizacao: float = 10.0  # 1/s, aproximacao da velocidade ao alvo
 
 @export var flecha_visual_voo: bool = true  # false no jogo: o Arrow.tscn faz o voo
+const PASSO_WALK := 0.51
+const PASSO_RUN := 1.59
+@export var vel_real: float = -1.0     # m/s do mundo; >= 0 liga o casamento passo x velocidade
+@export var escala_corpo: float = 1.0  # escala 3D aplicada ao corpo (muda o passo em m/s)
 var _vel_atual := 0.0
 var _playback: AnimationNodeStateMachinePlayback
 var _espada_mao: Node
@@ -118,7 +122,14 @@ func _ready() -> void:
 	loco.sync = true
 
 	var sm := AnimationNodeStateMachine.new()
-	sm.add_node("Locomocao", loco, Vector2(0, 0))
+	# locomocao = blend space -> TimeScale (casa o passo com a velocidade real, sem patinar)
+	var bt := AnimationNodeBlendTree.new()
+	var ts := AnimationNodeTimeScale.new()
+	bt.add_node("Loco", loco, Vector2(-300, 0))
+	bt.add_node("Escala", ts, Vector2(0, 0))
+	bt.connect_node("Escala", 0, "Loco")
+	bt.connect_node("output", 0, "Escala")
+	sm.add_node("Locomocao", bt, Vector2(0, 0))
 	var y := -120.0
 	for estado in ONE_SHOTS:
 		var an2 := AnimationNodeAnimation.new()
@@ -299,8 +310,26 @@ func _disparar() -> void:
 func _process(delta: float) -> void:
 	if _playback == null:
 		return
-	_vel_atual = lerpf(_vel_atual, velocidade, 1.0 - exp(-suavizacao * delta))
-	$Arvore.set("parameters/Locomocao/blend_position", _vel_atual)
+	var ts_alvo := 1.0
+	if vel_real >= 0.0:
+		# vel_real em m/s do mundo; passo medido dos clipes (escala 1): walk 0.51 m/s, run 1.59 m/s
+		var vw := PASSO_WALK * escala_corpo
+		var vr := PASSO_RUN * escala_corpo
+		var alvo := 0.0
+		if vel_real < 0.15:
+			alvo = 0.0
+		elif vel_real < vw:
+			alvo = 0.5 * vel_real / vw
+		elif vel_real < vr:
+			alvo = 0.5 + 0.5 * (vel_real - vw) / (vr - vw)
+		else:
+			alvo = 1.0
+			ts_alvo = clampf(vel_real / vr, 1.0, 2.2)
+		_vel_atual = lerpf(_vel_atual, alvo, 1.0 - exp(-suavizacao * delta))
+	else:
+		_vel_atual = lerpf(_vel_atual, velocidade, 1.0 - exp(-suavizacao * delta))
+	$Arvore.set("parameters/Locomocao/Loco/blend_position", _vel_atual)
+	$Arvore.set("parameters/Locomocao/Escala/scale", ts_alvo)
 	var est := estado_atual()
 	_atualizar_props(est)
 	# voo da flecha: translacao em linha reta por FLECHA_VOO s

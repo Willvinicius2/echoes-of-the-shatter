@@ -9,7 +9,7 @@ namespace EchoesOfTheShatter.Arqueiro;
 /// </summary>
 public partial class ArqueiroTripo : Node3D
 {
-    [Export] public float Escala = 2.2f;
+    [Export] public float Escala = 1.5f;
     public Node3D Animado { get; private set; }
 
     public override void _Ready()
@@ -18,6 +18,7 @@ public partial class ArqueiroTripo : Node3D
         // o GLB mede ~1,0 m e olha para +X; o jogo usa +Z para frente e uma capsula de 1,8 m
         Animado.RotationDegrees = new Vector3(0, -90, 0);
         Animado.Scale = Vector3.One * Escala;
+        Animado.Set("escala_corpo", Escala);
         AddChild(Animado);
     }
 }
@@ -44,6 +45,7 @@ public partial class ArqueiroAnimadorTripo : Node
                     : Mathf.Clamp(0.5f + 0.5f * (ratio - ArqueiroStats.F("mov_razao_andar")) / (1f - ArqueiroStats.F("mov_razao_andar")), 0.5f, 1f);
         }
         _a.Set("velocidade", vel);
+        _a.Set("vel_real", est == Estado.Locomocao ? velHoriz : 0f);
         if (est != _ant)
         {
             switch (est)
