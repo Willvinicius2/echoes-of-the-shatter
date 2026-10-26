@@ -48,9 +48,19 @@ func _init() -> void:
 	await tira("tiro_carga_frente", 0, 0.9, 3.2, 1.0)
 	await tira("tiro_maos_close", 70, 0.95, 1.5, 1.1)
 	await tira("tiro_maos_close_lado", 90, 0.95, 1.5, 1.0)
+	Engine.time_scale = 0.15   # camera lenta: pega o quadro do solto
 	n.call("mirar", 1.0, true)
-	await create_timer(0.23).timeout
+	var guarda := 0
+	while not n.call("shoot_solta") and guarda < 3000:
+		await process_frame
+		guarda += 1
+	print("SOLTO ", guarda, " ", n.call("estado_atual"), " ", n.get("_pos_shoot"))
+	await process_frame
+	await process_frame
+	Engine.time_scale = 0.0001
 	await tira("tiro_solto_lado", 90, 0.9, 3.2, 1.0)
+	await tira("tiro_solto_34", 50, 0.9, 3.2, 1.2)
+	Engine.time_scale = 1.0
 	n.set("segurando", false)
 	await create_timer(2.67).timeout
 	n.call("tocar", "dash")

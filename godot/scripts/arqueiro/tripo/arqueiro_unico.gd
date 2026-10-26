@@ -376,6 +376,7 @@ func _montar_flechas(sk: Skeleton3D) -> void:
 	_flecha_mao.position = gr
 	mao.add_child(_flecha_mao)
 	var nock := BoneAttachment3D.new()
+	_nock_no = nock
 	nock.bone_name = "mixamorig_CordaNock"
 	nock.name = "AncoraCorda"
 	sk.add_child(nock)
@@ -437,6 +438,7 @@ func _process(delta: float) -> void:
 	_mist = lerpf(_mist, alvo_mist, 1.0 - exp(-14.0 * delta))
 	$Arvore.set("parameters/Mistura/blend_amount", _mist)
 	_atualizar_props(est)
+	_desenhar_corda()
 	# voo da flecha: translacao em linha reta por FLECHA_VOO s
 	if _voo_t >= 0.0:
 		_voo_t += delta
@@ -583,8 +585,83 @@ func _criar_hurt_pe(p: AnimationPlayer) -> void:
 	p.get_animation_library("").add_animation("hurt_pe", h)
 
 # ---------- arco como objeto (arco.glb) preso por osso
+var _mesh_arco: ArrayMesh
+var _corda_mi: MeshInstance3D
+var _corda_im := ImmediateMesh.new()
+var _nock_no: Node3D
+const CORDA_PONTA := Vector3(-0.121, 0.275, 0.0)   # pontas da corda no espaco do arco.glb (|y|)
+const CORDA_LARG := 0.0035
+
+# arco.glb sem a corda rigida da malha (a corda e procedural e estica com a carga)
+func _sem_corda(m: Mesh) -> ArrayMesh:
+	var arr := m.surface_get_arrays(0)
+	var v: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+	var idx: PackedInt32Array = arr[Mesh.ARRAY_INDEX]
+	var novo := PackedInt32Array()
+	for i in range(0, idx.size(), 3):
+		var corda := true
+		for k in 3:
+			var p := v[idx[i + k]]
+			if p.x > -0.112 or absf(p.y) > 0.265:
+				corda = false
+		if not corda:
+			novo.append(idx[i]); novo.append(idx[i + 1]); novo.append(idx[i + 2])
+	arr[Mesh.ARRAY_INDEX] = novo
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	am.surface_set_material(0, m.surface_get_material(0))
+	return am
+
 func _no_arco() -> Node3D:
-	return (load(ARCO_GLB) as PackedScene).instantiate() as Node3D
+	var n := (load(ARCO_GLB) as PackedScene).instantiate() as Node3D
+	var mi := n.find_child("arco_rest", true, false) as MeshInstance3D
+	if mi:
+		if _mesh_arco == null:
+			_mesh_arco = _sem_corda(mi.mesh)
+		mi.mesh = _mesh_arco
+	return n
+
+func _seg_corda(a: Vector3, b: Vector3, w: float) -> void:
+	var d := (b - a)
+	if d.length() < 0.0001:
+		return
+	d = d.normalized()
+	var p1 := d.cross(Vector3.UP)
+	if p1.length() < 0.01:
+		p1 = d.cross(Vector3.RIGHT)
+	p1 = p1.normalized() * w
+	var p2 := d.cross(p1).normalized() * w
+	for q in [p1, p2]:
+		_corda_im.surface_add_vertex(a - q); _corda_im.surface_add_vertex(a + q); _corda_im.surface_add_vertex(b + q)
+		_corda_im.surface_add_vertex(a - q); _corda_im.surface_add_vertex(b + q); _corda_im.surface_add_vertex(b - q)
+
+# corda procedural: das duas pontas do arco ate o nock (que a mao direita puxa); reta quando o arco esta nas costas
+func _desenhar_corda() -> void:
+	if _corda_mi == null:
+		_corda_mi = MeshInstance3D.new()
+		_corda_mi.top_level = true
+		_corda_mi.mesh = _corda_im
+		_corda_mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var m := StandardMaterial3D.new()
+		m.albedo_color = Color(0.9, 0.78, 0.5)
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_corda_mi.material_override = m
+		add_child(_corda_mi)
+	_corda_im.clear_surfaces()
+	var arco: Node3D = _arco if (_arco and _arco.visible) else (_arco_costas if (_arco_costas and _arco_costas.visible) else null)
+	if arco == null:
+		return
+	var a := arco.to_global(CORDA_PONTA)
+	var b := arco.to_global(Vector3(CORDA_PONTA.x, -CORDA_PONTA.y, 0.0))
+	var nock := (a + b) * 0.5
+	if arco == _arco and _nock_no:
+		nock = _nock_no.global_position
+	var w := CORDA_LARG * global_basis.get_scale().x
+	_corda_im.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	_seg_corda(a, nock, w)
+	_seg_corda(nock, b, w)
+	_corda_im.surface_end()
 
 func sair_queda() -> void:
 	if _playback and estado_atual() == "fall":

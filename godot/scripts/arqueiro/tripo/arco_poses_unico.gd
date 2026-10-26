@@ -23,14 +23,14 @@ const FINGERS := ["Index", "Middle", "Ring", "Pinky", "Thumb"]
 
 # parametros ajustaveis (espaco do esqueleto, relativos aos ombros / cabeca)
 var L_HOLD := Vector3(0.11, -0.22, -0.075)     # pulso esquerdo relativo ao ombro esquerdo (arco em guarda)
-var L_AIM := Vector3(0.215, 0.025, 0.06)      # pulso esquerdo no tiro (estendido, levemente erguido)
+var L_AIM := Vector3(0.235, 0.09, 0.0)      # pulso esquerdo no tiro (estendido, levemente erguido)
 var L_COSTAS := Vector3(-0.11, 0.03, -0.09)   # mao esquerda atras do ombro (sacar/guardar)
 var R_QUIVER := Vector3(-0.075, 0.115, 0.04)  # nocas da mao direita relativas ao ombro direito (aljava)
-var ANCHOR := Vector3(0.105, 0.845, 0.04)     # posicao absoluta da mao direita no queixo
+var ANCHOR := Vector3(0.10, 0.805, 0.04)     # posicao absoluta da mao direita no queixo
 # arco em guarda: pendurado ao lado do corpo, ponta de cima inclinada para frente (nao tampa o rosto)
 const HOLD_LONGO := Vector3(0.30, 0.954, 0.0)
 const POLE_L := Vector3(0.0, -1.0, -0.4)
-const POLE_R := Vector3(-0.5, -0.1, 1.0)
+const POLE_R := Vector3(-1.0, 0.15, 0.35)   # cotovelo direito para tras, na linha da flecha
 
 var sk: Skeleton3D
 var idle: Animation
