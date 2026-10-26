@@ -26,21 +26,24 @@ var L_HOLD := Vector3(0.11, -0.22, -0.075)     # pulso esquerdo relativo ao ombr
 var L_COSTAS := Vector3(-0.11, 0.03, -0.09)   # mao esquerda atras do ombro (sacar/guardar)
 var R_QUIVER := Vector3(-0.075, 0.115, 0.04)  # nocas da mao direita relativas ao ombro direito (aljava)
 # ancora da mao da corda: nos dos dedos na BOCHECHA direita / canto da boca (cabeca a ~0.795..0.99, centro em z=0)
-var ANCHOR := Vector3(0.055, 0.782, 0.062)
+var ANCHOR := Vector3(0.055, 0.696, 0.062)   # canto da boca: o olho do chibi fica em ~0.73-0.75 (bem abaixo do osso Head, 0.795)
+const CABECA_INCLINA := -4.0    # queixo recolhido (cabeca olha um pouco para baixo, ao longo da flecha)
+const CABECA_LADO := -6.0       # orelha para o ombro do arco
+const OMBRO_SOBE := 8.0         # ombro do arco levemente erguido (a mira inteira sobe sem o braco cair abaixo do ombro)
 const MIRA_Y_OFF := 0.012       # o pulso do arco fica um pouco abaixo da linha da flecha (a flecha passa por cima do punho)
 const MIRA_ALCANCE := 0.965     # fracao do braco esticado (quase reto, sem travar o cotovelo)
 # tiro: torcao do corpo em torno de Y (mundo) para ficar de LADO para o alvo (ombro esquerdo a frente); cabeca volta a olhar o alvo
 const TORCAO := {"Hips": -36.0, "Spine": -14.0, "Spine1": -14.0, "Spine2": -14.0, "Neck": 16.0, "Head": 58.0}
 const OMBRO_FRENTE := -14.0     # LeftShoulder girado para frente: alonga o alcance do braco curto
-const PERNA_ABRE := 26.0        # graus de abertura de cada perna (base firme)
+const PERNA_ABRE := 32.0        # graus de abertura de cada perna (base firme)
 const JOELHO := 7.0             # dobra leve dos joelhos
-const QUEDA_QUADRIL := 0.042    # m: o quadril desce com a base aberta (pes continuam no chao)
+const QUEDA_QUADRIL := 0.06     # m: o quadril desce com a base aberta (pes continuam no chao)
 const PE_FRENTE_ALVO := Vector3(1.0, 0.0, 0.05)   # pe da frente (esquerdo) aponta para o alvo
 const PE_TRAS_ALVO := Vector3(0.25, 0.0, 1.0)     # pe de tras (direito) quase perpendicular
 # arco em guarda: pendurado ao lado do corpo, ponta de cima inclinada para frente (nao tampa o rosto)
 const HOLD_LONGO := Vector3(0.30, 0.954, 0.0)
 const POLE_L := Vector3(0.0, -1.0, -0.4)
-const POLE_R := Vector3(-1.0, 0.25, 0.12)   # cotovelo direito para tras, na altura do ombro, na linha da flecha
+const POLE_R := Vector3(-1.0, 0.0, 0.12)   # cotovelo direito para tras, na altura do ombro (nao acima), na linha da flecha
 
 var sk: Skeleton3D
 var idle: Animation
@@ -244,8 +247,13 @@ func _corpo_tiro(rot: Array, g: Dictionary, hips: Vector3, w: float) -> void:
 	for n in TORCAO:
 		_gira(rot, g, hips, n, CIMA, TORCAO[n] * w)
 	_gira(rot, g, hips, "LeftShoulder", CIMA, OMBRO_FRENTE * w)
-	# direita do quadril (apos a torcao): eixo dos joelhos
+	# direita do quadril (apos a torcao): eixo dos joelhos; frente do corpo = eixo para erguer o ombro do arco
 	var dir_q: Vector3 = (g[bi["Hips"]].basis * (rest_g[bi["Hips"]].basis.inverse() * Vector3(0, 0, 1))).normalized()
+	var fw_q := CIMA.cross(dir_q).normalized()
+	_gira(rot, g, hips, "LeftShoulder", fw_q, OMBRO_SOBE * w)
+	# cabeca de perfil para o alvo (+X): queixo recolhido (giro em Z) e orelha para o ombro do arco (giro em X)
+	_gira(rot, g, hips, "Head", Vector3(0, 0, 1), CABECA_INCLINA * w)
+	_gira(rot, g, hips, "Head", FRENTE, CABECA_LADO * w)
 	for lado in ["Left", "Right"]:
 		var s := 1.0 if lado == "Left" else -1.0
 		var alvo_pe := PE_FRENTE_ALVO if lado == "Left" else PE_TRAS_ALVO
