@@ -3,19 +3,19 @@ using Godot;
 namespace EchoesOfTheShatter.Arqueiro;
 
 /// <summary>
-/// Corpo do arqueiro modelado no Tripo (GLB animado + AnimationTree em arqueiro_animado.gd).
+/// Corpo do arqueiro de malha unica (GLB com roupa integrada + AnimationTree em arqueiro_unico.gd).
 /// Fica no lugar do ArqueiroModular. O ArqueiroAnimadorTripo traduz o Estado do controlador
 /// para a velocidade (0 idle, 0.5 andar, 1 correr) e para os one-shots do script GDScript.
 /// </summary>
 public partial class ArqueiroTripo : Node3D
 {
-    [Export] public float Escala = 1.5f;
+    [Export] public float Escala = 1.6f;   // malha unica mede ~0,92 m: 1,6 mantem os ~1,5 m do corpo anterior
     public Node3D Animado { get; private set; }
 
     public override void _Ready()
     {
-        Animado = GD.Load<PackedScene>("res://scenes/arqueiro/ArqueiroAnimadoTripo.tscn").Instantiate<Node3D>();
-        // o GLB mede ~1,0 m e olha para +X; o jogo usa +Z para frente e uma capsula de 1,8 m
+        Animado = GD.Load<PackedScene>("res://scenes/arqueiro/ArqueiroUnico.tscn").Instantiate<Node3D>();
+        // o GLB mede ~0,92 m e olha para +X; o jogo usa +Z para frente e uma capsula de 1,8 m
         Animado.RotationDegrees = new Vector3(0, -90, 0);
         Animado.Scale = Vector3.One * Escala;
         Animado.Set("escala_corpo", Escala);
@@ -60,6 +60,7 @@ public partial class ArqueiroAnimadorTripo : Node
                 case Estado.Dano: _a.Call("tocar", "hurt"); break;
                 case Estado.Morte: _a.Call("tocar", "fall"); break;
                 case Estado.Locomocao:
+                    if (_ant == Estado.Morte) _a.Call("sair_queda");
                     break;
             }
             _ant = est;
