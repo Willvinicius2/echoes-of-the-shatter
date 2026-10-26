@@ -18,6 +18,7 @@ const ARCO_GLB := "res://art/models/arqueiro_unico/arco.glb"
 const ARCO_PUNHO := Vector3(0.035, 0.03, 0.0)   # ponto de pegada no arco (espaco do arco.glb): empunhadura
 const ARCO_CORDA := Vector3(-0.122, 0.0, 0.0)   # centro da corda (onde a flecha encaixa)
 const ARCO_DESLOC_N := 0.025   # m: o eixo da empunhadura fica dentro da concha do punho (lado da palma)
+const ARCO_COSTAS_DESLOC := Vector3(-0.175, -0.04, -0.145)   # empunhadura do arco guardado, relativa ao Spine2 (atras e a esquerda)
 const LOOPS := ["idle", "walk", "run", "arco_segurando"]
 var ONE_SHOTS := {
 	"slash": "slash", "shoot": "shoot", "dash": "roll", "hurt": "hurt_pe",
@@ -117,6 +118,8 @@ func _ready() -> void:
 	if p == null:
 		return
 	_criar_clipes_ual(p)
+	if not p.has_animation("slash"):   # o GLB novo nao tem slash (o arqueiro nao usa espada)
+		ONE_SHOTS.erase("slash")
 	var sk_h := $Modelo.find_child("Skeleton3D", true, false) as Skeleton3D
 	_hips_rest = sk_h.get_bone_rest(sk_h.find_bone("mixamorig_Hips")).origin
 	for n in p.get_animation_list():
@@ -692,14 +695,15 @@ func _montar_arco(sk: Skeleton3D) -> void:
 	_arco.transform = rest_lh.affine_inverse() * T
 	_arco.visible = false
 	att.add_child(_arco)
-	# arco nas costas (Spine2): ventre para tras, inclinado na diagonal
+	# arco nas costas (Spine2): ventre para tras, na diagonal, deslocado para o lado ESQUERDO das costas
+	# (a aljava faz parte da malha e fica do lado direito: o arco nao a atravessa)
 	var sp := sk.find_bone("mixamorig_Spine2")
 	var rest_sp := sk.get_bone_global_rest(sp)
-	var longo := Vector3(-0.10, 0.85, -0.45).normalized()
+	var longo := Vector3(-0.10, 0.88, -0.42).normalized()
 	var bx := Vector3(-1, 0, 0)
 	bx = (bx - longo * longo.dot(bx)).normalized()
 	var Bc := Basis(bx, longo, bx.cross(longo)).orthonormalized()
-	var Tc := Transform3D(Bc, rest_sp.origin + Vector3(-0.145, 0.0, 0.0) - Bc * ARCO_PUNHO)
+	var Tc := Transform3D(Bc, rest_sp.origin + ARCO_COSTAS_DESLOC - Bc * ARCO_PUNHO)
 	var att2 := BoneAttachment3D.new()
 	att2.name = "AncoraArcoCostas"
 	att2.bone_name = "mixamorig_Spine2"

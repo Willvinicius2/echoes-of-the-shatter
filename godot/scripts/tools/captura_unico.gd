@@ -5,7 +5,7 @@ var n: Node3D
 var pasta := ""
 func _init() -> void:
 	var a := OS.get_cmdline_user_args()
-	pasta = a[0] if a.size() > 0 else "D:/openclaude/_trabalho-claude/arqueiro-tripo/malha_unica/capturas"
+	pasta = a[0] if a.size() > 0 else "D:/openclaude/_trabalho-claude/arqueiro-tripo/malha_unica/capturas_v2"
 	var esc := float(a[1]) if a.size() > 1 else 1.6
 	DirAccess.make_dir_recursive_absolute(pasta)
 	var raiz := Node3D.new(); root.add_child(raiz)
@@ -24,17 +24,15 @@ func _init() -> void:
 	cam = Camera3D.new(); cam.fov = 30; raiz.add_child(cam)
 	n.set("vel_real", 0.0)
 	await create_timer(0.50).timeout
-	# vistas (yaw: 0 = camera em +Z, de frente; 90 = lado +X; arqueiro olha para +Z)
+	# vistas (yaw: 0 = camera em +Z, de frente; 90 = lado +X; arqueiro olha para +Z = alvo)
 	await tira("idle_frente", 0, 0.8, 4.2, 0.9)
-	await tira("idle_lado", 90, 0.8, 4.2, 0.9)
-	await tira("idle_costas_arco", 180, 0.8, 3.2, 0.9)
-	await tira("idle_mao_close", 60, 0.75, 1.3, 0.8)
+	await tira("idle_costas", 180, 0.8, 3.2, 0.9)
+	await tira("idle_costas_34", 215, 0.8, 3.2, 0.9)
 	n.set("vel_real", 0.8)
 	await create_timer(0.67).timeout
 	await tira("walk_lado", 90, 0.8, 4.2, 0.9)
 	n.set("vel_real", 4.0)
 	await create_timer(0.67).timeout
-	await tira("run_lado", 90, 0.8, 4.2, 0.9)
 	await tira("run_34", 40, 0.8, 4.2, 1.1)
 	n.set("vel_real", 0.0)
 	await create_timer(0.50).timeout
@@ -43,38 +41,37 @@ func _init() -> void:
 	n.set("segurando", true)
 	await create_timer(2.00).timeout
 	n.call("mirar", 1.0, false)
-	await tira("tiro_carga_lado", 90, 0.9, 3.2, 1.0)
-	await tira("tiro_carga_34", 50, 0.9, 3.2, 1.2)
-	await tira("tiro_carga_frente", 0, 0.9, 3.2, 1.0)
-	await tira("tiro_maos_close", 70, 0.95, 1.5, 1.1)
-	await tira("tiro_maos_close_lado", 90, 0.95, 1.5, 1.0)
-	Engine.time_scale = 0.15   # camera lenta: pega o quadro do solto
+	# "lado" = camera perpendicular a flecha (ve o corpo de lado para o alvo, como a linha de cima da referencia)
+	# (o lado do peito e o -X da cena: o corpo fica de lado para o alvo com o ombro esquerdo a frente)
+	await tira("tiro_lado", 270, 0.9, 3.4, 1.0)
+	await tira("tiro_34", 310, 0.9, 3.4, 1.2)
+	await tira("tiro_frente", 0, 0.9, 3.4, 1.0)
+	await tira("tiro_costas", 90, 0.9, 3.4, 1.0)
+	await tira("tiro_maos_close", 270, 0.95, 1.6, 1.0)
+	# solto: espera shoot_solta() em camera lenta e congela o jogo (os timers da captura ignoram a escala de tempo)
+	Engine.time_scale = 0.15
 	n.call("mirar", 1.0, true)
 	var guarda := 0
 	while not n.call("shoot_solta") and guarda < 3000:
 		await process_frame
 		guarda += 1
 	print("SOLTO ", guarda, " ", n.call("estado_atual"), " ", n.get("_pos_shoot"))
-	await process_frame
-	await process_frame
+	await create_timer(0.45, true, false, true).timeout   # ~0.07 s de clipe apos o solte: corda ja estalou, mao da corda para tras
+	print("SOLTO quadro ", n.get("_pos_shoot"))
 	Engine.time_scale = 0.0001
-	await tira("tiro_solto_lado", 90, 0.9, 3.2, 1.0)
-	await tira("tiro_solto_34", 50, 0.9, 3.2, 1.2)
+	await tira("tiro_solto_lado", 270, 0.9, 3.4, 1.0)
+	await tira("tiro_solto_34", 310, 0.9, 3.4, 1.2)
 	Engine.time_scale = 1.0
 	n.set("segurando", false)
 	await create_timer(2.67).timeout
 	n.call("tocar", "dash")
 	await create_timer(0.23).timeout
-	await tira("dash_lado", 90, 0.6, 3.5, 0.8)
+	await tira("esquiva_lado", 90, 0.6, 3.5, 0.8)
 	await create_timer(0.67).timeout
 	n.call("tocar", "hurt")
 	await create_timer(0.13).timeout
 	await tira("hurt_lado", 90, 0.8, 4.2, 0.9)
-	await create_timer(0.67).timeout
-	n.call("tocar", "slash")
-	await create_timer(0.60).timeout
-	await tira("slash_lado", 90, 0.8, 4.2, 0.9)
-	await create_timer(2.00).timeout
+	await create_timer(1.0).timeout
 	n.call("tocar", "fall")
 	await create_timer(1.50).timeout
 	await tira("fall_lado", 90, 0.5, 4.2, 0.7)
@@ -84,6 +81,6 @@ func tira(nome: String, yaw_g: float, alvo_y: float, dist: float, alt: float) ->
 	var alvo := Vector3(0, alvo_y, 0.0) * (n.scale.x / 1.6)
 	cam.global_position = Vector3(sin(yaw) * dist, alt, cos(yaw) * dist)
 	cam.look_at(alvo, Vector3.UP)
-	await create_timer(0.10).timeout
+	await create_timer(0.10, true, false, true).timeout   # ignora Engine.time_scale (nao congela no quadro do solto)
 	await RenderingServer.frame_post_draw
 	get_root().get_viewport().get_texture().get_image().save_png("%s/%s.png" % [pasta, nome])

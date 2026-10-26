@@ -23,14 +23,24 @@ const FINGERS := ["Index", "Middle", "Ring", "Pinky", "Thumb"]
 
 # parametros ajustaveis (espaco do esqueleto, relativos aos ombros / cabeca)
 var L_HOLD := Vector3(0.11, -0.22, -0.075)     # pulso esquerdo relativo ao ombro esquerdo (arco em guarda)
-var L_AIM := Vector3(0.235, 0.09, 0.0)      # pulso esquerdo no tiro (estendido, levemente erguido)
 var L_COSTAS := Vector3(-0.11, 0.03, -0.09)   # mao esquerda atras do ombro (sacar/guardar)
 var R_QUIVER := Vector3(-0.075, 0.115, 0.04)  # nocas da mao direita relativas ao ombro direito (aljava)
-var ANCHOR := Vector3(0.10, 0.805, 0.04)     # posicao absoluta da mao direita no queixo
+# ancora da mao da corda: nos dos dedos na BOCHECHA direita / canto da boca (cabeca a ~0.795..0.99, centro em z=0)
+var ANCHOR := Vector3(0.055, 0.782, 0.062)
+const MIRA_Y_OFF := 0.012       # o pulso do arco fica um pouco abaixo da linha da flecha (a flecha passa por cima do punho)
+const MIRA_ALCANCE := 0.965     # fracao do braco esticado (quase reto, sem travar o cotovelo)
+# tiro: torcao do corpo em torno de Y (mundo) para ficar de LADO para o alvo (ombro esquerdo a frente); cabeca volta a olhar o alvo
+const TORCAO := {"Hips": -36.0, "Spine": -14.0, "Spine1": -14.0, "Spine2": -14.0, "Neck": 16.0, "Head": 58.0}
+const OMBRO_FRENTE := -14.0     # LeftShoulder girado para frente: alonga o alcance do braco curto
+const PERNA_ABRE := 26.0        # graus de abertura de cada perna (base firme)
+const JOELHO := 7.0             # dobra leve dos joelhos
+const QUEDA_QUADRIL := 0.042    # m: o quadril desce com a base aberta (pes continuam no chao)
+const PE_FRENTE_ALVO := Vector3(1.0, 0.0, 0.05)   # pe da frente (esquerdo) aponta para o alvo
+const PE_TRAS_ALVO := Vector3(0.25, 0.0, 1.0)     # pe de tras (direito) quase perpendicular
 # arco em guarda: pendurado ao lado do corpo, ponta de cima inclinada para frente (nao tampa o rosto)
 const HOLD_LONGO := Vector3(0.30, 0.954, 0.0)
 const POLE_L := Vector3(0.0, -1.0, -0.4)
-const POLE_R := Vector3(-1.0, 0.15, 0.35)   # cotovelo direito para tras, na linha da flecha
+const POLE_R := Vector3(-1.0, 0.25, 0.12)   # cotovelo direito para tras, na altura do ombro, na linha da flecha
 
 var sk: Skeleton3D
 var idle: Animation
@@ -206,6 +216,60 @@ func _curl_dir(rot: Array, s: float) -> void:
 			var rq: Quaternion = sk.get_bone_rest(b).basis.get_rotation_quaternion()
 			rot[b] = rq.slerp(curl_R[n], s * 0.8)
 
+# gira o osso `nome` em torno de um eixo do MUNDO (espaco de repouso do esqueleto) e recalcula a FK em `g`
+func _gira(rot: Array, g: Dictionary, hips: Vector3, nome: String, eixo: Vector3, graus: float) -> void:
+	if absf(graus) < 0.001:
+		return
+	var b: int = bi[nome]
+	var par := sk.get_bone_parent(b)
+	var Gp: Basis = g[par].basis if par >= 0 else Basis()
+	var R := Basis(eixo.normalized(), deg_to_rad(graus))
+	rot[b] = (Gp.inverse() * R * Gp * Basis(rot[b])).orthonormalized().get_rotation_quaternion()
+	var novo := _fk(rot, hips)
+	for k in novo:
+		g[k] = novo[k]
+
+func _yaw_entre(de: Vector3, para: Vector3) -> float:
+	var a := Vector2(de.x, de.z)
+	var b := Vector2(para.x, para.z)
+	if a.length() < 0.001 or b.length() < 0.001:
+		return 0.0
+	# rotacao em torno de +Y: x' = x cos + z sin, z' = -x sin + z cos -> angulo = atan2 no plano (z, x) invertido
+	return rad_to_deg(atan2(a.x * b.y - a.y * b.x, a.dot(b))) * -1.0
+
+# pose de tiro do corpo (peso w): torso de lado para o alvo, cabeca olhando ao longo da flecha, base aberta e firme
+func _corpo_tiro(rot: Array, g: Dictionary, hips: Vector3, w: float) -> void:
+	if w <= 0.0:
+		return
+	for n in TORCAO:
+		_gira(rot, g, hips, n, CIMA, TORCAO[n] * w)
+	_gira(rot, g, hips, "LeftShoulder", CIMA, OMBRO_FRENTE * w)
+	# direita do quadril (apos a torcao): eixo dos joelhos
+	var dir_q: Vector3 = (g[bi["Hips"]].basis * (rest_g[bi["Hips"]].basis.inverse() * Vector3(0, 0, 1))).normalized()
+	for lado in ["Left", "Right"]:
+		var s := 1.0 if lado == "Left" else -1.0
+		var alvo_pe := PE_FRENTE_ALVO if lado == "Left" else PE_TRAS_ALVO
+		# abre a perna para o lado do alvo (esq. -> +X, dir. -> -X) girando em torno de Z do mundo
+		_gira(rot, g, hips, lado + "UpLeg", Vector3(0, 0, 1), s * PERNA_ABRE * w)
+		# pe apontando: esquerdo para o alvo, direito perpendicular
+		var pe_fw: Vector3 = g[bi[lado + "ToeBase"]].origin - g[bi[lado + "Foot"]].origin
+		_gira(rot, g, hips, lado + "UpLeg", CIMA, _yaw_entre(pe_fw, alvo_pe) * w)
+		# joelho levemente dobrado (coxa a frente, canela para tras), pe volta a ficar plano
+		_gira(rot, g, hips, lado + "UpLeg", dir_q, -JOELHO * w)
+		_gira(rot, g, hips, lado + "Leg", dir_q, 2.0 * JOELHO * w)
+		_gira(rot, g, hips, lado + "Foot", dir_q, -JOELHO * w)
+		_gira(rot, g, hips, lado + "Foot", Vector3(0, 0, 1), -s * PERNA_ABRE * w)
+
+# alvo do pulso do arco: na linha da flecha (altura/lado da ancora), braco quase reto a frente do ombro
+func _alvo_mira(SL: Vector3) -> Vector3:
+	var la: float = (rest_g[bi["LeftForeArm"]].origin - rest_g[bi["LeftArm"]].origin).length()
+	var lb: float = (rest_g[bi["LeftHand"]].origin - rest_g[bi["LeftForeArm"]].origin).length()
+	var alc := (la + lb) * MIRA_ALCANCE
+	var alvo := Vector3(SL.x, ANCHOR.y - MIRA_Y_OFF, ANCHOR.z)
+	var dyz := Vector2(alvo.y - SL.y, alvo.z - SL.z).length_squared()
+	alvo.x = SL.x + sqrt(maxf(alc * alc - dyz, 0.0004))
+	return alvo
+
 # amostra uma pose. L = dict do braco esquerdo; fr = Callable(t, ctx) -> dict da mao direita
 func _amostra(L: Dictionary, fr: Callable, t: float, saida: Dictionary) -> void:
 	var rot := _base(t)
@@ -213,22 +277,36 @@ func _amostra(L: Dictionary, fr: Callable, t: float, saida: Dictionary) -> void:
 	var th := idle.find_track(NodePath(PFX + "Hips"), Animation.TYPE_POSITION_3D)
 	if th >= 0:
 		hips = idle.position_track_interpolate(th, t)
+	var wb: float = L.get("corpo", 0.0)
+	hips.y -= QUEDA_QUADRIL * wb
 	var g := _fk(rot, hips)
+	_corpo_tiro(rot, g, hips, wb)
 	var base := rot.duplicate()
 	var SL: Vector3 = g[bi["LeftArm"]].origin
 	var SR: Vector3 = g[bi["RightArm"]].origin
 	var bonesL := [bi["LeftArm"], bi["LeftForeArm"], bi["LeftHand"]]
 	var bonesR := [bi["RightArm"], bi["RightForeArm"], bi["RightHand"]]
-	var gh := _mao_arco(L["long"], L["belly"])
+	var pulso_alvo: Vector3 = SL + (L["off"] as Vector3)
+	var belly: Vector3 = L["belly"]
+	var longo: Vector3 = L["long"]
+	var km: float = L.get("mira", 0.0)
+	var mira_dir := FRENTE
+	if km > 0.0:
+		var alvo := _alvo_mira(SL)
+		mira_dir = (alvo + Vector3(0, MIRA_Y_OFF, 0) - ANCHOR).normalized()
+		pulso_alvo = pulso_alvo.lerp(alvo, km)
+		belly = FRENTE.lerp(mira_dir, km).normalized()
+		longo = HOLD_LONGO.lerp(CIMA, km).normalized()
+	var gh := _mao_arco(longo, belly)
 	var rl := rot.duplicate()
-	var infoL := _ik(rl, g, "Left", SL + (L["off"] as Vector3), POLE_L, gh)
+	var infoL := _ik(rl, g, "Left", pulso_alvo, POLE_L, gh)
 	var wL: float = L["w"]
 	for b in bonesL:
 		rot[b] = (base[b] as Quaternion).slerp(rl[b], wL)
 	_curl_esq(rot, L["curl"] * wL)
 	var GHL := Transform3D(infoL["GH"], infoL["wrist"])
 	var nock_rest_w: Vector3 = (GHL * nock_rest_hand).origin
-	var ctx := {"SL": SL, "SR": SR, "nock_rest_w": nock_rest_w, "belly": (L["belly"] as Vector3).normalized()}
+	var ctx := {"SL": SL, "SR": SR, "nock_rest_w": nock_rest_w, "belly": belly.normalized(), "mira_dir": mira_dir}
 	var R: Dictionary = fr.call(t, ctx)
 	var wR: float = R["w"]
 	var nockpos: Vector3 = rest_o[bi["CordaNock"]]
@@ -246,14 +324,17 @@ func _amostra(L: Dictionary, fr: Callable, t: float, saida: Dictionary) -> void:
 			nockpos = nockpos.lerp(loc, R["pull"])
 	saida["rot"] = rot
 	saida["nock_pos"] = nockpos
+	saida["hips"] = hips
 
 func _construir(base_anim: Animation, dur: float, fl: Callable, fr: Callable, nome: String) -> Animation:
 	var a := base_anim.duplicate() as Animation
 	a.length = dur
 	a.loop_mode = Animation.LOOP_NONE
 	var n := int(round(dur * FPS))
-	var ossos: Array = []
+	var ossos: Array = ["Hips", "Spine", "Spine1", "Spine2", "Neck", "Head", "LeftShoulder"]
 	for lado in ["Left", "Right"]:
+		for b in ["UpLeg", "Leg", "Foot"]:
+			ossos.append(lado + b)
 		for b in ["Arm", "ForeArm", "Hand"]:
 			ossos.append(lado + b)
 		for f in FINGERS:
@@ -276,6 +357,12 @@ func _construir(base_anim: Animation, dur: float, fl: Callable, fr: Callable, no
 		a.track_set_path(tn, pth_n)
 	while a.track_get_key_count(tn) > 0:
 		a.track_remove_key(tn, 0)
+	var th := a.find_track(NodePath(PFX + "Hips"), Animation.TYPE_POSITION_3D)
+	if th < 0:
+		th = a.add_track(Animation.TYPE_POSITION_3D)
+		a.track_set_path(th, NodePath(PFX + "Hips"))
+	while a.track_get_key_count(th) > 0:
+		a.track_remove_key(th, 0)
 	var tw := 0.0
 	for k in n + 1:
 		var t := minf(k / FPS, dur)
@@ -285,6 +372,7 @@ func _construir(base_anim: Animation, dur: float, fl: Callable, fr: Callable, no
 		for o in ossos:
 			a.rotation_track_insert_key(tracks[o], t, (out["rot"][bi[o]] as Quaternion))
 		a.position_track_insert_key(tn, t, out["nock_pos"])
+		a.position_track_insert_key(th, t, out["hips"])
 	print("ARCO anim ", nome, " ", n + 1, " quadros; torcao do punho (ultimo braco) max ", snappedf(tw, 0.1))
 	return a
 
@@ -295,11 +383,6 @@ func _hold_L(_t: float) -> Dictionary:
 func _hold_R(_t: float, _c: Dictionary) -> Dictionary:
 	return {"w": 0.0}
 
-func draw_dir() -> Vector3:
-	var s0: Vector3 = rest_g[bi["LeftArm"]].origin
-	var d := (s0 + L_AIM) - ANCHOR
-	return Vector3(d.x, d.y * 0.4, d.z).normalized()
-
 # tempos do shoot (usados tambem pelo script principal)
 const T_GRAB := 0.20
 const T_NOCK := 0.48
@@ -309,8 +392,8 @@ const T_END := 1.2
 
 func _shoot_L(t: float) -> Dictionary:
 	var kl := _seg(t, 0.22, 0.62) * (1.0 - _seg(t, 1.0, 1.2))
-	var belly := FRENTE.lerp(draw_dir(), kl).normalized()
-	return {"off": L_HOLD.lerp(L_AIM, kl), "long": HOLD_LONGO.lerp(CIMA, kl).normalized(), "belly": belly, "w": 1.0, "curl": 1.0}
+	# o pulso, o ventre e o eixo do arco no tiro sao resolvidos em _amostra ("mira") a partir do ombro ja torcido
+	return {"off": L_HOLD, "long": HOLD_LONGO, "belly": FRENTE, "w": 1.0, "curl": 1.0, "mira": kl, "corpo": kl}
 
 func _shoot_R(t: float, c: Dictionary) -> Dictionary:
 	var w := _seg(t, 0.0, 0.1) * (1.0 - _seg(t, 1.08, 1.2))
@@ -318,7 +401,6 @@ func _shoot_R(t: float, c: Dictionary) -> Dictionary:
 	var relax := SR + Vector3(0.02, -0.19, 0.05)
 	var quiver := SR + R_QUIVER
 	var nock: Vector3 = c["nock_rest_w"]
-	var dd := draw_dir()
 	var out := {"w": w, "pull": 0.0}
 	var grip: Vector3
 	var dir: Vector3
@@ -339,7 +421,7 @@ func _shoot_R(t: float, c: Dictionary) -> Dictionary:
 		out["pull"] = 1.0
 	else:
 		var u3 := _seg(t, T_REL, T_REL + 0.10)
-		var rec := ANCHOR + Vector3(-0.035, 0.0, 0.025) * u3
+		var rec := ANCHOR + Vector3(-0.045, 0.0, 0.02) * u3   # a mao da corda segue para tras ao soltar (follow-through)
 		var u4 := _seg(t, T_REL + 0.10, 1.2)
 		grip = rec.lerp(relax, u4)
 		dir = (c["belly"] as Vector3).lerp(Vector3(0.2, -1.0, 0.2), u4)
