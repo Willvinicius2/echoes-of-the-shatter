@@ -61,6 +61,7 @@ func _carregar_sala(i: int) -> void:
 	add_child(room)
 	move_child(room, 0)
 	room.carregar(salas[i]["room"])
+	room.colocar_props(atores)
 	room.porta_usada.connect(_on_porta)
 	player.global_position = room.spawn_jogador
 	player.velocity = Vector2.ZERO

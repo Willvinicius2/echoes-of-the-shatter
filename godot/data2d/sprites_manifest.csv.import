@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://0ni7vlj88lu6"
+
+[deps]
+
+files=["res://data2d/sprites_manifest.anim.translation", "res://data2d/sprites_manifest.arquivo.translation", "res://data2d/sprites_manifest.quadro.translation", "res://data2d/sprites_manifest.quadros.translation", "res://data2d/sprites_manifest.fps.translation", "res://data2d/sprites_manifest.loop.translation", "res://data2d/sprites_manifest.direcoes.translation", "res://data2d/sprites_manifest.pivo.translation", "res://data2d/sprites_manifest.pivo.translation", "res://data2d/sprites_manifest.evento.translation"]
+
+source_file="res://data2d/sprites_manifest.csv"
+dest_files=["res://data2d/sprites_manifest.anim.translation", "res://data2d/sprites_manifest.arquivo.translation", "res://data2d/sprites_manifest.quadro.translation", "res://data2d/sprites_manifest.quadros.translation", "res://data2d/sprites_manifest.fps.translation", "res://data2d/sprites_manifest.loop.translation", "res://data2d/sprites_manifest.direcoes.translation", "res://data2d/sprites_manifest.pivo.translation", "res://data2d/sprites_manifest.pivo.translation", "res://data2d/sprites_manifest.evento.translation"]
+
+[params]
+
+compress=true
+delimiter=0

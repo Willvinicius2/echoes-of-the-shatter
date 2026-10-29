@@ -2,12 +2,52 @@
 ############D###########
 #......................#
 #..B................B..#
+#..........E...........#
+#...E..................#
 #......................#
-#.....E..........E.....#
-#...........E..........#
+#.........E.....E......#
 #......................#
 #......................#
-#.......E..............#
 #......................#
 #..B........P.......B..#
 ########################
+@props
+tree_dead_large 2 3
+tree_dead_leaning 21 3 flip
+tree_dead_webs 1 8
+tree_dead_medium 22 9
+grave_slab 5 5
+grave_round 7 5
+grave_broken 6 7
+grave_fence 17 5.2
+grave_round 19 6
+grave_dirt_cross 15 8.5
+tomb_angel 9 9
+tomb_flowers 14 3
+rock_cluster 4 10
+rock_large 20 10
+rock_rubble 11 6
+bones_scattered 13 9
+skull_single 8 3
+skull_pair 16 10
+bones_ribcage 3 6
+shrub_withered 10 10
+bush_thorny 22 6
+sapling_dead 18 3
+tree_dry_large 1.2 2.6
+tree_dry_orange 22.6 5.5
+tree_dry_pile 22.6 10.6
+tree_dry_leaning 1.2 10.8
+bush_dry_red 9 4
+bush_dry_wide 14 10.5
+bush_dry_round 3 4.6
+shrub_dry_tall 19.5 3
+grass_dry_patch 12 7.5
+grass_dry_tall 6 10.5
+reeds_dry 21 8
+leaves_scattered 10 7
+leaves_pile 16 7
+leaves_bone 4 8
+branches_fallen 17.5 9.5
+log_fallen 7.5 4
+thistles_dry 2 7.5

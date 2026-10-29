@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://7bs60k01aqcc"
+
+[deps]
+
+files=["res://data2d/props_2d.escala.translation", "res://data2d/props_2d.solido.translation", "res://data2d/props_2d.solido.translation"]
+
+source_file="res://data2d/props_2d.csv"
+dest_files=["res://data2d/props_2d.escala.translation", "res://data2d/props_2d.solido.translation", "res://data2d/props_2d.solido.translation"]
+
+[params]
+
+compress=true
+delimiter=0

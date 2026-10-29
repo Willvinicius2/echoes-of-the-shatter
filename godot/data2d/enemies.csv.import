@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://uwlkyqaaqcoi"
+
+[deps]
+
+files=["res://data2d/enemies.kind.translation", "res://data2d/enemies.hp.translation", "res://data2d/enemies.speed.translation", "res://data2d/enemies.damage.translation", "res://data2d/enemies.radius.translation", "res://data2d/enemies.aggro.translation", "res://data2d/enemies.attack.translation", "res://data2d/enemies.attack.translation", "res://data2d/enemies.keep.translation", "res://data2d/enemies.projectile.translation", "res://data2d/enemies.burst.translation", "res://data2d/enemies.burst.translation", "res://data2d/enemies.hp.translation"]
+
+source_file="res://data2d/enemies.csv"
+dest_files=["res://data2d/enemies.kind.translation", "res://data2d/enemies.hp.translation", "res://data2d/enemies.speed.translation", "res://data2d/enemies.damage.translation", "res://data2d/enemies.radius.translation", "res://data2d/enemies.aggro.translation", "res://data2d/enemies.attack.translation", "res://data2d/enemies.attack.translation", "res://data2d/enemies.keep.translation", "res://data2d/enemies.projectile.translation", "res://data2d/enemies.burst.translation", "res://data2d/enemies.burst.translation", "res://data2d/enemies.hp.translation"]
+
+[params]
+
+compress=true
+delimiter=0

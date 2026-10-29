@@ -1,13 +1,44 @@
 ############D###########
 ############D###########
 #......................#
-#..B................B..#
-#..........E...........#
-#.......O......O.......#
-#....E............E....#
-#......................#
-#............E.........#
-#.......O......O.......#
-#......................#
+#..B.....rrrrrr.....B..#
+#........r....r........#
+#......E.r.E..r.E......#
+#........r....r........#
+#........r....r........#
+#...E....r.E..r....E...#
+#........r....r........#
+#........rrrrrr........#
 #..B........P.......B..#
 ########################
+@props
+pillar_runes 4 5
+pillar_cracked 4 9
+pillar_tall 19 5
+pillar_thick 19 9
+pillar_broken 8 3
+pillar_fallen 15 3.5
+altar_candles 11.5 6
+skull_mound_candles 6 10
+rock_slabs 17 10
+bones_chains 2 5
+bones_scattered 21 8
+skull_teal_eyes 10 9.5
+skeleton_hand 13 8.2
+roots_clump 2 10
+rock_mossy 21 4
+tree_dry_small 1.2 4
+tree_dry_thin 22.5 3.5
+tree_dry_thin 1.2 8
+tree_dry_small 22.5 8
+bush_dry_tangled 6 5
+bush_dry_thorny 17 4.5
+bush_dry_round 7 8.8
+grass_dry_patch 12 2.8
+grass_dry_tall 16 10
+ferns_withered 3 6.5
+flowers_dead 20 6.5
+leaves_scattered 10 7
+leaves_pile 13.5 9
+vines_dry_rock 7 10.8
+thistles_dry 15 6

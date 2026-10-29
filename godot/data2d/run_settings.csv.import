@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://6y3naek527u5"
+
+[deps]
+
+files=["res://data2d/run_settings.valor.translation", "res://data2d/run_settings.unidade.translation", "res://data2d/run_settings.nota.translation"]
+
+source_file="res://data2d/run_settings.csv"
+dest_files=["res://data2d/run_settings.valor.translation", "res://data2d/run_settings.unidade.translation", "res://data2d/run_settings.nota.translation"]
+
+[params]
+
+compress=true
+delimiter=0

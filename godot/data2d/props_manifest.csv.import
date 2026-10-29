@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cwrjih1m06tud"
+
+[deps]
+
+files=["res://data2d/props_manifest.arquivo.translation", "res://data2d/props_manifest.largura.translation", "res://data2d/props_manifest.altura.translation", "res://data2d/props_manifest.pivo.translation", "res://data2d/props_manifest.pivo.translation"]
+
+source_file="res://data2d/props_manifest.csv"
+dest_files=["res://data2d/props_manifest.arquivo.translation", "res://data2d/props_manifest.largura.translation", "res://data2d/props_manifest.altura.translation", "res://data2d/props_manifest.pivo.translation", "res://data2d/props_manifest.pivo.translation"]
+
+[params]
+
+compress=true
+delimiter=0

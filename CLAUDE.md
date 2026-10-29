@@ -75,6 +75,8 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+Visual 2D top-down é o definitivo desde 29/10/2026 (`docs/arte/26_direcao_visual_2d.md`; capturas em `docs/arte/sprites2d/capturas_cripta/`).
+
 Cliente 2D (corrida top-down, `godot/scripts2d/`): teste headless `godot --headless --path godot --script res://scripts2d/tools/test_2d.gd` (CI `cliente2d.yml`; ver `godot/COMO_RODAR_2D.md` e `docs/arte/25_formato_folhas_sprites_2d.md`). O cliente 3D antigo continua em `godot/scenes` e `godot/scripts`. O `checar_cliente.sh` e o CI `cliente.yml` da Unity foram removidos.
 
 O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como erro (`-Werror`): `-Wmissing-field-initializers` (agregado sem `{}`), `-Wtype-limits` (comparar tipo sem sinal com `< 0`, inclusive enum de base `uint8_t` convertido para `int`) e `-Wrange-loop-construct` (`for (const std::string x : ...)` em vez de `const std::string&`). Revise esses padrões antes de enviar mudanças no core e confira o CI depois do push.

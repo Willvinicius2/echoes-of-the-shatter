@@ -60,6 +60,16 @@ func _testar_salas() -> void:
 		check(sala.colunas == 24 and sala.linhas == 13, "%s tem 24x13" % r["room"])
 		check(sala.spawn_jogador != Vector2.ZERO and sala.spawns_inimigos.size() > 0, "%s tem P e E" % r["room"])
 		check(sala.celulas_porta.size() > 0, "%s tem porta" % r["room"])
+		check(sala.props.size() > 0, "%s tem props" % r["room"])
+		var ok_props := true
+		for pr in sala.props:
+			var c := Vector2i(int(pr["pos"].x / sala.tile), int(pr["pos"].y / sala.tile))
+			ok_props = ok_props and sala._props_def.has(pr["id"]) and sala._props_arte.has(pr["id"])
+			ok_props = ok_props and FileAccess.file_exists(sala._props_arte[pr["id"]]["arquivo"])
+			# a coluna da porta (11 a 13) fica livre nas linhas 2 a 4
+			var solido: bool = float(sala._props_def[pr["id"]]["solido_l"]) > 0.0
+			ok_props = ok_props and not (solido and c.x >= 11 and c.x <= 13 and c.y >= 2 and c.y <= 4)
+		check(ok_props, "%s: props com arte, definição e porta livre" % r["room"])
 		sala.free()
 
 func _testar_corrida() -> void:
