@@ -8,3 +8,6 @@
 - Limitações: SE e NE reaproveitam a vista E; ataque, hit e morte usam a vista E em todas as direções; morte tem só 2 poses repetidas.
 - Props: pivô no centro da base em `godot/data2d/props_manifest.csv`.
 - Rebuild: `python tools/sprites2d/montar_inimigos_novos.py godot/art2d/sprites_novos godot/art2d/sprites`.
+
+## Vegetação seca (p03)
+24 props em `props/`: `tree_dry_*` (6 árvores com folhas secas), `bush_dry_*`/`shrub_dry_tall` (arbustos), `grass_dry_*`, `reeds_dry`, `ferns_withered`, `thistles_dry`, `flowers_dead`, `leaves_*`, `log_fallen`, `branches_fallen`, `vines_dry_rock`. Recorte por agrupamento de pixels (não pela grade). Pivô no centro da base (`godot/data2d/props_manifest.csv`).
