@@ -3,8 +3,7 @@
 
 Uso: python tools/arte2d/recortar_sprites.py [saida_sprites] [saida_tiles]
 Entrada: docs/arte/sprites2d/brutos/. Saída padrão: godot/art2d/sprites/<id>/<id>_<anim>.png e
-godot/art2d/tiles/cripta_tiles.png. Também escreve o trecho de manifesto em
-docs/arte/sprites2d/manifest_trecho.csv e um relatório de emenda dos tiles.
+godot/art2d/tiles/cripta_tiles.png. O manifesto oficial é godot/data2d/sprites_manifest.csv (não é escrito aqui).
 """
 import math
 import os
@@ -28,7 +27,8 @@ PERSONAGENS = {
 }
 # animação -> (quadros, fps, loop)
 ANIMS = {"idle": (6, 8, 1), "run": (8, 12, 1), "attack": (6, 14, 0), "hit": (3, 12, 0), "death": (8, 10, 0)}
-EVENTO_ATAQUE = 3
+# id -> (quadros do attack, quadro do evento) conforme godot/data2d/sprites_manifest.csv
+ATAQUE = {"hollow_sentinel": (6, 3), "hollow_spearman": (6, 3), "ghost_archer": (6, 4), "crypt_guardian": (8, 5)}
 
 
 def chave_magenta(img):
@@ -127,7 +127,8 @@ def montar(pid, cfg, saida):
     diag_path = os.path.join(BRUTOS, base + "_diag.png")
     diag = extrair_quadros(diag_path) if os.path.exists(diag_path) else None
     walk = {"S": prin[0], "N": prin[1], "E": prin[2]}
-    ataque = {"E": [prin[3][i] for i in (0, 0, 1, 2, 3, 3)]}
+    na, EV = ATAQUE[pid]
+    ataque = {"E": prin[3][:4]}
     if diag:
         walk.update({"SE": diag[0], "NE": diag[1]})
         ataque.update({"SE": diag[2], "NE": diag[3]})
@@ -139,12 +140,13 @@ def montar(pid, cfg, saida):
     morte = [prin[3][4], prin[3][5]]
     alts = [pe(q)[1] for q in walk["S"] if q is not None]
     s = altura / float(np.median(alts))
-    folhas = {a: np.zeros((5 * F, n * F, 4), np.uint8) for a, (n, _, _) in ANIMS.items()}
+    anims = dict(ANIMS)
+    anims["attack"] = (na, ANIMS["attack"][1], 0)
+    folhas = {a: np.zeros((5 * F, n * F, 4), np.uint8) for a, (n, _, _) in anims.items()}
     for li, d in enumerate(DIRS):
         w = [q for q in walk[d] if q is not None]
         at = [q for q in ataque[d] if q is not None] or w
-        if len(at) < 6:
-            at = (at * 6)[:6]
+        at = [at[round(i * (len(at) - 1) / (na - 1))] for i in range(na)]
         fx, fy = FACE[d]
         for i in range(6):  # idle: respiração
             dy = bob * math.sin(2 * math.pi * i / 6)
@@ -152,7 +154,7 @@ def montar(pid, cfg, saida):
         for i in range(8):
             k = round(i * (len(w) - 1) / 7)
             folhas["run"][li * F:(li + 1) * F, i * F:(i + 1) * F] = colocar(w[k], s, F, px, py)
-        for i in range(6):
+        for i in range(na):
             folhas["attack"][li * F:(li + 1) * F, i * F:(i + 1) * F] = colocar(at[i], s, F, px, py)
         for i, (rec_off, fl) in enumerate(((2, 0.6), (5, 0.25), (2, 0.0))):
             folhas["hit"][li * F:(li + 1) * F, i * F:(i + 1) * F] = colocar(
@@ -162,9 +164,9 @@ def montar(pid, cfg, saida):
             folhas["death"][li * F:(li + 1) * F, i * F:(i + 1) * F] = colocar(rec, s, F, px, py)
     os.makedirs(os.path.join(saida, pid), exist_ok=True)
     linhas = []
-    for a, (n, fps, loop) in ANIMS.items():
+    for a, (n, fps, loop) in anims.items():
         Image.fromarray(folhas[a], "RGBA").save(os.path.join(saida, pid, f"{pid}_{a}.png"), optimize=True)
-        ev = EVENTO_ATAQUE if a == "attack" else ""
+        ev = EV if a == "attack" else ""
         linhas.append(f"{pid},{a},{pid}/{pid}_{a}.png,{F},{n},{fps},{loop},5,{px},{py},{ev}")
     return linhas
 
@@ -265,8 +267,6 @@ def main():
     for pid, cfg in PERSONAGENS.items():
         linhas += montar(pid, cfg, saida)
         print("ok", pid)
-    with open(os.path.join(RAIZ, "docs", "arte", "sprites2d", "manifest_trecho.csv"), "w") as f:
-        f.write("\n".join(linhas) + "\n")
     for l in montar_tiles(saida_t):
         print(l)
 
