@@ -1,0 +1,38 @@
+[
+ {
+  "id": "s01_sentinela_espada_diag",
+  "titulo": "Sentinela espada e escudo diagonais",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/sprites2d/brutos/s01_sentinela_espada.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET (companion to the attached sheet of the SAME character: copy design, colors, proportions and brush style EXACTLY; the attached sheet only has down/up/right views). High top-down 3/4 ARPG camera (like Diablo 1 / Tibia, ~55 degree pitch). Flat solid pure magenta (#FF00FF) background, no ground shadow, no scenery, no text. STRICT GRID: 6 columns x 4 rows of identical cells (256x256 px at 1536x1024), same sprite scale, feet at same point in every cell, nothing crossing cell borders. Rows: row 1 = walk cycle facing DOWN-RIGHT diagonal (south-east, three-quarter front view), 6 frames; row 2 = walk cycle facing UP-RIGHT diagonal (north-east, three-quarter back view), 6 frames; row 3 = attack facing DOWN-RIGHT diagonal, 6 frames (wind-up, strike, impact, recover); row 4 = attack facing UP-RIGHT diagonal, 6 frames. Character: Sentinela (Ato I): armored stone-and-gold knight, helmet with dark visor and tiny red plume, round gold-trimmed shield, short sword, red tabard — the first enemy of sheet 05, normal (non-elite) version."
+ },
+ {
+  "id": "s02_sentinela_lanca_diag",
+  "titulo": "Sentinela lanceira diagonais",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/sprites2d/brutos/s02_sentinela_lanca.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET (companion to the attached sheet of the SAME character: copy design, colors, proportions and brush style EXACTLY; the attached sheet only has down/up/right views). High top-down 3/4 ARPG camera (like Diablo 1 / Tibia, ~55 degree pitch). Flat solid pure magenta (#FF00FF) background, no ground shadow, no scenery, no text. STRICT GRID: 6 columns x 4 rows of identical cells (256x256 px at 1536x1024), same sprite scale, feet at same point in every cell, nothing crossing cell borders. Rows: row 1 = walk cycle facing DOWN-RIGHT diagonal (south-east, three-quarter front view), 6 frames; row 2 = walk cycle facing UP-RIGHT diagonal (north-east, three-quarter back view), 6 frames; row 3 = attack facing DOWN-RIGHT diagonal, 6 frames (wind-up, strike, impact, recover); row 4 = attack facing UP-RIGHT diagonal, 6 frames. Character: Sentinela lanceira (Ato I): same armor family as the sword sentinel, long gold-tipped spear and kite shield, red plume — second enemy of sheet 05, normal version. Attack = spear thrust."
+ },
+ {
+  "id": "s03_arqueiro_espectral_diag",
+  "titulo": "Arqueiro espectral diagonais",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/sprites2d/brutos/s03_arqueiro_espectral.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET (companion to the attached sheet of the SAME character: copy design, colors, proportions and brush style EXACTLY; the attached sheet only has down/up/right views). High top-down 3/4 ARPG camera (like Diablo 1 / Tibia, ~55 degree pitch). Flat solid pure magenta (#FF00FF) background, no ground shadow, no scenery, no text. STRICT GRID: 6 columns x 4 rows of identical cells (256x256 px at 1536x1024), same sprite scale, feet at same point in every cell, nothing crossing cell borders. Rows: row 1 = walk cycle facing DOWN-RIGHT diagonal (south-east, three-quarter front view), 6 frames; row 2 = walk cycle facing UP-RIGHT diagonal (north-east, three-quarter back view), 6 frames; row 3 = attack facing DOWN-RIGHT diagonal, 6 frames (wind-up, strike, impact, recover); row 4 = attack facing UP-RIGHT diagonal, 6 frames. Character: Arqueiro espectral inimigo (Ato I): hooded teal ghostly archer with floating tattered cloak, glowing cyan eyes, spectral bone bow, ragged cloth tail instead of legs (hover/glide instead of walking), cyan arrow glow — enemy from sheet 05 bottom row. Attack = draw and release spectral arrow."
+ },
+ {
+  "id": "s04_guardiao_chefe_diag",
+  "titulo": "Guardião da Cripta (chefe) diagonais",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/sprites2d/brutos/s04_guardiao_chefe.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET (companion to the attached sheet of the SAME character: copy design, colors, proportions and brush style EXACTLY; the attached sheet only has down/up/right views). High top-down 3/4 ARPG camera (like Diablo 1 / Tibia, ~55 degree pitch). Flat solid pure magenta (#FF00FF) background, no ground shadow, no scenery, no text. STRICT GRID: 6 columns x 4 rows of identical cells (256x256 px at 1536x1024), same sprite scale, feet at same point in every cell, nothing crossing cell borders. Rows: row 1 = walk cycle facing DOWN-RIGHT diagonal (south-east, three-quarter front view), 6 frames; row 2 = walk cycle facing UP-RIGHT diagonal (north-east, three-quarter back view), 6 frames; row 3 = attack facing DOWN-RIGHT diagonal, 6 frames (wind-up, strike, impact, recover); row 4 = attack facing UP-RIGHT diagonal, 6 frames. Character: Guardião da Cripta, boss of Act I: huge ancient stone-and-gold guardian statue-knight, hooded, cracked glowing gold runes, massive stone greatsword/hammer, slow heavy walk. Match the Guardian on boss sheet 06 exactly. Row 4 attack = overhead slam."
+ }
+]
