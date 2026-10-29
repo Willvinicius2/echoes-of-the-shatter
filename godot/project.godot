@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Echoes of the Shatter"
-run/main_scene="res://scenes/cripta/CriptaJogavel.tscn"
+run/main_scene="res://scenes2d/Run2D.tscn"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 
 [display]

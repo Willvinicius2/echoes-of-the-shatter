@@ -1,0 +1,16 @@
+chave,valor,unidade,nota
+hp_max,100,hp,vida do arqueiro
+speed,260,px/s,velocidade de corrida
+accel,2400,px/s2,aceleracao
+friction,3000,px/s2,desaceleracao
+radius,14,px,raio de colisao nos pes
+shoot_cooldown,0.35,s,intervalo entre flechas
+arrow_speed,900,px/s,velocidade da flecha
+arrow_damage,12,hp,dano da flecha
+arrow_range,1100,px,alcance maximo da flecha
+arrow_spawn_dist,36,px,distancia da flecha a partir dos pes
+dodge_speed,640,px/s,velocidade da esquiva
+dodge_time,0.25,s,duracao da esquiva
+dodge_cooldown,0.8,s,recarga da esquiva
+hit_iframes,0.6,s,invulnerabilidade apos levar dano
+attack_move_mult,0.4,x,fator de velocidade enquanto atira

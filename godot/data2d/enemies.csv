@@ -1,0 +1,6 @@
+id,kind,hp,speed,damage,radius,aggro,attack_range,attack_cooldown,keep_distance,projectile_speed,burst_interval,burst_count,hp_bar
+hollow_sentinel,melee,60,110,10,16,900,48,1.2,0,0,0,0,1
+ash_hound,melee,40,190,8,14,1000,42,0.9,0,0,0,0,1
+stone_herald,melee,150,65,18,22,800,64,1.8,0,0,0,0,1
+ghost_archer,ranged,35,100,8,14,1100,520,1.6,300,420,0,0,1
+crypt_guardian,boss,700,90,20,32,1400,90,1.5,0,320,4,12,1
