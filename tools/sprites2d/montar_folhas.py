@@ -8,6 +8,7 @@ pé em (64,104), mesma escala em toda a folha. Ver docs/arte/25 (formato).
 import os, sys
 from PIL import Image
 import numpy as np
+from scipy import ndimage
 
 COLS = {"idle": 6, "run": 8, "attack": 6, "dodge": 6, "hit": 3, "death": 8}
 ROWS, F, FOOT = 5, 128, (64, 104)
@@ -24,6 +25,25 @@ def key(img):
     out[edge, 2] = np.minimum(out[edge, 2], out[edge, 0])
     return Image.fromarray(out, "RGBA")
 
+def limpa(cell):
+    """Remove restos de sprites vizinhos: guarda só os blobs que cruzam a faixa vertical do maior."""
+    al = np.array(cell)[..., 3] > 0
+    lab, k = ndimage.label(ndimage.binary_dilation(al, iterations=3))
+    if k < 2:
+        return cell
+    sizes = ndimage.sum(al, lab, range(1, k + 1))
+    main = int(np.argmax(sizes)) + 1
+    ys = np.where((lab == main).any(axis=1))[0]
+    top, bot = ys.min(), ys.max()
+    keep = np.zeros_like(al)
+    for i in range(1, k + 1):
+        yy = np.where((lab == i).any(axis=1))[0]
+        if i == main or (yy.min() >= top - 4 and yy.max() <= bot + 4 and sizes[i - 1] > 8):
+            keep |= (lab == i) & al
+    a = np.array(cell)
+    a[~keep, 3] = 0
+    return Image.fromarray(a, "RGBA")
+
 def montar(raw, n):
     img = key(Image.open(raw))
     W, H = img.size
@@ -32,6 +52,7 @@ def montar(raw, n):
     for r in range(ROWS):
         for c in range(n):
             cell = img.crop((round(c * cw), round(r * ch), round((c + 1) * cw), round((r + 1) * ch)))
+            cell = limpa(cell)
             cells.append((r, c, cell, cell.getbbox()))
     boxes = [b for *_, b in cells if b]
     # escala única: o maior sprite cabe em 100 px de altura (pé em 104, topo em 4)
