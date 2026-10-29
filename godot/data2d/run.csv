@@ -1,5 +1,5 @@
 sala,room,enemies
-1,res://data2d/rooms/sala_1.txt,hollow_sentinel:3
-2,res://data2d/rooms/sala_2.txt,hollow_sentinel:2|ash_hound:2
-3,res://data2d/rooms/sala_3.txt,ghost_archer:2|stone_herald:1|ash_hound:1
+1,res://data2d/rooms/sala_1.txt,hollow_sentinel:1|skeleton_soldier:2
+2,res://data2d/rooms/sala_2.txt,skeleton_soldier:2|wandering_ghost:2|crypt_bat:2
+3,res://data2d/rooms/sala_3.txt,chain_wraith:2|ghost_archer:2|skeleton_soldier:1
 4,res://data2d/rooms/sala_boss.txt,crypt_guardian:1

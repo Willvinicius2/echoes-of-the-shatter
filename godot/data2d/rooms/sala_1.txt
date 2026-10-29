@@ -2,12 +2,35 @@
 ############D###########
 #......................#
 #..B................B..#
+#..........E...........#
+#...E..................#
 #......................#
-#.....E..........E.....#
-#...........E..........#
+#.........E.....E......#
 #......................#
 #......................#
-#.......E..............#
 #......................#
 #..B........P.......B..#
 ########################
+@props
+tree_dead_large 2 3
+tree_dead_leaning 21 3 flip
+tree_dead_webs 1 8
+tree_dead_medium 22 9
+grave_slab 5 5
+grave_round 7 5
+grave_broken 6 7
+grave_fence 17 5.2
+grave_round 19 6
+grave_dirt_cross 15 8.5
+tomb_angel 9 9
+tomb_flowers 14 3
+rock_cluster 4 10
+rock_large 20 10
+rock_rubble 11 6
+bones_scattered 13 9
+skull_single 8 3
+skull_pair 16 10
+bones_ribcage 3 6
+shrub_withered 10 10
+bush_thorny 22 6
+sapling_dead 18 3

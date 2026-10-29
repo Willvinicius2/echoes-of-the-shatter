@@ -1,6 +1,9 @@
 extends Node2D
 ## Sala da Cripta montada de um texto (data2d/rooms/*.txt) com TileMapLayer.
-## Legenda: # parede, . piso, B braseiro, O pilar, D porta, P início do jogador, E ponto de inimigo.
+## Legenda: # parede, . piso, r piso com runas, q piso escuro, B braseiro, O pilar, D porta,
+## P início do jogador, E ponto de inimigo.
+## Depois da grade, a linha `@props` abre a lista de props: `id coluna linha [flip]` (coluna e linha
+## podem ser fracionárias; ids em data2d/props_2d.csv, arte em props_manifest.csv).
 
 signal porta_usada
 
@@ -8,12 +11,14 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
 const ATLAS := "res://art2d/tiles/cripta_tiles.png"
 const T_PISO := 0
+const T_PISO_ESCURO := 6
 const T_PORTA_FECHADA := 7
 const T_PAREDE_FACE := 8
 const T_PAREDE_TOPO := 9
 const T_PILAR := 12
 const T_PORTA_ABERTA := 13
 const T_BRASEIRO := 15
+const T_RUNAS := [4, 41, 42, 43, 44, 45, 46, 47]
 
 var tile := 64
 var colunas := 0
@@ -21,7 +26,11 @@ var linhas := 0
 var spawn_jogador := Vector2.ZERO
 var spawns_inimigos: Array[Vector2] = []
 var celulas_porta: Array[Vector2i] = []
+var props: Array = []  # {id, pos (pé do prop em px), flip}
+var _props_def := {}
+var _props_arte := {}
 var _layer: TileMapLayer
+var _piso: TileMapLayer
 var _porta_area: Area2D
 var _porta_corpo: StaticBody2D
 var _grade: Array = []
@@ -35,9 +44,17 @@ func carregar(caminho: String) -> bool:
 	if f == null:
 		push_error("Sala ausente: " + caminho)
 		return false
+	var em_props := false
 	while not f.eof_reached():
 		var l := f.get_line().strip_edges(false, true)
-		if l != "":
+		if l == "":
+			continue
+		if l == "@props":
+			em_props = true
+		elif em_props:
+			var p := l.split(" ", false)
+			props.append({"id": p[0], "pos": Vector2((float(p[1]) + 0.5) * tile, (float(p[2]) + 0.5) * tile), "flip": p.size() > 3 and p[3] == "flip"})
+		else:
 			_grade.append(l)
 	linhas = _grade.size()
 	colunas = _grade[0].length()
@@ -45,6 +62,10 @@ func carregar(caminho: String) -> bool:
 		if l.length() != colunas:
 			push_error("Sala com linhas de tamanhos diferentes: " + caminho)
 			return false
+	for r in Csv.rows("res://data2d/props_2d.csv"):
+		_props_def[r["id"]] = r
+	for r in Csv.rows("res://data2d/props_manifest.csv"):
+		_props_arte[r["id"]] = r
 	_montar()
 	return true
 
@@ -57,8 +78,12 @@ func _eh_parede(x: int, y: int) -> bool:
 	return _grade[y][x] in ["#", "D"]
 
 func _montar() -> void:
+	var ts := _tileset()
+	_piso = TileMapLayer.new()  # piso sob os objetos, para o fundo transparente de braseiro e pilar não ficar preto
+	_piso.tile_set = ts
+	add_child(_piso)
 	_layer = TileMapLayer.new()
-	_layer.tile_set = _tileset()
+	_layer.tile_set = ts
 	add_child(_layer)
 	var corpo := StaticBody2D.new()
 	corpo.collision_layer = 1
@@ -87,6 +112,10 @@ func _montar() -> void:
 				"D":
 					idx = T_PORTA_FECHADA
 					celulas_porta.append(Vector2i(x, y))
+				"r":
+					idx = T_RUNAS[posmod(hash(Vector2i(x * 7, y * 13)), T_RUNAS.size())]
+				"q":
+					idx = T_PISO_ESCURO
 				"O":
 					idx = T_PILAR
 				"B":
@@ -95,7 +124,20 @@ func _montar() -> void:
 					spawn_jogador = _centro(x, y)
 				"E":
 					spawns_inimigos.append(_centro(x, y))
-			_pintar(Vector2i(x, y), idx)
+			if c != "#" and c != "D":
+				_pintar(Vector2i(x, y), T_PISO + posmod(hash(Vector2i(x, y)), 4), _piso)
+			if c != "." and not (c in ["P", "E"]):
+				_pintar(Vector2i(x, y), idx)
+	for p in props:
+		var d: Dictionary = _props_def.get(p["id"], {})
+		if d.is_empty() or float(d["solido_l"]) <= 0.0:
+			continue
+		var cp := CollisionShape2D.new()
+		var rp := RectangleShape2D.new()
+		rp.size = Vector2(float(d["solido_l"]), float(d["solido_a"]))
+		cp.shape = rp
+		cp.position = p["pos"] + Vector2(0, tile * 0.5 - float(d["solido_a"]) * 0.5)
+		corpo.add_child(cp)
 	_porta_corpo = StaticBody2D.new()
 	_porta_corpo.collision_layer = 1
 	_porta_corpo.collision_mask = 0
@@ -121,9 +163,10 @@ func _montar() -> void:
 		_porta_area.add_child(cs)
 	_porta_area.body_entered.connect(func(_c): porta_usada.emit())
 
-func _pintar(c: Vector2i, idx: int) -> void:
-	var cols: int = _layer.tile_set.get_source(0).texture.get_width() / tile
-	_layer.set_cell(c, 0, Vector2i(idx % cols, idx / cols))
+func _pintar(c: Vector2i, idx: int, camada: TileMapLayer = null) -> void:
+	var l := camada if camada != null else _layer
+	var cols: int = l.tile_set.get_source(0).texture.get_width() / tile
+	l.set_cell(c, 0, Vector2i(idx % cols, idx / cols))
 
 func _tileset() -> TileSet:
 	var tex: Texture2D
@@ -149,3 +192,42 @@ func abrir_porta() -> void:
 		_pintar(c, T_PORTA_ABERTA)
 	_porta_corpo.queue_free()
 	_porta_area.set_deferred("monitoring", true)
+
+## Cria os sprites dos props dentro de `alvo` (Node2D com y_sort_enabled, o mesmo dos atores).
+## O pé do prop fica na base da célula, então jogador e inimigos passam na frente ou atrás pela ordem em Y.
+func colocar_props(alvo: Node2D) -> void:
+	for p in props:
+		var arte: Dictionary = _props_arte.get(p["id"], {})
+		var d: Dictionary = _props_def.get(p["id"], {})
+		if arte.is_empty() or d.is_empty():
+			push_warning("Prop sem arte ou definição: " + p["id"])
+			continue
+		var tex: Texture2D = _carregar_textura(arte["arquivo"])
+		if tex == null:
+			continue
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.centered = false
+		spr.offset = -Vector2(float(arte["pivo_x"]), float(arte["pivo_y"]))
+		spr.scale = Vector2.ONE * float(d["escala"])
+		spr.flip_h = p["flip"]
+		if spr.flip_h:
+			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
+		var no := Node2D.new()
+		no.position = p["pos"] + Vector2(0, tile * 0.5)
+		no.add_child(spr)
+		var sombra := Node2D.new()
+		sombra.z_index = -1
+		sombra.draw.connect(func():
+			sombra.draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
+			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * 0.35, Color(0, 0, 0, 0.35)))
+		no.add_child(sombra)
+		sombra.queue_redraw()
+		alvo.add_child(no)
+
+func _carregar_textura(caminho: String) -> Texture2D:
+	if ResourceLoader.exists(caminho):
+		return load(caminho)
+	if FileAccess.file_exists(caminho):
+		return ImageTexture.create_from_image(Image.load_from_file(ProjectSettings.globalize_path(caminho)))
+	return null

@@ -2,12 +2,31 @@
 ############D###########
 #......................#
 #..B................B..#
+#...E............E.....#
 #......................#
-#....E............E....#
-#.........O..O.........#
 #......................#
-#.....E..........E.....#
+#......................#
+#....E...........E.....#
 #......................#
 #......................#
 #..B........P.......B..#
 ########################
+@props
+sarcophagus_closed 5 4.2
+sarcophagus_open 17 4.2
+sarcophagus_closed 3.5 8.5
+sarcophagus_open 20 8.5
+ribcage_arch 12 5.8
+skull_pile 8 6
+skull_pile 16 6.5
+skull_spike 10 9
+skull_spike 14 9
+skeleton_curled 7 3
+bones_ribcage 18 9.8
+bones_chains 6 10.3
+skull_pair 12 8
+coffin_lid_leaning 21 6
+mausoleum_door 2.5 5.5
+tree_skull 21.5 3
+rock_rubble 10 3.5
+bones_scattered 14 3.2
