@@ -13,6 +13,6 @@ O Will aprovou o visual 2D top-down montado no PR 99 como base definitiva. Daqui
 - Regras: a coluna da porta (11 a 13) fica livre nas linhas 2 a 4; árvores grandes ficam nas bordas e só as pequenas perto do caminho; teste `test_2d.gd` confere arte, definição e porta livre.
 
 ## Próximas direções (pedidas pelo Will)
-1. Chão de gramado com caminho de pedras no lugar do piso de laje.
+1. Chão de gramado com caminho de pedras: feito nas salas 1 e 3 (`@piso grama`, atlas `cripta_grama.png` gerado por `tools/sprites2d/gerar_chao_grama.py`); salas 2 e do chefe seguem em laje. Falta suavizar as bordas do caminho.
 2. Riacho atravessando algum mapa (depois).
 3. Um passe de direção de arte (luz, cor, composição), feito junto com o Will, passando pela revisora antes de ele ver.

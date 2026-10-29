@@ -1,7 +1,8 @@
 extends Node2D
 ## Sala da Cripta montada de um texto (data2d/rooms/*.txt) com TileMapLayer.
 ## Legenda: # parede, . piso, r piso com runas, q piso escuro, B braseiro, O pilar, D porta,
-## P início do jogador, E ponto de inimigo.
+## P início do jogador, E ponto de inimigo, p laje de caminho (só com `@piso grama`).
+## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png).
 ## Depois da grade, a linha `@props` abre a lista de props: `id coluna linha [flip]` (coluna e linha
 ## podem ser fracionárias; ids em data2d/props_2d.csv, arte em props_manifest.csv).
 
@@ -10,6 +11,7 @@ signal porta_usada
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
 const ATLAS := "res://art2d/tiles/cripta_tiles.png"
+const ATLAS_GRAMA := "res://art2d/tiles/cripta_grama.png"
 const T_PISO := 0
 const T_PISO_ESCURO := 6
 const T_PORTA_FECHADA := 7
@@ -31,6 +33,7 @@ var _props_def := {}
 var _props_arte := {}
 var _layer: TileMapLayer
 var _piso: TileMapLayer
+var piso_grama := false
 var _porta_area: Area2D
 var _porta_corpo: StaticBody2D
 var _grade: Array = []
@@ -51,6 +54,8 @@ func carregar(caminho: String) -> bool:
 			continue
 		if l == "@props":
 			em_props = true
+		elif l == "@piso grama":
+			piso_grama = true
 		elif em_props:
 			var p := l.split(" ", false)
 			props.append({"id": p[0], "pos": Vector2((float(p[1]) + 0.5) * tile, (float(p[2]) + 0.5) * tile), "flip": p.size() > 3 and p[3] == "flip"})
@@ -124,9 +129,11 @@ func _montar() -> void:
 					spawn_jogador = _centro(x, y)
 				"E":
 					spawns_inimigos.append(_centro(x, y))
-			if c != "#" and c != "D":
+			if piso_grama and c != "#" and c != "D":
+				_pintar_grama(Vector2i(x, y), posmod(hash(Vector2i(x, y)), 4), 1 if c == "p" else 0)
+			elif c != "#" and c != "D":
 				_pintar(Vector2i(x, y), T_PISO + posmod(hash(Vector2i(x, y)), 4), _piso)
-			if c != "." and not (c in ["P", "E"]):
+			if c != "." and c != "p" and not (c in ["P", "E"]):
 				_pintar(Vector2i(x, y), idx)
 	for p in props:
 		var d: Dictionary = _props_def.get(p["id"], {})
@@ -168,6 +175,9 @@ func _pintar(c: Vector2i, idx: int, camada: TileMapLayer = null) -> void:
 	var cols: int = l.tile_set.get_source(0).texture.get_width() / tile
 	l.set_cell(c, 0, Vector2i(idx % cols, idx / cols))
 
+func _pintar_grama(c: Vector2i, variante: int, linha: int) -> void:
+	_piso.set_cell(c, 1, Vector2i(variante, linha))
+
 func _tileset() -> TileSet:
 	var tex: Texture2D
 	if ResourceLoader.exists(ATLAS):
@@ -185,6 +195,15 @@ func _tileset() -> TileSet:
 		for x in tex.get_width() / tile:
 			src.create_tile(Vector2i(x, y))
 	ts.add_source(src, 0)
+	var tg := _carregar_textura(ATLAS_GRAMA)
+	if tg != null:
+		var sg := TileSetAtlasSource.new()
+		sg.texture = tg
+		sg.texture_region_size = Vector2i(tile, tile)
+		for y in tg.get_height() / tile:
+			for x in tg.get_width() / tile:
+				sg.create_tile(Vector2i(x, y))
+		ts.add_source(sg, 1)
 	return ts
 
 func abrir_porta() -> void:
