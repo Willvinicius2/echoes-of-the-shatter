@@ -1,0 +1,47 @@
+[
+ {
+  "id": "s01_sentinela_espada",
+  "titulo": "Sentinela espada e escudo",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch, characters seen from above-front). Style: hand-painted stylized 2D, chunky shapes, dark outline, warm gold + cold purple/teal neon accents, exactly matching the attached official reference sheets (copy design, colors, proportions). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels. STRICT GRID: the image is a perfect grid of 6 columns x 4 rows, every cell identical size (256x256 px at 1536x1024), same sprite scale in every cell, feet/pivot on the same point (horizontal center, 85% down the cell), nothing crossing cell borders. Rows: row 1 = walk cycle facing DOWN (toward camera), 6 frames; row 2 = walk cycle facing UP (away from camera), 6 frames; row 3 = walk cycle facing RIGHT (side view), 6 frames; row 4 = attack facing RIGHT (frames 1-4: wind-up, strike, impact, recover) then death (frames 5-6: falling, collapsed/shattered). Character: Sentinela (Ato I): armored stone-and-gold knight, helmet with dark visor and tiny red plume, round gold-trimmed shield, short sword, red tabard — the first enemy of sheet 05, normal (non-elite) version."
+ },
+ {
+  "id": "s02_sentinela_lanca",
+  "titulo": "Sentinela lanceira",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch, characters seen from above-front). Style: hand-painted stylized 2D, chunky shapes, dark outline, warm gold + cold purple/teal neon accents, exactly matching the attached official reference sheets (copy design, colors, proportions). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels. STRICT GRID: the image is a perfect grid of 6 columns x 4 rows, every cell identical size (256x256 px at 1536x1024), same sprite scale in every cell, feet/pivot on the same point (horizontal center, 85% down the cell), nothing crossing cell borders. Rows: row 1 = walk cycle facing DOWN (toward camera), 6 frames; row 2 = walk cycle facing UP (away from camera), 6 frames; row 3 = walk cycle facing RIGHT (side view), 6 frames; row 4 = attack facing RIGHT (frames 1-4: wind-up, strike, impact, recover) then death (frames 5-6: falling, collapsed/shattered). Character: Sentinela lanceira (Ato I): same armor family as the sword sentinel, long gold-tipped spear and kite shield, red plume — second enemy of sheet 05, normal version. Attack = spear thrust."
+ },
+ {
+  "id": "s03_arqueiro_espectral",
+  "titulo": "Arqueiro espectral",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch, characters seen from above-front). Style: hand-painted stylized 2D, chunky shapes, dark outline, warm gold + cold purple/teal neon accents, exactly matching the attached official reference sheets (copy design, colors, proportions). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels. STRICT GRID: the image is a perfect grid of 6 columns x 4 rows, every cell identical size (256x256 px at 1536x1024), same sprite scale in every cell, feet/pivot on the same point (horizontal center, 85% down the cell), nothing crossing cell borders. Rows: row 1 = walk cycle facing DOWN (toward camera), 6 frames; row 2 = walk cycle facing UP (away from camera), 6 frames; row 3 = walk cycle facing RIGHT (side view), 6 frames; row 4 = attack facing RIGHT (frames 1-4: wind-up, strike, impact, recover) then death (frames 5-6: falling, collapsed/shattered). Character: Arqueiro espectral inimigo (Ato I): hooded teal ghostly archer with floating tattered cloak, glowing cyan eyes, spectral bone bow, ragged cloth tail instead of legs (hover/glide instead of walking), cyan arrow glow — enemy from sheet 05 bottom row. Attack = draw and release spectral arrow."
+ },
+ {
+  "id": "s04_guardiao_chefe",
+  "titulo": "Guardião da Cripta (chefe)",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/06_chefes_ato1.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch, characters seen from above-front). Style: hand-painted stylized 2D, chunky shapes, dark outline, warm gold + cold purple/teal neon accents, exactly matching the attached official reference sheets (copy design, colors, proportions). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels. STRICT GRID: the image is a perfect grid of 6 columns x 4 rows (BOSS: each cell may hold a larger sprite, still inside its own cell, use 100% of the cell), every cell identical size (256x256 px at 1536x1024), same sprite scale in every cell, feet/pivot on the same point (horizontal center, 85% down the cell), nothing crossing cell borders. Rows: row 1 = walk cycle facing DOWN (toward camera), 6 frames; row 2 = walk cycle facing UP (away from camera), 6 frames; row 3 = walk cycle facing RIGHT (side view), 6 frames; row 4 = attack facing RIGHT (frames 1-4: wind-up, strike, impact, recover) then death (frames 5-6: falling, collapsed/shattered). Character: Guardião da Cripta, boss of Act I: huge ancient stone-and-gold guardian statue-knight, hooded, cracked glowing gold runes, massive stone greatsword/hammer, slow heavy walk. Match the Guardian on boss sheet 06 exactly. Row 4 attack = overhead slam."
+ },
+ {
+  "id": "t01_cripta_tiles",
+  "titulo": "Tiles da Cripta (top-down)",
+  "tamanho": "1024x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/07_cripta_tileset.png"
+  ],
+  "prompt": "Create a game-ready 2D TILESET for the top-down action-RPG \"Echoes of the Shatter\" (Godot TileMap, camera high top-down 3/4 like Tibia / Diablo 1). Style: hand-painted stylized 2D matching the attached Crypt reference (grey cracked stone, gold rune inlays, purple/teal fog accents, dark outline). Flat pure magenta (#FF00FF) background in empty cells, NO text. STRICT GRID: 8 columns x 8 rows of identical 128x128 cells, every tile fills its cell edge to edge (floor tiles must tile seamlessly with their neighbors). Cells in reading order: row 1-2: 8 plain cracked stone floor variants + 8 floor variants with gold crack lines; row 3: the gold rune-circle floor split into 8 seamless pieces; row 4: floor edge/border pieces toward abyss (4 sides + 4 corners); row 5: wall top-down 3/4 pieces (straight horizontal, straight vertical, 4 corners); row 6: pillar, broken pillar, hooded statue, arch, stairs up, stairs down, portal glowing teal, door; row 7: coffin closed, coffin open with skeleton, urns, bones, rubble, crystals gold, crystals teal, torn red banner; row 8: braseiro lit, braseiro teal flame, candles, chain, lantern, dead tree, blue plants, dry grass (props on transparent-looking magenta, centered, fit inside cell)."
+ }
+]
