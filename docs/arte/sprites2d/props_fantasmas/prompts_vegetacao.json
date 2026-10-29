@@ -1,0 +1,11 @@
+[
+ {
+  "id": "p03_vegetacao_seca",
+  "titulo": "Props: vegetação seca",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/07_cripta_tileset.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch). Style: hand-painted stylized 2D, chunky shapes, dark outline 2-3 px, muted autumn palette of dry ochre, brown, rust and dead grey with occasional cold teal/purple accents, exactly matching the attached official reference sheet (same painting style and line weight). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels. STRICT GRID: perfect grid of 6 columns x 4 rows, every cell identical (256x256 px at 1536x1024), one prop per cell, centered, base at the same height in every cell (85% down the cell), nothing crossing cell borders, each prop fully inside its cell. Props seen from above-front, lit from top-left. Row 1: 6 trees with dry dead leaves (large oak-like tree with clinging brown dry leaves, medium tree with orange-brown dry leaves, tall thin tree with sparse yellowed leaves, twisted tree with rust leaves and fallen leaf pile at its base, leaning tree with dry leaves, small tree with few last dry leaves). Row 2: 6 dry bushes (round dry brown bush, thorny dry bush with dead leaves, tall dry shrub, low wide dry bush, bush with tangled dead branches, bush with red-brown dry leaves). Row 3: 6 dry grass and weeds (dry grass tuft tall, wide dry grass patch, dry reeds, withered ferns, dry thistles, dead flowers on dry stalks). Row 4: 6 ground dressing (pile of fallen dry leaves, scattered dry leaves, fallen log with dry moss, fallen branches, dry vines on a small rock, dry leaf pile with a bone sticking out)."
+ }
+]
