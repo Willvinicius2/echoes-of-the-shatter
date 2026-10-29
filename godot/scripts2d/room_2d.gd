@@ -211,6 +211,8 @@ func colocar_props(alvo: Node2D) -> void:
 		spr.offset = -Vector2(float(arte["pivo_x"]), float(arte["pivo_y"]))
 		spr.scale = Vector2.ONE * float(d["escala"])
 		spr.flip_h = p["flip"]
+		if p["id"] in ["tree_dry_orange", "bush_dry_red"]:
+			spr.modulate = Color(0.86, 0.82, 0.82)  # laranja e vermelho um pouco mais calmos no piso escuro
 		if spr.flip_h:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
 		var no := Node2D.new()

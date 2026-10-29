@@ -30,3 +30,15 @@ mausoleum_door 2.5 5.5
 tree_skull 21.5 3
 rock_rubble 10 3.5
 bones_scattered 14 3.2
+tree_dry_leaning 1.5 3
+tree_dry_thin 22.5 10
+bush_dry_wide 11 3.3
+bush_dry_red 20 3.5
+grass_dry_tall 2 10.2
+reeds_dry 22 7
+ferns_withered 9 10.3
+flowers_dead 13 10.4
+leaves_bone 15 4.2
+leaves_scattered 6 6.5
+branches_fallen 18 7.6
+log_fallen 7 8.2
