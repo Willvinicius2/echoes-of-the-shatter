@@ -1,0 +1,35 @@
+name: cliente2d
+
+on:
+  pull_request:
+    paths: ['godot/scripts2d/**', 'godot/scenes2d/**', 'godot/data2d/**', 'godot/art2d/**', '.github/workflows/cliente2d.yml']
+  push:
+    branches: [master]
+    paths: ['godot/scripts2d/**', 'godot/scenes2d/**', 'godot/data2d/**', 'godot/art2d/**']
+
+jobs:
+  teste-headless:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar Godot
+        run: |
+          curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.4.1-stable_linux.x86_64
+      - name: Montar projeto só com o cliente 2D (sem C#)
+        run: |
+          mkdir proj
+          for d in scripts2d scenes2d data2d art2d; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          python3 - <<'PY'
+          import re
+          s = open('godot/project.godot').read()
+          s = s.replace('"4.7", "C#", "Forward Plus"', '"4.4", "Forward Plus"')
+          s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
+          open('proj/project.godot', 'w').write(s)
+          PY
+      - name: Importar e testar
+        run: |
+          ./Godot_v4.4.1-stable_linux.x86_64 --headless --path proj --import
+          ./Godot_v4.4.1-stable_linux.x86_64 --headless --path proj --script res://scripts2d/tools/test_2d.gd | tee saida.txt
+          ! grep -q "FALHA\|SCRIPT ERROR" saida.txt

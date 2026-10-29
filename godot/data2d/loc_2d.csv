@@ -1,0 +1,9 @@
+chave,pt
+hud.room,Sala %d/%d
+hud.hp,Vida
+hud.dodge,Esquiva
+hud.room_clear,Sala limpa! Siga pela porta
+hud.dead,Voce caiu. Recomecando...
+hud.victory,Cripta vencida! Recomecando...
+hud.boss,Guardiao da Cripta
+hud.help,WASD move | Mouse mira | Clique atira | Espaco esquiva
