@@ -1,0 +1,56 @@
+[
+ {
+  "id": "p01_pilares_pedras_arvores",
+  "titulo": "Props: pilares, pedras e árvores mortas",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/07_cripta_tileset.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch). Style: hand-painted stylized 2D, chunky shapes, dark outline 2-3 px, warm gold + cold purple/teal neon accents, grey cracked stone crypt palette, exactly matching the attached official reference sheet (same painting style, line weight and colors). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels, no glow bleeding outside its cell. STRICT GRID: perfect grid of 6 columns x 4 rows, every cell identical (256x256 px at 1536x1024), one prop per cell, centered, base of the prop at the same height in every cell (85% down the cell), nothing crossing cell borders, each prop fully inside its cell. Props seen from above-front, lit from top-left. Row 1: 6 stone pillars (intact carved pillar with gold runes, tall slender pillar, short thick pillar, cracked pillar, half-broken pillar with rubble, fallen pillar lying on its side). Row 2: 6 rocks and boulders (large grey boulder, small rock cluster, mossy boulder, jagged rock with purple crystal veins, flat slab stones, pile of rubble). Rows 3-4: 12 dead trees and dead plants (twisted bare dead tree large, dead tree medium, dead tree with hanging cobwebs, leaning dead tree, tree stump with roots, hollow dead trunk, thorny dead bush, bare roots clump, withered shrub, dead tree with a few glowing teal leaves, gnarled tree with a skull in the trunk, small dead sapling)."
+ },
+ {
+  "id": "p02_tumbas_caveiras",
+  "titulo": "Props: tumbas, caveiras e ossos",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/07_cripta_tileset.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch). Style: hand-painted stylized 2D, chunky shapes, dark outline 2-3 px, warm gold + cold purple/teal neon accents, grey cracked stone crypt palette, exactly matching the attached official reference sheet (same painting style, line weight and colors). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels, no glow bleeding outside its cell. STRICT GRID: perfect grid of 6 columns x 4 rows, every cell identical (256x256 px at 1536x1024), one prop per cell, centered, base of the prop at the same height in every cell (85% down the cell), nothing crossing cell borders, each prop fully inside its cell. Props seen from above-front, lit from top-left. Row 1: 6 tombs and gravestones (rounded gravestone with cross, tall slab gravestone, stone sarcophagus closed with gold cross, sarcophagus with lid slid open, broken gravestone, crypt tomb with carved angel relief). Row 2: 6 grave dressing props (mound of fresh dirt grave with wooden cross, mausoleum door slab, stone coffin lid leaning, small stone altar with candles, grave with iron fence corner, tomb with wilted flowers). Rows 3-4: 12 skull and bone props (single skull, two skulls, skull pile, skull on a spike, bone pile with ribcage, scattered bones, skeleton lying curled, skeleton hand reaching out of ground, rib cage arch, large skull pile mound with candle, skull with glowing teal eyes, bone and chain heap)."
+ },
+ {
+  "id": "g01_fantasma_errante",
+  "titulo": "Fantasma errante",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch). Style: hand-painted stylized 2D, chunky shapes, dark outline 2-3 px, warm gold + cold purple/teal neon accents, grey cracked stone crypt palette, exactly matching the attached official reference sheet (same painting style, line weight and colors). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels, no glow bleeding outside its cell. STRICT GRID: perfect grid of 6 columns x 4 rows, every cell identical size (256x256 px at 1536x1024), same sprite scale in every cell, feet/pivot on the same point (horizontal center, 85% down the cell), nothing crossing cell borders. Rows: row 1 = move cycle facing DOWN (toward camera), 6 frames; row 2 = move cycle facing UP (away from camera), 6 frames; row 3 = move cycle facing RIGHT (side view), 6 frames; row 4 = attack facing RIGHT (frames 1-4: wind-up, strike, impact, recover) then death (frames 5-6: falling apart, collapsed/dissolved). Character: wandering crypt ghost: pale translucent white-teal humanoid spirit with a ragged shroud, hollow dark eye sockets with cyan glow, long wispy arms, no legs (tail of ghostly mist, floats and bobs), small and spooky, not cute. Attack = lunges forward and claws with both hands, a cold teal swipe trail. Death = dissolves into drifting teal wisps."
+ },
+ {
+  "id": "g02_espectro_correntes",
+  "titulo": "Espectro de correntes",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch). Style: hand-painted stylized 2D, chunky shapes, dark outline 2-3 px, warm gold + cold purple/teal neon accents, grey cracked stone crypt palette, exactly matching the attached official reference sheet (same painting style, line weight and colors). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels, no glow bleeding outside its cell. STRICT GRID: perfect grid of 6 columns x 4 rows, every cell identical size (256x256 px at 1536x1024), same sprite scale in every cell, feet/pivot on the same point (horizontal center, 85% down the cell), nothing crossing cell borders. Rows: row 1 = move cycle facing DOWN (toward camera), 6 frames; row 2 = move cycle facing UP (away from camera), 6 frames; row 3 = move cycle facing RIGHT (side view), 6 frames; row 4 = attack facing RIGHT (frames 1-4: wind-up, strike, impact, recover) then death (frames 5-6: falling apart, collapsed/dissolved). Character: chained wraith: tall ghost in a torn dark purple robe, hooded, face hidden in shadow with two purple glowing eyes, rusty chains wrapped around its torso and wrists, floating, ragged hem fading to purple smoke. Attack = swings a heavy chain in an arc. Death = chains fall and the robe collapses into smoke."
+ },
+ {
+  "id": "g03_esqueleto_soldado",
+  "titulo": "Esqueleto soldado",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch). Style: hand-painted stylized 2D, chunky shapes, dark outline 2-3 px, warm gold + cold purple/teal neon accents, grey cracked stone crypt palette, exactly matching the attached official reference sheet (same painting style, line weight and colors). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels, no glow bleeding outside its cell. STRICT GRID: perfect grid of 6 columns x 4 rows, every cell identical size (256x256 px at 1536x1024), same sprite scale in every cell, feet/pivot on the same point (horizontal center, 85% down the cell), nothing crossing cell borders. Rows: row 1 = move cycle facing DOWN (toward camera), 6 frames; row 2 = move cycle facing UP (away from camera), 6 frames; row 3 = move cycle facing RIGHT (side view), 6 frames; row 4 = attack facing RIGHT (frames 1-4: wind-up, strike, impact, recover) then death (frames 5-6: falling apart, collapsed/dissolved). Character: crypt skeleton soldier: bleached bones with rusty dented helmet and a small round wooden shield, short rusty sword, a few cloth rags, glowing faint teal in the eye sockets, shambling walk. Attack = overhead sword chop. Death = collapses into a bone pile with the helmet rolling away."
+ },
+ {
+  "id": "g04_morcego_cripta",
+  "titulo": "Morcego da cripta",
+  "tamanho": "1536x1024",
+  "referencias": [
+   "docs/arte/referencias-geracao/aprovadas/05_inimigos_ato1.png"
+  ],
+  "prompt": "Create a game-ready 2D SPRITE SHEET for the top-down action-RPG \"Echoes of the Shatter\" (Godot, camera looking down from above like Tibia / Diablo 1: high top-down 3/4 view, about 55 degrees pitch). Style: hand-painted stylized 2D, chunky shapes, dark outline 2-3 px, warm gold + cold purple/teal neon accents, grey cracked stone crypt palette, exactly matching the attached official reference sheet (same painting style, line weight and colors). Flat solid pure magenta (#FF00FF) background, NO ground shadow, NO scenery, NO text, NO labels, no glow bleeding outside its cell. STRICT GRID: perfect grid of 6 columns x 4 rows, every cell identical size (256x256 px at 1536x1024), same sprite scale in every cell, feet/pivot on the same point (horizontal center, 85% down the cell), nothing crossing cell borders. Rows: row 1 = move cycle facing DOWN (toward camera), 6 frames; row 2 = move cycle facing UP (away from camera), 6 frames; row 3 = move cycle facing RIGHT (side view), 6 frames; row 4 = attack facing RIGHT (frames 1-4: wind-up, strike, impact, recover) then death (frames 5-6: falling apart, collapsed/dissolved). Character: crypt bat: large dark purple bat with tattered wings, small fangs, glowing amber eyes, flapping flight (wings up/down across the 6 frames), hovering slightly above the ground. Attack = dive-bite lunge with wings spread. Death = falls and lands on its back, wings limp."
+ }
+]
