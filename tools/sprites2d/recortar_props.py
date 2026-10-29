@@ -18,6 +18,11 @@ NOMES = {
         "grave_dirt_cross", "mausoleum_door", "coffin_lid_leaning", "altar_candles", "grave_fence", "tomb_flowers",
         "skull_single", "skull_pair", "skull_pile", "skull_spike", "bones_ribcage", "bones_scattered",
         "skeleton_curled", "skeleton_hand", "ribcage_arch", "skull_mound_candles", "skull_teal_eyes", "bones_chains"],
+    "p03_vegetacao_seca": [
+        "tree_dry_large", "tree_dry_orange", "tree_dry_thin", "tree_dry_pile", "tree_dry_leaning", "tree_dry_small",
+        "bush_dry_round", "bush_dry_thorny", "shrub_dry_tall", "bush_dry_wide", "bush_dry_tangled", "bush_dry_red",
+        "grass_dry_tall", "grass_dry_patch", "reeds_dry", "ferns_withered", "thistles_dry", "flowers_dead",
+        "leaves_pile", "leaves_scattered", "log_fallen", "branches_fallen", "vines_dry_rock", "leaves_bone"],
 }
 
 def chave(img):
@@ -34,6 +39,46 @@ def chave(img):
     out[:, ::256][:, :, 3] = 0
     return Image.fromarray(out, "RGBA")
 
+def tira_fragmentos_de_borda(cel):
+    """Apaga pedaços pequenos colados na borda do recorte (restos do vizinho)."""
+    a = np.array(cel)
+    lab, n = ndimage.label(a[..., 3] > 0, structure=np.ones((3, 3)))
+    if n < 2:
+        return cel
+    areas = ndimage.sum(np.ones_like(lab), lab, range(1, n + 1))
+    grande = max(areas)
+    for i, ar in enumerate(areas, 1):
+        m = lab == i
+        if ar < 0.1 * grande and (m[0].any() or m[-1].any() or m[:, 0].any() or m[:, -1].any()):
+            a[m, 3] = 0
+    return Image.fromarray(a, "RGBA")
+
+# folhas em que os props não respeitam a grade de 256 px
+POR_COMPONENTE = {"p03_vegetacao_seca"}
+
+def por_componente(im, juncao=8):
+    """Separa os props por agrupamento de pixels (ordem: linha a linha, esquerda para a direita)."""
+    a = np.array(im)
+    sol = a[..., 3] > 0
+    lab, n = ndimage.label(ndimage.binary_dilation(sol, iterations=juncao))
+    lab = np.where(sol, lab, 0)
+    objs = ndimage.find_objects(lab)
+    itens = []
+    for i, sl in enumerate(objs, 1):
+        if sl is not None and (lab == i).sum() >= 1500:
+            itens.append((sl[0].stop, sl[1].start, i))
+    itens.sort()  # pela linha de base; depois cada linha de 6 vai da esquerda para a direita
+    centros, n_linhas, por_linha = itens, 4, 6
+    saida = []
+    for r in range(n_linhas):
+        linha = sorted(centros[r * por_linha:(r + 1) * por_linha], key=lambda t: t[1])
+        for _, _, i in linha:
+            b = np.zeros_like(a)
+            m = lab == i
+            b[m] = a[m]
+            saida.append(Image.fromarray(b, "RGBA"))
+    return saida
+
 def main(brutos, saida_props, saida_ini):
     os.makedirs(saida_props, exist_ok=True)
     os.makedirs(saida_ini, exist_ok=True)
@@ -42,10 +87,14 @@ def main(brutos, saida_props, saida_ini):
             continue
         id_ = f[:-4]
         im = chave(Image.open(os.path.join(brutos, f)))
-        if id_ in NOMES:
+        if id_ in NOMES and id_ in POR_COMPONENTE:
+            for nome, cel in zip(NOMES[id_], por_componente(im)):
+                cel.crop(cel.getbbox()).save(os.path.join(saida_props, f"{nome}.png"))
+        elif id_ in NOMES:
             for i, nome in enumerate(NOMES[id_]):
                 c, l = i % 6, i // 6
                 cel = im.crop((c * 256 + 3, l * 256 + 3, c * 256 + 253, l * 256 + 253))
+                cel = tira_fragmentos_de_borda(cel)
                 bb = cel.getbbox()
                 if bb:
                     cel.crop(bb).save(os.path.join(saida_props, f"{nome}.png"))
