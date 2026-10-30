@@ -35,6 +35,7 @@ func _testar() -> void:
 	await _testar_chefe_luta()
 	await _testar_corrida()
 	await _testar_meta()
+	await _testar_forja()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -435,6 +436,53 @@ func _testar_meta() -> void:
 	run.menus.ao_titulo.emit()
 	run.menus.mostrar_meta()
 	check(run.menus.tela == run.menus.Tela.META, "tela de melhorias abre")
+	paused = false
+	run.queue_free()
+	DirAccess.remove_absolute(MetaScript.caminho)
+
+func _testar_forja() -> void:
+	const BASE := {"hp_max": 100.0, "speed": 100.0, "arrow_damage": 10.0, "dodge_cooldown": 1.0, "shoot_cooldown": 0.4}
+	MetaScript.caminho = "user://save_teste_forja_2d.json"
+	DirAccess.remove_absolute(MetaScript.caminho)
+	var m = MetaScript.new()
+	m.carregar()
+	check(m.receitas.size() >= 6, "receitas.csv carrega")
+	for id in m.receitas:
+		check(Csv.t("recipe.%s.name" % id) != "recipe.%s.name" % id, "texto da receita %s" % id)
+		for mat in m.receitas[id]["custo"]:
+			check(Csv.t("material." + mat) != "material." + mat, "material %s de %s existe" % [mat, id])
+	check(not m.criar("amuleto_osso"), "sem materiais não cria")
+	m.creditar({"fragmentos": 200, "materiais": {"osso_antigo": 10, "pedra_cinza": 1, "essencia_etera": 4}})
+	check(m.criar("amuleto_osso") and m.amuletos.has("amuleto_osso") and m.equipado == "amuleto_osso", "cria e equipa o primeiro amuleto")
+	check(m.materiais["osso_antigo"] == 7 and m.materiais["pedra_cinza"] == 0 and m.fragmentos == 170, "gasta materiais e fragmentos")
+	check(not m.criar("amuleto_osso"), "amuleto só se cria uma vez")
+	check(is_equal_approx(m.aplicar(BASE)["arrow_damage"], 10.5), "amuleto equipado soma o bônus")
+	check(m.criar("amuleto_essencia") and m.equipado == "amuleto_osso", "segundo amuleto não troca o slot sozinho")
+	check(m.equipar("amuleto_essencia") and m.equipado == "amuleto_essencia", "equipar troca o slot")
+	check(m.criar("tonico_vida") and m.estoque["tonico_vida"] == 1, "consumível vai ao estoque")
+	check(is_equal_approx(m.aplicar(BASE)["hp_max"], 100.0), "consumível guardado ainda não vale")
+	var m2 = MetaScript.new()
+	check(m2.carregar() and m2.equipado == "amuleto_essencia" and m2.amuletos.has("amuleto_osso") and m2.estoque["tonico_vida"] == 1, "forja volta idêntica do disco")
+	m2.preparar_corrida()
+	check(is_equal_approx(m2.aplicar(BASE)["hp_max"], 125.0) and m2.estoque["tonico_vida"] == 0, "partir gasta o consumível e aplica o bônus")
+	m2.preparar_corrida()
+	check(is_equal_approx(m2.aplicar(BASE)["hp_max"], 100.0), "sem estoque, a próxima corrida não tem o bônus")
+	# Balanceamento: uma corrida completa rende ~15 materiais; a 1ª receita sai em até uma corrida.
+	var total := 0
+	for e in ["hollow_sentinel", "skeleton_soldier", "skeleton_soldier", "skeleton_soldier", "wandering_ghost", "wandering_ghost", "crypt_bat", "crypt_bat", "chain_wraith", "chain_wraith", "ghost_archer", "ghost_archer", "skeleton_soldier"]:
+		total += m.drop_de(e)["material_qtd"]
+	check(total >= 12, "corrida até a sala 3 rende ao menos 12 materiais (%d)" % total)
+	var custo1 := 0
+	for q in m.receitas["amuleto_osso"]["custo"].values():
+		custo1 += q
+	check(custo1 <= 4, "primeira receita custa até 4 materiais")
+	var run = RunScene.instantiate()
+	run.com_menu = true
+	root.add_child(run)
+	await physics_frame
+	check(run.menus.tela == run.menus.Tela.TITULO, "título abre como hub")
+	run.menus.mostrar_forja()
+	check(run.menus.tela == run.menus.Tela.FORJA, "forja abre pelo hub")
 	paused = false
 	run.queue_free()
 	DirAccess.remove_absolute(MetaScript.caminho)

@@ -12,7 +12,7 @@ signal ao_titulo      # volta ao título
 signal pausa_pedida   # jogador apertou Esc durante a luta
 signal sair
 
-enum Tela { NENHUMA, TITULO, PAUSA, FIM, META }
+enum Tela { NENHUMA, TITULO, PAUSA, FIM, META, FORJA }
 
 var tela := Tela.NENHUMA
 var meta: RefCounted   # meta_2d.gd; a loja de melhorias do título
@@ -52,9 +52,55 @@ func fechar() -> void:
 	tela = Tela.NENHUMA
 	_fundo.visible = false
 
+## Título e hub entre corridas: saldo, amuleto equipado e as estações (Forja, Melhorias).
 func mostrar_titulo() -> void:
+	var linhas := []
+	if meta != null:
+		linhas = _resumo_hub()
 	_montar(Tela.TITULO, "menu.title", "menu.subtitle", [
-		["menu.play", jogar], ["menu.meta", mostrar_meta], ["menu.quit", sair]])
+		["menu.play", jogar], ["menu.forge", mostrar_forja], ["menu.meta", mostrar_meta], ["menu.quit", sair]], linhas)
+
+func _resumo_hub() -> Array:
+	var linhas := [Csv.t("menu.meta_balance") % meta.fragmentos]
+	var mats := []
+	for m in meta.materiais:
+		if int(meta.materiais[m]) > 0:
+			mats.append("%s x%d" % [Csv.t("material." + m), meta.materiais[m]])
+	if not mats.is_empty():
+		linhas.append(", ".join(mats))
+	if meta.equipado != "":
+		linhas.append(Csv.t("menu.forge_equipped") % Csv.t("recipe.%s.name" % meta.equipado))
+	return linhas
+
+func _custo_txt(r: Dictionary) -> String:
+	var partes := []
+	for m in r["custo"]:
+		partes.append("%d %s" % [r["custo"][m], Csv.t("material." + m)])
+	partes.append(Csv.t("menu.forge_fragments") % r["fragmentos"])
+	return ", ".join(partes)
+
+## Forja: criar amuletos e consumíveis com materiais; amuleto criado vira botão de equipar.
+func mostrar_forja() -> void:
+	var botoes := []
+	for id in meta.ordem_receitas:
+		var r: Dictionary = meta.receitas[id]
+		var nome := Csv.t("recipe.%s.name" % id)
+		var txt: String
+		if r["tipo"] == "amuleto" and meta.amuletos.has(id):
+			txt = Csv.t("menu.forge_unequip" if meta.equipado == id else "menu.forge_equip") % nome
+			botoes.append([txt, func() -> void:
+				meta.equipar(id)
+				mostrar_forja()])
+			continue
+		if r["tipo"] == "consumivel":
+			txt = Csv.t("menu.forge_craft_stock") % [nome, meta.estoque.get(id, 0), r["estoque_max"], _custo_txt(r)]
+		else:
+			txt = Csv.t("menu.forge_craft") % [nome, _custo_txt(r)]
+		botoes.append([txt, func() -> void:
+			meta.criar(id)
+			mostrar_forja(), not meta.pode_criar(id)])
+	botoes.append(["menu.back", mostrar_titulo])
+	_montar(Tela.FORJA, "menu.forge_title", "menu.forge_hint", botoes, _resumo_hub().slice(0, 2))
 
 func mostrar_pausa() -> void:
 	_montar(Tela.PAUSA, "menu.paused", "", [
@@ -144,7 +190,7 @@ func _input(ev: InputEvent) -> void:
 		match tela:
 			Tela.PAUSA:
 				retomar.emit()
-			Tela.META:
+			Tela.META, Tela.FORJA:
 				mostrar_titulo()
 			Tela.NENHUMA:
 				pausa_pedida.emit()

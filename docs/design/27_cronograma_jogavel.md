@@ -70,3 +70,10 @@ O Will perguntou se o jogo seguiria como roguelike ou viraria um MMO 2D de explo
 
 ## 7. M7 — decisões do Jev sobre preços e habilidades (30/10/2026)
 Consulta ao `jev-latest` (`POST /v1/systemone`) sobre a loja de meta-progressão: baratear ~30% os preços propostos (80% contra 17% de manter), manter as três habilidades bloqueadas no início (multishot, pierce, evasão; 100%), primeira compra em até 2 corridas (76%) e bônus de stat pequenos o bastante para não quebrar as cartas (61%). Preços finais em `godot/data2d/meta.csv`: melhorias 28/42/35, habilidades 56/56/42 fragmentos.
+
+## 8. M8 — hub com craft básico e balanceamento (30/10/2026)
+Consulta ao `jev-latest` sobre o hub: menu com Forja/Melhorias/Partir, sem cenário andável (89%); craft de amuletos e consumíveis juntos (99%); 1 slot de amuleto (100%); primeira receita com 3 a 4 materiais (44% contra 39% para 1 a 2); bônus de amuleto menor que a melhoria de loja de +10% de dano (78%).
+- **Hub**: o título virou o hub. Mostra fragmentos, materiais e o amuleto equipado; botões Jogar, Forja, Melhorias, Sair. A Forja cria receitas de `godot/data2d/receitas.csv` (custo em até 2 materiais mais fragmentos).
+- **Amuletos**: criados uma vez, 1 slot equipado, bônus permanente de stat (+5% dano, +5% velocidade, +10 vida, −8% recarga da esquiva, −6% recarga do tiro). **Consumíveis**: estoque de até 3, uma unidade de cada é gasta ao partir e vale só naquela corrida.
+- **Orçamento de materiais por corrida completa** (drops de `drops.csv`, salas de `run.csv`): osso ~7, essência ~4, ferro ~2, pedra ~1, núcleo 1 (só com o chefe morto), cerca de 15 no total e ~140 fragmentos numa vitória. Por isso a pedra aparece pouco nas receitas (1 a 2) e o ferro só nas mais caras. Primeira receita (Amuleto de Osso): 4 materiais, sai em uma corrida; o amuleto mais caro (Estilhaço) pede o núcleo do chefe e leva ao menos 2 vitórias com as outras compras.
+- Os números ficam no CSV; o teste `_testar_forja` confere a rodada de materiais e o custo da 1ª receita.

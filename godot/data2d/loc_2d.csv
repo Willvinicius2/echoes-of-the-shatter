@@ -67,3 +67,19 @@ material.osso_antigo,Osso Antigo
 material.essencia_etera,Essencia Etera
 material.ferro_corroido,Ferro Corroido
 material.nucleo_estilhaco,Nucleo de Estilhaco
+menu.forge,Forja
+menu.forge_title,Forja
+menu.forge_hint,Cada consumivel guardado e gasto ao partir.
+menu.forge_equipped,Amuleto: %s
+menu.forge_fragments,%d fragmentos
+menu.forge_craft,Criar %s  [%s]
+menu.forge_craft_stock,Criar %s (%d/%d)  [%s]
+menu.forge_equip,Equipar %s
+menu.forge_unequip,%s  (equipado - desequipar)
+recipe.amuleto_osso.name,Amuleto de Osso
+recipe.amuleto_essencia.name,Amuleto Etereo
+recipe.amuleto_pedra.name,Amuleto de Pedra
+recipe.amuleto_ferro.name,Amuleto de Ferro
+recipe.amuleto_nucleo.name,Amuleto do Estilhaco
+recipe.tonico_vida.name,Tonico de Vida
+recipe.po_afiado.name,Po Afiado
