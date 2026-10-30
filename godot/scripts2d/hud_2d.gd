@@ -108,8 +108,9 @@ func _desenhar_globos(vp: Vector2) -> void:
 	Arte.texto(_ctl, Vector2(ev.x + raio + 10, ev.y + 30), Csv.t("hud.hp"), 14, Tema.cor("texto_suave"))
 	var ed := _centro_globo(vp, true)
 	Arte.globo(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
+	_ctl.draw_circle(ed + Vector2(0, raio * 0.3), raio * 0.55, Color(0.2, 0.3, 0.9, 0.12))   # brilho azul fraco por baixo
 	# corrente nítida em X sobre o vidro vazio e cadeado pequeno no centro
-	var rr := raio * 0.66
+	var rr := raio * 0.5
 	Arte.corrente(_ctl, ed + Vector2(-rr, -rr), ed + Vector2(rr, rr), 7)
 	Arte.corrente(_ctl, ed + Vector2(rr, -rr), ed + Vector2(-rr, rr), 7)
 	Arte.cadeado(_ctl, ed + Vector2(0, -8), 20.0)

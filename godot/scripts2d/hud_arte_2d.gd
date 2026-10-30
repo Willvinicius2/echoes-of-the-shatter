@@ -65,13 +65,22 @@ static func caveira(c: CanvasItem, p: Vector2, r := 9.0) -> void:
 	for k in 3:
 		c.draw_line(p + Vector2(-r * 0.3 + k * r * 0.3, r * 0.75), p + Vector2(-r * 0.3 + k * r * 0.3, r * 1.2), Color(0, 0, 0, 0.7), 1.0)
 
-## Corrente reta entre dois pontos (globo trancado): elos alternados de frente e de lado.
-static func corrente(c: CanvasItem, p0: Vector2, p1: Vector2, elos := 9) -> void:
+## Corrente reta entre dois pontos: elos ovais de frente (anel) alternados com elos de perfil (barra), contínuos.
+static func corrente(c: CanvasItem, p0: Vector2, p1: Vector2, elos := 13) -> void:
+	var dir := (p1 - p0).normalized()
+	var ang := dir.angle()
 	for i in elos:
 		var p := p0.lerp(p1, float(i) / (elos - 1))
-		var tam := Vector2(4.5, 2.5) if i % 2 == 0 else Vector2(2.5, 4.5)
-		c.draw_rect(Rect2(p - tam - Vector2(1, 1), tam * 2 + Vector2(2, 2)), Color(0, 0, 0, 0.75), false, 2.5)
-		c.draw_rect(Rect2(p - tam, tam * 2), _c("metal_claro"), false, 1.5)
+		if i % 2 == 0:
+			var oval := PackedVector2Array()
+			for k in 17:
+				var a := TAU * k / 16.0
+				oval.append(p + Vector2(cos(a) * 7.5, sin(a) * 3.8).rotated(ang))
+			c.draw_polyline(oval, Color(0, 0, 0, 0.85), 4.5)
+			c.draw_polyline(oval, _c("metal_claro"), 2.2)
+		else:
+			c.draw_line(p - dir * 4.5, p + dir * 4.5, Color(0, 0, 0, 0.85), 5.0)
+			c.draw_line(p - dir * 4.5, p + dir * 4.5, _c("metal_medio").lightened(0.15), 3.0)
 
 ## Cadeado de ferro com argola e fechadura.
 static func cadeado(c: CanvasItem, p: Vector2, lado := 28.0) -> void:
@@ -310,13 +319,13 @@ static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecl
 		var arco := PackedVector2Array([ctr])
 		for p in _arco(ctr, vao.size.x * 0.72, ini, fim, 28):
 			arco.append(Vector2(clampf(p.x, vao.position.x, vao.end.x), clampf(p.y, vao.position.y, vao.end.y)))
-		c.draw_colored_polygon(arco, Color(0, 0, 0, 0.66))
+		c.draw_colored_polygon(arco, Color(0, 0, 0, 0.78))
 	if tecla != "":
-		tecla_placa(c, Vector2(r.get_center().x, r.end.y - 14), tecla)
+		tecla_placa(c, Vector2(r.position.x + 4 + maxf(36.0, 10.0 + tecla.length() * 7.0) * 0.5, r.end.y - 13), tecla)
 
 ## Plaquinha de tecla (abaixo do slot, sem tocar a borda dele).
 static func tecla_placa(c: CanvasItem, centro: Vector2, tecla: String) -> void:
-	var larg := maxf(40.0, 12.0 + tecla.length() * 8.0)
+	var larg := maxf(36.0, 10.0 + tecla.length() * 7.0)
 	var pl := Rect2(centro - Vector2(larg * 0.5, 8), Vector2(larg, 16))
 	placa(c, pl, _c("metal_escuro"), 1.0, false)
 	c.draw_rect(pl.grow(-2), Color(0, 0, 0, 0.35), false, 1.0)
