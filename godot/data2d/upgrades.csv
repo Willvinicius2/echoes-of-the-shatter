@@ -1,0 +1,8 @@
+id,stat,modo,valor,nivel_max
+power,arrow_damage,mult,0.25,3
+haste,shoot_cooldown,mult,-0.15,3
+swift,speed,mult,0.12,3
+vitality,hp_max,add,30,3
+multishot,arrow_count,add,1,2
+pierce,arrow_pierce,add,1,2
+evasion,dodge_cooldown,mult,-0.2,3

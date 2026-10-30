@@ -8,6 +8,7 @@ var sala := 1
 var total_salas := 1
 var mensagem := ""
 var chefe: Node2D
+var upgrades: RefCounted
 var _ctl: Control
 
 func _ready() -> void:
@@ -29,6 +30,13 @@ func _desenhar() -> void:
 		_ctl.draw_string(fonte, Vector2(30, 41), Csv.t("hud.hp"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14)
 		var cdmax: float = jogador.stats.get("dodge_cooldown", 1.0)
 		_barra(Vector2(24, 52), Vector2(300, 10), 1.0 - jogador.dodge_cd / cdmax, Color(0.3, 0.7, 0.9))
+	if upgrades != null and not upgrades.niveis.is_empty():
+		var y := 86.0
+		for id in upgrades.ordem:
+			var nv: int = upgrades.nivel(id)
+			if nv > 0:
+				_ctl.draw_string(fonte, Vector2(24, y), "%s x%d" % [Csv.t("upgrade.%s.name" % id), nv], HORIZONTAL_ALIGNMENT_LEFT, -1, 16)
+				y += 20.0
 	_ctl.draw_string(fonte, Vector2(vp.x - 200, 40), Csv.t("hud.room") % [sala, total_salas], HORIZONTAL_ALIGNMENT_LEFT, -1, 22)
 	_ctl.draw_string(fonte, Vector2(24, vp.y - 20), Csv.t("hud.help"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, 0.6))
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
