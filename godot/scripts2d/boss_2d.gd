@@ -4,6 +4,9 @@ extends "res://scripts2d/enemy_2d.gd"
 
 enum Ciclo { ENTRADA, PAUSA, AVISO, ACAO, FASE, FIM }
 
+const Tema = preload("res://scripts2d/tema_2d.gd")
+const Arte = preload("res://scripts2d/hud_arte_2d.gd")
+
 signal fase_mudou(fase: int)
 
 var ciclo := Ciclo.ENTRADA
@@ -247,19 +250,17 @@ func _desenhar_barra() -> void:
 		return
 	var vp := _ctl.size
 	var alfa := 1.0 if ciclo != Ciclo.ENTRADA else clampf(1.0 - _t / maxf(_t_total, 0.01), 0.0, 1.0)
-	var fonte := ThemeDB.fallback_font
-	var pos := Vector2(vp.x / 2 - 300, 52)
-	var tam := Vector2(600, 16)
-	_ctl.draw_rect(Rect2(pos - Vector2(2, 2), tam + Vector2(4, 4)), Color(0.05, 0.05, 0.07, 0.9 * alfa))
+	_ctl.modulate.a = alfa
+	var pos := Vector2(vp.x / 2 - 300, 62)
+	var tam := Vector2(600, 18)
 	var cor := Color(0.6, 0.2, 0.7) if fase == 1 else (Color(0.8, 0.25, 0.55) if fase == 2 else Color(0.9, 0.2, 0.2))
-	cor.a = alfa
-	_ctl.draw_rect(Rect2(pos, Vector2(tam.x * clampf(hp / hp_max, 0.0, 1.0), tam.y)), cor)
+	Arte.barra(_ctl, Rect2(pos, tam), hp / hp_max, cor.darkened(0.6), cor.lightened(0.15))
 	for f in fases:
 		if f > 1:
 			var x: float = pos.x + tam.x * fases[f]["pct"] / 100.0
-			_ctl.draw_rect(Rect2(x - 1, pos.y - 3, 2, tam.y + 6), Color(1, 1, 1, 0.8 * alfa))
-	_ctl.draw_string(fonte, pos + Vector2(0, -6), Csv.t("hud.boss"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 1, 1, alfa))
-	_ctl.draw_string(fonte, pos + Vector2(0, -6), Csv.t("hud.boss_phase") % [fase, total_fases()], HORIZONTAL_ALIGNMENT_RIGHT, tam.x, 14, Color(1, 1, 1, 0.7 * alfa))
+			_ctl.draw_rect(Rect2(x - 1.5, pos.y - 3, 3, tam.y + 6), Tema.cor("destaque"))
+	Arte.texto(_ctl, pos + Vector2(0, -10), Csv.t("hud.boss"), 18, Tema.cor("destaque"), HORIZONTAL_ALIGNMENT_LEFT)
+	Arte.texto(_ctl, pos + Vector2(0, -10), Csv.t("hud.boss_phase") % [fase, total_fases()], 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, tam.x)
 
 ## Aviso por padrão: área (golpe), linha de mira (leque/investida) ou anel que se expande (anel).
 func _draw() -> void:
