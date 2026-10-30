@@ -28,6 +28,9 @@ func _testar() -> void:
 	await _testar_upgrades()
 	_testar_feel()
 	await _testar_telegrafo()
+	_testar_chefe_csv()
+	await _testar_chefe_fases()
+	await _testar_chefe_luta()
 	await _testar_corrida()
 
 func _testar_upgrades() -> void:
@@ -133,6 +136,150 @@ func _testar_telegrafo() -> void:
 	check(e.hp == vida - 5.0 and e._kb.length() > 0.0, "flecha fere e empurra o inimigo")
 	mundo.queue_free()
 	await physics_frame
+
+## boss_patterns_2d.csv: fases em ordem, limiares decrescentes e golpes justos (dano, aviso, folga entre padrões).
+func _testar_chefe_csv() -> void:
+	var BossScript = load("res://scripts2d/boss_2d.gd")
+	var d: Dictionary = BossScript.carregar_padroes()
+	var hp_jogador: float = Csv.kv("res://data2d/player.csv")["hp_max"]
+	var dano: float = Csv.enemy("crypt_guardian")["damage"]
+	check(d["entrada"] > 0.0, "chefe tem animação de entrada (%.1f s)" % d["entrada"])
+	var fases: Array = d.keys().filter(func(k): return k is int)
+	fases.sort()
+	check(fases.size() >= 2 and fases.size() <= 3 and fases[0] == 1, "chefe tem 2 ou 3 fases (%d)" % fases.size())
+	var pct_ant := 101.0
+	for f in fases:
+		check(d[f]["pct"] < pct_ant, "fase %d começa com menos vida que a anterior (%d%%)" % [f, d[f]["pct"]])
+		pct_ant = d[f]["pct"]
+		check(f == 1 or d[f]["trans"] > 0.0, "fase %d tem transição" % f)
+		check(d[f]["passos"].size() >= 3, "fase %d tem pelo menos 3 padrões" % f)
+		for p in d[f]["passos"]:
+			var golpe: float = dano * p["dano_mult"]
+			check(golpe <= hp_jogador * 0.25, "fase %d %s: golpe de %d <= 25%% da vida" % [f, p["padrao"], golpe])
+			check(p["aviso"] >= 0.4 and p["pausa"] >= 0.6, "fase %d %s: aviso >= 0,4 s e pausa >= 0,6 s" % [f, p["padrao"]])
+			if p["padrao"] == "anel":
+				# vão entre dois tiros a 250 px do chefe precisa deixar o arqueiro (raio 14) passar
+				var vao: float = TAU * 250.0 / p["qtd"]
+				check(vao >= 90.0, "fase %d anel de %d tem vão de %d px" % [f, p["qtd"], vao])
+
+func _novo_duelo(niveis: Dictionary) -> Array:
+	var mundo := Node2D.new()
+	root.add_child(mundo)
+	var p = load("res://scripts2d/player_2d.gd").new()
+	mundo.add_child(p)
+	var cam := Camera2D.new()
+	mundo.add_child(cam)
+	var up = load("res://scripts2d/upgrades_2d.gd").new()
+	up.restaurar(p)
+	p.reset()
+	for id in niveis:
+		for _i in niveis[id]:
+			up.escolher(id, p)
+	var b = load("res://scripts2d/boss_2d.gd").new()
+	mundo.add_child(b)
+	p.global_position = Vector2(0, 0)
+	b.setup("crypt_guardian", p, Vector2(0, -320))
+	return [mundo, p, b]
+
+func _testar_chefe_fases() -> void:
+	var duelo := _novo_duelo({})
+	var p = duelo[1]
+	var b = duelo[2]
+	check(b.invulneravel() and b.ciclo == b.Ciclo.ENTRADA, "chefe nasce em entrada")
+	b.take_damage(100.0)
+	check(b.hp == b.hp_max, "chefe é invulnerável durante a entrada")
+	await _esperar(func(): return b.ciclo != b.Ciclo.ENTRADA, b.entrada_dur + 1.0)
+	check(b.ciclo == b.Ciclo.PAUSA and not b.invulneravel(), "entrada termina e o chefe fica vulnerável")
+	var vistas: Array = []
+	b.fase_mudou.connect(func(f): vistas.append(f))
+	p.god_mode = true
+	var limiar: float = b.fases[2]["pct"]
+	b.take_damage(b.hp_max * (1.0 - limiar / 100.0) + 1.0)
+	check(b.fase == 2 and b.ciclo == b.Ciclo.FASE and vistas == [2], "cruzar %d%% da vida abre a fase 2" % limiar)
+	var hp: float = b.hp
+	b.take_damage(50.0)
+	check(b.hp == hp, "chefe é invulnerável na transição de fase")
+	await _esperar(func(): return b.ciclo != b.Ciclo.FASE, 3.0)
+	check(b.ciclo == b.Ciclo.PAUSA, "transição termina")
+	b.take_damage(b.hp_max * (limiar - b.fases[3]["pct"]) / 100.0 + 1.0)
+	check(b.fase == 3 and vistas == [2, 3], "fase 3 depois de cruzar %d%%" % b.fases[3]["pct"])
+	await _esperar(func(): return b.ciclo != b.Ciclo.FASE, 3.0)
+	var vistos := {}
+	var t := 0.0
+	while t < 40.0 and vistos.size() < 4:
+		await physics_frame
+		t += 1.0 / 60.0
+		if b.ciclo == b.Ciclo.ACAO:
+			vistos[b.passo["padrao"]] = true
+	check(vistos.size() == 4, "fase 3 executa golpe, anel, leque e investida (%s)" % str(vistos.keys()))
+	b.take_damage(1.0e6)
+	check(b.estado == b.Estado.MORTO and b.ciclo == b.Ciclo.FIM, "chefe morre")
+	await _esperar(func(): return not is_instance_valid(duelo[2]), 4.0)
+	check(not is_instance_valid(duelo[2]), "chefe some depois da animação de morte")
+	check(get_nodes_in_group("proj_chefe").is_empty(), "tiros do chefe somem quando ele morre")
+	duelo[0].queue_free()
+	await physics_frame
+
+func _hit_stop_acabou() -> bool:
+	return load("res://scripts2d/feel_2d.gd").hit_stop_acabou()
+
+## Arqueiro-robô: mantém distância, circula, atira e esquiva de tiros e golpes avisados.
+func _simular_duelo(niveis: Dictionary, limite: float) -> Dictionary:
+	var duelo := _novo_duelo(niveis)
+	var p = duelo[1]
+	var b = duelo[2]
+	var t := 0.0
+	var lado := 1.0
+	var troca := 0.0
+	var esquivas := 0
+	Engine.time_scale = 4.0
+	while is_instance_valid(b) and b.estado != b.Estado.MORTO and not p.esta_morto() and t < limite:
+		await physics_frame
+		if _hit_stop_acabou():
+			Engine.time_scale = 4.0
+		t += 1.0 / 60.0
+		troca += 1.0 / 60.0
+		if troca > 2.2:
+			troca = 0.0
+			lado = -lado
+		var d: Vector2 = p.global_position - b.global_position
+		p.auto_aim = (b.global_position - p.global_position) if b.ciclo != b.Ciclo.ENTRADA else Vector2.ZERO
+		var rad := 0.0
+		if d.length() < 250.0:
+			rad = 1.0
+		elif d.length() > 380.0:
+			rad = -1.0
+		p.auto_move = (d.normalized() * rad + d.normalized().orthogonal() * lado * 0.8).normalized()
+		if p.dodge_cd <= 0.0 and p.estado != p.Estado.ESQUIVA:
+			var fuga := Vector2.ZERO
+			for pr in get_nodes_in_group("proj_chefe"):
+				var rel: Vector2 = p.global_position - pr.global_position
+				if rel.length() < 120.0 and rel.dot(pr.velocity) > 0.0:
+					fuga = pr.velocity.normalized().orthogonal() * lado
+			if b.ciclo == b.Ciclo.AVISO and b._t < 0.2 and not b.passo.is_empty():
+				if b.passo["padrao"] == "investida":
+					fuga = b._dir_para_alvo().orthogonal() * lado
+				elif b.passo["padrao"] == "golpe" and d.length() < b.passo["alcance"] * 1.3 + 40.0:
+					fuga = d.normalized()
+			if fuga != Vector2.ZERO:
+				esquivas += 1
+				p._comecar_esquiva(fuga)
+	Engine.time_scale = 1.0
+	var r := {"venceu": is_instance_valid(b) and b.estado == b.Estado.MORTO, "tempo": t, "vida": p.hp, "esquivas": esquivas}
+	duelo[0].queue_free()
+	await physics_frame
+	return r
+
+## Chefe derrotável e justo: o robô vence sem upgrades e com upgrades, e a luta não é trivial.
+func _testar_chefe_luta() -> void:
+	var sem: Dictionary = await _simular_duelo({}, 240.0)
+	print("duelo sem upgrades: ", sem)
+	check(sem["venceu"], "robô derrota o chefe sem upgrades em %.0f s" % sem["tempo"])
+	check(sem["tempo"] >= 15.0, "luta sem upgrades não é trivial (>= 15 s)")
+	var com: Dictionary = await _simular_duelo({"power": 2, "haste": 1, "vitality": 1, "multishot": 1}, 240.0)
+	print("duelo com upgrades: ", com)
+	check(com["venceu"], "robô derrota o chefe com upgrades em %.0f s" % com["tempo"])
+	check(com["tempo"] < sem["tempo"], "upgrades encurtam a luta")
 
 func _testar_corrida() -> void:
 	var run = RunScene.instantiate()
