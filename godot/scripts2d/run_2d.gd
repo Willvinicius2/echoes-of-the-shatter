@@ -7,8 +7,10 @@ const RoomScript = preload("res://scripts2d/room_2d.gd")
 const PlayerScript = preload("res://scripts2d/player_2d.gd")
 const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
+const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
+const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 
-enum Estado { LUTA, LIMPA, MORTO, VENCEU }
+enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA }
 
 var config := {}
 var salas: Array = []
@@ -18,6 +20,8 @@ var rng := RandomNumberGenerator.new()
 var room: Node2D
 var player: Node2D
 var hud: CanvasLayer
+var upgrades: RefCounted
+var ui: CanvasLayer
 var camera: Camera2D
 var atores: Node2D
 var vivos := 0
@@ -36,16 +40,23 @@ func _ready() -> void:
 	camera = Camera2D.new()
 	camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	add_child(camera)
+	upgrades = UpgradesScript.new()
 	hud = HudScript.new()
 	hud.jogador = player
+	hud.upgrades = upgrades
 	hud.total_salas = salas.size()
 	add_child(hud)
+	ui = UpgradeUiScript.new()
+	ui.upgrades = upgrades
+	ui.escolhido.connect(_on_upgrade_escolhido)
+	add_child(ui)
 	iniciar_corrida()
 
 func iniciar_corrida() -> void:
 	rng.seed = int(config["seed"]) + corridas
 	corridas += 1
 	indice = 0
+	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador
 	player.reset()
 	_carregar_sala(0)
 
@@ -112,12 +123,25 @@ func _physics_process(delta: float) -> void:
 		if _timer <= 0.0:
 			match estado:
 				Estado.LIMPA:
-					room.abrir_porta()
-					hud.mensagem = Csv.t("hud.room_clear")
+					var cartas: Array = upgrades.sortear(rng, int(config["upgrade_cards"])) if indice + 1 < salas.size() else []
+					if cartas.is_empty():
+						_abrir_porta()
+					else:
+						estado = Estado.ESCOLHA
+						ui.abrir(cartas)
 				Estado.MORTO, Estado.VENCEU:
 					iniciar_corrida()
 	if estado == Estado.MORTO and Input.is_action_just_pressed("renascer"):
 		iniciar_corrida()
+
+func _abrir_porta() -> void:
+	room.abrir_porta()
+	hud.mensagem = Csv.t("hud.room_clear")
+	estado = Estado.LIMPA
+
+func _on_upgrade_escolhido(id: String) -> void:
+	upgrades.escolher(id, player)
+	_abrir_porta()
 
 func _on_porta() -> void:
 	if estado != Estado.LIMPA or _timer > 0.0 or not room.celulas_porta.size():

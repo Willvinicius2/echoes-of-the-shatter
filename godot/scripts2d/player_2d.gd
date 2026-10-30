@@ -128,10 +128,14 @@ func _on_frame_changed() -> void:
 		_soltar_flecha()
 
 func _soltar_flecha() -> void:
-	var f := ArrowScript.new()
-	f.setup("player", global_position + _aim * stats["arrow_spawn_dist"], _aim,
-		stats["arrow_speed"], stats["arrow_damage"], stats["arrow_range"])
-	get_parent().add_child(f)
+	var n := int(stats["arrow_count"])  # gancho de upgrades: multishot abre as flechas em leque
+	for i in n:
+		var dir := _aim.rotated(deg_to_rad(stats["multishot_spread"]) * (i - (n - 1) * 0.5))
+		var f := ArrowScript.new()
+		f.setup("player", global_position + dir * stats["arrow_spawn_dist"], dir,
+			stats["arrow_speed"], stats["arrow_damage"], stats["arrow_range"])
+		f.pierce = int(stats["arrow_pierce"])  # gancho de upgrades
+		get_parent().add_child(f)
 
 func _on_anim_finished() -> void:
 	if estado == Estado.ATIRANDO:

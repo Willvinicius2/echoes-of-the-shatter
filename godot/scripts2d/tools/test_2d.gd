@@ -25,7 +25,37 @@ func _initialize() -> void:
 func _testar() -> void:
 	_testar_manifesto()
 	_testar_salas()
+	await _testar_upgrades()
 	await _testar_corrida()
+
+func _testar_upgrades() -> void:
+	var UpScript = preload("res://scripts2d/upgrades_2d.gd")
+	var PlayerScript = preload("res://scripts2d/player_2d.gd")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var up = UpScript.new()
+	check(up.defs.size() >= 6 and up.defs.size() <= 8, "pool de 6 a 8 upgrades")
+	for id in up.defs:
+		check(Csv.t("upgrade.%s.name" % id) != "upgrade.%s.name" % id and Csv.t("upgrade.%s.desc" % id) != "upgrade.%s.desc" % id, "texto de %s" % id)
+		var p = PlayerScript.new()
+		root.add_child(p)
+		await physics_frame
+		up.restaurar(p)
+		p.reset()
+		var base: Dictionary = p.stats.duplicate()
+		var st: String = up.defs[id]["stat"]
+		check(up.escolher(id, p), "escolhe %s" % id)
+		check(not is_equal_approx(p.stats[st], base[st]), "%s muda %s" % [id, st])
+		if st == "hp_max":
+			check(is_equal_approx(p.hp, p.stats["hp_max"]), "vigor cura o ganho")
+		for _i in up.defs[id]["nivel_max"] - 1:
+			up.escolher(id, p)
+		check(not up.escolher(id, p), "%s para no nível máximo" % id)
+		up.restaurar(p)
+		check(is_equal_approx(p.stats[st], base[st]) and up.niveis.is_empty(), "restaurar volta a base de %s" % id)
+		p.free()
+	var cartas: Array = up.sortear(rng, 3)
+	check(cartas.size() == 3 and cartas[0] != cartas[1] and cartas[1] != cartas[2] and cartas[0] != cartas[2], "sorteio de 3 cartas distintas")
 
 func _esperar(cond: Callable, limite: float) -> void:
 	var t := 0.0
@@ -100,6 +130,12 @@ func _testar_corrida() -> void:
 		await _esperar(func(): return run._timer <= 0.0, 3.0)
 		await physics_frame
 		await physics_frame
+		if i < run.salas.size() - 1:
+			check(run.estado == run.Estado.ESCOLHA and run.ui.aberta, "sala %d oferece cartas" % (i + 1))
+			run.ui.escolher(0)
+			check(run.estado == run.Estado.LIMPA and run.upgrades.niveis.size() > 0, "carta escolhida e porta aberta")
+		else:
+			check(run.estado == run.Estado.LIMPA, "sala do chefe não oferece cartas")
 		p.global_position = run.room._centro(12, 3)
 		p.auto_move = Vector2.UP
 		await _esperar(func(): return run.estado != run.Estado.LIMPA, 4.0)
