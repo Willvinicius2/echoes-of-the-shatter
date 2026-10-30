@@ -1,0 +1,22 @@
+chave,valor,unidade,nota
+hit_stop_hit_ms,40,ms,congelamento ao flecha acertar inimigo (decisao Jev)
+hit_stop_kill_ms,100,ms,congelamento ao matar inimigo (decisao Jev)
+hit_stop_player_ms,80,ms,congelamento ao jogador levar dano
+hit_stop_scale,0.05,x,escala de tempo durante o hit stop
+shake_hit_amp,1.5,px,tremor ao acertar inimigo
+shake_hit_time,0.08,s,duracao do tremor ao acertar
+shake_kill_amp,4,px,tremor ao matar
+shake_kill_time,0.12,s,duracao do tremor ao matar
+shake_player_amp,6,px,tremor ao jogador levar dano (decisao Jev)
+shake_player_time,0.2,s,duracao do tremor ao levar dano (decisao Jev)
+shake_shot_amp,1,px,coice da camera ao atirar
+shake_shot_time,0.06,s,duracao do coice
+player_recoil,90,px/s,empurrao para tras ao soltar a flecha
+enemy_knockback,260,px/s,empurrao no inimigo atingido (reduzido por kb_resist)
+knockback_decay,900,px/s2,desaceleracao do empurrao
+dmg_number_time,0.65,s,tempo de vida do numero de dano
+dmg_number_rise,42,px,quanto o numero sobe
+dmg_number_size,20,px,tamanho da fonte do numero
+dmg_number_size_kill,28,px,tamanho do numero no golpe que mata
+impact_time,0.14,s,duracao da faisca de impacto
+telegraph_alpha,0.45,x,opacidade maxima do aviso de ataque
