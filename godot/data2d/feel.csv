@@ -33,7 +33,7 @@ spark_time,0.28,s,vida das particulas da faisca
 death_dissolve_time,0.5,s,tempo da dissolucao na morte (sombra some junto)
 death_particles,18,x,particulas de poeira e alma na morte
 death_particle_time,0.7,s,vida das particulas da morte
-arrow_scale,1.4,x,escala do sprite da flecha
+arrow_scale,0.9,x,escala do sprite da flecha
 arrow_glow_scale,0.9,x,escala do brilho da flecha
 arrow_glow_alpha,0.45,x,opacidade do brilho da flecha
 arrow_trail_points,4,x,pontos do rastro da flecha
