@@ -46,3 +46,4 @@ hud.skill.dodge,Esquiva
 hud.key.shoot,Clique
 hud.key.dodge,Espaco
 hud.skill.locked,Bloqueado
+hud.boss_phase,Fase %d/%d

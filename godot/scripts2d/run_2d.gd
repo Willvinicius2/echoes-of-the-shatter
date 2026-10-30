@@ -6,6 +6,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
 const PlayerScript = preload("res://scripts2d/player_2d.gd")
 const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
+const BossScript = preload("res://scripts2d/boss_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
@@ -120,12 +121,10 @@ func _spawn_inimigos(spec: String) -> void:
 	for parte in spec.split("|"):
 		var p := parte.split(":")
 		for n in int(p[1]):
-			var e := EnemyScript.new()
+			var e: Node2D = (BossScript if Csv.enemy(p[0])["kind"] == "boss" else EnemyScript).new()
 			atores.add_child(e)
 			e.setup(p[0], player, pontos[k % pontos.size()])
 			e.died.connect(_on_inimigo_morto)
-			if e.stats["kind"] == "boss":
-				hud.chefe = e
 			k += 1
 			vivos += 1
 
