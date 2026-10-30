@@ -136,6 +136,7 @@ func _testar_telegrafo() -> void:
 
 func _testar_corrida() -> void:
 	var run = RunScene.instantiate()
+	run.com_menu = false
 	root.add_child(run)
 	await physics_frame
 	var p = run.player
@@ -173,18 +174,35 @@ func _testar_corrida() -> void:
 		await _esperar(func(): return run.estado != run.Estado.LIMPA, 4.0)
 		p.auto_move = Vector2.ZERO
 		if i < run.salas.size() - 1:
-			check(run.indice == i + 1, "porta leva à sala %d" % (i + 2))
+			await _esperar(func(): return run.estado == run.Estado.LUTA, 4.0)
+			check(run.indice == i + 1 and run.estado == run.Estado.LUTA, "porta leva à sala %d (com fade)" % (i + 2))
 		else:
 			check(run.estado == run.Estado.VENCEU, "vitória após o chefe")
 
-	await _esperar(func(): return run.estado == run.Estado.LUTA, 5.0)
-	check(run.estado == run.Estado.LUTA and run.indice == 0, "corrida reinicia após vencer")
+	await _esperar(func(): return run.menus.tela == run.menus.Tela.FIM, 5.0)
+	check(run.menus.tela == run.menus.Tela.FIM and paused, "tela de vitória aparece e pausa o jogo")
+	check(run.tempo > 0.0, "contador de corrida andou")
+	run.menus.jogar.emit()
+	check(not paused and run.estado == run.Estado.LUTA and run.indice == 0 and run.tempo == 0.0, "jogar de novo reinicia após vencer")
+
+	# Pausa com Esc: congela a luta e retoma.
+	run._on_pausa_pedida()
+	check(run.estado == run.Estado.PAUSA and paused and run.menus.tela == run.menus.Tela.PAUSA, "pausa abre")
+	run.menus.retomar.emit()
+	check(run.estado == run.Estado.LUTA and not paused and not run.menus.esta_aberta(), "retomar volta à luta")
 
 	# Morte e reinício.
 	p.god_mode = false
 	p.invencivel = 0.0
 	p.take_damage(1.0e6)
 	check(run.estado == run.Estado.MORTO and p.esta_morto(), "morte do jogador")
-	await _esperar(func(): return run.estado == run.Estado.LUTA, 5.0)
+	await _esperar(func(): return run.menus.tela == run.menus.Tela.FIM, 5.0)
+	check(run.menus.tela == run.menus.Tela.FIM, "tela de game over aparece")
+	run.menus.jogar.emit()
 	check(run.estado == run.Estado.LUTA and p.hp == p.stats["hp_max"], "reinicia com vida cheia")
+
+	# Volta ao título: corrida pronta mas parada.
+	run.menus.ao_titulo.emit()
+	check(run.estado == run.Estado.MENU and paused and run.menus.tela == run.menus.Tela.TITULO, "volta ao título")
+	paused = false
 	run.queue_free()

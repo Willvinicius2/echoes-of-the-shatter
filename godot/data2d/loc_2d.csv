@@ -6,7 +6,7 @@ hud.room_clear,Sala limpa! Siga pela porta
 hud.dead,Voce caiu. Recomecando...
 hud.victory,Cripta vencida! Recomecando...
 hud.boss,Guardiao da Cripta
-hud.help,WASD move | Mouse mira | Clique atira | Espaco esquiva
+hud.help,WASD move | Mouse mira | Clique atira | Espaco esquiva | Esc pausa
 hud.upgrades,Upgrades
 upgrade.title,Escolha um upgrade
 upgrade.level,Nivel %d/%d
@@ -24,3 +24,18 @@ upgrade.pierce.name,Ponta Afiada
 upgrade.pierce.desc,A flecha atravessa +1 inimigo
 upgrade.evasion.name,Passo Rapido
 upgrade.evasion.desc,Esquiva recarrega 20% mais rapido
+hud.time,Tempo %s
+menu.title,Ecos dos Estilhacos
+menu.subtitle,A Cripta espera
+menu.play,Jogar
+menu.quit,Sair
+menu.paused,Pausado
+menu.resume,Continuar
+menu.restart,Reiniciar corrida
+menu.to_title,Menu principal
+menu.game_over,Voce caiu
+menu.victory,Cripta vencida!
+menu.play_again,Jogar de novo
+menu.sum_time,Tempo: %s
+menu.sum_rooms,Salas: %d/%d
+menu.sum_upgrades,Upgrades escolhidos: %d
