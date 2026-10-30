@@ -19,3 +19,6 @@ godot/art/models/personagens/**/*.glb   filter=lfs diff=lfs merge=lfs -text
 
 # Áudio gerado do cliente 2D: pequeno e reproduzível por tools/audio/gerar_audio.py; fica fora do LFS
 godot/art2d/audio/*.wav -filter -diff -merge binary
+
+# Fonte serifada da HUD (DejaVu, ~380 KB, licença livre em art2d/ui/LICENCA.md): fora do LFS, como o áudio do cliente 2D
+godot/art2d/ui/*.ttf -filter -diff -merge binary
