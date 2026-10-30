@@ -22,3 +22,4 @@
 #include "shatter/vendor.h"
 #include "shatter/world.h"
 #include "shatter/story.h"
+#include "shatter/rogue.h"

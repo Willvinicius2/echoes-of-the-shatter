@@ -84,3 +84,8 @@ Consulta ao `jev-latest` (`POST /v1/systemone`): formato de bifurcação após a
 - **Elite** (etapa 2): 7 inimigos, +15 fragmentos e 1 carta a mais. **Descanso** (etapa 3): sem inimigos, cura 50% da vida máxima, sem cartas. Números em `run_settings.csv`.
 - **Fora deste marco**: segunda região jogável, mapa em camadas, tesouro. A ligação com os vereditos do roteiro (doc 21) vem depois.
 
+
+## 10. M10 — migração ao ShatterCore (30/10/2026)
+Consulta ao `jev-latest` (`POST /v1/systemone`): escopo economia mais fluxo da corrida (79%, contra 17% só economia, 3% adiar e 1% tudo); ponte por GDExtension em C++ (88%, contra 11% JSON e 1% C#); paridade de regras com os mesmos CSV (100%). Combate e movimento em tempo real ficam no GDScript.
+- **Pacote 1 (feito)**: módulo `rogue` do core (`shatter/rogue.h`, API C `shatter_rogue_*`, minor 8; contrato na seção 16 de `docs/tecnico/09_mudancas_contrato.md`). Lê `godot/data2d`, guarda o save no mesmo JSON do `meta_2d.gd`, sorteia cartas com `RngStream::Rogue`. Paridade é de regras, não da sequência aleatória do Godot.
+- **Pacote 2 (próximo, thread nova)**: GDExtension (godot-cpp) que embrulha `shatter_rogue_*`; `meta_2d.gd`, `upgrades_2d.gd` e as regras de `run_2d.gd` passam a chamar o core; ajustar o CI `cliente2d.yml` para compilar a extensão. Só depois a HUD (PR 110) e a lapidação (PR 112) são rebaseadas.
