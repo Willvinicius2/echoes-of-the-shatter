@@ -121,7 +121,6 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 			pg.uv = q
 			_lajes_soltas(raiz, q, 11 + i)
-			_tufos_na_borda(sala, q, i)
 		var trecho := PackedVector2Array()
 		for p in spline(c["pts"], 6.0):
 			for ag in aguas:
@@ -320,30 +319,15 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 	for r in riachos:
 		var linha := spline(r["pts"], 90.0)
 		for k in linha.size():
-			var m := _mancha(sala, linha[k] + Vector2(0, -6), Vector2(380, 140), _radial_cache("nevoa", Color(0.78, 0.84, 0.84, 0.05), 256), 6)
+			var m := _mancha(sala, linha[k] + Vector2(0, -6), Vector2(380, 140), _radial_cache("nevoa", Color(0.78, 0.84, 0.84, 0.025), 256), 6)
 			amb.add_nevoa(m, 28.0)
-		if not folha.is_empty():
-			var fino := spline(r["pts"], 8.0)
-			for k in 3:
-				var sp := Sprite2D.new()
-				sp.texture = folha[0]
-				sp.scale = Vector2.ONE * 0.1
-				sp.z_index = 4
-				sp.modulate = Color(1, 0.85, 0.7, 0.0)
-				sala.add_child(sp)
-				amb.add_folha(sp, fino, 0.012 + 0.004 * k, (k + n_riacho * 0.17) / 3.0)
 		n_riacho += 1
 	if grama:
-		for canto in [Vector2(0.12, 0.2), Vector2(0.88, 0.2), Vector2(0.12, 0.92), Vector2(0.88, 0.92)]:
-			var m := _mancha(sala, Vector2(larg * canto.x, alt * canto.y), Vector2(420, 220), _radial_cache("nevoa", Color(0.78, 0.84, 0.84, 0.05), 256), 6)
-			amb.add_nevoa(m, 22.0)
 		var musgo := Polygon2D.new()
 		var y0: float = 2 * tile
 		musgo.polygon = PackedVector2Array([Vector2(tile, y0), Vector2(larg - tile, y0), Vector2(larg - tile, y0 + 34), Vector2(tile, y0 + 34)])
 		musgo.vertex_colors = PackedColorArray([Color(0.2, 0.28, 0.12, 0.75), Color(0.2, 0.28, 0.12, 0.75), Color(0.2, 0.28, 0.12, 0.0), Color(0.2, 0.28, 0.12, 0.0)])
 		sala.add_child(musgo)
-		if not folha.is_empty():
-			_folhas_caindo(sala, folha[0], larg, alt)
 
 ## Poucas folhas laranja caindo devagar pela sala.
 static func _folhas_caindo(sala: Node2D, tex: Texture2D, larg: float, alt: float) -> void:
@@ -377,27 +361,29 @@ static func _folhas_caindo(sala: Node2D, tex: Texture2D, larg: float, alt: float
 	sala.add_child(p)
 
 static func _vagalumes(sala: Node2D, tile: int) -> void:
-	var p := CPUParticles2D.new()
-	p.amount = 26
-	p.lifetime = 5.0
-	p.preprocess = 5.0
-	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	p.emission_rect_extents = Vector2(sala.colunas * tile * 0.5, sala.linhas * tile * 0.5)
-	p.position = Vector2(sala.colunas * tile * 0.5, sala.linhas * tile * 0.5)
-	p.gravity = Vector2.ZERO
-	p.initial_velocity_min = 4.0
-	p.initial_velocity_max = 14.0
-	p.direction = Vector2(0, -1)
-	p.spread = 180.0
-	p.scale_amount_min = 2.0
-	p.scale_amount_max = 3.5
+	# poucos, só nas faixas laterais da sala, longe do centro de combate
 	var g := Gradient.new()
 	g.set_color(0, Color(0.85, 1.0, 0.45, 0.0))
-	g.add_point(0.5, Color(0.85, 1.0, 0.45, 0.9))
+	g.add_point(0.5, Color(0.85, 1.0, 0.45, 0.8))
 	g.set_color(g.get_point_count() - 1, Color(0.85, 1.0, 0.45, 0.0))
-	p.color_ramp = g
-	p.z_index = 10
-	sala.add_child(p)
+	for lado in [0.13, 0.87]:
+		var p := CPUParticles2D.new()
+		p.amount = 3
+		p.lifetime = 6.0
+		p.preprocess = 6.0
+		p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+		p.emission_rect_extents = Vector2(sala.colunas * tile * 0.1, sala.linhas * tile * 0.38)
+		p.position = Vector2(sala.colunas * tile * lado, sala.linhas * tile * 0.5)
+		p.gravity = Vector2.ZERO
+		p.initial_velocity_min = 4.0
+		p.initial_velocity_max = 12.0
+		p.direction = Vector2(0, -1)
+		p.spread = 180.0
+		p.scale_amount_min = 2.0
+		p.scale_amount_max = 3.0
+		p.color_ramp = g
+		p.z_index = 10
+		sala.add_child(p)
 
 ## Capim, cardos, folhas e pedrinhas soltos na margem do caminho, para a borda não parecer um corte reto.
 static func _tufos_na_borda(sala: Node2D, contorno: PackedVector2Array, semente: int) -> void:

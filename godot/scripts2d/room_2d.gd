@@ -100,6 +100,8 @@ func _montar() -> void:
 	var ts := _tileset()
 	_piso = TileMapLayer.new()  # piso sob os objetos, para o fundo transparente de braseiro e pilar não ficar preto
 	_piso.tile_set = ts
+	if piso_grama:
+		_piso.modulate = Color(0.8, 0.83, 0.78)  # gramado mais escuro para o caminho e os inimigos se destacarem
 	add_child(_piso)
 	_layer = TileMapLayer.new()
 	_layer.tile_set = ts
@@ -276,7 +278,9 @@ func colocar_props(alvo: Node2D) -> void:
 		spr.scale = Vector2.ONE * float(d["escala"])
 		spr.flip_h = p["flip"]
 		if p["id"] in ["tree_dry_orange", "bush_dry_red"]:
-			spr.modulate = Color(0.86, 0.82, 0.82)  # laranja e vermelho um pouco mais calmos no piso escuro
+			spr.modulate = Color(0.72, 0.68, 0.68)  # laranja e vermelho mais calmos, para inimigos e projéteis saltarem
+		elif String(p["id"]).begins_with("tree_"):
+			spr.modulate = Color(0.8, 0.77, 0.76)  # copas de fundo menos saturadas
 		if spr.flip_h:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
 		var no := Node2D.new()
