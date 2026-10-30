@@ -109,7 +109,7 @@ func _montar() -> void:
 	var mat_brilho := CanvasItemMaterial.new()
 	mat_brilho.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_brilho_runas.material = mat_brilho
-	_brilho_runas.modulate = Color(1, 0.85, 0.5, 0.16)
+	_brilho_runas.modulate = Color(1.3, 0.95, 0.45, 1.0)
 	add_child(_brilho_runas)
 	var corpo := StaticBody2D.new()
 	corpo.collision_layer = 1
@@ -141,8 +141,10 @@ func _montar() -> void:
 					idx = T_PORTA_FECHADA
 					celulas_porta.append(Vector2i(x, y))
 				"r":
-					idx = T_RUNAS[posmod(hash(Vector2i(x * 7, y * 13)), T_RUNAS.size())]
-					_pintar(Vector2i(x, y), idx, _brilho_runas)
+					idx = T_PISO + posmod(hash(Vector2i(x, y)), 4)
+					var cols_r: int = _brilho_runas.tile_set.get_source(2).texture.get_width() / tile
+					var rn: int = T_RUNAS[posmod(hash(Vector2i(x * 7, y * 13)), T_RUNAS.size())]
+					_brilho_runas.set_cell(Vector2i(x, y), 2, Vector2i(rn % cols_r, rn / cols_r))
 				"q":
 					idx = T_PISO_ESCURO
 				"O":
@@ -204,6 +206,16 @@ func _pintar(c: Vector2i, idx: int, camada: TileMapLayer = null) -> void:
 func _pintar_grama(c: Vector2i, variante: int, linha: int) -> void:
 	_piso.set_cell(c, 1, Vector2i(variante, linha))
 
+func _so_dourado(tex: Texture2D) -> Texture2D:
+	var img := tex.get_image()
+	img.convert(Image.FORMAT_RGBA8)
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			var dourado := clampf((c.r - c.b - 0.07) / 0.18, 0.0, 1.0)
+			img.set_pixel(x, y, Color(minf(c.r * 1.25, 1.0), minf(c.g * 1.15, 1.0), c.b, dourado * c.a))
+	return ImageTexture.create_from_image(img)
+
 func _tileset() -> TileSet:
 	var tex: Texture2D
 	if ResourceLoader.exists(ATLAS):
@@ -221,6 +233,13 @@ func _tileset() -> TileSet:
 		for x in tex.get_width() / tile:
 			src.create_tile(Vector2i(x, y))
 	ts.add_source(src, 0)
+	var sr := TileSetAtlasSource.new()  # só o dourado das runas, sem o fundo de pedra, para brilhar sobre o piso comum
+	sr.texture = _so_dourado(tex)
+	sr.texture_region_size = Vector2i(tile, tile)
+	for y in tex.get_height() / tile:
+		for x in tex.get_width() / tile:
+			sr.create_tile(Vector2i(x, y))
+	ts.add_source(sr, 2)
 	var tg := _carregar_textura(ATLAS_GRAMA)
 	if tg != null:
 		var sg := TileSetAtlasSource.new()

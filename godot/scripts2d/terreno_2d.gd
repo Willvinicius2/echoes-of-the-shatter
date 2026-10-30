@@ -161,10 +161,10 @@ static func _subtrair(polis: Array, tira: PackedVector2Array) -> Array:
 
 ## Pedra de travessia: laje irregular escura com borda clara, 4 ao longo do trecho que cruza a água.
 static func _pedras_de_travessia(raiz: Node2D, trecho: PackedVector2Array, lajes: Texture2D) -> void:
-	var n := 4
+	var n := 5
 	for k in n:
 		var p := trecho[int((trecho.size() - 1) * (k + 0.5) / n)]
-		var raio := 25.0 + posmod(hash(Vector2i(k, 5)), 7)
+		var raio := 31.0 + posmod(hash(Vector2i(k, 5)), 7)
 		var pts := PackedVector2Array()
 		for a in 9:
 			var ang := TAU * a / 9.0
