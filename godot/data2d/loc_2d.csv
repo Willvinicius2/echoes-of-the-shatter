@@ -39,3 +39,4 @@ menu.play_again,Jogar de novo
 menu.sum_time,Tempo: %s
 menu.sum_rooms,Salas: %d/%d
 menu.sum_upgrades,Upgrades escolhidos: %d
+hud.boss_phase,Fase %d/%d
