@@ -11,34 +11,27 @@
 #......................#
 #..B........P.......B..#
 ########################
+@piso grama
+@caminho 1.6 12,1.6 11.4,3.8 12.6,6 12.2,8 11.4,10 12,11.3
+@riacho 1.5 0.5,6.8 5,6.2 10,6.7 14,6.2 19,6.8 22.3,6.3
 @props
-sarcophagus_closed 5 4.2
-sarcophagus_open 17 4.2
-sarcophagus_closed 3.5 8.5
-sarcophagus_open 20 8.5
-ribcage_arch 12 5.8
-skull_pile 8 6
-skull_pile 16 6.5
-skull_spike 10 9
-skull_spike 14 9
-skeleton_curled 7 3
-bones_ribcage 18 9.8
-bones_chains 6 10.3
-skull_pair 12 8
-coffin_lid_leaning 21 6
-mausoleum_door 2.5 5.5
-tree_skull 21.5 3
-rock_rubble 10 3.5
-bones_scattered 14 3.2
-tree_dry_leaning 1.5 3
-tree_dry_thin 22.5 10
-bush_dry_wide 11 3.3
-bush_dry_red 20 3.5
-grass_dry_tall 2 10.2
-reeds_dry 22 7
-ferns_withered 9 10.3
-flowers_dead 13 10.4
-leaves_bone 15 4.2
-leaves_scattered 6 6.5
-branches_fallen 18 7.6
-log_fallen 7 8.2
+mausoleum_door 2.8 4.3
+sarcophagus_closed 5.2 3.7
+skull_pile 6.2 2.6
+sarcophagus_open 18.8 3.8
+sarcophagus_closed 21.0 4.5
+skull_pile 20.0 2.8
+coffin_lid_leaning 22.2 3.0
+sarcophagus_open 4.0 8.8
+skull_pile 6.0 10.0
+sarcophagus_closed 19.2 8.9
+skull_mound_candles 17.8 10.3
+coffin_lid_leaning 21.6 9.2
+rock_large 1.5 7.4
+rock_cluster 22.0 6.9
+tree_skull 22.2 2.6
+tree_dry_leaning 1.4 2.8
+tree_dry_large 0.9 10.8
+tree_dry_pile 22.6 10.9
+tree_dry_orange 18.4 2.1
+tree_dry_small 6.4 2.0

@@ -3,3 +3,5 @@ seed,1234,,seed da corrida (sorteio de spawns)
 restart_delay,2.0,s,tempo ate reiniciar apos morrer ou vencer
 clear_delay,0.8,s,pausa antes de abrir a porta
 tile,64,px,lado do tile
+upgrade_cards,3,cartas,cartas oferecidas ao limpar a sala
+room_fade,0.25,s,duracao de cada metade do fade entre salas

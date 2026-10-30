@@ -1,0 +1,70 @@
+extends RefCounted
+## Upgrades da corrida: definições em data2d/upgrades.csv, níveis escolhidos na corrida e
+## aplicação sobre os stats do jogador (sempre recalculados a partir da base: `restaurar` é idempotente).
+
+const Csv = preload("res://scripts2d/csv2d.gd")
+
+signal mudou
+
+var defs := {}       # id -> {stat, modo, valor, nivel_max}
+var ordem: Array = []
+var niveis := {}     # id -> nível atual
+var _base := {}
+
+func _init() -> void:
+	for r in Csv.rows("res://data2d/upgrades.csv"):
+		defs[r["id"]] = {"stat": r["stat"], "modo": r["modo"], "valor": float(r["valor"]), "nivel_max": int(r["nivel_max"])}
+		ordem.append(r["id"])
+
+## Começa uma corrida: guarda os stats base do jogador (na 1ª vez) e zera os níveis.
+func restaurar(jogador: Node) -> void:
+	if _base.is_empty():
+		_base = jogador.stats.duplicate()
+	jogador.stats = _base.duplicate()
+	niveis.clear()
+	mudou.emit()
+
+func nivel(id: String) -> int:
+	return int(niveis.get(id, 0))
+
+func disponiveis() -> Array:
+	var out := []
+	for id in ordem:
+		if nivel(id) < defs[id]["nivel_max"]:
+			out.append(id)
+	return out
+
+## Sorteia até `n` upgrades distintos ainda não no nível máximo (determinístico pelo rng da corrida).
+func sortear(rng: RandomNumberGenerator, n: int) -> Array:
+	var pool := disponiveis()
+	for i in range(pool.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var tmp = pool[i]
+		pool[i] = pool[j]
+		pool[j] = tmp
+	return pool.slice(0, n)
+
+## Sobe um nível do upgrade e reaplica todos sobre a base. Falso se já está no máximo.
+func escolher(id: String, jogador: Node) -> bool:
+	if not defs.has(id) or nivel(id) >= defs[id]["nivel_max"]:
+		return false
+	niveis[id] = nivel(id) + 1
+	var hp_antes: float = jogador.stats["hp_max"]
+	_aplicar(jogador)
+	var ganho: float = jogador.stats["hp_max"] - hp_antes
+	if ganho > 0.0:
+		jogador.hp += ganho
+	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
+	mudou.emit()
+	return true
+
+func _aplicar(jogador: Node) -> void:
+	var s: Dictionary = _base.duplicate()
+	for id in ordem:
+		var d: Dictionary = defs[id]
+		for _i in nivel(id):
+			if d["modo"] == "mult":
+				s[d["stat"]] = s[d["stat"]] * (1.0 + d["valor"])
+			else:
+				s[d["stat"]] = s[d["stat"]] + d["valor"]
+	jogador.stats = s
