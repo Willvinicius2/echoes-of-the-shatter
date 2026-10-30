@@ -237,6 +237,7 @@ func _ir_titulo() -> void:
 func _on_jogar() -> void:
 	menus.fechar()
 	get_tree().paused = false
+	meta.preparar_corrida()  # consumíveis da Forja valem a partir desta corrida
 	iniciar_corrida()
 
 func _on_pausa_pedida() -> void:

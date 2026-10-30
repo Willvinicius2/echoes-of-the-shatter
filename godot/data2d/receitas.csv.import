@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://841yiymkxxyk"
+
+[deps]
+
+files=["res://data2d/receitas.tipo.translation", "res://data2d/receitas.stat.translation", "res://data2d/receitas.modo.translation", "res://data2d/receitas.valor.translation", "res://data2d/receitas.mat1.translation", "res://data2d/receitas.qtd1.translation", "res://data2d/receitas.mat2.translation", "res://data2d/receitas.qtd2.translation", "res://data2d/receitas.fragmentos.translation", "res://data2d/receitas.estoque.translation"]
+
+source_file="res://data2d/receitas.csv"
+dest_files=["res://data2d/receitas.tipo.translation", "res://data2d/receitas.stat.translation", "res://data2d/receitas.modo.translation", "res://data2d/receitas.valor.translation", "res://data2d/receitas.mat1.translation", "res://data2d/receitas.qtd1.translation", "res://data2d/receitas.mat2.translation", "res://data2d/receitas.qtd2.translation", "res://data2d/receitas.fragmentos.translation", "res://data2d/receitas.estoque.translation"]
+
+[params]
+
+compress=true
+delimiter=0
