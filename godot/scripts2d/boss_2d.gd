@@ -251,11 +251,11 @@ func _desenhar_barra() -> void:
 	var vp := _ctl.size
 	var alfa := 1.0 if ciclo != Ciclo.ENTRADA else clampf(1.0 - _t / maxf(_t_total, 0.01), 0.0, 1.0)
 	_ctl.modulate.a = alfa
-	var pos := Vector2(vp.x / 2 - 300, 66)
+	var pos := Vector2(vp.x / 2 - 300, 196)   # abaixo da muralha: a porta do topo não fica coberta
 	var tam := Vector2(600, 18)
 	var cor := Color(0.6, 0.2, 0.7) if fase == 1 else (Color(0.8, 0.25, 0.55) if fase == 2 else Color(0.9, 0.2, 0.2))
 	# painel escuro atrás: o nome e a barra leem bem mesmo sobre a porta da sala
-	Arte.placa(_ctl, Rect2(pos + Vector2(-70, -40), Vector2(tam.x + 140, tam.y + 56)), Color(0.04, 0.035, 0.05, 0.9), 2.0)
+	Arte.placa(_ctl, Rect2(pos + Vector2(-70, -40), Vector2(tam.x + 140, tam.y + 56)), Color(0.04, 0.035, 0.05, 0.82), 2.0)
 	Arte.barra(_ctl, Rect2(pos, tam), hp / hp_max, cor.darkened(0.6), cor.lightened(0.15))
 	for f in fases:
 		if f > 1:
