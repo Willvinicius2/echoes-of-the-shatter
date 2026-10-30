@@ -67,3 +67,6 @@ O Will perguntou se o jogo seguiria como roguelike ou viraria um MMO 2D de explo
   5. M10 Migração ao ShatterCore antes de o craft crescer demais.
 - Fora do escopo: servidor, contas e MMO. Co-op pequeno só como extensão futura, depois do Acesso Antecipado.
 - Cada marco novo vira pacote em thread própria, com dono de arquivos, CSV para números e chaves em `loc_2d.csv`.
+
+## 7. M7 — decisões do Jev sobre preços e habilidades (30/10/2026)
+Consulta ao `jev-latest` (`POST /v1/systemone`) sobre a loja de meta-progressão: baratear ~30% os preços propostos (80% contra 17% de manter), manter as três habilidades bloqueadas no início (multishot, pierce, evasão; 100%), primeira compra em até 2 corridas (76%) e bônus de stat pequenos o bastante para não quebrar as cartas (61%). Preços finais em `godot/data2d/meta.csv`: melhorias 28/42/35, habilidades 56/56/42 fragmentos.

@@ -393,7 +393,7 @@ func _testar_meta() -> void:
 		check(Csv.t("material." + m.drops[e]["material"]) != "material." + m.drops[e]["material"], "texto do material de %s" % e)
 	check(not m.comprar("unlock_multishot"), "sem fragmentos não compra")
 	m.creditar({"fragmentos": 200, "materiais": {"pedra_cinza": 2}})
-	check(m.comprar("unlock_multishot") and m.liberada("multishot") and m.fragmentos == 120, "compra desbloqueia e gasta")
+	check(m.comprar("unlock_multishot") and m.liberada("multishot") and m.fragmentos == 200 - m.defs["unlock_multishot"]["custo"], "compra desbloqueia e gasta")
 	check(not m.comprar("unlock_multishot"), "habilidade só compra uma vez")
 	m.comprar("meta_vida")
 	var base := {"hp_max": 100.0, "arrow_damage": 12.0}
