@@ -12,9 +12,10 @@ signal ao_titulo      # volta ao título
 signal pausa_pedida   # jogador apertou Esc durante a luta
 signal sair
 
-enum Tela { NENHUMA, TITULO, PAUSA, FIM }
+enum Tela { NENHUMA, TITULO, PAUSA, FIM, META }
 
 var tela := Tela.NENHUMA
+var meta: RefCounted   # meta_2d.gd; a loja de melhorias do título
 var _fundo: ColorRect
 var _caixa: VBoxContainer
 var _fade: ColorRect
@@ -53,7 +54,7 @@ func fechar() -> void:
 
 func mostrar_titulo() -> void:
 	_montar(Tela.TITULO, "menu.title", "menu.subtitle", [
-		["menu.play", jogar], ["menu.quit", sair]])
+		["menu.play", jogar], ["menu.meta", mostrar_meta], ["menu.quit", sair]])
 
 func mostrar_pausa() -> void:
 	_montar(Tela.PAUSA, "menu.paused", "", [
@@ -63,6 +64,23 @@ func mostrar_pausa() -> void:
 func mostrar_fim(venceu: bool, resumo: Array) -> void:
 	_montar(Tela.FIM, "menu.victory" if venceu else "menu.game_over", "", [
 		["menu.play_again", jogar], ["menu.to_title", ao_titulo]], resumo)
+
+## Loja de melhorias permanentes: cada botão compra um nível; o saldo vem do save.
+func mostrar_meta() -> void:
+	var botoes := []
+	for id in meta.ordem:
+		var d: Dictionary = meta.defs[id]
+		var nome := Csv.t("meta.%s.name" % id)
+		var txt: String
+		if meta.nivel(id) >= d["nivel_max"]:
+			txt = Csv.t("menu.meta_item_owned" if d["tipo"] == "habilidade" else "menu.meta_item_max") % nome
+		else:
+			txt = Csv.t("menu.meta_item") % [nome, meta.nivel(id), d["custo"]]
+		botoes.append([txt, func() -> void:
+			meta.comprar(id)
+			mostrar_meta(), not meta.pode_comprar(id)])
+	botoes.append(["menu.back", mostrar_titulo])
+	_montar(Tela.META, "menu.meta_title", "", botoes, [Csv.t("menu.meta_balance") % meta.fragmentos])
 
 func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: Array = []) -> void:
 	for c in _caixa.get_children():
@@ -76,13 +94,17 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 	var primeiro: Button = null
 	for b in botoes:
 		var btn := Button.new()
-		btn.text = Csv.t(b[0])
+		btn.text = Csv.t(b[0])   # texto já formatado (loja) volta como veio: chave ausente devolve a própria string
 		btn.custom_minimum_size = Vector2(0, 46)
+		btn.disabled = b.size() > 2 and b[2]
 		btn.pressed.connect(func() -> void:
 			Audio.tocar("ui_click")
-			(b[1] as Signal).emit())
+			if b[1] is Signal:
+				(b[1] as Signal).emit()
+			else:
+				(b[1] as Callable).call())
 		_caixa.add_child(btn)
-		if primeiro == null:
+		if primeiro == null and not btn.disabled:
 			primeiro = btn
 	tela = t
 	_fundo.visible = true
@@ -122,6 +144,8 @@ func _input(ev: InputEvent) -> void:
 		match tela:
 			Tela.PAUSA:
 				retomar.emit()
+			Tela.META:
+				mostrar_titulo()
 			Tela.NENHUMA:
 				pausa_pedida.emit()
 			_:

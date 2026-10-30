@@ -11,6 +11,7 @@ const HudScript = preload("res://scripts2d/hud_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
+const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 
 enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO }
@@ -24,6 +25,8 @@ var room: Node2D
 var player: Node2D
 var hud: CanvasLayer
 var upgrades: RefCounted
+var meta: RefCounted
+var ganhos := {"fragmentos": 0, "materiais": {}}   # da corrida atual; vão ao save quando ela acaba
 var ui: CanvasLayer
 var menus: CanvasLayer
 var com_menu := true   # false nos testes: começa direto na sala 1
@@ -47,7 +50,10 @@ func _ready() -> void:
 	camera = Camera2D.new()
 	camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	add_child(camera)
+	meta = MetaScript.new()
+	meta.carregar()
 	upgrades = UpgradesScript.new()
+	upgrades.meta = meta
 	hud = HudScript.new()
 	hud.jogador = player
 	hud.upgrades = upgrades
@@ -58,6 +64,7 @@ func _ready() -> void:
 	ui.escolhido.connect(_on_upgrade_escolhido)
 	add_child(ui)
 	menus = MenusScript.new()
+	menus.meta = meta
 	menus.jogar.connect(_on_jogar)
 	menus.retomar.connect(_on_retomar)
 	menus.ao_titulo.connect(_ir_titulo)
@@ -70,6 +77,7 @@ func _ready() -> void:
 		_ir_titulo()
 
 func iniciar_corrida() -> void:
+	_creditar_ganhos()  # corrida abandonada (reiniciar, título) também guarda o que já rendeu
 	rng.seed = int(config["seed"]) + corridas
 	corridas += 1
 	indice = 0
@@ -128,11 +136,16 @@ func _spawn_inimigos(spec: String) -> void:
 			k += 1
 			vivos += 1
 
-func _on_inimigo_morto(_e) -> void:
+func _on_inimigo_morto(e) -> void:
 	vivos -= 1
+	var d: Dictionary = meta.drop_de(e.stats.get("id", ""))
+	if not d.is_empty():
+		ganhos["fragmentos"] += d["fragmentos"]
+		ganhos["materiais"][d["material"]] = int(ganhos["materiais"].get(d["material"], 0)) + d["material_qtd"]
 	if vivos <= 0 and estado == Estado.LUTA:
 		estado = Estado.LIMPA
 		_timer = config["clear_delay"]
+		ganhos["fragmentos"] += int(config["room_clear_fragments"])
 
 func _physics_process(delta: float) -> void:
 	if estado == Estado.LUTA or estado == Estado.LIMPA:
@@ -169,6 +182,7 @@ func _on_porta() -> void:
 		estado = Estado.VENCEU
 		hud.mensagem = Csv.t("hud.victory")
 		Audio.tocar("victory")
+		ganhos["fragmentos"] += int(config["victory_fragments"])
 		_timer = config["restart_delay"]
 		return
 	indice += 1
@@ -181,13 +195,26 @@ func _on_player_died() -> void:
 	Audio.tocar("defeat")
 	_timer = config["restart_delay"]
 
+func _creditar_ganhos() -> void:
+	if int(ganhos["fragmentos"]) == 0 and ganhos["materiais"].is_empty():
+		return
+	meta.creditar(ganhos)
+	ganhos = {"fragmentos": 0, "materiais": {}}
+
 func _mostrar_fim() -> void:
 	hud.mensagem = ""
+	var mats := []
+	for m in ganhos["materiais"]:
+		mats.append("%s x%d" % [Csv.t("material." + m), ganhos["materiais"][m]])
 	var resumo := [
 		Csv.t("menu.sum_time") % formatar_tempo(tempo),
 		Csv.t("menu.sum_rooms") % [indice + 1, salas.size()],
 		Csv.t("menu.sum_upgrades") % _total_upgrades(),
+		Csv.t("menu.sum_fragments") % int(ganhos["fragmentos"]),
 	]
+	if not mats.is_empty():
+		resumo.append(Csv.t("menu.sum_materials") % ", ".join(mats))
+	_creditar_ganhos()
 	menus.mostrar_fim(estado == Estado.VENCEU, resumo)
 	get_tree().paused = true
 

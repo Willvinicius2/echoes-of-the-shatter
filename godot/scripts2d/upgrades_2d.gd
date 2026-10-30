@@ -10,6 +10,8 @@ var defs := {}       # id -> {stat, modo, valor, nivel_max}
 var ordem: Array = []
 var niveis := {}     # id -> nível atual
 var _base := {}
+var meta: RefCounted   # opcional: bônus permanentes e habilidades liberadas (meta_2d.gd)
+var _base_bruta := {}
 
 func _init() -> void:
 	for r in Csv.rows("res://data2d/upgrades.csv"):
@@ -18,8 +20,9 @@ func _init() -> void:
 
 ## Começa uma corrida: guarda os stats base do jogador (na 1ª vez) e zera os níveis.
 func restaurar(jogador: Node) -> void:
-	if _base.is_empty():
-		_base = jogador.stats.duplicate()
+	if _base_bruta.is_empty():
+		_base_bruta = jogador.stats.duplicate()
+	_base = meta.aplicar(_base_bruta) if meta != null else _base_bruta.duplicate()
 	jogador.stats = _base.duplicate()
 	niveis.clear()
 	mudou.emit()
@@ -30,7 +33,7 @@ func nivel(id: String) -> int:
 func disponiveis() -> Array:
 	var out := []
 	for id in ordem:
-		if nivel(id) < defs[id]["nivel_max"]:
+		if nivel(id) < defs[id]["nivel_max"] and (meta == null or meta.liberada(id)):
 			out.append(id)
 	return out
 
