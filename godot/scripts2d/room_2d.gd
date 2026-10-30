@@ -1,7 +1,10 @@
 extends Node2D
 ## Sala da Cripta montada de um texto (data2d/rooms/*.txt) com TileMapLayer.
 ## Legenda: # parede, . piso, r piso com runas, q piso escuro, B braseiro, O pilar, D porta,
-## P início do jogador, E ponto de inimigo.
+## P início do jogador, E ponto de inimigo, p laje de caminho (só com `@piso grama`).
+## `@caminho largura x,y x,y ...` e `@riacho largura x,y ...` (células; curva suave) desenham caminho de pedra
+## e riacho; o riacho bloqueia jogador e inimigos (camada 8) menos onde o caminho o cruza.
+## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png).
 ## Depois da grade, a linha `@props` abre a lista de props: `id coluna linha [flip]` (coluna e linha
 ## podem ser fracionárias; ids em data2d/props_2d.csv, arte em props_manifest.csv).
 
@@ -9,7 +12,9 @@ signal porta_usada
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
+const Terreno = preload("res://scripts2d/terreno_2d.gd")
 const ATLAS := "res://art2d/tiles/cripta_tiles.png"
+const ATLAS_GRAMA := "res://art2d/tiles/cripta_grama.png"
 const T_PISO := 0
 const T_PISO_ESCURO := 6
 const T_PORTA_FECHADA := 7
@@ -31,6 +36,11 @@ var _props_def := {}
 var _props_arte := {}
 var _layer: TileMapLayer
 var _piso: TileMapLayer
+var _brilho_runas: TileMapLayer
+var piso_grama := false
+var braseiros: Array[Vector2] = []
+var caminhos: Array = []  # {larg (células), pts (px)}
+var riachos: Array = []
 var _porta_area: Area2D
 var _porta_corpo: StaticBody2D
 var _grade: Array = []
@@ -51,6 +61,15 @@ func carregar(caminho: String) -> bool:
 			continue
 		if l == "@props":
 			em_props = true
+		elif l == "@piso grama":
+			piso_grama = true
+		elif l.begins_with("@caminho ") or l.begins_with("@riacho "):
+			var q := l.split(" ", false)
+			var pts: Array = []
+			for ponto in q.slice(2):
+				var xy := ponto.split(",")
+				pts.append(Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile))
+			(caminhos if q[0] == "@caminho" else riachos).append({"larg": float(q[1]), "pts": pts})
 		elif em_props:
 			var p := l.split(" ", false)
 			props.append({"id": p[0], "pos": Vector2((float(p[1]) + 0.5) * tile, (float(p[2]) + 0.5) * tile), "flip": p.size() > 3 and p[3] == "flip"})
@@ -81,10 +100,19 @@ func _montar() -> void:
 	var ts := _tileset()
 	_piso = TileMapLayer.new()  # piso sob os objetos, para o fundo transparente de braseiro e pilar não ficar preto
 	_piso.tile_set = ts
+	if piso_grama:
+		_piso.modulate = Color(0.8, 0.83, 0.78)  # gramado mais escuro para o caminho e os inimigos se destacarem
 	add_child(_piso)
 	_layer = TileMapLayer.new()
 	_layer.tile_set = ts
 	add_child(_layer)
+	_brilho_runas = TileMapLayer.new()  # runas douradas reforçados com brilho aditivo
+	_brilho_runas.tile_set = ts
+	var mat_brilho := CanvasItemMaterial.new()
+	mat_brilho.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_brilho_runas.material = mat_brilho
+	_brilho_runas.modulate = Color(1.3, 0.95, 0.45, 1.0)
+	add_child(_brilho_runas)
 	var corpo := StaticBody2D.new()
 	corpo.collision_layer = 1
 	corpo.collision_mask = 0
@@ -109,24 +137,32 @@ func _montar() -> void:
 			match c:
 				"#":
 					idx = T_PAREDE_TOPO if _eh_parede(x, y + 1) else T_PAREDE_FACE
+					if idx == T_PAREDE_FACE:
+						_pintar(Vector2i(x, y), T_PAREDE_TOPO, _piso)  # sob o muro, no lugar do preto
 				"D":
 					idx = T_PORTA_FECHADA
 					celulas_porta.append(Vector2i(x, y))
 				"r":
-					idx = T_RUNAS[posmod(hash(Vector2i(x * 7, y * 13)), T_RUNAS.size())]
+					idx = T_PISO + posmod(hash(Vector2i(x, y)), 4)
+					var cols_r: int = _brilho_runas.tile_set.get_source(2).texture.get_width() / tile
+					var rn: int = T_RUNAS[posmod(hash(Vector2i(x * 7, y * 13)), T_RUNAS.size())]
+					_brilho_runas.set_cell(Vector2i(x, y), 2, Vector2i(rn % cols_r, rn / cols_r))
 				"q":
 					idx = T_PISO_ESCURO
 				"O":
 					idx = T_PILAR
 				"B":
 					idx = T_BRASEIRO
+					braseiros.append(_centro(x, y))
 				"P":
 					spawn_jogador = _centro(x, y)
 				"E":
 					spawns_inimigos.append(_centro(x, y))
-			if c != "#" and c != "D":
+			if piso_grama and c != "#" and c != "D":
+				_pintar_grama(Vector2i(x, y), posmod(hash(Vector2i(x, y)), 4), 1 if c == "p" else 0)
+			elif c != "#" and c != "D":
 				_pintar(Vector2i(x, y), T_PISO + posmod(hash(Vector2i(x, y)), 4), _piso)
-			if c != "." and not (c in ["P", "E"]):
+			if c != "." and c != "p" and not (c in ["P", "E"]):
 				_pintar(Vector2i(x, y), idx)
 	for p in props:
 		var d: Dictionary = _props_def.get(p["id"], {})
@@ -138,6 +174,7 @@ func _montar() -> void:
 		cp.shape = rp
 		cp.position = p["pos"] + Vector2(0, tile * 0.5 - float(d["solido_a"]) * 0.5)
 		corpo.add_child(cp)
+	Terreno.montar(self, caminhos, riachos, piso_grama, tile)
 	_porta_corpo = StaticBody2D.new()
 	_porta_corpo.collision_layer = 1
 	_porta_corpo.collision_mask = 0
@@ -168,6 +205,19 @@ func _pintar(c: Vector2i, idx: int, camada: TileMapLayer = null) -> void:
 	var cols: int = l.tile_set.get_source(0).texture.get_width() / tile
 	l.set_cell(c, 0, Vector2i(idx % cols, idx / cols))
 
+func _pintar_grama(c: Vector2i, variante: int, linha: int) -> void:
+	_piso.set_cell(c, 1, Vector2i(variante, linha))
+
+func _so_dourado(tex: Texture2D) -> Texture2D:
+	var img := tex.get_image()
+	img.convert(Image.FORMAT_RGBA8)
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			var dourado := clampf((c.r - c.b - 0.07) / 0.18, 0.0, 1.0)
+			img.set_pixel(x, y, Color(minf(c.r * 1.25, 1.0), minf(c.g * 1.15, 1.0), c.b, dourado * c.a))
+	return ImageTexture.create_from_image(img)
+
 func _tileset() -> TileSet:
 	var tex: Texture2D
 	if ResourceLoader.exists(ATLAS):
@@ -185,6 +235,22 @@ func _tileset() -> TileSet:
 		for x in tex.get_width() / tile:
 			src.create_tile(Vector2i(x, y))
 	ts.add_source(src, 0)
+	var sr := TileSetAtlasSource.new()  # só o dourado das runas, sem o fundo de pedra, para brilhar sobre o piso comum
+	sr.texture = _so_dourado(tex)
+	sr.texture_region_size = Vector2i(tile, tile)
+	for y in tex.get_height() / tile:
+		for x in tex.get_width() / tile:
+			sr.create_tile(Vector2i(x, y))
+	ts.add_source(sr, 2)
+	var tg := _carregar_textura(ATLAS_GRAMA)
+	if tg != null:
+		var sg := TileSetAtlasSource.new()
+		sg.texture = tg
+		sg.texture_region_size = Vector2i(tile, tile)
+		for y in tg.get_height() / tile:
+			for x in tg.get_width() / tile:
+				sg.create_tile(Vector2i(x, y))
+		ts.add_source(sg, 1)
 	return ts
 
 func abrir_porta() -> void:
@@ -212,18 +278,20 @@ func colocar_props(alvo: Node2D) -> void:
 		spr.scale = Vector2.ONE * float(d["escala"])
 		spr.flip_h = p["flip"]
 		if p["id"] in ["tree_dry_orange", "bush_dry_red"]:
-			spr.modulate = Color(0.86, 0.82, 0.82)  # laranja e vermelho um pouco mais calmos no piso escuro
+			spr.modulate = Color(0.72, 0.68, 0.68)  # laranja e vermelho mais calmos, para inimigos e projéteis saltarem
+		elif String(p["id"]).begins_with("tree_"):
+			spr.modulate = Color(0.8, 0.77, 0.76)  # copas de fundo menos saturadas
 		if spr.flip_h:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
 		var no := Node2D.new()
 		no.position = p["pos"] + Vector2(0, tile * 0.5)
-		no.add_child(spr)
 		var sombra := Node2D.new()
-		sombra.z_index = -1
+		no.add_child(sombra)  # antes do sprite, para ficar sob ele
+		no.add_child(spr)
+		var arvore: bool = String(p["id"]).begins_with("tree_")
 		sombra.draw.connect(func():
-			sombra.draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
-			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * 0.35, Color(0, 0, 0, 0.35)))
-		no.add_child(sombra)
+			sombra.draw_set_transform(Vector2(20, 2) if arvore else Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
+			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * (0.5 if arvore else 0.35), Color(0, 0, 0, 0.42)))
 		sombra.queue_redraw()
 		alvo.add_child(no)
 

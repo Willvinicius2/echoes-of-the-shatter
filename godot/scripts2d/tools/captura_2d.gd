@@ -15,7 +15,8 @@ func _initialize() -> void:
 		run._carregar_sala(sala)
 	run.player.god_mode = true
 	run.player.auto_aim = Vector2(1, 0.4)
-	for i in 90:
+	var espera: int = int(args[2]) if args.size() > 2 else 90
+	for i in espera:
 		await physics_frame
 	await RenderingServer.frame_post_draw
 	root.get_viewport().get_texture().get_image().save_png(saida)
