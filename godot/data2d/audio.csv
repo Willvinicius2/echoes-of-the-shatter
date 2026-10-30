@@ -1,0 +1,13 @@
+evento,arquivo,volume_db,variacao_pitch,tipo
+shoot,res://art2d/audio/shoot.wav,-6,0.08,sfx
+hit_enemy,res://art2d/audio/hit_enemy.wav,-5,0.1,sfx
+kill_enemy,res://art2d/audio/kill_enemy.wav,-3,0.06,sfx
+player_hurt,res://art2d/audio/player_hurt.wav,-2,0.04,sfx
+dodge,res://art2d/audio/dodge.wav,-6,0.05,sfx
+card_open,res://art2d/audio/card_open.wav,-5,0,sfx
+card_pick,res://art2d/audio/card_pick.wav,-4,0,sfx
+door_open,res://art2d/audio/door_open.wav,-3,0,sfx
+ui_click,res://art2d/audio/ui_click.wav,-8,0.03,sfx
+victory,res://art2d/audio/victory.wav,-3,0,sfx
+defeat,res://art2d/audio/defeat.wav,-3,0,sfx
+music_cripta,res://art2d/audio/music_cripta.wav,-14,0,musica

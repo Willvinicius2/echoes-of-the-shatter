@@ -6,6 +6,7 @@ signal died(enemy)
 const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
+const Audio = preload("res://scripts2d/audio_2d.gd")
 
 enum Estado { PERSEGUE, TELEGRAFA, ATACANDO, MORTO }
 
@@ -152,6 +153,7 @@ func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 			queue_free()
 
 func _feedback_golpe(amount: float, origem: Vector2, morreu: bool) -> void:
+	Audio.tocar("kill_enemy" if morreu else "hit_enemy")
 	var c := Feel.cfg()
 	Feel.hit_stop(c["hit_stop_kill_ms" if morreu else "hit_stop_hit_ms"])
 	Feel.shake(self, c["shake_kill_amp" if morreu else "shake_hit_amp"], c["shake_kill_time" if morreu else "shake_hit_time"])

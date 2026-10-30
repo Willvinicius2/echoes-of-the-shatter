@@ -3,6 +3,8 @@ extends CanvasLayer
 ## Funciona com a árvore pausada. Textos por chave de localização; a corrida decide quando abrir cada tela.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Tema = preload("res://scripts2d/tema_2d.gd")
+const Audio = preload("res://scripts2d/audio_2d.gd")
 
 signal jogar          # começa uma corrida nova (título e fim)
 signal retomar        # sai da pausa
@@ -23,19 +25,13 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_fundo = ColorRect.new()
 	_fundo.color = Color(0.03, 0.03, 0.05, 0.86)
+	_fundo.theme = Tema.tema()
 	_fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_fundo)
 	var centro := CenterContainer.new()
 	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fundo.add_child(centro)
 	var painel := PanelContainer.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.11, 0.11, 0.14, 0.95)
-	sb.set_border_width_all(3)
-	sb.border_color = Color(0.32, 0.30, 0.36)
-	sb.set_corner_radius_all(6)
-	sb.set_content_margin_all(36)
-	painel.add_theme_stylebox_override("panel", sb)
 	centro.add_child(painel)
 	_caixa = VBoxContainer.new()
 	_caixa.add_theme_constant_override("separation", 14)
@@ -72,9 +68,9 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 	for c in _caixa.get_children():
 		_caixa.remove_child(c)
 		c.queue_free()
-	_rotulo(Csv.t(titulo), 40)
+	_rotulo(Csv.t(titulo), 40, Tema.cor("destaque"))
 	if subtitulo != "":
-		_rotulo(Csv.t(subtitulo), 16, Color(1, 1, 1, 0.6))
+		_rotulo(Csv.t(subtitulo), 16, Tema.cor("texto_suave"))
 	for l in linhas:
 		_rotulo(l, 20)
 	var primeiro: Button = null
@@ -82,7 +78,9 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 		var btn := Button.new()
 		btn.text = Csv.t(b[0])
 		btn.custom_minimum_size = Vector2(0, 46)
-		btn.pressed.connect((b[1] as Signal).emit)
+		btn.pressed.connect(func() -> void:
+			Audio.tocar("ui_click")
+			(b[1] as Signal).emit())
 		_caixa.add_child(btn)
 		if primeiro == null:
 			primeiro = btn
@@ -91,12 +89,12 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 	if primeiro != null:
 		primeiro.grab_focus.call_deferred()
 
-func _rotulo(texto: String, tam: int, cor := Color.WHITE) -> void:
+func _rotulo(texto: String, tam: int, cor := Color(0.9, 0.88, 0.84)) -> void:
 	var l := Label.new()
 	l.text = texto
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", tam)
-	l.modulate = cor
+	l.add_theme_color_override("font_color", cor)
 	_caixa.add_child(l)
 
 ## Escurece a tela, chama `no_escuro` e clareia. Usado entre salas.

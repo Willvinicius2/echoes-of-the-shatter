@@ -39,3 +39,10 @@ menu.play_again,Jogar de novo
 menu.sum_time,Tempo: %s
 menu.sum_rooms,Salas: %d/%d
 menu.sum_upgrades,Upgrades escolhidos: %d
+hud.stamina,Estamina
+hud.mana,Mana
+hud.skill.shoot,Tiro
+hud.skill.dodge,Esquiva
+hud.key.shoot,Clique
+hud.key.dodge,Espaco
+hud.skill.locked,Bloqueado
