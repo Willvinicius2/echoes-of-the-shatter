@@ -738,6 +738,11 @@
       "data": "2026-10-20",
       "titulo": "Motor: migração da Unity para o Godot 4 (.NET)",
       "detalhe": "Will decidiu abandonar a Unity e fazer tudo no Godot (C#, Godot MCP), começando pela Cripta. Core, dados e arte se reaproveitam; o cliente é refeito. Unity arquivada no branch arquivo/unity-final. Plano em docs/tecnico/23_migracao_godot.md."
+    },
+    {
+      "data": "2026-10-30",
+      "titulo": "Direção: roguelike 2D com hub, craft e exploração (single-player), sem MMO",
+      "detalhe": "Will aprovou a recomendação do Jev (98% roguelike com hub e craft; MMO 4% de viabilidade para equipe pequena). Ordem: fechar M5, meta-progressão com save, hub com craft básico, exploração por regiões escolhíveis, migração ao ShatterCore. Co-op só como extensão futura. Ver docs/design/27_cronograma_jogavel.md seção 6."
     }
   ],
   "nuvem": [

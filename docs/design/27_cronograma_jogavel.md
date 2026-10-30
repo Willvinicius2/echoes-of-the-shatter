@@ -53,3 +53,17 @@ Total até o jogável (M5): cerca de 11 a 13 dias de trabalho, menos se P1 e P2 
 - O Jev decide o técnico e o visual. Dúvida de pacote vai para a planejadora, que consulta o Jev (`POST /v1/systemone`, `jev-latest`; credencial injetada pelo proxy).
 - Arte final passa pela revisora ("Agente escolhedor de ferramentas") e só depois o coordenador mostra ao Will.
 - Contexto pequeno: o índice `contexto-do-jogo/00_INDICE.md`, este documento e `COMO_RODAR_2D.md`. Ao fechar o pacote, passagem de bastão curta.
+
+## 6. Decisão de direção (30/10/2026): roguelike com hub, craft e exploração
+O Will perguntou se o jogo seguiria como roguelike ou viraria um MMO 2D de exploração, craft e habilidades. O Jev decidiu e o Will aprovou: **roguelike 2D com hub, craft e exploração, single-player. Sem MMO.**
+
+- Respostas do Jev: direção roguelike com hub e craft 98% (roguelike puro 2%, MMO 0%); "MMO é viável e de baixo risco para esta equipe?" 4%; "hub e craft aproveitam o master?" 90%; próximo marco hub com craft 63% contra migração ao core 35% (confiança 0,51, provisória).
+- Motivo: um MMO exige servidor autoritativo, contas, banco, anti-cheat, moderação e hospedagem mensal, mais reescrever o cliente para rede e ter jogadores para o mundo não ficar vazio. A equipe é o dono com agentes de IA. O hub com craft reaproveita todo o cliente 2D, as cartas e o chefe.
+- Ordem a partir do M5 (substitui o "decidir de novo" do M6 na linha de meta-progressão):
+  1. M5: build jogável para o Will testar uma corrida completa.
+  2. M7 Meta-progressão com save: moeda/materiais que sobrevivem à morte, save em disco, habilidades desbloqueáveis.
+  3. M8 Hub com craft básico: tela do hub entre corridas, receitas em CSV, materiais dropados nas salas.
+  4. M9 Exploração: regiões ou rotas escolhíveis na corrida, ligadas ao roteiro da Região 1.
+  5. M10 Migração ao ShatterCore antes de o craft crescer demais.
+- Fora do escopo: servidor, contas e MMO. Co-op pequeno só como extensão futura, depois do Acesso Antecipado.
+- Cada marco novo vira pacote em thread própria, com dono de arquivos, CSV para números e chaves em `loc_2d.csv`.
