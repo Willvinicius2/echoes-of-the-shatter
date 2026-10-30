@@ -26,7 +26,7 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	_burst_cd = stats["burst_interval"]
 	_cd = stats["attack_cooldown"] * 0.5
 	collision_layer = 4
-	collision_mask = 1 | 4
+	collision_mask = 1 | 4 | 8
 	add_to_group("hurtable")
 	shadow_radius = stats["radius"] * 1.2
 	setup_sprite(id)

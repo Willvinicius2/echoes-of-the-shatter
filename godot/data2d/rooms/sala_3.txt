@@ -1,45 +1,57 @@
 ############D###########
 ############D###########
-#..........pp..........#
-#..B.......pp.......B..#
-#...E......pp....E.....#
-#..........pp..........#
-#..........ppp.........#
-#...........pp.........#
-#....E.....pp....E.....#
-#..........pp..........#
-#..........pp..........#
-#..B.......pP.......B..#
+#......................#
+#..B................B..#
+#...E............E.....#
+#......................#
+#......................#
+#......................#
+#....E...........E.....#
+#......................#
+#......................#
+#..B........P.......B..#
 ########################
 @piso grama
+@caminho 1.9 12,1.6 11.4,3.8 12.6,6 12.2,8 11.4,10 12,11.3
+@riacho 1.5 0.5,6.8 5,6.2 10,6.7 14,6.2 19,6.8 22.3,6.3
 @props
-sarcophagus_closed 5 4.2
-sarcophagus_open 17 4.2
-sarcophagus_closed 3.5 8.5
-sarcophagus_open 20 8.5
-ribcage_arch 12 5.8
-skull_pile 8 6
-skull_pile 16 6.5
-skull_spike 10 9
-skull_spike 14 9
-skeleton_curled 7 3
-bones_ribcage 18 9.8
-bones_chains 6 10.3
-skull_pair 12 8
-coffin_lid_leaning 21 6
-mausoleum_door 2.5 5.5
-tree_skull 21.5 3
-rock_rubble 10 3.5
-bones_scattered 14 3.2
-tree_dry_leaning 1.5 3
-tree_dry_thin 22.5 10
-bush_dry_wide 11 3.3
-bush_dry_red 20 3.5
-grass_dry_tall 2 10.2
-reeds_dry 22 7
-ferns_withered 9 10.3
-flowers_dead 13 10.4
-leaves_bone 15 4.2
-leaves_scattered 6 6.5
-branches_fallen 18 7.6
-log_fallen 7 8.2
+mausoleum_door 2.8 4.3
+sarcophagus_closed 5.2 3.7
+skeleton_curled 4.4 4.6
+bones_scattered 7.2 4.2
+skull_pile 6.6 2.6
+sarcophagus_open 18.6 3.8
+sarcophagus_closed 21.0 4.5
+ribcage_arch 16.2 4.5
+skull_pile 20.0 2.8
+coffin_lid_leaning 22.2 3.0
+skull_spike 9.8 9.4
+skull_spike 14.4 9.6
+sarcophagus_open 4.0 8.8
+skull_pile 6.2 10.0
+bones_chains 3.0 10.5
+bones_ribcage 7.4 8.8
+sarcophagus_closed 19.2 8.9
+coffin_lid_leaning 21.6 9.2
+skull_mound_candles 17.6 10.3
+skeleton_hand 20.2 10.7
+tree_skull 22.2 2.6
+tree_dry_leaning 1.4 2.8
+tree_dry_large 0.9 10.8
+tree_dry_pile 22.6 10.9
+tree_dry_thin 9.0 2.4
+tree_dry_orange 15.0 2.2
+reeds_dry 3.0 4.9
+reeds_dry 8.2 5.0
+reeds_dry 17.0 5.0
+reeds_dry 21.0 4.9
+reeds_dry 6.0 7.2
+reeds_dry 15.2 7.1
+reeds_dry 20.6 7.2
+rock_rubble 10.4 7.3
+vines_dry_rock 8.6 7.3
+bush_dry_red 12.0 10.9
+grass_dry_tall 2.0 7.0
+leaves_scattered 10.0 3.4
+leaves_bone 14.0 3.3
+flowers_dead 8.6 10.4

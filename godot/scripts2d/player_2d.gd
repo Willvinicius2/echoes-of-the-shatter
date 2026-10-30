@@ -26,7 +26,7 @@ var _disparou := false
 func _ready() -> void:
 	stats = Csv.kv("res://data2d/player.csv")
 	collision_layer = 2
-	collision_mask = 1
+	collision_mask = 1 | 8
 	add_to_group("arqueiro")
 	setup_sprite("arqueiro")
 	var cs := CollisionShape2D.new()

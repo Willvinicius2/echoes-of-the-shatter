@@ -23,9 +23,13 @@ def ruido_periodico(n, escala):
 def grama(variante):
     n = T * SS
     base = np.zeros((n, n, 3))
-    verde_esc = np.array([40, 54, 34]); verde_cl = np.array([74, 90, 48])
+    verde_esc = np.array([46, 52, 34]); verde_cl = np.array([84, 88, 52])
+    terra = np.array([84, 70, 50])
     r = 0.55 * ruido_periodico(n, 6) + 0.45 * ruido_periodico(n, 14)
     base[:] = verde_esc[None, None] * (1 - r[..., None]) + verde_cl[None, None] * r[..., None]
+    mancha = ruido_periodico(n, 3)
+    f = np.clip((mancha - 0.62) * 5.0, 0, 0.75) * (0.4 + variante * 0.25)
+    base = base * (1 - f[..., None]) + terra[None, None] * f[..., None]  # manchas de terra
     im = Image.fromarray(base.astype("uint8"))
     d = ImageDraw.Draw(im)
     for _ in range(420):  # lâminas, desenhadas com cópia nas bordas para repetir sem emenda
@@ -33,7 +37,7 @@ def grama(variante):
         h = rng.integers(5, 12) * SS // 2
         dx = rng.integers(-3, 4) * SS // 2
         t = rng.random()
-        cor = tuple(int(v) for v in (np.array([70, 92, 42]) * (0.8 + 0.5 * t) if rng.random() > 0.12 else np.array([128, 112, 58]) * (0.8 + 0.3 * t)))
+        cor = tuple(int(v) for v in (np.array([74, 84, 44]) * (0.8 + 0.5 * t) if rng.random() > 0.3 else np.array([132, 116, 62]) * (0.8 + 0.3 * t)))
         for ox in (-n, 0, n):
             for oy in (-n, 0, n):
                 d.line([(x + ox, y + oy), (x + ox + dx, y + oy - h)], fill=cor, width=SS // 2 + 1)
