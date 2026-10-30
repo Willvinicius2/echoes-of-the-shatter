@@ -26,7 +26,7 @@ func _initialize() -> void:
 	run.hud._hp_fantasma = minf(1.0, vida + 0.1)
 	run.player.dodge_cd = run.player.stats["dodge_cooldown"] * 0.55
 	run.hud.tempo = 83.0
-	for i in 10:
+	for i in int(args[3]) if args.size() > 3 else 10:
 		await physics_frame
 	await RenderingServer.frame_post_draw
 	root.get_viewport().get_texture().get_image().save_png(saida)

@@ -44,6 +44,31 @@ static func placa(c: CanvasItem, r: Rect2, fundo: Color, chanfro := 2.0, cantos 
 		for q in [r.position + Vector2(5, 5), Vector2(r.end.x - 5, r.position.y + 5), Vector2(r.position.x + 5, r.end.y - 5), r.end - Vector2(5, 5)]:
 			rebite(c, q, 1.8)
 
+## Alvenaria de pedra escura: fileiras de blocos com juntas, variação de tom e rachaduras (determinística).
+static func alvenaria(c: CanvasItem, r: Rect2, bloco := Vector2(46, 18)) -> void:
+	var linhas := int(ceil(r.size.y / bloco.y))
+	for j in linhas:
+		var y := r.position.y + j * bloco.y
+		var h := minf(bloco.y, r.end.y - y)
+		var desloc := (j % 2) * bloco.x * 0.5
+		var x := r.position.x - desloc
+		var k := 0
+		while x < r.end.x:
+			var tom := 0.55 + 0.45 * fmod(abs(sin(float(j * 31 + k * 17) * 12.9898) * 43758.5453), 1.0)
+			var larg := bloco.x * (0.8 + 0.4 * fmod(abs(sin(float(k * 7 + j) * 4.1) * 1000.0), 1.0))
+			var x0 := maxf(x, r.position.x)
+			var x1 := minf(x + larg, r.end.x)
+			if x1 > x0:
+				var base := _c("pedra").lightened(0.06 * tom)
+				c.draw_rect(Rect2(x0, y, x1 - x0, h), base)
+				c.draw_rect(Rect2(x0, y, x1 - x0, 1.5), Color(1, 1, 1, 0.07 * tom))
+				c.draw_rect(Rect2(x0, y + h - 2, x1 - x0, 2), Color(0, 0, 0, 0.35))
+				c.draw_rect(Rect2(x1 - 1.5, y, 1.5, h), Color(0, 0, 0, 0.4))
+				if tom > 0.92:
+					c.draw_line(Vector2(x0 + 6, y + 4), Vector2(x0 + 12, y + h - 4), Color(0, 0, 0, 0.35), 1.0)
+			x += larg
+			k += 1
+
 ## Líquido dentro de um disco: polígono com gradiente, superfície ondulada, brilho e bolhas.
 static func liquido(c: CanvasItem, centro: Vector2, raio: float, frac: float, escura: Color, clara: Color, t: float, fase := 0.0) -> void:
 	frac = clampf(frac, 0.0, 1.0)
@@ -122,8 +147,7 @@ static func globo(c: CanvasItem, centro: Vector2, raio: float, frac: float, fant
 			liquido(c, centro, r_in, fantasma, Color(0.45, 0.12, 0.1), Color(0.95, 0.62, 0.45), t, 1.7)
 		liquido(c, centro, r_in, frac, escura, clara, t)
 	else:
-		c.draw_circle(centro, r_in, Color(escura.r, escura.g, escura.b, 0.55))
-		c.draw_circle(centro + Vector2(0, r_in * 0.25), r_in * 0.62, Color(clara.r, clara.g, clara.b, 0.07))
+		liquido(c, centro, r_in, 0.16, escura.darkened(0.35), clara.darkened(0.55), t, 0.9)
 	# profundidade do vidro: sombra interna em anéis e reflexo
 	for k in 6:
 		c.draw_arc(centro, r_in - k * 1.6, 0.0, TAU, 48, Color(0, 0, 0, 0.30 - k * 0.045), 2.0)

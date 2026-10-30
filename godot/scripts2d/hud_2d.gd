@@ -46,7 +46,7 @@ func _desenhar() -> void:
 	Arte.texto(_ctl, Vector2(_lay["margem"], 22), Csv.t("hud.help"), 12, Tema.cor("texto_suave"))
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
-		var r := Rect2(vp.x * 0.5 - w * 0.5, 58, w, 18)
+		var r := Rect2(vp.x * 0.5 - w * 0.5, 62, w, 18)
 		Arte.barra(_ctl, r, chefe.hp / chefe.hp_max, Tema.cor("chefe_escura"), Tema.cor("chefe_clara"))
 		Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 12), Csv.t("hud.boss"), 18, Tema.cor("destaque"), HORIZONTAL_ALIGNMENT_CENTER, w)
 	if mensagem != "":
@@ -70,13 +70,19 @@ func _centro_globo(vp: Vector2, direita: bool) -> Vector2:
 func _desenhar_base(vp: Vector2) -> void:
 	var e := _centro_globo(vp, false)
 	var d := _centro_globo(vp, true)
-	var alt := 62.0
+	var alt: float = _lay["base_altura"]
 	var r := Rect2(e.x + 50.0, vp.y - alt, d.x - e.x - 100.0, alt)
-	Arte.placa(_ctl, r, Tema.cor("pedra").lightened(0.04), 3.0, false)
-	_ctl.draw_rect(Rect2(r.position.x, r.position.y + 5, r.size.x, 1.5), Tema.cor("destaque").darkened(0.35))
-	for k in 18:
-		Arte.rebite(_ctl, Vector2(r.position.x + 18 + k * (r.size.x - 36) / 17.0, r.position.y + 14), 1.6)
-	Arte.losango(_ctl, Vector2(vp.x * 0.5, r.position.y + 5), 7.0, Tema.cor("destaque"))
+	_ctl.draw_rect(r.grow(3), Color(0, 0, 0, 0.6))
+	_ctl.draw_rect(r, Tema.cor("metal_escuro"))
+	var miolo := r.grow(-4)
+	Arte.alvenaria(_ctl, miolo)
+	# moldura de ferro: borda, friso dourado em cima e rebites nos cantos
+	_ctl.draw_rect(r, Tema.cor("metal_medio"), false, 2.0)
+	_ctl.draw_rect(Rect2(r.position.x, r.position.y, r.size.x, 4), Tema.cor("metal_medio"))
+	_ctl.draw_rect(Rect2(r.position.x, r.position.y + 4, r.size.x, 1.5), Tema.cor("destaque").darkened(0.2))
+	for k in 20:
+		Arte.rebite(_ctl, Vector2(r.position.x + 14 + k * (r.size.x - 28) / 19.0, r.position.y + 2), 1.8)
+	Arte.losango(_ctl, Vector2(vp.x * 0.5, r.position.y + 4), 8.0, Tema.cor("destaque"))
 
 ## Vida (esquerda) e recurso (direita, reservado e vazio). Vida baixa pulsa no aro.
 func _desenhar_globos(vp: Vector2) -> void:
@@ -97,14 +103,19 @@ func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():
 		return
 	var y: float = _lay["lista_y"]
+	var ativos := []
 	for id in upgrades.ordem:
-		var nv: int = upgrades.nivel(id)
-		if nv > 0:
-			var r := Rect2(_lay["margem"], y, 28, 28)
-			Arte.placa(_ctl, r, Tema.cor("pedra"), 1.5, false)
-			_ctl.draw_texture_rect(Icones.textura(id), r.grow(-4), false)
-			Arte.texto(_ctl, Vector2(r.end.x + 10, y + 19), "%s x%d" % [Csv.t("upgrade.%s.name" % id), nv], 15, Tema.cor("texto"))
-			y += 34.0
+		if upgrades.nivel(id) > 0:
+			ativos.append(id)
+	var painel := Rect2(_lay["margem"] - 8, y - 34, 230, 44 + ativos.size() * 40)
+	Arte.placa(_ctl, painel, Color(Tema.cor("pedra").r, Tema.cor("pedra").g, Tema.cor("pedra").b, 0.88), 2.0)
+	Arte.texto(_ctl, Vector2(painel.position.x, y - 12), Csv.t("hud.upgrades"), 15, Tema.cor("destaque"), HORIZONTAL_ALIGNMENT_CENTER, painel.size.x)
+	for id in ativos:
+		var r := Rect2(_lay["margem"], y + 2, 32, 32)
+		Arte.placa(_ctl, r, Tema.cor("pedra").darkened(0.3), 1.5, false)
+		_ctl.draw_texture_rect(Icones.textura(id), r.grow(-4), false)
+		Arte.texto(_ctl, Vector2(r.end.x + 10, y + 24), "%s x%d" % [Csv.t("upgrade.%s.name" % id), upgrades.nivel(id)], 15, Tema.cor("texto"))
+		y += 40.0
 
 ## Barra de habilidades: slots 0 e 1 = tiro e esquiva (lêem a recarga do jogador); o resto fica bloqueado.
 ## A barra fina de estamina (recarga da esquiva) fica logo acima dos slots.
