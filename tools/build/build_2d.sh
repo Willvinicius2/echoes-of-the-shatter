@@ -10,7 +10,9 @@ for d in scripts2d scenes2d art2d; do ln -s "$raiz/godot/$d" "$proj/$d"; done
 # data2d é copiado: o Godot importaria os CSV como tradução e o export perderia o arquivo cru.
 # O importador "keep" mantém os CSV como estão (o cliente os lê com FileAccess).
 cp -r "$raiz/godot/data2d" "$proj/data2d"
-find "$proj/data2d" -name '*.csv' | while read -r f; do
+# O mesmo vale para os WAV, lidos em bytes por audio_2d.gd (a cópia de art2d também sai do symlink).
+rm "$proj/art2d"; cp -r "$raiz/godot/art2d" "$proj/art2d"
+find "$proj/data2d" "$proj/art2d/audio" \( -name '*.csv' -o -name '*.wav' \) | while read -r f; do
   printf '[remap]\n\nimporter="keep"\n' > "$f.import"
 done
 python3 - "$raiz" "$proj" <<'PY'
