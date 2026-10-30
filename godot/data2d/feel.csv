@@ -20,3 +20,28 @@ dmg_number_size,20,px,tamanho da fonte do numero
 dmg_number_size_kill,28,px,tamanho do numero no golpe que mata
 impact_time,0.14,s,duracao da faisca de impacto
 telegraph_alpha,0.45,x,opacidade maxima do aviso de ataque
+flash_time,0.09,s,flash branco no inimigo atingido
+sprite_shake_px,2.5,px,tremor do sprite do inimigo ao ser atingido
+sprite_shake_time,0.12,s,duracao do tremor do sprite
+strong_hit_pct,0.3,x,fracao da vida maxima que faz o golpe contar como forte (numero amarelo grande)
+hit_stop_strong_ms,60,ms,congelamento ao golpe forte que nao mata
+dmg_number_size_strong,25,px,tamanho do numero no golpe forte
+dmg_number_drift,14,px,deriva lateral maxima do numero de dano
+spark_count,14,x,particulas da faisca de impacto
+spark_speed,230,px/s,velocidade das particulas da faisca
+spark_time,0.28,s,vida das particulas da faisca
+death_dissolve_time,0.5,s,tempo da dissolucao na morte (sombra some junto)
+death_particles,18,x,particulas de poeira e alma na morte
+death_particle_time,0.7,s,vida das particulas da morte
+arrow_scale,2.0,x,escala do sprite da flecha
+arrow_glow_scale,2.2,x,escala do brilho da flecha
+arrow_glow_alpha,0.9,x,opacidade do brilho da flecha
+arrow_trail_points,16,x,pontos do rastro da flecha
+arrow_trail_width,11,px,largura do rastro na ponta da flecha
+arrow_trail_fade,0.18,s,tempo do rastro sumindo depois do impacto
+boss_mark_alpha,0.6,x,opacidade da marca vermelha no chao antes do golpe do chefe
+boss_phase_glow_time,1.1,s,tempo do brilho no corpo do chefe ao trocar de fase
+boss_phase_wave,230,px,raio da onda ao trocar de fase
+boss_entry_shake_amp,2.5,px,tremor da camera durante a entrada do chefe
+boss_entry_zoom,1.06,x,zoom inicial da camera na entrada do chefe (volta a 1 ate o fim)
+boss_entry_mark,150,px,raio da marca vermelha no chao durante a entrada do chefe
