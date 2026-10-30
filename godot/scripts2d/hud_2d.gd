@@ -42,8 +42,10 @@ func _desenhar() -> void:
 		_desenhar_habilidades(vp)
 		_desenhar_globos(vp)
 	_desenhar_upgrades()
-	Arte.plaqueta(_ctl, Rect2(vp.x - _lay["margem"] - _lay["plaqueta_largura"], _lay["margem"] * 0.6, _lay["plaqueta_largura"], 58), Csv.t("hud.room") % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
-	Arte.texto(_ctl, Vector2(_lay["margem"], 22), Csv.t("hud.help"), 12, Tema.cor("texto_suave"))
+	Arte.plaqueta(_ctl, Rect2(vp.x - 8 - _lay["plaqueta_largura"], 8, _lay["plaqueta_largura"], 58), Csv.t("hud.room") % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
+	if _rel < 8.0 and estado_ajuda_visivel():
+		var a := clampf((8.0 - _rel) / 2.0, 0.0, 1.0)
+		Arte.texto(_ctl, Vector2(0, vp.y - 142), Csv.t("hud.help"), 14, Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Rect2(vp.x * 0.5 - w * 0.5, 62, w, 18)
@@ -52,19 +54,23 @@ func _desenhar() -> void:
 	if mensagem != "":
 		Arte.texto(_ctl, Vector2(0, vp.y * 0.3), mensagem, 32, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
+## A lista completa de controles só aparece nos primeiros segundos (os slots já têm as plaquinhas de tecla).
+func estado_ajuda_visivel() -> bool:
+	return mensagem == ""
+
 func _tempo_texto() -> String:
 	var total := int(tempo)
 	return "%02d:%02d" % [total / 60, total % 60]
 
 ## Sombra suave no rodapé para os globos e a barra ficarem legíveis sobre qualquer sala.
 func _fundo_inferior(vp: Vector2) -> void:
-	var h := 230.0
-	_ctl.draw_polygon(PackedVector2Array([Vector2(0, vp.y - h), Vector2(vp.x, vp.y - h), Vector2(vp.x, vp.y), Vector2(0, vp.y)]), PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0.62), Color(0, 0, 0, 0.62)]))
+	var h := 190.0
+	_ctl.draw_polygon(PackedVector2Array([Vector2(0, vp.y - h), Vector2(vp.x, vp.y - h), Vector2(vp.x, vp.y), Vector2(0, vp.y)]), PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0.45), Color(0, 0, 0, 0.45)]))
 
 func _centro_globo(vp: Vector2, direita: bool) -> Vector2:
 	var r: float = _lay["globo_raio"]
 	var m: float = _lay["globo_margem"]
-	return Vector2(vp.x - m - r - 6.0 if direita else m + r + 6.0, vp.y - m - r)
+	return Vector2(vp.x - m - r if direita else m + r, vp.y - m - r)
 
 ## Faixa de ferro e pedra que liga os dois globos por baixo da barra de habilidades, com friso dourado e gema central.
 func _desenhar_base(vp: Vector2) -> void:
@@ -92,30 +98,49 @@ func _desenhar_globos(vp: Vector2) -> void:
 	var pulso := (0.5 + 0.5 * sin(_rel * 6.0)) if frac < 0.3 and frac > 0.0 else 0.0
 	var ev := _centro_globo(vp, false)
 	Arte.globo(_ctl, ev, raio, frac, _hp_fantasma, Tema.cor("vida_escura"), Tema.cor("vida_clara"), _rel, pulso)
-	Arte.texto(_ctl, ev + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.hp), int(hmax)], 20, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
-	Arte.texto(_ctl, ev + Vector2(-raio, 26), Csv.t("hud.hp"), 13, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	Arte.texto(_ctl, ev + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.hp), int(hmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	Arte.texto(_ctl, ev + Vector2(-raio, 22), Csv.t("hud.hp"), 12, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
 	var ed := _centro_globo(vp, true)
 	Arte.globo(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
-	_ctl.draw_texture_rect(Icones.textura("bloqueado"), Rect2(ed - Vector2(14, 22), Vector2(28, 28)), false, Color(1, 1, 1, 0.45))
-	Arte.texto(_ctl, ed + Vector2(-raio, 22), Csv.t("hud.mana"), 13, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	var rr := raio * 0.72
+	Arte.corrente(_ctl, ed + Vector2(-rr, -rr), ed + Vector2(rr, rr), 14)
+	Arte.corrente(_ctl, ed + Vector2(rr, -rr), ed + Vector2(-rr, rr), 14)
+	Arte.cadeado(_ctl, ed + Vector2(0, -12), 26.0)
+	Arte.texto(_ctl, ed + Vector2(-raio, 34), Csv.t("hud.mana"), 12, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
 
+## Upgrades: uma fileira de ícones emoldurados com contador; o nome aparece ao passar o mouse.
 func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():
 		return
+	var x: float = _lay["margem"] - 8
 	var y: float = _lay["lista_y"]
-	var ativos := []
+	var lado := 38.0
+	var mouse := _ctl.get_local_mouse_position()
+	var dica := ""
+	var dica_pos := Vector2.ZERO
 	for id in upgrades.ordem:
-		if upgrades.nivel(id) > 0:
-			ativos.append(id)
-	var painel := Rect2(_lay["margem"] - 8, y - 34, 230, 44 + ativos.size() * 40)
-	Arte.placa(_ctl, painel, Color(Tema.cor("pedra").r, Tema.cor("pedra").g, Tema.cor("pedra").b, 0.88), 2.0)
-	Arte.texto(_ctl, Vector2(painel.position.x, y - 12), Csv.t("hud.upgrades"), 15, Tema.cor("destaque"), HORIZONTAL_ALIGNMENT_CENTER, painel.size.x)
-	for id in ativos:
-		var r := Rect2(_lay["margem"], y + 2, 32, 32)
-		Arte.placa(_ctl, r, Tema.cor("pedra").darkened(0.3), 1.5, false)
-		_ctl.draw_texture_rect(Icones.textura(id), r.grow(-4), false)
-		Arte.texto(_ctl, Vector2(r.end.x + 10, y + 24), "%s x%d" % [Csv.t("upgrade.%s.name" % id), upgrades.nivel(id)], 15, Tema.cor("texto"))
-		y += 40.0
+		var nv: int = upgrades.nivel(id)
+		if nv <= 0:
+			continue
+		var r := Rect2(x, y, lado, lado)
+		Arte.placa(_ctl, r, Tema.cor("pedra").darkened(0.15), 2.0, false)
+		_ctl.draw_texture_rect(Icones.textura(id), r.grow(-6), false)
+		var sel := r.has_point(mouse)
+		if sel:
+			_ctl.draw_rect(r, Tema.cor("destaque"), false, 2.0)
+			dica = "%s x%d" % [Csv.t("upgrade.%s.name" % id), nv]
+			dica_pos = Vector2(r.position.x, r.end.y + 6)
+		if nv > 1:
+			var tag := Rect2(r.end.x - 20, r.end.y - 14, 22, 16)
+			Arte.placa(_ctl, tag, Tema.cor("metal_escuro"), 1.0, false)
+			Arte.texto(_ctl, Vector2(tag.position.x, tag.position.y + 12), "x%d" % nv, 12, Tema.cor("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, tag.size.x)
+		x += lado + 8.0
+	if dica != "":
+		var fonte := ThemeDB.fallback_font
+		var larg := fonte.get_string_size(dica, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 20.0
+		var rd := Rect2(dica_pos, Vector2(larg, 26))
+		Arte.placa(_ctl, rd, Tema.cor("pedra"), 2.0, false)
+		Arte.texto(_ctl, rd.position + Vector2(0, 19), dica, 15, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, larg)
 
 ## Barra de habilidades: slots 0 e 1 = tiro e esquiva (lêem a recarga do jogador); o resto fica bloqueado.
 ## A barra fina de estamina (recarga da esquiva) fica logo acima dos slots.
@@ -129,7 +154,7 @@ func _desenhar_habilidades(vp: Vector2) -> void:
 	var cdmax: float = jogador.stats.get("dodge_cooldown", 1.0)
 	var rec_esq := clampf(jogador.dodge_cd / cdmax, 0.0, 1.0)
 	var bw: float = _lay["estamina_barra_largura"]
-	Arte.barra(_ctl, Rect2((vp.x - bw) * 0.5, y0 - 22.0, bw, 7.0), 1.0 - rec_esq, Tema.cor("estamina").darkened(0.5), Tema.cor("estamina_clara"), false)
+	Arte.barra(_ctl, Rect2((vp.x - bw) * 0.5, y0 - 24.0, bw, 7.0), 1.0 - rec_esq, Tema.cor("estamina").darkened(0.5), Tema.cor("estamina_clara"), 0)
 	var slots := [
 		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": rec_esq, "cor": Tema.cor("estamina")},

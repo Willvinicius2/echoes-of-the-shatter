@@ -5,14 +5,14 @@ vida_altura,22,px,altura da barra de vida
 estamina_altura,12,px,altura da barra de estamina
 mana_altura,12,px,altura da barra de mana (reservada)
 barra_espaco,6,px,espaco entre barras
-lista_y,150,px,topo da lista de upgrades
-slot_tamanho,76,px,lado de cada slot de habilidade
+lista_y,34,px,topo da lista de upgrades
+slot_tamanho,64,px,lado de cada slot de habilidade
 slot_espaco,10,px,espaco entre slots
 slot_total,5,slots,slots na barra de habilidades (os alem de tiro e esquiva ficam bloqueados)
-slot_base,16,px,distancia do rodape ate a base dos slots
+slot_base,30,px,distancia do rodape ate a base dos slots
 icone_carta,64,px,lado do icone nas cartas de upgrade
-globo_raio,88,px,raio dos globos de vida e recurso
-globo_margem,14,px,distancia dos globos ate a borda da tela
+globo_raio,70,px,raio dos globos de vida e recurso
+globo_margem,4,px,distancia dos globos ate a borda da tela
 estamina_barra_largura,260,px,largura da barra fina de estamina sobre a barra de habilidades
 chefe_largura,620,px,largura da barra de vida do chefe
 plaqueta_largura,170,px,largura da plaqueta da sala

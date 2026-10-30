@@ -251,18 +251,21 @@ func _desenhar_barra() -> void:
 	var vp := _ctl.size
 	var alfa := 1.0 if ciclo != Ciclo.ENTRADA else clampf(1.0 - _t / maxf(_t_total, 0.01), 0.0, 1.0)
 	_ctl.modulate.a = alfa
-	var pos := Vector2(vp.x / 2 - 300, 196)   # abaixo da muralha: a porta do topo não fica coberta
-	var tam := Vector2(600, 18)
+	# colada ao topo, sobre a faixa escura: fina e larga, sem painel, com caveiras e chifres nas pontas.
+	# Nome e fase ficam abaixo, um de cada lado da porta (centro x), que continua livre.
+	var tam := Vector2(660, 11)
+	var pos := Vector2(vp.x / 2 - tam.x / 2, 9)
 	var cor := Color(0.6, 0.2, 0.7) if fase == 1 else (Color(0.8, 0.25, 0.55) if fase == 2 else Color(0.9, 0.2, 0.2))
-	# painel escuro atrás: o nome e a barra leem bem mesmo sobre a porta da sala
-	Arte.placa(_ctl, Rect2(pos + Vector2(-70, -40), Vector2(tam.x + 140, tam.y + 56)), Color(0.04, 0.035, 0.05, 0.82), 2.0)
-	Arte.barra(_ctl, Rect2(pos, tam), hp / hp_max, cor.darkened(0.6), cor.lightened(0.15))
+	Arte.barra(_ctl, Rect2(pos, tam), hp / hp_max, cor.darkened(0.6), cor.lightened(0.15), 2)
 	for f in fases:
 		if f > 1:
 			var x: float = pos.x + tam.x * fases[f]["pct"] / 100.0
 			_ctl.draw_rect(Rect2(x - 1.5, pos.y - 3, 3, tam.y + 6), Tema.cor("destaque"))
-	Arte.texto(_ctl, pos + Vector2(0, -10), Csv.t("hud.boss"), 20, Tema.cor("destaque").lightened(0.35), HORIZONTAL_ALIGNMENT_LEFT)
-	Arte.texto(_ctl, pos + Vector2(0, -10), Csv.t("hud.boss_phase") % [fase, total_fases()], 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, tam.x)
+	Arte.texto(_ctl, pos + Vector2(0, 42), Csv.t("hud.boss"), 22, Tema.cor("destaque").lightened(0.35), HORIZONTAL_ALIGNMENT_LEFT, -1.0, true)
+	var total := total_fases()
+	for i in total:
+		Arte.runa(_ctl, Vector2(pos.x + tam.x - 14 - (total - 1 - i) * 26, pos.y + 34), i, i < fase)
+	Arte.texto(_ctl, pos + Vector2(0, 62), Csv.t("hud.boss_phase") % [fase, total], 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, tam.x)
 
 ## Aviso por padrão: área (golpe), linha de mira (leque/investida) ou anel que se expande (anel).
 func _draw() -> void:
