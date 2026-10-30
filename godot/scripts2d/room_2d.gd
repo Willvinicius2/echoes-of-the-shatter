@@ -287,7 +287,7 @@ func colocar_props(alvo: Node2D) -> void:
 		var arvore: bool = String(p["id"]).begins_with("tree_")
 		sombra.draw.connect(func():
 			sombra.draw_set_transform(Vector2(20, 2) if arvore else Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
-			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * (0.5 if arvore else 0.35), Color(0, 0, 0, 0.3 if arvore else 0.35)))
+			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * (0.5 if arvore else 0.35), Color(0, 0, 0, 0.42)))
 		sombra.queue_redraw()
 		alvo.add_child(no)
 

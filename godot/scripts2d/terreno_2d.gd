@@ -3,6 +3,7 @@ extends RefCounted
 ## Os pontos vêm do arquivo de sala (`@caminho largura x,y ...` e `@riacho largura x,y ...`, em células).
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Ambiente = preload("res://scripts2d/ambiente_2d.gd")
 
 const AGUA_SHADER := """
 shader_type canvas_item;
@@ -279,7 +280,7 @@ static func _radial(cor: Color, lado: int, borda := Color(0, 0, 0, 0)) -> Gradie
 	t.fill_to = Vector2(1.0, 0.5)
 	return t
 
-static func _mancha(sala: Node2D, pos: Vector2, tam: Vector2, tex: Texture2D, z: int, aditivo := false) -> void:
+static func _mancha(sala: Node2D, pos: Vector2, tam: Vector2, tex: Texture2D, z: int, aditivo := false) -> Sprite2D:
 	var sp := Sprite2D.new()
 	sp.texture = tex
 	sp.position = pos
@@ -290,24 +291,90 @@ static func _mancha(sala: Node2D, pos: Vector2, tam: Vector2, tex: Texture2D, z:
 		m.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 		sp.material = m
 	sala.add_child(sp)
+	return sp
 
 ## Vinheta, halo das tochas, névoa baixa na água e musgo na base do muro.
+static var _tex_cache := {}
+
+static func _radial_cache(chave: String, cor: Color, lado: int, borda := Color(0, 0, 0, 0)) -> GradientTexture2D:
+	if not _tex_cache.has(chave):
+		_tex_cache[chave] = _radial(cor, lado, borda)
+	return _tex_cache[chave]
+
+## Vinheta, halo oscilante das tochas e velas, névoa em deriva, folhas na água e musgo na base do muro.
 static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 	var larg: float = sala.colunas * tile
 	var alt: float = sala.linhas * tile
-	_mancha(sala, Vector2(larg, alt) * 0.5, Vector2(larg * 1.5, alt * 1.5), _radial(Color(0, 0, 0, 0), 256, Color(0.02, 0.02, 0.05, 0.62)), 20)
+	var amb := Ambiente.new()
+	sala.add_child(amb)
+	_mancha(sala, Vector2(larg, alt) * 0.5, Vector2(larg * 1.5, alt * 1.5), _radial_cache("vinheta", Color(0, 0, 0, 0), 256, Color(0.02, 0.02, 0.05, 0.7)), 20)
 	for b in sala.braseiros:
-		_mancha(sala, b + Vector2(0, -10), Vector2(420, 420), _radial(Color(1.0, 0.55, 0.18, 0.4), 256), 3, true)
+		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache("tocha", Color(1.0, 0.55, 0.18, 0.4), 256), 3, true)
+		amb.add_halo(h)
+	for p in sala.props:
+		if String(p["id"]).contains("candles"):
+			var h := _mancha(sala, p["pos"] + Vector2(0, 10), Vector2(230, 230), _radial_cache("vela", Color(1.0, 0.72, 0.3, 0.34), 256), 3, true)
+			amb.add_halo(h)
+	var folha := _arte_prop("leaves_scattered")
+	var n_riacho := 0
 	for r in riachos:
 		var linha := spline(r["pts"], 90.0)
 		for k in linha.size():
-			_mancha(sala, linha[k] + Vector2(0, -6), Vector2(380, 140), _radial(Color(0.78, 0.84, 0.84, 0.05), 256), 6)
+			var m := _mancha(sala, linha[k] + Vector2(0, -6), Vector2(380, 140), _radial_cache("nevoa", Color(0.78, 0.84, 0.84, 0.05), 256), 6)
+			amb.add_nevoa(m, 28.0)
+		if not folha.is_empty():
+			var fino := spline(r["pts"], 8.0)
+			for k in 3:
+				var sp := Sprite2D.new()
+				sp.texture = folha[0]
+				sp.scale = Vector2.ONE * 0.1
+				sp.z_index = 4
+				sp.modulate = Color(1, 0.85, 0.7, 0.0)
+				sala.add_child(sp)
+				amb.add_folha(sp, fino, 0.012 + 0.004 * k, (k + n_riacho * 0.17) / 3.0)
+		n_riacho += 1
 	if grama:
+		for canto in [Vector2(0.12, 0.2), Vector2(0.88, 0.2), Vector2(0.12, 0.92), Vector2(0.88, 0.92)]:
+			var m := _mancha(sala, Vector2(larg * canto.x, alt * canto.y), Vector2(420, 220), _radial_cache("nevoa", Color(0.78, 0.84, 0.84, 0.05), 256), 6)
+			amb.add_nevoa(m, 22.0)
 		var musgo := Polygon2D.new()
 		var y0: float = 2 * tile
 		musgo.polygon = PackedVector2Array([Vector2(tile, y0), Vector2(larg - tile, y0), Vector2(larg - tile, y0 + 34), Vector2(tile, y0 + 34)])
 		musgo.vertex_colors = PackedColorArray([Color(0.2, 0.28, 0.12, 0.75), Color(0.2, 0.28, 0.12, 0.75), Color(0.2, 0.28, 0.12, 0.0), Color(0.2, 0.28, 0.12, 0.0)])
 		sala.add_child(musgo)
+		if not folha.is_empty():
+			_folhas_caindo(sala, folha[0], larg, alt)
+
+## Poucas folhas laranja caindo devagar pela sala.
+static func _folhas_caindo(sala: Node2D, tex: Texture2D, larg: float, alt: float) -> void:
+	var p := CPUParticles2D.new()
+	p.texture = tex
+	p.amount = 7
+	p.lifetime = 11.0
+	p.preprocess = 11.0
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = Vector2(larg * 0.45, 20.0)
+	p.position = Vector2(larg * 0.5, 140.0)
+	p.direction = Vector2(0.25, 1.0)
+	p.spread = 15.0
+	p.gravity = Vector2(4.0, 6.0)
+	p.initial_velocity_min = 14.0
+	p.initial_velocity_max = 24.0
+	p.angle_min = 0.0
+	p.angle_max = 360.0
+	p.angular_velocity_min = -60.0
+	p.angular_velocity_max = 60.0
+	p.scale_amount_min = 0.05
+	p.scale_amount_max = 0.08
+	p.color = Color(1.0, 0.8, 0.6, 0.9)
+	var g := Gradient.new()
+	g.set_color(0, Color(1, 1, 1, 0.0))
+	g.add_point(0.15, Color(1, 1, 1, 1.0))
+	g.add_point(0.85, Color(1, 1, 1, 1.0))
+	g.set_color(g.get_point_count() - 1, Color(1, 1, 1, 0.0))
+	p.color_ramp = g
+	p.z_index = 11
+	sala.add_child(p)
 
 static func _vagalumes(sala: Node2D, tile: int) -> void:
 	var p := CPUParticles2D.new()
