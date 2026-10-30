@@ -327,8 +327,8 @@ static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecl
 static func tecla_placa(c: CanvasItem, centro: Vector2, tecla: String) -> void:
 	var larg := maxf(36.0, 10.0 + tecla.length() * 7.0)
 	var pl := Rect2(centro - Vector2(larg * 0.5, 8), Vector2(larg, 16))
-	placa(c, pl, _c("metal_escuro"), 1.0, false)
-	c.draw_rect(pl.grow(-2), Color(0, 0, 0, 0.35), false, 1.0)
+	placa(c, pl, _c("pedra_clara"), 1.5, false)
+	c.draw_rect(pl.grow(-2), Color(0, 0, 0, 0.3), false, 1.0)
 	texto(c, Vector2(pl.position.x, pl.position.y + 13), tecla, 12, _c("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, pl.size.x)
 
 ## Plaqueta de pedra (alvenaria) com texto serifado de destaque e linha de apoio.
