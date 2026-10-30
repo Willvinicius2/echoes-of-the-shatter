@@ -11,6 +11,7 @@ const HudScript = preload("res://scripts2d/hud_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
+const Audio = preload("res://scripts2d/audio_2d.gd")
 
 enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO }
 
@@ -63,6 +64,7 @@ func _ready() -> void:
 	menus.pausa_pedida.connect(_on_pausa_pedida)
 	menus.sair.connect(get_tree().quit)
 	add_child(menus)
+	Audio.musica("music_cripta")
 	iniciar_corrida()
 	if com_menu:
 		_ir_titulo()
@@ -152,6 +154,7 @@ func _physics_process(delta: float) -> void:
 
 func _abrir_porta() -> void:
 	room.abrir_porta()
+	Audio.tocar("door_open")
 	hud.mensagem = Csv.t("hud.room_clear")
 	estado = Estado.LIMPA
 
@@ -165,6 +168,7 @@ func _on_porta() -> void:
 	if indice + 1 >= salas.size():
 		estado = Estado.VENCEU
 		hud.mensagem = Csv.t("hud.victory")
+		Audio.tocar("victory")
 		_timer = config["restart_delay"]
 		return
 	indice += 1
@@ -174,6 +178,7 @@ func _on_porta() -> void:
 func _on_player_died() -> void:
 	estado = Estado.MORTO
 	hud.mensagem = Csv.t("hud.dead")
+	Audio.tocar("defeat")
 	_timer = config["restart_delay"]
 
 func _mostrar_fim() -> void:

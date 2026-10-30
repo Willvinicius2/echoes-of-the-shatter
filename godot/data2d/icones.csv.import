@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://co23oh0ttgbmh"
+
+[deps]
+
+files=["res://data2d/icones.forma.translation", "res://data2d/icones.cor.translation", "res://data2d/icones.nota.translation"]
+
+source_file="res://data2d/icones.csv"
+dest_files=["res://data2d/icones.forma.translation", "res://data2d/icones.cor.translation", "res://data2d/icones.nota.translation"]
+
+[params]
+
+compress=true
+delimiter=0

@@ -27,11 +27,36 @@ func _testar() -> void:
 	_testar_salas()
 	await _testar_upgrades()
 	_testar_feel()
+	_testar_audio_e_ui()
 	await _testar_telegrafo()
 	_testar_chefe_csv()
 	await _testar_chefe_fases()
 	await _testar_chefe_luta()
 	await _testar_corrida()
+
+func _testar_audio_e_ui() -> void:
+	var Audio = preload("res://scripts2d/audio_2d.gd")
+	var Tema = preload("res://scripts2d/tema_2d.gd")
+	var Icones = preload("res://scripts2d/icones_2d.gd")
+	var eventos := ["shoot", "hit_enemy", "kill_enemy", "player_hurt", "dodge", "card_open", "card_pick", "door_open", "ui_click", "victory", "defeat", "music_cripta"]
+	for ev in eventos:
+		var s = Audio.fluxo(ev)
+		check(s != null and s.data.size() > 100 and s.mix_rate > 0, "audio.csv: %s carrega" % ev)
+	check(Audio.fluxo("music_cripta").loop_mode == AudioStreamWAV.LOOP_FORWARD, "musica em laco")
+	check(Audio.fluxo("evento_que_nao_existe") == null, "evento desconhecido nao quebra")
+	Audio.tocar("evento_que_nao_existe")
+	for r in Csv.rows("res://data2d/audio.csv"):
+		check(eventos.has(r["evento"]), "evento %s do audio.csv e usado" % r["evento"])
+	check(Tema.tema().has_stylebox("normal", "Button") and Tema.tema().has_stylebox("panel", "PanelContainer"), "tema de pedra tem botao e painel")
+	check(Tema.cor("vida") != Color.MAGENTA and Tema.cor("pedra") != Color.MAGENTA, "cores do tema.csv")
+	var ids := ["tiro", "esquiva", "bloqueado"]
+	for r in Csv.rows("res://data2d/upgrades.csv"):
+		ids.append(r["id"])
+	for id in ids:
+		var tx = Icones.textura(id)
+		check(tx != null and tx.get_width() > 0, "icone %s existe" % id)
+	for k in ["hud.stamina", "hud.mana", "hud.key.shoot", "hud.key.dodge"]:
+		check(Csv.t(k) != k, "loc %s" % k)
 
 func _testar_upgrades() -> void:
 	var UpScript = preload("res://scripts2d/upgrades_2d.gd")

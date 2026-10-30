@@ -13,3 +13,8 @@ Cena principal: `scenes2d/Run2D.tscn` (GDScript, sem C#). Código em `scripts2d/
 godot --headless --path godot --script res://scripts2d/tools/test_2d.gd     # corrida completa, salas, manifesto (CI: cliente2d.yml)
 godot --path godot --script res://scripts2d/tools/captura_2d.gd -- saida.png [indice_sala]
 ```
+
+## Áudio e UI (P5)
+- Áudio: `data2d/audio.csv` (evento, arquivo, volume, variação de pitch) e `scripts2d/audio_2d.gd` (`Audio.tocar("evento")`, `Audio.musica(...)`). Os WAV de `art2d/audio/` são gerados por `python3 tools/audio/gerar_audio.py` (síntese própria, CC0; ver `art2d/audio/LICENCA.md`).
+- Tema de pedra escura: `scripts2d/tema_2d.gd` + `data2d/tema.csv` (cores). HUD: `hud_2d.gd` com medidas em `data2d/hud_layout.csv`. Ícones geométricos provisórios: `icones_2d.gd` + `data2d/icones.csv`; um PNG em `art2d/ui/icone_<id>.png` substitui o provisório.
+- HUD: vida, estamina (recarga da esquiva, sem recurso novo), mana (reservada, vazia) e barra de habilidades (tiro, esquiva e slots bloqueados). A barra do chefe subiu para o topo central.

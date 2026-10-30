@@ -3,6 +3,9 @@ extends CanvasLayer
 ## Clique na carta ou teclas 1, 2, 3. Textos por chave de localização.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Tema = preload("res://scripts2d/tema_2d.gd")
+const Icones = preload("res://scripts2d/icones_2d.gd")
+const Audio = preload("res://scripts2d/audio_2d.gd")
 
 signal escolhido(id: String)
 
@@ -17,17 +20,21 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_fundo = ColorRect.new()
 	_fundo.color = Color(0.03, 0.03, 0.05, 0.8)
+	_fundo.theme = Tema.tema()
 	_fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_fundo)
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fundo.add_child(centro)
 	var col := VBoxContainer.new()
-	col.set_anchors_preset(Control.PRESET_CENTER)
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 28)
-	_fundo.add_child(col)
+	centro.add_child(col)
 	var titulo := Label.new()
 	titulo.text = Csv.t("upgrade.title")
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 34)
+	titulo.add_theme_color_override("font_color", Tema.cor("destaque"))
 	col.add_child(titulo)
 	_caixa = HBoxContainer.new()
 	_caixa.add_theme_constant_override("separation", 24)
@@ -41,7 +48,11 @@ func abrir(ids: Array) -> void:
 	for i in ids.size():
 		var id: String = ids[i]
 		var b := Button.new()
-		b.custom_minimum_size = Vector2(260, 190)
+		b.custom_minimum_size = Vector2(260, 260)
+		b.icon = Icones.textura(id)
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+		b.expand_icon = true
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var nv: int = upgrades.nivel(id) + 1
 		b.text = "[%d]\n%s\n\n%s\n\n%s" % [i + 1, Csv.t("upgrade.%s.name" % id), Csv.t("upgrade.%s.desc" % id),
@@ -50,6 +61,7 @@ func abrir(ids: Array) -> void:
 		_caixa.add_child(b)
 	_fundo.visible = true
 	aberta = true
+	Audio.tocar("card_open")
 	get_tree().paused = true
 
 func escolher(i: int) -> void:
@@ -57,6 +69,7 @@ func escolher(i: int) -> void:
 		return
 	aberta = false
 	_fundo.visible = false
+	Audio.tocar("card_pick")
 	get_tree().paused = false
 	escolhido.emit(_ids[i])
 

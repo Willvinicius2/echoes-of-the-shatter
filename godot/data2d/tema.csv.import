@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dvm01pu64nxs3"
+
+[deps]
+
+files=["res://data2d/tema.valor.translation", "res://data2d/tema.nota.translation"]
+
+source_file="res://data2d/tema.csv"
+dest_files=["res://data2d/tema.valor.translation", "res://data2d/tema.nota.translation"]
+
+[params]
+
+compress=true
+delimiter=0

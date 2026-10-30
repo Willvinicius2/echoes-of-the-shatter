@@ -1,0 +1,11 @@
+id,forma,cor,nota
+tiro,seta,#e6e1d6,slot de tiro (placeholder geometrico)
+esquiva,passo,#3fa3c9,slot de esquiva
+bloqueado,cadeado,#52505c,slot ainda sem habilidade
+power,seta,#d9643a,Flecha Pesada
+haste,raio,#e0c040,Mao Agil
+swift,bota,#6ec06e,Pes Leves
+vitality,coracao,#b52a2a,Vigor
+multishot,leque,#c9a45c,Salva de Flechas
+pierce,lanca,#9ac0e0,Ponta Afiada
+evasion,passo,#3fa3c9,Passo Rapido

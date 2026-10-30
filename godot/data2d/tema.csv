@@ -1,0 +1,14 @@
+chave,valor,nota
+fundo_escuro,#08080c,fundo atras dos paineis (alpha vem do codigo)
+pedra,#1c1c24,painel de pedra escura
+pedra_clara,#2a2a35,botao normal
+pedra_hover,#383848,botao com foco ou mouse
+pedra_pressionada,#14141a,botao apertado
+borda,#52505c,moldura de pedra
+borda_foco,#c9a45c,moldura dourada de foco
+texto,#e6e1d6,texto principal
+texto_suave,#9a97a3,texto secundario e desativado
+vida,#b52a2a,barra de vida
+estamina,#3fa3c9,barra de estamina (recarga da esquiva)
+mana,#4a5bd0,barra de mana (reservada)
+destaque,#c9a45c,titulos e numeros de destaque

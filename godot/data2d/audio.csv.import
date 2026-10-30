@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://crourbyka1c8v"
+
+[deps]
+
+files=["res://data2d/audio.arquivo.translation", "res://data2d/audio.volume.translation", "res://data2d/audio.variacao.translation", "res://data2d/audio.tipo.translation"]
+
+source_file="res://data2d/audio.csv"
+dest_files=["res://data2d/audio.arquivo.translation", "res://data2d/audio.volume.translation", "res://data2d/audio.variacao.translation", "res://data2d/audio.tipo.translation"]
+
+[params]
+
+compress=true
+delimiter=0

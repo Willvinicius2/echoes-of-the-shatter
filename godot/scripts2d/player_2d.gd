@@ -7,6 +7,7 @@ signal hp_changed(hp: float, hp_max: float)
 const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
+const Audio = preload("res://scripts2d/audio_2d.gd")
 
 enum Estado { LIVRE, ATIRANDO, ESQUIVA, MORTO }
 
@@ -76,6 +77,10 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_animar(entrada)
 
+## Fração 0..1 da recarga do tiro (0 = pronto), para a barra de habilidades.
+func recarga_tiro() -> float:
+	return clampf(_shoot_cd / stats["shoot_cooldown"], 0.0, 1.0)
+
 func esta_morto() -> bool:
 	return estado == Estado.MORTO
 
@@ -99,6 +104,7 @@ func _comecar_esquiva(dir: Vector2) -> void:
 	invencivel = maxf(invencivel, stats["dodge_time"])
 	facing = _dodge_dir
 	play("dodge", true)
+	Audio.tocar("dodge")
 
 func _comecar_tiro() -> void:
 	estado = Estado.ATIRANDO
@@ -137,6 +143,7 @@ func _soltar_flecha() -> void:
 			stats["arrow_speed"], stats["arrow_damage"], stats["arrow_range"])
 		f.pierce = int(stats["arrow_pierce"])  # gancho de upgrades
 		get_parent().add_child(f)
+	Audio.tocar("shoot")
 	var c := Feel.cfg()
 	velocity -= _aim * c["player_recoil"]
 	Feel.shake(self, c["shake_shot_amp"], c["shake_shot_time"])
@@ -153,6 +160,7 @@ func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 	hp = maxf(0.0, hp - amount)
 	invencivel = stats["hit_iframes"]
 	flash()
+	Audio.tocar("player_hurt")
 	var c := Feel.cfg()
 	Feel.hit_stop(c["hit_stop_player_ms"])
 	Feel.shake(self, c["shake_player_amp"], c["shake_player_time"])
