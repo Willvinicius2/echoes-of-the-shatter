@@ -34,6 +34,7 @@ func _testar() -> void:
 	await _testar_chefe_fases()
 	await _testar_chefe_luta()
 	await _testar_corrida()
+	await _testar_rotas()
 	await _testar_meta()
 	await _testar_forja()
 
@@ -349,6 +350,11 @@ func _testar_corrida() -> void:
 		await _esperar(func(): return run.estado != run.Estado.LIMPA, 4.0)
 		p.auto_move = Vector2.ZERO
 		if i < run.salas.size() - 1:
+			if run.caminhos_da_etapa(i + 1).size() > 1:
+				await _esperar(func(): return run.estado == run.Estado.ROTA, 4.0)
+				check(run.estado == run.Estado.ROTA and paused and run.menus.tela == run.menus.Tela.ROTA, "etapa %d abre a escolha de caminho" % (i + 2))
+				run.escolher_rota(run.opcoes_rota[0])
+				check(not paused, "escolher o caminho despausa")
 			await _esperar(func(): return run.estado == run.Estado.LUTA, 4.0)
 			check(run.indice == i + 1 and run.estado == run.Estado.LUTA, "porta leva à sala %d (com fade)" % (i + 2))
 		else:
@@ -380,6 +386,58 @@ func _testar_corrida() -> void:
 	run.menus.ao_titulo.emit()
 	check(run.estado == run.Estado.MENU and paused and run.menus.tela == run.menus.Tela.TITULO, "volta ao título")
 	paused = false
+	run.queue_free()
+
+func _testar_rotas() -> void:
+	for r in Csv.rows("res://data2d/rota.csv"):
+		var sala = RoomScript.new()
+		check(sala.carregar(r["room"]), "rota %s: sala carrega" % r["id"])
+		check(r["tipo"] in ["elite", "descanso"] and int(r["etapa"]) > 1 and int(r["etapa"]) < Csv.rows("res://data2d/run.csv").size(), "rota %s: tipo e etapa válidos" % r["id"])
+		sala.free()
+	var run = RunScene.instantiate()
+	run.com_menu = false
+	root.add_child(run)
+	await physics_frame
+	var p = run.player
+	p.god_mode = true
+	check(run.caminhos_da_etapa(0).size() == 1 and run.caminhos_da_etapa(3).size() == 1, "sala 1 e chefe não têm bifurcação")
+	# etapa 2: combate ou elite
+	run.matar_todos()
+	await _esperar(func(): return run._timer <= 0.0 and run.estado == run.Estado.ESCOLHA, 5.0)
+	run.ui.escolher(0)
+	p.global_position = run.room._centro(12, 3)
+	p.auto_move = Vector2.UP
+	await _esperar(func(): return run.estado == run.Estado.ROTA, 4.0)
+	p.auto_move = Vector2.ZERO
+	check(run.opcoes_rota.size() == 2 and run.opcoes_rota[1]["tipo"] == "elite", "etapa 2 oferece combate ou elite")
+	run.escolher_rota(run.opcoes_rota[1])
+	await _esperar(func(): return run.estado == run.Estado.LUTA, 4.0)
+	check(run.no_atual["tipo"] == "elite" and run.vivos == 7 and run.hud.sala == 2, "elite: sala com 7 inimigos")
+	var antes: int = run.ganhos["fragmentos"]
+	run.matar_todos()
+	await _esperar(func(): return run.estado == run.Estado.ESCOLHA, 5.0)
+	check(run.ganhos["fragmentos"] - antes >= int(run.config["room_clear_fragments"] + run.config["elite_fragments"]), "elite paga fragmentos extras")
+	check(run.ui._ids.size() == int(run.config["upgrade_cards"] + run.config["elite_extra_cards"]), "elite oferece carta extra")
+	run.ui.escolher(0)
+	# etapa 3: combate ou descanso
+	p.hp = 10.0
+	p.global_position = run.room._centro(12, 3)
+	p.auto_move = Vector2.UP
+	await _esperar(func(): return run.estado == run.Estado.ROTA, 4.0)
+	p.auto_move = Vector2.ZERO
+	check(run.opcoes_rota.size() == 2 and run.opcoes_rota[1]["tipo"] == "descanso", "etapa 3 oferece combate ou descanso")
+	run.escolher_rota(run.opcoes_rota[1])
+	await _esperar(func(): return run.estado == run.Estado.LIMPA and run.no_atual["tipo"] == "descanso", 4.0)
+	check(run.vivos == 0 and run.no_atual["tipo"] == "descanso", "descanso não tem inimigos")
+	await _esperar(func(): return run._timer <= 0.0, 3.0)
+	await physics_frame
+	await physics_frame
+	check(run.estado == run.Estado.LIMPA and not run.ui.aberta and p.hp > 10.0 and p.hp <= p.stats["hp_max"], "descanso cura e abre a porta sem cartas")
+	p.global_position = run.room._centro(12, 3)
+	p.auto_move = Vector2.UP
+	await _esperar(func(): return run.estado == run.Estado.LUTA and run.indice == 3, 4.0)
+	p.auto_move = Vector2.ZERO
+	check(run.indice == 3 and run.estado == run.Estado.LUTA, "do descanso direto ao chefe")
 	run.queue_free()
 
 func _testar_meta() -> void:

@@ -77,3 +77,10 @@ Consulta ao `jev-latest` sobre o hub: menu com Forja/Melhorias/Partir, sem cená
 - **Amuletos**: criados uma vez, 1 slot equipado, bônus permanente de stat (+5% dano, +5% velocidade, +10 vida, −8% recarga da esquiva, −6% recarga do tiro). **Consumíveis**: estoque de até 3, uma unidade de cada é gasta ao partir e vale só naquela corrida.
 - **Orçamento de materiais por corrida completa** (drops de `drops.csv`, salas de `run.csv`): osso ~7, essência ~4, ferro ~2, pedra ~1, núcleo 1 (só com o chefe morto), cerca de 15 no total e ~140 fragmentos numa vitória. Por isso a pedra aparece pouco nas receitas (1 a 2) e o ferro só nas mais caras. Primeira receita (Amuleto de Osso): 4 materiais, sai em uma corrida; o amuleto mais caro (Estilhaço) pede o núcleo do chefe e leva ao menos 2 vitórias com as outras compras.
 - Os números ficam no CSV; o teste `_testar_forja` confere a rodada de materiais e o custo da 1ª receita.
+
+## 9. M9 — exploração por rotas (30/10/2026)
+Consulta ao `jev-latest` (`POST /v1/systemone`): formato de bifurcação após a sala, sem mapa andável (68% contra 30% de escolher região no hub e 2% de mapa ramificado); só a Região 1 com rotas dentro dela (81%); tipos de sala empatados entre combate/tesouro (42%) e combate/elite/descanso (40%), então entraram elite e descanso; número de bifurcações sem consenso (32/33/35%), ficaram 2.
+- **Fluxo**: a corrida segue 4 etapas. Ao atravessar a porta para as etapas 2 e 3, abre a tela "Escolha o caminho" com o combate padrão (`run.csv`) e uma alternativa de `godot/data2d/rota.csv`. Etapa 1 e chefe não têm bifurcação.
+- **Elite** (etapa 2): 7 inimigos, +15 fragmentos e 1 carta a mais. **Descanso** (etapa 3): sem inimigos, cura 50% da vida máxima, sem cartas. Números em `run_settings.csv`.
+- **Fora deste marco**: segunda região jogável, mapa em camadas, tesouro. A ligação com os vereditos do roteiro (doc 21) vem depois.
+

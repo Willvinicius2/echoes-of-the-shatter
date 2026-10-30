@@ -7,3 +7,6 @@ upgrade_cards,3,cartas,cartas oferecidas ao limpar a sala
 room_fade,0.25,s,duracao de cada metade do fade entre salas
 room_clear_fragments,5,fragmentos,bonus ao limpar cada sala
 victory_fragments,25,fragmentos,bonus ao vencer a cripta
+elite_fragments,15,fragmentos,bonus ao limpar uma sala de elite
+elite_extra_cards,1,cartas,cartas a mais ao limpar uma sala de elite
+rest_heal,0.5,fracao,vida recuperada na sala de descanso (fracao da vida maxima)

@@ -12,7 +12,7 @@ signal ao_titulo      # volta ao título
 signal pausa_pedida   # jogador apertou Esc durante a luta
 signal sair
 
-enum Tela { NENHUMA, TITULO, PAUSA, FIM, META, FORJA }
+enum Tela { NENHUMA, TITULO, PAUSA, FIM, META, FORJA, ROTA }
 
 var tela := Tela.NENHUMA
 var meta: RefCounted   # meta_2d.gd; a loja de melhorias do título
@@ -101,6 +101,10 @@ func mostrar_forja() -> void:
 			mostrar_forja(), not meta.pode_criar(id)])
 	botoes.append(["menu.back", mostrar_titulo])
 	_montar(Tela.FORJA, "menu.forge_title", "menu.forge_hint", botoes, _resumo_hub().slice(0, 2))
+
+## Bifurcação da cripta: `opcoes` é um Array de [texto, Callable]; sem Esc, o jogador precisa escolher.
+func mostrar_rota(opcoes: Array) -> void:
+	_montar(Tela.ROTA, "menu.route_title", "menu.route_hint", opcoes)
 
 func mostrar_pausa() -> void:
 	_montar(Tela.PAUSA, "menu.paused", "", [

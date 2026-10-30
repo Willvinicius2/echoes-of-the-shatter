@@ -14,10 +14,13 @@ const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 
-enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO }
+enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO, ROTA }
 
 var config := {}
 var salas: Array = []
+var rotas: Array = []     # alternativas de rota.csv; a sala de run.csv da etapa é o caminho padrão (combate)
+var no_atual := {}        # nó da sala em curso: id, tipo, room, enemies
+var opcoes_rota: Array = []
 var indice := 0
 var estado := Estado.LUTA
 var rng := RandomNumberGenerator.new()
@@ -41,6 +44,7 @@ var _estado_antes := Estado.LUTA
 func _ready() -> void:
 	config = Csv.kv("res://data2d/run_settings.csv")
 	salas = Csv.rows("res://data2d/run.csv")
+	rotas = Csv.rows("res://data2d/rota.csv")
 	atores = Node2D.new()
 	atores.y_sort_enabled = true
 	add_child(atores)
@@ -87,7 +91,21 @@ func iniciar_corrida() -> void:
 	player.reset()
 	_carregar_sala(0)
 
-func _carregar_sala(i: int) -> void:
+## Caminhos oferecidos ao entrar na etapa `i` (índice 0): o padrão de run.csv mais as alternativas de rota.csv.
+func caminhos_da_etapa(i: int) -> Array:
+	var padrao: Dictionary = salas[i].duplicate()
+	padrao["id"] = "combate"
+	padrao["tipo"] = "combate"
+	var out := [padrao]
+	for r in rotas:
+		if int(r["etapa"]) == i + 1:
+			out.append(r)
+	return out
+
+func _carregar_sala(i: int, no: Dictionary = {}) -> void:
+	if no.is_empty():
+		no = caminhos_da_etapa(i)[0]
+	no_atual = no
 	if room != null:
 		room.queue_free()
 	for n in get_tree().get_nodes_in_group("hurtable"):
@@ -98,7 +116,7 @@ func _carregar_sala(i: int) -> void:
 	room = RoomScript.new()
 	add_child(room)
 	move_child(room, 0)
-	room.carregar(salas[i]["room"])
+	room.carregar(no["room"])
 	room.colocar_props(atores)
 	room.porta_usada.connect(_on_porta)
 	player.global_position = room.spawn_jogador
@@ -107,8 +125,18 @@ func _carregar_sala(i: int) -> void:
 	hud.mensagem = ""
 	hud.chefe = null
 	_ajustar_camera()
-	_spawn_inimigos(salas[i]["enemies"])
+	_spawn_inimigos(no["enemies"])
 	estado = Estado.LUTA
+	if no["tipo"] == "descanso":
+		_descansar()
+
+## Sala de descanso: sem inimigos; recupera parte da vida e libera a porta sem cartas.
+func _descansar() -> void:
+	var maximo: float = player.stats["hp_max"]
+	player.hp = minf(maximo, player.hp + maximo * config["rest_heal"])
+	player.hp_changed.emit(player.hp, maximo)
+	estado = Estado.LIMPA
+	_timer = config["clear_delay"]
 
 func _ajustar_camera() -> void:
 	var vp := get_viewport_rect().size
@@ -126,7 +154,7 @@ func _spawn_inimigos(spec: String) -> void:
 		pontos[j] = tmp
 	var k := 0
 	vivos = 0
-	for parte in spec.split("|"):
+	for parte in spec.split("|", false):
 		var p := parte.split(":")
 		for n in int(p[1]):
 			var e: Node2D = (BossScript if Csv.enemy(p[0])["kind"] == "boss" else EnemyScript).new()
@@ -146,6 +174,8 @@ func _on_inimigo_morto(e) -> void:
 		estado = Estado.LIMPA
 		_timer = config["clear_delay"]
 		ganhos["fragmentos"] += int(config["room_clear_fragments"])
+		if no_atual["tipo"] == "elite":
+			ganhos["fragmentos"] += int(config["elite_fragments"])
 
 func _physics_process(delta: float) -> void:
 	if estado == Estado.LUTA or estado == Estado.LIMPA:
@@ -156,7 +186,12 @@ func _physics_process(delta: float) -> void:
 		if _timer <= 0.0:
 			match estado:
 				Estado.LIMPA:
-					var cartas: Array = upgrades.sortear(rng, int(config["upgrade_cards"])) if indice + 1 < salas.size() else []
+					var cartas: Array = []
+					if indice + 1 < salas.size() and no_atual["tipo"] != "descanso":
+						var qtd := int(config["upgrade_cards"])
+						if no_atual["tipo"] == "elite":
+							qtd += int(config["elite_extra_cards"])
+						cartas = upgrades.sortear(rng, qtd)
 					if cartas.is_empty():
 						_abrir_porta()
 					else:
@@ -168,7 +203,7 @@ func _physics_process(delta: float) -> void:
 func _abrir_porta() -> void:
 	room.abrir_porta()
 	Audio.tocar("door_open")
-	hud.mensagem = Csv.t("hud.room_clear")
+	hud.mensagem = Csv.t("hud.rest" if no_atual["tipo"] == "descanso" else "hud.room_clear")
 	estado = Estado.LIMPA
 
 func _on_upgrade_escolhido(id: String) -> void:
@@ -186,8 +221,29 @@ func _on_porta() -> void:
 		_timer = config["restart_delay"]
 		return
 	indice += 1
+	var caminhos := caminhos_da_etapa(indice)
+	if caminhos.size() == 1:
+		_entrar_na_sala(caminhos[0])
+		return
+	estado = Estado.ROTA
+	opcoes_rota = caminhos
+	var botoes := []
+	for c in caminhos:
+		botoes.append(["route." + c["id"], func() -> void: escolher_rota(c)])
+	get_tree().paused = true
+	menus.mostrar_rota(botoes)
+
+## Escolha de uma bifurcação (botão do menu ou teste): despausa e vai para a sala escolhida.
+func escolher_rota(no: Dictionary) -> void:
+	if estado != Estado.ROTA:
+		return
+	menus.fechar()
+	get_tree().paused = false
+	_entrar_na_sala(no)
+
+func _entrar_na_sala(no: Dictionary) -> void:
 	estado = Estado.TRANSICAO
-	menus.transicao(config["room_fade"], func(): _carregar_sala(indice))
+	menus.transicao(config["room_fade"], func(): _carregar_sala(indice, no))
 
 func _on_player_died() -> void:
 	estado = Estado.MORTO
