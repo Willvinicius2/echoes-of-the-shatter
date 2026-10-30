@@ -12,3 +12,6 @@ Cena principal: `scenes2d/Run2D.tscn` (GDScript, sem C#). Código em `scripts2d/
 godot --headless --path godot --script res://scripts2d/tools/test_2d.gd     # corrida completa, salas, manifesto (CI: cliente2d.yml)
 godot --path godot --script res://scripts2d/tools/captura_2d.gd -- saida.png [indice_sala]
 ```
+
+## Build jogável (Windows e Linux)
+`tools/build/build_2d.sh [saida] [godot]` monta um projeto só com o cliente 2D e exporta `EcosDosEstilhacos.exe` (Windows) e `.x86_64` (Linux), com os export templates 4.4.1 instalados. Os CSV entram crus (importador `keep`); sem isso o executável não acha `loc_2d.csv` nem os demais dados.
