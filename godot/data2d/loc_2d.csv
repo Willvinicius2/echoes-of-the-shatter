@@ -83,3 +83,9 @@ recipe.amuleto_ferro.name,Amuleto de Ferro
 recipe.amuleto_nucleo.name,Amuleto do Estilhaco
 recipe.tonico_vida.name,Tonico de Vida
 recipe.po_afiado.name,Po Afiado
+menu.route_title,Escolha o caminho
+menu.route_hint,A cripta se divide a frente
+route.combate,Corredor dos mortos: combate normal
+route.elite_ossuario,Ossuario profundo: elite (mais perigo, mais fragmentos e uma carta extra)
+route.descanso_cripta,Nicho de descanso: recupera vida, sem combate
+hud.rest,Nicho de descanso: a vida foi recuperada. Siga pela porta
