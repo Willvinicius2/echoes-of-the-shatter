@@ -309,7 +309,7 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 	sala.add_child(amb)
 	_mancha(sala, Vector2(larg, alt) * 0.5, Vector2(larg * 1.5, alt * 1.5), _radial_cache("vinheta", Color(0, 0, 0, 0), 256, Color(0.02, 0.02, 0.05, 0.7)), 20)
 	for b in sala.braseiros:
-		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache("tocha", Color(1.0, 0.55, 0.18, 0.4), 256), 3, true)
+		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache("tocha_grama" if grama else "tocha", Color(1.0, 0.55, 0.18, 0.62 if grama else 0.4), 256), 3, true)
 		amb.add_halo(h)
 	for p in sala.props:
 		if String(p["id"]).contains("candles"):
