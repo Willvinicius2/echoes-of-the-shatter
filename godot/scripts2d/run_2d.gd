@@ -9,8 +9,9 @@ const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
+const MenusScript = preload("res://scripts2d/menus_2d.gd")
 
-enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA }
+enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO }
 
 var config := {}
 var salas: Array = []
@@ -22,11 +23,15 @@ var player: Node2D
 var hud: CanvasLayer
 var upgrades: RefCounted
 var ui: CanvasLayer
+var menus: CanvasLayer
+var com_menu := true   # false nos testes: começa direto na sala 1
+var tempo := 0.0       # segundos da corrida atual (só conta luta e sala limpa)
 var camera: Camera2D
 var atores: Node2D
 var vivos := 0
 var corridas := 0
 var _timer := 0.0
+var _estado_antes := Estado.LUTA
 
 func _ready() -> void:
 	config = Csv.kv("res://data2d/run_settings.csv")
@@ -50,12 +55,23 @@ func _ready() -> void:
 	ui.upgrades = upgrades
 	ui.escolhido.connect(_on_upgrade_escolhido)
 	add_child(ui)
+	menus = MenusScript.new()
+	menus.jogar.connect(_on_jogar)
+	menus.retomar.connect(_on_retomar)
+	menus.ao_titulo.connect(_ir_titulo)
+	menus.pausa_pedida.connect(_on_pausa_pedida)
+	menus.sair.connect(get_tree().quit)
+	add_child(menus)
 	iniciar_corrida()
+	if com_menu:
+		_ir_titulo()
 
 func iniciar_corrida() -> void:
 	rng.seed = int(config["seed"]) + corridas
 	corridas += 1
 	indice = 0
+	tempo = 0.0
+	menus.limpar_fade()
 	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador
 	player.reset()
 	_carregar_sala(0)
@@ -118,6 +134,9 @@ func _on_inimigo_morto(_e) -> void:
 		_timer = config["clear_delay"]
 
 func _physics_process(delta: float) -> void:
+	if estado == Estado.LUTA or estado == Estado.LIMPA:
+		tempo += delta
+	hud.tempo = tempo
 	if _timer > 0.0:
 		_timer -= delta
 		if _timer <= 0.0:
@@ -130,9 +149,7 @@ func _physics_process(delta: float) -> void:
 						estado = Estado.ESCOLHA
 						ui.abrir(cartas)
 				Estado.MORTO, Estado.VENCEU:
-					iniciar_corrida()
-	if estado == Estado.MORTO and Input.is_action_just_pressed("renascer"):
-		iniciar_corrida()
+					_mostrar_fim()
 
 func _abrir_porta() -> void:
 	room.abrir_porta()
@@ -152,12 +169,57 @@ func _on_porta() -> void:
 		_timer = config["restart_delay"]
 		return
 	indice += 1
-	_carregar_sala.call_deferred(indice)
+	estado = Estado.TRANSICAO
+	menus.transicao(config["room_fade"], func(): _carregar_sala(indice))
 
 func _on_player_died() -> void:
 	estado = Estado.MORTO
 	hud.mensagem = Csv.t("hud.dead")
 	_timer = config["restart_delay"]
+
+func _mostrar_fim() -> void:
+	hud.mensagem = ""
+	var resumo := [
+		Csv.t("menu.sum_time") % formatar_tempo(tempo),
+		Csv.t("menu.sum_rooms") % [indice + 1, salas.size()],
+		Csv.t("menu.sum_upgrades") % _total_upgrades(),
+	]
+	menus.mostrar_fim(estado == Estado.VENCEU, resumo)
+	get_tree().paused = true
+
+func _total_upgrades() -> int:
+	var n := 0
+	for id in upgrades.niveis:
+		n += int(upgrades.niveis[id])
+	return n
+
+static func formatar_tempo(seg: float) -> String:
+	var total := int(seg)
+	return "%02d:%02d" % [total / 60, total % 60]
+
+func _ir_titulo() -> void:
+	iniciar_corrida()
+	estado = Estado.MENU
+	get_tree().paused = true
+	menus.mostrar_titulo()
+
+func _on_jogar() -> void:
+	menus.fechar()
+	get_tree().paused = false
+	iniciar_corrida()
+
+func _on_pausa_pedida() -> void:
+	if estado != Estado.LUTA and estado != Estado.LIMPA:
+		return
+	_estado_antes = estado
+	estado = Estado.PAUSA
+	get_tree().paused = true
+	menus.mostrar_pausa()
+
+func _on_retomar() -> void:
+	menus.fechar()
+	get_tree().paused = false
+	estado = _estado_antes
 
 ## Atalho de teste/depuração: mata todos os inimigos vivos.
 func matar_todos() -> void:
