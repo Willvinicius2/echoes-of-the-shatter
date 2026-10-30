@@ -26,6 +26,8 @@ func _testar() -> void:
 	_testar_manifesto()
 	_testar_salas()
 	await _testar_upgrades()
+	_testar_feel()
+	await _testar_telegrafo()
 	await _testar_corrida()
 
 func _testar_upgrades() -> void:
@@ -101,6 +103,36 @@ func _testar_salas() -> void:
 			ok_props = ok_props and not (solido and c.x >= 11 and c.x <= 13 and c.y >= 2 and c.y <= 4)
 		check(ok_props, "%s: props com arte, definição e porta livre" % r["room"])
 		sala.free()
+
+func _testar_feel() -> void:
+	var Feel = load("res://scripts2d/feel_2d.gd")
+	for k in ["hit_stop_hit_ms", "hit_stop_kill_ms", "shake_player_amp", "enemy_knockback", "dmg_number_time"]:
+		check(Feel.cfg().has(k), "feel.csv tem " + k)
+	for r in Csv.rows("res://data2d/enemies.csv"):
+		check(float(r["windup"]) >= 0.0 and float(r["windup"]) <= 1.0, "%s: windup entre 0 e 1 s" % r["id"])
+
+## O inimigo corpo a corpo avisa antes de bater: o dano só sai depois do windup, e a esquiva a tempo evita o golpe.
+func _testar_telegrafo() -> void:
+	var mundo := Node2D.new()
+	root.add_child(mundo)
+	var p = load("res://scripts2d/player_2d.gd").new()
+	mundo.add_child(p)
+	var e = load("res://scripts2d/enemy_2d.gd").new()
+	mundo.add_child(e)
+	e.setup("hollow_sentinel", p, p.global_position + Vector2(40, 0))
+	var wind: float = e.stats["windup"]
+	check(wind >= 0.3, "sentinela tem telégrafo de %.2f s" % wind)
+	var hp0: float = p.hp
+	await _esperar(func(): return e.estado == e.Estado.TELEGRAFA, 2.0)
+	check(e.estado == e.Estado.TELEGRAFA, "inimigo entra em telégrafo antes de atacar")
+	check(p.hp == hp0, "jogador ileso durante o telégrafo")
+	await _esperar(func(): return p.hp < hp0, 3.0)
+	check(p.hp < hp0, "golpe acerta depois do telégrafo")
+	var vida: float = e.hp
+	e.take_damage(5.0, e.global_position - Vector2(10, 0))
+	check(e.hp == vida - 5.0 and e._kb.length() > 0.0, "flecha fere e empurra o inimigo")
+	mundo.queue_free()
+	await physics_frame
 
 func _testar_corrida() -> void:
 	var run = RunScene.instantiate()

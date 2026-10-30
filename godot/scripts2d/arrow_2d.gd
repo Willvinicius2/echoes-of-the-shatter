@@ -2,6 +2,7 @@ extends Area2D
 ## Projétil 2D. `team` = "player" acerta inimigos; "enemy" acerta o jogador. Paredes sempre param.
 
 const Placeholders = preload("res://scripts2d/placeholders.gd")
+const Feel = preload("res://scripts2d/feel_2d.gd")
 
 var team := "player"
 var velocity := Vector2.ZERO
@@ -47,8 +48,10 @@ func _physics_process(delta: float) -> void:
 
 func _on_body(corpo: Node) -> void:
 	if corpo.has_method("take_damage"):
-		corpo.take_damage(damage, global_position)
+		corpo.take_damage(damage, global_position - velocity.normalized() * 8.0)
 		if pierce > 0:
 			pierce -= 1
 			return
+	elif is_inside_tree():
+		Feel.impacto(get_parent(), global_position, Color(0.8, 0.8, 0.8))
 	queue_free()
