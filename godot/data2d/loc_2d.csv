@@ -47,3 +47,23 @@ hud.key.shoot,Clique
 hud.key.dodge,Espaco
 hud.skill.locked,Bloqueado
 hud.boss_phase,Fase %d/%d
+menu.meta,Melhorias
+menu.meta_title,Melhorias permanentes
+menu.meta_balance,Fragmentos: %d
+menu.meta_item,%s  (%d)  [%d fragmentos]
+menu.meta_item_max,%s  (maximo)
+menu.meta_item_owned,%s  (desbloqueada)
+menu.back,Voltar
+menu.sum_fragments,Fragmentos ganhos: %d
+menu.sum_materials,Materiais: %s
+meta.meta_vida.name,Corpo Temperado
+meta.meta_dano.name,Ponta Forjada
+meta.meta_passo.name,Passada Firme
+meta.unlock_multishot.name,Desbloquear Salva de Flechas
+meta.unlock_pierce.name,Desbloquear Ponta Afiada
+meta.unlock_evasion.name,Desbloquear Passo Rapido
+material.pedra_cinza,Pedra Cinza
+material.osso_antigo,Osso Antigo
+material.essencia_etera,Essencia Etera
+material.ferro_corroido,Ferro Corroido
+material.nucleo_estilhaco,Nucleo de Estilhaco

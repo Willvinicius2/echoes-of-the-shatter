@@ -5,3 +5,5 @@ clear_delay,0.8,s,pausa antes de abrir a porta
 tile,64,px,lado do tile
 upgrade_cards,3,cartas,cartas oferecidas ao limpar a sala
 room_fade,0.25,s,duracao de cada metade do fade entre salas
+room_clear_fragments,5,fragmentos,bonus ao limpar cada sala
+victory_fragments,25,fragmentos,bonus ao vencer a cripta

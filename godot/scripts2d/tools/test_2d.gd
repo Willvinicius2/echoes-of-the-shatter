@@ -6,6 +6,7 @@ extends SceneTree
 const Csv = preload("res://scripts2d/csv2d.gd")
 const SpriteLoader = preload("res://scripts2d/sprite_loader.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
+const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 
 var falhas := 0
@@ -33,6 +34,7 @@ func _testar() -> void:
 	await _testar_chefe_fases()
 	await _testar_chefe_luta()
 	await _testar_corrida()
+	await _testar_meta()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -378,3 +380,61 @@ func _testar_corrida() -> void:
 	check(run.estado == run.Estado.MENU and paused and run.menus.tela == run.menus.Tela.TITULO, "volta ao título")
 	paused = false
 	run.queue_free()
+
+func _testar_meta() -> void:
+	MetaScript.caminho = "user://save_teste_2d.json"
+	DirAccess.remove_absolute(MetaScript.caminho)
+	var m = MetaScript.new()
+	check(not m.carregar() and m.fragmentos == 0, "sem save: começa zerado")
+	check(not m.liberada("multishot") and m.liberada("power"), "multishot nasce bloqueado, power liberado")
+	for id in m.defs:
+		check(Csv.t("meta.%s.name" % id) != "meta.%s.name" % id, "texto de %s" % id)
+	for e in m.drops:
+		check(Csv.t("material." + m.drops[e]["material"]) != "material." + m.drops[e]["material"], "texto do material de %s" % e)
+	check(not m.comprar("unlock_multishot"), "sem fragmentos não compra")
+	m.creditar({"fragmentos": 200, "materiais": {"pedra_cinza": 2}})
+	check(m.comprar("unlock_multishot") and m.liberada("multishot") and m.fragmentos == 120, "compra desbloqueia e gasta")
+	check(not m.comprar("unlock_multishot"), "habilidade só compra uma vez")
+	m.comprar("meta_vida")
+	var base := {"hp_max": 100.0, "arrow_damage": 12.0}
+	check(is_equal_approx(m.aplicar(base)["hp_max"], 115.0), "melhoria soma vida máxima")
+
+	# Round-trip do save: a morte e o fechamento do jogo não perdem nada.
+	var m2 = MetaScript.new()
+	check(m2.carregar() and m2.fragmentos == m.fragmentos and m2.materiais["pedra_cinza"] == 2 and m2.nivel("meta_vida") == 1, "save volta idêntico do disco")
+	var f := FileAccess.open(MetaScript.caminho, FileAccess.WRITE)
+	f.store_string("{lixo")
+	f.close()
+	check(not MetaScript.new().carregar(), "save corrompido é ignorado sem travar")
+
+	# Upgrades da corrida respeitam desbloqueios e bônus permanentes.
+	var up = preload("res://scripts2d/upgrades_2d.gd").new()
+	up.meta = m
+	check("multishot" in up.disponiveis() and not ("pierce" in up.disponiveis()), "pool só oferece habilidades liberadas")
+
+	# Integração: a corrida rende fragmentos e materiais, que sobrevivem à morte e ao novo carregamento.
+	DirAccess.remove_absolute(MetaScript.caminho)
+	var run = RunScene.instantiate()
+	run.com_menu = false
+	root.add_child(run)
+	await physics_frame
+	run.player.god_mode = true
+	run.matar_todos()
+	await _esperar(func(): return run.estado == run.Estado.LIMPA, 5.0)
+	check(run.ganhos["fragmentos"] > 0 and not run.ganhos["materiais"].is_empty(), "inimigos mortos dropam fragmentos e materiais")
+	run.player.god_mode = false
+	run.player.invencivel = 0.0
+	run.player.take_damage(1.0e6)
+	await _esperar(func(): return run.menus.tela == run.menus.Tela.FIM, 5.0)
+	var ganho: int = run.meta.fragmentos
+	check(ganho > 0 and run.ganhos["fragmentos"] == 0, "morte credita os ganhos ao saldo")
+	check(MetaScript.new().carregar(), "save existe em disco após a corrida")
+	var depois = MetaScript.new()
+	depois.carregar()
+	check(depois.fragmentos == ganho, "fragmentos persistem entre sessões")
+	run.menus.ao_titulo.emit()
+	run.menus.mostrar_meta()
+	check(run.menus.tela == run.menus.Tela.META, "tela de melhorias abre")
+	paused = false
+	run.queue_free()
+	DirAccess.remove_absolute(MetaScript.caminho)

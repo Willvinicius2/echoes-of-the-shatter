@@ -1,0 +1,7 @@
+id,tipo,alvo,stat,modo,valor,custo,nivel_max
+meta_vida,stat,,hp_max,add,15,40,3
+meta_dano,stat,,arrow_damage,mult,0.1,60,3
+meta_passo,stat,,speed,mult,0.05,50,2
+unlock_multishot,habilidade,multishot,,,,80,1
+unlock_pierce,habilidade,pierce,,,,80,1
+unlock_evasion,habilidade,evasion,,,,60,1

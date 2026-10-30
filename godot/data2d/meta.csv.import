@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://c14ihau5lq1in"
+
+[deps]
+
+files=["res://data2d/meta.tipo.translation", "res://data2d/meta.alvo.translation", "res://data2d/meta.stat.translation", "res://data2d/meta.modo.translation", "res://data2d/meta.valor.translation", "res://data2d/meta.custo.translation", "res://data2d/meta.nivel.translation"]
+
+source_file="res://data2d/meta.csv"
+dest_files=["res://data2d/meta.tipo.translation", "res://data2d/meta.alvo.translation", "res://data2d/meta.stat.translation", "res://data2d/meta.modo.translation", "res://data2d/meta.valor.translation", "res://data2d/meta.custo.translation", "res://data2d/meta.nivel.translation"]
+
+[params]
+
+compress=true
+delimiter=0
