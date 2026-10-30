@@ -44,8 +44,14 @@ func _desenhar() -> void:
 	_desenhar_upgrades()
 	Arte.plaqueta(_ctl, Rect2(vp.x - 8 - _lay["plaqueta_largura"], 8, _lay["plaqueta_largura"], 58), Csv.t("hud.room") % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
 	if _rel < 8.0 and estado_ajuda_visivel():
-		var a := clampf((8.0 - _rel) / 2.0, 0.0, 1.0)
-		Arte.texto(_ctl, Vector2(0, vp.y - 142), Csv.t("hud.help"), 14, Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, a), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		var al := clampf((8.0 - _rel) / 2.0, 0.0, 1.0)
+		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
+		var partes := Csv.t("hud.help").split(" | ")
+		var meio := int(ceil(partes.size() / 2.0))
+		var esq := " | ".join(partes.slice(0, meio))
+		var dir := " | ".join(partes.slice(meio))
+		Arte.texto(_ctl, Vector2(165, vp.y - 34), esq, 14, cor, HORIZONTAL_ALIGNMENT_RIGHT, 410.0)
+		Arte.texto(_ctl, Vector2(1000, vp.y - 34), dir, 14, cor, HORIZONTAL_ALIGNMENT_LEFT, 410.0)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Rect2(vp.x * 0.5 - w * 0.5, 62, w, 18)
@@ -95,20 +101,20 @@ func _desenhar_globos(vp: Vector2) -> void:
 	var raio: float = _lay["globo_raio"]
 	var hmax: float = jogador.stats.get("hp_max", 1.0)
 	var frac: float = clampf(jogador.hp / hmax, 0.0, 1.0)
-	var pulso := (0.5 + 0.5 * sin(_rel * 6.0)) if frac < 0.3 and frac > 0.0 else 0.0
+	var pulso := (0.4 + 0.6 * (0.5 + 0.5 * sin(_rel * 5.0))) if frac < 0.3 and frac > 0.0 else 0.0
 	var ev := _centro_globo(vp, false)
 	Arte.globo(_ctl, ev, raio, frac, _hp_fantasma, Tema.cor("vida_escura"), Tema.cor("vida_clara"), _rel, pulso)
 	Arte.texto(_ctl, ev + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.hp), int(hmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
-	Arte.texto(_ctl, ev + Vector2(-raio, 22), Csv.t("hud.hp"), 12, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	Arte.texto(_ctl, Vector2(ev.x + raio + 10, ev.y + 30), Csv.t("hud.hp"), 14, Tema.cor("texto_suave"))
 	var ed := _centro_globo(vp, true)
 	Arte.globo(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
-	var rr := raio * 0.72
-	Arte.corrente(_ctl, ed + Vector2(-rr, -rr), ed + Vector2(rr, rr), 14)
-	Arte.corrente(_ctl, ed + Vector2(rr, -rr), ed + Vector2(-rr, rr), 14)
-	Arte.cadeado(_ctl, ed + Vector2(0, -12), 26.0)
-	Arte.texto(_ctl, ed + Vector2(-raio, 34), Csv.t("hud.mana"), 12, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	# corrente nítida em X sobre o vidro vazio e cadeado pequeno no centro
+	var rr := raio * 0.66
+	Arte.corrente(_ctl, ed + Vector2(-rr, -rr), ed + Vector2(rr, rr), 7)
+	Arte.corrente(_ctl, ed + Vector2(rr, -rr), ed + Vector2(-rr, rr), 7)
+	Arte.cadeado(_ctl, ed + Vector2(0, -8), 20.0)
+	Arte.texto(_ctl, Vector2(ed.x - raio - 150, ed.y + 30), Csv.t("hud.mana"), 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, 140.0)
 
-## Upgrades: uma fileira de ícones emoldurados com contador; o nome aparece ao passar o mouse.
 func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():
 		return
@@ -155,6 +161,9 @@ func _desenhar_habilidades(vp: Vector2) -> void:
 	var rec_esq := clampf(jogador.dodge_cd / cdmax, 0.0, 1.0)
 	var bw: float = _lay["estamina_barra_largura"]
 	Arte.barra(_ctl, Rect2((vp.x - bw) * 0.5, y0 - 24.0, bw, 7.0), 1.0 - rec_esq, Tema.cor("estamina").darkened(0.5), Tema.cor("estamina_clara"), 0)
+	var fr := Rect2((vp.x - bw) * 0.5, y0 - 24.0, bw, 7.0).grow(4)
+	for q in [fr.position, Vector2(fr.end.x, fr.position.y), Vector2(fr.position.x, fr.end.y), fr.end]:
+		Arte.rebite(_ctl, q, 2.4)
 	var slots := [
 		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": rec_esq, "cor": Tema.cor("estamina")},

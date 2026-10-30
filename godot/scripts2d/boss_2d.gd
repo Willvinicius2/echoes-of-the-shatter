@@ -261,11 +261,13 @@ func _desenhar_barra() -> void:
 		if f > 1:
 			var x: float = pos.x + tam.x * fases[f]["pct"] / 100.0
 			_ctl.draw_rect(Rect2(x - 1.5, pos.y - 3, 3, tam.y + 6), Tema.cor("destaque"))
-	Arte.texto(_ctl, pos + Vector2(0, 42), Csv.t("hud.boss"), 22, Tema.cor("destaque").lightened(0.35), HORIZONTAL_ALIGNMENT_LEFT, -1.0, true)
+	Arte.texto(_ctl, pos + Vector2(0, 46), Csv.t("hud.boss"), 28, Tema.cor("destaque").lightened(0.35), HORIZONTAL_ALIGNMENT_LEFT, -1.0, true)
 	var total := total_fases()
-	for i in total:
-		Arte.runa(_ctl, Vector2(pos.x + tam.x - 14 - (total - 1 - i) * 26, pos.y + 34), i, i < fase)
-	Arte.texto(_ctl, pos + Vector2(0, 62), Csv.t("hud.boss_phase") % [fase, total], 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, tam.x)
+	var texto_fase: String = Csv.t("hud.boss_phase") % [fase, total]
+	var larg_txt := ThemeDB.fallback_font.get_string_size(texto_fase, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+	Arte.texto(_ctl, pos + Vector2(0, 40), texto_fase, 16, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_RIGHT, tam.x)
+	for i in total:   # losangos de fase à esquerda do texto: cheio = fase atual ou passada
+		Arte.runa(_ctl, Vector2(pos.x + tam.x - larg_txt - 22 - (total - 1 - i) * 22, pos.y + 34), i, i < fase)
 
 ## Aviso por padrão: área (golpe), linha de mira (leque/investida) ou anel que se expande (anel).
 func _draw() -> void:

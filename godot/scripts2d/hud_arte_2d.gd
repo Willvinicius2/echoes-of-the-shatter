@@ -22,7 +22,8 @@ static func _c(chave: String) -> Color:
 ## Texto com sombra dura, para ler sobre qualquer chão.
 static func texto(c: CanvasItem, pos: Vector2, s: String, tam: int, cor: Color, alinh := HORIZONTAL_ALIGNMENT_LEFT, larg := -1.0, serif := false) -> void:
 	var f: Font = serifa() if serif else ThemeDB.fallback_font
-	c.draw_string(f, pos + Vector2(1, 2), s, alinh, larg, tam, Color(0, 0, 0, 0.85))
+	var d := 2.0 if tam >= 20 else 1.0
+	c.draw_string(f, pos + Vector2(d, d + 1.0), s, alinh, larg, tam, Color(0, 0, 0, 1.0))
 	c.draw_string(f, pos, s, alinh, larg, tam, cor)
 
 static func _arco(centro: Vector2, r: float, a0: float, a1: float, n := 24) -> PackedVector2Array:
@@ -82,23 +83,18 @@ static func cadeado(c: CanvasItem, p: Vector2, lado := 28.0) -> void:
 	c.draw_circle(corpo.get_center() + Vector2(0, -1), lado * 0.1, Color(0.04, 0.03, 0.03))
 	c.draw_rect(Rect2(corpo.get_center() + Vector2(-1.2, 0), Vector2(2.4, lado * 0.22)), Color(0.04, 0.03, 0.03))
 
-## Runa angular (marca de fase do chefe): acesa em dourado, apagada em ferro.
-static func runa(c: CanvasItem, p: Vector2, tipo: int, acesa: bool) -> void:
-	var cor := _c("destaque") if acesa else _c("metal_medio").darkened(0.2)
-	var t := 7.0
-	var pts: Array = []
-	match tipo % 3:
-		0: pts = [[Vector2(0, -t), Vector2(0, t)], [Vector2(0, -t * 0.2), Vector2(t * 0.7, -t * 0.8)]]
-		1: pts = [[Vector2(-t * 0.6, -t), Vector2(t * 0.6, 0), Vector2(-t * 0.6, t)], [Vector2(t * 0.6, -t), Vector2(t * 0.6, t)]]
-		2: pts = [[Vector2(-t * 0.7, -t), Vector2(0, 0), Vector2(t * 0.7, -t)], [Vector2(0, 0), Vector2(0, t)]]
-	for l in pts:
-		var v := PackedVector2Array()
-		for q in l:
-			v.append(p + q)
-		c.draw_polyline(v, Color(0, 0, 0, 0.7), 4.0)
-		c.draw_polyline(v, cor, 2.0)
+## Marca de fase do chefe: losango dourado cheio (fase atual ou já passada) ou vazado (próximas).
+static func runa(c: CanvasItem, p: Vector2, _tipo: int, acesa: bool) -> void:
+	var r := 7.0
+	var v := PackedVector2Array([p + Vector2(0, -r), p + Vector2(r, 0), p + Vector2(0, r), p + Vector2(-r, 0)])
 	if acesa:
-		c.draw_circle(p, t * 1.3, Color(cor.r, cor.g, cor.b, 0.12))
+		c.draw_circle(p, r * 1.5, Color(_c("destaque").r, _c("destaque").g, _c("destaque").b, 0.18))
+		c.draw_colored_polygon(v, _c("destaque").lightened(0.1))
+	else:
+		c.draw_colored_polygon(v, Color(0.03, 0.025, 0.03))
+	v.append(v[0])
+	c.draw_polyline(v, Color(0, 0, 0, 0.85), 3.0)
+	c.draw_polyline(v, _c("destaque") if acesa else _c("metal_medio"), 1.5)
 
 ## Alvenaria de pedra escura: fileiras de blocos com juntas, variação de tom e rachaduras (determinística).
 static func alvenaria(c: CanvasItem, r: Rect2, bloco := Vector2(46, 18)) -> void:
@@ -181,6 +177,9 @@ static func liquido(c: CanvasItem, centro: Vector2, raio: float, frac: float, es
 ## grosso com rebites e quatro garras sobre o vidro. `pulso` (0..1) acende o aro em vermelho (vida baixa);
 ## `fantasma` é a fração antiga, em perda. `vazio` = vidro escuro sem líquido (recurso trancado).
 static func globo(c: CanvasItem, centro: Vector2, raio: float, frac: float, fantasma: float, escura: Color, clara: Color, t: float, pulso := 0.0, vazio := false) -> void:
+	if pulso > 0.0:   # vida baixa: o líquido clareia e pulsa para não sumir
+		clara = clara.lightened(0.3 * pulso)
+		escura = escura.lightened(0.18)
 	var r_in := raio - 15.0
 	c.draw_circle(centro + Vector2(0, 6), raio + 14.0, Color(0, 0, 0, 0.5))
 	# chifres de ferro curvos atrás do aro, com ponta dourada
@@ -245,7 +244,9 @@ static func globo(c: CanvasItem, centro: Vector2, raio: float, frac: float, fant
 		c.draw_polyline(garra, Color(0, 0, 0, 0.75), 1.5)
 		c.draw_line(base + tang * 5.0, ponta, _c("metal_claro"), 1.0)
 	if pulso > 0.0:
-		c.draw_arc(centro, raio + 1.0, 0.0, TAU, 72, Color(1.0, 0.15, 0.1, 0.55 * pulso), 5.0)
+		c.draw_arc(centro, raio + 2.0, 0.0, TAU, 72, Color(1.0, 0.1, 0.08, 0.35 * pulso), 9.0)
+		c.draw_arc(centro, raio, 0.0, TAU, 72, Color(1.0, 0.25, 0.2, 0.9 * pulso), 4.0)
+		c.draw_arc(centro, r_in + 1.0, 0.0, TAU, 72, Color(1.0, 0.3, 0.25, 0.7 * pulso), 3.0)
 
 ## Marcador cortado em losango (ponta de moldura).
 static func losango(c: CanvasItem, p: Vector2, r: float, cor: Color) -> void:
@@ -294,9 +295,9 @@ static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecl
 	c.draw_rect(vao, Color(0.03, 0.03, 0.045))
 	if ativo:
 		for k in 4:
-			c.draw_circle(vao.get_center(), vao.size.x * (0.46 - k * 0.07), Color(brilho.r, brilho.g, brilho.b, 0.10 + k * 0.04))
+			c.draw_circle(vao.get_center() - Vector2(0, 6), vao.size.x * (0.40 - k * 0.06), Color(brilho.r, brilho.g, brilho.b, 0.10 + k * 0.04))
 	c.draw_rect(vao, Color(0, 0, 0, 0.8), false, 1.5)
-	var ic := vao.grow(-4)
+	var ic := Rect2(vao.position + Vector2(5, 3), vao.size - Vector2(10, 17))
 	c.draw_texture_rect(icone, ic, false, Color(1, 1, 1, 1) if ativo else Color(1, 1, 1, 0.35))
 	if not ativo:
 		return
@@ -310,7 +311,8 @@ static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecl
 		for p in _arco(ctr, vao.size.x * 0.72, ini, fim, 28):
 			arco.append(Vector2(clampf(p.x, vao.position.x, vao.end.x), clampf(p.y, vao.position.y, vao.end.y)))
 		c.draw_colored_polygon(arco, Color(0, 0, 0, 0.66))
-	tecla_placa(c, Vector2(r.get_center().x, r.end.y + 11), tecla)
+	if tecla != "":
+		tecla_placa(c, Vector2(r.get_center().x, r.end.y - 14), tecla)
 
 ## Plaquinha de tecla (abaixo do slot, sem tocar a borda dele).
 static func tecla_placa(c: CanvasItem, centro: Vector2, tecla: String) -> void:
