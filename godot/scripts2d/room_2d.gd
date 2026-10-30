@@ -36,6 +36,7 @@ var _props_def := {}
 var _props_arte := {}
 var _layer: TileMapLayer
 var _piso: TileMapLayer
+var _brilho_runas: TileMapLayer
 var piso_grama := false
 var braseiros: Array[Vector2] = []
 var caminhos: Array = []  # {larg (células), pts (px)}
@@ -103,6 +104,13 @@ func _montar() -> void:
 	_layer = TileMapLayer.new()
 	_layer.tile_set = ts
 	add_child(_layer)
+	_brilho_runas = TileMapLayer.new()  # runas douradas reforçados com brilho aditivo
+	_brilho_runas.tile_set = ts
+	var mat_brilho := CanvasItemMaterial.new()
+	mat_brilho.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	_brilho_runas.material = mat_brilho
+	_brilho_runas.modulate = Color(1, 0.85, 0.5, 0.16)
+	add_child(_brilho_runas)
 	var corpo := StaticBody2D.new()
 	corpo.collision_layer = 1
 	corpo.collision_mask = 0
@@ -134,6 +142,7 @@ func _montar() -> void:
 					celulas_porta.append(Vector2i(x, y))
 				"r":
 					idx = T_RUNAS[posmod(hash(Vector2i(x * 7, y * 13)), T_RUNAS.size())]
+					_pintar(Vector2i(x, y), idx, _brilho_runas)
 				"q":
 					idx = T_PISO_ESCURO
 				"O":
@@ -253,14 +262,13 @@ func colocar_props(alvo: Node2D) -> void:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
 		var no := Node2D.new()
 		no.position = p["pos"] + Vector2(0, tile * 0.5)
-		no.add_child(spr)
 		var sombra := Node2D.new()
-		sombra.z_index = -1
+		no.add_child(sombra)  # antes do sprite, para ficar sob ele
+		no.add_child(spr)
 		var arvore: bool = String(p["id"]).begins_with("tree_")
 		sombra.draw.connect(func():
-			sombra.draw_set_transform(Vector2(16, 0) if arvore else Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
-			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * (0.5 if arvore else 0.35), Color(0, 0, 0, 0.5 if arvore else 0.35)))
-		no.add_child(sombra)
+			sombra.draw_set_transform(Vector2(20, 2) if arvore else Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
+			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * (0.5 if arvore else 0.35), Color(0, 0, 0, 0.3 if arvore else 0.35)))
 		sombra.queue_redraw()
 		alvo.add_child(no)
 

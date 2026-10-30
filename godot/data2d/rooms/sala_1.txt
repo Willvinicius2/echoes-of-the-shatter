@@ -2,7 +2,7 @@
 ############D###########
 #......................#
 #..B..E.............B..#
-#..........E...........#
+#.......E..............#
 #......................#
 #......................#
 #.........E.....E......#
@@ -12,7 +12,7 @@
 #..B........P.......B..#
 ########################
 @piso grama
-@caminho 1.9 12,1.6 12.4,3.6 11,5.2 10.2,7.4 11.6,9.2 12.6,10.4 12,11.3
+@caminho 1.6 12,1.6 12.4,3.6 11,5.2 10.2,7.4 11.6,9.2 12.6,10.4 12,11.3
 @riacho 1.5 0.5,6.2 4,6.5 8,5.9 12,6.3 16,6.7 20,6.2 22.3,6.5
 @props
 tree_dry_large 1.6 3.2
@@ -45,7 +45,7 @@ reeds_dry 7.4 5.0
 reeds_dry 16.4 5.0
 reeds_dry 17.8 5.1
 reeds_dry 3.0 7.2
-reeds_dry 9.4 7.1
+reeds_dry 7.8 7.1
 rock_rubble 14.4 7.2
 bush_dry_red 2.2 5.0
 bush_dry_wide 21.6 5.0
@@ -56,3 +56,13 @@ leaves_scattered 15.0 3.4
 leaves_pile 18.4 5.0
 leaves_bone 8.6 7.8
 flowers_dead 20.0 10.4
+rock_large 1.5 7.0
+rock_cluster 22.0 6.9
+rock_mossy 20.6 7.2
+rock_rubble 3.4 5.0
+tree_dry_small 22.0 5.0
+leaves_scattered 5.0 6.0
+leaves_pile 14.0 4.0
+leaves_scattered 19.0 9.6
+leaves_scattered 8.0 10.0
+leaves_pile 2.0 8.2

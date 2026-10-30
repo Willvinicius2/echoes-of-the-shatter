@@ -12,7 +12,7 @@
 #..B........P.......B..#
 ########################
 @piso grama
-@caminho 1.9 12,1.6 11.4,3.8 12.6,6 12.2,8 11.4,10 12,11.3
+@caminho 1.6 12,1.6 11.4,3.8 12.6,6 12.2,8 11.4,10 12,11.3
 @riacho 1.5 0.5,6.8 5,6.2 10,6.7 14,6.2 19,6.8 22.3,6.3
 @props
 mausoleum_door 2.8 4.3
@@ -50,8 +50,15 @@ reeds_dry 15.2 7.1
 reeds_dry 20.6 7.2
 rock_rubble 10.4 7.3
 vines_dry_rock 8.6 7.3
-bush_dry_red 12.0 10.9
 grass_dry_tall 2.0 7.0
 leaves_scattered 10.0 3.4
 leaves_bone 14.0 3.3
 flowers_dead 8.6 10.4
+rock_large 1.5 7.4
+rock_cluster 22.0 6.9
+rock_mossy 18.0 7.3
+rock_slabs 9.0 4.6
+leaves_scattered 5.0 6.0
+leaves_pile 14.0 4.2
+leaves_scattered 19.0 10.0
+leaves_pile 2.0 8.6
