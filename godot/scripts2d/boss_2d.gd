@@ -54,7 +54,7 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	d.erase("entrada")
 	fases = d
 	_iniciar_ciclo(Ciclo.ENTRADA, entrada_dur)
-	sprite.modulate.a = 0.0
+	sprite.modulate.a = 0.7
 	_criar_barra()
 
 func total_fases() -> int:
@@ -85,7 +85,7 @@ func _physics_process(delta: float) -> void:
 				var c := Feel.cfg()
 				Feel.shake(self, c["boss_entry_shake_amp"], _t_total * 0.85)
 				Feel.zoom_punch(self, c["boss_entry_zoom"], _t_total)
-			sprite.modulate.a = clampf(1.0 - _t / maxf(_t_total * 0.7, 0.01), 0.0, 1.0)
+			sprite.modulate.a = 0.7 + 0.3 * clampf(1.0 - _t / maxf(_t_total * 0.7, 0.01), 0.0, 1.0)
 			if _t <= 0.0:
 				sprite.modulate.a = 1.0
 				Feel.shake(self, 5.0, 0.3)
@@ -335,9 +335,9 @@ func _desenhar_marca_entrada() -> void:
 	var r: float = Feel.cfg()["boss_entry_mark"]
 	var a: float = Feel.cfg()["boss_mark_alpha"]
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.6))
-	draw_circle(Vector2.ZERO, r * p, Color(0.9, 0.08, 0.05, a * 0.35 * p))
-	draw_arc(Vector2.ZERO, r * p, 0.0, TAU, 48, Color(1, 0.4, 0.3, a * (0.5 + 0.5 * sin(p * 30.0))), 3.0)
-	draw_arc(Vector2.ZERO, r * 0.6 * p, 0.0, TAU, 40, Color(1, 0.25, 0.2, a * 0.6), 2.0)
+	draw_circle(Vector2.ZERO, r * p, Color(1.0, 0.05, 0.03, minf(1.0, a * 0.75)))
+	draw_arc(Vector2.ZERO, r * p, 0.0, TAU, 64, Color(1, 0.55, 0.35, 1.0), 4.0)
+	draw_arc(Vector2.ZERO, r * 0.6 * p, 0.0, TAU, 48, Color(1, 0.3, 0.2, 0.9), 3.0)
 
 func _dir_para_alvo() -> Vector2:
 	return (alvo.global_position - global_position).normalized()

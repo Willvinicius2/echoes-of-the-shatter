@@ -31,5 +31,5 @@ func _draw() -> void:
 	c.a = 1.0 - maxf(0.0, (p - 0.55) / 0.45)
 	var sombra := Color(0, 0, 0, c.a)
 	var pos := Vector2(-larg / 2.0 + deriva * p, sobe)
-	fonte.draw_string_outline(get_canvas_item(), pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tam, 5, sombra)
+	fonte.draw_string_outline(get_canvas_item(), pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tam, 4, sombra)
 	fonte.draw_string(get_canvas_item(), pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tam, c)

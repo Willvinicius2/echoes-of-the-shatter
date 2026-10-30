@@ -84,7 +84,7 @@ func _process(delta: float) -> void:
 	if _mat != null:
 		if _flash > 0.0:
 			_flash -= delta
-		_mat.set_shader_parameter("flash", 1.0 if _flash > 0.0 else 0.0)
+		_mat.set_shader_parameter("flash", 0.7 if _flash > 0.0 else 0.0)
 	if sprite != null:
 		if _shake_t > 0.0:
 			_shake_t -= delta

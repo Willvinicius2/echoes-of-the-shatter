@@ -38,10 +38,9 @@ func _ready() -> void:
 		sp.texture = load(caminho)
 	else:
 		sp.texture = Placeholders.seta(Vector2i(64, 16))
-		if team == "enemy":
-			sp.modulate = Color(0.6, 1.0, 0.9)
+		sp.modulate = Color(0.55, 0.38, 0.22) if team == "player" else Color(0.6, 1.0, 0.9)  # haste de madeira escura
 	sp.position = Vector2(0, -30)  # só o desenho sobe até o peito; a colisão fica no chão
-	sp.scale = Vector2.ONE * c["arrow_scale"]
+	sp.scale = Vector2(c["arrow_scale"], 1.0)  # só alonga: haste continua fina
 	var brilho := Sprite2D.new()
 	brilho.texture = Feel.ponto()
 	brilho.material = Feel.aditivo()

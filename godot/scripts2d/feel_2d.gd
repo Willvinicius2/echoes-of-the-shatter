@@ -92,12 +92,14 @@ static func numero(alvo: Node2D, valor: float, cor: Color, grande := false, fort
 	n.texto = str(int(round(valor)))
 	n.cor = cor
 	n.tamanho = cfg()["dmg_number_size_kill" if grande else ("dmg_number_size_strong" if forte else "dmg_number_size")]
+	var esc: float = alvo.escala_sprite() if alvo.has_method("escala_sprite") else 1.0   # alvo grande: número mais alto e maior
+	n.tamanho *= clampf(esc, 1.0, 1.4)
 	n.forte = grande or forte
 	n.deriva = randf_range(-1.0, 1.0) * cfg()["dmg_number_drift"]
 	n.tempo = cfg()["dmg_number_time"]
 	n.subida = cfg()["dmg_number_rise"]
 	pai.add_child(n)
-	n.global_position = alvo.global_position + Vector2(randf_range(-10.0, 10.0), -60.0)
+	n.global_position = alvo.global_position + Vector2(randf_range(-1.0, 1.0) * cfg()["number_offset_x"], (-90.0 * maxf(esc, 0.7) - 8.0) + randf_range(-10.0, 6.0))
 
 ## Faísca de impacto em `pos` (mundo), filha de `pai`.
 static func impacto(pai: Node, pos: Vector2, cor: Color, dir := Vector2.ZERO, escala := 1.0) -> void:

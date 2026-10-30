@@ -160,7 +160,7 @@ func _feedback_golpe(amount: float, origem: Vector2, morreu: bool) -> void:
 	Feel.hit_stop(stop)
 	Feel.shake(self, c["shake_kill_amp" if morreu else "shake_hit_amp"], c["shake_kill_time" if morreu else "shake_hit_time"])
 	tremer_sprite(c["sprite_shake_px"], c["sprite_shake_time"])
-	Feel.numero(self, amount, Color(1.0, 0.85, 0.2) if (morreu or forte) else Color.WHITE, morreu, forte)
+	Feel.numero(self, amount, Color(1.0, 0.85, 0.2) if (morreu or forte) else (Color(1.0, 0.65, 0.15) if amount >= hp_max * c["weak_hit_pct"] else Color.WHITE), morreu, forte)
 	if origem != Vector2.ZERO:
 		var dir := (global_position - origem).normalized()
 		_kb = dir * c["enemy_knockback"] * (1.0 - stats.get("kb_resist", 0.0))
