@@ -60,13 +60,7 @@ func dar_escudo(valor: float, dur: float) -> void:
 func direcao_mira() -> Vector2:
 	return _aim
 
-## Ponto no chão mirado pelo cursor (ou analógico), limitado a `alcance` a partir do mago.
-func ponto_mira(alcance: float) -> Vector2:
-	var alvo := global_position + _aim * alcance
-	if auto_aim == Vector2.ZERO and Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down").length() <= 0.3:
-		alvo = get_global_mouse_position()
-	var v := alvo - global_position
-	return global_position + v.limit_length(alcance)
+## ponto_mira(alcance) mora no player_2d.gd: ponto do autocast, senão o cursor.
 
 ## Toca a animação de conjuração sem travar o movimento.
 func animar_conjuracao() -> void:

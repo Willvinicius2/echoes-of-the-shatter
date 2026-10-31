@@ -1,5 +1,6 @@
 extends "res://scripts2d/actor_2d.gd"
-## Arqueiro 2D: corre, atira na direção do mouse/analógico e esquiva. Números em data2d/player.csv.
+## Arqueiro 2D: corre e esquiva; o tiro básico e as habilidades disparam sozinhos no inimigo certo (autocast, mira
+## em data2d/habilidades_mira.csv) e a ult sai na tecla de ult. Números em data2d/player.csv.
 
 signal died
 signal hp_changed(hp: float, hp_max: float)
@@ -9,6 +10,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 
 enum Estado { LIVRE, ATIRANDO, ESQUIVA, MORTO }
 
@@ -24,6 +26,9 @@ var invencivel := 0.0
 var god_mode := false          # testes automáticos
 var auto_aim := Vector2.ZERO   # testes: mira forçada
 var auto_move := Vector2.ZERO  # testes: movimento forçado
+var autocast := true           # básico e habilidades disparam sozinhos (falso: só tecla, como antes)
+var _alvo_basico := {}         # alvo do tiro básico no autocast ({} = ninguém no alcance)
+var alvo_ponto := Vector2.INF  # ponto no chão escolhido pelo autocast para a habilidade em uso (INF = nenhum)
 var dodge_cd := 0.0
 var _shoot_cd := 0.0
 var _dodge_t := 0.0
@@ -38,6 +43,7 @@ var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	stats = Csv.kv(stats_csv)
+	HabilidadesScript.registrar_tecla_ult()
 	habilidades = HabilidadesScript.new()
 	definir_classe(classe)
 	collision_layer = 2
@@ -79,11 +85,50 @@ func ganhar_mana(qtd: float) -> void:
 func taxa_regen_mana() -> float:
 	return stats["mana_regen"]
 
-## Usa a habilidade do slot 0..3 mirando no cursor (ou na mira forçada dos testes).
-func usar_habilidade(slot: int) -> bool:
+## Usa a habilidade do slot 0..3. Sem `alvo`, mira onde o jogador mira; com `alvo` ({dir, ponto} do autocast), nele.
+func usar_habilidade(slot: int, alvo := {}) -> bool:
 	if estado == Estado.MORTO or estado == Estado.ESQUIVA:
 		return false
-	return habilidades.usar(slot, self, _aim)
+	var dir := _aim
+	if not alvo.is_empty() and not Alvos.mira_mouse:
+		dir = alvo["dir"]
+		alvo_ponto = alvo["ponto"]
+	var ok: bool = habilidades.usar(slot, self, dir)
+	alvo_ponto = Vector2.INF
+	if ok:
+		facing = dir
+	return ok
+
+## Ult: a ativa marcada como ult no slot sai só aqui (tecla de ult), mirando no inimigo do autocast quando há um.
+func usar_ult() -> bool:
+	var slot: int = habilidades.slot_ult()
+	if slot < 0:
+		return false
+	var id: String = habilidades.slots[slot]
+	return usar_habilidade(slot, habilidades.alvo_auto(id, get_tree(), global_position))
+
+## Autocast: cada ativa equipada (menos a ult e as manuais) sai assim que a recarga acaba e há alvo. Uma por quadro.
+func _autocast_habilidades() -> void:
+	for i in HabilidadesScript.SLOTS:
+		var id: String = habilidades.slots[i]
+		if not habilidades.automatica(id) or habilidades.recargas.has(id):
+			continue
+		var alvo: Dictionary = habilidades.alvo_auto(id, get_tree(), global_position, stats["arrow_range"])
+		if not alvo.is_empty() and usar_habilidade(i, alvo):
+			return
+
+## Ponto no chão para habilidades de área, limitado a `alcance`: o do autocast, senão o cursor (ou a mira).
+func ponto_mira(alcance: float) -> Vector2:
+	var alvo := global_position + _aim * alcance
+	if alvo_ponto != Vector2.INF:
+		alvo = alvo_ponto
+	elif auto_aim == Vector2.ZERO and Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down").length() <= 0.3:
+		alvo = get_global_mouse_position()
+	var v := alvo - global_position
+	return global_position + v.limit_length(alcance)
+
+func tem_alvo_auto() -> bool:
+	return alvo_ponto != Vector2.INF
 
 func reset() -> void:
 	hp = stats["hp_max"]
@@ -118,8 +163,8 @@ func _physics_process(delta: float) -> void:
 	habilidades.tick(delta)
 	if estado != Estado.MORTO:
 		ganhar_mana(taxa_regen_mana() * delta)
-	_aim = _ler_mira()
 	var entrada := auto_move if auto_move != Vector2.ZERO else Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	_aim = _ler_mira(entrada)
 
 	match estado:
 		Estado.ESQUIVA:
@@ -135,7 +180,11 @@ func _physics_process(delta: float) -> void:
 			velocity = velocity.move_toward(alvo, taxa * delta)
 			for i in HabilidadesScript.SLOTS:
 				if Input.is_action_just_pressed("skill_%d" % (i + 1)):
-					usar_habilidade(i)
+					usar_habilidade(i, habilidades.alvo_auto(habilidades.slots[i], get_tree(), global_position, stats["arrow_range"]) if autocast else {})
+			if InputMap.has_action("ult") and Input.is_action_just_pressed("ult"):
+				usar_ult()
+			if autocast and estado != Estado.ESQUIVA:
+				_autocast_habilidades()
 			if Input.is_action_just_pressed("dodge") and dodge_cd <= 0.0:
 				_comecar_esquiva(entrada if entrada != Vector2.ZERO else _aim)
 			elif _quer_atirar() and _shoot_cd <= 0.0:
@@ -151,11 +200,21 @@ func esta_morto() -> bool:
 	return estado == Estado.MORTO
 
 func _quer_atirar() -> bool:
-	return Input.is_action_pressed("shoot") or auto_aim != Vector2.ZERO
+	return Input.is_action_pressed("shoot") or auto_aim != Vector2.ZERO or not _alvo_basico.is_empty()
 
-func _ler_mira() -> Vector2:
+## Mira: a forçada dos testes; no autocast, o inimigo do básico (ou a direção do movimento); senão analógico e cursor.
+func _ler_mira(entrada := Vector2.ZERO) -> Vector2:
+	_alvo_basico = {}
 	if auto_aim != Vector2.ZERO:
 		return auto_aim.normalized()
+	if autocast:
+		_alvo_basico = habilidades.alvo_auto("basico", get_tree(), global_position, stats["arrow_range"])
+		if not Alvos.mira_mouse:
+			if not _alvo_basico.is_empty():
+				return _alvo_basico["dir"]
+			if entrada != Vector2.ZERO:
+				return entrada.normalized()
+			return _aim
 	var stick := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
 	if stick.length() > 0.3:
 		return stick.normalized()

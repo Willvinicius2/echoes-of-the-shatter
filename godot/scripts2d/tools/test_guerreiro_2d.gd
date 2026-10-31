@@ -176,6 +176,7 @@ func _ativas() -> void:
 	j.reset()
 	j.global_position = Vector2(500, 500)
 	j.god_mode = true
+	j.autocast = false   # aqui cada ativa é usada à mão; o autocast tem os testes dele (test_autocast_2d.gd)
 	for id in ["w_keen_edge", "w_heavy_slash", "w_whirlwind", "w_stone_rift", "w_flame_brand", "w_shield_bash", "w_charge", "w_battle_cry", "w_leap_slam", "w_rampage"]:
 		var cadeia := _cadeia(sk, id)
 		cadeia.reverse()   # cada ativa é testada isolada: a cadeia é aprendida no core, pais primeiro

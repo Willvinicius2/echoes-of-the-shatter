@@ -9,6 +9,7 @@ const RoomScript = preload("res://scripts2d/room_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 const GuerreiroTestes = preload("res://scripts2d/tools/test_guerreiro_2d.gd")
+const AutocastTestes = preload("res://scripts2d/tools/test_autocast_2d.gd")
 
 var falhas := 0
 
@@ -47,6 +48,7 @@ func _testar() -> void:
 	await _testar_mago()
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
+	await AutocastTestes.new(self, check).rodar()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -798,6 +800,7 @@ func _testar_abertura() -> void:
 	for e in adormecidos:
 		longe = minf(longe, e.global_position.distance_to(run.player.global_position))
 	check(longe > Csv.kv("res://data2d/run_settings.csv")["first_room_wake_radius"], "sala 1: jogador nasce fora do alcance dos inimigos")
+	run.player.autocast = false   # o tiro automático acordaria a sala; aqui só importa que eles não se mexem sozinhos
 	var e0 = adormecidos[0]
 	var pos0: Vector2 = e0.global_position
 	for i in 60:
