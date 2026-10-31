@@ -1,0 +1,65 @@
+[
+ {
+  "id": "guerreiro_referencia",
+  "tamanho": "1536x1024",
+  "prompt": "Estilo: pintura digital à mão de jogo ARPG top-down 3/4, personagem chibi com cabeça grande, o MESMO estilo, contorno escuro de 2 a 3 px e nível de acabamento do Arqueiro de referência; luz principal vinda do alto à esquerda; fundo totalmente transparente (ou liso chroma #ff00ff para recorte); sem sombra de chão, sem brilho que vaze do quadro, sem texto. Personagem: GUERREIRO. Armadura de ferro escurecido com detalhes dourados nas ombreiras e no cinto, capacete aberto com crista, capa vermelho queimado, espada grande de lâmina clara bem legível na silhueta e escudo redondo com emblema dourado bem visível. Sem lanterna, sem elementos de mago. Prancha de referência do personagem: 5 vistas do mesmo guerreiro em pé (frente, 3/4 frente, lado, 3/4 costas, costas) lado a lado, mais um close do rosto e um detalhe do escudo e da espada. Mesmas proporções chibi do Arqueiro.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_idle.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_attack.png"
+  ]
+ },
+ {
+  "id": "guerreiro_idle",
+  "tamanho": "768x640",
+  "prompt": "Estilo: pintura digital à mão de jogo ARPG top-down 3/4, personagem chibi com cabeça grande, o MESMO estilo, contorno escuro de 2 a 3 px e nível de acabamento do Arqueiro de referência; luz principal vinda do alto à esquerda; fundo totalmente transparente (ou liso chroma #ff00ff para recorte); sem sombra de chão, sem brilho que vaze do quadro, sem texto. Personagem: GUERREIRO. Armadura de ferro escurecido com detalhes dourados nas ombreiras e no cinto, capacete aberto com crista, capa vermelho queimado, espada grande de lâmina clara bem legível na silhueta e escudo redondo com emblema dourado bem visível. Sem lanterna, sem elementos de mago. Folha em grade: 6 colunas (quadros da animação, da esquerda para a direita) x 5 linhas (direções, de cima para baixo: S de frente, SE, E, NE, N de costas; as direções do oeste são espelho e NÃO entram). Cada célula 128x128 px, personagem de ~96 px de altura com os pés no ponto x=64, y=104, mesma escala e posição em todos os quadros. Idle em loop: respiração e leve balanço do corpo, capa mexendo, espada baixa ao lado. Os 6 quadros precisam ser DISTINTOS (peito sobe e desce, ombros, capa, ponta da espada), não cópias.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\guerreiro\\referencia_aprovada.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_idle.png"
+  ]
+ },
+ {
+  "id": "guerreiro_run",
+  "tamanho": "1024x640",
+  "prompt": "Estilo: pintura digital à mão de jogo ARPG top-down 3/4, personagem chibi com cabeça grande, o MESMO estilo, contorno escuro de 2 a 3 px e nível de acabamento do Arqueiro de referência; luz principal vinda do alto à esquerda; fundo totalmente transparente (ou liso chroma #ff00ff para recorte); sem sombra de chão, sem brilho que vaze do quadro, sem texto. Personagem: GUERREIRO. Armadura de ferro escurecido com detalhes dourados nas ombreiras e no cinto, capacete aberto com crista, capa vermelho queimado, espada grande de lâmina clara bem legível na silhueta e escudo redondo com emblema dourado bem visível. Sem lanterna, sem elementos de mago. Folha em grade: 8 colunas (quadros da animação, da esquerda para a direita) x 5 linhas (direções, de cima para baixo: S de frente, SE, E, NE, N de costas; as direções do oeste são espelho e NÃO entram). Cada célula 128x128 px, personagem de ~96 px de altura com os pés no ponto x=64, y=104, mesma escala e posição em todos os quadros. Corrida em loop: ciclo de 8 quadros, passos largos, tronco inclinado, capa para trás, escudo e espada balançando; pés tocam o chão nos quadros 0 e 4.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\guerreiro\\referencia_aprovada.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_run.png"
+  ]
+ },
+ {
+  "id": "guerreiro_attack",
+  "tamanho": "768x640",
+  "prompt": "Estilo: pintura digital à mão de jogo ARPG top-down 3/4, personagem chibi com cabeça grande, o MESMO estilo, contorno escuro de 2 a 3 px e nível de acabamento do Arqueiro de referência; luz principal vinda do alto à esquerda; fundo totalmente transparente (ou liso chroma #ff00ff para recorte); sem sombra de chão, sem brilho que vaze do quadro, sem texto. Personagem: GUERREIRO. Armadura de ferro escurecido com detalhes dourados nas ombreiras e no cinto, capacete aberto com crista, capa vermelho queimado, espada grande de lâmina clara bem legível na silhueta e escudo redondo com emblema dourado bem visível. Sem lanterna, sem elementos de mago. Folha em grade: 6 colunas (quadros da animação, da esquerda para a direita) x 5 linhas (direções, de cima para baixo: S de frente, SE, E, NE, N de costas; as direções do oeste são espelho e NÃO entram). Cada célula 128x128 px, personagem de ~96 px de altura com os pés no ponto x=64, y=104, mesma escala e posição em todos os quadros. Golpe de espada: quadros 0-1 preparar (espada para trás), 2 começar, 3 IMPACTO (espada no ponto mais à frente, com rastro de corte claro), 4-5 recuperar. O golpe acontece no quadro 3.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\guerreiro\\referencia_aprovada.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_attack.png"
+  ]
+ },
+ {
+  "id": "guerreiro_dodge",
+  "tamanho": "768x640",
+  "prompt": "Estilo: pintura digital à mão de jogo ARPG top-down 3/4, personagem chibi com cabeça grande, o MESMO estilo, contorno escuro de 2 a 3 px e nível de acabamento do Arqueiro de referência; luz principal vinda do alto à esquerda; fundo totalmente transparente (ou liso chroma #ff00ff para recorte); sem sombra de chão, sem brilho que vaze do quadro, sem texto. Personagem: GUERREIRO. Armadura de ferro escurecido com detalhes dourados nas ombreiras e no cinto, capacete aberto com crista, capa vermelho queimado, espada grande de lâmina clara bem legível na silhueta e escudo redondo com emblema dourado bem visível. Sem lanterna, sem elementos de mago. Folha em grade: 6 colunas (quadros da animação, da esquerda para a direita) x 5 linhas (direções, de cima para baixo: S de frente, SE, E, NE, N de costas; as direções do oeste são espelho e NÃO entram). Cada célula 128x128 px, personagem de ~96 px de altura com os pés no ponto x=64, y=104, mesma escala e posição em todos os quadros. Esquiva/rolamento curto: corpo abaixado e inclinado para a direção do movimento, capa em arrasto, escudo à frente.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\guerreiro\\referencia_aprovada.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_dodge.png"
+  ]
+ },
+ {
+  "id": "guerreiro_hit",
+  "tamanho": "384x640",
+  "prompt": "Estilo: pintura digital à mão de jogo ARPG top-down 3/4, personagem chibi com cabeça grande, o MESMO estilo, contorno escuro de 2 a 3 px e nível de acabamento do Arqueiro de referência; luz principal vinda do alto à esquerda; fundo totalmente transparente (ou liso chroma #ff00ff para recorte); sem sombra de chão, sem brilho que vaze do quadro, sem texto. Personagem: GUERREIRO. Armadura de ferro escurecido com detalhes dourados nas ombreiras e no cinto, capacete aberto com crista, capa vermelho queimado, espada grande de lâmina clara bem legível na silhueta e escudo redondo com emblema dourado bem visível. Sem lanterna, sem elementos de mago. Folha em grade: 3 colunas (quadros da animação, da esquerda para a direita) x 5 linhas (direções, de cima para baixo: S de frente, SE, E, NE, N de costas; as direções do oeste são espelho e NÃO entram). Cada célula 128x128 px, personagem de ~96 px de altura com os pés no ponto x=64, y=104, mesma escala e posição em todos os quadros. Reação a dano: tronco jogado para trás, escudo balança, rosto contraído; quadro 0 mais forte.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\guerreiro\\referencia_aprovada.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_hit.png"
+  ]
+ },
+ {
+  "id": "guerreiro_death",
+  "tamanho": "1024x640",
+  "prompt": "Estilo: pintura digital à mão de jogo ARPG top-down 3/4, personagem chibi com cabeça grande, o MESMO estilo, contorno escuro de 2 a 3 px e nível de acabamento do Arqueiro de referência; luz principal vinda do alto à esquerda; fundo totalmente transparente (ou liso chroma #ff00ff para recorte); sem sombra de chão, sem brilho que vaze do quadro, sem texto. Personagem: GUERREIRO. Armadura de ferro escurecido com detalhes dourados nas ombreiras e no cinto, capacete aberto com crista, capa vermelho queimado, espada grande de lâmina clara bem legível na silhueta e escudo redondo com emblema dourado bem visível. Sem lanterna, sem elementos de mago. Folha em grade: 8 colunas (quadros da animação, da esquerda para a direita) x 5 linhas (direções, de cima para baixo: S de frente, SE, E, NE, N de costas; as direções do oeste são espelho e NÃO entram). Cada célula 128x128 px, personagem de ~96 px de altura com os pés no ponto x=64, y=104, mesma escala e posição em todos os quadros. Morte: cambaleia, cai de joelhos e tomba; o último quadro mostra o corpo caído no chão com espada ao lado, e se mantém.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\guerreiro\\referencia_aprovada.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_death.png"
+  ]
+ }
+]
