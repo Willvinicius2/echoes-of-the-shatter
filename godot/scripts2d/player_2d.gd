@@ -12,6 +12,8 @@ const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 
 enum Estado { LIVRE, ATIRANDO, ESQUIVA, MORTO }
 
+var stats_csv := "res://data2d/player.csv"  # outras classes (mago) trocam no _init
+var sprite_id := "arqueiro"
 var stats := {}
 var hp := 0.0
 var mana := 0.0
@@ -35,13 +37,13 @@ var _salto_vel := 0.0          # >0: esquiva customizada (Salto Atrás) com esta
 var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
-	stats = Csv.kv("res://data2d/player.csv")
+	stats = Csv.kv(stats_csv)
 	habilidades = HabilidadesScript.new()
 	definir_classe(classe)
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("arqueiro")
-	setup_sprite("arqueiro")
+	setup_sprite(sprite_id)
 	var cs := CollisionShape2D.new()
 	var sh := CircleShape2D.new()
 	sh.radius = stats["radius"]
@@ -52,7 +54,7 @@ func _ready() -> void:
 ## Troca a classe: stats de player.csv mais as sobrescritas de classes_2d.csv, e carrega a árvore dela.
 func definir_classe(id: String) -> void:
 	classe = id
-	stats = Csv.kv("res://data2d/player.csv")
+	stats = Csv.kv(stats_csv)
 	var cl: Dictionary = HabilidadesScript.classes().get(id, {})
 	for k in cl:
 		if stats.has(k) and str(cl[k]) != "":
@@ -60,9 +62,22 @@ func definir_classe(id: String) -> void:
 	habilidades.carregar_classe(id)
 	mana = stats["mana_max"]
 
-func gastar_mana(n: float) -> void:
-	mana = maxf(0.0, mana - n)
+func gastar_mana(n: float) -> bool:
+	if mana + 0.0001 < n:
+		return false
+	mana -= n
 	mana_changed.emit(mana, stats["mana_max"])
+	return true
+
+func ganhar_mana(qtd: float) -> void:
+	var antes := mana
+	mana = minf(stats["mana_max"], mana + qtd)
+	if absf(mana - antes) > 0.0001:
+		mana_changed.emit(mana, stats["mana_max"])
+
+## Regeneração de mana por segundo; classes com bônus temporários sobrescrevem.
+func taxa_regen_mana() -> float:
+	return stats["mana_regen"]
 
 ## Usa a habilidade do slot 0..3 mirando no cursor (ou na mira forçada dos testes).
 func usar_habilidade(slot: int) -> bool:
@@ -101,9 +116,8 @@ func _physics_process(delta: float) -> void:
 	dodge_cd = maxf(0.0, dodge_cd - delta)
 	invencivel = maxf(0.0, invencivel - delta)
 	habilidades.tick(delta)
-	if mana < stats["mana_max"]:
-		mana = minf(stats["mana_max"], mana + stats["mana_regen"] * delta)
-		mana_changed.emit(mana, stats["mana_max"])
+	if estado != Estado.MORTO:
+		ganhar_mana(taxa_regen_mana() * delta)
 	_aim = _ler_mira()
 	var entrada := auto_move if auto_move != Vector2.ZERO else Input.get_vector("move_left", "move_right", "move_up", "move_down")
 

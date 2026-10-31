@@ -11,6 +11,7 @@ const HudScript = preload("res://scripts2d/hud_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
 const ArvoreUiScript = preload("res://scripts2d/arvore_ui_2d.gd")
+const MagoScript = preload("res://scripts2d/mago_2d.gd")
 const SkillsGuerreiroScript = preload("res://scripts2d/skills_guerreiro_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
@@ -103,7 +104,7 @@ func _ready() -> void:
 ## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro: cartas do core; guerreiro: árvore de habilidades).
 func _criar_classe() -> void:
 	var guerreiro: bool = Classe.atual == "guerreiro"
-	player = (WarriorScript if guerreiro else PlayerScript).new()
+	player = (WarriorScript if guerreiro else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
 	player.died.connect(_on_player_died)
 	atores.add_child(player)
 	upgrades = (SkillsGuerreiroScript if guerreiro else UpgradesScript).new()

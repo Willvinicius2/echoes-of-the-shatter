@@ -170,6 +170,7 @@ hud.key.skill4,R
 class.guerreiro.name,Guerreiro
 menu.class,Classe: %s
 class.arqueiro.name,Arqueiro
+class.mago.name,Mago
 skill.w_keen_edge.name,Fio Afiado
 skill.w_keen_edge.desc,+20% de dano da espada
 skill.w_heavy_slash.name,Talho Pesado

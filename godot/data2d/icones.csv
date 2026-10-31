@@ -10,6 +10,24 @@ multishot,leque,#c9a45c,Salva de Flechas
 pierce,lanca,#9ac0e0,Ponta Afiada
 evasion,passo,#58b8a0,Passo Rapido
 ember_tip,seta,#e8873a,Ponta em Brasa
+skill.mage.fireball,seta,#ff7a1f,habilidade do mago (placeholder)
+skill.mage.flame_breath,leque,#ff9a2e,habilidade do mago (placeholder)
+skill.mage.embers,coracao,#ffb347,habilidade do mago (placeholder)
+skill.mage.fire_wall,lanca,#ff5a1a,habilidade do mago (placeholder)
+skill.mage.meteor,seta,#ff3b12,habilidade do mago (placeholder)
+skill.mage.inferno_nova,leque,#ff2a00,habilidade do mago (placeholder)
+skill.mage.frost_bolt,seta,#6fd6ff,habilidade do mago (placeholder)
+skill.mage.frost_nova,leque,#9fe8ff,habilidade do mago (placeholder)
+skill.mage.chill,coracao,#c8f3ff,habilidade do mago (placeholder)
+skill.mage.ice_barrier,cadeado,#7fc8ff,habilidade do mago (placeholder)
+skill.mage.blizzard,leque,#b8ecff,habilidade do mago (placeholder)
+skill.mage.glacial_spike,lanca,#e6fbff,habilidade do mago (placeholder)
+skill.mage.chain_lightning,raio,#ffe94a,habilidade do mago (placeholder)
+skill.mage.blink,passo,#d9a0ff,habilidade do mago (placeholder)
+skill.mage.static_charge,raio,#fff08a,habilidade do mago (placeholder)
+skill.mage.thunderstorm,raio,#fff36b,habilidade do mago (placeholder)
+skill.mage.mana_surge,coracao,#b36bff,habilidade do mago (placeholder)
+skill.mage.overload,raio,#ffffff,habilidade do mago (placeholder)
 golpe,espada,#e6e1d6,Golpe de espada (guerreiro)
 w_keen_edge,espada,#e6e1d6,Fio Afiado
 w_heavy_slash,espada,#e8873a,Talho Pesado

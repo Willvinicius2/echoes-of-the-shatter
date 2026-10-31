@@ -4,6 +4,7 @@ extends RefCounted
 
 const COR := {
 	"arqueiro": Color(0.25, 0.65, 0.3),
+	"mago": Color(0.45, 0.3, 0.75),
 	"guerreiro": Color(0.6, 0.65, 0.75),
 	"hollow_sentinel": Color(0.6, 0.6, 0.65),
 	"ash_hound": Color(0.55, 0.4, 0.3),
