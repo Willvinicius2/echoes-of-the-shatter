@@ -69,7 +69,7 @@ def sem_brilho(a):
     azul = (b > r + 60) & (b > g + 20)
     corpo = (al >= 200) & ~azul
     perto = ndimage.binary_dilation(corpo, iterations=6)
-    manter = ndimage.binary_dilation(corpo, iterations=1) & (al >= 120) | (azul & (al >= 230) & perto)
+    manter = corpo | (azul & (al >= 230) & perto)
     a[..., 3] = np.where(manter, a[..., 3], 0)
     return a
 
@@ -112,7 +112,7 @@ def rastro(q, dx, cor=(90, 140, 255)):
     """Rastro arcano: silhueta azul translúcida deslocada para trás e borrada."""
     al = q.split()[3]
     sil = Image.new("RGBA", q.size, cor + (0,))
-    sil.putalpha(al.point(lambda v: v * 0.28))
+    sil.putalpha(al.point(lambda v: v * 0.22))
     sil = sil.filter(ImageFilter.GaussianBlur(1))
     base = Image.new("RGBA", q.size, (0, 0, 0, 0))
     for k, f in ((1, 1.0),):
