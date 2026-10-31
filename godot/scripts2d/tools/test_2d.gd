@@ -40,6 +40,7 @@ func _testar() -> void:
 	await _testar_forja()
 	await _testar_opcoes_steam_tutorial()
 	await _testar_status()
+	await _testar_mago()
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
 
@@ -70,31 +71,46 @@ func _testar_audio_e_ui() -> void:
 func _testar_upgrades() -> void:
 	var UpScript = preload("res://scripts2d/upgrades_2d.gd")
 	var PlayerScript = preload("res://scripts2d/player_2d.gd")
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
 	var up = UpScript.new()
 	check(up.defs.size() >= 6 and up.defs.size() <= 8, "pool de 6 a 8 upgrades")
 	for id in up.defs:
 		check(Csv.t("upgrade.%s.name" % id) != "upgrade.%s.name" % id and Csv.t("upgrade.%s.desc" % id) != "upgrade.%s.desc" % id, "texto de %s" % id)
-		var p = PlayerScript.new()
-		root.add_child(p)
-		await physics_frame
-		up.restaurar(p)
-		p.reset()
-		var base: Dictionary = p.stats.duplicate()
+	var p = PlayerScript.new()
+	root.add_child(p)
+	await physics_frame
+	up.restaurar(p)
+	p.reset()
+	var base: Dictionary = p.stats.duplicate()
+	check(up.niveis.is_empty(), "corrida nova começa sem níveis")
+	# As cartas vêm do core ao limpar a sala; só as oferecidas podem ser escolhidas.
+	var n: Object = up.nucleo
+	for i in 3:
+		var morto := false
+		for e in n.corrida_estado()["node"]["enemies"]:
+			for _k in int(e["count"]):
+				morto = n.corrida_inimigo_morto(e["id"])["sala_limpa"]
+		check(morto, "sala %d limpa pelo core" % (i + 1))
+		var oferta: Array = up.oferta()
+		check(oferta.size() == 3 and oferta[0] != oferta[1] and oferta[1] != oferta[2] and oferta[0] != oferta[2], "sorteio de 3 cartas distintas")
+		var id: String = oferta[0]
 		var st: String = up.defs[id]["stat"]
+		var antes: float = p.stats[st]
+		var fora := ""
+		for k in up.defs:
+			if not oferta.has(k):
+				fora = k
+		check(not up.escolher(fora, p), "carta fora da oferta é recusada")
 		check(up.escolher(id, p), "escolhe %s" % id)
-		check(not is_equal_approx(p.stats[st], base[st]), "%s muda %s" % [id, st])
+		check(not is_equal_approx(p.stats[st], antes), "%s muda %s" % [id, st])
 		if st == "hp_max":
 			check(is_equal_approx(p.hp, p.stats["hp_max"]), "vigor cura o ganho")
-		for _i in up.defs[id]["nivel_max"] - 1:
-			up.escolher(id, p)
-		check(not up.escolher(id, p), "%s para no nível máximo" % id)
-		up.restaurar(p)
-		check(is_equal_approx(p.stats[st], base[st]) and up.niveis.is_empty(), "restaurar volta a base de %s" % id)
-		p.free()
-	var cartas: Array = up.sortear(rng, 3)
-	check(cartas.size() == 3 and cartas[0] != cartas[1] and cartas[1] != cartas[2] and cartas[0] != cartas[2], "sorteio de 3 cartas distintas")
+		if n.corrida_porta() == 2:
+			n.corrida_escolher_caminho(0)
+		check(n.corrida_fase() == 1, "porta leva à próxima sala (luta)")
+	n.corrida_iniciar(7, base)
+	up.restaurar(p)
+	check(p.stats == base and up.niveis.is_empty(), "restaurar volta a base")
+	p.free()
 
 func _esperar(cond: Callable, limite: float) -> void:
 	var t := 0.0
@@ -206,9 +222,14 @@ func _novo_duelo(niveis: Dictionary) -> Array:
 	var up = load("res://scripts2d/upgrades_2d.gd").new()
 	up.restaurar(p)
 	p.reset()
-	for id in niveis:
-		for _i in niveis[id]:
-			up.escolher(id, p)
+	if not niveis.is_empty():
+		# Níveis de upgrade direto no estado do core (restaurar o estado é o caminho de teste; a sorte das cartas não conta).
+		var est: Dictionary = JSON.parse_string(up.nucleo.estado_texto())
+		for id in niveis:
+			est["run"]["levels"][id] = niveis[id]
+		up.nucleo.estado_restaurar(JSON.stringify(est))
+		p.stats = up.nucleo.corrida_stats()
+		p.hp = p.stats["hp_max"]
 	var b = load("res://scripts2d/boss_2d.gd").new()
 	mundo.add_child(b)
 	p.global_position = Vector2(0, 0)
@@ -453,8 +474,8 @@ func _testar_meta() -> void:
 	check(not m.liberada("multishot") and m.liberada("power"), "multishot nasce bloqueado, power liberado")
 	for id in m.defs:
 		check(Csv.t("meta.%s.name" % id) != "meta.%s.name" % id, "texto de %s" % id)
-	for e in m.drops:
-		check(Csv.t("material." + m.drops[e]["material"]) != "material." + m.drops[e]["material"], "texto do material de %s" % e)
+	for r in Csv.rows("res://data2d/drops.csv"):
+		check(Csv.t("material." + r["material"]) != "material." + r["material"], "texto do material de %s" % r["inimigo"])
 	check(not m.comprar("unlock_multishot"), "sem fragmentos não compra")
 	m.creditar({"fragmentos": 200, "materiais": {"pedra_cinza": 2}})
 	check(m.comprar("unlock_multishot") and m.liberada("multishot") and m.fragmentos == 200 - m.defs["unlock_multishot"]["custo"], "compra desbloqueia e gasta")
@@ -533,7 +554,7 @@ func _testar_forja() -> void:
 	# Balanceamento: uma corrida completa rende ~15 materiais; a 1ª receita sai em até uma corrida.
 	var total := 0
 	for e in ["hollow_sentinel", "skeleton_soldier", "skeleton_soldier", "skeleton_soldier", "wandering_ghost", "wandering_ghost", "crypt_bat", "crypt_bat", "chain_wraith", "chain_wraith", "ghost_archer", "ghost_archer", "skeleton_soldier"]:
-		total += m.drop_de(e)["material_qtd"]
+		total += m.drop_de(e)["material_qty"]
 	check(total >= 12, "corrida até a sala 3 rende ao menos 12 materiais (%d)" % total)
 	var custo1 := 0
 	for q in m.receitas["amuleto_osso"]["custo"].values():
@@ -667,6 +688,114 @@ func _testar_status() -> void:
 	mundo.queue_free()
 	await physics_frame
 
+## Mago: dados de habilidades coerentes e efeitos que de fato ferem, lentificam, queimam e protegem.
+func _testar_mago() -> void:
+	var Efeitos = preload("res://scripts2d/efeitos_mago_2d.gd")
+	var Icones = preload("res://scripts2d/icones_2d.gd")
+	var defs := {}
+	for r in Csv.rows("res://data2d/habilidades_mago.csv"):
+		defs[r["id"]] = r
+	var mstats := Csv.kv("res://data2d/mago.csv")
+	check(defs.size() >= 15 and defs.size() <= 20, "mago tem 15 a 20 habilidades (%d)" % defs.size())
+	var ramos := {}
+	for id in defs:
+		var d: Dictionary = defs[id]
+		ramos[d["ramo"]] = true
+		check(Csv.t("skill.%s.name" % id) != "skill.%s.name" % id and Csv.t("skill.%s.desc" % id) != "skill.%s.desc" % id, "%s tem nome e descricao" % id)
+		check(Icones.textura(d["icone"]) != null, "%s tem icone" % id)
+		check(d["pai"] == "" or (defs.has(d["pai"]) and int(defs[d["pai"]]["tier"]) < int(d["tier"]) and defs[d["pai"]]["ramo"] == d["ramo"]), "%s: pai valido no mesmo ramo" % id)
+		check(d["pai"] != "" or d["tier"] == "1", "%s: raiz so no tier 1" % id)
+		if d["tipo"] == "passiva":
+			check(mstats.has(d["stat"]) and (d["modo"] == "add" or d["modo"] == "mult"), "%s: passiva mexe em stat existente" % id)
+		else:
+			check(float(d["cd"]) > 0.0 or float(d["custo"]) == 0.0, "%s: tem recarga" % id)
+	check(ramos.size() == 3, "3 ramos de habilidade")
+	# cena com mago e inimigos
+	var mundo := Node2D.new()
+	root.add_child(mundo)
+	var m = load("res://scripts2d/mago_2d.gd").new()
+	mundo.add_child(m)
+	m.auto_aim = Vector2.RIGHT
+	m.god_mode = true
+	await physics_frame
+	check(m.mana == mstats["mana_max"] and m.stats["hp_max"] == mstats["hp_max"], "mago comeca com mana e vida do mago.csv")
+	check(m.gastar_mana(30.0) and not m.gastar_mana(1000.0) and absf(m.mana - 70.0) < 0.5, "gastar mana")
+	var antes: float = m.mana
+	await _esperar(func(): return m.mana > antes + 3.0, 2.0)
+	check(m.mana > antes + 3.0, "mana regenera")
+	var funcionou := {}
+	for id in defs:
+		var d: Dictionary = defs[id].duplicate()
+		if d["tipo"] != "ativa":
+			continue
+		var def := {}
+		for k in ["cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor"]:
+			def[k] = float(d[k])
+		var inimigos := _alvos_mago(mundo, m)
+		var hp_antes := 0.0
+		for e in inimigos:
+			hp_antes += e.hp
+		var ok: bool = m.lancar_efeito(d["efeito"], def, 1)
+		check(ok, "%s (%s) executa" % [id, d["efeito"]])
+		await _esperar(func(): return false, 1.3)   # projétil voa, marca de meteoro cai
+		var hp_depois := 0.0
+		for e in inimigos:
+			if is_instance_valid(e):
+				hp_depois += maxf(0.0, e.hp)
+		funcionou[d["efeito"]] = hp_depois < hp_antes
+		for e in inimigos:
+			if is_instance_valid(e):
+				e.queue_free()
+		await physics_frame
+	for ef in ["bola_fogo", "raio_gelo", "sopro_chamas", "meteoro", "nova_fogo", "nova_gelo", "nova_raio", "corrente_raios", "estacas_gelo", "salto_arcano"]:
+		check(funcionou.get(ef, false), "efeito %s causa dano" % ef)
+	# muralha, nevasca e tempestade são zonas: dano por ticks no ponto mirado (a frente do mago)
+	for ef in ["muralha_fogo", "nevasca", "tempestade"]:
+		check(funcionou.has(ef), "zona %s executou sem erro" % ef)
+	var inimigos := _alvos_mago(mundo, m)
+	# status
+	var alvo = inimigos[0]
+	alvo.hp = alvo.hp_max
+	alvo.global_position = m.global_position + Vector2(150, 0)
+	m.lancar_efeito("raio_gelo", {"dano": 10.0, "raio": 0.0, "alcance": 900.0, "valor": 600.0}, 1)
+	await _esperar(func(): return alvo.tem_status("lentidao"), 1.5)
+	check(alvo.tem_status("lentidao"), "raio de gelo lentifica")
+	alvo.hp = alvo.hp_max
+	m.lancar_efeito("bola_fogo", {"dano": 20.0, "raio": 90.0, "alcance": 900.0, "valor": 640.0}, 1)
+	await _esperar(func(): return alvo.tem_status("queimadura"), 1.5)
+	check(alvo.tem_status("queimadura"), "bola de fogo queima")
+	m.lancar_efeito("nova_gelo", {"dano": 5.0, "raio": 300.0}, 1)
+	check(alvo.tem_status("atordoamento"), "nova glacial congela")
+	# escudo, surto e salto
+	m.god_mode = false
+	m.invencivel = 0.0
+	m.lancar_efeito("barreira_gelo", {"valor": 40.0, "duracao": 5.0}, 1)
+	var hp0: float = m.hp
+	m.take_damage(25.0)
+	check(m.hp == hp0 and m.escudo == 15.0, "barreira absorve dano")
+	m.invencivel = 0.0
+	m.take_damage(25.0)
+	check(m.hp == hp0 - 10.0 and m.escudo == 0.0, "dano acima do escudo passa")
+	m.lancar_efeito("surto_mana", {"valor": 3.0, "duracao": 2.0}, 1)
+	m.mana = 10.0
+	var mana0: float = m.mana
+	await _esperar(func(): return false, 0.5)
+	check(m.mana - mana0 > m.stats["mana_regen"] * 0.5 * 2.0, "surto de mana acelera a regeneracao")
+	var pos0: Vector2 = m.global_position
+	m.lancar_efeito("salto_arcano", {"dano": 5.0, "raio": 80.0, "alcance": 200.0}, 1)
+	check(m.global_position.distance_to(pos0 + Vector2(200, 0)) < 40.0, "salto arcano teleporta na direcao da mira")
+	mundo.queue_free()
+	await physics_frame
+
+func _alvos_mago(mundo: Node, m: Node) -> Array:
+	var out := []
+	for i in 5:
+		var e = load("res://scripts2d/enemy_2d.gd").new()
+		mundo.add_child(e)
+		e.setup("hollow_sentinel", m, m.global_position + Vector2(120 + i * 30, (i - 2) * 25))
+		e.stats["speed"] = 0.0   # fica parado para a medição
+		out.append(e)
+	return out
 ## habilidades_arqueiro.csv: árvore coerente, textos, ícones e efeitos ativos funcionando.
 func _def_arqueiro(r: Dictionary) -> Dictionary:
 	var d := {}
