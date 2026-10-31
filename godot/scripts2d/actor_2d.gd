@@ -10,6 +10,7 @@ var sprite: AnimatedSprite2D
 var shadow_radius := 18.0
 var _anim_base := ""
 var _flash := 0.0
+var _fase_respiro := 0.0
 var _shake_t := 0.0
 var _shake_total := 0.0
 var _shake_px := 0.0
