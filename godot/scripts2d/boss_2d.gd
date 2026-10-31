@@ -71,6 +71,7 @@ func _iniciar_ciclo(c: Ciclo, dur: float) -> void:
 func _physics_process(delta: float) -> void:
 	if estado == Estado.MORTO or alvo == null:
 		return
+	_tick_status(delta)
 	var para := alvo.global_position - global_position
 	var dist := para.length()
 	var dir := para.normalized() if dist > 0.01 else Vector2.DOWN
@@ -117,7 +118,7 @@ func _physics_process(delta: float) -> void:
 			elif _t <= -1.5:   # sem animação de ataque: não trava o chefe
 				_disparar()
 				_terminar_passo()
-	velocity = mover * stats["speed"] + _kb
+	velocity = mover * stats["speed"] * vel_mult + _kb
 	move_and_slide()
 	if ciclo == Ciclo.PAUSA or (ciclo == Ciclo.ACAO and passo.get("padrao", "") == "investida"):
 		play("run" if mover != Vector2.ZERO else "idle")
