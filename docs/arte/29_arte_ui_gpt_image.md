@@ -35,3 +35,6 @@ Decisões do Jev (`jev-latest`, `POST /v1/systemone`, três consultas com captur
 - Barra fina de estamina removida, porque o slot de esquiva já mostra a recarga (57%, provisória; `estamina_barra` = 1 a traz de volta).
 - Globo da direita: mana real quando o jogador tem `mana` (runtime de habilidades), ímpeto no guerreiro, trancado nos outros casos.
 Código em `hud_2d.gd` (`retangulos_slots`, `conteudo_slots`) e `hud_arte_2d.gd` (`slot`, `encaixe_vazio`, `nove_fatias`, `friso`). Capturas com `godot/scripts2d/tools/captura_hud_variantes_2d.gd`; antes e depois em `/mnt/project-files/hud/v3/`.
+
+## HUD v4: formas recortadas (31/10/2026)
+O Will reprovou a v3 por estar "tudo muito quadrado". A v4 troca as caixas por formas recortadas, desenhadas em código (`hud_arte_2d.gd`): slots das ativas em octógono chanfrado com garras de ferro nos chanfros, ataque e esquiva em medalhões redondos, plaquinha de tecla em escudinho, base de pedra em arco com pico central e gema (`faixa_modo` 3), placa da sala com topo ogival, buffs em losango e globos com crista e garras. Jev: a v4 deixou de parecer quadrada (81%) e é melhor que a v3 (95%); o ajuste pedido, ornamento nos globos (45%, provisória), já entrou. Capturas em `/mnt/project-files/hud/v4/`.

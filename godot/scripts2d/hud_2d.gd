@@ -42,7 +42,7 @@ func _desenhar() -> void:
 		_desenhar_habilidades(vp)
 		_desenhar_globos(vp)
 	_desenhar_upgrades()
-	Arte.plaqueta(_ctl, Rect2(vp.x - 8 - _lay["plaqueta_largura"], 8, _lay["plaqueta_largura"], 58), Csv.t("hud.room") % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
+	Arte.placa_gotica(_ctl, Rect2(vp.x - 8 - _lay["plaqueta_largura"], 6, _lay["plaqueta_largura"], 72), Csv.t("hud.room") % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
 	if _rel < 8.0 and estado_ajuda_visivel():
 		var al := clampf((8.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
@@ -107,6 +107,11 @@ func _desenhar_base(vp: Vector2) -> void:
 		var esc: float = _lay.get("faixa_escala", 0.5)
 		var r := Rect2(g.position.x - 30.0, g.position.y - 12.0, g.size.x + 60.0, vp.y - g.position.y + 12.0)
 		Arte.nove_fatias(_ctl, faixa, r, 48.0, 48.0, 20.0, 20.0, esc)
+	elif modo == 3:   # base de pedra em arco com pico central, das bordas dos globos até o centro
+		var raio: float = _lay["globo_raio"]
+		var x0 := _centro_globo(vp, false).x + raio * 0.55
+		var x1 := _centro_globo(vp, true).x - raio * 0.55
+		Arte.base_arco(_ctl, maxf(x0, g.position.x - 160.0), minf(x1, g.end.x + 160.0), vp.y, 5.0, g.size.y * 0.9 + _lay["slot_base"])
 	elif modo == 2:
 		for sr in rs["basicos"] + rs["ativas"]:
 			Arte.sombra(_ctl, sr, 6.0, 0.3)
@@ -123,6 +128,8 @@ func _desenhar_globos(vp: Vector2) -> void:
 	var pulso := (0.4 + 0.6 * (0.5 + 0.5 * sin(_rel * 5.0))) if frac < 0.3 and frac > 0.0 else 0.0
 	var ev := _centro_globo(vp, false)
 	Arte.globo(_ctl, ev, raio, frac, _hp_fantasma, Tema.cor("vida_escura"), Tema.cor("vida_clara"), _rel, pulso)
+	Arte.ornamento_globo(_ctl, ev, raio)
+	Arte.ornamento_globo(_ctl, _centro_globo(vp, true), raio)
 	Arte.texto(_ctl, ev + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.hp), int(hmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
 	Arte.texto(_ctl, Vector2(ev.x + raio + 10, ev.y + 30), Csv.t("hud.hp"), 14, Tema.cor("texto_suave"))
 	var ed := _centro_globo(vp, true)
@@ -148,9 +155,9 @@ func _desenhar_globos(vp: Vector2) -> void:
 func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():
 		return
-	var x: float = _lay["margem"] - 8
-	var y: float = _lay["lista_y"]
-	var lado := 38.0
+	var raio := 21.0
+	var x: float = _lay["margem"] - 8 + raio
+	var y: float = _lay["lista_y"] - 6 + raio
 	var mouse := _ctl.get_local_mouse_position()
 	var dica := ""
 	var dica_pos := Vector2.ZERO
@@ -158,20 +165,14 @@ func _desenhar_upgrades() -> void:
 		var nv: int = upgrades.nivel(id)
 		if nv <= 0:
 			continue
-		var r := Rect2(x, y, lado, lado)
-		Arte.placa(_ctl, r, Tema.cor("pedra").darkened(0.15), 2.0, false)
-		_ctl.draw_texture_rect(Icones.textura(id), r.grow(-6), false)
-		var sel := r.has_point(mouse)
+		var ctr := Vector2(x, y)
+		var sel := absf(mouse.x - ctr.x) + absf(mouse.y - ctr.y) <= raio
+		Arte.buff_losango(_ctl, ctr, raio, Icones.textura(id), nv, sel)
 		if sel:
-			_ctl.draw_rect(r, Tema.cor("destaque"), false, 2.0)
 			var chave := "skill.%s.name" if upgrades.defs[id].has("ramo") else "upgrade.%s.name"  # habilidades têm ramo
 			dica = "%s x%d" % [Csv.t(chave % id), nv]
-			dica_pos = Vector2(r.position.x, r.end.y + 6)
-		if nv > 1:
-			var tag := Rect2(r.end.x - 20, r.end.y - 14, 22, 16)
-			Arte.placa(_ctl, tag, Tema.cor("metal_escuro"), 1.0, false)
-			Arte.texto(_ctl, Vector2(tag.position.x, tag.position.y + 12), "x%d" % nv, 12, Tema.cor("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, tag.size.x)
-		x += lado + 8.0
+			dica_pos = Vector2(ctr.x - raio, ctr.y + raio + 18)
+		x += raio * 2.0 + 8.0
 	if dica != "":
 		var fonte := ThemeDB.fallback_font
 		var larg := fonte.get_string_size(dica, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 20.0
@@ -234,11 +235,11 @@ func _desenhar_habilidades(vp: Vector2) -> void:
 		Arte.barra(_ctl, Rect2(g.get_center().x - bw * 0.5, g.position.y - 18.0, bw, 6.0), 1.0 - clampf(jogador.dodge_cd / cdmax, 0.0, 1.0), Tema.cor("estamina").darkened(0.5), Tema.cor("estamina_clara"), 0)
 	for i in 2:
 		var sl: Dictionary = cs["basicos"][i]
-		Arte.slot(_ctl, rs["basicos"][i], Icones.textura(sl["icone"]), sl["recarga"], Csv.t(sl["tecla"]), true, sl["cor"], -1.0, false, true)
+		Arte.slot_forma(_ctl, rs["basicos"][i], "medalhao", Icones.textura(sl["icone"]), sl["recarga"], Csv.t(sl["tecla"]), true, sl["cor"])
 	for i in rs["ativas"].size():
 		var r: Rect2 = rs["ativas"][i]
 		var sl: Dictionary = cs["ativas"][i]
 		if sl.is_empty():
-			Arte.encaixe_vazio(_ctl, r, Csv.t("hud.key.skill%d" % (i + 1)))
+			Arte.encaixe_forma(_ctl, r, Csv.t("hud.key.skill%d" % (i + 1)))
 		else:
-			Arte.slot(_ctl, r, Icones.textura(sl["icone"]), sl["recarga"], Csv.t(sl["tecla"]), true, sl["cor"], sl.get("segundos", -1.0), sl.get("sem_recurso", false))
+			Arte.slot_forma(_ctl, r, "octo", Icones.textura(sl["icone"]), sl["recarga"], Csv.t(sl["tecla"]), true, sl["cor"], sl.get("segundos", -1.0), sl.get("sem_recurso", false))
