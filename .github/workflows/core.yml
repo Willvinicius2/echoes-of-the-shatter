@@ -8,6 +8,7 @@ on:
       - "ShatterCore/**"
       - "EchoesOfTheShatter/Content/Data/**"
       - "prototipos/godot-f1/data/**"
+      - "godot/data2d/**"
       - "tools/**"
       - ".github/workflows/core.yml"
   pull_request:
@@ -17,6 +18,7 @@ on:
       - "ShatterCore/**"
       - "EchoesOfTheShatter/Content/Data/**"
       - "prototipos/godot-f1/data/**"
+      - "godot/data2d/**"
       - "tools/**"
       - ".github/workflows/core.yml"
 

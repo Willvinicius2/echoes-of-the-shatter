@@ -136,8 +136,9 @@ endif()
 # --- Testes -----------------------------------------------------------------
 if(SHATTER_BUILD_TESTS)
   file(GLOB SHATTER_TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)
-  # test_c_api.cpp vira um executável próprio, ligado à DLL (testa a fronteira de verdade).
-  list(FILTER SHATTER_TEST_SOURCES EXCLUDE REGEX ".*/test_c_api\\.cpp$")
+  # test_c_api*.cpp viram um executável próprio, ligado à DLL (testa a fronteira de verdade).
+  list(FILTER SHATTER_TEST_SOURCES EXCLUDE REGEX ".*/test_c_api(_[a-z0-9_]+)?\\.cpp$")
+  file(GLOB SHATTER_C_API_TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_c_api*.cpp)
   if(SHATTER_TEST_SOURCES)
     enable_testing()
     add_executable(shattercore_tests ${SHATTER_TEST_SOURCES})
@@ -147,6 +148,7 @@ if(SHATTER_BUILD_TESTS)
     target_compile_definitions(shattercore_tests PRIVATE
       SHATTER_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data"
       SHATTER_CONTENT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../EchoesOfTheShatter/Content/Data"
+      SHATTER_ROGUE_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../godot/data2d"
       SHATTER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
       SHATTER_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/test_tmp")
     shatter_set_warnings(shattercore_tests)
@@ -168,13 +170,14 @@ if(SHATTER_BUILD_TESTS)
 
     # Fronteira da API C: o mesmo framework, ligado à DLL/so (ou à API C estática sem SHATTER_BUILD_SHARED).
     if(SHATTER_C_TARGET AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_c_api.cpp)
-      add_executable(shattercore_c_api_tests ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_c_api.cpp
+      add_executable(shattercore_c_api_tests ${SHATTER_C_API_TEST_SOURCES}
                                              ${CMAKE_CURRENT_SOURCE_DIR}/tests/main.cpp)
       target_link_libraries(shattercore_c_api_tests PRIVATE ${SHATTER_C_TARGET} shattercore)
       target_include_directories(shattercore_c_api_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
       target_compile_definitions(shattercore_c_api_tests PRIVATE
         SHATTER_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data"
         SHATTER_CONTENT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../EchoesOfTheShatter/Content/Data"
+        SHATTER_ROGUE_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../godot/data2d"
         SHATTER_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
         SHATTER_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/test_tmp")
       shatter_set_warnings(shattercore_c_api_tests)

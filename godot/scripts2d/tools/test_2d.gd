@@ -6,6 +6,7 @@ extends SceneTree
 const Csv = preload("res://scripts2d/csv2d.gd")
 const SpriteLoader = preload("res://scripts2d/sprite_loader.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
+const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 
 var falhas := 0
@@ -33,6 +34,10 @@ func _testar() -> void:
 	await _testar_chefe_fases()
 	await _testar_chefe_luta()
 	await _testar_corrida()
+	await _testar_rotas()
+	await _testar_meta()
+	await _testar_forja()
+	await _testar_opcoes_steam_tutorial()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -346,6 +351,11 @@ func _testar_corrida() -> void:
 		await _esperar(func(): return run.estado != run.Estado.LIMPA, 4.0)
 		p.auto_move = Vector2.ZERO
 		if i < run.salas.size() - 1:
+			if run.caminhos_da_etapa(i + 1).size() > 1:
+				await _esperar(func(): return run.estado == run.Estado.ROTA, 4.0)
+				check(run.estado == run.Estado.ROTA and paused and run.menus.tela == run.menus.Tela.ROTA, "etapa %d abre a escolha de caminho" % (i + 2))
+				run.escolher_rota(run.opcoes_rota[0])
+				check(not paused, "escolher o caminho despausa")
 			await _esperar(func(): return run.estado == run.Estado.LUTA, 4.0)
 			check(run.indice == i + 1 and run.estado == run.Estado.LUTA, "porta leva à sala %d (com fade)" % (i + 2))
 		else:
@@ -378,3 +388,250 @@ func _testar_corrida() -> void:
 	check(run.estado == run.Estado.MENU and paused and run.menus.tela == run.menus.Tela.TITULO, "volta ao título")
 	paused = false
 	run.queue_free()
+
+func _testar_rotas() -> void:
+	for r in Csv.rows("res://data2d/rota.csv"):
+		var sala = RoomScript.new()
+		check(sala.carregar(r["room"]), "rota %s: sala carrega" % r["id"])
+		check(r["tipo"] in ["elite", "descanso"] and int(r["etapa"]) > 1 and int(r["etapa"]) < Csv.rows("res://data2d/run.csv").size(), "rota %s: tipo e etapa válidos" % r["id"])
+		sala.free()
+	var run = RunScene.instantiate()
+	run.com_menu = false
+	root.add_child(run)
+	await physics_frame
+	var p = run.player
+	p.god_mode = true
+	check(run.caminhos_da_etapa(0).size() == 1 and run.caminhos_da_etapa(3).size() == 1, "sala 1 e chefe não têm bifurcação")
+	# etapa 2: combate ou elite
+	run.matar_todos()
+	await _esperar(func(): return run._timer <= 0.0 and run.estado == run.Estado.ESCOLHA, 5.0)
+	run.ui.escolher(0)
+	p.global_position = run.room._centro(12, 3)
+	p.auto_move = Vector2.UP
+	await _esperar(func(): return run.estado == run.Estado.ROTA, 4.0)
+	p.auto_move = Vector2.ZERO
+	check(run.opcoes_rota.size() == 2 and run.opcoes_rota[1]["tipo"] == "elite", "etapa 2 oferece combate ou elite")
+	run.escolher_rota(run.opcoes_rota[1])
+	await _esperar(func(): return run.estado == run.Estado.LUTA, 4.0)
+	check(run.no_atual["tipo"] == "elite" and run.vivos == 7 and run.hud.sala == 2, "elite: sala com 7 inimigos")
+	var antes: int = run.ganhos["fragmentos"]
+	run.matar_todos()
+	await _esperar(func(): return run.estado == run.Estado.ESCOLHA, 5.0)
+	check(run.ganhos["fragmentos"] - antes >= int(run.config["room_clear_fragments"] + run.config["elite_fragments"]), "elite paga fragmentos extras")
+	check(run.ui._ids.size() == int(run.config["upgrade_cards"] + run.config["elite_extra_cards"]), "elite oferece carta extra")
+	run.ui.escolher(0)
+	# etapa 3: combate ou descanso
+	p.hp = 10.0
+	p.global_position = run.room._centro(12, 3)
+	p.auto_move = Vector2.UP
+	await _esperar(func(): return run.estado == run.Estado.ROTA, 4.0)
+	p.auto_move = Vector2.ZERO
+	check(run.opcoes_rota.size() == 2 and run.opcoes_rota[1]["tipo"] == "descanso", "etapa 3 oferece combate ou descanso")
+	run.escolher_rota(run.opcoes_rota[1])
+	await _esperar(func(): return run.estado == run.Estado.LIMPA and run.no_atual["tipo"] == "descanso", 4.0)
+	check(run.vivos == 0 and run.no_atual["tipo"] == "descanso", "descanso não tem inimigos")
+	await _esperar(func(): return run._timer <= 0.0, 3.0)
+	await physics_frame
+	await physics_frame
+	check(run.estado == run.Estado.LIMPA and not run.ui.aberta and p.hp > 10.0 and p.hp <= p.stats["hp_max"], "descanso cura e abre a porta sem cartas")
+	p.global_position = run.room._centro(12, 3)
+	p.auto_move = Vector2.UP
+	await _esperar(func(): return run.estado == run.Estado.LUTA and run.indice == 3, 4.0)
+	p.auto_move = Vector2.ZERO
+	check(run.indice == 3 and run.estado == run.Estado.LUTA, "do descanso direto ao chefe")
+	run.queue_free()
+
+func _testar_meta() -> void:
+	MetaScript.caminho = "user://save_teste_2d.json"
+	DirAccess.remove_absolute(MetaScript.caminho)
+	var m = MetaScript.new()
+	check(not m.carregar() and m.fragmentos == 0, "sem save: começa zerado")
+	check(not m.liberada("multishot") and m.liberada("power"), "multishot nasce bloqueado, power liberado")
+	for id in m.defs:
+		check(Csv.t("meta.%s.name" % id) != "meta.%s.name" % id, "texto de %s" % id)
+	for e in m.drops:
+		check(Csv.t("material." + m.drops[e]["material"]) != "material." + m.drops[e]["material"], "texto do material de %s" % e)
+	check(not m.comprar("unlock_multishot"), "sem fragmentos não compra")
+	m.creditar({"fragmentos": 200, "materiais": {"pedra_cinza": 2}})
+	check(m.comprar("unlock_multishot") and m.liberada("multishot") and m.fragmentos == 200 - m.defs["unlock_multishot"]["custo"], "compra desbloqueia e gasta")
+	check(not m.comprar("unlock_multishot"), "habilidade só compra uma vez")
+	m.comprar("meta_vida")
+	var base := {"hp_max": 100.0, "arrow_damage": 12.0}
+	check(is_equal_approx(m.aplicar(base)["hp_max"], 115.0), "melhoria soma vida máxima")
+
+	# Round-trip do save: a morte e o fechamento do jogo não perdem nada.
+	var m2 = MetaScript.new()
+	check(m2.carregar() and m2.fragmentos == m.fragmentos and m2.materiais["pedra_cinza"] == 2 and m2.nivel("meta_vida") == 1, "save volta idêntico do disco")
+	var f := FileAccess.open(MetaScript.caminho, FileAccess.WRITE)
+	f.store_string("{lixo")
+	f.close()
+	check(not MetaScript.new().carregar(), "save corrompido é ignorado sem travar")
+
+	# Upgrades da corrida respeitam desbloqueios e bônus permanentes.
+	var up = preload("res://scripts2d/upgrades_2d.gd").new()
+	up.meta = m
+	check("multishot" in up.disponiveis() and not ("pierce" in up.disponiveis()), "pool só oferece habilidades liberadas")
+
+	# Integração: a corrida rende fragmentos e materiais, que sobrevivem à morte e ao novo carregamento.
+	DirAccess.remove_absolute(MetaScript.caminho)
+	var run = RunScene.instantiate()
+	run.com_menu = false
+	root.add_child(run)
+	await physics_frame
+	run.player.god_mode = true
+	run.matar_todos()
+	await _esperar(func(): return run.estado == run.Estado.LIMPA, 5.0)
+	check(run.ganhos["fragmentos"] > 0 and not run.ganhos["materiais"].is_empty(), "inimigos mortos dropam fragmentos e materiais")
+	run.player.god_mode = false
+	run.player.invencivel = 0.0
+	run.player.take_damage(1.0e6)
+	await _esperar(func(): return run.menus.tela == run.menus.Tela.FIM, 5.0)
+	var ganho: int = run.meta.fragmentos
+	check(ganho > 0 and run.ganhos["fragmentos"] == 0, "morte credita os ganhos ao saldo")
+	check(MetaScript.new().carregar(), "save existe em disco após a corrida")
+	var depois = MetaScript.new()
+	depois.carregar()
+	check(depois.fragmentos == ganho, "fragmentos persistem entre sessões")
+	run.menus.ao_titulo.emit()
+	run.menus.mostrar_meta()
+	check(run.menus.tela == run.menus.Tela.META, "tela de melhorias abre")
+	paused = false
+	run.queue_free()
+	DirAccess.remove_absolute(MetaScript.caminho)
+
+func _testar_forja() -> void:
+	const BASE := {"hp_max": 100.0, "speed": 100.0, "arrow_damage": 10.0, "dodge_cooldown": 1.0, "shoot_cooldown": 0.4}
+	MetaScript.caminho = "user://save_teste_forja_2d.json"
+	DirAccess.remove_absolute(MetaScript.caminho)
+	var m = MetaScript.new()
+	m.carregar()
+	check(m.receitas.size() >= 6, "receitas.csv carrega")
+	for id in m.receitas:
+		check(Csv.t("recipe.%s.name" % id) != "recipe.%s.name" % id, "texto da receita %s" % id)
+		for mat in m.receitas[id]["custo"]:
+			check(Csv.t("material." + mat) != "material." + mat, "material %s de %s existe" % [mat, id])
+	check(not m.criar("amuleto_osso"), "sem materiais não cria")
+	m.creditar({"fragmentos": 200, "materiais": {"osso_antigo": 10, "pedra_cinza": 1, "essencia_etera": 4}})
+	check(m.criar("amuleto_osso") and m.amuletos.has("amuleto_osso") and m.equipado == "amuleto_osso", "cria e equipa o primeiro amuleto")
+	check(m.materiais["osso_antigo"] == 7 and m.materiais["pedra_cinza"] == 0 and m.fragmentos == 170, "gasta materiais e fragmentos")
+	check(not m.criar("amuleto_osso"), "amuleto só se cria uma vez")
+	check(is_equal_approx(m.aplicar(BASE)["arrow_damage"], 10.5), "amuleto equipado soma o bônus")
+	check(m.criar("amuleto_essencia") and m.equipado == "amuleto_osso", "segundo amuleto não troca o slot sozinho")
+	check(m.equipar("amuleto_essencia") and m.equipado == "amuleto_essencia", "equipar troca o slot")
+	check(m.criar("tonico_vida") and m.estoque["tonico_vida"] == 1, "consumível vai ao estoque")
+	check(is_equal_approx(m.aplicar(BASE)["hp_max"], 100.0), "consumível guardado ainda não vale")
+	var m2 = MetaScript.new()
+	check(m2.carregar() and m2.equipado == "amuleto_essencia" and m2.amuletos.has("amuleto_osso") and m2.estoque["tonico_vida"] == 1, "forja volta idêntica do disco")
+	m2.preparar_corrida()
+	check(is_equal_approx(m2.aplicar(BASE)["hp_max"], 125.0) and m2.estoque["tonico_vida"] == 0, "partir gasta o consumível e aplica o bônus")
+	m2.preparar_corrida()
+	check(is_equal_approx(m2.aplicar(BASE)["hp_max"], 100.0), "sem estoque, a próxima corrida não tem o bônus")
+	# Balanceamento: uma corrida completa rende ~15 materiais; a 1ª receita sai em até uma corrida.
+	var total := 0
+	for e in ["hollow_sentinel", "skeleton_soldier", "skeleton_soldier", "skeleton_soldier", "wandering_ghost", "wandering_ghost", "crypt_bat", "crypt_bat", "chain_wraith", "chain_wraith", "ghost_archer", "ghost_archer", "skeleton_soldier"]:
+		total += m.drop_de(e)["material_qtd"]
+	check(total >= 12, "corrida até a sala 3 rende ao menos 12 materiais (%d)" % total)
+	var custo1 := 0
+	for q in m.receitas["amuleto_osso"]["custo"].values():
+		custo1 += q
+	check(custo1 <= 4, "primeira receita custa até 4 materiais")
+	var run = RunScene.instantiate()
+	run.com_menu = true
+	root.add_child(run)
+	await physics_frame
+	check(run.menus.tela == run.menus.Tela.TITULO, "título abre como hub")
+	run.menus.mostrar_forja()
+	check(run.menus.tela == run.menus.Tela.FORJA, "forja abre pelo hub")
+	paused = false
+	run.queue_free()
+	DirAccess.remove_absolute(MetaScript.caminho)
+
+func _testar_opcoes_steam_tutorial() -> void:
+	var OpcoesScript = preload("res://scripts2d/opcoes_2d.gd")
+	var SteamScript = preload("res://scripts2d/steam_2d.gd")
+	OpcoesScript.caminho = "user://teste_opcoes.json"
+	SteamScript.caminho = "user://teste_steam.json"
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	DirAccess.remove_absolute(SteamScript.caminho)
+	var o = OpcoesScript.new()
+	check(not o.carregar() and is_equal_approx(o.vol["musica"], 0.8) and not o.tutorial_visto, "opcoes: sem arquivo usa os padroes")
+	o.ciclar_volume("master")
+	check(is_equal_approx(o.vol["master"], 0.0), "opcoes: volume 100% volta a 0")
+	o.set_volume("efeitos", 0.5)
+	check(AudioServer.get_bus_index("Musica") >= 0 and AudioServer.get_bus_index("Efeitos") >= 0, "opcoes: barramentos de musica e efeitos")
+	check(AudioServer.is_bus_mute(AudioServer.get_bus_index("Master")) and absf(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Efeitos")) - linear_to_db(0.5)) < 0.1, "opcoes: volume chega ao AudioServer")
+	o.set_volume("master", 1.0)
+	var antes: int = o.tecla("dodge")
+	check(antes == KEY_SPACE, "opcoes: esquiva comeca no Espaco")
+	check(o.remapear("dodge", KEY_SHIFT) and o.tecla("dodge") == KEY_SHIFT, "opcoes: remapear esquiva")
+	var ev_ok := false
+	for ev in InputMap.action_get_events("dodge"):
+		if ev is InputEventKey and ev.physical_keycode == KEY_SHIFT:
+			ev_ok = true
+	check(ev_ok, "opcoes: InputMap recebe a nova tecla")
+	var joy := false
+	for ev in InputMap.action_get_events("dodge"):
+		joy = joy or ev is InputEventJoypadButton
+	check(joy, "opcoes: remapear preserva o controle")
+	check(not o.remapear("dodge", KEY_ESCAPE), "opcoes: Esc e reservado")
+	check(o.remapear("move_up", KEY_SHIFT) and o.tecla("dodge") == KEY_W and o.tecla("move_up") == KEY_SHIFT, "opcoes: tecla repetida troca de lugar")
+	o.set_tela_cheia(true)
+	o.tutorial_visto = true
+	check(o.salvar(), "opcoes: salva em disco")
+	o.restaurar_padroes()
+	check(o.tecla("dodge") == KEY_SPACE and o.tecla("move_up") == KEY_W and o.eh_padrao("dodge"), "opcoes: restaurar teclas")
+	var o2 = OpcoesScript.new()
+	check(o2.carregar() and o2.tecla("dodge") == KEY_W and o2.tecla("move_up") == KEY_SHIFT and o2.tela_cheia and o2.tutorial_visto, "opcoes: volta identica do disco")
+	o2.set_tela_cheia(false)
+	o2.restaurar_teclas()
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	var corrompido := FileAccess.open(OpcoesScript.caminho, FileAccess.WRITE)
+	corrompido.store_string("{ isto nao e json")
+	corrompido.close()
+	check(not OpcoesScript.new().carregar(), "opcoes: arquivo corrompido nao quebra")
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	for a in Csv.rows("res://data2d/teclas.csv"):
+		check(Csv.t(a["loc"]) != a["loc"], "texto da acao %s" % a["acao"])
+	# Steam: sem plugin o jogo segue, conquistas ficam no registro local e voltam depois do reinicio.
+	var st = SteamScript.new()
+	check(not st.iniciar() and not st.disponivel, "steam: sem plugin fica indisponivel sem quebrar")
+	st.tick()
+	check(not st.nuvem_ativa(), "steam: nuvem inativa sem Steam")
+	check(st.evento("evento_que_nao_existe").is_empty(), "steam: evento desconhecido nao desbloqueia")
+	check(st.evento("corrida_fim") == ["primeira_corrida"] and st.evento("corrida_fim").is_empty(), "steam: conquista desbloqueia uma vez")
+	check(SteamScript.new().desbloqueadas.has("primeira_corrida"), "steam: registro local sobrevive ao reinicio")
+	for c in st.conquistas:
+		check(Csv.t(c["loc"]) != c["loc"] and c["steam_id"] != "", "conquista %s tem texto e id da Steam" % c["id"])
+	# Menus e tutorial.
+	MetaScript.caminho = "user://teste_opcoes_meta.json"
+	var run = RunScene.instantiate()
+	run.com_menu = true
+	root.add_child(run)
+	await physics_frame
+	var m = run.menus
+	check(m.opcoes != null and m.steam != null, "menus: opcoes e steam ligadas")
+	m.mostrar_opcoes(m.mostrar_titulo)
+	check(m.tela == m.Tela.OPCOES, "menus: opcoes abrem")
+	m.mostrar_teclas()
+	check(m.tela == m.Tela.TECLAS, "menus: tela de teclas abre")
+	m.mostrar_opcoes()
+	m._fechar_opcoes()
+	check(m.tela == m.Tela.TITULO, "menus: voltar das opcoes reabre o titulo")
+	m.opcoes.tutorial_visto = false
+	m.jogar.emit()
+	check(m.tutorial.ativo and m.tutorial.indice == 0, "tutorial: abre na primeira corrida")
+	check(m.tutorial._rotulo.text.contains(m.opcoes.nome_tecla("move_up")), "tutorial: mostra as teclas atuais")
+	Input.action_press("move_up")
+	await process_frame
+	await process_frame
+	Input.action_release("move_up")
+	check(m.tutorial.indice >= 1, "tutorial: avanca ao mover")
+	m.tutorial._ir(m.tutorial.passos.size())
+	check(not m.tutorial.ativo and m.opcoes.tutorial_visto, "tutorial: termina e nao volta")
+	m.jogar.emit()
+	check(not m.tutorial.ativo, "tutorial: nao repete depois de visto")
+	paused = false
+	run.queue_free()
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	DirAccess.remove_absolute(SteamScript.caminho)
+	DirAccess.remove_absolute(MetaScript.caminho)

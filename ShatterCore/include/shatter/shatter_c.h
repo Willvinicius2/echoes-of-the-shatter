@@ -553,7 +553,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 7u   /* 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 8u   /* 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -1397,6 +1397,184 @@ SHATTER_API shatter_status SHATTER_CALL shatter_story_skill_revealed(const shatt
 SHATTER_API shatter_status SHATTER_CALL shatter_story_quest_event(const shatter_story* story, shatter_save* save,
                                                                   const char* type, size_t type_len, const char* target,
                                                                   size_t target_len, uint32_t* completed) SHATTER_NOEXCEPT;
+
+/* --- Roguelike 2D da Cripta: meta-progressão, Forja, cartas e fluxo da corrida (API 1.8; rogue.h; docs/09 seção 16) ---
+ * Assume as regras de godot/scripts2d/meta_2d.gd, upgrades_2d.gd e run_2d.gd. Combate, movimento, física, spawns e tempo
+ * real ficam no Godot; o core decide economia, progressão e fluxo da corrida. Dados: os CSV de godot/data2d (meta,
+ * receitas, drops, rota, run, run_settings, upgrades), única fonte de números. Sem struct nova: escalares e JSON UTF-8.
+ * Um shatter_rogue é de UMA thread (main thread). Ações que não dão certo (*result != OK) não mudam nada.
+ * Cartas: Pcg32 do core (fluxo próprio, um gerador por sorteio). NÃO reproduz o RandomNumberGenerator do Godot: a paridade é
+ * nas regras, não na sequência. Mesmo seed + dados + ações = mesmo estado e mesmo shatter_rogue_state_hash.
+ * Save do meta: o MESMO JSON do meta_2d.gd ({"versao":1,"fragmentos","materiais","niveis","amuletos","equipado","estoque"}).
+ * Com caminho ligado (shatter_rogue_save_path_set), toda ação do meta que muda o saldo grava sozinha, como o salvar() do
+ * GDScript: comprar, criar, equipar, preparar_corrida, creditar, iniciar corrida (se creditou ganhos pendentes) e
+ * terminar corrida. Se só a gravação falhar, a função devolve SHATTER_IO_ERROR e a mudança fica na memória. */
+typedef struct shatter_rogue shatter_rogue;
+
+/* Resultado das ações do meta. */
+enum { SHATTER_ROGUE_META_OK = 0, SHATTER_ROGUE_META_UNKNOWN = 1, SHATTER_ROGUE_META_MAXED = 2,
+       SHATTER_ROGUE_META_NO_FRAGMENTS = 3, SHATTER_ROGUE_META_NO_MATERIALS = 4, SHATTER_ROGUE_META_ALREADY_OWNED = 5,
+       SHATTER_ROGUE_META_STOCK_FULL = 6, SHATTER_ROGUE_META_NOT_OWNED = 7 };
+/* Resultado da leitura do save do meta (o estado fica zerado em tudo que não é OK, como o carregar() do GDScript). */
+enum { SHATTER_ROGUE_LOAD_OK = 0, SHATTER_ROGUE_LOAD_MISSING = 1, SHATTER_ROGUE_LOAD_BAD_JSON = 2,
+       SHATTER_ROGUE_LOAD_BAD_VERSION = 3 };
+/* Fase da corrida. */
+enum { SHATTER_ROGUE_PHASE_NONE = 0, SHATTER_ROGUE_PHASE_FIGHT = 1, SHATTER_ROGUE_PHASE_CLEARED = 2,
+       SHATTER_ROGUE_PHASE_CHOICE = 3, SHATTER_ROGUE_PHASE_ROUTE = 4, SHATTER_ROGUE_PHASE_WON = 5,
+       SHATTER_ROGUE_PHASE_DEAD = 6 };
+/* Resultado das ações da corrida. */
+enum { SHATTER_ROGUE_RUN_OK = 0, SHATTER_ROGUE_RUN_WRONG_PHASE = 1, SHATTER_ROGUE_RUN_NOT_OFFERED = 2,
+       SHATTER_ROGUE_RUN_UNKNOWN = 3, SHATTER_ROGUE_RUN_NO_HP_STAT = 4 };
+/* Porta usada na sala limpa. */
+enum { SHATTER_ROGUE_DOOR_NOT_READY = 0, SHATTER_ROGUE_DOOR_ENTERED = 1, SHATTER_ROGUE_DOOR_ROUTE = 2,
+       SHATTER_ROGUE_DOOR_VICTORY = 3 };
+
+/* Carrega e valida os 7 CSV da pasta (godot/data2d). Pasta ou arquivo faltando: SHATTER_IO_ERROR; tabela inválida:
+ * SHATTER_CONTENT_INVALID com a 1ª mensagem em `err`. *out fica NULL em erro. Meta zerado e sem corrida. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_load_directory(const char* path, size_t path_len, shatter_rogue** out,
+                                                                     shatter_error* err) SHATTER_NOEXCEPT;
+SHATTER_API void SHATTER_CALL shatter_rogue_destroy(shatter_rogue* rogue) SHATTER_NOEXCEPT;
+/* Valor de run_settings.csv (ex.: clear_delay, room_fade, restart_delay, seed). Chave que não existe: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_setting(const shatter_rogue* rogue, const char* key, size_t key_len,
+                                                              double* out) SHATTER_NOEXCEPT;
+
+/* --- Save do meta --- */
+/* Liga o caminho do arquivo (ex.: user://save_2d.json já resolvido). Vazio desliga a gravação automática. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_save_path_set(shatter_rogue* rogue, const char* path,
+                                                                    size_t path_len) SHATTER_NOEXCEPT;
+/* Lê o save do caminho ligado. *result = SHATTER_ROGUE_LOAD_*. Sem caminho ligado: SHATTER_INVALID_ARGUMENT. Leitura
+ * tolerante: ids desconhecidos descartados, níveis e estoque limitados ao máximo, negativos viram 0, `equipado` só se
+ * criado, consumíveis ativos zerados. Ausente, JSON inválido ou `versao` != 1: meta zerado. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_load(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Grava no caminho ligado (temporário + troca). Falha: SHATTER_IO_ERROR com o motivo em `err`. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_save(const shatter_rogue* rogue, shatter_error* err) SHATTER_NOEXCEPT;
+/* O texto do save (o que meta_save grava). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_save_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                     size_t* needed) SHATTER_NOEXCEPT;
+/* Lê o save de um texto (mesma leitura tolerante de meta_load, sem arquivo). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_load_json(shatter_rogue* rogue, const char* json, size_t len,
+                                                                     int32_t* result) SHATTER_NOEXCEPT;
+
+/* --- Meta: compras, Forja, equipar e consultas --- */
+/* Compra 1 nível de uma melhoria de meta.csv (stat ou habilidade). *result = SHATTER_ROGUE_META_*. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_buy(shatter_rogue* rogue, const char* id, size_t id_len,
+                                                               int32_t* result) SHATTER_NOEXCEPT;
+/* Só confere (pode_comprar); não muda nada. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_can_buy(const shatter_rogue* rogue, const char* id, size_t id_len,
+                                                                   int32_t* result) SHATTER_NOEXCEPT;
+/* Forja: cria um amuleto (o 1º criado se equipa sozinho) ou 1 unidade de consumível. *result = SHATTER_ROGUE_META_*. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_craft(shatter_rogue* rogue, const char* id, size_t id_len,
+                                                                 int32_t* result) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_can_craft(const shatter_rogue* rogue, const char* id, size_t id_len,
+                                                                     int32_t* result) SHATTER_NOEXCEPT;
+/* Equipa o amuleto criado (troca o do slot) ou desequipa se já era ele. Não criado: SHATTER_ROGUE_META_NOT_OWNED. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_equip(shatter_rogue* rogue, const char* id, size_t id_len,
+                                                                 int32_t* result) SHATTER_NOEXCEPT;
+/* Ao partir (botão Jogar): gasta 1 unidade de cada consumível guardado; eles valem só para esta corrida. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_prepare_run(shatter_rogue* rogue) SHATTER_NOEXCEPT;
+/* Credita ganhos no saldo: {"fragmentos": n, "materiais": {id: n}} (formato do GDScript; as duas chaves são opcionais).
+ * Quantidade negativa ou não inteira: SHATTER_PARSE_ERROR; material desconhecido: SHATTER_NOT_FOUND (nada muda). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_credit(shatter_rogue* rogue, const char* gains_json, size_t len,
+                                                                  shatter_error* err) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_fragments(const shatter_rogue* rogue, int64_t* out) SHATTER_NOEXCEPT;
+/* Saldo de um material (0 se não tem). Material que não existe nos dados: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_material(const shatter_rogue* rogue, const char* id, size_t id_len,
+                                                                   int64_t* out) SHATTER_NOEXCEPT;
+/* Nível comprado de uma melhoria de meta.csv. Id desconhecido: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_level(const shatter_rogue* rogue, const char* id, size_t id_len,
+                                                                 int32_t* out) SHATTER_NOEXCEPT;
+/* Estoque de um consumível (amuleto: 1 se criado). Receita desconhecida: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_stock(const shatter_rogue* rogue, const char* id, size_t id_len,
+                                                                 int32_t* out) SHATTER_NOEXCEPT;
+/* tem(): amuleto criado ou consumível com estoque > 0. Receita desconhecida: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_owns(const shatter_rogue* rogue, const char* id, size_t id_len,
+                                                                uint8_t* out) SHATTER_NOEXCEPT;
+/* Habilidade da corrida (id de upgrades.csv) liberada? Upgrade sem entrada "habilidade" em meta.csv nasce liberado.
+ * Upgrade desconhecido: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_unlocked(const shatter_rogue* rogue, const char* upgrade_id,
+                                                                     size_t upgrade_id_len, uint8_t* out) SHATTER_NOEXCEPT;
+/* Tudo o que a tela de meta e a Forja mostram:
+ * {"fragments","materials":[{"id","qty"}] (todos os materiais conhecidos),"equipped":"" ,
+ *  "upgrades":[{"id","kind":"stat"|"ability","target","stat","mode","value","cost","level","max_level","can_buy":code}],
+ *  "recipes":[{"id","kind":"amulet"|"consumable","stat","mode","value","cost":[{"id","qty"}],"fragments","max_stock",
+ *              "owned","stock","active","equipped","can_craft":code}]}  (code = SHATTER_ROGUE_META_*; ordem dos CSV). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_meta_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                size_t* needed) SHATTER_NOEXCEPT;
+/* Ganho de um inimigo morto (drop_de): {"enemy","fragments","material","material_qty"}; inimigo sem drop: {}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_drop_json(const shatter_rogue* rogue, const char* enemy_id,
+                                                                size_t enemy_id_len, uint8_t* out, size_t cap,
+                                                                size_t* needed) SHATTER_NOEXCEPT;
+
+/* --- Stats ---
+ * Entrada e saída: objeto JSON stat -> número ({"hp_max":100,"arrow_damage":10,...}); a saída mantém a ordem da entrada.
+ * Aplica o amuleto equipado, os consumíveis ativos (ordem de receitas.csv) e as melhorias de stat (ordem de meta.csv, uma
+ * vez por nível); com include_run = 1 e corrida em curso, também os upgrades escolhidos (ordem de upgrades.csv). Stat que não
+ * está na entrada é ignorado. Valor que não é número: SHATTER_PARSE_ERROR. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_stats_apply(const shatter_rogue* rogue, const char* base_json,
+                                                                  size_t len, uint8_t include_run, uint8_t* out, size_t cap,
+                                                                  size_t* needed, shatter_error* err) SHATTER_NOEXCEPT;
+
+/* --- Corrida --- */
+/* Começa a corrida (iniciar_corrida): credita os ganhos pendentes da anterior (abandono também rende), guarda os stats base
+ * do jogador com o meta aplicado (restaurar), zera upgrades e ganhos e entra no caminho padrão da etapa 0. O cliente passa
+ * seed = setting "seed" + nº da corrida, como o GDScript. base_json como em shatter_rogue_stats_apply. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_start(shatter_rogue* rogue, uint64_t seed, const char* base_json,
+                                                                size_t len, shatter_error* err) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_phase(const shatter_rogue* rogue, int32_t* out) SHATTER_NOEXCEPT;
+/* Caminhos da etapa (0 = primeira): [{"id","kind","room","enemies":[{"id","count"}],"enemy_total"}], o padrão de run.csv
+ * (id e kind "combate") e depois as alternativas de rota.csv. Etapa fora da faixa: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_paths_json(const shatter_rogue* rogue, uint32_t stage, uint8_t* out,
+                                                                     size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Inimigo morto (qualquer fase com corrida): soma o drop aos ganhos; na luta, o último vivo limpa a sala
+ * (+ room_clear_fragments, + elite_fragments na elite) e sorteia as cartas (upgrade_cards, + elite_extra_cards na elite;
+ * nenhuma na última sala nem no descanso). *room_cleared = 1 se esta morte limpou a sala (fase vira CHOICE com cartas, ou
+ * CLEARED sem). Sem corrida: *result = WRONG_PHASE. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_enemy_killed(shatter_rogue* rogue, const char* enemy_id,
+                                                                       size_t enemy_id_len, uint8_t* room_cleared,
+                                                                       int32_t* result) SHATTER_NOEXCEPT;
+/* Escolhe uma das cartas oferecidas (fase CHOICE): sobe o nível e abre a porta (CLEARED). *hp_out = hp + o ganho de hp_max
+ * (se subiu). Carta fora da oferta: NOT_OFFERED. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_choose_card(shatter_rogue* rogue, const char* upgrade_id,
+                                                                      size_t upgrade_id_len, double hp, double* hp_out,
+                                                                      int32_t* result) SHATTER_NOEXCEPT;
+/* Sala de descanso: *hp_out = min(hp_max, hp + hp_max x rest_heal), com hp_max dos stats da corrida. Uma vez por sala de
+ * descanso (a porta já está aberta e não há cartas). Fora do descanso: WRONG_PHASE; stats sem hp_max: NO_HP_STAT. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_rest(shatter_rogue* rogue, double hp, double* hp_out,
+                                                               int32_t* result) SHATTER_NOEXCEPT;
+/* Porta usada (fase CLEARED): *result = SHATTER_ROGUE_DOOR_*. Na última sala é a vitória (+ victory_fragments, fase WON);
+ * com bifurcação a fase vira ROUTE e a escolha vem por shatter_rogue_run_choose_path. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_door(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Caminho escolhido na bifurcação (fase ROUTE): índice em shatter_rogue_run_paths_json da etapa atual. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_choose_path(shatter_rogue* rogue, uint32_t path_index,
+                                                                      int32_t* result) SHATTER_NOEXCEPT;
+/* Jogador morreu (fase vira DEAD). Sem corrida, já morto ou já vencida: WRONG_PHASE. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_player_died(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Fim da corrida (depois de mostrar o resumo): credita os ganhos no meta e volta à fase NONE. Sem corrida: WRONG_PHASE. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_finish(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Estado da corrida: {"phase":"none|fight|cleared|choice|route|won|dead","stage","stages_total","node":{...}|null,
+ * "alive","rest_pending","offer":[ids],"upgrades":[{"id","stat","mode","value","level","max_level","unlocked"}],
+ * "route_options":[caminhos] (só na fase route),"gains":{"fragments","materials":[{"id","qty"}]}}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                               size_t* needed) SHATTER_NOEXCEPT;
+/* Stats finais da corrida (base com o meta guardada no início + upgrades), mesmo formato de stats_apply. Sem corrida: {}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_stats_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                     size_t* needed) SHATTER_NOEXCEPT;
+/* Resumo do fim: {"victory","stage_reached","stages_total","upgrades_total","fragments","materials":[{"id","qty"}]}.
+ * O tempo da corrida é do cliente (relógio de jogo). Ler ANTES de shatter_rogue_run_finish. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_summary_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                       size_t* needed) SHATTER_NOEXCEPT;
+
+/* --- Estado completo e determinismo --- */
+/* Estado inteiro (meta + consumíveis ativos + corrida, inclusive o nº de sorteios) em JSON canônico. Retomar com
+ * shatter_rogue_state_restore continua exatamente do mesmo ponto (simular em partes = de uma vez). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_state_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                 size_t* needed) SHATTER_NOEXCEPT;
+/* Inválido: SHATTER_PARSE_ERROR e nada muda. Não grava o save. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_state_restore(shatter_rogue* rogue, const char* json, size_t len,
+                                                                    shatter_error* err) SHATTER_NOEXCEPT;
+/* SHA-256 (64 caracteres hex minúsculos) do estado canônico. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_state_hash(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                 size_t* needed) SHATTER_NOEXCEPT;
 
 #ifdef __cplusplus
 }  /* extern "C" */

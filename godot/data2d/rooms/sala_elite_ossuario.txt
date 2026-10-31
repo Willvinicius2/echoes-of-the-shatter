@@ -1,0 +1,26 @@
+############D###########
+############D###########
+#......................#
+#..B....O........O..B..#
+#......................#
+#...E..........E.......#
+#.......rrrrrrrr.......#
+#...E...r......r...E...#
+#.......r..E...r.......#
+#.......rrrrrrrr.......#
+#....E.......E....E....#
+#..B........P.......B..#
+########################
+@props
+sarcophagus_closed 3.0 5.2
+sarcophagus_open 20.5 5.4
+skull_pile 5.8 3.4
+skull_mound_candles 18.2 3.2
+ribcage_arch 12.5 7.4
+bones_scattered 9.4 9.2
+bones_chains 15.2 9.4
+skeleton_curled 4.4 8.8
+skull_teal_eyes 20.2 8.6
+altar_candles 12 5.4
+rock_rubble 21.6 10.2
+pillar_cracked 2.0 9.6

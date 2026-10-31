@@ -1,0 +1,192 @@
+extends SceneTree
+## Corridas automáticas (bot) do cliente 2D, sem god mode, para achar travas e picos de dificuldade:
+##   godot --headless --fixed-fps 600 --path godot --script res://scripts2d/tools/corridas_2d.gd -- [corridas=10] [saida_dir=.] [seed=1]
+## Use --fixed-fps 600: sem ele o headless anda em tempo real (uma corrida leva ~100 s) e com ele ~10x mais rápido.
+## Escreve metricas_corridas.json e metricas_corridas.md em saida_dir.
+## Sai com código 1 se alguma corrida travar (sem avançar de sala por tempo demais) ou der erro.
+
+const Csv = preload("res://scripts2d/csv2d.gd")
+const RunScene = preload("res://scenes2d/Run2D.tscn")
+
+const LIMITE_SALA := 240.0     # s simulados numa sala sem sair dela = travou
+const LIMITE_CORRIDA := 1500.0 # s simulados numa corrida inteira = travou
+
+var n_corridas := 10
+var saida := "."
+var semente := 1
+var rng := RandomNumberGenerator.new()
+var run
+var resultados: Array = []
+var _na_porta := false
+
+func _initialize() -> void:
+	var args := OS.get_cmdline_user_args()
+	if args.size() > 0:
+		n_corridas = int(args[0])
+	if args.size() > 1:
+		saida = args[1]
+	if args.size() > 2:
+		semente = int(args[2])
+	rng.seed = semente
+	await _executar()
+
+func _executar() -> void:
+	run = RunScene.instantiate()
+	run.com_menu = false
+	root.add_child(run)
+	await physics_frame
+	for i in n_corridas:
+		resultados.append(await _corrida(i))
+		if i < n_corridas - 1:
+			await _proxima()
+	var travadas := 0
+	for r in resultados:
+		if r["resultado"] == "travou":
+			travadas += 1
+	_gravar()
+	print("corridas=%d vitorias=%d mortes=%d travadas=%d" % [n_corridas, _contar("vitoria"), _contar("morte"), travadas])
+	quit(1 if travadas > 0 else 0)
+
+func _contar(res: String) -> int:
+	var n := 0
+	for r in resultados:
+		if r["resultado"] == res:
+			n += 1
+	return n
+
+## Volta ao início depois de morrer ou vencer (mesmo caminho do botão "jogar de novo").
+func _proxima() -> void:
+	await _esperar(func(): return run.menus.tela == run.menus.Tela.FIM, 8.0)
+	run.menus.jogar.emit()
+	await physics_frame
+
+func _esperar(cond: Callable, limite: float) -> void:
+	var t := 0.0
+	while not cond.call() and t < limite:
+		await physics_frame
+		t += 1.0 / 60.0
+
+func _corrida(n: int) -> Dictionary:
+	var p = run.player
+	p.god_mode = false
+	var salas_tempo := {}   # sala (1..N) -> segundos simulados
+	var r := {"corrida": n + 1, "resultado": "travou", "sala_final": 1, "morreu_na_sala": 0, "tempo": 0.0, "cartas": 0, "vida_final": 0.0, "salas": salas_tempo}
+	var sala := 0
+	var t_sala := 0.0
+	var t_corrida := 0.0
+	var esquiva_t := 0.0
+	while true:
+		await physics_frame
+		var dt := 1.0 / 60.0
+		t_corrida += dt
+		t_sala += dt
+		if run.indice != sala:
+			sala = run.indice
+			t_sala = 0.0
+		salas_tempo[sala + 1] = float(salas_tempo.get(sala + 1, 0.0)) + dt
+		r["sala_final"] = sala + 1
+		if int(t_corrida * 60.0) % 600 == 0:
+			print("[bot] wall=%d corrida %d t=%.0f sala=%d estado=%d vivos=%d hp=%.0f" % [Time.get_ticks_msec() / 1000, n + 1, t_corrida, sala + 1, run.estado, run.vivos, p.hp])
+		r["vida_final"] = p.hp
+		if run.estado == run.Estado.VENCEU:
+			r["resultado"] = "vitoria"
+			break
+		if run.estado == run.Estado.MORTO:
+			r["resultado"] = "morte"
+			r["morreu_na_sala"] = sala + 1
+			break
+		if t_sala > LIMITE_SALA or t_corrida > LIMITE_CORRIDA:
+			push_error("corrida %d travada na sala %d (estado %d)" % [n + 1, sala + 1, run.estado])
+			break
+		esquiva_t = maxf(0.0, esquiva_t - dt)
+		if Input.is_action_pressed("dodge"):
+			Input.action_release("dodge")
+		if _agir(p, esquiva_t <= 0.0):
+			esquiva_t = 1.0
+		if run.estado == run.Estado.ESCOLHA and run.ui.aberta:
+			run.ui.escolher(rng.randi_range(0, maxi(0, run.ui._ids.size() - 1)))
+			r["cartas"] += 1
+		elif run.estado == run.Estado.ROTA:
+			run.escolher_rota(run.opcoes_rota[rng.randi_range(0, run.opcoes_rota.size() - 1)])
+	r["tempo"] = run.tempo
+	p.auto_aim = Vector2.ZERO
+	p.auto_move = Vector2.ZERO
+	return r
+
+## Bot simples: mira no inimigo mais próximo, mantém distância, esquiva de perto; sala limpa -> vai à porta.
+func _agir(p, pode_esquivar: bool) -> bool:
+	if run.estado == run.Estado.LIMPA:
+		if run._timer <= 0.0 and run.room.celulas_porta.size():
+			p.auto_aim = Vector2.ZERO
+			if not _na_porta:   # teleporta uma vez para o corredor da porta, como no teste da corrida
+				p.global_position = run.room._centro(12, 3)
+				_na_porta = true
+			p.auto_move = Vector2.UP
+		return false
+	_na_porta = false
+	if run.estado != run.Estado.LUTA:
+		p.auto_aim = Vector2.ZERO
+		p.auto_move = Vector2.ZERO
+		return false
+	var alvo = null
+	var melhor := INF
+	for n in get_nodes_in_group("hurtable"):
+		if not is_instance_valid(n):
+			continue
+		var d: float = n.global_position.distance_to(p.global_position)
+		if d < melhor:
+			melhor = d
+			alvo = n
+	if alvo == null:
+		p.auto_aim = Vector2.ZERO
+		p.auto_move = Vector2.ZERO
+		return false
+	var para: Vector2 = alvo.global_position - p.global_position
+	p.auto_aim = para
+	var lado := Vector2(-para.y, para.x).normalized()
+	if melhor < 170.0:
+		p.auto_move = (-para.normalized() + lado * 0.6).normalized()
+		if pode_esquivar and melhor < 100.0:
+			Input.action_press("dodge")
+	elif melhor > 340.0:
+		p.auto_move = para.normalized()
+	else:
+		p.auto_move = lado
+	return Input.is_action_pressed("dodge")
+
+func _gravar() -> void:
+	DirAccess.make_dir_recursive_absolute(saida)
+	var f := FileAccess.open(saida.path_join("metricas_corridas.json"), FileAccess.WRITE)
+	f.store_string(JSON.stringify({"corridas": resultados, "semente": semente}, "\t"))
+	f.close()
+	var n := resultados.size()
+	var por_sala := {}   # sala -> {mortes, tempo_total, passagens}
+	var tempos := []
+	for r in resultados:
+		tempos.append(float(r["tempo"]))
+		for s in r["salas"]:
+			var d: Dictionary = por_sala.get(s, {"mortes": 0, "tempo": 0.0, "n": 0})
+			d["tempo"] += r["salas"][s]
+			d["n"] += 1
+			if int(r["morreu_na_sala"]) == int(s):
+				d["mortes"] += 1
+			por_sala[s] = d
+	var md := "# Métricas de corridas automáticas\n\n"
+	md += "Corridas: %d | vitórias: %d | mortes: %d | travadas: %d | semente: %d\n\n" % [n, _contar("vitoria"), _contar("morte"), _contar("travou"), semente]
+	md += "| Sala | Entradas | Mortes | Tempo médio (s) |\n|---|---|---|---|\n"
+	var chaves := por_sala.keys()
+	chaves.sort()
+	for s in chaves:
+		var d: Dictionary = por_sala[s]
+		md += "| %d | %d | %d | %.1f |\n" % [s, d["n"], d["mortes"], d["tempo"] / maxf(1.0, d["n"])]
+	var soma := 0.0
+	for t in tempos:
+		soma += t
+	md += "\nTempo médio de corrida: %.1f s\n\n" % (soma / maxf(1.0, n))
+	md += "| # | Resultado | Sala final | Tempo (s) | Cartas | Vida final |\n|---|---|---|---|---|---|\n"
+	for r in resultados:
+		md += "| %d | %s | %d | %.1f | %d | %.0f |\n" % [r["corrida"], r["resultado"], r["sala_final"], r["tempo"], r["cartas"], r["vida_final"]]
+	var g := FileAccess.open(saida.path_join("metricas_corridas.md"), FileAccess.WRITE)
+	g.store_string(md)
+	g.close()
+	print(md)
