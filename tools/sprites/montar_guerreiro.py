@@ -124,12 +124,22 @@ def separa_v2(img, n):
     return [limpa_ilhas(b[2]) for b in blocos]
 
 
+def tira_magenta(img):
+    """Remove o reflexo magenta que o fundo deixa nas bordas do metal (só onde vermelho e azul passam do verde)."""
+    a = np.asarray(img).astype(float)
+    mag = np.minimum(a[..., 0], a[..., 2]) - a[..., 1]
+    corte = np.clip(mag - 12, 0, None) * 0.9
+    a[..., 0] -= corte
+    a[..., 2] -= corte
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+
+
 def montar_v2(anim, v2_dir):
     """Corrida e idle desenhados quadro a quadro (v2): uma folha bruta por direção, sem animação por código."""
     n = ANIMS[anim]
     folha = Image.new("RGBA", (W * n, W * 5), (0, 0, 0, 0))
     for d, nome in enumerate(DIRS_V2):
-        img = sem_fundo(Image.open(os.path.join(v2_dir, f"{anim}_{nome}.png")))
+        img = tira_magenta(sem_fundo(Image.open(os.path.join(v2_dir, f"{anim}_{nome}.png"))))
         quadros = separa_v2(img, n)
         alts = sorted(bbox(f)[3] - bbox(f)[1] for f in quadros)
         s = ALTURA_V2[anim] / float(np.median(alts))
