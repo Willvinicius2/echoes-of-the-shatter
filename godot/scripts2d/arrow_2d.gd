@@ -9,6 +9,11 @@ var velocity := Vector2.ZERO
 var damage := 0.0
 var max_dist := 1000.0
 var pierce := 0  # inimigos que ainda pode atravessar (upgrade)
+var veneno_dps := 0.0       # habilidade Pontas Venenosas
+var veneno_t := 0.0
+var explode_raio := 0.0     # habilidade Flecha Explosiva: explode ao acertar
+var explode_dano := 0.0
+var cor_fx := Color(0.8, 0.8, 0.8)
 var _viajado := 0.0
 var _trilha: Line2D
 var _cor := Color(0.45, 1.0, 0.5)
@@ -84,12 +89,22 @@ func _on_body(corpo: Node) -> void:
 	if corpo.has_method("take_damage"):
 		Feel.impacto(get_parent(), ponta, _cor, velocity.normalized() * -1.0)
 		corpo.take_damage(damage, global_position - velocity.normalized() * 8.0)
+		if veneno_dps > 0.0 and corpo.has_method("aplicar_status"):
+			corpo.aplicar_status("veneno", veneno_t, veneno_dps)
 		if pierce > 0:
 			pierce -= 1
 			return
 	elif is_inside_tree():
 		Feel.impacto(get_parent(), ponta, Color(0.8, 0.8, 0.8), velocity.normalized() * -1.0)
+	if explode_raio > 0.0 and is_inside_tree():
+		_explodir()
 	_fim()
+
+func _explodir() -> void:
+	Feel.impacto(get_parent(), global_position + Vector2(0, -30), cor_fx, Vector2.ZERO, explode_raio / 40.0)
+	for n in get_tree().get_nodes_in_group("hurtable"):
+		if n is Node2D and n.global_position.distance_to(global_position) <= explode_raio:
+			n.take_damage(explode_dano, global_position)
 
 ## Solta o rastro para sumir sozinho e remove a flecha.
 func _fim() -> void:
