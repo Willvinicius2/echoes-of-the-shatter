@@ -42,3 +42,21 @@ Os pacotes H1, H2, H3 e H5 andam em paralelo; cada um é dono só dos arquivos l
 - O jogador só move, esquiva, usa a ult e o item ativo; todo o resto dispara sozinho.
 - O bot de corridas (10 corridas, 3 classes) termina sem erro, e a taxa de morte por onda fica dentro da faixa do `curva_horda.csv`.
 - Nenhum prop parece flutuar e ninguém passa por baixo da ponte, conferido em capturas no build.
+
+## 5. Ideias da referência de hordas (análise do PokeBonk, 31/10)
+Uma sessão no PC do Will analisou um jogo de hordas como referência de estrutura (notas em `D:\openclaude\research\pokebonk\notas\`). Só a estrutura serve de inspiração: nenhum código, nome ou número exato entra no jogo. O Jev avaliou cada ideia (agora, depois do primeiro teste, ou não):
+
+| Ideia | Decisão | Probabilidades (agora / depois / não) | Conf. | Pacote |
+|---|---|---|---|---|
+| Spawn em anel ao redor do jogador, fora da tela | **Agora** | 50 / 37 / 13 | 0,25 (provisória) | H3 (regra) e H1 (raio da tela, bordas do mapa) |
+| Fase com prazo: no fim do tempo vem um enxame final; antes disso o jogador acorda o Guardião e abre o portal | **Agora**, como variante do "Guardião na última onda" | 51 / 38 / 11 | 0,26 (provisória) | H3 (gatilho e enxame), H1 (Guardião e portal no mapa) |
+| Vida do chefe adaptativa: DPS medido do jogador × um tempo-alvo de luta (no CSV) | **Agora** | 57 / 38 / 5 | 0,35 (provisória) | H4 (o cliente mede, o core recebe o DPS como entrada e calcula, mantendo o determinismo) |
+| Level up com 3 cartas, ao menos 1 de habilidade de ataque, reroll/pular/banir limitados | **Agora** | 62 / 35 / 3 | 0,43 (provisória) | H4 (regra no core), H6 (botões) |
+| Diretor por orçamento (créditos por segundo, cada inimigo custa pela força) no lugar das ondas | Depois | 8 / 60 / 32 | 0,40 | backlog do H3; as ondas contadas já usam orçamento por onda |
+| Baralho de espécies (um tipo novo por minuto) | Depois | 18 / 67 / 15 | 0,50 | backlog do H3 |
+| Teto de vivos que "condensa" inimigos novos em um mais forte | Depois | 41 / 49 / 10 | 0,24 | backlog do H3; o H3 deixa o teto como número no CSV |
+| Escala separada por atributo (vida rápido, dano devagar, velocidade com teto) | Depois | 41 / 53 / 6 | 0,30 | backlog do H4; o `curva_horda.csv` já nasce com uma coluna por atributo para isso caber sem migração |
+| Eventos com horário fixo (alfa gigante, enxame em anel, manada em linha, onda de elites, totens) | Depois | 31 / 64 / 5 | 0,46 | backlog do H3 |
+| 3 habilidades de ataque + 3 passivas, nível máximo, fusão | Depois | 14 / 69 / 17 | 0,53 | backlog; hoje a árvore tem 4 slots (doc 29) |
+| Arena procedural com um bioma por zona | Depois | 30 / 55 / 15 | 0,33 | backlog do H1; a primeira fase é feita à mão |
+| Moeda comum com custo crescente e moeda rara só de chefes | Depois | 25 / 65 / 10 | 0,48 | backlog do meta (`meta.csv`) |
