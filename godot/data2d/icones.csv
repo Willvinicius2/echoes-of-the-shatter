@@ -28,3 +28,24 @@ skill.mage.static_charge,raio,#fff08a,habilidade do mago (placeholder)
 skill.mage.thunderstorm,raio,#fff36b,habilidade do mago (placeholder)
 skill.mage.mana_surge,coracao,#b36bff,habilidade do mago (placeholder)
 skill.mage.overload,raio,#ffffff,habilidade do mago (placeholder)
+golpe,espada,#e6e1d6,Golpe de espada (guerreiro)
+w_keen_edge,espada,#e6e1d6,Fio Afiado
+w_heavy_slash,espada,#e8873a,Talho Pesado
+w_whirlwind,impacto,#c9c9d9,Redemoinho
+w_executioner,lanca,#b52a2a,Carrasco
+w_flame_brand,chama,#e8873a,Lamina Ardente
+w_stone_rift,onda,#b08a58,Fenda de Pedra
+w_iron_skin,escudo,#7d8fa8,Pele de Ferro
+w_vigor,coracao,#b52a2a,Vigor
+w_shield_bash,escudo,#3fa3c9,Escudada
+w_guard_stance,escudo,#c9a45c,Postura de Guarda
+w_second_wind,coracao,#6ec06e,Folego
+w_retaliation,impacto,#d9643a,Revide
+w_last_stand,escudo,#f0e0a0,Ultima Resistencia
+w_charge,passo,#d9643a,Investida
+w_swift,bota,#6ec06e,Passo de Guerra
+w_battle_cry,raio,#e0c040,Grito de Guerra
+w_momentum,seta,#d9643a,Impeto Crescente
+w_bloodlust,chama,#b52a2a,Sede de Sangue
+w_leap_slam,onda,#e0c040,Salto Sismico
+w_rampage,impacto,#b52a2a,Furia Descontrolada

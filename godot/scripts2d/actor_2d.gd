@@ -10,6 +10,7 @@ var sprite: AnimatedSprite2D
 var shadow_radius := 18.0
 var _anim_base := ""
 var _flash := 0.0
+var _fase_respiro := randf() * TAU  # fase própria: atores juntos não respiram em uníssono
 var _shake_t := 0.0
 var _shake_total := 0.0
 var _shake_px := 0.0
@@ -91,7 +92,18 @@ func _process(delta: float) -> void:
 			sprite.position = Vector2.from_angle(randf() * TAU) * _shake_px * clampf(_shake_t / _shake_total, 0.0, 1.0)
 		else:
 			sprite.position = Vector2.ZERO
+		_respirar(delta)
 	queue_redraw()
+
+## Respiração do idle por código (os quadros da folha mal mudam): o corpo estica de 2 a 3 px a partir dos pés.
+func _respirar(delta: float) -> void:
+	if _anim_base == "idle":
+		_fase_respiro += delta * 2.4
+		var r := sin(_fase_respiro)
+		var k := 1.0 / escala_sprite()  # sprite maior (chefe) respira a mesma quantidade de px, não a mesma fração
+		sprite.scale = Vector2(1.0 - 0.012 * k * r, 1.0 + 0.026 * k * r)
+	elif sprite.scale != Vector2.ONE:
+		sprite.scale = Vector2.ONE
 
 func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.4))

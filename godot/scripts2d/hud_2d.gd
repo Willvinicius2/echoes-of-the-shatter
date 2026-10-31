@@ -135,7 +135,8 @@ func _desenhar_upgrades() -> void:
 		var sel := r.has_point(mouse)
 		if sel:
 			_ctl.draw_rect(r, Tema.cor("destaque"), false, 2.0)
-			dica = "%s x%d" % [Csv.t("upgrade.%s.name" % id), nv]
+			var chave := "skill.%s.name" if upgrades.defs[id].has("ramo") else "upgrade.%s.name"  # habilidades têm ramo
+			dica = "%s x%d" % [Csv.t(chave % id), nv]
 			dica_pos = Vector2(r.position.x, r.end.y + 6)
 		if nv > 1:
 			var tag := Rect2(r.end.x - 20, r.end.y - 14, 22, 16)
@@ -165,10 +166,14 @@ func _desenhar_habilidades(vp: Vector2) -> void:
 	var fr := Rect2((vp.x - bw) * 0.5, y0 - 24.0, bw, 7.0).grow(4)
 	for q in [fr.position, Vector2(fr.end.x, fr.position.y), Vector2(fr.position.x, fr.end.y), fr.end]:
 		Arte.rebite(_ctl, q, 2.4)
-	var slots := [
+	var slots: Array = [
 		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": rec_esq, "cor": Tema.cor("estamina")},
 	]
+	if jogador.has_method("slots_hud"):  # guerreiro: golpe, esquiva e as ativas aprendidas
+		slots = jogador.slots_hud()
+		for sl in slots:
+			sl["cor"] = Tema.cor("estamina") if sl["icone"] == "esquiva" else Tema.cor("destaque")
 	for i in total:
 		var r := Rect2(x0 + i * (lado + esp), y0, lado, lado)
 		if i < slots.size():
