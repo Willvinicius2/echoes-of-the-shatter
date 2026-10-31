@@ -1,0 +1,36 @@
+chave,valor,unidade,nota
+hp_max,80,hp,vida do mago (menos que o arqueiro)
+speed,250,px/s,velocidade de corrida
+accel,2400,px/s2,aceleracao
+friction,3000,px/s2,desaceleracao
+radius,14,px,raio de colisao nos pes
+shoot_cooldown,0.45,s,intervalo entre orbes arcanos (ataque basico)
+arrow_speed,720,px/s,velocidade do orbe arcano
+arrow_damage,14,hp,dano do orbe arcano
+arrow_range,950,px,alcance maximo do orbe
+arrow_spawn_dist,36,px,distancia do orbe a partir dos pes
+dodge_speed,620,px/s,velocidade da esquiva
+dodge_time,0.25,s,duracao da esquiva
+dodge_cooldown,0.9,s,recarga da esquiva
+hit_iframes,0.6,s,invulnerabilidade apos levar dano
+attack_move_mult,0.6,x,fator de velocidade enquanto conjura o basico
+arrow_count,1,orbes,orbes por disparo
+arrow_pierce,0,corpos,inimigos atravessados pelo orbe
+multishot_spread,10,graus,abertura entre orbes
+mana_max,100,mana,reserva de mana
+mana_regen,8,mana/s,regeneracao de mana
+bolt_radius,7,px,raio do orbe arcano
+cooldown_mult,1.0,x,multiplicador de recarga das habilidades (passivas mexem)
+spell_power,1.0,x,multiplicador de dano das habilidades
+burn_bonus,0,x,bonus de dano da queimadura (passiva Brasas Vivas)
+slow_bonus,0,x,bonus de lentidao (passiva Frio Cortante)
+burn_dps_ratio,0.25,x,dano por segundo da queimadura = dano do golpe x este valor
+burn_duration,3,s,duracao da queimadura
+slow_amount,0.45,x,fracao de velocidade perdida na lentidao
+slow_duration,2.5,s,duracao da lentidao
+freeze_duration,1.2,s,duracao do congelamento (atordoamento do inimigo)
+stun_duration,0.5,s,duracao do atordoamento do raio
+thunder_strike_radius,45,px,raio de cada raio da Tempestade
+blink_iframes,0.35,s,invulnerabilidade depois do Salto Arcano
+chain_ray_time,0.18,s,tempo que o raio da Corrente fica na tela
+skill_points_start,6,pontos,pontos de habilidade no inicio da corrida
