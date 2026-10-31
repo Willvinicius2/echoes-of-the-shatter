@@ -148,3 +148,53 @@ ach.first_run,Primeira expedicao
 ach.crypt_cleared,Cripta vencida
 ach.first_forge,Primeira criacao na Forja
 ach.first_upgrade,Primeira melhoria permanente
+ramo.lamina,Lamina
+ramo.baluarte,Baluarte
+ramo.impeto,Impeto
+hud.key.skill1,Q
+hud.key.skill2,E
+hud.key.skill3,F
+hud.key.skill4,R
+class.guerreiro.name,Guerreiro
+menu.class,Classe: %s
+class.arqueiro.name,Arqueiro
+skill.w_keen_edge.name,Fio Afiado
+skill.w_keen_edge.desc,+20% de dano da espada
+skill.w_heavy_slash.name,Talho Pesado
+skill.w_heavy_slash.desc,"Golpe lento em cone largo: 2,6x de dano. Recarga 5s"
+skill.w_whirlwind.name,Redemoinho
+skill.w_whirlwind.desc,"Gira a espada e acerta todos em volta: 1,6x de dano. Recarga 7s"
+skill.w_executioner.name,Carrasco
+skill.w_executioner.desc,+40% de dano contra inimigos com menos de 30% de vida
+skill.w_flame_brand.name,Lamina Ardente
+skill.w_flame_brand.desc,Os golpes queimam o alvo: +4 de dano por segundo durante 3s
+skill.w_stone_rift.name,Fenda de Pedra
+skill.w_stone_rift.desc,Rasga o chao em linha reta: 2x de dano a longa distancia. Recarga 9s
+skill.w_iron_skin.name,Pele de Ferro
+skill.w_iron_skin.desc,-8% de dano recebido
+skill.w_vigor.name,Vigor
+skill.w_vigor.desc,+30 de vida maxima e cura a mesma quantidade
+skill.w_shield_bash.name,Escudada
+skill.w_shield_bash.desc,Atordoa e empurra quem esta a frente (chefes resistem). Recarga 4s
+skill.w_guard_stance.name,Postura de Guarda
+skill.w_guard_stance.desc,Segure a tecla: bloqueia 70% do dano pela frente e ganha impeto ao bloquear
+skill.w_second_wind.name,Folego
+skill.w_second_wind.desc,Regenera 2 de vida por segundo depois de 3s sem levar dano
+skill.w_retaliation.name,Revide
+skill.w_retaliation.desc,"Ao ser atingido, um pulso machuca quem esta perto"
+skill.w_last_stand.name,Ultima Resistencia
+skill.w_last_stand.desc,"Uma vez por corrida: ao cair a zero, volta com vida e fica invulneravel por instantes"
+skill.w_charge.name,Investida
+skill.w_charge.desc,"Avanca em linha reta, invulneravel, atordoando quem atravessa. Recarga 6s"
+skill.w_swift.name,Passo de Guerra
+skill.w_swift.desc,+10% de velocidade
+skill.w_battle_cry.name,Grito de Guerra
+skill.w_battle_cry.desc,Empurra os inimigos e aumenta seu dano em 35% por 6s. Recarga 14s
+skill.w_momentum.name,Impeto Crescente
+skill.w_momentum.desc,+4 de impeto por golpe que acerta (o impeto aumenta o dano)
+skill.w_bloodlust.name,Sede de Sangue
+skill.w_bloodlust.desc,Recupera 4% do dano causado em vida
+skill.w_leap_slam.name,Salto Sismico
+skill.w_leap_slam.desc,"Salta e cai com um tremor: 1,8x de dano e atordoamento em area. Recarga 10s"
+skill.w_rampage.name,Furia Descontrolada
+skill.w_rampage.desc,"Gasta 50 de impeto: por 7s ataca 50% mais rapido, causa +30% de dano e rouba vida"

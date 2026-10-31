@@ -38,7 +38,8 @@ func _desenhar() -> void:
 			var nv: int = upgrades.nivel(id)
 			if nv > 0:
 				_ctl.draw_texture_rect(Icones.textura(id), Rect2(_lay["margem"], y - 16, 20, 20), false)
-				_ctl.draw_string(fonte, Vector2(_lay["margem"] + 28, y), "%s x%d" % [Csv.t("upgrade.%s.name" % id), nv], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Tema.cor("texto"))
+				var chave := "skill.%s.name" if upgrades.defs[id].has("ramo") else "upgrade.%s.name"
+				_ctl.draw_string(fonte, Vector2(_lay["margem"] + 28, y), "%s x%d" % [Csv.t(chave % id), nv], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Tema.cor("texto"))
 				y += 24.0
 	_ctl.draw_string(fonte, Vector2(vp.x - 200, 40), Csv.t("hud.room") % [sala, total_salas], HORIZONTAL_ALIGNMENT_LEFT, -1, 22)
 	_ctl.draw_string(fonte, Vector2(vp.x - 200, 66), Csv.t("hud.time") % _tempo_texto(), HORIZONTAL_ALIGNMENT_LEFT, -1, 18)
@@ -77,8 +78,10 @@ func _desenhar_barras(fonte: Font) -> void:
 	_ctl.draw_string(fonte, Vector2(m + larg + 10, y + eh), Csv.t("hud.stamina"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Tema.cor("texto_suave"))
 	y += eh + _lay["barra_espaco"] + 6.0
 	var mh: float = _lay["mana_altura"]
-	_barra(Vector2(m, y), Vector2(larg, mh), 0.0, Tema.cor("mana"))
-	_ctl.draw_rect(Rect2(Vector2(m, y), Vector2(larg, mh)), Color(0, 0, 0, 0.45))
+	var recurso: float = jogador.recurso_frac() if jogador.has_method("recurso_frac") else 0.0
+	_barra(Vector2(m, y), Vector2(larg, mh), recurso, Tema.cor("mana") if recurso <= 0.0 else Color(0.85, 0.35, 0.2))
+	if recurso <= 0.0:
+		_ctl.draw_rect(Rect2(Vector2(m, y), Vector2(larg, mh)), Color(0, 0, 0, 0.45))
 	_ctl.draw_string(fonte, Vector2(m + larg + 10, y + mh), Csv.t("hud.mana"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Tema.cor("texto_suave"))
 
 ## Barra de habilidades: slots 0 e 1 = tiro e esquiva (lêem a recarga do jogador); o resto fica bloqueado.
@@ -89,7 +92,7 @@ func _desenhar_habilidades(fonte: Font, vp: Vector2) -> void:
 	var largura := total * lado + (total - 1) * esp
 	var x0 := (vp.x - largura) * 0.5
 	var y0: float = vp.y - _lay["slot_base"] - lado
-	var slots := [
+	var slots: Array = jogador.slots_hud() if jogador.has_method("slots_hud") else [
 		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(jogador.dodge_cd / jogador.stats.get("dodge_cooldown", 1.0), 0.0, 1.0)},
 	]

@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://kikx5fam20or"
+
+[deps]
+
+files=["res://data2d/guerreiro.valor.translation", "res://data2d/guerreiro.unidade.translation", "res://data2d/guerreiro.nota.translation"]
+
+source_file="res://data2d/guerreiro.csv"
+dest_files=["res://data2d/guerreiro.valor.translation", "res://data2d/guerreiro.unidade.translation", "res://data2d/guerreiro.nota.translation"]
+
+[params]
+
+compress=true
+delimiter=0

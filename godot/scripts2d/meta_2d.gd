@@ -117,11 +117,19 @@ func preparar_corrida() -> void:
 	salvar()
 	mudou.emit()
 
+## Nomes de stat do arqueiro que valem para outras classes (o guerreiro usa `damage` e `attack_cooldown`).
+const ALIAS_STAT := {"arrow_damage": "damage", "shoot_cooldown": "attack_cooldown"}
+
 func _bonus(s: Dictionary, r: Dictionary) -> void:
+	var k: String = r["stat"]
+	if not s.has(k):
+		k = ALIAS_STAT.get(k, "")
+		if k == "" or not s.has(k):
+			return  # stat que esta classe não tem (ex.: perfuração de flecha no guerreiro)
 	if r["modo"] == "mult":
-		s[r["stat"]] = s[r["stat"]] * (1.0 + r["valor"])
+		s[k] = s[k] * (1.0 + r["valor"])
 	else:
-		s[r["stat"]] = s[r["stat"]] + r["valor"]
+		s[k] = s[k] + r["valor"]
 
 ## Soma os bônus permanentes aos stats base da corrida.
 func aplicar(base: Dictionary) -> Dictionary:
@@ -135,10 +143,7 @@ func aplicar(base: Dictionary) -> Dictionary:
 		if d["tipo"] != "stat":
 			continue
 		for _i in nivel(id):
-			if d["modo"] == "mult":
-				s[d["stat"]] = s[d["stat"]] * (1.0 + d["valor"])
-			else:
-				s[d["stat"]] = s[d["stat"]] + d["valor"]
+			_bonus(s, d)
 	return s
 
 ## Ganho de um inimigo morto: {"fragmentos": n, "material": id, "material_qtd": n} (vazio se não dropa).

@@ -8,6 +8,6 @@ barra_espaco,6,px,espaco entre barras
 lista_y,120,px,topo da lista de upgrades
 slot_tamanho,56,px,lado de cada slot de habilidade
 slot_espaco,10,px,espaco entre slots
-slot_total,5,slots,slots na barra de habilidades (os alem de tiro e esquiva ficam bloqueados)
+slot_total,6,slots,slots na barra de habilidades (os alem das habilidades aprendidas ficam bloqueados)
 slot_base,28,px,distancia do rodape ate a base dos slots
 icone_carta,64,px,lado do icone nas cartas de upgrade
