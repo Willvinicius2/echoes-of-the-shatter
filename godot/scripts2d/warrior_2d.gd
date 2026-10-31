@@ -1,6 +1,6 @@
 extends "res://scripts2d/actor_2d.gd"
-## Guerreiro 2D: combo de espada em 3 golpes, esquiva e até 4 habilidades ativas da árvore (skills_guerreiro_2d.gd).
-## Números em data2d/guerreiro.csv e data2d/skills_guerreiro.csv. Mesma interface do player_2d.gd (arqueiro).
+## Guerreiro 2D: combo de espada em 3 golpes, esquiva e até 4 habilidades ativas da árvore comum (habilidades_2d.gd).
+## Números em data2d/guerreiro.csv e data2d/habilidades_guerreiro.csv; custo das ativas é ímpeto, não mana. Mesma interface do player_2d.gd (arqueiro).
 
 signal died
 signal hp_changed(hp: float, hp_max: float)
@@ -8,6 +8,7 @@ signal hp_changed(hp: float, hp_max: float)
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const Efeitos = preload("res://scripts2d/efeitos_guerreiro_2d.gd")
+const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 
 enum Estado { LIVRE, ATACANDO, CONJURANDO, INVESTIDA, SALTO, ESQUIVA, MORTO }
 
@@ -25,7 +26,7 @@ var god_mode := false          # testes automáticos
 var auto_aim := Vector2.ZERO   # testes: mira forçada (e ataque contínuo)
 var auto_move := Vector2.ZERO  # testes: movimento forçado
 var dodge_cd := 0.0
-var skills: RefCounted         # árvore da corrida (skills_guerreiro_2d.gd); opcional nos testes
+var habilidades: RefCounted    # árvore e slots (habilidades_2d.gd); recargas das ativas ficam em habilidades.recargas
 var impeto := 0.0
 var guardando := false
 var combo := 0
@@ -35,7 +36,6 @@ var _combo_t := 0.0
 var _golpeou := false
 var _dodge_t := 0.0
 var _dodge_dir := Vector2.DOWN
-var _cds := {}                 # id da ativa -> recarga restante
 var _cast := {}                # conjuração em curso: id, espera, resta, aplicou
 var _dash_t := 0.0
 var _dash := {}                # investida/salto em curso: def, nivel, mira, hit
@@ -54,6 +54,9 @@ var _fx: Array = []            # efeitos visuais: {tipo, ang, r, arco, t, dur, c
 func _ready() -> void:
 	stats = Csv.kv("res://data2d/guerreiro.csv")
 	_registrar_acoes()
+	if habilidades == null:
+		habilidades = HabilidadesScript.new()
+		habilidades.carregar_classe("guerreiro")
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("guerreiro")
@@ -83,7 +86,7 @@ func reset() -> void:
 	combo = 0
 	_atk_cd = 0.0
 	_combo_t = 0.0
-	_cds.clear()
+	habilidades.recargas.clear()
 	_cast = {}
 	_dash = {}
 	_buff_cry = 0.0
@@ -154,8 +157,7 @@ func _tick(delta: float) -> void:
 	_buff_furia = maxf(0.0, _buff_furia - delta)
 	_sem_dano += delta
 	_sem_acerto += delta
-	for id in _cds.keys():
-		_cds[id] = maxf(0.0, _cds[id] - delta)
+	habilidades.tick(delta)
 	if _sem_acerto > stats["impeto_decay_delay"]:
 		impeto = maxf(0.0, impeto - stats["impeto_decay"] * delta)
 	if stats["regen"] > 0.0 and _sem_dano >= stats["regen_delay"] and hp < stats["hp_max"]:
@@ -169,8 +171,8 @@ func _decidir_acao(entrada: Vector2) -> void:
 	var guarda_id := _slot_de("w_guard_stance")
 	var guarda_tecla := guarda_id != "" and Input.is_action_pressed("skill_%d" % (_indice_slot(guarda_id) + 1))
 	guardando = guarda_tecla and _cd(guarda_id) <= 0.0
-	if not guardando and guarda_id != "" and _cds.get(guarda_id, 0.0) <= 0.0 and _guarda_ativa_antes:
-		_cds[guarda_id] = skills.recarga(guarda_id)
+	if not guardando and guarda_id != "" and _cd(guarda_id) <= 0.0 and _guarda_ativa_antes:
+		_iniciar_recarga(guarda_id)
 	_guarda_ativa_antes = guardando
 	if Input.is_action_just_pressed("dodge") and dodge_cd <= 0.0:
 		guardando = false
@@ -179,10 +181,10 @@ func _decidir_acao(entrada: Vector2) -> void:
 	if guardando:
 		facing = _aim
 		return
-	if skills != null:
-		for i in mini(skills.slots.size(), TECLAS_SKILL.size()):
-			var id: String = skills.slots[i]
-			if id != "w_guard_stance" and Input.is_action_just_pressed("skill_%d" % (i + 1)):
+	if habilidades != null:
+		for i in mini(habilidades.slots.size(), TECLAS_SKILL.size()):
+			var id: String = habilidades.slots[i]
+			if id != "" and id != "w_guard_stance" and Input.is_action_just_pressed("skill_%d" % (i + 1)):
 				if usar(id):
 					return
 	if _quer_atacar() and _atk_cd <= 0.0:
@@ -260,31 +262,37 @@ func _on_anim_finished() -> void:
 # ---------------------------------------------------------------- habilidades ativas
 
 func _slot_de(id: String) -> String:
-	return id if skills != null and skills.nivel(id) > 0 else ""
+	return id if habilidades != null and habilidades.nivel(id) > 0 and habilidades.slots.has(id) else ""
 
 func _indice_slot(id: String) -> int:
-	return skills.slots.find(id) if skills != null else -1
+	return habilidades.slots.find(id) if habilidades != null else -1
 
 func _cd(id: String) -> float:
-	return _cds.get(id, 0.0)
+	return habilidades.recargas.get(id, 0.0)
 
 ## Fração 0..1 da recarga da ativa `id` (0 = pronta).
 func recarga_skill(id: String) -> float:
-	if skills == null or skills.nivel(id) <= 0:
+	if habilidades == null or habilidades.nivel(id) <= 0:
 		return 0.0
-	return clampf(_cd(id) / maxf(skills.recarga(id), 0.01), 0.0, 1.0)
+	return clampf(_cd(id) / maxf(habilidades.defs[id]["cd"] * _cd_mult(), 0.01), 0.0, 1.0)
+
+func _cd_mult() -> float:
+	return stats.get("skill_cd_mult", 1.0)
+
+func _iniciar_recarga(id: String) -> void:
+	habilidades.recargas[id] = habilidades.defs[id]["cd"] * _cd_mult()
 
 ## Usa a ativa `id` se estiver aprendida, pronta e o jogador livre. Retorna se começou.
 func usar(id: String) -> bool:
-	if skills == null or skills.nivel(id) <= 0 or not skills.defs.has(id) or estado != Estado.LIVRE:
+	if habilidades == null or habilidades.nivel(id) <= 0 or not habilidades.defs.has(id) or estado != Estado.LIVRE:
 		return false
-	var d: Dictionary = skills.def(id)
+	var d: Dictionary = habilidades.def_nivel(id)
 	if _cd(id) > 0.0 or d["efeito"] == "postura_guarda" or d["custo"] > impeto:
 		return false
-	if not Efeitos.executar(d["efeito"], self, d, skills.nivel(id), _aim):
+	if not Efeitos.executar(d["efeito"], self, d, habilidades.nivel(id), _aim):
 		return false
 	impeto -= d["custo"]
-	_cds[id] = skills.recarga(id)
+	_iniciar_recarga(id)
 	facing = _aim
 	return true
 
@@ -501,9 +509,11 @@ func slots_hud() -> Array:
 		{"icone": "golpe", "tecla": "hud.key.shoot", "recarga": recarga_tiro()},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(dodge_cd / stats["dodge_cooldown"], 0.0, 1.0)},
 	]
-	if skills != null:
-		for i in skills.slots.size():
-			var id: String = skills.slots[i]
+	if habilidades != null:
+		for i in habilidades.slots.size():
+			var id: String = habilidades.slots[i]
+			if id == "":
+				continue
 			out.append({"icone": id, "tecla": "hud.key.skill%d" % (i + 1), "recarga": recarga_skill(id)})
 	return out
 
