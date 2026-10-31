@@ -1,0 +1,29 @@
+[
+ {
+  "id": "icone_wind_feet",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: one single sleek foot-print or bare ankle with a pale sky-blue ribbon of wind trailing behind it, plus one small white feather wing at the ankle; NO boot. Glow color: sky-blue glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_hunter_vigor",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a stoppered glass potion flask filled with dark crimson blood and a glowing gold rune floating inside; NO heart shape. Glow color: deep crimson glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_rapid_volley",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a single bow seen from the side with a tight vertical column of four arrows queued one above the other leaving it, long horizontal speed streaks; NOT a fan, NOT a cone. Glow color: bright yellow-white glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ }
+]

@@ -16,6 +16,15 @@ static func serifa() -> Font:
 		_serifa = load(caminho) if ResourceLoader.exists(caminho) else ThemeDB.fallback_font
 	return _serifa
 
+static var _texturas := {}
+
+## Peça de arte pintada da HUD (art2d/ui/<nome>.png, ver docs/arte/29_arte_ui_gpt_image.md); null se faltar.
+static func tex(nome: String) -> Texture2D:
+	if not _texturas.has(nome):
+		var caminho := "res://art2d/ui/%s.png" % nome
+		_texturas[nome] = load(caminho) if ResourceLoader.exists(caminho) else null
+	return _texturas[nome]
+
 static func _c(chave: String) -> Color:
 	return Tema.cor(chave)
 
@@ -189,10 +198,11 @@ static func globo(c: CanvasItem, centro: Vector2, raio: float, frac: float, fant
 	if pulso > 0.0:   # vida baixa: o líquido clareia e pulsa para não sumir
 		clara = clara.lightened(0.3 * pulso)
 		escura = escura.lightened(0.18)
-	var r_in := raio - 15.0
-	c.draw_circle(centro + Vector2(0, 6), raio + 14.0, Color(0, 0, 0, 0.5))
-	# chifres de ferro curvos atrás do aro, com ponta dourada
-	for lado in [-1.0, 1.0]:
+	var moldura := tex("hud_globo_moldura")
+	var r_in := raio * 0.859 if moldura != null else raio - 15.0   # o vidro da moldura pintada vai até 0,859 do raio externo
+	c.draw_circle(centro + Vector2(0, 6), raio + 6.0 if moldura != null else raio + 14.0, Color(0, 0, 0, 0.5))
+	# chifres de ferro curvos atrás do aro, com ponta dourada (só no desenho de reserva)
+	for lado in ([] if moldura != null else [-1.0, 1.0]):
 		var curva := PackedVector2Array()
 		var n := 14
 		for i in n + 1:
@@ -230,28 +240,31 @@ static func globo(c: CanvasItem, centro: Vector2, raio: float, frac: float, fant
 	c.draw_arc(centro, r_in * 0.82, PI * 1.12, PI * 1.35, 24, Color(1, 1, 1, 0.3), 2.5)
 	c.draw_circle(centro + Vector2(cos(PI * 1.62), sin(PI * 1.62)) * r_in * 0.82, 2.6, Color(1, 1, 1, 0.45))
 	c.draw_arc(centro, r_in * 0.84, PI * 0.1, PI * 0.35, 12, Color(1, 1, 1, 0.1), 3.0)
-	# aro de ferro forjado: camada grossa, luz no arco superior esquerdo, sombra no inferior direito, friso dourado
-	c.draw_arc(centro, raio - 7.0, 0.0, TAU, 72, _c("metal_medio"), 14.0)
-	c.draw_arc(centro, raio - 2.5, PI * 0.85, PI * 1.8, 40, _c("metal_claro"), 4.0)
-	c.draw_arc(centro, raio - 12.0, -PI * 0.15, PI * 0.8, 40, Color(0, 0, 0, 0.5), 4.0)
-	c.draw_arc(centro, raio - 7.0, 0.0, TAU, 72, Color(0, 0, 0, 0.22), 1.5)
-	c.draw_arc(centro, raio, 0.0, TAU, 72, Color(0, 0, 0, 0.75), 1.8)
-	c.draw_arc(centro, r_in + 1.0, 0.0, TAU, 72, _c("destaque").darkened(0.25), 2.5)
-	for i in 12:
-		var a := TAU * i / 12.0 + 0.26
-		rebite(c, centro + Vector2(cos(a), sin(a)) * (raio - 7.0), 2.8)
-	# garras de ferro sobre o vidro (topo, base e laterais)
-	for g in 4:
-		var ang := -PI * 0.5 + g * PI * 0.5
-		var dir := Vector2(cos(ang), sin(ang))
-		var tang := Vector2(-dir.y, dir.x)
-		var base := centro + dir * (raio - 3.0)
-		var ponta := centro + dir * (r_in - 10.0)
-		var garra := PackedVector2Array([base + tang * 8.0, base - tang * 8.0, ponta + tang * 0.5])
-		c.draw_colored_polygon(garra, _c("metal_medio"))
-		garra.append(garra[0])
-		c.draw_polyline(garra, Color(0, 0, 0, 0.75), 1.5)
-		c.draw_line(base + tang * 5.0, ponta, _c("metal_claro"), 1.0)
+	if moldura != null:
+		c.draw_texture_rect(moldura, Rect2(centro - Vector2(raio, raio), Vector2(raio, raio) * 2.0), false)
+	else:
+		# aro de ferro forjado: camada grossa, luz no arco superior esquerdo, sombra no inferior direito, friso dourado
+		c.draw_arc(centro, raio - 7.0, 0.0, TAU, 72, _c("metal_medio"), 14.0)
+		c.draw_arc(centro, raio - 2.5, PI * 0.85, PI * 1.8, 40, _c("metal_claro"), 4.0)
+		c.draw_arc(centro, raio - 12.0, -PI * 0.15, PI * 0.8, 40, Color(0, 0, 0, 0.5), 4.0)
+		c.draw_arc(centro, raio - 7.0, 0.0, TAU, 72, Color(0, 0, 0, 0.22), 1.5)
+		c.draw_arc(centro, raio, 0.0, TAU, 72, Color(0, 0, 0, 0.75), 1.8)
+		c.draw_arc(centro, r_in + 1.0, 0.0, TAU, 72, _c("destaque").darkened(0.25), 2.5)
+		for i in 12:
+			var a := TAU * i / 12.0 + 0.26
+			rebite(c, centro + Vector2(cos(a), sin(a)) * (raio - 7.0), 2.8)
+		# garras de ferro sobre o vidro (topo, base e laterais)
+		for g in 4:
+			var ang := -PI * 0.5 + g * PI * 0.5
+			var dir := Vector2(cos(ang), sin(ang))
+			var tang := Vector2(-dir.y, dir.x)
+			var base := centro + dir * (raio - 3.0)
+			var ponta := centro + dir * (r_in - 10.0)
+			var garra := PackedVector2Array([base + tang * 8.0, base - tang * 8.0, ponta + tang * 0.5])
+			c.draw_colored_polygon(garra, _c("metal_medio"))
+			garra.append(garra[0])
+			c.draw_polyline(garra, Color(0, 0, 0, 0.75), 1.5)
+			c.draw_line(base + tang * 5.0, ponta, _c("metal_claro"), 1.0)
 	if pulso > 0.0:
 		c.draw_arc(centro, raio + 2.0, 0.0, TAU, 72, Color(1.0, 0.1, 0.08, 0.35 * pulso), 9.0)
 		c.draw_arc(centro, raio, 0.0, TAU, 72, Color(1.0, 0.25, 0.2, 0.9 * pulso), 4.0)
@@ -299,18 +312,23 @@ static func barra(c: CanvasItem, r: Rect2, frac: float, escura: Color, clara: Co
 
 ## Slot de habilidade: baixo-relevo de pedra, ícone, varredura radial de recarga e plaquinha da tecla.
 static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecla: String, ativo: bool, brilho: Color) -> void:
-	placa(c, r, _c("pedra") if ativo else Color(0.07, 0.07, 0.09), 3.0)
-	var vao := r.grow(-7)
+	var moldura := tex("hud_slot_moldura")
+	if moldura == null:
+		placa(c, r, _c("pedra") if ativo else Color(0.07, 0.07, 0.09), 3.0)
+	var vao := r.grow(-5 if moldura != null else -7)
 	c.draw_rect(vao, Color(0.03, 0.03, 0.045))
 	if ativo:
 		for k in 4:
 			c.draw_circle(vao.get_center() - Vector2(0, 6), vao.size.x * (0.40 - k * 0.06), Color(brilho.r, brilho.g, brilho.b, 0.10 + k * 0.04))
 	c.draw_rect(vao, Color(0, 0, 0, 0.8), false, 1.5)
-	var ic := Rect2(vao.position + Vector2(5, 3), vao.size - Vector2(10, 17))
+	var ic := vao if moldura != null else Rect2(vao.position + Vector2(5, 3), vao.size - Vector2(10, 17))
 	c.draw_texture_rect(icone, ic, false, Color(1, 1, 1, 1) if ativo else Color(1, 1, 1, 0.35))
 	if not ativo:
+		if moldura != null:
+			c.draw_texture_rect(moldura, r, false, Color(1, 1, 1, 0.6))
 		return
-	c.draw_rect(r.grow(-1), Color(brilho.r, brilho.g, brilho.b, 0.8), false, 1.5)
+	if moldura == null:
+		c.draw_rect(r.grow(-1), Color(brilho.r, brilho.g, brilho.b, 0.8), false, 1.5)
 	c.draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4, 2)), Color(brilho.r, brilho.g, brilho.b, 0.45))
 	if recarga > 0.0:
 		var ctr := vao.get_center()
@@ -320,6 +338,9 @@ static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecl
 		for p in _arco(ctr, vao.size.x * 0.72, ini, fim, 28):
 			arco.append(Vector2(clampf(p.x, vao.position.x, vao.end.x), clampf(p.y, vao.position.y, vao.end.y)))
 		c.draw_colored_polygon(arco, Color(0, 0, 0, 0.78))
+	if moldura != null:
+		c.draw_texture_rect(moldura, r, false)
+		c.draw_rect(r.grow(-2), Color(brilho.r, brilho.g, brilho.b, 0.5), false, 1.5)
 	if tecla != "":
 		tecla_placa(c, Vector2(r.position.x + 4 + maxf(36.0, 10.0 + tecla.length() * 7.0) * 0.5, r.end.y - 13), tecla)
 
@@ -330,6 +351,17 @@ static func tecla_placa(c: CanvasItem, centro: Vector2, tecla: String) -> void:
 	placa(c, pl, _c("pedra_clara"), 1.5, false)
 	c.draw_rect(pl.grow(-2), Color(0, 0, 0, 0.3), false, 1.0)
 	texto(c, Vector2(pl.position.x, pl.position.y + 13), tecla, 12, _c("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, pl.size.x)
+
+## Moldura pintada da barra do chefe, em tamanho fixo (a caveira não deforma). Retorna o canal interno onde vai a
+## barra; sem a arte, retorna um canal desenhado pelo reserva `barra`. cx = centro x da caveira.
+static func canal_chefe(cx: float, y: float) -> Rect2:
+	var esc := 0.625   # 1240 px do arquivo = 775 px na tela de 1600
+	return Rect2(cx - 620.0 * esc + 58.0 * esc, y + 84.0 * esc, (1182.0 - 58.0) * esc, 34.0 * esc)
+
+static func moldura_chefe(c: CanvasItem, cx: float, y: float) -> void:
+	var m := tex("hud_barra_chefe_moldura")
+	if m != null:
+		c.draw_texture_rect(m, Rect2(cx - 620.0 * 0.625, y, 775.0, 91.25), false)
 
 ## Plaqueta de pedra (alvenaria) com texto serifado de destaque e linha de apoio.
 static func plaqueta(c: CanvasItem, r: Rect2, titulo: String, apoio: String) -> void:

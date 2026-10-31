@@ -1,0 +1,164 @@
+[
+ {
+  "id": "icone_steady_aim",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a bright eagle eye with a thin crosshair over the pupil and one arrow tip below. Glow color: amber-gold glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_power_shot",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: one thick heavy arrow with a broad steel head flying forward with a white-orange shock trail. Glow color: burning orange glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_piercing_mastery",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: an arrowhead punching through two stacked shields, the tip emerging on the far side. Glow color: pale steel-blue glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_eagle_eye",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: an eagle head in profile with a sharp golden eye and a small crit star above. Glow color: golden-yellow glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_rapid_volley",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: five arrows in a tight parallel burst flying upward with motion streaks. Glow color: warm gold glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_sniper_shot",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a long slender arrow crossing a circular scope reticle, tiny sparks at the tip. Glow color: cold white-blue glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_fan_of_arrows",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: five arrows fanned out in a wide cone from the bottom center. Glow color: golden glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_arrow_rain",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: many arrows falling from the top onto a faint circle on the ground. Glow color: amber glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_spike_trap",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: an open iron bear-trap ring with sharp teeth on the ground, seen from above. Glow color: rusty orange glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_explosive_arrow",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: an arrow whose head is a small round bomb, burst of flame and sparks around it. Glow color: fiery red-orange glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_hunters_mark",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a glowing crimson hunter's mark rune circle with a small arrow through its center. Glow color: blood-red glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_venom_tips",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: an arrowhead dripping green venom drops, a toxic skull-like swirl behind. Glow color: toxic green glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_backstep_shot",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a boot kicking back with curved motion lines and a small arrow released forward. Glow color: teal glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_wind_feet",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a winged boot in mid-stride with swirling wind lines. Glow color: light green glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_smoke_bomb",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a round dark bomb exploding in a billowing grey-violet smoke cloud. Glow color: violet-grey glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_shadow_dance",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a hooded shadow silhouette with two fading afterimages to its side. Glow color: deep teal glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_adrenaline",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a clenched fist around a bow with sharp lightning bolts and a racing heartbeat line. Glow color: electric yellow glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_hunter_vigor",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a stout heart wrapped by a leather hunter's strap with a single feather. Glow color: deep red glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ }
+]
