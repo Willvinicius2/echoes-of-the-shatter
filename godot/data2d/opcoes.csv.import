@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cqc2xmbmkyccm"
+
+[deps]
+
+files=["res://data2d/opcoes.valor.translation"]
+
+source_file="res://data2d/opcoes.csv"
+dest_files=["res://data2d/opcoes.valor.translation"]
+
+[params]
+
+compress=true
+delimiter=0
