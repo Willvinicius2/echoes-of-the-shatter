@@ -2,6 +2,7 @@ extends CharacterBody2D
 ## Base de jogador e inimigos: sprite animado por direção, sombra, flash de dano.
 
 const SpriteLoader = preload("res://scripts2d/sprite_loader.gd")
+const Feel = preload("res://scripts2d/feel_2d.gd")
 
 var char_id := ""
 var facing := Vector2.DOWN
@@ -9,12 +10,20 @@ var sprite: AnimatedSprite2D
 var shadow_radius := 18.0
 var _anim_base := ""
 var _flash := 0.0
+var _shake_t := 0.0
+var _shake_total := 0.0
+var _shake_px := 0.0
+var _mat: ShaderMaterial     # flash branco, dissolução e brilho do sprite
+var _morrendo := false
+var _sombra_a := 1.0
 
 func setup_sprite(id: String) -> void:
 	char_id = id
 	sprite = AnimatedSprite2D.new()
 	sprite.sprite_frames = SpriteLoader.frames_for(id)
 	sprite.offset = SpriteLoader.info(id)["offset"]
+	_mat = Feel.material_ator()
+	sprite.material = _mat
 	add_child(sprite)
 	sprite.frame_changed.connect(_on_frame_changed)
 	sprite.animation_finished.connect(_on_anim_finished)
@@ -52,17 +61,41 @@ func anim_base() -> String:
 	return _anim_base
 
 func flash() -> void:
-	_flash = 0.12
+	_flash = Feel.cfg()["flash_time"]
+
+## Treme só o sprite (a colisão não muda), decaindo até zero em `tempo` s.
+func tremer_sprite(px: float, tempo: float) -> void:
+	_shake_px = px
+	_shake_t = tempo
+	_shake_total = tempo
+
+## Dissolve o sprite em pixels e some com a sombra; depois remove o ator.
+func dissolver(tempo: float) -> void:
+	if _morrendo:
+		return
+	_morrendo = true
+	var tw := create_tween()
+	tw.tween_method(func(v: float) -> void:
+		_mat.set_shader_parameter("dissolve", v)
+		_sombra_a = 1.0 - v, 0.0, 1.0, tempo)
+	tw.tween_callback(queue_free)
 
 func _process(delta: float) -> void:
-	if _flash > 0.0:
-		_flash -= delta
-		modulate = Color(2.0, 2.0, 2.0) if _flash > 0.0 else Color.WHITE
+	if _mat != null:
+		if _flash > 0.0:
+			_flash -= delta
+		_mat.set_shader_parameter("flash", 0.7 if _flash > 0.0 else 0.0)
+	if sprite != null:
+		if _shake_t > 0.0:
+			_shake_t -= delta
+			sprite.position = Vector2.from_angle(randf() * TAU) * _shake_px * clampf(_shake_t / _shake_total, 0.0, 1.0)
+		else:
+			sprite.position = Vector2.ZERO
 	queue_redraw()
 
 func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.4))
-	draw_circle(Vector2.ZERO, shadow_radius, Color(0, 0, 0, 0.4))
+	draw_circle(Vector2.ZERO, shadow_radius, Color(0, 0, 0, 0.4 * _sombra_a))
 
 func _on_frame_changed() -> void:
 	pass

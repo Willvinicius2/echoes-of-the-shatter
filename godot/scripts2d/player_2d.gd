@@ -7,7 +7,6 @@ signal mana_changed(mana: float, mana_max: float)
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
-const Feel = preload("res://scripts2d/feel_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 
