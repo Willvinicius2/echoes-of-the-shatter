@@ -3,29 +3,29 @@ hud.room,Sala %d/%d
 hud.hp,Vida
 hud.dodge,Esquiva
 hud.room_clear,Sala limpa! Siga pela porta
-hud.dead,Voce caiu. Recomecando...
-hud.victory,Cripta vencida! Recomecando...
-hud.boss,Guardiao da Cripta
-hud.help,WASD move | Mouse mira | Clique atira | Espaco esquiva | Esc pausa
+hud.dead,Você caiu. Recomeçando...
+hud.victory,Cripta vencida! Recomeçando...
+hud.boss,Guardião da Cripta
+hud.help,WASD move | Mouse mira | Clique atira | Espaço esquiva | Esc pausa
 hud.upgrades,Upgrades
 upgrade.title,Escolha um upgrade
-upgrade.level,Nivel %d/%d
+upgrade.level,Nível %d/%d
 upgrade.power.name,Flecha Pesada
 upgrade.power.desc,+25% de dano por flecha
-upgrade.haste.name,Mao Agil
-upgrade.haste.desc,Atira 15% mais rapido
-upgrade.swift.name,Pes Leves
+upgrade.haste.name,Mão Ágil
+upgrade.haste.desc,Atira 15% mais rápido
+upgrade.swift.name,Pés Leves
 upgrade.swift.desc,+12% de velocidade
 upgrade.vitality.name,Vigor
-upgrade.vitality.desc,+30 de vida maxima e cura a mesma quantidade
+upgrade.vitality.desc,+30 de vida máxima e cura a mesma quantidade
 upgrade.multishot.name,Salva de Flechas
 upgrade.multishot.desc,+1 flecha por disparo
 upgrade.pierce.name,Ponta Afiada
 upgrade.pierce.desc,A flecha atravessa +1 inimigo
-upgrade.evasion.name,Passo Rapido
-upgrade.evasion.desc,Esquiva recarrega 20% mais rapido
+upgrade.evasion.name,Passo Rápido
+upgrade.evasion.desc,Esquiva recarrega 20% mais rápido
 hud.time,Tempo %s
-menu.title,Ecos dos Estilhacos
+menu.title,Ecos dos Estilhaços
 menu.subtitle,A Cripta espera
 menu.play,Jogar
 menu.quit,Sair
@@ -33,7 +33,7 @@ menu.paused,Pausado
 menu.resume,Continuar
 menu.restart,Reiniciar corrida
 menu.to_title,Menu principal
-menu.game_over,Voce caiu
+menu.game_over,Você caiu
 menu.victory,Cripta vencida!
 menu.play_again,Jogar de novo
 menu.sum_time,Tempo: %s
@@ -44,7 +44,7 @@ hud.mana,Mana
 hud.skill.shoot,Tiro
 hud.skill.dodge,Esquiva
 hud.key.shoot,Clique
-hud.key.dodge,Espaco
+hud.key.dodge,Espaço
 hud.skill.locked,Bloqueado
 hud.boss_phase,Fase %d/%d
 menu.meta,Melhorias
@@ -160,3 +160,45 @@ hud.key.skill_1,Q
 hud.key.skill_2,E
 hud.key.skill_3,F
 hud.key.skill_4,R
+skill.steady_aim.name,Mira Firme
+skill.steady_aim.desc,+12% de dano das flechas por nível
+skill.power_shot.name,Disparo Carregado
+skill.power_shot.desc,Flecha pesada que atravessa 2 inimigos e causa 3x de dano
+skill.piercing_mastery.name,Ponta Perfurante
+skill.piercing_mastery.desc,+1 inimigo atravessado por flecha por nível
+skill.eagle_eye.name,Olho de Águia
+skill.eagle_eye.desc,+8% de chance de golpe crítico por nível
+skill.rapid_volley.name,Salva Veloz
+skill.rapid_volley.desc,Dispara 5 flechas em sequência na direção da mira
+skill.sniper_shot.name,Tiro Certeiro
+skill.sniper_shot.desc,Flecha letal de longo alcance que atravessa todos os inimigos
+skill.fan_of_arrows.name,Leque de Flechas
+skill.fan_of_arrows.desc,Dispara 5 flechas em cone à sua frente
+skill.arrow_rain.name,Chuva de Flechas
+skill.arrow_rain.desc,Chove flechas na área mirada por alguns segundos
+skill.spike_trap.name,Armadilha de Espinhos
+skill.spike_trap.desc,Planta uma armadilha que fere e prende quem pisar
+skill.explosive_arrow.name,Flecha Explosiva
+skill.explosive_arrow.desc,Flecha que explode em área ao acertar
+skill.hunters_mark.name,Marca do Caçador
+skill.hunters_mark.desc,Marca o inimigo mirado: ele sofre mais dano por alguns segundos
+skill.venom_tips.name,Pontas Venenosas
+skill.venom_tips.desc,Flechas envenenam o alvo: +4 de dano por segundo por nível
+skill.backstep_shot.name,Salto Atrás
+skill.backstep_shot.desc,Salta para longe da mira, invulnerável, e atira ao pousar
+skill.wind_feet.name,Pés de Vento
+skill.wind_feet.desc,+8% de velocidade de corrida por nível
+skill.smoke_bomb.name,Bomba de Fumaça
+skill.smoke_bomb.desc,Nuvem que deixa os inimigos lentos
+skill.shadow_dance.name,Dança das Sombras
+skill.shadow_dance.desc,-10% na recarga da esquiva por nível
+skill.adrenaline.name,Adrenalina
+skill.adrenaline.desc,Por alguns segundos, atira e corre muito mais rápido
+skill.hunter_vigor.name,Vigor do Andarilho
+skill.hunter_vigor.desc,+25 de vida máxima por nível
+ramo.precisao.name,Precisão
+ramo.precisao.desc,Dano direto e golpes certeiros
+ramo.cacada.name,Caça
+ramo.cacada.desc,Área, armadilhas e controle
+ramo.sombra.name,Sombra
+ramo.sombra.desc,Mobilidade e esquiva
