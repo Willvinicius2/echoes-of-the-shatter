@@ -445,7 +445,7 @@ TEST(c_api_rogue_external_cards_mode_no_offer_no_draw_and_state) {
     shatter_error err{};
     std::int32_t res = -1;
     std::uint8_t on = 9;
-    EXPECT_EQ(shatter_api_minor(), 9u);
+    EXPECT_TRUE(shatter_api_minor() >= 9u);
     EXPECT_EQ(shatter_rogue_run_external_cards_set(nullptr, 1, &res), SHATTER_INVALID_ARGUMENT);
     EXPECT_EQ(shatter_rogue_run_external_cards_set(r, 1, nullptr), SHATTER_INVALID_ARGUMENT);
     EXPECT_EQ(shatter_rogue_run_external_cards_get(nullptr, &on), SHATTER_INVALID_ARGUMENT);
@@ -518,4 +518,232 @@ TEST(c_api_rogue_external_cards_mode_no_offer_no_draw_and_state) {
     EXPECT_EQ(shatter_rogue_run_finish(r, &res), SHATTER_OK);
     EXPECT_EQ(shatter_rogue_run_external_cards_get(r, &on), SHATTER_OK);
     EXPECT_EQ(on, 1);
+}
+
+// --- API 1.10: habilidades por classe ---------------------------------------------------------------------------
+namespace {
+
+void WriteText(const std::string& path, const std::string& text) {
+    std::ofstream out(std::filesystem::u8path(path), std::ios::binary);
+    out << text;
+}
+
+// Cópia de godot/data2d com classes_2d.csv (a fixture do PR 127 e a árvore real do Guerreiro) e os pontos do run_settings.
+std::string SkillDir() {
+    static std::string dir;
+    if (!dir.empty()) return dir;
+    dir = tu::TmpDir("c_api_rogue_skills_data");
+    for (const char* t : {"meta.csv", "receitas.csv", "drops.csv", "rota.csv", "run.csv", "upgrades.csv",
+                          "habilidades_guerreiro.csv"})
+        WriteText(dir + "/" + t, tu::ReadFile(RogueDir() + "/" + t));
+    std::string settings = tu::ReadFile(RogueDir() + "/run_settings.csv");
+    if (settings.find("skill_points_room") == std::string::npos) {
+        if (!settings.empty() && settings.back() != '\n') settings += "\n";
+        settings += "skill_points_room,1,pontos,teste\nskill_points_boss,3,pontos,teste\n";
+    }
+    WriteText(dir + "/run_settings.csv", settings);
+    WriteText(dir + "/habilidades_teste.csv",
+              "id,ramo,tipo,tier,pai,pontos,nivel_max,efeito,cd,custo,dano,qtd,angulo,raio,duracao,alcance,valor,escala,stat,modo,icone\n"
+              "t_golpe,fogo,ativa,1,,1,3,golpe,2,10,20,1,0,0,0,300,0,0.5,,,tiro\n"
+              "t_nova,fogo,ativa,2,t_golpe,2,2,nova,5,30,40,0,0,120,0,0,0,0.5,,,tiro\n"
+              "t_vigor,vida,passiva,1,,1,3,,0,0,0,0,0,0,0,0,0.2,0,hp_max,mult,\n"
+              "t_passo,vida,passiva,2,t_vigor,1,2,,0,0,0,0,0,0,0,0,10,0,speed,add,\n");
+    WriteText(dir + "/classes_2d.csv",
+              "id,nome,sprite,habilidades,efeitos\n"
+              "teste,class.teste,arqueiro,res://data2d/habilidades_teste.csv,\n"
+              "guerreiro,class.guerreiro,guerreiro,res://data2d/habilidades_guerreiro.csv,\n");
+    return dir;
+}
+
+struct SkillRogue {
+    shatter_rogue* r = nullptr;
+    shatter_status st = SHATTER_INTERNAL;
+    SkillRogue() {
+        const std::string d = SkillDir();
+        shatter_error err{};
+        st = shatter_rogue_load_directory(d.data(), d.size(), &r, &err);
+    }
+    ~SkillRogue() { shatter_rogue_destroy(r); }
+    SkillRogue(const SkillRogue&) = delete;
+    SkillRogue& operator=(const SkillRogue&) = delete;
+};
+
+json::Value SkillsJson(const shatter_rogue* r) {
+    json::Value v;
+    json::Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_rogue_skills_json(r, o, c, n); }), v);
+    return v;
+}
+
+std::int32_t Learn(shatter_rogue* r, const char* id) {
+    std::int32_t res = -1;
+    EXPECT_EQ(shatter_rogue_skill_learn(r, id, std::strlen(id), &res), SHATTER_OK);
+    return res;
+}
+
+}  // namespace
+
+TEST(c_api_rogue_skills_null_arguments_and_no_classes) {
+    SkillRogue g;
+    ASSERT_EQ(g.st, SHATTER_OK);
+    shatter_rogue* r = g.r;
+    std::int32_t res = -1;
+    double dbl = 0.0;
+    std::size_t needed = 0;
+    EXPECT_EQ(shatter_rogue_class_set(nullptr, "teste", 5, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_class_set(r, nullptr, 5, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_class_set(r, "teste", 5, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_class_set(r, "\xff", 1, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skills_json(nullptr, nullptr, 0, &needed), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skills_json(r, nullptr, 0, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_def_json(nullptr, "t_golpe", 7, 1, nullptr, 0, &needed), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_def_json(r, nullptr, 7, 1, nullptr, 0, &needed), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_def_json(r, "t_golpe", 7, 1, nullptr, 0, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_can_learn(nullptr, "t_golpe", 7, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_can_learn(r, "t_golpe", 7, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_learn(nullptr, "t_golpe", 7, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_learn(r, nullptr, 7, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_equip(nullptr, 0, "t_golpe", 7, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_equip(r, 0, nullptr, 7, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_equip(r, 0, "t_golpe", 7, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_respec(nullptr, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_respec(r, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_points_add(nullptr, 1, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_points_add(r, 1, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_tick(nullptr, 1.0), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_can_use(nullptr, 0, 1.0, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_can_use(r, 0, 1.0, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_commit_use(nullptr, 0, 1.0, &dbl, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_commit_use(r, 0, 1.0, nullptr, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_commit_use(r, 0, 1.0, &dbl, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_cooldown(nullptr, 0, &dbl), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_cooldown(r, 0, nullptr), SHATTER_INVALID_ARGUMENT);
+
+    // Dados de hoje (sem classes_2d.csv): sem classe, NO_CLASS e o save sem as chaves novas.
+    Rogue plain;
+    ASSERT_EQ(plain.st, SHATTER_OK);
+    const json::Value v = SkillsJson(plain.r);
+    if (v["classes"].Size() == 0) {
+        EXPECT_EQ(v["class"].AsString(), std::string());
+        EXPECT_EQ(Learn(plain.r, "t_golpe"), static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_NO_CLASS));
+        EXPECT_EQ(shatter_rogue_skill_can_use(plain.r, 0, 99.0, &res), SHATTER_OK);
+        EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_NO_CLASS));
+        const std::string save = Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+            return shatter_rogue_meta_save_json(plain.r, o, c, n);
+        });
+        EXPECT_TRUE(save.find("habilidades") == std::string::npos && save.find("classe") == std::string::npos);
+    }
+}
+
+TEST(c_api_rogue_skills_tree_slots_use_and_save) {
+    SkillRogue g;
+    ASSERT_EQ(g.st, SHATTER_OK);
+    shatter_rogue* r = g.r;
+    const std::string dir = tu::TmpDir("c_api_rogue_skills_save");
+    const std::string path = dir + "/save_2d.json";
+    std::filesystem::remove(std::filesystem::u8path(path));
+    ASSERT_EQ(shatter_rogue_save_path_set(r, path.data(), path.size()), SHATTER_OK);
+    std::int32_t res = -1;
+
+    json::Value v = SkillsJson(r);
+    EXPECT_EQ(v["class"].AsString(), std::string("teste"));
+    EXPECT_EQ(v["classes"].Size(), std::size_t(2));
+    EXPECT_EQ(v["slots"].Size(), std::size_t(4));
+    EXPECT_EQ(v["skills"].Size(), std::size_t(4));
+    EXPECT_EQ(Learn(r, "t_golpe"), static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_NO_POINTS));
+    EXPECT_FALSE(std::filesystem::exists(std::filesystem::u8path(path)));  // ação recusada não grava
+    ASSERT_EQ(shatter_rogue_skill_points_add(r, 5, &res), SHATTER_OK);
+    EXPECT_TRUE(std::filesystem::exists(std::filesystem::u8path(path)));
+    EXPECT_EQ(shatter_rogue_skill_can_learn(r, "t_nova", 6, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_LOCKED));
+    EXPECT_EQ(Learn(r, "t_golpe"), static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_OK));
+    EXPECT_EQ(Learn(r, "t_golpe"), static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_OK));
+    EXPECT_EQ(Learn(r, "t_vigor"), static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_OK));
+    v = SkillsJson(r);
+    EXPECT_EQ(v["points"].AsInt(-1), std::int64_t(2));
+    EXPECT_EQ(v["slots"].At(0).AsString(), std::string("t_golpe"));
+    EXPECT_EQ(v["skills"].At(0)["level"].AsInt(-1), std::int64_t(2));
+    EXPECT_EQ(v["skills"].At(1)["can_learn"].AsInt(-1), std::int64_t(SHATTER_ROGUE_SKILL_OK));
+    EXPECT_TRUE(tu::ReadFile(path).find("\"t_golpe\":2") != std::string::npos);
+
+    // Definição escalonada (nível 2: 1 + 0.5 = 1.5x), BUFFER_TOO_SMALL e desconhecida.
+    std::size_t needed = 0;
+    std::uint8_t tiny[4] = {0, 0, 0, 0};
+    EXPECT_EQ(shatter_rogue_skill_def_json(r, "t_golpe", 7, -1, tiny, sizeof tiny, &needed), SHATTER_BUFFER_TOO_SMALL);
+    EXPECT_TRUE(needed > sizeof tiny);
+    EXPECT_EQ(shatter_rogue_skill_def_json(r, "nada", 4, 1, nullptr, 0, &needed), SHATTER_NOT_FOUND);
+    json::Value def;
+    json::Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+                    return shatter_rogue_skill_def_json(r, "t_golpe", 7, -1, o, c, n);
+                }),
+                def);
+    EXPECT_NEAR(def["dano"].AsDouble(0.0), 30.0, 1e-12);
+    EXPECT_EQ(def["efeito"].AsString(), std::string("golpe"));
+    EXPECT_EQ(def["nivel"].AsInt(-1), std::int64_t(2));
+
+    // Passivas nos stats (include_run, sem corrida) e na corrida.
+    shatter_error err{};
+    json::Value st;
+    json::Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+                    return shatter_rogue_stats_apply(r, kBase, std::strlen(kBase), 1, o, c, n, &err);
+                }),
+                st);
+    EXPECT_NEAR(st["hp_max"].AsDouble(0.0), 120.0, 1e-9);
+    const char* withMeta = "{\"hp_max\":100,\"bonus\":1}";
+    json::Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+                    return shatter_rogue_skill_passives_apply(r, withMeta, std::strlen(withMeta), o, c, n, &err);
+                }),
+                st);
+    EXPECT_NEAR(st["hp_max"].AsDouble(0.0), 120.0, 1e-9);  // só a passiva t_vigor (x1.2)
+    EXPECT_NEAR(st["bonus"].AsDouble(0.0), 1.0, 1e-12);
+    EXPECT_EQ(shatter_rogue_skill_passives_apply(nullptr, withMeta, std::strlen(withMeta), nullptr, 0, &needed, &err),
+              SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_passives_apply(r, "[1]", 3, nullptr, 0, &needed, &err), SHATTER_PARSE_ERROR);
+    ASSERT_EQ(shatter_rogue_run_start(r, 5, kBase, std::strlen(kBase), &err), SHATTER_OK);
+    json::Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_rogue_run_stats_json(r, o, c, n); }), st);
+    EXPECT_NEAR(st["hp_max"].AsDouble(0.0), 120.0, 1e-9);
+    EXPECT_EQ(shatter_rogue_class_set(r, "guerreiro", 9, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_WRONG_PHASE));
+
+    // Uso: mana, recarga e fração da HUD.
+    double cost = -1.0, frac = -1.0;
+    EXPECT_EQ(shatter_rogue_skill_can_use(r, 0, 9.0, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_NO_MANA));
+    EXPECT_EQ(shatter_rogue_skill_commit_use(r, 0, 50.0, &cost, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_OK));
+    EXPECT_NEAR(cost, 10.0, 1e-12);
+    EXPECT_EQ(shatter_rogue_skill_cooldown(r, 0, &frac), SHATTER_OK);
+    EXPECT_NEAR(frac, 1.0, 1e-12);
+    EXPECT_EQ(shatter_rogue_skill_tick(r, 0.5), SHATTER_OK);
+    shatter_rogue_skill_cooldown(r, 0, &frac);
+    EXPECT_NEAR(frac, 0.75, 1e-12);
+    EXPECT_EQ(shatter_rogue_skill_can_use(r, 0, 50.0, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_COOLDOWN));
+    EXPECT_EQ(shatter_rogue_skill_can_use(r, 7, 50.0, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_BAD_SLOT));
+
+    // Estado com recarga: ida e volta com o mesmo hash.
+    const std::string state = Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_rogue_state_json(r, o, c, n); });
+    SkillRogue other;
+    ASSERT_EQ(shatter_rogue_state_restore(other.r, state.data(), state.size(), &err), SHATTER_OK);
+    EXPECT_EQ(Hash(other.r), Hash(r));
+
+    // Sala limpa dá pontos e grava; equipar e redistribuir também gravam.
+    for (const std::string& e : RoomEnemies(r)) Kill(r, e);
+    EXPECT_EQ(SkillsJson(r)["points"].AsInt(-1), std::int64_t(3));
+    EXPECT_TRUE(tu::ReadFile(path).find("\"pontos\":3") != std::string::npos);
+    EXPECT_EQ(shatter_rogue_skill_equip(r, 2, "t_golpe", 7, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_OK));
+    EXPECT_EQ(shatter_rogue_skill_equip(r, 9, "t_golpe", 7, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_SKILL_BAD_SLOT));
+    EXPECT_TRUE(tu::ReadFile(path).find("\"slots\":[\"\",\"\",\"t_golpe\",\"\"]") != std::string::npos);
+    EXPECT_EQ(shatter_rogue_skill_respec(r, &res), SHATTER_OK);
+    EXPECT_EQ(SkillsJson(r)["points"].AsInt(-1), std::int64_t(6));
+    EXPECT_TRUE(tu::ReadFile(path).find("\"pontos\":6") != std::string::npos);
+
+    // Recarrega o save num núcleo novo.
+    SkillRogue back;
+    ASSERT_EQ(shatter_rogue_save_path_set(back.r, path.data(), path.size()), SHATTER_OK);
+    ASSERT_EQ(shatter_rogue_meta_load(back.r, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_LOAD_OK));
+    EXPECT_EQ(SkillsJson(back.r)["points"].AsInt(-1), std::int64_t(6));
 }

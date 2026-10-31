@@ -89,7 +89,7 @@ func reset() -> void:
 	hp = stats["hp_max"]
 	mana = stats["mana_max"]
 	mana_changed.emit(mana, stats["mana_max"])
-	habilidades.recargas.clear()
+	habilidades.limpar_recargas()
 	estado = Estado.LIVRE
 	invencivel = 0.0
 	dodge_cd = 0.0

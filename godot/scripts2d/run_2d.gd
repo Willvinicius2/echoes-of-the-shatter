@@ -109,7 +109,10 @@ func _criar_classe() -> void:
 	atores.add_child(player)
 	upgrades = (CorridaGuerreiroScript if guerreiro else UpgradesScript).new()
 	upgrades.meta = meta
-	if not guerreiro:  # arqueiro e mago escolhem a classe aqui; o guerreiro carrega a dele no _ready
+	player.habilidades.nucleo = nucleo   # árvore de habilidades com as regras no core do meta (as 3 classes)
+	if guerreiro:
+		player.habilidades.carregar_classe("guerreiro")
+	else:  # arqueiro e mago: stats da classe e a árvore
 		player.definir_classe(Classe.atual)
 	upgrades.habilidades = player.habilidades
 	if arvore != null:
@@ -125,6 +128,8 @@ func _trocar_classe() -> void:
 	ui.upgrades = upgrades
 
 func iniciar_corrida() -> void:
+	if nucleo.corrida_fase() != 0:
+		nucleo.corrida_terminar()   # corrida abandonada: classe e modo de cartas só mudam fora de corrida viva (credita os ganhos)
 	if Classe.atual != _classe_montada:
 		_trocar_classe()
 	# O core credita os ganhos pendentes de uma corrida abandonada (reiniciar, título) ao começar a próxima.
@@ -135,8 +140,7 @@ func iniciar_corrida() -> void:
 	menus.limpar_fade()
 	var guerreiro: bool = Classe.atual == "guerreiro"
 	# O guerreiro não usa as cartas do core (só a árvore comum): o core roda o fluxo da corrida sem cartas.
-	if nucleo.corrida_fase() != 0:
-		nucleo.corrida_terminar()   # corrida abandonada: o modo de cartas só muda fora de corrida viva (credita os ganhos)
+	nucleo.classe_definir(Classe.atual)   # pontos por sala e passivas da árvore vão para esta classe
 	nucleo.corrida_cartas_externas(guerreiro)
 	if not guerreiro:
 		upgrades.semente = int(rng.seed)
@@ -234,8 +238,8 @@ func _on_inimigo_morto(e) -> void:
 	var r: Dictionary = nucleo.corrida_inimigo_morto(e.stats.get("id", ""))   # drops, sala limpa e cartas: regras do core
 	if r["sala_limpa"] and estado == Estado.LUTA:
 		estado = Estado.LIMPA
-		if "habilidades" in player:
-			player.habilidades.ganhar_pontos(int(config["skill_points_room"]) + (int(config["skill_points_boss"]) if indice + 1 >= salas.size() else 0))
+		if "habilidades" in player and player.habilidades != null:
+			player.habilidades.sincronizar()   # o core deu os pontos de habilidade da sala (e do chefe)
 		_timer = config["clear_delay"]
 
 func _physics_process(delta: float) -> void:

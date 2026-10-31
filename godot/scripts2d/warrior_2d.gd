@@ -86,7 +86,7 @@ func reset() -> void:
 	combo = 0
 	_atk_cd = 0.0
 	_combo_t = 0.0
-	habilidades.recargas.clear()
+	habilidades.limpar_recargas()
 	_cast = {}
 	_dash = {}
 	_buff_cry = 0.0
@@ -279,8 +279,9 @@ func recarga_skill(id: String) -> float:
 func _cd_mult() -> float:
 	return stats.get("skill_cd_mult", 1.0)
 
+## A recarga é do core (habilidades_2d.gd); o ímpeto já foi conferido e gasto aqui, então o recurso passado só precisa cobrir o custo.
 func _iniciar_recarga(id: String) -> void:
-	habilidades.recargas[id] = habilidades.defs[id]["cd"] * _cd_mult()
+	habilidades.iniciar_recarga(id, INF)
 
 ## Usa a ativa `id` se estiver aprendida, pronta e o jogador livre. Retorna se começou.
 func usar(id: String) -> bool:

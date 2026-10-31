@@ -14,6 +14,7 @@
 //   gravou continua valendo. Leitura tolerante como o carregar() do GDScript. Não usa o save.h do ARPG (só o IFileIO).
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -88,11 +89,59 @@ struct RogueUpgrade {          // upgrades.csv
 // Pares stat -> valor, na ordem em que o chamador mandou (a saída mantém a ordem).
 using RogueStats = std::vector<std::pair<std::string, double>>;
 
+// --- Habilidades por classe (API 1.10; runtime de godot/scripts2d/habilidades_2d.gd; docs/09 seção 17) ---------
+// Quantos slots ativos a árvore tem (Q, E, F, R). Contrato com a HUD, não balanceamento.
+inline constexpr int kRogueSkillSlots = 4;
+
+struct RogueSkillDef {         // linha de habilidades_<classe>.csv (formato do doc 29)
+    ContentId id;
+    bool active = false;       // tipo "ativa"; senão "passiva"
+    ContentId parent;          // pai ("" = raiz do ramo)
+    int parentIndex = -1;      // índice do pai na mesma classe
+    int points = 1;            // custo por nível (mínimo 1)
+    int maxLevel = 1;          // mínimo 1
+    double cooldown = 0.0;     // cd (s), não escala
+    double cost = 0.0;         // custo de mana, não escala
+    double scale = 0.0;        // escala por nível acima do 1
+    std::string stat;          // passiva: stat afetado ("" = passiva sem stat)
+    RogueMode mode = RogueMode::Add;
+    double value = 0.0;        // passiva: valor por nível
+    // Todas as colunas na ordem do CSV: as de texto (id, ramo, tipo, pai, efeito, stat, modo, icone) em `texts`, as
+    // demais em `numbers` (vazio = 0). A definição escalonada (SkillDefAt) repassa todas ao cliente.
+    std::vector<std::pair<std::string, std::string>> texts;
+    std::vector<std::pair<std::string, double>> numbers;
+};
+
+struct RogueClass {            // linha de classes_2d.csv + a árvore dela
+    ContentId id;
+    std::string skillFile;     // nome do arquivo da árvore (só o nome, sem pasta); "" = sem árvore
+    std::vector<RogueSkillDef> skills;
+};
+
+// Estado da árvore de uma classe (meta; vai ao save em "habilidades": {classe: {niveis, slots, pontos}}).
+struct RogueSkillMeta {
+    std::int64_t points = 0;
+    std::vector<int> levels;                                   // por habilidade da classe
+    std::array<int, kRogueSkillSlots> slots{{-1, -1, -1, -1}};  // índice da habilidade ou -1
+};
+
+// Uma habilidade num nível: as colunas do CSV com dano, qtd, raio, duracao, alcance e valor multiplicados por
+// 1 + escala * max(0, n - 1); qtd > 0 é arredondada e fica no mínimo 1 (def_nivel do habilidades_2d.gd).
+struct RogueSkillLevelDef {
+    std::vector<std::pair<std::string, std::string>> texts;
+    std::vector<std::pair<std::string, double>> numbers;
+    int level = 0;
+};
+
 class RogueData {
 public:
-    // Tabelas: "meta.csv", "receitas.csv", "drops.csv", "rota.csv", "run.csv", "run_settings.csv", "upgrades.csv".
+    // Tabelas: "meta.csv", "receitas.csv", "drops.csv", "rota.csv", "run.csv", "run_settings.csv", "upgrades.csv" e
+    // "classes_2d.csv" (opcional).
     bool LoadTableCsv(std::string_view tableName, std::string_view csvText);
-    // Lê as 7 tabelas da pasta (todas obrigatórias). Erro de IO vem com mensagem "E_IO ...".
+    // Árvore de habilidades de uma classe já lida de classes_2d.csv (texto de habilidades_<classe>.csv).
+    bool LoadSkillTableCsv(std::string_view classId, std::string_view csvText);
+    // Lê as 7 tabelas da pasta (todas obrigatórias). Erro de IO vem com mensagem "E_IO ...". Se houver classes_2d.csv,
+    // lê também a árvore de cada classe (arquivo da coluna `habilidades`, só o nome); árvore ausente = classe sem árvore.
     bool LoadDirectory(const std::string& dir);
     // Confere referências (habilidade -> upgrade, rota -> etapa) e as chaves obrigatórias de run_settings. Uma vez.
     bool Finalize();
@@ -103,6 +152,9 @@ public:
     const std::vector<RogueRecipe>& Recipes() const { return recipes_; }
     const std::vector<RogueDrop>& Drops() const { return drops_; }
     const std::vector<RogueUpgrade>& Upgrades() const { return upgrades_; }
+    const std::vector<RogueClass>& Classes() const { return classes_; }       // classes_2d.csv, na ordem
+    int FindClass(std::string_view id) const;                                // índice ou -1
+    int FindSkill(int classIndex, std::string_view skillId) const;           // índice ou -1
     const std::vector<RogueNode>& Stages() const { return stages_; }          // run.csv, na ordem
     // Materiais conhecidos (drops.csv e depois receitas.csv, na ordem em que aparecem).
     const std::vector<ContentId>& Materials() const { return materials_; }
@@ -129,6 +181,9 @@ public:
     std::int64_t EliteFragments() const { return eliteFragments_; }
     std::int64_t VictoryFragments() const { return victoryFragments_; }
     double RestHeal() const { return restHeal_; }
+    // Pontos de habilidade por sala limpa e extras na última sala (chefe). Chaves opcionais (ausente = 0).
+    std::int64_t SkillPointsRoom() const { return skillPointsRoom_; }
+    std::int64_t SkillPointsBoss() const { return skillPointsBoss_; }
 
 private:
     struct RouteRow {
@@ -141,6 +196,7 @@ private:
     std::vector<RogueUpgrade> upgrades_;
     std::vector<RogueNode> stages_;
     std::vector<RouteRow> routes_;
+    std::vector<RogueClass> classes_;
     std::vector<ContentId> materials_;
     std::vector<std::pair<std::string, double>> settings_;
     std::vector<ContentError> errors_;
@@ -148,6 +204,7 @@ private:
     int upgradeCards_ = 0, eliteExtraCards_ = 0;
     std::int64_t roomClearFragments_ = 0, eliteFragments_ = 0, victoryFragments_ = 0;
     double restHeal_ = 0.0;
+    std::int64_t skillPointsRoom_ = 0, skillPointsBoss_ = 0;
     bool finalized_ = false;
 };
 
@@ -161,6 +218,23 @@ enum class RogueMetaResult : std::uint8_t {
     AlreadyOwned = 5,   // amuleto já criado
     StockFull = 6,      // consumível no estoque máximo
     NotOwned = 7,       // equipar amuleto que não foi criado
+};
+
+// Resultado das ações de habilidade. Só Ok muda o estado.
+enum class RogueSkillResult : std::uint8_t {
+    Ok = 0,
+    Unknown = 1,        // classe ou habilidade que não existe
+    Maxed = 2,          // já no nível máximo
+    NoPoints = 3,       // saldo menor que o custo
+    Locked = 4,         // pai ainda não aprendido
+    NotActive = 5,      // equipar uma passiva
+    NotLearned = 6,     // equipar uma ativa com nível 0
+    BadSlot = 7,        // slot fora de 0..3
+    EmptySlot = 8,      // usar um slot vazio
+    Cooldown = 9,       // em recarga
+    NoMana = 10,        // mana menor que o custo
+    WrongPhase = 11,    // trocar de classe com corrida viva
+    NoClass = 12,       // nenhuma classe escolhida (sem classes_2d.csv)
 };
 
 enum class RogueLoadResult : std::uint8_t { Ok = 0, Missing = 1, BadJson = 2, BadVersion = 3 };
@@ -200,6 +274,7 @@ struct RogueKill {
     std::int64_t materialQty = 0;
     bool roomCleared = false;       // esta morte limpou a sala (vivos chegou a 0 durante a luta)
     std::int64_t clearFragments = 0;  // bônus de sala limpa (+ elite) somado agora
+    std::int64_t skillPoints = 0;   // pontos de habilidade dados à classe atual agora (o save do meta mudou)
 };
 
 struct RogueSummary {
@@ -246,6 +321,40 @@ public:
     RogueStats ApplyMeta(const RogueStats& base) const;
     // Upgrades da corrida (ordem de upgrades.csv, uma vez por nível) sobre `stats`.
     RogueStats ApplyRunUpgrades(const RogueStats& stats) const;
+    // Passivas aprendidas da classe atual (ordem do CSV, uma vez por nível). Diferente dos bônus acima, stat que não
+    // está em `stats` entra no fim com 0 antes do bônus (aplicar_passivas do habilidades_2d.gd).
+    RogueStats ApplySkillPassives(const RogueStats& stats) const;
+
+    // --- Habilidades da classe (habilidades_2d.gd). Pontos, níveis e slots são do meta (vão ao save, por classe);
+    // as recargas são da corrida. A mana e os efeitos ficam no cliente.
+    int ClassIndex() const { return class_; }                  // -1 sem classes
+    const std::vector<RogueSkillMeta>& SkillMetas() const { return skillMeta_; }  // por classe
+    const ContentId& ClassId() const;                          // "" sem classes
+    // Escolhe a classe da próxima corrida. Só fora de corrida viva (None, Won, Dead); zera as recargas.
+    RogueSkillResult SetClass(std::string_view classId);
+    std::int64_t SkillPoints() const;                          // saldo da classe atual
+    int SkillLevel(std::string_view skillId) const;            // 0 se desconhecida
+    const ContentId& SkillSlot(int slot) const;                // "" vazio ou fora da faixa
+    RogueSkillResult CheckLearn(std::string_view skillId) const;
+    // Gasta os pontos e sobe um nível; ativa recém-aprendida entra no 1º slot livre.
+    RogueSkillResult Learn(std::string_view skillId);
+    // Soma pontos ao saldo da classe atual (n < 0 conta como 0).
+    RogueSkillResult AddSkillPoints(std::int64_t n);
+    // Redistribuição gratuita: devolve tudo o que foi gasto, zera níveis e slots.
+    RogueSkillResult Respec();
+    // Põe a ativa aprendida no slot ("" limpa). Se ela já estava em outro slot, os dois trocam.
+    RogueSkillResult EquipSkill(int slot, std::string_view skillId);
+    // Definição no nível `level` (< 0 = nível atual; nível 0 mostra o valor base). false se desconhecida.
+    bool SkillDefAt(std::string_view skillId, int level, RogueSkillLevelDef& out) const;
+    // Recargas: Tick desconta `dt` segundos (dt inválido ou <= 0 não faz nada).
+    void TickSkills(double dt);
+    double SkillCooldownLeft(std::string_view skillId) const;  // segundos (0 = pronta)
+    double SlotCooldownFraction(int slot) const;               // 0..1 para a HUD (0 = pronto)
+    // Pode usar o slot com esta mana? (slot, vazio, recarga, mana)
+    RogueSkillResult CheckUse(int slot, double mana) const;
+    // Depois que o efeito do cliente deu certo: confere de novo, inicia a recarga (cd * skill_cd_mult dos stats da
+    // corrida, 1 sem corrida) e devolve o custo de mana em `costOut` (o cliente desconta).
+    RogueSkillResult CommitUse(int slot, double mana, double* costOut = nullptr);
 
     // Save do meta (formato do meta_2d.gd). Leitura: zera o estado e lê o que for válido.
     std::string MetaToJson() const;
@@ -277,11 +386,12 @@ public:
     const std::vector<std::pair<ContentId, std::int64_t>>& GainMaterials() const { return gainMaterials_; }
     // Upgrades que podem sair nas cartas: abaixo do nível máximo e liberados no meta (ordem de upgrades.csv).
     std::vector<ContentId> AvailableUpgrades() const;
-    // Stats finais da corrida: base com meta (guardada no início) + upgrades escolhidos.
+    // Stats finais da corrida: base com meta (guardada no início) + upgrades escolhidos + passivas da árvore.
     RogueStats RunStats() const;
 
     // Inimigo morto: soma o drop aos ganhos; se a sala estava em luta e os vivos chegaram a 0, limpa a sala
-    // (+ room_clear_fragments, + elite_fragments na elite) e sorteia as cartas. Vale em qualquer fase com corrida.
+    // (+ room_clear_fragments, + elite_fragments na elite), dá skill_points_room (+ skill_points_boss na última sala)
+    // à classe atual e sorteia as cartas. Vale em qualquer fase com corrida.
     // Com ExternalCards() ligado não sorteia: a sala limpa fica em Cleared.
     RogueRunResult EnemyKilled(std::string_view enemyId, RogueKill* out = nullptr);
     // Escolhe uma das cartas oferecidas: sobe o nível e abre a porta. `hp` volta somado do ganho de hp_max.
@@ -308,6 +418,8 @@ private:
     void CreditGains();
     void DrawCards(int count);
     void AddGainMaterial(const ContentId& id, std::int64_t qty);
+    void ResetSkillState();
+    void ClearCooldowns();
 
     const RogueData* data_ = nullptr;
     // meta
@@ -318,6 +430,10 @@ private:
     std::vector<int> stock_;                // por receita (consumível)
     std::vector<std::uint8_t> active_;      // por receita (consumível ativo nesta corrida)
     int equipped_ = -1;
+    // habilidades (meta): por classe
+    std::vector<RogueSkillMeta> skillMeta_;  // por classe
+    int class_ = -1;                      // classe atual (a 1ª de classes_2d.csv por padrão)
+    std::vector<double> cooldowns_;       // por habilidade da classe atual (corrida)
     bool externalCards_ = false;            // modo cartas externas (não é meta nem corrida: configuração do cliente)
     // corrida
     RoguePhase phase_ = RoguePhase::None;

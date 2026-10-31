@@ -4797,6 +4797,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_stats_apply(const shatter_
     if (!RogueParseStats(base_json, len, base, err, st)) return st;
     RogueStats s = rogue->state.ApplyMeta(base);
     if (include_run != 0 && rogue->state.Phase() != RoguePhase::None) s = rogue->state.ApplyRunUpgrades(s);
+    if (include_run != 0) s = rogue->state.ApplySkillPassives(s);
     return WriteJson(RogueStatsValue(s), false, out, cap, needed);
 }
 
@@ -4848,7 +4849,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_enemy_killed(shatter_r
     RogueKill k;
     *result = static_cast<std::int32_t>(rogue->state.EnemyKilled(s, &k));
     *room_cleared = k.roomCleared ? 1 : 0;
-    return SHATTER_OK;
+    return k.skillPoints > 0 ? RogueAutoSave(rogue) : SHATTER_OK;  // pontos de habilidade são do meta (API 1.10)
 }
 
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_choose_card(shatter_rogue* rogue, const char* upgrade_id,
@@ -4975,6 +4976,143 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_state_hash(const shatter_r
                                                                std::size_t* needed) SHATTER_NOEXCEPT {
     if (rogue == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
     return WriteOut(rogue->state.StateHash(), out, cap, needed);
+}
+
+
+// --- Habilidades por classe (API 1.10) ---
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_class_set(shatter_rogue* rogue, const char* class_id, std::size_t class_id_len,
+                                                              std::int32_t* result) SHATTER_NOEXCEPT {
+    std::string_view s;
+    if (rogue == nullptr || result == nullptr || !RogueId(class_id, class_id_len, s)) return SHATTER_INVALID_ARGUMENT;
+    const RogueSkillResult r = rogue->state.SetClass(s);
+    *result = static_cast<std::int32_t>(r);
+    return r == RogueSkillResult::Ok ? RogueAutoSave(rogue) : SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skills_json(const shatter_rogue* rogue, std::uint8_t* out, std::size_t cap,
+                                                                std::size_t* needed) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    const RogueState& st = rogue->state;
+    Value o = Value::MakeObject();
+    o.Set("class", Value(st.ClassId()));
+    Value classes = Value::MakeArray();
+    for (const RogueClass& c : rogue->data.Classes()) classes.Push(Value(c.id));
+    o.Set("classes", std::move(classes));
+    o.Set("points", Value(st.SkillPoints()));
+    Value slots = Value::MakeArray();
+    for (int k = 0; k < kRogueSkillSlots; ++k) slots.Push(Value(st.SkillSlot(k)));
+    o.Set("slots", std::move(slots));
+    Value skills = Value::MakeArray();
+    if (st.ClassIndex() >= 0) {
+        for (const RogueSkillDef& d : rogue->data.Classes()[static_cast<std::size_t>(st.ClassIndex())].skills) {
+            Value x = Value::MakeObject();
+            x.Set("id", Value(d.id));
+            x.Set("active", Value(d.active));
+            x.Set("parent", Value(d.parent));
+            x.Set("level", Value(st.SkillLevel(d.id)));
+            x.Set("max_level", Value(d.maxLevel));
+            x.Set("points", Value(d.points));
+            x.Set("can_learn", Value(static_cast<int>(st.CheckLearn(d.id))));
+            x.Set("cooldown", Value(st.SkillCooldownLeft(d.id)));
+            skills.Push(std::move(x));
+        }
+    }
+    o.Set("skills", std::move(skills));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_def_json(const shatter_rogue* rogue, const char* skill_id,
+                                                                   std::size_t skill_id_len, std::int32_t level, std::uint8_t* out,
+                                                                   std::size_t cap, std::size_t* needed) SHATTER_NOEXCEPT {
+    std::string_view s;
+    if (rogue == nullptr || needed == nullptr || !RogueId(skill_id, skill_id_len, s)) return SHATTER_INVALID_ARGUMENT;
+    RogueSkillLevelDef d;
+    if (!rogue->state.SkillDefAt(s, level < 0 ? -1 : level, d)) return SHATTER_NOT_FOUND;
+    Value o = Value::MakeObject();
+    for (const auto& t : d.texts) o.Set(t.first, Value(t.second));
+    for (const auto& n : d.numbers) o.Set(n.first, Value(n.second));
+    o.Set("nivel", Value(d.level));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_can_learn(const shatter_rogue* rogue, const char* skill_id,
+                                                                    std::size_t skill_id_len, std::int32_t* result) SHATTER_NOEXCEPT {
+    std::string_view s;
+    if (rogue == nullptr || result == nullptr || !RogueId(skill_id, skill_id_len, s)) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.CheckLearn(s));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_learn(shatter_rogue* rogue, const char* skill_id, std::size_t skill_id_len,
+                                                                std::int32_t* result) SHATTER_NOEXCEPT {
+    std::string_view s;
+    if (rogue == nullptr || result == nullptr || !RogueId(skill_id, skill_id_len, s)) return SHATTER_INVALID_ARGUMENT;
+    const RogueSkillResult r = rogue->state.Learn(s);
+    *result = static_cast<std::int32_t>(r);
+    return r == RogueSkillResult::Ok ? RogueAutoSave(rogue) : SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_equip(shatter_rogue* rogue, std::uint32_t slot, const char* skill_id,
+                                                                std::size_t skill_id_len, std::int32_t* result) SHATTER_NOEXCEPT {
+    std::string_view s;
+    if (rogue == nullptr || result == nullptr || !Text(skill_id, skill_id_len, s)) return SHATTER_INVALID_ARGUMENT;
+    const int k = slot > 1000u ? -1 : static_cast<int>(slot);
+    const RogueSkillResult r = rogue->state.EquipSkill(k, s);
+    *result = static_cast<std::int32_t>(r);
+    return r == RogueSkillResult::Ok ? RogueAutoSave(rogue) : SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_respec(shatter_rogue* rogue, std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    const RogueSkillResult r = rogue->state.Respec();
+    *result = static_cast<std::int32_t>(r);
+    return r == RogueSkillResult::Ok ? RogueAutoSave(rogue) : SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_points_add(shatter_rogue* rogue, std::int64_t points,
+                                                                     std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    const RogueSkillResult r = rogue->state.AddSkillPoints(points);
+    *result = static_cast<std::int32_t>(r);
+    return r == RogueSkillResult::Ok && points > 0 ? RogueAutoSave(rogue) : SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_tick(shatter_rogue* rogue, double dt) SHATTER_NOEXCEPT {
+    if (rogue == nullptr) return SHATTER_INVALID_ARGUMENT;
+    rogue->state.TickSkills(dt);
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_can_use(const shatter_rogue* rogue, std::uint32_t slot, double mana,
+                                                                  std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.CheckUse(slot > 1000u ? -1 : static_cast<int>(slot), mana));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_commit_use(shatter_rogue* rogue, std::uint32_t slot, double mana,
+                                                                     double* cost_out, std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || cost_out == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.CommitUse(slot > 1000u ? -1 : static_cast<int>(slot), mana, cost_out));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_passives_apply(const shatter_rogue* rogue, const char* base_json,
+                                                                         std::size_t len, std::uint8_t* out, std::size_t cap,
+                                                                         std::size_t* needed, shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (rogue == nullptr || needed == nullptr) return SetError(err, SHATTER_INVALID_ARGUMENT, "rogue or needed is null");
+    RogueStats base;
+    shatter_status st = SHATTER_OK;
+    if (!RogueParseStats(base_json, len, base, err, st)) return st;
+    return WriteJson(RogueStatsValue(rogue->state.ApplySkillPassives(base)), false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_cooldown(const shatter_rogue* rogue, std::uint32_t slot,
+                                                                   double* fraction_out) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || fraction_out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *fraction_out = rogue->state.SlotCooldownFraction(slot > 1000u ? -1 : static_cast<int>(slot));
+    return SHATTER_OK;
 }
 
 }  // extern "C"

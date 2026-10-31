@@ -137,5 +137,6 @@ func salvar() -> bool:
 ## Carrega o save. Arquivo ausente ou inválido deixa o estado zerado. Retorna true se leu um save válido.
 func carregar() -> bool:
 	var r: int = nucleo.meta_carregar()
+	preload("res://scripts2d/habilidades_2d.gd").migrar_legado(nucleo, caminho)   # árvore de antes do core (uma vez)
 	sincronizar()
 	return r == 0

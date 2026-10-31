@@ -715,7 +715,7 @@ func _testar_habilidades() -> void:
 	var h2 = Hab.new()
 	h2.carregar_classe("teste", csv, fx)
 	check(h2.nivel("t_golpe") == 3 and h2.slots[3] == "t_golpe" and h2.pontos == h.pontos, "níveis, slots e pontos voltam do save")
-	check(FileAccess.file_exists(Hab.caminho) and JSON.parse_string(FileAccess.get_file_as_string(Hab.caminho)).has("teste"), "o save em disco guarda a árvore")
+	check(FileAccess.file_exists(Hab.caminho) and JSON.parse_string(FileAccess.get_file_as_string(Hab.caminho)).get("habilidades", {}).has("teste"), "o save do core guarda a árvore")
 	var gasto := 0
 	for id in h.niveis:
 		gasto += int(h.defs[id]["pontos"]) * h.niveis[id]

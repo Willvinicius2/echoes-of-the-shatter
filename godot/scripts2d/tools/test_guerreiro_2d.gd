@@ -177,14 +177,12 @@ func _ativas() -> void:
 	j.global_position = Vector2(500, 500)
 	j.god_mode = true
 	for id in ["w_keen_edge", "w_heavy_slash", "w_whirlwind", "w_stone_rift", "w_flame_brand", "w_shield_bash", "w_charge", "w_battle_cry", "w_leap_slam", "w_rampage"]:
-		for pai in _cadeia(sk, id):
-			sk.niveis[pai] = 1   # cada ativa é testada isolada: a cadeia entra de uma vez
-	sk.slots = ["", "", "", ""]
-	var k := 0
-	for id in sk.ordem:
-		if sk.nivel(id) > 0 and sk.eh_ativa(id) and k < 4:
-			sk.slots[k] = id
-			k += 1
+		var cadeia := _cadeia(sk, id)
+		cadeia.reverse()   # cada ativa é testada isolada: a cadeia é aprendida no core, pais primeiro
+		for pai in cadeia:
+			if sk.nivel(pai) == 0:
+				sk.ganhar_pontos(int(sk.defs[pai]["pontos"]))
+				check.call(sk.aprender(pai), "aprende %s" % pai)
 	var e := _inimigo(Vector2(580, 500))
 	var vida := 100000.0
 	var testes := {
@@ -196,7 +194,8 @@ func _ativas() -> void:
 		j.global_position = Vector2(500, 500)
 		j.velocity = Vector2.ZERO
 		j.estado = j.Estado.LIVRE
-		j.habilidades.recargas.clear()
+		sk.equipar(0, id)
+		sk.limpar_recargas()
 		j._aim = Vector2.RIGHT
 		j.invencivel = 0.0
 		check.call(j.usar(id), "%s: usar começa" % id)
@@ -207,7 +206,9 @@ func _ativas() -> void:
 		check.call(e.hp < vida, "%s: causa dano" % id)
 		check.call(j.estado == j.Estado.LIVRE, "%s: termina e libera o jogador" % id)
 	# buffs
-	j.habilidades.recargas.clear()
+	sk.equipar(0, "w_battle_cry")
+	sk.equipar(1, "w_rampage")
+	sk.limpar_recargas()
 	j.estado = j.Estado.LIVRE
 	check.call(j.usar("w_battle_cry"), "Grito de Guerra")
 	for _i in 30:
