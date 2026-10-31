@@ -112,8 +112,9 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			fora_agua_fc = _subtrair(fora_agua_fc, m)
 		# Terra úmida em 3 degraus translúcidos (4 a 6 px cada), com ruído próprio: a borda esfuma no gramado sem corte reto.
 		for degrau in 3:
-			var folga := [14.0, 9.0, 4.0][degrau]
-			var cor_terra := Color(0.2, 0.16, 0.1, [0.2, 0.3, 0.45][degrau])
+			var folga: float = [14.0, 9.0, 4.0][degrau]
+			var alfa: float = [0.2, 0.3, 0.45][degrau]
+			var cor_terra := Color(0.2, 0.16, 0.1, alfa)
 			var anel := faixa(linha, c["larg"] * tile + folga * 2.0, 5.0 - degrau, 21 + i * 3 + degrau)
 			if anel.is_empty():
 				continue
