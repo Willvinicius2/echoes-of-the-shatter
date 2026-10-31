@@ -436,3 +436,86 @@ TEST(c_api_rogue_same_seed_same_hash_and_state_restore) {
     EXPECT_EQ(shatter_rogue_state_restore(c.r, "{\"format\":9}", 12, &err), SHATTER_PARSE_ERROR);
     EXPECT_EQ(Hash(c.r), before);
 }
+
+TEST(c_api_rogue_external_cards_mode_no_offer_no_draw_and_state) {
+    Rogue g, ref;
+    ASSERT_EQ(g.st, SHATTER_OK);
+    ASSERT_EQ(ref.st, SHATTER_OK);
+    shatter_rogue* r = g.r;
+    shatter_error err{};
+    std::int32_t res = -1;
+    std::uint8_t on = 9;
+    EXPECT_EQ(shatter_api_minor(), 9u);
+    EXPECT_EQ(shatter_rogue_run_external_cards_set(nullptr, 1, &res), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_run_external_cards_set(r, 1, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_run_external_cards_get(nullptr, &on), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_run_external_cards_get(r, nullptr), SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_run_external_cards_get(r, &on), SHATTER_OK);
+    EXPECT_EQ(on, 0);
+    const std::string hOff = Hash(r);
+    EXPECT_EQ(shatter_rogue_run_external_cards_set(r, 1, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_RUN_OK));
+    EXPECT_EQ(shatter_rogue_run_external_cards_get(r, &on), SHATTER_OK);
+    EXPECT_EQ(on, 1);
+    EXPECT_NE(Hash(r), hOff);  // o modo entra no hash
+
+    EXPECT_EQ(shatter_rogue_run_start(r, 42, kBase, std::strlen(kBase), &err), SHATTER_OK);
+    EXPECT_EQ(shatter_rogue_run_start(ref.r, 42, kBase, std::strlen(kBase), &err), SHATTER_OK);
+    EXPECT_EQ(shatter_rogue_run_external_cards_set(r, 0, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_RUN_WRONG_PHASE));  // corrida viva: não muda
+    // Sala limpa: CLEARED sem oferta; escolher carta é WRONG_PHASE.
+    std::uint8_t cleared = 0;
+    for (const std::string& e : RoomEnemies(r)) Kill(r, e, &cleared);
+    for (const std::string& e : RoomEnemies(ref.r)) Kill(ref.r, e);
+    EXPECT_EQ(cleared, 1);
+    EXPECT_EQ(Phase(r), static_cast<std::int32_t>(SHATTER_ROGUE_PHASE_CLEARED));
+    EXPECT_EQ(Phase(ref.r), static_cast<std::int32_t>(SHATTER_ROGUE_PHASE_CHOICE));
+    json::Value run, runRef;
+    ASSERT_TRUE(json::Parse(RunJson(r), run));
+    ASSERT_TRUE(json::Parse(RunJson(ref.r), runRef));
+    EXPECT_EQ(run["offer"].Size(), std::size_t(0));
+    EXPECT_TRUE(run["external_cards"].AsBool(false));
+    EXPECT_FALSE(runRef["external_cards"].AsBool(true));
+    EXPECT_EQ(run["gains"]["fragments"].AsInt(0), runRef["gains"]["fragments"].AsInt(-1));
+    const std::string card = runRef["offer"].At(0).AsString();
+    double hp = 0.0;
+    EXPECT_EQ(shatter_rogue_run_choose_card(r, card.data(), card.size(), 50.0, &hp, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_RUN_WRONG_PHASE));
+    EXPECT_NEAR(hp, 50.0, 1e-12);
+    // Nenhum sorteio consumido: o estado guarda draws 0 (na referência, 1).
+    json::Value st;
+    ASSERT_TRUE(json::Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_rogue_state_json(r, o, c, n); }), st));
+    EXPECT_EQ(st["run"]["draws"].AsUInt64(99), std::uint64_t(0));
+    EXPECT_TRUE(st["external_cards"].AsBool(false));
+    // Stats da corrida = base + meta (stats_apply sem corrida).
+    const std::string base = kBase;
+    EXPECT_EQ(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_rogue_run_stats_json(r, o, c, n); }),
+              Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+                  return shatter_rogue_stats_apply(r, base.data(), base.size(), 0, o, c, n, &err);
+              }));
+    // Porta segue o fluxo normal (bifurcação).
+    EXPECT_EQ(shatter_rogue_run_door(r, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_DOOR_ROUTE));
+
+    // Estado ida e volta em outro objeto: modo e hash voltam juntos.
+    const std::string state = Out([&](std::uint8_t* o, std::size_t n, std::size_t* nd) { return shatter_rogue_state_json(r, o, n, nd); });
+    Rogue c;
+    ASSERT_EQ(c.st, SHATTER_OK);
+    EXPECT_EQ(shatter_rogue_state_restore(c.r, state.data(), state.size(), &err), SHATTER_OK);
+    EXPECT_EQ(Hash(c.r), Hash(r));
+    EXPECT_EQ(shatter_rogue_run_external_cards_get(c.r, &on), SHATTER_OK);
+    EXPECT_EQ(on, 1);
+    shatter_rogue_run_choose_path(r, 1, &res);
+    shatter_rogue_run_choose_path(c.r, 1, &res);
+    for (const std::string& e : RoomEnemies(r)) Kill(r, e);
+    for (const std::string& e : RoomEnemies(c.r)) Kill(c.r, e);
+    EXPECT_EQ(Phase(c.r), static_cast<std::int32_t>(SHATTER_ROGUE_PHASE_CLEARED));  // elite também sem cartas
+    EXPECT_EQ(Hash(c.r), Hash(r));
+    // Morte libera a troca; finish não zera o modo.
+    EXPECT_EQ(shatter_rogue_run_player_died(r, &res), SHATTER_OK);
+    EXPECT_EQ(shatter_rogue_run_external_cards_set(r, 1, &res), SHATTER_OK);
+    EXPECT_EQ(res, static_cast<std::int32_t>(SHATTER_ROGUE_RUN_OK));
+    EXPECT_EQ(shatter_rogue_run_finish(r, &res), SHATTER_OK);
+    EXPECT_EQ(shatter_rogue_run_external_cards_get(r, &on), SHATTER_OK);
+    EXPECT_EQ(on, 1);
+}

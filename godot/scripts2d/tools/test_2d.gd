@@ -70,31 +70,46 @@ func _testar_audio_e_ui() -> void:
 func _testar_upgrades() -> void:
 	var UpScript = preload("res://scripts2d/upgrades_2d.gd")
 	var PlayerScript = preload("res://scripts2d/player_2d.gd")
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
 	var up = UpScript.new()
 	check(up.defs.size() >= 6 and up.defs.size() <= 8, "pool de 6 a 8 upgrades")
 	for id in up.defs:
 		check(Csv.t("upgrade.%s.name" % id) != "upgrade.%s.name" % id and Csv.t("upgrade.%s.desc" % id) != "upgrade.%s.desc" % id, "texto de %s" % id)
-		var p = PlayerScript.new()
-		root.add_child(p)
-		await physics_frame
-		up.restaurar(p)
-		p.reset()
-		var base: Dictionary = p.stats.duplicate()
+	var p = PlayerScript.new()
+	root.add_child(p)
+	await physics_frame
+	up.restaurar(p)
+	p.reset()
+	var base: Dictionary = p.stats.duplicate()
+	check(up.niveis.is_empty(), "corrida nova começa sem níveis")
+	# As cartas vêm do core ao limpar a sala; só as oferecidas podem ser escolhidas.
+	var n: Object = up.nucleo
+	for i in 3:
+		var morto := false
+		for e in n.corrida_estado()["node"]["enemies"]:
+			for _k in int(e["count"]):
+				morto = n.corrida_inimigo_morto(e["id"])["sala_limpa"]
+		check(morto, "sala %d limpa pelo core" % (i + 1))
+		var oferta: Array = up.oferta()
+		check(oferta.size() == 3 and oferta[0] != oferta[1] and oferta[1] != oferta[2] and oferta[0] != oferta[2], "sorteio de 3 cartas distintas")
+		var id: String = oferta[0]
 		var st: String = up.defs[id]["stat"]
+		var antes: float = p.stats[st]
+		var fora := ""
+		for k in up.defs:
+			if not oferta.has(k):
+				fora = k
+		check(not up.escolher(fora, p), "carta fora da oferta é recusada")
 		check(up.escolher(id, p), "escolhe %s" % id)
-		check(not is_equal_approx(p.stats[st], base[st]), "%s muda %s" % [id, st])
+		check(not is_equal_approx(p.stats[st], antes), "%s muda %s" % [id, st])
 		if st == "hp_max":
 			check(is_equal_approx(p.hp, p.stats["hp_max"]), "vigor cura o ganho")
-		for _i in up.defs[id]["nivel_max"] - 1:
-			up.escolher(id, p)
-		check(not up.escolher(id, p), "%s para no nível máximo" % id)
-		up.restaurar(p)
-		check(is_equal_approx(p.stats[st], base[st]) and up.niveis.is_empty(), "restaurar volta a base de %s" % id)
-		p.free()
-	var cartas: Array = up.sortear(rng, 3)
-	check(cartas.size() == 3 and cartas[0] != cartas[1] and cartas[1] != cartas[2] and cartas[0] != cartas[2], "sorteio de 3 cartas distintas")
+		if n.corrida_porta() == 2:
+			n.corrida_escolher_caminho(0)
+		check(n.corrida_fase() == 1, "porta leva à próxima sala (luta)")
+	n.corrida_iniciar(7, base)
+	up.restaurar(p)
+	check(p.stats == base and up.niveis.is_empty(), "restaurar volta a base")
+	p.free()
 
 func _esperar(cond: Callable, limite: float) -> void:
 	var t := 0.0
@@ -206,9 +221,14 @@ func _novo_duelo(niveis: Dictionary) -> Array:
 	var up = load("res://scripts2d/upgrades_2d.gd").new()
 	up.restaurar(p)
 	p.reset()
-	for id in niveis:
-		for _i in niveis[id]:
-			up.escolher(id, p)
+	if not niveis.is_empty():
+		# Níveis de upgrade direto no estado do core (restaurar o estado é o caminho de teste; a sorte das cartas não conta).
+		var est: Dictionary = JSON.parse_string(up.nucleo.estado_texto())
+		for id in niveis:
+			est["run"]["levels"][id] = niveis[id]
+		up.nucleo.estado_restaurar(JSON.stringify(est))
+		p.stats = up.nucleo.corrida_stats()
+		p.hp = p.stats["hp_max"]
 	var b = load("res://scripts2d/boss_2d.gd").new()
 	mundo.add_child(b)
 	p.global_position = Vector2(0, 0)
@@ -453,8 +473,8 @@ func _testar_meta() -> void:
 	check(not m.liberada("multishot") and m.liberada("power"), "multishot nasce bloqueado, power liberado")
 	for id in m.defs:
 		check(Csv.t("meta.%s.name" % id) != "meta.%s.name" % id, "texto de %s" % id)
-	for e in m.drops:
-		check(Csv.t("material." + m.drops[e]["material"]) != "material." + m.drops[e]["material"], "texto do material de %s" % e)
+	for r in Csv.rows("res://data2d/drops.csv"):
+		check(Csv.t("material." + r["material"]) != "material." + r["material"], "texto do material de %s" % r["inimigo"])
 	check(not m.comprar("unlock_multishot"), "sem fragmentos não compra")
 	m.creditar({"fragmentos": 200, "materiais": {"pedra_cinza": 2}})
 	check(m.comprar("unlock_multishot") and m.liberada("multishot") and m.fragmentos == 200 - m.defs["unlock_multishot"]["custo"], "compra desbloqueia e gasta")
@@ -533,7 +553,7 @@ func _testar_forja() -> void:
 	# Balanceamento: uma corrida completa rende ~15 materiais; a 1ª receita sai em até uma corrida.
 	var total := 0
 	for e in ["hollow_sentinel", "skeleton_soldier", "skeleton_soldier", "skeleton_soldier", "wandering_ghost", "wandering_ghost", "crypt_bat", "crypt_bat", "chain_wraith", "chain_wraith", "ghost_archer", "ghost_archer", "skeleton_soldier"]:
-		total += m.drop_de(e)["material_qtd"]
+		total += m.drop_de(e)["material_qty"]
 	check(total >= 12, "corrida até a sala 3 rende ao menos 12 materiais (%d)" % total)
 	var custo1 := 0
 	for q in m.receitas["amuleto_osso"]["custo"].values():
