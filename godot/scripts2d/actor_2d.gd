@@ -100,7 +100,8 @@ func _respirar(delta: float) -> void:
 	if _anim_base == "idle":
 		_fase_respiro += delta * 2.4
 		var r := sin(_fase_respiro)
-		sprite.scale = Vector2(1.0 - 0.012 * r, 1.0 + 0.026 * r)
+		var k := 1.0 / escala_sprite()  # sprite maior (chefe) respira a mesma quantidade de px, não a mesma fração
+		sprite.scale = Vector2(1.0 - 0.012 * k * r, 1.0 + 0.026 * k * r)
 	elif sprite.scale != Vector2.ONE:
 		sprite.scale = Vector2.ONE
 
