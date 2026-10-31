@@ -6,3 +6,5 @@ amuleto_ferro,amuleto,dodge_cooldown,mult,-0.08,ferro_corroido,2,essencia_etera,
 amuleto_nucleo,amuleto,shoot_cooldown,mult,-0.06,nucleo_estilhaco,1,ferro_corroido,2,70,1
 tonico_vida,consumivel,hp_max,add,25,essencia_etera,1,osso_antigo,1,8,3
 po_afiado,consumivel,arrow_damage,mult,0.12,osso_antigo,2,essencia_etera,1,12,3
+amuleto_cinza,amuleto,arrow_pierce,add,1,pedra_cinza,3,ferro_corroido,3,60,1
+tonico_folego,consumivel,dodge_cooldown,mult,-0.15,essencia_etera,2,pedra_cinza,1,10,3
