@@ -51,6 +51,19 @@ Anote em cada passo: passou (P), falhou (F) ou estranho (E), com uma linha de de
 ### 2.5 Relato
 Para cada falha: build (data/commit), plataforma, passo do roteiro, o que esperava, o que aconteceu, captura de tela. Abrir como issue com a etiqueta `playtest`.
 
+### 2.6 Perguntas de feedback da demo (Will)
+Depois de jogar a demo (doc 28), responda em poucas palavras:
+1. Os controles (WASD, mira, tiro, esquiva) responderam bem? Algo travou ou atrasou?
+2. A sala 1 ensinou o básico ou você ficou perdido? O tutorial ajudou?
+3. As cartas de upgrade fazem diferença perceptível? Alguma é inútil ou forte demais?
+4. A dificuldade das salas 2 e 3 está certa, fácil ou difícil?
+5. O Guardião está justo? Fácil, difícil ou injusto em algum padrão (qual)?
+6. A escolha de rota (combate, elite, descanso) pareceu importante?
+7. O hub, a Forja e as Melhorias são claros? Você entendeu o que comprar e criar?
+8. Depois de morrer, deu vontade de tentar de novo? Por quê?
+9. Imagem e som: o que mais incomodou (HUD, ícones, cenário, áudio)?
+10. Em uma frase: o que você mais quer que mude antes da próxima rodada?
+
 ## 3. Critério de saída para o Acesso Antecipado (QA)
 - `teste-headless` verde em `master`.
 - `corridas-bot` com 0 travadas em 3 execuções seguidas com sementes diferentes.

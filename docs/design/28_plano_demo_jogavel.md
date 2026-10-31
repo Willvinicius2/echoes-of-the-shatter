@@ -22,7 +22,7 @@ Conteúdo da Região 1 (PR 118), opções, tutorial e interface Steam (119), tex
 ## 4. O que falta antes de entregar
 | Item | Dono | Entrega |
 |---|---|---|
-| Suavizar o Guardião | setor B (`boss_patterns_2d.csv`, `enemies.csv`) | Vida/dano reduzidos de forma leve; bot com taxa de vitória do chefe em faixa razoável (alvo: 30 a 60%) |
+| Suavizar o Guardião | setor B (`boss_patterns_2d.csv`, `enemies.csv`) | **Feito**: vida 1500→1300 e dano 20→18 em `enemies.csv`; mortes do bot na sala do chefe caíram de 67% (6 entradas, 2 vitórias) para 50–57% em duas sementes |
 | Conferir CI do `master` | setor C | `test_2d.gd`, `corridas-bot` e `export` verdes no último commit; artefatos `build-windows` e `build-linux` presentes |
 | Roteiro de teste | setor C | `docs/requisitos-qa/11_playtest_2d.md` já serve; adicionar ao fim uma lista de 10 perguntas que o Will responde depois de jogar |
 | Salas por etapa, variação de chefe, teto de cartas acima de 8 | setor B / A | **Não bloqueiam a demo**; entram depois do feedback |
