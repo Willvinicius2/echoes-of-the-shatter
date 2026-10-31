@@ -34,7 +34,7 @@ public:
     int meta_creditar(const Dictionary& ganhos);
     Dictionary meta_estado() const;
     Dictionary drop_de(const String& inimigo) const;
-    bool habilidade_liberada(const String& upgrade) const;
+    int habilidade_liberada(const String& upgrade) const;   // 1 liberada, 0 bloqueada, -1 desconhecida
     double configuracao(const String& chave) const;
 
     // Stats: objeto stat -> número.
@@ -48,6 +48,7 @@ public:
     Dictionary corrida_escolher_carta(const String& upgrade, double hp);
     Dictionary corrida_descansar(double hp);
     int corrida_porta();
+    int corrida_cartas_externas(bool ligado);   // só fora de corrida viva; 0 = ok
     int corrida_escolher_caminho(int indice);
     int corrida_jogador_morreu();
     int corrida_terminar();

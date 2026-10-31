@@ -9,6 +9,9 @@ const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
 const BossScript = preload("res://scripts2d/boss_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
+const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
+const SkillsGuerreiroScript = preload("res://scripts2d/skills_guerreiro_2d.gd")
+const Classe = preload("res://scripts2d/classe_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
@@ -27,6 +30,7 @@ var room: Node2D
 var player: Node2D
 var hud: CanvasLayer
 var upgrades: RefCounted
+var _classe_montada := ""
 var meta: RefCounted
 var nucleo: Object         # ShatterRogue (mesmo núcleo do meta)
 ## Ganhos da corrida atual, guardados no core; vão ao saldo quando ela acaba. {"fragmentos": n, "materiais": {id: n}}
@@ -54,17 +58,14 @@ func _ready() -> void:
 	atores = Node2D.new()
 	atores.y_sort_enabled = true
 	add_child(atores)
-	player = PlayerScript.new()
-	player.died.connect(_on_player_died)
-	atores.add_child(player)
-	camera = Camera2D.new()
-	camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
-	add_child(camera)
+	Classe.ler_argumentos()
 	meta = MetaScript.new()
 	meta.carregar()
 	nucleo = meta.nucleo
-	upgrades = UpgradesScript.new()
-	upgrades.meta = meta
+	_criar_classe()
+	camera = Camera2D.new()
+	camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
+	add_child(camera)
 	var etapa := 0
 	while not nucleo.corrida_caminhos(etapa).is_empty():
 		salas.append(_no_do_core(nucleo.corrida_caminhos(etapa)[0]))
@@ -91,18 +92,59 @@ func _ready() -> void:
 	if com_menu:
 		_ir_titulo()
 
+## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro: cartas do core; guerreiro: árvore de habilidades).
+func _criar_classe() -> void:
+	var guerreiro: bool = Classe.atual == "guerreiro"
+	player = (WarriorScript if guerreiro else PlayerScript).new()
+	player.died.connect(_on_player_died)
+	atores.add_child(player)
+	upgrades = (SkillsGuerreiroScript if guerreiro else UpgradesScript).new()
+	upgrades.meta = meta
+	if guerreiro:
+		player.skills = upgrades
+	_classe_montada = Classe.atual
+
+## Troca de classe entre corridas (botão do título): recria o jogador e religa HUD e cartas.
+func _trocar_classe() -> void:
+	player.queue_free()
+	_criar_classe()
+	hud.jogador = player
+	hud.upgrades = upgrades
+	ui.upgrades = upgrades
+
 func iniciar_corrida() -> void:
+	if Classe.atual != _classe_montada:
+		_trocar_classe()
 	# O core credita os ganhos pendentes de uma corrida abandonada (reiniciar, título) ao começar a próxima.
 	rng.seed = int(config["seed"]) + corridas
-	upgrades.semente = rng.seed
 	corridas += 1
 	indice = 0
 	tempo = 0.0
 	menus.limpar_fade()
-	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador
+	var guerreiro: bool = Classe.atual == "guerreiro"
+	# O guerreiro tem a árvore de habilidades no GDScript (ainda não migrada): o core só roda o fluxo da corrida, sem cartas.
+	if nucleo.corrida_fase() != 0:
+		nucleo.corrida_terminar()   # corrida abandonada: o modo de cartas só muda fora de corrida viva (credita os ganhos)
+	nucleo.corrida_cartas_externas(guerreiro)
+	if not guerreiro:
+		upgrades.semente = int(rng.seed)
+	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador; o arqueiro também começa a corrida no core
+	if guerreiro:
+		nucleo.corrida_iniciar(int(rng.seed), upgrades.base_numerica())
 	meta.sincronizar()
 	player.reset()
 	_carregar_sala(0)
+
+## Cartas da sala limpa: o arqueiro recebe as que o core sorteou; o guerreiro sorteia na árvore dele.
+func _cartas_da_sala() -> Array:
+	if Classe.atual != "guerreiro":
+		return upgrades.oferta()
+	if indice + 1 >= salas.size() or no_atual["tipo"] == "descanso":
+		return []
+	var qtd := int(config["upgrade_cards"])
+	if no_atual["tipo"] == "elite":
+		qtd += int(config["elite_extra_cards"])
+	return upgrades.sortear(rng, qtd)
 
 ## Nó do core ({id, kind, room, enemies: [{id, count}]}) no formato que o cliente usa: tipo e texto "inimigo:n|...".
 func _no_do_core(c: Dictionary) -> Dictionary:
@@ -196,7 +238,7 @@ func _physics_process(delta: float) -> void:
 		if _timer <= 0.0:
 			match estado:
 				Estado.LIMPA:
-					var cartas: Array = upgrades.oferta()
+					var cartas: Array = _cartas_da_sala()
 					if cartas.is_empty():
 						_abrir_porta()
 					else:
@@ -269,7 +311,7 @@ func _mostrar_fim() -> void:
 	var resumo := [
 		Csv.t("menu.sum_time") % formatar_tempo(tempo),
 		Csv.t("menu.sum_rooms") % [int(r["stage_reached"]) + 1, int(r["stages_total"])],
-		Csv.t("menu.sum_upgrades") % int(r["upgrades_total"]),
+		Csv.t("menu.sum_upgrades") % _total_upgrades(),
 		Csv.t("menu.sum_fragments") % int(r["fragments"]),
 	]
 	if not mats.is_empty():
@@ -278,6 +320,12 @@ func _mostrar_fim() -> void:
 	meta.sincronizar()
 	menus.mostrar_fim(estado == Estado.VENCEU, resumo)
 	get_tree().paused = true
+
+func _total_upgrades() -> int:
+	var n := 0
+	for id in upgrades.niveis:
+		n += int(upgrades.niveis[id])
+	return n
 
 static func formatar_tempo(seg: float) -> String:
 	var total := int(seg)

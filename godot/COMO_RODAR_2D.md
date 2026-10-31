@@ -3,6 +3,7 @@
 Cena principal: `scenes2d/Run2D.tscn` (GDScript, sem C#). Código em `scripts2d/`, dados em `data2d/` (CSV e salas em texto), arte em `art2d/`. O cliente só apresenta: meta, Forja, cartas e fluxo da corrida são do módulo `rogue` do ShatterCore, chamado pela GDExtension `ShatterRogue` (`godot/gdextension/`).
 
 - Controles: WASD move, mouse mira, clique atira, Espaço esquiva, R reinicia ao morrer.
+- Guerreiro: no título, o botão "Classe" alterna Arqueiro/Guerreiro (ou `-- --classe=guerreiro` na linha de comando). Clique = combo de espada em 3 golpes; Q, E, F, R usam as habilidades ativas na ordem em que foram aprendidas (cartas ao limpar a sala; segurar a tecla da Postura de Guarda). Árvore em `data2d/habilidades_guerreiro.csv`; regras do personagem em `data2d/guerreiro.csv`.
 - Corrida: 4 salas (`data2d/run.csv`), a última com o Guardião. Limpou, a porta abre; morreu, recomeça em 2 s.
 - Chefe: `data2d/boss_patterns_2d.csv` (fases por limiar de vida, padrões golpe/leque/anel/investida, entrada e transição) e `scripts2d/boss_2d.gd`.
 - Números: `data2d/player.csv`, `enemies.csv` (inclui `windup` e `kb_resist`), `feel.csv` (hit stop, tremor, números de dano), `run_settings.csv`. Textos: `loc_2d.csv`. Salas: `data2d/rooms/*.txt` (legenda no topo de `scripts2d/room_2d.gd`).

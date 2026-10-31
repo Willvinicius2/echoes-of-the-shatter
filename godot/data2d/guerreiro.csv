@@ -1,0 +1,42 @@
+chave,valor,unidade,nota
+hp_max,140,hp,vida do guerreiro
+speed,235,px/s,velocidade de corrida
+accel,2400,px/s2,aceleracao
+friction,3000,px/s2,desaceleracao
+radius,15,px,raio de colisao nos pes
+damage,18,hp,dano base do golpe de espada (1x)
+attack_cooldown,0.42,s,intervalo entre golpes do combo
+attack_range,88,px,alcance do golpe basico
+attack_arc,110,graus,abertura do cone do golpe basico
+attack_move_mult,0.55,x,fator de velocidade durante o golpe
+combo_window,0.7,s,tempo para encadear o proximo golpe do combo
+combo2_mult,1.1,x,dano do 2o golpe
+combo3_mult,1.5,x,dano do 3o golpe
+combo3_arc_mult,1.3,x,abertura extra do 3o golpe
+combo_lunge,160,px/s,impulso para frente a cada golpe
+dodge_speed,600,px/s,velocidade da esquiva
+dodge_time,0.22,s,duracao da esquiva
+dodge_cooldown,0.9,s,recarga da esquiva
+hit_iframes,0.6,s,invulnerabilidade apos levar dano
+impeto_max,100,pt,teto do impeto
+impeto_gain,8,pt,impeto ganho por golpe que acerta
+impeto_decay,6,pt/s,perda de impeto fora de combate
+impeto_decay_delay,3,s,tempo sem acertar antes do impeto cair
+impeto_damage,0.3,x,bonus de dano com impeto cheio
+damage_taken,1,x,multiplicador do dano recebido
+regen,0,hp/s,regeneracao fora de combate
+regen_delay,3,s,tempo sem dano antes de regenerar
+lifesteal,0,x,fracao do dano causado devolvida em vida
+exec_bonus,0,x,bonus de dano contra alvo quase morto
+exec_threshold,0.3,x,fracao de vida que define alvo quase morto
+burn_dps,0,hp/s,dano de queimadura aplicado pelos golpes
+burn_time,3,s,duracao da queimadura
+revide,0,x,dano do pulso de revide ao ser atingido (x dano base)
+revide_radius,100,px,raio do pulso de revide
+last_stand,0,nivel,Ultima Resistencia: nivel (0 = sem a habilidade)
+last_stand_time,1.5,s,invulnerabilidade por nivel da Ultima Resistencia
+last_stand_heal,0.2,x,cura por nivel da Ultima Resistencia (fracao da vida)
+guard_reduction,0.7,x,reducao de dano frontal na Postura de Guarda
+guard_arc,150,graus,abertura da guarda
+guard_move_mult,0.45,x,fator de velocidade em guarda
+guard_impeto,12,pt,impeto ganho ao bloquear

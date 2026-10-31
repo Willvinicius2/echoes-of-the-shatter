@@ -74,8 +74,9 @@ func nivel(id: String) -> int:
 	return int(niveis.get(id, 0))
 
 ## Habilidade de corrida liberada? Habilidades sem entrada em meta.csv nascem liberadas.
+## Habilidade que o core não conhece (árvore do guerreiro, ainda no GDScript) nasce liberada.
 func liberada(upgrade_id: String) -> bool:
-	return nucleo.habilidade_liberada(upgrade_id)
+	return nucleo.habilidade_liberada(upgrade_id) != 0
 
 func pode_comprar(id: String) -> bool:
 	return nucleo.meta_pode_comprar(id) == 0
@@ -107,9 +108,20 @@ func preparar_corrida() -> void:
 	nucleo.meta_preparar_corrida()
 	sincronizar()
 
-## Soma os bônus permanentes aos stats base da corrida.
+## Nomes de stat do arqueiro que valem para outras classes (o guerreiro usa `damage` e `attack_cooldown`).
+const ALIAS_STAT := {"damage": "arrow_damage", "attack_cooldown": "shoot_cooldown"}
+
+## Soma os bônus permanentes aos stats base da corrida (o core usa os nomes do arqueiro; só traduzimos os nomes).
 func aplicar(base: Dictionary) -> Dictionary:
-	return nucleo.aplicar_stats(base, false)
+	var entrada := {}
+	for k in base:
+		entrada[ALIAS_STAT[k] if ALIAS_STAT.has(k) and not base.has(ALIAS_STAT[k]) else k] = base[k]
+	var saida: Dictionary = nucleo.aplicar_stats(entrada, false)
+	var s := {}
+	for k in base:
+		var nome: String = ALIAS_STAT[k] if ALIAS_STAT.has(k) and not base.has(ALIAS_STAT[k]) else k
+		s[k] = saida[nome]
+	return s
 
 ## Ganho de um inimigo morto: {"fragments": n, "material": id, "material_qty": n} (vazio se não dropa).
 func drop_de(inimigo: String) -> Dictionary:

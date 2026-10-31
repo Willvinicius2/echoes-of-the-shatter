@@ -752,13 +752,20 @@ RogueRunResult RogueState::EnemyKilled(std::string_view enemyId, RogueKill* out)
         const bool elite = node_.kind == kKindElite;
         k.clearFragments = data_->RoomClearFragments() + (elite ? data_->EliteFragments() : 0);
         gainFragments_ = SatAdd(gainFragments_, k.clearFragments);
-        // Cartas: não na última sala nem no descanso; a elite oferece elite_extra_cards a mais.
-        if (stage_ + 1 < StagesTotal() && node_.kind != kKindRest) {
+        // Cartas: não na última sala nem no descanso nem no modo cartas externas; a elite oferece elite_extra_cards a mais.
+        if (!externalCards_ && stage_ + 1 < StagesTotal() && node_.kind != kKindRest) {
             DrawCards(data_->UpgradeCards() + (elite ? data_->EliteExtraCards() : 0));
             if (!offer_.empty()) phase_ = RoguePhase::Choice;
         }
     }
     if (out != nullptr) *out = k;
+    return RogueRunResult::Ok;
+}
+
+RogueRunResult RogueState::SetExternalCards(bool on) {
+    if (phase_ != RoguePhase::None && phase_ != RoguePhase::Won && phase_ != RoguePhase::Dead)
+        return RogueRunResult::WrongPhase;
+    externalCards_ = on;
     return RogueRunResult::Ok;
 }
 
@@ -857,6 +864,8 @@ std::string RogueState::StateJson() const {
     for (std::size_t k = 0; k < active_.size(); ++k)
         if (active_[k] != 0) act.Push(Value(data_->Recipes()[k].id));
     o.Set("active", std::move(act));
+    // Só aparece ligado: o estado sem o modo continua byte a byte o da API 1.8 (mesmo hash).
+    if (externalCards_) o.Set("external_cards", Value(true));
     Value run = Value::MakeObject();
     run.Set("phase", Value(RoguePhaseName(phase_)));
     run.Set("seed", json::FromUInt64(seed_));
@@ -901,6 +910,9 @@ bool RogueState::RestoreState(std::string_view text, std::string* error) {
         if (k < 0 || data_->Recipes()[static_cast<std::size_t>(k)].amulet) return fail("bad active consumable");
         t.active_[static_cast<std::size_t>(k)] = 1;
     }
+    const Value& ext = d["external_cards"];
+    if (ext.type() != json::Type::Null && ext.type() != json::Type::Bool) return fail("bad external_cards");
+    t.externalCards_ = ext.AsBool(false);
     const Value& run = d["run"];
     if (run.type() != json::Type::Object) return fail("run is not an object");
     bool okPhase = false;
@@ -932,6 +944,8 @@ bool RogueState::RestoreState(std::string_view text, std::string* error) {
         if (v.type() != json::Type::String || data_->FindUpgrade(v.AsString()) < 0) return fail("bad offer");
         t.offer_.push_back(v.AsString());
     }
+    // No modo cartas externas nunca há escolha nem oferta pendente.
+    if (t.externalCards_ && (t.phase_ == RoguePhase::Choice || !t.offer_.empty())) return fail("offer with external cards");
     if (run["base"].type() != json::Type::Object) return fail("bad base");
     for (const auto& m : run["base"].Members()) {
         if (!m.second.IsNumber()) return fail("bad base stat");

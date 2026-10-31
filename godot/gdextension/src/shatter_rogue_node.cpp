@@ -132,11 +132,13 @@ Dictionary ShatterRogue::drop_de(const String& inimigo) const {
     });
 }
 
-bool ShatterRogue::habilidade_liberada(const String& upgrade) const {
+int ShatterRogue::habilidade_liberada(const String& upgrade) const {
     std::string s = utf8(upgrade);
     uint8_t r = 0;
-    shatter_rogue_skill_unlocked(rogue_, s.data(), s.size(), &r);
-    return r != 0;
+    if (shatter_rogue_skill_unlocked(rogue_, s.data(), s.size(), &r) == SHATTER_NOT_FOUND) {
+        return -1;  // upgrade que o core não conhece (habilidade de outra classe)
+    }
+    return r != 0 ? 1 : 0;
 }
 
 double ShatterRogue::configuracao(const String& chave) const {
@@ -216,6 +218,12 @@ ROGUE_ACAO_RESULTADO(corrida_porta, shatter_rogue_run_door)
 ROGUE_ACAO_RESULTADO(corrida_jogador_morreu, shatter_rogue_run_player_died)
 ROGUE_ACAO_RESULTADO(corrida_terminar, shatter_rogue_run_finish)
 
+int ShatterRogue::corrida_cartas_externas(bool ligado) {
+    int32_t r = -1;
+    shatter_rogue_run_external_cards_set(rogue_, ligado ? 1 : 0, &r);
+    return r;
+}
+
 int ShatterRogue::corrida_escolher_caminho(int indice) {
     int32_t r = -1;
     shatter_rogue_run_choose_path(rogue_, static_cast<uint32_t>(indice), &r);
@@ -273,6 +281,7 @@ void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("corrida_escolher_carta", "upgrade", "hp"), &ShatterRogue::corrida_escolher_carta);
     ClassDB::bind_method(D_METHOD("corrida_descansar", "hp"), &ShatterRogue::corrida_descansar);
     ClassDB::bind_method(D_METHOD("corrida_porta"), &ShatterRogue::corrida_porta);
+    ClassDB::bind_method(D_METHOD("corrida_cartas_externas", "ligado"), &ShatterRogue::corrida_cartas_externas);
     ClassDB::bind_method(D_METHOD("corrida_escolher_caminho", "indice"), &ShatterRogue::corrida_escolher_caminho);
     ClassDB::bind_method(D_METHOD("corrida_jogador_morreu"), &ShatterRogue::corrida_jogador_morreu);
     ClassDB::bind_method(D_METHOD("corrida_terminar"), &ShatterRogue::corrida_terminar);

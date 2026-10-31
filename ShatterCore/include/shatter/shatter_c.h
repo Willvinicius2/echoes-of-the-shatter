@@ -553,7 +553,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 8u   /* 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 9u   /* 9: modo "cartas externas" do rogue (shatter_rogue_run_external_cards_set/_get, docs/09 seção 16.5); 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -1525,15 +1525,27 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_phase(const shatter_ro
  * (id e kind "combate") e depois as alternativas de rota.csv. Etapa fora da faixa: SHATTER_NOT_FOUND. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_paths_json(const shatter_rogue* rogue, uint32_t stage, uint8_t* out,
                                                                      size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Modo "cartas externas" (API 1.9): para a classe cuja progressão da corrida é do cliente (ex.: árvore de habilidades do
+ * Guerreiro). Ligado, o core não sorteia nem oferece cartas: a sala limpa vai direto a CLEARED (porta aberta, como na
+ * última sala e no descanso), sem consumir sorteio do Pcg32 e com "offer" vazia; choose_card dá WRONG_PHASE; os stats da
+ * corrida ficam base + meta. Etapas, rotas, drops, ganhos, descanso, vitória e derrota não mudam. O modo vale até ser
+ * desligado (run_start, run_finish e o save do meta não o zeram), entra no state_json/state_hash e volta com
+ * state_restore. Só muda fora de corrida viva (fase NONE, WON ou DEAD): chame antes de shatter_rogue_run_start. Em outra
+ * fase: *result = WRONG_PHASE e nada muda; senão OK. on: 0 desliga, qualquer outro valor liga. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_external_cards_set(shatter_rogue* rogue, uint8_t on,
+                                                                            int32_t* result) SHATTER_NOEXCEPT;
+/* *out = 1 com o modo cartas externas ligado, senão 0. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_external_cards_get(const shatter_rogue* rogue,
+                                                                            uint8_t* out) SHATTER_NOEXCEPT;
 /* Inimigo morto (qualquer fase com corrida): soma o drop aos ganhos; na luta, o último vivo limpa a sala
  * (+ room_clear_fragments, + elite_fragments na elite) e sorteia as cartas (upgrade_cards, + elite_extra_cards na elite;
- * nenhuma na última sala nem no descanso). *room_cleared = 1 se esta morte limpou a sala (fase vira CHOICE com cartas, ou
+ * nenhuma na última sala, no descanso nem no modo cartas externas). *room_cleared = 1 se esta morte limpou a sala (fase vira CHOICE com cartas, ou
  * CLEARED sem). Sem corrida: *result = WRONG_PHASE. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_enemy_killed(shatter_rogue* rogue, const char* enemy_id,
                                                                        size_t enemy_id_len, uint8_t* room_cleared,
                                                                        int32_t* result) SHATTER_NOEXCEPT;
 /* Escolhe uma das cartas oferecidas (fase CHOICE): sobe o nível e abre a porta (CLEARED). *hp_out = hp + o ganho de hp_max
- * (se subiu). Carta fora da oferta: NOT_OFFERED. */
+ * (se subiu). Carta fora da oferta: NOT_OFFERED. Modo cartas externas: sempre WRONG_PHASE (nunca há fase CHOICE). */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_choose_card(shatter_rogue* rogue, const char* upgrade_id,
                                                                       size_t upgrade_id_len, double hp, double* hp_out,
                                                                       int32_t* result) SHATTER_NOEXCEPT;
@@ -1553,7 +1565,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_player_died(shatter_ro
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_finish(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
 /* Estado da corrida: {"phase":"none|fight|cleared|choice|route|won|dead","stage","stages_total","node":{...}|null,
  * "alive","rest_pending","offer":[ids],"upgrades":[{"id","stat","mode","value","level","max_level","unlocked"}],
- * "route_options":[caminhos] (só na fase route),"gains":{"fragments","materials":[{"id","qty"}]}}. */
+ * "route_options":[caminhos] (só na fase route),"gains":{"fragments","materials":[{"id","qty"}]},
+ * "external_cards":bool (API 1.9)}. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
                                                                size_t* needed) SHATTER_NOEXCEPT;
 /* Stats finais da corrida (base com o meta guardada no início + upgrades), mesmo formato de stats_apply. Sem corrida: {}. */

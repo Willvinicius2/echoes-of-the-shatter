@@ -4825,6 +4825,20 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_paths_json(const shatt
     return WriteJson(RoguePathsValue(rogue->data.Paths(static_cast<int>(stage))), false, out, cap, needed);
 }
 
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_external_cards_set(shatter_rogue* rogue, std::uint8_t on,
+                                                                          std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.SetExternalCards(on != 0));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_external_cards_get(const shatter_rogue* rogue,
+                                                                          std::uint8_t* out) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *out = rogue->state.ExternalCards() ? 1 : 0;
+    return SHATTER_OK;
+}
+
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_enemy_killed(shatter_rogue* rogue, const char* enemy_id,
                                                                      std::size_t enemy_id_len, std::uint8_t* room_cleared,
                                                                      std::int32_t* result) SHATTER_NOEXCEPT {
@@ -4915,6 +4929,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_json(const shatter_rog
     gains.Set("fragments", Value(s.GainFragments()));
     gains.Set("materials", RogueQtyList(s.GainMaterials()));
     o.Set("gains", std::move(gains));
+    o.Set("external_cards", Value(s.ExternalCards()));
     return WriteJson(o, false, out, cap, needed);
 }
 
