@@ -92,7 +92,17 @@ func _process(delta: float) -> void:
 			sprite.position = Vector2.from_angle(randf() * TAU) * _shake_px * clampf(_shake_t / _shake_total, 0.0, 1.0)
 		else:
 			sprite.position = Vector2.ZERO
+		_respirar(delta)
 	queue_redraw()
+
+## Respiração do idle por código (os quadros da folha mal mudam): o corpo estica de 2 a 3 px a partir dos pés.
+func _respirar(delta: float) -> void:
+	if _anim_base == "idle":
+		_fase_respiro += delta * 2.4
+		var r := sin(_fase_respiro)
+		sprite.scale = Vector2(1.0 - 0.012 * r, 1.0 + 0.026 * r)
+	elif sprite.scale != Vector2.ONE:
+		sprite.scale = Vector2.ONE
 
 func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.4))
