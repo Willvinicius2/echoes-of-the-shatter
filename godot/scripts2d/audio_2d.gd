@@ -69,6 +69,9 @@ static func _voz(nome: String) -> AudioStreamPlayer:
 		p = AudioStreamPlayer.new()
 		p.name = nome
 		p.process_mode = Node.PROCESS_MODE_ALWAYS   # toca com o jogo pausado (menus)
+		var bus := "Musica" if nome == "Musica" else "Efeitos"   # barramentos criados por opcoes_2d.gd
+		if AudioServer.get_bus_index(bus) >= 0:
+			p.bus = bus
 		raiz.add_child.call_deferred(p)   # a raiz pode estar ocupada montando filhos
 	return p
 

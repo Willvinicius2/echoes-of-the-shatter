@@ -5,7 +5,6 @@ signal died(enemy)
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
-const Feel = preload("res://scripts2d/feel_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 
 enum Estado { PERSEGUE, TELEGRAFA, ATACANDO, MORTO }
@@ -121,7 +120,7 @@ func _on_anim_finished() -> void:
 	if estado == Estado.ATACANDO:
 		estado = Estado.PERSEGUE
 	elif estado == Estado.MORTO:
-		queue_free()
+		dissolver(Feel.cfg()["death_dissolve_time"])
 
 func _rajada() -> void:
 	var n := int(stats["burst_count"])
@@ -147,18 +146,21 @@ func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 		remove_from_group("hurtable")
 		set_deferred("collision_layer", 0)
 		died.emit(self)
+		Feel.morte(get_parent(), global_position + Vector2(0, -30), Color(0.8, 0.95, 1.0))
 		if has_anim("death"):
 			play("death", true)
 		else:
-			queue_free()
+			dissolver(Feel.cfg()["death_dissolve_time"])
 
 func _feedback_golpe(amount: float, origem: Vector2, morreu: bool) -> void:
 	Audio.tocar("kill_enemy" if morreu else "hit_enemy")
 	var c := Feel.cfg()
-	Feel.hit_stop(c["hit_stop_kill_ms" if morreu else "hit_stop_hit_ms"])
+	var forte: bool = not morreu and amount >= hp_max * c["strong_hit_pct"]
+	var stop: float = c["hit_stop_kill_ms"] if morreu else (c["hit_stop_strong_ms"] if forte else c["hit_stop_hit_ms"])
+	Feel.hit_stop(stop)
 	Feel.shake(self, c["shake_kill_amp" if morreu else "shake_hit_amp"], c["shake_kill_time" if morreu else "shake_hit_time"])
-	Feel.numero(self, amount, Color(1.0, 0.85, 0.2) if morreu else Color.WHITE, morreu)
-	Feel.impacto(get_parent(), global_position + Vector2(0, -30), Color(1.0, 0.9, 0.5))
+	tremer_sprite(c["sprite_shake_px"], c["sprite_shake_time"])
+	Feel.numero(self, amount, Color(1.0, 0.85, 0.2) if (morreu or forte) else (Color(1.0, 0.65, 0.15) if amount >= hp_max * c["weak_hit_pct"] else Color.WHITE), morreu, forte)
 	if origem != Vector2.ZERO:
 		var dir := (global_position - origem).normalized()
 		_kb = dir * c["enemy_knockback"] * (1.0 - stats.get("kb_resist", 0.0))

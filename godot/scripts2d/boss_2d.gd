@@ -21,6 +21,9 @@ var _invest_acertou := false
 var _anel_alt := false
 var _barra: CanvasLayer
 var _ctl: Control
+var _glow_t := 0.0       # brilho no corpo restante após a troca de fase
+var _glow_total := 1.0
+var _entrada_avisada := false
 
 static func carregar_padroes() -> Dictionary:
 	var out := {}
@@ -51,7 +54,7 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	d.erase("entrada")
 	fases = d
 	_iniciar_ciclo(Ciclo.ENTRADA, entrada_dur)
-	sprite.modulate.a = 0.0
+	sprite.modulate.a = 0.7
 	_criar_barra()
 
 func total_fases() -> int:
@@ -77,10 +80,16 @@ func _physics_process(delta: float) -> void:
 	match ciclo:
 		Ciclo.ENTRADA:
 			facing = Vector2.DOWN
-			sprite.modulate.a = clampf(1.0 - _t / maxf(_t_total * 0.7, 0.01), 0.0, 1.0)
+			if not _entrada_avisada:
+				_entrada_avisada = true
+				var c := Feel.cfg()
+				Feel.shake(self, c["boss_entry_shake_amp"], _t_total * 0.85)
+				Feel.zoom_punch(self, c["boss_entry_zoom"], _t_total)
+			sprite.modulate.a = 0.7 + 0.3 * clampf(1.0 - _t / maxf(_t_total * 0.7, 0.01), 0.0, 1.0)
 			if _t <= 0.0:
 				sprite.modulate.a = 1.0
 				Feel.shake(self, 5.0, 0.3)
+				Feel.impacto(get_parent(), global_position, Color(1.0, 0.3, 0.25), Vector2.ZERO, 6.0)
 				_proxima_pausa(0.6)
 		Ciclo.FASE:
 			facing = dir
@@ -156,7 +165,7 @@ func _on_frame_changed() -> void:
 
 func _on_anim_finished() -> void:
 	if estado == Estado.MORTO:
-		queue_free()
+		dissolver(Feel.cfg()["death_dissolve_time"] * 1.6)
 	elif ciclo == Ciclo.ACAO and passo.get("padrao", "") != "investida":
 		_disparar()
 		_terminar_passo()
@@ -176,6 +185,7 @@ func _disparar() -> void:
 			if alvo.global_position.distance_to(global_position) <= passo["alcance"] * 1.3:
 				alvo.take_damage(dano, global_position)
 			Feel.shake(self, 3.0, 0.15)
+			Feel.impacto(get_parent(), global_position, Color(1.0, 0.35, 0.2), Vector2.ZERO, float(passo["alcance"]) * 1.3 / 20.0)
 		"leque":
 			var base := (alvo.global_position - global_position).angle()
 			var abre := deg_to_rad(passo["abertura"])
@@ -214,6 +224,12 @@ func _entrar_fase(f: int) -> void:
 	Feel.shake(self, 8.0, 0.4)
 	Feel.hit_stop(120.0)
 	flash()
+	var c := Feel.cfg()
+	_glow_total = c["boss_phase_glow_time"]
+	_glow_t = _glow_total
+	_mat.set_shader_parameter("glow_color", Color(0.9, 0.25, 0.55) if f == 2 else Color(1.0, 0.2, 0.15))
+	Feel.impacto(get_parent(), global_position, Color(1.0, 0.3, 0.4), Vector2.ZERO, c["boss_phase_wave"] / 20.0)
+	Feel.particulas(get_parent(), global_position + Vector2(0, -50), Color(1.0, 0.35, 0.4), 28, 220.0, 0.6, Vector2.ZERO, 0.2)
 	fase_mudou.emit(f)
 
 func _ao_morrer() -> void:
@@ -238,6 +254,14 @@ func _criar_barra() -> void:
 	add_child(_barra)
 
 func _process(delta: float) -> void:
+	if _glow_t > 0.0:
+		_glow_t -= delta
+		var k := clampf(_glow_t / _glow_total, 0.0, 1.0)
+		_mat.set_shader_parameter("glow", k * (0.55 + 0.3 * sin(_glow_t * 24.0)))
+	elif _mat != null and ciclo == Ciclo.ENTRADA:
+		_mat.set_shader_parameter("glow", 0.35 * (1.0 - clampf(_t / maxf(_t_total, 0.01), 0.0, 1.0)))
+	elif _mat != null:
+		_mat.set_shader_parameter("glow", 0.0)
 	super._process(delta)
 	if _ctl != null:
 		_ctl.queue_redraw()
@@ -261,32 +285,59 @@ func _desenhar_barra() -> void:
 	_ctl.draw_string(fonte, pos + Vector2(0, -6), Csv.t("hud.boss"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 1, 1, alfa))
 	_ctl.draw_string(fonte, pos + Vector2(0, -6), Csv.t("hud.boss_phase") % [fase, total_fases()], HORIZONTAL_ALIGNMENT_RIGHT, tam.x, 14, Color(1, 1, 1, 0.7 * alfa))
 
-## Aviso por padrão: área (golpe), linha de mira (leque/investida) ou anel que se expande (anel).
+## Marca vermelha no chão por padrão: área (golpe), faixa (investida), cunha (leque) ou anel (anel).
 func _draw() -> void:
 	super._draw()
+	if ciclo == Ciclo.ENTRADA and _t_total > 0.0:
+		_desenhar_marca_entrada()
+		return
 	if ciclo != Ciclo.AVISO or _wind_total <= 0.0 or passo.is_empty():
 		return
 	var p := clampf(1.0 - _t / _wind_total, 0.0, 1.0)
-	var a: float = Feel.cfg()["telegraph_alpha"]
+	var a: float = Feel.cfg()["boss_mark_alpha"]
+	var pulso := 0.5 + 0.5 * sin(p * 26.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	match passo["padrao"]:
 		"golpe":
 			var r: float = passo["alcance"] * 1.3
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.6))
-			draw_circle(Vector2.ZERO, r, Color(1, 0.15, 0.1, a * 0.35))
-			draw_circle(Vector2.ZERO, r * p, Color(1, 0.15, 0.1, a))
-			draw_arc(Vector2.ZERO, r, 0.0, TAU, 32, Color(1, 0.3, 0.2, a + 0.3), 2.0)
+			draw_circle(Vector2.ZERO, r, Color(0.9, 0.08, 0.05, a * 0.3))
+			draw_circle(Vector2.ZERO, r * p, Color(1, 0.12, 0.08, a * (0.55 + 0.35 * p)))
+			draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(1, 0.45, 0.3, minf(1.0, a + 0.3 + 0.2 * pulso * p)), 3.0 + 2.0 * p)
 		"investida":
-			var fim: Vector2 = _dir_para_alvo() * float(passo["vel_proj"]) * float(passo["duracao"])
-			draw_line(Vector2(0, -20), Vector2(0, -20) + fim, Color(1, 0.2, 0.2, a * p), 4.0 + 6.0 * p)
+			var comp: float = float(passo["vel_proj"]) * float(passo["duracao"])
+			var larg: float = stats["radius"] + 22.0
+			var d := _dir_para_alvo()
+			var n := d.orthogonal() * larg
+			var fim := d * comp
+			draw_colored_polygon(PackedVector2Array([n, fim + n, fim - n, -n]), Color(0.9, 0.08, 0.05, a * 0.3))
+			var fr := fim * p
+			draw_colored_polygon(PackedVector2Array([n, fr + n, fr - n, -n]), Color(1, 0.12, 0.08, a * 0.6))
+			draw_line(n, fim + n, Color(1, 0.45, 0.3, a + 0.25), 2.0)
+			draw_line(-n, fim - n, Color(1, 0.45, 0.3, a + 0.25), 2.0)
 		"leque":
 			var base := (alvo.global_position - global_position).angle()
 			var abre := deg_to_rad(passo["abertura"])
-			for s in [-0.5, 0.5]:
-				draw_line(Vector2(0, -30), Vector2(0, -30) + Vector2.from_angle(base + abre * s) * 360.0, Color(1, 0.2, 0.2, a * p), 2.0)
+			var cunha := PackedVector2Array([Vector2.ZERO])
+			for i in 13:
+				cunha.append(Vector2.from_angle(base - abre / 2.0 + abre * i / 12.0) * 360.0)
+			draw_colored_polygon(cunha, Color(0.9, 0.08, 0.05, a * 0.2 * (0.4 + 0.6 * p)))
+			for sd in [-0.5, 0.5]:
+				draw_line(Vector2.ZERO, Vector2.from_angle(base + abre * sd) * 360.0, Color(1, 0.4, 0.3, a * (0.4 + 0.6 * p) + 0.15), 2.0)
 		"anel":
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.6))
+			draw_circle(Vector2.ZERO, 120.0 * p + 20.0, Color(0.7, 0.2, 0.9, a * 0.25))
 			draw_arc(Vector2.ZERO, 120.0 * p + 20.0, 0.0, TAU, 40, Color(0.8, 0.3, 1.0, a + 0.3), 3.0)
+
+## Marca no chão enquanto o chefe se materializa: anel vermelho que cresce e pulsa.
+func _desenhar_marca_entrada() -> void:
+	var p := clampf(1.0 - _t / _t_total, 0.0, 1.0)
+	var r: float = Feel.cfg()["boss_entry_mark"]
+	var a: float = Feel.cfg()["boss_mark_alpha"]
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.6))
+	draw_circle(Vector2.ZERO, r * p, Color(1.0, 0.05, 0.03, minf(1.0, a * 0.75)))
+	draw_arc(Vector2.ZERO, r * p, 0.0, TAU, 64, Color(1, 0.55, 0.35, 1.0), 4.0)
+	draw_arc(Vector2.ZERO, r * 0.6 * p, 0.0, TAU, 48, Color(1, 0.3, 0.2, 0.9), 3.0)
 
 func _dir_para_alvo() -> Vector2:
 	return (alvo.global_position - global_position).normalized()

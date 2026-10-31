@@ -6,3 +6,4 @@ vitality,hp_max,add,30,3
 multishot,arrow_count,add,1,2
 pierce,arrow_pierce,add,1,2
 evasion,dodge_cooldown,mult,-0.2,3
+ember_tip,arrow_damage,add,4,2

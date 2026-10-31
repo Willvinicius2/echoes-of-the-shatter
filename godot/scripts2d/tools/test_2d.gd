@@ -37,6 +37,7 @@ func _testar() -> void:
 	await _testar_rotas()
 	await _testar_meta()
 	await _testar_forja()
+	await _testar_opcoes_steam_tutorial()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -543,4 +544,94 @@ func _testar_forja() -> void:
 	check(run.menus.tela == run.menus.Tela.FORJA, "forja abre pelo hub")
 	paused = false
 	run.queue_free()
+	DirAccess.remove_absolute(MetaScript.caminho)
+
+func _testar_opcoes_steam_tutorial() -> void:
+	var OpcoesScript = preload("res://scripts2d/opcoes_2d.gd")
+	var SteamScript = preload("res://scripts2d/steam_2d.gd")
+	OpcoesScript.caminho = "user://teste_opcoes.json"
+	SteamScript.caminho = "user://teste_steam.json"
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	DirAccess.remove_absolute(SteamScript.caminho)
+	var o = OpcoesScript.new()
+	check(not o.carregar() and is_equal_approx(o.vol["musica"], 0.8) and not o.tutorial_visto, "opcoes: sem arquivo usa os padroes")
+	o.ciclar_volume("master")
+	check(is_equal_approx(o.vol["master"], 0.0), "opcoes: volume 100% volta a 0")
+	o.set_volume("efeitos", 0.5)
+	check(AudioServer.get_bus_index("Musica") >= 0 and AudioServer.get_bus_index("Efeitos") >= 0, "opcoes: barramentos de musica e efeitos")
+	check(AudioServer.is_bus_mute(AudioServer.get_bus_index("Master")) and absf(AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Efeitos")) - linear_to_db(0.5)) < 0.1, "opcoes: volume chega ao AudioServer")
+	o.set_volume("master", 1.0)
+	var antes: int = o.tecla("dodge")
+	check(antes == KEY_SPACE, "opcoes: esquiva comeca no Espaco")
+	check(o.remapear("dodge", KEY_SHIFT) and o.tecla("dodge") == KEY_SHIFT, "opcoes: remapear esquiva")
+	var ev_ok := false
+	for ev in InputMap.action_get_events("dodge"):
+		if ev is InputEventKey and ev.physical_keycode == KEY_SHIFT:
+			ev_ok = true
+	check(ev_ok, "opcoes: InputMap recebe a nova tecla")
+	var joy := false
+	for ev in InputMap.action_get_events("dodge"):
+		joy = joy or ev is InputEventJoypadButton
+	check(joy, "opcoes: remapear preserva o controle")
+	check(not o.remapear("dodge", KEY_ESCAPE), "opcoes: Esc e reservado")
+	check(o.remapear("move_up", KEY_SHIFT) and o.tecla("dodge") == KEY_W and o.tecla("move_up") == KEY_SHIFT, "opcoes: tecla repetida troca de lugar")
+	o.set_tela_cheia(true)
+	o.tutorial_visto = true
+	check(o.salvar(), "opcoes: salva em disco")
+	o.restaurar_padroes()
+	check(o.tecla("dodge") == KEY_SPACE and o.tecla("move_up") == KEY_W and o.eh_padrao("dodge"), "opcoes: restaurar teclas")
+	var o2 = OpcoesScript.new()
+	check(o2.carregar() and o2.tecla("dodge") == KEY_W and o2.tecla("move_up") == KEY_SHIFT and o2.tela_cheia and o2.tutorial_visto, "opcoes: volta identica do disco")
+	o2.set_tela_cheia(false)
+	o2.restaurar_teclas()
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	var corrompido := FileAccess.open(OpcoesScript.caminho, FileAccess.WRITE)
+	corrompido.store_string("{ isto nao e json")
+	corrompido.close()
+	check(not OpcoesScript.new().carregar(), "opcoes: arquivo corrompido nao quebra")
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	for a in Csv.rows("res://data2d/teclas.csv"):
+		check(Csv.t(a["loc"]) != a["loc"], "texto da acao %s" % a["acao"])
+	# Steam: sem plugin o jogo segue, conquistas ficam no registro local e voltam depois do reinicio.
+	var st = SteamScript.new()
+	check(not st.iniciar() and not st.disponivel, "steam: sem plugin fica indisponivel sem quebrar")
+	st.tick()
+	check(not st.nuvem_ativa(), "steam: nuvem inativa sem Steam")
+	check(st.evento("evento_que_nao_existe").is_empty(), "steam: evento desconhecido nao desbloqueia")
+	check(st.evento("corrida_fim") == ["primeira_corrida"] and st.evento("corrida_fim").is_empty(), "steam: conquista desbloqueia uma vez")
+	check(SteamScript.new().desbloqueadas.has("primeira_corrida"), "steam: registro local sobrevive ao reinicio")
+	for c in st.conquistas:
+		check(Csv.t(c["loc"]) != c["loc"] and c["steam_id"] != "", "conquista %s tem texto e id da Steam" % c["id"])
+	# Menus e tutorial.
+	MetaScript.caminho = "user://teste_opcoes_meta.json"
+	var run = RunScene.instantiate()
+	run.com_menu = true
+	root.add_child(run)
+	await physics_frame
+	var m = run.menus
+	check(m.opcoes != null and m.steam != null, "menus: opcoes e steam ligadas")
+	m.mostrar_opcoes(m.mostrar_titulo)
+	check(m.tela == m.Tela.OPCOES, "menus: opcoes abrem")
+	m.mostrar_teclas()
+	check(m.tela == m.Tela.TECLAS, "menus: tela de teclas abre")
+	m.mostrar_opcoes()
+	m._fechar_opcoes()
+	check(m.tela == m.Tela.TITULO, "menus: voltar das opcoes reabre o titulo")
+	m.opcoes.tutorial_visto = false
+	m.jogar.emit()
+	check(m.tutorial.ativo and m.tutorial.indice == 0, "tutorial: abre na primeira corrida")
+	check(m.tutorial._rotulo.text.contains(m.opcoes.nome_tecla("move_up")), "tutorial: mostra as teclas atuais")
+	Input.action_press("move_up")
+	await process_frame
+	await process_frame
+	Input.action_release("move_up")
+	check(m.tutorial.indice >= 1, "tutorial: avanca ao mover")
+	m.tutorial._ir(m.tutorial.passos.size())
+	check(not m.tutorial.ativo and m.opcoes.tutorial_visto, "tutorial: termina e nao volta")
+	m.jogar.emit()
+	check(not m.tutorial.ativo, "tutorial: nao repete depois de visto")
+	paused = false
+	run.queue_free()
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	DirAccess.remove_absolute(SteamScript.caminho)
 	DirAccess.remove_absolute(MetaScript.caminho)
