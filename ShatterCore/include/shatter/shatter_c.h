@@ -1643,6 +1643,11 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_can_use(const shatte
  * corrida; 1 sem corrida) e devolve em *cost_out o custo de mana que o cliente desconta. Falha: *cost_out = 0. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_commit_use(shatter_rogue* rogue, uint32_t slot, double mana,
                                                                        double* cost_out, int32_t* result) SHATTER_NOEXCEPT;
+/* Só as passivas aprendidas da classe atual sobre base_json (objeto stat -> número; ordem do CSV, uma vez por nível; stat
+ * ausente entra no fim com 0 antes do bônus). Sem meta nem upgrades: é o aplicar_passivas do habilidades_2d.gd. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_passives_apply(const shatter_rogue* rogue, const char* base_json,
+                                                                          size_t len, uint8_t* out, size_t cap, size_t* needed,
+                                                                          shatter_error* err) SHATTER_NOEXCEPT;
 /* Fração 0..1 da recarga do slot para a HUD (0 = pronto, slot vazio ou fora da faixa). */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_cooldown(const shatter_rogue* rogue, uint32_t slot,
                                                                      double* fraction_out) SHATTER_NOEXCEPT;

@@ -688,6 +688,16 @@ TEST(c_api_rogue_skills_tree_slots_use_and_save) {
                 }),
                 st);
     EXPECT_NEAR(st["hp_max"].AsDouble(0.0), 120.0, 1e-9);
+    const char* withMeta = "{\"hp_max\":100,\"bonus\":1}";
+    json::Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
+                    return shatter_rogue_skill_passives_apply(r, withMeta, std::strlen(withMeta), o, c, n, &err);
+                }),
+                st);
+    EXPECT_NEAR(st["hp_max"].AsDouble(0.0), 120.0, 1e-9);  // só a passiva t_vigor (x1.2)
+    EXPECT_NEAR(st["bonus"].AsDouble(0.0), 1.0, 1e-12);
+    EXPECT_EQ(shatter_rogue_skill_passives_apply(nullptr, withMeta, std::strlen(withMeta), nullptr, 0, &needed, &err),
+              SHATTER_INVALID_ARGUMENT);
+    EXPECT_EQ(shatter_rogue_skill_passives_apply(r, "[1]", 3, nullptr, 0, &needed, &err), SHATTER_PARSE_ERROR);
     ASSERT_EQ(shatter_rogue_run_start(r, 5, kBase, std::strlen(kBase), &err), SHATTER_OK);
     json::Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_rogue_run_stats_json(r, o, c, n); }), st);
     EXPECT_NEAR(st["hp_max"].AsDouble(0.0), 120.0, 1e-9);

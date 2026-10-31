@@ -69,6 +69,7 @@ public:
     int habilidade_pode_usar(int slot, double mana) const;
     Dictionary habilidade_usar(int slot, double mana);              // {"resultado", "custo"}
     double habilidade_recarga(int slot) const;                      // 0..1
+    Dictionary aplicar_passivas(const Dictionary& base) const;      // só as passivas da classe atual
 
     // Estado completo e determinismo.
     String estado_texto() const;

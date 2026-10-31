@@ -5097,6 +5097,17 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_commit_use(shatter_r
     return SHATTER_OK;
 }
 
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_passives_apply(const shatter_rogue* rogue, const char* base_json,
+                                                                         std::size_t len, std::uint8_t* out, std::size_t cap,
+                                                                         std::size_t* needed, shatter_error* err) SHATTER_NOEXCEPT {
+    ClearError(err);
+    if (rogue == nullptr || needed == nullptr) return SetError(err, SHATTER_INVALID_ARGUMENT, "rogue or needed is null");
+    RogueStats base;
+    shatter_status st = SHATTER_OK;
+    if (!RogueParseStats(base_json, len, base, err, st)) return st;
+    return WriteJson(RogueStatsValue(rogue->state.ApplySkillPassives(base)), false, out, cap, needed);
+}
+
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_cooldown(const shatter_rogue* rogue, std::uint32_t slot,
                                                                    double* fraction_out) SHATTER_NOEXCEPT {
     if (rogue == nullptr || fraction_out == nullptr) return SHATTER_INVALID_ARGUMENT;

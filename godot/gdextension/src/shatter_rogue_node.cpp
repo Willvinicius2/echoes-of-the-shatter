@@ -299,6 +299,14 @@ double ShatterRogue::habilidade_recarga(int slot) const {
     return f;
 }
 
+Dictionary ShatterRogue::aplicar_passivas(const Dictionary& base) const {
+    std::string j = utf8(JSON::stringify(base));
+    shatter_error err{};
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) {
+        return shatter_rogue_skill_passives_apply(rogue_, j.data(), j.size(), o, c, n, &err);
+    });
+}
+
 String ShatterRogue::estado_texto() const {
     return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_state_json(rogue_, o, c, n); });
 }
@@ -357,6 +365,7 @@ void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("habilidade_pode_usar", "slot", "mana"), &ShatterRogue::habilidade_pode_usar);
     ClassDB::bind_method(D_METHOD("habilidade_usar", "slot", "mana"), &ShatterRogue::habilidade_usar);
     ClassDB::bind_method(D_METHOD("habilidade_recarga", "slot"), &ShatterRogue::habilidade_recarga);
+    ClassDB::bind_method(D_METHOD("aplicar_passivas", "base"), &ShatterRogue::aplicar_passivas);
     ClassDB::bind_method(D_METHOD("estado_texto"), &ShatterRogue::estado_texto);
     ClassDB::bind_method(D_METHOD("estado_restaurar", "texto"), &ShatterRogue::estado_restaurar);
     ClassDB::bind_method(D_METHOD("estado_hash"), &ShatterRogue::estado_hash);
