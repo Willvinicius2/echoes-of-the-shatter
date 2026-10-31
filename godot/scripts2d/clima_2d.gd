@@ -72,6 +72,7 @@ var _ar: Node2D            # folhas no ar (por cima de tudo)
 var _chao: Node2D          # folhas caídas e sombras das folhas
 var _tamanho := Vector2.ZERO
 var _tex_cache := {}
+var _escala_area := 1.0
 
 func _ready() -> void:
 	cfg = Csv.kv("res://data2d/clima.csv")
@@ -84,6 +85,7 @@ func _montar() -> void:
 	if sala == null or sala.is_queued_for_deletion():
 		return  # sala trocada no mesmo quadro: os props já são da próxima
 	_tamanho = sala.tamanho_px()
+	_escala_area = maxf(_tamanho.x * _tamanho.y / (1536.0 * 832.0), 1.0)  # salas maiores (mapa ampliado) ganham mais nuvem, poeira e folhas
 	_chao = Node2D.new()
 	_chao.z_index = 2
 	_chao.draw.connect(_desenhar_chao)
@@ -194,7 +196,7 @@ func _vegetacao() -> void:
 # ---------------------------------------------------------------- folhas
 
 func _nova_folha(p: Vector2, z: float, v: Vector2, cores: Array) -> void:
-	if _folhas.size() >= int(cfg["folhas_max"]):
+	if _folhas.size() >= int(cfg["folhas_max"] * _escala_area):
 		return
 	_folhas.append({"p": p, "z": z, "v": v, "ang": _rng.randf() * TAU, "giro": _rng.randf_range(-3.0, 3.0),
 		"virar": _rng.randf() * TAU, "virar_v": _rng.randf_range(3.0, 7.0), "queda": _rng.randf_range(14.0, 26.0),
@@ -210,7 +212,7 @@ func _soltar_folhas(delta: float, w: Vector2) -> void:
 			var base: Vector2 = a["base"]
 			var p := base + Vector2(_rng.randf_range(-0.32, 0.32) * a["larg"], _rng.randf_range(-14.0, 10.0))
 			_nova_folha(p, _rng.randf_range(0.45, 0.85) * a["alt"], w * 0.3, a["cores"])
-	if _rng.randf() < cfg["folhas_rajada"] * pow(vento, 3.0) * delta:
+	if _rng.randf() < cfg["folhas_rajada"] * _escala_area * pow(vento, 3.0) * delta:
 		var x := -30.0 if dir_vento.x >= 0.0 else _tamanho.x + 30.0
 		var p := Vector2(x, _rng.randf_range(0.1, 1.0) * _tamanho.y)
 		_nova_folha(p, _rng.randf_range(25.0, 110.0), w, CORES_FOLHA)
@@ -426,7 +428,7 @@ func _braseiro(b: Vector2) -> void:
 func _criar_poeira() -> void:
 	_poeira = CPUParticles2D.new()
 	_poeira.texture = _textura_suave("brasa", 8, true)
-	_poeira.amount = int(cfg["poeira_qtd"])
+	_poeira.amount = int(cfg["poeira_qtd"] * _escala_area)
 	_poeira.lifetime = 9.0
 	_poeira.preprocess = 9.0
 	_poeira.position = _tamanho * 0.5
@@ -446,7 +448,7 @@ func _criar_poeira() -> void:
 ## que dão a volta na sala.
 func _criar_nuvens(cor: Color, z: int) -> void:
 	var tex := _textura_suave("nuvem", 128)
-	for i in int(cfg["nuvens_qtd"]):
+	for i in int(round(cfg["nuvens_qtd"] * _escala_area)):
 		var n := Node2D.new()
 		n.z_index = z
 		for k in 3:
