@@ -42,6 +42,7 @@ func _testar() -> void:
 	await _testar_status()
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
+	await _testar_hud_slots()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -757,3 +758,50 @@ func _testar_habilidades_arqueiro() -> void:
 	check(is_equal_approx(f.veneno_dps, 5.0), "flecha carrega veneno")
 	m2.queue_free()
 	await physics_frame
+
+## HUD: barra de slots (2 pequenos + 4 ativas) dentro da tela, sem sobrepor os globos; ativas vazias no arqueiro e
+## preenchidas pelas skills aprendidas do guerreiro, com segundos de recarga.
+func _testar_hud_slots() -> void:
+	var Classe = preload("res://scripts2d/classe_2d.gd")
+	var Tema = preload("res://scripts2d/tema_2d.gd")
+	for k in ["hud.fury", "hud.key.skill1", "hud.key.skill4"]:
+		check(Csv.t(k) != k, "loc %s" % k)
+	for k in ["impeto_escura", "impeto_clara", "sem_recurso"]:
+		check(Tema.cor(k) != Color.MAGENTA, "cor %s no tema" % k)
+	var antes: String = Classe.atual
+	for classe in ["arqueiro", "guerreiro"]:
+		Classe.atual = classe
+		var run = RunScene.instantiate()
+		run.com_menu = false
+		root.add_child(run)
+		await physics_frame
+		run.player.god_mode = true
+		var hud = run.hud
+		var vp := Vector2(1600, 900)
+		var rs: Dictionary = hud.retangulos_slots(vp)
+		check(rs["basicos"].size() == 2 and rs["ativas"].size() == 4, "%s: 2 slots básicos e 4 ativas" % classe)
+		var todos: Array = rs["basicos"] + rs["ativas"]
+		var raio: float = hud._lay["globo_raio"]
+		var dentro := true
+		for i in todos.size():
+			var r: Rect2 = todos[i]
+			dentro = dentro and Rect2(Vector2.ZERO, vp).encloses(r)
+			dentro = dentro and r.position.x > hud._centro_globo(vp, false).x + raio and r.end.x < hud._centro_globo(vp, true).x - raio
+			for j in range(i + 1, todos.size()):
+				dentro = dentro and not r.intersects(todos[j])
+		check(dentro, "%s: slots dentro da tela, entre os globos e sem sobreposição" % classe)
+		check(rs["ativas"][0].size.x > rs["basicos"][0].size.x, "%s: ativas maiores que ataque e esquiva" % classe)
+		var cs: Dictionary = hud.conteudo_slots()
+		if classe == "arqueiro":
+			check(cs["ativas"].all(func(e): return e.is_empty()), "arqueiro sem ativas: 4 encaixes vazios")
+		else:
+			run.upgrades.escolher("w_charge", run.player)
+			run.player._cds["w_charge"] = run.upgrades.recarga("w_charge") * 0.5
+			cs = hud.conteudo_slots()
+			var e: Dictionary = cs["ativas"][0]
+			check(not e.is_empty() and e["icone"] == "w_charge" and e["tecla"] == "hud.key.skill1", "guerreiro: ativa aprendida vai ao slot Q")
+			check(e.get("segundos", -1.0) > 0.0 and absf(e["recarga"] - 0.5) < 0.05, "guerreiro: slot traz fração e segundos de recarga")
+			check(cs["ativas"][3].is_empty(), "guerreiro: slots sem ativa ficam vazios")
+		run.queue_free()
+		await physics_frame
+	Classe.atual = antes

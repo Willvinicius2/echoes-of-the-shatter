@@ -25,3 +25,13 @@ Substitui os ícones procedurais do doc 28 (o gerador `tools/arte/gen_icones_hab
 
 ## Ícones das 18 habilidades do Arqueiro (31/10/2026)
 `tools/arte/ui_gpt_image/prompts_icones_arqueiro.json`: 18 prompts no mesmo molde dos 10 aprovados (moldura de pedra e ferro igual ao ícone Tiro, 128 px depois do `prep.py`). Saída esperada: `godot/art2d/ui/icone_<id>.png` com `<id>` = id da skill em `data2d/habilidades_arqueiro.csv`. Depois de gerar, trocar a coluna `icone` do CSV para o próprio id e acrescentar linhas em `data2d/icones.csv` (o `icones_2d.gd` já prioriza o PNG).
+
+## HUD v3: molduras leves e slots das ativas (31/10/2026)
+Decisões do Jev (`jev-latest`, `POST /v1/systemone`, três consultas com capturas; confiança abaixo de 0,5 é provisória):
+- Fundo da barra de slots: **slots soltos com friso fino de ferro** (47%, contra 40% slots soltos e 13% faixa justa; provisória). A faixa pintada continua disponível em `hud_layout.csv` (`faixa_modo` 0 = faixa justa em 9-slice, 1 = soltos, 2 = friso).
+- Rodapé escuro reduzido a 90 px e 25% (85%); globos de raio 84 para 70 (96%).
+- 4 slots grandes de 75 px para Q E F R (94%), ataque e esquiva em slots menores à esquerda (77%; 58 px depois da conferência final); encaixe vazio só com a letra, sem cadeado (92%).
+- Recarga com varredura e segundos no centro (42%, provisória); ícone tingido de azul quando falta mana ou ímpeto (66%).
+- Barra fina de estamina removida, porque o slot de esquiva já mostra a recarga (57%, provisória; `estamina_barra` = 1 a traz de volta).
+- Globo da direita: mana real quando o jogador tem `mana` (runtime de habilidades), ímpeto no guerreiro, trancado nos outros casos.
+Código em `hud_2d.gd` (`retangulos_slots`, `conteudo_slots`) e `hud_arte_2d.gd` (`slot`, `encaixe_vazio`, `nove_fatias`, `friso`). Capturas com `godot/scripts2d/tools/captura_hud_variantes_2d.gd`; antes e depois em `/mnt/project-files/hud/v3/`.

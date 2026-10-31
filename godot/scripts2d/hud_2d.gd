@@ -63,38 +63,57 @@ func _tempo_texto() -> String:
 	var total := int(tempo)
 	return "%02d:%02d" % [total / 60, total % 60]
 
-## Sombra suave no rodapé para os globos e a barra ficarem legíveis sobre qualquer sala.
+## Sombra suave no rodapé para os globos e os slots lerem sobre qualquer sala (curta e leve: o combate continua visível).
 func _fundo_inferior(vp: Vector2) -> void:
-	var h := 190.0
-	_ctl.draw_polygon(PackedVector2Array([Vector2(0, vp.y - h), Vector2(vp.x, vp.y - h), Vector2(vp.x, vp.y), Vector2(0, vp.y)]), PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0.45), Color(0, 0, 0, 0.45)]))
+	var h: float = _lay.get("rodape_altura", 90.0)
+	var al: float = _lay.get("rodape_alfa", 0.25)
+	_ctl.draw_polygon(PackedVector2Array([Vector2(0, vp.y - h), Vector2(vp.x, vp.y - h), Vector2(vp.x, vp.y), Vector2(0, vp.y)]), PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, al), Color(0, 0, 0, al)]))
 
 func _centro_globo(vp: Vector2, direita: bool) -> Vector2:
 	var r: float = _lay["globo_raio"]
 	var m: float = _lay["globo_margem"]
 	return Vector2(vp.x - m - r if direita else m + r, vp.y - m - r)
 
-## Faixa de ferro e pedra que liga os dois globos por baixo da barra de habilidades, com friso dourado e gema central.
+## Retângulos da barra de slots: 2 pequenos (ataque e esquiva) à esquerda e as ativas (Q E F R), o grupo centrado.
+func retangulos_slots(vp: Vector2) -> Dictionary:
+	var lado: float = _lay["slot_tamanho"]
+	var esp: float = _lay["slot_espaco"]
+	var peq: float = _lay.get("slot_pequeno", 52.0)
+	var gap: float = _lay.get("slot_grupo_espaco", 18.0)
+	var total := int(_lay["slot_total"])
+	var largura := 2.0 * peq + esp * 0.8 + gap + total * lado + (total - 1) * esp
+	var x := (vp.x - largura) * 0.5
+	var base: float = vp.y - _lay["slot_base"]
+	var basicos: Array = []
+	for i in 2:
+		basicos.append(Rect2(x, base - peq, peq, peq))
+		x += peq + esp * 0.8
+	x += gap - esp * 0.8
+	var ativas: Array = []
+	for i in total:
+		ativas.append(Rect2(x, base - lado, lado, lado))
+		x += lado + esp
+	var grupo := Rect2((vp.x - largura) * 0.5, base - lado, largura, lado)
+	return {"basicos": basicos, "ativas": ativas, "grupo": grupo}
+
+## Fundo da barra de slots, conforme `faixa_modo` em hud_layout.csv: faixa pintada justa aos slots (9-slice),
+## slots soltos com sombra ou friso fino de ferro.
 func _desenhar_base(vp: Vector2) -> void:
+	var rs := retangulos_slots(vp)
+	var g: Rect2 = rs["grupo"]
+	var modo := int(_lay.get("faixa_modo", 0.0))
 	var faixa := Arte.tex("hud_faixa_pedra")
-	if faixa != null:   # arte pintada: 1120x150 no arquivo, 700x94 na tela de 1600x900, centrada embaixo
-		var esc := 0.625
-		_ctl.draw_texture_rect(faixa, Rect2(vp.x * 0.5 - 560.0 * esc, vp.y - 150.0 * esc, 1120.0 * esc, 150.0 * esc), false)
-		return
-	var e := _centro_globo(vp, false)
-	var d := _centro_globo(vp, true)
-	var alt: float = _lay["base_altura"]
-	var r := Rect2(e.x + 50.0, vp.y - alt, d.x - e.x - 100.0, alt)
-	_ctl.draw_rect(r.grow(3), Color(0, 0, 0, 0.6))
-	_ctl.draw_rect(r, Tema.cor("metal_escuro"))
-	var miolo := r.grow(-4)
-	Arte.alvenaria(_ctl, miolo)
-	# moldura de ferro: borda, friso dourado em cima e rebites nos cantos
-	_ctl.draw_rect(r, Tema.cor("metal_medio"), false, 2.0)
-	_ctl.draw_rect(Rect2(r.position.x, r.position.y, r.size.x, 4), Tema.cor("metal_medio"))
-	_ctl.draw_rect(Rect2(r.position.x, r.position.y + 4, r.size.x, 1.5), Tema.cor("destaque").darkened(0.2))
-	for k in 20:
-		Arte.rebite(_ctl, Vector2(r.position.x + 14 + k * (r.size.x - 28) / 19.0, r.position.y + 2), 1.8)
-	Arte.losango(_ctl, Vector2(vp.x * 0.5, r.position.y + 4), 8.0, Tema.cor("destaque"))
+	if modo == 0 and faixa != null:
+		var esc: float = _lay.get("faixa_escala", 0.5)
+		var r := Rect2(g.position.x - 30.0, g.position.y - 12.0, g.size.x + 60.0, vp.y - g.position.y + 12.0)
+		Arte.nove_fatias(_ctl, faixa, r, 48.0, 48.0, 20.0, 20.0, esc)
+	elif modo == 2:
+		for sr in rs["basicos"] + rs["ativas"]:
+			Arte.sombra(_ctl, sr, 6.0, 0.3)
+		Arte.friso(_ctl, g.position.x - 24.0, g.end.x + 24.0, vp.y - 6.0)
+	else:
+		for sr in rs["basicos"] + rs["ativas"]:
+			Arte.sombra(_ctl, sr, 8.0, 0.4)
 
 ## Vida (esquerda) e recurso (direita, reservado e vazio). Vida baixa pulsa no aro.
 func _desenhar_globos(vp: Vector2) -> void:
@@ -107,14 +126,24 @@ func _desenhar_globos(vp: Vector2) -> void:
 	Arte.texto(_ctl, ev + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.hp), int(hmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
 	Arte.texto(_ctl, Vector2(ev.x + raio + 10, ev.y + 30), Csv.t("hud.hp"), 14, Tema.cor("texto_suave"))
 	var ed := _centro_globo(vp, true)
-	Arte.globo(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
-	_ctl.draw_circle(ed + Vector2(0, raio * 0.3), raio * 0.55, Color(0.2, 0.3, 0.9, 0.12))   # brilho azul fraco por baixo
-	# corrente nítida em X sobre o vidro vazio e cadeado pequeno no centro
-	var rr := raio * 0.5
-	Arte.corrente(_ctl, ed + Vector2(-rr, -rr), ed + Vector2(rr, rr), 7)
-	Arte.corrente(_ctl, ed + Vector2(rr, -rr), ed + Vector2(-rr, rr), 7)
-	Arte.cadeado(_ctl, ed + Vector2(0, -8), 20.0)
-	Arte.texto(_ctl, Vector2(ed.x - raio - 150, ed.y + 30), Csv.t("hud.mana"), 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, 140.0)
+	var rotulo := Csv.t("hud.mana")
+	if "mana" in jogador:   # mana real (runtime de habilidades das classes)
+		var mmax: float = maxf(1.0, jogador.stats.get("mana_max", 1.0))
+		Arte.globo(_ctl, ed, raio, clampf(jogador.mana / mmax, 0.0, 1.0), 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel)
+		Arte.texto(_ctl, ed + Vector2(-raio, 4), "%d/%d" % [floori(jogador.mana), int(mmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	elif jogador.has_method("recurso_frac"):   # guerreiro: ímpeto
+		Arte.globo(_ctl, ed, raio, jogador.recurso_frac(), 0.0, Tema.cor("impeto_escura"), Tema.cor("impeto_clara"), _rel)
+		if "impeto" in jogador:
+			Arte.texto(_ctl, ed + Vector2(-raio, 4), "%d/%d" % [floori(jogador.impeto), int(jogador.stats.get("impeto_max", 0.0))], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+		rotulo = Csv.t("hud.fury")
+	else:   # recurso ainda trancado: vidro vazio, corrente em X e cadeado
+		Arte.globo(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
+		_ctl.draw_circle(ed + Vector2(0, raio * 0.3), raio * 0.55, Color(0.2, 0.3, 0.9, 0.12))
+		var rr := raio * 0.5
+		Arte.corrente(_ctl, ed + Vector2(-rr, -rr), ed + Vector2(rr, rr), 7)
+		Arte.corrente(_ctl, ed + Vector2(rr, -rr), ed + Vector2(-rr, rr), 7)
+		Arte.cadeado(_ctl, ed + Vector2(0, -8), 20.0)
+	Arte.texto(_ctl, Vector2(ed.x - raio - 150, ed.y + 30), rotulo, 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, 140.0)
 
 func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():
@@ -150,34 +179,66 @@ func _desenhar_upgrades() -> void:
 		Arte.placa(_ctl, rd, Tema.cor("pedra"), 2.0, false)
 		Arte.texto(_ctl, rd.position + Vector2(0, 19), dica, 15, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, larg)
 
-## Barra de habilidades: slots 0 e 1 = tiro e esquiva (lêem a recarga do jogador); o resto fica bloqueado.
-## A barra fina de estamina (recarga da esquiva) fica logo acima dos slots.
-func _desenhar_habilidades(vp: Vector2) -> void:
-	var lado: float = _lay["slot_tamanho"]
-	var esp: float = _lay["slot_espaco"]
+## Conteúdo dos slots: `basicos` (ataque e esquiva) e `ativas` (4 entradas; {} = encaixe vazio). Lê, por duck typing,
+## o guerreiro (`slots_hud`, `skills`, `impeto`) ou o runtime comum de habilidades (`habilidades` com slots,
+## defs, recargas, recarga_slot e def_nivel; `mana`).
+func conteudo_slots() -> Dictionary:
 	var total := int(_lay["slot_total"])
-	var largura := total * lado + (total - 1) * esp
-	var x0 := (vp.x - largura) * 0.5
-	var y0: float = vp.y - _lay["slot_base"] - lado
 	var cdmax: float = jogador.stats.get("dodge_cooldown", 1.0)
-	var rec_esq := clampf(jogador.dodge_cd / cdmax, 0.0, 1.0)
-	var bw: float = _lay["estamina_barra_largura"]
-	Arte.barra(_ctl, Rect2((vp.x - bw) * 0.5, y0 - 24.0, bw, 7.0), 1.0 - rec_esq, Tema.cor("estamina").darkened(0.5), Tema.cor("estamina_clara"), 0)
-	var fr := Rect2((vp.x - bw) * 0.5, y0 - 24.0, bw, 7.0).grow(4)
-	for q in [fr.position, Vector2(fr.end.x, fr.position.y), Vector2(fr.position.x, fr.end.y), fr.end]:
-		Arte.rebite(_ctl, q, 2.4)
-	var slots: Array = [
+	var basicos: Array = [
 		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
-		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": rec_esq, "cor": Tema.cor("estamina")},
+		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(jogador.dodge_cd / maxf(cdmax, 0.01), 0.0, 1.0), "cor": Tema.cor("estamina")},
 	]
-	if jogador.has_method("slots_hud"):  # guerreiro: golpe, esquiva e as ativas aprendidas
-		slots = jogador.slots_hud()
-		for sl in slots:
-			sl["cor"] = Tema.cor("estamina") if sl["icone"] == "esquiva" else Tema.cor("destaque")
-	for i in total:
-		var r := Rect2(x0 + i * (lado + esp), y0, lado, lado)
-		if i < slots.size():
-			var sl: Dictionary = slots[i]
-			Arte.slot(_ctl, r, Icones.textura(sl["icone"]), sl["recarga"], Csv.t(sl["tecla"]), true, sl["cor"])
+	var ativas: Array = []
+	ativas.resize(total)
+	ativas.fill({})
+	if jogador.has_method("slots_hud"):   # guerreiro: golpe, esquiva e as ativas aprendidas
+		var sl: Array = jogador.slots_hud()
+		basicos[0] = sl[0]
+		basicos[1] = sl[1]
+		basicos[0]["cor"] = Tema.cor("destaque")
+		basicos[1]["cor"] = Tema.cor("estamina")
+		var sk = jogador.skills if "skills" in jogador else null
+		for i in mini(total, sl.size() - 2):
+			var e: Dictionary = sl[i + 2]
+			var id: String = e["icone"]
+			if id == "":
+				continue
+			e["cor"] = Tema.cor("destaque")
+			e["tecla"] = "hud.key.skill%d" % (i + 1)
+			if sk != null and sk.defs.has(id):
+				e["segundos"] = e["recarga"] * sk.recarga(id)
+				e["sem_recurso"] = "impeto" in jogador and sk.def(id)["custo"] > jogador.impeto
+			ativas[i] = e
+	elif "habilidades" in jogador and jogador.habilidades != null and jogador.habilidades.has_method("recarga_slot"):
+		var hab = jogador.habilidades
+		for i in mini(total, hab.slots.size()):
+			var id: String = hab.slots[i]
+			if id == "" or not hab.defs.has(id):
+				continue
+			var icone: String = hab.defs[id].get("icone", id)
+			ativas[i] = {"icone": icone if Icones.textura(icone) != null else "tiro", "tecla": "hud.key.skill%d" % (i + 1),
+				"recarga": hab.recarga_slot(i), "segundos": float(hab.recargas.get(id, 0.0)), "cor": Tema.cor("mana_clara"),
+				"sem_recurso": "mana" in jogador and float(hab.def_nivel(id)["custo"]) > jogador.mana}
+	return {"basicos": basicos, "ativas": ativas}
+
+## Barra de habilidades: ataque e esquiva em slots menores à esquerda e as 4 ativas (Q E F R) em slots grandes; encaixe
+## vazio mostra só a tecla. A barra fina de estamina é opcional (`estamina_barra`), porque o slot de esquiva já mostra a recarga.
+func _desenhar_habilidades(vp: Vector2) -> void:
+	var rs := retangulos_slots(vp)
+	var cs := conteudo_slots()
+	if _lay.get("estamina_barra", 0.0) > 0.0:
+		var cdmax: float = jogador.stats.get("dodge_cooldown", 1.0)
+		var bw: float = _lay["estamina_barra_largura"]
+		var g: Rect2 = rs["grupo"]
+		Arte.barra(_ctl, Rect2(g.get_center().x - bw * 0.5, g.position.y - 18.0, bw, 6.0), 1.0 - clampf(jogador.dodge_cd / cdmax, 0.0, 1.0), Tema.cor("estamina").darkened(0.5), Tema.cor("estamina_clara"), 0)
+	for i in 2:
+		var sl: Dictionary = cs["basicos"][i]
+		Arte.slot(_ctl, rs["basicos"][i], Icones.textura(sl["icone"]), sl["recarga"], Csv.t(sl["tecla"]), true, sl["cor"], -1.0, false, true)
+	for i in rs["ativas"].size():
+		var r: Rect2 = rs["ativas"][i]
+		var sl: Dictionary = cs["ativas"][i]
+		if sl.is_empty():
+			Arte.encaixe_vazio(_ctl, r, Csv.t("hud.key.skill%d" % (i + 1)))
 		else:
-			Arte.slot(_ctl, r, Icones.textura("bloqueado"), 0.0, "", false, Color.WHITE)
+			Arte.slot(_ctl, r, Icones.textura(sl["icone"]), sl["recarga"], Csv.t(sl["tecla"]), true, sl["cor"], sl.get("segundos", -1.0), sl.get("sem_recurso", false))

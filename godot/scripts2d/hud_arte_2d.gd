@@ -310,26 +310,24 @@ static func barra(c: CanvasItem, r: Rect2, frac: float, escura: Color, clara: Co
 			asa.append(asa[0])
 			c.draw_polyline(asa, _c("metal_medio"), 1.2)
 
-## Slot de habilidade: baixo-relevo de pedra, ícone, varredura radial de recarga e plaquinha da tecla.
-static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecla: String, ativo: bool, brilho: Color) -> void:
+## Slot de habilidade: ícone, moldura, varredura radial de recarga com os segundos restantes, tinta azul quando falta
+## recurso e plaquinha da tecla. `segundos` < 0 esconde o número; `pequeno` = slot de ataque/esquiva (tecla menor).
+static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecla: String, ativo: bool, brilho: Color, segundos := -1.0, sem_recurso := false, pequeno := false) -> void:
 	var moldura := tex("hud_slot_moldura")
 	if moldura == null:
 		placa(c, r, _c("pedra") if ativo else Color(0.07, 0.07, 0.09), 3.0)
-	var vao := r.grow(-5 if moldura != null else -7)
+	var vao := r.grow(-(r.size.x * 0.067) if moldura != null else -7.0)
 	c.draw_rect(vao, Color(0.03, 0.03, 0.045))
-	if ativo:
-		for k in 4:
-			c.draw_circle(vao.get_center() - Vector2(0, 6), vao.size.x * (0.40 - k * 0.06), Color(brilho.r, brilho.g, brilho.b, 0.10 + k * 0.04))
-	c.draw_rect(vao, Color(0, 0, 0, 0.8), false, 1.5)
+	if ativo and not sem_recurso:
+		for k in 3:
+			c.draw_circle(vao.get_center() - Vector2(0, 4), vao.size.x * (0.36 - k * 0.07), Color(brilho.r, brilho.g, brilho.b, 0.07 + k * 0.03))
 	var ic := vao if moldura != null else Rect2(vao.position + Vector2(5, 3), vao.size - Vector2(10, 17))
-	c.draw_texture_rect(icone, ic, false, Color(1, 1, 1, 1) if ativo else Color(1, 1, 1, 0.35))
-	if not ativo:
-		if moldura != null:
-			c.draw_texture_rect(moldura, r, false, Color(1, 1, 1, 0.6))
-		return
-	if moldura == null:
-		c.draw_rect(r.grow(-1), Color(brilho.r, brilho.g, brilho.b, 0.8), false, 1.5)
-	c.draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4, 2)), Color(brilho.r, brilho.g, brilho.b, 0.45))
+	var tinta := Color(1, 1, 1, 1) if ativo else Color(1, 1, 1, 0.35)
+	if sem_recurso:
+		tinta = Color(0.45, 0.55, 1.0, 0.75)
+	c.draw_texture_rect(icone, ic, false, tinta)
+	if sem_recurso:
+		c.draw_rect(vao, Color(_c("sem_recurso").r, _c("sem_recurso").g, _c("sem_recurso").b, 0.45))
 	if recarga > 0.0:
 		var ctr := vao.get_center()
 		var ini := -PI * 0.5
@@ -337,20 +335,71 @@ static func slot(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecl
 		var arco := PackedVector2Array([ctr])
 		for p in _arco(ctr, vao.size.x * 0.72, ini, fim, 28):
 			arco.append(Vector2(clampf(p.x, vao.position.x, vao.end.x), clampf(p.y, vao.position.y, vao.end.y)))
-		c.draw_colored_polygon(arco, Color(0, 0, 0, 0.78))
+		c.draw_colored_polygon(arco, Color(0, 0, 0, 0.72))
 	if moldura != null:
-		c.draw_texture_rect(moldura, r, false)
-		c.draw_rect(r.grow(-2), Color(brilho.r, brilho.g, brilho.b, 0.5), false, 1.5)
+		c.draw_texture_rect(moldura, r, false, Color(1, 1, 1, 1) if ativo else Color(1, 1, 1, 0.6))
+	elif ativo:
+		c.draw_rect(r.grow(-1), Color(brilho.r, brilho.g, brilho.b, 0.8), false, 1.5)
+	if ativo and recarga <= 0.0 and not sem_recurso:
+		c.draw_rect(r.grow(-3), Color(brilho.r, brilho.g, brilho.b, 0.35), false, 1.0)   # pronto: fio fino da cor da habilidade
+	if recarga > 0.0 and segundos > 0.0:
+		var txt := ("%d" % ceili(segundos)) if segundos >= 1.0 else ("%.1f" % segundos)
+		var tam := 15 if pequeno else 22
+		texto(c, Vector2(vao.position.x, vao.get_center().y + tam * 0.36), txt, tam, _c("texto"), HORIZONTAL_ALIGNMENT_CENTER, vao.size.x, true)
 	if tecla != "":
-		tecla_placa(c, Vector2(r.position.x + 4 + maxf(36.0, 10.0 + tecla.length() * 7.0) * 0.5, r.end.y - 13), tecla)
+		tecla_placa(c, r, tecla, pequeno)
 
-## Plaquinha de tecla (abaixo do slot, sem tocar a borda dele).
-static func tecla_placa(c: CanvasItem, centro: Vector2, tecla: String) -> void:
-	var larg := maxf(36.0, 10.0 + tecla.length() * 7.0)
-	var pl := Rect2(centro - Vector2(larg * 0.5, 8), Vector2(larg, 16))
+## Encaixe de habilidade ainda vazio: vão escuro e rebaixado, sem cadeado, só com a letra da tecla.
+static func encaixe_vazio(c: CanvasItem, r: Rect2, tecla: String) -> void:
+	var vao := r.grow(-r.size.x * 0.067)
+	c.draw_rect(vao, Color(0.02, 0.02, 0.03, 0.75))
+	c.draw_rect(Rect2(vao.position, Vector2(vao.size.x, 3)), Color(0, 0, 0, 0.5))   # sombra interna em cima
+	var moldura := tex("hud_slot_moldura")
+	if moldura != null:
+		c.draw_texture_rect(moldura, r, false, Color(0.8, 0.8, 0.85, 0.72))
+	else:
+		c.draw_rect(r, _c("metal_medio").darkened(0.3), false, 1.5)
+	if tecla != "":
+		texto(c, Vector2(r.position.x, r.get_center().y + 8), tecla, 20, Color(_c("texto_suave").r, _c("texto_suave").g, _c("texto_suave").b, 0.85), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, true)
+
+## 9-slice de uma textura com margens (em pixels do arquivo) e escala: cantos fixos, bordas e miolo esticados.
+static func nove_fatias(c: CanvasItem, t: Texture2D, r: Rect2, esq: float, dir: float, topo: float, base: float, esc: float) -> void:
+	var w := float(t.get_width())
+	var h := float(t.get_height())
+	var xs := [0.0, esq, w - dir, w]
+	var ys := [0.0, topo, h - base, h]
+	var dx := [r.position.x, r.position.x + esq * esc, r.end.x - dir * esc, r.end.x]
+	var dy := [r.position.y, r.position.y + topo * esc, r.end.y - base * esc, r.end.y]
+	for j in 3:
+		for i in 3:
+			var src := Rect2(xs[i], ys[j], xs[i + 1] - xs[i], ys[j + 1] - ys[j])
+			var dst := Rect2(dx[i], dy[j], dx[i + 1] - dx[i], dy[j + 1] - dy[j])
+			if dst.size.x > 0.0 and dst.size.y > 0.0:
+				c.draw_texture_rect_region(t, dst, src)
+
+## Sombra suave atrás de um retângulo (camadas de alfa baixo), para slots soltos lerem sobre qualquer chão.
+static func sombra(c: CanvasItem, r: Rect2, raio := 8.0, alfa := 0.35) -> void:
+	for k in 4:
+		c.draw_rect(r.grow(raio * (1.0 - k * 0.25)), Color(0, 0, 0, alfa * 0.25))
+
+## Friso fino de ferro com fio dourado e losangos nas pontas (fundo mínimo da barra de slots).
+static func friso(c: CanvasItem, x0: float, x1: float, y: float) -> void:
+	c.draw_rect(Rect2(x0, y - 1, x1 - x0, 6), Color(0, 0, 0, 0.55))
+	c.draw_rect(Rect2(x0, y, x1 - x0, 4), _c("metal_medio"))
+	c.draw_rect(Rect2(x0, y, x1 - x0, 1), _c("metal_claro"))
+	c.draw_rect(Rect2(x0, y + 4, x1 - x0, 1), _c("destaque").darkened(0.25))
+	losango(c, Vector2(x0, y + 2), 6.0, _c("destaque").darkened(0.1))
+	losango(c, Vector2(x1, y + 2), 6.0, _c("destaque").darkened(0.1))
+
+## Plaquinha de tecla no canto de baixo do slot, sem sair dele.
+static func tecla_placa(c: CanvasItem, r: Rect2, tecla: String, pequeno := false) -> void:
+	var tam := 10 if pequeno else 12
+	var larg := minf(r.size.x - 4.0, maxf(22.0, 8.0 + tecla.length() * (tam * 0.6)))
+	var pl := Rect2(Vector2(r.position.x + 2.0, r.end.y - 16.0), Vector2(larg, 14))
+	if larg < 30.0:   # letra única: plaquinha centrada embaixo
+		pl.position.x = r.get_center().x - larg * 0.5
 	placa(c, pl, _c("pedra_clara"), 1.5, false)
-	c.draw_rect(pl.grow(-2), Color(0, 0, 0, 0.3), false, 1.0)
-	texto(c, Vector2(pl.position.x, pl.position.y + 13), tecla, 12, _c("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, pl.size.x)
+	texto(c, Vector2(pl.position.x, pl.position.y + 11), tecla, tam, _c("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, pl.size.x)
 
 ## Moldura pintada da barra do chefe, em tamanho fixo (a caveira não deforma). Retorna o canal interno onde vai a
 ## barra; sem a arte, retorna um canal desenhado pelo reserva `barra`. cx = centro x da caveira.
