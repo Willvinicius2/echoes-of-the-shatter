@@ -122,12 +122,19 @@ TEST(c_api_rogue_wave_queue_and_kill) {
     EXPECT_EQ(s0["id"].AsInt(0), 1);
     EXPECT_EQ(s0["wave"].AsInt(0), 1);
     EXPECT_FALSE(s0["enemy"].AsString().empty());
-    EXPECT_TRUE(s0["edge"].AsInt(-1) >= 0 && s0["edge"].AsInt(-1) <= 3);
+    EXPECT_TRUE(s0["angle"].IsNumber());
+    EXPECT_TRUE(s0["radius"].AsDouble(0.0) > 0.0);
     json::Value st = State(g.r);
     EXPECT_EQ(st["phase"].AsString(), std::string("cripta"));
     EXPECT_EQ(st["alive"].AsInt(-1), static_cast<std::int64_t>(n));
     EXPECT_EQ(st["waves_total"].AsInt(0), 8);
     EXPECT_EQ(st["cap"].AsInt(0), 12);
+    EXPECT_NEAR(st["deadline"].AsDouble(0.0), 480.0, 1e-9);
+    EXPECT_FALSE(st["swarm"].AsBool(true));
+    EXPECT_EQ(st["can_wake"].AsInt(-1), SHATTER_ROGUE_WAVE_TOO_EARLY);
+    EXPECT_EQ(shatter_rogue_wave_wake_boss(g.r, &res), SHATTER_OK);
+    EXPECT_EQ(res, SHATTER_ROGUE_WAVE_TOO_EARLY);
+    EXPECT_EQ(shatter_rogue_wave_wake_boss(g.r, nullptr), SHATTER_INVALID_ARGUMENT);
     std::uint8_t complete = 9;
     EXPECT_EQ(shatter_rogue_wave_killed(g.r, 1, &complete, &res), SHATTER_OK);
     EXPECT_EQ(res, SHATTER_ROGUE_WAVE_OK);
@@ -147,7 +154,9 @@ TEST(c_api_rogue_wave_defs) {
     const json::Value& ph = d["phases"].At(0);
     EXPECT_EQ(ph["id"].AsString(), std::string("cripta"));
     ASSERT_EQ(ph["waves"].Size(), std::size_t(8));
-    EXPECT_EQ(ph["waves"].At(7)["boss"].AsString(), std::string("crypt_guardian"));
+    EXPECT_EQ(ph["boss"].AsString(), std::string("crypt_guardian"));
+    EXPECT_EQ(ph["swarm"]["wave"].AsInt(0), 9);
+    EXPECT_TRUE(ph["ring_max"].AsDouble(0.0) >= ph["ring_min"].AsDouble(1.0));
     EXPECT_TRUE(ph["waves"].At(0)["enemies"].Size() > 0);
 }
 

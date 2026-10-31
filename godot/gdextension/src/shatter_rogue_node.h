@@ -77,6 +77,7 @@ public:
     void ondas_parar();
     Array ondas_tick(double dt);                                     // passa dt e devolve os que nasceram agora
     Dictionary ondas_morto(int64_t id);                              // {"resultado", "completa"}
+    int ondas_acordar_chefe();                                       // 0 = acordou (ver SHATTER_ROGUE_WAVE_*)
     Dictionary ondas_estado() const;
     Dictionary ondas_definicoes() const;
     String ondas_estado_texto() const;

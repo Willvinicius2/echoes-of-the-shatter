@@ -322,7 +322,6 @@ void ShatterRogue::ondas_parar() {
 Array ShatterRogue::ondas_tick(double dt) {
     uint32_t n = 0;
     shatter_rogue_wave_tick(rogue_, dt, &n);
-    // A fila também guarda o chefe de uma fase de onda única, que nasce no iniciar: lê sempre.
     Variant v = json_de([&](uint8_t* o, size_t c, size_t* m) { return shatter_rogue_wave_take_json(rogue_, o, c, m); });
     return v.get_type() == Variant::ARRAY ? Array(v) : Array();
 }
@@ -336,6 +335,12 @@ Dictionary ShatterRogue::ondas_morto(int64_t id) {
     d["resultado"] = r;
     d["completa"] = completa != 0;
     return d;
+}
+
+int ShatterRogue::ondas_acordar_chefe() {
+    int32_t r = -1;
+    shatter_rogue_wave_wake_boss(rogue_, &r);
+    return r;
 }
 
 Dictionary ShatterRogue::ondas_estado() const {
@@ -423,6 +428,7 @@ void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("ondas_parar"), &ShatterRogue::ondas_parar);
     ClassDB::bind_method(D_METHOD("ondas_tick", "dt"), &ShatterRogue::ondas_tick);
     ClassDB::bind_method(D_METHOD("ondas_morto", "id"), &ShatterRogue::ondas_morto);
+    ClassDB::bind_method(D_METHOD("ondas_acordar_chefe"), &ShatterRogue::ondas_acordar_chefe);
     ClassDB::bind_method(D_METHOD("ondas_estado"), &ShatterRogue::ondas_estado);
     ClassDB::bind_method(D_METHOD("ondas_definicoes"), &ShatterRogue::ondas_definicoes);
     ClassDB::bind_method(D_METHOD("ondas_estado_texto"), &ShatterRogue::ondas_estado_texto);

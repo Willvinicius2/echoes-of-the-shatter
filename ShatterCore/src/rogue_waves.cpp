@@ -29,6 +29,8 @@ constexpr int kMaxCost = 1000000;
 constexpr std::int64_t kMaxBudget = 1000000000;
 constexpr int kMaxElites = 1000;
 constexpr double kMaxMult = 1000.0;
+constexpr double kMaxRadius = 100000.0;
+constexpr double kTwoPi = 6.283185307179586;  // 2π (constante; nada de trigonometria no core)
 
 bool IntCell(std::string_view cell, int lo, int hi, int& out) {
     std::int64_t v = 0;
@@ -78,8 +80,8 @@ Value SpawnValue(const RogueWaveSpawn& s) {
     o.Set("elite", Value(s.elite));
     o.Set("boss", Value(s.boss));
     o.Set("wave", Value(s.wave));
-    o.Set("edge", Value(s.edge));
-    o.Set("pos", Value(s.pos));
+    o.Set("angle", Value(s.angle));
+    o.Set("radius", Value(s.radius));
     o.Set("hp_mult", Value(s.hpMult));
     o.Set("damage_mult", Value(s.damageMult));
     return o;
@@ -87,20 +89,21 @@ Value SpawnValue(const RogueWaveSpawn& s) {
 
 bool SpawnFromValue(const Value& v, RogueWaveSpawn& s) {
     if (v.type() != json::Type::Object) return false;
-    const std::int64_t id = v["id"].AsInt(-1), wave = v["wave"].AsInt(-1), edge = v["edge"].AsInt(-1);
-    if (id < 1 || id > std::numeric_limits<std::uint32_t>::max() || wave < 1 || edge < 0 || edge > 3) return false;
+    const std::int64_t id = v["id"].AsInt(-1), wave = v["wave"].AsInt(-1);
+    if (id < 1 || id > std::numeric_limits<std::uint32_t>::max() || wave < 1) return false;
     if (v["enemy"].type() != json::Type::String || v["enemy"].AsString().empty()) return false;
-    if (!v["pos"].IsNumber() || !v["hp_mult"].IsNumber() || !v["damage_mult"].IsNumber()) return false;
+    if (!v["angle"].IsNumber() || !v["radius"].IsNumber() || !v["hp_mult"].IsNumber() || !v["damage_mult"].IsNumber())
+        return false;
     s.id = static_cast<std::uint32_t>(id);
     s.enemy = v["enemy"].AsString();
     s.elite = v["elite"].AsBool(false);
     s.boss = v["boss"].AsBool(false);
     s.wave = static_cast<int>(wave);
-    s.edge = static_cast<int>(edge);
-    s.pos = v["pos"].AsDouble(0.0);
+    s.angle = v["angle"].AsDouble(0.0);
+    s.radius = v["radius"].AsDouble(0.0);
     s.hpMult = v["hp_mult"].AsDouble(1.0);
     s.damageMult = v["damage_mult"].AsDouble(1.0);
-    return s.pos >= 0.0 && s.pos < 1.0;
+    return s.angle >= 0.0 && s.angle < kTwoPi && s.radius >= 0.0;
 }
 
 }  // namespace
@@ -118,8 +121,8 @@ bool RogueData::LoadWavesCsv(std::string_view text) {
         errors_.push_back({name, ce.line, ce.message});
         return false;
     }
-    const std::vector<std::string_view> want = {"fase",    "onda",  "duracao", "intervalo",  "lote",        "orcamento",
-                                                "teto",    "inimigos", "elites", "elite_vida", "elite_dano", "chefe"};
+    const std::vector<std::string_view> want = {"fase", "onda",     "duracao", "intervalo",  "lote",      "orcamento",
+                                                "teto", "inimigos", "elites",  "elite_vida", "elite_dano"};
     bool headerOk = t.header.size() == want.size();
     for (std::size_t i = 0; headerOk && i < want.size(); ++i) headerOk = t.header[i] == want[i];
     if (!headerOk) {
@@ -140,7 +143,6 @@ bool RogueData::LoadWavesCsv(std::string_view text) {
                     bad("fase '" + w.phase + "' is split in two blocks");
                     break;
                 }
-        if (samePhase && !waves_.back().boss.empty()) bad("chefe only on the last onda of the fase");
         if (!SecondsCell(r.cells[2], w.duration, w.durationUs)) bad("duracao must be > 0 s");
         if (!SecondsCell(r.cells[3], w.interval, w.intervalUs)) bad("intervalo must be > 0 s");
         if (!IntCell(r.cells[4], 1, kMaxBatch, w.batch)) bad("lote out of range");
@@ -151,16 +153,93 @@ bool RogueData::LoadWavesCsv(std::string_view text) {
         w.mixText = std::string(r.cells[7]);
         if (!ParseMix(r.cells[7], w.mix)) bad("inimigos is not id:peso|id:peso:custo (ids sem repetir)");
         for (const RogueWaveMix& m : w.mix) w.minCost = w.minCost == 0 ? m.cost : std::min(w.minCost, m.cost);
-        if (w.budget > 0 && w.mix.empty()) bad("orcamento without inimigos");
+        if (w.mix.empty()) bad("inimigos is empty");
         if (!IntCell(r.cells[8], 0, kMaxElites, w.elites)) bad("elites out of range");
         if (w.elites > 0 && w.mix.empty()) bad("elites without inimigos");
         if (!MultCell(r.cells[9], w.eliteHp)) bad("elite_vida must be > 0");
         if (!MultCell(r.cells[10], w.eliteDamage)) bad("elite_dano must be > 0");
-        w.boss = std::string(r.cells[11]);
-        if (w.budget == 0 && w.boss.empty()) bad("onda without orcamento nor chefe");
+        if (w.budget == 0) bad("orcamento must be > 0");
         waves_.push_back(std::move(w));
     }
     return errors_.size() == before;
+}
+
+bool RogueData::LoadWavePhasesCsv(std::string_view text) {
+    const std::size_t before = errors_.size();
+    const std::string name = "ondas_fases.csv";
+    wavePhases_.clear();
+    CsvTable t;
+    detail::CsvError ce;
+    if (!detail::ParseCsv(text, t, ce)) {
+        errors_.push_back({name, ce.line, ce.message});
+        return false;
+    }
+    const std::vector<std::string_view> want = {"fase",          "prazo",          "raio_min",         "raio_max",
+                                                "chefe",         "despertar_onda", "enxame_inimigos",  "enxame_orcamento",
+                                                "enxame_lote",   "enxame_intervalo", "enxame_teto"};
+    bool headerOk = t.header.size() == want.size();
+    for (std::size_t i = 0; headerOk && i < want.size(); ++i) headerOk = t.header[i] == want[i];
+    if (!headerOk) {
+        errors_.push_back({name, t.headerLine, "unexpected header"});
+        return false;
+    }
+    for (const CsvRow& r : t.rows) {
+        auto bad = [&](const std::string& msg) { errors_.push_back({name, r.line, msg}); };
+        RogueWavePhaseDef p;
+        p.id = std::string(r.cells[0]);
+        if (p.id.empty()) bad("fase is empty");
+        if (FindWavePhaseDef(p.id) != nullptr) bad("duplicate fase '" + p.id + "'");
+        if (!SecondsCell(r.cells[1], p.deadline, p.deadlineUs)) bad("prazo must be > 0 s");
+        if (!detail::ParseDouble(r.cells[2], p.ringMin) || !(p.ringMin > 0.0) || !(p.ringMin <= kMaxRadius))
+            bad("raio_min must be > 0");
+        if (!detail::ParseDouble(r.cells[3], p.ringMax) || !(p.ringMax >= p.ringMin) || !(p.ringMax <= kMaxRadius))
+            bad("raio_max must be >= raio_min");
+        p.boss = std::string(r.cells[4]);
+        if (!IntCell(r.cells[5], 1, kMaxCap, p.wakeWave)) bad("despertar_onda out of range");
+        RogueWaveDef& w = p.swarm;
+        w.phase = p.id;
+        w.mixText = std::string(r.cells[6]);
+        if (!ParseMix(r.cells[6], w.mix) || w.mix.empty()) bad("enxame_inimigos is not id:peso|id:peso:custo");
+        for (const RogueWaveMix& m : w.mix) w.minCost = w.minCost == 0 ? m.cost : std::min(w.minCost, m.cost);
+        std::int64_t b = 0;
+        if (!detail::ParseInt64(r.cells[7], b) || b < 1 || b > kMaxBudget) bad("enxame_orcamento out of range");
+        w.budget = b;
+        if (!IntCell(r.cells[8], 1, kMaxBatch, w.batch)) bad("enxame_lote out of range");
+        if (!SecondsCell(r.cells[9], w.interval, w.intervalUs)) bad("enxame_intervalo must be > 0 s");
+        if (!IntCell(r.cells[10], 1, kMaxCap, w.cap)) bad("enxame_teto out of range");
+        w.duration = p.deadline;  // sem efeito: o enxame não passa de onda
+        w.durationUs = p.deadlineUs;
+        wavePhases_.push_back(std::move(p));
+    }
+    return errors_.size() == before;
+}
+
+void RogueData::CheckWaves() {
+    const std::string waves = "ondas.csv", phases = "ondas_fases.csv";
+    for (const std::string& id : WavePhases()) {
+        const RogueWavePhaseDef* p = FindWavePhaseDef(id);
+        if (p == nullptr) {
+            errors_.push_back({phases, 0, "fase '" + id + "' of ondas.csv has no row"});
+            continue;
+        }
+        int first = -1, count = 0;
+        FindWavePhase(id, first, count);
+        if (p->wakeWave > count) errors_.push_back({phases, 0, "despertar_onda beyond the ondas of '" + id + "'"});
+    }
+    for (RogueWavePhaseDef& p : wavePhases_) {
+        int first = -1, count = 0;
+        if (!FindWavePhase(p.id, first, count)) {
+            errors_.push_back({waves, 0, "fase '" + p.id + "' of ondas_fases.csv has no ondas"});
+            continue;
+        }
+        p.swarm.wave = count + 1;
+    }
+}
+
+const RogueWavePhaseDef* RogueData::FindWavePhaseDef(std::string_view phase) const {
+    for (const RogueWavePhaseDef& p : wavePhases_)
+        if (p.id == phase) return &p;
+    return nullptr;
 }
 
 std::vector<std::string> RogueData::WavePhases() const {
@@ -184,11 +263,13 @@ bool RogueData::FindWavePhase(std::string_view phase, int& first, int& count) co
 // ---------------------------------------------------------------------------------------------------------------
 // RogueWaves
 // ---------------------------------------------------------------------------------------------------------------
-const RogueWaveDef& RogueWaves::Def() const { return data_->Waves()[static_cast<std::size_t>(phase_ + wave_)]; }
+const RogueWaveDef& RogueWaves::Def() const {
+    return swarm_ ? pdef_->swarm : data_->Waves()[static_cast<std::size_t>(phase_ + wave_)];
+}
 
 const RogueWaveDef* RogueWaves::CurrentDef() const { return Running() ? &Def() : nullptr; }
 
-std::string RogueWaves::PhaseId() const { return Running() ? Def().phase : std::string(); }
+std::string RogueWaves::PhaseId() const { return Running() ? pdef_->id : std::string(); }
 
 int RogueWaves::Wave() const { return Running() ? wave_ + 1 : 0; }
 
@@ -207,7 +288,10 @@ bool RogueWaves::BossAlive() const {
 RogueWaveResult RogueWaves::Start(std::string_view phase, std::uint64_t seed) {
     int first = -1, count = 0;
     if (data_ == nullptr || !data_->FindWavePhase(phase, first, count)) return RogueWaveResult::Unknown;
+    const RogueWavePhaseDef* p = data_->FindWavePhaseDef(phase);
+    if (p == nullptr) return RogueWaveResult::Unknown;
     Stop();
+    pdef_ = p;
     phase_ = first;
     count_ = count;
     seed_ = seed;
@@ -216,9 +300,12 @@ RogueWaveResult RogueWaves::Start(std::string_view phase, std::uint64_t seed) {
 }
 
 void RogueWaves::Stop() {
+    pdef_ = nullptr;
     phase_ = -1;
     count_ = 0;
     wave_ = 0;
+    swarm_ = false;
+    loops_ = 0;
     seed_ = 0;
     now_ = waveStart_ = nextSpawn_ = 0;
     waveEndPassed_ = false;
@@ -239,7 +326,13 @@ void RogueWaves::EnterWave(int wave, std::int64_t at) {
     budgetLeft_ = d.budget;
     spent_ = 0;
     elitesSpawned_ = 0;
-    if (!d.boss.empty() && !bossSpawned_) SpawnBoss();
+}
+
+void RogueWaves::StartSwarm(std::int64_t at) {
+    swarm_ = true;
+    EnterWave(count_, at);
+    waveEndPassed_ = true;  // o enxame não passa de onda
+    if (!pdef_->boss.empty() && !bossSpawned_) SpawnBoss();
 }
 
 RogueWaveSpawn RogueWaves::MakeSpawn(bool boss) {
@@ -250,7 +343,7 @@ RogueWaveSpawn RogueWaves::MakeSpawn(bool boss) {
     s.wave = wave_ + 1;
     Pcg32 rng = Pcg32::ForStream(seed_, RngStream::RogueWave, s.id);
     if (boss) {
-        s.enemy = d.boss;
+        s.enemy = pdef_->boss;
     } else {
         std::uint32_t total = 0;
         for (const RogueWaveMix& m : d.mix)
@@ -275,8 +368,8 @@ RogueWaveSpawn RogueWaves::MakeSpawn(bool boss) {
             r -= w;
         }
     }
-    s.edge = static_cast<int>(rng.NextBelow(4));
-    s.pos = rng.NextUnit();
+    s.angle = rng.NextUnit() * kTwoPi;
+    s.radius = pdef_->ringMin + (pdef_->ringMax - pdef_->ringMin) * rng.NextUnit();
     if (s.elite) {
         s.hpMult = d.eliteHp;
         s.damageMult = d.eliteDamage;
@@ -305,9 +398,9 @@ void RogueWaves::SpawnBatch() {
 }
 
 void RogueWaves::CheckComplete() {
-    if (!Running() || complete_ || !LastWave()) return;
-    if (!Def().boss.empty()) complete_ = bossKilled_;
-    else complete_ = Exhausted() && alive_.empty();
+    if (!Running() || complete_) return;
+    if (!pdef_->boss.empty()) complete_ = bossKilled_;
+    else complete_ = swarm_ && Exhausted() && alive_.empty();
 }
 
 int RogueWaves::Tick(double dt) {
@@ -315,22 +408,33 @@ int RogueWaves::Tick(double dt) {
     const std::size_t before = pending_.size();
     const double clamped = std::min(dt, kRogueWaveMaxTick);
     const std::int64_t target = now_ + static_cast<std::int64_t>(std::llround(clamped * 1000000.0));
+    constexpr std::int64_t kNever = std::numeric_limits<std::int64_t>::max();
     for (;;) {
-        const std::int64_t waveEnd = waveEndPassed_ ? std::numeric_limits<std::int64_t>::max()
-                                                    : waveStart_ + Def().durationUs;
-        if (waveEnd <= nextSpawn_ && waveEnd <= target) {
-            // Fim da duração da onda (antes de um lote no mesmo instante).
+        // Eventos em ordem de tempo; no mesmo instante: prazo, fim da onda, lote.
+        const std::int64_t deadline = swarm_ ? kNever : pdef_->deadlineUs;
+        const std::int64_t waveEnd = waveEndPassed_ ? kNever : waveStart_ + Def().durationUs;
+        if (deadline <= target && deadline <= waveEnd && deadline <= nextSpawn_) {
+            now_ = deadline;
+            StartSwarm(now_);
+            continue;
+        }
+        if (waveEnd <= target && waveEnd <= nextSpawn_) {
             now_ = waveEnd;
             waveEndPassed_ = true;
-            if (Exhausted() && !LastWave()) EnterWave(wave_ + 1, now_);
+            if (Exhausted()) {
+                loops_ += LastWave() ? 1 : 0;
+                EnterWave(LastWave() ? wave_ : wave_ + 1, now_);
+            }
             continue;
         }
         if (nextSpawn_ > target) break;
         now_ = nextSpawn_;
         SpawnBatch();
         nextSpawn_ += Def().intervalUs;
-        if (Exhausted() && !LastWave() && (waveEndPassed_ || alive_.empty())) {
-            EnterWave(wave_ + 1, now_);
+        if (!swarm_ && Exhausted() && (waveEndPassed_ || alive_.empty())) {
+            // A última onda recomeça até o prazo.
+            loops_ += LastWave() ? 1 : 0;
+            EnterWave(LastWave() ? wave_ : wave_ + 1, now_);
             continue;
         }
         CheckComplete();
@@ -354,6 +458,20 @@ RogueWaveResult RogueWaves::Killed(std::uint32_t id, RogueWaveSpawn* out) {
     return RogueWaveResult::NotAlive;
 }
 
+RogueWaveResult RogueWaves::CheckWake() const {
+    if (!Running() || complete_) return RogueWaveResult::NotRunning;
+    if (pdef_->boss.empty()) return RogueWaveResult::NoBoss;
+    if (bossSpawned_) return RogueWaveResult::AlreadyAwake;
+    if (!swarm_ && wave_ + 1 < pdef_->wakeWave) return RogueWaveResult::TooEarly;
+    return RogueWaveResult::Ok;
+}
+
+RogueWaveResult RogueWaves::WakeBoss() {
+    const RogueWaveResult r = CheckWake();
+    if (r == RogueWaveResult::Ok) SpawnBoss();
+    return r;
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Estado canônico
 // ---------------------------------------------------------------------------------------------------------------
@@ -364,6 +482,8 @@ std::string RogueWaves::StateJson() const {
     if (Running()) {
         o.Set("seed", json::FromUInt64(seed_));
         o.Set("wave", Value(wave_ + 1));
+        o.Set("swarm", Value(swarm_));
+        o.Set("loops", Value(loops_));
         o.Set("now", Value(now_));
         o.Set("wave_start", Value(waveStart_));
         o.Set("next_spawn", Value(nextSpawn_));
@@ -401,10 +521,14 @@ bool RogueWaves::RestoreState(std::string_view text, std::string* error) {
         *this = t;
         return true;
     }
-    if (!data_->FindWavePhase(phase, t.phase_, t.count_)) return fail("unknown phase");
-    const std::int64_t wave = d["wave"].AsInt(0);
-    if (wave < 1 || wave > t.count_) return fail("wave out of range");
+    t.pdef_ = data_->FindWavePhaseDef(phase);
+    if (t.pdef_ == nullptr || !data_->FindWavePhase(phase, t.phase_, t.count_)) return fail("unknown phase");
+    t.swarm_ = d["swarm"].AsBool(false);
+    const std::int64_t wave = d["wave"].AsInt(0), loops = d["loops"].AsInt(-1);
+    if (t.swarm_ ? wave != t.count_ + 1 : (wave < 1 || wave > t.count_)) return fail("wave out of range");
+    if (loops < 0 || loops > std::numeric_limits<int>::max()) return fail("bad loops");
     t.wave_ = static_cast<int>(wave - 1);
+    t.loops_ = static_cast<int>(loops);
     if (d["seed"].type() != json::Type::String) return fail("bad seed");
     t.seed_ = d["seed"].AsUInt64(0);
     t.now_ = d["now"].AsInt(-1);
@@ -431,7 +555,7 @@ bool RogueWaves::RestoreState(std::string_view text, std::string* error) {
         std::vector<RogueWaveSpawn>& list = std::string_view(key) == "alive" ? t.alive_ : t.pending_;
         for (const Value& v : d[key].Items()) {
             RogueWaveSpawn s;
-            if (!SpawnFromValue(v, s) || s.id > t.spawned_ || s.wave > t.count_) return fail("bad spawn");
+            if (!SpawnFromValue(v, s) || s.id > t.spawned_ || s.wave > t.count_ + 1) return fail("bad spawn");
             list.push_back(std::move(s));
         }
     }

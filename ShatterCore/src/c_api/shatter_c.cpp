@@ -5129,8 +5129,8 @@ Value RogueSpawnValue(const RogueWaveSpawn& w) {
     o.Set("elite", Value(w.elite));
     o.Set("boss", Value(w.boss));
     o.Set("wave", Value(w.wave));
-    o.Set("edge", Value(w.edge));
-    o.Set("pos", Value(w.pos));
+    o.Set("angle", Value(w.angle));
+    o.Set("radius", Value(w.radius));
     o.Set("hp_mult", Value(w.hpMult));
     o.Set("damage_mult", Value(w.damageMult));
     return o;
@@ -5180,6 +5180,12 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_killed(shatter_rogue*
     return SHATTER_OK;
 }
 
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_wake_boss(shatter_rogue* rogue, std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->waves.WakeBoss());
+    return SHATTER_OK;
+}
+
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_json(const shatter_rogue* rogue, std::uint8_t* out, std::size_t cap,
                                                               std::size_t* needed) SHATTER_NOEXCEPT {
     if (rogue == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
@@ -5191,7 +5197,13 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_json(const shatter_ro
     o.Set("complete", Value(w.Complete()));
     o.Set("wave", Value(w.Wave()));
     o.Set("waves_total", Value(w.WavesTotal()));
+    o.Set("swarm", Value(w.Swarm()));
+    o.Set("loops", Value(w.Loops()));
     o.Set("time", Value(RogueUsToSeconds(w.TimeUs())));
+    const RogueWavePhaseDef* p = w.PhaseDef();
+    const double deadline = p != nullptr ? p->deadline : 0.0;
+    o.Set("deadline", Value(deadline));
+    o.Set("time_left", Value(p != nullptr && !w.Swarm() ? std::max(0.0, RogueUsToSeconds(p->deadlineUs - w.TimeUs())) : 0.0));
     o.Set("wave_time", Value(RogueUsToSeconds(w.WaveTimeUs())));
     o.Set("wave_duration", Value(d != nullptr ? d->duration : 0.0));
     o.Set("budget", Value(d != nullptr ? d->budget : std::int64_t{0}));
@@ -5199,7 +5211,9 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_json(const shatter_ro
     o.Set("exhausted", Value(w.Exhausted()));
     o.Set("alive", Value(w.Alive()));
     o.Set("cap", Value(d != nullptr ? d->cap : 0));
-    o.Set("boss", Value(d != nullptr ? d->boss : std::string()));
+    o.Set("boss", Value(p != nullptr ? p->boss : std::string()));
+    o.Set("wake_wave", Value(p != nullptr ? p->wakeWave : 0));
+    o.Set("can_wake", Value(static_cast<int>(w.CheckWake())));
     o.Set("boss_spawned", Value(w.BossSpawned()));
     o.Set("boss_alive", Value(w.BossAlive()));
     o.Set("spawned", Value(w.SpawnedTotal()));
@@ -5211,34 +5225,43 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_json(const shatter_ro
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_defs_json(const shatter_rogue* rogue, std::uint8_t* out, std::size_t cap,
                                                                    std::size_t* needed) SHATTER_NOEXCEPT {
     if (rogue == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    auto waveValue = [](const RogueWaveDef& d) {
+        Value x = Value::MakeObject();
+        x.Set("wave", Value(d.wave));
+        x.Set("duration", Value(d.duration));
+        x.Set("interval", Value(d.interval));
+        x.Set("batch", Value(d.batch));
+        x.Set("budget", Value(d.budget));
+        x.Set("cap", Value(d.cap));
+        Value mix = Value::MakeArray();
+        for (const RogueWaveMix& m : d.mix) {
+            Value e = Value::MakeObject();
+            e.Set("id", Value(m.enemy));
+            e.Set("weight", Value(m.weight));
+            e.Set("cost", Value(m.cost));
+            mix.Push(std::move(e));
+        }
+        x.Set("enemies", std::move(mix));
+        x.Set("elites", Value(d.elites));
+        x.Set("elite_hp", Value(d.eliteHp));
+        x.Set("elite_damage", Value(d.eliteDamage));
+        return x;
+    };
     Value phases = Value::MakeArray();
-    for (const std::string& id : rogue->data.WavePhases()) {
+    for (const RogueWavePhaseDef& p : rogue->data.WavePhaseDefs()) {
+        const std::string& id = p.id;
         Value ph = Value::MakeObject();
         ph.Set("id", Value(id));
+        ph.Set("deadline", Value(p.deadline));
+        ph.Set("ring_min", Value(p.ringMin));
+        ph.Set("ring_max", Value(p.ringMax));
+        ph.Set("boss", Value(p.boss));
+        ph.Set("wake_wave", Value(p.wakeWave));
+        ph.Set("swarm", waveValue(p.swarm));
         Value waves = Value::MakeArray();
         for (const RogueWaveDef& d : rogue->data.Waves()) {
             if (d.phase != id) continue;
-            Value x = Value::MakeObject();
-            x.Set("wave", Value(d.wave));
-            x.Set("duration", Value(d.duration));
-            x.Set("interval", Value(d.interval));
-            x.Set("batch", Value(d.batch));
-            x.Set("budget", Value(d.budget));
-            x.Set("cap", Value(d.cap));
-            Value mix = Value::MakeArray();
-            for (const RogueWaveMix& m : d.mix) {
-                Value e = Value::MakeObject();
-                e.Set("id", Value(m.enemy));
-                e.Set("weight", Value(m.weight));
-                e.Set("cost", Value(m.cost));
-                mix.Push(std::move(e));
-            }
-            x.Set("enemies", std::move(mix));
-            x.Set("elites", Value(d.elites));
-            x.Set("elite_hp", Value(d.eliteHp));
-            x.Set("elite_damage", Value(d.eliteDamage));
-            x.Set("boss", Value(d.boss));
-            waves.Push(std::move(x));
+            waves.Push(waveValue(d));
         }
         ph.Set("waves", std::move(waves));
         phases.Push(std::move(ph));

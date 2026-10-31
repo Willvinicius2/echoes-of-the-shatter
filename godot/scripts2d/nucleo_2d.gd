@@ -4,13 +4,15 @@ extends RefCounted
 ## do cliente só chamam e apresentam.
 ##
 ## Hordas (API 1.11, docs/tecnico/09 seção 18): `ondas_iniciar(fase, semente)`, depois a cada quadro
-## `ondas_tick(delta)` devolve os que nasceram agora ([{id, enemy, elite, boss, wave, edge, pos, hp_mult,
-## damage_mult}]; edge 0..3 = norte, leste, sul, oeste e pos 0..1 ao longo da borda) e `ondas_morto(id)` avisa cada
-## morte ({resultado, completa}). `ondas_estado()` alimenta a HUD (onda, vivos, teto, tempo, chefe).
+## `ondas_tick(delta)` devolve os que nasceram agora ([{id, enemy, elite, boss, wave, angle, radius, hp_mult,
+## damage_mult}]; nascem em `jogador + Vector2.from_angle(angle) * radius`, presos nas bordas do mapa) e
+## `ondas_morto(id)` avisa cada morte ({resultado, completa}). `ondas_acordar_chefe()` acorda o Guardião no altar (a
+## partir da onda despertar_onda; no prazo ele acorda sozinho, junto do enxame final). `ondas_estado()` alimenta a HUD
+## (onda, enxame, tempo que falta, vivos, teto, chefe).
 
 const ARQUIVOS := ["meta", "receitas", "drops", "rota", "run", "run_settings", "upgrades"]
-## Tabelas que o core lê se existirem (ondas.csv: spawner de hordas).
-const OPCIONAIS := ["ondas"]
+## Tabelas que o core lê se existirem (ondas e ondas_fases: spawner de hordas).
+const OPCIONAIS := ["ondas", "ondas_fases"]
 const CLASSES := "res://data2d/classes_2d.csv"
 const PASTA := "user://dados_core"
 
