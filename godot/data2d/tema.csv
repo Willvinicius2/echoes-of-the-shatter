@@ -22,3 +22,6 @@ mana_clara,#5a74e0,topo do globo de recurso
 estamina_clara,#8fd6ec,topo da barra de estamina
 chefe_escura,#2c0a3a,fundo da barra do chefe
 chefe_clara,#a050c8,topo da barra do chefe
+impeto_escura,#4a1a06,fundo do globo de impeto (guerreiro)
+impeto_clara,#e0782a,topo do globo de impeto (guerreiro)
+sem_recurso,#1a2a66,tinta do icone quando falta mana ou impeto
