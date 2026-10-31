@@ -111,7 +111,7 @@ func _desenhar_base(vp: Vector2) -> void:
 		var raio: float = _lay["globo_raio"]
 		var x0 := _centro_globo(vp, false).x + raio * 0.55
 		var x1 := _centro_globo(vp, true).x - raio * 0.55
-		Arte.base_arco(_ctl, maxf(x0, g.position.x - 160.0), minf(x1, g.end.x + 160.0), vp.y, 5.0, g.size.y * 0.9 + _lay["slot_base"])
+		Arte.base_arco(_ctl, x0, x1, vp.y, 30.0, g.size.y * 0.9 + _lay["slot_base"])
 	elif modo == 2:
 		for sr in rs["basicos"] + rs["ativas"]:
 			Arte.sombra(_ctl, sr, 6.0, 0.3)
@@ -131,9 +131,7 @@ func _desenhar_globos(vp: Vector2) -> void:
 	Arte.ornamento_globo(_ctl, ev, raio)
 	Arte.ornamento_globo(_ctl, _centro_globo(vp, true), raio)
 	Arte.texto(_ctl, ev + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.hp), int(hmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
-	Arte.texto(_ctl, Vector2(ev.x + raio + 10, ev.y + 30), Csv.t("hud.hp"), 14, Tema.cor("texto_suave"))
 	var ed := _centro_globo(vp, true)
-	var rotulo := Csv.t("hud.mana")
 	if "mana" in jogador:   # mana real (runtime de habilidades das classes)
 		var mmax: float = maxf(1.0, jogador.stats.get("mana_max", 1.0))
 		Arte.globo(_ctl, ed, raio, clampf(jogador.mana / mmax, 0.0, 1.0), 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel)
@@ -142,7 +140,6 @@ func _desenhar_globos(vp: Vector2) -> void:
 		Arte.globo(_ctl, ed, raio, jogador.recurso_frac(), 0.0, Tema.cor("impeto_escura"), Tema.cor("impeto_clara"), _rel)
 		if "impeto" in jogador:
 			Arte.texto(_ctl, ed + Vector2(-raio, 4), "%d/%d" % [floori(jogador.impeto), int(jogador.stats.get("impeto_max", 0.0))], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
-		rotulo = Csv.t("hud.fury")
 	else:   # recurso ainda trancado: vidro vazio, corrente em X e cadeado
 		Arte.globo(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
 		_ctl.draw_circle(ed + Vector2(0, raio * 0.3), raio * 0.55, Color(0.2, 0.3, 0.9, 0.12))
@@ -150,7 +147,6 @@ func _desenhar_globos(vp: Vector2) -> void:
 		Arte.corrente(_ctl, ed + Vector2(-rr, -rr), ed + Vector2(rr, rr), 7)
 		Arte.corrente(_ctl, ed + Vector2(rr, -rr), ed + Vector2(-rr, rr), 7)
 		Arte.cadeado(_ctl, ed + Vector2(0, -8), 20.0)
-	Arte.texto(_ctl, Vector2(ed.x - raio - 150, ed.y + 30), rotulo, 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, 140.0)
 
 func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():
