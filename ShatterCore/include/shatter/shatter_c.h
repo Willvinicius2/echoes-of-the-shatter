@@ -553,7 +553,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 9u   /* 9: modo "cartas externas" do rogue (shatter_rogue_run_external_cards_set/_get, docs/09 seção 16.5); 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 10u   /* 10: árvore de habilidades por classe do rogue (shatter_rogue_class_*, shatter_rogue_skill*, docs/09 seção 17); 9: modo "cartas externas" do rogue (shatter_rogue_run_external_cards_set/_get, docs/09 seção 16.5); 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -1509,7 +1509,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_drop_json(const shatter_ro
  * Entrada e saída: objeto JSON stat -> número ({"hp_max":100,"arrow_damage":10,...}); a saída mantém a ordem da entrada.
  * Aplica o amuleto equipado, os consumíveis ativos (ordem de receitas.csv) e as melhorias de stat (ordem de meta.csv, uma
  * vez por nível); com include_run = 1 e corrida em curso, também os upgrades escolhidos (ordem de upgrades.csv). Stat que não
- * está na entrada é ignorado. Valor que não é número: SHATTER_PARSE_ERROR. */
+ * está na entrada é ignorado. Com include_run = 1 (com ou sem corrida, API 1.10), por fim as passivas aprendidas da classe
+ * atual; aqui o stat ausente entra no fim com 0 antes do bônus. Valor que não é número: SHATTER_PARSE_ERROR. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_stats_apply(const shatter_rogue* rogue, const char* base_json,
                                                                   size_t len, uint8_t include_run, uint8_t* out, size_t cap,
                                                                   size_t* needed, shatter_error* err) SHATTER_NOEXCEPT;
@@ -1569,7 +1570,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_finish(shatter_rogue* 
  * "external_cards":bool (API 1.9)}. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
                                                                size_t* needed) SHATTER_NOEXCEPT;
-/* Stats finais da corrida (base com o meta guardada no início + upgrades), mesmo formato de stats_apply. Sem corrida: {}. */
+/* Stats finais da corrida (base com o meta guardada no início + upgrades + passivas da árvore da classe, API 1.10), mesmo
+ * formato de stats_apply. Sem corrida: {}. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_stats_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
                                                                      size_t* needed) SHATTER_NOEXCEPT;
 /* Resumo do fim: {"victory","stage_reached","stages_total","upgrades_total","fragments","materials":[{"id","qty"}]}.
@@ -1588,6 +1590,62 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_state_restore(shatter_rogu
 /* SHA-256 (64 caracteres hex minúsculos) do estado canônico. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_state_hash(const shatter_rogue* rogue, uint8_t* out, size_t cap,
                                                                  size_t* needed) SHATTER_NOEXCEPT;
+
+/* --- Habilidades por classe do roguelike 2D (API 1.10; rogue.h; docs/09 seção 17) ---
+ * Runtime de godot/scripts2d/habilidades_2d.gd (doc 29): pontos permanentes por classe, nó que só abre com o pai no
+ * nível 1+, custo em pontos por nível, 4 slots (0..3 = Q, E, F, R), redistribuição gratuita, passivas sobre os stats e
+ * recargas. A mana e os efeitos (efeitos_<classe>_2d.gd) ficam no cliente. Dados: classes_2d.csv (opcional; colunas
+ * id e habilidades) e a árvore de cada classe (o arquivo da coluna habilidades, só o nome, lido da mesma pasta; ausente =
+ * classe sem árvore). Sem classes_2d.csv não há classe: as funções abaixo dão NO_CLASS e o save fica o da 1.9.
+ * Pontos, níveis e slots são do meta (save: "habilidades": {classe: {"niveis","slots","pontos"}} e "classe"), e toda ação
+ * que dá certo grava sozinha com o caminho ligado. Ao limpar uma sala (shatter_rogue_run_enemy_killed), a classe atual
+ * ganha skill_points_room (+ skill_points_boss na última sala) de run_settings.csv, e o save grava. As passivas entram em
+ * shatter_rogue_run_stats_json e em shatter_rogue_stats_apply com include_run. As recargas são da corrida (state_json). */
+enum { SHATTER_ROGUE_SKILL_OK = 0, SHATTER_ROGUE_SKILL_UNKNOWN = 1, SHATTER_ROGUE_SKILL_MAXED = 2,
+       SHATTER_ROGUE_SKILL_NO_POINTS = 3, SHATTER_ROGUE_SKILL_LOCKED = 4, SHATTER_ROGUE_SKILL_NOT_ACTIVE = 5,
+       SHATTER_ROGUE_SKILL_NOT_LEARNED = 6, SHATTER_ROGUE_SKILL_BAD_SLOT = 7, SHATTER_ROGUE_SKILL_EMPTY_SLOT = 8,
+       SHATTER_ROGUE_SKILL_COOLDOWN = 9, SHATTER_ROGUE_SKILL_NO_MANA = 10, SHATTER_ROGUE_SKILL_WRONG_PHASE = 11,
+       SHATTER_ROGUE_SKILL_NO_CLASS = 12 };
+/* Classe da próxima corrida (padrão: a 1ª de classes_2d.csv). Só fora de corrida viva (NONE, WON, DEAD), senão
+ * WRONG_PHASE; classe desconhecida: UNKNOWN. Zera as recargas. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_class_set(shatter_rogue* rogue, const char* class_id, size_t class_id_len,
+                                                                int32_t* result) SHATTER_NOEXCEPT;
+/* {"class":"id"|"","classes":["ids"],"points","slots":["id ou vazio" x4],"skills":[{"id","active","parent","level",
+ * "max_level","points","can_learn":código,"cooldown":s restantes}]} da classe atual, na ordem do CSV. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skills_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                  size_t* needed) SHATTER_NOEXCEPT;
+/* Definição da habilidade no nível `level` (< 0 = nível atual; 0 mostra o valor base): objeto com todas as colunas do
+ * CSV (texto como string, as demais como número) com dano, qtd, raio, duracao, alcance e valor escalonados por
+ * 1 + escala x (n - 1), qtd > 0 arredondada e no mínimo 1, e "nivel". Habilidade desconhecida: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_def_json(const shatter_rogue* rogue, const char* skill_id,
+                                                                     size_t skill_id_len, int32_t level, uint8_t* out,
+                                                                     size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Pode aprender (ou subir) agora? Mesmo código de shatter_rogue_skill_learn, sem mudar nada. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_can_learn(const shatter_rogue* rogue, const char* skill_id,
+                                                                      size_t skill_id_len, int32_t* result) SHATTER_NOEXCEPT;
+/* Gasta `pontos` e sobe um nível (MAXED, NO_POINTS, LOCKED). A ativa recém-aprendida entra no 1º slot livre. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_learn(shatter_rogue* rogue, const char* skill_id, size_t skill_id_len,
+                                                                  int32_t* result) SHATTER_NOEXCEPT;
+/* Põe a ativa aprendida no slot 0..3 (id vazio limpa o slot). Se já estava em outro slot, os dois trocam. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_equip(shatter_rogue* rogue, uint32_t slot, const char* skill_id,
+                                                                  size_t skill_id_len, int32_t* result) SHATTER_NOEXCEPT;
+/* Redistribuição gratuita: devolve os pontos gastos, zera níveis e slots. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_respec(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Soma pontos ao saldo da classe atual (negativo conta como 0). Para testes e recompensas fora da sala limpa. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_points_add(shatter_rogue* rogue, int64_t points,
+                                                                       int32_t* result) SHATTER_NOEXCEPT;
+/* Passa `dt` segundos nas recargas (dt <= 0, NaN ou infinito: nada muda). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_tick(shatter_rogue* rogue, double dt) SHATTER_NOEXCEPT;
+/* Pode usar o slot com esta mana? (BAD_SLOT, EMPTY_SLOT, COOLDOWN, NO_MANA). Não muda nada. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_can_use(const shatter_rogue* rogue, uint32_t slot, double mana,
+                                                                    int32_t* result) SHATTER_NOEXCEPT;
+/* Chame depois que o efeito do cliente deu certo: confere de novo, inicia a recarga (cd x skill_cd_mult dos stats da
+ * corrida; 1 sem corrida) e devolve em *cost_out o custo de mana que o cliente desconta. Falha: *cost_out = 0. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_commit_use(shatter_rogue* rogue, uint32_t slot, double mana,
+                                                                       double* cost_out, int32_t* result) SHATTER_NOEXCEPT;
+/* Fração 0..1 da recarga do slot para a HUD (0 = pronto, slot vazio ou fora da faixa). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_cooldown(const shatter_rogue* rogue, uint32_t slot,
+                                                                     double* fraction_out) SHATTER_NOEXCEPT;
 
 #ifdef __cplusplus
 }  /* extern "C" */

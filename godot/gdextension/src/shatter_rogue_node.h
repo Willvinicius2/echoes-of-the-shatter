@@ -56,6 +56,20 @@ public:
     Dictionary corrida_stats() const;
     Dictionary corrida_resumo() const;
 
+    // Habilidades por classe (API 1.10): os códigos são SHATTER_ROGUE_SKILL_* (0 = ok).
+    int classe_definir(const String& classe);
+    Dictionary habilidades_estado() const;
+    Dictionary habilidade_def(const String& id, int nivel) const;   // nivel < 0 = atual; {} se desconhecida
+    int habilidade_pode_aprender(const String& id) const;
+    int habilidade_aprender(const String& id);
+    int habilidade_equipar(int slot, const String& id);
+    int habilidades_redistribuir();
+    int habilidades_ganhar_pontos(int64_t pontos);
+    void habilidades_tick(double dt);
+    int habilidade_pode_usar(int slot, double mana) const;
+    Dictionary habilidade_usar(int slot, double mana);              // {"resultado", "custo"}
+    double habilidade_recarga(int slot) const;                      // 0..1
+
     // Estado completo e determinismo.
     String estado_texto() const;
     bool estado_restaurar(const String& texto);

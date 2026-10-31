@@ -34,6 +34,28 @@ constexpr std::int64_t kMaxCount = 1000000000;
 constexpr int kMaxLevel = 1000;
 constexpr int kMaxEnemiesPerKind = 1000;
 
+// Classes do cliente 2D (opcional) e colunas de texto da árvore de habilidades (doc 29); as demais são números.
+constexpr std::string_view kClassesTable = "classes_2d.csv";
+constexpr const char* kSkillTextColumns[] = {"id", "ramo", "tipo", "pai", "efeito", "stat", "modo", "icone"};
+
+bool IsSkillTextColumn(std::string_view col) {
+    for (const char* c : kSkillTextColumns)
+        if (col == c) return true;
+    return false;
+}
+
+int ColumnIndex(const detail::CsvTable& t, std::string_view col) {
+    for (std::size_t i = 0; i < t.header.size(); ++i)
+        if (t.header[i] == col) return static_cast<int>(i);
+    return -1;
+}
+
+// "res://data2d/habilidades_mago.csv" -> "habilidades_mago.csv" (o core lê da pasta que recebeu).
+std::string_view BaseName(std::string_view path) {
+    const std::size_t cut = path.find_last_of("/\\");
+    return cut == std::string_view::npos ? path : path.substr(cut + 1);
+}
+
 constexpr const char* kTables[] = {"meta.csv", "receitas.csv", "drops.csv", "rota.csv", "run.csv", "run_settings.csv",
                                    "upgrades.csv"};
 
@@ -302,9 +324,108 @@ bool RogueData::LoadTableCsv(std::string_view table, std::string_view text) {
             if (IndexById(upgrades_, u.id) >= 0) bad(r, "duplicate id '" + u.id + "'");
             upgrades_.push_back(std::move(u));
         }
+    } else if (table == kClassesTable) {
+        // Só id e habilidades importam ao core; as demais colunas (nome, sprite, efeitos, stats) são do cliente.
+        const int colId = ColumnIndex(t, "id"), colSkills = ColumnIndex(t, "habilidades");
+        if (colId < 0 || colSkills < 0) {
+            errors_.push_back({name, t.headerLine, "classes_2d.csv needs id and habilidades columns"});
+            return false;
+        }
+        for (const CsvRow& r : t.rows) {
+            RogueClass c;
+            c.id = S(r, static_cast<std::size_t>(colId));
+            if (c.id.empty()) bad(r, "id is empty");
+            c.skillFile = std::string(BaseName(r.cells[static_cast<std::size_t>(colSkills)]));
+            if (c.skillFile == "." || c.skillFile == "..") bad(r, "habilidades is not a file name");
+            if (IndexById(classes_, c.id) >= 0) bad(r, "duplicate id '" + c.id + "'");
+            classes_.push_back(std::move(c));
+        }
     } else {
         errors_.push_back({name, 0, "unknown rogue table"});
         return false;
+    }
+    return errors_.size() == before;
+}
+
+bool RogueData::LoadSkillTableCsv(std::string_view classId, std::string_view text) {
+    const std::size_t before = errors_.size();
+    const int ci = IndexById(classes_, classId);
+    const std::string name = ci >= 0 && !classes_[static_cast<std::size_t>(ci)].skillFile.empty()
+                                 ? classes_[static_cast<std::size_t>(ci)].skillFile
+                                 : "habilidades_" + std::string(classId) + ".csv";
+    if (ci < 0) {
+        errors_.push_back({name, 0, "class not in classes_2d.csv"});
+        return false;
+    }
+    RogueClass& cls = classes_[static_cast<std::size_t>(ci)];
+    cls.skills.clear();
+    CsvTable t;
+    detail::CsvError ce;
+    if (!detail::ParseCsv(text, t, ce)) {
+        errors_.push_back({name, ce.line, ce.message});
+        return false;
+    }
+    for (const char* req : {"id", "tipo", "pai", "pontos", "nivel_max"}) {
+        if (ColumnIndex(t, req) < 0) {
+            errors_.push_back({name, t.headerLine, std::string("missing column ") + req});
+            return false;
+        }
+    }
+    for (std::size_t c = 0; c < t.header.size(); ++c)
+        for (std::size_t o = 0; o < c; ++o)
+            if (t.header[o] == t.header[c]) {
+                errors_.push_back({name, t.headerLine, "duplicate column " + std::string(t.header[c])});
+                return false;
+            }
+    for (const CsvRow& r : t.rows) {
+        auto bad = [&](const std::string& msg) { errors_.push_back({name, r.line, msg}); };
+        RogueSkillDef d;
+        std::string tipo, modo;
+        for (std::size_t c = 0; c < t.header.size(); ++c) {
+            const std::string col(t.header[c]);
+            const std::string_view cell = r.cells[c];
+            if (IsSkillTextColumn(col)) {
+                d.texts.emplace_back(col, std::string(cell));
+                if (col == "id") d.id = std::string(cell);
+                else if (col == "tipo") tipo = std::string(cell);
+                else if (col == "pai") d.parent = std::string(cell);
+                else if (col == "stat") d.stat = std::string(cell);
+                else if (col == "modo") modo = std::string(cell);
+                continue;
+            }
+            double v = 0.0;
+            if (!cell.empty() && !detail::ParseDouble(cell, v)) {
+                bad("column " + col + " is not a number");
+                continue;
+            }
+            if (col == "pontos" || col == "nivel_max") {
+                // maxi(1, int(...)) do GDScript: aqui o valor tem de ser inteiro de verdade; 0 conta como 1.
+                if (!(v >= 0.0 && v <= kMaxLevel) || v != static_cast<double>(static_cast<int>(v))) {
+                    bad(col + " out of range");
+                    continue;
+                }
+                const int n = std::max(1, static_cast<int>(v));
+                if (col == "pontos") d.points = n;
+                else d.maxLevel = n;
+                v = n;
+            } else if (col == "cd" || col == "custo") {
+                if (!(v >= 0.0)) bad(col + " must be >= 0");
+                if (col == "cd") d.cooldown = v;
+                else d.cost = v;
+            } else if (col == "escala") {
+                d.scale = v;
+            } else if (col == "valor") {
+                d.value = v;
+            }
+            d.numbers.emplace_back(col, v);
+        }
+        if (d.id.empty()) bad("id is empty");
+        if (tipo == "ativa") d.active = true;
+        else if (tipo != "passiva") bad("tipo must be ativa or passiva");
+        if (!d.active && !d.stat.empty() && !Mode(modo, d.mode)) bad("modo must be add or mult");
+        if (d.parent == d.id && !d.id.empty()) bad("pai is the skill itself");
+        if (IndexById(cls.skills, d.id) >= 0) bad("duplicate id '" + d.id + "'");
+        cls.skills.push_back(std::move(d));
     }
     return errors_.size() == before;
 }
@@ -326,6 +447,24 @@ bool RogueData::LoadDirectory(const std::string& dir) {
         }
         const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
         ok = LoadTableCsv(name, text) && ok;
+    }
+    // Classes e árvores: opcionais. Sem classes_2d.csv não há classes; árvore ausente = classe sem árvore
+    // (como o carregar_classe do habilidades_2d.gd).
+    std::ifstream classesIn(d / std::string(kClassesTable), std::ios::binary);
+    if (classesIn) {
+        const std::string text((std::istreambuf_iterator<char>(classesIn)), std::istreambuf_iterator<char>());
+        if (LoadTableCsv(kClassesTable, text)) {
+            for (std::size_t i = 0; i < classes_.size(); ++i) {
+                const RogueClass& c = classes_[i];
+                if (c.skillFile.empty()) continue;
+                std::ifstream skillIn(d / fs::u8path(c.skillFile), std::ios::binary);
+                if (!skillIn) continue;
+                const std::string st((std::istreambuf_iterator<char>(skillIn)), std::istreambuf_iterator<char>());
+                ok = LoadSkillTableCsv(classes_[i].id, st) && ok;
+            }
+        } else {
+            ok = false;
+        }
     }
     return ok;
 }
@@ -376,11 +515,46 @@ bool RogueData::Finalize() {
     else if (!(heal >= 0.0 && heal <= 1.0)) E("run_settings.csv", "rest_heal must be in 0..1");
     else restHeal_ = heal;
 
+    // Pontos de habilidade: opcionais (sem a chave, a sala não dá pontos).
+    auto optIntKey = [&](const char* key, std::int64_t& out) {
+        double v = 0.0;
+        if (!Setting(key, v)) return;
+        if (!(v >= 0.0 && v <= static_cast<double>(kMaxCount)) || v != static_cast<double>(static_cast<std::int64_t>(v))) {
+            E("run_settings.csv", std::string("chave must be a non-negative integer: ") + key);
+            return;
+        }
+        out = static_cast<std::int64_t>(v);
+    };
+    optIntKey("skill_points_room", skillPointsRoom_);
+    optIntKey("skill_points_boss", skillPointsBoss_);
+
+    // Árvores: pai existe na mesma classe e não há ciclo (um nó num ciclo nunca abriria).
+    for (RogueClass& c : classes_) {
+        const std::string table = c.skillFile.empty() ? c.id : c.skillFile;
+        for (RogueSkillDef& d : c.skills) {
+            d.parentIndex = -1;
+            if (d.parent.empty()) continue;
+            d.parentIndex = IndexById(c.skills, d.parent);
+            if (d.parentIndex < 0) errors_.push_back({table, 0, "pai is not a skill of the class: '" + d.parent + "'"});
+        }
+        for (std::size_t i = 0; i < c.skills.size(); ++i) {
+            int p = c.skills[i].parentIndex;
+            for (std::size_t steps = 0; p >= 0 && steps <= c.skills.size(); ++steps)
+                p = c.skills[static_cast<std::size_t>(p)].parentIndex;
+            if (p >= 0) errors_.push_back({table, 0, "pai forms a cycle: '" + c.skills[i].id + "'"});
+        }
+    }
+
     finalized_ = true;
     return errors_.size() == before && errors_.empty();
 }
 
 int RogueData::FindMetaDef(std::string_view id) const { return IndexById(meta_, id); }
+int RogueData::FindClass(std::string_view id) const { return IndexById(classes_, id); }
+int RogueData::FindSkill(int classIndex, std::string_view skillId) const {
+    if (classIndex < 0 || classIndex >= static_cast<int>(classes_.size())) return -1;
+    return IndexById(classes_[static_cast<std::size_t>(classIndex)].skills, skillId);
+}
 int RogueData::FindRecipe(std::string_view id) const { return IndexById(recipes_, id); }
 int RogueData::FindUpgrade(std::string_view id) const { return IndexById(upgrades_, id); }
 int RogueData::FindMaterial(std::string_view id) const {
@@ -430,6 +604,7 @@ void RogueState::ResetMeta() {
     stock_.assign(data_->Recipes().size(), 0);
     active_.assign(data_->Recipes().size(), 0);
     equipped_ = -1;
+    ResetSkillState();
 }
 
 std::int64_t RogueState::Material(std::string_view id) const {
@@ -581,6 +756,37 @@ RogueStats RogueState::ApplyRunUpgrades(const RogueStats& stats) const {
 
 namespace {
 
+// "habilidades": {classe: {"niveis", "slots", "pontos"}} só das classes com algo guardado, e "classe" (a atual).
+// Sem classes_2d.csv nenhuma das duas chaves aparece: o save fica byte a byte o da API 1.8.
+void SkillsToValue(Value& o, const RogueData& data, const std::vector<RogueSkillMeta>& metas, int cls) {
+    if (data.Classes().empty()) return;
+    Value hab = Value::MakeObject();
+    for (std::size_t c = 0; c < metas.size(); ++c) {
+        const RogueSkillMeta& m = metas[c];
+        const auto& skills = data.Classes()[c].skills;
+        bool any = m.points != 0;
+        Value lv = Value::MakeObject();
+        for (std::size_t i = 0; i < m.levels.size(); ++i) {
+            if (m.levels[i] <= 0) continue;
+            lv.Set(skills[i].id, Value(m.levels[i]));
+            any = true;
+        }
+        Value sl = Value::MakeArray();
+        for (int k : m.slots) {
+            sl.Push(Value(k >= 0 ? skills[static_cast<std::size_t>(k)].id : std::string()));
+            any = any || k >= 0;
+        }
+        if (!any) continue;
+        Value e = Value::MakeObject();
+        e.Set("niveis", std::move(lv));
+        e.Set("slots", std::move(sl));
+        e.Set("pontos", Value(m.points));
+        hab.Set(data.Classes()[c].id, std::move(e));
+    }
+    o.Set("habilidades", std::move(hab));
+    o.Set("classe", Value(cls >= 0 ? data.Classes()[static_cast<std::size_t>(cls)].id : std::string()));
+}
+
 Value MetaToValue(const RogueData& data, std::int64_t fragments, const std::vector<std::int64_t>& materials,
                   const std::vector<int>& levels, const std::vector<std::uint8_t>& owned, const std::vector<int>& stock,
                   int equipped) {
@@ -611,7 +817,9 @@ Value MetaToValue(const RogueData& data, std::int64_t fragments, const std::vect
 
 std::string RogueState::MetaToJson() const {
     if (data_ == nullptr) return std::string();
-    return json::Serialize(MetaToValue(*data_, fragments_, materials_, levels_, owned_, stock_, equipped_), false);
+    Value o = MetaToValue(*data_, fragments_, materials_, levels_, owned_, stock_, equipped_);
+    SkillsToValue(o, *data_, skillMeta_, class_);
+    return json::Serialize(o, false);
 }
 
 RogueLoadResult RogueState::MetaFromJson(std::string_view text) {
@@ -646,6 +854,35 @@ RogueLoadResult RogueState::MetaFromJson(std::string_view text) {
             stock_[static_cast<std::size_t>(i)] =
                 ClampLevel(LooseInt(m.second), data_->Recipes()[static_cast<std::size_t>(i)].maxStock);
     }
+    // Habilidades (de_dicionario do habilidades_2d.gd): classe e habilidade desconhecidas descartadas, nível limitado
+    // a 0..máximo, slot só com ativa aprendida, pontos >= 0. Classe salva desconhecida: fica a padrão.
+    const auto& classes = data_->Classes();
+    for (const auto& m : d["habilidades"].Members()) {
+        const int c = data_->FindClass(m.first);
+        if (c < 0) continue;
+        const auto& skills = classes[static_cast<std::size_t>(c)].skills;
+        RogueSkillMeta& sm = skillMeta_[static_cast<std::size_t>(c)];
+        for (const auto& n : m.second["niveis"].Members()) {
+            const int i = data_->FindSkill(c, n.first);
+            if (i >= 0)
+                sm.levels[static_cast<std::size_t>(i)] =
+                    ClampLevel(LooseInt(n.second), skills[static_cast<std::size_t>(i)].maxLevel);
+        }
+        const auto& sv = m.second["slots"].Items();
+        for (std::size_t k = 0; k < sv.size() && k < static_cast<std::size_t>(kRogueSkillSlots); ++k) {
+            const int i = sv[k].type() == json::Type::String ? data_->FindSkill(c, sv[k].AsString()) : -1;
+            if (i >= 0 && skills[static_cast<std::size_t>(i)].active && sm.levels[static_cast<std::size_t>(i)] >= 1 &&
+                std::find(sm.slots.begin(), sm.slots.end(), i) == sm.slots.end())
+                sm.slots[k] = i;
+        }
+        sm.points = std::max<std::int64_t>(0, LooseInt(m.second["pontos"]));
+    }
+    const Value& cls = d["classe"];
+    if (cls.type() == json::Type::String) {
+        const int c = data_->FindClass(cls.AsString());
+        if (c >= 0) class_ = c;
+    }
+    ClearCooldowns();
     return RogueLoadResult::Ok;
 }
 
@@ -670,7 +907,7 @@ std::vector<ContentId> RogueState::AvailableUpgrades() const {
     return out;
 }
 
-RogueStats RogueState::RunStats() const { return ApplyRunUpgrades(base_); }
+RogueStats RogueState::RunStats() const { return ApplySkillPassives(ApplyRunUpgrades(base_)); }
 
 void RogueState::CreditGains() {
     if (gainFragments_ != 0 || !gainMaterials_.empty()) Credit(gainFragments_, gainMaterials_);
@@ -696,6 +933,7 @@ bool RogueState::StartRun(std::uint64_t seed, const RogueStats& baseStats) {
     draws_ = 0;
     runLevels_.assign(data_->Upgrades().size(), 0);
     base_ = ApplyMeta(baseStats);
+    ClearCooldowns();
     EnterNode(0, 0);
     return credited;
 }
@@ -752,6 +990,12 @@ RogueRunResult RogueState::EnemyKilled(std::string_view enemyId, RogueKill* out)
         const bool elite = node_.kind == kKindElite;
         k.clearFragments = data_->RoomClearFragments() + (elite ? data_->EliteFragments() : 0);
         gainFragments_ = SatAdd(gainFragments_, k.clearFragments);
+        // Pontos de habilidade: permanentes na hora (ganhar_pontos do habilidades_2d.gd), da classe atual.
+        if (class_ >= 0) {
+            const bool boss = stage_ + 1 >= StagesTotal();
+            k.skillPoints = SatAdd(data_->SkillPointsRoom(), boss ? data_->SkillPointsBoss() : 0);
+            if (k.skillPoints > 0) AddSkillPoints(k.skillPoints);
+        }
         // Cartas: não na última sala nem no descanso nem no modo cartas externas; a elite oferece elite_extra_cards a mais.
         if (!externalCards_ && stage_ + 1 < StagesTotal() && node_.kind != kKindRest) {
             DrawCards(data_->UpgradeCards() + (elite ? data_->EliteExtraCards() : 0));
@@ -859,7 +1103,9 @@ std::string RogueState::StateJson() const {
     if (data_ == nullptr) return std::string();
     Value o = Value::MakeObject();
     o.Set("format", Value(kRogueStateFormat));
-    o.Set("meta", MetaToValue(*data_, fragments_, materials_, levels_, owned_, stock_, equipped_));
+    Value meta = MetaToValue(*data_, fragments_, materials_, levels_, owned_, stock_, equipped_);
+    SkillsToValue(meta, *data_, skillMeta_, class_);
+    o.Set("meta", std::move(meta));
     Value act = Value::MakeArray();
     for (std::size_t k = 0; k < active_.size(); ++k)
         if (active_[k] != 0) act.Push(Value(data_->Recipes()[k].id));
@@ -890,6 +1136,14 @@ std::string RogueState::StateJson() const {
     for (const auto& m : gainMaterials_) gm.Set(m.first, Value(m.second));
     gains.Set("materials", std::move(gm));
     run.Set("gains", std::move(gains));
+    // Recargas das habilidades: só as que estão correndo (sem nenhuma, o JSON fica o da 1.9).
+    if (class_ >= 0) {
+        Value cd = Value::MakeObject();
+        const auto& skills = data_->Classes()[static_cast<std::size_t>(class_)].skills;
+        for (std::size_t i = 0; i < cooldowns_.size(); ++i)
+            if (cooldowns_[i] > 0.0) cd.Set(skills[i].id, Value(cooldowns_[i]));
+        if (cd.Size() > 0) run.Set("cooldowns", std::move(cd));
+    }
     o.Set("run", std::move(run));
     return json::Serialize(o, false);
 }
@@ -958,6 +1212,17 @@ bool RogueState::RestoreState(std::string_view text, std::string* error) {
         const std::int64_t q = m.second.AsInt(-1);
         if (q < 0 || data_->FindMaterial(m.first) < 0) return fail("bad gain material");
         t.gainMaterials_.emplace_back(m.first, q);
+    }
+    // A classe do estado vem do meta; o MetaFromJson tolerante troca dado ruim pelo padrão, mas aqui é erro.
+    const Value& metaClass = d["meta"]["classe"];
+    if (metaClass.type() != json::Type::Null &&
+        (metaClass.type() != json::Type::String || data_->FindClass(metaClass.AsString()) != t.class_))
+        return fail("bad classe");
+    for (const auto& m : run["cooldowns"].Members()) {
+        const int i = data_->FindSkill(t.class_, m.first);
+        const double left = m.second.AsDouble(-1.0);
+        if (i < 0 || !m.second.IsNumber() || !(left > 0.0) || left > 1e12) return fail("bad cooldown");
+        t.cooldowns_[static_cast<std::size_t>(i)] = left;
     }
     *this = std::move(t);
     return true;

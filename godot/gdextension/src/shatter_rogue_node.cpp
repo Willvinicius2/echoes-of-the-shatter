@@ -1,5 +1,6 @@
 #include "shatter_rogue_node.h"
 
+#include <cstdint>
 #include <functional>
 #include <vector>
 
@@ -242,6 +243,62 @@ Dictionary ShatterRogue::corrida_resumo() const {
     return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_run_summary_json(rogue_, o, c, n); });
 }
 
+// --- Habilidades por classe (API 1.10) ---
+ROGUE_ACAO_ID(classe_definir, shatter_rogue_class_set)
+ROGUE_ACAO_ID(habilidade_aprender, shatter_rogue_skill_learn)
+ROGUE_CONSULTA_ID(habilidade_pode_aprender, shatter_rogue_skill_can_learn)
+ROGUE_ACAO_RESULTADO(habilidades_redistribuir, shatter_rogue_skill_respec)
+
+Dictionary ShatterRogue::habilidades_estado() const {
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_skills_json(rogue_, o, c, n); });
+}
+
+Dictionary ShatterRogue::habilidade_def(const String& id, int nivel) const {
+    std::string s = utf8(id);
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) {
+        return shatter_rogue_skill_def_json(rogue_, s.data(), s.size(), nivel, o, c, n);
+    });
+}
+
+int ShatterRogue::habilidade_equipar(int slot, const String& id) {
+    std::string s = utf8(id);
+    int32_t r = -1;
+    shatter_rogue_skill_equip(rogue_, slot < 0 ? UINT32_MAX : static_cast<uint32_t>(slot), s.data(), s.size(), &r);
+    return r;
+}
+
+int ShatterRogue::habilidades_ganhar_pontos(int64_t pontos) {
+    int32_t r = -1;
+    shatter_rogue_skill_points_add(rogue_, pontos, &r);
+    return r;
+}
+
+void ShatterRogue::habilidades_tick(double dt) {
+    shatter_rogue_skill_tick(rogue_, dt);
+}
+
+int ShatterRogue::habilidade_pode_usar(int slot, double mana) const {
+    int32_t r = -1;
+    shatter_rogue_skill_can_use(rogue_, slot < 0 ? UINT32_MAX : static_cast<uint32_t>(slot), mana, &r);
+    return r;
+}
+
+Dictionary ShatterRogue::habilidade_usar(int slot, double mana) {
+    double custo = 0.0;
+    int32_t r = -1;
+    shatter_rogue_skill_commit_use(rogue_, slot < 0 ? UINT32_MAX : static_cast<uint32_t>(slot), mana, &custo, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["custo"] = custo;
+    return d;
+}
+
+double ShatterRogue::habilidade_recarga(int slot) const {
+    double f = 0.0;
+    shatter_rogue_skill_cooldown(rogue_, slot < 0 ? UINT32_MAX : static_cast<uint32_t>(slot), &f);
+    return f;
+}
+
 String ShatterRogue::estado_texto() const {
     return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_state_json(rogue_, o, c, n); });
 }
@@ -288,6 +345,18 @@ void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("corrida_estado"), &ShatterRogue::corrida_estado);
     ClassDB::bind_method(D_METHOD("corrida_stats"), &ShatterRogue::corrida_stats);
     ClassDB::bind_method(D_METHOD("corrida_resumo"), &ShatterRogue::corrida_resumo);
+    ClassDB::bind_method(D_METHOD("classe_definir", "classe"), &ShatterRogue::classe_definir);
+    ClassDB::bind_method(D_METHOD("habilidades_estado"), &ShatterRogue::habilidades_estado);
+    ClassDB::bind_method(D_METHOD("habilidade_def", "id", "nivel"), &ShatterRogue::habilidade_def);
+    ClassDB::bind_method(D_METHOD("habilidade_pode_aprender", "id"), &ShatterRogue::habilidade_pode_aprender);
+    ClassDB::bind_method(D_METHOD("habilidade_aprender", "id"), &ShatterRogue::habilidade_aprender);
+    ClassDB::bind_method(D_METHOD("habilidade_equipar", "slot", "id"), &ShatterRogue::habilidade_equipar);
+    ClassDB::bind_method(D_METHOD("habilidades_redistribuir"), &ShatterRogue::habilidades_redistribuir);
+    ClassDB::bind_method(D_METHOD("habilidades_ganhar_pontos", "pontos"), &ShatterRogue::habilidades_ganhar_pontos);
+    ClassDB::bind_method(D_METHOD("habilidades_tick", "dt"), &ShatterRogue::habilidades_tick);
+    ClassDB::bind_method(D_METHOD("habilidade_pode_usar", "slot", "mana"), &ShatterRogue::habilidade_pode_usar);
+    ClassDB::bind_method(D_METHOD("habilidade_usar", "slot", "mana"), &ShatterRogue::habilidade_usar);
+    ClassDB::bind_method(D_METHOD("habilidade_recarga", "slot"), &ShatterRogue::habilidade_recarga);
     ClassDB::bind_method(D_METHOD("estado_texto"), &ShatterRogue::estado_texto);
     ClassDB::bind_method(D_METHOD("estado_restaurar", "texto"), &ShatterRogue::estado_restaurar);
     ClassDB::bind_method(D_METHOD("estado_hash"), &ShatterRogue::estado_hash);
