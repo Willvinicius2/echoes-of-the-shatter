@@ -179,7 +179,10 @@ static func _subtrair(polis: Array, tira: PackedVector2Array) -> Array:
 ## Tudo no z do chão: os atores andam por cima do tabuleiro e as muretas ficam ao lado deles, nunca à frente.
 ## Devolve o eixo [a0, b0] (beiradas da água) para a colisão abrir o corredor sobre o tabuleiro.
 static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVector2Array, lajes: Texture2D, aguas: Array, margens: Array, linhas: Array, larg_caminho: float) -> PackedVector2Array:
-	var meio: Vector2 = trecho[trecho.size() / 2]
+	var meio := Vector2.ZERO
+	for q in trecho:
+		meio += q
+	meio /= trecho.size()
 	var corda: Vector2 = (trecho[trecho.size() - 1] - trecho[0]).normalized()
 	var agua := PackedVector2Array()
 	for ag in aguas:
@@ -215,7 +218,7 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 		b0 += d * 2.0
 	var a := a0 - d * 30.0  # a ponte entra 30 px pelas margens, para assentar na terra
 	var b := b0 + d * 30.0
-	var meia := larg_caminho * 0.39
+	var meia := larg_caminho * 0.5  # mesma largura da trilha, centrada nela
 	var ret := func(p0: Vector2, p1: Vector2, half: float) -> PackedVector2Array:
 		return PackedVector2Array([p0 + n * half, p1 + n * half, p1 - n * half, p0 - n * half])
 	# 0) rampas de lajes ligando cada ponta da ponte ao caminho fora da margem
@@ -246,38 +249,44 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 			rampa.texture = lajes
 			rampa.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 			rampa.uv = hull
-	# 1) sombra na água (só dentro da água)
+	# uv alinhada ao eixo da ponte, para as lajes retas correrem no sentido da travessia
+	var uv_eixo := func(pts: PackedVector2Array) -> PackedVector2Array:
+		var out := PackedVector2Array()
+		for q in pts:
+			out.append(Vector2((q - a).dot(d), (q - a).dot(n) + 64.0))
+		return out
+	var tabuleiro_tex := _textura_tabuleiro()
+	# 1) sombra na água: anel escuro em volta da ponte (oclusão, dos dois lados) e sombra deslocada para baixo-direita
+	for q in Geometry2D.intersect_polygons(ret.call(a, b, meia + 14.0), agua):
+		_poligono(raiz, q, Color(0.01, 0.04, 0.06, 0.4))
 	var desloc := Vector2(12.0, 18.0)
-	for q in Geometry2D.intersect_polygons(ret.call(a + desloc, b + desloc, meia + 10.0), agua):
-		_poligono(raiz, q, Color(0.01, 0.04, 0.06, 0.55))
-	# 2) encontros nas margens: laje larga onde a ponte assenta na terra, com sombra
-	for ponta in [[a - d * 6.0, a + d * 28.0], [b - d * 28.0, b + d * 6.0]]:
-		_poligono(raiz, ret.call(ponta[0] + Vector2(3, 4), ponta[1] + Vector2(3, 4), meia + 12.0), Color(0.03, 0.04, 0.05, 0.5))
-		var enc := _poligono(raiz, ret.call(ponta[0], ponta[1], meia + 12.0), Color(0.6, 0.6, 0.66))
-		enc.texture = lajes
-		enc.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		enc.uv = enc.polygon
-	# 3) tabuleiro: lajes com juntas transversais, aresta clara à esquerda e escura à direita
+	for q in Geometry2D.intersect_polygons(ret.call(a + desloc, b + desloc, meia + 12.0), agua):
+		_poligono(raiz, q, Color(0.01, 0.04, 0.06, 0.5))
+	# 2) encontros: a laje do tabuleiro continua pela margem, com soleira escura só na junta com a trilha
+	for ponta in [[a - d * 8.0, a + d * 2.0], [b - d * 2.0, b + d * 8.0]]:
+		var sol: PackedVector2Array = ret.call(ponta[0], ponta[1], meia + 2.0)
+		var pg_sol := _poligono(raiz, sol, Color(0.7, 0.72, 0.78))
+		pg_sol.texture = tabuleiro_tex
+		pg_sol.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		pg_sol.uv = uv_eixo.call(sol)
+	# 3) tabuleiro: lajes retas de pedra, aresta clara à esquerda e escura à direita
 	var tab: PackedVector2Array = ret.call(a, b, meia)
-	var pg := _poligono(raiz, tab, Color(0.88, 0.9, 0.96))
-	pg.texture = lajes
+	var pg := _poligono(raiz, tab, Color(0.92, 0.94, 1.0))
+	pg.texture = tabuleiro_tex
 	pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	pg.uv = tab
+	pg.uv = uv_eixo.call(tab)
 	var comp_tab := a.distance_to(b)
-	var s := 16.0 + float(posmod(hash(Vector2i(int(a.x), int(a.y))), 9))
-	while s < comp_tab - 10.0:
-		var p := a + d * s
-		_poligono(raiz, ret.call(p - d * 1.3, p + d * 1.3, meia - 1.0), Color(0.09, 0.09, 0.1, 0.85))
-		s += 24.0 + float(posmod(hash(Vector2i(int(s), 9)), 9))
-	_poligono(raiz, ret.call(a - n * (meia - 1.5), b - n * (meia - 1.5), 1.5), Color(0.9, 0.92, 0.96, 0.35))
-	_poligono(raiz, ret.call(a + n * (meia - 3.0), b + n * (meia - 3.0), 3.0), Color(0.04, 0.04, 0.05, 0.4))
-	# 4) reflexo claro tremido na água, colado às beiradas do tabuleiro (por cima da sombra)
+	_poligono(raiz, ret.call(a - d * 8.0 - n * (meia - 1.5), b + d * 8.0 - n * (meia - 1.5), 1.5), Color(0.9, 0.92, 0.96, 0.3))
+	_poligono(raiz, ret.call(a - d * 8.0 + n * (meia - 3.0), b + d * 8.0 + n * (meia - 3.0), 3.0), Color(0.04, 0.04, 0.05, 0.35))
+	for ponta in [a + d * 1.0, b - d * 1.0]:
+		_poligono(raiz, ret.call(ponta - d * 1.0, ponta + d * 1.0, meia + 2.0), Color(0.08, 0.08, 0.1, 0.55))  # soleira
+	# 4) reflexo claro tremido na água, colado às beiradas (por cima da sombra)
 	for lado in [-1.0, 1.0]:
 		var beira := PackedVector2Array()
 		var volta := PackedVector2Array()
 		var k := 0.0
 		while k <= comp_tab:
-			var p: Vector2 = a + d * k + n * lado * (meia + 1.0)
+			var p: Vector2 = a + d * k + n * lado * (meia + 8.0)
 			var onda := absf(sin(k * 0.19 + lado * 2.0)) * 2.2 + 1.5
 			beira.append(p)
 			volta.append(p + n * lado * (onda + 2.5 + sin(k * 0.41) * 1.0))
@@ -286,51 +295,93 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 		beira.append_array(volta)
 		for q in Geometry2D.intersect_polygons(beira, agua):
 			_poligono(raiz, q, Color(0.66, 0.9, 0.9, 0.42))
-	# 5) muretas: topo claro 8 px acima do chão, sombra da mureta da esquerda no tabuleiro,
-	#    face escura só na ponta mais perto da câmera (a que fica mais embaixo na tela)
+	# 5) muretas com espessura: base de 14 px no chão (meia 7), topo 12 px acima, face escura na ponta de baixo
+	#    e no lado direito (fora da luz), sombra da mureta da esquerda no tabuleiro, bloco de pedra nas pontas
+	var alt_m := 12.0
 	for lado in [-1.0, 1.0]:
-		var c0: Vector2 = a + n * lado * (meia + 5.0) + d * 8.0
-		var c1: Vector2 = b + n * lado * (meia + 5.0) - d * 8.0
+		var c0: Vector2 = a + n * lado * (meia + 1.0) + d * 10.0
+		var c1: Vector2 = b + n * lado * (meia + 1.0) - d * 10.0
 		if lado < 0.0:
-			_poligono(raiz, ret.call(c0 + Vector2(4, 3), c1 + Vector2(4, 3), 4.5), Color(0.02, 0.03, 0.04, 0.32))
-		var baixo: Vector2 = c0 if c0.y > c1.y else c1
-		var face := PackedVector2Array([baixo + n * 5.0, baixo - n * 5.0, baixo - n * 5.0 + Vector2(0, -8), baixo + n * 5.0 + Vector2(0, -8)])
-		_poligono(raiz, face, Color(0.1, 0.1, 0.12))
-		_poligono(raiz, ret.call(c0 + n * lado * 5.0, c1 + n * lado * 5.0, 1.2), Color(0.1, 0.1, 0.12, 0.7))  # aresta externa
+			_poligono(raiz, ret.call(c0 + Vector2(8, 6), c1 + Vector2(8, 6), 7.0), Color(0.02, 0.03, 0.04, 0.35))
+		else:
+			for q in Geometry2D.intersect_polygons(ret.call(c0 + Vector2(10, 8), c1 + Vector2(10, 8), 7.0), agua):
+				_poligono(raiz, q, Color(0.01, 0.03, 0.05, 0.45))
+		var base: PackedVector2Array = ret.call(c0, c1, 7.0)
+		var corpo := PackedVector2Array(base)
+		for q in base:
+			corpo.append(q + Vector2(0, -alt_m))
+		_poligono(raiz, Geometry2D.convex_hull(corpo), Color(0.17, 0.17, 0.2))  # lados e ponta, em sombra
 		var topo := PackedVector2Array()
-		for q in ret.call(c0, c1, 5.0):
-			topo.append(q + Vector2(0, -8))
-		var tp := _poligono(raiz, topo, Color(0.74, 0.76, 0.82))
-		tp.texture = lajes
+		for q in base:
+			topo.append(q + Vector2(0, -alt_m))
+		var tp := _poligono(raiz, topo, Color(0.8, 0.82, 0.88))
+		tp.texture = tabuleiro_tex
 		tp.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		tp.uv = topo
-		var sm := 10.0
-		while sm < c0.distance_to(c1) - 6.0:
-			var p: Vector2 = c0 + d * sm + Vector2(0, -8)
-			_poligono(raiz, ret.call(p - d * 0.9, p + d * 0.9, 5.0), Color(0.09, 0.09, 0.1, 0.8))
-			sm += 18.0 + float(posmod(hash(Vector2i(int(sm), int(lado))), 7))
-		_poligono(raiz, ret.call(c0 + Vector2(0, -8) - n * lado * 4.0, c1 + Vector2(0, -8) - n * lado * 4.0, 1.0), Color(0.95, 0.96, 1.0, 0.3))  # fio de luz no topo
+		tp.uv = uv_eixo.call(topo)
+		var sm := 12.0
+		while sm < c0.distance_to(c1) - 8.0:
+			var p: Vector2 = c0 + d * sm + Vector2(0, -alt_m)
+			_poligono(raiz, ret.call(p - d * 0.9, p + d * 0.9, 7.0), Color(0.09, 0.09, 0.1, 0.8))
+			sm += 20.0 + float(posmod(hash(Vector2i(int(sm), int(lado))), 9))
+		_poligono(raiz, ret.call(c0 + Vector2(0, -alt_m) - n * 6.0, c1 + Vector2(0, -alt_m) - n * 6.0, 1.0), Color(0.95, 0.96, 1.0, 0.35))  # fio de luz
+		_poligono(raiz, ret.call(c0 + Vector2(0, -alt_m) + n * 6.0, c1 + Vector2(0, -alt_m) + n * 6.0, 1.0), Color(0.05, 0.05, 0.06, 0.5))  # aresta de sombra
 		for pt in [c0, c1]:
-			_pilarete(raiz, pt, lajes, d, n)
+			_pilarete(raiz, pt, tabuleiro_tex, d, n)
 	return PackedVector2Array([a0, b0])
 
-## Pilarete de pedra nas pontas das muretas, alinhado ao eixo da ponte: sombra no chão, corpo escuro
-## de 14 px (a face que a câmera vê) e tampa clara em cima.
-static func _pilarete(raiz: Node2D, pt: Vector2, lajes: Texture2D, d: Vector2, n: Vector2) -> void:
+## Bloco de pedra nas pontas das muretas, alinhado ao eixo da ponte: sombra no chão, corpo de 20 px
+## (faces em sombra, a da esquerda um pouco mais clara) e tampa clara com fio de luz.
+static func _pilarete(raiz: Node2D, pt: Vector2, tex: Texture2D, d: Vector2, n: Vector2) -> void:
 	var quad := func(c: Vector2, half: float) -> PackedVector2Array:
 		return PackedVector2Array([c - d * half - n * half, c + d * half - n * half, c + d * half + n * half, c - d * half + n * half])
-	_poligono(raiz, quad.call(pt + Vector2(5, 4), 8.0), Color(0.02, 0.03, 0.04, 0.4))
-	var base: PackedVector2Array = quad.call(pt, 7.0)
+	var alt := 20.0
+	_poligono(raiz, quad.call(pt + Vector2(7, 6), 11.0), Color(0.02, 0.03, 0.04, 0.4))
+	var base: PackedVector2Array = quad.call(pt, 10.0)
 	var corpo := PackedVector2Array(base)
 	for q in base:
-		corpo.append(q + Vector2(0, -14))
-	_poligono(raiz, Geometry2D.convex_hull(corpo), Color(0.15, 0.15, 0.18))
-	_poligono(raiz, PackedVector2Array([base[3], base[0], base[0] + Vector2(0, -14), base[3] + Vector2(0, -14)]), Color(0.24, 0.24, 0.28, 0.9))  # lado da luz
-	var tampa := _poligono(raiz, quad.call(pt + Vector2(0, -14), 8.0), Color(0.82, 0.84, 0.9))
-	tampa.texture = lajes
+		corpo.append(q + Vector2(0, -alt))
+	_poligono(raiz, Geometry2D.convex_hull(corpo), Color(0.14, 0.14, 0.17))
+	_poligono(raiz, PackedVector2Array([base[3], base[0], base[0] + Vector2(0, -alt), base[3] + Vector2(0, -alt)]), Color(0.26, 0.26, 0.3, 0.9))  # lado da luz
+	var tampa := _poligono(raiz, quad.call(pt + Vector2(0, -alt), 11.0), Color(0.86, 0.88, 0.94))
+	tampa.texture = tex
 	tampa.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	tampa.uv = tampa.polygon
-	_poligono(raiz, PackedVector2Array([tampa.polygon[0], tampa.polygon[1], tampa.polygon[1] + Vector2(0, 2), tampa.polygon[0] + Vector2(0, 2)]), Color(0.95, 0.96, 1.0, 0.35))
+	tampa.uv = PackedVector2Array([Vector2(0, 0), Vector2(22, 0), Vector2(22, 22), Vector2(0, 22)])
+	_poligono(raiz, PackedVector2Array([tampa.polygon[0], tampa.polygon[1], tampa.polygon[1] + Vector2(0, 2), tampa.polygon[0] + Vector2(0, 2)]), Color(0.95, 0.96, 1.0, 0.4))
+
+static var _tabuleiro_tex: Texture2D
+
+## Textura do tabuleiro da ponte (64 px, repete): lajes retangulares em fiadas desencontradas, junta escura reta,
+## tom cinza-azulado com variação por laje e grão leve. Diferente das lajes redondas da trilha de propósito.
+static func _textura_tabuleiro() -> Texture2D:
+	if _tabuleiro_tex != null:
+		return _tabuleiro_tex
+	var n := 64
+	var img := Image.create(n, n, false, Image.FORMAT_RGB8)
+	for y in n:
+		var fiada := y / 16
+		var desl := 16 if fiada % 2 == 1 else 0
+		for x in n:
+			var xx := (x + desl) % n
+			var laje := xx / 32
+			var h := hash(Vector2i(laje, fiada))
+			var t := 0.82 + 0.3 * float(posmod(h, 100)) / 100.0
+			var c := Color(0.46 * t, 0.49 * t, 0.56 * t)
+			var jx := xx % 32
+			var jy := y % 16
+			var gr := 0.94 + 0.12 * float(posmod(hash(Vector2i(x, y + 300)), 100)) / 100.0
+			c = c * gr
+			if jx < 2 or jy < 2:
+				c = Color(0.11, 0.11, 0.13)
+			elif jx == 2 or jy == 2:
+				c = c * 0.78
+			elif jx == 31 or jy == 15:
+				c = c * 1.08
+			elif posmod(hash(Vector2i(x / 2, y / 2 + laje)), 61) == 0:
+				c = c * 0.75  # lasca
+			c.a = 1.0
+			img.set_pixel(x, y, c)
+	_tabuleiro_tex = ImageTexture.create_from_image(img)
+	return _tabuleiro_tex
 
 static func _expandir(pts: PackedVector2Array, centro: Vector2, d: float) -> PackedVector2Array:
 	var out := PackedVector2Array()
