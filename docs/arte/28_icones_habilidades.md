@@ -9,14 +9,14 @@ Pintado à mão com glifo central, brilho colorido e moldura de pedra/metal escu
 | id | habilidade | motivo | cor |
 |---|---|---|---|
 | tiro | Tiro (slot de clique) | flecha em voo | marfim |
-| esquiva | Esquiva (Espaço) | arco de rolada com rastros | ciano |
+| esquiva | Esquiva (Espaço) | seta circular robusta | ciano |
 | bloqueado | slot sem habilidade | cadeado de ferro, brilho apagado | cinza |
 | multishot | Salva de Flechas | três flechas em leque | dourado |
 | pierce | Ponta Afiada | flecha atravessando escudo | azul gelo |
-| evasion | Passo Rápido | pegadas com rastro | verde-água (diferente da esquiva) |
+| evasion | Passo Rápido | bota leve com rastro de vento | verde-água (diferente da esquiva) |
 | power | Flecha Pesada (carta) | flecha grossa em chama | laranja |
 | haste | Mão Ágil (carta) | raio | amarelo |
 | swift | Pés Leves (carta) | bota alada | verde |
-| vitality | Vigor (carta) | coração rachado | vermelho |
+| vitality | Vigor (carta) | coração com runa | vermelho |
 
 Gerador: `python3 tools/arte/gen_icones_habilidade.py` (Pillow; reproduz os PNG). Prévia: `docs/arte/sprites2d/icones_habilidades_previa.png`. Os `.import` do Godot nascem na primeira abertura do projeto.
