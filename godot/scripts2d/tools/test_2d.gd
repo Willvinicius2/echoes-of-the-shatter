@@ -38,6 +38,7 @@ func _testar() -> void:
 	await _testar_meta()
 	await _testar_forja()
 	await _testar_opcoes_steam_tutorial()
+	await _testar_status()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -635,3 +636,30 @@ func _testar_opcoes_steam_tutorial() -> void:
 	DirAccess.remove_absolute(OpcoesScript.caminho)
 	DirAccess.remove_absolute(SteamScript.caminho)
 	DirAccess.remove_absolute(MetaScript.caminho)
+
+## Status de inimigo (aplicar_status): marca, lentidão, atordoamento, veneno e queimadura.
+func _testar_status() -> void:
+	var mundo := Node2D.new()
+	root.add_child(mundo)
+	var p = load("res://scripts2d/player_2d.gd").new()
+	p.god_mode = true
+	mundo.add_child(p)
+	var e = load("res://scripts2d/enemy_2d.gd").new()
+	mundo.add_child(e)
+	e.setup("hollow_sentinel", p, p.global_position + Vector2(600, 0))
+	e.aplicar_status("marca", 2.0, 0.5)
+	var hp0: float = e.hp
+	e.take_damage(10.0)
+	check(is_equal_approx(hp0 - e.hp, 15.0), "marca: +50% de dano recebido")
+	e.aplicar_status("lentidao", 0.3, 0.6)
+	check(is_equal_approx(e.vel_mult, 0.4), "lentidão reduz a velocidade")
+	e.aplicar_status("atordoamento", 0.3, 0.0)
+	check(e.atordoado > 0.0, "atordoamento para o inimigo")
+	var hp1: float = e.hp
+	e.aplicar_status("veneno", 1.5, 10.0)
+	await _esperar(func(): return e.hp < hp1 - 5.0, 3.0)
+	check(e.hp < hp1 - 5.0, "veneno causa dano ao longo do tempo")
+	await _esperar(func(): return not e.tem_status("lentidao") and not e.tem_status("atordoamento"), 2.0)
+	check(is_equal_approx(e.vel_mult, 1.0) and e.atordoado == 0.0, "status expiram e a velocidade volta")
+	mundo.queue_free()
+	await physics_frame
