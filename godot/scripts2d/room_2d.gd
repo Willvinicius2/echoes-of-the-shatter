@@ -1,7 +1,9 @@
 extends Node2D
 ## Sala da Cripta montada de um texto (data2d/rooms/*.txt) com TileMapLayer.
-## Legenda: # parede, . piso, r piso com runas, q piso escuro, B braseiro, O pilar, D porta,
-## P início do jogador, E ponto de inimigo, p laje de caminho (só com `@piso grama`).
+## Legenda: # parede, . piso, r piso com runas, q piso escuro, s laje de pedra (ruínas sobre o gramado),
+## B braseiro, O pilar, D porta, P início do jogador, E ponto de inimigo, G lugar do chefe, X portal do fim da fase,
+## p laje de caminho (só com `@piso grama`). Fase aberta (data2d/rooms/fase_*.txt): mapa grande sem `D`,
+## câmera seguindo o jogador e um portal em `X` depois do chefe.
 ## `@caminho largura x,y x,y ...` e `@riacho largura x,y ...` (células; curva suave) desenham caminho de pedra
 ## e riacho; o riacho bloqueia jogador e inimigos (camada 8) menos onde o caminho o cruza.
 ## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png).
@@ -29,6 +31,9 @@ var tile := 64
 var colunas := 0
 var linhas := 0
 var spawn_jogador := Vector2.ZERO
+var posicao_portal := Vector2.ZERO   # célula X (fase aberta); vazio = sem X
+var posicao_chefe := Vector2.ZERO    # célula G (fase aberta): o chefe espera aqui; vazio = nasce como os outros
+var celulas_livres: Array[Vector2i] = []   # chão andável, longe de muro, água e prop sólido (spawn nas bordas da tela)
 var spawns_inimigos: Array[Vector2] = []
 var celulas_porta: Array[Vector2i] = []
 var props: Array = []  # {id, pos (pé do prop em px), flip}
@@ -158,12 +163,22 @@ func _montar() -> void:
 					spawn_jogador = _centro(x, y)
 				"E":
 					spawns_inimigos.append(_centro(x, y))
+				"X":
+					posicao_portal = _centro(x, y)
+				"G":
+					posicao_chefe = _centro(x, y)
 			if piso_grama and c != "#" and c != "D":
 				_pintar_grama(Vector2i(x, y), posmod(hash(Vector2i(x, y)), 4), 1 if c == "p" else 0)
 			elif c != "#" and c != "D":
 				_pintar(Vector2i(x, y), T_PISO + posmod(hash(Vector2i(x, y)), 4), _piso)
-			if c != "." and c != "p" and not (c in ["P", "E"]):
+			if c != "." and c != "p" and not (c in ["P", "E", "X", "G"]):
 				_pintar(Vector2i(x, y), idx)
+			elif c in ["P", "E", "X", "G"]:   # marcador sobre laje de pedra: o piso segue o dos vizinhos
+				var viz := _piso_vizinho(x, y)
+				if viz == "q":
+					_pintar(Vector2i(x, y), T_PISO_ESCURO)
+				elif viz in ["s", "r"]:
+					_pintar(Vector2i(x, y), T_PISO + posmod(hash(Vector2i(x, y)), 4))
 	for p in props:
 		var d: Dictionary = _props_def.get(p["id"], {})
 		if d.is_empty() or float(d["solido_l"]) <= 0.0:
@@ -175,6 +190,7 @@ func _montar() -> void:
 		cp.position = p["pos"] + Vector2(0, tile * 0.5 - float(d["solido_a"]) * 0.5)
 		corpo.add_child(cp)
 	Terreno.montar(self, caminhos, riachos, piso_grama, tile)
+	_mapear_livres()
 	_porta_corpo = StaticBody2D.new()
 	_porta_corpo.collision_layer = 1
 	_porta_corpo.collision_mask = 0
@@ -199,6 +215,93 @@ func _montar() -> void:
 		cs.position = _centro(c.x, c.y) + Vector2(0, tile * 0.5)
 		_porta_area.add_child(cs)
 	_porta_area.body_entered.connect(func(_c): porta_usada.emit())
+
+## Piso mais comum nas 4 vizinhas de uma célula de marcador (P, E, X, G).
+func _piso_vizinho(x: int, y: int) -> String:
+	var conta := {}
+	for d in [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]:
+		var v: Vector2i = Vector2i(x, y) + d
+		if v.x >= 0 and v.y >= 0 and v.x < colunas and v.y < linhas:
+			var k: String = _grade[v.y][v.x]
+			conta[k] = int(conta.get(k, 0)) + 1
+	var melhor := "."
+	for k in [".", "s", "q", "r"]:
+		if int(conta.get(k, 0)) > int(conta.get(melhor, 0)):
+			melhor = k
+	return melhor
+
+## Fase aberta: o mapa é maior que a tela (a câmera segue o jogador e as ondas nascem fora da vista).
+func aberta() -> bool:
+	return celulas_porta.is_empty()
+
+## Marca as células onde um inimigo pode nascer: piso sem muro, pilar, braseiro, água (fora da travessia) nem prop sólido.
+func _mapear_livres() -> void:
+	var bloq := {}
+	for r in riachos:
+		var raio: int = ceili(float(r["larg"]) * 0.5 + 0.7)
+		for p in Terreno.spline(r["pts"], tile * 0.5):
+			var c := Vector2i(int(p.x / tile), int(p.y / tile))
+			for dy in range(-raio, raio + 1):
+				for dx in range(-raio, raio + 1):
+					bloq[c + Vector2i(dx, dy)] = true
+	for p in props:
+		var d: Dictionary = _props_def.get(p["id"], {})
+		if not d.is_empty() and float(d["solido_l"]) > 0.0:
+			var c := Vector2i(int(p["pos"].x / tile), int(p["pos"].y / tile))
+			for dx in range(-1, 2):
+				bloq[c + Vector2i(dx, 0)] = true
+	celulas_livres.clear()
+	for y in range(1, linhas - 1):
+		for x in range(1, colunas - 1):
+			if _grade[y][x] in [".", "r", "q", "s", "p", "E", "P", "X", "G"] and not bloq.has(Vector2i(x, y)) \
+					and not _eh_parede(x, y - 1) and not _eh_parede(x, y + 1) and not _eh_parede(x - 1, y) and not _eh_parede(x + 1, y):
+				celulas_livres.append(Vector2i(x, y))
+
+## Retângulo andável do mapa em px (dentro do muro da borda). O spawner usa para não pôr inimigo fora do mapa.
+func bordas_jogaveis() -> Rect2:
+	return Rect2(Vector2(tile, tile * 2), Vector2((colunas - 2) * tile, (linhas - 3) * tile))
+
+## Leva um ponto qualquer (ex.: do anel de spawn além da borda do mapa) para a célula livre mais perto dele.
+func empurrar_para_dentro(pos: Vector2) -> Vector2:
+	var b := bordas_jogaveis()
+	var alvo := Vector2(clampf(pos.x, b.position.x, b.end.x - 1.0), clampf(pos.y, b.position.y, b.end.y - 1.0))
+	var c0 := Vector2i(int(alvo.x / tile), int(alvo.y / tile))
+	if celulas_livres.is_empty():
+		return alvo
+	var melhor: Vector2i = celulas_livres[0]
+	var d_melhor := INF
+	for c in celulas_livres:
+		var d := float((c - c0).length_squared())
+		if d < d_melhor:
+			d_melhor = d
+			melhor = c
+			if d == 0.0:
+				break
+	return _centro(melhor.x, melhor.y)
+
+## Pontos de nascimento fora da área vista (`vista`, em px), no anel entre `margem_min` e `margem_max` px além dela.
+## Sem célula no anel (canto do mapa), usa as livres mais perto dele. Sorteio pelo `rng` da corrida (determinístico).
+func pontos_fora_da_vista(vista: Rect2, margem_min: float, margem_max: float, n: int, rng: RandomNumberGenerator) -> Array[Vector2]:
+	var dentro := vista.grow(margem_min)
+	var fora := vista.grow(margem_max)
+	var anel: Array[Vector2i] = []
+	for c in celulas_livres:
+		var p := _centro(c.x, c.y)
+		if fora.has_point(p) and not dentro.has_point(p):
+			anel.append(c)
+	if anel.is_empty():
+		var ordem := celulas_livres.filter(func(c: Vector2i) -> bool: return not dentro.has_point(_centro(c.x, c.y)))
+		var meio := vista.get_center()
+		ordem.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return _centro(a.x, a.y).distance_squared_to(meio) < _centro(b.x, b.y).distance_squared_to(meio))
+		for c in ordem.slice(0, maxi(n * 4, 16)):
+			anel.append(c)
+	if anel.is_empty():
+		anel = celulas_livres
+	var out: Array[Vector2] = []
+	for i in n:
+		var c: Vector2i = anel[rng.randi_range(0, anel.size() - 1)]
+		out.append(_centro(c.x, c.y))
+	return out
 
 func _pintar(c: Vector2i, idx: int, camada: TileMapLayer = null) -> void:
 	var l := camada if camada != null else _layer
