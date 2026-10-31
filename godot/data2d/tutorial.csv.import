@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://bo13v6nhdcx8n"
-
-[deps]
-
-files=["res://data2d/tutorial.acoes.translation", "res://data2d/tutorial.loc.translation", "res://data2d/tutorial.segundos.translation"]
-
-source_file="res://data2d/tutorial.csv"
-dest_files=["res://data2d/tutorial.acoes.translation", "res://data2d/tutorial.loc.translation", "res://data2d/tutorial.segundos.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"

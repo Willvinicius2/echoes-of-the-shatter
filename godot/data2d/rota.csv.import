@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://diss8om5o6k20"
-
-[deps]
-
-files=["res://data2d/rota.id.translation", "res://data2d/rota.tipo.translation", "res://data2d/rota.room.translation", "res://data2d/rota.enemies.translation"]
-
-source_file="res://data2d/rota.csv"
-dest_files=["res://data2d/rota.id.translation", "res://data2d/rota.tipo.translation", "res://data2d/rota.room.translation", "res://data2d/rota.enemies.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"
