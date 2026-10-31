@@ -6,7 +6,6 @@ signal hp_changed(hp: float, hp_max: float)
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
-const Feel = preload("res://scripts2d/feel_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 
 enum Estado { LIVRE, ATIRANDO, ESQUIVA, MORTO }
