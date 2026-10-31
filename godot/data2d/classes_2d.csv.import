@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://diuvvmdvjv0oo"
-
-[deps]
-
-files=["res://data2d/classes_2d.nome.translation", "res://data2d/classes_2d.sprite.translation", "res://data2d/classes_2d.habilidades.translation", "res://data2d/classes_2d.efeitos.translation", "res://data2d/classes_2d.hp.translation", "res://data2d/classes_2d.speed.translation", "res://data2d/classes_2d.mana.translation", "res://data2d/classes_2d.mana.translation", "res://data2d/classes_2d.shoot.translation", "res://data2d/classes_2d.arrow.translation"]
-
-source_file="res://data2d/classes_2d.csv"
-dest_files=["res://data2d/classes_2d.nome.translation", "res://data2d/classes_2d.sprite.translation", "res://data2d/classes_2d.habilidades.translation", "res://data2d/classes_2d.efeitos.translation", "res://data2d/classes_2d.hp.translation", "res://data2d/classes_2d.speed.translation", "res://data2d/classes_2d.mana.translation", "res://data2d/classes_2d.mana.translation", "res://data2d/classes_2d.shoot.translation", "res://data2d/classes_2d.arrow.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"
