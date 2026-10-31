@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://jcw6xlg3wjc8"
+
+[deps]
+
+files=["res://data2d/prologo.quem.translation", "res://data2d/prologo.lado.translation", "res://data2d/prologo.loc.translation"]
+
+source_file="res://data2d/prologo.csv"
+dest_files=["res://data2d/prologo.quem.translation", "res://data2d/prologo.lado.translation", "res://data2d/prologo.loc.translation"]
+
+[params]
+
+compress=true
+delimiter=0

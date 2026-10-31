@@ -10,3 +10,4 @@ victory_fragments,25,fragmentos,bonus ao vencer a cripta
 elite_fragments,15,fragmentos,bonus ao limpar uma sala de elite
 elite_extra_cards,1,cartas,cartas a mais ao limpar uma sala de elite
 rest_heal,0.5,fracao,vida recuperada na sala de descanso (fracao da vida maxima)
+first_room_wake_radius,300,px,inimigos da primeira sala dormem ate o jogador chegar a esta distancia ou ferir um deles (0 desliga)
