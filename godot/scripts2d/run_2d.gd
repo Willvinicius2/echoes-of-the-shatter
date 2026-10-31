@@ -1,6 +1,6 @@
 extends Node2D
 ## Corrida 2D: salas em sequência (data2d/run.csv), chefe na última, morte reinicia em segundos.
-## O cliente só apresenta; as regras da corrida migram para o módulo `run` do ShatterCore (pacote 2).
+## O cliente só apresenta: o fluxo da corrida (etapas, rotas, cartas, ganhos, vitória e derrota) é do módulo `rogue` do ShatterCore.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
@@ -17,8 +17,7 @@ const Audio = preload("res://scripts2d/audio_2d.gd")
 enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO, ROTA }
 
 var config := {}
-var salas: Array = []
-var rotas: Array = []     # alternativas de rota.csv; a sala de run.csv da etapa é o caminho padrão (combate)
+var salas: Array = []     # caminho padrão (combate) de cada etapa, vindo do core
 var no_atual := {}        # nó da sala em curso: id, tipo, room, enemies
 var opcoes_rota: Array = []
 var indice := 0
@@ -29,7 +28,16 @@ var player: Node2D
 var hud: CanvasLayer
 var upgrades: RefCounted
 var meta: RefCounted
-var ganhos := {"fragmentos": 0, "materiais": {}}   # da corrida atual; vão ao save quando ela acaba
+var nucleo: Object         # ShatterRogue (mesmo núcleo do meta)
+## Ganhos da corrida atual, guardados no core; vão ao saldo quando ela acaba. {"fragmentos": n, "materiais": {id: n}}
+var ganhos: Dictionary:
+	get:
+		var g: Dictionary = nucleo.corrida_estado().get("gains", {})
+		var mats := {}
+		for m in g.get("materials", []):
+			if int(m["qty"]) > 0:
+				mats[str(m["id"])] = int(m["qty"])
+		return {"fragmentos": int(g.get("fragments", 0)), "materiais": mats}
 var ui: CanvasLayer
 var menus: CanvasLayer
 var com_menu := true   # false nos testes: começa direto na sala 1
@@ -43,8 +51,6 @@ var _estado_antes := Estado.LUTA
 
 func _ready() -> void:
 	config = Csv.kv("res://data2d/run_settings.csv")
-	salas = Csv.rows("res://data2d/run.csv")
-	rotas = Csv.rows("res://data2d/rota.csv")
 	atores = Node2D.new()
 	atores.y_sort_enabled = true
 	add_child(atores)
@@ -56,8 +62,13 @@ func _ready() -> void:
 	add_child(camera)
 	meta = MetaScript.new()
 	meta.carregar()
+	nucleo = meta.nucleo
 	upgrades = UpgradesScript.new()
 	upgrades.meta = meta
+	var etapa := 0
+	while not nucleo.corrida_caminhos(etapa).is_empty():
+		salas.append(_no_do_core(nucleo.corrida_caminhos(etapa)[0]))
+		etapa += 1
 	hud = HudScript.new()
 	hud.jogador = player
 	hud.upgrades = upgrades
@@ -81,30 +92,35 @@ func _ready() -> void:
 		_ir_titulo()
 
 func iniciar_corrida() -> void:
-	_creditar_ganhos()  # corrida abandonada (reiniciar, título) também guarda o que já rendeu
+	# O core credita os ganhos pendentes de uma corrida abandonada (reiniciar, título) ao começar a próxima.
 	rng.seed = int(config["seed"]) + corridas
+	upgrades.semente = rng.seed
 	corridas += 1
 	indice = 0
 	tempo = 0.0
 	menus.limpar_fade()
 	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador
+	meta.sincronizar()
 	player.reset()
 	_carregar_sala(0)
 
+## Nó do core ({id, kind, room, enemies: [{id, count}]}) no formato que o cliente usa: tipo e texto "inimigo:n|...".
+func _no_do_core(c: Dictionary) -> Dictionary:
+	var partes := []
+	for e in c["enemies"]:
+		partes.append("%s:%d" % [e["id"], int(e["count"])])
+	return {"id": c["id"], "tipo": c["kind"], "room": c["room"], "enemies": "|".join(partes)}
+
 ## Caminhos oferecidos ao entrar na etapa `i` (índice 0): o padrão de run.csv mais as alternativas de rota.csv.
 func caminhos_da_etapa(i: int) -> Array:
-	var padrao: Dictionary = salas[i].duplicate()
-	padrao["id"] = "combate"
-	padrao["tipo"] = "combate"
-	var out := [padrao]
-	for r in rotas:
-		if int(r["etapa"]) == i + 1:
-			out.append(r)
+	var out := []
+	for c in nucleo.corrida_caminhos(i):
+		out.append(_no_do_core(c))
 	return out
 
 func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 	if no.is_empty():
-		no = caminhos_da_etapa(i)[0]
+		no = _no_do_core(nucleo.corrida_estado()["node"])
 	no_atual = no
 	if room != null:
 		room.queue_free()
@@ -130,11 +146,11 @@ func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 	if no["tipo"] == "descanso":
 		_descansar()
 
-## Sala de descanso: sem inimigos; recupera parte da vida e libera a porta sem cartas.
+## Sala de descanso: sem inimigos; o core diz quanto da vida volta e a porta abre sem cartas.
 func _descansar() -> void:
-	var maximo: float = player.stats["hp_max"]
-	player.hp = minf(maximo, player.hp + maximo * config["rest_heal"])
-	player.hp_changed.emit(player.hp, maximo)
+	var r: Dictionary = nucleo.corrida_descansar(player.hp)
+	player.hp = float(r["hp"])
+	player.hp_changed.emit(player.hp, player.stats["hp_max"])
 	estado = Estado.LIMPA
 	_timer = config["clear_delay"]
 
@@ -166,16 +182,10 @@ func _spawn_inimigos(spec: String) -> void:
 
 func _on_inimigo_morto(e) -> void:
 	vivos -= 1
-	var d: Dictionary = meta.drop_de(e.stats.get("id", ""))
-	if not d.is_empty():
-		ganhos["fragmentos"] += d["fragmentos"]
-		ganhos["materiais"][d["material"]] = int(ganhos["materiais"].get(d["material"], 0)) + d["material_qtd"]
-	if vivos <= 0 and estado == Estado.LUTA:
+	var r: Dictionary = nucleo.corrida_inimigo_morto(e.stats.get("id", ""))   # drops, sala limpa e cartas: regras do core
+	if r["sala_limpa"] and estado == Estado.LUTA:
 		estado = Estado.LIMPA
 		_timer = config["clear_delay"]
-		ganhos["fragmentos"] += int(config["room_clear_fragments"])
-		if no_atual["tipo"] == "elite":
-			ganhos["fragmentos"] += int(config["elite_fragments"])
 
 func _physics_process(delta: float) -> void:
 	if estado == Estado.LUTA or estado == Estado.LIMPA:
@@ -186,12 +196,7 @@ func _physics_process(delta: float) -> void:
 		if _timer <= 0.0:
 			match estado:
 				Estado.LIMPA:
-					var cartas: Array = []
-					if indice + 1 < salas.size() and no_atual["tipo"] != "descanso":
-						var qtd := int(config["upgrade_cards"])
-						if no_atual["tipo"] == "elite":
-							qtd += int(config["elite_extra_cards"])
-						cartas = upgrades.sortear(rng, qtd)
+					var cartas: Array = upgrades.oferta()
 					if cartas.is_empty():
 						_abrir_porta()
 					else:
@@ -213,30 +218,32 @@ func _on_upgrade_escolhido(id: String) -> void:
 func _on_porta() -> void:
 	if estado != Estado.LIMPA or _timer > 0.0 or not room.celulas_porta.size():
 		return
-	if indice + 1 >= salas.size():
-		estado = Estado.VENCEU
-		hud.mensagem = Csv.t("hud.victory")
-		Audio.tocar("victory")
-		ganhos["fragmentos"] += int(config["victory_fragments"])
-		_timer = config["restart_delay"]
-		return
-	indice += 1
-	var caminhos := caminhos_da_etapa(indice)
-	if caminhos.size() == 1:
-		_entrar_na_sala(caminhos[0])
-		return
-	estado = Estado.ROTA
-	opcoes_rota = caminhos
-	var botoes := []
-	for c in caminhos:
-		botoes.append(["route." + c["id"], func() -> void: escolher_rota(c)])
-	get_tree().paused = true
-	menus.mostrar_rota(botoes)
+	match nucleo.corrida_porta():
+		3:   # vitória na última sala
+			estado = Estado.VENCEU
+			hud.mensagem = Csv.t("hud.victory")
+			Audio.tocar("victory")
+			_timer = config["restart_delay"]
+		1:   # entrou na etapa seguinte, sem bifurcação
+			indice += 1
+			_entrar_na_sala(_no_do_core(nucleo.corrida_estado()["node"]))
+		2:   # bifurcação: o jogador escolhe o caminho
+			indice += 1
+			estado = Estado.ROTA
+			opcoes_rota = caminhos_da_etapa(indice)
+			var botoes := []
+			for c in opcoes_rota:
+				botoes.append(["route." + c["id"], func() -> void: escolher_rota(c)])
+			get_tree().paused = true
+			menus.mostrar_rota(botoes)
 
 ## Escolha de uma bifurcação (botão do menu ou teste): despausa e vai para a sala escolhida.
 func escolher_rota(no: Dictionary) -> void:
 	if estado != Estado.ROTA:
 		return
+	for i in opcoes_rota.size():
+		if opcoes_rota[i]["id"] == no["id"]:
+			nucleo.corrida_escolher_caminho(i)
 	menus.fechar()
 	get_tree().paused = false
 	_entrar_na_sala(no)
@@ -246,39 +253,31 @@ func _entrar_na_sala(no: Dictionary) -> void:
 	menus.transicao(config["room_fade"], func(): _carregar_sala(indice, no))
 
 func _on_player_died() -> void:
+	nucleo.corrida_jogador_morreu()
 	estado = Estado.MORTO
 	hud.mensagem = Csv.t("hud.dead")
 	Audio.tocar("defeat")
 	_timer = config["restart_delay"]
 
-func _creditar_ganhos() -> void:
-	if int(ganhos["fragmentos"]) == 0 and ganhos["materiais"].is_empty():
-		return
-	meta.creditar(ganhos)
-	ganhos = {"fragmentos": 0, "materiais": {}}
-
 func _mostrar_fim() -> void:
 	hud.mensagem = ""
+	var r: Dictionary = nucleo.corrida_resumo()   # lido antes de terminar: terminar credita os ganhos e zera a corrida
 	var mats := []
-	for m in ganhos["materiais"]:
-		mats.append("%s x%d" % [Csv.t("material." + m), ganhos["materiais"][m]])
+	for m in r.get("materials", []):
+		if int(m["qty"]) > 0:
+			mats.append("%s x%d" % [Csv.t("material." + m["id"]), int(m["qty"])])
 	var resumo := [
 		Csv.t("menu.sum_time") % formatar_tempo(tempo),
-		Csv.t("menu.sum_rooms") % [indice + 1, salas.size()],
-		Csv.t("menu.sum_upgrades") % _total_upgrades(),
-		Csv.t("menu.sum_fragments") % int(ganhos["fragmentos"]),
+		Csv.t("menu.sum_rooms") % [int(r["stage_reached"]) + 1, int(r["stages_total"])],
+		Csv.t("menu.sum_upgrades") % int(r["upgrades_total"]),
+		Csv.t("menu.sum_fragments") % int(r["fragments"]),
 	]
 	if not mats.is_empty():
 		resumo.append(Csv.t("menu.sum_materials") % ", ".join(mats))
-	_creditar_ganhos()
+	nucleo.corrida_terminar()
+	meta.sincronizar()
 	menus.mostrar_fim(estado == Estado.VENCEU, resumo)
 	get_tree().paused = true
-
-func _total_upgrades() -> int:
-	var n := 0
-	for id in upgrades.niveis:
-		n += int(upgrades.niveis[id])
-	return n
 
 static func formatar_tempo(seg: float) -> String:
 	var total := int(seg)

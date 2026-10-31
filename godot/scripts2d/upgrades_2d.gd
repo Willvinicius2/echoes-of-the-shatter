@@ -1,16 +1,22 @@
 extends RefCounted
-## Upgrades da corrida: definições em data2d/upgrades.csv, níveis escolhidos na corrida e
-## aplicação sobre os stats do jogador (sempre recalculados a partir da base: `restaurar` é idempotente).
+## Upgrades da corrida. Níveis, cartas oferecidas e stats finais vêm do módulo `rogue` do ShatterCore; este script guarda uma
+## cópia para a HUD e aplica os stats calculados no jogador. Definições de exibição em data2d/upgrades.csv.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Nucleo = preload("res://scripts2d/nucleo_2d.gd")
 
 signal mudou
 
-var defs := {}       # id -> {stat, modo, valor, nivel_max}
+var defs := {}       # id -> {stat, modo, valor, nivel_max} (só para exibir)
 var ordem: Array = []
-var niveis := {}     # id -> nível atual
-var _base := {}
-var meta: RefCounted   # opcional: bônus permanentes e habilidades liberadas (meta_2d.gd)
+var niveis := {}     # id -> nível atual (cópia do core)
+var semente := 1     # semente da próxima corrida (run_settings seed + nº da corrida)
+var meta: RefCounted:   # opcional: compartilha o núcleo (meta, bônus permanentes e habilidades liberadas)
+	set(v):
+		meta = v
+		if v != null:
+			nucleo = v.nucleo
+var nucleo: Object
 var _base_bruta := {}
 
 func _init() -> void:
@@ -18,56 +24,51 @@ func _init() -> void:
 		defs[r["id"]] = {"stat": r["stat"], "modo": r["modo"], "valor": float(r["valor"]), "nivel_max": int(r["nivel_max"])}
 		ordem.append(r["id"])
 
-## Começa uma corrida: guarda os stats base do jogador (na 1ª vez) e zera os níveis.
+func _nucleo() -> Object:
+	if nucleo == null:
+		nucleo = Nucleo.criar()
+	return nucleo
+
+## Começa uma corrida no core: guarda os stats base do jogador (na 1ª vez), zera os níveis e aplica o meta.
 func restaurar(jogador: Node) -> void:
 	if _base_bruta.is_empty():
 		_base_bruta = jogador.stats.duplicate()
-	_base = meta.aplicar(_base_bruta) if meta != null else _base_bruta.duplicate()
-	jogador.stats = _base.duplicate()
-	niveis.clear()
+	_nucleo().corrida_iniciar(semente, _base_bruta)
+	jogador.stats = nucleo.corrida_stats()
+	sincronizar(false)
 	mudou.emit()
+
+## Copia os níveis da corrida do core.
+func sincronizar(avisar := true) -> void:
+	niveis = {}
+	for u in _nucleo().corrida_estado().get("upgrades", []):
+		if int(u["level"]) > 0:
+			niveis[str(u["id"])] = int(u["level"])
+	if avisar:
+		mudou.emit()
 
 func nivel(id: String) -> int:
 	return int(niveis.get(id, 0))
 
+## Cartas que o core ofereceu ao limpar a sala (fase de escolha).
+func oferta() -> Array:
+	return _nucleo().corrida_estado().get("offer", [])
+
+## Upgrades que ainda podem sair: liberados e abaixo do nível máximo.
 func disponiveis() -> Array:
 	var out := []
-	for id in ordem:
-		if nivel(id) < defs[id]["nivel_max"] and (meta == null or meta.liberada(id)):
-			out.append(id)
+	for u in _nucleo().corrida_estado().get("upgrades", []):
+		if u["unlocked"] and int(u["level"]) < int(u["max_level"]):
+			out.append(str(u["id"]))
 	return out
 
-## Sorteia até `n` upgrades distintos ainda não no nível máximo (determinístico pelo rng da corrida).
-func sortear(rng: RandomNumberGenerator, n: int) -> Array:
-	var pool := disponiveis()
-	for i in range(pool.size() - 1, 0, -1):
-		var j := rng.randi_range(0, i)
-		var tmp = pool[i]
-		pool[i] = pool[j]
-		pool[j] = tmp
-	return pool.slice(0, n)
-
-## Sobe um nível do upgrade e reaplica todos sobre a base. Falso se já está no máximo.
+## Escolhe uma das cartas oferecidas: o core sobe o nível e devolve a vida; aplica os stats novos no jogador.
 func escolher(id: String, jogador: Node) -> bool:
-	if not defs.has(id) or nivel(id) >= defs[id]["nivel_max"]:
+	var r: Dictionary = _nucleo().corrida_escolher_carta(id, jogador.hp)
+	if int(r["resultado"]) != 0:
 		return false
-	niveis[id] = nivel(id) + 1
-	var hp_antes: float = jogador.stats["hp_max"]
-	_aplicar(jogador)
-	var ganho: float = jogador.stats["hp_max"] - hp_antes
-	if ganho > 0.0:
-		jogador.hp += ganho
+	jogador.stats = nucleo.corrida_stats()
+	jogador.hp = float(r["hp"])
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
-	mudou.emit()
+	sincronizar()
 	return true
-
-func _aplicar(jogador: Node) -> void:
-	var s: Dictionary = _base.duplicate()
-	for id in ordem:
-		var d: Dictionary = defs[id]
-		for _i in nivel(id):
-			if d["modo"] == "mult":
-				s[d["stat"]] = s[d["stat"]] * (1.0 + d["valor"])
-			else:
-				s[d["stat"]] = s[d["stat"]] + d["valor"]
-	jogador.stats = s

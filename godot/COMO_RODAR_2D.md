@@ -1,12 +1,21 @@
 # Cliente 2D (corrida top-down)
 
-Cena principal: `scenes2d/Run2D.tscn` (GDScript, sem C#). Código em `scripts2d/`, dados em `data2d/` (CSV e salas em texto), arte em `art2d/`. O cliente só apresenta; as regras da corrida migram para o módulo `run` do ShatterCore (pacote 2 de `/design/plano_migracao_roguelike.md`).
+Cena principal: `scenes2d/Run2D.tscn` (GDScript, sem C#). Código em `scripts2d/`, dados em `data2d/` (CSV e salas em texto), arte em `art2d/`. O cliente só apresenta: meta, Forja, cartas e fluxo da corrida são do módulo `rogue` do ShatterCore, chamado pela GDExtension `ShatterRogue` (`godot/gdextension/`).
 
 - Controles: WASD move, mouse mira, clique atira, Espaço esquiva, R reinicia ao morrer.
 - Corrida: 4 salas (`data2d/run.csv`), a última com o Guardião. Limpou, a porta abre; morreu, recomeça em 2 s.
 - Chefe: `data2d/boss_patterns_2d.csv` (fases por limiar de vida, padrões golpe/leque/anel/investida, entrada e transição) e `scripts2d/boss_2d.gd`.
 - Números: `data2d/player.csv`, `enemies.csv` (inclui `windup` e `kb_resist`), `feel.csv` (hit stop, tremor, números de dano), `run_settings.csv`. Textos: `loc_2d.csv`. Salas: `data2d/rooms/*.txt` (legenda no topo de `scripts2d/room_2d.gd`).
 - Arte: o manifesto `data2d/sprites_manifest.csv` aponta para `art2d/sprites/<id>/<id>_<anim>.png`; sem o PNG o cliente gera placeholders. Formato em `docs/arte/25_formato_folhas_sprites_2d.md`.
+
+## GDExtension do ShatterCore (obrigatória)
+O cliente 2D chama o core pela classe `ShatterRogue` (`scripts2d/nucleo_2d.gd`). Sem a biblioteca compilada o jogo não abre. Compilar (CMake, godot-cpp 4.4):
+```
+git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp D:\openclaude\_ferramentas\godot-cpp
+cmake -S godot/gdextension -B D:\openclaude\_trabalho-claude\build-ext -DGODOT_CPP_DIR=D:\openclaude\_ferramentas\godot-cpp
+cmake --build D:\openclaude\_trabalho-claude\build-ext --config Release
+```
+A biblioteca sai em `godot/gdextension/bin/` (ignorada pelo Git) e o Godot a acha por `godot/shatter_rogue.gdextension`. No CI, `cliente2d.yml` compila a de Linux e a de Windows (artifacts `gdextension-linux` e `gdextension-windows`); para jogar no PC sem compilar, baixe a `gdextension-windows` do último run e solte a `.dll` em `godot/gdextension/bin/`. Os CSV de `data2d` são copiados para `user://dados_core` ao abrir o jogo (o core lê de uma pasta real, inclusive no executável exportado).
 
 ## Testes e captura
 ```

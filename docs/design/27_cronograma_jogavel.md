@@ -88,29 +88,5 @@ Consulta ao `jev-latest` (`POST /v1/systemone`): formato de bifurcação após a
 ## 10. M10 — migração ao ShatterCore (30/10/2026)
 Consulta ao `jev-latest` (`POST /v1/systemone`): escopo economia mais fluxo da corrida (79%, contra 17% só economia, 3% adiar e 1% tudo); ponte por GDExtension em C++ (88%, contra 11% JSON e 1% C#); paridade de regras com os mesmos CSV (100%). Combate e movimento em tempo real ficam no GDScript.
 - **Pacote 1 (feito)**: módulo `rogue` do core (`shatter/rogue.h`, API C `shatter_rogue_*`, minor 8; contrato na seção 16 de `docs/tecnico/09_mudancas_contrato.md`). Lê `godot/data2d`, guarda o save no mesmo JSON do `meta_2d.gd`, sorteia cartas com `RngStream::Rogue`. Paridade é de regras, não da sequência aleatória do Godot.
-- **Pacote 2 (próximo, thread nova)**: GDExtension (godot-cpp) que embrulha `shatter_rogue_*`; `meta_2d.gd`, `upgrades_2d.gd` e as regras de `run_2d.gd` passam a chamar o core; ajustar o CI `cliente2d.yml` para compilar a extensão. Só depois a HUD (PR 110) e a lapidação (PR 112) são rebaseadas.
-
-## 11. Roadmap por setores até o Acesso Antecipado (31/10/2026)
-O Will pediu para dividir o que falta em setores independentes, cada um em uma thread, com o Jev decidindo prioridades e correções. Consulta ao `jev-latest` (`POST /v1/systemone`): prioridade 1 em conteúdo (38%, contra 24% combate e 18% QA; confiança 0,26, provisória); Região 2 fora do lançamento (95%); Steam começa agora em paralelo (90%); QA desde o início (53% contra 47%, provisória); áudio final depois da arte e do conteúdo (77%); número de setores novos em paralelo: 3 (77%). Escolha da coordenação: 4 setores novos, porque Steam (90% "agora") tem arquivos próprios e não disputa nada com os outros; áudio fica adiado.
-
-### Setores que já têm dono (não recriar)
-| Setor | Thread | Observação |
-|---|---|---|
-| Arte 2D e ícones | "Gerar ícones e HUD no ChatGPT" | roda no PC do Will |
-| Revisão visual | "Direção visual com o Jev" | só arte, `props_*`, salas |
-| Migração ao ShatterCore (pacote 2) | "Migrar jogo ao ShatterCore" | espera os PRs 110 (HUD) e 112 (combate lapidado), que esperam o sim do Will |
-
-### Setores novos
-| Setor | Entrega | Dono de arquivos (exclusivo) | Não toca |
-|---|---|---|---|
-| A Conteúdo | Mais inimigos, 1 ou 2 variações de chefe/elite, salas, cartas, amuletos e receitas; texto da Região 1 conforme o doc 21 | `data2d/enemies.csv`, `upgrades.csv`, `receitas.csv`, `drops.csv`, `rota.csv`, `rooms/`, `loc_2d.csv` (chaves de conteúdo) | scripts de regra (só pede ponto de ligação ao dono) |
-| B Combate e balanceamento | Ajuste fino de `player.csv`, `feel.csv`, `run_settings.csv`, curva de dificuldade por etapa, simulação de corridas para achar picos | `player.csv`, `feel.csv`, `run_settings.csv`, `enemy_2d.gd`, `player_2d.gd`, `arrow_2d.gd`, `boss_patterns_2d.csv`; começa depois do merge do PR 112 | CSV de conteúdo do setor A |
-| C QA e build | Corridas automáticas a cada PR (headless, 10 corridas sem travar), relatório de métricas (tempo, mortes por sala), roteiro de playtest, export Windows/Linux no CI | `scripts2d/tools/`, `.github/workflows/cliente2d.yml`, `tools/` de export, `docs/requisitos-qa/` | scripts de jogo |
-| D Steam e opções | Menu de opções (volume, vídeo, remapear teclas), tutorial da primeira corrida, conquistas e nuvem de saves via GodotSteam (atrás de interface, sem travar sem Steam), texto e checklist da página da loja | `menus_2d.gd` (seção de opções), `opcoes_2d.gd`, `steam_2d.gd`, `docs/steam/` | HUD de corrida (PR 110) |
-| E Áudio final (adiado) | Música e efeitos próprios | `audio_2d.gd`, `data2d/audio.csv` | começa depois da arte e do conteúdo |
-
-### Ordem e regras
-1. Agora, em paralelo: A, C e D. B começa quando o PR 112 for mesclado. E espera.
-2. Fora do escopo do lançamento: Região 2, MMO, co-op.
-3. Cada setor: uma thread, branch temporária, PR, CI verde, merge no `master`, passagem de bastão curta. Números em CSV, texto em `loc_2d.csv`, `test_2d.gd` verde.
-4. A cada entrega a thread do setor avisa a coordenação, que consulta o Jev. Se o Jev tiver confiança abaixo de 0,5, a decisão é provisória e volta ao Jev ao fechar o setor. Arte nova passa pela revisora antes do Will.
+- **Pacote 2 (feito)**: GDExtension `ShatterRogue` (`godot/gdextension/`, godot-cpp 4.4, CMake) embrulha `shatter_rogue_*`. `meta_2d.gd`, `upgrades_2d.gd` e `run_2d.gd` não têm mais regra: guardam uma cópia de leitura para a UI e chamam o core (`nucleo_2d.gd` copia os CSV de `data2d` para `user://dados_core`, porque o core lê de uma pasta real). As cartas agora saem do core ao limpar a sala. O CI `cliente2d.yml` compila a extensão (Linux e Windows) antes dos testes e do export. Teste headless e bot de corridas passam com a extensão.
+- **Atenção no PC**: sem `godot/gdextension/bin/*.dll` o jogo não abre. A DLL vem do artifact `gdextension-windows` do CI ou de `COMO_RODAR_2D.md` (compilar com CMake).
