@@ -1,0 +1,6 @@
+acao,loc
+move_up,keys.move_up
+move_down,keys.move_down
+move_left,keys.move_left
+move_right,keys.move_right
+dodge,keys.dodge
