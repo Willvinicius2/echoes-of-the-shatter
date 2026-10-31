@@ -22,3 +22,6 @@ Substitui os ícones procedurais do doc 28 (o gerador `tools/arte/gen_icones_hab
 - Ligar as peças em `hud_arte_2d.gd` e `hud_2d.gd`: esse código está no PR 110, ainda não mesclado e já divergente do master. Fazer depois do merge do 110, com as medidas acima, sem deixar a thread da HUD e esta editarem os mesmos arquivos.
 - Passar pela revisora e pela Direção visual com o Jev antes do Will ver.
 - Efeitos animados (recarga, golpe na barra do chefe): avaliar a skill pixelfx (`ui/health-bar-hit`, `ui/heart-lost`); nada exportado ainda.
+
+## Ícones das 18 habilidades do Arqueiro (31/10/2026)
+`tools/arte/ui_gpt_image/prompts_icones_arqueiro.json`: 18 prompts no mesmo molde dos 10 aprovados (moldura de pedra e ferro igual ao ícone Tiro, 128 px depois do `prep.py`). Saída esperada: `godot/art2d/ui/icone_<id>.png` com `<id>` = id da skill em `data2d/habilidades_arqueiro.csv`. Depois de gerar, trocar a coluna `icone` do CSV para o próprio id e acrescentar linhas em `data2d/icones.csv` (o `icones_2d.gd` já prioriza o PNG).
