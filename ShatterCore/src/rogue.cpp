@@ -340,6 +340,8 @@ bool RogueData::LoadTableCsv(std::string_view table, std::string_view text) {
             if (IndexById(classes_, c.id) >= 0) bad(r, "duplicate id '" + c.id + "'");
             classes_.push_back(std::move(c));
         }
+    } else if (table == "ondas.csv") {
+        return LoadWavesCsv(text);
     } else {
         errors_.push_back({name, 0, "unknown rogue table"});
         return false;
@@ -465,6 +467,12 @@ bool RogueData::LoadDirectory(const std::string& dir) {
         } else {
             ok = false;
         }
+    }
+    // Ondas de horda: opcionais (API 1.11).
+    std::ifstream wavesIn(d / "ondas.csv", std::ios::binary);
+    if (wavesIn) {
+        const std::string text((std::istreambuf_iterator<char>(wavesIn)), std::istreambuf_iterator<char>());
+        ok = LoadWavesCsv(text) && ok;
     }
     return ok;
 }

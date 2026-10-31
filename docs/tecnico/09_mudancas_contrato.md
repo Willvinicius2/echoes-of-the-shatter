@@ -562,3 +562,56 @@ Aditiva: `SHATTER_C_API_MINOR` sobe de 9 para 10 (o cliente confere `shatter_api
 - `tests/test_c_api_rogue.cpp` +2 (argumentos nulos e sem classes; árvore, slots, uso, recarga, gravação automática e recarga do save pela API). `test_c_api.cpp` confere o minor 10. GCC e Clang com `-Werror` e ASan/UBSan: 4/4 no ctest.
 - **Cliente (mesmo PR, depois do PR 127)**: `habilidades_2d.gd` mantém a interface pública e guarda só cópias de leitura (`niveis`, `slots`, `pontos`, `recargas`, `defs` para exibir); aprender, equipar, redistribuir, ganhar pontos, checar e iniciar recarga, definição escalonada e passivas vêm do core (`ShatterRogue`). A corrida passa o núcleo do meta para a árvore do jogador e chama `classe_definir` antes de cada corrida; o ponto por sala limpa e por chefe sai do core, e `corrida_stats` já traz as passivas (o `upgrades_2d.gd` não as aplica de novo). Sem núcleo do meta (testes, jogador fora da corrida), a árvore cria um núcleo próprio; uma árvore de fixture fora de `classes_2d.csv` entra só nesse núcleo (`Nucleo.criar({id: csv})`). `nucleo_2d.gd` copia `classes_2d.csv` e as árvores para `user://dados_core`. O save antigo `user://habilidades_2d.json` (PR 127) é migrado uma vez para o `save_2d.json` pelo `meta_2d.carregar()` e renomeado para `.migrado`. O Guerreiro entra nesse runtime pela thread dele (sai o `skills_guerreiro_2d.gd`).
 - `shatter_rogue_skill_passives_apply(base_json)`: só as passivas (o `aplicar_passivas`), para quem precisa delas fora dos stats da corrida.
+
+## 18. API C 1.11: spawner de hordas no rogue (plano 31, pacote H3; 31/10/2026, `claude/project-thread-vyunkg`)
+Aditiva: `SHATTER_C_API_MINOR` sobe de 10 para 11 (o cliente confere `shatter_api_minor() >= 11`). Sem struct nova: escalares e JSON UTF-8, no mesmo `shatter_rogue`. É a peça de core da virada para hordas (`docs/design/31_plano_hordas.md`): o core decide quem nasce e quando, de forma determinística; o cliente só instancia, move e luta. Os pacotes H1 (mapa grande e pontos de spawn), H4 (curva de vida, dano e orçamento) e H6 (HUD de onda) consomem esta API.
+
+### 18.1 Dados: `godot/data2d/ondas.csv` (opcional)
+Uma linha por onda, cada fase num bloco contíguo e `onda` contando 1, 2, 3...
+
+| coluna | o que é |
+|---|---|
+| `fase` | id da fase (mapa aberto); hoje `cripta` |
+| `onda` | 1, 2, 3... dentro da fase |
+| `duracao` | s: tempo da onda (ver 18.2) |
+| `intervalo` | s entre lotes de spawn (> 0) |
+| `lote` | até quantos nascem por lote (1..1000) |
+| `orcamento` | pontos de spawn da onda (soma dos custos) |
+| `teto` | máximo de inimigos comuns vivos (1..1000; o chefe não conta) |
+| `inimigos` | mistura `id:peso` ou `id:peso:custo` separada por `|` (custo padrão 1; id sem repetir) |
+| `elites` | quantos nascem marcados como elite |
+| `elite_vida`, `elite_dano` | multiplicadores do elite (vazio = 1) |
+| `chefe` | id do chefe, só na última onda da fase |
+
+Validação na carga (`CONTENT_INVALID`): cabeçalho exato, fase vazia ou partida em dois blocos, onda fora da contagem, chefe fora da última onda, tempos <= 0, lote/teto fora da faixa, peso ou custo < 1, orçamento sem mistura, onda sem orçamento nem chefe. Sem `ondas.csv` não há fase (`wave_start` dá `UNKNOWN`). Os ids da mistura são os de `enemies.csv` (o core não confere: a tabela de inimigos é do cliente). Os números de hoje são provisórios (8 ondas, ~8 min, teto 12 → 40, elites a partir da onda 3 com 4x vida e 1,5x dano, Guardião na onda 8); o H4 calibra pela curva e pelo bot de corridas.
+
+### 18.2 Regras
+- **Relógio inteiro** em microssegundos (`dt` arredondado; acima de 60 s por tick é cortado). Simular em 1 ou N ticks dá o mesmo resultado.
+- **Lotes**: um no início da onda e depois a cada `intervalo`. Cada lote solta até `lote` inimigos, parando no `teto` de vivos comuns ou quando nada mais cabe no orçamento. O tipo é sorteado pelo peso entre os da mistura cujo custo cabe no que sobra.
+- **Elites**: o k-ésimo elite da onda sai no spawn em que o gasto chega a k / (elites + 1) do orçamento (espalhados, não todos no começo). Elite traz `hp_mult = elite_vida` e `damage_mult = elite_dano`; os demais, 1.
+- **Passar de onda**: quando o orçamento acabou E (a `duracao` passou OU ninguém está vivo). Jogador lento: o teto segura o spawn e a onda dura mais que a duração; jogador rápido: limpou tudo, a próxima onda começa no lote seguinte.
+- **Chefe**: nasce no início da última onda, fora do teto e do orçamento. A fase fica **completa** quando o chefe morre (sem chefe: orçamento da última onda gasto e ninguém vivo). Completa, nada mais nasce e o relógio para.
+- **Posição**: cada spawn traz `edge` (0 norte, 1 leste, 2 sul, 3 oeste) e `pos` (0..1 ao longo da borda). O cliente converte em ponto fora da tela, perto do jogador, e respeita o limite do mapa (H1).
+- **Sorteio**: `Pcg32::ForStream(seed, RngStream::RogueWave (6), id do spawn)`, um gerador por inimigo (tipo, borda e posição). Mesmo seed + dados + mortes nos mesmos instantes = mesmos spawns e mesmo `wave_state_hash`.
+- **Independente da corrida**: `shatter_rogue_run_*` não muda. Drops, fragmentos e materiais continuam por `shatter_rogue_run_enemy_killed(enemy_id)`; o cliente chama os dois na morte. Como o fluxo de salas da corrida conversa com a fase aberta é decisão do H1.
+
+### 18.3 API C (`shatter_c.h`)
+`shatter_rogue_wave_start(fase, seed, *result)` (`OK|UNKNOWN`; descarta a fase anterior), `_wave_stop`, `_wave_tick(dt, *spawned)`, `_wave_take_json` (entrega e esvazia a fila de nascidos: `[{"id","enemy","elite","boss","wave","edge","pos","hp_mult","damage_mult"}]`; com `BUFFER_TOO_SMALL` a fila fica), `_wave_killed(spawn_id, *complete, *result)` (`OK|NOT_RUNNING|NOT_ALIVE`), `_wave_json` (fase, running, complete, wave, waves_total, time, wave_time, wave_duration, budget, budget_left, exhausted, alive, cap, boss, boss_spawned, boss_alive, spawned, killed, pending), `_wave_defs_json` (as ondas do CSV por fase), `_wave_state_json`, `_wave_state_restore` (`PARSE_ERROR` e nada muda) e `_wave_state_hash` (SHA-256 hex). O estado do spawner é separado do `shatter_rogue_state_json` (o hash da corrida da 1.10 não muda).
+
+GDExtension (`ShatterRogue`): `ondas_iniciar(fase, semente)`, `ondas_parar()`, `ondas_tick(dt)` (passa o tempo e devolve o Array dos que nasceram agora), `ondas_morto(id)` (`{resultado, completa}`), `ondas_estado()`, `ondas_definicoes()`, `ondas_estado_texto()`, `ondas_restaurar(texto)`, `ondas_hash()`. `nucleo_2d.gd` copia `ondas.csv` para `user://dados_core` quando ele existe.
+
+Uso no cliente (H1):
+```gdscript
+nucleo.ondas_iniciar("cripta", semente)
+func _process(delta):
+    for s in nucleo.ondas_tick(delta):
+        spawnar(s.enemy, ponto_na_borda(s.edge, s.pos), s.elite, s.boss, s.hp_mult, s.damage_mult, s.id)
+func ao_morrer(inimigo):
+    nucleo.corrida_inimigo_morto(inimigo.tipo)     # drops e ganhos
+    if nucleo.ondas_morto(inimigo.spawn_id).completa:
+        abrir_portal()
+```
+
+### 18.4 Testes e build
+- `tests/test_rogue_waves.cpp` (10 testes, com o `ondas.csv` real): carga e 15 erros de CSV; resultados básicos; teto segura o spawn sem mortes; fase inteira com bot (todos os elites, chefe na onda 8, pico de vivos <= 40, 6 a 10 min); passar de onda cedo ao limpar e pela duração com sobreviventes; chefe fecha a fase; custo e elites com orçamento exato; determinismo (30 s de uma vez = 60 x 0,5 s = partes desiguais; seed diferente muda); restore continua igual e restore inválido não muda nada.
+- `tests/test_c_api_rogue_waves.cpp` (4 testes, ligado à DLL/so): argumentos nulos, fase desconhecida, fila entregue uma vez e `BUFFER_TOO_SMALL` sem esvaziar, morte e `NOT_ALIVE`, defs, determinismo por hash entre dois handles e restore em outro handle. `test_c_api.cpp` confere o minor 11. GCC e Clang com `-Werror` e GCC com ASan/UBSan.

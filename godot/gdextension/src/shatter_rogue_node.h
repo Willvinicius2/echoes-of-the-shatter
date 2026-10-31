@@ -3,6 +3,7 @@
 #pragma once
 
 #include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/variant/array.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/string.hpp>
 
@@ -70,6 +71,17 @@ public:
     Dictionary habilidade_usar(int slot, double mana);              // {"resultado", "custo"}
     double habilidade_recarga(int slot) const;                      // 0..1
     Dictionary aplicar_passivas(const Dictionary& base) const;      // só as passivas da classe atual
+
+    // Hordas (API 1.11, docs/09 seção 18): o core decide quem nasce e quando; os códigos são SHATTER_ROGUE_WAVE_*.
+    int ondas_iniciar(const String& fase, int64_t semente);         // 0 = ok, 1 = fase desconhecida
+    void ondas_parar();
+    Array ondas_tick(double dt);                                     // passa dt e devolve os que nasceram agora
+    Dictionary ondas_morto(int64_t id);                              // {"resultado", "completa"}
+    Dictionary ondas_estado() const;
+    Dictionary ondas_definicoes() const;
+    String ondas_estado_texto() const;
+    bool ondas_restaurar(const String& texto);
+    String ondas_hash() const;
 
     // Estado completo e determinismo.
     String estado_texto() const;

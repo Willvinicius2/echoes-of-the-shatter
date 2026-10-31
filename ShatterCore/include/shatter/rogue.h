@@ -133,15 +133,41 @@ struct RogueSkillLevelDef {
     int level = 0;
 };
 
+// --- Ondas de horda (API 1.11; ondas.csv; docs/09 seção 18; runtime em rogue_waves.h) --------------------------
+struct RogueWaveMix {          // uma entrada da coluna `inimigos` ("id:peso" ou "id:peso:custo")
+    ContentId enemy;
+    int weight = 1;            // peso no sorteio do tipo
+    int cost = 1;              // pontos do orçamento que cada um gasta (padrão 1)
+};
+
+struct RogueWaveDef {          // linha de ondas.csv
+    std::string phase;         // fase (mapa aberto) a que a onda pertence
+    int wave = 0;              // 1, 2, 3... dentro da fase
+    double duration = 0.0;     // s: tempo mínimo da onda antes de passar à próxima (ou antes, se ela for limpa)
+    double interval = 0.0;     // s entre lotes de spawn
+    std::int64_t durationUs = 0, intervalUs = 0;  // os mesmos tempos em microssegundos (relógio inteiro do spawner)
+    int batch = 1;             // até quantos nascem por lote
+    std::int64_t budget = 0;   // orçamento de spawn da onda (soma dos custos)
+    int cap = 1;               // teto de inimigos vivos (o chefe não respeita o teto)
+    std::string mixText;       // texto original da coluna inimigos
+    std::vector<RogueWaveMix> mix;
+    int minCost = 0;           // menor custo da mistura (0 = mistura vazia)
+    int elites = 0;            // quantos nascem marcados como elite, espalhados pelo orçamento
+    double eliteHp = 1.0;      // multiplicador de vida do elite
+    double eliteDamage = 1.0;  // multiplicador de dano do elite
+    ContentId boss;            // chefe que nasce no início desta onda ("" = nenhum; só na última onda da fase)
+};
+
 class RogueData {
 public:
-    // Tabelas: "meta.csv", "receitas.csv", "drops.csv", "rota.csv", "run.csv", "run_settings.csv", "upgrades.csv" e
-    // "classes_2d.csv" (opcional).
+    // Tabelas: "meta.csv", "receitas.csv", "drops.csv", "rota.csv", "run.csv", "run_settings.csv", "upgrades.csv",
+    // "classes_2d.csv" (opcional) e "ondas.csv" (opcional, API 1.11).
     bool LoadTableCsv(std::string_view tableName, std::string_view csvText);
     // Árvore de habilidades de uma classe já lida de classes_2d.csv (texto de habilidades_<classe>.csv).
     bool LoadSkillTableCsv(std::string_view classId, std::string_view csvText);
     // Lê as 7 tabelas da pasta (todas obrigatórias). Erro de IO vem com mensagem "E_IO ...". Se houver classes_2d.csv,
     // lê também a árvore de cada classe (arquivo da coluna `habilidades`, só o nome); árvore ausente = classe sem árvore.
+    // Se houver ondas.csv, lê as ondas de horda.
     bool LoadDirectory(const std::string& dir);
     // Confere referências (habilidade -> upgrade, rota -> etapa) e as chaves obrigatórias de run_settings. Uma vez.
     bool Finalize();
@@ -156,6 +182,11 @@ public:
     int FindClass(std::string_view id) const;                                // índice ou -1
     int FindSkill(int classIndex, std::string_view skillId) const;           // índice ou -1
     const std::vector<RogueNode>& Stages() const { return stages_; }          // run.csv, na ordem
+    // ondas.csv (opcional): ondas na ordem do CSV, cada fase num bloco contíguo (onda 1, 2, 3...).
+    const std::vector<RogueWaveDef>& Waves() const { return waves_; }
+    std::vector<std::string> WavePhases() const;                             // fases na ordem do CSV
+    // Primeira onda da fase em Waves() e quantas são; false se a fase não existe.
+    bool FindWavePhase(std::string_view phase, int& first, int& count) const;
     // Materiais conhecidos (drops.csv e depois receitas.csv, na ordem em que aparecem).
     const std::vector<ContentId>& Materials() const { return materials_; }
 
@@ -186,6 +217,7 @@ public:
     std::int64_t SkillPointsBoss() const { return skillPointsBoss_; }
 
 private:
+    bool LoadWavesCsv(std::string_view csvText);  // rogue_waves.cpp
     struct RouteRow {
         int stage = 0;  // etapa (1-based, como no CSV)
         RogueNode node;
@@ -197,6 +229,7 @@ private:
     std::vector<RogueNode> stages_;
     std::vector<RouteRow> routes_;
     std::vector<RogueClass> classes_;
+    std::vector<RogueWaveDef> waves_;
     std::vector<ContentId> materials_;
     std::vector<std::pair<std::string, double>> settings_;
     std::vector<ContentError> errors_;
