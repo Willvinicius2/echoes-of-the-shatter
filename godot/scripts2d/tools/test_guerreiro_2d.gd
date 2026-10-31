@@ -269,11 +269,11 @@ func _corrida() -> void:
 	p.auto_aim = Vector2.ZERO
 	p.auto_move = Vector2.ZERO
 	check.call(not is_instance_valid(alvo) or alvo.hp < antes, "espada derruba inimigo na corrida")
-	# sala limpa: ganha ponto de habilidade (sem cartas) e a porta abre
+	# sala limpa: ganha ponto de habilidade (sem cartas) e a saída abre (porta antiga ou onda seguinte na fase aberta)
 	var pontos0: int = p.habilidades.pontos
 	run.matar_todos()
 	var espera := 0.0
-	while not (run.estado == run.Estado.LIMPA and run.hud.mensagem != "") and espera < 8.0:
+	while not (run.estado in [run.Estado.LIMPA, run.Estado.PROXIMA] and run.hud.mensagem != "") and espera < 8.0:
 		await t.physics_frame
 		espera += 1.0 / 60.0
 	check.call(p.habilidades.pontos > pontos0, "sala limpa dá ponto de habilidade ao guerreiro")

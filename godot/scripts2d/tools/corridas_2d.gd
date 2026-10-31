@@ -114,12 +114,15 @@ func _corrida(n: int) -> Dictionary:
 	return r
 
 ## Bot simples: mira no inimigo mais próximo, mantém distância, esquiva de perto; sala limpa -> vai à porta.
+var _preso_t := 0.0
+var _ultima_pos := Vector2.ZERO
+
 func _agir(p, pode_esquivar: bool) -> bool:
 	if run.estado == run.Estado.LIMPA:
-		if run._timer <= 0.0 and run.room.celulas_porta.size():
+		if run._timer <= 0.0 and run.posicao_saida() != Vector2.ZERO:
 			p.auto_aim = Vector2.ZERO
-			if not _na_porta:   # teleporta uma vez para o corredor da porta, como no teste da corrida
-				p.global_position = run.room._centro(12, 3)
+			if not _na_porta:   # teleporta uma vez para a saída (porta antiga ou portal da fase aberta), como no teste da corrida
+				p.global_position = run.posicao_saida()
 				_na_porta = true
 			p.auto_move = Vector2.UP
 		return false
@@ -142,6 +145,13 @@ func _agir(p, pode_esquivar: bool) -> bool:
 		p.auto_move = Vector2.ZERO
 		return false
 	var para: Vector2 = alvo.global_position - p.global_position
+	# Fase aberta: alvo longe (chefe na arena) e o bot preso no riacho ou num muro: pula para perto dele.
+	if melhor > 900.0 and run.room.aberta():
+		_preso_t = _preso_t + 1.0 / 60.0 if p.global_position.distance_to(_ultima_pos) < 1.0 else 0.0
+		_ultima_pos = p.global_position
+		if _preso_t > 2.0:
+			p.global_position = run.room.empurrar_para_dentro(alvo.global_position - para.normalized() * 500.0)
+			_preso_t = 0.0
 	p.auto_aim = para
 	var lado := Vector2(-para.y, para.x).normalized()
 	if melhor < 170.0:
