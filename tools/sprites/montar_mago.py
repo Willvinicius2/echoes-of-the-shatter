@@ -99,10 +99,10 @@ def rastro(q, dx, cor=(90, 140, 255)):
     """Rastro arcano: silhueta azul translúcida deslocada para trás e borrada."""
     al = q.split()[3]
     sil = Image.new("RGBA", q.size, cor + (0,))
-    sil.putalpha(al.point(lambda v: v * 0.45))
-    sil = sil.filter(ImageFilter.GaussianBlur(2))
+    sil.putalpha(al.point(lambda v: v * 0.28))
+    sil = sil.filter(ImageFilter.GaussianBlur(1))
     base = Image.new("RGBA", q.size, (0, 0, 0, 0))
-    for k, f in ((2, 0.5), (1, 1.0)):
+    for k, f in ((1, 1.0),):
         camada = Image.new("RGBA", q.size, (0, 0, 0, 0))
         camada.paste(sil, (round(dx * k), 0))
         arr = np.asarray(camada).copy()
@@ -142,7 +142,7 @@ def montar(anim, bruto, cache):
                 quadro = borda_suave(quadro)
             elif anim == "hit":
                 fr = linha[q]
-                quadro = encaixa(fr, ancora(fr), s, dx=[-3, -4, -1][q])
+                quadro = encaixa(fr, ancora(fr), s, dx=[-3, -4, 0][q])
                 if q == 0:
                     quadro = clarao(quadro, (255, 255, 255), 110)
             elif anim == "dodge":
@@ -154,7 +154,7 @@ def montar(anim, bruto, cache):
                 quadro = encaixa(fr, (ancora(fr)[0], anc_linha[1]), s, sy=sq, sx=1.0 + (1 - sq) * 0.5,
                                  rot=-lean * ix, dx=-7 * ix)
                 if 1 <= q <= 4:
-                    tras = [0, -9, -12, -12, -7, 0][q]
+                    tras = [0, -6, -8, -8, -5, 0][q]
                     if d == 0:
                         quadro = rastro_v(quadro, -tras)
                     elif d == 4:
