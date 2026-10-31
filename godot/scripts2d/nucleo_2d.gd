@@ -1,9 +1,18 @@
 extends RefCounted
 ## Liga o cliente 2D ao ShatterCore: instancia o `ShatterRogue` da GDExtension (godot/gdextension) com os CSV de data2d.
-## As regras de meta, Forja, cartas, fluxo da corrida e árvore de habilidades moram no core; os scripts do cliente só
-## chamam e apresentam.
+## As regras de meta, Forja, cartas, fluxo da corrida, árvore de habilidades e ondas de horda moram no core; os scripts
+## do cliente só chamam e apresentam.
+##
+## Hordas (API 1.11, docs/tecnico/09 seção 18): `ondas_iniciar(fase, semente)`, depois a cada quadro
+## `ondas_tick(delta)` devolve os que nasceram agora ([{id, enemy, elite, boss, wave, angle, radius, hp_mult,
+## damage_mult}]; nascem em `jogador + Vector2.from_angle(angle) * radius`, presos nas bordas do mapa) e
+## `ondas_morto(id)` avisa cada morte ({resultado, completa}). `ondas_acordar_chefe()` acorda o Guardião no altar (a
+## partir da onda despertar_onda; no prazo ele acorda sozinho, junto do enxame final). `ondas_estado()` alimenta a HUD
+## (onda, enxame, tempo que falta, vivos, teto, chefe).
 
 const ARQUIVOS := ["meta", "receitas", "drops", "rota", "run", "run_settings", "upgrades"]
+## Tabelas que o core lê se existirem (ondas e ondas_fases: spawner de hordas).
+const OPCIONAIS := ["ondas", "ondas_fases"]
 const CLASSES := "res://data2d/classes_2d.csv"
 const PASTA := "user://dados_core"
 
@@ -18,6 +27,14 @@ static func criar(classes_extras := {}) -> Object:
 	for a in ARQUIVOS:
 		if not _copiar("res://data2d/%s.csv" % a, "%s/%s.csv" % [PASTA, a]):
 			return null
+	for a in OPCIONAIS:
+		var origem := "res://data2d/%s.csv" % a
+		var destino := "%s/%s.csv" % [PASTA, a]
+		if FileAccess.file_exists(origem):
+			if not _copiar(origem, destino):
+				return null
+		elif FileAccess.file_exists(destino):
+			DirAccess.remove_absolute(destino)
 	if not _copiar_classes(classes_extras):
 		return null
 	var n: Object = ClassDB.instantiate("ShatterRogue")
