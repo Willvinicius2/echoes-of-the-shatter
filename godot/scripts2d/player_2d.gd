@@ -23,6 +23,11 @@ var _dodge_t := 0.0
 var _dodge_dir := Vector2.DOWN
 var _aim := Vector2.DOWN
 var _disparou := false
+var vel_buff := 1.0            # habilidade Adrenalina: velocidade de corrida
+var cad_buff := 1.0            # habilidade Adrenalina: cadência de tiro
+var buff_t := 0.0
+var _salto_vel := 0.0          # >0: esquiva customizada (Salto Atrás) com esta velocidade
+var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
 	stats = Csv.kv("res://data2d/player.csv")
@@ -43,6 +48,10 @@ func reset() -> void:
 	invencivel = 0.0
 	dodge_cd = 0.0
 	_shoot_cd = 0.0
+	buff_t = 0.0
+	vel_buff = 1.0
+	cad_buff = 1.0
+	_salto_vel = 0.0
 	velocity = Vector2.ZERO
 	modulate = Color.WHITE
 	play("idle", true)
@@ -52,7 +61,12 @@ func _physics_process(delta: float) -> void:
 	if estado == Estado.MORTO:
 		velocity = Vector2.ZERO
 		return
-	_shoot_cd = maxf(0.0, _shoot_cd - delta)
+	_shoot_cd = maxf(0.0, _shoot_cd - delta * cad_buff)
+	if buff_t > 0.0:
+		buff_t -= delta
+		if buff_t <= 0.0:
+			vel_buff = 1.0
+			cad_buff = 1.0
 	dodge_cd = maxf(0.0, dodge_cd - delta)
 	invencivel = maxf(0.0, invencivel - delta)
 	_aim = _ler_mira()
@@ -61,11 +75,12 @@ func _physics_process(delta: float) -> void:
 	match estado:
 		Estado.ESQUIVA:
 			_dodge_t -= delta
-			velocity = _dodge_dir * stats["dodge_speed"]
+			velocity = _dodge_dir * (_salto_vel if _salto_vel > 0.0 else stats["dodge_speed"])
 			if _dodge_t <= 0.0:
 				estado = Estado.LIVRE
+				_salto_vel = 0.0
 		_:
-			var vmax: float = stats["speed"] * (stats["attack_move_mult"] if estado == Estado.ATIRANDO else 1.0)
+			var vmax: float = stats["speed"] * vel_buff * (stats["attack_move_mult"] if estado == Estado.ATIRANDO else 1.0)
 			var alvo := entrada * vmax
 			var taxa: float = stats["accel"] if entrada != Vector2.ZERO else stats["friction"]
 			velocity = velocity.move_toward(alvo, taxa * delta)
@@ -133,15 +148,45 @@ func _on_frame_changed() -> void:
 		_disparou = true
 		_soltar_flecha()
 
+func mira_atual() -> Vector2:
+	return _aim
+
+## Cria e lança uma flecha com os stats do jogador (crítico, veneno, perfuração). Usada pelo tiro e pelas habilidades.
+func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0) -> Node:
+	var f := ArrowScript.new()
+	var dano: float = stats["arrow_damage"] * dano_mult
+	if stats["crit_chance"] > 0.0 and _rng.randf() < stats["crit_chance"]:
+		dano *= stats["crit_mult"]
+	f.setup("player", global_position + dir * stats["arrow_spawn_dist"], dir,
+		stats["arrow_speed"] * vel_mult, dano, stats["arrow_range"])
+	f.pierce = int(stats["arrow_pierce"]) + pierce_extra  # gancho de upgrades
+	if stats["poison_dps"] > 0.0:
+		f.veneno_dps = stats["poison_dps"]
+		f.veneno_t = stats["poison_time"]
+	get_parent().add_child(f)
+	return f
+
+## Salto das habilidades: avança `dist` px na direção `dir` em `dur` s, invulnerável. Não gasta a recarga da esquiva.
+func saltar(dir: Vector2, dist: float, dur: float) -> void:
+	if estado == Estado.MORTO:
+		return
+	estado = Estado.ESQUIVA
+	_dodge_dir = dir.normalized()
+	_dodge_t = dur
+	_salto_vel = dist / maxf(dur, 0.01)
+	invencivel = maxf(invencivel, dur)
+	play("dodge", true)
+	Audio.tocar("dodge")
+
+func dar_buff(dur: float, vel: float, cad: float) -> void:
+	buff_t = dur
+	vel_buff = vel
+	cad_buff = cad
+
 func _soltar_flecha() -> void:
 	var n := int(stats["arrow_count"])  # gancho de upgrades: multishot abre as flechas em leque
 	for i in n:
-		var dir := _aim.rotated(deg_to_rad(stats["multishot_spread"]) * (i - (n - 1) * 0.5))
-		var f := ArrowScript.new()
-		f.setup("player", global_position + dir * stats["arrow_spawn_dist"], dir,
-			stats["arrow_speed"], stats["arrow_damage"], stats["arrow_range"])
-		f.pierce = int(stats["arrow_pierce"])  # gancho de upgrades
-		get_parent().add_child(f)
+		lancar_flecha(_aim.rotated(deg_to_rad(stats["multishot_spread"]) * (i - (n - 1) * 0.5)))
 	Audio.tocar("shoot")
 	var c := Feel.cfg()
 	velocity -= _aim * c["player_recoil"]
