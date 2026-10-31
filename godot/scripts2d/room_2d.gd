@@ -259,9 +259,14 @@ func abrir_porta() -> void:
 	_porta_corpo.queue_free()
 	_porta_area.set_deferred("monitoring", true)
 
-## Cria os sprites dos props dentro de `alvo` (Node2D com y_sort_enabled, o mesmo dos atores).
-## O pé do prop fica na base da célula, então jogador e inimigos passam na frente ou atrás pela ordem em Y.
+## Cria os sprites dos props dentro de `alvo` (Node2D com y_sort_enabled, o mesmo dos atores) e os
+## decalques que os prendem ao chão (sombras, terra, raízes) num nó da própria sala, sob os atores.
 func colocar_props(alvo: Node2D) -> void:
+	var Ancoragem = preload("res://scripts2d/ancoragem_2d.gd")
+	var chao := Node2D.new()
+	chao.name = "ChaoProps"
+	add_child(chao)
+	var k := 0
 	for p in props:
 		var arte: Dictionary = _props_arte.get(p["id"], {})
 		var d: Dictionary = _props_def.get(p["id"], {})
@@ -285,15 +290,14 @@ func colocar_props(alvo: Node2D) -> void:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
 		var no := Node2D.new()
 		no.position = p["pos"] + Vector2(0, tile * 0.5)
-		var sombra := Node2D.new()
-		no.add_child(sombra)  # antes do sprite, para ficar sob ele
+		var atras := Node2D.new()
+		var frente := Node2D.new()
+		no.add_child(atras)   # tufos atrás do sprite
 		no.add_child(spr)
-		var arvore: bool = String(p["id"]).begins_with("tree_")
-		sombra.draw.connect(func():
-			sombra.draw_set_transform(Vector2(20, 2) if arvore else Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
-			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * (0.5 if arvore else 0.35), Color(0, 0, 0, 0.42)))
-		sombra.queue_redraw()
+		no.add_child(frente)  # tufos que cobrem um pouco o pé
+		Ancoragem.prender(chao, atras, frente, p["id"], tex, d, arte, spr.flip_h, no.position, piso_grama, k)
 		alvo.add_child(no)
+		k += 1
 
 func _carregar_textura(caminho: String) -> Texture2D:
 	if ResourceLoader.exists(caminho):

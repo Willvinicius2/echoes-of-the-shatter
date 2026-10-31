@@ -1,5 +1,5 @@
 extends RefCounted
-## Caminho de pedra, riacho e vaga-lumes de uma sala, desenhados por cima do piso.
+## Caminho de pedra, riacho, ponte de pedra e vaga-lumes de uma sala, desenhados por cima do piso.
 ## Os pontos vêm do arquivo de sala (`@caminho largura x,y ...` e `@riacho largura x,y ...`, em células).
 
 const Csv = preload("res://scripts2d/csv2d.gd")
@@ -81,9 +81,11 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 	var lajes := _textura_lajes()
 	var aguas: Array = []
 	var margens: Array = []
+	var linhas: Array = []
 	for i in riachos.size():
 		var r: Dictionary = riachos[i]
 		var linha := spline(r["pts"])
+		linhas.append(linha)
 		var margem := faixa(linha, r["larg"] * tile + 26.0, 4.0, 31 + i)
 		var agua := faixa(linha, r["larg"] * tile, 3.0, 41 + i)
 		if agua.is_empty():
@@ -138,8 +140,9 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 					trecho.append(p)
 					break
 		if trecho.size() >= 2:
-			travessias.append(trecho)
-			_pedras_de_travessia(raiz, trecho, lajes)
+			var eixo := _ponte(raiz, trecho, spline(c["pts"], 6.0), lajes, aguas, margens, linhas, c["larg"] * tile)
+			if eixo.size() == 2:
+				travessias.append(eixo)
 	# Colisão da água: livre só no corredor das pedras de travessia.
 	var corredores: Array = []
 	for t in travessias:
@@ -169,23 +172,165 @@ static func _subtrair(polis: Array, tira: PackedVector2Array) -> Array:
 				out.append(q)
 	return out
 
-## Pedra de travessia: laje irregular escura com borda clara, 5 ao longo do trecho que cruza a água.
-## Fica no z do chão (0), sob os atores: com z 1 o jogador parecia passar por baixo das pedras.
-static func _pedras_de_travessia(raiz: Node2D, trecho: PackedVector2Array, lajes: Texture2D) -> void:
-	var n := 5
-	for k in n:
-		var p := trecho[int((trecho.size() - 1) * (k + 0.5) / n)]
-		var raio := 31.0 + posmod(hash(Vector2i(k, 5)), 7)
-		var pts := PackedVector2Array()
-		for a in 9:
-			var ang := TAU * a / 9.0
-			var rr := raio * (0.85 + 0.3 * float(posmod(hash(Vector2i(a, k + 3)), 100)) / 100.0)
-			pts.append(p + Vector2(cos(ang) * rr, sin(ang) * rr * 0.78))
-		_poligono(raiz, _expandir(pts, p, 4.0), Color(0.1, 0.12, 0.12, 0.9))
-		var pg := _poligono(raiz, pts, Color(0.85, 0.88, 0.95))
-		pg.texture = lajes
-		pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		pg.uv = pts
+## Ponte de pedra sobre a água (pacote H5, decisão do Jev em 31/10/2026): cruza o riacho em ângulo reto
+## (eixo perpendicular à água no ponto de travessia), com tabuleiro de lajes contínuas, muretas baixas dos
+## dois lados com pilaretes nas pontas, encontros assentados nas margens, rampas de lajes ligando o caminho
+## às pontas, sombra na água deslocada para baixo-direita e reflexo claro tremido junto das beiradas.
+## Tudo no z do chão: os atores andam por cima do tabuleiro e as muretas ficam ao lado deles, nunca à frente.
+## Devolve o eixo [a0, b0] (beiradas da água) para a colisão abrir o corredor sobre o tabuleiro.
+static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVector2Array, lajes: Texture2D, aguas: Array, margens: Array, linhas: Array, larg_caminho: float) -> PackedVector2Array:
+	var meio: Vector2 = trecho[trecho.size() / 2]
+	var corda: Vector2 = (trecho[trecho.size() - 1] - trecho[0]).normalized()
+	var agua := PackedVector2Array()
+	for ag in aguas:
+		if Geometry2D.is_point_in_polygon(meio, ag):
+			agua = ag
+	if agua.is_empty():
+		return PackedVector2Array()
+	# direção: a do caminho (corda do trecho na água). Se o caminho cruzar muito de lado (mais de 40°
+	# em relação à perpendicular do riacho), a ponte fica perpendicular à água e as rampas fazem a ligação.
+	var d := corda
+	var melhor := 1e12
+	var normal := corda
+	for linha in linhas:
+		for i in range(1, linha.size() - 1):
+			var dist: float = linha[i].distance_squared_to(meio)
+			if dist < melhor:
+				melhor = dist
+				var tang: Vector2 = (linha[i + 1] - linha[i - 1]).normalized()
+				normal = Vector2(-tang.y, tang.x)
+	if normal.dot(corda) < 0.0:
+		normal = -normal
+	if normal.dot(corda) < cos(deg_to_rad(40.0)):
+		d = normal
+	var n := Vector2(-d.y, d.x)
+	if n.x < 0.0:
+		n = -n  # n aponta para a direita da tela (lado da sombra)
+	# beiradas da água ao longo do eixo
+	var a0 := meio
+	while Geometry2D.is_point_in_polygon(a0 - d * 2.0, agua) and a0.distance_to(meio) < 400.0:
+		a0 -= d * 2.0
+	var b0 := meio
+	while Geometry2D.is_point_in_polygon(b0 + d * 2.0, agua) and b0.distance_to(meio) < 400.0:
+		b0 += d * 2.0
+	var a := a0 - d * 30.0  # a ponte entra 30 px pelas margens, para assentar na terra
+	var b := b0 + d * 30.0
+	var meia := larg_caminho * 0.39
+	var ret := func(p0: Vector2, p1: Vector2, half: float) -> PackedVector2Array:
+		return PackedVector2Array([p0 + n * half, p1 + n * half, p1 - n * half, p0 - n * half])
+	# 0) rampas de lajes ligando cada ponta da ponte ao caminho fora da margem
+	for ponta in [[a, -1.0], [b, 1.0]]:
+		var pt: Vector2 = ponta[0]
+		var alvo := Vector2.INF
+		var melhor_d := 1e12
+		for q in caminho:
+			var fora := true
+			for m in margens:
+				if Geometry2D.is_point_in_polygon(q, m):
+					fora = false
+					break
+			if not fora:
+				continue
+			var ao_longo: float = (q - pt).dot(d) * float(ponta[1])
+			if ao_longo < 24.0 or ao_longo > 110.0:
+				continue
+			var dist := q.distance_to(pt)
+			if dist < melhor_d:
+				melhor_d = dist
+				alvo = q
+		if alvo != Vector2.INF:
+			var dq := (alvo - pt).normalized()
+			var nq := Vector2(-dq.y, dq.x)
+			var hull := Geometry2D.convex_hull(PackedVector2Array([pt + n * (meia + 6.0), pt - n * (meia + 6.0), alvo + nq * larg_caminho * 0.5, alvo - nq * larg_caminho * 0.5]))
+			var rampa := _poligono(raiz, hull, Color(0.95, 0.96, 1.0))
+			rampa.texture = lajes
+			rampa.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+			rampa.uv = hull
+	# 1) sombra na água (só dentro da água)
+	var desloc := Vector2(12.0, 18.0)
+	for q in Geometry2D.intersect_polygons(ret.call(a + desloc, b + desloc, meia + 10.0), agua):
+		_poligono(raiz, q, Color(0.01, 0.04, 0.06, 0.55))
+	# 2) encontros nas margens: laje larga onde a ponte assenta na terra, com sombra
+	for ponta in [[a - d * 6.0, a + d * 28.0], [b - d * 28.0, b + d * 6.0]]:
+		_poligono(raiz, ret.call(ponta[0] + Vector2(3, 4), ponta[1] + Vector2(3, 4), meia + 12.0), Color(0.03, 0.04, 0.05, 0.5))
+		var enc := _poligono(raiz, ret.call(ponta[0], ponta[1], meia + 12.0), Color(0.6, 0.6, 0.66))
+		enc.texture = lajes
+		enc.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		enc.uv = enc.polygon
+	# 3) tabuleiro: lajes com juntas transversais, aresta clara à esquerda e escura à direita
+	var tab: PackedVector2Array = ret.call(a, b, meia)
+	var pg := _poligono(raiz, tab, Color(0.88, 0.9, 0.96))
+	pg.texture = lajes
+	pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	pg.uv = tab
+	var comp_tab := a.distance_to(b)
+	var s := 16.0 + float(posmod(hash(Vector2i(int(a.x), int(a.y))), 9))
+	while s < comp_tab - 10.0:
+		var p := a + d * s
+		_poligono(raiz, ret.call(p - d * 1.3, p + d * 1.3, meia - 1.0), Color(0.09, 0.09, 0.1, 0.85))
+		s += 24.0 + float(posmod(hash(Vector2i(int(s), 9)), 9))
+	_poligono(raiz, ret.call(a - n * (meia - 1.5), b - n * (meia - 1.5), 1.5), Color(0.9, 0.92, 0.96, 0.35))
+	_poligono(raiz, ret.call(a + n * (meia - 3.0), b + n * (meia - 3.0), 3.0), Color(0.04, 0.04, 0.05, 0.4))
+	# 4) reflexo claro tremido na água, colado às beiradas do tabuleiro (por cima da sombra)
+	for lado in [-1.0, 1.0]:
+		var beira := PackedVector2Array()
+		var volta := PackedVector2Array()
+		var k := 0.0
+		while k <= comp_tab:
+			var p: Vector2 = a + d * k + n * lado * (meia + 1.0)
+			var onda := absf(sin(k * 0.19 + lado * 2.0)) * 2.2 + 1.5
+			beira.append(p)
+			volta.append(p + n * lado * (onda + 2.5 + sin(k * 0.41) * 1.0))
+			k += 5.0
+		volta.reverse()
+		beira.append_array(volta)
+		for q in Geometry2D.intersect_polygons(beira, agua):
+			_poligono(raiz, q, Color(0.66, 0.9, 0.9, 0.42))
+	# 5) muretas: topo claro 8 px acima do chão, sombra da mureta da esquerda no tabuleiro,
+	#    face escura só na ponta mais perto da câmera (a que fica mais embaixo na tela)
+	for lado in [-1.0, 1.0]:
+		var c0: Vector2 = a + n * lado * (meia + 5.0) + d * 8.0
+		var c1: Vector2 = b + n * lado * (meia + 5.0) - d * 8.0
+		if lado < 0.0:
+			_poligono(raiz, ret.call(c0 + Vector2(4, 3), c1 + Vector2(4, 3), 4.5), Color(0.02, 0.03, 0.04, 0.32))
+		var baixo: Vector2 = c0 if c0.y > c1.y else c1
+		var face := PackedVector2Array([baixo + n * 5.0, baixo - n * 5.0, baixo - n * 5.0 + Vector2(0, -8), baixo + n * 5.0 + Vector2(0, -8)])
+		_poligono(raiz, face, Color(0.1, 0.1, 0.12))
+		_poligono(raiz, ret.call(c0 + n * lado * 5.0, c1 + n * lado * 5.0, 1.2), Color(0.1, 0.1, 0.12, 0.7))  # aresta externa
+		var topo := PackedVector2Array()
+		for q in ret.call(c0, c1, 5.0):
+			topo.append(q + Vector2(0, -8))
+		var tp := _poligono(raiz, topo, Color(0.74, 0.76, 0.82))
+		tp.texture = lajes
+		tp.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		tp.uv = topo
+		var sm := 10.0
+		while sm < c0.distance_to(c1) - 6.0:
+			var p: Vector2 = c0 + d * sm + Vector2(0, -8)
+			_poligono(raiz, ret.call(p - d * 0.9, p + d * 0.9, 5.0), Color(0.09, 0.09, 0.1, 0.8))
+			sm += 18.0 + float(posmod(hash(Vector2i(int(sm), int(lado))), 7))
+		_poligono(raiz, ret.call(c0 + Vector2(0, -8) - n * lado * 4.0, c1 + Vector2(0, -8) - n * lado * 4.0, 1.0), Color(0.95, 0.96, 1.0, 0.3))  # fio de luz no topo
+		for pt in [c0, c1]:
+			_pilarete(raiz, pt, lajes, d, n)
+	return PackedVector2Array([a0, b0])
+
+## Pilarete de pedra nas pontas das muretas, alinhado ao eixo da ponte: sombra no chão, corpo escuro
+## de 14 px (a face que a câmera vê) e tampa clara em cima.
+static func _pilarete(raiz: Node2D, pt: Vector2, lajes: Texture2D, d: Vector2, n: Vector2) -> void:
+	var quad := func(c: Vector2, half: float) -> PackedVector2Array:
+		return PackedVector2Array([c - d * half - n * half, c + d * half - n * half, c + d * half + n * half, c - d * half + n * half])
+	_poligono(raiz, quad.call(pt + Vector2(5, 4), 8.0), Color(0.02, 0.03, 0.04, 0.4))
+	var base: PackedVector2Array = quad.call(pt, 7.0)
+	var corpo := PackedVector2Array(base)
+	for q in base:
+		corpo.append(q + Vector2(0, -14))
+	_poligono(raiz, Geometry2D.convex_hull(corpo), Color(0.15, 0.15, 0.18))
+	_poligono(raiz, PackedVector2Array([base[3], base[0], base[0] + Vector2(0, -14), base[3] + Vector2(0, -14)]), Color(0.24, 0.24, 0.28, 0.9))  # lado da luz
+	var tampa := _poligono(raiz, quad.call(pt + Vector2(0, -14), 8.0), Color(0.82, 0.84, 0.9))
+	tampa.texture = lajes
+	tampa.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	tampa.uv = tampa.polygon
+	_poligono(raiz, PackedVector2Array([tampa.polygon[0], tampa.polygon[1], tampa.polygon[1] + Vector2(0, 2), tampa.polygon[0] + Vector2(0, 2)]), Color(0.95, 0.96, 1.0, 0.35))
 
 static func _expandir(pts: PackedVector2Array, centro: Vector2, d: float) -> PackedVector2Array:
 	var out := PackedVector2Array()
@@ -209,23 +354,26 @@ static func _musgo_na_borda(raiz: Node2D, contorno: PackedVector2Array) -> void:
 		_poligono(raiz, pts, cor)
 		i += 2 + posmod(h / 5, 4)
 
-## Lajes soltas e musgo espalhados pela borda do caminho.
+## Pedrinhas e lajes soltas na borda do caminho: pequenas, achatadas, com sombra curta para baixo-direita
+## (a mesma luz dos props) em vez de um contorno escuro em volta, para não parecerem seixos flutuando.
 static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: int) -> void:
 	var i := 2
 	while i < contorno.size():
 		var h := hash(Vector2i(i, semente + 5))
-		var raio := 7.0 + posmod(h, 7)
+		var raio := 4.0 + posmod(h, 5)
 		var c := contorno[i] + Vector2(posmod(h / 11, 11) - 5, posmod(h / 97, 9) - 4)
 		var pts := PackedVector2Array()
 		for a in 7:
 			var ang := TAU * a / 7.0 + posmod(h, 6)
-			pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.7))
-		var tom := 0.42 + 0.22 * float(posmod(h / 5, 100)) / 100.0
+			pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.6))
+		var tom := 0.4 + 0.2 * float(posmod(h / 5, 100)) / 100.0
 		var musgo: bool = posmod(h / 13, 4) == 0
 		var cor := Color(0.28, 0.4, 0.2) if musgo else Color(tom, tom + 0.02, tom + 0.07)
-		_poligono(raiz, _expandir(pts, c, 1.8), Color(0.08, 0.09, 0.08, 0.8))
+		var sombra := _poligono(raiz, pts, Color(0.04, 0.05, 0.05, 0.6))
+		sombra.position = Vector2(2.0, 2.5)
 		_poligono(raiz, pts, cor)
-		i += 7 + posmod(h / 3, 6)
+		_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.12))  # faceta clara
+		i += 10 + posmod(h / 3, 7)
 
 ## Manchas grandes e suaves de terra e grama amarelada sob tudo, para o gramado não ser textura chapada.
 static func _manchas_de_chao(raiz: Node2D, sala: Node2D, tile: int) -> void:
