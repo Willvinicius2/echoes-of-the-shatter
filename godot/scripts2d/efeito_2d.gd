@@ -19,7 +19,7 @@ var _t := 0.0
 var _acc := 0.0
 
 static func _novo(pai: Node, pos: Vector2, forma_: String, cor_: Color, dur_: float) -> Node2D:
-	var e := load("res://scripts2d/efeito_2d.gd").new()
+	var e = load("res://scripts2d/efeito_2d.gd").new()
 	e.forma = forma_
 	e.cor = cor_
 	e.dur = dur_
@@ -29,19 +29,19 @@ static func _novo(pai: Node, pos: Vector2, forma_: String, cor_: Color, dur_: fl
 	return e
 
 static func anel(pai: Node, pos: Vector2, raio_: float, cor_: Color, dur_ := 0.35) -> Node2D:
-	var e := _novo(pai, pos, "anel", cor_, dur_)
+	var e = _novo(pai, pos, "anel", cor_, dur_)
 	e.raio = raio_
 	return e
 
 static func disco(pai: Node, pos: Vector2, raio_: float, cor_: Color, dur_: float, tick_: float, cb: Callable) -> Node2D:
-	var e := _novo(pai, pos, "disco", cor_, dur_)
+	var e = _novo(pai, pos, "disco", cor_, dur_)
 	e.raio = raio_
 	e.tick = tick_
 	e.ao_tick = cb
 	return e
 
 static func linha(pai: Node, de: Vector2, para: Vector2, espessura: float, cor_: Color, dur_: float, tick_: float, cb: Callable) -> Node2D:
-	var e := _novo(pai, (de + para) * 0.5, "linha", cor_, dur_)
+	var e = _novo(pai, (de + para) * 0.5, "linha", cor_, dur_)
 	e.a = de - e.global_position
 	e.b = para - e.global_position
 	e.raio = espessura
@@ -50,14 +50,14 @@ static func linha(pai: Node, de: Vector2, para: Vector2, espessura: float, cor_:
 	return e
 
 static func cone(pai: Node, pos: Vector2, dir_: Vector2, compr: float, ang: float, cor_: Color, dur_ := 0.25) -> Node2D:
-	var e := _novo(pai, pos, "cone", cor_, dur_)
+	var e = _novo(pai, pos, "cone", cor_, dur_)
 	e.dir = dir_.normalized()
 	e.raio = compr
 	e.angulo = ang
 	return e
 
 static func raio_zigue(pai: Node, de: Vector2, para: Vector2, cor_: Color, dur_: float) -> Node2D:
-	var e := _novo(pai, de, "raio", cor_, dur_)
+	var e = _novo(pai, de, "raio", cor_, dur_)
 	e.pts = PackedVector2Array([Vector2.ZERO])
 	var v := para - de
 	var n := 6
@@ -71,7 +71,7 @@ static func raio_zigue(pai: Node, de: Vector2, para: Vector2, cor_: Color, dur_:
 
 ## Marca de aviso que cresce até `raio_` e chama `cb` ao fim (meteoro).
 static func marca(pai: Node, pos: Vector2, raio_: float, cor_: Color, dur_: float, cb: Callable) -> Node2D:
-	var e := _novo(pai, pos, "marca", cor_, dur_)
+	var e = _novo(pai, pos, "marca", cor_, dur_)
 	e.raio = raio_
 	e.ao_fim = cb
 	return e
