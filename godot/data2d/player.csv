@@ -17,6 +17,9 @@ attack_move_mult,0.4,x,fator de velocidade enquanto atira
 arrow_count,1,flechas,flechas por disparo (multishot soma)
 arrow_pierce,0,corpos,inimigos atravessados pela flecha
 multishot_spread,12,graus,abertura entre flechas do multishot
+mana_max,80,mana,mana maxima (classe pode sobrescrever em classes_2d.csv)
+mana_regen,8,mana/s,regeneracao de mana
+skill_cd_mult,1,x,multiplicador da recarga das habilidades (menor = mais rapido)
 crit_chance,0,fracao,chance de golpe crítico das flechas (habilidades somam)
 crit_mult,2,x,multiplicador do dano crítico
 poison_dps,0,hp/s,veneno aplicado pela flecha (habilidade Pontas Venenosas)

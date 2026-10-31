@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://0rp1ww6x1grr"
+
+[deps]
+
+files=["res://data2d/testes/habilidades_teste.ramo.translation", "res://data2d/testes/habilidades_teste.tipo.translation", "res://data2d/testes/habilidades_teste.tier.translation", "res://data2d/testes/habilidades_teste.pai.translation", "res://data2d/testes/habilidades_teste.pontos.translation", "res://data2d/testes/habilidades_teste.nivel.translation", "res://data2d/testes/habilidades_teste.efeito.translation", "res://data2d/testes/habilidades_teste.cd.translation", "res://data2d/testes/habilidades_teste.custo.translation", "res://data2d/testes/habilidades_teste.dano.translation", "res://data2d/testes/habilidades_teste.qtd.translation", "res://data2d/testes/habilidades_teste.angulo.translation", "res://data2d/testes/habilidades_teste.raio.translation", "res://data2d/testes/habilidades_teste.duracao.translation", "res://data2d/testes/habilidades_teste.alcance.translation", "res://data2d/testes/habilidades_teste.valor.translation", "res://data2d/testes/habilidades_teste.escala.translation", "res://data2d/testes/habilidades_teste.stat.translation", "res://data2d/testes/habilidades_teste.modo.translation", "res://data2d/testes/habilidades_teste.icone.translation"]
+
+source_file="res://data2d/testes/habilidades_teste.csv"
+dest_files=["res://data2d/testes/habilidades_teste.ramo.translation", "res://data2d/testes/habilidades_teste.tipo.translation", "res://data2d/testes/habilidades_teste.tier.translation", "res://data2d/testes/habilidades_teste.pai.translation", "res://data2d/testes/habilidades_teste.pontos.translation", "res://data2d/testes/habilidades_teste.nivel.translation", "res://data2d/testes/habilidades_teste.efeito.translation", "res://data2d/testes/habilidades_teste.cd.translation", "res://data2d/testes/habilidades_teste.custo.translation", "res://data2d/testes/habilidades_teste.dano.translation", "res://data2d/testes/habilidades_teste.qtd.translation", "res://data2d/testes/habilidades_teste.angulo.translation", "res://data2d/testes/habilidades_teste.raio.translation", "res://data2d/testes/habilidades_teste.duracao.translation", "res://data2d/testes/habilidades_teste.alcance.translation", "res://data2d/testes/habilidades_teste.valor.translation", "res://data2d/testes/habilidades_teste.escala.translation", "res://data2d/testes/habilidades_teste.stat.translation", "res://data2d/testes/habilidades_teste.modo.translation", "res://data2d/testes/habilidades_teste.icone.translation"]
+
+[params]
+
+compress=true
+delimiter=0

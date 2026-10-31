@@ -10,6 +10,8 @@ const BossScript = preload("res://scripts2d/boss_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
+const ArvoreUiScript = preload("res://scripts2d/arvore_ui_2d.gd")
+const MagoScript = preload("res://scripts2d/mago_2d.gd")
 const SkillsGuerreiroScript = preload("res://scripts2d/skills_guerreiro_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
@@ -47,6 +49,7 @@ var menus: CanvasLayer
 var com_menu := true   # false nos testes: começa direto na sala 1
 var tempo := 0.0       # segundos da corrida atual (só conta luta e sala limpa)
 var camera: Camera2D
+var arvore: CanvasLayer   # árvore de habilidades (tecla T)
 var atores: Node2D
 var vivos := 0
 var corridas := 0
@@ -79,6 +82,12 @@ func _ready() -> void:
 	ui.upgrades = upgrades
 	ui.escolhido.connect(_on_upgrade_escolhido)
 	add_child(ui)
+	arvore = ArvoreUiScript.new()
+	arvore.definir(player.habilidades if "habilidades" in player else null)
+	arvore.fechada.connect(func() -> void:
+		if upgrades.has_method("reaplicar"):
+			upgrades.reaplicar(player))
+	add_child(arvore)
 	menus = MenusScript.new()
 	menus.meta = meta
 	menus.jogar.connect(_on_jogar)
@@ -95,13 +104,18 @@ func _ready() -> void:
 ## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro: cartas do core; guerreiro: árvore de habilidades).
 func _criar_classe() -> void:
 	var guerreiro: bool = Classe.atual == "guerreiro"
-	player = (WarriorScript if guerreiro else PlayerScript).new()
+	player = (WarriorScript if guerreiro else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
 	player.died.connect(_on_player_died)
 	atores.add_child(player)
 	upgrades = (SkillsGuerreiroScript if guerreiro else UpgradesScript).new()
 	upgrades.meta = meta
 	if guerreiro:
 		player.skills = upgrades
+	else:  # arqueiro e mago: árvore de habilidades em habilidades_2d.gd (tecla T)
+		player.definir_classe(Classe.atual)
+		upgrades.habilidades = player.habilidades
+	if arvore != null:
+		arvore.definir(player.habilidades if "habilidades" in player else null)
 	_classe_montada = Classe.atual
 
 ## Troca de classe entre corridas (botão do título): recria o jogador e religa HUD e cartas.
@@ -229,6 +243,8 @@ func _on_inimigo_morto(e) -> void:
 	var r: Dictionary = nucleo.corrida_inimigo_morto(e.stats.get("id", ""))   # drops, sala limpa e cartas: regras do core
 	if r["sala_limpa"] and estado == Estado.LUTA:
 		estado = Estado.LIMPA
+		if "habilidades" in player:
+			player.habilidades.ganhar_pontos(int(config["skill_points_room"]) + (int(config["skill_points_boss"]) if indice + 1 >= salas.size() else 0))
 		_timer = config["clear_delay"]
 
 func _physics_process(delta: float) -> void:

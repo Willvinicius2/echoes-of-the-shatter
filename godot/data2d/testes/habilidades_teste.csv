@@ -1,0 +1,5 @@
+id,ramo,tipo,tier,pai,pontos,nivel_max,efeito,cd,custo,dano,qtd,angulo,raio,duracao,alcance,valor,escala,stat,modo,icone
+t_golpe,fogo,ativa,1,,1,3,golpe,2,10,20,1,0,0,0,300,0,0.5,,,tiro
+t_nova,fogo,ativa,2,t_golpe,2,2,nova,5,30,40,0,0,120,0,0,0,0.5,,,tiro
+t_vigor,vida,passiva,1,,1,3,,0,0,0,0,0,0,0,0,0.2,0,hp_max,mult,
+t_passo,vida,passiva,2,t_vigor,1,2,,0,0,0,0,0,0,0,0,10,0,speed,add,

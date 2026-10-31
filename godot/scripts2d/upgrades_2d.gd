@@ -18,6 +18,7 @@ var meta: RefCounted:   # opcional: compartilha o núcleo (meta, bônus permanen
 			nucleo = v.nucleo
 var nucleo: Object
 var _base_bruta := {}
+var habilidades: RefCounted   # opcional: passivas da árvore de habilidades (habilidades_2d.gd)
 
 func _init() -> void:
 	for r in Csv.rows("res://data2d/upgrades.csv"):
@@ -35,6 +36,7 @@ func restaurar(jogador: Node) -> void:
 		_base_bruta = jogador.stats.duplicate()
 	_nucleo().corrida_iniciar(semente, _base_bruta)
 	jogador.stats = nucleo.corrida_stats()
+	_passivas(jogador)
 	sincronizar(false)
 	mudou.emit()
 
@@ -68,7 +70,19 @@ func escolher(id: String, jogador: Node) -> bool:
 	if int(r["resultado"]) != 0:
 		return false
 	jogador.stats = nucleo.corrida_stats()
+	_passivas(jogador)
 	jogador.hp = float(r["hp"])
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
 	sincronizar()
 	return true
+
+## Passivas da árvore de habilidades sobre os stats que o core acabou de calcular (idempotente).
+func _passivas(jogador: Node) -> void:
+	if habilidades != null:
+		jogador.stats = habilidades.aplicar_passivas(jogador.stats)
+
+## Reaplica core e passivas (chamar depois de aprender ou redistribuir na árvore).
+func reaplicar(jogador: Node) -> void:
+	jogador.stats = _nucleo().corrida_stats()
+	_passivas(jogador)
+	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])

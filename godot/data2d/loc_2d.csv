@@ -148,6 +148,19 @@ ach.first_run,Primeira expedição
 ach.crypt_cleared,Cripta vencida
 ach.first_forge,Primeira criação na Forja
 ach.first_upgrade,Primeira melhoria permanente
+class.arqueiro,Arqueiro
+class.guerreiro,Guerreiro
+class.mago,Mago
+tree.points,Pontos
+tree.empty,Nenhuma habilidade nesta classe ainda
+tree.slot_empty,vazio
+tree.respec,Redistribuir pontos
+tree.close,Fechar (T)
+hud.key.skill_1,Q
+hud.key.skill_2,E
+hud.key.skill_3,F
+hud.key.skill_4,R
+ramo.lamina.name,Lamina
 ramo.lamina.name,Lâmina
 ramo.baluarte.name,Baluarte
 ramo.impeto.name,Ímpeto
@@ -158,6 +171,7 @@ hud.key.skill4,R
 class.guerreiro.name,Guerreiro
 menu.class,Classe: %s
 class.arqueiro.name,Arqueiro
+class.mago.name,Mago
 skill.w_keen_edge.name,Fio Afiado
 skill.w_keen_edge.desc,+20% de dano da espada
 skill.w_heavy_slash.name,Talho Pesado
