@@ -9,6 +9,9 @@ const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
 const BossScript = preload("res://scripts2d/boss_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
+const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
+const SkillsGuerreiroScript = preload("res://scripts2d/skills_guerreiro_2d.gd")
+const Classe = preload("res://scripts2d/classe_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
@@ -29,6 +32,7 @@ var room: Node2D
 var player: Node2D
 var hud: CanvasLayer
 var upgrades: RefCounted
+var _classe_montada := ""
 var meta: RefCounted
 var ganhos := {"fragmentos": 0, "materiais": {}}   # da corrida atual; vão ao save quando ela acaba
 var ui: CanvasLayer
@@ -50,19 +54,13 @@ func _ready() -> void:
 	atores = Node2D.new()
 	atores.y_sort_enabled = true
 	add_child(atores)
-	player = PlayerScript.new()
-	player.died.connect(_on_player_died)
-	atores.add_child(player)
+	Classe.ler_argumentos()
+	meta = MetaScript.new()
+	meta.carregar()
+	_criar_classe()
 	camera = Camera2D.new()
 	camera.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	add_child(camera)
-	meta = MetaScript.new()
-	meta.carregar()
-	upgrades = UpgradesScript.new()
-	upgrades.meta = meta
-	player.habilidades.meta = meta
-	player.definir_classe(meta.classe)
-	upgrades.habilidades = player.habilidades
 	hud = HudScript.new()
 	hud.jogador = player
 	hud.upgrades = upgrades
@@ -73,8 +71,10 @@ func _ready() -> void:
 	ui.escolhido.connect(_on_upgrade_escolhido)
 	add_child(ui)
 	arvore = ArvoreUiScript.new()
-	arvore.habilidades = player.habilidades
-	arvore.fechada.connect(func() -> void: upgrades.reaplicar(player))
+	arvore.definir(player.habilidades if "habilidades" in player else null)
+	arvore.fechada.connect(func() -> void:
+		if upgrades.has_method("reaplicar"):
+			upgrades.reaplicar(player))
 	add_child(arvore)
 	menus = MenusScript.new()
 	menus.meta = meta
@@ -89,7 +89,35 @@ func _ready() -> void:
 	if com_menu:
 		_ir_titulo()
 
+## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro: cartas de upgrades.csv; guerreiro: habilidades).
+func _criar_classe() -> void:
+	var guerreiro: bool = Classe.atual == "guerreiro"
+	player = (WarriorScript if guerreiro else PlayerScript).new()
+	player.died.connect(_on_player_died)
+	atores.add_child(player)
+	upgrades = (SkillsGuerreiroScript if guerreiro else UpgradesScript).new()
+	upgrades.meta = meta
+	if guerreiro:
+		player.skills = upgrades
+	else:  # arqueiro e mago: árvore de habilidades em habilidades_2d.gd (tecla T)
+		player.habilidades.meta = meta
+		player.definir_classe(Classe.atual)
+		upgrades.habilidades = player.habilidades
+	if arvore != null:
+		arvore.definir(player.habilidades if "habilidades" in player else null)
+	_classe_montada = Classe.atual
+
+## Troca de classe entre corridas (botão do título): recria o jogador e religa HUD e cartas.
+func _trocar_classe() -> void:
+	player.queue_free()
+	_criar_classe()
+	hud.jogador = player
+	hud.upgrades = upgrades
+	ui.upgrades = upgrades
+
 func iniciar_corrida() -> void:
+	if Classe.atual != _classe_montada:
+		_trocar_classe()
 	_creditar_ganhos()  # corrida abandonada (reiniciar, título) também guarda o que já rendeu
 	rng.seed = int(config["seed"]) + corridas
 	corridas += 1
@@ -183,7 +211,8 @@ func _on_inimigo_morto(e) -> void:
 		estado = Estado.LIMPA
 		_timer = config["clear_delay"]
 		ganhos["fragmentos"] += int(config["room_clear_fragments"])
-		player.habilidades.ganhar_pontos(int(config["skill_points_room"]) + (int(config["skill_points_boss"]) if no_atual["room"].contains("boss") else 0))
+		if "habilidades" in player:
+			player.habilidades.ganhar_pontos(int(config["skill_points_room"]) + (int(config["skill_points_boss"]) if no_atual["room"].contains("boss") else 0))
 		if no_atual["tipo"] == "elite":
 			ganhos["fragmentos"] += int(config["elite_fragments"])
 

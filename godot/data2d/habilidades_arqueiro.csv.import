@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://k2fyv1abil0"
+
+[deps]
+
+files=["res://data2d/habilidades_arqueiro.ramo.translation", "res://data2d/habilidades_arqueiro.tipo.translation", "res://data2d/habilidades_arqueiro.tier.translation", "res://data2d/habilidades_arqueiro.pai.translation", "res://data2d/habilidades_arqueiro.pontos.translation", "res://data2d/habilidades_arqueiro.nivel.translation", "res://data2d/habilidades_arqueiro.efeito.translation", "res://data2d/habilidades_arqueiro.cd.translation", "res://data2d/habilidades_arqueiro.custo.translation", "res://data2d/habilidades_arqueiro.dano.translation", "res://data2d/habilidades_arqueiro.qtd.translation", "res://data2d/habilidades_arqueiro.angulo.translation", "res://data2d/habilidades_arqueiro.raio.translation", "res://data2d/habilidades_arqueiro.duracao.translation", "res://data2d/habilidades_arqueiro.alcance.translation", "res://data2d/habilidades_arqueiro.valor.translation", "res://data2d/habilidades_arqueiro.escala.translation", "res://data2d/habilidades_arqueiro.stat.translation", "res://data2d/habilidades_arqueiro.modo.translation", "res://data2d/habilidades_arqueiro.icone.translation"]
+
+source_file="res://data2d/habilidades_arqueiro.csv"
+dest_files=["res://data2d/habilidades_arqueiro.ramo.translation", "res://data2d/habilidades_arqueiro.tipo.translation", "res://data2d/habilidades_arqueiro.tier.translation", "res://data2d/habilidades_arqueiro.pai.translation", "res://data2d/habilidades_arqueiro.pontos.translation", "res://data2d/habilidades_arqueiro.nivel.translation", "res://data2d/habilidades_arqueiro.efeito.translation", "res://data2d/habilidades_arqueiro.cd.translation", "res://data2d/habilidades_arqueiro.custo.translation", "res://data2d/habilidades_arqueiro.dano.translation", "res://data2d/habilidades_arqueiro.qtd.translation", "res://data2d/habilidades_arqueiro.angulo.translation", "res://data2d/habilidades_arqueiro.raio.translation", "res://data2d/habilidades_arqueiro.duracao.translation", "res://data2d/habilidades_arqueiro.alcance.translation", "res://data2d/habilidades_arqueiro.valor.translation", "res://data2d/habilidades_arqueiro.escala.translation", "res://data2d/habilidades_arqueiro.stat.translation", "res://data2d/habilidades_arqueiro.modo.translation", "res://data2d/habilidades_arqueiro.icone.translation"]
+
+[params]
+
+compress=true
+delimiter=0

@@ -107,9 +107,18 @@ func _desenhar_globos(vp: Vector2) -> void:
 	Arte.texto(_ctl, ev + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.hp), int(hmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
 	Arte.texto(_ctl, Vector2(ev.x + raio + 10, ev.y + 30), Csv.t("hud.hp"), 14, Tema.cor("texto_suave"))
 	var ed := _centro_globo(vp, true)
-	var mmax: float = maxf(1.0, jogador.stats.get("mana_max", 1.0))
-	Arte.globo(_ctl, ed, raio, clampf(jogador.mana / mmax, 0.0, 1.0), 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel)
-	Arte.texto(_ctl, ed + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.mana), int(mmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	if "mana" in jogador:
+		var mmax: float = maxf(1.0, jogador.stats.get("mana_max", 1.0))
+		Arte.globo(_ctl, ed, raio, clampf(jogador.mana / mmax, 0.0, 1.0), 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel)
+		Arte.texto(_ctl, ed + Vector2(-raio, 4), "%d/%d" % [ceili(jogador.mana), int(mmax)], 18, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	else:
+		Arte.globo(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
+		_ctl.draw_circle(ed + Vector2(0, raio * 0.3), raio * 0.55, Color(0.2, 0.3, 0.9, 0.12))   # brilho azul fraco por baixo
+		# corrente nítida em X sobre o vidro vazio e cadeado pequeno no centro
+		var rr := raio * 0.5
+		Arte.corrente(_ctl, ed + Vector2(-rr, -rr), ed + Vector2(rr, rr), 7)
+		Arte.corrente(_ctl, ed + Vector2(rr, -rr), ed + Vector2(-rr, rr), 7)
+		Arte.cadeado(_ctl, ed + Vector2(0, -8), 20.0)
 	Arte.texto(_ctl, Vector2(ed.x - raio - 150, ed.y + 30), Csv.t("hud.mana"), 14, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, 140.0)
 
 func _desenhar_upgrades() -> void:
@@ -131,7 +140,8 @@ func _desenhar_upgrades() -> void:
 		var sel := r.has_point(mouse)
 		if sel:
 			_ctl.draw_rect(r, Tema.cor("destaque"), false, 2.0)
-			dica = "%s x%d" % [Csv.t("upgrade.%s.name" % id), nv]
+			var chave := "skill.%s.name" if upgrades.defs[id].has("ramo") else "upgrade.%s.name"  # habilidades têm ramo
+			dica = "%s x%d" % [Csv.t(chave % id), nv]
 			dica_pos = Vector2(r.position.x, r.end.y + 6)
 		if nv > 1:
 			var tag := Rect2(r.end.x - 20, r.end.y - 14, 22, 16)
@@ -161,11 +171,11 @@ func _desenhar_habilidades(vp: Vector2) -> void:
 	var fr := Rect2((vp.x - bw) * 0.5, y0 - 24.0, bw, 7.0).grow(4)
 	for q in [fr.position, Vector2(fr.end.x, fr.position.y), Vector2(fr.position.x, fr.end.y), fr.end]:
 		Arte.rebite(_ctl, q, 2.4)
-	var slots := [
+	var slots: Array = [
 		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": rec_esq, "cor": Tema.cor("estamina")},
 	]
-	if "habilidades" in jogador and jogador.habilidades != null:
+	if not jogador.has_method("slots_hud") and "habilidades" in jogador and jogador.habilidades != null:
 		var hab: RefCounted = jogador.habilidades
 		for i in hab.SLOTS:
 			var id: String = hab.slots[i]
@@ -173,6 +183,10 @@ func _desenhar_habilidades(vp: Vector2) -> void:
 				var icone: String = hab.defs[id]["icone"]
 				slots.append({"icone": icone if Icones.textura(icone) != null else "tiro", "tecla": "hud.key.skill_%d" % (i + 1),
 					"recarga": hab.recarga_slot(i), "cor": Tema.cor("mana_clara")})
+	elif jogador.has_method("slots_hud"):  # guerreiro: golpe, esquiva e as ativas aprendidas
+		slots = jogador.slots_hud()
+		for sl in slots:
+			sl["cor"] = Tema.cor("estamina") if sl["icone"] == "esquiva" else Tema.cor("destaque")
 	for i in total:
 		var r := Rect2(x0 + i * (lado + esp), y0, lado, lado)
 		if i < slots.size():

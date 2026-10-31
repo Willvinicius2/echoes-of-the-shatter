@@ -44,6 +44,12 @@ func _ready() -> void:
 	_slots.add_theme_constant_override("separation", 12)
 	col.add_child(_slots)
 	_fundo.visible = false
+
+## Liga a árvore a um runtime de habilidades (ou a nenhum, para classes com sistema próprio).
+func definir(h: RefCounted) -> void:
+	if habilidades != null and habilidades.mudou.is_connected(_montar):
+		habilidades.mudou.disconnect(_montar)
+	habilidades = h
 	if habilidades != null:
 		habilidades.mudou.connect(_montar)
 

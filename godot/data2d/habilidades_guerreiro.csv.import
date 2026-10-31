@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cmqa3nffb2bcx"
+
+[deps]
+
+files=["res://data2d/habilidades_guerreiro.ramo.translation", "res://data2d/habilidades_guerreiro.tipo.translation", "res://data2d/habilidades_guerreiro.tier.translation", "res://data2d/habilidades_guerreiro.pai.translation", "res://data2d/habilidades_guerreiro.pontos.translation", "res://data2d/habilidades_guerreiro.nivel.translation", "res://data2d/habilidades_guerreiro.efeito.translation", "res://data2d/habilidades_guerreiro.cd.translation", "res://data2d/habilidades_guerreiro.custo.translation", "res://data2d/habilidades_guerreiro.dano.translation", "res://data2d/habilidades_guerreiro.qtd.translation", "res://data2d/habilidades_guerreiro.angulo.translation", "res://data2d/habilidades_guerreiro.raio.translation", "res://data2d/habilidades_guerreiro.duracao.translation", "res://data2d/habilidades_guerreiro.alcance.translation", "res://data2d/habilidades_guerreiro.valor.translation", "res://data2d/habilidades_guerreiro.escala.translation", "res://data2d/habilidades_guerreiro.stat.translation", "res://data2d/habilidades_guerreiro.modo.translation", "res://data2d/habilidades_guerreiro.icone.translation", "res://data2d/habilidades_guerreiro.espera.translation", "res://data2d/habilidades_guerreiro.recup.translation"]
+
+source_file="res://data2d/habilidades_guerreiro.csv"
+dest_files=["res://data2d/habilidades_guerreiro.ramo.translation", "res://data2d/habilidades_guerreiro.tipo.translation", "res://data2d/habilidades_guerreiro.tier.translation", "res://data2d/habilidades_guerreiro.pai.translation", "res://data2d/habilidades_guerreiro.pontos.translation", "res://data2d/habilidades_guerreiro.nivel.translation", "res://data2d/habilidades_guerreiro.efeito.translation", "res://data2d/habilidades_guerreiro.cd.translation", "res://data2d/habilidades_guerreiro.custo.translation", "res://data2d/habilidades_guerreiro.dano.translation", "res://data2d/habilidades_guerreiro.qtd.translation", "res://data2d/habilidades_guerreiro.angulo.translation", "res://data2d/habilidades_guerreiro.raio.translation", "res://data2d/habilidades_guerreiro.duracao.translation", "res://data2d/habilidades_guerreiro.alcance.translation", "res://data2d/habilidades_guerreiro.valor.translation", "res://data2d/habilidades_guerreiro.escala.translation", "res://data2d/habilidades_guerreiro.stat.translation", "res://data2d/habilidades_guerreiro.modo.translation", "res://data2d/habilidades_guerreiro.icone.translation", "res://data2d/habilidades_guerreiro.espera.translation", "res://data2d/habilidades_guerreiro.recup.translation"]
+
+[params]
+
+compress=true
+delimiter=0

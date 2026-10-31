@@ -55,7 +55,8 @@ func abrir(ids: Array) -> void:
 		b.expand_icon = true
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var nv: int = upgrades.nivel(id) + 1
-		b.text = "[%d]\n%s\n\n%s\n\n%s" % [i + 1, Csv.t("upgrade.%s.name" % id), Csv.t("upgrade.%s.desc" % id),
+		var pre := "skill" if upgrades.defs[id].has("ramo") else "upgrade"  # habilidades do guerreiro têm ramo
+		b.text = "[%d]\n%s\n\n%s\n\n%s" % [i + 1, Csv.t("%s.%s.name" % [pre, id]), Csv.t("%s.%s.desc" % [pre, id]),
 			Csv.t("upgrade.level") % [nv, upgrades.defs[id]["nivel_max"]]]
 		b.pressed.connect(escolher.bind(i))
 		_caixa.add_child(b)
