@@ -218,6 +218,8 @@ func _spawn_inimigos(spec: String) -> void:
 			var e: Node2D = (BossScript if Csv.enemy(p[0])["kind"] == "boss" else EnemyScript).new()
 			atores.add_child(e)
 			e.setup(p[0], player, pontos[k % pontos.size()])
+			if indice == 0 and e.has_method("adormecer") and config.get("first_room_wake_radius", 0.0) > 0.0:
+				e.adormecer(config["first_room_wake_radius"])   # entrada calma: a sala só luta quando o jogador avança
 			e.died.connect(_on_inimigo_morto)
 			k += 1
 			vivos += 1

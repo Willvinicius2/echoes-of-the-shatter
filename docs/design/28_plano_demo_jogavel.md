@@ -40,3 +40,17 @@ Conteúdo da Região 1 (PR 118), opções, tutorial e interface Steam (119), tex
 
 ## 7. Depois do feedback
 O Jev decide a prioridade com base nas respostas: fechar PRs 110/112/117, setor B (salas por etapa, variação de chefe, teto de cartas) ou M10 pacote 2.
+
+## 8. Segunda rodada: demo do início do jogo (31/10/2026)
+O Will pediu uma demo polida do começo do jogo, seguindo o roteiro e com o Jev decidindo. Consulta ao `jev-latest` (`POST /v1/systemone`):
+
+| Pergunta | Decisão | Probabilidades | Conf. |
+|---|---|---|---|
+| Escopo | Abertura completa: título com arte, prólogo curto (Ilsa e Tico), classe no título, primeira sala calma e a corrida até o Guardião | a 82%, só polir 15%, com Veredito 3% | 0,73 |
+| Formato do prólogo | Caixa de diálogo com retrato e nome sobre a arte, avança com clique/Espaço, pulável | 96% | 0,94 |
+| Escolha de classe | Manter o botão no título, com nome e retrato (sem tela própria) | 95% | 0,92 |
+| PRs paralelos (127, 131, 138) | Entregar com o `master` atual; a abertura recebe o Mago e a árvore quando entrarem, com build nova | 96% | 0,94 |
+| Primeira sala | Entrada calma: nasce longe da HUD, inimigos despertam quando o jogador avança | 91% | 0,86 |
+
+Entregue: título com a key art aprovada e cartão da classe; prólogo com as falas da cena 1 do doc 21 (`data2d/prologo.csv`); primeira sala com o jogador abaixo do riacho e inimigos adormecidos (`first_room_wake_radius`); acentos dos textos do hub, da Forja, das opções e das habilidades. Retratos e fundo são recortes das artes já aprovadas (`01_key_art`, `n01_ilsa`, `n02_tico`), sem arte nova. Bot: 10 corridas, 0 travadas, 0 mortes na sala 1.
+

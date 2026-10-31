@@ -24,6 +24,7 @@ var dano_mult := 1.0            # status marca: dano recebido multiplicado
 var vel_mult := 1.0             # status lentidão: velocidade multiplicada
 var atordoado := 0.0            # status atordoamento: segundos parado
 var _status := {}               # id -> {t: segundos restantes, v: valor}
+var raio_despertar := 0.0       # > 0: começa adormecido; acorda (com o grupo) quando o jogador chega a essa distância ou fere alguém
 
 func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	stats = Csv.enemy(id)
@@ -56,6 +57,12 @@ func _physics_process(delta: float) -> void:
 	_cd = maxf(0.0, _cd - delta)
 	var para := alvo.global_position - global_position
 	var dist := para.length()
+	if raio_despertar > 0.0:
+		if dist > raio_despertar:
+			velocity = _kb
+			move_and_slide()
+			return
+		despertar_grupo()
 	var dir := para.normalized() if dist > 0.01 else Vector2.DOWN
 	_kb = _kb.move_toward(Vector2.ZERO, Feel.cfg()["knockback_decay"] * delta)
 	if estado == Estado.TELEGRAFA:
@@ -94,6 +101,19 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	if estado == Estado.PERSEGUE:
 		play("run" if mover != Vector2.ZERO else "idle")
+
+## Adormecidos acordam juntos: o primeiro que vê o jogador (ou leva dano) chama o resto da sala.
+func adormecer(raio: float) -> void:
+	raio_despertar = raio
+	add_to_group("inimigos_adormecidos")
+
+func despertar_grupo() -> void:
+	if is_inside_tree():
+		get_tree().call_group("inimigos_adormecidos", "despertar")
+
+func despertar() -> void:
+	raio_despertar = 0.0
+	remove_from_group("inimigos_adormecidos")
 
 func alvo_morto() -> bool:
 	return alvo.has_method("esta_morto") and alvo.esta_morto()
@@ -184,6 +204,8 @@ func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 	if estado == Estado.MORTO:
 		return
 	amount *= dano_mult
+	if raio_despertar > 0.0:
+		despertar_grupo()
 	var mostrado := minf(amount, hp)
 	hp -= amount
 	flash()

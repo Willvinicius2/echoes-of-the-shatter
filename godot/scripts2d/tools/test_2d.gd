@@ -39,6 +39,7 @@ func _testar() -> void:
 	await _testar_meta()
 	await _testar_forja()
 	await _testar_opcoes_steam_tutorial()
+	await _testar_abertura()
 	await _testar_status()
 	await _testar_mago()
 	await GuerreiroTestes.new(self, check).rodar()
@@ -659,6 +660,62 @@ func _testar_opcoes_steam_tutorial() -> void:
 	run.queue_free()
 	DirAccess.remove_absolute(OpcoesScript.caminho)
 	DirAccess.remove_absolute(SteamScript.caminho)
+	DirAccess.remove_absolute(MetaScript.caminho)
+
+## Início do jogo: prólogo de Ilsa e Tico no primeiro Jogar, cartão da classe no título e primeira sala adormecida.
+func _testar_abertura() -> void:
+	var OpcoesScript = preload("res://scripts2d/opcoes_2d.gd")
+	OpcoesScript.caminho = "user://teste_abertura_opcoes.json"
+	MetaScript.caminho = "user://teste_abertura_meta.json"
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	var falas := Csv.rows("res://data2d/prologo.csv")
+	check(falas.size() >= 4, "prologo: falas no csv")
+	for f in falas:
+		check(Csv.t(f["loc"]) != f["loc"] and Csv.t("npc.%s.name" % f["quem"]) != "npc.%s.name" % f["quem"], "prologo: %s tem texto e nome" % f["loc"])
+		check(ResourceLoader.exists("res://art2d/ui/retrato_%s.png" % f["quem"]), "prologo: retrato de %s" % f["quem"])
+	var run = RunScene.instantiate()
+	run.com_menu = true
+	root.add_child(run)
+	await physics_frame
+	var m = run.menus
+	check(m.tela == m.Tela.TITULO and m._arte.visible and m._retrato_classe != null, "titulo: key art e cartao da classe")
+	var corridas_antes: int = run.corridas
+	m._jogar_do_titulo()
+	check(m.prologo.ativo and m.prologo.visible and run.corridas == corridas_antes, "prologo: abre no primeiro Jogar sem comecar a corrida")
+	m.prologo.avancar()
+	check(m.prologo.indice == 0 and m.prologo._texto.visible_characters == -1, "prologo: primeiro clique completa a fala")
+	for i in falas.size():
+		m.prologo.avancar()
+		m.prologo.avancar()
+	check(not m.prologo.ativo and m.opcoes.prologo_visto and run.corridas == corridas_antes + 1, "prologo: termina e comeca a corrida")
+	var o2 = OpcoesScript.new()
+	check(o2.carregar() and o2.prologo_visto, "prologo: visto fica salvo")
+	m.mostrar_titulo()
+	m._jogar_do_titulo()
+	check(not m.prologo.ativo and run.corridas == corridas_antes + 2, "prologo: nao repete depois de visto")
+	m.mostrar_titulo()
+	m.prologo.iniciar()
+	m.prologo.pular()
+	check(not m.prologo.ativo and m.tela == m.Tela.TITULO and run.corridas == corridas_antes + 2, "prologo: rever pelo titulo e pular volta ao titulo")
+	m.fechar()
+	paused = false
+	await physics_frame   # inimigos das corridas anteriores saem da árvore
+	var adormecidos := get_nodes_in_group("inimigos_adormecidos").filter(func(e): return is_instance_valid(e) and not e.is_queued_for_deletion())
+	check(run.indice == 0 and adormecidos.size() == run.vivos and run.vivos > 0, "sala 1: inimigos comecam adormecidos")
+	var longe := INF
+	for e in adormecidos:
+		longe = minf(longe, e.global_position.distance_to(run.player.global_position))
+	check(longe > Csv.kv("res://data2d/run_settings.csv")["first_room_wake_radius"], "sala 1: jogador nasce fora do alcance dos inimigos")
+	var e0 = adormecidos[0]
+	var pos0: Vector2 = e0.global_position
+	for i in 60:
+		await physics_frame
+	check(e0.global_position.distance_to(pos0) < 1.0 and run.player.hp == run.player.stats["hp_max"], "sala 1: adormecidos nao atacam nem andam")
+	e0.take_damage(1.0)
+	check(adormecidos.all(func(e): return e.raio_despertar == 0.0), "sala 1: ferir um acorda a sala toda")
+	run.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(OpcoesScript.caminho)
 	DirAccess.remove_absolute(MetaScript.caminho)
 
 ## Status de inimigo (aplicar_status): marca, lentidão, atordoamento, veneno e queimadura.
