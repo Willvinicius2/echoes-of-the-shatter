@@ -223,7 +223,7 @@ skill.hunters_mark.desc,Marca o inimigo mirado: ele sofre mais dano por alguns s
 skill.venom_tips.name,Pontas Venenosas
 skill.venom_tips.desc,Flechas envenenam o alvo: +4 de dano por segundo por nível
 skill.backstep_shot.name,Salto Atrás
-skill.backstep_shot.desc,Salta para longe da mira, invulnerável, e atira ao pousar
+skill.backstep_shot.desc,"Salta para longe da mira, invulnerável, e atira ao pousar"
 skill.wind_feet.name,Pés de Vento
 skill.wind_feet.desc,+8% de velocidade de corrida por nível
 skill.smoke_bomb.name,Bomba de Fumaça
@@ -231,12 +231,12 @@ skill.smoke_bomb.desc,Nuvem que deixa os inimigos lentos
 skill.shadow_dance.name,Dança das Sombras
 skill.shadow_dance.desc,-10% na recarga da esquiva por nível
 skill.adrenaline.name,Adrenalina
-skill.adrenaline.desc,Por alguns segundos, atira e corre muito mais rápido
+skill.adrenaline.desc,"Por alguns segundos, atira e corre muito mais rápido"
 skill.hunter_vigor.name,Vigor do Andarilho
 skill.hunter_vigor.desc,+25 de vida máxima por nível
 ramo.precisao.name,Precisão
 ramo.precisao.desc,Dano direto e golpes certeiros
 ramo.cacada.name,Caça
-ramo.cacada.desc,Área, armadilhas e controle
+ramo.cacada.desc,"Área, armadilhas e controle"
 ramo.sombra.name,Sombra
 ramo.sombra.desc,Mobilidade e esquiva
