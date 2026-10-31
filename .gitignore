@@ -39,3 +39,4 @@ __pycache__/
 *.pyc
 
 node_modules/
+godot/gdextension/bin/

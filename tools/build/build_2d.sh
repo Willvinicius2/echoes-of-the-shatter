@@ -7,6 +7,10 @@ saida="${1:-$raiz/build}"
 godot="${2:-godot}"
 proj="$(mktemp -d)"
 for d in scripts2d scenes2d art2d; do ln -s "$raiz/godot/$d" "$proj/$d"; done
+# GDExtension do ShatterCore (godot/gdextension/bin precisa ter o .so do Linux e a .dll do Windows; ver COMO_RODAR_2D.md).
+mkdir -p "$proj/gdextension"
+cp -r "$raiz/godot/gdextension/bin" "$proj/gdextension/bin"
+cp "$raiz/godot/shatter_rogue.gdextension" "$proj/shatter_rogue.gdextension"
 # data2d é copiado: o Godot importaria os CSV como tradução e o export perderia o arquivo cru.
 # O importador "keep" mantém os CSV como estão (o cliente os lê com FileAccess).
 cp -r "$raiz/godot/data2d" "$proj/data2d"
