@@ -74,7 +74,6 @@ func nivel(id: String) -> int:
 	return int(niveis.get(id, 0))
 
 ## Habilidade de corrida liberada? Habilidades sem entrada em meta.csv nascem liberadas.
-## Habilidade que o core não conhece (árvore do guerreiro, ainda no GDScript) nasce liberada.
 func liberada(upgrade_id: String) -> bool:
 	return nucleo.habilidade_liberada(upgrade_id) != 0
 

@@ -12,7 +12,7 @@ const Nucleo = preload("res://scripts2d/nucleo_2d.gd")
 const SLOTS := 4
 ## Save antigo (antes do core): {classe: {niveis, slots, pontos}}. O meta_2d.gd o migra para o save do core uma vez.
 const LEGADO := "user://habilidades_2d.json"
-const CAMPOS_NUM := ["tier", "pontos", "nivel_max", "cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor", "escala"]
+const CAMPOS_NUM := ["tier", "pontos", "nivel_max", "cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor", "escala", "espera", "recup"]
 
 ## Save de um núcleo próprio (sem o núcleo do meta). Vazio = não grava. Os testes apontam para um arquivo deles.
 static var caminho := ""
@@ -149,6 +149,13 @@ func tick(delta: float) -> void:
 			if recargas[id] <= 0.0:
 				recargas.erase(id)
 
+## Zera as recargas da classe (reset do jogador; o core também zera ao começar uma corrida). O tick longo é a mesma
+## regra do core, sem caminho novo na API.
+func limpar_recargas() -> void:
+	if nucleo != null:
+		nucleo.habilidades_tick(1.0e9)
+	recargas.clear()
+
 ## Fração 0..1 da recarga do slot (0 = pronto), para a HUD.
 func recarga_slot(slot: int) -> float:
 	if nucleo == null or slot < 0 or slot >= SLOTS:
@@ -174,6 +181,16 @@ func usar(slot: int, jogador: Node2D, mira: Vector2) -> bool:
 	sincronizar(false)
 	usada.emit(slot, id)
 	return true
+
+## Inicia a recarga da ativa `id` sem passar por usar(): para classes que pagam com outro recurso (o ímpeto do Guerreiro)
+## e já rodaram o efeito. `recurso` é o que a classe tem para pagar; o core confere slot, recarga e custo.
+func iniciar_recarga(id: String, recurso: float) -> bool:
+	var slot := slots.find(id)
+	if nucleo == null or id == "" or slot < 0:
+		return false
+	var ok: bool = int(nucleo.habilidade_usar(slot, recurso)["resultado"]) == 0
+	sincronizar(false)
+	return ok
 
 ## Aplica as passivas aprendidas sobre os stats (idempotente: parte sempre de `base`), calculadas pelo core.
 func aplicar_passivas(base: Dictionary) -> Dictionary:

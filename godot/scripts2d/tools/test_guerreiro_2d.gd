@@ -3,7 +3,8 @@ extends RefCounted
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Icones = preload("res://scripts2d/icones_2d.gd")
-const SkillsScript = preload("res://scripts2d/skills_guerreiro_2d.gd")
+const HabScript = preload("res://scripts2d/habilidades_2d.gd")
+const CorridaScript = preload("res://scripts2d/corrida_guerreiro_2d.gd")
 const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
 const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
@@ -23,14 +24,23 @@ func rodar() -> void:
 	await _ativas()
 	await _corrida()
 
-func _novo_guerreiro() -> Node2D:
+## Árvore do guerreiro sem save em disco e com pontos de sobra.
+func _hab(pontos := 60) -> RefCounted:
+	var h = HabScript.new()
+	h.persistir = false
+	h.carregar_classe("guerreiro")
+	h.ganhar_pontos(pontos)
+	return h
+
+func _novo_guerreiro(pontos := 0) -> Node2D:
 	var j: Node2D = WarriorScript.new()
+	j.habilidades = _hab(pontos)
 	t.root.add_child(j)
 	await t.physics_frame
 	return j
 
 func _dados() -> void:
-	var sk = SkillsScript.new()
+	var sk = _hab()
 	check.call(sk.defs.size() >= 15 and sk.defs.size() <= 20, "guerreiro: 15 a 20 habilidades (%d)" % sk.defs.size())
 	var ramos := {}
 	var ativas := 0
@@ -58,38 +68,34 @@ func _dados() -> void:
 			check.call(stats.has(sk.defs[id]["stat"]), "%s: stat %s existe em guerreiro.csv" % [id, sk.defs[id]["stat"]])
 
 func _arvore() -> void:
-	var j = await _novo_guerreiro()
-	var sk = SkillsScript.new()
-	j.skills = sk
-	sk.restaurar(j)
+	var j = await _novo_guerreiro(60)
+	var sk = j.habilidades
+	var run = CorridaScript.new()
+	run.habilidades = sk
+	run.restaurar(j)
 	j.reset()
-	var disp: Array = sk.disponiveis()
-	check.call(disp.has("w_keen_edge") and disp.has("w_charge") and not disp.has("w_heavy_slash"), "arvore: só raízes no começo")
+	check.call(sk.pode_aprender("w_keen_edge") and sk.pode_aprender("w_charge") and not sk.pode_aprender("w_heavy_slash"), "arvore: só raízes no começo")
 	var dano0: float = j.stats["damage"]
-	check.call(sk.escolher("w_keen_edge", j), "aprende Fio Afiado")
+	check.call(sk.aprender("w_keen_edge"), "aprende Fio Afiado")
+	run.reaplicar(j)
 	check.call(is_equal_approx(j.stats["damage"], dano0 * 1.2), "Fio Afiado: +20% de dano")
-	check.call(sk.disponiveis().has("w_heavy_slash"), "Fio Afiado libera Talho Pesado")
-	check.call(not sk.escolher("w_stone_rift", j), "não pula a árvore")
+	check.call(sk.pode_aprender("w_heavy_slash"), "Fio Afiado libera Talho Pesado")
+	check.call(not sk.aprender("w_stone_rift"), "não pula a árvore")
 	var hp0: float = j.stats["hp_max"]
-	sk.escolher("w_vigor", j)
+	sk.aprender("w_vigor")
+	run.reaplicar(j)
 	check.call(j.stats["hp_max"] == hp0 + 30.0 and is_equal_approx(j.hp, j.stats["hp_max"]), "Vigor: +30 de vida e cura")
-	# slots: as 4 primeiras ativas ocupam as teclas, a quinta nova não é mais oferecida
-	sk.escolher("w_iron_skin", j)
+	sk.aprender("w_iron_skin")
 	for id in ["w_heavy_slash", "w_whirlwind", "w_charge", "w_shield_bash"]:
-		check.call(sk.escolher(id, j), "aprende %s" % id)
-	check.call(sk.slots.size() == 4, "4 ativas ocupam 4 teclas")
-	check.call(not sk.disponiveis().has("w_guard_stance") and not sk.escolher("w_guard_stance", j), "tecla cheia: não oferece ativa nova")
-	check.call(sk.escolher("w_heavy_slash", j), "ativa já aprendida ainda sobe de nível")
-	var d := sk.def("w_heavy_slash")
-	check.call(d["dano"] > sk.defs["w_heavy_slash"]["dano"], "nível 2 aumenta o dano da ativa")
-	sk.restaurar(j)
-	check.call(sk.niveis.is_empty() and sk.slots.is_empty() and is_equal_approx(j.stats["damage"], dano0), "restaurar zera a árvore")
-	# sorteio determinístico
-	var r1 := RandomNumberGenerator.new()
-	var r2 := RandomNumberGenerator.new()
-	r1.seed = 5
-	r2.seed = 5
-	check.call(sk.sortear(r1, 3) == sk.sortear(r2, 3), "sorteio determinístico")
+		check.call(sk.aprender(id), "aprende %s" % id)
+	check.call(sk.slots.count("") == 0 and sk.slots[0] == "w_heavy_slash", "4 ativas ocupam 4 teclas")
+	check.call(sk.aprender("w_flame_brand") and not sk.slots.has("w_flame_brand"), "quinta ativa fica sem tecla até equipar")
+	check.call(sk.aprender("w_heavy_slash"), "ativa já aprendida ainda sobe de nível")
+	check.call(sk.def_nivel("w_heavy_slash")["dano"] > sk.defs["w_heavy_slash"]["dano"], "nível 2 aumenta o dano da ativa")
+	check.call(sk.def_nivel("w_heavy_slash")["espera"] == sk.defs["w_heavy_slash"]["espera"], "espera e recup chegam à definição")
+	sk.redistribuir()
+	run.reaplicar(j)
+	check.call(sk.niveis.is_empty() and is_equal_approx(j.stats["damage"], dano0), "redistribuir zera a árvore")
 	j.queue_free()
 
 func _inimigo(pos: Vector2, id := "hollow_sentinel", hp := 100000.0) -> Node2D:
@@ -162,22 +168,21 @@ func _combate() -> void:
 	await t.physics_frame
 
 func _ativas() -> void:
-	var j = await _novo_guerreiro()
-	var sk = SkillsScript.new()
-	j.skills = sk
-	sk.restaurar(j)
+	var j = await _novo_guerreiro(0)
+	var sk = j.habilidades
+	var run = CorridaScript.new()
+	run.habilidades = sk
+	run.restaurar(j)
 	j.reset()
 	j.global_position = Vector2(500, 500)
 	j.god_mode = true
 	for id in ["w_keen_edge", "w_heavy_slash", "w_whirlwind", "w_stone_rift", "w_flame_brand", "w_shield_bash", "w_charge", "w_battle_cry", "w_leap_slam", "w_rampage"]:
-		# aprende a cadeia necessária (ignora tecla cheia: cada ativa é testada isolada)
-		sk.slots.clear()
-		for pai in _cadeia(sk, id):
-			sk.niveis[pai] = 1
-	sk.slots.clear()
-	for id in sk.ordem:
-		if sk.nivel(id) > 0 and sk.eh_ativa(id):
-			sk.slots.append(id)
+		var cadeia := _cadeia(sk, id)
+		cadeia.reverse()   # cada ativa é testada isolada: a cadeia é aprendida no core, pais primeiro
+		for pai in cadeia:
+			if sk.nivel(pai) == 0:
+				sk.ganhar_pontos(int(sk.defs[pai]["pontos"]))
+				check.call(sk.aprender(pai), "aprende %s" % pai)
 	var e := _inimigo(Vector2(580, 500))
 	var vida := 100000.0
 	var testes := {
@@ -189,7 +194,8 @@ func _ativas() -> void:
 		j.global_position = Vector2(500, 500)
 		j.velocity = Vector2.ZERO
 		j.estado = j.Estado.LIVRE
-		j._cds.clear()
+		sk.equipar(0, id)
+		sk.limpar_recargas()
 		j._aim = Vector2.RIGHT
 		j.invencivel = 0.0
 		check.call(j.usar(id), "%s: usar começa" % id)
@@ -200,7 +206,9 @@ func _ativas() -> void:
 		check.call(e.hp < vida, "%s: causa dano" % id)
 		check.call(j.estado == j.Estado.LIVRE, "%s: termina e libera o jogador" % id)
 	# buffs
-	j._cds.clear()
+	sk.equipar(0, "w_battle_cry")
+	sk.equipar(1, "w_rampage")
+	sk.limpar_recargas()
 	j.estado = j.Estado.LIVRE
 	check.call(j.usar("w_battle_cry"), "Grito de Guerra")
 	for _i in 30:
@@ -219,14 +227,14 @@ func _ativas() -> void:
 	check.call(j._buff_furia > 0.0 and j._taxa_ataque() > 1.4, "Fúria acelera os golpes")
 	# HUD
 	var slots: Array = j.slots_hud()
-	check.call(slots.size() == 2 + sk.slots.size() and slots[0]["icone"] == "golpe", "slots do HUD: golpe, esquiva e ativas")
+	check.call(slots.size() == 2 + sk.slots.size() - sk.slots.count("") and slots[0]["icone"] == "golpe", "slots do HUD: golpe, esquiva e ativas")
 	# morte e reset
 	j.god_mode = false
 	j.invencivel = 0.0
 	j.take_damage(1.0e6, Vector2(900, 500))
 	check.call(j.esta_morto(), "guerreiro morre")
 	j.reset()
-	check.call(not j.esta_morto() and j.impeto == 0.0 and j._cds.is_empty(), "reset limpa o estado")
+	check.call(not j.esta_morto() and j.impeto == 0.0 and j.habilidades.recargas.is_empty(), "reset limpa o estado")
 	e.queue_free()
 	j.queue_free()
 	await t.physics_frame
@@ -246,7 +254,7 @@ func _corrida() -> void:
 	t.root.add_child(run)
 	await t.physics_frame
 	var p = run.player
-	check.call(p.has_method("slots_hud") and run.upgrades.defs.has("w_keen_edge"), "corrida com guerreiro usa a árvore de habilidades")
+	check.call(p.has_method("slots_hud") and p.habilidades.defs.has("w_keen_edge") and run.upgrades.habilidades == p.habilidades, "corrida com guerreiro usa a árvore comum")
 	p.god_mode = true
 	check.call(run.estado == run.Estado.LUTA and run.vivos == 3, "sala 1 começa com 3 inimigos")
 	var alvo = t.get_nodes_in_group("hurtable")[0]
@@ -261,15 +269,15 @@ func _corrida() -> void:
 	p.auto_aim = Vector2.ZERO
 	p.auto_move = Vector2.ZERO
 	check.call(not is_instance_valid(alvo) or alvo.hp < antes, "espada derruba inimigo na corrida")
-	# cartas de habilidade ao limpar a sala
+	# sala limpa: ganha ponto de habilidade (sem cartas) e a porta abre
+	var pontos0: int = p.habilidades.pontos
 	run.matar_todos()
 	var espera := 0.0
-	while run.estado != run.Estado.ESCOLHA and espera < 8.0:
+	while not (run.estado == run.Estado.LIMPA and run.hud.mensagem != "") and espera < 8.0:
 		await t.physics_frame
 		espera += 1.0 / 60.0
-	check.call(run.estado == run.Estado.ESCOLHA and run.ui.aberta, "sala limpa oferece cartas de habilidade")
-	run.ui.escolher(0)
-	check.call(run._total_upgrades() == 1, "carta escolhida entra na árvore")
+	check.call(p.habilidades.pontos > pontos0, "sala limpa dá ponto de habilidade ao guerreiro")
+	check.call(not run.ui.aberta, "guerreiro não recebe cartas do core")
 	# volta ao arqueiro
 	Classe.atual = "arqueiro"
 	run.queue_free()
