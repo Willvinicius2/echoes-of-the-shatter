@@ -10,6 +10,8 @@ func _initialize() -> void:
 	var run = RunScene.instantiate()
 	root.add_child(run)
 	await physics_frame
+	run.menus.fechar()  # a corrida abre no título; fecha o menu para ver a sala
+	root.get_tree().paused = false
 	run._carregar_sala(0, {"room": sala, "enemies": [], "tipo": "combate"})
 	run.player.god_mode = true
 	for i in 60:
