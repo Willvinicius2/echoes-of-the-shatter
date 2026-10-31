@@ -113,7 +113,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 		# Terra úmida em 3 degraus translúcidos (4 a 6 px cada), com ruído próprio: a borda esfuma no gramado sem corte reto.
 		for degrau in 3:
 			var folga: float = [14.0, 9.0, 4.0][degrau]
-			var alfa: float = [0.2, 0.3, 0.45][degrau]
+			var alfa: float = [0.28, 0.4, 0.55][degrau]
 			var cor_terra := Color(0.2, 0.16, 0.1, alfa)
 			var anel := faixa(linha, c["larg"] * tile + folga * 2.0, 5.0 - degrau, 21 + i * 3 + degrau)
 			if anel.is_empty():
@@ -193,17 +193,21 @@ static func _expandir(pts: PackedVector2Array, centro: Vector2, d: float) -> Pac
 		out.append(p + (p - centro).normalized() * d)
 	return out
 
-## Faixa de musgo sobre a beira das lajes: amacia o contorno do caminho.
+## Manchas de musgo escuro e esmaecido, descontínuas, sobre a beira das lajes (sem desenhar um contorno).
 static func _musgo_na_borda(raiz: Node2D, contorno: PackedVector2Array) -> void:
-	for camada in 2:
-		var l := Line2D.new()
-		l.points = contorno
-		l.closed = true
-		l.width = [9.0, 4.0][camada]
-		l.default_color = [Color(0.2, 0.3, 0.13, 0.32), Color(0.3, 0.42, 0.2, 0.4)][camada]
-		l.joint_mode = Line2D.LINE_JOINT_ROUND
-		l.z_index = 1
-		raiz.add_child(l)
+	var i := 0
+	while i < contorno.size():
+		var h := hash(Vector2i(i, 313))
+		var c := contorno[i]
+		var raio := 7.0 + posmod(h, 5)
+		var pts := PackedVector2Array()
+		for a in 8:
+			var ang := TAU * a / 8.0
+			var rr := raio * (0.7 + 0.5 * float(posmod(h / (a + 3), 10)) / 10.0)
+			pts.append(c + Vector2(cos(ang) * rr, sin(ang) * rr * 0.7))
+		var cor := Color(0.13, 0.2, 0.1, 0.3 + 0.12 * float(posmod(h / 7, 4)) / 3.0)
+		_poligono(raiz, pts, cor).z_index = 1
+		i += 2 + posmod(h / 5, 4)
 
 ## Lajes soltas e musgo espalhados pela borda do caminho.
 static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: int) -> void:
