@@ -209,15 +209,19 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 	var n := Vector2(-d.y, d.x)
 	if n.x < 0.0:
 		n = -n  # n aponta para a direita da tela (lado da sombra)
-	# beiradas da água ao longo do eixo
-	var a0 := meio
-	while Geometry2D.is_point_in_polygon(a0 - d * 2.0, agua) and a0.distance_to(meio) < 400.0:
-		a0 -= d * 2.0
-	var b0 := meio
-	while Geometry2D.is_point_in_polygon(b0 + d * 2.0, agua) and b0.distance_to(meio) < 400.0:
-		b0 += d * 2.0
+	# eixo: do ponto em que o caminho entra na água ao ponto em que sai (assim a ponte nasce centrada na trilha)
+	var a0: Vector2 = trecho[0]
+	var b0: Vector2 = trecho[trecho.size() - 1]
+	if d != corda:
+		a0 = meio
+		while Geometry2D.is_point_in_polygon(a0 - d * 2.0, agua) and a0.distance_to(meio) < 400.0:
+			a0 -= d * 2.0
+		b0 = meio
+		while Geometry2D.is_point_in_polygon(b0 + d * 2.0, agua) and b0.distance_to(meio) < 400.0:
+			b0 += d * 2.0
 	var a := a0 - d * 30.0  # a ponte entra 30 px pelas margens, para assentar na terra
 	var b := b0 + d * 30.0
+	var filho0 := raiz.get_child_count()  # tudo que a ponte criar a partir daqui ganha antialias no fim
 	var meia := larg_caminho * 0.5  # mesma largura da trilha, centrada nela
 	var ret := func(p0: Vector2, p1: Vector2, half: float) -> PackedVector2Array:
 		return PackedVector2Array([p0 + n * half, p1 + n * half, p1 - n * half, p0 - n * half])
@@ -256,12 +260,15 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 			out.append(Vector2((q - a).dot(d), (q - a).dot(n) + 64.0))
 		return out
 	var tabuleiro_tex := _textura_tabuleiro()
-	# 1) sombra na água: anel escuro em volta da ponte (oclusão, dos dois lados) e sombra deslocada para baixo-direita
-	for q in Geometry2D.intersect_polygons(ret.call(a, b, meia + 14.0), agua):
-		_poligono(raiz, q, Color(0.01, 0.04, 0.06, 0.4))
-	var desloc := Vector2(12.0, 18.0)
-	for q in Geometry2D.intersect_polygons(ret.call(a + desloc, b + desloc, meia + 12.0), agua):
-		_poligono(raiz, q, Color(0.01, 0.04, 0.06, 0.5))
+	# 1) sombra na água, em camadas translúcidas para a borda sair macia: anel em volta da ponte inteira
+	#    (oclusão dos dois lados) e sombra curta deslocada para baixo-direita
+	for camada in [[6.0, 0.22], [11.0, 0.16], [16.0, 0.1]]:
+		for q in Geometry2D.intersect_polygons(ret.call(a, b, meia + camada[0]), agua):
+			_poligono(raiz, q, Color(0.01, 0.04, 0.06, camada[1]))
+	var desloc := Vector2(7.0, 11.0)
+	for camada in [[3.0, 0.2], [8.0, 0.14], [13.0, 0.08]]:
+		for q in Geometry2D.intersect_polygons(ret.call(a + desloc, b + desloc, meia + camada[0]), agua):
+			_poligono(raiz, q, Color(0.01, 0.04, 0.06, camada[1]))
 	# 2) encontros: a laje do tabuleiro continua pela margem, com soleira escura só na junta com a trilha
 	for ponta in [[a - d * 8.0, a + d * 2.0], [b - d * 2.0, b + d * 8.0]]:
 		var sol: PackedVector2Array = ret.call(ponta[0], ponta[1], meia + 2.0)
@@ -279,7 +286,7 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 	_poligono(raiz, ret.call(a - d * 8.0 - n * (meia - 1.5), b + d * 8.0 - n * (meia - 1.5), 1.5), Color(0.9, 0.92, 0.96, 0.3))
 	_poligono(raiz, ret.call(a - d * 8.0 + n * (meia - 3.0), b + d * 8.0 + n * (meia - 3.0), 3.0), Color(0.04, 0.04, 0.05, 0.35))
 	for ponta in [a + d * 1.0, b - d * 1.0]:
-		_poligono(raiz, ret.call(ponta - d * 1.0, ponta + d * 1.0, meia + 2.0), Color(0.08, 0.08, 0.1, 0.55))  # soleira
+		_poligono(raiz, ret.call(ponta - d * 0.8, ponta + d * 0.8, meia + 1.0), Color(0.08, 0.08, 0.1, 0.3))  # soleira
 	# 4) reflexo claro tremido na água, colado às beiradas (por cima da sombra)
 	for lado in [-1.0, 1.0]:
 		var beira := PackedVector2Array()
@@ -327,6 +334,10 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 		_poligono(raiz, ret.call(c0 + Vector2(0, -alt_m) + n * 6.0, c1 + Vector2(0, -alt_m) + n * 6.0, 1.0), Color(0.05, 0.05, 0.06, 0.5))  # aresta de sombra
 		for pt in [c0, c1]:
 			_pilarete(raiz, pt, tabuleiro_tex, d, n)
+	for i in range(filho0, raiz.get_child_count()):
+		var f := raiz.get_child(i)
+		if f is Polygon2D:
+			f.antialiased = true
 	return PackedVector2Array([a0, b0])
 
 ## Bloco de pedra nas pontas das muretas, alinhado ao eixo da ponte: sombra no chão, corpo de 20 px
