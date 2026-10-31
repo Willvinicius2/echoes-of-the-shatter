@@ -31,6 +31,12 @@ set_target_properties(shatter_gdextension PROPERTIES
   PREFIX "" OUTPUT_NAME "libshatter_gdextension.${_so}"
   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+# Visual Studio (multi-config) acrescenta Release/ ao diretório de saída; fixa o mesmo diretório em todas as configurações.
+foreach(_cfg RELEASE DEBUG RELWITHDEBINFO MINSIZEREL)
+  set_target_properties(shatter_gdextension PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY_${_cfg} ${CMAKE_CURRENT_SOURCE_DIR}/bin
+    RUNTIME_OUTPUT_DIRECTORY_${_cfg} ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+endforeach()
 if(WIN32)
   set_target_properties(shatter_gdextension PROPERTIES OUTPUT_NAME "shatter_gdextension.${_so}")
 endif()
