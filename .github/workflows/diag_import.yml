@@ -46,6 +46,7 @@ jobs:
           git add -A godot && git -c user.name=x -c user.email=x@x commit -qm variante || true
       - name: 15 importações limpas
         run: |
+          set +e
           falhas=0
           for i in $(seq 1 15); do
             git clean -fdqx godot; git checkout -q -- godot
