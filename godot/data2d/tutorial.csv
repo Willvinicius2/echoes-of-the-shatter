@@ -1,0 +1,4 @@
+passo,acoes,loc,segundos_max
+1,move_up|move_down|move_left|move_right,tutorial.move,20
+2,shoot,tutorial.shoot,20
+3,dodge,tutorial.dodge,20

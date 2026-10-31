@@ -1,0 +1,17 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://q7hmlbpbctih"
+
+[deps]
+
+files=["res://data2d/teclas.loc.translation"]
+
+source_file="res://data2d/teclas.csv"
+dest_files=["res://data2d/teclas.loc.translation"]
+
+[params]
+
+compress=true
+delimiter=0

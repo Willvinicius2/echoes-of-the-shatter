@@ -1,0 +1,5 @@
+id,steam_id,evento,loc
+primeira_corrida,ACH_FIRST_RUN,corrida_fim,ach.first_run
+cripta_vencida,ACH_CRYPT_CLEARED,vitoria,ach.crypt_cleared
+primeira_forja,ACH_FIRST_FORGE,amuleto_criado,ach.first_forge
+primeira_melhoria,ACH_FIRST_UPGRADE,melhoria_comprada,ach.first_upgrade
