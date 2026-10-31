@@ -86,8 +86,8 @@ recipe.po_afiado.name,Po Afiado
 menu.route_title,Escolha o caminho
 menu.route_hint,A cripta se divide a frente
 route.combate,Corredor dos mortos: combate normal
-route.elite_ossuario,Ossuario profundo: elite (mais perigo, mais fragmentos e uma carta extra)
-route.descanso_cripta,Nicho de descanso: recupera vida, sem combate
+route.elite_ossuario,"Ossuario profundo: elite (mais perigo, mais fragmentos e uma carta extra)"
+route.descanso_cripta,"Nicho de descanso: recupera vida, sem combate"
 hud.rest,Nicho de descanso: a vida foi recuperada. Siga pela porta
 enemy.ossuary_captain.name,Capitao do Ossuario
 enemy.ossuary_warden.name,Carcereiro do Ossuario
