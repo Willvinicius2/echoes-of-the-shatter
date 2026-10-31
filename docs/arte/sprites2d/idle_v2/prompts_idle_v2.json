@@ -1,0 +1,42 @@
+[
+ {
+  "id": "idle_arqueiro",
+  "tamanho": "1536x1280",
+  "prompt": "Folha de sprites 2D top-down de ARPG, pintura à mão, contorno escuro de 2 a 3 px, fundo magenta #FF00FF para recorte, luz do alto à esquerda, sem sombra de chão. Grade 6 colunas x 5 linhas, células 256x256 (6 quadros de idle por direção; linhas: S, SE, E, NE, N). Mesmo personagem, silhueta e paleta da folha de referência; só muda a pose entre os quadros: respiração com o tronco e a capa subindo e descendo 2 a 3 px, leve balanço de cabeça e do equipamento, 6 quadros distintos em ciclo suave, o quadro 6 volta ao 1. arqueiro de roupa verde, capuz curto, arco e aljava.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\arqueiro\\arqueiro_idle.png"
+  ]
+ },
+ {
+  "id": "idle_crypt_guardian",
+  "tamanho": "1536x1280",
+  "prompt": "Folha de sprites 2D top-down de ARPG, pintura à mão, contorno escuro de 2 a 3 px, fundo magenta #FF00FF para recorte, luz do alto à esquerda, sem sombra de chão. Grade 6 colunas x 5 linhas, células 256x256 (6 quadros de idle por direção; linhas: S, SE, E, NE, N). Mesmo personagem, silhueta e paleta da folha de referência; só muda a pose entre os quadros: respiração com o tronco e a capa subindo e descendo 2 a 3 px, leve balanço de cabeça e do equipamento, 6 quadros distintos em ciclo suave, o quadro 6 volta ao 1. Guardião da Cripta, chefe de armadura vermelha e escudo grande, martelo.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\crypt_guardian\\crypt_guardian_idle.png"
+  ]
+ },
+ {
+  "id": "idle_hollow_sentinel",
+  "tamanho": "1536x1280",
+  "prompt": "Folha de sprites 2D top-down de ARPG, pintura à mão, contorno escuro de 2 a 3 px, fundo magenta #FF00FF para recorte, luz do alto à esquerda, sem sombra de chão. Grade 6 colunas x 5 linhas, células 256x256 (6 quadros de idle por direção; linhas: S, SE, E, NE, N). Mesmo personagem, silhueta e paleta da folha de referência; só muda a pose entre os quadros: respiração com o tronco e a capa subindo e descendo 2 a 3 px, leve balanço de cabeça e do equipamento, 6 quadros distintos em ciclo suave, o quadro 6 volta ao 1. sentinela oca de armadura dourada com escudo redondo e espada.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\hollow_sentinel\\hollow_sentinel_idle.png"
+  ]
+ },
+ {
+  "id": "idle_hollow_spearman",
+  "tamanho": "1536x1280",
+  "prompt": "Folha de sprites 2D top-down de ARPG, pintura à mão, contorno escuro de 2 a 3 px, fundo magenta #FF00FF para recorte, luz do alto à esquerda, sem sombra de chão. Grade 6 colunas x 5 linhas, células 256x256 (6 quadros de idle por direção; linhas: S, SE, E, NE, N). Mesmo personagem, silhueta e paleta da folha de referência; só muda a pose entre os quadros: respiração com o tronco e a capa subindo e descendo 2 a 3 px, leve balanço de cabeça e do equipamento, 6 quadros distintos em ciclo suave, o quadro 6 volta ao 1. lanceiro oco de armadura dourada com lança e escudo.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\hollow_spearman\\hollow_spearman_idle.png"
+  ]
+ },
+ {
+  "id": "idle_skeleton_soldier",
+  "tamanho": "1536x1280",
+  "prompt": "Folha de sprites 2D top-down de ARPG, pintura à mão, contorno escuro de 2 a 3 px, fundo magenta #FF00FF para recorte, luz do alto à esquerda, sem sombra de chão. Grade 6 colunas x 5 linhas, células 256x256 (6 quadros de idle por direção; linhas: S, SE, E, NE, N). Mesmo personagem, silhueta e paleta da folha de referência; só muda a pose entre os quadros: respiração com o tronco e a capa subindo e descendo 2 a 3 px, leve balanço de cabeça e do equipamento, 6 quadros distintos em ciclo suave, o quadro 6 volta ao 1. soldado esqueleto com elmo enferrujado, escudo redondo e espada.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\godot\\art2d\\sprites\\skeleton_soldier\\skeleton_soldier_idle.png"
+  ]
+ }
+]
