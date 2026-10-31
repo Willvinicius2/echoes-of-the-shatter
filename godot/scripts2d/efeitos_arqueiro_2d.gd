@@ -58,8 +58,10 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			return false
 	return true
 
-## Ponto no chão mirado: até onde o mouse aponta (limitado ao alcance); sem mouse, 70% do alcance.
+## Ponto no chão mirado: o alvo do autocast (limitado ao alcance); senão até onde o mouse aponta; sem mouse, 70% do alcance.
 static func _ponto(jogador: Node2D, dir: Vector2, alcance: float) -> Vector2:
+	if jogador.has_method("tem_alvo_auto") and jogador.tem_alvo_auto():
+		return jogador.ponto_mira(alcance)
 	var d: float = 0.7 * alcance
 	if jogador.auto_aim == Vector2.ZERO:
 		var m: Vector2 = jogador.get_global_mouse_position() - jogador.global_position

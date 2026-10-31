@@ -55,3 +55,53 @@ static func golpear(alvo: Node, dano: float, origem: Vector2, status: Dictionary
 	alvo.take_damage(dano, origem)
 	if not status.is_empty() and is_instance_valid(alvo) and alvo.has_method("aplicar_status"):
 		alvo.aplicar_status(status["tipo"], status["dur"], status["valor"])
+
+# ---- autocast: escolha de alvo das habilidades (coluna `mira` de data2d/habilidades_mira.csv) ----------------
+
+## Acessibilidade: com true, o básico e as habilidades disparam sozinhos mas miram no cursor (ou no analógico).
+static var mira_mouse := false
+
+## Quantos inimigos vivos estão a até `raio` de `centro` (com o raio deles descontado).
+static func contar_em(arvore: SceneTree, centro: Vector2, raio: float) -> int:
+	return em_circulo(arvore, centro, raio).size()
+
+## Inimigo, dentro de `alcance`, com mais vizinhos a até `raio_grupo`; empate fica com o mais próximo.
+static func centro_de_grupo(arvore: SceneTree, pos: Vector2, alcance: float, raio_grupo: float) -> Node2D:
+	var perto := em_circulo(arvore, pos, alcance)
+	var melhor: Node2D = null
+	var melhor_n := -1
+	var melhor_d := INF
+	for a in perto:
+		var n := 0
+		for b in perto:
+			if a.global_position.distance_to(b.global_position) <= raio_grupo:
+				n += 1
+		var d: float = a.global_position.distance_to(pos)
+		if n > melhor_n or (n == melhor_n and d < melhor_d):
+			melhor = a
+			melhor_n = n
+			melhor_d = d
+	return melhor
+
+## Decide se uma habilidade com autocast dispara agora e para onde.
+## `mira`: proximo (no inimigo mais próximo), grupo (no maior grupo), si (em volta do jogador), fuga (para longe do
+## mais próximo). `alcance`: distância em que precisa haver inimigo. `min_alvos`: quantos inimigos no alcance.
+## `raio_grupo`: raio da área da habilidade, usado pelo `grupo`. Devolve {} (não dispara) ou {dir, ponto}.
+static func escolher(arvore: SceneTree, pos: Vector2, mira: String, alcance: float, min_alvos: int, raio_grupo: float) -> Dictionary:
+	if arvore == null or mira == "" or mira == "manual":
+		return {}
+	var perto := mais_proximo(arvore, pos, alcance)
+	if perto == null:
+		return {}
+	if min_alvos > 1 and contar_em(arvore, pos, alcance) < min_alvos:
+		return {}
+	var alvo: Node2D = perto
+	if mira == "grupo":
+		var g := centro_de_grupo(arvore, pos, alcance, maxf(raio_grupo, 1.0))
+		if g != null:
+			alvo = g
+	var v: Vector2 = alvo.global_position - pos
+	var dir := v.normalized() if v.length() > 0.5 else Vector2.DOWN
+	if mira == "fuga":
+		return {"dir": -dir, "ponto": pos - dir * 1.0e4}   # quem usa limita ao alcance da habilidade
+	return {"dir": dir, "ponto": alvo.global_position}

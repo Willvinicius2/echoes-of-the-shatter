@@ -8,8 +8,11 @@ extends RefCounted
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Nucleo = preload("res://scripts2d/nucleo_2d.gd")
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 
 const SLOTS := 4
+## Autocast: como cada ativa (e o ataque básico, id `basico`) escolhe o alvo e se é a ult manual. Ver alvos_2d.escolher.
+const MIRAS := "res://data2d/habilidades_mira.csv"
 ## Save antigo (antes do core): {classe: {niveis, slots, pontos}}. O meta_2d.gd o migra para o save do core uma vez.
 const LEGADO := "user://habilidades_2d.json"
 const CAMPOS_NUM := ["tier", "pontos", "nivel_max", "cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor", "escala", "espera", "recup"]
@@ -32,6 +35,7 @@ var persistir := true     # falso: o núcleo próprio não lê nem grava o save
 var nucleo: Object
 var _proprio := false
 var _efeitos: GDScript
+var miras := {}           # id -> {mira, ult, alcance, min_alvos} da classe (data2d/habilidades_mira.csv)
 
 ## Linhas de data2d/classes_2d.csv por id.
 static func classes() -> Dictionary:
@@ -48,6 +52,7 @@ func carregar_classe(id: String, caminho_csv := "", caminho_efeitos := "") -> vo
 	ordem.clear()
 	_efeitos = null
 	var cl: Dictionary = classes().get(id, {})
+	miras = carregar_miras(id)
 	var csv: String = caminho_csv if caminho_csv != "" else cl.get("habilidades", "")
 	if csv != "" and FileAccess.file_exists(csv):
 		for r in Csv.rows(csv):
@@ -95,6 +100,65 @@ func sincronizar(avisar := true) -> void:
 			recargas[str(s["id"])] = float(s["cooldown"])
 	if avisar:
 		mudou.emit()
+
+## Tecla da ult (botão direito do mouse, X e o botão Y do controle), criada na hora se o projeto não a tiver.
+static func registrar_tecla_ult() -> void:
+	if InputMap.has_action("ult"):
+		return
+	InputMap.add_action("ult")
+	var m := InputEventMouseButton.new()
+	m.button_index = MOUSE_BUTTON_RIGHT
+	InputMap.action_add_event("ult", m)
+	var k := InputEventKey.new()
+	k.physical_keycode = KEY_X
+	InputMap.action_add_event("ult", k)
+	var j := InputEventJoypadButton.new()
+	j.button_index = JOY_BUTTON_Y
+	InputMap.action_add_event("ult", j)
+
+## Linhas de habilidades_mira.csv da classe `id`, por id de habilidade.
+static func carregar_miras(id: String) -> Dictionary:
+	var out := {}
+	if not FileAccess.file_exists(MIRAS):
+		return out
+	for r in Csv.rows(MIRAS):
+		if r.get("classe", "") == id:
+			out[r["id"]] = {"mira": str(r.get("mira", "")), "ult": str(r.get("ult", "0")) == "1",
+				"alcance": float(r["alcance"]) if str(r.get("alcance", "")) != "" else 0.0,
+				"min_alvos": maxi(1, int(str(r.get("min_alvos", "1"))))}
+	return out
+
+## Como a ativa `id` mira no autocast; vazio = sem autocast (só pela tecla).
+func mira_de(id: String) -> String:
+	return str(miras.get(id, {}).get("mira", ""))
+
+## A ult não dispara sozinha: só na tecla de ult (ou na do slot).
+func eh_ult(id: String) -> bool:
+	return bool(miras.get(id, {}).get("ult", false))
+
+## Slot que guarda a ult equipada (-1 se nenhuma).
+func slot_ult() -> int:
+	for i in SLOTS:
+		if slots[i] != "" and eh_ult(slots[i]):
+			return i
+	return -1
+
+## A ativa `id` dispara sozinha (equipada, com mira definida, não manual e não ult)?
+func automatica(id: String) -> bool:
+	var m := mira_de(id)
+	return id != "" and m != "" and m != "manual" and not eh_ult(id)
+
+## Alvo do autocast para `id` (ou `basico`) a partir de `pos`: {} = não há o que acertar agora; senão {dir, ponto}.
+## `alcance_padrao` vale quando o CSV de miras deixa o alcance vazio.
+func alvo_auto(id: String, arvore: SceneTree, pos: Vector2, alcance_padrao := 0.0) -> Dictionary:
+	var m: Dictionary = miras.get(id, {})
+	if m.is_empty():
+		return {}
+	var alcance: float = m["alcance"] if m["alcance"] > 0.0 else alcance_padrao
+	var raio := 0.0
+	if defs.has(id):
+		raio = float(def_nivel(id).get("raio", 0.0))
+	return Alvos.escolher(arvore, pos, m["mira"], alcance, m["min_alvos"], raio)
 
 func nivel(id: String) -> int:
 	return int(niveis.get(id, 0))
