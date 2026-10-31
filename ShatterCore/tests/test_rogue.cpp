@@ -72,10 +72,10 @@ TEST(rogue_data_loads_real_csv) {
     for (const ContentError& e : d.Errors()) FAIL(e.table + ":" + std::to_string(e.line) + " " + e.message);
     ASSERT_TRUE(d.Ok());
     EXPECT_EQ(d.MetaDefs().size(), std::size_t(6));
-    EXPECT_EQ(d.Recipes().size(), std::size_t(7));
-    EXPECT_EQ(d.Drops().size(), std::size_t(9));
+    EXPECT_EQ(d.Recipes().size(), std::size_t(9));
+    EXPECT_EQ(d.Drops().size(), std::size_t(13));
     EXPECT_EQ(d.Stages().size(), std::size_t(4));
-    EXPECT_EQ(d.Upgrades().size(), std::size_t(7));
+    EXPECT_EQ(d.Upgrades().size(), std::size_t(8));
     EXPECT_EQ(d.UpgradeCards(), 3);
     EXPECT_EQ(d.EliteExtraCards(), 1);
     EXPECT_EQ(d.RoomClearFragments(), std::int64_t(5));
@@ -306,7 +306,7 @@ TEST(rogue_elite_room_gives_15_fragments_and_one_extra_card) {
         KillNext(s, &k);
         drops += k.fragments;
     }
-    EXPECT_EQ(drops, std::int64_t(3 * 3 + 5 * 2 + 2 * 2));
+    EXPECT_EQ(drops, std::int64_t(10 + 12 + 3 * 2 + 5 + 2 * 2));
     EXPECT_EQ(k.clearFragments, std::int64_t(5 + 15));
     EXPECT_EQ(s.GainFragments() - before, drops + 20);
     ASSERT_EQ(s.Offer().size(), std::size_t(4));  // 3 + 1 da elite

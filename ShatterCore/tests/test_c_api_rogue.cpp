@@ -227,7 +227,7 @@ TEST(c_api_rogue_settings_meta_buy_craft_equip_and_queries) {
     ASSERT_TRUE(json::Parse(meta, mv));
     EXPECT_EQ(mv["equipped"].AsString(), std::string("amuleto_osso"));
     EXPECT_EQ(mv["upgrades"].Size(), std::size_t(6));
-    EXPECT_EQ(mv["recipes"].Size(), std::size_t(7));
+    EXPECT_EQ(mv["recipes"].Size(), std::size_t(9));
     EXPECT_EQ(mv["recipes"].At(0)["cost"].At(0)["qty"].AsInt(0), std::int64_t(3));
     const std::string drop = Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) {
         return shatter_rogue_drop_json(r, "crypt_guardian", 14, o, c, n);
