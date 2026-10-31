@@ -19,6 +19,7 @@ from scipy import ndimage
 W = 128
 PX, PY = 64, 104
 ALTURA = 100.0
+FASE_IDLE = [0.0, 1.3, 2.6, 3.9, 5.2]
 ANIMS = {"idle": 6, "run": 8, "attack": 6, "dodge": 6, "hit": 3, "death": 8}
 
 
@@ -42,6 +43,8 @@ def sem_fundo(img):
         fundo = np.isin(lab, list(borda))
         fundo = (ndimage.binary_dilation(fundo, iterations=1) & claro) | fundo
         alpha = ndimage.gaussian_filter(np.where(fundo, 0.0, 1.0), 0.6)
+        alpha = ndimage.minimum_filter(alpha, size=3)           # come a franja clara do xadrez
+        alpha = np.clip((alpha - 0.3) / 0.7, 0, 1)
     out = np.dstack([np.clip(a[..., :3], 0, 255), alpha * 255]).astype(np.uint8)
     return Image.fromarray(out, "RGBA")
 
@@ -54,7 +57,7 @@ def limpa_ilhas(frame):
     if n <= 1:
         return frame
     tam = ndimage.sum(al, lab, range(1, n + 1))
-    manter = [i + 1 for i, t in enumerate(tam) if t >= 0.08 * tam.max()]
+    manter = [i + 1 for i, t in enumerate(tam) if t >= 0.3 * tam.max()]
     arr = np.asarray(frame).copy()
     arr[..., 3] = np.where(np.isin(lab, manter), arr[..., 3], 0)
     return Image.fromarray(arr, "RGBA")
@@ -118,8 +121,9 @@ def montar(anim, bruto_dir, cache):
                 fr = linha[0]
                 dx, dy, rot = [-5, -8, -3][q], [1, 2, 0][q], [3, 5, 2][q]
             elif anim == "idle":
-                sy = 1.0 + 0.022 * math.sin(t * math.tau)
-                dy = -1.0 * math.sin(t * math.tau)
+                fase = FASE_IDLE[d]  # fase própria por direção: as linhas não respiram em uníssono
+                sy = 1.0 + 0.022 * math.sin(t * math.tau + fase)
+                dy = -1.0 * math.sin(t * math.tau + fase)
             elif anim == "run":
                 dy = -3.0 * abs(math.sin(t * math.tau * 2))
                 rot = 2.5 * math.sin(t * math.tau)
@@ -128,6 +132,15 @@ def montar(anim, bruto_dir, cache):
                 tint = Image.new("RGBA", quadro.size, (0, 0, 0, 0))
                 tint.paste(Image.new("RGBA", quadro.size, (255, 255, 255, 110)), mask=quadro.split()[3])
                 quadro.alpha_composite(tint)
+            if anim == "attack" and d == 4 and q in (3, 4):
+                # fragmento solto do corte (luz branca à direita) que o gerador deixou nesses quadros
+                arr = np.asarray(quadro).copy()
+                if q == 3:
+                    arr[:40, 96:, 3] = 0   # sobra à direita, acima do ombro
+                    arr[:, 116:, 3] = 0
+                else:
+                    arr[:, :26, 3] = 0    # o corte do quadro 3 invade a célula seguinte pela esquerda
+                quadro = Image.fromarray(arr, "RGBA")
             folha.alpha_composite(quadro, (q * W, d * W))
     return folha
 
