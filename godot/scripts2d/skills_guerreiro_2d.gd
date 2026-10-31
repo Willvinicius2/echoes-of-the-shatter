@@ -39,6 +39,14 @@ func restaurar(jogador: Node) -> void:
 	slots.clear()
 	mudou.emit()
 
+## Stats base numéricos (sem o meta) que o core usa na corrida: cura do descanso e bônus permanentes.
+func base_numerica() -> Dictionary:
+	var out := {}
+	for k in _base_bruta:
+		if typeof(_base_bruta[k]) in [TYPE_INT, TYPE_FLOAT]:
+			out[k] = _base_bruta[k]
+	return out
+
 func nivel(id: String) -> int:
 	return int(niveis.get(id, 0))
 

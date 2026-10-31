@@ -10,6 +10,8 @@ const Audio = preload("res://scripts2d/audio_2d.gd")
 
 enum Estado { LIVRE, ATIRANDO, ESQUIVA, MORTO }
 
+var stats_csv := "res://data2d/player.csv"  # outras classes (mago) trocam no _init
+var sprite_id := "arqueiro"
 var stats := {}
 var hp := 0.0
 var estado := Estado.LIVRE
@@ -30,11 +32,11 @@ var _salto_vel := 0.0          # >0: esquiva customizada (Salto Atrás) com esta
 var _rng := RandomNumberGenerator.new()
 
 func _ready() -> void:
-	stats = Csv.kv("res://data2d/player.csv")
+	stats = Csv.kv(stats_csv)
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("arqueiro")
-	setup_sprite("arqueiro")
+	setup_sprite(sprite_id)
 	var cs := CollisionShape2D.new()
 	var sh := CircleShape2D.new()
 	sh.radius = stats["radius"]

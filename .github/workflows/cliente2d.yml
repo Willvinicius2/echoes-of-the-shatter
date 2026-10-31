@@ -2,20 +2,59 @@ name: cliente2d
 
 on:
   pull_request:
-    paths: ['godot/scripts2d/**', 'godot/scenes2d/**', 'godot/data2d/**', 'godot/art2d/**', 'tools/build/**', '.github/workflows/cliente2d.yml']
+    paths: ['godot/scripts2d/**', 'godot/scenes2d/**', 'godot/data2d/**', 'godot/art2d/**', 'tools/build/**', 'godot/gdextension/**', 'godot/shatter_rogue.gdextension', 'ShatterCore/**', '.github/workflows/cliente2d.yml']
   push:
     branches: [master]
-    paths: ['godot/scripts2d/**', 'godot/scenes2d/**', 'godot/data2d/**', 'godot/art2d/**', 'tools/build/**']
+    paths: ['godot/scripts2d/**', 'godot/scenes2d/**', 'godot/data2d/**', 'godot/art2d/**', 'tools/build/**', 'godot/gdextension/**', 'godot/shatter_rogue.gdextension', 'ShatterCore/**']
   workflow_dispatch:
 
 env:
   GODOT_VERSION: 4.4.1-stable
 
 jobs:
+
+  extensao-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
+        run: |
+          git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
+          cmake -S godot/gdextension -B build-ext -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
+          cmake --build build-ext -j"$(nproc)"
+          ls -la godot/gdextension/bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gdextension-linux
+          path: godot/gdextension/bin/
+
+  extensao-windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
+        shell: bash
+        run: |
+          git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
+          cmake -S godot/gdextension -B build-ext -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
+          cmake --build build-ext --config Release
+          ls -la godot/gdextension/bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gdextension-windows
+          path: godot/gdextension/bin/*.dll
+
   teste-headless:
+    needs: extensao-linux
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gdextension-linux
+          path: godot/gdextension/bin
       - name: Baixar Godot
         run: |
           curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
@@ -24,7 +63,8 @@ jobs:
       - name: Montar projeto só com o cliente 2D (sem C#)
         run: |
           mkdir proj
-          for d in scripts2d scenes2d data2d art2d; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          for d in scripts2d scenes2d data2d art2d gdextension; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          ln -s "$PWD/godot/shatter_rogue.gdextension" proj/shatter_rogue.gdextension
           python3 - <<'PY'
           import re
           s = open('godot/project.godot').read()
@@ -39,10 +79,15 @@ jobs:
           ! grep -q "FALHA\|SCRIPT ERROR" saida.txt
 
   corridas-bot:
+    needs: extensao-linux
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gdextension-linux
+          path: godot/gdextension/bin
       - name: Baixar Godot
         run: |
           curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip
@@ -51,7 +96,8 @@ jobs:
       - name: Montar projeto só com o cliente 2D (sem C#)
         run: |
           mkdir proj
-          for d in scripts2d scenes2d data2d art2d; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          for d in scripts2d scenes2d data2d art2d gdextension; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          ln -s "$PWD/godot/shatter_rogue.gdextension" proj/shatter_rogue.gdextension
           python3 - <<'PY'
           import re
           s = open('godot/project.godot').read()
@@ -75,10 +121,19 @@ jobs:
           path: metricas/
 
   export:
+    needs: [extensao-linux, extensao-windows]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gdextension-linux
+          path: godot/gdextension/bin
+      - uses: actions/download-artifact@v4
+        with:
+          name: gdextension-windows
+          path: godot/gdextension/bin
       - name: Baixar Godot e export templates
         run: |
           curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip

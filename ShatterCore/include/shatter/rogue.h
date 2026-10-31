@@ -254,6 +254,12 @@ public:
 
     // --- Corrida (run_2d.gd + upgrades_2d.gd) ----------------------------------------------------------
     RoguePhase Phase() const { return phase_; }
+    // Modo "cartas externas" (API 1.9): a classe tem progressão própria no cliente (ex.: árvore do Guerreiro). Ligado,
+    // a sala limpa vai direto a Cleared, sem sortear (Draws() não muda, oferta vazia), e ChooseCard dá WrongPhase; os
+    // stats da corrida ficam base + meta. Vale até ser desligado (não é zerado por StartRun, FinishRun nem pelo meta).
+    // Só muda fora de uma corrida viva (fase None, Won ou Dead); em outra fase devolve WrongPhase e nada muda.
+    RogueRunResult SetExternalCards(bool on);
+    bool ExternalCards() const { return externalCards_; }
     // Começa a corrida: credita os ganhos pendentes da anterior (abandono também rende), guarda os stats base
     // com o meta aplicado (restaurar), zera upgrades e ganhos e entra no caminho padrão da etapa 0.
     // Devolve true se creditou ganhos pendentes (o save do meta mudou).
@@ -276,6 +282,7 @@ public:
 
     // Inimigo morto: soma o drop aos ganhos; se a sala estava em luta e os vivos chegaram a 0, limpa a sala
     // (+ room_clear_fragments, + elite_fragments na elite) e sorteia as cartas. Vale em qualquer fase com corrida.
+    // Com ExternalCards() ligado não sorteia: a sala limpa fica em Cleared.
     RogueRunResult EnemyKilled(std::string_view enemyId, RogueKill* out = nullptr);
     // Escolhe uma das cartas oferecidas: sobe o nível e abre a porta. `hp` volta somado do ganho de hp_max.
     RogueRunResult ChooseCard(std::string_view upgradeId, double hp, double* hpOut = nullptr);
@@ -291,7 +298,8 @@ public:
     bool FinishRun();
 
     // --- Estado completo e determinismo ---------------------------------------------------------------
-    std::string StateJson() const;                              // meta + consumíveis ativos + corrida
+    // meta + consumíveis ativos + corrida (+ "external_cards": true só com o modo ligado; desligado o JSON é o da 1.8).
+    std::string StateJson() const;
     bool RestoreState(std::string_view text, std::string* error = nullptr);  // falha: nada muda
     std::string StateHash() const;                              // SHA-256 (hex) do StateJson
 
@@ -310,6 +318,7 @@ private:
     std::vector<int> stock_;                // por receita (consumível)
     std::vector<std::uint8_t> active_;      // por receita (consumível ativo nesta corrida)
     int equipped_ = -1;
+    bool externalCards_ = false;            // modo cartas externas (não é meta nem corrida: configuração do cliente)
     // corrida
     RoguePhase phase_ = RoguePhase::None;
     std::uint64_t seed_ = 0;
