@@ -10,7 +10,7 @@ const SLOTS := 4
 
 static var caminho := "user://habilidades_2d.json"   # os testes apontam para outro arquivo
 const CAMPOS_ESCALA := ["dano", "qtd", "raio", "duracao", "alcance", "valor"]
-const CAMPOS_NUM := ["tier", "pontos", "nivel_max", "cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor", "escala"]
+const CAMPOS_NUM := ["tier", "pontos", "nivel_max", "cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor", "escala", "espera", "recup"]
 
 signal mudou
 signal usada(slot: int, id: String)

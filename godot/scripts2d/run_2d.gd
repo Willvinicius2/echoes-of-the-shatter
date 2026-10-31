@@ -12,7 +12,7 @@ const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
 const ArvoreUiScript = preload("res://scripts2d/arvore_ui_2d.gd")
 const MagoScript = preload("res://scripts2d/mago_2d.gd")
-const SkillsGuerreiroScript = preload("res://scripts2d/skills_guerreiro_2d.gd")
+const CorridaGuerreiroScript = preload("res://scripts2d/corrida_guerreiro_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
@@ -101,19 +101,17 @@ func _ready() -> void:
 	if com_menu:
 		_ir_titulo()
 
-## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro: cartas do core; guerreiro: árvore de habilidades).
+## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro e mago: cartas do core; guerreiro: só a árvore comum).
 func _criar_classe() -> void:
 	var guerreiro: bool = Classe.atual == "guerreiro"
 	player = (WarriorScript if guerreiro else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
 	player.died.connect(_on_player_died)
 	atores.add_child(player)
-	upgrades = (SkillsGuerreiroScript if guerreiro else UpgradesScript).new()
+	upgrades = (CorridaGuerreiroScript if guerreiro else UpgradesScript).new()
 	upgrades.meta = meta
-	if guerreiro:
-		player.skills = upgrades
-	else:  # arqueiro e mago: árvore de habilidades em habilidades_2d.gd (tecla T)
+	if not guerreiro:  # arqueiro e mago escolhem a classe aqui; o guerreiro carrega a dele no _ready
 		player.definir_classe(Classe.atual)
-		upgrades.habilidades = player.habilidades
+	upgrades.habilidades = player.habilidades
 	if arvore != null:
 		arvore.definir(player.habilidades if "habilidades" in player else null)
 	_classe_montada = Classe.atual
@@ -136,7 +134,7 @@ func iniciar_corrida() -> void:
 	tempo = 0.0
 	menus.limpar_fade()
 	var guerreiro: bool = Classe.atual == "guerreiro"
-	# O guerreiro tem a árvore de habilidades no GDScript (ainda não migrada): o core só roda o fluxo da corrida, sem cartas.
+	# O guerreiro não usa as cartas do core (só a árvore comum): o core roda o fluxo da corrida sem cartas.
 	if nucleo.corrida_fase() != 0:
 		nucleo.corrida_terminar()   # corrida abandonada: o modo de cartas só muda fora de corrida viva (credita os ganhos)
 	nucleo.corrida_cartas_externas(guerreiro)
@@ -149,16 +147,9 @@ func iniciar_corrida() -> void:
 	player.reset()
 	_carregar_sala(0)
 
-## Cartas da sala limpa: o arqueiro recebe as que o core sorteou; o guerreiro sorteia na árvore dele.
+## Cartas da sala limpa: as que o core sorteou (o guerreiro não recebe cartas, só pontos da árvore).
 func _cartas_da_sala() -> Array:
-	if Classe.atual != "guerreiro":
-		return upgrades.oferta()
-	if indice + 1 >= salas.size() or no_atual["tipo"] == "descanso":
-		return []
-	var qtd := int(config["upgrade_cards"])
-	if no_atual["tipo"] == "elite":
-		qtd += int(config["elite_extra_cards"])
-	return upgrades.sortear(rng, qtd)
+	return upgrades.oferta()
 
 ## Nó do core ({id, kind, room, enemies: [{id, count}]}) no formato que o cliente usa: tipo e texto "inimigo:n|...".
 func _no_do_core(c: Dictionary) -> Dictionary:
