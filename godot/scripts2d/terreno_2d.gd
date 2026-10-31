@@ -169,7 +169,8 @@ static func _subtrair(polis: Array, tira: PackedVector2Array) -> Array:
 				out.append(q)
 	return out
 
-## Pedra de travessia: laje irregular escura com borda clara, 4 ao longo do trecho que cruza a água.
+## Pedra de travessia: laje irregular escura com borda clara, 5 ao longo do trecho que cruza a água.
+## Fica no z do chão (0), sob os atores: com z 1 o jogador parecia passar por baixo das pedras.
 static func _pedras_de_travessia(raiz: Node2D, trecho: PackedVector2Array, lajes: Texture2D) -> void:
 	var n := 5
 	for k in n:
@@ -180,12 +181,11 @@ static func _pedras_de_travessia(raiz: Node2D, trecho: PackedVector2Array, lajes
 			var ang := TAU * a / 9.0
 			var rr := raio * (0.85 + 0.3 * float(posmod(hash(Vector2i(a, k + 3)), 100)) / 100.0)
 			pts.append(p + Vector2(cos(ang) * rr, sin(ang) * rr * 0.78))
-		_poligono(raiz, _expandir(pts, p, 4.0), Color(0.1, 0.12, 0.12, 0.9)).z_index = 1
+		_poligono(raiz, _expandir(pts, p, 4.0), Color(0.1, 0.12, 0.12, 0.9))
 		var pg := _poligono(raiz, pts, Color(0.85, 0.88, 0.95))
 		pg.texture = lajes
 		pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 		pg.uv = pts
-		pg.z_index = 1
 
 static func _expandir(pts: PackedVector2Array, centro: Vector2, d: float) -> PackedVector2Array:
 	var out := PackedVector2Array()
@@ -206,7 +206,7 @@ static func _musgo_na_borda(raiz: Node2D, contorno: PackedVector2Array) -> void:
 			var rr := raio * (0.7 + 0.5 * float(posmod(h / (a + 3), 10)) / 10.0)
 			pts.append(c + Vector2(cos(ang) * rr, sin(ang) * rr * 0.7))
 		var cor := Color(0.13, 0.2, 0.1, 0.3 + 0.12 * float(posmod(h / 7, 4)) / 3.0)
-		_poligono(raiz, pts, cor).z_index = 1
+		_poligono(raiz, pts, cor)
 		i += 2 + posmod(h / 5, 4)
 
 ## Lajes soltas e musgo espalhados pela borda do caminho.
@@ -223,8 +223,8 @@ static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: i
 		var tom := 0.42 + 0.22 * float(posmod(h / 5, 100)) / 100.0
 		var musgo: bool = posmod(h / 13, 4) == 0
 		var cor := Color(0.28, 0.4, 0.2) if musgo else Color(tom, tom + 0.02, tom + 0.07)
-		_poligono(raiz, _expandir(pts, c, 1.8), Color(0.08, 0.09, 0.08, 0.8)).z_index = 1
-		_poligono(raiz, pts, cor).z_index = 1
+		_poligono(raiz, _expandir(pts, c, 1.8), Color(0.08, 0.09, 0.08, 0.8))
+		_poligono(raiz, pts, cor)
 		i += 7 + posmod(h / 3, 6)
 
 ## Manchas grandes e suaves de terra e grama amarelada sob tudo, para o gramado não ser textura chapada.
@@ -427,7 +427,6 @@ static func _tufos_na_borda(sala: Node2D, contorno: PackedVector2Array, semente:
 			sp.offset = -Vector2(arte[1], arte[2])
 			sp.scale = Vector2.ONE * escalas[k]
 			sp.position = contorno[i] + Vector2(posmod(h / 7, 9) - 4, posmod(h / 63, 7) - 3)
-			sp.z_index = 1
 			sala.add_child(sp)
 		i += 9 + posmod(h / 3, 8)
 
