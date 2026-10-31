@@ -3,14 +3,11 @@ extends "res://scripts2d/player_2d.gd"
 ## (data2d/habilidades_mago.csv + efeitos_mago_2d.gd). Mana, escudo de gelo e surto de mana ficam aqui.
 ## Números em data2d/mago.csv.
 
-signal mana_changed(mana: float, mana_max: float)
-
 const OrbeScript = preload("res://scripts2d/orbe_2d.gd")
 const Efeitos = preload("res://scripts2d/efeitos_mago_2d.gd")
 
 const COR_ORBE := Color(0.72, 0.45, 1.0)
 
-var mana := 0.0
 var escudo := 0.0        # dano que a Barreira de Gelo ainda absorve
 var escudo_t := 0.0
 var surto_t := 0.0       # Surto de Mana: tempo restante
@@ -20,6 +17,7 @@ var _cast_t := 0.0
 func _init() -> void:
 	stats_csv = "res://data2d/mago.csv"
 	sprite_id = "mago"
+	classe = "mago"
 
 func _ready() -> void:
 	super._ready()
@@ -35,9 +33,6 @@ func reset() -> void:
 	mana_changed.emit(mana, stats["mana_max"])
 
 func _physics_process(delta: float) -> void:
-	if estado != Estado.MORTO:
-		var regen: float = stats["mana_regen"] * (1.0 + surto_mult if surto_t > 0.0 else 1.0)
-		ganhar_mana(regen * delta)
 	surto_t = maxf(0.0, surto_t - delta)
 	_cast_t = maxf(0.0, _cast_t - delta)
 	if escudo_t > 0.0:
@@ -52,18 +47,9 @@ func _physics_process(delta: float) -> void:
 func mana_frac() -> float:
 	return clampf(mana / stats["mana_max"], 0.0, 1.0)
 
-func gastar_mana(custo: float) -> bool:
-	if mana + 0.0001 < custo:
-		return false
-	mana -= custo
-	mana_changed.emit(mana, stats["mana_max"])
-	return true
-
-func ganhar_mana(qtd: float) -> void:
-	var antes := mana
-	mana = minf(stats["mana_max"], mana + qtd)
-	if absf(mana - antes) > 0.0001:
-		mana_changed.emit(mana, stats["mana_max"])
+## Surto de Mana multiplica a regeneração enquanto dura.
+func taxa_regen_mana() -> float:
+	return stats["mana_regen"] * (1.0 + surto_mult if surto_t > 0.0 else 1.0)
 
 func dar_escudo(valor: float, dur: float) -> void:
 	escudo = maxf(escudo, valor)
