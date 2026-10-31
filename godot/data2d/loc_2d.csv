@@ -51,7 +51,7 @@ menu.meta,Melhorias
 menu.meta_title,Melhorias permanentes
 menu.meta_balance,Fragmentos: %d
 menu.meta_item,%s  (%d)  [%d fragmentos]
-menu.meta_item_max,%s  (maximo)
+menu.meta_item_max,%s  (máximo)
 menu.meta_item_owned,%s  (desbloqueada)
 menu.back,Voltar
 menu.sum_fragments,Fragmentos ganhos: %d
@@ -61,15 +61,15 @@ meta.meta_dano.name,Ponta Forjada
 meta.meta_passo.name,Passada Firme
 meta.unlock_multishot.name,Desbloquear Salva de Flechas
 meta.unlock_pierce.name,Desbloquear Ponta Afiada
-meta.unlock_evasion.name,Desbloquear Passo Rapido
+meta.unlock_evasion.name,Desbloquear Passo Rápido
 material.pedra_cinza,Pedra Cinza
 material.osso_antigo,Osso Antigo
-material.essencia_etera,Essencia Etera
-material.ferro_corroido,Ferro Corroido
-material.nucleo_estilhaco,Nucleo de Estilhaco
+material.essencia_etera,Essência Etérea
+material.ferro_corroido,Ferro Corroído
+material.nucleo_estilhaco,Núcleo de Estilhaço
 menu.forge,Forja
 menu.forge_title,Forja
-menu.forge_hint,Cada consumivel guardado e gasto ao partir.
+menu.forge_hint,Cada consumível guardado é gasto ao partir.
 menu.forge_equipped,Amuleto: %s
 menu.forge_fragments,%d fragmentos
 menu.forge_craft,Criar %s  [%s]
@@ -77,52 +77,52 @@ menu.forge_craft_stock,Criar %s (%d/%d)  [%s]
 menu.forge_equip,Equipar %s
 menu.forge_unequip,%s  (equipado - desequipar)
 recipe.amuleto_osso.name,Amuleto de Osso
-recipe.amuleto_essencia.name,Amuleto Etereo
+recipe.amuleto_essencia.name,Amuleto Etéreo
 recipe.amuleto_pedra.name,Amuleto de Pedra
 recipe.amuleto_ferro.name,Amuleto de Ferro
-recipe.amuleto_nucleo.name,Amuleto do Estilhaco
-recipe.tonico_vida.name,Tonico de Vida
-recipe.po_afiado.name,Po Afiado
+recipe.amuleto_nucleo.name,Amuleto do Estilhaço
+recipe.tonico_vida.name,Tônico de Vida
+recipe.po_afiado.name,Pó Afiado
 menu.route_title,Escolha o caminho
-menu.route_hint,A cripta se divide a frente
+menu.route_hint,A cripta se divide à frente
 route.combate,Corredor dos mortos: combate normal
-route.elite_ossuario,"Ossuario profundo: elite (mais perigo, mais fragmentos e uma carta extra)"
+route.elite_ossuario,"Ossuário profundo: elite (mais perigo, mais fragmentos e uma carta extra)"
 route.descanso_cripta,"Nicho de descanso: recupera vida, sem combate"
 hud.rest,Nicho de descanso: a vida foi recuperada. Siga pela porta
-enemy.ossuary_captain.name,Capitao do Ossuario
-enemy.ossuary_warden.name,Carcereiro do Ossuario
+enemy.ossuary_captain.name,Capitão do Ossuário
+enemy.ossuary_warden.name,Carcereiro do Ossuário
 enemy.cinder_archer.name,Arqueiro de Cinza
-enemy.fallen_echo.name,Eco Caido
+enemy.fallen_echo.name,Eco Caído
 enemy.hollow_sentinel.name,Sentinela Oca
 enemy.skeleton_soldier.name,Soldado Esqueleto
 enemy.wandering_ghost.name,Espectro Errante
 enemy.chain_wraith.name,Espectro Acorrentado
 enemy.crypt_bat.name,Morcego da Cripta
 enemy.ghost_archer.name,Arqueiro Fantasma
-enemy.ash_hound.name,Cao de Cinza
+enemy.ash_hound.name,Cão de Cinza
 enemy.stone_herald.name,Arauto de Pedra
-enemy.crypt_guardian.name,Guardiao da Cripta
-enemy.ossuary_captain.desc,Elite do ossuario. Bate devagar e forte: esquive depois do aviso.
-enemy.ossuary_warden.desc,Elite do ossuario. Lento e pesado; guarda as ossadas que a Cinza nao levou.
-enemy.cinder_archer.desc,Atira de longe e recua. Feche a distancia ou use as colunas.
-enemy.fallen_echo.desc,Eco de um cacador da Queda. Rapido e fragil.
+enemy.crypt_guardian.name,Guardião da Cripta
+enemy.ossuary_captain.desc,Elite do ossuário. Bate devagar e forte: esquive depois do aviso.
+enemy.ossuary_warden.desc,Elite do ossuário. Lento e pesado; guarda as ossadas que a Cinza não levou.
+enemy.cinder_archer.desc,Atira de longe e recua. Feche a distância ou use as colunas.
+enemy.fallen_echo.desc,Eco de um caçador da Queda. Rápido e frágil.
 upgrade.ember_tip.name,Ponta em Brasa
 upgrade.ember_tip.desc,+4 de dano por flecha
 recipe.amuleto_cinza.name,Amuleto de Cinza
-recipe.tonico_folego.name,Tonico de Folego
+recipe.tonico_folego.name,Tônico de Fôlego
 region.r1.name,Cripta Partida
-region.r1.intro,Sob a Cinza ainda ha uma cripta de pe. O Guardiao ainda guarda o que ela partiu.
-region.r1.room_2b,Ossuario lateral: os mortos daqui nunca foram contados.
+region.r1.intro,Sob a Cinza ainda há uma cripta de pé. O Guardião ainda guarda o que ela partiu.
+region.r1.room_2b,Ossuário lateral: os mortos daqui nunca foram contados.
 region.r1.room_3b,Salao das colunas: runas antigas ainda respondem ao ouvido.
 route.elite_ossuario.lore,Os Ecos da Queda mostram o carcereiro vigiando esta sala desde antes da Cinza.
-route.descanso_cripta.lore,Ilsa chama de nicho de descanso o canto onde a Cinza nao entra.
-echo.r1.hammer,Eco do martelo: o Guardiao golpeia em cone a frente. Fique de lado.
-echo.r1.shield,Eco do escudo: o escudo cobre a frente do Guardiao. Atire quando ele recuar.
-echo.r1.phase2,Eco da queda: na segunda fase o Guardiao chama as Sentinelas de volta.
-menu.options,Opcoes
-opt.title,Opcoes
+route.descanso_cripta.lore,Ilsa chama de nicho de descanso o canto onde a Cinza não entra.
+echo.r1.hammer,Eco do martelo: o Guardião golpeia em cone à frente. Fique de lado.
+echo.r1.shield,Eco do escudo: o escudo cobre a frente do Guardião. Atire quando ele recuar.
+echo.r1.phase2,Eco da queda: na segunda fase o Guardião chama as Sentinelas de volta.
+menu.options,Opções
+opt.title,Opções
 opt.vol_master,Volume geral: %d%%
-opt.vol_musica,Musica: %d%%
+opt.vol_musica,Música: %d%%
 opt.vol_efeitos,Efeitos: %d%%
 opt.fullscreen,Tela cheia: %s
 opt.vsync,Sincronia vertical: %s
@@ -130,11 +130,11 @@ opt.on,ligado
 opt.off,desligado
 opt.keys,Teclas
 opt.keys_title,Teclas
-opt.keys_hint,Clique numa acao e aperte a nova tecla. Esc cancela.
-opt.keys_reset,Restaurar teclas padrao
+opt.keys_hint,Clique numa ação e aperte a nova tecla. Esc cancela.
+opt.keys_reset,Restaurar teclas padrão
 opt.key_item,%s: %s
 opt.press_key,aperte uma tecla...
-opt.tutorial,Tutorial na proxima corrida: %s
+opt.tutorial,Tutorial na próxima corrida: %s
 keys.move_up,Mover para cima
 keys.move_down,Mover para baixo
 keys.move_left,Mover para a esquerda
@@ -144,13 +144,26 @@ tutorial.move,Mova-se com %s
 tutorial.shoot,Mire com o mouse e atire com %s
 tutorial.dodge,Esquive com %s para escapar dos golpes
 tutorial.key_shoot,o clique esquerdo
-ach.first_run,Primeira expedicao
+ach.first_run,Primeira expedição
 ach.crypt_cleared,Cripta vencida
-ach.first_forge,Primeira criacao na Forja
+ach.first_forge,Primeira criação na Forja
 ach.first_upgrade,Primeira melhoria permanente
+class.arqueiro,Arqueiro
+class.guerreiro,Guerreiro
+class.mago,Mago
+tree.points,Pontos
+tree.empty,Nenhuma habilidade nesta classe ainda
+tree.slot_empty,vazio
+tree.respec,Redistribuir pontos
+tree.close,Fechar (T)
+hud.key.skill_1,Q
+hud.key.skill_2,E
+hud.key.skill_3,F
+hud.key.skill_4,R
 ramo.lamina.name,Lamina
+ramo.lamina.name,Lâmina
 ramo.baluarte.name,Baluarte
-ramo.impeto.name,Impeto
+ramo.impeto.name,Ímpeto
 hud.key.skill1,Q
 hud.key.skill2,E
 hud.key.skill3,F
@@ -158,6 +171,7 @@ hud.key.skill4,R
 class.guerreiro.name,Guerreiro
 menu.class,Classe: %s
 class.arqueiro.name,Arqueiro
+class.mago.name,Mago
 skill.w_keen_edge.name,Fio Afiado
 skill.w_keen_edge.desc,+20% de dano da espada
 skill.w_heavy_slash.name,Talho Pesado
@@ -166,38 +180,38 @@ skill.w_whirlwind.name,Redemoinho
 skill.w_whirlwind.desc,"Gira a espada e acerta todos em volta: 1,6x de dano. Recarga 7s"
 skill.w_executioner.name,Carrasco
 skill.w_executioner.desc,+40% de dano contra inimigos com menos de 30% de vida
-skill.w_flame_brand.name,Lamina Ardente
+skill.w_flame_brand.name,Lâmina Ardente
 skill.w_flame_brand.desc,Os golpes queimam o alvo: +4 de dano por segundo durante 3s
 skill.w_stone_rift.name,Fenda de Pedra
-skill.w_stone_rift.desc,Rasga o chao em linha reta: 2x de dano a longa distancia. Recarga 9s
+skill.w_stone_rift.desc,Rasga o chão em linha reta: 2x de dano a longa distância. Recarga 9s
 skill.w_iron_skin.name,Pele de Ferro
 skill.w_iron_skin.desc,-8% de dano recebido
 skill.w_vigor.name,Vigor
-skill.w_vigor.desc,+30 de vida maxima e cura a mesma quantidade
+skill.w_vigor.desc,+30 de vida máxima e cura a mesma quantidade
 skill.w_shield_bash.name,Escudada
-skill.w_shield_bash.desc,Atordoa e empurra quem esta a frente (chefes resistem). Recarga 4s
+skill.w_shield_bash.desc,Atordoa e empurra quem está à frente (chefes resistem). Recarga 4s
 skill.w_guard_stance.name,Postura de Guarda
-skill.w_guard_stance.desc,Segure a tecla: bloqueia 70% do dano pela frente e ganha impeto ao bloquear
-skill.w_second_wind.name,Folego
+skill.w_guard_stance.desc,Segure a tecla: bloqueia 70% do dano pela frente e ganha ímpeto ao bloquear
+skill.w_second_wind.name,Fôlego
 skill.w_second_wind.desc,Regenera 2 de vida por segundo depois de 3s sem levar dano
 skill.w_retaliation.name,Revide
-skill.w_retaliation.desc,"Ao ser atingido, um pulso machuca quem esta perto"
-skill.w_last_stand.name,Ultima Resistencia
-skill.w_last_stand.desc,"Uma vez por corrida: ao cair a zero, volta com vida e fica invulneravel por instantes"
+skill.w_retaliation.desc,"Ao ser atingido, um pulso machuca quem está perto"
+skill.w_last_stand.name,Última Resistência
+skill.w_last_stand.desc,"Uma vez por corrida: ao cair a zero, volta com vida e fica invulnerável por instantes"
 skill.w_charge.name,Investida
-skill.w_charge.desc,"Avanca em linha reta, invulneravel, atordoando quem atravessa. Recarga 6s"
+skill.w_charge.desc,"Avança em linha reta, invulnerável, atordoando quem atravessa. Recarga 6s"
 skill.w_swift.name,Passo de Guerra
 skill.w_swift.desc,+10% de velocidade
 skill.w_battle_cry.name,Grito de Guerra
 skill.w_battle_cry.desc,Empurra os inimigos e aumenta seu dano em 35% por 6s. Recarga 14s
-skill.w_momentum.name,Impeto Crescente
-skill.w_momentum.desc,+4 de impeto por golpe que acerta (o impeto aumenta o dano)
+skill.w_momentum.name,Ímpeto Crescente
+skill.w_momentum.desc,+4 de ímpeto por golpe que acerta (o ímpeto aumenta o dano)
 skill.w_bloodlust.name,Sede de Sangue
 skill.w_bloodlust.desc,Recupera 4% do dano causado em vida
-skill.w_leap_slam.name,Salto Sismico
+skill.w_leap_slam.name,Salto Sísmico
 skill.w_leap_slam.desc,"Salta e cai com um tremor: 1,8x de dano e atordoamento em area. Recarga 10s"
-skill.w_rampage.name,Furia Descontrolada
-skill.w_rampage.desc,"Gasta 50 de impeto: por 7s ataca 50% mais rapido, causa +30% de dano e rouba vida"
+skill.w_rampage.name,Fúria Descontrolada
+skill.w_rampage.desc,"Gasta 50 de ímpeto: por 7s ataca 50% mais rápido, causa +30% de dano e rouba vida"
 skill.steady_aim.name,Mira Firme
 skill.steady_aim.desc,+12% de dano das flechas por nível
 skill.power_shot.name,Disparo Carregado
@@ -240,3 +254,18 @@ ramo.cacada.name,Caça
 ramo.cacada.desc,"Área, armadilhas e controle"
 ramo.sombra.name,Sombra
 ramo.sombra.desc,Mobilidade e esquiva
+npc.ilsa.name,Ilsa
+npc.ilsa.title,a Cartógrafa
+npc.tico.name,Tico
+npc.tico.title,o Mensageiro
+prologue.ilsa_1,"Você chegou. Aqui no Refúgio ainda há luz. Lá fora, só existe o que a Cinza segura."
+prologue.tico_1,Você é o Caçador de verdade? Eu vou contar tudo para os outros!
+prologue.ilsa_2,"É ele, Tico. A Cinza não prende o Caçador. Foi por isso que chamamos."
+prologue.ilsa_3,A Cripta Partida é a primeira âncora. Um General guarda os portões: o Guardião.
+prologue.ilsa_4,Antes de General ele foi herói. Procure os Ecos da Queda e vai entender.
+prologue.tico_2,"E se você cair lá dentro, a gente te traz de volta para o Refúgio. Boa caçada!"
+prologue.hint,Clique ou Espaço: continuar   ·   Esc: pular
+menu.prologue,Rever o prólogo
+menu.class_change,Trocar classe
+class.arqueiro.desc,"Ataca de longe: mire com o mouse, mantenha distância e esquive."
+class.guerreiro.desc,"Luta corpo a corpo: combo de espada, escudo e habilidades em Q, E, F e R."

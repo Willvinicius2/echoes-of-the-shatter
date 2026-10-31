@@ -4,6 +4,8 @@ Cena principal: `scenes2d/Run2D.tscn` (GDScript, sem C#). Código em `scripts2d/
 
 - Controles: WASD move, mouse mira, clique atira, Espaço esquiva, R reinicia ao morrer.
 - Guerreiro: no título, o botão "Classe" alterna Arqueiro/Guerreiro (ou `-- --classe=guerreiro` na linha de comando). Clique = combo de espada em 3 golpes; Q, E, F, R usam as habilidades ativas na ordem em que foram aprendidas (cartas ao limpar a sala; segurar a tecla da Postura de Guarda). Árvore em `data2d/habilidades_guerreiro.csv`; regras do personagem em `data2d/guerreiro.csv`.
+- Início do jogo: o título mostra a key art aprovada (`art2d/ui/titulo_fundo.jpg`) e o cartão da classe (retrato animado do idle, descrição e "Trocar classe"). No primeiro "Jogar" abre o prólogo (`scripts2d/prologo_2d.gd`): Ilsa e Tico no Refúgio, falas em `data2d/prologo.csv` e `loc_2d.csv`, retratos recortados das folhas aprovadas `n01_ilsa`/`n02_tico` (`art2d/ui/retrato_*.png`). Clique ou Espaço avança, Esc pula; "Rever o prólogo" fica no título. O estado `prologo_visto` vai no save de opções.
+- Primeira sala calma: o jogador nasce abaixo do riacho e os inimigos da sala 1 dormem até ele chegar a `first_room_wake_radius` (`run_settings.csv`) ou ferir um deles; aí a sala toda acorda.
 - Corrida: 4 salas (`data2d/run.csv`), a última com o Guardião. Limpou, a porta abre; morreu, recomeça em 2 s.
 - Chefe: `data2d/boss_patterns_2d.csv` (fases por limiar de vida, padrões golpe/leque/anel/investida, entrada e transição) e `scripts2d/boss_2d.gd`.
 - Números: `data2d/player.csv`, `enemies.csv` (inclui `windup` e `kb_resist`), `feel.csv` (hit stop, tremor, números de dano), `run_settings.csv`. Textos: `loc_2d.csv`. Salas: `data2d/rooms/*.txt` (legenda no topo de `scripts2d/room_2d.gd`).
@@ -25,7 +27,7 @@ godot --path godot --script res://scripts2d/tools/captura_2d.gd -- saida.png [in
 ```
 
 ## Build jogável (Windows e Linux)
-`tools/build/build_2d.sh [saida] [godot]` monta um projeto só com o cliente 2D e exporta `EcosDosEstilhacos.exe` (Windows) e `.x86_64` (Linux), com os export templates 4.4.1 instalados. Os CSV entram crus (importador `keep`); sem isso o executável não acha `loc_2d.csv` nem os demais dados.
+`tools/build/build_2d.sh [saida] [godot]` monta um projeto só com o cliente 2D e exporta `EcosDosEstilhacos.exe` (Windows) e `.x86_64` (Linux), com os export templates 4.4.1 instalados. Os CSV entram crus (importador `keep`); sem isso o executável não acha `loc_2d.csv` nem os demais dados. Todo CSV novo em `data2d/` precisa de um `.csv.import` com `importer="keep"` (o CI confere com `tools/build/checar_csv_keep.sh`). Importado como tradução, cada coluna vira um `Translation` criado numa thread de importação; o `set_locale` deixa na fila da thread principal uma chamada para um objeto que já foi liberado quando a fila roda, e o `--import` do Godot 4.4 cai às vezes com `double free or corruption`.
 
 ## Áudio e UI (P5)
 - Áudio: `data2d/audio.csv` (evento, arquivo, volume, variação de pitch) e `scripts2d/audio_2d.gd` (`Audio.tocar("evento")`, `Audio.musica(...)`). Os WAV de `art2d/audio/` são gerados por `python3 tools/audio/gerar_audio.py` (síntese própria, CC0; ver `art2d/audio/LICENCA.md`).

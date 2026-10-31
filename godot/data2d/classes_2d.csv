@@ -1,0 +1,4 @@
+id,nome,sprite,habilidades,efeitos
+arqueiro,class.arqueiro,arqueiro,res://data2d/habilidades_arqueiro.csv,res://scripts2d/efeitos_arqueiro_2d.gd
+guerreiro,class.guerreiro,guerreiro,res://data2d/habilidades_guerreiro.csv,res://scripts2d/efeitos_guerreiro_2d.gd
+mago,class.mago,mago,res://data2d/habilidades_mago.csv,res://scripts2d/efeitos_mago_2d.gd

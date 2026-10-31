@@ -25,6 +25,8 @@ func _initialize() -> void:
 	quit(0 if falhas == 0 else 1)
 
 func _testar() -> void:
+	preload("res://scripts2d/habilidades_2d.gd").caminho = "user://teste_habilidades_geral_2d.json"
+	DirAccess.remove_absolute("user://teste_habilidades_geral_2d.json")
 	_testar_manifesto()
 	_testar_salas()
 	await _testar_upgrades()
@@ -37,9 +39,12 @@ func _testar() -> void:
 	await _testar_corrida()
 	await _testar_rotas()
 	await _testar_meta()
+	await _testar_habilidades()
 	await _testar_forja()
 	await _testar_opcoes_steam_tutorial()
+	await _testar_abertura()
 	await _testar_status()
+	await _testar_mago()
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
 
@@ -660,6 +665,151 @@ func _testar_opcoes_steam_tutorial() -> void:
 	DirAccess.remove_absolute(SteamScript.caminho)
 	DirAccess.remove_absolute(MetaScript.caminho)
 
+func _testar_habilidades() -> void:
+	var Hab = preload("res://scripts2d/habilidades_2d.gd")
+	Hab.caminho = "user://save_teste_hab_2d.json"
+	DirAccess.remove_absolute(Hab.caminho)
+	var Efeitos = preload("res://scripts2d/tools/efeitos_teste_2d.gd")
+	var csv := "res://data2d/testes/habilidades_teste.csv"
+	var fx := "res://scripts2d/tools/efeitos_teste_2d.gd"
+	var cls: Dictionary = Hab.classes()
+	for c in ["arqueiro", "guerreiro", "mago"]:
+		check(cls.has(c), "classes_2d.csv tem " + c)
+		check(Csv.t("class." + c) != "class." + c, "texto da classe " + c)
+	var h = Hab.new()
+	h.carregar_classe("teste", csv, fx)
+	check(h.ordem.size() == 4 and h.ramos() == ["fogo", "vida"], "carrega 4 skills em 2 ramos")
+	check(not h.aprender("t_golpe"), "sem pontos não aprende")
+	h.ganhar_pontos(6)
+	check(not h.aprender("t_nova"), "filho exige o pai aprendido")
+	check(h.aprender("t_golpe") and h.nivel("t_golpe") == 1 and h.pontos == 5, "aprende a raiz e gasta 1 ponto")
+	check(h.slots[0] == "t_golpe", "ativa nova entra no primeiro slot livre")
+	check(h.aprender("t_nova") and h.slots[1] == "t_nova" and h.pontos == 3, "filho aprende depois do pai")
+	check(h.aprender("t_golpe") and h.aprender("t_golpe") and not h.aprender("t_golpe"), "respeita nivel_max")
+	check(is_equal_approx(h.def_nivel("t_golpe")["dano"], 40.0), "escala por nível: 20*(1+0.5*2)=40")
+
+	# Uso: mana, recarga e efeito.
+	var j := Node2D.new()
+	j.set_script(preload("res://scripts2d/tools/jogador_falso_2d.gd"))
+	root.add_child(j)
+	j.mana = 100.0
+	check(h.usar(0, j, Vector2(3, 0)) and Efeitos.ultimo["efeito"] == "golpe" and Efeitos.ultimo["mira"] == Vector2.RIGHT, "usa o slot e normaliza a mira")
+	check(is_equal_approx(j.mana, 90.0), "cobra o custo de mana")
+	check(not h.usar(0, j, Vector2.RIGHT) and h.recarga_slot(0) > 0.99, "em recarga não dispara de novo")
+	h.tick(2.0)
+	check(h.recarga_slot(0) == 0.0 and h.usar(0, j, Vector2.RIGHT), "recarga acaba e libera")
+	j.mana = 5.0
+	check(not h.usar(1, j, Vector2.RIGHT), "sem mana suficiente não dispara")
+	check(not h.usar(3, j, Vector2.RIGHT), "slot vazio não dispara")
+
+	# Passivas e equipar.
+	h.ganhar_pontos(4)
+	h.aprender("t_vigor")
+	h.aprender("t_passo")
+	var s: Dictionary = h.aplicar_passivas({"hp_max": 100.0, "speed": 200.0})
+	check(is_equal_approx(s["hp_max"], 120.0) and is_equal_approx(s["speed"], 210.0), "passivas somam sobre a base")
+	check(h.equipar(3, "t_golpe") and h.slots[3] == "t_golpe" and h.slots[0] == "", "equipar move a skill de slot")
+	check(not h.equipar(0, "t_vigor"), "passiva não vai a slot")
+
+	# Save e respec.
+	var h2 = Hab.new()
+	h2.carregar_classe("teste", csv, fx)
+	check(h2.nivel("t_golpe") == 3 and h2.slots[3] == "t_golpe" and h2.pontos == h.pontos, "níveis, slots e pontos voltam do save")
+	check(FileAccess.file_exists(Hab.caminho) and JSON.parse_string(FileAccess.get_file_as_string(Hab.caminho)).has("teste"), "o save em disco guarda a árvore")
+	var gasto := 0
+	for id in h.niveis:
+		gasto += int(h.defs[id]["pontos"]) * h.niveis[id]
+	var antes: int = h.pontos
+	h.redistribuir()
+	check(h.pontos == antes + gasto and h.niveis.is_empty() and h.slots == ["", "", "", ""], "redistribuir devolve todos os pontos")
+
+	# Árvores reais das classes que já entregaram dados: pais existem, textos existem, ativas têm efeito.
+	for c in cls:
+		var hc = Hab.new()
+		hc.carregar_classe(c)
+		for id in hc.ordem:
+			var d: Dictionary = hc.defs[id]
+			check(d["pai"] == "" or hc.defs.has(d["pai"]), "%s: pai de %s existe" % [c, id])
+			check(Csv.t("skill.%s.name" % id) != "skill.%s.name" % id, "%s: texto de %s" % [c, id])
+			check(d["tipo"] in ["ativa", "passiva"] and (d["tipo"] == "passiva" or d["efeito"] != ""), "%s: %s tem tipo e efeito válidos" % [c, id])
+		if not hc.ordem.is_empty():
+			check(hc._efeitos != null, "%s: tem script de efeitos" % c)
+
+	# Integração com o jogador e a corrida: mana, classe e pontos por sala.
+	DirAccess.remove_absolute(Hab.caminho)
+	var run = RunScene.instantiate()
+	run.com_menu = false
+	root.add_child(run)
+	await physics_frame
+	var p = run.player
+	check(p.classe == "arqueiro" and p.stats["mana_max"] == 80.0 and p.mana == 80.0, "arqueiro começa com mana cheia")
+	run.player.god_mode = true
+	var pts: int = p.habilidades.pontos
+	run.matar_todos()
+	await _esperar(func(): return run.estado == run.Estado.LIMPA, 5.0)
+	check(p.habilidades.pontos == pts + 1, "limpar sala rende 1 ponto de habilidade")
+	p.gastar_mana(30.0)
+	await create_timer(0.5).timeout
+	check(p.mana > 50.0, "mana regenera com o tempo")
+	run.queue_free()
+	j.queue_free()
+	DirAccess.remove_absolute(Hab.caminho)
+## Início do jogo: prólogo de Ilsa e Tico no primeiro Jogar, cartão da classe no título e primeira sala adormecida.
+func _testar_abertura() -> void:
+	var OpcoesScript = preload("res://scripts2d/opcoes_2d.gd")
+	OpcoesScript.caminho = "user://teste_abertura_opcoes.json"
+	MetaScript.caminho = "user://teste_abertura_meta.json"
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	var falas := Csv.rows("res://data2d/prologo.csv")
+	check(falas.size() >= 4, "prologo: falas no csv")
+	for f in falas:
+		check(Csv.t(f["loc"]) != f["loc"] and Csv.t("npc.%s.name" % f["quem"]) != "npc.%s.name" % f["quem"], "prologo: %s tem texto e nome" % f["loc"])
+		check(ResourceLoader.exists("res://art2d/ui/retrato_%s.png" % f["quem"]), "prologo: retrato de %s" % f["quem"])
+	var run = RunScene.instantiate()
+	run.com_menu = true
+	root.add_child(run)
+	await physics_frame
+	var m = run.menus
+	check(m.tela == m.Tela.TITULO and m._arte.visible and m._retrato_classe != null, "titulo: key art e cartao da classe")
+	var corridas_antes: int = run.corridas
+	m._jogar_do_titulo()
+	check(m.prologo.ativo and m.prologo.visible and run.corridas == corridas_antes, "prologo: abre no primeiro Jogar sem comecar a corrida")
+	m.prologo.avancar()
+	check(m.prologo.indice == 0 and m.prologo._texto.visible_characters == -1, "prologo: primeiro clique completa a fala")
+	for i in falas.size():
+		m.prologo.avancar()
+		m.prologo.avancar()
+	check(not m.prologo.ativo and m.opcoes.prologo_visto and run.corridas == corridas_antes + 1, "prologo: termina e comeca a corrida")
+	var o2 = OpcoesScript.new()
+	check(o2.carregar() and o2.prologo_visto, "prologo: visto fica salvo")
+	m.mostrar_titulo()
+	m._jogar_do_titulo()
+	check(not m.prologo.ativo and run.corridas == corridas_antes + 2, "prologo: nao repete depois de visto")
+	m.mostrar_titulo()
+	m.prologo.iniciar()
+	m.prologo.pular()
+	check(not m.prologo.ativo and m.tela == m.Tela.TITULO and run.corridas == corridas_antes + 2, "prologo: rever pelo titulo e pular volta ao titulo")
+	m.fechar()
+	paused = false
+	await physics_frame   # inimigos das corridas anteriores saem da árvore
+	var adormecidos := get_nodes_in_group("inimigos_adormecidos").filter(func(e): return is_instance_valid(e) and not e.is_queued_for_deletion())
+	check(run.indice == 0 and adormecidos.size() == run.vivos and run.vivos > 0, "sala 1: inimigos comecam adormecidos")
+	var longe := INF
+	for e in adormecidos:
+		longe = minf(longe, e.global_position.distance_to(run.player.global_position))
+	check(longe > Csv.kv("res://data2d/run_settings.csv")["first_room_wake_radius"], "sala 1: jogador nasce fora do alcance dos inimigos")
+	var e0 = adormecidos[0]
+	var pos0: Vector2 = e0.global_position
+	for i in 60:
+		await physics_frame
+	check(e0.global_position.distance_to(pos0) < 1.0 and run.player.hp == run.player.stats["hp_max"], "sala 1: adormecidos nao atacam nem andam")
+	e0.take_damage(1.0)
+	check(adormecidos.all(func(e): return e.raio_despertar == 0.0), "sala 1: ferir um acorda a sala toda")
+	run.queue_free()
+	await process_frame
+	DirAccess.remove_absolute(OpcoesScript.caminho)
+	DirAccess.remove_absolute(MetaScript.caminho)
+
 ## Status de inimigo (aplicar_status): marca, lentidão, atordoamento, veneno e queimadura.
 func _testar_status() -> void:
 	var mundo := Node2D.new()
@@ -687,6 +837,114 @@ func _testar_status() -> void:
 	mundo.queue_free()
 	await physics_frame
 
+## Mago: dados de habilidades coerentes e efeitos que de fato ferem, lentificam, queimam e protegem.
+func _testar_mago() -> void:
+	var Efeitos = preload("res://scripts2d/efeitos_mago_2d.gd")
+	var Icones = preload("res://scripts2d/icones_2d.gd")
+	var defs := {}
+	for r in Csv.rows("res://data2d/habilidades_mago.csv"):
+		defs[r["id"]] = r
+	var mstats := Csv.kv("res://data2d/mago.csv")
+	check(defs.size() >= 15 and defs.size() <= 20, "mago tem 15 a 20 habilidades (%d)" % defs.size())
+	var ramos := {}
+	for id in defs:
+		var d: Dictionary = defs[id]
+		ramos[d["ramo"]] = true
+		check(Csv.t("skill.%s.name" % id) != "skill.%s.name" % id and Csv.t("skill.%s.desc" % id) != "skill.%s.desc" % id, "%s tem nome e descricao" % id)
+		check(Icones.textura(d["icone"]) != null, "%s tem icone" % id)
+		check(d["pai"] == "" or (defs.has(d["pai"]) and int(defs[d["pai"]]["tier"]) < int(d["tier"]) and defs[d["pai"]]["ramo"] == d["ramo"]), "%s: pai valido no mesmo ramo" % id)
+		check(d["pai"] != "" or d["tier"] == "1", "%s: raiz so no tier 1" % id)
+		if d["tipo"] == "passiva":
+			check(mstats.has(d["stat"]) and (d["modo"] == "add" or d["modo"] == "mult"), "%s: passiva mexe em stat existente" % id)
+		else:
+			check(float(d["cd"]) > 0.0 or float(d["custo"]) == 0.0, "%s: tem recarga" % id)
+	check(ramos.size() == 3, "3 ramos de habilidade")
+	# cena com mago e inimigos
+	var mundo := Node2D.new()
+	root.add_child(mundo)
+	var m = load("res://scripts2d/mago_2d.gd").new()
+	mundo.add_child(m)
+	m.auto_aim = Vector2.RIGHT
+	m.god_mode = true
+	await physics_frame
+	check(m.mana == mstats["mana_max"] and m.stats["hp_max"] == mstats["hp_max"], "mago comeca com mana e vida do mago.csv")
+	check(m.gastar_mana(30.0) and not m.gastar_mana(1000.0) and absf(m.mana - 70.0) < 0.5, "gastar mana")
+	var antes: float = m.mana
+	await _esperar(func(): return m.mana > antes + 3.0, 2.0)
+	check(m.mana > antes + 3.0, "mana regenera")
+	var funcionou := {}
+	for id in defs:
+		var d: Dictionary = defs[id].duplicate()
+		if d["tipo"] != "ativa":
+			continue
+		var def := {}
+		for k in ["cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor"]:
+			def[k] = float(d[k])
+		var inimigos := _alvos_mago(mundo, m)
+		var hp_antes := 0.0
+		for e in inimigos:
+			hp_antes += e.hp
+		var ok: bool = m.lancar_efeito(d["efeito"], def, 1)
+		check(ok, "%s (%s) executa" % [id, d["efeito"]])
+		await _esperar(func(): return false, 1.3)   # projétil voa, marca de meteoro cai
+		var hp_depois := 0.0
+		for e in inimigos:
+			if is_instance_valid(e):
+				hp_depois += maxf(0.0, e.hp)
+		funcionou[d["efeito"]] = hp_depois < hp_antes
+		for e in inimigos:
+			if is_instance_valid(e):
+				e.queue_free()
+		await physics_frame
+	for ef in ["bola_fogo", "raio_gelo", "sopro_chamas", "meteoro", "nova_fogo", "nova_gelo", "nova_raio", "corrente_raios", "estacas_gelo", "salto_arcano"]:
+		check(funcionou.get(ef, false), "efeito %s causa dano" % ef)
+	# muralha, nevasca e tempestade são zonas: dano por ticks no ponto mirado (a frente do mago)
+	for ef in ["muralha_fogo", "nevasca", "tempestade"]:
+		check(funcionou.has(ef), "zona %s executou sem erro" % ef)
+	var inimigos := _alvos_mago(mundo, m)
+	# status
+	var alvo = inimigos[0]
+	alvo.hp = alvo.hp_max
+	alvo.global_position = m.global_position + Vector2(150, 0)
+	m.lancar_efeito("raio_gelo", {"dano": 10.0, "raio": 0.0, "alcance": 900.0, "valor": 600.0}, 1)
+	await _esperar(func(): return alvo.tem_status("lentidao"), 1.5)
+	check(alvo.tem_status("lentidao"), "raio de gelo lentifica")
+	alvo.hp = alvo.hp_max
+	m.lancar_efeito("bola_fogo", {"dano": 20.0, "raio": 90.0, "alcance": 900.0, "valor": 640.0}, 1)
+	await _esperar(func(): return alvo.tem_status("queimadura"), 1.5)
+	check(alvo.tem_status("queimadura"), "bola de fogo queima")
+	m.lancar_efeito("nova_gelo", {"dano": 5.0, "raio": 300.0}, 1)
+	check(alvo.tem_status("atordoamento"), "nova glacial congela")
+	# escudo, surto e salto
+	m.god_mode = false
+	m.invencivel = 0.0
+	m.lancar_efeito("barreira_gelo", {"valor": 40.0, "duracao": 5.0}, 1)
+	var hp0: float = m.hp
+	m.take_damage(25.0)
+	check(m.hp == hp0 and m.escudo == 15.0, "barreira absorve dano")
+	m.invencivel = 0.0
+	m.take_damage(25.0)
+	check(m.hp == hp0 - 10.0 and m.escudo == 0.0, "dano acima do escudo passa")
+	m.lancar_efeito("surto_mana", {"valor": 3.0, "duracao": 2.0}, 1)
+	m.mana = 10.0
+	var mana0: float = m.mana
+	await _esperar(func(): return false, 0.5)
+	check(m.mana - mana0 > m.stats["mana_regen"] * 0.5 * 2.0, "surto de mana acelera a regeneracao")
+	var pos0: Vector2 = m.global_position
+	m.lancar_efeito("salto_arcano", {"dano": 5.0, "raio": 80.0, "alcance": 200.0}, 1)
+	check(m.global_position.distance_to(pos0 + Vector2(200, 0)) < 40.0, "salto arcano teleporta na direcao da mira")
+	mundo.queue_free()
+	await physics_frame
+
+func _alvos_mago(mundo: Node, m: Node) -> Array:
+	var out := []
+	for i in 5:
+		var e = load("res://scripts2d/enemy_2d.gd").new()
+		mundo.add_child(e)
+		e.setup("hollow_sentinel", m, m.global_position + Vector2(120 + i * 30, (i - 2) * 25))
+		e.stats["speed"] = 0.0   # fica parado para a medição
+		out.append(e)
+	return out
 ## habilidades_arqueiro.csv: árvore coerente, textos, ícones e efeitos ativos funcionando.
 func _def_arqueiro(r: Dictionary) -> Dictionary:
 	var d := {}

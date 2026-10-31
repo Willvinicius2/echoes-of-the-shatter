@@ -2,7 +2,7 @@ extends RefCounted
 ## Classe jogável escolhida (arqueiro ou guerreiro). Vale para a próxima corrida; o título alterna.
 ## Também aceita `-- --classe=guerreiro` na linha de comando (testes e bot).
 
-const CLASSES := ["arqueiro", "guerreiro"]
+const CLASSES := ["arqueiro", "guerreiro", "mago"]
 
 static var atual := "arqueiro"
 

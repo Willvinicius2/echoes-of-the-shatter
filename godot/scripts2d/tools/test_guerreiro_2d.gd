@@ -251,6 +251,7 @@ func _corrida() -> void:
 	check.call(run.estado == run.Estado.LUTA and run.vivos == 3, "sala 1 começa com 3 inimigos")
 	var alvo = t.get_nodes_in_group("hurtable")[0]
 	var antes: float = alvo.hp
+	p.global_position = alvo.global_position + Vector2(0, 90)   # a sala 1 tem o riacho no meio e começa adormecida
 	var tempo := 0.0
 	while is_instance_valid(alvo) and alvo.hp > 0.0 and tempo < 12.0:
 		p.auto_aim = alvo.global_position - p.global_position

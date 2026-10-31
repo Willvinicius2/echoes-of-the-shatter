@@ -1,0 +1,62 @@
+[
+    {
+        "referencias": [
+            "docs/arte/referencias-geracao/aprovadas/04_mago.png",
+            "godot/art2d/sprites/arqueiro/arqueiro_idle.png"
+        ],
+        "titulo": "Mago: folha idle",
+        "prompt": "2D game sprite sheet, transparent PNG background, hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: the Mage from attached image 1 (approved design): dark purple hooded robe with gold trim at the hem and belt, pointed hood, pale face with cyan glowing eyes, wooden staff in the right hand topped by a glowing cyan crystal (NEVER a lantern). Chibi proportions, about 3 heads tall, same as the Archer in image 2 (reference for painting style, scale, outline and sheet layout). Sheet layout: grid with 6 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Every cell is 128x128 px, character feet on the same baseline at y=104, centered at x=64, standing about 96 px tall, same size in every cell. IDLE loop: calm breathing, robe hem sways, crystal pulses softly.",
+        "id": "mago_idle",
+        "tamanho": "768x640"
+    },
+    {
+        "referencias": [
+            "docs/arte/referencias-geracao/aprovadas/04_mago.png",
+            "godot/art2d/sprites/arqueiro/arqueiro_run.png"
+        ],
+        "titulo": "Mago: folha run",
+        "prompt": "2D game sprite sheet, transparent PNG background, hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: the Mage from attached image 1 (approved design): dark purple hooded robe with gold trim at the hem and belt, pointed hood, pale face with cyan glowing eyes, wooden staff in the right hand topped by a glowing cyan crystal (NEVER a lantern). Chibi proportions, about 3 heads tall, same as the Archer in image 2 (reference for painting style, scale, outline and sheet layout). Sheet layout: grid with 8 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Every cell is 128x128 px, character feet on the same baseline at y=104, centered at x=64, standing about 96 px tall, same size in every cell. RUN loop: 8-frame run cycle, leaning forward, robe flowing back, staff held in right hand, boots alternating.",
+        "id": "mago_run",
+        "tamanho": "1024x640"
+    },
+    {
+        "referencias": [
+            "docs/arte/referencias-geracao/aprovadas/04_mago.png",
+            "godot/art2d/sprites/arqueiro/arqueiro_attack.png"
+        ],
+        "titulo": "Mago: folha attack",
+        "prompt": "2D game sprite sheet, transparent PNG background, hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: the Mage from attached image 1 (approved design): dark purple hooded robe with gold trim at the hem and belt, pointed hood, pale face with cyan glowing eyes, wooden staff in the right hand topped by a glowing cyan crystal (NEVER a lantern). Chibi proportions, about 3 heads tall, same as the Archer in image 2 (reference for painting style, scale, outline and sheet layout). Sheet layout: grid with 6 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Every cell is 128x128 px, character feet on the same baseline at y=104, centered at x=64, standing about 96 px tall, same size in every cell. CAST ATTACK, not looping: frame 1-2 pull staff back, 3 raise, frame 5 (index 4) thrusts the staff forward releasing a burst of violet arcane energy from the crystal, frame 6 recover.",
+        "id": "mago_attack",
+        "tamanho": "768x640"
+    },
+    {
+        "referencias": [
+            "docs/arte/referencias-geracao/aprovadas/04_mago.png",
+            "godot/art2d/sprites/arqueiro/arqueiro_dodge.png"
+        ],
+        "titulo": "Mago: folha dodge",
+        "prompt": "2D game sprite sheet, transparent PNG background, hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: the Mage from attached image 1 (approved design): dark purple hooded robe with gold trim at the hem and belt, pointed hood, pale face with cyan glowing eyes, wooden staff in the right hand topped by a glowing cyan crystal (NEVER a lantern). Chibi proportions, about 3 heads tall, same as the Archer in image 2 (reference for painting style, scale, outline and sheet layout). Sheet layout: grid with 6 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Every cell is 128x128 px, character feet on the same baseline at y=104, centered at x=64, standing about 96 px tall, same size in every cell. DODGE ROLL/DASH: quick forward lunge with the body low, robe trailing, faint arcane trail behind, 6 frames.",
+        "id": "mago_dodge",
+        "tamanho": "768x640"
+    },
+    {
+        "referencias": [
+            "docs/arte/referencias-geracao/aprovadas/04_mago.png",
+            "godot/art2d/sprites/arqueiro/arqueiro_hit.png"
+        ],
+        "titulo": "Mago: folha hit",
+        "prompt": "2D game sprite sheet, transparent PNG background, hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: the Mage from attached image 1 (approved design): dark purple hooded robe with gold trim at the hem and belt, pointed hood, pale face with cyan glowing eyes, wooden staff in the right hand topped by a glowing cyan crystal (NEVER a lantern). Chibi proportions, about 3 heads tall, same as the Archer in image 2 (reference for painting style, scale, outline and sheet layout). Sheet layout: grid with 3 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Every cell is 128x128 px, character feet on the same baseline at y=104, centered at x=64, standing about 96 px tall, same size in every cell. HIT REACTION: 3 frames, flinches backward, eyes squeezed, first frame brighter.",
+        "id": "mago_hit",
+        "tamanho": "384x640"
+    },
+    {
+        "referencias": [
+            "docs/arte/referencias-geracao/aprovadas/04_mago.png",
+            "godot/art2d/sprites/arqueiro/arqueiro_death.png"
+        ],
+        "titulo": "Mago: folha death",
+        "prompt": "2D game sprite sheet, transparent PNG background, hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: the Mage from attached image 1 (approved design): dark purple hooded robe with gold trim at the hem and belt, pointed hood, pale face with cyan glowing eyes, wooden staff in the right hand topped by a glowing cyan crystal (NEVER a lantern). Chibi proportions, about 3 heads tall, same as the Archer in image 2 (reference for painting style, scale, outline and sheet layout). Sheet layout: grid with 8 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Every cell is 128x128 px, character feet on the same baseline at y=104, centered at x=64, standing about 96 px tall, same size in every cell. DEATH: 8 frames, staggers, drops the staff and collapses on the ground, crystal fades out; last frames lie still within the cell.",
+        "id": "mago_death",
+        "tamanho": "1024x640"
+    }
+]

@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://bj36k6lfojd3"
-
-[deps]
-
-files=["res://data2d/feel.valor.translation", "res://data2d/feel.unidade.translation", "res://data2d/feel.nota.translation"]
-
-source_file="res://data2d/feel.csv"
-dest_files=["res://data2d/feel.valor.translation", "res://data2d/feel.unidade.translation", "res://data2d/feel.nota.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"
