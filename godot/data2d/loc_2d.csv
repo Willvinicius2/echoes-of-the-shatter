@@ -89,3 +89,32 @@ route.combate,Corredor dos mortos: combate normal
 route.elite_ossuario,Ossuario profundo: elite (mais perigo, mais fragmentos e uma carta extra)
 route.descanso_cripta,Nicho de descanso: recupera vida, sem combate
 hud.rest,Nicho de descanso: a vida foi recuperada. Siga pela porta
+menu.options,Opcoes
+opt.title,Opcoes
+opt.vol_master,Volume geral: %d%%
+opt.vol_musica,Musica: %d%%
+opt.vol_efeitos,Efeitos: %d%%
+opt.fullscreen,Tela cheia: %s
+opt.vsync,Sincronia vertical: %s
+opt.on,ligado
+opt.off,desligado
+opt.keys,Teclas
+opt.keys_title,Teclas
+opt.keys_hint,Clique numa acao e aperte a nova tecla. Esc cancela.
+opt.keys_reset,Restaurar teclas padrao
+opt.key_item,%s: %s
+opt.press_key,aperte uma tecla...
+opt.tutorial,Tutorial na proxima corrida: %s
+keys.move_up,Mover para cima
+keys.move_down,Mover para baixo
+keys.move_left,Mover para a esquerda
+keys.move_right,Mover para a direita
+keys.dodge,Esquiva
+tutorial.move,Mova-se com %s
+tutorial.shoot,Mire com o mouse e atire com %s
+tutorial.dodge,Esquive com %s para escapar dos golpes
+tutorial.key_shoot,o clique esquerdo
+ach.first_run,Primeira expedicao
+ach.crypt_cleared,Cripta vencida
+ach.first_forge,Primeira criacao na Forja
+ach.first_upgrade,Primeira melhoria permanente
