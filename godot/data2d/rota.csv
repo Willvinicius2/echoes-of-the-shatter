@@ -1,3 +1,3 @@
 etapa,id,tipo,room,enemies
-2,elite_ossuario,elite,res://data2d/rooms/sala_2.txt,skeleton_soldier:3|chain_wraith:2|crypt_bat:2
-3,descanso_cripta,descanso,res://data2d/rooms/sala_1.txt,
+2,elite_ossuario,elite,res://data2d/rooms/sala_elite_ossuario.txt,ossuary_captain:1|ossuary_warden:1|skeleton_soldier:2|chain_wraith:1|crypt_bat:2
+3,descanso_cripta,descanso,res://data2d/rooms/sala_descanso.txt,

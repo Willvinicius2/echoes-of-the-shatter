@@ -89,6 +89,36 @@ route.combate,Corredor dos mortos: combate normal
 route.elite_ossuario,Ossuario profundo: elite (mais perigo, mais fragmentos e uma carta extra)
 route.descanso_cripta,Nicho de descanso: recupera vida, sem combate
 hud.rest,Nicho de descanso: a vida foi recuperada. Siga pela porta
+enemy.ossuary_captain.name,Capitao do Ossuario
+enemy.ossuary_warden.name,Carcereiro do Ossuario
+enemy.cinder_archer.name,Arqueiro de Cinza
+enemy.fallen_echo.name,Eco Caido
+enemy.hollow_sentinel.name,Sentinela Oca
+enemy.skeleton_soldier.name,Soldado Esqueleto
+enemy.wandering_ghost.name,Espectro Errante
+enemy.chain_wraith.name,Espectro Acorrentado
+enemy.crypt_bat.name,Morcego da Cripta
+enemy.ghost_archer.name,Arqueiro Fantasma
+enemy.ash_hound.name,Cao de Cinza
+enemy.stone_herald.name,Arauto de Pedra
+enemy.crypt_guardian.name,Guardiao da Cripta
+enemy.ossuary_captain.desc,Elite do ossuario. Bate devagar e forte: esquive depois do aviso.
+enemy.ossuary_warden.desc,Elite do ossuario. Lento e pesado; guarda as ossadas que a Cinza nao levou.
+enemy.cinder_archer.desc,Atira de longe e recua. Feche a distancia ou use as colunas.
+enemy.fallen_echo.desc,Eco de um cacador da Queda. Rapido e fragil.
+upgrade.ember_tip.name,Ponta em Brasa
+upgrade.ember_tip.desc,+4 de dano por flecha
+recipe.amuleto_cinza.name,Amuleto de Cinza
+recipe.tonico_folego.name,Tonico de Folego
+region.r1.name,Cripta Partida
+region.r1.intro,Sob a Cinza ainda ha uma cripta de pe. O Guardiao ainda guarda o que ela partiu.
+region.r1.room_2b,Ossuario lateral: os mortos daqui nunca foram contados.
+region.r1.room_3b,Salao das colunas: runas antigas ainda respondem ao ouvido.
+route.elite_ossuario.lore,Os Ecos da Queda mostram o carcereiro vigiando esta sala desde antes da Cinza.
+route.descanso_cripta.lore,Ilsa chama de nicho de descanso o canto onde a Cinza nao entra.
+echo.r1.hammer,Eco do martelo: o Guardiao golpeia em cone a frente. Fique de lado.
+echo.r1.shield,Eco do escudo: o escudo cobre a frente do Guardiao. Atire quando ele recuar.
+echo.r1.phase2,Eco da queda: na segunda fase o Guardiao chama as Sentinelas de volta.
 menu.options,Opcoes
 opt.title,Opcoes
 opt.vol_master,Volume geral: %d%%

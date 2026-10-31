@@ -1,0 +1,24 @@
+############D###########
+############D###########
+#......................#
+#..B................B..#
+#..qq.E..........E.qq..#
+#..qq...............qq.#
+#.......r..rrrr........#
+#...E...r..r..r....E...#
+#.......r..r..r........#
+#..qq...rrrr..r.....qq.#
+#..qq..........E....qq.#
+#..B........P.......B..#
+########################
+@props
+sarcophagus_closed 4.4 3.4
+sarcophagus_closed 19.6 3.4
+skull_pile 7.8 2.8
+bones_ribcage 16.6 2.9
+coffin_lid_leaning 3.0 7.4
+skull_spike 21.0 7.2
+bones_scattered 11.0 10.0
+rock_slabs 17.4 9.8
+tree_dry_pile 1.4 10.8
+tree_dry_leaning 22.4 10.6
