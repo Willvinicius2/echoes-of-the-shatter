@@ -579,3 +579,148 @@ TEST(rogue_restore_rejects_invalid_state_and_keeps_current) {
     EXPECT_TRUE(s.RestoreState(good, &err));
     EXPECT_EQ(s.StateHash(), hash);
 }
+
+// --- Modo cartas externas (API 1.9): o Guerreiro tem árvore própria no cliente; o core não sorteia nem oferece cartas. ---
+namespace {
+
+// Corrida inteira pelo mesmo caminho (etapa 2 = elite, etapa 3 = descanso), escolhendo a 1ª carta quando houver.
+void PlayFullRoute(RogueState& s) {
+    while (s.Phase() != RoguePhase::Won && s.Phase() != RoguePhase::Dead) {
+        switch (s.Phase()) {
+            case RoguePhase::Fight: KillNext(s); break;
+            case RoguePhase::Choice: s.ChooseCard(s.Offer().front(), 50.0); break;
+            case RoguePhase::Cleared:
+                if (s.RestPending()) s.Rest(50.0);
+                else s.UseDoor();
+                break;
+            case RoguePhase::Route: s.ChoosePath(1); break;
+            default: return;
+        }
+    }
+}
+
+}  // namespace
+
+TEST(rogue_external_cards_room_clear_goes_to_cleared_without_offer_or_draw) {
+    RogueState s(Data());
+    EXPECT_FALSE(s.ExternalCards());
+    EXPECT_ENUM_EQ(s.SetExternalCards(true), RogueRunResult::Ok);  // fase None
+    EXPECT_TRUE(s.ExternalCards());
+    s.StartRun(7, Base());
+    EXPECT_TRUE(s.ExternalCards());  // StartRun não zera o modo
+    // Não muda com a corrida viva.
+    EXPECT_ENUM_EQ(s.SetExternalCards(false), RogueRunResult::WrongPhase);
+    EXPECT_TRUE(s.ExternalCards());
+    RogueKill k;
+    while (s.Phase() == RoguePhase::Fight) KillNext(s, &k);
+    EXPECT_TRUE(k.roomCleared);
+    EXPECT_EQ(k.clearFragments, std::int64_t(5));
+    EXPECT_ENUM_EQ(s.Phase(), RoguePhase::Cleared);
+    EXPECT_TRUE(s.Offer().empty());
+    EXPECT_EQ(s.Draws(), std::uint64_t(0));
+    double hp = 0.0;
+    EXPECT_ENUM_EQ(s.ChooseCard(Data().Upgrades().front().id, 50.0, &hp), RogueRunResult::WrongPhase);
+    EXPECT_NEAR(hp, 50.0, 1e-12);
+    EXPECT_ENUM_EQ(s.SetExternalCards(false), RogueRunResult::WrongPhase);
+    // Elite: +5 da sala + 15 da elite, mas nenhuma carta.
+    EXPECT_ENUM_EQ(s.UseDoor(), RogueDoor::Route);
+    EXPECT_ENUM_EQ(s.ChoosePath(1), RogueRunResult::Ok);
+    EXPECT_EQ(s.CurrentNode()->kind, std::string("elite"));
+    while (s.Phase() == RoguePhase::Fight) KillNext(s, &k);
+    EXPECT_EQ(k.clearFragments, std::int64_t(5 + 15));
+    EXPECT_ENUM_EQ(s.Phase(), RoguePhase::Cleared);
+    EXPECT_TRUE(s.Offer().empty());
+    // Descanso continua curando; chefe e vitória iguais.
+    s.UseDoor();
+    s.ChoosePath(1);
+    EXPECT_TRUE(s.RestPending());
+    EXPECT_ENUM_EQ(s.Rest(20.0, &hp), RogueRunResult::Ok);
+    EXPECT_NEAR(hp, 70.0, 1e-12);
+    EXPECT_ENUM_EQ(s.UseDoor(), RogueDoor::Entered);
+    ClearRoom(s);
+    EXPECT_ENUM_EQ(s.UseDoor(), RogueDoor::Victory);
+    EXPECT_EQ(s.Draws(), std::uint64_t(0));
+    // Stats da corrida = base + meta; nenhum upgrade no resumo.
+    const RogueStats rs = s.RunStats(), meta = s.ApplyMeta(Base());
+    ASSERT_EQ(rs.size(), meta.size());
+    for (std::size_t i = 0; i < rs.size(); ++i) EXPECT_EQ(rs[i].second, meta[i].second);
+    EXPECT_EQ(s.Summary().upgradesTotal, 0);
+    // Depois da vitória pode mudar; FinishRun não zera.
+    EXPECT_ENUM_EQ(s.SetExternalCards(true), RogueRunResult::Ok);
+    s.FinishRun();
+    EXPECT_TRUE(s.ExternalCards());
+    EXPECT_ENUM_EQ(s.SetExternalCards(false), RogueRunResult::Ok);
+    s.StartRun(7, Base());
+    ClearRoom(s);
+    EXPECT_ENUM_EQ(s.Phase(), RoguePhase::Choice);  // desligado: volta a sortear
+    EXPECT_EQ(s.Draws(), std::uint64_t(1));
+}
+
+TEST(rogue_external_cards_same_seed_same_meta_gains_and_different_hash) {
+    RogueState cards(Data()), ext(Data());
+    ext.SetExternalCards(true);
+    cards.StartRun(321, Base());
+    ext.StartRun(321, Base());
+    PlayFullRoute(cards);
+    PlayFullRoute(ext);
+    ASSERT_TRUE(cards.Phase() == RoguePhase::Won);
+    ASSERT_TRUE(ext.Phase() == RoguePhase::Won);
+    EXPECT_EQ(cards.Draws(), std::uint64_t(2));
+    EXPECT_EQ(ext.Draws(), std::uint64_t(0));
+    EXPECT_EQ(cards.GainFragments(), ext.GainFragments());
+    EXPECT_TRUE(cards.GainMaterials() == ext.GainMaterials());
+    EXPECT_EQ(cards.Summary().stageReached, ext.Summary().stageReached);
+    EXPECT_NE(cards.StateHash(), ext.StateHash());
+    cards.FinishRun();
+    ext.FinishRun();
+    EXPECT_EQ(cards.MetaToJson(), ext.MetaToJson());  // o modo não entra no save do meta
+    EXPECT_TRUE(ext.MetaToJson().find("external") == std::string::npos);
+    // Mesmo estado em tudo, só o modo muda: hash muda; sem o modo o JSON não ganha chave nova (igual à 1.8).
+    RogueState a(Data()), b(Data());
+    a.StartRun(5, Base());
+    b.SetExternalCards(true);
+    b.StartRun(5, Base());
+    EXPECT_NE(a.StateHash(), b.StateHash());
+    EXPECT_TRUE(a.StateJson().find("external_cards") == std::string::npos);
+    EXPECT_TRUE(b.StateJson().find("\"external_cards\":true") != std::string::npos);
+}
+
+TEST(rogue_external_cards_state_round_trip_and_parts_equal_whole) {
+    RogueState a(Data());
+    a.SetExternalCards(true);
+    a.StartRun(1234, Base());
+    for (int i = 0; i < 400; ++i) Step(a);
+    EXPECT_EQ(a.Draws(), std::uint64_t(0));  // nenhum sorteio em 400 passos (várias corridas)
+    EXPECT_TRUE(a.Fragments() > 0);
+    RogueState c(Data());
+    c.SetExternalCards(true);
+    c.StartRun(1234, Base());
+    for (int i = 0; i < 150; ++i) Step(c);
+    RogueState d(Data());
+    std::string err;
+    ASSERT_TRUE(d.RestoreState(c.StateJson(), &err));
+    EXPECT_TRUE(d.ExternalCards());
+    EXPECT_EQ(d.StateHash(), c.StateHash());
+    for (int i = 0; i < 250; ++i) Step(d);
+    EXPECT_EQ(d.StateHash(), a.StateHash());
+    // Restaurar um estado sem o modo desliga o modo.
+    RogueState off(Data());
+    off.StartRun(1234, Base());
+    ASSERT_TRUE(d.RestoreState(off.StateJson(), &err));
+    EXPECT_FALSE(d.ExternalCards());
+    // Inválidos: valor não booleano; modo ligado com cartas na mesa. Nada muda.
+    const std::string hash = d.StateHash();
+    std::string good = c.StateJson();
+    std::string bad = good;
+    bad.replace(bad.find("\"external_cards\":true"), 21, "\"external_cards\":1");
+    EXPECT_FALSE(d.RestoreState(bad, &err));
+    RogueState choice(Data());
+    choice.StartRun(7, Base());
+    ClearRoom(choice);
+    ASSERT_TRUE(choice.Phase() == RoguePhase::Choice);
+    std::string bad2 = choice.StateJson();
+    bad2.insert(1, "\"external_cards\":true,");
+    EXPECT_FALSE(d.RestoreState(bad2, &err));
+    EXPECT_EQ(d.StateHash(), hash);
+    EXPECT_FALSE(d.ExternalCards());
+}

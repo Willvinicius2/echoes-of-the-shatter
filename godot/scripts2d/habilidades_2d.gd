@@ -7,6 +7,8 @@ extends RefCounted
 const Csv = preload("res://scripts2d/csv2d.gd")
 
 const SLOTS := 4
+
+static var caminho := "user://habilidades_2d.json"   # os testes apontam para outro arquivo
 const CAMPOS_ESCALA := ["dano", "qtd", "raio", "duracao", "alcance", "valor"]
 const CAMPOS_NUM := ["tier", "pontos", "nivel_max", "cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor", "escala"]
 
@@ -20,7 +22,7 @@ var niveis := {}          # id -> nível aprendido
 var slots: Array = ["", "", "", ""]
 var recargas := {}        # id -> segundos restantes
 var pontos := 0           # saldo de pontos de habilidade
-var meta: RefCounted      # opcional: guarda pontos, níveis e slots no save
+var persistir := true     # falso: não lê nem grava o save (testes de lógica)
 var _efeitos: GDScript
 
 ## Linhas de data2d/classes_2d.csv por id.
@@ -196,10 +198,24 @@ func de_dicionario(d: Dictionary) -> void:
 	pontos = maxi(0, int(d.get("pontos", 0)))
 
 func _restaurar() -> void:
-	if meta != null and meta.habilidades.has(classe):
-		de_dicionario(meta.habilidades[classe])
+	var tudo := _ler_tudo()
+	if tudo.has(classe):
+		de_dicionario(tudo[classe])
 
 func _salvar() -> void:
-	if meta != null:
-		meta.habilidades[classe] = para_dicionario()
-		meta.salvar()
+	if not persistir:
+		return
+	var tudo := _ler_tudo()
+	tudo[classe] = para_dicionario()
+	var f := FileAccess.open(caminho, FileAccess.WRITE)
+	if f == null:
+		push_error("Não foi possível gravar as habilidades: " + caminho)
+		return
+	f.store_string(JSON.stringify(tudo))
+
+## Save de todas as classes: {classe: {niveis, slots, pontos}}. Arquivo ausente ou inválido = vazio.
+func _ler_tudo() -> Dictionary:
+	if not persistir or not FileAccess.file_exists(caminho):
+		return {}
+	var d = JSON.parse_string(FileAccess.get_file_as_string(caminho))
+	return d if typeof(d) == TYPE_DICTIONARY else {}

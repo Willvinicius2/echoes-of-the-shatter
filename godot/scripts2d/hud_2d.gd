@@ -78,7 +78,8 @@ func _desenhar_base(vp: Vector2) -> void:
 	var faixa := Arte.tex("hud_faixa_pedra")
 	if faixa != null:   # arte pintada: 1120x150 no arquivo, 700x94 na tela de 1600x900, centrada embaixo
 		var esc := 0.625
-		_ctl.draw_texture_rect(faixa, Rect2(vp.x * 0.5 - 560.0 * esc, vp.y - 150.0 * esc, 1120.0 * esc, 150.0 * esc), false)
+		var larg := 1120.0 * esc * 0.84   # um pouco mais estreita que o arquivo: menos pedra vazia ao lado dos slots
+		_ctl.draw_texture_rect(faixa, Rect2(vp.x * 0.5 - larg * 0.5, vp.y - 150.0 * esc, larg, 150.0 * esc), false)
 		return
 	var e := _centro_globo(vp, false)
 	var d := _centro_globo(vp, true)
