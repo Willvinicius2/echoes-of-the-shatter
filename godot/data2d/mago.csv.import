@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://xmvejnxxsos3"
-
-[deps]
-
-files=["res://data2d/mago.valor.translation", "res://data2d/mago.unidade.translation", "res://data2d/mago.nota.translation"]
-
-source_file="res://data2d/mago.csv"
-dest_files=["res://data2d/mago.valor.translation", "res://data2d/mago.unidade.translation", "res://data2d/mago.nota.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"

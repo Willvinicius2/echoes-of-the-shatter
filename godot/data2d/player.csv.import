@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://btsvw1ybuky00"
-
-[deps]
-
-files=["res://data2d/player.valor.translation", "res://data2d/player.unidade.translation", "res://data2d/player.nota.translation"]
-
-source_file="res://data2d/player.csv"
-dest_files=["res://data2d/player.valor.translation", "res://data2d/player.unidade.translation", "res://data2d/player.nota.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"

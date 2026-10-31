@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://f3rna8py6315"
-
-[deps]
-
-files=["res://data2d/hud_layout.valor.translation", "res://data2d/hud_layout.unidade.translation", "res://data2d/hud_layout.nota.translation"]
-
-source_file="res://data2d/hud_layout.csv"
-dest_files=["res://data2d/hud_layout.valor.translation", "res://data2d/hud_layout.unidade.translation", "res://data2d/hud_layout.nota.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"
