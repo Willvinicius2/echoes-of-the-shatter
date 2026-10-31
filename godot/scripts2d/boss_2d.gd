@@ -4,6 +4,9 @@ extends "res://scripts2d/enemy_2d.gd"
 
 enum Ciclo { ENTRADA, PAUSA, AVISO, ACAO, FASE, FIM }
 
+const Tema = preload("res://scripts2d/tema_2d.gd")
+const Arte = preload("res://scripts2d/hud_arte_2d.gd")
+
 signal fase_mudou(fase: int)
 
 var ciclo := Ciclo.ENTRADA
@@ -272,19 +275,24 @@ func _desenhar_barra() -> void:
 		return
 	var vp := _ctl.size
 	var alfa := 1.0 if ciclo != Ciclo.ENTRADA else clampf(1.0 - _t / maxf(_t_total, 0.01), 0.0, 1.0)
-	var fonte := ThemeDB.fallback_font
-	var pos := Vector2(vp.x / 2 - 300, 52)
-	var tam := Vector2(600, 16)
-	_ctl.draw_rect(Rect2(pos - Vector2(2, 2), tam + Vector2(4, 4)), Color(0.05, 0.05, 0.07, 0.9 * alfa))
+	_ctl.modulate.a = alfa
+	# colada ao topo, sobre a faixa escura: fina e larga, sem painel, com caveiras e chifres nas pontas.
+	# Nome e fase ficam abaixo, um de cada lado da porta (centro x), que continua livre.
+	var tam := Vector2(660, 11)
+	var pos := Vector2(vp.x / 2 - tam.x / 2, 9)
 	var cor := Color(0.6, 0.2, 0.7) if fase == 1 else (Color(0.8, 0.25, 0.55) if fase == 2 else Color(0.9, 0.2, 0.2))
-	cor.a = alfa
-	_ctl.draw_rect(Rect2(pos, Vector2(tam.x * clampf(hp / hp_max, 0.0, 1.0), tam.y)), cor)
+	Arte.barra(_ctl, Rect2(pos, tam), hp / hp_max, cor.darkened(0.6), cor.lightened(0.15), 2)
 	for f in fases:
 		if f > 1:
 			var x: float = pos.x + tam.x * fases[f]["pct"] / 100.0
-			_ctl.draw_rect(Rect2(x - 1, pos.y - 3, 2, tam.y + 6), Color(1, 1, 1, 0.8 * alfa))
-	_ctl.draw_string(fonte, pos + Vector2(0, -6), Csv.t("hud.boss"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(1, 1, 1, alfa))
-	_ctl.draw_string(fonte, pos + Vector2(0, -6), Csv.t("hud.boss_phase") % [fase, total_fases()], HORIZONTAL_ALIGNMENT_RIGHT, tam.x, 14, Color(1, 1, 1, 0.7 * alfa))
+			_ctl.draw_rect(Rect2(x - 1.5, pos.y - 3, 3, tam.y + 6), Tema.cor("destaque"))
+	Arte.texto(_ctl, pos + Vector2(0, 46), Csv.t("hud.boss"), 28, Tema.cor("destaque").lightened(0.35), HORIZONTAL_ALIGNMENT_LEFT, -1.0, true)
+	var total := total_fases()
+	var texto_fase: String = Csv.t("hud.boss_phase") % [fase, total]
+	var larg_txt := ThemeDB.fallback_font.get_string_size(texto_fase, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+	Arte.texto(_ctl, pos + Vector2(0, 40), texto_fase, 16, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_RIGHT, tam.x)
+	for i in total:   # losangos de fase à esquerda do texto: cheio = fase atual ou passada
+		Arte.runa(_ctl, Vector2(pos.x + tam.x - larg_txt - 22 - (total - 1 - i) * 22, pos.y + 34), i, i < fase)
 
 ## Marca vermelha no chão por padrão: área (golpe), faixa (investida), cunha (leque) ou anel (anel).
 func _draw() -> void:

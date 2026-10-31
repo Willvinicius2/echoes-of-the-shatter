@@ -41,6 +41,7 @@ func _testar() -> void:
 	await _testar_opcoes_steam_tutorial()
 	await _testar_status()
 	await GuerreiroTestes.new(self, check).rodar()
+	await _testar_habilidades_arqueiro()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -664,4 +665,95 @@ func _testar_status() -> void:
 	await _esperar(func(): return not e.tem_status("lentidao") and not e.tem_status("atordoamento"), 2.0)
 	check(is_equal_approx(e.vel_mult, 1.0) and e.atordoado == 0.0, "status expiram e a velocidade volta")
 	mundo.queue_free()
+	await physics_frame
+
+## habilidades_arqueiro.csv: árvore coerente, textos, ícones e efeitos ativos funcionando.
+func _def_arqueiro(r: Dictionary) -> Dictionary:
+	var d := {}
+	for k in ["cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor", "escala"]:
+		if r[k] != "":
+			d[k] = float(r[k])
+	return d
+
+func _testar_habilidades_arqueiro() -> void:
+	var rows: Array = Csv.rows("res://data2d/habilidades_arqueiro.csv")
+	check(rows.size() >= 15 and rows.size() <= 20, "arqueiro tem de 15 a 20 habilidades (%d)" % rows.size())
+	var por_id := {}
+	var icones := {}
+	for r in Csv.rows("res://data2d/icones.csv"):
+		icones[r["id"]] = true
+	var player_stats := Csv.kv("res://data2d/player.csv")
+	var ramos := {}
+	var ativas := 0
+	for r in rows:
+		por_id[r["id"]] = r
+	for r in rows:
+		var id: String = r["id"]
+		ramos[r["ramo"]] = true
+		check(Csv.t("skill.%s.name" % id) != "skill.%s.name" % id and Csv.t("skill.%s.desc" % id) != "skill.%s.desc" % id, "texto de %s" % id)
+		check(icones.has(r["icone"]), "ícone de %s existe" % id)
+		check(int(r["nivel_max"]) >= 1 and int(r["pontos"]) >= 1 and int(r["tier"]) >= 1, "%s: níveis, pontos e tier válidos" % id)
+		if r["pai"] != "":
+			check(por_id.has(r["pai"]) and por_id[r["pai"]]["ramo"] == r["ramo"] and int(por_id[r["pai"]]["tier"]) < int(r["tier"]), "%s: pai no mesmo ramo e tier menor" % id)
+		else:
+			check(int(r["tier"]) == 1, "%s: raiz é tier 1" % id)
+		if r["tipo"] == "passiva":
+			check(player_stats.has(r["stat"]) and (r["modo"] == "add" or r["modo"] == "mult") and r["valor"] != "", "%s: passiva muda stat existente" % id)
+		else:
+			ativas += 1
+			check(float(r["cd"]) > 0.0, "%s: ativa tem recarga" % id)
+	for ramo in ["precisao", "cacada", "sombra"]:
+		check(ramos.has(ramo) and Csv.t("ramo.%s.name" % ramo) != "ramo.%s.name" % ramo, "ramo %s tem skills e texto" % ramo)
+	check(ativas >= 8, "ao menos 8 ativas (%d)" % ativas)
+	var Efeitos = load("res://scripts2d/efeitos_arqueiro_2d.gd")
+	for r in rows:
+		if r["tipo"] != "ativa":
+			continue
+		var mundo := Node2D.new()
+		root.add_child(mundo)
+		var p = load("res://scripts2d/player_2d.gd").new()
+		p.god_mode = true
+		p.auto_aim = Vector2.RIGHT
+		mundo.add_child(p)
+		var es: Array = []
+		for k in 3:
+			var e = load("res://scripts2d/enemy_2d.gd").new()
+			mundo.add_child(e)
+			e.setup("hollow_sentinel", p, p.global_position + Vector2(160 + 40 * k, 0))
+			e.hp = 1000.0
+			e.hp_max = 1000.0
+			e.stats["aggro"] = 0.0   # parados
+			es.append(e)
+		await physics_frame
+		var antes: Array = es.map(func(e): return e.hp)
+		var ok: bool = Efeitos.executar(r["efeito"], p, _def_arqueiro(r), 1, Vector2.RIGHT)
+		check(ok, "%s (%s) executa" % [r["id"], r["efeito"]])
+		await _esperar(func(): return es.any(func(e): return e.hp < 1000.0 or e.tem_status("marca") or e.tem_status("lentidao")), 4.0)
+		var afetado: bool = es.any(func(e): return e.hp < 1000.0 or e.tem_status("marca") or e.tem_status("lentidao") or e.atordoado > 0.0)
+		match r["efeito"]:
+			"salto":
+				check(p.global_position.x < -50.0 or p.estado == p.Estado.ESQUIVA or p.invencivel > 0.0, "salto recua com invulnerabilidade")
+			"furia":
+				check(p.cad_buff > 1.0 and p.vel_buff > 1.0, "adrenalina acelera tiro e corrida")
+			"armadilha":
+				for e in es:
+					e.global_position = p.global_position + Vector2(160, 0)
+				await _esperar(func(): return es.any(func(e): return e.atordoado > 0.0), 2.0)
+				check(es.any(func(e): return e.atordoado > 0.0), "armadilha atordoa quem pisa")
+			_:
+				check(afetado, "%s afeta os inimigos à frente" % r["id"])
+		mundo.queue_free()
+		await physics_frame
+	# passiva de crítico e veneno: a flecha carrega os dados
+	var m2 := Node2D.new()
+	root.add_child(m2)
+	var p2 = load("res://scripts2d/player_2d.gd").new()
+	m2.add_child(p2)
+	await physics_frame
+	p2.stats["crit_chance"] = 1.0
+	p2.stats["poison_dps"] = 5.0
+	var f = p2.lancar_flecha(Vector2.RIGHT)
+	check(is_equal_approx(f.damage, p2.stats["arrow_damage"] * p2.stats["crit_mult"]), "crítico multiplica o dano")
+	check(is_equal_approx(f.veneno_dps, 5.0), "flecha carrega veneno")
+	m2.queue_free()
 	await physics_frame
