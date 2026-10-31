@@ -27,7 +27,7 @@ godot --path godot --script res://scripts2d/tools/captura_2d.gd -- saida.png [in
 ```
 
 ## Build jogável (Windows e Linux)
-`tools/build/build_2d.sh [saida] [godot]` monta um projeto só com o cliente 2D e exporta `EcosDosEstilhacos.exe` (Windows) e `.x86_64` (Linux), com os export templates 4.4.1 instalados. Os CSV entram crus (importador `keep`); sem isso o executável não acha `loc_2d.csv` nem os demais dados.
+`tools/build/build_2d.sh [saida] [godot]` monta um projeto só com o cliente 2D e exporta `EcosDosEstilhacos.exe` (Windows) e `.x86_64` (Linux), com os export templates 4.4.1 instalados. Os CSV entram crus (importador `keep`); sem isso o executável não acha `loc_2d.csv` nem os demais dados. Todo CSV novo em `data2d/` precisa de um `.csv.import` com `importer="keep"` (o CI confere com `tools/build/checar_csv_keep.sh`). Importado como tradução, cada coluna vira um `Translation` criado numa thread de importação; o `set_locale` deixa na fila da thread principal uma chamada para um objeto que já foi liberado quando a fila roda, e o `--import` do Godot 4.4 cai às vezes com `double free or corruption`.
 
 ## Áudio e UI (P5)
 - Áudio: `data2d/audio.csv` (evento, arquivo, volume, variação de pitch) e `scripts2d/audio_2d.gd` (`Audio.tocar("evento")`, `Audio.musica(...)`). Os WAV de `art2d/audio/` são gerados por `python3 tools/audio/gerar_audio.py` (síntese própria, CC0; ver `art2d/audio/LICENCA.md`).

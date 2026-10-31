@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://bi7gtj1vmvg12"
-
-[deps]
-
-files=["res://data2d/drops.fragmentos.translation", "res://data2d/drops.material.translation", "res://data2d/drops.material.translation"]
-
-source_file="res://data2d/drops.csv"
-dest_files=["res://data2d/drops.fragmentos.translation", "res://data2d/drops.material.translation", "res://data2d/drops.material.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"

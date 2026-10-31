@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://btuj7mg6rn5t5"
-
-[deps]
-
-files=["res://data2d/upgrades.stat.translation", "res://data2d/upgrades.modo.translation", "res://data2d/upgrades.valor.translation", "res://data2d/upgrades.nivel.translation"]
-
-source_file="res://data2d/upgrades.csv"
-dest_files=["res://data2d/upgrades.stat.translation", "res://data2d/upgrades.modo.translation", "res://data2d/upgrades.valor.translation", "res://data2d/upgrades.nivel.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"
