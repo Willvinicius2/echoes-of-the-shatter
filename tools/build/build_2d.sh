@@ -12,7 +12,8 @@ mkdir -p "$proj/gdextension"
 cp -r "$raiz/godot/gdextension/bin" "$proj/gdextension/bin"
 cp "$raiz/godot/shatter_rogue.gdextension" "$proj/shatter_rogue.gdextension"
 # data2d é copiado: o Godot importaria os CSV como tradução e o export perderia o arquivo cru.
-# O importador "keep" mantém os CSV como estão (o cliente os lê com FileAccess).
+# O importador "keep" mantém os CSV como estão (o cliente os lê com FileAccess). Os .import de data2d
+# já vêm com "keep" no repositório (tools/build/checar_csv_keep.sh); a regravação abaixo é só garantia.
 cp -r "$raiz/godot/data2d" "$proj/data2d"
 # O mesmo vale para os WAV, lidos em bytes por audio_2d.gd (a cópia de art2d também sai do symlink).
 rm "$proj/art2d"; cp -r "$raiz/godot/art2d" "$proj/art2d"

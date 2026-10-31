@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://bp52u2hembbrr"
-
-[deps]
-
-files=["res://data2d/conquistas.steam.translation", "res://data2d/conquistas.evento.translation", "res://data2d/conquistas.loc.translation"]
-
-source_file="res://data2d/conquistas.csv"
-dest_files=["res://data2d/conquistas.steam.translation", "res://data2d/conquistas.evento.translation", "res://data2d/conquistas.loc.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"

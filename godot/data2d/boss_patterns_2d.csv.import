@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://c6aq4rfuaogun"
-
-[deps]
-
-files=["res://data2d/boss_patterns_2d.hp.translation", "res://data2d/boss_patterns_2d.padrao.translation", "res://data2d/boss_patterns_2d.aviso.translation", "res://data2d/boss_patterns_2d.pausa.translation", "res://data2d/boss_patterns_2d.qtd.translation", "res://data2d/boss_patterns_2d.vel.translation", "res://data2d/boss_patterns_2d.dano.translation", "res://data2d/boss_patterns_2d.abertura.translation", "res://data2d/boss_patterns_2d.alcance.translation", "res://data2d/boss_patterns_2d.duracao.translation", "res://data2d/boss_patterns_2d.vel.translation"]
-
-source_file="res://data2d/boss_patterns_2d.csv"
-dest_files=["res://data2d/boss_patterns_2d.hp.translation", "res://data2d/boss_patterns_2d.padrao.translation", "res://data2d/boss_patterns_2d.aviso.translation", "res://data2d/boss_patterns_2d.pausa.translation", "res://data2d/boss_patterns_2d.qtd.translation", "res://data2d/boss_patterns_2d.vel.translation", "res://data2d/boss_patterns_2d.dano.translation", "res://data2d/boss_patterns_2d.abertura.translation", "res://data2d/boss_patterns_2d.alcance.translation", "res://data2d/boss_patterns_2d.duracao.translation", "res://data2d/boss_patterns_2d.vel.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"

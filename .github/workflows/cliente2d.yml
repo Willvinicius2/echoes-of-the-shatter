@@ -72,6 +72,8 @@ jobs:
           s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
           open('proj/project.godot', 'w').write(s)
           PY
+      - name: CSV de dados com importador keep (sem isso o --import cai às vezes)
+        run: tools/build/checar_csv_keep.sh
       - name: Importar e testar
         run: |
           ./Godot_v4.4.1-stable_linux.x86_64 --headless --path proj --import
