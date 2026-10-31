@@ -155,9 +155,17 @@ def montar_v2(anim, v2_dir):
             t = Image.new("RGBA", (wmax, hmax), (0, 0, 0, 0))
             t.alpha_composite(f, ((wmax - f.width) // 2, hmax - f.height))
             telas.append(t)
+        if anim == "idle":  # quadro que destoa da silhueta (IA redesenhou) vira o anterior: respira sem trocar de desenho
+            hs = [bbox(t)[3] - bbox(t)[1] for t in telas]
+            med = float(np.median(hs))
+            for q in range(1, n):
+                if hs[q] < 0.95 * med:
+                    telas[q] = telas[q - 1]
         anc = ancora_linha(telas)
-        for q in range(n):
-            folha.alpha_composite(encaixa(telas[q], anc, s), (q * W, d * W))
+        quadros_finais = [encaixa(telas[q], anc, s) for q in range(n)]
+        pe = max(bbox(f)[3] for f in quadros_finais)  # pé exatamente no pivô
+        for q, f in enumerate(quadros_finais):
+            folha.alpha_composite(f, (q * W, d * W + PY - pe))
     return folha
 
 
