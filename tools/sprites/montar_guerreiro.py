@@ -100,7 +100,56 @@ def encaixa(fr, ancora, s, dx=0.0, dy=0.0, sy=1.0, rot=0.0):
     return tela.crop((W, W, W * 2, W * 2))
 
 
-def montar(anim, bruto_dir, cache):
+DIRS_V2 = ["s", "se", "e", "ne", "n"]
+GRADE_V2 = {"run": (4, 2), "idle": (3, 2)}
+ALTURA_V2 = {"run": ALTURA * 0.97, "idle": ALTURA}
+
+
+def separa_v2(img, n):
+    """Folha v2 (um personagem por célula de uma grade invisível): pega os n maiores blocos e ordena por leitura."""
+    al = np.asarray(img)[..., 3] > 25
+    lab, k = ndimage.label(ndimage.binary_dilation(al, iterations=6))
+    tam = ndimage.sum(al, lab, range(1, k + 1))
+    maiores = sorted(np.argsort(tam)[::-1][:n] + 1)
+    caixas = ndimage.find_objects(lab)
+    blocos = []
+    for i in maiores:
+        sl = caixas[i - 1]
+        arr = np.asarray(img).copy()[sl]
+        arr[..., 3] = np.where(lab[sl] == i, arr[..., 3], 0)
+        cy, cx = (sl[0].start + sl[0].stop) / 2, (sl[1].start + sl[1].stop) / 2
+        blocos.append((cy, cx, Image.fromarray(arr, "RGBA")))
+    linhas = img.height / 2
+    blocos.sort(key=lambda b: (int(b[0] // linhas), b[1]))
+    return [limpa_ilhas(b[2]) for b in blocos]
+
+
+def montar_v2(anim, v2_dir):
+    """Corrida e idle desenhados quadro a quadro (v2): uma folha bruta por direção, sem animação por código."""
+    n = ANIMS[anim]
+    folha = Image.new("RGBA", (W * n, W * 5), (0, 0, 0, 0))
+    for d, nome in enumerate(DIRS_V2):
+        img = sem_fundo(Image.open(os.path.join(v2_dir, f"{anim}_{nome}.png")))
+        quadros = separa_v2(img, n)
+        alts = sorted(bbox(f)[3] - bbox(f)[1] for f in quadros)
+        s = ALTURA_V2[anim] / float(np.median(alts))
+        # todos os quadros numa tela comum, com o pé mais baixo de cada um no chão
+        hmax = max(f.height for f in quadros)
+        wmax = max(f.width for f in quadros)
+        telas = []
+        for f in quadros:
+            t = Image.new("RGBA", (wmax, hmax), (0, 0, 0, 0))
+            t.alpha_composite(f, ((wmax - f.width) // 2, hmax - f.height))
+            telas.append(t)
+        anc = ancora_linha(telas)
+        for q in range(n):
+            folha.alpha_composite(encaixa(telas[q], anc, s), (q * W, d * W))
+    return folha
+
+
+def montar(anim, bruto_dir, cache, v2_dir=None):
+    if v2_dir and anim in GRADE_V2 and os.path.exists(os.path.join(v2_dir, f"{anim}_s.png")):
+        return montar_v2(anim, v2_dir)
     n = ANIMS[anim]
     origem = "idle" if anim == "hit" else anim
     if origem not in cache:
@@ -150,9 +199,10 @@ def main():
     bruto = sys.argv[1] if len(sys.argv) > 1 else os.path.join(raiz, "docs", "arte", "sprites2d", "guerreiro", "bruto")
     saida = sys.argv[2] if len(sys.argv) > 2 else os.path.join(raiz, "godot", "art2d", "sprites", "guerreiro")
     os.makedirs(saida, exist_ok=True)
+    v2 = os.path.join(raiz, "docs", "arte", "sprites2d", "guerreiro", "v2", "bruto")
     cache = {}
     for anim in ANIMS:
-        montar(anim, bruto, cache).save(os.path.join(saida, f"guerreiro_{anim}.png"))
+        montar(anim, bruto, cache, v2).save(os.path.join(saida, f"guerreiro_{anim}.png"))
     print("folhas em", os.path.abspath(saida))
 
 
