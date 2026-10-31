@@ -12,3 +12,13 @@ vida,#b52a2a,barra de vida
 estamina,#3fa3c9,barra de estamina (recarga da esquiva)
 mana,#4a5bd0,barra de mana (reservada)
 destaque,#c9a45c,titulos e numeros de destaque
+metal_escuro,#121216,ferro dos aros e molduras da HUD
+metal_medio,#4a4852,ferro claro: aro e rebites e bordas
+metal_claro,#9a96a6,brilho do ferro
+vida_escura,#4a0a10,fundo do globo de vida
+vida_clara,#e0453f,topo do globo de vida
+mana_escura,#10184a,fundo do globo de recurso
+mana_clara,#5a74e0,topo do globo de recurso
+estamina_clara,#8fd6ec,topo da barra de estamina
+chefe_escura,#2c0a3a,fundo da barra do chefe
+chefe_clara,#a050c8,topo da barra do chefe

@@ -3,29 +3,29 @@ hud.room,Sala %d/%d
 hud.hp,Vida
 hud.dodge,Esquiva
 hud.room_clear,Sala limpa! Siga pela porta
-hud.dead,Voce caiu. Recomecando...
-hud.victory,Cripta vencida! Recomecando...
-hud.boss,Guardiao da Cripta
-hud.help,WASD move | Mouse mira | Clique atira | Espaco esquiva | Esc pausa
+hud.dead,Você caiu. Recomeçando...
+hud.victory,Cripta vencida! Recomeçando...
+hud.boss,Guardião da Cripta
+hud.help,WASD move | Mouse mira | Clique atira | Espaço esquiva | Esc pausa
 hud.upgrades,Upgrades
 upgrade.title,Escolha um upgrade
-upgrade.level,Nivel %d/%d
+upgrade.level,Nível %d/%d
 upgrade.power.name,Flecha Pesada
 upgrade.power.desc,+25% de dano por flecha
-upgrade.haste.name,Mao Agil
-upgrade.haste.desc,Atira 15% mais rapido
-upgrade.swift.name,Pes Leves
+upgrade.haste.name,Mão Ágil
+upgrade.haste.desc,Atira 15% mais rápido
+upgrade.swift.name,Pés Leves
 upgrade.swift.desc,+12% de velocidade
 upgrade.vitality.name,Vigor
-upgrade.vitality.desc,+30 de vida maxima e cura a mesma quantidade
+upgrade.vitality.desc,+30 de vida máxima e cura a mesma quantidade
 upgrade.multishot.name,Salva de Flechas
 upgrade.multishot.desc,+1 flecha por disparo
 upgrade.pierce.name,Ponta Afiada
 upgrade.pierce.desc,A flecha atravessa +1 inimigo
-upgrade.evasion.name,Passo Rapido
-upgrade.evasion.desc,Esquiva recarrega 20% mais rapido
+upgrade.evasion.name,Passo Rápido
+upgrade.evasion.desc,Esquiva recarrega 20% mais rápido
 hud.time,Tempo %s
-menu.title,Ecos dos Estilhacos
+menu.title,Ecos dos Estilhaços
 menu.subtitle,A Cripta espera
 menu.play,Jogar
 menu.quit,Sair
@@ -33,7 +33,7 @@ menu.paused,Pausado
 menu.resume,Continuar
 menu.restart,Reiniciar corrida
 menu.to_title,Menu principal
-menu.game_over,Voce caiu
+menu.game_over,Você caiu
 menu.victory,Cripta vencida!
 menu.play_again,Jogar de novo
 menu.sum_time,Tempo: %s
@@ -44,7 +44,7 @@ hud.mana,Mana
 hud.skill.shoot,Tiro
 hud.skill.dodge,Esquiva
 hud.key.shoot,Clique
-hud.key.dodge,Espaco
+hud.key.dodge,Espaço
 hud.skill.locked,Bloqueado
 hud.boss_phase,Fase %d/%d
 menu.meta,Melhorias
