@@ -70,3 +70,9 @@ fallen_echo,run,res://art2d/sprites/wandering_ghost/wandering_ghost_run.png,128,
 fallen_echo,attack,res://art2d/sprites/wandering_ghost/wandering_ghost_attack.png,128,6,12,false,5,64,104,3
 fallen_echo,hit,res://art2d/sprites/wandering_ghost/wandering_ghost_hit.png,128,3,12,false,5,64,104,-1
 fallen_echo,death,res://art2d/sprites/wandering_ghost/wandering_ghost_death.png,128,8,10,false,5,64,104,-1
+guerreiro,idle,res://art2d/sprites/guerreiro/guerreiro_idle.png,128,6,8,true,5,64,104,-1
+guerreiro,run,res://art2d/sprites/guerreiro/guerreiro_run.png,128,8,12,true,5,64,104,-1
+guerreiro,attack,res://art2d/sprites/guerreiro/guerreiro_attack.png,128,6,14,false,5,64,104,3
+guerreiro,dodge,res://art2d/sprites/guerreiro/guerreiro_dodge.png,128,6,14,false,5,64,104,-1
+guerreiro,hit,res://art2d/sprites/guerreiro/guerreiro_hit.png,128,3,12,false,5,64,104,-1
+guerreiro,death,res://art2d/sprites/guerreiro/guerreiro_death.png,128,8,10,false,5,64,104,-1
