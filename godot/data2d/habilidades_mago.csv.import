@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://dln6lkt3dmkfa"
-
-[deps]
-
-files=["res://data2d/habilidades_mago.ramo.translation", "res://data2d/habilidades_mago.tipo.translation", "res://data2d/habilidades_mago.tier.translation", "res://data2d/habilidades_mago.pai.translation", "res://data2d/habilidades_mago.pontos.translation", "res://data2d/habilidades_mago.nivel.translation", "res://data2d/habilidades_mago.efeito.translation", "res://data2d/habilidades_mago.cd.translation", "res://data2d/habilidades_mago.custo.translation", "res://data2d/habilidades_mago.dano.translation", "res://data2d/habilidades_mago.qtd.translation", "res://data2d/habilidades_mago.angulo.translation", "res://data2d/habilidades_mago.raio.translation", "res://data2d/habilidades_mago.duracao.translation", "res://data2d/habilidades_mago.alcance.translation", "res://data2d/habilidades_mago.valor.translation", "res://data2d/habilidades_mago.escala.translation", "res://data2d/habilidades_mago.stat.translation", "res://data2d/habilidades_mago.modo.translation", "res://data2d/habilidades_mago.icone.translation"]
-
-source_file="res://data2d/habilidades_mago.csv"
-dest_files=["res://data2d/habilidades_mago.ramo.translation", "res://data2d/habilidades_mago.tipo.translation", "res://data2d/habilidades_mago.tier.translation", "res://data2d/habilidades_mago.pai.translation", "res://data2d/habilidades_mago.pontos.translation", "res://data2d/habilidades_mago.nivel.translation", "res://data2d/habilidades_mago.efeito.translation", "res://data2d/habilidades_mago.cd.translation", "res://data2d/habilidades_mago.custo.translation", "res://data2d/habilidades_mago.dano.translation", "res://data2d/habilidades_mago.qtd.translation", "res://data2d/habilidades_mago.angulo.translation", "res://data2d/habilidades_mago.raio.translation", "res://data2d/habilidades_mago.duracao.translation", "res://data2d/habilidades_mago.alcance.translation", "res://data2d/habilidades_mago.valor.translation", "res://data2d/habilidades_mago.escala.translation", "res://data2d/habilidades_mago.stat.translation", "res://data2d/habilidades_mago.modo.translation", "res://data2d/habilidades_mago.icone.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"

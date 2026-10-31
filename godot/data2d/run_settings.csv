@@ -12,3 +12,4 @@ elite_extra_cards,1,cartas,cartas a mais ao limpar uma sala de elite
 rest_heal,0.5,fracao,vida recuperada na sala de descanso (fracao da vida maxima)
 skill_points_room,1,pontos,pontos de habilidade ganhos ao limpar cada sala (viram saldo permanente)
 skill_points_boss,3,pontos,pontos extras ao derrotar o chefe
+first_room_wake_radius,300,px,inimigos da primeira sala dormem ate o jogador chegar a esta distancia ou ferir um deles (0 desliga)

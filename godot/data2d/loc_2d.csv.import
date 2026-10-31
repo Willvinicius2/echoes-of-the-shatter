@@ -1,17 +1,3 @@
 [remap]
 
-importer="csv_translation"
-type="Translation"
-uid="uid://c7tcea8dgw2fb"
-
-[deps]
-
-files=["res://data2d/loc_2d.pt.translation"]
-
-source_file="res://data2d/loc_2d.csv"
-dest_files=["res://data2d/loc_2d.pt.translation"]
-
-[params]
-
-compress=true
-delimiter=0
+importer="keep"

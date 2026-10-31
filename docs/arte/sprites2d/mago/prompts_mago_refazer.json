@@ -1,0 +1,32 @@
+[
+ {
+  "id": "mago_idle",
+  "titulo": "Mago: folha idle (refazer no desenho aprovado)",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\wt\\mago-arte\\docs\\arte\\referencias-geracao\\aprovadas\\04_mago.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\mago-arte\\docs\\arte\\sprites2d\\mago\\bruto\\mago_hit.png"
+  ],
+  "tamanho": "1536x1280",
+  "prompt": "2D game sprite sheet, transparent PNG background (real alpha, NOT a checkerboard pattern, NOT white), hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: EXACTLY the same Mage as in attached images 1 and 2 (approved design, keep identical): young boy with messy brown hair and normal brown/blue eyes (NO glowing eyes), deep NAVY-BLUE hood and long navy coat with gold trim and gold star/compass embroidery, navy scarf, white sleeves under brown leather gloves, brown leather belt with a gold-buckled book pouch, brown boots, ornate GOLDEN staff with a gold ring at the top holding a glowing BLUE crystal with small floating crystal shards (NEVER a plain wooden staff, NEVER purple robe, NEVER a lantern). Chibi proportions, about 3 heads tall, same scale, colors and painting as image 2 (frames of the same character). Sheet layout: grid with 6 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Leave clear empty space between cells so no frame touches another; feet of every frame on the same baseline of its row, same character size in every cell. IDLE loop, 6 frames: calm standing pose, staff upright in the right hand, gentle breathing (chest rises), scarf and coat hem sway, crystal pulses softly. Eyes open, calm expression."
+ },
+ {
+  "id": "mago_dodge",
+  "titulo": "Mago: folha dodge (refazer no desenho aprovado)",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\wt\\mago-arte\\docs\\arte\\referencias-geracao\\aprovadas\\04_mago.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\mago-arte\\docs\\arte\\sprites2d\\mago\\bruto\\mago_hit.png"
+  ],
+  "tamanho": "1536x1280",
+  "prompt": "2D game sprite sheet, transparent PNG background (real alpha, NOT a checkerboard pattern, NOT white), hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: EXACTLY the same Mage as in attached images 1 and 2 (approved design, keep identical): young boy with messy brown hair and normal brown/blue eyes (NO glowing eyes), deep NAVY-BLUE hood and long navy coat with gold trim and gold star/compass embroidery, navy scarf, white sleeves under brown leather gloves, brown leather belt with a gold-buckled book pouch, brown boots, ornate GOLDEN staff with a gold ring at the top holding a glowing BLUE crystal with small floating crystal shards (NEVER a plain wooden staff, NEVER purple robe, NEVER a lantern). Chibi proportions, about 3 heads tall, same scale, colors and painting as image 2 (frames of the same character). Sheet layout: grid with 6 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Leave clear empty space between cells so no frame touches another; feet of every frame on the same baseline of its row, same character size in every cell. DODGE DASH, 6 frames, not looping: crouch, quick low forward dash with coat and scarf trailing behind and a faint BLUE arcane trail (not cyan smoke, no rocks), recover to stance. Staff kept in the right hand."
+ },
+ {
+  "id": "mago_death",
+  "titulo": "Mago: folha death (refazer no desenho aprovado)",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\wt\\mago-arte\\docs\\arte\\referencias-geracao\\aprovadas\\04_mago.png",
+   "D:\\openclaude\\_trabalho-claude\\wt\\mago-arte\\docs\\arte\\sprites2d\\mago\\bruto\\mago_hit.png"
+  ],
+  "tamanho": "2048x1280",
+  "prompt": "2D game sprite sheet, transparent PNG background (real alpha, NOT a checkerboard pattern, NOT white), hand-painted ARPG style with a consistent dark 2-3 px outline, light from top-left, no pixel art, no glow bleeding outside the cell. Character: EXACTLY the same Mage as in attached images 1 and 2 (approved design, keep identical): young boy with messy brown hair and normal brown/blue eyes (NO glowing eyes), deep NAVY-BLUE hood and long navy coat with gold trim and gold star/compass embroidery, navy scarf, white sleeves under brown leather gloves, brown leather belt with a gold-buckled book pouch, brown boots, ornate GOLDEN staff with a gold ring at the top holding a glowing BLUE crystal with small floating crystal shards (NEVER a plain wooden staff, NEVER purple robe, NEVER a lantern). Chibi proportions, about 3 heads tall, same scale, colors and painting as image 2 (frames of the same character). Sheet layout: grid with 8 columns (animation frames, left to right) and 5 rows (directions top to bottom: row 1 facing DOWN toward the camera, row 2 facing down-right, row 3 facing right, row 4 facing up-right, row 5 facing UP away from the camera; left directions are mirrored by the game, do not draw them). Leave clear empty space between cells so no frame touches another; feet of every frame on the same baseline of its row, same character size in every cell. DEATH, 8 frames, not looping: staggers back, knees buckle, falls to the ground lying on the side, the staff drops beside him and the blue crystal dims; last 2 frames lie still and fully inside the cell."
+ }
+]

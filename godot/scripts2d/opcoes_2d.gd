@@ -18,6 +18,7 @@ var vol := {"master": 1.0, "musica": 0.8, "efeitos": 1.0}
 var tela_cheia := false
 var vsync := true
 var tutorial_visto := false
+var prologo_visto := false   # o prólogo (Ilsa e Tico) abre no primeiro Jogar; o título permite rever
 var acoes: Array = []        # ações remapeáveis, na ordem de teclas.csv
 var teclas := {}             # ação -> physical_keycode escolhido pelo jogador
 static var _padrao_teclas := {}   # ação -> physical_keycode que veio do InputMap (lido uma vez, antes de qualquer remapeamento)
@@ -37,6 +38,7 @@ func restaurar_padroes() -> void:
 	tela_cheia = padroes["tela_cheia"] > 0.5
 	vsync = padroes["vsync"] > 0.5
 	tutorial_visto = padroes["tutorial_visto"] > 0.5
+	prologo_visto = padroes.get("prologo_visto", 0.0) > 0.5
 	restaurar_teclas()
 
 ## Cria os barramentos de música e efeitos (idempotente). O áudio dos players usa estes nomes.
@@ -152,7 +154,7 @@ func salvar() -> bool:
 	if f == null:
 		return false
 	f.store_string(JSON.stringify({"versao": VERSAO, "vol": vol, "tela_cheia": tela_cheia, "vsync": vsync,
-		"tutorial_visto": tutorial_visto, "teclas": teclas}, "\t"))
+		"tutorial_visto": tutorial_visto, "prologo_visto": prologo_visto, "teclas": teclas}, "\t"))
 	return true
 
 ## Lê o arquivo (se houver) e aplica. Arquivo ausente ou corrompido deixa os padrões.
@@ -167,6 +169,7 @@ func carregar() -> bool:
 			tela_cheia = bool(d.get("tela_cheia", tela_cheia))
 			vsync = bool(d.get("vsync", vsync))
 			tutorial_visto = bool(d.get("tutorial_visto", false))
+			prologo_visto = bool(d.get("prologo_visto", false))
 			var salvas = d.get("teclas", {})
 			if salvas is Dictionary:
 				for a in acoes:

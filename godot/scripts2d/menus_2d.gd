@@ -9,6 +9,10 @@ const Audio = preload("res://scripts2d/audio_2d.gd")
 const OpcoesScript = preload("res://scripts2d/opcoes_2d.gd")
 const SteamScript = preload("res://scripts2d/steam_2d.gd")
 const TutorialScript = preload("res://scripts2d/tutorial_2d.gd")
+const PrologoScript = preload("res://scripts2d/prologo_2d.gd")
+const SpriteLoader = preload("res://scripts2d/sprite_loader.gd")
+const FUNDO_TITULO := "res://art2d/ui/titulo_fundo.jpg"
+const FONTE_TITULO := "res://art2d/ui/DejaVuSerif-Bold.ttf"
 
 signal jogar          # começa uma corrida nova (título e fim)
 signal retomar        # sai da pausa
@@ -23,9 +27,14 @@ var meta: RefCounted   # meta_2d.gd; a loja de melhorias do título
 var opcoes: RefCounted   # opcoes_2d.gd; volume, vídeo e teclas (carregadas do disco no _ready)
 var steam: RefCounted    # steam_2d.gd; conquistas, sem efeito quando a Steam não está disponível
 var tutorial: CanvasLayer   # tutorial_2d.gd; dicas da primeira corrida
+var prologo: CanvasLayer    # prologo_2d.gd; Ilsa e Tico no primeiro Jogar
 var _voltar_opcoes := Callable()   # tela que abriu as opções (título ou pausa)
 var _esperando := ""   # ação aguardando a próxima tecla (remapeamento)
 var _fundo: ColorRect
+var _arte: TextureRect          # key art atrás do título e das telas do hub
+var _no_hub := false            # telas abertas a partir do título (Forja, Melhorias, Opções)
+var _retrato_classe: TextureRect   # idle da classe escolhida, animado no cartão do título
+var _retrato_t := 0.0
 var _caixa: VBoxContainer
 var _fade: ColorRect
 var _tween: Tween
@@ -38,6 +47,14 @@ func _ready() -> void:
 	_fundo.theme = Tema.tema()
 	_fundo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(_fundo)
+	_arte = TextureRect.new()
+	_arte.texture = load(FUNDO_TITULO)
+	_arte.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_arte.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_arte.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_arte.modulate = Color(0.5, 0.5, 0.58)
+	_arte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fundo.add_child(_arte)
 	var centro := CenterContainer.new()
 	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fundo.add_child(centro)
@@ -61,11 +78,34 @@ func _ready() -> void:
 	tutorial.opcoes = opcoes
 	tutorial.concluido.connect(_tutorial_concluido)
 	add_child(tutorial)
+	prologo = PrologoScript.new()
+	prologo.concluido.connect(_prologo_concluido)
+	add_child(prologo)
 	jogar.connect(_ao_jogar)
 	ao_titulo.connect(tutorial.parar)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	steam.tick()
+	if _retrato_classe != null and is_instance_valid(_retrato_classe) and _retrato_classe.is_visible_in_tree():
+		_retrato_t += delta
+		var sf: SpriteFrames = SpriteLoader.frames_for(Classe.atual)
+		if sf.has_animation("idle_1"):
+			var n := sf.get_frame_count("idle_1")
+			_retrato_classe.texture = sf.get_frame_texture("idle_1", int(_retrato_t * sf.get_animation_speed("idle_1")) % n)
+
+## Jogar no título: na primeira vez passa pelo prólogo antes de começar a corrida.
+func _jogar_do_titulo() -> void:
+	if opcoes.prologo_visto:
+		jogar.emit()
+	else:
+		prologo.iniciar()
+
+func _prologo_concluido() -> void:
+	var primeira: bool = not opcoes.prologo_visto
+	opcoes.prologo_visto = true
+	opcoes.salvar()
+	if primeira:
+		jogar.emit()
 
 func _ao_jogar() -> void:
 	if not opcoes.tutorial_visto:
@@ -80,6 +120,7 @@ func esta_aberta() -> bool:
 
 func fechar() -> void:
 	tela = Tela.NENHUMA
+	_no_hub = false
 	_fundo.visible = false
 
 ## Título e hub entre corridas: saldo, amuleto equipado e as estações (Forja, Melhorias).
@@ -87,11 +128,52 @@ func mostrar_titulo() -> void:
 	var linhas := []
 	if meta != null:
 		linhas = _resumo_hub()
-	_montar(Tela.TITULO, "menu.title", "menu.subtitle", [
-		["menu.play", jogar], [Csv.t("menu.class") % Csv.t("class.%s.name" % Classe.atual), func() -> void:
-			Classe.alternar()
-			mostrar_titulo()], ["menu.forge", mostrar_forja], ["menu.meta", mostrar_meta],
-		["menu.options", func() -> void: mostrar_opcoes(mostrar_titulo)], ["menu.quit", sair]], linhas)
+	_no_hub = true
+	var botoes := [["menu.play", _jogar_do_titulo], ["menu.forge", mostrar_forja], ["menu.meta", mostrar_meta]]
+	if opcoes.prologo_visto:
+		botoes.append(["menu.prologue", prologo.iniciar])
+	botoes.append_array([["menu.options", func() -> void: mostrar_opcoes(mostrar_titulo)], ["menu.quit", sair]])
+	_montar(Tela.TITULO, "menu.title", "menu.subtitle", botoes, linhas, _cartao_classe())
+
+## Cartão da classe no título: retrato animado, nome, estilo de jogo e o botão que troca a classe.
+func _cartao_classe() -> Control:
+	var cartao := PanelContainer.new()
+	cartao.add_theme_stylebox_override("panel", Tema.caixa(Tema.cor("pedra_clara"), Tema.cor("borda"), 2, 5, 10))
+	var linha := HBoxContainer.new()
+	linha.add_theme_constant_override("separation", 14)
+	cartao.add_child(linha)
+	_retrato_classe = TextureRect.new()
+	_retrato_classe.custom_minimum_size = Vector2(112, 112)
+	_retrato_classe.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_retrato_classe.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_retrato_classe.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	linha.add_child(_retrato_classe)
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	linha.add_child(col)
+	var nome := Label.new()
+	nome.text = Csv.t("class.%s.name" % Classe.atual)
+	nome.add_theme_font_size_override("font_size", 26)
+	nome.add_theme_color_override("font_color", Tema.cor("destaque"))
+	col.add_child(nome)
+	var desc := Label.new()
+	desc.text = Csv.t("class.%s.desc" % Classe.atual)
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.custom_minimum_size = Vector2(300, 0)
+	desc.add_theme_font_size_override("font_size", 16)
+	desc.add_theme_color_override("font_color", Tema.cor("texto_suave"))
+	col.add_child(desc)
+	var trocar := Button.new()
+	trocar.text = Csv.t("menu.class_change")
+	trocar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	trocar.pressed.connect(func() -> void:
+		Audio.tocar("ui_click")
+		Classe.alternar()
+		mostrar_titulo())
+	linha.add_child(trocar)
+	_retrato_t = 0.0
+	return cartao
 
 func _resumo_hub() -> Array:
 	var linhas := [Csv.t("menu.meta_balance") % meta.fragmentos]
@@ -138,15 +220,18 @@ func mostrar_forja() -> void:
 
 ## Bifurcação da cripta: `opcoes` é um Array de [texto, Callable]; sem Esc, o jogador precisa escolher.
 func mostrar_rota(opcoes: Array) -> void:
+	_no_hub = false
 	_montar(Tela.ROTA, "menu.route_title", "menu.route_hint", opcoes)
 
 func mostrar_pausa() -> void:
+	_no_hub = false
 	_montar(Tela.PAUSA, "menu.paused", "", [
 		["menu.resume", retomar], ["menu.restart", jogar],
 		["menu.options", func() -> void: mostrar_opcoes(mostrar_pausa)], ["menu.to_title", ao_titulo]])
 
 ## `resumo` é um Array de linhas já formatadas (tempo, salas, upgrades).
 func mostrar_fim(venceu: bool, resumo: Array) -> void:
+	_no_hub = false
 	steam.evento("corrida_fim")
 	if venceu:
 		steam.evento("vitoria")
@@ -223,15 +308,22 @@ func mostrar_teclas() -> void:
 		mostrar_opcoes()])
 	_montar(Tela.TECLAS, "opt.keys_title", "opt.keys_hint", botoes)
 
-func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: Array = []) -> void:
+func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: Array = [], extra: Control = null) -> void:
 	for c in _caixa.get_children():
 		_caixa.remove_child(c)
 		c.queue_free()
-	_rotulo(Csv.t(titulo), 40, Tema.cor("destaque"))
+	_caixa.custom_minimum_size.x = 560 if t == Tela.TITULO else 420
+	var titulo_l := _rotulo(Csv.t(titulo), 52 if t == Tela.TITULO else 40, Tema.cor("destaque"))
+	if t == Tela.TITULO:
+		titulo_l.add_theme_font_override("font", load(FONTE_TITULO))
+		titulo_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+		titulo_l.add_theme_constant_override("outline_size", 8)
 	if subtitulo != "":
 		_rotulo(Csv.t(subtitulo), 16, Tema.cor("texto_suave"))
 	for l in linhas:
 		_rotulo(l, 20)
+	if extra != null:
+		_caixa.add_child(extra)
 	var primeiro: Button = null
 	for b in botoes:
 		var btn := Button.new()
@@ -248,17 +340,20 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 		if primeiro == null and not btn.disabled:
 			primeiro = btn
 	tela = t
+	_arte.visible = _no_hub
 	_fundo.visible = true
 	if primeiro != null:
 		primeiro.grab_focus.call_deferred()
 
-func _rotulo(texto: String, tam: int, cor := Color(0.9, 0.88, 0.84)) -> void:
+func _rotulo(texto: String, tam: int, cor := Color(0.9, 0.88, 0.84)) -> Label:
 	var l := Label.new()
 	l.text = texto
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_caixa.add_child(l)
+	return l
 
 ## Escurece a tela, chama `no_escuro` e clareia. Usado entre salas.
 func transicao(duracao: float, no_escuro: Callable) -> void:
