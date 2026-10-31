@@ -46,12 +46,7 @@ func _desenhar() -> void:
 	if _rel < 8.0 and estado_ajuda_visivel():
 		var al := clampf((8.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
-		var partes := Csv.t("hud.help").split(" | ")
-		var meio := int(ceil(partes.size() / 2.0))
-		var esq := " | ".join(partes.slice(0, meio))
-		var dir := " | ".join(partes.slice(meio))
-		Arte.texto(_ctl, Vector2(165, vp.y - 34), esq, 14, cor, HORIZONTAL_ALIGNMENT_RIGHT, 410.0)
-		Arte.texto(_ctl, Vector2(1000, vp.y - 34), dir, 14, cor, HORIZONTAL_ALIGNMENT_LEFT, 410.0)
+		Arte.texto(_ctl, Vector2(0, vp.y - 135), Csv.t("hud.help"), 15, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Rect2(vp.x * 0.5 - w * 0.5, 62, w, 18)
@@ -80,6 +75,11 @@ func _centro_globo(vp: Vector2, direita: bool) -> Vector2:
 
 ## Faixa de ferro e pedra que liga os dois globos por baixo da barra de habilidades, com friso dourado e gema central.
 func _desenhar_base(vp: Vector2) -> void:
+	var faixa := Arte.tex("hud_faixa_pedra")
+	if faixa != null:   # arte pintada: 1120x150 no arquivo, 700x94 na tela de 1600x900, centrada embaixo
+		var esc := 0.625
+		_ctl.draw_texture_rect(faixa, Rect2(vp.x * 0.5 - 560.0 * esc, vp.y - 150.0 * esc, 1120.0 * esc, 150.0 * esc), false)
+		return
 	var e := _centro_globo(vp, false)
 	var d := _centro_globo(vp, true)
 	var alt: float = _lay["base_altura"]
