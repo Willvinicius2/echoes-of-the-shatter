@@ -13,6 +13,7 @@ const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
+const ArvoreUiScript = preload("res://scripts2d/arvore_ui_2d.gd")
 
 enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO, ROTA }
 
@@ -32,6 +33,7 @@ var meta: RefCounted
 var ganhos := {"fragmentos": 0, "materiais": {}}   # da corrida atual; vão ao save quando ela acaba
 var ui: CanvasLayer
 var menus: CanvasLayer
+var arvore: CanvasLayer   # árvore de habilidades (tecla T)
 var com_menu := true   # false nos testes: começa direto na sala 1
 var tempo := 0.0       # segundos da corrida atual (só conta luta e sala limpa)
 var camera: Camera2D
@@ -58,6 +60,9 @@ func _ready() -> void:
 	meta.carregar()
 	upgrades = UpgradesScript.new()
 	upgrades.meta = meta
+	player.habilidades.meta = meta
+	player.definir_classe(meta.classe)
+	upgrades.habilidades = player.habilidades
 	hud = HudScript.new()
 	hud.jogador = player
 	hud.upgrades = upgrades
@@ -67,6 +72,10 @@ func _ready() -> void:
 	ui.upgrades = upgrades
 	ui.escolhido.connect(_on_upgrade_escolhido)
 	add_child(ui)
+	arvore = ArvoreUiScript.new()
+	arvore.habilidades = player.habilidades
+	arvore.fechada.connect(func() -> void: upgrades.reaplicar(player))
+	add_child(arvore)
 	menus = MenusScript.new()
 	menus.meta = meta
 	menus.jogar.connect(_on_jogar)
@@ -174,6 +183,7 @@ func _on_inimigo_morto(e) -> void:
 		estado = Estado.LIMPA
 		_timer = config["clear_delay"]
 		ganhos["fragmentos"] += int(config["room_clear_fragments"])
+		player.habilidades.ganhar_pontos(int(config["skill_points_room"]) + (int(config["skill_points_boss"]) if no_atual["room"].contains("boss") else 0))
 		if no_atual["tipo"] == "elite":
 			ganhos["fragmentos"] += int(config["elite_fragments"])
 

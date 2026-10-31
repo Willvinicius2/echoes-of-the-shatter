@@ -77,7 +77,7 @@ func _desenhar_barras(fonte: Font) -> void:
 	_ctl.draw_string(fonte, Vector2(m + larg + 10, y + eh), Csv.t("hud.stamina"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Tema.cor("texto_suave"))
 	y += eh + _lay["barra_espaco"] + 6.0
 	var mh: float = _lay["mana_altura"]
-	_barra(Vector2(m, y), Vector2(larg, mh), 0.0, Tema.cor("mana"))
+	_barra(Vector2(m, y), Vector2(larg, mh), jogador.mana / maxf(1.0, jogador.stats.get("mana_max", 1.0)), Tema.cor("mana"))
 	_ctl.draw_rect(Rect2(Vector2(m, y), Vector2(larg, mh)), Color(0, 0, 0, 0.45))
 	_ctl.draw_string(fonte, Vector2(m + larg + 10, y + mh), Csv.t("hud.mana"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Tema.cor("texto_suave"))
 
@@ -93,6 +93,13 @@ func _desenhar_habilidades(fonte: Font, vp: Vector2) -> void:
 		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(jogador.dodge_cd / jogador.stats.get("dodge_cooldown", 1.0), 0.0, 1.0)},
 	]
+	if "habilidades" in jogador and jogador.habilidades != null:
+		var hab: RefCounted = jogador.habilidades
+		for i in hab.SLOTS:
+			var id: String = hab.slots[i]
+			if id != "":
+				slots.append({"icone": hab.defs[id]["icone"] if hab.defs[id]["icone"] != "" else "bloqueado",
+					"tecla": "hud.key.skill_%d" % (i + 1), "recarga": hab.recarga_slot(i)})
 	for i in total:
 		var r := Rect2(x0 + i * (lado + esp), y0, lado, lado)
 		var ativo := i < slots.size()
@@ -101,7 +108,8 @@ func _desenhar_habilidades(fonte: Font, vp: Vector2) -> void:
 			_ctl.draw_texture_rect(Icones.textura("bloqueado"), r.grow(-lado * 0.22), false)
 			continue
 		var sl: Dictionary = slots[i]
-		_ctl.draw_texture_rect(Icones.textura(sl["icone"]), r.grow(-lado * 0.16), false)
+		var tex: Texture2D = Icones.textura(sl["icone"])
+		_ctl.draw_texture_rect(tex if tex != null else Icones.textura("tiro"), r.grow(-lado * 0.16), false)
 		var rec: float = sl["recarga"]
 		if rec > 0.0:
 			var h := (lado - 6.0) * rec

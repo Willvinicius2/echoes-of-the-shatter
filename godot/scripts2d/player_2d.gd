@@ -3,16 +3,21 @@ extends "res://scripts2d/actor_2d.gd"
 
 signal died
 signal hp_changed(hp: float, hp_max: float)
+signal mana_changed(mana: float, mana_max: float)
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
+const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 
 enum Estado { LIVRE, ATIRANDO, ESQUIVA, MORTO }
 
 var stats := {}
 var hp := 0.0
+var mana := 0.0
+var classe := "arqueiro"
+var habilidades: RefCounted   # árvore e slots da classe (habilidades_2d.gd)
 var estado := Estado.LIVRE
 var invencivel := 0.0
 var god_mode := false          # testes automáticos
@@ -27,6 +32,8 @@ var _disparou := false
 
 func _ready() -> void:
 	stats = Csv.kv("res://data2d/player.csv")
+	habilidades = HabilidadesScript.new()
+	definir_classe(classe)
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("arqueiro")
@@ -38,8 +45,32 @@ func _ready() -> void:
 	add_child(cs)
 	reset()
 
+## Troca a classe: stats de player.csv mais as sobrescritas de classes_2d.csv, e carrega a árvore dela.
+func definir_classe(id: String) -> void:
+	classe = id
+	stats = Csv.kv("res://data2d/player.csv")
+	var cl: Dictionary = HabilidadesScript.classes().get(id, {})
+	for k in cl:
+		if stats.has(k) and str(cl[k]) != "":
+			stats[k] = float(cl[k])
+	habilidades.carregar_classe(id)
+	mana = stats["mana_max"]
+
+func gastar_mana(n: float) -> void:
+	mana = maxf(0.0, mana - n)
+	mana_changed.emit(mana, stats["mana_max"])
+
+## Usa a habilidade do slot 0..3 mirando no cursor (ou na mira forçada dos testes).
+func usar_habilidade(slot: int) -> bool:
+	if estado == Estado.MORTO or estado == Estado.ESQUIVA:
+		return false
+	return habilidades.usar(slot, self, _aim)
+
 func reset() -> void:
 	hp = stats["hp_max"]
+	mana = stats["mana_max"]
+	mana_changed.emit(mana, stats["mana_max"])
+	habilidades.recargas.clear()
 	estado = Estado.LIVRE
 	invencivel = 0.0
 	dodge_cd = 0.0
@@ -56,6 +87,10 @@ func _physics_process(delta: float) -> void:
 	_shoot_cd = maxf(0.0, _shoot_cd - delta)
 	dodge_cd = maxf(0.0, dodge_cd - delta)
 	invencivel = maxf(0.0, invencivel - delta)
+	habilidades.tick(delta)
+	if mana < stats["mana_max"]:
+		mana = minf(stats["mana_max"], mana + stats["mana_regen"] * delta)
+		mana_changed.emit(mana, stats["mana_max"])
 	_aim = _ler_mira()
 	var entrada := auto_move if auto_move != Vector2.ZERO else Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
@@ -70,6 +105,9 @@ func _physics_process(delta: float) -> void:
 			var alvo := entrada * vmax
 			var taxa: float = stats["accel"] if entrada != Vector2.ZERO else stats["friction"]
 			velocity = velocity.move_toward(alvo, taxa * delta)
+			for i in HabilidadesScript.SLOTS:
+				if Input.is_action_just_pressed("skill_%d" % (i + 1)):
+					usar_habilidade(i)
 			if Input.is_action_just_pressed("dodge") and dodge_cd <= 0.0:
 				_comecar_esquiva(entrada if entrada != Vector2.ZERO else _aim)
 			elif _quer_atirar() and _shoot_cd <= 0.0:

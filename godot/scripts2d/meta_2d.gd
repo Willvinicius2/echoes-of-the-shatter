@@ -22,6 +22,8 @@ var ordem_receitas: Array = []
 var amuletos := {}    # id do amuleto criado -> true
 var equipado := ""    # amuleto equipado (1 slot)
 var estoque := {}     # id do consumível -> unidades guardadas
+var habilidades := {} # classe -> {niveis, slots, pontos} (runtime em habilidades_2d.gd)
+var classe := "arqueiro"   # classe escolhida para a próxima corrida
 var ativos := {}      # consumíveis gastos ao partir; valem só para a corrida atual
 
 func _init() -> void:
@@ -160,7 +162,8 @@ func salvar() -> bool:
 		push_error("Não foi possível gravar o save: " + caminho)
 		return false
 	f.store_string(JSON.stringify({"versao": VERSAO, "fragmentos": fragmentos, "materiais": materiais, "niveis": niveis,
-		"amuletos": amuletos.keys(), "equipado": equipado, "estoque": estoque}))
+		"amuletos": amuletos.keys(), "equipado": equipado, "estoque": estoque,
+		"habilidades": habilidades, "classe": classe}))
 	f.close()
 	# Grava no temporário e troca: save corrompido por queda no meio da escrita não acontece.
 	var dir := DirAccess.open(caminho.get_base_dir())
@@ -177,6 +180,8 @@ func carregar() -> bool:
 	equipado = ""
 	estoque = {}
 	ativos = {}
+	habilidades = {}
+	classe = "arqueiro"
 	if not FileAccess.file_exists(caminho):
 		return false
 	var d = JSON.parse_string(FileAccess.get_file_as_string(caminho))
@@ -196,5 +201,9 @@ func carregar() -> bool:
 	for id in d.get("estoque", {}):
 		if receitas.has(id) and receitas[id]["tipo"] == "consumivel":
 			estoque[id] = clampi(int(d["estoque"][id]), 0, receitas[id]["estoque_max"])
+	var hab = d.get("habilidades", {})
+	if typeof(hab) == TYPE_DICTIONARY:
+		habilidades = hab
+	classe = str(d.get("classe", "arqueiro"))
 	mudou.emit()
 	return true

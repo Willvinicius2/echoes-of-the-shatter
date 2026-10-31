@@ -148,3 +148,15 @@ ach.first_run,Primeira expedicao
 ach.crypt_cleared,Cripta vencida
 ach.first_forge,Primeira criacao na Forja
 ach.first_upgrade,Primeira melhoria permanente
+class.arqueiro,Arqueiro
+class.guerreiro,Guerreiro
+class.mago,Mago
+tree.points,Pontos
+tree.empty,Nenhuma habilidade nesta classe ainda
+tree.slot_empty,vazio
+tree.respec,Redistribuir pontos
+tree.close,Fechar (T)
+hud.key.skill_1,Q
+hud.key.skill_2,E
+hud.key.skill_3,F
+hud.key.skill_4,R

@@ -12,6 +12,8 @@ var niveis := {}     # id -> nível atual
 var _base := {}
 var meta: RefCounted   # opcional: bônus permanentes e habilidades liberadas (meta_2d.gd)
 var _base_bruta := {}
+var _classe_base := ""
+var habilidades: RefCounted   # opcional: passivas da árvore de habilidades (habilidades_2d.gd)
 
 func _init() -> void:
 	for r in Csv.rows("res://data2d/upgrades.csv"):
@@ -20,10 +22,14 @@ func _init() -> void:
 
 ## Começa uma corrida: guarda os stats base do jogador (na 1ª vez) e zera os níveis.
 func restaurar(jogador: Node) -> void:
-	if _base_bruta.is_empty():
+	var cl: String = jogador.classe if "classe" in jogador else ""
+	if _base_bruta.is_empty() or cl != _classe_base:
 		_base_bruta = jogador.stats.duplicate()
+		_classe_base = cl
 	_base = meta.aplicar(_base_bruta) if meta != null else _base_bruta.duplicate()
 	jogador.stats = _base.duplicate()
+	if habilidades != null:
+		jogador.stats = habilidades.aplicar_passivas(jogador.stats)
 	niveis.clear()
 	mudou.emit()
 
@@ -61,6 +67,11 @@ func escolher(id: String, jogador: Node) -> bool:
 	mudou.emit()
 	return true
 
+## Reaplica upgrades e passivas sobre a base (chamar depois de aprender uma passiva).
+func reaplicar(jogador: Node) -> void:
+	_aplicar(jogador)
+	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
+
 func _aplicar(jogador: Node) -> void:
 	var s: Dictionary = _base.duplicate()
 	for id in ordem:
@@ -70,4 +81,6 @@ func _aplicar(jogador: Node) -> void:
 				s[d["stat"]] = s[d["stat"]] * (1.0 + d["valor"])
 			else:
 				s[d["stat"]] = s[d["stat"]] + d["valor"]
+	if habilidades != null:
+		s = habilidades.aplicar_passivas(s)
 	jogador.stats = s

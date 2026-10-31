@@ -1,0 +1,4 @@
+id,nome,sprite,habilidades,efeitos,hp_max,speed,mana_max,mana_regen,shoot_cooldown,arrow_damage
+arqueiro,class.arqueiro,arqueiro,res://data2d/habilidades_arqueiro.csv,res://scripts2d/efeitos_arqueiro_2d.gd,,,80,8,,
+guerreiro,class.guerreiro,guerreiro,res://data2d/habilidades_guerreiro.csv,res://scripts2d/efeitos_guerreiro_2d.gd,150,235,60,6,0.5,20
+mago,class.mago,mago,res://data2d/habilidades_mago.csv,res://scripts2d/efeitos_mago_2d.gd,80,250,140,12,0.6,16
