@@ -5,7 +5,6 @@ signal died(enemy)
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
-const Feel = preload("res://scripts2d/feel_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 
 enum Estado { PERSEGUE, TELEGRAFA, ATACANDO, MORTO }
@@ -21,6 +20,10 @@ var _acertou := false
 var _wind := 0.0                # tempo restante do aviso antes do golpe
 var _wind_total := 0.0
 var _kb := Vector2.ZERO         # empurrão por golpe recebido
+var dano_mult := 1.0            # status marca: dano recebido multiplicado
+var vel_mult := 1.0             # status lentidão: velocidade multiplicada
+var atordoado := 0.0            # status atordoamento: segundos parado
+var _status := {}               # id -> {t: segundos restantes, v: valor}
 
 func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	stats = Csv.enemy(id)
@@ -44,6 +47,11 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 
 func _physics_process(delta: float) -> void:
 	if estado == Estado.MORTO or alvo == null:
+		return
+	_tick_status(delta)
+	if atordoado > 0.0:
+		velocity = Vector2.ZERO
+		move_and_slide()
 		return
 	_cd = maxf(0.0, _cd - delta)
 	var para := alvo.global_position - global_position
@@ -82,7 +90,7 @@ func _physics_process(delta: float) -> void:
 			if _burst_cd <= 0.0:
 				_burst_cd = stats["burst_interval"]
 				_rajada()
-	velocity = mover * stats["speed"] + _kb
+	velocity = mover * stats["speed"] * vel_mult + _kb
 	move_and_slide()
 	if estado == Estado.PERSEGUE:
 		play("run" if mover != Vector2.ZERO else "idle")
@@ -121,7 +129,7 @@ func _on_anim_finished() -> void:
 	if estado == Estado.ATACANDO:
 		estado = Estado.PERSEGUE
 	elif estado == Estado.MORTO:
-		queue_free()
+		dissolver(Feel.cfg()["death_dissolve_time"])
 
 func _rajada() -> void:
 	var n := int(stats["burst_count"])
@@ -133,9 +141,49 @@ func _projetil(dir: Vector2, dano: float) -> void:
 	f.setup("enemy", global_position + dir * 30.0, dir, stats["projectile_speed"], dano, 1400.0)
 	get_parent().add_child(f)
 
+## Status das habilidades: veneno e queimadura (v = dano/s), marca (v = dano extra), lentidao (v = fração de velocidade
+## perdida), atordoamento. Reaplicar renova a duração e fica com o maior valor.
+func aplicar_status(tipo: String, dur: float, valor := 0.0) -> void:
+	if estado == Estado.MORTO:
+		return
+	var atual: Dictionary = _status.get(tipo, {"t": 0.0, "v": 0.0})
+	_status[tipo] = {"t": maxf(atual["t"], dur), "v": maxf(atual["v"], valor)}
+	_recalcular_status()
+
+func tem_status(tipo: String) -> bool:
+	return _status.has(tipo)
+
+func _recalcular_status() -> void:
+	dano_mult = 1.0 + (_status["marca"]["v"] if _status.has("marca") else 0.0)
+	vel_mult = 1.0 - (_status["lentidao"]["v"] if _status.has("lentidao") else 0.0)
+	atordoado = _status["atordoamento"]["t"] if _status.has("atordoamento") else 0.0
+
+func _tick_status(delta: float) -> void:
+	if _status.is_empty():
+		return
+	var mudou := false
+	for tipo in _status.keys():
+		var st: Dictionary = _status[tipo]
+		if tipo == "veneno" or tipo == "queimadura":
+			st["acc"] = st.get("acc", 0.0) + delta
+			if st["acc"] >= 0.5:   # dano em pulsos de meio segundo, para não piscar todo quadro
+				take_damage(st["v"] * st["acc"])
+				st["acc"] = 0.0
+		st["t"] -= delta
+		if st["t"] <= 0.0:
+			_status.erase(tipo)
+			mudou = true
+		elif tipo == "atordoamento":
+			atordoado = st["t"]
+		if estado == Estado.MORTO:
+			return
+	if mudou:
+		_recalcular_status()
+
 func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 	if estado == Estado.MORTO:
 		return
+	amount *= dano_mult
 	var mostrado := minf(amount, hp)
 	hp -= amount
 	flash()
@@ -147,18 +195,21 @@ func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 		remove_from_group("hurtable")
 		set_deferred("collision_layer", 0)
 		died.emit(self)
+		Feel.morte(get_parent(), global_position + Vector2(0, -30), Color(0.8, 0.95, 1.0))
 		if has_anim("death"):
 			play("death", true)
 		else:
-			queue_free()
+			dissolver(Feel.cfg()["death_dissolve_time"])
 
 func _feedback_golpe(amount: float, origem: Vector2, morreu: bool) -> void:
 	Audio.tocar("kill_enemy" if morreu else "hit_enemy")
 	var c := Feel.cfg()
-	Feel.hit_stop(c["hit_stop_kill_ms" if morreu else "hit_stop_hit_ms"])
+	var forte: bool = not morreu and amount >= hp_max * c["strong_hit_pct"]
+	var stop: float = c["hit_stop_kill_ms"] if morreu else (c["hit_stop_strong_ms"] if forte else c["hit_stop_hit_ms"])
+	Feel.hit_stop(stop)
 	Feel.shake(self, c["shake_kill_amp" if morreu else "shake_hit_amp"], c["shake_kill_time" if morreu else "shake_hit_time"])
-	Feel.numero(self, amount, Color(1.0, 0.85, 0.2) if morreu else Color.WHITE, morreu)
-	Feel.impacto(get_parent(), global_position + Vector2(0, -30), Color(1.0, 0.9, 0.5))
+	tremer_sprite(c["sprite_shake_px"], c["sprite_shake_time"])
+	Feel.numero(self, amount, Color(1.0, 0.85, 0.2) if (morreu or forte) else (Color(1.0, 0.65, 0.15) if amount >= hp_max * c["weak_hit_pct"] else Color.WHITE), morreu, forte)
 	if origem != Vector2.ZERO:
 		var dir := (global_position - origem).normalized()
 		_kb = dir * c["enemy_knockback"] * (1.0 - stats.get("kb_resist", 0.0))
