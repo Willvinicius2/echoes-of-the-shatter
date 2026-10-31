@@ -1,0 +1,29 @@
+[
+ {
+  "id": "icone_skill.mage.flame_breath_v2",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a narrow vertical jet of fire shooting straight upward from the bottom edge, thin and tall, white-yellow core with orange edges. Glow color: bright yellow-orange glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_skill.mage.fire_wall_v2",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a low horizontal wall of flames stretching left to right across the whole width of the tile, short and wide, with scorched stone below. Glow color: deep red glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_skill.mage.meteor_v2",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a very large dark charred boulder with cracked glowing orange seams seen from above, falling with a thick trail of black smoke and a round shadow cast on the ground below it. Glow color: dull red glow, dark smoky background. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ }
+]
