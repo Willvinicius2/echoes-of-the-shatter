@@ -8,6 +8,7 @@ const SpriteLoader = preload("res://scripts2d/sprite_loader.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
+const GuerreiroTestes = preload("res://scripts2d/tools/test_guerreiro_2d.gd")
 
 var falhas := 0
 
@@ -39,6 +40,7 @@ func _testar() -> void:
 	await _testar_forja()
 	await _testar_opcoes_steam_tutorial()
 	await _testar_status()
+	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
 
 func _testar_audio_e_ui() -> void:

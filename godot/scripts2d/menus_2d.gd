@@ -3,6 +3,7 @@ extends CanvasLayer
 ## Funciona com a árvore pausada. Textos por chave de localização; a corrida decide quando abrir cada tela.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Classe = preload("res://scripts2d/classe_2d.gd")
 const Tema = preload("res://scripts2d/tema_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const OpcoesScript = preload("res://scripts2d/opcoes_2d.gd")
@@ -87,7 +88,9 @@ func mostrar_titulo() -> void:
 	if meta != null:
 		linhas = _resumo_hub()
 	_montar(Tela.TITULO, "menu.title", "menu.subtitle", [
-		["menu.play", jogar], ["menu.forge", mostrar_forja], ["menu.meta", mostrar_meta],
+		["menu.play", jogar], [Csv.t("menu.class") % Csv.t("class.%s.name" % Classe.atual), func() -> void:
+			Classe.alternar()
+			mostrar_titulo()], ["menu.forge", mostrar_forja], ["menu.meta", mostrar_meta],
 		["menu.options", func() -> void: mostrar_opcoes(mostrar_titulo)], ["menu.quit", sair]], linhas)
 
 func _resumo_hub() -> Array:
