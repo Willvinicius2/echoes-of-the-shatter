@@ -105,22 +105,31 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 		var c: Dictionary = caminhos[i]
 		var linha := spline(c["pts"])
 		var fc := faixa(linha, c["larg"] * tile, 4.0, 11 + i)
-		var borda := faixa(linha, c["larg"] * tile + 16.0, 5.0, 21 + i)
 		if fc.is_empty():
 			continue
 		var fora_agua_fc: Array = [fc]
-		var fora_agua_borda: Array = [borda]
 		for m in margens:
 			fora_agua_fc = _subtrair(fora_agua_fc, m)
-			fora_agua_borda = _subtrair(fora_agua_borda, m)
-		for b in fora_agua_borda:
-			_poligono(raiz, b, Color(0.14, 0.15, 0.09, 0.9))
+		# Terra úmida em 3 degraus translúcidos (4 a 6 px cada), com ruído próprio: a borda esfuma no gramado sem corte reto.
+		for degrau in 3:
+			var folga := [14.0, 9.0, 4.0][degrau]
+			var cor_terra := Color(0.2, 0.16, 0.1, [0.2, 0.3, 0.45][degrau])
+			var anel := faixa(linha, c["larg"] * tile + folga * 2.0, 5.0 - degrau, 21 + i * 3 + degrau)
+			if anel.is_empty():
+				continue
+			var fora_anel: Array = [anel]
+			for m in margens:
+				fora_anel = _subtrair(fora_anel, m)
+			for b in fora_anel:
+				_poligono(raiz, b, cor_terra)
 		for q in fora_agua_fc:
 			var pg := _poligono(raiz, q, Color(1, 1, 1))
 			pg.texture = lajes
 			pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 			pg.uv = q
 			_lajes_soltas(raiz, q, 11 + i)
+			_musgo_na_borda(raiz, q)
+			_tufos_na_borda(raiz, q, 11 + i)
 		var trecho := PackedVector2Array()
 		for p in spline(c["pts"], 6.0):
 			for ag in aguas:
@@ -182,6 +191,18 @@ static func _expandir(pts: PackedVector2Array, centro: Vector2, d: float) -> Pac
 	for p in pts:
 		out.append(p + (p - centro).normalized() * d)
 	return out
+
+## Faixa de musgo sobre a beira das lajes: amacia o contorno do caminho.
+static func _musgo_na_borda(raiz: Node2D, contorno: PackedVector2Array) -> void:
+	for camada in 2:
+		var l := Line2D.new()
+		l.points = contorno
+		l.closed = true
+		l.width = [9.0, 4.0][camada]
+		l.default_color = [Color(0.2, 0.3, 0.13, 0.32), Color(0.3, 0.42, 0.2, 0.4)][camada]
+		l.joint_mode = Line2D.LINE_JOINT_ROUND
+		l.z_index = 1
+		raiz.add_child(l)
 
 ## Lajes soltas e musgo espalhados pela borda do caminho.
 static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: int) -> void:
