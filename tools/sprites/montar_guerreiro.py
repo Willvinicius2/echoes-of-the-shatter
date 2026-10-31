@@ -131,6 +131,10 @@ def tira_magenta(img):
     corte = np.clip(mag - 12, 0, None) * 0.9
     a[..., 0] -= corte
     a[..., 2] -= corte
+    # roxo pintado pela IA no aço (azul e vermelho acima do verde): volta para cinza-aço
+    roxo = (a[..., 2] > a[..., 1] + 10) & (a[..., 0] >= a[..., 1])
+    for c in (0, 2):
+        a[..., c] = np.where(roxo, a[..., 1] + (a[..., c] - a[..., 1]) * 0.35, a[..., c])
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
 
 
