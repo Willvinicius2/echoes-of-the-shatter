@@ -110,7 +110,7 @@ func _desenhar_globos(vp: Vector2) -> void:
 		Arte.cadeado(_ctl, ed + Vector2(0, -6), 14.0)
 
 func _texto_globo(centro: Vector2, raio: float, s: String) -> void:
-	Arte.texto(_ctl, centro + Vector2(-raio, 5), s, 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	Arte.texto(_ctl, centro + Vector2(-raio, 6), s, 15, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
 
 func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():
