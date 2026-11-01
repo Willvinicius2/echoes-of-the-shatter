@@ -5,6 +5,7 @@ extends RefCounted
 ## Contrato igual ao de efeitos_arqueiro_2d.gd: executar(efeito, jogador, def, nivel, mira) -> bool.
 
 const Feel = preload("res://scripts2d/feel_2d.gd")
+const VfxIdent = preload("res://scripts2d/vfx_identidade_2d.gd")
 const PASTA := "res://art2d/fx/gelo/"
 const COR := Color(0.6, 0.88, 1.0)
 const COR_FUNDO := Color(0.35, 0.65, 0.95)
@@ -33,6 +34,7 @@ static func _flecha_gelida(jogador: Node2D, dir: Vector2, def: Dictionary) -> vo
 	var anel: bool = def.get("forma", "") == "anel"
 	var f = jogador.lancar_flecha(dir, def.get("dano", 1.0), 0 if anel else int(def.get("qtd", 0)), 1.0, def)
 	f.cor_fx = COR
+	VfxIdent.anexar(f, "gelo")
 	_vestir_flecha(f)
 	var dano_lasca: float = jogador.stats["arrow_damage"] * def.get("dano", 1.0) * 0.5
 	f.body_entered.connect(func(corpo: Node):
@@ -45,6 +47,7 @@ static func _flecha_gelida(jogador: Node2D, dir: Vector2, def: Dictionary) -> vo
 static func _estilhaco(jogador: Node2D, dir: Vector2, def: Dictionary) -> void:
 	var f = jogador.lancar_flecha(dir, def.get("dano", 1.0), 0, 1.0, def)
 	f.cor_fx = COR
+	VfxIdent.anexar(f, "gelo")
 	_vestir_flecha(f)
 	var dano_lasca: float = jogador.stats["arrow_damage"] * def.get("dano", 1.0) * def.get("valor", 0.5)
 	f.body_entered.connect(func(corpo: Node):

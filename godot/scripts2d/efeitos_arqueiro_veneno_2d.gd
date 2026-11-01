@@ -6,6 +6,7 @@ extends RefCounted
 
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const VERDE := Color(0.45, 0.9, 0.25)
+const VfxIdent = preload("res://scripts2d/vfx_identidade_2d.gd")
 const PASTA := "res://art2d/fx/veneno/"
 ## Folhas em linha: nome -> [largura do quadro, altura, quadros, fps, loop]. Só formato de arte, sem balanceamento.
 const FOLHAS := {
@@ -31,6 +32,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			f.veneno_dps = def.get("valor", 4.0)       # dps do veneno vem do CSV
 			f.veneno_t = def.get("duracao", 3.0)
 			f.cor_fx = VERDE
+			VfxIdent.anexar(f, "veneno")
 			_anexar_anim(f.vis, "fx_veneno_flecha", Vector2.ZERO)
 		"bola_veneno":
 			_bola(jogador, dir, def, jogador.stats["arrow_damage"] * dano)

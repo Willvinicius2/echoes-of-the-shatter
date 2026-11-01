@@ -4,6 +4,7 @@ extends RefCounted
 ## Sem arte (PNG ausente) cada efeito cai num desenho de código, para o jogo e o teste headless nunca quebrarem.
 ## Nenhum número de balanceamento aqui: tudo vem do `def` (data2d/habilidades_arqueiro.csv).
 
+const VfxIdent = preload("res://scripts2d/vfx_identidade_2d.gd")
 const U = preload("res://scripts2d/fogo_util_2d.gd")
 const Anim = preload("res://scripts2d/fogo_anim_2d.gd")
 const COR_FOGO := Color(1.0, 0.55, 0.15)
@@ -19,6 +20,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 		"tiro_ardente":
 			var f = jogador.lancar_flecha(dir, def.get("dano", 1.0), 0, 1.0, def)
 			f.cor_fx = COR_FOGO
+			VfxIdent.anexar(f, "fogo")
 			f.add_child(_VigiaImpacto.new(def.get("duracao", 3.0), def.get("valor", 4.0)))
 			var pr := Anim.new("flecha_proj", true)
 			pr.position = Vector2.ZERO

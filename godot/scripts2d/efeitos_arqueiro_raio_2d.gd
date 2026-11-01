@@ -4,6 +4,7 @@ extends RefCounted
 ## A integradora delega daqui por `match` (efeitos "flecha_eletrica", "raio_encadeado", "tornado") e chama
 ## `ao_morrer(inimigo)` na morte do inimigo para o Arauto do Trovão. Folhas em res://art2d/fx/raio/.
 
+const VfxIdent = preload("res://scripts2d/vfx_identidade_2d.gd")
 const PASTA := "res://art2d/fx/raio/"
 const COR := Color(0.55, 0.8, 1.0)
 const ATRASO_TORNADO := 0.55   # só tempo visual da flecha subindo e caindo (não é balanceamento)
@@ -19,6 +20,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, _nivel: i
 		"flecha_eletrica":
 			var f = jogador.lancar_flecha(dir, dano, 0, 1.0, def)
 			f.cor_fx = COR
+			VfxIdent.anexar(f, "raio")
 			var dur: float = def.get("duracao", 3.0)
 			var val: float = def.get("valor", 0.15)
 			f.body_entered.connect(func(corpo):
