@@ -27,6 +27,11 @@ func _executar() -> void:
 	await physics_frame
 	var total_us := 0
 	var pior_us := 0
+	var spawn_us := 0
+	for i in 20:   # aquecimento: o pico do nascimento (shaders, quadros de sprite) não conta na média
+		var t1 := Time.get_ticks_usec()
+		await physics_frame
+		spawn_us = maxi(spawn_us, Time.get_ticks_usec() - t1)
 	for i in quadros:
 		var t0 := Time.get_ticks_usec()
 		await physics_frame
@@ -36,5 +41,7 @@ func _executar() -> void:
 	var media_ms := float(total_us) / quadros / 1000.0
 	print("estresse: %d x %s, %d quadros" % [nasceram, id, quadros])
 	print("ms/quadro: media %.2f, pior %.2f  (limite %.1f)" % [media_ms, pior_us / 1000.0, LIMITE_MS])
+	print("pico de aquecimento: %.1f ms" % (spawn_us / 1000.0))
+	print("fisica %.1f ms, processo %.1f ms (ultimo quadro)" % [Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0])
 	print("nos: %d, objetos: %d" % [int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), int(Performance.get_monitor(Performance.OBJECT_COUNT))])
 	quit(1 if media_ms > LIMITE_MS else 0)
