@@ -17,7 +17,9 @@ Haiku: Git, LFS, conferir envio, rodar script pronto. Sonnet 5.5: padrão (model
 | Godot: shader/VFX/neon | `godot-shaders`, `shader-programming`, `game-feel` | `prototipos/godot-f1/` (game feel) | Godot MCP | Sonnet |
 | Godot: UI de pedra escura | `godot-ui-control`, `game-ui-ux` | `docs/arte/03_design_system.md` + tokens | Theme do Godot | Sonnet |
 | Arte 2D de UI/HUD (ícones, globos, molduras) | `game-ui-ux`, `godot-ui-control` | `docs/arte/29_arte_ui_gpt_image.md`, capturas em `docs/arte/sprites2d/capturas_cripta/` | Codex CLI com gpt-image via `docs/arte/referencias-geracao/scripts/gerar.py`; fundo magenta + `tools/arte/ui_gpt_image/key.py`; Jev para decisão de estilo | Sonnet |
-| Efeitos pixel art 2D em código (ui/, fire/, ice/, impacts/) | skill `pixelfx` (patch-gg/pixelfx, MIT) | clone em `D:\openclaude\_trabalho-claude\pixelfx-src`; `node tools/render.mjs <cat>/<fx> --sheet` exporta sprite sheet para o Godot | Node 18+; código lido antes de rodar (só fs local, ffmpeg opcional) | Sonnet |
+| Efeitos pixel art 2D em código (ui/, fire/, ice/, impacts/) | skill `pixelfx` (patch-gg/pixelfx, MIT) | clone em `D:\openclaude\_trabalho-claude\pixelfx-src`; `node tools/render.mjs <cat>/<fx> --sheet` exporta sprite sheet para o Godot | Node 18+; código lido antes de rodar (só fs local, ffmpeg opcional). 244 efeitos em 21 categorias (moves, fire, ice, lightning, melee, projectiles, status, nature, holy, shadow...) + 12 golpes completos com pose de personagem (`tools/act.mjs`). Licença MIT (Patch + Hugo Duprez); a fonte de `gallery/fonts` NÃO é MIT, não usar. Sprite sheet pré-renderizada = custo de runtime de um `AnimatedSprite2D` | Sonnet |
+| VFX pixel art para Godot 4.7 (oficina no editor, sprite sheet, SpriteFrames) | `Smidle/Jeff-FX-forge` (MIT; texturas originais CC0) | plugin `addons/fx_forge/` (só ele é importável; o projeto de demo traz personagem e headshot de terceiros, não copiar); 38 efeitos de pixel por código (corte de fogo, impacto, explosão, círculo, status) + 44 clássicos 3D gravados em 2D; exporta PNG, SpriteFrames e cena pronta | Godot 4.7.2 testado só em macOS/Compatibility. Exportar para sprite sheet e tocar com `AnimatedSprite2D`: custo de runtime quase zero. Evitar os "clássicos 3D" ao vivo e muitas instâncias dos efeitos procedurais (CPU) | Sonnet |
+| Geração de VFX/habilidade em pixel art (navegador, determinístico) | `GameDev-Toolkit/pixel-ability-fx-generator` (Apache-2.0) | `index.html` abre local, sem build; 48 formações (impacto, barreira, aura), 10 paletas elementais, seed reproduzível; exporta atlas PNG, sequência ou GIF em 128 a 256 px | Loops perfeitos (fase periódica). Bom para auras e barreiras de gema; os elementos do jogo (Trovão, Veneno, Gelo, Fogo) mapeiam nas paletas Storm, Nature, Frost, Fire | Sonnet |
 | Gameplay C# e ligação ao core | `godot-csharp`, `input-systems`, `physics-tuning`, `godot-physics`, `game-ai` | `ShatterCore/bindings/csharp/` | `dotnet`, Godot | Sonnet |
 | Animação e feel de combate | `godot-animation`, `game-feel`, `physics-tuning` | `docs/arte/animacao_mixamo.md` (Mixamo, KayKit CC0) | Blender, Godot | Sonnet |
 | Core C++ (ShatterCore) | nenhuma skill de Godot; seguir regras do `CLAUDE.md` (sem exceções, RTTI, estado global, `std::rand`) | `ShatterCore/include/shatter/`, `docs/tecnico/09_mudancas_contrato.md` | CMake + ctest (ver CLAUDE.md); olhar os avisos do GCC/Clang | Sonnet; Opus só para contrato da API C ou bug de memória |
@@ -82,3 +84,17 @@ claude plugin install goal-meter@nateherk-mods       # progresso do /goal
 claude plugin install recording-mode@nateherk-mods   # mascara dados ao gravar (opcional)
 ```
 Segunda leva, se precisar: `VedantAndhale/claude-pro-kit` (budget-guard, read-cap, reread-guard, compact-keeper, turn-budget) e `hamzafer/claude-code-mods` (context-bar, token-weather, usage-meter, session-saver). Estado da instalação: ver o relatório da thread "Mods instalados no Claude".
+
+## Pesquisa de VFX em pixel art (01/11/2026)
+Critério: licença que permita uso comercial, estilo pixel art, custo de desempenho baixo (jogo 2D leve, FPS alto) e encaixe no Godot 4.7. Regra de desempenho comum: **pré-renderizar em sprite sheet e tocar com `AnimatedSprite2D` ou `GPUParticles2D` com poucas partículas**; nada de gerar pixel por código a cada quadro durante a partida.
+
+| Repositório | Veredito | Observação |
+|---|---|---|
+| patch-gg/pixelfx (MIT, 2,5 mil estrelas, ativo) | **usar** (já na tabela) | O "pixel fx" que o Will citou. Melhor fonte de referência de identidade por habilidade (cada efeito é código legível e recolorível) e de sprite sheets prontas via `render.mjs --sheet` |
+| Smidle/Jeff-FX-forge (MIT + CC0 nos efeitos) | **usar o plugin** | Feito para Godot 4.7, exporta SpriteFrames direto. Ressalvas: interface em chinês, testado só em macOS; personagem e retrato da demo têm licença própria, não importar |
+| GameDev-Toolkit/pixel-ability-fx-generator (Apache-2.0) | **usar como gerador de aura/barreira/impacto** | Sem build, determinístico, loops perfeitos; só 5 estrelas, então validar o resultado a olho |
+| jess-hammer/2d-pixel-water-shader-godot (MIT) | reserva | Shader de água pixel art; útil só se a Cripta ganhar água |
+| Mairon31/ppae-engine (Apache-2.0, 1 estrela) | acompanhar | Gerador TypeScript determinístico de personagens e efeitos; imaturo |
+| audoraemon/vfxProve | descartado | Sem licença declarada |
+| NullTale/LutLight2D, PixelationFx | descartados | Unity |
+| hardc0l2e/VFXForge (MIT) | acompanhar | Ferramenta Godot de VFX 2D/3D, 0 estrelas, sem evidência de maturidade |
