@@ -18,8 +18,9 @@ func _initialize() -> void:
 	# Câmera do jogo em cada zona: início, travessia do riacho, ruínas e arena do Guardião.
 	var pontos := {
 		"1_inicio": room.spawn_jogador,
-		"2_riacho": room._centro(40, 30),
-		"3_ruinas": room._centro(62, 30),
+		"2_riacho": room._centro(82, 57),
+		"3_ruinas": room._centro(124, 52),
+		"6_bosque_e_borda": room._centro(30, 12),
 		"4_arena_guardiao": room.posicao_chefe + Vector2(0, 200),
 	}
 	for nome in pontos:
