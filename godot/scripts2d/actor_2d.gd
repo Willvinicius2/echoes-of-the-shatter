@@ -16,6 +16,8 @@ var _shake_total := 0.0
 var _shake_px := 0.0
 var _mat: ShaderMaterial     # flash branco, dissolução e brilho do sprite
 var _morrendo := false
+var _flash_ligado := false
+var _dir_k := -1
 var _sombra_a := 1.0
 
 func setup_sprite(id: String) -> void:
@@ -34,8 +36,12 @@ func has_anim(base: String) -> bool:
 
 ## Toca a animação `base` na direção de `facing`. Mantém o quadro ao só trocar de direção.
 func play(base: String, restart := false) -> void:
+	var k := posmod(int(round(facing.angle() / (PI / 4.0))), 8)
+	if not restart and k == _dir_k and base == _anim_base and sprite.is_playing():
+		return   # caminho rápido: mesma animação e direção, nada a trocar
 	if not has_anim(base):
 		return
+	_dir_k = k
 	var d := SpriteLoader.dir_for(facing, SpriteLoader.info(char_id)["dirs"])
 	sprite.flip_h = d[1]
 	var nome := "%s_%d" % [base, d[0]]
@@ -81,11 +87,15 @@ func dissolver(tempo: float) -> void:
 		_sombra_a = 1.0 - v, 0.0, 1.0, tempo)
 	tw.tween_callback(queue_free)
 
+
 func _process(delta: float) -> void:
 	if _mat != null:
 		if _flash > 0.0:
 			_flash -= delta
-		_mat.set_shader_parameter("flash", 0.7 if _flash > 0.0 else 0.0)
+		var ligado := _flash > 0.0
+		if ligado != _flash_ligado:   # só fala com o shader quando o flash liga ou desliga
+			_flash_ligado = ligado
+			_mat.set_shader_parameter("flash", 0.7 if ligado else 0.0)
 	if sprite != null:
 		if _shake_t > 0.0:
 			_shake_t -= delta
@@ -93,7 +103,13 @@ func _process(delta: float) -> void:
 		else:
 			sprite.position = Vector2.ZERO
 		_respirar(delta)
-	queue_redraw()
+	if _precisa_redesenhar():
+		queue_redraw()
+
+## O desenho só muda em casos pontuais (aviso, barra de vida, sombra sumindo): redesenhar todo quadro
+## custa caro com centenas de atores. Quem tem desenho animado sobrescreve.
+func _precisa_redesenhar() -> bool:
+	return true
 
 ## Respiração do idle por código (os quadros da folha mal mudam): o corpo estica de 2 a 3 px a partir dos pés.
 func _respirar(delta: float) -> void:

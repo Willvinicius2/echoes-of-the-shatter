@@ -24,6 +24,23 @@ var dano_mult := 1.0            # status marca: dano recebido multiplicado
 var vel_mult := 1.0             # status lentidão: velocidade multiplicada
 var atordoado := 0.0            # status atordoamento: segundos parado
 var _status := {}               # id -> {t: segundos restantes, v: valor}
+## Inimigos vivos na cena: com horda grande, quem só persegue atualiza a cada 2 ou 3 quadros (com o `delta`
+## acumulado), cada um numa fase própria, para o custo de física não crescer linear com a horda.
+static var vivos_n := 0
+const HORDA_PASSO2 := 400
+const HORDA_PASSO3 := 900
+const CELULA := 40.0
+static var _grade := {}
+static var _grade_quadro := -1
+var _acum := 0.0
+var _contado := false
+var _kind := ""
+var _speed := 0.0
+var _aggro := 0.0
+var _range := 0.0
+var _keep := 0.0
+var _burst := 0.0
+var _kb_decay := 0.0
 var raio_despertar := 0.0       # > 0: começa adormecido; acorda (com o grupo) quando o jogador chega a essa distância ou fere alguém
 
 func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
@@ -32,10 +49,21 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	global_position = pos
 	hp = stats["hp"]
 	hp_max = hp
+	vivos_n += 1
+	_contado = true
+	_kind = stats["kind"]
+	_speed = stats["speed"]
+	_aggro = stats["aggro"]
+	_range = stats["attack_range"]
+	_keep = stats["keep_distance"]
+	_burst = stats["burst_interval"]
+	_kb_decay = Feel.cfg()["knockback_decay"]
 	_burst_cd = stats["burst_interval"]
 	_cd = stats["attack_cooldown"] * 0.5
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING   # visão de cima: sem chão nem gravidade
+	max_slides = 2
 	collision_layer = 4
-	collision_mask = 1 | 4 | 8
+	collision_mask = 1 | 8
 	add_to_group("hurtable")
 	shadow_radius = stats["radius"] * 1.2
 	setup_sprite(id)
@@ -46,25 +74,69 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	add_child(cs)
 	play("idle", true)
 
+## Separação leve (no lugar da colisão física entre inimigos, que custava O(n²)): empurra para longe de quem está
+## na mesma célula da grade, reconstruída uma vez por quadro de física. No máximo 4 vizinhos por inimigo.
+func _separacao() -> Vector2:
+	var q := Engine.get_physics_frames()
+	if _grade_quadro != q:
+		_grade_quadro = q
+		_grade.clear()
+	var c := Vector2i((global_position / CELULA).floor())
+	var cel: Array = _grade.get(c, [])
+	var push := Vector2.ZERO
+	var viz := 0
+	for outro in cel:
+		var d: Vector2 = global_position - outro
+		var l2 := d.length_squared()
+		if l2 < CELULA * CELULA and l2 > 0.01:
+			push += d / l2 * CELULA
+			viz += 1
+			if viz >= 4:
+				break
+	if cel.size() < 8:
+		cel.append(global_position)
+		_grade[c] = cel
+	return push
+
+func _descontar() -> void:
+	if _contado:
+		_contado = false
+		vivos_n -= 1
+
+func _exit_tree() -> void:
+	_descontar()
+
+func _precisa_redesenhar() -> bool:
+	return estado != Estado.PERSEGUE or _morrendo or hp < hp_max
+
 func _physics_process(delta: float) -> void:
 	if estado == Estado.MORTO or alvo == null:
 		return
-	_tick_status(delta)
+	if estado == Estado.PERSEGUE and vivos_n > HORDA_PASSO2:
+		var passo := 2 if vivos_n <= HORDA_PASSO3 else 3
+		_acum += delta
+		if (Engine.get_physics_frames() + get_instance_id()) % passo != 0:
+			return
+		delta = _acum
+		_acum = 0.0
+	if not _status.is_empty():
+		_tick_status(delta)
 	if atordoado > 0.0:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
-	_cd = maxf(0.0, _cd - delta)
+	if _cd > 0.0:
+		_cd = maxf(0.0, _cd - delta)
 	var para := alvo.global_position - global_position
 	var dist := para.length()
 	if raio_despertar > 0.0:
 		if dist > raio_despertar:
-			velocity = _kb
-			move_and_slide()
+			_mover_parado()
 			return
 		despertar_grupo()
-	var dir := para.normalized() if dist > 0.01 else Vector2.DOWN
-	_kb = _kb.move_toward(Vector2.ZERO, Feel.cfg()["knockback_decay"] * delta)
+	var dir := para / dist if dist > 0.01 else Vector2.DOWN
+	if _kb != Vector2.ZERO:
+		_kb = _kb.move_toward(Vector2.ZERO, _kb_decay * delta)
 	if estado == Estado.TELEGRAFA:
 		facing = dir
 		_wind -= delta
@@ -79,28 +151,34 @@ func _physics_process(delta: float) -> void:
 		return
 	facing = dir
 	var mover := Vector2.ZERO
-	if dist <= stats["aggro"]:
-		if stats["kind"] == "ranged":
-			if dist < stats["keep_distance"] * 0.8:
+	if dist <= _aggro:
+		if _kind == "ranged":
+			if dist < _keep * 0.8:
 				mover = -dir
-			elif dist > stats["attack_range"] * 0.9:
+			elif dist > _range * 0.9:
 				mover = dir
-			if dist <= stats["attack_range"] and _cd <= 0.0 and not alvo_morto():
-				_atacar()
-		else:
-			if dist > stats["attack_range"] * 0.8:
-				mover = dir
-			if dist <= stats["attack_range"] and _cd <= 0.0 and not alvo_morto():
-				_atacar()
-		if stats["burst_interval"] > 0.0:
+		elif dist > _range * 0.8:
+			mover = dir
+		if dist <= _range and _cd <= 0.0 and not alvo_morto():
+			_atacar()
+		if _burst > 0.0:
 			_burst_cd -= delta
 			if _burst_cd <= 0.0:
-				_burst_cd = stats["burst_interval"]
+				_burst_cd = _burst
 				_rajada()
-	velocity = mover * stats["speed"] * vel_mult + _kb
-	move_and_slide()
+	if mover != Vector2.ZERO:
+		mover = (mover + _separacao() * 0.8).limit_length(1.0)
+	velocity = mover * _speed * vel_mult + _kb
+	if velocity != Vector2.ZERO:   # parado e sem empurrão: nada a resolver na física
+		move_and_slide()
 	if estado == Estado.PERSEGUE:
 		play("run" if mover != Vector2.ZERO else "idle")
+
+## Sem mover por vontade própria: só o empurrão de golpes (adormecido, atordoado).
+func _mover_parado() -> void:
+	velocity = _kb
+	if _kb != Vector2.ZERO:
+		move_and_slide()
 
 ## Adormecidos acordam juntos: o primeiro que vê o jogador (ou leva dano) chama o resto da sala.
 func adormecer(raio: float) -> void:
@@ -213,6 +291,7 @@ func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 	_feedback_golpe(mostrado, _origem, morreu)
 	if morreu:
 		estado = Estado.MORTO
+		_descontar()
 		velocity = Vector2.ZERO
 		remove_from_group("hurtable")
 		set_deferred("collision_layer", 0)
