@@ -10,6 +10,8 @@ permissions:
 jobs:
   capturas:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true  # só tira capturas, não testa: nunca bloqueia o PR
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,11 +33,11 @@ jobs:
           s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
           open('proj/project.godot', 'w').write(s)
           PY
-          ./Godot_v4.4.1-stable_linux.x86_64 --headless --path proj --import || true
+          timeout -k 5 180 ./Godot_v4.4.1-stable_linux.x86_64 --headless --path proj --import || true
       - name: Capturar salas 1 e 3, antes (master) e depois (este commit)
         run: |
           mkdir capturas
-          cap() { xvfb-run -a -s "-screen 0 1280x720x24" ./Godot_v4.4.1-stable_linux.x86_64 --path proj --rendering-driver opengl3 --script res://scripts2d/tools/captura_sala_2d.gd -- "$PWD/capturas/$1" "res://data2d/rooms/$2.txt" || true; }
+          cap() { timeout -k 5 90 xvfb-run -a -s "-screen 0 1280x720x24" ./Godot_v4.4.1-stable_linux.x86_64 --path proj --rendering-driver opengl3 --script res://scripts2d/tools/captura_sala_2d.gd -- "$PWD/capturas/$1" "res://data2d/rooms/$2.txt" || true; }
           cp godot/scripts2d/terreno_2d.gd /tmp/terreno_depois.gd
           git show origin/master:godot/scripts2d/terreno_2d.gd > godot/scripts2d/terreno_2d.gd
           cap antes_sala1.png sala_1; cap antes_sala3.png sala_3
@@ -43,6 +45,7 @@ jobs:
           cap depois_sala1.png sala_1; cap depois_sala3.png sala_3
           ls -la capturas
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: capturas-terreno
           path: capturas/
@@ -50,6 +53,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           cd capturas
+          if ! ls *.png >/dev/null 2>&1; then echo "sem capturas; nada a publicar"; exit 0; fi
           git init -q
           git checkout -q -b capturas/rodada7
           git config user.name "github-actions"
