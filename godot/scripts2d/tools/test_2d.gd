@@ -1077,7 +1077,7 @@ func _testar_habilidades_arqueiro() -> void:
 	longe.setup("hollow_sentinel", ph, Vector2(1500, 0))
 	morto.aplicar_status("veneno", 3.0, 4.0)
 	VenenoFx.arauto_peste_morte(morto, {"raio": 140.0, "duracao": 3.0, "valor": 4.0})
-	check(perto.tem_status("veneno") and not longe.tem_status("veneno") or e.tem_status("choque") or e.tem_status("queimadura"), "Arauto da Peste passa o veneno só a quem está no raio")
+	check(perto.tem_status("veneno") and not longe.tem_status("veneno"), "Arauto da Peste passa o veneno só a quem está no raio")
 	mh.queue_free()
 	await physics_frame
 	# passiva de crítico e veneno: a flecha carrega os dados
