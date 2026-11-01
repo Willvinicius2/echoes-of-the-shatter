@@ -60,11 +60,17 @@ void fragment() {
 	float nucleo = 1.0 - smoothstep(0.0, largura * 0.55, abs(x));
 	float calor = corpo * (1.0 - y * 1.3) + nucleo * 0.25 * (1.0 - y * 2.0) + (n - 0.5) * 1.05 * (0.35 + y);
 	calor -= y * y * 0.35;  // pontas finas que somem no alto, sem blocos soltos
+	// línguas internas: sulcos escuros que sobem e mudam a cada quadro, separando 2 ou 3 línguas
+	float sulco = sin((x + 0.5) * 17.0 + sin(t * 3.0 + y * 6.0) * 1.6 + t * 4.0 * (0.5 + semente * 0.0));
+	calor -= smoothstep(0.55, 1.0, sulco) * smoothstep(0.1, 0.45, y) * 0.34 * (1.0 - y * 0.6);
+	// línguas soltas que se desprendem da ponta e somem
+	float solta = smoothstep(0.045, 0.0, abs(x - sin(t * 5.0 + 1.7) * 0.12)) * smoothstep(0.6, 0.72, y) * (1.0 - smoothstep(0.82, 0.96, y));
+	calor += solta * 0.5 * step(0.4, fract(t * 2.3 + semente));
 	// faixas de cor com transição macia (combina com a arte pintada em volta)
 	vec3 cor = vec3(0.78, 0.2, 0.07);
 	cor = mix(cor, vec3(0.98, 0.47, 0.12), smoothstep(0.34, 0.46, calor));
-	cor = mix(cor, vec3(1.0, 0.76, 0.24), smoothstep(0.56, 0.68, calor));
-	cor = mix(cor, vec3(1.0, 0.94, 0.62), smoothstep(0.8, 0.92, calor));
+	cor = mix(cor, vec3(1.0, 0.76, 0.24), smoothstep(0.66, 0.8, calor));
+	cor = mix(cor, vec3(1.0, 0.94, 0.62), smoothstep(0.95, 1.08, calor));
 	float a = smoothstep(0.18, 0.3, calor);
 	vec4 c = vec4(cor, a);
 	COLOR = c;
@@ -128,6 +134,7 @@ var _tamanho := Vector2.ZERO
 var _tex_cache := {}
 var _escala_area := 1.0
 var _mats_fogo: Array = []
+var _pocas: Array = []
 
 func _ready() -> void:
 	cfg = Csv.kv("res://data2d/clima.csv")
@@ -184,6 +191,10 @@ func _process(delta: float) -> void:
 		m.set_shader_parameter("vento", vento)
 	for m in _mats_fogo:
 		m.set_shader_parameter("vento", vento * signf(dir_vento.x))
+	for po in _pocas:
+		var fa: float = po["fase"]
+		var f := 0.5 + 0.5 * (sin(_t * 7.3 + fa) * 0.5 + sin(_t * 13.1 + fa * 1.9) * 0.3 + sin(_t * 3.1 + fa * 0.7) * 0.2)
+		po["sp"].modulate.a = po["alpha"] * (0.7 + 0.5 * f)
 	var w: Vector2 = dir_vento * vento * cfg["vento_vel_folha"]
 	for p in _fogo:
 		p["no"].gravity = p["base"] + w * p["fator"]
@@ -450,6 +461,16 @@ func _braseiro(b: Vector2) -> void:
 	fogo.z_index = 4
 	add_child(fogo)
 	_mats_fogo.append(mf)
+	# poça de luz quente no chão e nas folhas em volta (aditiva, tremeluz com o fogo)
+	var poca := Sprite2D.new()
+	poca.texture = _textura_suave("poca", 128)
+	poca.material = _aditivo()
+	poca.modulate = Color(1.0, 0.55, 0.2, cfg["poca_alpha"])
+	poca.scale = Vector2(cfg["poca_raio"], cfg["poca_raio"] * 0.8) / 64.0
+	poca.position = b + Vector2(0, 6)
+	poca.z_index = 3
+	add_child(poca)
+	_pocas.append({"sp": poca, "fase": _rng.randf() * TAU, "alpha": cfg["poca_alpha"]})
 	# brilho aditivo fraco por cima, para a chama clarear o que está atrás
 	var miolo := CPUParticles2D.new()
 	miolo.texture = _textura_suave("chama", 32, true)
