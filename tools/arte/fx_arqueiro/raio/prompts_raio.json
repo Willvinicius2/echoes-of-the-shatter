@@ -1,0 +1,94 @@
+[
+ {
+  "id": "flecha_eletrica_proj",
+  "tamanho": "1536x256",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 6 equal square frames, an arrow flying to the right wrapped in crackling electricity with a short spark trail behind it; loop animation, each frame slightly different arcs.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "raio_impacto",
+  "tamanho": "2048x256",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 8 equal frames: a lightning impact burst on a creature, starting as a bright white flash, growing into a star of forked bolts, then fading to sparks.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "raio_arco",
+  "tamanho": "2048x256",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 4 equal wide frames: a horizontal jagged chain-lightning bolt running edge to edge left to right, thin side forks, each frame a different path.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "choque_overlay",
+  "tamanho": "1536x256",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 6 equal square frames: small electric sparks and arcs crawling around an invisible creature silhouette, loop.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "tornado_tempestade",
+  "tamanho": "2048x512",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 8 equal frames: a stormy tornado funnel of blue-grey cloud with lightning bolts inside, seen from a 3/4 top-down angle, rotating loop.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "raio_coluna",
+  "tamanho": "1536x768",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 6 equal tall frames: a lightning bolt striking down from the sky in a vertical column, brightest in the first frames then fading.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "arauto_trovao_aura",
+  "tamanho": "1536x256",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 6 equal square frames: a ring of crackling electric sparks circling a character's feet, subtle, loop.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "icone_flecha_eletrica",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted, matching the style of the attached screenshot. Beveled dark stone and iron border with thin worn gold inner line and four rivets, dark stone background with soft vignette and a colored glow halo, large centered glyph readable at 64px, strong light from top-left, dark outline. No text. Glyph: an arrow wrapped in blue-white lightning",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_raio_encadeado",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted, matching the style of the attached screenshot. Beveled dark stone and iron border with thin worn gold inner line and four rivets, dark stone background with soft vignette and a colored glow halo, large centered glyph readable at 64px, strong light from top-left, dark outline. No text. Glyph: a bolt of lightning forking and jumping between three small glowing nodes",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_tornado_tempestade",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted, matching the style of the attached screenshot. Beveled dark stone and iron border with thin worn gold inner line and four rivets, dark stone background with soft vignette and a colored glow halo, large centered glyph readable at 64px, strong light from top-left, dark outline. No text. Glyph: a small stormy tornado funnel with a lightning bolt inside",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_arauto_trovao",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted, matching the style of the attached screenshot. Beveled dark stone and iron border with thin worn gold inner line and four rivets, dark stone background with soft vignette and a colored glow halo, large centered glyph readable at 64px, strong light from top-left, dark outline. No text. Glyph: a hooded storm herald silhouette crowned by a lightning bolt",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ }
+]
