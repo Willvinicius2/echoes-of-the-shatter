@@ -20,6 +20,9 @@ cmake --build D:\openclaude\_trabalho-claude\build-ext --config Release
 ```
 A biblioteca sai em `godot/gdextension/bin/` (ignorada pelo Git) e o Godot a acha por `godot/shatter_rogue.gdextension`. No CI, `cliente2d.yml` compila a de Linux e a de Windows (artifacts `gdextension-linux` e `gdextension-windows`); para jogar no PC sem compilar, baixe a `gdextension-windows` do último run e solte a `.dll` em `godot/gdextension/bin/`. Os CSV de `data2d` são copiados para `user://dados_core` ao abrir o jogo (o core lê de uma pasta real, inclusive no executável exportado).
 
+## Clima vivo das salas
+`scripts2d/clima_2d.gd` (criado pelo `ambiente_2d.gd` de cada sala) dá movimento ao cenário: vento com rajadas, árvores, arbustos e capim balançando por shader, folhas caindo das copas e atravessando a sala nas rajadas, fogo em línguas, brasas e fumaça nos braseiros, sombra de nuvem (grama) ou névoa rasteira (pedra), poeira no ar e ondas de vento no gramado. Só visual. Números em `data2d/clima.csv`. Para ver em movimento: `godot --path godot --script res://scripts2d/tools/captura_clima_2d.gd -- pasta res://data2d/rooms/sala_1.txt 90 2` grava quadros (junte com ffmpeg).
+
 ## Testes e captura
 ```
 godot --headless --path godot --script res://scripts2d/tools/test_2d.gd     # corrida completa, salas, manifesto (CI: cliente2d.yml)
