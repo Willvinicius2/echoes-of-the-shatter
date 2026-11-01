@@ -17,6 +17,9 @@ var cor_fx := Color(0.8, 0.8, 0.8)
 var _viajado := 0.0
 var _trilha: Line2D
 var _cor := Color(0.45, 1.0, 0.5)
+## Nó do desenho: fica no peito do atirador e gira com a direção. Efeitos elementais se penduram aqui (posição local zero).
+## Antes o corpo todo girava e o desvio de 30 px para cima girava junto: o desenho saía ao lado da trilha e do acerto.
+var vis := Node2D.new()
 
 func setup(equipe: String, origem: Vector2, dir: Vector2, vel: float, dano: float, alcance: float) -> void:
 	team = equipe
@@ -24,7 +27,7 @@ func setup(equipe: String, origem: Vector2, dir: Vector2, vel: float, dano: floa
 	velocity = dir.normalized() * vel
 	damage = dano
 	max_dist = alcance
-	rotation = dir.angle()
+	vis.rotation = dir.angle()
 
 func _ready() -> void:
 	collision_layer = 0
@@ -44,16 +47,16 @@ func _ready() -> void:
 	else:
 		sp.texture = Placeholders.seta(Vector2i(64, 16))
 		sp.modulate = Color(0.55, 0.38, 0.22) if team == "player" else Color(0.6, 1.0, 0.9)  # haste de madeira escura
-	sp.position = Vector2(0, -30)  # só o desenho sobe até o peito; a colisão fica no chão
+	vis.position = Vector2(0, -30)  # só o desenho sobe até o peito; a colisão fica no chão
 	sp.scale = Vector2(c["arrow_scale"], 1.0)  # só alonga: haste continua fina
 	var brilho := Sprite2D.new()
 	brilho.texture = Feel.ponto()
 	brilho.material = Feel.aditivo()
-	brilho.position = sp.position
 	brilho.scale = Vector2(c["arrow_glow_scale"] * 1.6, c["arrow_glow_scale"])
 	brilho.modulate = Color(_cor.r, _cor.g, _cor.b, c["arrow_glow_alpha"])
-	add_child(brilho)
-	add_child(sp)
+	vis.add_child(brilho)
+	vis.add_child(sp)
+	add_child(vis)
 	_criar_trilha(c)
 	body_entered.connect(_on_body)
 

@@ -25,8 +25,8 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, _nivel: i
 				if is_instance_valid(corpo) and corpo.has_method("aplicar_status") and corpo.has_method("take_damage"):
 					aplicar_choque(corpo, dur, val))
 			var sp := Quadros.new()
-			sp.preparar(_tex("flecha_eletrica_proj"), 6, 14.0, true, Vector2(0, -30))
-			f.add_child(sp)
+			sp.preparar(_tex("flecha_eletrica_proj"), 6, 14.0, true, Vector2.ZERO)
+			f.vis.add_child(sp)
 		"raio_encadeado":
 			var alvo := _mais_proximo(jogador, jogador.global_position, dir, def.get("alcance", 600.0), [])
 			if alvo == null:
@@ -130,7 +130,10 @@ static func ativar_arauto(jogador: Node2D, def: Dictionary) -> void:
 	jogador.set_meta("arauto_trovao", def)
 	var aura := Quadros.new()
 	aura.name = "AuraArauto"
-	aura.preparar(_tex("arauto_trovao_aura"), 6, 10.0, true, Vector2(0, -20))
+	aura.preparar(_tex("arauto_trovao_aura"), 6, 10.0, true, Vector2.ZERO)
+	aura.position = Vector2(0, -4)   # no chão, aos pés
+	aura.scale = Vector2(1.0, 0.5)
+	aura.show_behind_parent = true   # atrás do arqueiro, não cortando o corpo
 	aura.modulate.a = 0.7
 	jogador.add_child(aura)
 
