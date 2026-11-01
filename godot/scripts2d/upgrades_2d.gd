@@ -19,11 +19,19 @@ var meta: RefCounted:   # opcional: compartilha o núcleo (meta, bônus permanen
 var nucleo: Object
 var _base_bruta := {}
 var habilidades: RefCounted   # opcional: árvore de habilidades da classe (as passivas já vêm nos stats do core)
+var camada_partida: RefCounted   # opcional: habilidades da corrida (gemas); as passivas dela somam por cima dos stats do core
 
 func _init() -> void:
 	for r in Csv.rows("res://data2d/upgrades.csv"):
 		defs[r["id"]] = {"stat": r["stat"], "modo": r["modo"], "valor": float(r["valor"]), "nivel_max": int(r["nivel_max"])}
 		ordem.append(r["id"])
+
+## Stats do core (base + meta + cartas + árvore fixa) com as passivas da camada de partida por cima.
+func _stats_finais() -> Dictionary:
+	var s: Dictionary = _nucleo().corrida_stats()
+	if s.is_empty() or camada_partida == null:
+		return s
+	return camada_partida.aplicar_passivas(s)
 
 func _nucleo() -> Object:
 	if nucleo == null:
@@ -35,7 +43,7 @@ func restaurar(jogador: Node) -> void:
 	if _base_bruta.is_empty():
 		_base_bruta = jogador.stats.duplicate()
 	_nucleo().corrida_iniciar(semente, _base_bruta)
-	jogador.stats = nucleo.corrida_stats()   # base + meta + upgrades + passivas da árvore (core)
+	jogador.stats = _stats_finais()   # base + meta + upgrades + passivas da árvore fixa (core) + passivas da partida
 	_passivos_globais(jogador)
 	sincronizar(false)
 	mudou.emit()
@@ -69,7 +77,7 @@ func escolher(id: String, jogador: Node) -> bool:
 	var r: Dictionary = _nucleo().corrida_escolher_carta(id, jogador.hp)
 	if int(r["resultado"]) != 0:
 		return false
-	jogador.stats = nucleo.corrida_stats()
+	jogador.stats = _stats_finais()
 	_passivos_globais(jogador)
 	jogador.hp = float(r["hp"])
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
@@ -78,7 +86,7 @@ func escolher(id: String, jogador: Node) -> bool:
 
 ## Relê os stats da corrida do core, que já incluem as passivas (chamar depois de aprender ou redistribuir na árvore).
 func reaplicar(jogador: Node) -> void:
-	var s: Dictionary = _nucleo().corrida_stats()
+	var s: Dictionary = _stats_finais()
 	if s.is_empty():
 		return   # sem corrida: os stats voltam com a próxima corrida_iniciar
 	jogador.stats = s
@@ -101,7 +109,7 @@ func escolher_nivel(id: String, jogador: Node) -> bool:
 	var r: Dictionary = _nucleo().nivel_escolher(id, jogador.hp)
 	if int(r["resultado"]) != 0:
 		return false
-	jogador.stats = nucleo.corrida_stats()
+	jogador.stats = _stats_finais()
 	_passivos_globais(jogador)
 	jogador.hp = float(r["hp"])
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])

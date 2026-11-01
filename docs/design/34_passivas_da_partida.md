@@ -28,4 +28,4 @@ O `skill_cd_mult` de nós `global` da árvore nunca chegava às recargas, porque
 ## 6. Limites conhecidos (backlog)
 - O baralho de cartas é único para as classes com core; Mago pode ver cartas que só o Arqueiro aproveita (tags dele). Baralho por classe pede contrato novo na API C (decisão Opus).
 - A HUD ainda não lista as passivas ativas da partida.
-- Cartas de Arauto por nível (subir o Arauto em si) seguem na thread de progressão (doc 33_aquisicao_habilidades).
+- Cartas de Arauto por nível (subir o Arauto em si) seguem na thread de progressão (doc 35_aquisicao_habilidades).

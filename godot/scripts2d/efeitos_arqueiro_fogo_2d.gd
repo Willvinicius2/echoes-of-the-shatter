@@ -6,6 +6,7 @@ extends RefCounted
 
 const U = preload("res://scripts2d/fogo_util_2d.gd")
 const Anim = preload("res://scripts2d/fogo_anim_2d.gd")
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const COR_FOGO := Color(1.0, 0.55, 0.15)
 const COR_BRASA := Color(1.0, 0.35, 0.1)
 const TEMPO_QUEDA := 0.55   # só ritmo visual do meteoro
@@ -48,9 +49,9 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 
 ## Arauto das Cinzas (passiva): chamado pelo gatilho de abate (integradora). `sobra` = dano que passou da vida do inimigo.
 ## `def` traz valor = fração da sobra que vira explosão, raio, duracao da queimadura; `minimo` evita explodir por sobra irrisória.
-static func ao_abate(jogador: Node2D, pos: Vector2, sobra: float, def: Dictionary) -> void:
+static func ao_abate(jogador: Node2D, pos: Vector2, sobra: float, def: Dictionary) -> bool:
 	if jogador == null or not jogador.is_inside_tree() or sobra <= def.get("minimo", 0.0):
-		return
+		return false
 	var raio: float = def.get("raio", 110.0)
 	var dano: float = sobra * def.get("valor", 0.5)
 	var cena: Node = jogador.get_parent()
@@ -63,16 +64,12 @@ static func ao_abate(jogador: Node2D, pos: Vector2, sobra: float, def: Dictionar
 			n.take_damage(dano, pos)
 			if n.has_method("aplicar_status"):
 				n.aplicar_status("queimadura", def.get("duracao", 3.0), def.get("dps", 3.0))
+	return true
 
-## Aura leve no arqueiro enquanto o Arauto está equipado. Devolve o nó para a integradora guardar e remover.
+## Aura do Arauto das Cinzas na camada C1 (elipse no chão, atrás do arqueiro; regra única em vfx_2d.gd). Nó "AuraCinzas".
 static func aura(jogador: Node2D) -> Node2D:
-	var a := Anim.new("arauto_aura", true, 110.0)
-	a.modulate.a = 0.55
-	a.position = Vector2(0, -4)   # no chão, aos pés, atrás do arqueiro
-	a.scale = Vector2(1.0, 0.5)
-	a.show_behind_parent = true
-	jogador.add_child(a)
-	return a
+	var diam: float = Vfx.Feel.cfg()["aura_diametro"]
+	return Vfx.aura_c1(jogador, Anim.new("arauto_aura", true, diam), diam, "AuraCinzas")
 
 ## Overlay de queimadura sobre o inimigo (a integradora liga isto ao status "queimadura" em enemy_2d.gd).
 static func overlay_queimadura(inimigo: Node2D) -> Node2D:
@@ -122,8 +119,10 @@ class _Meteoro extends Node2D:
 	var _t := 0.0
 	var _caiu := false
 	var _queda: Node2D
+	var _aviso: Node2D
 
-	func preparar(_p: Vector2, r: float, d: float, du: float, v: float) -> void:
+	func preparar(p: Vector2, r: float, d: float, du: float, v: float) -> void:
+		position = p
 		raio = r
 		dano = d
 		dur = du
@@ -133,12 +132,18 @@ class _Meteoro extends Node2D:
 	func _ready() -> void:
 		_queda = Anim.new("meteoro_queda", true, 150.0)
 		_queda.position = Vector2(0, -420)
+		_queda.z_index = 6   # céu (C5): -1 + 6
 		add_child(_queda)
+		if atraso > 0.0:
+			_queda.visible = false   # forma "brasas": a queda só aparece (e avisa no chão) quando chega a vez dela
 
 	func _physics_process(delta: float) -> void:
 		if atraso > 0.0:
 			atraso -= delta
 			return
+		if _aviso == null:
+			_queda.visible = true
+			_aviso = Vfx.sombra_aviso(get_parent(), global_position, raio, COR_BRASA, TEMPO_QUEDA)   # sombra de aviso (C0)
 		_t += delta
 		queue_redraw()
 		if not _caiu:
@@ -146,6 +151,8 @@ class _Meteoro extends Node2D:
 			if _t >= TEMPO_QUEDA:
 				_caiu = true
 				_queda.queue_free()
+				if is_instance_valid(_aviso):
+					_aviso.concluir()
 				var e := Anim.new("meteoro_impacto", false, raio * 2.2)
 				e.position = Vector2(0, -20)
 				add_child(e)
@@ -164,10 +171,9 @@ class _Meteoro extends Node2D:
 				queue_free()
 
 	func _draw() -> void:
-		if not _caiu:   # telégrafo no chão
-			var a := 0.15 + 0.35 * clampf(_t / TEMPO_QUEDA, 0.0, 1.0)
-			draw_circle(Vector2.ZERO, raio, Color(COR_BRASA.r, COR_BRASA.g, COR_BRASA.b, a * 0.6))
-			draw_arc(Vector2.ZERO, raio, 0.0, TAU, 40, Color(1.0, 0.6, 0.2, a + 0.2), 2.0)
+		if _caiu:   # brasas: contorno da área que ainda queima, apagando no fim
+			var apaga := Vfx.fade_zona(_t, dur)
+			draw_arc(Vector2.ZERO, raio, 0.0, TAU, 40, Color(1.0, 0.6, 0.2, 0.35 * apaga), 2.0)
 
 ## Muralha de Brasas: linha de chamas no chão; fere e queima quem cruza, em pulsos.
 class _Muralha extends Node2D:

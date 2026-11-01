@@ -54,6 +54,7 @@ func _testar() -> void:
 	await _testar_mago()
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
+	await _testar_fisica_habilidades()
 	await AutocastTestes.new(self, check).rodar()
 	await HordaTestes.new(self, check).rodar()
 
@@ -189,6 +190,7 @@ func _testar_telegrafo() -> void:
 	var mundo := Node2D.new()
 	root.add_child(mundo)
 	var p = load("res://scripts2d/player_2d.gd").new()
+	p.autocast = false   # o teste é do telégrafo do inimigo: o jogador não pode matá-lo atirando sozinho (e vazar o mundo)
 	mundo.add_child(p)
 	var e = load("res://scripts2d/enemy_2d.gd").new()
 	mundo.add_child(e)
@@ -1128,6 +1130,100 @@ func _alvos_mago(mundo: Node, m: Node) -> Array:
 		out.append(e)
 	return out
 ## habilidades_arqueiro.csv: árvore coerente, textos, ícones e efeitos ativos funcionando.
+## Física e camadas das habilidades (docs/arte/33_direcao_vfx_habilidades.md): a flecha nasce na boca do arco da
+## direção mirada (CSV de ancoragem, espelhado à esquerda), desce até a altura de voo; a aura de Herald fica atrás do
+## ator, como elipse no chão, com alfa limitado; o projétil em arco cria a sombra de aviso no destino e chama o impacto ao cair.
+func _testar_fisica_habilidades() -> void:
+	var HabScript = load("res://scripts2d/habilidades_2d.gd")
+	var caminho_antes: String = HabScript.caminho
+	HabScript.caminho = "user://teste_fisica_habilidades_2d.json"   # save próprio: o que este teste aprende não vaza para os outros
+	DirAccess.remove_absolute(HabScript.caminho)
+	await _fisica_habilidades()
+	DirAccess.remove_absolute(HabScript.caminho)
+	HabScript.caminho = caminho_antes
+
+func _fisica_habilidades() -> void:
+	var Vfx = load("res://scripts2d/vfx_2d.gd")
+	var Feel = load("res://scripts2d/feel_2d.gd")
+	for k in ["aura_diametro", "aura_alfa", "aura_altura", "muzzle_flash_time", "shot_recoil_px", "arc_shadow_alpha", "zone_ring_time", "zone_fade_time"]:
+		check(Feel.cfg().has(k), "feel.csv tem " + k)
+	var linhas := {}
+	for r in Csv.rows("res://data2d/ancoras_2d.csv"):
+		if r["id"] == "arqueiro" and r["anim"] == "attack":
+			linhas[int(r["linha"])] = true
+			check(float(r["y"]) < -30.0, "boca do arco da linha %s fica acima do peito" % r["linha"])
+	check(linhas.size() == 5, "ancoras_2d.csv tem as 5 linhas do ataque do arqueiro (%d)" % linhas.size())
+	var m := Node2D.new()
+	root.add_child(m)
+	var p = load("res://scripts2d/player_2d.gd").new()
+	m.add_child(p)
+	await physics_frame
+	var dir_e: Dictionary = p.boca_do_arco(Vector2.RIGHT)
+	var dir_o: Dictionary = p.boca_do_arco(Vector2.LEFT)
+	var dir_n: Dictionary = p.boca_do_arco(Vector2.UP)
+	check(dir_e["chao"].x > p.global_position.x and dir_e["altura"] > 40.0, "mirando à direita a flecha nasce do lado do arco, na altura da mão")
+	check(is_equal_approx(dir_o["chao"].x - p.global_position.x, -(dir_e["chao"].x - p.global_position.x)), "mirando à esquerda a boca do arco é o espelho da direita")
+	check(dir_n["chao"].x < p.global_position.x, "de costas (norte) o arco fica do outro lado")
+	var f = p.lancar_flecha(Vector2.RIGHT)
+	check(f.global_position.is_equal_approx(dir_e["origem"]) and is_equal_approx(f.altura, dir_e["altura"]), "a colisão da flecha nasce na linha da mira")
+	check(f.vis.global_position.is_equal_approx(dir_e["chao"] + Vector2(0.0, -dir_e["altura"])), "o desenho da flecha nasce na boca do arco")
+	check(f.vis.position.y < -40.0, "o desenho da flecha começa na altura do arco")
+	var flashes := 0
+	for n in m.get_children():
+		if n is Sprite2D and n.get_script() != null and n.z_index == 4:
+			flashes += 1
+	check(flashes >= 1, "disparo cria o flash de boca")
+	f.cor_fx = Color(1.0, 0.2, 0.2)
+	check(f.cor_atual().is_equal_approx(Color(1.0, 0.2, 0.2)), "a cor do elemento repinta o brilho e o rastro da flecha")
+	for i in 20:
+		await physics_frame
+	if is_instance_valid(f):
+		check(f.altura < dir_e["altura"], "em voo a flecha desce da altura do arco para a de voo")
+		check(absf(f.vis.position.x) < absf(dir_e["desloc"].x), "em voo o desenho converge para a linha da mira")
+	# aura C1: atrás do ator, centrada no tronco, alfa limitado, diâmetro do feel.csv
+	var desenho := Sprite2D.new()
+	desenho.texture = Feel.ponto()
+	desenho.modulate.a = 1.0
+	var aura = Vfx.aura_c1(p, desenho, 32.0, "AuraTeste")
+	check(aura.get_parent() == p and aura.show_behind_parent and aura.position.y <= 0.0 and aura.scale.y < aura.scale.x, "aura é uma elipse no chão, atrás do ator")
+	check(aura.modulate.a <= Feel.cfg()["aura_alfa"] + 0.001, "aura respeita o alfa máximo")
+	check(is_equal_approx(aura.scale.x * 32.0, Feel.cfg()["aura_diametro"]), "aura tem o diâmetro do feel.csv")
+	var aura2 = Vfx.aura_c1(p, Sprite2D.new(), 32.0, "AuraTeste")
+	check(aura2.name == "AuraTeste" and aura2 != aura, "aura nova substitui a antiga de mesmo nome")
+	# Heralds equipados põem as quatro auras na mesma camada
+	var h = p.habilidades
+	h.ganhar_pontos(400)
+	for id in ["herald_plague", "herald_ice", "herald_thunder", "arauto_cinzas"]:
+		var cadeia := []   # aprende da raiz do ramo até o Herald
+		var cur: String = id
+		while cur != "":
+			cadeia.push_front(cur)
+			cur = h.defs[cur]["pai"]
+		for c in cadeia:
+			if h.nivel(c) < 1:
+				h.aprender(c)
+		check(h.nivel(id) >= 1, "teste aprende %s" % id)
+	await physics_frame
+	for nome in ["AuraPeste", "AuraGelo", "AuraArauto", "AuraCinzas"]:
+		var a := p.get_node_or_null(nome) as Node2D
+		check(a != null and a.show_behind_parent and a.position.y <= 0.0 and a.modulate.a <= Feel.cfg()["aura_alfa"] + 0.001, "Herald equipado: %s atrás do arqueiro" % nome)
+	# projétil em arco: sombra de aviso no destino, cai e chama o impacto
+	var caiu := []
+	var corpo := Node2D.new()
+	var destino: Vector2 = p.global_position + Vector2(300, 0)
+	var arco = Vfx.arco(m, p.global_position, 50.0, destino, 200.0, 0.2, corpo, Color.GREEN, 80.0, func(pt: Vector2): caiu.append(pt))
+	await physics_frame
+	var avisos := 0
+	for n in m.get_children():
+		if n.has_method("concluir"):
+			avisos += 1
+	check(avisos >= 1, "projétil em arco cria a sombra de aviso no ponto de queda")
+	check(arco.altura() > 50.0 and corpo.position.y < -50.0, "no começo do voo o corpo sobe e o nó fica no chão")
+	await _esperar(func(): return not caiu.is_empty(), 1.0)
+	check(caiu.size() == 1 and caiu[0].is_equal_approx(destino), "o projétil em arco cai no destino e chama o impacto uma vez")
+	m.queue_free()
+	await physics_frame
+
 func _def_arqueiro(r: Dictionary) -> Dictionary:
 	var d := {}
 	for k in ["cd", "custo", "dano", "qtd", "angulo", "raio", "duracao", "alcance", "valor", "escala"]:
@@ -1226,6 +1322,16 @@ func _testar_habilidades_arqueiro() -> void:
 	check(perto.tem_status("veneno") and not longe.tem_status("veneno"), "Arauto da Peste passa o veneno só a quem está no raio")
 	mh.queue_free()
 	await physics_frame
+	# leque do autocast: 1º disparo reto, os seguintes abrem +d, -d, +2d
+	var pl = load("res://scripts2d/player_2d.gd").new()
+	pl.stats = {"leque_graus": 10.0, "leque_janela": 0.4}
+	var graus: Array = []
+	for k in 4:
+		graus.append(snappedf(rad_to_deg(pl._desvio_leque(1000 + k * 50)), 0.1))
+		pl._leque_disparos.append(1000 + k * 50)
+	check(graus == [0.0, 10.0, -10.0, 20.0], "leque do autocast abre +d, -d, +2d (%s)" % str(graus))
+	check(is_equal_approx(pl._desvio_leque(5000), 0.0), "disparo isolado depois da janela sai reto")
+	pl.free()
 	# passiva de crítico e veneno: a flecha carrega os dados
 	var m2 := Node2D.new()
 	root.add_child(m2)
