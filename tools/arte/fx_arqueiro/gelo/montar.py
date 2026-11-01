@@ -8,6 +8,21 @@ from PIL import Image
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "ui_gpt_image"))
 from key import key
 
+def limpa_bordas(c):
+    """O modelo as vezes deixa lascas do quadro vizinho na borda da celula: apaga os pedacos pequenos que tocam
+    a borda esquerda/direita (menos de 20% da area do maior pedaco)."""
+    from scipy import ndimage
+    a = np.array(c)
+    lab, k = ndimage.label(a[..., 3] > 20, structure=np.ones((3, 3)))
+    if k < 2: return c
+    areas = ndimage.sum(np.ones_like(lab), lab, range(1, k + 1))
+    maior = areas.max()
+    bordas = set(np.unique(lab[:, 0])) | set(np.unique(lab[:, -1]))
+    for i in range(1, k + 1):
+        if i in bordas and areas[i - 1] < 0.2 * maior:
+            a[lab == i] = 0
+    return Image.fromarray(a, "RGBA")
+
 def main(ent, sai):
     os.makedirs(sai, exist_ok=True)
     itens = json.load(open(os.path.join(os.path.dirname(__file__), "prompts_gelo.json"), encoding="utf-8"))
@@ -16,7 +31,7 @@ def main(ent, sai):
         if not os.path.exists(p):
             print("falta", p); continue
         im = key(p); n = it["quadros"]; w = im.width // n
-        cel = [im.crop((i * w, 0, (i + 1) * w, im.height)) for i in range(n)]
+        cel = [limpa_bordas(im.crop((i * w, 0, (i + 1) * w, im.height))) for i in range(n)]
         # caixa comum: união dos conteúdos, centrada na célula
         box = None
         for c in cel:
