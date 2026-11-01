@@ -8,6 +8,9 @@ signal mana_changed(mana: float, mana_max: float)
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const VenenoFx = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
+const GeloFx = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
+const FogoFx = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
+const RaioFx = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
@@ -47,6 +50,7 @@ func _ready() -> void:
 	HabilidadesScript.registrar_tecla_ult()
 	habilidades = HabilidadesScript.new()
 	definir_classe(classe)
+	habilidades.mudou.connect(_atualizar_heralds)
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("arqueiro")
@@ -103,11 +107,39 @@ func usar_habilidade(slot: int, alvo := {}) -> bool:
 	return ok
 
 ## Heralds: gatilhos de morte (docs/design/32). Cada Herald aprendido age quando o inimigo morre com o status certo.
-func herald_morte(inimigo: Node2D) -> void:
+## `sobra` = dano que passou da vida do inimigo no golpe fatal (overkill).
+func herald_morte(inimigo: Node2D, sobra := 0.0) -> void:
 	if habilidades == null:
 		return
 	if habilidades.nivel("herald_plague") > 0:
 		VenenoFx.arauto_peste_morte(inimigo, habilidades.def_nivel("herald_plague"))
+	if habilidades.nivel("herald_ice") > 0:
+		GeloFx.arauto_vigiar(inimigo, self, habilidades.def_nivel("herald_ice"))   # explode no died.emit, se estiver congelado
+	if habilidades.nivel("herald_thunder") > 0:
+		RaioFx.ao_morrer(inimigo)
+	if habilidades.nivel("arauto_cinzas") > 0:
+		var d: Dictionary = habilidades.def_nivel("arauto_cinzas").duplicate()
+		d["minimo"] = float(inimigo.hp_max) * float(d.get("qtd", 0.0)) / 100.0   # qtd = sobra mínima em % da vida máxima
+		FogoFx.ao_abate(self, inimigo.global_position, sobra, d)
+
+## Auras e gatilhos dos Heralds seguem o que está aprendido (liga e desliga quando a árvore muda).
+func _atualizar_heralds() -> void:
+	if habilidades == null:
+		return
+	if habilidades.nivel("herald_plague") > 0:
+		VenenoFx.aura_arauto(self)
+	else:
+		_tirar_no("AuraPeste")
+	RaioFx.ativar_arauto(self, habilidades.def_nivel("herald_thunder") if habilidades.nivel("herald_thunder") > 0 else {})
+	if habilidades.nivel("arauto_cinzas") > 0:
+		if not has_node("AuraCinzas"):
+			FogoFx.aura(self).name = "AuraCinzas"
+	else:
+		_tirar_no("AuraCinzas")
+
+func _tirar_no(nome: String) -> void:
+	if has_node(nome):
+		get_node(nome).queue_free()
 
 ## Ult: a ativa marcada como ult no slot sai só aqui (tecla de ult), mirando no inimigo do autocast quando há um.
 func usar_ult() -> bool:

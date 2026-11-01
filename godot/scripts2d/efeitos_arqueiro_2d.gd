@@ -4,6 +4,9 @@ extends RefCounted
 
 const ZonaScript = preload("res://scripts2d/zona_2d.gd")
 const Veneno = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
+const Gelo = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
+const Fogo = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
+const Raio = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 
 static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: int, mira: Vector2) -> bool:
 	if jogador == null or not jogador.is_inside_tree() or jogador.esta_morto():
@@ -56,6 +59,12 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			jogador.dar_buff(def.get("duracao", 5.0), 1.0 + v * 0.5, 1.0 / (1.0 - minf(v, 0.8)))
 		"tiro_veneno", "bola_veneno", "chuva_corrosiva":
 			return Veneno.executar(efeito, jogador, def, nivel, mira)
+		"gelo_flecha", "gelo_estilhaco", "gelo_prisao":
+			return Gelo.executar(efeito, jogador, def, nivel, mira)
+		"tiro_ardente", "meteoro", "muralha":
+			return Fogo.executar(efeito, jogador, def, nivel, mira)
+		"flecha_eletrica", "raio_encadeado", "tornado":
+			return Raio.executar(efeito, jogador, def, nivel, mira)
 		_:
 			push_error("Efeito de arqueiro desconhecido: " + efeito)
 			return false

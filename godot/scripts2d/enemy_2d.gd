@@ -7,6 +7,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const Veneno = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
+const Fogo = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
 
 enum Estado { PERSEGUE, TELEGRAFA, ATACANDO, MORTO }
 
@@ -249,13 +250,15 @@ func aplicar_status(tipo: String, dur: float, valor := 0.0) -> void:
 	_status[tipo] = {"t": maxf(atual["t"], dur), "v": maxf(atual["v"], valor)}
 	if tipo == "veneno":
 		Veneno.overlay_status(self, dur)
+	elif tipo == "queimadura" and not has_node("OverlayQueimadura"):
+		Fogo.overlay_queimadura(self).name = "OverlayQueimadura"
 	_recalcular_status()
 
 func tem_status(tipo: String) -> bool:
 	return _status.has(tipo)
 
 func _recalcular_status() -> void:
-	dano_mult = 1.0 + (_status["marca"]["v"] if _status.has("marca") else 0.0)
+	dano_mult = 1.0 + (_status["marca"]["v"] if _status.has("marca") else 0.0) + (_status["choque"]["v"] if _status.has("choque") else 0.0)
 	vel_mult = 1.0 - (_status["lentidao"]["v"] if _status.has("lentidao") else 0.0)
 	atordoado = _status["atordoamento"]["t"] if _status.has("atordoamento") else 0.0
 
@@ -274,6 +277,8 @@ func _tick_status(delta: float) -> void:
 		if st["t"] <= 0.0:
 			_status.erase(tipo)
 			mudou = true
+			if tipo == "queimadura" and has_node("OverlayQueimadura"):
+				get_node("OverlayQueimadura").queue_free()
 		elif tipo == "atordoamento":
 			atordoado = st["t"]
 		if estado == Estado.MORTO:
@@ -299,7 +304,7 @@ func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 		remove_from_group("hurtable")
 		set_deferred("collision_layer", 0)
 		if alvo != null and alvo.has_method("herald_morte"):
-			alvo.herald_morte(self)   # gatilhos de morte dos Heralds (veneno, depois gelo, raio, fogo)
+			alvo.herald_morte(self, -hp)   # gatilhos de morte dos Heralds; -hp = dano que passou da vida (overkill)
 		died.emit(self)
 		Feel.morte(get_parent(), global_position + Vector2(0, -30), Color(0.8, 0.95, 1.0))
 		if has_anim("death"):

@@ -21,3 +21,15 @@ poison_arrow,veneno,ativa,1,,1,3,tiro_veneno,3,0,1.0,0,,,3,,4,0.15,,,poison_arro
 venom_orb,veneno,ativa,2,poison_arrow,2,3,bola_veneno,9,0,1.2,4,,110,3.2,450,0.35,0.15,,,venom_orb
 corrosive_rain,veneno,ativa,3,venom_orb,3,3,chuva_corrosiva,14,0,0.9,6,,150,4.5,450,0.25,0.12,,,corrosive_rain
 herald_plague,veneno,passiva,3,poison_arrow,3,3,arauto,,,,,,140,3,,4,0.2,,,herald_plague
+frost_arrow,gelo,ativa,1,,1,3,gelo_flecha,5,0,1.0,0,,,3.0,,0.15,0.1,,,frost_arrow
+glacial_shard,gelo,ativa,2,frost_arrow,2,3,gelo_estilhaco,8,0,1.2,3,,260,3.0,,0.5,0.12,,,glacial_shard
+ice_prison,gelo,ativa,3,glacial_shard,3,3,gelo_prisao,20,0,1.5,,,170,2.0,450,,0.12,,,ice_prison
+herald_ice,gelo,passiva,3,frost_arrow,3,3,herald_gelo,,,1.5,,,150,3.0,,0.15,0.12,,,herald_ice
+flecha_ardente,fogo,ativa,1,,1,3,tiro_ardente,5,0,1.6,,,,3,,4,0.15,,,flecha_ardente
+flecha_meteoro,fogo,ativa,2,flecha_ardente,2,3,meteoro,10,0,3.2,,,140,3,600,3,0.15,,,flecha_meteoro
+muralha_brasas,fogo,ativa,3,flecha_meteoro,3,3,muralha,14,0,1.0,10,,44,5,320,4,0.15,,,muralha_brasas
+arauto_cinzas,fogo,passiva,3,flecha_ardente,3,3,herald_cinzas,,,,20,,110,3,,0.5,0.1,,,arauto_cinzas
+shock_arrow,raio,ativa,1,,1,3,flecha_eletrica,4,0,1.2,,,,3,,0.15,0.15,,,shock_arrow
+chain_lightning,raio,ativa,2,shock_arrow,2,3,raio_encadeado,9,0,1.6,4,,220,3,600,0.2,0.15,,,chain_lightning
+storm_tornado,raio,ativa,3,chain_lightning,3,3,tornado,16,0,0.9,,,150,4,650,90,0.15,,,storm_tornado
+herald_thunder,raio,passiva,2,shock_arrow,2,3,arauto,,,1.5,,,180,3,,,,,,herald_thunder
