@@ -21,6 +21,8 @@ const ArvoreUiScript = preload("res://scripts2d/arvore_ui_2d.gd")
 const MagoScript = preload("res://scripts2d/mago_2d.gd")
 const CorridaGuerreiroScript = preload("res://scripts2d/corrida_guerreiro_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
+const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
@@ -70,6 +72,8 @@ var _timer := 0.0
 var _estado_antes := Estado.LUTA
 var portal: Area2D          # saída da fase aberta, aberta depois do chefe
 var _pos_chefe := Vector2.ZERO
+var arvore_fixa: RefCounted   # árvore permanente do personagem (core do hub); player.habilidades é a camada que o combate usa
+var _gemas_pendentes := 0   # gemas de habilidade esperando a tela atual fechar
 # Modo horda
 var horda := false          # a corrida atual usa o spawner do core
 var fase_horda := ""        # id da fase em ondas.csv
@@ -130,12 +134,40 @@ func _ready() -> void:
 	if com_menu:
 		_ir_titulo()
 
+## Modo horda com `skill_from_scratch`: a corrida começa só com o ataque básico e as habilidades vêm de nível e gemas.
+func _habilidades_do_zero() -> bool:
+	return not modo_etapas and int(config.get("horda", 0)) == 1 and int(config.get("skill_from_scratch", 0)) == 1
+
+## Duas camadas de habilidade (decisão do Will, doc 33): a árvore FIXA fica no personagem para sempre (core do hub, tecla T,
+## passivas valem em toda corrida). A camada de PARTIDA começa vazia a cada corrida (só o ataque básico) e guarda as ativas,
+## os Heralds e as passivas ganhos por nível e gemas; ela vive num core próprio, sem save. `player.habilidades` aponta para a
+## camada que o combate usa (partida no modo horda, fixa no resto).
+func _montar_camada_partida() -> void:
+	var tem_heralds: bool = player.has_method("_atualizar_heralds")
+	if tem_heralds and player.habilidades != arvore_fixa and player.habilidades.mudou.is_connected(player._atualizar_heralds):
+		player.habilidades.mudou.disconnect(player._atualizar_heralds)   # camada de partida da corrida anterior
+	if _habilidades_do_zero() and horda:
+		var h: RefCounted = HabilidadesScript.new()
+		h.persistir = false
+		h.carregar_classe(Classe.atual)   # sem núcleo: cria um core novo e vazio
+		player.habilidades = h
+		if tem_heralds:
+			h.mudou.connect(player._atualizar_heralds)
+			player._atualizar_heralds()
+	else:
+		player.habilidades = arvore_fixa
+	upgrades.camada_partida = player.habilidades if player.habilidades != arvore_fixa else null
+	upgrades.habilidades = arvore_fixa
+	if arvore != null:
+		arvore.definir(arvore_fixa)
+
 ## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro e mago: cartas do core; guerreiro: só a árvore comum).
 func _criar_classe() -> void:
 	var guerreiro: bool = Classe.atual == "guerreiro"
 	player = (WarriorScript if guerreiro else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
 	player.died.connect(_on_player_died)
 	atores.add_child(player)
+	arvore_fixa = player.habilidades   # recém-criado: ainda é a árvore fixa (core do meta); a camada de partida entra no início da corrida
 	upgrades = (CorridaGuerreiroScript if guerreiro else UpgradesScript).new()
 	upgrades.meta = meta
 	player.habilidades.nucleo = nucleo   # árvore de habilidades com as regras no core do meta (as 3 classes)
@@ -171,6 +203,7 @@ func iniciar_corrida() -> void:
 	_aviso_altar = false
 	_aviso_enxame = false
 	_mortes_dps = []
+	_gemas_pendentes = 0
 	vida_chefe = 0.0
 	dps_medido = 0.0
 	# O core credita os ganhos pendentes de uma corrida abandonada (reiniciar, título) ao começar a próxima.
@@ -185,6 +218,7 @@ func iniciar_corrida() -> void:
 	nucleo.corrida_cartas_externas(guerreiro)
 	if not guerreiro:
 		upgrades.semente = int(rng.seed)
+	_montar_camada_partida()
 	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador; o arqueiro também começa a corrida no core
 	if guerreiro:
 		nucleo.corrida_iniciar(int(rng.seed), upgrades.base_numerica())
@@ -361,18 +395,30 @@ func _reposicionar_presos() -> void:
 	var v := vista()
 	var longe := float(config.get("horde_leash_dist", 1700.0))
 	var preso := float(config.get("horde_stuck_dist", 500.0))
+	var checks := int(config.get("horde_stuck_checks", 4))
 	var t := float(room.tile)
 	for e in get_tree().get_nodes_in_group("hurtable"):
-		if not e.has_meta("spawn_id") or e.stats.get("kind", "") == "boss" or v.has_point(e.global_position):
+		if not e.has_meta("spawn_id") or e.stats.get("kind", "") == "boss":
 			continue
 		var d: float = e.global_position.distance_to(player.global_position)
 		var antes := float(e.get_meta("dist_antes", INF))
 		e.set_meta("dist_antes", d)
-		if d > longe or (d > preso and d >= antes - 4.0):
+		var parado := d >= antes - 4.0
+		var voltar := false
+		if not v.has_point(e.global_position) and (d > longe or (d > preso and parado)):
+			voltar = true
+		# Sem linha de visão (muro, água) e sem se aproximar por `horde_stuck_checks` conferências: o jogador não o acerta
+		# e ele não chega ao jogador (chase direto, sem rota). Vale também perto e dentro da vista.
+		var n := int(e.get_meta("preso_n", 0)) + 1 if parado and not Alvos.ve(get_tree(), e.global_position, player.global_position) else 0
+		e.set_meta("preso_n", n)
+		if n >= checks:
+			voltar = true
+		if voltar:
 			var p: Array = room.pontos_fora_da_vista(v, float(config.get("spawn_margem_min", 1.0)) * t, float(config.get("spawn_margem_max", 4.0)) * t, 1, rng)
 			if not p.is_empty():
 				e.global_position = p[0]
 				e.set_meta("dist_antes", INF)
+				e.set_meta("preso_n", 0)
 
 ## O jogador chegou ao altar (ou o bot/teste pediu): o core acorda o Guardião se já pode.
 func acordar_chefe() -> int:
@@ -437,6 +483,11 @@ func _morto_na_horda(e) -> void:
 		_soltar("xp", int(x["xp"]), e.global_position)
 	if bool(x.get("bau", false)):
 		_soltar("bau", 0, e.global_position)
+	# Gema de habilidade (estilo Path of Exile): elite e Guardião soltam uma que ensina ou melhora uma habilidade.
+	var chefe: bool = e.stats.get("kind", "") == "boss"
+	var chance := float(config.get("skill_gem_boss" if chefe else "skill_gem_elite", 0.0))
+	if (elite or chefe) and randf() < chance:
+		_soltar("habilidade", 1, e.global_position)
 	var r: Dictionary = nucleo.ondas_morto(int(e.get_meta("spawn_id", 0)))
 	if e.stats.get("kind", "") == "boss":
 		_pos_chefe = e.global_position
@@ -461,11 +512,60 @@ func atrair_coletaveis() -> void:
 func _on_coletada(g) -> void:
 	if estado == Estado.MORTO or estado == Estado.VENCEU:
 		return
+	if g.tipo == "habilidade":
+		_usar_gema_habilidade()
+		return
 	if g.tipo == "bau":
 		nucleo.nivel_abrir_bau()
 	else:
+		var antes := _nivel_atual()
 		nucleo.nivel_ganhar_xp(int(g.valor))
+		var cada := int(config.get("skill_gem_every_levels", 0))
+		if cada > 0 and _habilidades_do_zero():
+			for lv in range(antes + 1, _nivel_atual() + 1):
+				if lv % cada == 0:
+					_usar_gema_habilidade()
 	_checar_oferta_nivel()
+
+func _nivel_atual() -> int:
+	return int(upgrades.nivel_estado().get("level", 1)) if upgrades.has_method("nivel_estado") else 1
+
+## Habilidades que uma gema pode dar agora: raiz sem pré-requisito ou filha de pai aprendido, abaixo do nível máximo.
+func _gemas_possiveis() -> Array:
+	var h = player.habilidades if "habilidades" in player else null
+	var out := []
+	if h == null:
+		return out
+	for id in h.ordem:
+		var d: Dictionary = h.defs[id]
+		var n: int = h.nivel(id)
+		var pai := str(d.get("pai", ""))
+		if n < int(d.get("nivel_max", 1)) and (n > 0 or pai == "" or h.nivel(pai) > 0):
+			out.append(id)
+	return out
+
+## Gema de habilidade (de nível, elite ou Guardião): abre a escolha entre `skill_gem_cards` habilidades sorteadas.
+## Se já há uma tela aberta (carta de nível, outra gema), fica na fila e abre quando a atual fechar.
+func _usar_gema_habilidade() -> void:
+	if ui.aberta:
+		_gemas_pendentes += 1
+		return
+	var cands := _gemas_possiveis()
+	if cands.is_empty():
+		return
+	cands.shuffle()
+	var ids: Array = cands.slice(0, maxi(1, int(config.get("skill_gem_cards", 3))))
+	ui.abrir(ids, "gem", 0, player.habilidades)
+
+## Escolha da gema: soma os pontos da habilidade e aprende pelo core (pré-requisito e nível máximo continuam dele);
+## ativa nova entra no primeiro slot livre.
+func _aprender_gema(id: String) -> void:
+	var h = player.habilidades
+	h.ganhar_pontos(int(h.defs[id].get("pontos", 1)))
+	if h.aprender(id) and h.eh_ativa(id) and not h.slots.has(id) and h.slots.has(""):
+		h.equipar(h.slots.find(""), id)
+	upgrades.reaplicar(player)   # passivas da partida entram nos stats agora
+	hud.mensagem = Csv.t("hud.skill_gem") % Csv.t("skill.%s.name" % id)
 
 ## Abre a tela de cartas se o core tem uma oferta de nível ou de baú esperando.
 func _checar_oferta_nivel() -> void:
@@ -524,6 +624,7 @@ func _abrir_porta() -> void:
 	if room.aberta():
 		_fim_da_onda()
 		return
+	_pontos_passivos(false)
 	room.abrir_porta()
 	Audio.tocar("door_open")
 	hud.mensagem = Csv.t("hud.rest" if no_atual["tipo"] == "descanso" else "hud.room_clear")
@@ -532,13 +633,24 @@ func _abrir_porta() -> void:
 ## Fase aberta: onda vencida leva à seguinte depois de uma pausa curta; depois do chefe, abre o portal.
 func _fim_da_onda() -> void:
 	if indice < salas.size() - 1:
+		_pontos_passivos(false)
 		hud.mensagem = Csv.t("hud.rest_open" if no_atual["tipo"] == "descanso" else "hud.wave_clear")
 		estado = Estado.PROXIMA
 		_timer = float(config.get("next_wave_delay", 1.5))
 		return
+	_pontos_passivos(true)
 	_abrir_portal()
 	hud.mensagem = Csv.t("hud.portal_open")
 	estado = Estado.LIMPA
+
+## Pontos da árvore de passivos (doc 33): `passive_points_wave` por onda ou sala vencida, `passive_points_boss` pelo chefe.
+## O saldo é permanente (passivos_2d.gd grava por classe).
+func _pontos_passivos(chefe: bool) -> void:
+	if player == null or not "habilidades" in player or player.habilidades == null or player.habilidades.passivos == null:
+		return
+	var n := int(config.get("passive_points_boss" if chefe else "passive_points_wave", 0))
+	if n > 0 and not player.habilidades.passivos.defs.is_empty():
+		player.habilidades.passivos.ganhar_pontos(n)
 
 ## Mensagem central que some sozinha depois de `tempo` s (se outra não tomou o lugar).
 func _avisar(texto: String, tempo: float) -> void:
@@ -561,9 +673,16 @@ func _abrir_portal() -> void:
 	Audio.tocar("door_open")
 
 func _on_upgrade_escolhido(id: String) -> void:
-	if ui.modo != "sala":   # carta de nível ou de baú: a luta continua; abre a próxima oferta, se houver
+	if ui.modo == "gem":
+		_aprender_gema(id)
+	elif ui.modo != "sala":   # carta de nível ou de baú: a luta continua
 		upgrades.escolher_nivel(id, player)
-		_checar_oferta_nivel()
+	if ui.modo != "sala":   # abre a próxima oferta, se houver: gema na fila primeiro, depois nível ou baú
+		if _gemas_pendentes > 0:
+			_gemas_pendentes -= 1
+			_usar_gema_habilidade()
+		else:
+			_checar_oferta_nivel()
 		return
 	upgrades.escolher(id, player)
 	_abrir_porta()

@@ -26,7 +26,7 @@ chest_cards,3,cartas,cartas raras oferecidas pelo bau de elite
 level_rerolls,2,vezes,sorteios novos da oferta de nivel por corrida
 level_skips,1,vezes,ofertas que o jogador pode pular por corrida
 level_bans,1,vezes,cartas que o jogador pode banir por corrida
-skill_points_every_levels,4,niveis,modo horda: 1 ponto de habilidade a cada este numero de niveis (as salas nao limpam)
+skill_points_every_levels,0,niveis,modo horda: 0 desliga os pontos por nivel (as habilidades vem das gemas e 0 no core = desligado)
 boss_fight_time,45,s,tempo-alvo da luta com o chefe: vida = DPS medido x este tempo
 boss_hp_min,0.6,x,vida minima do chefe (fracao da vida base de enemies.csv)
 boss_hp_max,2.5,x,vida maxima do chefe (multiplo da vida base)
@@ -40,3 +40,11 @@ horde_aggro,100000,px,no modo horda os inimigos perseguem o jogador desta distan
 horde_leash_check,1.0,s,intervalo da conferencia de inimigos presos ou longe demais no modo horda
 horde_leash_dist,1700,px,inimigo comum mais longe que isto do jogador volta ao anel de spawn
 horde_stuck_dist,500,px,inimigo fora da vista e mais longe que isto que nao se aproximou desde a ultima conferencia volta ao anel
+skill_gem_elite,1.0,chance,chance de o elite soltar uma gema de habilidade (ensina ou melhora uma habilidade)
+skill_gem_boss,1.0,chance,chance de o Guardiao soltar uma gema de habilidade
+skill_from_scratch,1,flag,modo horda: a corrida comeca sem habilidades (so o ataque basico) numa arvore propria da corrida e sem o saldo do hub
+skill_gem_every_levels,2,niveis,modo horda: a cada este numero de niveis do Cristal o jogador ganha uma gema de habilidade
+skill_gem_cards,3,cartas,quantas habilidades a gema oferece para escolher
+horde_stuck_checks,4,conferencias,inimigo sem linha de visao e sem se aproximar por este numero de conferencias (horde_leash_check) volta ao anel
+passive_points_wave,1,pontos,pontos da arvore de passivos (doc 33) ganhos ao vencer cada onda ou sala
+passive_points_boss,3,pontos,pontos de passivo extras ao derrotar o chefe

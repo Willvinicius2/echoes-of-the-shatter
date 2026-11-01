@@ -26,7 +26,7 @@ Regra de ouro: **a árvore define o estilo de jogo; a gema define a potência; a
 ## 3. Pipeline de modificadores
 Toda skill é uma linha base (CSV) mais uma lista de modificadores. Função pura `resolver(skill, mods, nivel_gema) -> def`, que devolve o mesmo `def` que os efeitos já recebem (`efeitos_arqueiro_*_2d.gd`), então **nenhum efeito precisa mudar de contrato**. Ordem de cálculo por campo:
 
-`final = (base + soma(add)) × (1 + escala × (nivel_gema − 1)) × (1 + soma(inc)) × produto(1 + mais_i)`, depois aplica os tetos (seção 3.3).
+`final = (base_escalonada + soma(add)) × (1 + soma(inc)) × produto(1 + mais_i)`, depois aplica os tetos (seção 3.3). `base_escalonada` é o que o core já devolve com o nível da gema (`escala`); o `add` entra depois, então "+1 projétil" é sempre +1, em qualquer nível.
 
 - `add`: soma plana (ex.: +1 projétil, +2 saltos).
 - `inc` ("aumentado"): percentuais **somados entre si** (ex.: +15% e +20% = +35%). É o que a maioria dos nós pequenos dá.
@@ -150,3 +150,35 @@ Critério de pronto: CSV validado, `test_2d.gd` com testes do resolver (ordem ad
 
 ## 11. Decisões tomadas e pontos abertos
 Decididas aqui (técnicas): grafo pequeno (76 nós) em vez de uma árvore gigante; `inc` somado e `mais` separado (como PoE 2); tags para alvo; uma forma por skill; resolver em GDScript no cliente; keystone limitado a 1; formas reaproveitam VFX. Abertas para a revisão final do Will, sem bloquear P1 a P4: (a) quantos pontos por onda (provisório); (b) se os keystones ficam na v1 ou entram depois do Guardião; (c) se gemas no nível 5 destravam slot extra de "Transforma"; (d) nomes finais dos nós (os daqui são provisórios).
+
+## 12. Implementado em 01/11/2026 (PR da árvore de passivos)
+O que está no `master` a partir deste PR, tudo no cliente 2D (GDScript) e nos CSV:
+- **Pipeline** (`godot/scripts2d/passivos_2d.gd`): `resolver(id, def, tags)` aplica `add`, `inc`, `mais` e `set` sobre o def que o core devolve (`habilidades_2d.def_nivel` passa a entregar o def já resolvido; `def_base` dá o sem passivos). Campos de habilidade: `dano, qtd, projeteis, angulo, raio, duracao, alcance, valor, vel, perfura, forma`; `projeteis` vira `qtd` nas habilidades com a tag `multi` e `proj_extra` (cópias em leque do mesmo tiro) nas demais. Nós `global` mexem nos stats do jogador (`arrow_damage`, `arrow_speed`, `arrow_count`, `arrow_pierce`, `crit_chance`, `crit_mult`, `speed`, `hp_max`, `shoot_cooldown`, `skill_cd_mult`...), por cima do que o core calculou.
+- **Tags** por habilidade em `godot/data2d/habilidades_tags.csv` (`classe,id,tags` com `+`), mais o ramo e o tipo da linha. O CSV de habilidades não ganhou coluna porque o core trata toda coluna nova como número.
+- **Tetos** em `godot/data2d/passivas_limites.csv`: `qtd_add_max`, `area_inc_max`, `angulo_max`, `vel_inc_max`, `vel_min`, `cd_min_frac`, `keystones_max`, `max_projeteis` (o `lancar_flecha` do jogador não cria flecha acima disso).
+- **Árvore v1** em `godot/data2d/passivas_arqueiro.csv`: 76 nós (1 raiz, 35 pequenos, 29 notáveis, 7 transforma, 4 keystones) em 8 setores (centro, precisão, caçada, sombra, raio, veneno, gelo, fogo), com `x,y` para o mapa, `vizinhos`, `exclui` e uma linha por modificador. Textos em `loc_2d.csv` (`passivo.<id>.name/desc`, `setor.<id>`).
+- **Formas** que os efeitos já entendem (`forma` no def): `espiral` (Leque em 360°), `lanca` (Disparo Carregado atravessa tudo), `anel` (Flecha Gélida solta lascas em volta do alvo), `bifurcado` (Raio Encadeado em dois ramos), `errante` (Tornado persegue), `brasas` (Meteoro em 3 quedas). `pustulas` (Bola de Veneno) só muda números por enquanto; `muro` (Chuva de Flechas) ficou para depois.
+- **Efeitos** leem `vel` (multiplica a velocidade), `perfura` (soma corpos atravessados) e `proj_extra` pelo `def` que passam ao `lancar_flecha`.
+- **UI**: a tecla T tem as abas Habilidades e Passivos; a de passivos desenha o grafo (linhas entre vizinhos, arrastar com o mouse ou setas), e a dica de cada nó mostra custo, efeito e a pré-visualização "antes → depois" nas habilidades aprendidas e nos stats.
+- **Pontos**: `passive_points_wave` por onda ou sala vencida e `passive_points_boss` pelo chefe (`run_settings.csv`), saldo permanente por classe em `user://passivos_2d.json`; redistribuir é de graça.
+- **Testes**: `_testar_passivos` em `scripts2d/tools/test_2d.gd` (fixture `data2d/testes/passivas_teste.csv`): ordem add/inc/mais/set, tetos, grafo, keystone, save, dados reais do arqueiro e a flecha lendo o def.
+
+Fica para depois (backlog, em ordem): `cd` e `custo` por habilidade ou tag exigem o core (hoje só `global` via `skill_cd_mult`; é contrato novo da API C, Opus); `chance_status`; formas `muro` e `pustulas` de verdade; ícones próprios dos nós; ligação com as cartas de nível (P5) e calibração pelo bot (P6); Guerreiro e Mago só precisam do CSV `passivas_<classe>.csv` e das tags.
+
+## 13. Decisão do Will (01/11/2026): árvore fixa mais passivas da partida
+A árvore de passivos (seções 4 a 12) é **permanente no personagem**, como no PoE 2: os pontos ficam entre corridas e a build é a mesma ao começar cada partida. Dentro da partida o jogador **sobe skills e passivas por nível** (cartas de nível, doc 31 H4): os Arautos (Trovão, Cinzas, Gelo, Peste) e passivas de partida como mais tamanho de habilidade, tipo de dano, crítico, recarga e velocidade de ataque. Alguns nós da árvore podem deixar uma dessas passivas de partida **já pronta** ao começar a corrida. Quais cartas existem e como sobem é da thread "Lapidar skills, passivos e progressão"; este doc só fixa o encaixe técnico.
+
+| Camada | Quando muda | Dura | Fonte dos modificadores |
+|---|---|---|---|
+| **Árvore** (fixa) | entre corridas, com pontos de passivo | para sempre, redistribuição gratuita | `passivas_<classe>.csv` (nós ativos) |
+| **Passivas da partida** | a cada nível dentro da corrida (1 de 3 cartas) | até o fim da corrida | linhas de cartas no mesmo formato de nó (`alvo,campo,op,valor,forma`) |
+| **Pré-prontas** | ao começar a corrida | até o fim da corrida | nó da árvore com `inicia=<id da carta>`: a carta entra no nível 1 sem ser sorteada |
+
+Como encaixa no que já foi implementado:
+- **Mesmo pipeline.** Uma carta de "+20% de tamanho" é um modificador `tag:area,raio,inc,0.20`; uma de recarga é `global,skill_cd_mult,inc,-0.05`; um Arauto subindo de nível é `skill:herald_thunder,raio,inc`. `passivos_2d.resolver(id, def, tags, extra_ativos)` já aceita nós extras (hoje usado só na pré-visualização), então as cartas entram como `extra_ativos` da corrida e **somam com a árvore**, sem código novo de cálculo.
+- **Tetos únicos.** `passivas_limites.csv` vale para a soma das duas camadas (área +150%, quantidade +6, recarga mínima 35%, velocidade +100%): a corrida não passa disso, por mais cartas que apareçam.
+- **Estado da corrida.** Os `extra_ativos` ficam no jogador (lista de ids de carta com nível) e zeram ao morrer ou vencer; o save permanente guarda só a árvore. Pontos de passivo da seção 4 continuam por onda e chefe.
+- **Pré-prontas.** Coluna nova `inicia` em `passivas_<classe>.csv` (vazia na maioria dos nós). Ao iniciar a corrida, as cartas dos nós ativos com `inicia` entram na lista da corrida no nível 1. É o que torna "tenho o Arauto do Trovão desde o começo" uma escolha de build.
+- **Próximos passos (pacote P5).** (1) `cartas_passivas.csv` com as passivas da partida (id, nível máximo, modificadores por nível, raridade); (2) a oferta de nível do H4 sorteia também essas cartas; (3) o jogador guarda `extra_ativos`; (4) coluna `inicia` e testes; (5) HUD mostra as passivas ativas. A oferta de nível hoje vive no core (`nivel_estado`/`nivel_escolher`), então a parte de sorteio é contrato novo da API C se as cartas passivas precisarem de peso e raridade lá; senão o cliente sorteia entre as cartas do CSV. Decidir com a thread de progressão antes de tocar no core.
+
+**Status (01/11/2026):** implementado como camada de partida **sem contrato novo no core**, pelos stats `run_*`: ver `docs/design/34_passivas_da_partida.md`. A coluna `inicia` e o sorteio no cliente do plano acima viraram desnecessários: o core já sorteia as cartas de `upgrades.csv`, e o preparo é um nó `global run_* add`.

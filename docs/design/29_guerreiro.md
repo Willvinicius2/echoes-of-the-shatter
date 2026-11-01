@@ -19,7 +19,7 @@ Segunda classe do cliente 2D (a primeira é o Arqueiro). Combate corpo a corpo: 
 Passivas somam por nível sobre os stats; ativas crescem por nível pela coluna `escala` (dano, raio, duração, alcance, valor). Atordoamento e queimadura usam `aplicar_status` dos inimigos (chefes resistem ao atordoamento pelo próprio sistema de status).
 
 ## Arte
-Sprites provisórios em pixel art gerados por `tools/sprites/gerar_guerreiro.py` (formato do doc 25). **Esperam aprovação do Will**; a arte final entra no mesmo caminho sem mudar código.
+Sprites provisórios em pixel art gerados por `tools/sprites2d/gerar_guerreiro.py` (formato do doc 25). **Esperam aprovação do Will**; a arte final entra no mesmo caminho sem mudar código.
 
 ## Testes
 `godot/scripts2d/tools/test_guerreiro_2d.gd`, chamado pelo `test_2d.gd` (dados, árvore, combate, ativas, corrida com guerreiro).

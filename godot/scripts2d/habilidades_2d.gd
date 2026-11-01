@@ -9,6 +9,7 @@ extends RefCounted
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Nucleo = preload("res://scripts2d/nucleo_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
+const Passivos = preload("res://scripts2d/passivos_2d.gd")
 
 const SLOTS := 4
 ## Autocast: como cada ativa (e o ataque básico, id `basico`) escolhe o alvo e se é a ult manual. Ver alvos_2d.escolher.
@@ -36,6 +37,10 @@ var nucleo: Object
 var _proprio := false
 var _efeitos: GDScript
 var miras := {}           # id -> {mira, ult, alcance, min_alvos} da classe (data2d/habilidades_mira.csv)
+## Árvore de passivos da classe (passivos_2d.gd, doc 33): modifica o def das ativas e os stats do jogador.
+var passivos: RefCounted
+## Fator extra no tick das recargas (tree `global skill_cd_mult` que o core não viu): 1 = sem efeito.
+var cd_extra := 1.0
 
 ## Linhas de data2d/classes_2d.csv por id.
 static func classes() -> Dictionary:
@@ -46,11 +51,15 @@ static func classes() -> Dictionary:
 
 ## Carrega a árvore da classe. Arquivo de dados ou de efeitos ausente deixa a árvore vazia (sem erro).
 ## `caminho_csv` fora de classes_2d.csv (fixture dos testes) cria um núcleo próprio que conhece essa classe.
-func carregar_classe(id: String, caminho_csv := "", caminho_efeitos := "") -> void:
+func carregar_classe(id: String, caminho_csv := "", caminho_efeitos := "", caminho_passivos := "", caminho_tags := "") -> void:
 	classe = id
 	defs.clear()
 	ordem.clear()
 	_efeitos = null
+	passivos = Passivos.new()
+	passivos.persistir = persistir
+	passivos.carregar_classe(id, caminho_passivos, caminho_tags)
+	passivos.mudou.connect(func() -> void: mudou.emit())
 	var cl: Dictionary = classes().get(id, {})
 	miras = carregar_miras(id)
 	var csv: String = caminho_csv if caminho_csv != "" else cl.get("habilidades", "")
@@ -176,11 +185,24 @@ func ids_do_ramo(ramo: String) -> Array:
 func eh_ativa(id: String) -> bool:
 	return defs.has(id) and defs[id]["tipo"] == "ativa"
 
-## Linha da habilidade já escalonada pelo nível (n = 0 mostra o valor base), calculada pelo core.
+## Linha da habilidade já escalonada pelo nível (n = 0 mostra o valor base), calculada pelo core, e depois passada
+## pela árvore de passivos (dano, qtd, raio, vel, perfura, forma...).
 func def_nivel(id: String, n := -1) -> Dictionary:
+	var d := def_base(id, n)
+	if passivos == null or d.is_empty():
+		return d
+	return passivos.resolver(id, d, tags_de(id))
+
+## Linha escalonada pelo nível sem os passivos (para a pré-visualização da árvore).
+func def_base(id: String, n := -1) -> Dictionary:
 	if nucleo == null:
 		return defs.get(id, {}).duplicate()
 	return nucleo.habilidade_def(id, n)
+
+## Tags da habilidade para os passivos: as de habilidades_tags.csv mais o ramo e o tipo.
+func tags_de(id: String) -> Array:
+	var d: Dictionary = defs.get(id, {})
+	return passivos.tags_de(id, [str(d.get("ramo", "")), str(d.get("tipo", ""))]) if passivos != null else []
 
 func pode_aprender(id: String) -> bool:
 	return nucleo != null and nucleo.habilidade_pode_aprender(id) == 0
@@ -207,7 +229,7 @@ func _acao(ok: bool) -> bool:
 
 func tick(delta: float) -> void:
 	if nucleo != null and not recargas.is_empty():
-		nucleo.habilidades_tick(delta)
+		nucleo.habilidades_tick(delta * cd_extra)
 		for id in recargas.keys():
 			recargas[id] = maxf(0.0, recargas[id] - delta)
 			if recargas[id] <= 0.0:
@@ -258,13 +280,27 @@ func iniciar_recarga(id: String, recurso: float) -> bool:
 
 ## Aplica as passivas aprendidas sobre os stats (idempotente: parte sempre de `base`), calculadas pelo core.
 func aplicar_passivas(base: Dictionary) -> Dictionary:
-	if nucleo == null:
-		return base.duplicate()
-	return nucleo.aplicar_passivas(base)
+	var s: Dictionary = base.duplicate() if nucleo == null else nucleo.aplicar_passivas(base)
+	return aplicar_passivos_globais(s)
+
+## Modificadores `global` da árvore de passivos sobre stats que o core já calculou (idempotente). Também guarda os
+## `run_*` da partida (cartas e nós de preparo) para o resolver e o fator `cd_extra` da recarga das ativas.
+func aplicar_passivos_globais(stats: Dictionary) -> Dictionary:
+	if passivos == null:
+		return stats.duplicate()
+	var s: Dictionary = passivos.stats_globais(stats)
+	if passivos.definir_partida(s):
+		mudou.emit()
+	# O core só enxerga o skill_cd_mult das cartas; o que a árvore mexeu por cima chega aqui como fator do tick.
+	var antes := float(stats.get("skill_cd_mult", 1.0))
+	var depois := float(s.get("skill_cd_mult", 1.0))
+	cd_extra = antes / depois if antes > 0.0 and depois > 0.0 else 1.0
+	return s
 
 ## Estado da árvore no formato do save ({niveis, slots, pontos}).
 func para_dicionario() -> Dictionary:
-	return {"niveis": niveis.duplicate(), "slots": slots.duplicate(), "pontos": pontos}
+	return {"niveis": niveis.duplicate(), "slots": slots.duplicate(), "pontos": pontos,
+		"passivos": passivos.para_dicionario() if passivos != null else {}}
 
 ## Passa o save antigo (user://habilidades_2d.json, de antes do core) para o save do meta, uma vez: só se o save do core
 ## ainda não tem habilidades. O arquivo antigo é renomeado para .migrado.
