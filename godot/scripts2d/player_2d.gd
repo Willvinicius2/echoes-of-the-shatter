@@ -32,6 +32,10 @@ var habilidades: RefCounted   # árvore e slots da classe (habilidades_2d.gd)
 ## Afinidade do ataque básico ("Eco", doc 36 seção 2): id de data2d/afinidades_arqueiro.csv ou vazio (básico neutro).
 ## Escolhida na primeira gema da corrida; zera a cada corrida (run_2d.gd).
 var afinidade := ""
+# Experiência do modo horda, preenchida a cada quadro pela barra de XP (hud_xp_2d.gd) a partir do core; a HUD lê daqui.
+var nivel_jogador := 1
+var xp := 0.0
+var xp_proximo := 1.0
 var estado := Estado.LIVRE
 var invencivel := 0.0
 var god_mode := false          # testes automáticos
