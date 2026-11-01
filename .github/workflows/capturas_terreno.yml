@@ -53,6 +53,7 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           cd capturas
+          if ! ls *.png >/dev/null 2>&1; then echo "sem capturas; nada a publicar"; exit 0; fi
           git init -q
           git checkout -q -b capturas/rodada7
           git config user.name "github-actions"
