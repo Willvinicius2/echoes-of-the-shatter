@@ -1011,7 +1011,9 @@ func _testar_habilidades_arqueiro() -> void:
 			check(por_id.has(r["pai"]) and por_id[r["pai"]]["ramo"] == r["ramo"] and int(por_id[r["pai"]]["tier"]) < int(r["tier"]), "%s: pai no mesmo ramo e tier menor" % id)
 		else:
 			check(int(r["tier"]) == 1, "%s: raiz é tier 1" % id)
-		if r["tipo"] == "passiva":
+		if r["tipo"] == "passiva" and r["efeito"] != "stat":
+			check(r["efeito"] in ["arauto", "herald_gelo", "herald_cinzas"], "%s: passiva de gatilho (Herald) conhecida" % id)
+		elif r["tipo"] == "passiva":
 			check(player_stats.has(r["stat"]) and (r["modo"] == "add" or r["modo"] == "mult") and r["valor"] != "", "%s: passiva muda stat existente" % id)
 		else:
 			ativas += 1
