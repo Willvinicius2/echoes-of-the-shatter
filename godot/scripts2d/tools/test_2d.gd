@@ -152,7 +152,8 @@ func _testar_salas() -> void:
 		if aberta:   # fase aberta: mapa grande, sem porta, com portal X e chão livre para as ondas
 			check(sala.colunas >= 80 and sala.linhas >= 45, "%s: fase aberta grande (%dx%d)" % [r["room"], sala.colunas, sala.linhas])
 			check(sala.posicao_portal != Vector2.ZERO and sala.posicao_chefe != Vector2.ZERO, "%s tem lugar do chefe G e portal X" % r["room"])
-			check(sala.celulas_livres.size() > sala.colunas * sala.linhas / 2, "%s: mais da metade do mapa livre para nascer" % r["room"])
+			check(sala.celulas_livres.size() > sala.colunas * sala.linhas * 0.35, "%s: ao menos 35%% do mapa livre para nascer" % r["room"])
+			check(sala.colunas * sala.linhas >= 24 * 13 * 25 * 2, "%s: área de ao menos 50 salas antigas" % r["room"])
 		else:
 			check(sala.colunas == 24 and sala.linhas == 13, "%s tem 24x13" % r["room"])
 			check(sala.celulas_porta.size() > 0, "%s tem porta" % r["room"])

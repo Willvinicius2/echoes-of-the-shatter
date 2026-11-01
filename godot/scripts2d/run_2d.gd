@@ -316,6 +316,8 @@ func _physics_process(delta: float) -> void:
 					_on_porta()
 	if room != null and room.aberta() and estado != Estado.MENU:
 		camera.position = player.global_position
+		var v := vista()
+		room.seguir_vinheta(v.get_center(), v.size)
 
 func _abrir_porta() -> void:
 	if room.aberta():
