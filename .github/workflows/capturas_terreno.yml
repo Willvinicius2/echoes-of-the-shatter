@@ -10,12 +10,18 @@ permissions:
 jobs:
   capturas:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     continue-on-error: true  # só tira capturas, não testa: nunca bloqueia o PR
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
+        run: |
+          git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
+          cmake -S godot/gdextension -B build-ext -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
+          cmake --build build-ext -j"$(nproc)"
+          ls -la godot/gdextension/bin
       - name: Baixar Godot
         run: |
           curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
@@ -25,7 +31,8 @@ jobs:
       - name: Montar projeto só com o cliente 2D (sem C#)
         run: |
           mkdir proj
-          for d in scripts2d scenes2d data2d art2d; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          for d in scripts2d scenes2d data2d art2d gdextension; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          ln -s "$PWD/godot/shatter_rogue.gdextension" proj/shatter_rogue.gdextension
           python3 - <<'PY'
           import re
           s = open('godot/project.godot').read()

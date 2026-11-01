@@ -27,6 +27,7 @@ const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const PortalScript = preload("res://scripts2d/portal_2d.gd")
 const GemaScript = preload("res://scripts2d/gema_2d.gd")
+const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
 
 ## Testes do fluxo antigo de etapas (salas com porta, rotas) ligam isto antes de criar a corrida.
 static var modo_etapas := false
@@ -121,6 +122,10 @@ func _ready() -> void:
 	menus.sair.connect(get_tree().quit)
 	add_child(menus)
 	Audio.musica("music_cripta")
+	if OS.is_debug_build():
+		ConsoleDev.new(self).registrar()   # comandos de playtest no console ` (LimboConsole)
+	elif has_node("/root/LimboConsole"):
+		get_node("/root/LimboConsole").enabled = false   # build de release: sem console
 	iniciar_corrida()
 	if com_menu:
 		_ir_titulo()
@@ -492,7 +497,8 @@ func _physics_process(delta: float) -> void:
 		tempo += delta
 	if horda and estado == Estado.LUTA and room != null and room.aberta():
 		_tick_horda(delta)
-	hud.tempo = tempo
+	if hud:
+		hud.tempo = tempo
 	if _timer > 0.0:
 		_timer -= delta
 		if _timer <= 0.0:

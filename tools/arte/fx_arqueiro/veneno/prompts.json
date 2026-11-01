@@ -1,0 +1,110 @@
+[
+ {
+  "id": "fx_veneno_flecha",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 6 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: a LARGE, THICK arrow projectile flying to the right that fills most of its cell width: clearly readable wooden shaft, a big broad steel arrowhead dripping bright green venom, visible feathered fletching at the tail, thick toxic green glow and a short bubbling trail, looping animation with slight venom drip changes between frames",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "fx_veneno_impacto",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 8 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: a poison impact burst: green splash that expands, droplets and small bubbles, then fades into thin mist",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "fx_veneno_bola",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 6 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: a glowing sphere of toxic venom thrown upward: round blob of swirling green liquid with bubbles, wobbling, with small drips, looping; the sphere is large and fills about 80% of its cell, keeping a strong bright inner glow",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "fx_veneno_poca",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 8 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: a top-down puddle of toxic acid on the ground, viewed from above at a slight angle: bubbling green pool with popping bubbles and thin rising vapor, ring-shaped irregular edge, looping seamlessly",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "fx_veneno_nuvem",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 8 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: a toxic gas cloud burst on the ground: green cloud puffs outward from the center with skull-shaped wisps hinted in the smoke, expands and dissolves at the end",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "fx_veneno_chuva",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 8 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: a large area of corrosive green rain: slanted acid droplets falling over a circular patch of the ground that is splashing and eaten by acid, looping seamlessly",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "fx_veneno_status",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 6 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: an overlay for a poisoned enemy: dense clusters of many bright green bubbles and drops of different sizes rising upward around the body, with thick sickly green vapor wisps, high contrast and clearly visible, NOT a thin ring; the middle column stays mostly empty so the body shows through, looping",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "fx_veneno_arauto_aura",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 6 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: a faint aura around a hero: thin swirling ring of green miasma with two tiny skull-like wisps orbiting, mostly transparent in the center, looping",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "fx_veneno_arauto_gatilho",
+  "tamanho": "1536x1024",
+  "prompt": "A horizontal sprite sheet of 8 animation frames in a single row, evenly spaced, each frame in its own square cell of identical size (the row is vertically centered in the canvas), on a flat solid magenta (#FF00FF) background, no grid lines, no text, no watermark. Hand-painted dark fantasy ARPG visual effect, top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: a plague burst: a green cloud expands outward in a ring with spores and little skulls of mist, spreading to the sides, then dissipates",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
+  ]
+ },
+ {
+  "id": "icone_poison_arrow",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp detail, matching the rich painterly style of the attached game screenshot. Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a green glow halo behind the central glyph. The glyph is large, centered, readable at 64px, strong light from top-left, shading, dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Glyph: an arrow with a dripping green venom tip leaving a small green splash. Use EXACTLY the same stone-and-iron frame as the second attached icon.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_venom_orb",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp detail, matching the rich painterly style of the attached game screenshot. Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a green glow halo behind the central glyph. The glyph is large, centered, readable at 64px, strong light from top-left, shading, dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Glyph: a round bubbling sphere of green venom with an upward arc trail and drips. Use EXACTLY the same stone-and-iron frame as the second attached icon.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_corrosive_rain",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp detail, matching the rich painterly style of the attached game screenshot. Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a green glow halo behind the central glyph. The glyph is large, centered, readable at 64px, strong light from top-left, shading, dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Glyph: a dark cloud above with slanted green acid drops and a corroded puddle below. Use EXACTLY the same stone-and-iron frame as the second attached icon.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_herald_plague",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp detail, matching the rich painterly style of the attached game screenshot. Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a green glow halo behind the central glyph. The glyph is large, centered, readable at 64px, strong light from top-left, shading, dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Glyph: a green skull of mist with spores spreading outward like a ring. Use EXACTLY the same stone-and-iron frame as the second attached icon.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ }
+]

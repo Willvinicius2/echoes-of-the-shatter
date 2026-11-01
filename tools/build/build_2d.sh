@@ -6,7 +6,7 @@ raiz="$(cd "$(dirname "$0")/../.." && pwd)"
 saida="${1:-$raiz/build}"
 godot="${2:-godot}"
 proj="$(mktemp -d)"
-for d in scripts2d scenes2d art2d; do ln -s "$raiz/godot/$d" "$proj/$d"; done
+for d in scripts2d scenes2d art2d addons; do ln -s "$raiz/godot/$d" "$proj/$d"; done
 # GDExtension do ShatterCore (godot/gdextension/bin precisa ter o .so do Linux e a .dll do Windows; ver COMO_RODAR_2D.md).
 mkdir -p "$proj/gdextension"
 cp -r "$raiz/godot/gdextension/bin" "$proj/gdextension/bin"
