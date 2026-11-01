@@ -18,7 +18,7 @@
  {
   "id": "raio_arco",
   "tamanho": "2048x256",
-  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 4 equal wide frames: a horizontal jagged chain-lightning bolt running edge to edge left to right, thin side forks, each frame a different path.",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style: soft painted glow, white-hot core, cyan and royal-blue halo, light from top-left, matching a painted lightning column and storm tornado. NOT pixel art, NOT flat vector, NO identical round dots. Pure magenta (#FF00FF) flat background, no ground, no text. One row of 4 equal wide frames: a thick horizontal chain-lightning arc running edge to edge, white core with a wide soft blue halo, stroke thickness varying along its length, thin side forks and loose sparks around it, NO round nodes at the ends; each frame a different jagged path.",
   "referencias": [
    "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
   ]
@@ -26,7 +26,7 @@
  {
   "id": "choque_overlay",
   "tamanho": "1536x256",
-  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style (soft painted glow, crisp dark-blue outline, light from top-left), NOT pixel art, NOT clay, NOT flat vector. Electric lightning palette: white-hot core, cyan and royal-blue glow, small sparks. Pure magenta (#FF00FF) flat background, no ground, no shadow, no text. One row of 6 equal square frames: small electric sparks and arcs crawling around an invisible creature silhouette, loop.",
+  "prompt": "Hand-painted video-game visual effect sprite sheet for a dark fantasy top-down ARPG, rich painterly style: soft painted glow, white-hot core, cyan and royal-blue halo, light from top-left, matching a painted lightning column and storm tornado. NOT pixel art, NOT flat vector, NO identical round dots. Pure magenta (#FF00FF) flat background, no ground, no text. One row of 6 equal square frames: small painted electric arcs and sparks of varied sizes crawling in a loose ring with empty center, soft glow, NO creature, NO silhouette, NO body shape; works around any enemy; loop.",
   "referencias": [
    "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
   ]
