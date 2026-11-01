@@ -580,7 +580,7 @@ func colocar_props(alvo: Node2D) -> void:
 
 var _ocultaveis: Array = []  # arbustos: {no, spr, meia, alt}; ficam semitransparentes com alguém atrás
 
-## Arbusto na frente do personagem fica a 45% de alfa enquanto ele está atrás (decisão do Jev, 1/11), para o
+## Arbusto na frente do personagem fica a 55% de alfa enquanto ele está atrás (decisão do Jev, 1/11), para o
 ## corpo não sumir atrás de uma moita de meio corpo. Árvores, pilares e tumbas altas não mudam: sumir atrás
 ## delas é natural. O personagem é o `player` da corrida ou, nas ferramentas de captura, quem estiver no
 ## grupo `arqueiro`.
@@ -601,7 +601,7 @@ func _process(delta: float) -> void:
 		var dy := no.global_position.y - pp.y
 		var atras: bool = dy > 0.0 and dy < o["alt"] * 0.9 and absf(pp.x - no.global_position.x) < o["meia"] + 10.0
 		var spr: Sprite2D = o["spr"]
-		var alvo_a := 0.45 if atras else 1.0
+		var alvo_a := 0.55 if atras else 1.0
 		if absf(spr.modulate.a - alvo_a) > 0.01:
 			spr.modulate.a = move_toward(spr.modulate.a, alvo_a, delta * 5.0)
 
