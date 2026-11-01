@@ -133,6 +133,8 @@ func _ready() -> void:
 	cfg = Csv.kv("res://data2d/clima.csv")
 	dir_vento = Vector2(cfg["vento_dir_x"], cfg["vento_dir_y"]).normalized()
 	_rng.seed = hash(get_instance_id())
+	if DisplayServer.get_name() == "headless":
+		return  # sem tela (testes e corridas do bot): o clima é só visual e custaria tempo de CI
 	_montar.call_deferred()
 
 func _montar() -> void:
