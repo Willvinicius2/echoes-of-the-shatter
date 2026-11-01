@@ -54,3 +54,21 @@ Fonte completa: `analises/poe2-arco-referencias.md` na pasta do projeto. Decisõ
 - **Overkill** (Arauto das Cinzas) exige o dano que sobra no abate. O cliente calcula a partir da vida restante do inimigo no golpe fatal; só vai ao core se a regra precisar de determinismo (decidir na integração).
 - **Sinergias cruzadas** entram na fase de polimento, depois das 4 árvores base: Raio×Gelo (Trovão e Gelo ativam um ao outro) e Veneno×Fogo (nuvem de veneno detona com fogo).
 - Canalização vira autocast com salto curto. "Ritmo" (inspirado nas Frenzy Charges) e passivas de ascendência (dano perto/longe, munição, vento) ficam como backlog opcional.
+
+## 7. Árvore do Arqueiro montada a partir do PoE 2 (decisão de 01/11/2026)
+Pedido do Will: a árvore sai das referências de `analises/poe2-arco-referencias.md`. Cada nó abaixo traduz uma mecânica do PoE 2 para o nosso jogo (nomes e números são nossos). Tier e pai seguem o doc 30; os ramos de Precisão, Caça e Sombra continuam e **ganham 4 ramos elementais**. As threads de árvore podem ajustar nomes, mas não a mecânica de gatilho.
+
+| Ramo | T1 | T2 (pai = T1) | T3 | Herald (passiva, gatilho) |
+|---|---|---|---|---|
+| **Raio** | Flecha Elétrica (do Lightning Arrow: encadeia em 2 a 3 alvos, aplica choque) | Haste Elétrica (Lightning Rod: finca no chão; raios saltam nela e explodem) e Raio Encadeado | Tempestade (Stormcaller: telégrafo de 0,6 s e relâmpago grande com alta chance de choque); **Tornado de Tempestade** (ult candidata) | Arauto do Trovão: `choque_morte`, 3 cargas, os próximos tiros soltam raio em área |
+| **Veneno** | Flecha Peçonhenta (Poisonburst: estouro com 1 stack em todos na área) | Planta Daninha (Vine Arrow: zona que lentifica e fere, veneno dobra o dano) e Pústula (Toxic Growth: explode depois de atraso, veneno encurta o atraso) | Nuvem Inflamável (Gas Arrow: detona com fogo); zona gigante de pústulas (ult candidata) | Arauto da Peste: `veneno_morte`, espalha os stacks e pode lentificar |
+| **Gelo** | Flecha Gélida (Ice Shot: cone de lascas e frio) | Salva Glacial (Freezing Salvo: enche mísseis parada, descarrega no autocast) e Passo Gélido (Escape Shot: pulo curto para trás congelando a área que deixou) | Prisão de Gelo (ult candidata); Estilhaço Glacial | Arauto do Gelo: `congelado_morte`, explosão de estilhaços |
+| **Fogo** | Flecha Ardente (criação nossa; queima, só renova) | Flecha Detonante (Detonating Arrow: carga automática de ~1 s e explosão no alvo mais denso) e Flecha Meteoro | Muralha de Brasas; Chuva de Meteoros (ult candidata) | Arauto das Cinzas: `overkill` (mínimo em % da vida, no CSV), explosão e queimadura |
+
+**Gatilhos e status** (coluna `gatilha_em`): `choque_morte`, `congelado_morte`, `veneno_morte`, `overkill`. Choque = mais dano recebido; frio acumula até congelar e o congelado estilhaça ao morrer; queimadura renova e não empilha; veneno empilha.
+
+**Sinergias cruzadas** (fase de polimento, depois das 4 árvores base): Raio×Gelo (a explosão do Gelo aplica choque; o raio do Trovão acerta congelados com bônus) e Veneno×Fogo (nuvem de veneno detonada por inimigo em chamas). Cada uma é uma linha de CSV, sem código novo de balanceamento.
+
+**Passivas gerais** (traduzidas dos nós de Ranger/Deadeye, só como ideia): bônus de dano perto e longe, chance de aplicar status, cadência por acerto, vento que acelera tiros. Entram como passivas dos ramos de Precisão e Sombra (doc 30), que já têm `crit_chance` e `speed`.
+
+**Integração**: a integradora aplica as linhas de CSV, loc e testes que cada árvore entregou em `docs/design/32_<elemento>.md`, na ordem veneno, gelo, raio, fogo, conforme os PRs forem mesclados, e só então liga os Heralds por `gatilha_em`.
