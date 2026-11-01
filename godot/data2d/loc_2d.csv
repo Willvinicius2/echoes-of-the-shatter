@@ -280,3 +280,33 @@ skill.herald_plague.name,Arauto da Peste
 skill.herald_plague.desc,Inimigo envenenado que morre espalha o veneno aos vizinhos
 ramo.veneno.name,Veneno
 ramo.veneno.desc,Dano contínuo que se acumula e se espalha
+skill.frost_arrow.name,Flecha Gélida
+skill.frost_arrow.desc,Acerta e acumula frio: o inimigo fica lento e, no quarto acúmulo, congela
+skill.glacial_shard.name,Estilhaço Glacial
+skill.glacial_shard.desc,A flecha racha ao acertar e lascas de gelo saltam para os inimigos próximos
+skill.ice_prison.name,Prisão de Gelo
+skill.ice_prison.desc,Congela todos os inimigos na área mirada por alguns segundos
+skill.herald_ice.name,Arauto do Gelo
+skill.herald_ice.desc,Inimigo congelado que morre explode em estilhaços e gela os vizinhos
+skill.flecha_ardente.name,Flecha Ardente
+skill.flecha_ardente.desc,Flecha em chamas que acerta e faz o inimigo queimar
+skill.flecha_meteoro.name,Flecha Meteoro
+skill.flecha_meteoro.desc,Dispara para o alto; um meteoro cai na área e deixa o chão em brasas
+skill.muralha_brasas.name,Muralha de Brasas
+skill.muralha_brasas.desc,Linha de fogo no chão que queima quem a cruza
+skill.arauto_cinzas.name,Arauto das Cinzas
+skill.arauto_cinzas.desc,O dano que sobra ao abater um inimigo vira uma explosão de fogo em volta
+skill.shock_arrow.name,Flecha Elétrica
+skill.shock_arrow.desc,Flecha que causa choque: o inimigo recebe mais dano por alguns segundos
+skill.chain_lightning.name,Raio Encadeado
+skill.chain_lightning.desc,A flecha vira raio e salta entre inimigos próximos, perdendo força a cada salto
+skill.storm_tornado.name,Tornado de Tempestade
+skill.storm_tornado.desc,Atira para o alto; a flecha cai e vira um tornado que arrasta e fere os inimigos
+skill.herald_thunder.name,Arauto do Trovão
+skill.herald_thunder.desc,Inimigo que morre em choque solta um raio que fere os vizinhos
+ramo.gelo.name,Gelo
+ramo.gelo.desc,Frio acumulado, congelamento e estilhaços
+ramo.fogo.name,Fogo
+ramo.fogo.desc,Queimadura, meteoros e chão em brasas
+ramo.raio.name,Raio
+ramo.raio.desc,Choque, raios encadeados e tempestade

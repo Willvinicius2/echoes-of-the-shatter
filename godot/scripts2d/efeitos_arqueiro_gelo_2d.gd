@@ -4,6 +4,7 @@ extends RefCounted
 ## existentes (lentidao, atordoamento). Sem arte em res://art2d/fx/gelo/ cai em desenho por código (Feel.ponto).
 ## Contrato igual ao de efeitos_arqueiro_2d.gd: executar(efeito, jogador, def, nivel, mira) -> bool.
 
+const Feel = preload("res://scripts2d/feel_2d.gd")
 const PASTA := "res://art2d/fx/gelo/"
 const COR := Color(0.6, 0.88, 1.0)
 const COR_FUNDO := Color(0.35, 0.65, 0.95)
