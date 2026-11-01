@@ -149,6 +149,17 @@ for _ in range(40):
         continue
     LAJES.append(("claro", round(cx, 1), round(cy, 1), round(rng.uniform(2.5, 6.0), 1)))
 
+# Lajes quebradas na arena: fragmentos pequenos de pedra clara e escura espalhados nas transições (estrado -> laje
+# escura -> laje clara -> gramado), para o piso não ler como três manchas de tom chapado.
+for faixa_a, faixa_b, qtd in [(2.4, 5.2, 26), (ar - 2.5, ar + 1.5, 46), (ar + 1.0, ar + 4.8, 34)]:
+    for _ in range(qtd):
+        ang = rng.uniform(0, math.tau)
+        d = rng.uniform(faixa_a, faixa_b)
+        cx, cy = ax + math.cos(ang) * d, ay + math.sin(ang) * d
+        if grade[int(cy)][int(cx)] == "m":
+            continue
+        LAJES.append((rng.choice(["claro", "escuro", "escuro"]), round(cx, 1), round(cy, 1), round(rng.uniform(0.7, 1.7), 1)))
+
 
 def em_laje(x, y):
     return any(math.dist((x, y), (cx, cy)) < r for _, cx, cy, r in LAJES)
@@ -158,8 +169,20 @@ def em_laje(x, y):
 props = []
 
 
+def no_corredor_de_tiro(x, y, folga=1.8):
+    """Corredor entre o início e cada inimigo da primeira onda: sem prop sólido, para a mira e as flechas passarem."""
+    for ex, ey in E_INICIO:
+        dx, dy = ex - P[0], ey - P[1]
+        t = max(0.0, min(1.0, ((x - P[0]) * dx + (y - P[1]) * dy) / (dx * dx + dy * dy)))
+        if math.dist((x, y), (P[0] + t * dx, P[1] + t * dy)) < folga:
+            return True
+    return False
+
+
 def livre_para_prop(x, y, raio, sem_caminho=1.0, na_mata=False):
     cx, cy = int(x), int(y)
+    if no_corredor_de_tiro(x, y):
+        return False
     if not (1 <= cx < W - 1 and 1 <= cy < H - 1):
         return False
     if not na_mata:
@@ -277,6 +300,12 @@ for _ in range(45):
 espalhar(["grass_dry_patch", "flowers_dead", "leaves_scattered", "thistles_dry", "leaves_pile"], 420, (6, 6, 174, 94), 0.5,
          sem_caminho=0.5, filtro=lambda x, y: not em_laje(x, y))
 
+# Tufos baixos e flores secas em volta de cada bosque e nas clareiras, onde a grama aparecia lisa.
+for bx, by, br in BOSQUES:
+    espalhar(["grass_dry_patch", "flowers_dead", "leaves_scattered", "thistles_dry"], 16,
+             (bx - br - 5, by - br - 5, bx + br + 5, by + br + 5), 0.4, tentativas=500, sem_caminho=0.5,
+             filtro=lambda x, y, bx=bx, by=by, br=br: br + 0.8 < math.dist((x, y), (bx, by)) < br + 5.5 and not em_laje(x, y))
+
 # Zona 2: margens dos riachos.
 beira = lambda x, y: perto_riacho(x, y, 1.6) and not perto_riacho(x, y, 0.9)
 espalhar(["reeds_dry"], 90, (70, 0, 130, 100), 0.6, tentativas=12000, filtro=beira)
@@ -315,7 +344,7 @@ for k, (pid, ang, d) in enumerate([("tomb_angel", -0.5, 9.0), ("tomb_angel", mat
 
 # Transição pedra-grama: cascalho, capim e raízes na beira de cada mancha de laje.
 for tom, cx, cy, r in LAJES:
-    if (cx, cy) == (ax, ay) and r < ar:
+    if ((cx, cy) == (ax, ay) and r < ar) or r < 1.8:
         continue
     n = int(r * math.tau / 1.3)
     for k in range(n):
