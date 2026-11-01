@@ -74,7 +74,6 @@ func nivel(id: String) -> int:
 	return int(niveis.get(id, 0))
 
 ## Habilidade de corrida liberada? Habilidades sem entrada em meta.csv nascem liberadas.
-## Habilidade que o core não conhece (árvore do guerreiro, ainda no GDScript) nasce liberada.
 func liberada(upgrade_id: String) -> bool:
 	return nucleo.habilidade_liberada(upgrade_id) != 0
 
@@ -138,5 +137,6 @@ func salvar() -> bool:
 ## Carrega o save. Arquivo ausente ou inválido deixa o estado zerado. Retorna true se leu um save válido.
 func carregar() -> bool:
 	var r: int = nucleo.meta_carregar()
+	preload("res://scripts2d/habilidades_2d.gd").migrar_legado(nucleo, caminho)   # árvore de antes do core (uma vez)
 	sincronizar()
 	return r == 0

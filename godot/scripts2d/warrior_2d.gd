@@ -1,6 +1,8 @@
 extends "res://scripts2d/actor_2d.gd"
-## Guerreiro 2D: combo de espada em 3 golpes, esquiva e até 4 habilidades ativas da árvore (skills_guerreiro_2d.gd).
-## Números em data2d/guerreiro.csv e data2d/skills_guerreiro.csv. Mesma interface do player_2d.gd (arqueiro).
+## Guerreiro 2D: combo de espada em 3 golpes, esquiva e até 4 habilidades ativas da árvore comum (habilidades_2d.gd).
+## Autocast: o combo e as ativas saem sozinhos no inimigo certo (data2d/habilidades_mira.csv); a ult e a postura de
+## guarda ficam na tecla.
+## Números em data2d/guerreiro.csv e data2d/habilidades_guerreiro.csv; custo das ativas é ímpeto, não mana. Mesma interface do player_2d.gd (arqueiro).
 
 signal died
 signal hp_changed(hp: float, hp_max: float)
@@ -8,6 +10,8 @@ signal hp_changed(hp: float, hp_max: float)
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const Efeitos = preload("res://scripts2d/efeitos_guerreiro_2d.gd")
+const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 
 enum Estado { LIVRE, ATACANDO, CONJURANDO, INVESTIDA, SALTO, ESQUIVA, MORTO }
 
@@ -24,8 +28,10 @@ var invencivel := 0.0
 var god_mode := false          # testes automáticos
 var auto_aim := Vector2.ZERO   # testes: mira forçada (e ataque contínuo)
 var auto_move := Vector2.ZERO  # testes: movimento forçado
+var autocast := true           # combo e ativas disparam sozinhos (falso: só tecla, como antes)
+var _alvo_basico := {}         # alvo do combo no autocast ({} = ninguém no alcance)
 var dodge_cd := 0.0
-var skills: RefCounted         # árvore da corrida (skills_guerreiro_2d.gd); opcional nos testes
+var habilidades: RefCounted    # árvore e slots (habilidades_2d.gd); recargas das ativas ficam em habilidades.recargas
 var impeto := 0.0
 var guardando := false
 var combo := 0
@@ -35,7 +41,6 @@ var _combo_t := 0.0
 var _golpeou := false
 var _dodge_t := 0.0
 var _dodge_dir := Vector2.DOWN
-var _cds := {}                 # id da ativa -> recarga restante
 var _cast := {}                # conjuração em curso: id, espera, resta, aplicou
 var _dash_t := 0.0
 var _dash := {}                # investida/salto em curso: def, nivel, mira, hit
@@ -54,6 +59,10 @@ var _fx: Array = []            # efeitos visuais: {tipo, ang, r, arco, t, dur, c
 func _ready() -> void:
 	stats = Csv.kv("res://data2d/guerreiro.csv")
 	_registrar_acoes()
+	HabilidadesScript.registrar_tecla_ult()
+	if habilidades == null:
+		habilidades = HabilidadesScript.new()
+		habilidades.carregar_classe("guerreiro")
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("guerreiro")
@@ -83,7 +92,7 @@ func reset() -> void:
 	combo = 0
 	_atk_cd = 0.0
 	_combo_t = 0.0
-	_cds.clear()
+	habilidades.limpar_recargas()
 	_cast = {}
 	_dash = {}
 	_buff_cry = 0.0
@@ -107,8 +116,8 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		return
 	_tick(delta)
-	_aim = _ler_mira()
 	var entrada := auto_move if auto_move != Vector2.ZERO else Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	_aim = _ler_mira(entrada)
 	match estado:
 		Estado.ESQUIVA:
 			_dodge_t -= delta
@@ -154,8 +163,7 @@ func _tick(delta: float) -> void:
 	_buff_furia = maxf(0.0, _buff_furia - delta)
 	_sem_dano += delta
 	_sem_acerto += delta
-	for id in _cds.keys():
-		_cds[id] = maxf(0.0, _cds[id] - delta)
+	habilidades.tick(delta)
 	if _sem_acerto > stats["impeto_decay_delay"]:
 		impeto = maxf(0.0, impeto - stats["impeto_decay"] * delta)
 	if stats["regen"] > 0.0 and _sem_dano >= stats["regen_delay"] and hp < stats["hp_max"]:
@@ -169,8 +177,8 @@ func _decidir_acao(entrada: Vector2) -> void:
 	var guarda_id := _slot_de("w_guard_stance")
 	var guarda_tecla := guarda_id != "" and Input.is_action_pressed("skill_%d" % (_indice_slot(guarda_id) + 1))
 	guardando = guarda_tecla and _cd(guarda_id) <= 0.0
-	if not guardando and guarda_id != "" and _cds.get(guarda_id, 0.0) <= 0.0 and _guarda_ativa_antes:
-		_cds[guarda_id] = skills.recarga(guarda_id)
+	if not guardando and guarda_id != "" and _cd(guarda_id) <= 0.0 and _guarda_ativa_antes:
+		_iniciar_recarga(guarda_id)
 	_guarda_ativa_antes = guardando
 	if Input.is_action_just_pressed("dodge") and dodge_cd <= 0.0:
 		guardando = false
@@ -179,21 +187,63 @@ func _decidir_acao(entrada: Vector2) -> void:
 	if guardando:
 		facing = _aim
 		return
-	if skills != null:
-		for i in mini(skills.slots.size(), TECLAS_SKILL.size()):
-			var id: String = skills.slots[i]
-			if id != "w_guard_stance" and Input.is_action_just_pressed("skill_%d" % (i + 1)):
-				if usar(id):
+	if habilidades != null:
+		for i in mini(habilidades.slots.size(), TECLAS_SKILL.size()):
+			var id: String = habilidades.slots[i]
+			if id != "" and id != "w_guard_stance" and Input.is_action_just_pressed("skill_%d" % (i + 1)):
+				if usar(id, _dir_auto(id)):
 					return
+		if InputMap.has_action("ult") and Input.is_action_just_pressed("ult") and usar_ult():
+			return
+		if autocast and _autocast_habilidades():
+			return
 	if _quer_atacar() and _atk_cd <= 0.0:
 		_comecar_golpe()
 
-func _quer_atacar() -> bool:
-	return Input.is_action_pressed("shoot") or auto_aim != Vector2.ZERO
+func mira_atual() -> Vector2:
+	return _aim
 
-func _ler_mira() -> Vector2:
+func _quer_atacar() -> bool:
+	return Input.is_action_pressed("shoot") or auto_aim != Vector2.ZERO or not _alvo_basico.is_empty()
+
+## Direção do inimigo que o autocast escolheria para `id` (ou a mira atual se não há alvo ou a mira é no cursor).
+func _dir_auto(id: String) -> Vector2:
+	if not autocast or Alvos.mira_mouse:
+		return _aim
+	var a: Dictionary = habilidades.alvo_auto(id, get_tree(), global_position, stats["attack_range"])
+	return _aim if a.is_empty() else a["dir"]
+
+## Autocast: a primeira ativa equipada pronta, com ímpeto e com alvo, sai agora. A ult e a guarda não entram.
+func _autocast_habilidades() -> bool:
+	for id in habilidades.slots:
+		if not habilidades.automatica(id) or _cd(id) > 0.0:
+			continue
+		var a: Dictionary = habilidades.alvo_auto(id, get_tree(), global_position, stats["attack_range"])
+		if not a.is_empty() and usar(id, _aim if Alvos.mira_mouse else a["dir"]):
+			return true
+	return false
+
+## Ult: a ativa marcada como ult no slot sai só na tecla de ult.
+func usar_ult() -> bool:
+	var slot: int = habilidades.slot_ult()
+	if slot < 0:
+		return false
+	var id: String = habilidades.slots[slot]
+	return usar(id, _dir_auto(id))
+
+## Mira: a forçada dos testes; no autocast, o inimigo do combo (ou a direção do movimento); senão analógico e cursor.
+func _ler_mira(entrada := Vector2.ZERO) -> Vector2:
+	_alvo_basico = {}
 	if auto_aim != Vector2.ZERO:
 		return auto_aim.normalized()
+	if autocast and habilidades != null:
+		_alvo_basico = habilidades.alvo_auto("basico", get_tree(), global_position, stats["attack_range"])
+		if not Alvos.mira_mouse:
+			if not _alvo_basico.is_empty():
+				return _alvo_basico["dir"]
+			if entrada != Vector2.ZERO:
+				return entrada.normalized()
+			return _aim
 	var stick := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
 	if stick.length() > 0.3:
 		return stick.normalized()
@@ -260,31 +310,41 @@ func _on_anim_finished() -> void:
 # ---------------------------------------------------------------- habilidades ativas
 
 func _slot_de(id: String) -> String:
-	return id if skills != null and skills.nivel(id) > 0 else ""
+	return id if habilidades != null and habilidades.nivel(id) > 0 and habilidades.slots.has(id) else ""
 
 func _indice_slot(id: String) -> int:
-	return skills.slots.find(id) if skills != null else -1
+	return habilidades.slots.find(id) if habilidades != null else -1
 
 func _cd(id: String) -> float:
-	return _cds.get(id, 0.0)
+	return habilidades.recargas.get(id, 0.0)
 
 ## Fração 0..1 da recarga da ativa `id` (0 = pronta).
 func recarga_skill(id: String) -> float:
-	if skills == null or skills.nivel(id) <= 0:
+	if habilidades == null or habilidades.nivel(id) <= 0:
 		return 0.0
-	return clampf(_cd(id) / maxf(skills.recarga(id), 0.01), 0.0, 1.0)
+	return clampf(_cd(id) / maxf(habilidades.defs[id]["cd"] * _cd_mult(), 0.01), 0.0, 1.0)
 
-## Usa a ativa `id` se estiver aprendida, pronta e o jogador livre. Retorna se começou.
-func usar(id: String) -> bool:
-	if skills == null or skills.nivel(id) <= 0 or not skills.defs.has(id) or estado != Estado.LIVRE:
+func _cd_mult() -> float:
+	return stats.get("skill_cd_mult", 1.0)
+
+## A recarga é do core (habilidades_2d.gd); o ímpeto já foi conferido e gasto aqui, então o recurso passado só precisa cobrir o custo.
+func _iniciar_recarga(id: String) -> void:
+	habilidades.iniciar_recarga(id, INF)
+
+## Usa a ativa `id` se estiver aprendida, pronta e o jogador livre, mirando em `mira` (vazio = a mira atual).
+## Retorna se começou.
+func usar(id: String, mira := Vector2.ZERO) -> bool:
+	if habilidades == null or habilidades.nivel(id) <= 0 or not habilidades.defs.has(id) or estado != Estado.LIVRE:
 		return false
-	var d: Dictionary = skills.def(id)
+	var d: Dictionary = habilidades.def_nivel(id)
 	if _cd(id) > 0.0 or d["efeito"] == "postura_guarda" or d["custo"] > impeto:
 		return false
-	if not Efeitos.executar(d["efeito"], self, d, skills.nivel(id), _aim):
+	if mira != Vector2.ZERO:
+		_aim = mira.normalized()
+	if not Efeitos.executar(d["efeito"], self, d, habilidades.nivel(id), _aim):
 		return false
 	impeto -= d["custo"]
-	_cds[id] = skills.recarga(id)
+	_iniciar_recarga(id)
 	facing = _aim
 	return true
 
@@ -501,10 +561,12 @@ func slots_hud() -> Array:
 		{"icone": "golpe", "tecla": "hud.key.shoot", "recarga": recarga_tiro()},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(dodge_cd / stats["dodge_cooldown"], 0.0, 1.0)},
 	]
-	if skills != null:
-		for i in skills.slots.size():
-			var id: String = skills.slots[i]
-			out.append({"icone": id, "tecla": "hud.key.skill%d" % (i + 1), "recarga": recarga_skill(id)})
+	if habilidades != null:
+		for i in habilidades.slots.size():
+			var id: String = habilidades.slots[i]
+			if id == "":
+				continue
+			out.append({"icone": id, "tecla": "hud.key.skill_%d" % (i + 1), "recarga": recarga_skill(id)})
 	return out
 
 func _animar(entrada: Vector2) -> void:

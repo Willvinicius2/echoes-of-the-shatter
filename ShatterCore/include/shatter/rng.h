@@ -16,6 +16,8 @@ enum class RngStream : std::uint32_t {
     Events = 3,  // escolha do encontro, elites, modificadores de encontro
     Crafting = 4,  // melhorias do Encantador (docs/16 11.6): semente por (craft_seed, uid, craft_steps, operação); não consome Loot
     Rogue = 5,     // cartas da corrida do roguelike 2D (rogue.h): um gerador por sorteio, índice = nº do sorteio
+    RogueWave = 6, // spawner de hordas (rogue_waves.h): um gerador por inimigo nascido, índice = id do spawn
+    RogueLevel = 7, // cartas de nível e de baú da corrida (rogue.h, API 1.12): um gerador por sorteio, índice = nº do sorteio
 };
 
 // Passo do SplitMix64 (Steele, Lea, Flood 2014). Avança o estado e devolve 64 bits.

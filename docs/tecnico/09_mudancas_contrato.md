@@ -533,3 +533,133 @@ Aditiva: `SHATTER_C_API_MINOR` sobe de 8 para 9 (o cliente confere `shatter_api_
 - **Estado e determinismo**: entra no `state_json` como `"external_cards": true` no nível de cima, só quando ligado. Desligado, o JSON é byte a byte o da 1.8 (os hashes antigos continuam valendo). `state_restore` lê a chave (ausente = desligado; valor que não é booleano, ou modo ligado com fase `choice` ou oferta não vazia: `PARSE_ERROR` e nada muda). Com o modo no estado, o hash difere do mesmo estado sem ele. Não vai para o save do meta (`save_2d.json`). `shatter_rogue_run_json` ganhou `"external_cards": bool`.
 - **Testes**: `test_rogue.cpp` +3 (sala limpa e elite vão a `Cleared` sem oferta nem sorteio, carta dá `WrongPhase`, descanso e vitória iguais, stats = base + meta, troca recusada na corrida viva e liberada depois; mesma seed com e sem o modo dá os mesmos ganhos e o mesmo save do meta, hash diferente, sem chave nova no JSON desligado; 400 passos sem sorteio, 150 + 250 com restauração = 400 de uma vez, restauração inválida não muda nada). `test_c_api_rogue.cpp` +1 (argumentos nulos, set/get, `WRONG_PHASE` na corrida viva, `CLEARED` sem oferta, `choose_card` = `WRONG_PHASE`, `draws` 0, `run_stats_json` = `stats_apply` sem corrida, estado ida e volta com o mesmo hash). `test_c_api.cpp` confere o minor 9. GCC e Clang com `-Werror`: 4/4 no ctest.
 - **Falta (fora do core)**: o nó da GDExtension (`godot/gdextension/src/shatter_rogue_node.*`) expor as duas funções, e o cliente do Guerreiro ligar o modo.
+
+## 17. API C 1.10: árvore de habilidades por classe no rogue (marco M10, pacote 3; 31/10/2026, `claude/project-thread-0vjmp3`)
+Aditiva: `SHATTER_C_API_MINOR` sobe de 9 para 10 (o cliente confere `shatter_api_minor() >= 10`). Sem struct nova. Leva ao core o runtime compartilhado de habilidades do PR 127 (`godot/scripts2d/habilidades_2d.gd`, doc 29), que serve às três classes, no lugar da árvore própria do Guerreiro (`skills_guerreiro_2d.gd`, PR 130). Combinado com as threads "Criar sistema de skills e árvore" (dona do 127) e "Criar guerreiro e suas skills".
+
+### 17.1 O que entrou
+- **Dados** (opcionais): `classes_2d.csv` (o core só lê `id` e `habilidades`; nome, sprite, efeitos e stats da classe são do cliente) e a árvore de cada classe, no arquivo da coluna `habilidades` (só o nome, lido da mesma pasta: `res://data2d/habilidades_guerreiro.csv` vira `habilidades_guerreiro.csv`). Árvore ausente = classe sem árvore, como o `carregar_classe`. Sem `classes_2d.csv` não há classe: tudo dá `NO_CLASS` e o save e o estado ficam byte a byte os da 1.9. `run_settings.csv` ganha as chaves opcionais `skill_points_room` e `skill_points_boss` (inteiras >= 0; ausente = 0).
+- **Formato da árvore** (doc 29): colunas por nome. Obrigatórias `id, tipo, pai, pontos, nivel_max`. Texto: `id, ramo, tipo, pai, efeito, stat, modo, icone`; toda outra coluna é número (vazio = 0), inclusive as extras do Guerreiro (`espera`, `recup`), e todas vão para o cliente na definição escalonada. Validação: `tipo` = `ativa|passiva`; `pai` existe na mesma classe e não forma ciclo; `pontos` e `nivel_max` inteiros de 0 a 1000 (0 conta como 1, `maxi(1, ...)` do GDScript); `cd` e `custo` >= 0; passiva com `stat` precisa de `modo` `add|mult`; id e coluna sem repetir.
+- **Regras** (paridade com `habilidades_2d.gd`): aprender pede saldo >= `pontos`, nível abaixo do máximo e o pai no nível 1+; a ativa recém-aprendida entra no 1º slot livre (4 slots). Equipar só ativa aprendida; se já estava noutro slot, os dois trocam; id vazio limpa. Redistribuir devolve `pontos x nível` de tudo e esvazia os slots. Definição no nível n: `dano, qtd, raio, duracao, alcance, valor` x `1 + escala x max(0, n - 1)`, `qtd > 0` arredondada (meio para longe do zero) e no mínimo 1; `cd` e `custo` não escalam. Passivas: ordem do CSV, uma vez por nível; stat ausente entra no fim com 0 (diferente dos bônus do meta, que ignoram stat ausente). Recarga: `cd x skill_cd_mult` dos stats da corrida (1 sem corrida); `tick(dt)` desconta; fração para a HUD = restante / max(0,01, cd).
+- **Fluxo**: a classe da próxima corrida é `SetClass` / `shatter_rogue_class_set` (padrão: a 1ª de `classes_2d.csv`), só fora de corrida viva. Ao limpar uma sala, a classe atual ganha `skill_points_room` e, na última sala (o chefe), mais `skill_points_boss`; os pontos são permanentes na hora e o save grava. As passivas entram em `run_stats_json` (base + meta + upgrades + passivas) e em `stats_apply` com `include_run` (com ou sem corrida).
+- **Mana e efeitos ficam no cliente**: `can_use(slot, mana)` diz se dá; o cliente roda o efeito de `efeitos_<classe>_2d.gd` e, só se ele deu certo, chama `commit_use(slot, mana)`, que inicia a recarga e devolve o custo que o cliente desconta (o `usar` do GDScript, dividido em dois por causa do efeito no meio).
+
+### 17.2 API C (`shatter_c.h`)
+`shatter_rogue_class_set`, `shatter_rogue_skills_json` (classe, classes, pontos, slots, e por habilidade id, active, parent, level, max_level, points, can_learn e cooldown), `shatter_rogue_skill_def_json(id, level)` (`level < 0` = atual; desconhecida: `NOT_FOUND`), `_skill_can_learn`, `_skill_learn`, `_skill_equip(slot, id)`, `_skill_respec`, `_skill_points_add`, `_skill_tick(dt)`, `_skill_can_use(slot, mana)`, `_skill_commit_use(slot, mana, *cost_out)`, `_skill_cooldown(slot, *fraction)`, `_skill_passives_apply(base_json)` (só as passivas, o `aplicar_passivas` do GDScript). `*result` = `SHATTER_ROGUE_SKILL_OK|UNKNOWN|MAXED|NO_POINTS|LOCKED|NOT_ACTIVE|NOT_LEARNED|BAD_SLOT|EMPTY_SLOT|COOLDOWN|NO_MANA|WRONG_PHASE|NO_CLASS`; só OK muda o estado. Com caminho de save ligado, classe, aprender, equipar, redistribuir, ganhar pontos e a sala limpa que deu pontos gravam sozinhos. A GDExtension expõe tudo no `ShatterRogue` (`classe_definir`, `habilidades_estado`, `habilidade_def`, `habilidade_pode_aprender`, `habilidade_aprender`, `habilidade_equipar`, `habilidades_redistribuir`, `habilidades_ganhar_pontos`, `habilidades_tick`, `habilidade_pode_usar`, `habilidade_usar`, `habilidade_recarga`, `aplicar_passivas`).
+
+### 17.3 Save e estado
+- **Save do meta** (mesmo formato do PR 127): `"habilidades": {classe: {"niveis": {id: n}, "slots": [4 ids ou ""], "pontos": n}}` só das classes com algo guardado, e `"classe"`. `versao` continua 1. Leitura tolerante como o `de_dicionario`: classe e habilidade desconhecidas descartadas, nível limitado a 0..máximo, slot só com ativa aprendida (sem repetir), pontos negativos viram 0, números aceitos como float; classe salva desconhecida fica a padrão.
+- **Estado completo**: o meta leva as habilidades; a corrida ganha `"cooldowns": {id: s}` só com recargas correndo (sem nenhuma, o JSON é o da 1.9). `state_restore` recusa recarga de habilidade que não é da classe, valor que não é número positivo e `classe` desconhecida (`PARSE_ERROR`, nada muda). As recargas zeram ao começar corrida, trocar de classe e carregar o meta.
+
+### 17.4 Decisões (diferenças conscientes do GDScript)
+- **Chefe = última sala** (o GDScript conferia se o caminho da sala tinha "boss"; com os dados de hoje é a mesma sala, e não depende de nome de arquivo).
+- **Classe padrão = 1ª linha de `classes_2d.csv`** (o GDScript fixava "arqueiro", que é a 1ª linha).
+- **Classe e habilidade de outra classe no save**: o GDScript guardava o dicionário cru de qualquer classe; o core descarta classe desconhecida na leitura.
+- **Dado inválido é erro de carga** (`CONTENT_INVALID`), não 0 silencioso: `tipo`, `modo`, número, pai e ciclo.
+
+### 17.5 Testes e build
+- `tests/test_rogue_skills.cpp` (10 testes; pasta de dados = cópia de `godot/data2d` com `classes_2d.csv`, a fixture do PR 127 e a árvore real do Guerreiro): carga e erros de árvore; pontos, pai e slot automático; equipar e trocar, redistribuir; escala por nível igual ao `def_nivel`; passivas na corrida e stat ausente (`exec_bonus` do Guerreiro); mana, recarga e `skill_cd_mult`; sala limpa +1 e chefe +3 por classe; save ida e volta e leitura tolerante; estado com recarga, 13 + 17 passos = 30 de uma vez, restauração inválida não muda nada.
+- `tests/test_c_api_rogue.cpp` +2 (argumentos nulos e sem classes; árvore, slots, uso, recarga, gravação automática e recarga do save pela API). `test_c_api.cpp` confere o minor 10. GCC e Clang com `-Werror` e ASan/UBSan: 4/4 no ctest.
+- **Cliente (mesmo PR, depois do PR 127)**: `habilidades_2d.gd` mantém a interface pública e guarda só cópias de leitura (`niveis`, `slots`, `pontos`, `recargas`, `defs` para exibir); aprender, equipar, redistribuir, ganhar pontos, checar e iniciar recarga, definição escalonada e passivas vêm do core (`ShatterRogue`). A corrida passa o núcleo do meta para a árvore do jogador e chama `classe_definir` antes de cada corrida; o ponto por sala limpa e por chefe sai do core, e `corrida_stats` já traz as passivas (o `upgrades_2d.gd` não as aplica de novo). Sem núcleo do meta (testes, jogador fora da corrida), a árvore cria um núcleo próprio; uma árvore de fixture fora de `classes_2d.csv` entra só nesse núcleo (`Nucleo.criar({id: csv})`). `nucleo_2d.gd` copia `classes_2d.csv` e as árvores para `user://dados_core`. O save antigo `user://habilidades_2d.json` (PR 127) é migrado uma vez para o `save_2d.json` pelo `meta_2d.carregar()` e renomeado para `.migrado`. O Guerreiro entra nesse runtime pela thread dele (sai o `skills_guerreiro_2d.gd`).
+- `shatter_rogue_skill_passives_apply(base_json)`: só as passivas (o `aplicar_passivas`), para quem precisa delas fora dos stats da corrida.
+
+## 18. API C 1.11: spawner de hordas no rogue (plano 31, pacote H3; 31/10/2026, `claude/project-thread-vyunkg`)
+Aditiva: `SHATTER_C_API_MINOR` sobe de 10 para 11 (o cliente confere `shatter_api_minor() >= 11`). Sem struct nova: escalares e JSON UTF-8, no mesmo `shatter_rogue`. É a peça de core da virada para hordas (`docs/design/31_plano_hordas.md`): o core decide quem nasce, quando e onde, de forma determinística; o cliente só instancia, move e luta. Entram também as duas ideias da referência de hordas que o Jev marcou como "agora" (plano 31, seção 5): **spawn em anel ao redor do jogador** e **fase com prazo** (o jogador pode acordar o Guardião antes; no fim do tempo vem um enxame final). Os pacotes H1 (mapa, altar e portal), H4 (curva de vida, dano e orçamento) e H6 (HUD de onda e prazo) consomem esta API.
+
+### 18.1 Dados (opcionais, em par)
+`godot/data2d/ondas.csv`: uma linha por onda, cada fase num bloco contíguo e `onda` contando 1, 2, 3...
+
+| coluna | o que é |
+|---|---|
+| `fase` | id da fase (mapa aberto); hoje `cripta` |
+| `onda` | 1, 2, 3... dentro da fase |
+| `duracao` | s: tempo da onda (ver 18.2) |
+| `intervalo` | s entre lotes de spawn (> 0) |
+| `lote` | até quantos nascem por lote (1..1000) |
+| `orcamento` | pontos de spawn da onda (soma dos custos; > 0) |
+| `teto` | máximo de inimigos comuns vivos (1..1000; o chefe não conta) |
+| `inimigos` | mistura `id:peso` ou `id:peso:custo` separada por `|` (custo padrão 1; id sem repetir) |
+| `elites` | quantos nascem marcados como elite |
+| `elite_vida`, `elite_dano` | multiplicadores do elite (vazio = 1) |
+
+`godot/data2d/ondas_fases.csv`: uma linha por fase.
+
+| coluna | o que é |
+|---|---|
+| `fase` | id (o mesmo de `ondas.csv`) |
+| `prazo` | s: fim do tempo da fase; aí vem o enxame final |
+| `raio_min`, `raio_max` | px: anel de spawn ao redor do jogador (fora da tela; o H1 ajusta à câmera) |
+| `chefe` | id do chefe que o jogador acorda ("" = fase sem chefe) |
+| `despertar_onda` | a partir de qual onda o jogador pode acordar o chefe |
+| `enxame_inimigos`, `enxame_orcamento`, `enxame_lote`, `enxame_intervalo`, `enxame_teto` | o enxame final, no formato de uma onda |
+
+Validação na carga (`CONTENT_INVALID`): cabeçalhos exatos, fase vazia, repetida ou partida em dois blocos, onda fora da contagem, tempos e raios <= 0, `raio_max < raio_min`, lote/teto fora da faixa, peso ou custo < 1, orçamento 0 ou mistura vazia; no `Finalize`, toda fase de `ondas.csv` precisa de linha em `ondas_fases.csv` e vice-versa, e `despertar_onda` não passa do número de ondas. Os ids da mistura são os de `enemies.csv` (o core não confere: a tabela de inimigos é do cliente). Números de hoje, provisórios para o H4: 8 ondas de 55 a 65 s, teto 12 → 40, elites a partir da onda 3 (4x vida, 1,5x dano), prazo 480 s (~8 min), anel 1150 a 1350 px, Guardião acordável a partir da onda 4, enxame de 400 pontos com teto 40.
+
+### 18.2 Regras
+- **Relógio inteiro** em microssegundos (`dt` arredondado; acima de 60 s por tick é cortado). Simular em 1 ou N ticks dá o mesmo resultado.
+- **Lotes**: um no início da onda e depois a cada `intervalo`. Cada lote solta até `lote` inimigos, parando no `teto` de vivos comuns ou quando nada mais cabe no orçamento. O tipo é sorteado pelo peso entre os da mistura cujo custo cabe no que sobra.
+- **Elites**: o k-ésimo elite da onda sai no spawn em que o gasto chega a k / (elites + 1) do orçamento (espalhados). Elite traz `hp_mult = elite_vida` e `damage_mult = elite_dano`; os demais, 1.
+- **Passar de onda**: quando o orçamento acabou E (a `duracao` passou OU ninguém está vivo). Jogador lento: o teto segura o spawn e a onda dura mais; jogador rápido: limpou tudo, a próxima começa no lote seguinte. A **última onda recomeça** (orçamento novo) até o prazo, para a pressão não acabar.
+- **Chefe**: o jogador o acorda (`wake_boss`, o altar do Guardião no mapa do H1) a partir de `despertar_onda`; ele nasce na hora, fora do teto e do orçamento. A fase fica **completa** quando o chefe morre. Completa, nada mais nasce e o relógio para; o portal é do cliente.
+- **Prazo**: no instante `prazo` as ondas param e começa o **enxame final** (onda número ondas + 1, com o orçamento, lote, intervalo e teto do enxame, sem passar de onda). Se o chefe ainda dormia, acorda junto. Fase sem chefe termina com o enxame gasto e ninguém vivo.
+- **Posição em anel**: cada spawn traz `angle` (radianos em [0, 2π), a partir do eixo x do cliente) e `radius` (px entre `raio_min` e `raio_max`). O cliente nasce o inimigo em `jogador + Vector2.from_angle(angle) * radius` e prende nas bordas do mapa (H1). O core não usa trigonometria: o ângulo é só `sorteio x 2π`.
+- **Sorteio**: `Pcg32::ForStream(seed, RngStream::RogueWave (6), id do spawn)`, um gerador por inimigo (tipo, ângulo e raio). Mesmo seed + dados + ações (mortes, despertar) nos mesmos instantes = mesmos spawns e mesmo `wave_state_hash`.
+- **Independente da corrida**: `shatter_rogue_run_*` não muda. Drops, fragmentos e materiais continuam por `shatter_rogue_run_enemy_killed(enemy_id)`; o cliente chama os dois na morte. Como o fluxo de salas da corrida conversa com a fase aberta é decisão do H1.
+- **Pronto para depois, sem quebrar a API** (backlog do plano 31): o teto já é número do CSV (a "condensação" acima do teto pode entrar como regra nova no `SpawnBatch`); o orçamento já é por onda e por custo, então um diretor por créditos/s troca só a regra de gasto; eventos com horário e baralho de espécies cabem como colunas/tabelas novas que o spawner lê.
+
+### 18.3 API C (`shatter_c.h`)
+`shatter_rogue_wave_start(fase, seed, *result)` (`OK|UNKNOWN`; descarta a fase anterior), `_wave_stop`, `_wave_tick(dt, *spawned)`, `_wave_take_json` (entrega e esvazia a fila de nascidos: `[{"id","enemy","elite","boss","wave","angle","radius","hp_mult","damage_mult"}]`; com `BUFFER_TOO_SMALL` a fila fica), `_wave_killed(spawn_id, *complete, *result)` (`OK|NOT_RUNNING|NOT_ALIVE`), `_wave_wake_boss(*result)` (`OK|NOT_RUNNING|NO_BOSS|ALREADY_AWAKE|TOO_EARLY`), `_wave_json` (phase, running, complete, wave, waves_total, swarm, loops, time, deadline, time_left, wave_time, wave_duration, budget, budget_left, exhausted, alive, cap, boss, wake_wave, can_wake, boss_spawned, boss_alive, spawned, killed, pending), `_wave_defs_json` (fases com prazo, anel, chefe, despertar, enxame e ondas), `_wave_state_json`, `_wave_state_restore` (`PARSE_ERROR` e nada muda) e `_wave_state_hash` (SHA-256 hex). O estado do spawner é separado do `shatter_rogue_state_json` (o hash da corrida da 1.10 não muda).
+
+GDExtension (`ShatterRogue`): `ondas_iniciar(fase, semente)`, `ondas_parar()`, `ondas_tick(dt)` (passa o tempo e devolve o Array dos que nasceram agora), `ondas_morto(id)` (`{resultado, completa}`), `ondas_acordar_chefe()`, `ondas_estado()`, `ondas_definicoes()`, `ondas_estado_texto()`, `ondas_restaurar(texto)`, `ondas_hash()`. `nucleo_2d.gd` copia `ondas.csv` e `ondas_fases.csv` para `user://dados_core` quando existem.
+
+Uso no cliente (H1):
+```gdscript
+nucleo.ondas_iniciar("cripta", semente)
+func _process(delta):
+    for s in nucleo.ondas_tick(delta):
+        var ponto := limitar_ao_mapa(jogador.position + Vector2.from_angle(s.angle) * s.radius)
+        spawnar(s.enemy, ponto, s.elite, s.boss, s.hp_mult, s.damage_mult, s.id)
+func ao_usar_altar():
+    nucleo.ondas_acordar_chefe()   # 0 = acordou; 4 = cedo demais
+func ao_morrer(inimigo):
+    nucleo.corrida_inimigo_morto(inimigo.tipo)     # drops e ganhos
+    if nucleo.ondas_morto(inimigo.spawn_id).completa:
+        abrir_portal()
+```
+
+### 18.4 Testes e build
+- `tests/test_rogue_waves.cpp` (14 testes, com os CSV reais): carga; 14 erros de `ondas.csv` e 8 de `ondas_fases.csv`; conferência cruzada do `Finalize`; resultados básicos (inclusive acordar cedo e fase sem chefe); teto segura o spawn sem mortes; fase inteira com bot que acorda o Guardião na onda 4 e o mata antes do prazo (pico <= 40, raio dentro do anel); bot que não acorda: no prazo vem o enxame e o chefe, o enxame gasta o orçamento e a fase só fecha com o chefe morto; última onda recomeçando até o teto segurar; passar de onda cedo e pela duração; custo, elites e anel; determinismo (30 s de uma vez = 60 x 0,5 s = partes desiguais, e 10 x 50 s = 1000 x 0,5 s passando pelo prazo; seed diferente muda); restore no meio das ondas e no enxame continua igual, restore inválido não muda nada.
+- `tests/test_c_api_rogue_waves.cpp` (4 testes, ligado à DLL/so): argumentos nulos, fase desconhecida, fila entregue uma vez e `BUFFER_TOO_SMALL` sem esvaziar, morte e `NOT_ALIVE`, acordar cedo, estado com prazo, defs, determinismo por hash entre dois handles e restore em outro handle. `test_c_api.cpp` confere o minor 11. GCC e Clang com `-Werror` e GCC com ASan/UBSan.
+- GDExtension compilada com godot-cpp 4.4 e conferida no Godot 4.4.1 headless: a fase da Cripta inteira roda pelo `ShatterRogue` (iniciar, tick, mortes, acordar cedo dá 4, acordar na onda 6 dá 0, fase completa com o chefe morto).
+
+## 19. API C 1.12: XP, nível, cartas de nível, baú, curva de horda, vida do chefe e modo horda (plano 31, pacote H4; 01/11/2026, `claude/project-thread-x255g2`)
+Aditiva: `SHATTER_C_API_MINOR` sobe de 11 para 12. Sem struct nova. Fecha o ciclo da horda: o spawner da 1.11 passa a ser a fase aberta inteira no cliente, cada morte vira XP, o nível vira cartas, o elite vira baú, a força de cada onda vem de uma curva em CSV e a vida do Guardião se ajusta ao DPS medido do jogador. Ideias da referência de hordas marcadas "agora" pelo Jev (plano 31, seção 5): 3 cartas com ao menos 1 de ataque e reroll/pular/banir limitados; vida do chefe adaptativa (o cliente mede, o core calcula); `curva_horda.csv` com uma coluna por atributo.
+
+### 19.1 Dados (todos opcionais; sem eles o comportamento e o hash são os da 1.11)
+- `drops.csv`: coluna final `xp` (inteiro >= 0): XP da gema que o inimigo solta.
+- `upgrades.csv`: colunas finais `tipo` (`ataque|defesa|utilidade`, padrão `utilidade`) e `raridade` (`comum|rara`, padrão `comum`).
+- `curva_horda.csv` (novo): `fase,onda,vida,dano,velocidade,xp`. Multiplicadores (> 0) dos inimigos comuns e elites da onda; `onda = ondas da fase + 1` é o enxame final. Fase precisa existir em `ondas.csv`; fase e onda sem repetir. O chefe não usa a curva (a vida dele é a adaptativa).
+- `run_settings.csv`: `skill_points_every_levels` (modo horda: 1 ponto de habilidade à classe a cada N níveis, já que as salas não limpam), `xp_level_base`, `xp_level_step` (o nível n pede `base + passo x (n - 1)`; sem `xp_level_base` não há níveis), `level_cards`, `chest_cards`, `level_rerolls`, `level_skips`, `level_bans` (inteiros >= 0), `boss_fight_time` (s), `boss_hp_min`, `boss_hp_max` (x vida base; com `boss_fight_time`, min > 0 e max >= min). As chaves `horda`, `gem_*`, `dps_window`, `boss_wake_radius`, `horde_aggro` e `horde_leash_*`/`horde_stuck_dist` são só do cliente.
+
+### 19.2 Regras
+- **Modo horda** (`SetHorde`, só fora de corrida viva, como as cartas externas): `EnemyKilled` só soma o drop (a sala nunca limpa, não há cartas de sala nem pontos por sala) e a corrida termina com `WinRun` (fase `won`, `victory_fragments` e `skill_points_boss`). Estado: `"horde": true` só ligado.
+- **XP**: `KillXp(inimigo, xp_mult, elite)` não muda nada: XP = `xp` do drops x `xp_mult` (curva da onda), arredondado; elite solta baú se `chest_cards > 0`. O cliente cria a gema e o baú no chão e, ao pegar, chama `GainXp(n)` e `OpenChest()`.
+- **Nível**: cada nível que fecha entra numa fila; ofertas de nível saem antes das de baú. Oferta de nível: `level_cards` cartas sorteadas (Fisher-Yates, `Pcg32` do fluxo `RogueLevel` (7), um gerador por sorteio) entre as disponíveis (liberadas no meta, abaixo do máximo e não banidas); se nenhuma é de ataque, a última dá lugar à primeira de ataque que sobrou no embaralhamento. Baú: `chest_cards` cartas só raras (se não sobrar rara, qualquer uma). Oferta que sairia vazia (tudo no máximo) é descartada. Com cartas externas (Guerreiro) o nível sobe sem oferta.
+- **Escolher** sobe o upgrade como `ChooseCard` (a vida sobe junto com `hp_max`) e abre a próxima oferta. **Reroll** sorteia de novo (gasta 1), **pular** descarta a oferta (gasta 1), **banir** tira a carta pelo resto da corrida e sorteia de novo (gasta 1). Os saldos voltam a cada corrida. Os botões na tela são do H6; o cliente tem `upgrades_2d.sortear_de_novo/pular/banir`.
+- **Vida do chefe**: `BossHp(base, dps) = clamp(dps x boss_fight_time, base x boss_hp_min, base x boss_hp_max)`; sem a chave ou DPS <= 0, a base. O cliente mede o DPS (vida dos inimigos mortos nos últimos `dps_window` s) quando o Guardião acorda.
+- **Curva no spawner**: `hp_mult` e `damage_mult` do spawn = elite x curva; `speed_mult` e `xp_mult` novos (1 sem curva e no chefe). No estado do spawner, `speed_mult` e `xp_mult` só aparecem quando != 1 (sem curva o hash é o da 1.11).
+- **Estado**: a corrida ganha `"progress"` (xp, nível, filas, oferta, sorteios, saldos e banidas) só depois do primeiro XP ou baú; sem isso o JSON é o da 1.11 (mesmo hash). `state_restore` recusa progress inválido (PARSE_ERROR, nada muda).
+
+### 19.3 API C e GDExtension
+`shatter_rogue_horde_set/_win`, `shatter_rogue_level_kill_xp/_gain_xp/_open_chest/_choose/_reroll/_skip/_ban/_json`, `shatter_rogue_curve_json(fase, onda)` e `shatter_rogue_boss_hp(base, dps)`; `wave_take_json` ganha `speed_mult` e `xp_mult`. Resultados: os `SHATTER_ROGUE_RUN_*`. GDExtension: `horda_definir`, `horda_vencer`, `nivel_xp_da_morte`, `nivel_ganhar_xp`, `nivel_abrir_bau`, `nivel_escolher`, `nivel_sortear_de_novo`, `nivel_pular`, `nivel_banir`, `nivel_estado`, `curva`, `vida_chefe`.
+
+### 19.4 Cliente (mesmo PR)
+- `run_2d.gd`: com `horda = 1` em `run_settings.csv` e a fase aberta carregada, a corrida chama `horda_definir(true)` e `ondas_iniciar`; a cada quadro `ondas_tick` traz quem nasce (anel ao redor do jogador, preso no mapa, com a curva aplicada em vida, dano e velocidade; elite com brilho dourado). O Guardião espera no altar G e acorda quando o jogador chega a `boss_wake_radius` (a partir de `despertar_onda`) ou no prazo, com a vida de `vida_chefe`. Inimigo preso atrás do riacho ou longe demais volta ao anel fora da vista. Cada morte chama `corrida_inimigo_morto` (drops), `nivel_xp_da_morte` (gema e baú) e `ondas_morto`; fase completa abre o portal e o portal chama `horda_vencer`. O fluxo antigo de etapas continua com `horda = 0` (e nos testes antigos, `run_2d.modo_etapas = true`).
+- `gema_2d.gd` (novo): gema e baú no chão com ímã (`gem_magnet_radius`, `gem_pickup_radius`, `gem_speed`); desenho provisório em código, a arte é do H6.
+- `upgrade_ui_2d.gd`: modo `sala`, `level` ou `chest` com o título certo; `upgrades_2d.gd`: ponte das cartas de nível.
+- `tools/corridas_2d.gd`: no modo horda cada linha de sala é uma onda; mede mortes, pico de vivos, nível, DPS no chefe e a vida que o core deu a ele; aceita `--classe=`.
+
+### 19.5 Testes
+- `tests/test_rogue_levels.cpp` (11 testes, CSV reais): carga e 9 erros de dado; CSV antigo sem as colunas novas; XP e dois níveis de uma vez; carta de ataque garantida em 200 sementes, sem repetir; reroll, pular e banir com os limites e a volta na corrida seguinte; baú depois do nível e só com raras; cartas externas sem oferta; estado com progress ida e volta, mesmas ofertas depois e restore inválido; modo horda e vitória; vida do chefe nas três faixas; curva nos spawns e no estado do spawner.
+- `tests/test_c_api_rogue_levels.cpp` (2 testes, DLL/so): argumentos nulos e o fluxo inteiro pela API.
+- Cliente: `scripts2d/tools/test_horda_2d.gd` (no `test_2d.gd`): spawner na fase aberta, onda 1 fora da vista com a curva, gemas, cartas de nível com ataque, baú, altar liberado na onda certa, Guardião no altar com a vida adaptativa, portal e vitória.

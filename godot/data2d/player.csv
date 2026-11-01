@@ -13,7 +13,7 @@ dodge_speed,640,px/s,velocidade da esquiva
 dodge_time,0.25,s,duracao da esquiva
 dodge_cooldown,0.8,s,recarga da esquiva
 hit_iframes,0.6,s,invulnerabilidade apos levar dano
-attack_move_mult,0.4,x,fator de velocidade enquanto atira
+attack_move_mult,0.85,x,fator de velocidade enquanto atira (horda: o tiro e automatico, entao quase nao freia)
 arrow_count,1,flechas,flechas por disparo (multishot soma)
 arrow_pierce,0,corpos,inimigos atravessados pela flecha
 multishot_spread,12,graus,abertura entre flechas do multishot

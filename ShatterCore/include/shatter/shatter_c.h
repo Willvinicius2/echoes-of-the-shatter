@@ -553,7 +553,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 9u   /* 9: modo "cartas externas" do rogue (shatter_rogue_run_external_cards_set/_get, docs/09 seção 16.5); 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 12u   /* 12: XP, nível e cartas de nível, baú de elite, curva de horda, vida do chefe adaptativa e modo horda do rogue (shatter_rogue_level_*, shatter_rogue_horde_*, docs/09 seção 19); 11: spawner de hordas do rogue (shatter_rogue_wave_*, docs/09 seção 18); 10: árvore de habilidades por classe do rogue (shatter_rogue_class_*, shatter_rogue_skill*, docs/09 seção 17); 9: modo "cartas externas" do rogue (shatter_rogue_run_external_cards_set/_get, docs/09 seção 16.5); 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -1509,7 +1509,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_drop_json(const shatter_ro
  * Entrada e saída: objeto JSON stat -> número ({"hp_max":100,"arrow_damage":10,...}); a saída mantém a ordem da entrada.
  * Aplica o amuleto equipado, os consumíveis ativos (ordem de receitas.csv) e as melhorias de stat (ordem de meta.csv, uma
  * vez por nível); com include_run = 1 e corrida em curso, também os upgrades escolhidos (ordem de upgrades.csv). Stat que não
- * está na entrada é ignorado. Valor que não é número: SHATTER_PARSE_ERROR. */
+ * está na entrada é ignorado. Com include_run = 1 (com ou sem corrida, API 1.10), por fim as passivas aprendidas da classe
+ * atual; aqui o stat ausente entra no fim com 0 antes do bônus. Valor que não é número: SHATTER_PARSE_ERROR. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_stats_apply(const shatter_rogue* rogue, const char* base_json,
                                                                   size_t len, uint8_t include_run, uint8_t* out, size_t cap,
                                                                   size_t* needed, shatter_error* err) SHATTER_NOEXCEPT;
@@ -1569,7 +1570,8 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_finish(shatter_rogue* 
  * "external_cards":bool (API 1.9)}. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
                                                                size_t* needed) SHATTER_NOEXCEPT;
-/* Stats finais da corrida (base com o meta guardada no início + upgrades), mesmo formato de stats_apply. Sem corrida: {}. */
+/* Stats finais da corrida (base com o meta guardada no início + upgrades + passivas da árvore da classe, API 1.10), mesmo
+ * formato de stats_apply. Sem corrida: {}. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_run_stats_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
                                                                      size_t* needed) SHATTER_NOEXCEPT;
 /* Resumo do fim: {"victory","stage_reached","stages_total","upgrades_total","fragments","materials":[{"id","qty"}]}.
@@ -1588,6 +1590,167 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_state_restore(shatter_rogu
 /* SHA-256 (64 caracteres hex minúsculos) do estado canônico. */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_state_hash(const shatter_rogue* rogue, uint8_t* out, size_t cap,
                                                                  size_t* needed) SHATTER_NOEXCEPT;
+
+/* --- Habilidades por classe do roguelike 2D (API 1.10; rogue.h; docs/09 seção 17) ---
+ * Runtime de godot/scripts2d/habilidades_2d.gd (doc 29): pontos permanentes por classe, nó que só abre com o pai no
+ * nível 1+, custo em pontos por nível, 4 slots (0..3 = Q, E, F, R), redistribuição gratuita, passivas sobre os stats e
+ * recargas. A mana e os efeitos (efeitos_<classe>_2d.gd) ficam no cliente. Dados: classes_2d.csv (opcional; colunas
+ * id e habilidades) e a árvore de cada classe (o arquivo da coluna habilidades, só o nome, lido da mesma pasta; ausente =
+ * classe sem árvore). Sem classes_2d.csv não há classe: as funções abaixo dão NO_CLASS e o save fica o da 1.9.
+ * Pontos, níveis e slots são do meta (save: "habilidades": {classe: {"niveis","slots","pontos"}} e "classe"), e toda ação
+ * que dá certo grava sozinha com o caminho ligado. Ao limpar uma sala (shatter_rogue_run_enemy_killed), a classe atual
+ * ganha skill_points_room (+ skill_points_boss na última sala) de run_settings.csv, e o save grava. As passivas entram em
+ * shatter_rogue_run_stats_json e em shatter_rogue_stats_apply com include_run. As recargas são da corrida (state_json). */
+enum { SHATTER_ROGUE_SKILL_OK = 0, SHATTER_ROGUE_SKILL_UNKNOWN = 1, SHATTER_ROGUE_SKILL_MAXED = 2,
+       SHATTER_ROGUE_SKILL_NO_POINTS = 3, SHATTER_ROGUE_SKILL_LOCKED = 4, SHATTER_ROGUE_SKILL_NOT_ACTIVE = 5,
+       SHATTER_ROGUE_SKILL_NOT_LEARNED = 6, SHATTER_ROGUE_SKILL_BAD_SLOT = 7, SHATTER_ROGUE_SKILL_EMPTY_SLOT = 8,
+       SHATTER_ROGUE_SKILL_COOLDOWN = 9, SHATTER_ROGUE_SKILL_NO_MANA = 10, SHATTER_ROGUE_SKILL_WRONG_PHASE = 11,
+       SHATTER_ROGUE_SKILL_NO_CLASS = 12 };
+/* Classe da próxima corrida (padrão: a 1ª de classes_2d.csv). Só fora de corrida viva (NONE, WON, DEAD), senão
+ * WRONG_PHASE; classe desconhecida: UNKNOWN. Zera as recargas. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_class_set(shatter_rogue* rogue, const char* class_id, size_t class_id_len,
+                                                                int32_t* result) SHATTER_NOEXCEPT;
+/* {"class":"id"|"","classes":["ids"],"points","slots":["id ou vazio" x4],"skills":[{"id","active","parent","level",
+ * "max_level","points","can_learn":código,"cooldown":s restantes}]} da classe atual, na ordem do CSV. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skills_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                  size_t* needed) SHATTER_NOEXCEPT;
+/* Definição da habilidade no nível `level` (< 0 = nível atual; 0 mostra o valor base): objeto com todas as colunas do
+ * CSV (texto como string, as demais como número) com dano, qtd, raio, duracao, alcance e valor escalonados por
+ * 1 + escala x (n - 1), qtd > 0 arredondada e no mínimo 1, e "nivel". Habilidade desconhecida: SHATTER_NOT_FOUND. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_def_json(const shatter_rogue* rogue, const char* skill_id,
+                                                                     size_t skill_id_len, int32_t level, uint8_t* out,
+                                                                     size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Pode aprender (ou subir) agora? Mesmo código de shatter_rogue_skill_learn, sem mudar nada. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_can_learn(const shatter_rogue* rogue, const char* skill_id,
+                                                                      size_t skill_id_len, int32_t* result) SHATTER_NOEXCEPT;
+/* Gasta `pontos` e sobe um nível (MAXED, NO_POINTS, LOCKED). A ativa recém-aprendida entra no 1º slot livre. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_learn(shatter_rogue* rogue, const char* skill_id, size_t skill_id_len,
+                                                                  int32_t* result) SHATTER_NOEXCEPT;
+/* Põe a ativa aprendida no slot 0..3 (id vazio limpa o slot). Se já estava em outro slot, os dois trocam. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_equip(shatter_rogue* rogue, uint32_t slot, const char* skill_id,
+                                                                  size_t skill_id_len, int32_t* result) SHATTER_NOEXCEPT;
+/* Redistribuição gratuita: devolve os pontos gastos, zera níveis e slots. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_respec(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Soma pontos ao saldo da classe atual (negativo conta como 0). Para testes e recompensas fora da sala limpa. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_points_add(shatter_rogue* rogue, int64_t points,
+                                                                       int32_t* result) SHATTER_NOEXCEPT;
+/* Passa `dt` segundos nas recargas (dt <= 0, NaN ou infinito: nada muda). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_tick(shatter_rogue* rogue, double dt) SHATTER_NOEXCEPT;
+/* Pode usar o slot com esta mana? (BAD_SLOT, EMPTY_SLOT, COOLDOWN, NO_MANA). Não muda nada. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_can_use(const shatter_rogue* rogue, uint32_t slot, double mana,
+                                                                    int32_t* result) SHATTER_NOEXCEPT;
+/* Chame depois que o efeito do cliente deu certo: confere de novo, inicia a recarga (cd x skill_cd_mult dos stats da
+ * corrida; 1 sem corrida) e devolve em *cost_out o custo de mana que o cliente desconta. Falha: *cost_out = 0. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_commit_use(shatter_rogue* rogue, uint32_t slot, double mana,
+                                                                       double* cost_out, int32_t* result) SHATTER_NOEXCEPT;
+/* Só as passivas aprendidas da classe atual sobre base_json (objeto stat -> número; ordem do CSV, uma vez por nível; stat
+ * ausente entra no fim com 0 antes do bônus). Sem meta nem upgrades: é o aplicar_passivas do habilidades_2d.gd. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_passives_apply(const shatter_rogue* rogue, const char* base_json,
+                                                                          size_t len, uint8_t* out, size_t cap, size_t* needed,
+                                                                          shatter_error* err) SHATTER_NOEXCEPT;
+/* Fração 0..1 da recarga do slot para a HUD (0 = pronto, slot vazio ou fora da faixa). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_cooldown(const shatter_rogue* rogue, uint32_t slot,
+                                                                     double* fraction_out) SHATTER_NOEXCEPT;
+
+/* --- Spawner de hordas do roguelike 2D (API 1.11; rogue_waves.h; docs/09 seção 18) ---
+ * O core decide quem nasce, quando e onde (anel ao redor do jogador); o cliente só instancia, move e luta. Dados (opcionais,
+ * em par): godot/data2d/ondas.csv (fase, onda, duracao, intervalo, lote, orcamento, teto, inimigos "id:peso" ou
+ * "id:peso:custo" separados por |, elites, elite_vida, elite_dano) e ondas_fases.csv (fase, prazo, raio_min, raio_max,
+ * chefe, despertar_onda e o enxame final: enxame_inimigos, enxame_orcamento, enxame_lote, enxame_intervalo, enxame_teto).
+ * Sem eles nenhuma fase existe e wave_start dá UNKNOWN.
+ * Regras: relógio inteiro em microssegundos; um lote no início da onda e depois a cada `intervalo`, até `lote` inimigos
+ * por vez sem passar do teto de vivos (o chefe não conta) nem do orçamento; tipo sorteado pelo peso entre os que cabem
+ * no orçamento; `elites` marcados espalhados pelo orçamento. A onda passa quando o orçamento acabou e (a duração passou
+ * ou ninguém está vivo); a última onda recomeça até o prazo. A partir de `despertar_onda` o jogador pode acordar o chefe
+ * (wave_wake_boss). No prazo as ondas param e vem o enxame final; o chefe acorda junto se ainda dormia. A fase termina
+ * quando o chefe morre (sem chefe: enxame gasto e ninguém vivo). Posição: "angle" (radianos, 0..2π) e "radius" (px, entre
+ * raio_min e raio_max) a partir do jogador; o cliente prende nas bordas do mapa. Sorteio: Pcg32 do fluxo RogueWave, um
+ * gerador por spawn (índice = id). Mesmo seed + dados + ações nos mesmos instantes = mesmos spawns e mesmo
+ * wave_state_hash, em 1 ou N ticks. Independente da corrida (shatter_rogue_run_*): drops e ganhos continuam por
+ * shatter_rogue_run_enemy_killed. */
+enum { SHATTER_ROGUE_WAVE_OK = 0, SHATTER_ROGUE_WAVE_UNKNOWN = 1, SHATTER_ROGUE_WAVE_NOT_RUNNING = 2,
+       SHATTER_ROGUE_WAVE_NOT_ALIVE = 3, SHATTER_ROGUE_WAVE_TOO_EARLY = 4, SHATTER_ROGUE_WAVE_ALREADY_AWAKE = 5,
+       SHATTER_ROGUE_WAVE_NO_BOSS = 6 };
+/* Começa a fase do zero (descarta a anterior, inclusive a fila). Fase que não existe: UNKNOWN e nada muda. O 1º lote nasce
+ * no primeiro wave_tick (instante 0). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_start(shatter_rogue* rogue, const char* phase_id, size_t phase_id_len,
+                                                                 uint64_t seed, int32_t* result) SHATTER_NOEXCEPT;
+/* Encerra a fase (jogador morreu ou saiu): vivos e fila vazios. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_stop(shatter_rogue* rogue) SHATTER_NOEXCEPT;
+/* Passa `dt` segundos (<= 0, NaN ou infinito: nada; acima de 60 s: cortado em 60). *spawned = quantos nasceram agora
+ * (vão para a fila). Sem fase ou com a fase completa: *spawned = 0. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_tick(shatter_rogue* rogue, double dt, uint32_t* spawned) SHATTER_NOEXCEPT;
+/* Entrega e esvazia a fila de nascidos: [{"id","enemy","elite","boss","wave" (ondas + 1 no enxame),"angle":radianos,
+ * "radius":px,"hp_mult","damage_mult","speed_mult","xp_mult"}], na ordem de nascimento (API 1.12: hp, dano, velocidade e
+ * XP já com a curva_horda.csv da onda; sem curva, speed_mult e xp_mult = 1). Com BUFFER_TOO_SMALL a fila fica. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_take_json(shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                     size_t* needed) SHATTER_NOEXCEPT;
+/* Morte (ou sumiço) de um spawn vivo, pelo id. *complete = 1 se a fase está completa agora. Sem fase: NOT_RUNNING; id
+ * que não está vivo: NOT_ALIVE (nada muda). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_killed(shatter_rogue* rogue, uint32_t spawn_id, uint8_t* complete,
+                                                                  int32_t* result) SHATTER_NOEXCEPT;
+/* O jogador acorda o chefe (altar): ele nasce agora e vai para a fila. *result: OK, NOT_RUNNING (sem fase ou completa),
+ * NO_BOSS, ALREADY_AWAKE ou TOO_EARLY (antes de despertar_onda; no enxame sempre pode). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_wake_boss(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Para a HUD e o bot: {"phase":""|id,"running","complete","wave","waves_total","swarm","loops","time":s,"deadline":s,
+ * "time_left":s,"wave_time":s,"wave_duration":s,"budget":n,"budget_left":n,"exhausted","alive","cap","boss":""|id,
+ * "wake_wave","can_wake":código de wake_boss,"boss_spawned","boss_alive","spawned","killed","pending"}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                size_t* needed) SHATTER_NOEXCEPT;
+/* As fases e ondas do CSV: {"phases":[{"id","deadline","ring_min","ring_max","boss","wake_wave","swarm":onda,
+ * "waves":[onda]}]}, onda = {"wave","duration","interval","batch","budget","cap","enemies":[{"id","weight","cost"}],
+ * "elites","elite_hp","elite_damage"}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_defs_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                     size_t* needed) SHATTER_NOEXCEPT;
+/* Estado canônico do spawner (relógio, orçamento, vivos e fila) em JSON; restaurar continua exatamente do mesmo ponto.
+ * Restore inválido: SHATTER_PARSE_ERROR e nada muda. Hash: SHA-256 hex do estado. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_state_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                      size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_state_restore(shatter_rogue* rogue, const char* json, size_t len,
+                                                                         shatter_error* err) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_state_hash(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                      size_t* needed) SHATTER_NOEXCEPT;
+
+/* --- API C 1.12: XP, nível, cartas de nível, baú, curva de horda, vida do chefe e modo horda (docs/09 seção 19) ---
+ * Dados opcionais: coluna `xp` em drops.csv; colunas `tipo` (ataque|defesa|utilidade) e `raridade` (comum|rara) em
+ * upgrades.csv; curva_horda.csv (fase, onda, vida, dano, velocidade, xp; onda = ondas + 1 é o enxame); chaves de
+ * run_settings xp_level_base, xp_level_step, level_cards, chest_cards, level_rerolls, level_skips, level_bans,
+ * boss_fight_time, boss_hp_min, boss_hp_max. Resultados: os de shatter_rogue_run_* (OK, WRONG_PHASE, NOT_OFFERED,
+ * UNKNOWN). */
+/* Modo horda: a corrida numa fase aberta com o spawner. Ligado, enemy_killed só soma o drop (a sala nunca limpa) e a
+ * corrida termina com horde_win. Só fora de corrida viva (senão WRONG_PHASE). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_horde_set(shatter_rogue* rogue, uint8_t on, int32_t* result) SHATTER_NOEXCEPT;
+/* Venceu a fase aberta: fase "won", + victory_fragments e skill_points_boss (grava o meta com o caminho ligado). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_horde_win(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* XP da gema (xp de drops.csv x xp_mult, arredondado) e se solta baú (elite e chest_cards > 0). Não muda nada. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_kill_xp(const shatter_rogue* rogue, const char* enemy_id, size_t enemy_id_len,
+                                                                    double xp_mult, uint8_t elite, int64_t* xp, uint8_t* chest,
+                                                                    int32_t* result) SHATTER_NOEXCEPT;
+/* Soma XP; *levels = níveis fechados agora. Cada nível vira uma oferta de level_cards cartas, ao menos uma de ataque. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_gain_xp(shatter_rogue* rogue, int64_t amount, int32_t* levels,
+                                                                    int32_t* result) SHATTER_NOEXCEPT;
+/* Baú pego: oferta de chest_cards cartas raras, depois das de nível pendentes. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_open_chest(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Escolhe uma carta da oferta atual (como run_choose_card: *hp_out com o ganho de hp_max) e abre a próxima. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_choose(shatter_rogue* rogue, const char* upgrade_id, size_t upgrade_id_len,
+                                                                   double hp, double* hp_out, int32_t* result) SHATTER_NOEXCEPT;
+/* Sorteia de novo, pula ou bane (uma carta da oferta, pelo resto da corrida; sorteia de novo). Sem oferta ou sem saldo:
+ * WRONG_PHASE. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_reroll(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_skip(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_ban(shatter_rogue* rogue, const char* upgrade_id, size_t upgrade_id_len,
+                                                                int32_t* result) SHATTER_NOEXCEPT;
+/* {"level","xp","xp_next","pending_levels","pending_chests","kind":""|"level"|"chest","offer":[id],"rerolls","skips",
+ * "bans","banned":[id],"horde"}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                 size_t* needed) SHATTER_NOEXCEPT;
+/* Curva da onda: {"hp","damage","speed","xp"} (1 sem linha). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_curve_json(const shatter_rogue* rogue, const char* phase_id, size_t phase_id_len,
+                                                                 int32_t wave, uint8_t* out, size_t cap, size_t* needed) SHATTER_NOEXCEPT;
+/* Vida do chefe adaptativa: dps x boss_fight_time, presa em [base x boss_hp_min, base x boss_hp_max]; sem a chave ou
+ * dps <= 0, a base. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_boss_hp(const shatter_rogue* rogue, double base_hp, double dps,
+                                                              double* hp_out) SHATTER_NOEXCEPT;
 
 #ifdef __cplusplus
 }  /* extern "C" */

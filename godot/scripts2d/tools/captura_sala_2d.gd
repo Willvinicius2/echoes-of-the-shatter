@@ -4,6 +4,10 @@ extends SceneTree
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 
 func _initialize() -> void:
+	# Vigia: se algo travar ou der erro depois de um await, o Godot ficaria vivo para sempre.
+	create_timer(60.0).timeout.connect(func():
+		push_error("captura_sala_2d: tempo esgotado (60 s)")
+		quit(2))
 	var args := OS.get_cmdline_user_args()
 	var saida: String = args[0] if args.size() > 0 else "captura_sala.png"
 	var sala: String = args[1] if args.size() > 1 else "res://data2d/rooms/sala_1.txt"

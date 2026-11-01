@@ -1,5 +1,6 @@
 #include "shatter_rogue_node.h"
 
+#include <cstdint>
 #include <functional>
 #include <vector>
 
@@ -242,6 +243,128 @@ Dictionary ShatterRogue::corrida_resumo() const {
     return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_run_summary_json(rogue_, o, c, n); });
 }
 
+// --- Habilidades por classe (API 1.10) ---
+ROGUE_ACAO_ID(classe_definir, shatter_rogue_class_set)
+ROGUE_ACAO_ID(habilidade_aprender, shatter_rogue_skill_learn)
+ROGUE_CONSULTA_ID(habilidade_pode_aprender, shatter_rogue_skill_can_learn)
+ROGUE_ACAO_RESULTADO(habilidades_redistribuir, shatter_rogue_skill_respec)
+
+Dictionary ShatterRogue::habilidades_estado() const {
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_skills_json(rogue_, o, c, n); });
+}
+
+Dictionary ShatterRogue::habilidade_def(const String& id, int nivel) const {
+    std::string s = utf8(id);
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) {
+        return shatter_rogue_skill_def_json(rogue_, s.data(), s.size(), nivel, o, c, n);
+    });
+}
+
+int ShatterRogue::habilidade_equipar(int slot, const String& id) {
+    std::string s = utf8(id);
+    int32_t r = -1;
+    shatter_rogue_skill_equip(rogue_, slot < 0 ? UINT32_MAX : static_cast<uint32_t>(slot), s.data(), s.size(), &r);
+    return r;
+}
+
+int ShatterRogue::habilidades_ganhar_pontos(int64_t pontos) {
+    int32_t r = -1;
+    shatter_rogue_skill_points_add(rogue_, pontos, &r);
+    return r;
+}
+
+void ShatterRogue::habilidades_tick(double dt) {
+    shatter_rogue_skill_tick(rogue_, dt);
+}
+
+int ShatterRogue::habilidade_pode_usar(int slot, double mana) const {
+    int32_t r = -1;
+    shatter_rogue_skill_can_use(rogue_, slot < 0 ? UINT32_MAX : static_cast<uint32_t>(slot), mana, &r);
+    return r;
+}
+
+Dictionary ShatterRogue::habilidade_usar(int slot, double mana) {
+    double custo = 0.0;
+    int32_t r = -1;
+    shatter_rogue_skill_commit_use(rogue_, slot < 0 ? UINT32_MAX : static_cast<uint32_t>(slot), mana, &custo, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["custo"] = custo;
+    return d;
+}
+
+double ShatterRogue::habilidade_recarga(int slot) const {
+    double f = 0.0;
+    shatter_rogue_skill_cooldown(rogue_, slot < 0 ? UINT32_MAX : static_cast<uint32_t>(slot), &f);
+    return f;
+}
+
+Dictionary ShatterRogue::aplicar_passivas(const Dictionary& base) const {
+    std::string j = utf8(JSON::stringify(base));
+    shatter_error err{};
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) {
+        return shatter_rogue_skill_passives_apply(rogue_, j.data(), j.size(), o, c, n, &err);
+    });
+}
+
+// --- Hordas (API 1.11) ---
+int ShatterRogue::ondas_iniciar(const String& fase, int64_t semente) {
+    std::string f = utf8(fase);
+    int32_t r = -1;
+    shatter_rogue_wave_start(rogue_, f.data(), f.size(), static_cast<uint64_t>(semente), &r);
+    return r;
+}
+
+void ShatterRogue::ondas_parar() {
+    shatter_rogue_wave_stop(rogue_);
+}
+
+Array ShatterRogue::ondas_tick(double dt) {
+    uint32_t n = 0;
+    shatter_rogue_wave_tick(rogue_, dt, &n);
+    Variant v = json_de([&](uint8_t* o, size_t c, size_t* m) { return shatter_rogue_wave_take_json(rogue_, o, c, m); });
+    return v.get_type() == Variant::ARRAY ? Array(v) : Array();
+}
+
+Dictionary ShatterRogue::ondas_morto(int64_t id) {
+    uint8_t completa = 0;
+    int32_t r = -1;
+    shatter_rogue_wave_killed(rogue_, id < 0 || id > static_cast<int64_t>(UINT32_MAX) ? 0u : static_cast<uint32_t>(id),
+                              &completa, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["completa"] = completa != 0;
+    return d;
+}
+
+int ShatterRogue::ondas_acordar_chefe() {
+    int32_t r = -1;
+    shatter_rogue_wave_wake_boss(rogue_, &r);
+    return r;
+}
+
+Dictionary ShatterRogue::ondas_estado() const {
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_wave_json(rogue_, o, c, n); });
+}
+
+Dictionary ShatterRogue::ondas_definicoes() const {
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_wave_defs_json(rogue_, o, c, n); });
+}
+
+String ShatterRogue::ondas_estado_texto() const {
+    return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_wave_state_json(rogue_, o, c, n); });
+}
+
+bool ShatterRogue::ondas_restaurar(const String& texto) {
+    std::string j = utf8(texto);
+    shatter_error err{};
+    return shatter_rogue_wave_state_restore(rogue_, j.data(), j.size(), &err) == SHATTER_OK;
+}
+
+String ShatterRogue::ondas_hash() const {
+    return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_wave_state_hash(rogue_, o, c, n); });
+}
+
 String ShatterRogue::estado_texto() const {
     return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_state_json(rogue_, o, c, n); });
 }
@@ -254,6 +377,89 @@ bool ShatterRogue::estado_restaurar(const String& texto) {
 
 String ShatterRogue::estado_hash() const {
     return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_state_hash(rogue_, o, c, n); });
+}
+
+// --- XP, nível, baú, curva e modo horda (API 1.12) ---
+int ShatterRogue::horda_definir(bool ligado) {
+    int32_t r = -1;
+    shatter_rogue_horde_set(rogue_, ligado ? 1 : 0, &r);
+    return r;
+}
+
+int ShatterRogue::horda_vencer() {
+    int32_t r = -1;
+    shatter_rogue_horde_win(rogue_, &r);
+    return r;
+}
+
+Dictionary ShatterRogue::nivel_xp_da_morte(const String& inimigo, double xp_mult, bool elite) const {
+    std::string s = utf8(inimigo);
+    int64_t xp = 0;
+    uint8_t bau = 0;
+    int32_t r = -1;
+    shatter_rogue_level_kill_xp(rogue_, s.data(), s.size(), xp_mult, elite ? 1 : 0, &xp, &bau, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["xp"] = xp;
+    d["bau"] = bau != 0;
+    return d;
+}
+
+Dictionary ShatterRogue::nivel_ganhar_xp(int64_t xp) {
+    int32_t niveis = 0, r = -1;
+    shatter_rogue_level_gain_xp(rogue_, xp, &niveis, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["niveis"] = niveis;
+    return d;
+}
+
+int ShatterRogue::nivel_abrir_bau() {
+    int32_t r = -1;
+    shatter_rogue_level_open_chest(rogue_, &r);
+    return r;
+}
+
+Dictionary ShatterRogue::nivel_escolher(const String& upgrade, double hp) {
+    std::string s = utf8(upgrade);
+    double hp_out = hp;
+    int32_t r = -1;
+    shatter_rogue_level_choose(rogue_, s.data(), s.size(), hp, &hp_out, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["hp"] = hp_out;
+    return d;
+}
+
+int ShatterRogue::nivel_sortear_de_novo() {
+    int32_t r = -1;
+    shatter_rogue_level_reroll(rogue_, &r);
+    return r;
+}
+
+int ShatterRogue::nivel_pular() {
+    int32_t r = -1;
+    shatter_rogue_level_skip(rogue_, &r);
+    return r;
+}
+
+ROGUE_ACAO_ID(nivel_banir, shatter_rogue_level_ban)
+
+Dictionary ShatterRogue::nivel_estado() const {
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_level_json(rogue_, o, c, n); });
+}
+
+Dictionary ShatterRogue::curva(const String& fase, int onda) const {
+    std::string f = utf8(fase);
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) {
+        return shatter_rogue_curve_json(rogue_, f.data(), f.size(), static_cast<int32_t>(onda), o, c, n);
+    });
+}
+
+double ShatterRogue::vida_chefe(double base, double dps) const {
+    double hp = base;
+    shatter_rogue_boss_hp(rogue_, base, dps, &hp);
+    return hp;
 }
 
 void ShatterRogue::_bind_methods() {
@@ -277,6 +483,18 @@ void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("corrida_iniciar", "semente", "base"), &ShatterRogue::corrida_iniciar);
     ClassDB::bind_method(D_METHOD("corrida_fase"), &ShatterRogue::corrida_fase);
     ClassDB::bind_method(D_METHOD("corrida_caminhos", "etapa"), &ShatterRogue::corrida_caminhos);
+    ClassDB::bind_method(D_METHOD("horda_definir", "ligado"), &ShatterRogue::horda_definir);
+    ClassDB::bind_method(D_METHOD("horda_vencer"), &ShatterRogue::horda_vencer);
+    ClassDB::bind_method(D_METHOD("nivel_xp_da_morte", "inimigo", "xp_mult", "elite"), &ShatterRogue::nivel_xp_da_morte);
+    ClassDB::bind_method(D_METHOD("nivel_ganhar_xp", "xp"), &ShatterRogue::nivel_ganhar_xp);
+    ClassDB::bind_method(D_METHOD("nivel_abrir_bau"), &ShatterRogue::nivel_abrir_bau);
+    ClassDB::bind_method(D_METHOD("nivel_escolher", "upgrade", "hp"), &ShatterRogue::nivel_escolher);
+    ClassDB::bind_method(D_METHOD("nivel_sortear_de_novo"), &ShatterRogue::nivel_sortear_de_novo);
+    ClassDB::bind_method(D_METHOD("nivel_pular"), &ShatterRogue::nivel_pular);
+    ClassDB::bind_method(D_METHOD("nivel_banir", "upgrade"), &ShatterRogue::nivel_banir);
+    ClassDB::bind_method(D_METHOD("nivel_estado"), &ShatterRogue::nivel_estado);
+    ClassDB::bind_method(D_METHOD("curva", "fase", "onda"), &ShatterRogue::curva);
+    ClassDB::bind_method(D_METHOD("vida_chefe", "base", "dps"), &ShatterRogue::vida_chefe);
     ClassDB::bind_method(D_METHOD("corrida_inimigo_morto", "inimigo"), &ShatterRogue::corrida_inimigo_morto);
     ClassDB::bind_method(D_METHOD("corrida_escolher_carta", "upgrade", "hp"), &ShatterRogue::corrida_escolher_carta);
     ClassDB::bind_method(D_METHOD("corrida_descansar", "hp"), &ShatterRogue::corrida_descansar);
@@ -288,6 +506,29 @@ void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("corrida_estado"), &ShatterRogue::corrida_estado);
     ClassDB::bind_method(D_METHOD("corrida_stats"), &ShatterRogue::corrida_stats);
     ClassDB::bind_method(D_METHOD("corrida_resumo"), &ShatterRogue::corrida_resumo);
+    ClassDB::bind_method(D_METHOD("classe_definir", "classe"), &ShatterRogue::classe_definir);
+    ClassDB::bind_method(D_METHOD("habilidades_estado"), &ShatterRogue::habilidades_estado);
+    ClassDB::bind_method(D_METHOD("habilidade_def", "id", "nivel"), &ShatterRogue::habilidade_def);
+    ClassDB::bind_method(D_METHOD("habilidade_pode_aprender", "id"), &ShatterRogue::habilidade_pode_aprender);
+    ClassDB::bind_method(D_METHOD("habilidade_aprender", "id"), &ShatterRogue::habilidade_aprender);
+    ClassDB::bind_method(D_METHOD("habilidade_equipar", "slot", "id"), &ShatterRogue::habilidade_equipar);
+    ClassDB::bind_method(D_METHOD("habilidades_redistribuir"), &ShatterRogue::habilidades_redistribuir);
+    ClassDB::bind_method(D_METHOD("habilidades_ganhar_pontos", "pontos"), &ShatterRogue::habilidades_ganhar_pontos);
+    ClassDB::bind_method(D_METHOD("habilidades_tick", "dt"), &ShatterRogue::habilidades_tick);
+    ClassDB::bind_method(D_METHOD("habilidade_pode_usar", "slot", "mana"), &ShatterRogue::habilidade_pode_usar);
+    ClassDB::bind_method(D_METHOD("habilidade_usar", "slot", "mana"), &ShatterRogue::habilidade_usar);
+    ClassDB::bind_method(D_METHOD("habilidade_recarga", "slot"), &ShatterRogue::habilidade_recarga);
+    ClassDB::bind_method(D_METHOD("aplicar_passivas", "base"), &ShatterRogue::aplicar_passivas);
+    ClassDB::bind_method(D_METHOD("ondas_iniciar", "fase", "semente"), &ShatterRogue::ondas_iniciar);
+    ClassDB::bind_method(D_METHOD("ondas_parar"), &ShatterRogue::ondas_parar);
+    ClassDB::bind_method(D_METHOD("ondas_tick", "dt"), &ShatterRogue::ondas_tick);
+    ClassDB::bind_method(D_METHOD("ondas_morto", "id"), &ShatterRogue::ondas_morto);
+    ClassDB::bind_method(D_METHOD("ondas_acordar_chefe"), &ShatterRogue::ondas_acordar_chefe);
+    ClassDB::bind_method(D_METHOD("ondas_estado"), &ShatterRogue::ondas_estado);
+    ClassDB::bind_method(D_METHOD("ondas_definicoes"), &ShatterRogue::ondas_definicoes);
+    ClassDB::bind_method(D_METHOD("ondas_estado_texto"), &ShatterRogue::ondas_estado_texto);
+    ClassDB::bind_method(D_METHOD("ondas_restaurar", "texto"), &ShatterRogue::ondas_restaurar);
+    ClassDB::bind_method(D_METHOD("ondas_hash"), &ShatterRogue::ondas_hash);
     ClassDB::bind_method(D_METHOD("estado_texto"), &ShatterRogue::estado_texto);
     ClassDB::bind_method(D_METHOD("estado_restaurar", "texto"), &ShatterRogue::estado_restaurar);
     ClassDB::bind_method(D_METHOD("estado_hash"), &ShatterRogue::estado_hash);

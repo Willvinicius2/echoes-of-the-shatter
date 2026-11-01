@@ -1,0 +1,2 @@
+Fonte: https://github.com/limbonaut/limbo_console (MIT), commit 8aca12a, v0.8.0
+Alteração local: fontes Monaspace Argon removidas (eram .otf no Git LFS, que esta sessão não consegue enviar); o tema usa a fonte padrão do Godot.
