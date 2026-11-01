@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Monta as folhas finais do Mago (128 px, 5 direções) a partir das folhas brutas geradas por IA.
 
-Uso: python3 tools/sprites/montar_mago.py [pasta_bruto] [pasta_saida]
+Uso: python3 tools/sprites2d/montar_mago.py [pasta_bruto] [pasta_saida]
 Entrada: docs/arte/sprites2d/mago/bruto/mago_<anim>.png (fundo transparente, quadros desalinhados).
 Saída: godot/art2d/sprites/mago/mago_<anim>.png, quadros de 128 com pés em (64,104). Ver docs/arte/25.
 

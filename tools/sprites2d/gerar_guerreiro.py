@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Gera as folhas 2D do Guerreiro (pixel art provisório, formato de docs/arte/25_formato_folhas_sprites_2d.md).
 
-Uso: python3 tools/sprites/gerar_guerreiro.py [pasta_saida]
+Uso: python3 tools/sprites2d/gerar_guerreiro.py [pasta_saida]
 Saída padrão: godot/art2d/sprites/guerreiro/guerreiro_<anim>.png (5 direções x N quadros de 128 px, pivô 64,104).
 Desenha em 64x64 sem suavização e amplia 2x (pixel art); o contorno escuro sai da máscara dilatada.
 """

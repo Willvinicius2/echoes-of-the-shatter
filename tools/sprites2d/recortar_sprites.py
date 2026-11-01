@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Recorta as folhas brutas da IA (fundo magenta) no formato de docs/arte/25_formato_folhas_sprites_2d.md.
 
-Uso: python tools/arte2d/recortar_sprites.py [saida_sprites] [saida_tiles]
+Uso: python tools/sprites2d/recortar_sprites.py [saida_sprites] [saida_tiles]
 Entrada: docs/arte/sprites2d/brutos/. Saída padrão: godot/art2d/sprites/<id>/<id>_<anim>.png e
 godot/art2d/tiles/cripta_tiles.png. O manifesto oficial é godot/data2d/sprites_manifest.csv (não é escrito aqui).
 """

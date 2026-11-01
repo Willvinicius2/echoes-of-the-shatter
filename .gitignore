@@ -40,3 +40,6 @@ __pycache__/
 
 node_modules/
 godot/gdextension/bin/
+
+# Cache local do TripoSG (gerado no PC)
+.tripo/
