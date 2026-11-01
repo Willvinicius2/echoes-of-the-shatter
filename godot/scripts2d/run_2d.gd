@@ -1,5 +1,8 @@
 extends Node2D
-## Corrida 2D: salas em sequência (data2d/run.csv), chefe na última, morte reinicia em segundos.
+## Corrida 2D: etapas em sequência (data2d/run.csv), chefe na última, morte reinicia em segundos.
+## Fase aberta (data2d/rooms/fase_*.txt, sem portas): um mapa grande para a corrida toda, a câmera segue o jogador,
+## cada etapa é uma onda que nasce fora da vista e, depois do chefe, um portal leva à vitória.
+## Salas antigas com porta `D` (24 x 13) continuam com câmera fixa e porta.
 ## O cliente só apresenta: o fluxo da corrida (etapas, rotas, cartas, ganhos, vitória e derrota) é do módulo `rogue` do ShatterCore.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
@@ -18,8 +21,9 @@ const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
+const PortalScript = preload("res://scripts2d/portal_2d.gd")
 
-enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO, ROTA }
+enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO, ROTA, PROXIMA }
 
 var config := {}
 var salas: Array = []     # caminho padrão (combate) de cada etapa, vindo do core
@@ -55,6 +59,8 @@ var vivos := 0
 var corridas := 0
 var _timer := 0.0
 var _estado_antes := Estado.LUTA
+var portal: Area2D          # saída da fase aberta, aberta depois do chefe
+var _pos_chefe := Vector2.ZERO
 
 func _ready() -> void:
 	config = Csv.kv("res://data2d/run_settings.csv")
@@ -173,25 +179,30 @@ func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 	if no.is_empty():
 		no = _no_do_core(nucleo.corrida_estado()["node"])
 	no_atual = no
-	if room != null:
-		room.queue_free()
 	for n in get_tree().get_nodes_in_group("hurtable"):
 		n.queue_free()
-	for n in atores.get_children():
-		if n != player:
-			n.queue_free()
-	room = RoomScript.new()
-	add_child(room)
-	move_child(room, 0)
-	room.carregar(no["room"])
-	room.colocar_props(atores)
-	room.porta_usada.connect(_on_porta)
-	player.global_position = room.spawn_jogador
-	player.velocity = Vector2.ZERO
+	# Fase aberta: o mapa fica de uma etapa para a outra (a onda seguinte nasce no mesmo mapa).
+	var manter: bool = i > 0 and room != null and is_instance_valid(room) and room.aberta()
+	if not manter:
+		if room != null:
+			room.queue_free()
+		for n in atores.get_children():
+			if n != player:
+				n.queue_free()
+		portal = null
+		_pos_chefe = Vector2.ZERO
+		room = RoomScript.new()
+		add_child(room)
+		move_child(room, 0)
+		room.carregar(no["room"])
+		room.colocar_props(atores)
+		room.porta_usada.connect(_on_porta)
+		player.global_position = room.spawn_jogador
+		player.velocity = Vector2.ZERO
 	hud.sala = i + 1
 	hud.mensagem = ""
 	hud.chefe = null
-	_ajustar_camera()
+	_ajustar_camera(not manter)
 	_spawn_inimigos(no["enemies"])
 	estado = Estado.LUTA
 	if no["tipo"] == "descanso":
@@ -205,15 +216,49 @@ func _descansar() -> void:
 	estado = Estado.LIMPA
 	_timer = config["clear_delay"]
 
-func _ajustar_camera() -> void:
+## Sala com porta: câmera fixa que cabe a sala inteira. Fase aberta: zoom do CSV, segue o jogador e para na borda do mapa.
+func _ajustar_camera(cortar := true) -> void:
 	var vp := get_viewport_rect().size
 	var tam: Vector2 = room.tamanho_px()
-	camera.position = tam / 2.0
-	var z := minf(vp.x / tam.x, vp.y / tam.y)
+	var cabe := minf(vp.x / tam.x, vp.y / tam.y)
+	if not room.aberta():
+		camera.position_smoothing_enabled = false
+		camera.limit_left = -10000000
+		camera.limit_top = -10000000
+		camera.limit_right = 10000000
+		camera.limit_bottom = 10000000
+		camera.position = tam / 2.0
+		camera.zoom = Vector2(cabe, cabe)
+		return
+	var z := maxf(float(config.get("camera_zoom", 1.0)), cabe)   # nunca mostra além da borda do mapa
 	camera.zoom = Vector2(z, z)
+	camera.limit_left = 0
+	camera.limit_top = 0
+	camera.limit_right = int(tam.x)
+	camera.limit_bottom = int(tam.y)
+	camera.position_smoothing_speed = float(config.get("camera_smoothing", 6.0))
+	camera.position_smoothing_enabled = camera.position_smoothing_speed > 0.0
+	camera.position = player.global_position
+	if cortar:
+		camera.reset_smoothing()
+
+## Área do mapa que o jogador vê agora (px), centrada nele e presa à borda como a câmera.
+func vista() -> Rect2:
+	var tam: Vector2 = get_viewport_rect().size / camera.zoom
+	var mapa: Vector2 = room.tamanho_px()
+	var canto := player.global_position - tam / 2.0
+	canto = Vector2(clampf(canto.x, 0.0, maxf(0.0, mapa.x - tam.x)), clampf(canto.y, 0.0, maxf(0.0, mapa.y - tam.y)))
+	return Rect2(canto, tam)
 
 func _spawn_inimigos(spec: String) -> void:
+	var total := 0
+	for parte in spec.split("|", false):
+		total += int(parte.split(":")[1])
 	var pontos: Array = room.spawns_inimigos.duplicate()
+	# Fase aberta: a primeira onda usa os pontos E (adormecida, perto do início); as outras nascem fora da vista.
+	if room.aberta() and (indice > 0 or pontos.is_empty()):
+		var t := float(room.tile)
+		pontos = room.pontos_fora_da_vista(vista(), float(config.get("spawn_margem_min", 1.0)) * t, float(config.get("spawn_margem_max", 4.0)) * t, maxi(total, 1), rng)
 	for i in range(pontos.size() - 1, 0, -1):
 		var j := rng.randi_range(0, i)
 		var tmp = pontos[i]
@@ -224,9 +269,14 @@ func _spawn_inimigos(spec: String) -> void:
 	for parte in spec.split("|", false):
 		var p := parte.split(":")
 		for n in int(p[1]):
-			var e: Node2D = (BossScript if Csv.enemy(p[0])["kind"] == "boss" else EnemyScript).new()
+			var chefe: bool = Csv.enemy(p[0])["kind"] == "boss"
+			var e: Node2D = (BossScript if chefe else EnemyScript).new()
 			atores.add_child(e)
-			e.setup(p[0], player, pontos[k % pontos.size()])
+			# Fase aberta: o chefe espera no lugar dele (G, na arena); o jogador vai até lá.
+			var onde: Vector2 = room.posicao_chefe if chefe and room.aberta() and room.posicao_chefe != Vector2.ZERO else pontos[k % pontos.size()]
+			e.setup(p[0], player, onde)
+			if chefe and room.aberta() and room.posicao_chefe != Vector2.ZERO:
+				_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
 			if indice == 0 and e.has_method("adormecer") and config.get("first_room_wake_radius", 0.0) > 0.0:
 				e.adormecer(config["first_room_wake_radius"])   # entrada calma: a sala só luta quando o jogador avança
 			e.died.connect(_on_inimigo_morto)
@@ -235,6 +285,8 @@ func _spawn_inimigos(spec: String) -> void:
 
 func _on_inimigo_morto(e) -> void:
 	vivos -= 1
+	if e.stats.get("kind", "") == "boss":
+		_pos_chefe = e.global_position
 	var r: Dictionary = nucleo.corrida_inimigo_morto(e.stats.get("id", ""))   # drops, sala limpa e cartas: regras do core
 	if r["sala_limpa"] and estado == Estado.LUTA:
 		estado = Estado.LIMPA
@@ -243,7 +295,7 @@ func _on_inimigo_morto(e) -> void:
 		_timer = config["clear_delay"]
 
 func _physics_process(delta: float) -> void:
-	if estado == Estado.LUTA or estado == Estado.LIMPA:
+	if estado == Estado.LUTA or estado == Estado.LIMPA or estado == Estado.PROXIMA:
 		tempo += delta
 	hud.tempo = tempo
 	if _timer > 0.0:
@@ -259,19 +311,70 @@ func _physics_process(delta: float) -> void:
 						ui.abrir(cartas)
 				Estado.MORTO, Estado.VENCEU:
 					_mostrar_fim()
+				Estado.PROXIMA:
+					estado = Estado.LIMPA
+					_on_porta()
+	if room != null and room.aberta() and estado != Estado.MENU:
+		camera.position = player.global_position
+		var v := vista()
+		room.seguir_vinheta(v.get_center(), v.size)
 
 func _abrir_porta() -> void:
+	if room.aberta():
+		_fim_da_onda()
+		return
 	room.abrir_porta()
 	Audio.tocar("door_open")
 	hud.mensagem = Csv.t("hud.rest" if no_atual["tipo"] == "descanso" else "hud.room_clear")
 	estado = Estado.LIMPA
 
+## Fase aberta: onda vencida leva à seguinte depois de uma pausa curta; depois do chefe, abre o portal.
+func _fim_da_onda() -> void:
+	if indice < salas.size() - 1:
+		hud.mensagem = Csv.t("hud.rest_open" if no_atual["tipo"] == "descanso" else "hud.wave_clear")
+		estado = Estado.PROXIMA
+		_timer = float(config.get("next_wave_delay", 1.5))
+		return
+	_abrir_portal()
+	hud.mensagem = Csv.t("hud.portal_open")
+	estado = Estado.LIMPA
+
+## Mensagem central que some sozinha depois de `tempo` s (se outra não tomou o lugar).
+func _avisar(texto: String, tempo: float) -> void:
+	hud.mensagem = texto
+	get_tree().create_timer(tempo, false).timeout.connect(func() -> void:
+		if is_instance_valid(hud) and hud.mensagem == texto:
+			hud.mensagem = "")
+
+func _abrir_portal() -> void:
+	if portal != null and is_instance_valid(portal):
+		return
+	var pos: Vector2 = room.posicao_portal if room.posicao_portal != Vector2.ZERO else _pos_chefe
+	if pos == Vector2.ZERO:
+		pos = player.global_position + Vector2(0, -room.tile * 3)
+	portal = Area2D.new()
+	portal.set_script(PortalScript)
+	portal.position = pos
+	portal.body_entered.connect(func(_c): _on_porta())
+	room.add_child.call_deferred(portal)
+	Audio.tocar("door_open")
+
 func _on_upgrade_escolhido(id: String) -> void:
 	upgrades.escolher(id, player)
 	_abrir_porta()
 
+## Posição da saída aberta (porta ou portal); Vector2.ZERO enquanto não há saída. Usada pelo bot e pelos testes.
+func posicao_saida() -> Vector2:
+	if room.aberta():
+		return portal.position if portal != null and is_instance_valid(portal) else Vector2.ZERO
+	return room._centro(room.celulas_porta[0].x, room.celulas_porta[0].y + 3) if room.celulas_porta.size() else Vector2.ZERO
+
 func _on_porta() -> void:
-	if estado != Estado.LIMPA or _timer > 0.0 or not room.celulas_porta.size():
+	if estado != Estado.LIMPA or _timer > 0.0:
+		return
+	if room.aberta() and indice == salas.size() - 1 and (portal == null or not is_instance_valid(portal)):
+		return
+	if not room.aberta() and not room.celulas_porta.size():
 		return
 	match nucleo.corrida_porta():
 		3:   # vitória na última sala
@@ -304,6 +407,9 @@ func escolher_rota(no: Dictionary) -> void:
 	_entrar_na_sala(no)
 
 func _entrar_na_sala(no: Dictionary) -> void:
+	if room.aberta():   # fase aberta: a próxima onda chega no mesmo mapa, sem fade
+		_carregar_sala(indice, no)
+		return
 	estado = Estado.TRANSICAO
 	menus.transicao(config["room_fade"], func(): _carregar_sala(indice, no))
 
@@ -357,7 +463,7 @@ func _on_jogar() -> void:
 	iniciar_corrida()
 
 func _on_pausa_pedida() -> void:
-	if estado != Estado.LUTA and estado != Estado.LIMPA:
+	if estado != Estado.LUTA and estado != Estado.LIMPA and estado != Estado.PROXIMA:
 		return
 	_estado_antes = estado
 	estado = Estado.PAUSA

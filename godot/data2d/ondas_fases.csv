@@ -1,0 +1,2 @@
+fase,prazo,raio_min,raio_max,chefe,despertar_onda,enxame_inimigos,enxame_orcamento,enxame_lote,enxame_intervalo,enxame_teto
+cripta,480,1150,1350,crypt_guardian,4,skeleton_soldier:3|ash_hound:3|crypt_bat:3|chain_wraith:2:2|cinder_archer:1:2,400,8,1.0,40

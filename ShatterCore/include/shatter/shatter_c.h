@@ -553,7 +553,7 @@ SHATTER_API shatter_status SHATTER_CALL shatter_save_collect_expedition(const sh
  *  - O que o chamador manda como resultado de expedição, tempo de início ou seed NÃO é confiável: o core recalcula
  *    a partir do estado salvo (shatter_save_collect_expedition_trusted, shatter_save_start_expedition_trusted).
  * ============================================================================================== */
-#define SHATTER_C_API_MINOR 10u   /* 10: árvore de habilidades por classe do rogue (shatter_rogue_class_*, shatter_rogue_skill*, docs/09 seção 17); 9: modo "cartas externas" do rogue (shatter_rogue_run_external_cards_set/_get, docs/09 seção 16.5); 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
+#define SHATTER_C_API_MINOR 11u   /* 11: spawner de hordas do rogue (shatter_rogue_wave_*, docs/09 seção 18); 10: árvore de habilidades por classe do rogue (shatter_rogue_class_*, shatter_rogue_skill*, docs/09 seção 17); 9: modo "cartas externas" do rogue (shatter_rogue_run_external_cards_set/_get, docs/09 seção 16.5); 8: roguelike 2D da Cripta: meta, Forja, cartas e fluxo da corrida (shatter_rogue_*, docs/09 seção 16); 7: core da Cripta: estado do mundo, baús, encontros sorteados, XP por morte, Fervor e tempo da arma (docs/09 seção 14); 6: economia do protótipo: Vendedor, recompra, Frasco de Recarga e Encantador (docs/09 seção 13); 5: combate básico: kits de classe, chaves do combo, defesa com arco, pierce, regen em movimento, recurso por golpe (docs/09 seção 12); 4: inventário, equipamento, venda, loot no chão (docs/09 seção 11); 3: fuga do inimigo no shatter_actor (docs/09 seção 10); 2: shatter_vitals.potion_barrier, layout ext completo, início confiável com relógio (docs/09 seção 9) */
 
 typedef struct shatter_potions shatter_potions;   /* cinto de poções de UM personagem (cargas, recarga, trava) */
 typedef struct shatter_actor shatter_actor;       /* stun, imunidades e Guarda Quebrada de UMA entidade */
@@ -1651,6 +1651,64 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_passives_apply(const
 /* Fração 0..1 da recarga do slot para a HUD (0 = pronto, slot vazio ou fora da faixa). */
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_skill_cooldown(const shatter_rogue* rogue, uint32_t slot,
                                                                      double* fraction_out) SHATTER_NOEXCEPT;
+
+/* --- Spawner de hordas do roguelike 2D (API 1.11; rogue_waves.h; docs/09 seção 18) ---
+ * O core decide quem nasce, quando e onde (anel ao redor do jogador); o cliente só instancia, move e luta. Dados (opcionais,
+ * em par): godot/data2d/ondas.csv (fase, onda, duracao, intervalo, lote, orcamento, teto, inimigos "id:peso" ou
+ * "id:peso:custo" separados por |, elites, elite_vida, elite_dano) e ondas_fases.csv (fase, prazo, raio_min, raio_max,
+ * chefe, despertar_onda e o enxame final: enxame_inimigos, enxame_orcamento, enxame_lote, enxame_intervalo, enxame_teto).
+ * Sem eles nenhuma fase existe e wave_start dá UNKNOWN.
+ * Regras: relógio inteiro em microssegundos; um lote no início da onda e depois a cada `intervalo`, até `lote` inimigos
+ * por vez sem passar do teto de vivos (o chefe não conta) nem do orçamento; tipo sorteado pelo peso entre os que cabem
+ * no orçamento; `elites` marcados espalhados pelo orçamento. A onda passa quando o orçamento acabou e (a duração passou
+ * ou ninguém está vivo); a última onda recomeça até o prazo. A partir de `despertar_onda` o jogador pode acordar o chefe
+ * (wave_wake_boss). No prazo as ondas param e vem o enxame final; o chefe acorda junto se ainda dormia. A fase termina
+ * quando o chefe morre (sem chefe: enxame gasto e ninguém vivo). Posição: "angle" (radianos, 0..2π) e "radius" (px, entre
+ * raio_min e raio_max) a partir do jogador; o cliente prende nas bordas do mapa. Sorteio: Pcg32 do fluxo RogueWave, um
+ * gerador por spawn (índice = id). Mesmo seed + dados + ações nos mesmos instantes = mesmos spawns e mesmo
+ * wave_state_hash, em 1 ou N ticks. Independente da corrida (shatter_rogue_run_*): drops e ganhos continuam por
+ * shatter_rogue_run_enemy_killed. */
+enum { SHATTER_ROGUE_WAVE_OK = 0, SHATTER_ROGUE_WAVE_UNKNOWN = 1, SHATTER_ROGUE_WAVE_NOT_RUNNING = 2,
+       SHATTER_ROGUE_WAVE_NOT_ALIVE = 3, SHATTER_ROGUE_WAVE_TOO_EARLY = 4, SHATTER_ROGUE_WAVE_ALREADY_AWAKE = 5,
+       SHATTER_ROGUE_WAVE_NO_BOSS = 6 };
+/* Começa a fase do zero (descarta a anterior, inclusive a fila). Fase que não existe: UNKNOWN e nada muda. O 1º lote nasce
+ * no primeiro wave_tick (instante 0). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_start(shatter_rogue* rogue, const char* phase_id, size_t phase_id_len,
+                                                                 uint64_t seed, int32_t* result) SHATTER_NOEXCEPT;
+/* Encerra a fase (jogador morreu ou saiu): vivos e fila vazios. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_stop(shatter_rogue* rogue) SHATTER_NOEXCEPT;
+/* Passa `dt` segundos (<= 0, NaN ou infinito: nada; acima de 60 s: cortado em 60). *spawned = quantos nasceram agora
+ * (vão para a fila). Sem fase ou com a fase completa: *spawned = 0. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_tick(shatter_rogue* rogue, double dt, uint32_t* spawned) SHATTER_NOEXCEPT;
+/* Entrega e esvazia a fila de nascidos: [{"id","enemy","elite","boss","wave" (ondas + 1 no enxame),"angle":radianos,
+ * "radius":px,"hp_mult","damage_mult"}], na ordem de nascimento. Com BUFFER_TOO_SMALL a fila fica. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_take_json(shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                     size_t* needed) SHATTER_NOEXCEPT;
+/* Morte (ou sumiço) de um spawn vivo, pelo id. *complete = 1 se a fase está completa agora. Sem fase: NOT_RUNNING; id
+ * que não está vivo: NOT_ALIVE (nada muda). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_killed(shatter_rogue* rogue, uint32_t spawn_id, uint8_t* complete,
+                                                                  int32_t* result) SHATTER_NOEXCEPT;
+/* O jogador acorda o chefe (altar): ele nasce agora e vai para a fila. *result: OK, NOT_RUNNING (sem fase ou completa),
+ * NO_BOSS, ALREADY_AWAKE ou TOO_EARLY (antes de despertar_onda; no enxame sempre pode). */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_wake_boss(shatter_rogue* rogue, int32_t* result) SHATTER_NOEXCEPT;
+/* Para a HUD e o bot: {"phase":""|id,"running","complete","wave","waves_total","swarm","loops","time":s,"deadline":s,
+ * "time_left":s,"wave_time":s,"wave_duration":s,"budget":n,"budget_left":n,"exhausted","alive","cap","boss":""|id,
+ * "wake_wave","can_wake":código de wake_boss,"boss_spawned","boss_alive","spawned","killed","pending"}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                size_t* needed) SHATTER_NOEXCEPT;
+/* As fases e ondas do CSV: {"phases":[{"id","deadline","ring_min","ring_max","boss","wake_wave","swarm":onda,
+ * "waves":[onda]}]}, onda = {"wave","duration","interval","batch","budget","cap","enemies":[{"id","weight","cost"}],
+ * "elites","elite_hp","elite_damage"}. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_defs_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                     size_t* needed) SHATTER_NOEXCEPT;
+/* Estado canônico do spawner (relógio, orçamento, vivos e fila) em JSON; restaurar continua exatamente do mesmo ponto.
+ * Restore inválido: SHATTER_PARSE_ERROR e nada muda. Hash: SHA-256 hex do estado. */
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_state_json(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                      size_t* needed) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_state_restore(shatter_rogue* rogue, const char* json, size_t len,
+                                                                         shatter_error* err) SHATTER_NOEXCEPT;
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_state_hash(const shatter_rogue* rogue, uint8_t* out, size_t cap,
+                                                                      size_t* needed) SHATTER_NOEXCEPT;
 
 #ifdef __cplusplus
 }  /* extern "C" */

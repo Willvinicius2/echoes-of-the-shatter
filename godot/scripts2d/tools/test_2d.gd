@@ -9,6 +9,7 @@ const RoomScript = preload("res://scripts2d/room_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 const GuerreiroTestes = preload("res://scripts2d/tools/test_guerreiro_2d.gd")
+const AutocastTestes = preload("res://scripts2d/tools/test_autocast_2d.gd")
 
 var falhas := 0
 
@@ -47,6 +48,7 @@ func _testar() -> void:
 	await _testar_mago()
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
+	await AutocastTestes.new(self, check).rodar()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -146,9 +148,16 @@ func _testar_salas() -> void:
 	for r in Csv.rows("res://data2d/run.csv"):
 		var sala = RoomScript.new()
 		check(sala.carregar(r["room"]), "carrega " + r["room"])
-		check(sala.colunas == 24 and sala.linhas == 13, "%s tem 24x13" % r["room"])
+		var aberta: bool = sala.aberta()
+		if aberta:   # fase aberta: mapa grande, sem porta, com portal X e chão livre para as ondas
+			check(sala.colunas >= 80 and sala.linhas >= 45, "%s: fase aberta grande (%dx%d)" % [r["room"], sala.colunas, sala.linhas])
+			check(sala.posicao_portal != Vector2.ZERO and sala.posicao_chefe != Vector2.ZERO, "%s tem lugar do chefe G e portal X" % r["room"])
+			check(sala.celulas_livres.size() > sala.colunas * sala.linhas * 0.35, "%s: ao menos 35%% do mapa livre para nascer" % r["room"])
+			check(sala.colunas * sala.linhas >= 24 * 13 * 25 * 2, "%s: área de ao menos 50 salas antigas" % r["room"])
+		else:
+			check(sala.colunas == 24 and sala.linhas == 13, "%s tem 24x13" % r["room"])
+			check(sala.celulas_porta.size() > 0, "%s tem porta" % r["room"])
 		check(sala.spawn_jogador != Vector2.ZERO and sala.spawns_inimigos.size() > 0, "%s tem P e E" % r["room"])
-		check(sala.celulas_porta.size() > 0, "%s tem porta" % r["room"])
 		check(sala.props.size() > 0, "%s tem props" % r["room"])
 		var ok_props := true
 		for pr in sala.props:
@@ -157,7 +166,7 @@ func _testar_salas() -> void:
 			ok_props = ok_props and FileAccess.file_exists(sala._props_arte[pr["id"]]["arquivo"])
 			# a coluna da porta (11 a 13) fica livre nas linhas 2 a 4
 			var solido: bool = float(sala._props_def[pr["id"]]["solido_l"]) > 0.0
-			ok_props = ok_props and not (solido and c.x >= 11 and c.x <= 13 and c.y >= 2 and c.y <= 4)
+			ok_props = ok_props and (aberta or not (solido and c.x >= 11 and c.x <= 13 and c.y >= 2 and c.y <= 4))
 		check(ok_props, "%s: props com arte, definição e porta livre" % r["room"])
 		sala.free()
 
@@ -360,7 +369,23 @@ func _testar_corrida() -> void:
 	p.auto_aim = Vector2.ZERO
 	check(not is_instance_valid(alvo) or alvo.hp < antes, "flechas ferem inimigo")
 
-	# Percorre todas as salas: mata tudo, espera a porta, atravessa.
+	# Fase aberta: a câmera segue o jogador e para na borda do mapa.
+	if run.room.aberta():
+		check(run.room.colunas * run.room.tile > run.get_viewport_rect().size.x * 2.0, "mapa maior que duas telas")
+		run.camera.position_smoothing_enabled = false
+		for alvo_cam in [run.room._centro(45, 25), run.room._centro(3, 4)]:
+			p.global_position = alvo_cam
+			await physics_frame
+			await physics_frame
+			await process_frame
+			alvo_cam = p.global_position
+			var meia: Vector2 = run.get_viewport_rect().size / run.camera.zoom / 2.0
+			var esperado := Vector2(clampf(alvo_cam.x, meia.x, run.room.tamanho_px().x - meia.x), clampf(alvo_cam.y, meia.y, run.room.tamanho_px().y - meia.y))
+			check(run.camera.get_screen_center_position().distance_to(esperado) < 8.0, "câmera segue o jogador e para na borda do mapa (%s)" % str(alvo_cam))
+		p.global_position = run.room.spawn_jogador
+		check(run.room.bordas_jogaveis().has_point(run.room.empurrar_para_dentro(Vector2(-500, -500))), "ponto fora do mapa é empurrado para dentro")
+		run._ajustar_camera()
+	# Percorre todas as etapas: mata tudo, espera a saída (porta antiga ou onda seguinte e portal no fim).
 	for i in run.salas.size():
 		check(run.indice == i, "estando na sala %d" % (i + 1))
 		run.matar_todos()
@@ -372,12 +397,12 @@ func _testar_corrida() -> void:
 		if i < run.salas.size() - 1:
 			check(run.estado == run.Estado.ESCOLHA and run.ui.aberta, "sala %d oferece cartas" % (i + 1))
 			run.ui.escolher(0)
-			check(run.estado == run.Estado.LIMPA and run.upgrades.niveis.size() > 0, "carta escolhida e porta aberta")
+			check(run.estado in [run.Estado.LIMPA, run.Estado.PROXIMA] and run.upgrades.niveis.size() > 0, "carta escolhida e saída aberta")
 		else:
 			check(run.estado == run.Estado.LIMPA, "sala do chefe não oferece cartas")
-		p.global_position = run.room._centro(12, 3)
-		p.auto_move = Vector2.UP
-		await _esperar(func(): return run.estado != run.Estado.LIMPA, 4.0)
+			check(run.posicao_saida() != Vector2.ZERO, "portal aberto depois do chefe")
+		_ir_para_saida(run, p)
+		await _esperar(func(): return run.estado != run.Estado.LIMPA and run.estado != run.Estado.PROXIMA, 4.0)
 		p.auto_move = Vector2.ZERO
 		if i < run.salas.size() - 1:
 			if run.caminhos_da_etapa(i + 1).size() > 1:
@@ -386,7 +411,13 @@ func _testar_corrida() -> void:
 				run.escolher_rota(run.opcoes_rota[0])
 				check(not paused, "escolher o caminho despausa")
 			await _esperar(func(): return run.estado == run.Estado.LUTA, 4.0)
-			check(run.indice == i + 1 and run.estado == run.Estado.LUTA, "porta leva à sala %d (com fade)" % (i + 2))
+			check(run.indice == i + 1 and run.estado == run.Estado.LUTA, "segue para a etapa %d" % (i + 2))
+			if run.room.aberta():
+				var v: Rect2 = run.vista()
+				var fora := true
+				for e in get_nodes_in_group("hurtable"):
+					fora = fora and not v.has_point(e.global_position)
+				check(fora, "onda %d nasce fora da vista" % (i + 2))
 		else:
 			check(run.estado == run.Estado.VENCEU, "vitória após o chefe")
 
@@ -418,6 +449,13 @@ func _testar_corrida() -> void:
 	paused = false
 	run.queue_free()
 
+## Leva o jogador à saída aberta (porta da sala antiga ou portal da fase aberta). Sem saída (fase aberta no meio), a onda seguinte vem sozinha.
+func _ir_para_saida(run, p) -> void:
+	var s: Vector2 = run.posicao_saida()
+	if s != Vector2.ZERO:
+		p.global_position = s
+		p.auto_move = Vector2.UP
+
 func _testar_rotas() -> void:
 	for r in Csv.rows("res://data2d/rota.csv"):
 		var sala = RoomScript.new()
@@ -435,8 +473,7 @@ func _testar_rotas() -> void:
 	run.matar_todos()
 	await _esperar(func(): return run._timer <= 0.0 and run.estado == run.Estado.ESCOLHA, 5.0)
 	run.ui.escolher(0)
-	p.global_position = run.room._centro(12, 3)
-	p.auto_move = Vector2.UP
+	_ir_para_saida(run, p)
 	await _esperar(func(): return run.estado == run.Estado.ROTA, 4.0)
 	p.auto_move = Vector2.ZERO
 	check(run.opcoes_rota.size() == 2 and run.opcoes_rota[1]["tipo"] == "elite", "etapa 2 oferece combate ou elite")
@@ -451,8 +488,7 @@ func _testar_rotas() -> void:
 	run.ui.escolher(0)
 	# etapa 3: combate ou descanso
 	p.hp = 10.0
-	p.global_position = run.room._centro(12, 3)
-	p.auto_move = Vector2.UP
+	_ir_para_saida(run, p)
 	await _esperar(func(): return run.estado == run.Estado.ROTA, 4.0)
 	p.auto_move = Vector2.ZERO
 	check(run.opcoes_rota.size() == 2 and run.opcoes_rota[1]["tipo"] == "descanso", "etapa 3 oferece combate ou descanso")
@@ -462,9 +498,8 @@ func _testar_rotas() -> void:
 	await _esperar(func(): return run._timer <= 0.0, 3.0)
 	await physics_frame
 	await physics_frame
-	check(run.estado == run.Estado.LIMPA and not run.ui.aberta and p.hp > 10.0 and p.hp <= p.stats["hp_max"], "descanso cura e abre a porta sem cartas")
-	p.global_position = run.room._centro(12, 3)
-	p.auto_move = Vector2.UP
+	check(run.estado in [run.Estado.LIMPA, run.Estado.PROXIMA, run.Estado.LUTA] and not run.ui.aberta and p.hp > 10.0 and p.hp <= p.stats["hp_max"], "descanso cura e segue sem cartas")
+	_ir_para_saida(run, p)
 	await _esperar(func(): return run.estado == run.Estado.LUTA and run.indice == 3, 4.0)
 	p.auto_move = Vector2.ZERO
 	check(run.indice == 3 and run.estado == run.Estado.LUTA, "do descanso direto ao chefe")
@@ -798,6 +833,7 @@ func _testar_abertura() -> void:
 	for e in adormecidos:
 		longe = minf(longe, e.global_position.distance_to(run.player.global_position))
 	check(longe > Csv.kv("res://data2d/run_settings.csv")["first_room_wake_radius"], "sala 1: jogador nasce fora do alcance dos inimigos")
+	run.player.autocast = false   # o tiro automático acordaria a sala; aqui só importa que eles não se mexem sozinhos
 	var e0 = adormecidos[0]
 	var pos0: Vector2 = e0.global_position
 	for i in 60:
@@ -983,6 +1019,7 @@ func _testar_habilidades_arqueiro() -> void:
 	for ramo in ["precisao", "cacada", "sombra"]:
 		check(ramos.has(ramo) and Csv.t("ramo.%s.name" % ramo) != "ramo.%s.name" % ramo, "ramo %s tem skills e texto" % ramo)
 	check(ativas >= 8, "ao menos 8 ativas (%d)" % ativas)
+	print("DBG paused ", paused, " ts ", Engine.time_scale)
 	var Efeitos = load("res://scripts2d/efeitos_arqueiro_2d.gd")
 	for r in rows:
 		if r["tipo"] != "ativa":

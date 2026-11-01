@@ -23,3 +23,4 @@
 #include "shatter/world.h"
 #include "shatter/story.h"
 #include "shatter/rogue.h"
+#include "shatter/rogue_waves.h"

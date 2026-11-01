@@ -47,7 +47,7 @@ static func enemy(id: String) -> Dictionary:
 ## Texto visível por chave de localização.
 static func t(key: String) -> String:
 	if _loc.is_empty():
-		for arq in ["res://data2d/loc_2d.csv", "res://data2d/loc_mago.csv"]:
+		for arq in ["res://data2d/loc_2d.csv", "res://data2d/loc_mago.csv", "res://data2d/loc_fase.csv"]:
 			for r in rows(arq):
 				_loc[r["chave"]] = r["pt"]
 	return _loc.get(key, key)

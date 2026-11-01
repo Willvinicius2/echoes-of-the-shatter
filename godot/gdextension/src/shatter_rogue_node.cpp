@@ -307,6 +307,64 @@ Dictionary ShatterRogue::aplicar_passivas(const Dictionary& base) const {
     });
 }
 
+// --- Hordas (API 1.11) ---
+int ShatterRogue::ondas_iniciar(const String& fase, int64_t semente) {
+    std::string f = utf8(fase);
+    int32_t r = -1;
+    shatter_rogue_wave_start(rogue_, f.data(), f.size(), static_cast<uint64_t>(semente), &r);
+    return r;
+}
+
+void ShatterRogue::ondas_parar() {
+    shatter_rogue_wave_stop(rogue_);
+}
+
+Array ShatterRogue::ondas_tick(double dt) {
+    uint32_t n = 0;
+    shatter_rogue_wave_tick(rogue_, dt, &n);
+    Variant v = json_de([&](uint8_t* o, size_t c, size_t* m) { return shatter_rogue_wave_take_json(rogue_, o, c, m); });
+    return v.get_type() == Variant::ARRAY ? Array(v) : Array();
+}
+
+Dictionary ShatterRogue::ondas_morto(int64_t id) {
+    uint8_t completa = 0;
+    int32_t r = -1;
+    shatter_rogue_wave_killed(rogue_, id < 0 || id > static_cast<int64_t>(UINT32_MAX) ? 0u : static_cast<uint32_t>(id),
+                              &completa, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["completa"] = completa != 0;
+    return d;
+}
+
+int ShatterRogue::ondas_acordar_chefe() {
+    int32_t r = -1;
+    shatter_rogue_wave_wake_boss(rogue_, &r);
+    return r;
+}
+
+Dictionary ShatterRogue::ondas_estado() const {
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_wave_json(rogue_, o, c, n); });
+}
+
+Dictionary ShatterRogue::ondas_definicoes() const {
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_wave_defs_json(rogue_, o, c, n); });
+}
+
+String ShatterRogue::ondas_estado_texto() const {
+    return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_wave_state_json(rogue_, o, c, n); });
+}
+
+bool ShatterRogue::ondas_restaurar(const String& texto) {
+    std::string j = utf8(texto);
+    shatter_error err{};
+    return shatter_rogue_wave_state_restore(rogue_, j.data(), j.size(), &err) == SHATTER_OK;
+}
+
+String ShatterRogue::ondas_hash() const {
+    return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_wave_state_hash(rogue_, o, c, n); });
+}
+
 String ShatterRogue::estado_texto() const {
     return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_state_json(rogue_, o, c, n); });
 }
@@ -366,6 +424,16 @@ void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("habilidade_usar", "slot", "mana"), &ShatterRogue::habilidade_usar);
     ClassDB::bind_method(D_METHOD("habilidade_recarga", "slot"), &ShatterRogue::habilidade_recarga);
     ClassDB::bind_method(D_METHOD("aplicar_passivas", "base"), &ShatterRogue::aplicar_passivas);
+    ClassDB::bind_method(D_METHOD("ondas_iniciar", "fase", "semente"), &ShatterRogue::ondas_iniciar);
+    ClassDB::bind_method(D_METHOD("ondas_parar"), &ShatterRogue::ondas_parar);
+    ClassDB::bind_method(D_METHOD("ondas_tick", "dt"), &ShatterRogue::ondas_tick);
+    ClassDB::bind_method(D_METHOD("ondas_morto", "id"), &ShatterRogue::ondas_morto);
+    ClassDB::bind_method(D_METHOD("ondas_acordar_chefe"), &ShatterRogue::ondas_acordar_chefe);
+    ClassDB::bind_method(D_METHOD("ondas_estado"), &ShatterRogue::ondas_estado);
+    ClassDB::bind_method(D_METHOD("ondas_definicoes"), &ShatterRogue::ondas_definicoes);
+    ClassDB::bind_method(D_METHOD("ondas_estado_texto"), &ShatterRogue::ondas_estado_texto);
+    ClassDB::bind_method(D_METHOD("ondas_restaurar", "texto"), &ShatterRogue::ondas_restaurar);
+    ClassDB::bind_method(D_METHOD("ondas_hash"), &ShatterRogue::ondas_hash);
     ClassDB::bind_method(D_METHOD("estado_texto"), &ShatterRogue::estado_texto);
     ClassDB::bind_method(D_METHOD("estado_restaurar", "texto"), &ShatterRogue::estado_restaurar);
     ClassDB::bind_method(D_METHOD("estado_hash"), &ShatterRogue::estado_hash);

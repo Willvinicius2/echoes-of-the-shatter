@@ -340,6 +340,10 @@ bool RogueData::LoadTableCsv(std::string_view table, std::string_view text) {
             if (IndexById(classes_, c.id) >= 0) bad(r, "duplicate id '" + c.id + "'");
             classes_.push_back(std::move(c));
         }
+    } else if (table == "ondas.csv") {
+        return LoadWavesCsv(text);
+    } else if (table == "ondas_fases.csv") {
+        return LoadWavePhasesCsv(text);
     } else {
         errors_.push_back({name, 0, "unknown rogue table"});
         return false;
@@ -466,6 +470,17 @@ bool RogueData::LoadDirectory(const std::string& dir) {
             ok = false;
         }
     }
+    // Ondas de horda: opcionais (API 1.11).
+    std::ifstream wavesIn(d / "ondas.csv", std::ios::binary);
+    if (wavesIn) {
+        const std::string text((std::istreambuf_iterator<char>(wavesIn)), std::istreambuf_iterator<char>());
+        ok = LoadWavesCsv(text) && ok;
+    }
+    std::ifstream phasesIn(d / "ondas_fases.csv", std::ios::binary);
+    if (phasesIn) {
+        const std::string text((std::istreambuf_iterator<char>(phasesIn)), std::istreambuf_iterator<char>());
+        ok = LoadWavePhasesCsv(text) && ok;
+    }
     return ok;
 }
 
@@ -477,6 +492,8 @@ bool RogueData::Finalize() {
     if (stages_.empty()) E("run.csv", "no rooms");
     for (const RouteRow& r : routes_)
         if (r.stage > static_cast<int>(stages_.size())) E("rota.csv", "etapa beyond run.csv: '" + r.node.id + "'");
+
+    CheckWaves();
 
     // Materiais conhecidos: drops e depois receitas, na ordem.
     materials_.clear();
