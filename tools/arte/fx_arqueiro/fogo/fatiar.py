@@ -17,13 +17,30 @@ def key(im):
     a[..., 0] -= spill * 0.6; a[..., 2] -= spill * 0.6
     return Image.fromarray(np.dstack([np.clip(a, 0, 255), alpha * 255]).astype(np.uint8), "RGBA")
 
+def cortes(alpha, n):
+    """n-1 cortes: perto de cada fronteira nominal (largura/n), no vale de menor massa de alfa (+-30% da celula)."""
+    mass = (alpha > 20).sum(axis=0).astype(float)
+    k = np.ones(9) / 9; mass = np.convolve(mass, k, mode="same")
+    cw = len(mass) / n; out = []
+    for i in range(1, n):
+        c = int(cw * i); lo, hi = int(c - cw * 0.3), int(c + cw * 0.3)
+        out.append(lo + int(np.argmin(mass[lo:hi])))
+    return out
+
 def fatia(src, dst, n, tam):
     im = key(Image.open(src))
+    al = np.asarray(im.split()[3])
     bb = im.split()[3].point(lambda v: 255 if v > 20 else 0).getbbox()
-    im = im.crop(bb)
-    cw = im.width / n
-    cells = [im.crop((round(cw * i), 0, round(cw * (i + 1)), im.height)) for i in range(n)]
-    esc = (tam * 0.96) / max(cw, im.height)   # fator único: quadros mantêm a proporção entre si
+    im = im.crop((0, bb[1], im.width, bb[3])); al = al[bb[1]:bb[3], :]
+    cs = cortes(al, n)
+    if len(cs) != n - 1: raise SystemExit(f"{src}: so achei {len(cs)+1} quadros, esperado {n}")
+    lim = [0] + cs + [im.width]
+    cells = []
+    for i in range(n):
+        c = im.crop((lim[i], 0, lim[i + 1], im.height))
+        bx = c.split()[3].point(lambda v: 255 if v > 20 else 0).getbbox()
+        cells.append(c.crop((bx[0], 0, bx[2], c.height)) if bx else c)
+    esc = (tam * 0.96) / max(max(c.width for c in cells), im.height)
     folha = Image.new("RGBA", (n * tam, tam), (0, 0, 0, 0))
     for i, c in enumerate(cells):
         c = c.resize((max(1, round(c.width * esc)), max(1, round(c.height * esc))), Image.LANCZOS)

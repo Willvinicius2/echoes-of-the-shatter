@@ -2,7 +2,7 @@
 Depois: python D:\\openclaude\\EchoesOfTheShatter\\docs\\arte\\referencias-geracao\\scripts\\gerar.py prompts_fogo.json <saida_bruta>
 e fatiar.py para cortar em folhas de quadros. Nomes e quadros devem bater com FOLHAS de godot/scripts2d/fogo_util_2d.gd."""
 import json
-REPO = r"D:\openclaude\EchoesOfTheShatter"
+REPO = "D:/openclaude/_trabalho-claude/wt/fx-fogo"
 REFS = [REPO + r"\docs\arte\sprites2d\capturas_cripta\sala1.png"]
 BASE = ("Sprite sheet for a dark fantasy top-down ARPG, hand-painted style with a dark outline, strong light from the top-left, "
         "matching the painterly look of the attached game screenshot (warm torch light, aged stone). It is NOT pixel art and NOT flat vector. "
@@ -14,10 +14,10 @@ FOLHAS = {
  "flecha_impacto": (8, "One-shot fire impact burst, small: spark flash, fire puff that expands, ember sparks fly outward, then dies into thin smoke. Centered, growing then fading across the frames."),
  "queimadura": (6, "Loop of a small burning overlay that sits on top of an enemy: several small licking flames and floating embers rising upward, base wide, tips flickering. Centered, small."),
  "meteoro_queda": (6, "Loop of a falling meteor fireball seen from the side while falling straight down: rocky glowing core, big flame tail streaming UPWARD behind it, sparks. Frames differ in flame flicker and rotation of the rock."),
- "meteoro_impacto": (8, "One-shot large meteor impact seen top-down at a 3/4 angle: white-hot flash, expanding fire shockwave ring, flying rock debris and embers, then a smoldering crater with smoke. Expands across the frames then fades."),
+ "meteoro_impacto": (8, "One-shot large meteor impact seen top-down at a 3/4 angle: white-hot flash, expanding fire shockwave ring, flying rock debris and embers, then a smoldering crater with smoke. Expands across the frames then fades. IMPORTANT: count carefully, the row must contain EIGHT frames (8), not seven."),
  "brasas_chao": (6, "Loop of a patch of scorched ground seen top-down at a 3/4 angle: dark cracked charred earth in a rough circle with glowing orange embers and small low flames pulsing. Round, centered, same footprint in every frame, only the glow pulses."),
  "muralha_chama": (8, "Loop of a single wall of flames segment seen from a 3/4 top-down angle: a thick column of fire rising from glowing embers on the ground, wide at the base, licking tongues of flame, sparks. Same base footprint in every frame, only the flames dance."),
- "arauto_aura": (6, "Loop of a faint ring aura of small floating ash and embers circling at a character's feet and waist, thin glowing orange wisps and grey ash flakes. Subtle, low intensity, centered."),
+ "arauto_aura": (6, "Loop of a faint ring aura of small floating ash and embers circling at a character's feet and waist, thin glowing orange wisps and grey ash flakes. Make it clearly visible and opaque, bright glowing ember wisps and solid grey ash flakes in ONE single flattened ring (not two stacked rings), fully opaque pixels, centered."),
  "arauto_explosao": (8, "One-shot explosion of fire made from ashes: a grey ash cloud flashes into an orange fireball that blows outward in a ring, ash flakes and embers fly out, then fade to falling ash. Centered, expanding then fading."),
 }
 ICONES = {
