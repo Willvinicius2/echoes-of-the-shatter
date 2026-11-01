@@ -67,3 +67,8 @@ Folhas em linha, fundo transparente, pintura à mão (doc 26), luz do alto à es
 | `fx_veneno_arauto_gatilho.png` | 8 x 128 | explosão da peste na morte |
 | `godot/art2d/ui/icone_{poison_arrow,venom_orb,corrosive_rain,herald_plague}.png` | 128 | ícones de gema/HUD |
 Estado da arte: ver o fim deste documento (atualizado a cada rodada de revisão).
+
+## Notas da referência de mecânica (thread de referências PoE 2, só régua)
+- Herald da Peste: além de espalhar o veneno, pode dar `chance_lentidao` nos vizinhos. Colunas sugeridas para o CSV (a integradora decide o nome final): `raio_propag`, `fracao_stacks` (quanto do veneno passa), `chance_lentidao`. O script já lê `raio`, `duracao`, `valor` hoje.
+- Veneno empilha e controla (lentidão); não é burst. A Bola de Veneno e a Chuva Corrosiva seguem isso (dano baixo por pulso, controle alto).
+- Ponte Veneno×Fogo (nuvem inflamável que detona com fogo) fica como ideia futura via `gatilha_em`; não entra nesta rodada.
