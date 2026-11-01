@@ -26,7 +26,7 @@ Regra de ouro: **a árvore define o estilo de jogo; a gema define a potência; a
 ## 3. Pipeline de modificadores
 Toda skill é uma linha base (CSV) mais uma lista de modificadores. Função pura `resolver(skill, mods, nivel_gema) -> def`, que devolve o mesmo `def` que os efeitos já recebem (`efeitos_arqueiro_*_2d.gd`), então **nenhum efeito precisa mudar de contrato**. Ordem de cálculo por campo:
 
-`final = (base + soma(add)) × (1 + escala × (nivel_gema − 1)) × (1 + soma(inc)) × produto(1 + mais_i)`, depois aplica os tetos (seção 3.3).
+`final = (base_escalonada + soma(add)) × (1 + soma(inc)) × produto(1 + mais_i)`, depois aplica os tetos (seção 3.3). `base_escalonada` é o que o core já devolve com o nível da gema (`escala`); o `add` entra depois, então "+1 projétil" é sempre +1, em qualquer nível.
 
 - `add`: soma plana (ex.: +1 projétil, +2 saltos).
 - `inc` ("aumentado"): percentuais **somados entre si** (ex.: +15% e +20% = +35%). É o que a maioria dos nós pequenos dá.
@@ -150,3 +150,17 @@ Critério de pronto: CSV validado, `test_2d.gd` com testes do resolver (ordem ad
 
 ## 11. Decisões tomadas e pontos abertos
 Decididas aqui (técnicas): grafo pequeno (76 nós) em vez de uma árvore gigante; `inc` somado e `mais` separado (como PoE 2); tags para alvo; uma forma por skill; resolver em GDScript no cliente; keystone limitado a 1; formas reaproveitam VFX. Abertas para a revisão final do Will, sem bloquear P1 a P4: (a) quantos pontos por onda (provisório); (b) se os keystones ficam na v1 ou entram depois do Guardião; (c) se gemas no nível 5 destravam slot extra de "Transforma"; (d) nomes finais dos nós (os daqui são provisórios).
+
+## 12. Implementado em 01/11/2026 (PR da árvore de passivos)
+O que está no `master` a partir deste PR, tudo no cliente 2D (GDScript) e nos CSV:
+- **Pipeline** (`godot/scripts2d/passivos_2d.gd`): `resolver(id, def, tags)` aplica `add`, `inc`, `mais` e `set` sobre o def que o core devolve (`habilidades_2d.def_nivel` passa a entregar o def já resolvido; `def_base` dá o sem passivos). Campos de habilidade: `dano, qtd, projeteis, angulo, raio, duracao, alcance, valor, vel, perfura, forma`; `projeteis` vira `qtd` nas habilidades com a tag `multi` e `proj_extra` (cópias em leque do mesmo tiro) nas demais. Nós `global` mexem nos stats do jogador (`arrow_damage`, `arrow_speed`, `arrow_count`, `arrow_pierce`, `crit_chance`, `crit_mult`, `speed`, `hp_max`, `shoot_cooldown`, `skill_cd_mult`...), por cima do que o core calculou.
+- **Tags** por habilidade em `godot/data2d/habilidades_tags.csv` (`classe,id,tags` com `+`), mais o ramo e o tipo da linha. O CSV de habilidades não ganhou coluna porque o core trata toda coluna nova como número.
+- **Tetos** em `godot/data2d/passivas_limites.csv`: `qtd_add_max`, `area_inc_max`, `angulo_max`, `vel_inc_max`, `vel_min`, `cd_min_frac`, `keystones_max`, `max_projeteis` (o `lancar_flecha` do jogador não cria flecha acima disso).
+- **Árvore v1** em `godot/data2d/passivas_arqueiro.csv`: 76 nós (1 raiz, 35 pequenos, 29 notáveis, 7 transforma, 4 keystones) em 8 setores (centro, precisão, caçada, sombra, raio, veneno, gelo, fogo), com `x,y` para o mapa, `vizinhos`, `exclui` e uma linha por modificador. Textos em `loc_2d.csv` (`passivo.<id>.name/desc`, `setor.<id>`).
+- **Formas** que os efeitos já entendem (`forma` no def): `espiral` (Leque em 360°), `lanca` (Disparo Carregado atravessa tudo), `anel` (Flecha Gélida solta lascas em volta do alvo), `bifurcado` (Raio Encadeado em dois ramos), `errante` (Tornado persegue), `brasas` (Meteoro em 3 quedas). `pustulas` (Bola de Veneno) só muda números por enquanto; `muro` (Chuva de Flechas) ficou para depois.
+- **Efeitos** leem `vel` (multiplica a velocidade), `perfura` (soma corpos atravessados) e `proj_extra` pelo `def` que passam ao `lancar_flecha`.
+- **UI**: a tecla T tem as abas Habilidades e Passivos; a de passivos desenha o grafo (linhas entre vizinhos, arrastar com o mouse ou setas), e a dica de cada nó mostra custo, efeito e a pré-visualização "antes → depois" nas habilidades aprendidas e nos stats.
+- **Pontos**: `passive_points_wave` por onda ou sala vencida e `passive_points_boss` pelo chefe (`run_settings.csv`), saldo permanente por classe em `user://passivos_2d.json`; redistribuir é de graça.
+- **Testes**: `_testar_passivos` em `scripts2d/tools/test_2d.gd` (fixture `data2d/testes/passivas_teste.csv`): ordem add/inc/mais/set, tetos, grafo, keystone, save, dados reais do arqueiro e a flecha lendo o def.
+
+Fica para depois (backlog, em ordem): `cd` e `custo` por habilidade ou tag exigem o core (hoje só `global` via `skill_cd_mult`; é contrato novo da API C, Opus); `chance_status`; formas `muro` e `pustulas` de verdade; ícones próprios dos nós; ligação com as cartas de nível (P5) e calibração pelo bot (P6); Guerreiro e Mago só precisam do CSV `passivas_<classe>.csv` e das tags.

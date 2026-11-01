@@ -30,6 +30,8 @@ func _testar() -> void:
 	preload("res://scripts2d/run_2d.gd").modo_etapas = true   # fluxo antigo de etapas; o modo horda tem o teste dele
 	preload("res://scripts2d/habilidades_2d.gd").caminho = "user://teste_habilidades_geral_2d.json"
 	DirAccess.remove_absolute("user://teste_habilidades_geral_2d.json")
+	preload("res://scripts2d/passivos_2d.gd").caminho = "user://passivos_teste_geral_2d.json"
+	DirAccess.remove_absolute("user://passivos_teste_geral_2d.json")
 	_testar_manifesto()
 	_testar_salas()
 	await _testar_upgrades()
@@ -43,6 +45,7 @@ func _testar() -> void:
 	await _testar_rotas()
 	await _testar_meta()
 	await _testar_habilidades()
+	await _testar_passivos()
 	await _testar_forja()
 	await _testar_opcoes_steam_tutorial()
 	await _testar_abertura()
@@ -792,6 +795,107 @@ func _testar_habilidades() -> void:
 	run.queue_free()
 	j.queue_free()
 	DirAccess.remove_absolute(Hab.caminho)
+## Árvore de passivos (passivos_2d.gd, doc 33): resolução (add/inc/mais/set), tetos, grafo, keystone, save e os dados
+## reais do arqueiro; a flecha lê vel, perfura e proj_extra do def resolvido.
+func _testar_passivos() -> void:
+	var Hab = preload("res://scripts2d/habilidades_2d.gd")
+	var Pas = preload("res://scripts2d/passivos_2d.gd")
+	Hab.caminho = "user://save_teste_pas_hab_2d.json"
+	Pas.caminho = "user://save_teste_pas_2d.json"
+	DirAccess.remove_absolute(Hab.caminho)
+	DirAccess.remove_absolute(Pas.caminho)
+	var csv := "res://data2d/testes/habilidades_teste.csv"
+	var fx := "res://scripts2d/tools/efeitos_teste_2d.gd"
+	var csv_pas := "res://data2d/testes/passivas_teste.csv"
+	var csv_tags := "res://data2d/testes/habilidades_tags_teste.csv"
+	var h = Hab.new()
+	h.carregar_classe("teste", csv, fx, csv_pas, csv_tags)
+	var p = h.passivos
+	check(p.ordem.size() == 12 and p.ativo("raiz") and p.pontos == 0, "carrega 12 nós e a raiz nasce ativa")
+	check(p.validar(h.ordem).is_empty(), "fixture válida: %s" % str(p.validar(h.ordem)))
+	check(h.tags_de("t_nova") == ["area", "multi", "fogo", "ativa"], "tags do CSV mais ramo e tipo: %s" % str(h.tags_de("t_nova")))
+	check(not p.pode_ativar("a1") and not p.ativar("a1"), "sem pontos não ativa")
+	p.ganhar_pontos(20)
+	check(not p.pode_ativar("a2"), "nó sem vizinho ativo fica bloqueado")
+	check(p.ativar("a1") and p.ativar("a2") and p.ativar("a3") and p.pontos == 16, "ativa a corrente e gasta 1+1+2")
+	var d: Dictionary = p.resolver("t_golpe", {"dano": 20.0}, ["projetil"])
+	check(is_equal_approx(d["dano"], 39.0), "dano = (20 + 0) × (1 + 0,1 + 0,2) × 1,5 = 39 (%s)" % str(d["dano"]))
+	check(d["perfura"] == 1.0 and d["vel"] == 1.0 and d["proj_extra"] == 0.0 and d["forma"] == "", "campos padrão presentes: perfura 1")
+	check(is_equal_approx(p.resolver("t_nova", {"dano": 40.0}, ["area", "multi"])["dano"], 40.0), "modificador de outra tag não vaza")
+	p.ativar("b1")
+	check(is_equal_approx(p.resolver("t_nova", {"raio": 120.0}, ["area"])["raio"], 300.0), "aumento de área preso ao teto de 150%% (%s)" % str(p.resolver("t_nova", {"raio": 120.0}, ["area"])["raio"]))
+	p.ativar("c1")
+	check(p.resolver("t_golpe", {"dano": 1.0}, ["projetil"])["proj_extra"] == 6.0, "projéteis em tiro simples viram cópias, presas ao teto 6")
+	p.ativar("b2")
+	check(p.resolver("t_nova", {"qtd": 2.0}, ["area", "multi"])["qtd"] == 3.0, "projéteis em habilidade multi somam em qtd")
+	p.ativar("b3")
+	var dn: Dictionary = p.resolver("t_nova", {"qtd": 2.0}, ["area", "multi"])
+	check(dn["forma"] == "anel" and dn["qtd"] == 7.0, "set troca a forma e fixa qtd")
+	# def do core passa pelos passivos
+	h.ganhar_pontos(3)
+	h.aprender("t_golpe")
+	check(is_equal_approx(h.def_nivel("t_golpe")["dano"], 39.0) and is_equal_approx(h.def_base("t_golpe")["dano"], 20.0), "def_nivel aplica os passivos sobre o def do core")
+	# globais, keystone e tetos de recarga
+	p.ativar("g1")
+	p.ativar("g2")
+	var s: Dictionary = h.aplicar_passivas({"hp_max": 100.0, "skill_cd_mult": 1.0})
+	check(is_equal_approx(s["hp_max"], 165.0), "global: (100 + 10) × 1,5 = 165 (%s)" % str(s["hp_max"]))
+	check(p.ativar("k1") and is_equal_approx(h.aplicar_passivas({"skill_cd_mult": 1.0})["skill_cd_mult"], 0.35), "keystone -90%% de recarga para no piso de 35%%")
+	check(not p.pode_ativar("k2"), "segundo keystone bloqueado (teto e exclusão)")
+	var previa: Array = p.previa("a1", {"t_golpe": {"dano": 20.0}}, {"t_golpe": ["projetil"]})
+	check(previa.is_empty(), "prévia de nó já ativo não muda nada")
+	p.redistribuir()
+	check(p.pontos == 20 and p.ativos.size() == 1 and p.ativo("raiz"), "redistribuir devolve tudo e deixa a raiz")
+	previa = p.previa("a1", {"t_golpe": {"dano": 20.0}}, {"t_golpe": ["projetil"]})
+	check(previa.size() == 1 and previa[0]["campo"] == "dano" and is_equal_approx(previa[0]["depois"], 22.0), "prévia antes → depois: 20 → 22")
+	p.ativar("a1")
+	var h2 = Hab.new()
+	h2.carregar_classe("teste", csv, fx, csv_pas, csv_tags)
+	check(h2.passivos.ativo("a1") and h2.passivos.pontos == 19, "nós e pontos voltam do save")
+	check(h.para_dicionario()["passivos"]["ativos"] == ["a1"], "para_dicionario inclui os passivos")
+
+	# Dados reais do arqueiro: grafo válido, textos, setores, e cada transforma mexe numa forma que o efeito conhece.
+	var ha = Hab.new()
+	ha.carregar_classe("arqueiro")
+	var pa = ha.passivos
+	check(pa.ordem.size() >= 60, "arqueiro tem ao menos 60 nós de passivo (%d)" % pa.ordem.size())
+	var erros: Array = pa.validar(ha.ordem)
+	check(erros.is_empty(), "passivas_arqueiro.csv válida: %s" % str(erros))
+	for id in pa.ordem:
+		check(Csv.t("passivo.%s.name" % id) != "passivo.%s.name" % id and Csv.t("passivo.%s.desc" % id) != "passivo.%s.desc" % id, "texto do passivo %s" % id)
+	for setor in pa.setores():
+		check(Csv.t("setor." + setor) != "setor." + setor, "texto do setor " + setor)
+	check(pa.contar_tipo("raiz") == 1 and pa.setores().size() == 8, "1 raiz e 8 setores")
+	var formas := {"espiral": true, "lanca": true, "anel": true, "bifurcado": true, "errante": true, "brasas": true, "pustulas": true}
+	for id in pa.ordem:
+		for m in pa.defs[id]["mods"]:
+			if m["campo"] == "forma":
+				check(formas.has(m["forma"]), "forma conhecida em %s: %s" % [id, m["forma"]])
+	var limites := Csv.kv("res://data2d/passivas_limites.csv")
+	check(limites.has("qtd_add_max") and limites.has("max_projeteis") and limites.has("keystones_max"), "passivas_limites.csv tem os tetos")
+	for id in ha.ordem:
+		if ha.eh_ativa(id):
+			check(not ha.tags_de(id).is_empty(), "ativa %s tem tags" % id)
+
+	# A flecha do jogador lê o def resolvido: velocidade, perfuração e cópias em leque.
+	var run = RunScene.instantiate()
+	run.com_menu = false
+	root.add_child(run)
+	await physics_frame
+	var jog = run.player
+	var vel_base: float = jog.stats["arrow_speed"]
+	var f = jog.lancar_flecha(Vector2.RIGHT, 1.0, 0, 1.0, {"vel": 2.0, "perfura": 3, "proj_extra": 2})
+	await physics_frame
+	check(is_equal_approx(f.velocity.length(), vel_base * 2.0) and f.pierce == 3, "flecha usa vel e perfura do def")
+	check(jog.get_tree().get_nodes_in_group("flecha_jogador").size() == 3, "proj_extra 2 lança 3 flechas em leque")
+	var antes_pts: int = jog.habilidades.passivos.pontos
+	run._pontos_passivos(false)
+	check(jog.habilidades.passivos.pontos == antes_pts + int(run.config["passive_points_wave"]), "onda vencida rende pontos de passivo")
+	run.queue_free()
+	DirAccess.remove_absolute(Hab.caminho)
+	DirAccess.remove_absolute(Pas.caminho)
+	Pas.caminho = "user://passivos_teste_geral_2d.json"
+
 ## Início do jogo: prólogo de Ilsa e Tico no primeiro Jogar, cartão da classe no título e primeira sala adormecida.
 func _testar_abertura() -> void:
 	var OpcoesScript = preload("res://scripts2d/opcoes_2d.gd")
