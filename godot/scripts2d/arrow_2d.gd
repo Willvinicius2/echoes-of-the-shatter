@@ -81,7 +81,7 @@ func _physics_process(delta: float) -> void:
 	global_position += passo
 	_viajado += passo.length()
 	if _trilha != null:
-		_trilha.add_point(vis.global_position)   # acompanha o desenho, que pode estar saindo do arco
+		_trilha.add_point(global_position + Vector2(0, -30))
 		if _trilha.get_point_count() > int(Feel.cfg()["arrow_trail_points"]):
 			_trilha.remove_point(0)
 	if _viajado >= max_dist:

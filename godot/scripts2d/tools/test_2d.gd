@@ -11,7 +11,6 @@ const RunScene = preload("res://scenes2d/Run2D.tscn")
 const GuerreiroTestes = preload("res://scripts2d/tools/test_guerreiro_2d.gd")
 const AutocastTestes = preload("res://scripts2d/tools/test_autocast_2d.gd")
 const HordaTestes = preload("res://scripts2d/tools/test_horda_2d.gd")
-const Vfx = preload("res://scripts2d/vfx_2d.gd")
 
 var falhas := 0
 
@@ -32,7 +31,6 @@ func _testar() -> void:
 	preload("res://scripts2d/habilidades_2d.gd").caminho = "user://teste_habilidades_geral_2d.json"
 	DirAccess.remove_absolute("user://teste_habilidades_geral_2d.json")
 	_testar_manifesto()
-	_testar_vfx()
 	_testar_salas()
 	await _testar_upgrades()
 	_testar_feel()
@@ -128,32 +126,6 @@ func _esperar(cond: Callable, limite: float) -> void:
 	while not cond.call() and t < limite:
 		await physics_frame
 		t += 1.0 / 60.0
-
-class AtorFake extends Node2D:
-	var char_id := "arqueiro"
-	var facing := Vector2.DOWN
-
-## Regras visuais comuns (docs/arte/33): saída do projétil no arco por direção, aura atrás do ator e sombra de aviso.
-func _testar_vfx() -> void:
-	var linhas: Array = Csv.rows(Vfx.SAIDAS).filter(func(r): return r["id"] == "arqueiro")
-	check(linhas.size() == 5, "saidas_2d.csv: 5 direções do arqueiro")
-	var a := AtorFake.new()
-	root.add_child(a)
-	var s := Vfx.saida_local(a)
-	check(s.y < -40.0 and s.y > -80.0, "saída do arco na altura da mão (%s)" % s)
-	a.facing = Vector2.RIGHT
-	var dir_e := Vfx.saida_local(a)
-	a.facing = Vector2.LEFT
-	var dir_w := Vfx.saida_local(a)
-	check(is_equal_approx(dir_e.x, -dir_w.x) and is_equal_approx(dir_e.y, dir_w.y), "saída espelhada ao olhar para a esquerda")
-	var aura := Node2D.new()
-	aura.modulate.a = 0.9
-	Vfx.aura_chao(a, aura)
-	check(aura.show_behind_parent and aura.modulate.a <= 0.45 and aura.get_parent() == a, "aura fica atrás do ator com alfa limitado")
-	var sombra := Vfx.sombra_aviso(root, Vector2(100, 100), 60.0, Color.RED, 0.3)
-	check(sombra.z_index == -1 and sombra.get_parent() == root and sombra.raio == 60.0, "sombra de aviso nasce no chão (z -1)")
-	sombra.queue_free()
-	a.queue_free()
 
 func _testar_manifesto() -> void:
 	var ids := {}

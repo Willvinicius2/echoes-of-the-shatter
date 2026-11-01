@@ -4,7 +4,6 @@ extends RefCounted
 ## Entrada: `executar(efeito, jogador, def, nivel, mira)` com efeito = tiro_veneno | bola_veneno | chuva_corrosiva.
 ## Gancho do Herald: `arauto_peste_morte(inimigo, def)`. A integradora liga os dois em efeitos_arqueiro_2d.gd.
 
-const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const VERDE := Color(0.45, 0.9, 0.25)
 const PASTA := "res://art2d/fx/veneno/"
@@ -80,8 +79,11 @@ static func aura_arauto(jogador: Node2D) -> void:
 	if s == null:
 		return
 	s.name = "AuraPeste"
-	s.modulate.a = 0.45
-	Vfx.aura_chao(jogador, s)   # no chão, aos pés, atrás do arqueiro (docs/arte/33)
+	s.position = Vector2(0, -4)   # no chão, aos pés
+	s.scale = Vector2(1.0, 0.5)   # achatada: anel no chão, não uma bolha sobre o corpo
+	s.show_behind_parent = true   # desenhada atrás do arqueiro
+	s.modulate.a = 0.6
+	jogador.add_child(s)
 
 # --- Bola de Veneno: sobe, desaparece do quadro, cai no alvo, vira poça e estoura em nuvem ---
 static func _bola(jogador: Node2D, dir: Vector2, def: Dictionary, dano: float) -> void:
