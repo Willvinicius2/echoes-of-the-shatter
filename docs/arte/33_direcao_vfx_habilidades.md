@@ -18,7 +18,7 @@ Do fundo para a frente. Todo efeito escolhe uma só camada; nenhuma aura atraves
 | C2 Ator | y-sort normal | arqueiro, inimigos |
 | C3 Em cima do ator | z 3 | overlay de status no inimigo (choque, frio, queimadura, veneno), faíscas |
 | C4 Projétil e impacto | z 4 | flecha, raio, explosão no alvo |
-| C5 Céu | z 5 | colunas que descem do alto (raio, meteoro), sombra de queda não, só o corpo caindo |
+| C5 Céu | z 5 | colunas que descem do alto (raio, meteoro) (só o corpo que cai; a sombra de aviso fica em C0) |
 
 Regras:
 - **Aura é C1, nunca C3.** Sempre atrás do arqueiro, centrada no tronco (≈ -34 px dos pés), diâmetro entre 1,1× e 1,4× a altura do sprite, alfa máximo 0,45. Se a leitura exigir algo à frente, vira **partículas pequenas orbitando** (≤ 8 px), nunca um quadro grande por cima.
