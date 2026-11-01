@@ -26,6 +26,7 @@ func rodar() -> void:
 	await _mago()
 	await _guerreiro()
 	await _mira_mouse()
+	await _linha_de_visao()
 
 func _esperar(cond: Callable, max_s: float) -> void:
 	var t0 := Time.get_ticks_msec()
@@ -186,5 +187,38 @@ func _mira_mouse() -> void:
 	var alvo: Dictionary = p.habilidades.alvo_auto("power_shot", t, p.global_position, 1000.0)
 	check.call(not alvo.is_empty() and alvo["dir"].dot(Vector2.RIGHT) > 0.95, "alvo_auto acha o inimigo à direita")
 	Alvos.mira_mouse = false
+	mundo.queue_free()
+	await t.physics_frame
+
+## Inimigo atrás de um muro (camada 1) não vira alvo: nada dispara e a recarga não vai embora. Sem o muro, dispara.
+func _linha_de_visao() -> void:
+	var mundo := _mundo()
+	var p = PlayerScript.new()
+	p.god_mode = true
+	mundo.add_child(p)
+	var muro := StaticBody2D.new()
+	muro.collision_layer = 1
+	muro.collision_mask = 0
+	var cs := CollisionShape2D.new()
+	var forma := RectangleShape2D.new()
+	forma.size = Vector2(20, 400)
+	cs.shape = forma
+	muro.add_child(cs)
+	muro.position = Vector2(150, 0)
+	mundo.add_child(muro)
+	await t.physics_frame
+	var e := _inimigo(mundo, p, p.global_position + Vector2(300, 0))
+	_equipar(p, ["power_shot"])
+	for _i in 40:
+		await t.physics_frame
+	check.call(not p.habilidades.recargas.has("power_shot") and is_equal_approx(e.hp, 5000.0), "linha de visão: inimigo atrás do muro não é alvo")
+	check.call(p.habilidades.alvo_auto("basico", t, p.global_position, 1000.0).is_empty(), "linha de visão: básico também não mira no muro")
+	check.call(not Alvos.ve(t, p.global_position, e.global_position), "Alvos.ve enxerga o muro")
+	muro.queue_free()
+	await t.physics_frame
+	await _esperar(func(): return p.habilidades.recargas.has("power_shot"), 3.0)
+	check.call(p.habilidades.recargas.has("power_shot"), "linha de visão: sem o muro, dispara")
+	# `si` (em volta) não depende de ver: a nova acerta quem está encostado mesmo atrás de uma quina
+	check.call(not Alvos.escolher(t, p.global_position, "si", 400.0, 1, 0.0).is_empty(), "mira si não exige linha de visão")
 	mundo.queue_free()
 	await t.physics_frame

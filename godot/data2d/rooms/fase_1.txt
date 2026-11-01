@@ -10,31 +10,31 @@ mmm......................................mmmmmmmmmmmmmmmmm.....mmmmmmmmmmmmmmm..
 mmm.......................................mmmmmmmmmmmmmmm........mmmmmmmmmmmmm......mm..........................mmmmmmmmm............mmmmmmmmmm............mmmmmmmmmmmmmmmmmmmmmmmmm
 mmm...........................................mmmmmmmmmm..........mmmmmmmmmmmm......m...........................mmmmmmmmmm..............mmmmmmm.....................mmmmmmmmmmmmmmmm
 mmmm..............................................mmmmmm...........mmmmmmmmmm...................................mmmmmmmmmm.................mmm...........................mmmmmmmmmmm
-mmmm................................................................mmmmmmm.....................................mmmmmmmmm..........................rrrrrrr...............mmmmmmmmmmm
-mmmmm.................................................................mmm.......................................mmmmmmmmm........................rr.......rr..............mmmmmmmmmm
-mmmmm............................................................................................................mmmmmmm.......................rr...........rr.............mmmmmmmmm
-mmmmm..............................................................................................................mm.........................r...............r.............mmmmmmmm
-mmmmmm............................................................B..........................................................................r.................r............mmmmmmmm
-mmmmmm......................................................................................................................................r...................r...........mmmmmmmm
-mmmmmm......................................................................................................................................r..B.............B..r............mmmmmmm
-mmmmmm.....................................................................................................................................r.....................r...........mmmmmmm
-mmmmmmm....................................................................................................................................r.........rrr.........r...........mmmmmmm
-mmmmmmm...................................................................................................................................r........rr.G.rr........r..........mmmmmmm
-mmmmmmm...................................................................................................B........................................r.....r........r..........mmmmmmm
-mmmmmmm...........................................................................................................................................r.......r.......r..........mmmmmmm
-mmmmmmm...........................................................................................................................................r.......r.......r..........mmmmmmm
-mmmmmmm...................................................................................................................................r.......r.......r.......r.........mmmmmmmm
-mmmmmmm....................................mmmmm..........................................................................................r........r.....r........r.........mmmmmmmm
-mmmmmmm..................................mmmmmmmm............mmmmm........................................................................r........rr...rr........r.........mmmmmmmm
-mmmmmmm.................................mmmmmmmmmm..........mmmmmmm........................................................................r.........rXr.........r..........mmmmmmmm
-mmmmmm.................................mmmmmmmmmmmm........mmmmmmmmm.......................................................................r.....................r..........mmmmmmmm
-mmmmmm................................mmmmmmmmmmmmmm.......mmmmmmmmm..................................................######...................B.............B..r.....#.....mmmmmmmm
-mmmmm................................mmmmmmmmmmmmmmm........mmmmmmmm..................................................#.........................................r.....#.....mmmmmmmm
-mmmmm................................mmmmmmmmmmmmmmm........mmmmmmm...................................................#......................r.................r......#......mmmmmmm
-mmmmm................................mmmmmmmmmmmmmmm.........mmmmmm................................mmm................#.......................r...............r.......#......mmmmmmm
-mmmmm................................mmmmmmmmmmmmmmm..........mmmm.................................mmmm...............#........................rr...........rr........#......mmmmmmm
-mmmmm................................mmmmmmmmmmmmmmm................................................mmmm.........................................rr.......rr..........#.......mmmmmm
-mmmmm................................mmmmmmmmmmmmmmm................................................mmmmm..........................................rrrrrrr....................mmmmmm
+mmmm................................................................mmmmmmm.....................................mmmmmmmmm................................................mmmmmmmmmmm
+mmmmm.................................................................mmm.......................................mmmmmmmmm.................................................mmmmmmmmmm
+mmmmm............................................................................................................mmmmmmm...................................................mmmmmmmmm
+mmmmm..............................................................................................................mm.......................................................mmmmmmmm
+mmmmmm............................................................B.........................................................................................................mmmmmmmm
+mmmmmm......................................................................................................................................................................mmmmmmmm
+mmmmmm.........................................................................................................................................B.............B...............mmmmmmm
+mmmmmm.......................................................................................................................................................................mmmmmmm
+mmmmmmm......................................................................................................................................................................mmmmmmm
+mmmmmmm...............................................................................................................................................G......................mmmmmmm
+mmmmmmm...................................................................................................B..................................................................mmmmmmm
+mmmmmmm......................................................................................................................................................................mmmmmmm
+mmmmmmm......................................................................................................................................................................mmmmmmm
+mmmmmmm.....................................................................................................................................................................mmmmmmmm
+mmmmmmm....................................mmmmm............................................................................................................................mmmmmmmm
+mmmmmmm..................................mmmmmmmm............mmmmm..........................................................................................................mmmmmmmm
+mmmmmmm.................................mmmmmmmmmm..........mmmmmmm...................................................................................X.....................mmmmmmmm
+mmmmmm.................................mmmmmmmmmmmm........mmmmmmmmm........................................................................................................mmmmmmmm
+mmmmmm................................mmmmmmmmmmmmmm.......mmmmmmmmm..................................................######...................B.............B........#.....mmmmmmmm
+mmmmm................................mmmmmmmmmmmmmmm........mmmmmmmm..................................................#...............................................#.....mmmmmmmm
+mmmmm................................mmmmmmmmmmmmmmm........mmmmmmm...................................................#...............................................#......mmmmmmm
+mmmmm................................mmmmmmmmmmmmmmm.........mmmmmm................................mmm................#...............................................#......mmmmmmm
+mmmmm................................mmmmmmmmmmmmmmm..........mmmm.................................mmmm...............#...............................................#......mmmmmmm
+mmmmm................................mmmmmmmmmmmmmmm................................................mmmm..............................................................#.......mmmmmm
+mmmmm................................mmmmmmmmmmmmmmm................................................mmmmm.....................................................................mmmmmm
 mmmmm.................................mmmmmmmmmmmmm.................................................mmmmm.....................................................................mmmmmm
 mmmmm.................................mmmmmmmmmmmm.......m...........................................mmmmm.....................................................................mmmmm
 mmmmm..................................mmmmmmmmmm......mmmmmm........................................mmmmm...............................................................mm....mmmmm
@@ -142,6 +142,8 @@ mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 @lajes claro 4.5 162.1,33.8
 @lajes claro 5.7 102.7,89.6
 @lajes claro 5.2 107.3,58.3
+@anel 1 0.9
+@anel 2 0.7 sigilo
 @props
 tree_dry_orange 26.7 1.1
 tree_dead_webs 120.2 1.3 flip
@@ -209,6 +211,7 @@ tree_dead_webs 118.8 6.3
 flowers_dead 8.7 6.4
 flowers_dead 29.2 6.4 flip
 tree_dry_pile 110.9 6.4 flip
+bush_dry_tangled 122.7 6.4
 tree_dry_orange 93.5 6.5 flip
 tree_dry_pile 96.9 6.5 flip
 bush_dry_wide 116.6 6.5
@@ -223,7 +226,6 @@ tree_dry_pile 62.3 6.8
 flowers_dead 5.3 6.9
 ferns_withered 24.7 6.9 flip
 tree_dry_pile 88.4 6.9 flip
-skull_single 123.5 6.9
 tree_dry_orange 44.7 7.1 flip
 tree_dry_pile 152.3 7.1 flip
 tree_dead_medium 114.9 7.2 flip
@@ -246,6 +248,7 @@ flowers_dead 36.9 7.8 flip
 bush_dry_tangled 39.2 7.8
 tree_hollow 98.9 7.8
 tree_hollow 130.4 7.9 flip
+bush_dry_wide 147.1 7.9 flip
 leaves_pile 24.8 8.1
 flowers_dead 29.8 8.1
 bush_dry_wide 86 8.1
@@ -287,14 +290,12 @@ branches_fallen 106.4 9.5
 leaves_pile 91 9.6
 branches_fallen 108.3 9.6
 thistles_dry 114.6 9.6
+leaves_scattered 149 9.6 flip
 bush_dry_round 65.7 9.7
-leaves_scattered 130.2 9.7 flip
-ferns_withered 148 9.7 flip
 tree_dead_webs 42.2 9.8 flip
 tree_dry_small 89.3 9.8
 tree_dry_pile 139.5 9.8
 ferns_withered 146.3 9.8
-flowers_dead 153.2 9.8 flip
 leaves_pile 22.6 9.9 flip
 flowers_dead 78.1 9.9
 pillar_fallen 100.5 9.9 flip
@@ -310,7 +311,6 @@ tree_dry_large 171.8 10.2
 leaves_scattered 14.9 10.3
 reeds_dry 82.4 10.3
 grass_dry_patch 96.4 10.3
-flowers_dead 109.3 10.3 flip
 leaves_pile 111 10.3 flip
 bush_dry_tangled 119.2 10.3 flip
 tree_hollow 55.7 10.4
@@ -331,8 +331,10 @@ tree_dry_large 53.3 10.9 flip
 leaves_scattered 62 10.9 flip
 branches_fallen 159.7 10.9 flip
 reeds_dry 77.8 11.1 flip
+ferns_withered 108.8 11.1
 grass_dry_patch 8.6 11.2
 shrub_dry_tall 35.5 11.2
+leaves_scattered 156.3 11.3
 leaves_pile 130.9 11.5
 grass_dry_tall 138.7 11.5 flip
 bush_dry_tangled 143.8 11.5
@@ -347,33 +349,32 @@ grass_dry_tall 97.4 11.8 flip
 shrub_dry_tall 135.9 11.8
 flowers_dead 140.7 11.9
 grass_dry_tall 91.1 12 flip
-bush_dry_tangled 160.8 12
 leaves_pile 16.3 12.1
 thistles_dry 47.9 12.1
 tree_dry_pile 70.5 12.1 flip
 grass_dry_tall 142.5 12.1
 reeds_dry 98.3 12.2
 tree_dry_small 87.3 12.3
-grass_dry_patch 109.2 12.3
 thistles_dry 134.5 12.3 flip
-leaves_scattered 156.7 12.3
-grass_dry_tall 158.1 12.3
-bush_dry_round 163.1 12.3
 bush_dry_round 56.3 12.5
 branches_fallen 84.7 12.5
 tree_dead_webs 89.5 12.5
+leaves_scattered 109.2 12.5
 tree_teal_leaves 119.3 12.5 flip
+bush_dry_tangled 166.7 12.5 flip
 grass_dry_patch 12.8 12.6
 pillar_fallen 123.8 12.6 flip
-leaves_scattered 155.2 12.6
+flowers_dead 152.5 12.6 flip
 thistles_dry 39.7 12.7
 bush_dry_tangled 138.3 12.7
+leaves_scattered 151.2 12.7 flip
 thistles_dry 99.1 12.8 flip
 thistles_dry 139.8 12.8
-leaves_scattered 150.9 12.8
+rock_rubble 154.6 12.8
 thistles_dry 53.7 12.9
 flowers_dead 121.8 12.9
 grass_dry_patch 35.1 13
+flowers_dead 155.7 13
 flowers_dead 164.3 13 flip
 grass_dry_tall 28.9 13.1
 tree_dead_large 72.8 13.1
@@ -383,29 +384,30 @@ pillar_fallen 101.9 13.1
 rock_large 18.4 13.2
 grass_dry_patch 75.7 13.2 flip
 thistles_dry 132.6 13.2 flip
+flowers_dead 149.9 13.2 flip
+grass_dry_patch 159.7 13.2
 leaves_pile 10.9 13.3
 grass_dry_tall 14.6 13.3
 pillar_fallen 126.7 13.3 flip
 pillar_tall 142 13.3
-ferns_withered 145.8 13.3
 pillar_tall 158 13.3
 tree_dry_pile 171.2 13.3 flip
 shrub_dry_tall 85.7 13.4
 pillar_broken 106.8 13.4 flip
 bush_dry_wide 131.2 13.4
-leaves_scattered 153.4 13.4 flip
 flowers_dead 173.2 13.4
 reeds_dry 79.3 13.5
+ferns_withered 153.6 13.5
 tree_dry_orange 4.7 13.6 flip
 leaves_pile 59.3 13.6
 shrub_dry_tall 168.4 13.6
 tree_dead_webs 1.2 13.7
 thistles_dry 52.5 13.7
 flowers_dead 7.2 13.8 flip
-leaves_scattered 108.8 13.8 flip
 grass_dry_tall 111.1 13.8
 tree_dry_orange 112.9 13.8
-ferns_withered 144.5 13.8 flip
+rock_rubble 146.4 13.8
+skull_single 144.8 13.9 flip
 bush_dry_tangled 16 14
 grass_dry_tall 27.4 14
 grass_dry_tall 28.5 14
@@ -418,97 +420,101 @@ thistles_dry 26.5 14.3 flip
 bush_dry_round 70.5 14.3
 leaves_scattered 89.8 14.3
 tree_dry_orange 115.3 14.3
-grass_dry_patch 160.5 14.3
+skull_single 160.6 14.3
 shrub_dry_tall 37.6 14.4
 leaves_pile 20.4 14.5 flip
 flowers_dead 80.2 14.5 flip
+leaves_scattered 143.7 14.5 flip
 grass_dry_tall 9.7 14.6 flip
 thistles_dry 135.4 14.6
-bush_dry_wide 163.1 14.6
+leaves_scattered 155.8 14.6 flip
 grass_dry_patch 35.2 14.7 flip
 branches_fallen 120.8 14.7
 grass_dry_tall 28 14.8 flip
 bush_dry_round 68.9 14.8
 tree_hollow 118.1 14.8 flip
 rock_slabs 12.6 14.9
-grass_dry_patch 107.9 14.9 flip
-skull_single 156.9 14.9
+flowers_dead 156.9 14.9
 leaves_scattered 161.7 14.9
-rock_rubble 139.3 15
 rock_large 45.2 15.1 flip
 reeds_dry 78.9 15.1
+bush_dry_wide 99.8 15.1 flip
+bush_dry_tangled 166.1 15.1
 leaves_scattered 87.7 15.2
 leaves_scattered 131.5 15.2 flip
 tree_dry_leaning 63.2 15.3
 leaves_pile 93.9 15.3
-flowers_dead 106.7 15.3 flip
 thistles_dry 2.7 15.4 flip
 leaves_pile 91.8 15.4 flip
 tree_teal_leaves 173.4 15.4 flip
 shrub_dry_tall 5.7 15.5
 bush_dry_wide 50.5 15.5
+ferns_withered 106.3 15.5
 grass_dry_tall 16.7 15.6
 tree_dead_medium 24.4 15.6
+ferns_withered 129.3 15.6 flip
 leaves_pile 101.5 15.7
 bush_thorny 113.2 15.7 flip
 bush_thorny 15.3 15.9
 grass_dry_tall 78.5 16
 reeds_dry 85.7 16
 grass_dry_patch 96.9 16
-ferns_withered 105 16
-rock_rubble 120.9 16 flip
 rock_rubble 123.8 16 flip
-flowers_dead 129.6 16 flip
 pillar_thick 169.9 16
 reeds_dry 26.8 16.1
 grass_dry_patch 54.7 16.1
 leaves_pile 97.9 16.1 flip
 bush_dry_wide 109.3 16.2 flip
+leaves_scattered 138.3 16.2 flip
+grass_dry_patch 128.1 16.3 flip
 grass_dry_patch 137.1 16.3 flip
+grass_dry_patch 158.2 16.3 flip
 grass_dry_patch 131.2 16.4
 grass_dry_tall 135.8 16.4 flip
-rock_rubble 141.8 16.4 flip
 grass_dry_patch 102.3 16.5 flip
+ferns_withered 121.4 16.5
+skull_single 104.7 16.6
 tree_teal_leaves 10.7 16.7 flip
 altar_candles 150 16.7
 thistles_dry 164.6 16.7 flip
 thistles_dry 133 16.9 flip
-flowers_dead 161.9 16.9 flip
+grass_dry_patch 141.7 16.9
 grass_dry_patch 167.7 16.9
 thistles_dry 16.5 17.1
 grass_dry_patch 103.4 17.1
+leaves_scattered 126.8 17.1
 grass_dry_patch 130.4 17.2
 flowers_dead 5.7 17.3
 grass_dry_tall 106 17.3
-leaves_scattered 125.7 17.3 flip
 skull_mound_candles 146.2 17.3 flip
 skull_mound_candles 153.8 17.3
 grass_dry_patch 102.2 17.4 flip
 thistles_dry 8.5 17.5
 grass_dry_tall 78.7 17.5 flip
-leaves_scattered 121.3 17.5
 tree_dry_orange 13 17.6 flip
 grass_dry_patch 80.5 17.6 flip
 ferns_withered 98 17.6
-leaves_scattered 128.3 17.6 flip
+roots_clump 121.6 17.6 flip
+bush_dry_wide 171.7 17.6
 leaves_scattered 17.4 17.7 flip
 leaves_pile 36.1 17.7
 reeds_dry 86.2 17.7
 leaves_pile 110.3 17.7 flip
+flowers_dead 129.1 17.7
 tree_dead_webs 3.8 17.8 flip
+ferns_withered 124.7 17.8
 pillar_cracked 147.1 17.9
 pillar_runes 152.9 17.9
-skull_single 123.3 18 flip
-rock_rubble 140.1 18 flip
 leaves_scattered 104.9 18.1 flip
-leaves_scattered 129.7 18.1 flip
 grass_dry_tall 163 18.1
 reeds_dry 81.6 18.2 flip
 reeds_dry 102.6 18.3
-skull_single 159.8 18.4 flip
+leaves_scattered 140.8 18.3 flip
+skull_single 159.4 18.3
 flowers_dead 34.8 18.5
 leaves_pile 89.5 18.5
 grass_dry_patch 96.4 18.5
+ferns_withered 165.1 18.5
 thistles_dry 10.6 18.6
 thistles_dry 107.3 18.6 flip
 grass_dry_patch 31 18.7
@@ -518,40 +524,42 @@ bush_dry_round 131 18.9
 rock_slabs 87.7 19
 bush_dry_tangled 15.8 19.1
 leaves_pile 66.8 19.1
+skull_single 139.5 19.1
 grass_dry_patch 172.6 19.1 flip
 skull_mound_candles 116.1 19.2
 tree_hollow 174.5 19.2
-bush_dry_round 164.1 19.3 flip
 flowers_dead 65.7 19.4 flip
 bush_thorny 7.3 19.5
 thistles_dry 37.6 19.5 flip
 flowers_dead 57.8 19.5 flip
 thistles_dry 39.3 19.6 flip
-altar_candles 126 19.9
 pillar_runes 137.1 19.9
 pillar_runes 162.9 19.9
 leaves_pile 171.4 19.9 flip
 leaves_pile 42.4 20
 leaves_scattered 110.1 20 flip
 flowers_dead 133.5 20
+flowers_dead 160 20
 skull_mound_candles 121.8 20.1
 leaves_pile 12 20.2 flip
 tree_dry_pile 4.2 20.3 flip
 tomb_angel 142.1 20.3 flip
 tomb_angel 157.9 20.3
 skeleton_hand 152.7 20.4 flip
-grass_dry_patch 131.2 20.5
 shrub_dry_tall 34.5 20.6 flip
 tree_teal_leaves 45.6 20.7 flip
+leaves_scattered 135.7 20.7 flip
 tree_dry_leaning 70.4 20.8
+leaves_scattered 131.7 20.8 flip
 grass_dry_patch 7.7 20.9 flip
 thistles_dry 50.3 20.9
+ferns_withered 139.2 20.9
 reeds_dry 78.5 21.1
-rock_rubble 135.9 21.1 flip
 leaves_pile 164 21.1
 thistles_dry 168.2 21.1
 bush_dry_tangled 10.1 21.2 flip
 bush_dry_round 20.1 21.2 flip
+leaves_scattered 119.9 21.2
 tree_dry_orange 173.3 21.2 flip
 leaves_scattered 76.6 21.3
 grass_dry_patch 165.7 21.4
@@ -562,7 +570,6 @@ pillar_broken 157 21.5
 skull_pile 145.4 21.6
 flowers_dead 48 21.7 flip
 leaves_pile 59.4 21.7 flip
-grass_dry_patch 139.1 21.7
 bones_ribcage 144.6 21.7
 reeds_dry 79.2 21.9
 thistles_dry 13.4 22 flip
@@ -578,74 +585,70 @@ tree_dead_large 5.7 22.6 flip
 flowers_dead 25 22.6
 thistles_dry 75.9 22.7 flip
 leaves_scattered 95.1 22.7
-leaves_scattered 161.1 22.7
 tree_dry_large 175.4 22.7
 branches_fallen 17.5 22.8
 thistles_dry 48.3 23
-leaves_scattered 164.4 23
 reeds_dry 83.5 23.1 flip
 thistles_dry 10.5 23.2
 branches_fallen 15 23.2
 grave_fence 40.8 23.2 flip
 grass_dry_tall 93.2 23.2
+ferns_withered 160.9 23.2
 grass_dry_patch 169.5 23.2
 grass_dry_tall 67.3 23.4
 grass_dry_patch 51.9 23.5 flip
 grass_dry_patch 100.1 23.5 flip
 pillar_thick 110.4 23.6
-grass_dry_patch 113.9 23.6
+grass_dry_patch 132 23.6
 grave_broken 50.2 23.8 flip
 leaves_pile 9.5 23.9 flip
 grave_dirt_cross 43.9 23.9 flip
 thistles_dry 11.6 24
 grave_dirt_cross 32.2 24 flip
-grass_dry_patch 132.3 24 flip
+leaves_scattered 136.3 24
 branches_fallen 36.2 24.1
 grass_dry_patch 60.9 24.1
-skull_single 135.8 24.1
 tomb_angel 38.3 24.2
 tomb_angel 56.1 24.2
+ferns_withered 129.7 24.2 flip
 tree_dry_small 13.6 24.3
 grave_slab 58.8 24.3 flip
 grass_dry_tall 93.8 24.3
-skull_single 161.6 24.5 flip
 bush_dry_wide 7.7 24.6
 bush_thorny 68.9 24.6 flip
 thistles_dry 81.5 24.6 flip
 reeds_dry 82.7 24.7 flip
 reeds_dry 87 24.8 flip
+grass_dry_patch 99.8 24.8
 leaves_scattered 101.2 24.8 flip
 grass_dry_tall 60.1 24.9 flip
 grass_dry_patch 94.6 24.9 flip
-bush_dry_round 107.2 24.9
-grass_dry_patch 130.2 24.9
-pillar_thick 134.1 24.9
 rock_large 24.8 25 flip
-bush_dry_round 120.3 25 flip
 tree_hollow 5.9 25.1 flip
 leaves_scattered 47.6 25.1
 thistles_dry 117.3 25.1
+skull_single 138.5 25.1 flip
 bush_dry_tangled 12.2 25.2
 shrub_dry_tall 45.2 25.2
 pillar_broken 169.6 25.2
+leaves_scattered 131.9 25.3
+leaves_scattered 134.8 25.3
 tree_dead_large 173.3 25.3 flip
 thistles_dry 52.1 25.4
 grass_dry_tall 55.7 25.4 flip
 grass_dry_tall 57.5 25.4 flip
 grass_dry_patch 56.6 25.5
 thistles_dry 70.3 25.5
-skull_single 131.4 25.5 flip
 skull_single 154.2 25.5 flip
 flowers_dead 165.1 25.5 flip
 grass_dry_patch 71.5 25.6
+ferns_withered 121.3 25.6
 rock_crystal 141 25.6
 rock_crystal 159 25.6 flip
 thistles_dry 166.5 25.6 flip
 tree_dry_thin 28.4 25.7 flip
 thistles_dry 58.6 25.7 flip
 leaves_pile 74.8 25.7 flip
-leaves_scattered 135.9 25.7
-ferns_withered 163.8 25.7 flip
 leaves_scattered 44.2 25.9
 reeds_dry 68.2 25.9 flip
 pillar_runes 105.1 25.9
@@ -653,10 +656,12 @@ thistles_dry 116.8 25.9
 rock_large 19.9 26
 grass_dry_patch 79.3 26
 bush_thorny 77.9 26.2
+grass_dry_patch 139.2 26.2
 leaves_scattered 171.4 26.2 flip
 grass_dry_tall 40.3 26.3
 leaves_pile 63.2 26.3
 grass_dry_patch 81.1 26.3 flip
+leaves_scattered 164.1 26.3 flip
 rock_large 10.6 26.4
 thistles_dry 53.3 26.4
 bush_dry_wide 60.5 26.4 flip
@@ -666,15 +671,17 @@ ferns_withered 102.6 26.4 flip
 leaves_pile 114.5 26.4
 bones_scattered 145.2 26.5 flip
 pillar_runes 157 26.5
+skull_single 161.3 26.5 flip
 tree_dead_webs 46.3 26.6
 leaves_scattered 73.2 26.8 flip
 reeds_dry 116.6 26.8
 flowers_dead 38.4 26.9
 bush_dry_tangled 59 26.9
 leaves_scattered 121.4 26.9
-leaves_scattered 139.1 26.9
 flowers_dead 25 27
 thistles_dry 133.1 27 flip
+skull_pile 136.2 27 flip
+grass_dry_patch 160.3 27
 grass_dry_tall 95.6 27.1 flip
 reeds_dry 86 27.2
 reeds_dry 81.7 27.3 flip
@@ -682,17 +689,15 @@ branches_fallen 128.2 27.3 flip
 grass_dry_tall 171.3 27.4
 grass_dry_patch 67.9 27.5 flip
 tree_dry_orange 64.5 27.6
+ferns_withered 118.5 27.6
 tree_dead_medium 6.1 27.7
 tree_teal_leaves 43.4 27.7 flip
 tree_hollow 61.8 27.7
-skull_pile 136.6 27.7
 tomb_angel 31.9 27.8 flip
 altar_candles 98.5 27.8
 grave_broken 55.7 27.9
-leaves_scattered 160.5 28 flip
 tomb_flowers 34.7 28.1 flip
 leaves_pile 71.3 28.1
-bush_dry_tangled 118.1 28.1
 tree_dead_large 130.4 28.1
 pillar_tall 137.1 28.1
 bones_scattered 151.9 28.1
@@ -700,6 +705,7 @@ pillar_tall 162.9 28.1
 tree_dry_orange 49.4 28.2
 shrub_dry_tall 67.1 28.2
 reeds_dry 95.8 28.2
+skull_single 160.2 28.2 flip
 tree_dry_leaning 15.4 28.3 flip
 leaves_scattered 38.8 28.3
 tree_dry_large 40.9 28.3 flip
@@ -709,13 +715,14 @@ grass_dry_tall 116.5 28.3 flip
 grass_dry_patch 11 28.4
 leaves_scattered 74.9 28.4
 leaves_pile 72.4 28.6 flip
+grass_dry_patch 120 28.6
 skull_mound_candles 122.7 28.8 flip
-ferns_withered 125 28.8
 ferns_withered 18.6 28.9
 bush_dry_round 101.3 28.9 flip
 leaves_pile 113.9 28.9
 tree_hollow 132.5 28.9
 skull_mound_candles 110.6 29 flip
+grass_dry_patch 161.6 29 flip
 thistles_dry 54.4 29.1 flip
 reeds_dry 85.3 29.1 flip
 thistles_dry 96 29.1
@@ -726,28 +733,28 @@ tree_dry_thin 128.3 29.2 flip
 shrub_dry_tall 56.5 29.3 flip
 grass_dry_tall 116.9 29.3 flip
 tree_dead_medium 59.4 29.4
+grass_dry_patch 126.1 29.4
 leaves_scattered 26.2 29.5 flip
-grass_dry_patch 118 29.5
 tree_dead_large 173.7 29.5
-leaves_scattered 126.2 29.6
-leaves_scattered 161.5 29.6
 reeds_dry 80.4 29.7
+grass_dry_patch 160.6 29.7 flip
 leaves_scattered 53.6 29.8
 tree_dry_large 63.1 29.8 flip
 grass_dry_patch 97.4 29.8
 flowers_dead 113.1 29.9 flip
+grass_dry_patch 165.3 29.9
+leaves_scattered 118.3 30
+grass_dry_patch 159.3 30
 grass_dry_tall 28.3 30.1 flip
 pillar_runes 147.1 30.1
 pillar_cracked 152.9 30.1
 tree_dead_webs 51.6 30.2 flip
+grass_dry_patch 171 30.2
 pillar_thick 106.6 30.3
-leaves_scattered 137 30.3
-grass_dry_patch 159.1 30.3 flip
 tree_dry_pile 5.8 30.5
 flowers_dead 12.5 30.5
 grass_dry_patch 96.4 30.5 flip
 ferns_withered 133.4 30.5
-leaves_scattered 165.4 30.5
 tree_dead_medium 67.4 30.6 flip
 tree_dry_orange 2.2 30.7 flip
 thistles_dry 18 30.8
@@ -762,30 +769,31 @@ grass_dry_tall 129.1 31.2
 pillar_fallen 146.1 31.2 flip
 bush_dry_wide 49.4 31.3 flip
 grass_dry_patch 91.1 31.3 flip
+flowers_dead 162.6 31.3
+skull_single 166.1 31.3
 tree_dry_pile 37.7 31.4
 bush_dry_round 58.6 31.4
 leaves_pile 19.1 31.5
 flowers_dead 109.6 31.5
 leaves_scattered 17 31.6 flip
 leaves_scattered 132.9 31.6 flip
-grass_dry_patch 162.3 31.6 flip
 leaves_pile 87 31.7
 altar_candles 116.9 31.7
 thistles_dry 134.6 31.7
 tree_dry_pile 175.5 31.7
 flowers_dead 79.4 31.8
 reeds_dry 84.1 31.8
-roots_clump 157.7 31.8
 grave_slab 53.1 31.9
+leaves_scattered 158.2 31.9
 bush_dry_round 24 32
 bush_dry_round 127.3 32
 grave_slab 32.1 32.1
 flowers_dead 36 32.3 flip
 tree_dead_webs 61.2 32.3 flip
 grass_dry_patch 63.5 32.3
+roots_clump 143 32.3
 tree_dead_large 169.1 32.3
 thistles_dry 100.2 32.5 flip
-grass_dry_patch 142.4 32.5
 tree_dry_thin 14.7 32.6 flip
 thistles_dry 59.2 32.6 flip
 grass_dry_patch 68.7 32.7
@@ -794,141 +802,134 @@ tree_dry_large 4.3 32.8
 tree_hollow 51.2 32.8
 bones_scattered 105.5 32.8
 thistles_dry 109.1 32.8
-grass_dry_patch 138.6 32.8
 grave_fence 55.9 32.9
 tree_dry_orange 66.2 32.9 flip
-ferns_withered 161.3 33.2 flip
 tree_dry_pile 39.1 33.3
+leaves_scattered 155.7 33.3 flip
+skull_single 161.1 33.3 flip
 tree_dead_webs 173.8 33.3 flip
 grass_dry_patch 27.1 33.4
 thistles_dry 29.8 33.4
 reeds_dry 79.2 33.4 flip
 tree_dead_large 101.7 33.4 flip
+leaves_scattered 128.6 33.4 flip
+leaves_scattered 166.3 33.4 flip
 flowers_dead 7.7 33.5
 shrub_dry_tall 74.2 33.5
 thistles_dry 103.8 33.6
 flowers_dead 130.7 33.6
 reeds_dry 83.8 33.7 flip
-flowers_dead 127.9 33.7 flip
-rock_rubble 160.1 33.7 flip
 pillar_tall 112.1 33.8
-grass_dry_patch 144.8 33.8
 grass_dry_patch 129.6 34
-leaves_scattered 166.3 34.1
 bush_dry_round 60.3 34.3
 altar_candles 123 34.3
-roots_clump 154.9 34.5 flip
+grass_dry_patch 145.7 34.4
 tree_dead_webs 62.3 34.6
 tree_hollow 99.2 34.6
 grass_dry_patch 108.8 34.6 flip
 bush_dry_wide 140.3 34.6 flip
-flowers_dead 115.7 34.7
 pillar_runes 142 34.7
-leaves_scattered 147.2 34.7
-roots_clump 151.1 34.7
 pillar_runes 158 34.7
 leaves_scattered 66.8 34.8
 grass_dry_patch 86.3 34.8 flip
 rock_rubble 126.2 34.8
-leaves_scattered 153.8 34.8 flip
 reeds_dry 84.1 34.9
 thistles_dry 20.3 35 flip
 flowers_dead 26.4 35 flip
 pillar_fallen 138.2 35
-flowers_dead 152.6 35
-roots_clump 167 35 flip
+skull_single 151.9 35
 pillar_runes 171.4 35
 reeds_dry 78.9 35.1
-ferns_withered 106.1 35.1
 grass_dry_tall 135.8 35.1
-grass_dry_patch 149.1 35.1
 tree_dead_webs 3.7 35.2 flip
 bush_dry_round 173.4 35.2
 tree_dead_medium 176.5 35.2 flip
 bush_dry_tangled 10 35.3 flip
 tree_teal_leaves 37.3 35.3
-roots_clump 128.2 35.3 flip
 leaves_scattered 13.7 35.4
 flowers_dead 89.8 35.5
+grass_dry_patch 149.9 35.5 flip
+leaves_scattered 166.8 35.5
 leaves_scattered 76.3 35.6 flip
 tree_dead_medium 50.7 35.7
 grass_dry_patch 6.2 35.8 flip
 mausoleum_door 32.1 35.8
 tomb_angel 53 35.8
 thistles_dry 64.1 35.8
+grass_dry_patch 120.6 35.8
+leaves_scattered 144.6 35.8
 thistles_dry 168.4 35.8 flip
 grave_slab 59.1 35.9
+flowers_dead 128.3 35.9 flip
 leaves_scattered 35.7 36 flip
 grave_broken 55.8 36.1 flip
 reeds_dry 84.6 36.1 flip
 tree_dry_orange 102.1 36.2
-grass_dry_patch 144.7 36.2 flip
 bush_thorny 65.3 36.3
 leaves_pile 107.3 36.3
-rock_rubble 120.2 36.3 flip
-leaves_scattered 166.3 36.3
+skull_single 158.3 36.4
 leaves_scattered 28.4 36.5
-flowers_dead 124.3 36.5
+skull_single 119.1 36.5
+skull_single 142.3 36.5 flip
 leaves_scattered 73.5 36.6
-rock_rubble 142.8 36.6 flip
+ferns_withered 143.4 36.6 flip
 bones_ribcage 162.3 36.6
+grass_dry_patch 166 36.6 flip
 tree_dead_medium 40.8 36.7 flip
 tree_dry_large 104.7 36.7
-roots_clump 127.4 36.8 flip
+grass_dry_patch 116.7 36.7 flip
 flowers_dead 57.1 36.9
 grass_dry_patch 140.1 36.9
 grass_dry_patch 111.2 37 flip
+grass_dry_patch 155.3 37
 bush_dry_tangled 52.2 37.1 flip
 thistles_dry 110.1 37.1
-leaves_scattered 155.4 37.1
+skull_pile 146.7 37.1 flip
 pillar_tall 114.7 37.2
 pillar_tall 150 37.2
-flowers_dead 159.3 37.2
 tree_teal_leaves 174.2 37.2
 flowers_dead 58.7 37.3 flip
 grass_dry_patch 86.9 37.3
-leaves_scattered 119.2 37.3
-roots_clump 125.5 37.3
 grass_dry_patch 157.1 37.3
-skull_single 165.5 37.3 flip
 thistles_dry 4.7 37.4
 reeds_dry 80 37.4
 tree_teal_leaves 70.8 37.5
-rock_rubble 154.3 37.5
 rock_cluster 16.2 37.6
 tree_dry_orange 20.3 37.6
 tree_dry_orange 49.2 37.7
 leaves_scattered 77.5 37.7
 tree_dead_webs 100.1 37.7
-ferns_withered 145.8 37.8
+roots_clump 164.2 37.7
+leaves_scattered 117.6 37.8 flip
 flowers_dead 36 37.9
 reeds_dry 85.7 37.9
 grass_dry_patch 112.6 37.9 flip
 pillar_cracked 134.5 37.9
-flowers_dead 147.2 38
+skull_mound_candles 124.3 38 flip
 leaves_scattered 64.7 38.1 flip
 thistles_dry 75.7 38.1 flip
 leaves_pile 106.6 38.1
+rock_rubble 126.5 38.1
 thistles_dry 55.4 38.2
 grass_dry_tall 168.4 38.2 flip
 shrub_dry_tall 170.6 38.2
-grass_dry_patch 160.9 38.3 flip
-grass_dry_patch 163.2 38.3 flip
+bush_dry_round 152.7 38.3
 tree_dry_large 42.6 38.4 flip
 flowers_dead 95.4 38.4
-ferns_withered 117.2 38.4
 leaves_scattered 62.8 38.6
 leaves_scattered 79.1 38.6 flip
 reeds_dry 81 38.6
 leaves_scattered 155.1 38.6 flip
 thistles_dry 156.5 38.6 flip
+leaves_scattered 160.7 38.6 flip
+rock_rubble 162.7 38.6 flip
 tree_dry_orange 176.7 38.6 flip
 tree_dead_medium 45.7 38.7
+ferns_withered 130.8 38.7 flip
 pillar_fallen 150 38.7
 tree_teal_leaves 38.2 38.8
 ferns_withered 50.8 38.8 flip
 tree_dry_small 108.6 38.8
-flowers_dead 130.4 38.8 flip
 leaves_pile 165.1 38.8 flip
 flowers_dead 33.9 38.9 flip
 bush_thorny 153.9 39
@@ -937,26 +938,27 @@ tree_dry_large 2.6 39.1 flip
 flowers_dead 74.8 39.1 flip
 bush_thorny 142.9 39.1 flip
 tree_dead_medium 105.2 39.3
+grass_dry_patch 118.6 39.3 flip
 grass_dry_patch 171.2 39.3 flip
 tree_teal_leaves 102.3 39.4
 branches_fallen 140.5 39.4
 thistles_dry 88.8 39.5
 bush_thorny 15.2 39.6
-rock_rubble 116.9 39.6 flip
 branches_fallen 141.6 39.6
 tree_dead_webs 4.9 39.7
 grave_round 52.8 39.7 flip
 tree_hollow 57.7 39.7
 tree_dead_medium 60.8 39.7 flip
 tree_dead_large 112.6 39.7
-grass_dry_patch 119 39.7 flip
 pillar_tall 121.9 39.7
 branches_fallen 155 39.7
 tree_dry_orange 169.4 39.7
 grave_dirt_cross 32 39.8
 shrub_dry_tall 49.2 39.8
+roots_clump 117.3 39.8 flip
 thistles_dry 29.6 39.9
 flowers_dead 62.6 39.9
+roots_clump 119.5 40
 bush_dry_tangled 147.5 40
 leaves_pile 20.9 40.1 flip
 leaves_scattered 75.3 40.1
@@ -973,7 +975,6 @@ tree_dry_leaning 110.5 40.4 flip
 tree_dry_large 156.9 40.4 flip
 tree_dry_orange 47.3 40.5
 pillar_tall 114.9 40.5
-roots_clump 130.3 40.6 flip
 pillar_runes 132.2 40.6 flip
 ferns_withered 16.3 40.7
 reeds_dry 26.9 40.7 flip
@@ -981,17 +982,14 @@ bush_dry_tangled 38.5 40.7 flip
 tree_dead_medium 40.5 40.7
 grass_dry_patch 63.5 40.7
 leaves_scattered 89.5 40.8
-grass_dry_patch 118.6 40.8
 leaves_scattered 88.1 40.9
 branches_fallen 108.1 40.9
-skull_single 145.8 40.9 flip
 grass_dry_tall 28 41
 thistles_dry 74.2 41
 reeds_dry 82.1 41
 tree_dry_orange 13.5 41.1 flip
 tree_dead_webs 140.4 41.1
 reeds_dry 87 41.2
-grass_dry_patch 117 41.2 flip
 tree_hollow 54.4 41.3
 grass_dry_tall 69.1 41.3
 bush_dry_tangled 75.9 41.3 flip
@@ -1006,6 +1004,7 @@ grass_dry_tall 21.8 41.6 flip
 grass_dry_patch 127.9 41.6
 rock_slabs 67 41.7 flip
 tree_dry_leaning 154.7 41.7
+pillar_runes 118 41.8 flip
 ferns_withered 171.8 41.8
 reeds_dry 69.9 41.9
 grass_dry_patch 106 41.9
@@ -1036,7 +1035,6 @@ leaves_pile 82.1 42.6
 tree_dead_medium 103.2 42.6
 branches_fallen 107.9 42.6 flip
 thistles_dry 109.1 42.6
-leaves_scattered 141.3 42.6 flip
 leaves_pile 156.7 42.6
 grass_dry_tall 47.5 42.7 flip
 tree_dry_large 62.2 42.7 flip
@@ -1047,13 +1045,11 @@ flowers_dead 149.1 42.8 flip
 thistles_dry 83.1 42.9
 grass_dry_tall 48.7 43
 grass_dry_patch 97.2 43 flip
-grass_dry_patch 131.2 43.1
 ferns_withered 101.5 43.2
-leaves_scattered 115.8 43.2
-grass_dry_patch 127.1 43.2
 tree_hollow 10.3 43.3
 tree_hollow 16.8 43.3 flip
 bush_dry_wide 64.7 43.3
+leaves_scattered 115.7 43.5
 grass_dry_patch 139.6 43.5
 grass_dry_patch 145.3 43.5
 tree_dry_pile 170.5 43.5 flip
@@ -1063,31 +1059,35 @@ thistles_dry 167.9 43.6 flip
 grave_broken 44.2 43.7
 leaves_scattered 76.1 43.7 flip
 bush_dry_round 147.8 43.7
-grass_dry_patch 114.3 43.8
 reeds_dry 88.7 43.9 flip
 grass_dry_patch 89.9 43.9 flip
 leaves_pile 142.4 43.9 flip
 tomb_flowers 46.9 44
 grave_round 53.2 44
 grass_dry_tall 97.1 44
+ferns_withered 114.2 44 flip
 thistles_dry 3.6 44.1
 grave_round 38.2 44.1
 grave_broken 41.1 44.1
 grave_slab 49.9 44.1 flip
 flowers_dead 104.7 44.1
+grass_dry_tall 106.9 44.1
 grass_dry_tall 109.8 44.1
+rock_rubble 134.4 44.1
 grass_dry_tall 71 44.2
 grass_dry_patch 81.1 44.2
-flowers_dead 134.5 44.2 flip
+tree_dead_medium 128.7 44.2 flip
+skull_single 132.6 44.2 flip
+bush_dry_round 166.6 44.2 flip
 thistles_dry 160.5 44.3 flip
 ferns_withered 55.4 44.4 flip
 grass_dry_patch 110.7 44.5
 pillar_cracked 124.9 44.5
 flowers_dead 28 44.6
 tree_dead_webs 162.7 44.7
-grass_dry_patch 131.2 44.8 flip
 tree_dry_large 172.7 44.8
 leaves_scattered 83.9 44.9
+roots_clump 135.9 45 flip
 flowers_dead 19.7 45.1
 branches_fallen 44.2 45.1
 leaves_scattered 48.1 45.1
@@ -1095,43 +1095,41 @@ bush_dry_wide 56.7 45.1
 thistles_dry 164.8 45.1
 tree_dry_large 63.1 45.2 flip
 grass_dry_tall 111.4 45.2
-leaves_scattered 136.2 45.2 flip
-bush_dry_round 141.4 45.2
 leaves_scattered 147.4 45.2 flip
 grass_dry_tall 72 45.3
 pillar_cracked 120.8 45.3
-grass_dry_patch 140 45.3
 ferns_withered 170.1 45.3
 tree_dead_medium 8.1 45.4 flip
 thistles_dry 10.4 45.4
 shrub_dry_tall 46.3 45.4 flip
 grass_dry_patch 82.5 45.4
 reeds_dry 97.7 45.4
-bush_dry_tangled 143.3 45.4 flip
 thistles_dry 52.4 45.5 flip
 rock_rubble 102.5 45.5 flip
 leaves_scattered 37.3 45.6 flip
 leaves_pile 107 45.6
 tree_teal_leaves 1.6 45.7
 ferns_withered 168.6 45.7
+flowers_dead 133.2 45.8 flip
 tree_dry_large 159.2 45.8
 reeds_dry 84.7 45.9 flip
 leaves_pile 166.7 45.9
+bush_dry_wide 151.5 46
 flowers_dead 42.3 46.1
+leaves_scattered 118.8 46.1
 tree_dead_webs 16.6 46.2 flip
 grass_dry_patch 43.8 46.2 flip
 tree_dead_large 54.8 46.2
 grass_dry_tall 98.3 46.2 flip
 branches_fallen 70.3 46.3 flip
+ferns_withered 124 46.3
 tree_dry_pile 156.8 46.3
 ferns_withered 11.2 46.4 flip
-leaves_scattered 119.3 46.4 flip
-leaves_scattered 134.1 46.4 flip
-grass_dry_patch 150.6 46.4
+tree_skull 140.9 46.4 flip
 leaves_pile 93.7 46.5
-grass_dry_patch 135.8 46.5
 thistles_dry 34 46.6 flip
 grass_dry_patch 92.7 46.6 flip
+ferns_withered 136.6 46.6
 bush_dry_round 48.6 46.7
 reeds_dry 88.7 46.7 flip
 reeds_dry 99.1 46.7 flip
@@ -1139,21 +1137,21 @@ bush_dry_tangled 162.3 46.7 flip
 ferns_withered 4.3 46.8 flip
 ferns_withered 18.8 46.8
 grass_dry_tall 33 46.8
-bush_dry_tangled 142.3 46.8
+ferns_withered 134.5 46.8 flip
 reeds_dry 167.4 46.8
 grass_dry_patch 67.9 46.9
+grass_dry_tall 126 46.9
 grass_dry_patch 146.7 46.9
 thistles_dry 116.1 47 flip
 tree_dead_large 61.2 47.2 flip
 thistles_dry 73.5 47.2
 ferns_withered 104.1 47.2
 leaves_scattered 121.1 47.3 flip
+grass_dry_tall 122.7 47.3 flip
 altar_candles 131.5 47.3 flip
-skull_pile 138.1 47.3
 tree_dry_large 13.3 47.4
 tree_dry_pile 58.9 47.4
 reeds_dry 84 47.4 flip
-grass_dry_patch 124.2 47.4
 tree_dry_pile 164.6 47.4
 tree_dead_medium 169.3 47.4 flip
 tree_dry_large 63.7 47.5
@@ -1164,6 +1162,7 @@ grave_broken 35.1 47.9
 grave_slab 47.2 47.9
 grave_slab 50.1 47.9
 grave_dirt_cross 52.9 47.9
+flowers_dead 137 47.9 flip
 tree_teal_leaves 160.9 47.9 flip
 leaves_pile 82.6 48
 tomb_flowers 44.1 48.1
@@ -1171,7 +1170,6 @@ tree_teal_leaves 174.9 48.1 flip
 leaves_pile 103 48.2
 thistles_dry 144.1 48.2
 tree_teal_leaves 172.2 48.2
-leaves_scattered 129.3 48.3 flip
 pillar_thick 153 48.3
 tree_dead_large 166.8 48.3 flip
 tree_dry_large 10.4 48.4 flip
@@ -1190,7 +1188,6 @@ bush_dry_tangled 168.5 48.9
 skull_pile 98.5 49
 leaves_pile 33.7 49.1 flip
 thistles_dry 118.7 49.1
-skull_single 136.9 49.2 flip
 bush_thorny 141.7 49.2 flip
 thistles_dry 150.3 49.2 flip
 tree_hollow 4.6 49.3
@@ -1208,25 +1205,25 @@ tree_hollow 156.4 49.8
 grass_dry_tall 172.8 49.8 flip
 grave_fence 38.7 49.9
 leaves_pile 94.8 50
+leaves_scattered 124.2 50 flip
 leaves_pile 130 50 flip
 flowers_dead 22.2 50.1 flip
 bush_dry_tangled 58.4 50.1
 grass_dry_patch 74.4 50.1
 tree_dry_large 139.7 50.1
 mausoleum_door 42.1 50.2
-bush_dry_round 109.7 50.2
 leaves_pile 144 50.2
 bush_dry_wide 147.3 50.2
 grave_fence 51.3 50.3
 leaves_scattered 106 50.3
 leaves_pile 107.8 50.4 flip
-ferns_withered 124 50.4
 thistles_dry 11.6 50.5
 grass_dry_patch 31.3 50.5
 grass_dry_tall 7.9 50.6
 tree_hollow 174.7 50.7
 grass_dry_patch 92.4 50.8
 tree_dry_large 168.9 50.8
+flowers_dead 135.3 50.9 flip
 grave_fence 48.3 51 flip
 ferns_withered 176.8 51.1
 grass_dry_patch 80.5 51.2
@@ -1245,34 +1242,34 @@ tree_teal_leaves 141.5 51.6 flip
 grass_dry_patch 153.1 51.6 flip
 grass_dry_tall 35.4 51.7
 tree_dead_medium 65.3 51.7
+rock_rubble 130.6 51.7 flip
 tree_hollow 137.5 51.7 flip
 tree_dead_large 166.5 51.7 flip
 leaves_pile 27.1 51.8
-ferns_withered 131.6 51.8 flip
 grave_fence 32.7 51.9 flip
-roots_clump 130.3 51.9 flip
-flowers_dead 132.7 51.9
 thistles_dry 152 51.9
 reeds_dry 86.7 52
 bush_thorny 10.9 52.1
 leaves_pile 69.4 52.1
 thistles_dry 100.9 52.1
 pillar_thick 119.7 52.1 flip
+grass_dry_patch 132.5 52.2 flip
 bush_thorny 155.4 52.2
 grass_dry_tall 171.6 52.2 flip
 flowers_dead 108.2 52.3
 rock_mossy 58 52.4 flip
+tree_dead_webs 104.3 52.4
 reeds_dry 111.4 52.4
 grass_dry_tall 113 52.4
 flowers_dead 89.9 52.5
+skull_single 107.1 52.5
 grass_dry_tall 114.1 52.5
-leaves_scattered 134.6 52.5 flip
 leaves_pile 36.5 52.6
 thistles_dry 46.3 52.6 flip
 flowers_dead 72.7 52.6 flip
 reeds_dry 81.7 52.6
+flowers_dead 134.6 52.6 flip
 grass_dry_patch 110.4 52.7
-altar_candles 146.1 52.7 flip
 flowers_dead 157.3 52.7 flip
 reeds_dry 115.7 52.8
 grass_dry_patch 151.4 52.8 flip
@@ -1280,75 +1277,69 @@ tree_dry_pile 15.3 52.9 flip
 branches_fallen 37.8 52.9
 leaves_pile 12.5 53
 grass_dry_tall 100.7 53 flip
-roots_clump 107.1 53
+ferns_withered 152.6 53 flip
 grass_dry_tall 171.1 53
 grass_dry_patch 18.6 53.1
 leaves_pile 24.9 53.1
 bush_dry_round 43.5 53.1 flip
-roots_clump 130 53.1 flip
-flowers_dead 153.2 53.1
 tree_dead_medium 54.5 53.2
 reeds_dry 109.6 53.2
 reeds_dry 126.1 53.2 flip
+flowers_dead 133.1 53.2
 tree_dead_large 168.5 53.2 flip
-flowers_dead 150.2 53.3 flip
-grass_dry_tall 172.5 53.3 flip
 tree_dry_large 7.5 53.4 flip
 branches_fallen 35.6 53.4 flip
 leaves_pile 101.6 53.4
 tree_dry_pile 159.2 53.4
 tree_dry_large 176.6 53.4
 grass_dry_patch 137.5 53.5
+skull_single 148.9 53.5
 grass_dry_patch 170.3 53.5 flip
 leaves_pile 97.3 53.6 flip
 thistles_dry 9.3 53.7
 grass_dry_tall 99.8 53.8
-skull_single 110.6 53.8
 leaves_pile 128 53.8
 flowers_dead 36.7 53.9
-ferns_withered 130.7 54 flip
+ferns_withered 129.3 53.9 flip
 grass_dry_patch 142.6 54 flip
-grass_dry_patch 149 54 flip
 grass_dry_tall 44.4 54.1
-rock_rubble 104.7 54.1 flip
-ferns_withered 132.6 54.1
 tree_dead_webs 162.6 54.1 flip
 grass_dry_patch 94.8 54.2
+flowers_dead 132.3 54.2 flip
 tree_dry_orange 140.7 54.2
 flowers_dead 50 54.3 flip
-leaves_scattered 129.2 54.3
+flowers_dead 130.7 54.3 flip
 tree_dry_large 135.3 54.3
 tree_dry_orange 39.8 54.5
 tree_dry_small 74.8 54.5
 tree_dry_orange 174.4 54.6 flip
 tree_dry_orange 42.3 54.7
+pillar_fallen 112.1 54.7
 tree_dead_webs 166.4 54.7 flip
 rock_large 81.2 54.9
 bush_thorny 58.2 55
 ferns_withered 70.6 55.1 flip
 thistles_dry 99.2 55.1
+roots_clump 124.8 55.1 flip
 grass_dry_patch 14 55.3 flip
 tree_dry_leaning 29.2 55.3
 bush_dry_wide 68.3 55.3
 thistles_dry 91.7 55.3 flip
 tree_dry_pile 170.7 55.3 flip
 flowers_dead 44.6 55.5 flip
-leaves_scattered 129 55.5
-ribcage_arch 151.3 55.5
+grass_dry_patch 129.1 55.5 flip
 bush_dry_round 168.1 55.5
-rock_rubble 123.6 55.6
-skull_pile 126.6 55.6 flip
-roots_clump 111.7 55.7
 pillar_broken 121.5 55.7
+skeleton_curled 126.7 55.7 flip
 tree_dry_pile 137.4 55.7
 tree_hollow 160.6 55.8
 tree_dry_large 7.6 55.9
 leaves_pile 48.7 55.9 flip
 pillar_thick 109.6 55.9
-flowers_dead 147.4 55.9
 pillar_tall 154.2 55.9 flip
 flowers_dead 157.1 55.9
 leaves_scattered 56.6 56
+ferns_withered 147.3 56 flip
 thistles_dry 91.2 56.1
 grass_dry_patch 99.2 56.1
 thistles_dry 142.5 56.1
@@ -1357,60 +1348,59 @@ branches_fallen 173.6 56.2
 tree_teal_leaves 36.3 56.3 flip
 grass_dry_tall 34.3 56.4 flip
 thistles_dry 77.4 56.4
-roots_clump 112.6 56.4 flip
 leaves_pile 116.3 56.4
-leaves_scattered 124.5 56.4
+rock_rubble 117.8 56.4
 ferns_withered 164.1 56.4
 thistles_dry 45.7 56.5 flip
 bush_thorny 52.9 56.5
 thistles_dry 96.5 56.5 flip
 thistles_dry 16.3 56.6 flip
 bush_dry_round 60.6 56.6
+sarcophagus_open 131.7 56.6
 thistles_dry 113.8 56.7 flip
-flowers_dead 135.8 56.7
 tree_dead_webs 63.9 56.8 flip
 leaves_pile 73 56.8 flip
-roots_clump 129.3 56.8
+leaves_scattered 123.4 56.8 flip
 thistles_dry 141.5 56.8 flip
 grass_dry_patch 167.6 56.8
 bush_dry_round 168.8 56.8
 reeds_dry 90.7 56.9
 grass_dry_tall 158.1 56.9
 grass_dry_patch 98.4 57 flip
-sarcophagus_open 131.2 57
 shrub_dry_tall 69.4 57.2
 leaves_pile 85.5 57.2
+leaves_scattered 129.6 57.2 flip
 tree_dry_leaning 47.2 57.3 flip
 tree_dead_medium 50 57.3 flip
-flowers_dead 122.7 57.3 flip
+rock_rubble 143.5 57.3
 rock_rubble 145.7 57.3 flip
 tree_teal_leaves 165.8 57.3 flip
 tree_hollow 176.3 57.3 flip
+skull_single 122.3 57.4 flip
 tree_dry_pile 42.2 57.5
 tree_dead_webs 101.3 57.5
 bush_dry_tangled 136.7 57.5
 grass_dry_tall 34.4 57.6
 grass_dry_patch 67.2 57.6
+roots_clump 147.6 57.6
 grass_dry_patch 163.3 57.7 flip
-grass_dry_patch 173 57.7 flip
 tree_hollow 44.5 57.8
 tree_dead_large 57.9 57.8
 grass_dry_tall 114.3 57.8
+bones_chains 152.4 57.8
 reeds_dry 158.4 57.8
 branches_fallen 138.8 57.9 flip
-altar_candles 148.6 57.9 flip
 leaves_scattered 161.3 57.9
 thistles_dry 26.6 58
 thistles_dry 30.2 58 flip
 grass_dry_patch 60.6 58
 tree_dry_large 8.6 58.1 flip
 skeleton_curled 127.9 58.1 flip
-skull_single 132.8 58.1
+roots_clump 154.8 58.1
 grass_dry_tall 97.5 58.3
+leaves_scattered 140.4 58.3
 tree_dry_orange 170.9 58.3
-grass_dry_patch 134.7 58.4
 tree_dry_small 116.3 58.5
-rock_rubble 144 58.5
 tree_hollow 168.3 58.5
 thistles_dry 159.1 58.6
 thistles_dry 160 58.6
@@ -1418,81 +1408,86 @@ thistles_dry 28.3 58.8
 bones_scattered 108.4 58.8
 grass_dry_tall 112.1 58.8
 sarcophagus_closed 125.2 58.8 flip
+ferns_withered 133.8 58.8
 leaves_pile 157.8 58.9 flip
 shrub_dry_tall 162.8 58.9 flip
 reeds_dry 84.9 59.1
 grass_dry_patch 51.4 59.2 flip
-leaves_scattered 131.3 59.2
 shrub_dry_tall 59 59.3
+roots_clump 138.9 59.3
 grass_dry_tall 160.7 59.3 flip
 tree_hollow 37.2 59.4
 tree_dead_webs 49.3 59.4
 thistles_dry 97.4 59.4
-skull_pile 154.9 59.4
-bush_dry_round 164.5 59.4
 flowers_dead 7.2 59.5
-flowers_dead 132.8 59.5 flip
-roots_clump 139.9 59.5 flip
 grass_dry_tall 161.6 59.5
 bush_dry_wide 47.2 59.6
+skull_pile 131.5 59.6
+skeleton_curled 156.1 59.6
 grass_dry_patch 88.6 59.7
+skull_pile 148 59.7
+skull_spike 164.7 59.7 flip
 flowers_dead 79.2 59.8 flip
-roots_clump 129.8 59.9 flip
 tree_dry_large 176.7 59.9 flip
 bush_dry_wide 61 60
 shrub_dry_tall 62.5 60
 tree_dry_orange 114.2 60 flip
+skull_mound_candles 119 60 flip
+rock_rubble 153 60
 tree_hollow 44.8 60.1
 branches_fallen 53 60.1
 pillar_broken 135.7 60.1
-ferns_withered 152.3 60.1
 grave_dirt_cross 13.9 60.2
 grave_round 17.1 60.2 flip
+grass_dry_patch 143.4 60.2 flip
 grass_dry_tall 35.6 60.3
 tree_dry_pile 39.6 60.3 flip
 grass_dry_tall 51.8 60.3
 leaves_pile 138.3 60.3
 thistles_dry 162.2 60.3
 grass_dry_patch 97.1 60.4 flip
-flowers_dead 172.6 60.4
 bush_dry_round 98.3 60.5 flip
 ferns_withered 115.9 60.5 flip
 ferns_withered 59.1 60.6
+flowers_dead 129.8 60.6
 tree_dry_orange 174.3 60.6 flip
 ferns_withered 50.4 60.7
 reeds_dry 86.1 60.7 flip
 leaves_scattered 101.4 60.7 flip
 reeds_dry 79.8 60.8
 pillar_cracked 110.4 60.8 flip
+sarcophagus_open 140.5 60.8
 bush_dry_wide 144.7 60.8 flip
+grass_dry_patch 172.6 60.8 flip
 reeds_dry 81.2 60.9 flip
 tree_hollow 56.5 61
 grass_dry_tall 154 61
 grass_dry_patch 162.8 61
 thistles_dry 100.1 61.1
+ferns_withered 167.5 61.1 flip
 flowers_dead 78.7 61.2
-sarcophagus_closed 140.9 61.2 flip
+skull_mound_candles 159.9 61.2 flip
 tree_dead_large 95.8 61.3 flip
 pillar_runes 150.2 61.3
 tree_hollow 8.3 61.4 flip
 tree_dry_orange 11.6 61.4 flip
 grass_dry_patch 76.3 61.4
-skull_single 128.9 61.4
 bush_dry_round 106.5 61.5 flip
 leaves_pile 49.8 61.6
 tree_dry_orange 37.1 61.7 flip
 ferns_withered 59.1 61.7 flip
 ferns_withered 61.3 61.7 flip
-grass_dry_patch 132 61.7
 grass_dry_patch 166.1 61.7
 pillar_thick 169.8 61.7
 tree_dry_pile 42.2 61.8
 branches_fallen 73.8 61.8
 tree_dry_large 146.7 61.8 flip
+skull_mound_candles 103.8 61.9
 leaves_pile 130.9 61.9 flip
 grass_dry_patch 155.5 61.9
 grass_dry_patch 117.3 62
 skull_mound_candles 122.8 62 flip
+rock_rubble 132.5 62 flip
 reeds_dry 86.7 62.1 flip
 flowers_dead 19.7 62.2
 thistles_dry 79.7 62.2
@@ -1500,7 +1495,6 @@ tree_dry_pile 112.6 62.2
 grass_dry_tall 115.7 62.2
 reeds_dry 81.7 62.3
 bush_thorny 93.2 62.3 flip
-bush_dry_round 103.7 62.3
 bush_thorny 35.3 62.4
 reeds_dry 153.6 62.5
 grass_dry_tall 163.2 62.5
@@ -1525,14 +1519,12 @@ tree_dead_medium 173.4 63.3 flip
 grass_dry_tall 79.8 63.4
 thistles_dry 102.3 63.4 flip
 tree_dead_medium 106.2 63.4
-flowers_dead 116.4 63.4 flip
 sarcophagus_open 167.5 63.4
 leaves_pile 82.4 63.5
 tree_dry_small 95 63.5
 grass_dry_patch 12.5 63.7
 grass_dry_patch 43.3 63.7
 flowers_dead 57.1 63.7 flip
-roots_clump 170.6 63.7
 tree_dead_medium 9.4 63.8
 reeds_dry 87 63.8 flip
 leaves_scattered 20.3 63.9 flip
@@ -1542,24 +1534,26 @@ leaves_pile 33.4 64.2
 tree_dry_orange 74 64.2
 leaves_scattered 135.7 64.2
 grass_dry_tall 148.6 64.2
+roots_clump 120.4 64.4 flip
 skull_mound_candles 150.4 64.4
 grass_dry_patch 160.9 64.4
 tree_dry_orange 111.6 64.5
+leaves_scattered 117 64.5
 flowers_dead 126.3 64.5
 reeds_dry 153.6 64.5
+flowers_dead 165.1 64.5
 thistles_dry 16.7 64.6
 reeds_dry 82.8 64.6 flip
 flowers_dead 107.5 64.6 flip
-ferns_withered 118.4 64.6 flip
 thistles_dry 152.2 64.6
-bush_dry_wide 163.2 64.6
 thistles_dry 80.5 64.7
 ferns_withered 141.7 64.7 flip
 tree_dry_thin 146.5 64.7 flip
+flowers_dead 164 64.7
 leaves_pile 32.5 64.8 flip
 leaves_scattered 103.3 64.8 flip
-skull_spike 122.1 64.8 flip
 leaves_pile 137.9 64.8 flip
+grass_dry_patch 172.1 64.8 flip
 flowers_dead 40.9 64.9
 tree_dead_large 71.9 64.9
 reeds_dry 87.6 64.9
@@ -1569,6 +1563,7 @@ tree_dead_webs 23.9 65.1
 bush_dry_round 53.7 65.1 flip
 flowers_dead 76.4 65.1
 branches_fallen 97.3 65.1 flip
+bush_dry_tangled 100.6 65.1 flip
 tree_dead_medium 114.1 65.1
 grass_dry_tall 81.3 65.2 flip
 thistles_dry 96.1 65.2
@@ -1577,10 +1572,10 @@ leaves_scattered 102.4 65.3
 thistles_dry 33.8 65.4 flip
 leaves_pile 66.1 65.4
 ferns_withered 99 65.4
+skull_mound_candles 122.1 65.4
 thistles_dry 153.9 65.4
 leaves_pile 124.8 65.5 flip
 thistles_dry 144 65.5
-leaves_scattered 167.3 65.5
 tree_hollow 175.6 65.5 flip
 tree_teal_leaves 11.3 65.6
 grass_dry_patch 69.6 65.6
@@ -1589,13 +1584,12 @@ grass_dry_patch 148.2 65.7
 grass_dry_patch 50.5 65.8
 grass_dry_tall 83.1 65.8 flip
 leaves_pile 89.1 65.9 flip
+bush_dry_round 162.3 65.9 flip
 leaves_scattered 67.3 66
 grave_slab 14.1 66.1
-coffin_lid_leaning 128.5 66.1
 flowers_dead 145.6 66.1 flip
 tomb_flowers 17 66.2
-rock_rubble 101.7 66.4 flip
-bush_dry_tangled 100.1 66.5
+skull_single 101.9 66.5
 tree_hollow 173.4 66.5
 leaves_pile 70.7 66.6 flip
 reeds_dry 84 66.6
@@ -1607,13 +1601,16 @@ leaves_pile 157.7 66.8
 shrub_dry_tall 53.6 66.9
 tree_teal_leaves 108.2 66.9
 shrub_dry_tall 72.4 67
+grass_dry_patch 99.4 67 flip
 tree_dead_medium 105.5 67.1 flip
 thistles_dry 160.9 67.1
 shrub_dry_tall 20.4 67.2
-bones_chains 169.5 67.3 flip
+leaves_scattered 103.8 67.2 flip
 tree_dead_medium 112.5 67.4
 tree_dead_webs 115.6 67.4
 flowers_dead 130.7 67.4 flip
+skull_mound_candles 143.4 67.4
+ferns_withered 169.6 67.4 flip
 bush_thorny 66.2 67.5
 bush_thorny 68.5 67.5
 skull_pile 164.4 67.5
@@ -1628,10 +1625,10 @@ tree_dry_large 37.8 67.8 flip
 thistles_dry 84.2 67.8 flip
 thistles_dry 95.5 67.8
 grass_dry_patch 152.1 67.8
-flowers_dead 172 67.8 flip
 grass_dry_tall 10.9 67.9 flip
 skull_spike 124.9 67.9 flip
 thistles_dry 132.2 67.9 flip
+flowers_dead 98.3 68
 tree_dry_orange 75.4 68.1
 thistles_dry 44.7 68.2
 skeleton_curled 155.7 68.2 flip
@@ -1640,31 +1637,30 @@ thistles_dry 81.7 68.5
 sarcophagus_closed 120.7 68.5
 grass_dry_tall 148 68.5
 bush_dry_round 49.9 68.6 flip
-rock_rubble 98.5 68.6
 tree_skull 19.4 68.8 flip
-bones_scattered 101.9 68.8 flip
+bones_chains 170.9 68.8 flip
 leaves_scattered 78.2 68.9
 grass_dry_patch 162.3 68.9
-pillar_cracked 136.2 69
+pillar_runes 101.9 69
+bones_chains 128 69 flip
 grave_slab 16.7 69.1 flip
 reeds_dry 85 69.1 flip
 tree_dry_large 9.5 69.2
 tomb_angel 13.9 69.2 flip
 bush_dry_tangled 111.6 69.2
-sarcophagus_closed 158.1 69.2
 leaves_pile 159.9 69.2
 grass_dry_patch 29.9 69.3 flip
 bush_dry_tangled 67 69.3 flip
 tree_dry_orange 107.5 69.3 flip
 thistles_dry 118.8 69.4
 reeds_dry 90.4 69.5
-sarcophagus_open 129 69.5
 tree_dead_webs 175.7 69.5
 tree_dead_large 64.7 69.6
 tree_dry_orange 113.6 69.6 flip
 bush_dry_tangled 105.3 69.7
 tree_dry_large 173.4 69.7
 leaves_scattered 91.6 69.9
+skull_single 97.3 69.9
 thistles_dry 133.7 70.1
 leaves_pile 40.5 70.3 flip
 leaves_pile 27.5 70.4 flip
@@ -1675,13 +1671,14 @@ bush_dry_round 62.8 70.5 flip
 flowers_dead 126.8 70.5
 rock_large 70.9 70.6
 thistles_dry 83.8 70.6 flip
-ferns_withered 116.9 70.7
+rock_rubble 105.9 70.7 flip
 tree_dry_large 68.3 70.8
 tree_teal_leaves 109.6 70.8 flip
 leaves_scattered 125.6 70.8 flip
 sarcophagus_open 142.2 70.8
 reeds_dry 89.6 70.9 flip
-ferns_withered 98.1 70.9 flip
+bones_chains 123.3 70.9
+sarcophagus_open 136.6 70.9
 bush_dry_wide 10.5 71
 tree_dry_leaning 16.3 71 flip
 bush_dry_wide 22.8 71
@@ -1690,6 +1687,7 @@ bush_dry_wide 64 71.1
 grass_dry_patch 65.7 71.1 flip
 flowers_dead 114.6 71.1
 flowers_dead 60.2 71.2
+rock_rubble 97.5 71.2
 thistles_dry 79.8 71.3
 grass_dry_patch 113.4 71.4 flip
 bush_dry_tangled 112.2 71.5 flip
@@ -1700,109 +1698,113 @@ flowers_dead 77.1 71.7
 tree_dry_pile 8.5 71.8
 pillar_thick 102.4 71.8
 flowers_dead 134.4 71.8 flip
+roots_clump 163.7 71.8
 leaves_scattered 66.8 71.9
 reeds_dry 90.5 71.9
-roots_clump 104.8 71.9 flip
 coffin_lid_leaning 161.7 71.9
+bones_ribcage 168.2 71.9
 ferns_withered 75.3 72
-skull_pile 170.2 72 flip
 leaves_pile 130.6 72.1
 grass_dry_patch 146 72.1 flip
 reeds_dry 56.2 72.2
 bush_dry_tangled 111 72.2
+ribcage_arch 127.4 72.2
 grass_dry_tall 138.5 72.2 flip
 reeds_dry 84.7 72.3
 flowers_dead 151 72.3
 tree_dead_large 19.6 72.4 flip
 flowers_dead 81.2 72.4
+rock_rubble 98.7 72.4
 reeds_dry 137.6 72.4 flip
-sarcophagus_closed 165.9 72.4
+grass_dry_patch 148.8 72.4
 reeds_dry 55.3 72.5 flip
 bush_dry_round 65.3 72.5
 grass_dry_patch 131.8 72.5
 tree_dead_large 173.3 72.6
-skull_spike 127.8 72.7
+bush_dry_round 115.7 72.7 flip
+leaves_scattered 170.5 72.7 flip
 grass_dry_patch 34.4 72.8
 rock_mossy 37.6 72.8
 thistles_dry 76.5 72.9
 grass_dry_tall 133.1 72.9
+grass_dry_patch 152.9 72.9 flip
 leaves_scattered 96.4 73
 leaves_scattered 53.8 73.1
 bush_dry_wide 72.4 73.1
 leaves_pile 74.7 73.1 flip
-ferns_withered 115.6 73.1 flip
+leaves_scattered 164 73.1 flip
 bush_dry_wide 175.9 73.1 flip
 bush_thorny 11.8 73.2 flip
 tree_dry_orange 67.9 73.2 flip
 tree_dry_small 79 73.2 flip
-grass_dry_patch 99 73.2
 reeds_dry 92.3 73.3
+grass_dry_patch 107.6 73.3 flip
 leaves_scattered 125.7 73.3
-grass_dry_patch 154.4 73.3
 leaves_scattered 160.3 73.3
 thistles_dry 55.8 73.4
-ferns_withered 108.1 73.4
+flowers_dead 104.5 73.4
 altar_candles 118.2 73.4 flip
 grass_dry_tall 69.6 73.5 flip
 leaves_scattered 28 73.6
-grass_dry_patch 106.6 73.6
+leaves_scattered 98.9 73.6
 grass_dry_tall 136.4 73.6
+grass_dry_patch 147.5 73.6 flip
 flowers_dead 66.2 73.7 flip
-skull_single 100.2 73.7
-skull_mound_candles 140.9 73.7 flip
-coffin_lid_leaning 148.8 73.7
+leaves_scattered 110.1 73.7 flip
 reeds_dry 84.4 73.8
+grass_dry_patch 101.2 73.8 flip
 leaves_pile 123.4 73.8 flip
+ribcage_arch 140.8 73.8
+roots_clump 111.9 73.9
 leaves_scattered 129.3 73.9
 thistles_dry 164.7 73.9
+skull_single 165.7 73.9 flip
+grass_dry_patch 170.5 73.9 flip
 bush_dry_round 77.3 74 flip
 reeds_dry 93.8 74 flip
-skull_single 110.9 74
-ferns_withered 112.2 74
 flowers_dead 171.8 74 flip
+roots_clump 106.4 74.1 flip
 leaves_scattered 143.9 74.1
 grass_dry_patch 13.2 74.2
 skull_mound_candles 121.6 74.2
 grass_dry_tall 163.8 74.2
-skull_single 169.4 74.2 flip
+skull_single 168 74.2
 tree_dry_pile 8.1 74.3
 ferns_withered 71.3 74.3
-ferns_withered 101.6 74.4
 grass_dry_patch 103.4 74.4
+skull_single 138.3 74.4 flip
 flowers_dead 153.5 74.4
 grass_dry_patch 156.1 74.4 flip
 grass_dry_patch 162.8 74.4 flip
 leaves_scattered 113.5 74.5
-rock_rubble 138.2 74.5
 tree_teal_leaves 174.7 74.5
 thistles_dry 135 74.6
-ferns_withered 137.1 74.6
+grass_dry_patch 137.1 74.6 flip
 reeds_dry 161 74.6
 tree_dead_large 10.4 74.7
 leaves_pile 47 74.7
 tree_dry_orange 75.2 74.7 flip
-skull_single 157.1 74.8
+skull_single 154.6 74.8
 flowers_dead 50.2 74.9
 leaves_pile 55.5 74.9 flip
 leaves_pile 56.7 74.9 flip
 reeds_dry 95.3 74.9 flip
-ferns_withered 114.9 74.9
 flowers_dead 124 74.9 flip
 tree_skull 62.6 75
+roots_clump 115.5 75 flip
 sarcophagus_open 151.3 75 flip
 grass_dry_tall 159.4 75
 tree_dead_webs 80.4 75.1 flip
 reeds_dry 83.4 75.1
+flowers_dead 112.6 75.1 flip
 leaves_pile 128.3 75.1 flip
-rock_rubble 158.3 75.1 flip
 flowers_dead 170.7 75.1
 ferns_withered 78.2 75.2
 reeds_dry 88.5 75.2 flip
-grass_dry_patch 104.4 75.3
 leaves_scattered 48.5 75.4 flip
 rock_large 33.3 75.6 flip
+rock_rubble 157.9 75.6 flip
 leaves_scattered 100 75.7 flip
-rock_rubble 113.7 75.7
 bush_dry_round 130.4 75.8
 pillar_fallen 166.5 75.8
 skull_mound_candles 109.3 75.9 flip
@@ -1810,7 +1812,7 @@ bush_dry_tangled 79 76
 flowers_dead 132.2 76
 flowers_dead 18.5 76.1
 reeds_dry 96.7 76.1
-bush_dry_tangled 101.8 76.1 flip
+leaves_scattered 159.7 76.1 flip
 grass_dry_tall 12.4 76.2
 thistles_dry 23 76.2
 leaves_pile 57.7 76.2 flip
@@ -1818,8 +1820,8 @@ tree_dry_thin 73.2 76.2 flip
 reeds_dry 83.2 76.2 flip
 pillar_tall 147.1 76.2 flip
 leaves_pile 28.2 76.3
+ferns_withered 104 76.3 flip
 grass_dry_tall 170.6 76.3
-sarcophagus_open 134.5 76.4
 bones_ribcage 139.5 76.4
 pillar_tall 155.6 76.5 flip
 thistles_dry 17.1 76.6
@@ -1827,35 +1829,35 @@ tree_dead_medium 76.9 76.6
 ferns_withered 54 76.8
 branches_fallen 75.1 76.8
 reeds_dry 87.4 76.8
+leaves_scattered 131.4 76.8
 rock_slabs 90 76.9
 tree_dead_large 122.3 76.9 flip
 leaves_pile 46.7 77 flip
-roots_clump 103.9 77 flip
-skull_spike 127.3 77 flip
 pillar_runes 144.1 77 flip
+pillar_cracked 162.2 77
 branches_fallen 26.3 77.1
 grass_dry_patch 125.1 77.1
 tree_dry_orange 9.2 77.2 flip
 tree_dead_webs 118.3 77.2 flip
+leaves_scattered 165.4 77.3 flip
 reeds_dry 99.9 77.4 flip
 tree_dry_pile 172.7 77.4 flip
 leaves_pile 51.6 77.5 flip
-flowers_dead 160.6 77.5 flip
+leaves_scattered 114.6 77.5
 leaves_scattered 40.8 77.6
 bones_scattered 112.1 77.6
-roots_clump 114.2 77.6
+grass_dry_patch 127.7 77.8 flip
 leaves_pile 17.3 78
 bush_dry_round 20.1 78
 grass_dry_tall 22.3 78
 leaves_pile 63.8 78.1
-skeleton_curled 162.4 78.1
 tree_hollow 12.8 78.2 flip
 grass_dry_tall 73.5 78.2
 flowers_dead 93.2 78.2 flip
 thistles_dry 145.5 78.2
-flowers_dead 166.5 78.2 flip
 tree_dead_webs 170.2 78.2 flip
 reeds_dry 82 78.3
+leaves_scattered 103.3 78.3
 skull_pile 148.8 78.3
 grass_dry_tall 165.5 78.3
 thistles_dry 86.8 78.4
@@ -1863,10 +1865,11 @@ bush_dry_wide 125.9 78.4
 thistles_dry 52.9 78.5 flip
 bush_thorny 54.5 78.5
 reeds_dry 100.9 78.5 flip
-grass_dry_patch 130.6 78.5 flip
 skull_spike 159.1 78.6 flip
 leaves_scattered 50.4 78.7 flip
+skull_single 166.8 78.7
 grass_dry_tall 87.7 78.8
+ferns_withered 130.7 78.8 flip
 grass_dry_tall 22.4 78.9
 grass_dry_tall 116.3 78.9 flip
 rock_rubble 135.4 78.9
@@ -1877,12 +1880,12 @@ grass_dry_patch 168.3 79.1 flip
 reeds_dry 88.8 79.2
 pillar_fallen 107.3 79.3 flip
 tree_hollow 120.5 79.3
-bush_dry_round 143.4 79.3
 leaves_scattered 65.2 79.4
 grass_dry_tall 91.5 79.4
 reeds_dry 94.8 79.4
 leaves_scattered 129.5 79.4
 tree_dry_leaning 34.3 79.5
+bones_chains 141.4 79.5 flip
 tree_dead_webs 59.6 79.6
 reeds_dry 102.9 79.7 flip
 tree_dry_pile 123.4 79.7
@@ -1890,9 +1893,8 @@ tree_teal_leaves 9.7 79.8 flip
 branches_fallen 14.9 79.8
 thistles_dry 22.6 79.8
 leaves_pile 53.1 79.8 flip
-coffin_lid_leaning 156.1 79.8
 tree_dry_large 171.9 79.8
-bones_chains 138.9 79.9
+skull_pile 132.2 79.9 flip
 rock_rubble 152.7 79.9
 flowers_dead 51.9 80 flip
 reeds_dry 81.8 80 flip
@@ -1900,7 +1902,6 @@ reeds_dry 166.8 80
 grass_dry_tall 77.7 80.1 flip
 reeds_dry 95.8 80.1 flip
 bush_dry_round 169.6 80.1
-pillar_tall 132.4 80.2
 grass_dry_tall 149.5 80.2 flip
 grass_dry_patch 165.9 80.2
 reeds_dry 97 80.3 flip
@@ -1908,7 +1909,6 @@ tree_teal_leaves 13.2 80.5
 leaves_pile 18.5 80.6
 flowers_dead 40.7 80.6
 reeds_dry 105.6 80.6 flip
-grass_dry_patch 160.6 80.6
 reeds_dry 86 80.7
 tree_hollow 125.6 80.7
 bush_dry_round 30.7 80.8 flip
@@ -1933,13 +1933,14 @@ thistles_dry 9.7 81.7
 ferns_withered 14.7 81.7
 rock_large 70.8 81.7 flip
 bush_dry_wide 148.1 81.8 flip
-skull_single 161 81.8
 leaves_pile 29 81.9 flip
 reeds_dry 107.7 81.9 flip
 pillar_cracked 159.1 81.9 flip
 reeds_dry 85.2 82.2
 leaves_pile 17.2 82.3 flip
 tree_dead_webs 45.3 82.3
+pillar_cracked 131.3 82.4
+ferns_withered 169.1 82.5 flip
 grass_dry_patch 90.5 82.6 flip
 bush_dry_tangled 126.6 82.6 flip
 leaves_scattered 166.2 82.6 flip
@@ -1951,7 +1952,6 @@ tree_teal_leaves 152.2 82.8
 leaves_pile 62.9 82.9
 reeds_dry 109.6 82.9
 tree_dead_medium 52.3 83
-grass_dry_patch 115.1 83 flip
 tree_dead_large 124.8 83.1
 rock_large 23.8 83.3
 tree_dead_medium 37.5 83.3 flip
@@ -1963,27 +1963,27 @@ tree_dry_pile 149.1 83.3 flip
 tree_dry_pile 32 83.4 flip
 reeds_dry 81.3 83.4 flip
 reeds_dry 111.4 83.4
-rock_rubble 128.4 83.5
 log_fallen 100.1 83.6
 leaves_scattered 85.3 83.7
 leaves_pile 41.3 83.8 flip
+grass_dry_patch 159.1 83.8 flip
 leaves_pile 162.3 83.8
 leaves_pile 86.5 83.9
 leaves_scattered 48.3 84
 grass_dry_patch 104.1 84
+sarcophagus_closed 128.3 84
 leaves_pile 40.3 84.1
 leaves_scattered 88 84.1 flip
+roots_clump 105.3 84.1 flip
 pillar_thick 136.8 84.1
 reeds_dry 112.3 84.2
 ferns_withered 172.8 84.2
 flowers_dead 102.3 84.3 flip
-ferns_withered 160.6 84.3 flip
 tree_dead_large 167.9 84.3
 leaves_scattered 27.9 84.5 flip
 tree_dry_orange 122.8 84.5
 pillar_fallen 133.5 84.5
 bush_dry_wide 140 84.5
-skeleton_curled 158 84.5
 reeds_dry 113.9 84.6 flip
 flowers_dead 131.3 84.6
 grass_dry_patch 164.5 84.7 flip
@@ -1991,37 +1991,40 @@ tree_dead_medium 6.6 84.8
 ferns_withered 118.3 84.8
 thistles_dry 25.5 84.9
 reeds_dry 85.9 84.9 flip
+flowers_dead 106.6 84.9
 thistles_dry 147.9 84.9 flip
 grass_dry_patch 98.2 85 flip
 tree_dry_large 152.1 85 flip
+bush_dry_wide 160.3 85 flip
 tree_skull 74.7 85.1 flip
 leaves_scattered 141.3 85.1
+grass_dry_patch 129.8 85.3
+skull_single 138.4 85.3
 grass_dry_patch 63.2 85.4
 flowers_dead 42.2 85.5 flip
 leaves_scattered 59.1 85.5
 thistles_dry 103.2 85.5 flip
 grass_dry_patch 144.8 85.5
-ferns_withered 106.8 85.6 flip
 flowers_dead 114.6 85.6 flip
 skull_mound_candles 120.4 85.6
-roots_clump 138.8 85.6
-flowers_dead 155.3 85.6
 grass_dry_patch 163.3 85.6
 flowers_dead 165.6 85.6
 grass_dry_tall 26.1 85.7 flip
 flowers_dead 60.4 85.7 flip
+grass_dry_patch 156.8 85.7
 flowers_dead 21.3 85.8
-flowers_dead 130.2 85.8 flip
 tree_dry_orange 149.4 85.8 flip
 tree_dead_medium 171.3 85.8 flip
-leaves_scattered 136.2 86
 grass_dry_tall 8.7 86.1
 tree_skull 66.4 86.1 flip
 reeds_dry 115.9 86.1 flip
+bush_dry_wide 146.9 86.1 flip
+grass_dry_patch 137.1 86.3
 shrub_dry_tall 89.3 86.4 flip
 grass_dry_tall 108.8 86.4
 leaves_scattered 19 86.5 flip
 leaves_scattered 58.9 86.5
+grass_dry_patch 131.1 86.5
 bush_thorny 153.9 86.5
 reeds_dry 81.7 86.6
 tree_dead_large 105.3 86.6 flip
@@ -2030,21 +2033,19 @@ grass_dry_patch 44.6 86.7
 thistles_dry 69.3 86.7 flip
 grass_dry_patch 140.9 86.7
 thistles_dry 38.4 86.8 flip
-ferns_withered 97.1 86.8 flip
 reeds_dry 116.9 86.9
-bones_chains 123.2 87.1
 thistles_dry 86 87.3 flip
 grass_dry_tall 157.6 87.3
 flowers_dead 7.4 87.4
 rock_slabs 35.7 87.5
 shrub_dry_tall 109.7 87.5 flip
 leaves_pile 140.2 87.5 flip
-coffin_lid_leaning 145 87.5 flip
 leaves_scattered 57 87.6
 tree_teal_leaves 63.3 87.6 flip
 tree_dry_large 90.7 87.6 flip
 tree_dead_webs 103.2 87.6 flip
 reeds_dry 118.4 87.7 flip
+ribcage_arch 143.6 87.7 flip
 tree_dry_large 165.8 87.7
 flowers_dead 154.3 87.8
 grass_dry_patch 148.3 87.9
@@ -2064,7 +2065,6 @@ leaves_scattered 21.7 88.7
 tree_dry_pile 163.2 88.7 flip
 tree_dry_orange 6.3 88.8
 bush_dry_round 109.3 88.8 flip
-sarcophagus_open 152.2 88.8
 bush_dry_round 65.6 88.9
 bush_dry_tangled 66.8 89.1
 grass_dry_tall 99.9 89.1 flip
@@ -2090,6 +2090,7 @@ grass_dry_tall 41.9 89.7 flip
 pillar_tall 132.9 89.7
 flowers_dead 145.1 89.7
 tree_dry_large 8.8 89.8 flip
+bush_dry_wide 151.9 89.8 flip
 leaves_pile 138.5 89.9
 pillar_broken 149.1 89.9 flip
 thistles_dry 24.5 90.1 flip
@@ -2131,7 +2132,6 @@ leaves_scattered 152.4 91.6
 tree_dead_webs 7.4 91.7 flip
 bush_thorny 27.8 91.8 flip
 flowers_dead 142.4 91.8
-bush_dry_wide 144.2 91.8 flip
 reeds_dry 158.3 91.8
 tree_dry_small 45.8 91.9
 reeds_dry 86.6 91.9
@@ -2139,6 +2139,7 @@ thistles_dry 137.8 91.9 flip
 reeds_dry 118.1 92
 leaves_scattered 76.7 92.2
 tree_dry_large 74.5 92.3
+leaves_scattered 130.3 92.3 flip
 flowers_dead 22.4 92.4
 grass_dry_tall 35.8 92.4
 bush_thorny 40.8 92.4 flip
@@ -2149,6 +2150,7 @@ thistles_dry 33.5 92.6
 tree_dead_large 60.6 92.6 flip
 bush_dry_tangled 65.5 92.6 flip
 bush_dry_wide 82 92.6
+coffin_lid_leaning 145.7 92.6
 bush_thorny 161.3 92.7
 tree_dead_medium 163.6 92.7 flip
 tree_dry_orange 20.6 92.8
@@ -2175,6 +2177,7 @@ bush_dry_round 89.8 93.5
 tree_dry_pile 126.3 93.5
 tree_dead_large 159.2 93.5
 flowers_dead 48.6 93.6 flip
+leaves_scattered 98.2 93.6
 tree_dead_large 17.6 93.7
 tree_dead_webs 55.5 93.7 flip
 grass_dry_tall 88.6 93.7 flip
@@ -2190,6 +2193,7 @@ tree_dead_medium 12.3 94.4
 tree_teal_leaves 92.6 94.5
 shrub_dry_tall 96.6 94.5
 tree_dry_pile 161.6 94.5
+flowers_dead 105.5 94.6
 bush_thorny 143.4 94.6
 tree_dry_large 28.4 94.7
 tree_dry_large 147.5 94.7
@@ -2198,13 +2202,12 @@ tree_dry_pile 24.8 94.8
 tree_dry_orange 61.4 94.8 flip
 tree_dry_pile 130.8 94.8 flip
 tree_dry_orange 154.9 94.8
+ferns_withered 103.8 95
 tree_dry_large 34.5 95.1 flip
 tree_dry_orange 50.8 95.1 flip
 tree_teal_leaves 80.4 95.2
-ferns_withered 103.6 95.2 flip
 tree_dead_large 75.5 95.3
 tree_teal_leaves 98.3 95.3
-flowers_dead 100.4 95.3 flip
 tree_hollow 115.2 95.3
 tree_dead_large 30.7 95.5 flip
 tree_dead_webs 82.8 95.5
@@ -2260,561 +2263,635 @@ tree_dry_orange 124.8 98.7 flip
 tree_dead_medium 137.8 98.7
 tree_teal_leaves 112.4 98.8 flip
 tree_dry_pile 134.4 98.8
-bones_scattered 34.7 4.9 flip
-ribcage_arch 31.9 5.0 flip
-skull_pile 33.4 5.1
-grass_dry_patch 35.5 5.4
-skull_pair 34.5 5.8 flip
-skeleton_hand 32.9 5.9 flip
-leaves_pile 28.0 6.6
-log_fallen 28.5 7.3
-skull_single 29.7 7.3 flip
-bush_dry_round 26.7 7.4
-leaves_scattered 104.0 9.2
-skull_pile 60.9 9.7
-pillar_fallen 104.6 10.2
-vines_dry_rock 103.4 10.2
+grass_dry_patch 35.6 4.7
+bones_scattered 34.9 5.3
+skull_pair 35.5 5.6
+skull_pile 34.6 6.2
+bush_dry_round 31.9 6.3
+bush_dry_round 26.0 7.0 flip
+skeleton_hand 35.3 7.2
+log_fallen 30.6 7.2
+leaves_pile 27.5 7.2 flip
+leaves_pile 31.9 7.3
+ribcage_arch 34.2 7.4 flip
+branches_fallen 29.4 7.6 flip
+grass_dry_patch 31.2 7.8
+log_fallen 27.1 8.2
+grass_dry_patch 28.3 8.4 flip
+skull_single 27.7 9.0
+branches_fallen 102.9 9.6 flip
+branches_fallen 26.9 9.8 flip
+skull_single 103.1 10.2
 ribcage_arch 11.1 10.3 flip
 skeleton_hand 9.7 10.4
-bush_thorny 22.1 10.8
-skull_pile 103.1 10.8 flip
+log_fallen 104.4 10.5 flip
+grass_dry_patch 24.7 10.8
+bush_dry_round 105.9 10.8 flip
+skull_single 22.4 10.9
+grass_dry_patch 103.2 11.1 flip
 skull_pile 9.9 11.2
-pillar_fallen 60.4 11.4 flip
-ferns_withered 23.7 11.4
-pillar_broken 104.4 11.4 flip
-leaves_scattered 61.7 11.5
-bones_scattered 27.3 11.6
-grass_dry_patch 28.3 11.7
-bush_dry_tangled 22.9 11.8
-rock_large 95.8 11.8 flip
-rock_rubble 61.5 11.9 flip
-grass_dry_tall 94.6 11.9 flip
-grass_dry_tall 21.3 12.0 flip
+tomb_flowers 23.9 11.2 flip
+bones_scattered 61.3 11.2
+leaves_pile 104.8 11.4 flip
+branches_fallen 95.4 11.5
+rock_cluster 163.8 11.5 flip
+grave_broken 25.3 11.6 flip
+skull_pair 61.9 11.6 flip
+thistles_dry 164.6 11.7
+grave_round 24.0 11.8
+grave_slab 22.9 11.8
+skull_pile 60.7 11.9 flip
 bones_scattered 9.0 12.1
 grass_dry_patch 8.3 12.2
-skull_pile 26.5 12.3 flip
-skull_pair 27.6 12.3
-rock_crystal 96.6 12.5 flip
-rock_rubble 95.2 12.7 flip
-bush_dry_wide 22.0 12.9
-flowers_dead 21.0 12.9
-skeleton_hand 26.9 12.9 flip
-ribcage_arch 25.5 13.1
-pillar_fallen 147.9 13.7 flip
-shrub_dry_tall 98.3 14.4
-skull_pile 149.5 14.4
+skull_single 94.7 12.4
+flowers_dead 23.2 12.4 flip
+skeleton_hand 61.7 12.6 flip
+rock_large 162.8 12.6
+log_fallen 95.8 12.7 flip
+ribcage_arch 60.1 12.9
+grass_dry_patch 94.7 13.1
+grass_dry_tall 161.8 13.3
+bush_dry_round 97.2 13.6
+leaves_pile 95.6 13.7 flip
+rock_rubble 163.0 13.8
 branches_fallen 76.8 14.6 flip
-leaves_scattered 147.3 14.6
 skull_single 75.9 14.8 flip
-vines_dry_rock 148.5 14.8
 grass_dry_patch 75.3 15.0 flip
-skull_pair 19.4 15.1
-tree_dry_small 98.8 15.3
-roots_clump 99.7 15.3
-grass_dry_patch 18.6 15.3
-skeleton_hand 21.3 15.5 flip
 log_fallen 76.4 15.5
 shrub_dry_tall 133.9 15.6 flip
-bones_scattered 19.1 15.8 flip
-branches_fallen 93.6 16.0
-log_fallen 95.0 16.3
-skull_pile 20.4 16.4 flip
+grass_dry_tall 93.4 15.8 flip
+grave_round 161.4 16.1
+bush_thorny 19.7 16.2 flip
+rock_rubble 92.3 16.3
 tree_dry_small 134.4 16.7
-skull_single 94.0 16.7 flip
-leaves_pile 96.2 17.0
-grass_dry_patch 94.7 17.3
-flowers_dead 93.0 17.4 flip
+rock_large 93.5 16.8
+flowers_dead 162.1 16.8 flip
+bush_dry_tangled 20.7 17.1 flip
+grave_slab 161.0 17.1
+grass_dry_tall 19.9 17.7 flip
 sapling_dead 133.7 17.7
+rock_crystal 92.3 17.9
+bush_dry_wide 20.8 18.0 flip
+rock_cluster 167.8 18.0 flip
 grave_slab 37.2 18.3 flip
-grave_round 92.5 18.4
-skull_single 94.6 18.4 flip
+thistles_dry 168.6 18.3 flip
 grave_round 38.6 18.4
-bush_thorny 169.9 18.6 flip
+flowers_dead 19.9 18.6 flip
+thistles_dry 92.4 18.8
 flowers_dead 37.3 18.8 flip
-grass_dry_tall 168.1 19.1
-flowers_dead 166.9 19.4
-bush_dry_tangled 169.1 19.6
-bush_dry_wide 167.7 19.8 flip
+rock_large 166.7 18.9 flip
+rock_crystal 167.9 19.1
+grass_dry_tall 165.6 19.4
 grave_round 60.2 19.8 flip
 tomb_flowers 58.8 19.8
 bush_dry_tangled 26.0 19.9
-ferns_withered 170.1 19.9
 ferns_withered 26.7 20.0
+rock_rubble 166.6 20.0
 rock_rubble 72.7 20.4 flip
-sapling_dead 54.3 20.5
 bush_dry_wide 25.2 20.7 flip
-tree_dry_small 53.2 20.7 flip
 skull_single 58.0 20.7
 rock_large 74.0 20.8 flip
+skull_single 51.7 20.9 flip
 flowers_dead 60.1 21.2
-leaves_pile 54.1 21.3 flip
-shrub_dry_tall 52.8 21.6 flip
+log_fallen 52.7 21.3
+grass_dry_patch 51.9 21.6 flip
 rock_crystal 73.5 21.9
-skull_pile 101.7 22.4 flip
-bush_thorny 80.4 22.5 flip
+bush_dry_round 53.9 22.1 flip
+leaves_pile 52.7 22.2
+skull_single 166.0 22.3 flip
+thistles_dry 101.0 22.4 flip
+shrub_dry_tall 80.4 22.6 flip
 thistles_dry 74.0 22.7 flip
-grave_round 97.1 23.0
-tomb_flowers 95.7 23.2
-bush_dry_tangled 81.1 23.3
-bones_scattered 101.4 23.3
-grass_dry_tall 80.3 23.7 flip
-grass_dry_patch 100.6 23.9 flip
-grave_slab 96.6 24.1 flip
-flowers_dead 97.8 24.1
-skull_single 95.3 24.3
-rock_rubble 73.0 24.3 flip
+grave_slab 165.3 22.8 flip
+rock_cluster 100.9 22.8
+rock_crystal 101.8 22.8 flip
+tree_dry_small 81.5 22.8 flip
+bush_dry_round 95.6 23.2 flip
+tomb_flowers 166.2 23.3
+leaves_pile 97.0 23.4
+flowers_dead 164.3 23.5 flip
+grass_dry_patch 153.5 23.5 flip
+leaves_pile 80.8 23.7 flip
+grass_dry_patch 167.0 23.8 flip
+grave_round 165.4 23.9
+skull_single 154.3 23.9 flip
+rock_large 101.7 23.9 flip
+log_fallen 153.4 24.3
+grass_dry_tall 102.4 24.3
+log_fallen 96.5 24.3 flip
 grave_broken 126.2 24.4 flip
-leaves_scattered 72.1 24.4 flip
-flowers_dead 80.1 24.6 flip
-pillar_fallen 114.5 24.6 flip
+grass_dry_patch 97.7 24.5
+branches_fallen 154.8 24.7 flip
 grave_round 124.6 24.9
+skull_single 97.3 25.0 flip
 flowers_dead 123.3 25.4
-leaves_scattered 115.3 25.5
-pillar_fallen 73.0 25.6 flip
-rock_rubble 114.3 25.8 flip
+grass_dry_patch 118.0 25.4 flip
+branches_fallen 96.6 25.6
+skull_single 118.9 25.8
 flowers_dead 88.2 26.1 flip
-skull_pile 71.4 26.4 flip
+bush_dry_wide 70.7 26.1
+log_fallen 118.1 26.2 flip
+branches_fallen 119.5 26.4 flip
 bush_dry_wide 87.7 26.8 flip
 grass_dry_tall 89.0 26.8
+bush_dry_tangled 72.0 26.9 flip
+ferns_withered 72.0 27.7 flip
+sapling_dead 116.2 27.7 flip
 bush_dry_tangled 88.8 27.8 flip
 bush_thorny 90.2 27.9
-skull_single 24.3 27.9
+log_fallen 23.2 28.3 flip
 ferns_withered 88.5 28.4
-log_fallen 25.1 28.5
-grass_dry_patch 23.9 28.5 flip
-grave_broken 75.7 29.2 flip
-leaves_pile 24.7 29.6 flip
-grass_dry_patch 75.2 29.6
-grave_round 76.6 30.0
-tomb_flowers 75.4 30.5
-leaves_pile 10.3 30.6 flip
-flowers_dead 77.1 30.7
-grass_dry_patch 11.7 30.8 flip
-bush_dry_round 8.9 31.0
-grave_slab 76.3 31.1
-log_fallen 10.7 31.3
-skull_single 75.5 31.4 flip
+tree_dry_small 115.0 28.5 flip
+grass_dry_tall 169.2 28.6 flip
+bush_dry_round 24.6 28.8 flip
+rock_large 170.0 28.9 flip
+flowers_dead 76.9 29.0
+leaves_pile 23.5 29.5
+shrub_dry_tall 115.5 29.5 flip
+rock_rubble 169.6 29.7 flip
+grave_round 76.5 30.2
+skull_single 11.2 30.8
+grass_dry_patch 10.2 30.8 flip
+grass_dry_tall 29.3 30.8
+branches_fallen 12.1 31.1
+grave_broken 75.7 31.3 flip
+grass_dry_patch 76.9 31.4
 thistles_dry 85.2 31.5 flip
-skull_single 12.0 31.5 flip
-shrub_dry_tall 150.3 32.0
+bush_dry_tangled 28.5 31.5
+log_fallen 10.4 31.6
+leaves_pile 9.2 31.6
+bush_thorny 29.7 31.8 flip
+flowers_dead 151.1 31.9 flip
+bones_scattered 161.9 31.9 flip
 flowers_dead 91.4 32.0 flip
-leaves_pile 163.6 32.0 flip
 rock_crystal 85.9 32.1
-branches_fallen 12.1 32.2
+skull_pile 160.5 32.1 flip
+ferns_withered 28.0 32.1 flip
+grass_dry_patch 162.4 32.2 flip
+bush_dry_wide 150.4 32.3
 grave_round 90.4 32.4 flip
-sapling_dead 162.7 32.5 flip
 grave_slab 91.5 32.7
-tree_dry_small 150.7 32.9 flip
-leaves_pile 149.4 33.0 flip
-tree_dry_small 164.3 33.0
+bush_dry_round 9.3 32.8 flip
+skeleton_hand 160.0 32.8
+skull_pair 161.6 32.8
+grass_dry_tall 151.0 32.9
+pillar_fallen 18.8 32.9 flip
+bush_thorny 107.6 32.9 flip
 grave_broken 89.4 33.1
-roots_clump 151.5 33.2
+bush_dry_tangled 149.8 33.2
 skull_single 92.0 33.3
+grass_dry_tall 105.9 33.3
 rock_large 85.3 33.4 flip
 tomb_flowers 90.9 33.4 flip
+bush_dry_wide 164.1 33.4
 rock_rubble 87.0 33.5 flip
 grass_dry_patch 89.7 33.5 flip
-ferns_withered 18.4 33.6
-sapling_dead 149.8 33.7
-bush_dry_tangled 19.1 33.7
-flowers_dead 108.3 33.7 flip
-roots_clump 164.5 33.8
-bush_thorny 27.3 34.0
-ferns_withered 28.9 34.1 flip
+ferns_withered 148.9 33.5 flip
+leaves_scattered 19.0 33.5 flip
+bush_thorny 69.4 33.5
+rock_rubble 18.3 33.7
+flowers_dead 104.7 33.7
+bush_dry_tangled 106.8 33.9 flip
+branches_fallen 153.4 34.0 flip
+ferns_withered 107.7 34.1 flip
+bush_dry_tangled 69.5 34.1 flip
 grass_dry_tall 85.7 34.2 flip
-bush_thorny 18.9 34.6 flip
-grave_round 107.6 34.6 flip
-bush_dry_tangled 28.0 34.7
-skull_single 109.8 34.9
+bush_dry_wide 105.3 34.2 flip
+ferns_withered 70.4 34.2
+bush_thorny 150.2 34.4 flip
+bush_dry_tangled 164.0 34.4
+grass_dry_tall 68.5 34.4 flip
+ferns_withered 163.4 35.0
+log_fallen 154.2 35.0 flip
+skull_single 153.1 35.0
+bush_dry_wide 68.7 35.0
+flowers_dead 67.9 35.0 flip
 ferns_withered 92.4 35.1
-grass_dry_tall 27.3 35.1
-tomb_flowers 108.4 35.4
-sapling_dead 164.5 35.5
-bush_dry_wide 28.3 35.6 flip
+bush_dry_round 155.9 35.5
+grass_dry_patch 153.3 35.5
+grass_dry_tall 116.8 35.5
+ferns_withered 119.3 35.6
 bush_dry_tangled 92.5 35.7
+sapling_dead 28.0 35.7 flip
+bush_dry_tangled 118.3 35.7
 bush_thorny 91.6 35.9 flip
-flowers_dead 27.6 36.0 flip
+leaves_pile 154.6 36.0
+roots_clump 76.7 36.1
 bush_dry_wide 93.8 36.3
-tree_dry_small 163.9 36.4
+shrub_dry_tall 74.7 36.3
+flowers_dead 116.1 36.4
 grass_dry_tall 92.8 36.5 flip
+tree_dry_small 27.1 36.6
 flowers_dead 94.0 36.8
-roots_clump 162.9 36.9 flip
-shrub_dry_tall 164.6 37.2 flip
-skull_pile 89.9 37.5
-vines_dry_rock 90.9 38.3 flip
-branches_fallen 164.1 39.1
-leaves_scattered 91.9 39.1
-skull_single 163.4 39.2
-skull_single 72.1 39.3 flip
-pillar_fallen 90.4 39.4 flip
-grass_dry_patch 162.5 39.5 flip
-rock_rubble 91.6 39.8 flip
-log_fallen 163.5 40.1
-grave_slab 71.8 40.1
-tomb_flowers 72.8 40.2 flip
-rock_rubble 79.8 40.5 flip
-rock_large 95.7 40.5
-flowers_dead 71.2 40.6
-grass_dry_tall 94.7 40.8 flip
-grave_round 72.4 40.9 flip
-rock_large 80.1 41.1 flip
-bush_dry_round 163.5 41.4
-rock_crystal 78.9 41.5 flip
-rock_rubble 95.6 41.7
+tree_dry_small 75.8 36.8
+leaves_pile 74.6 37.5 flip
+shrub_dry_tall 27.4 37.8
+grass_dry_patch 95.2 39.2
+grave_slab 166.7 39.3
+flowers_dead 165.6 39.4
+grass_dry_patch 136.8 39.7 flip
+leaves_pile 94.4 39.7 flip
+log_fallen 95.2 39.9
+bones_scattered 136.3 40.2 flip
+skull_pair 137.2 40.3
+grave_round 165.9 40.4
+tomb_flowers 167.3 40.4 flip
+bush_thorny 71.1 40.5 flip
+bush_dry_round 94.1 40.6 flip
+skull_pile 136.5 41.0 flip
+bush_dry_tangled 71.0 41.4 flip
+skeleton_hand 137.5 41.5 flip
+ferns_withered 72.1 41.5 flip
+grave_broken 166.3 41.7 flip
+flowers_dead 69.0 42.1 flip
 shrub_dry_tall 92.6 42.2 flip
-branches_fallen 135.5 42.2
-rock_cluster 79.3 42.2 flip
-thistles_dry 78.3 42.2
-skull_single 134.6 42.9 flip
+ribcage_arch 136.5 42.2
 tree_dry_small 93.1 43.0
 roots_clump 94.0 43.0 flip
 leaves_pile 91.7 43.1 flip
-grass_dry_patch 134.4 43.3
-log_fallen 135.5 43.4
-branches_fallen 128.2 43.4
-ferns_withered 21.8 43.5
+bush_dry_tangled 20.8 43.1 flip
+ferns_withered 19.9 43.1
+bush_dry_wide 107.4 43.2 flip
+grass_dry_tall 108.8 43.6 flip
 sapling_dead 92.5 44.0 flip
-bush_thorny 20.2 44.1 flip
-skull_single 127.4 44.2
-bush_dry_tangled 21.6 44.4
+bush_thorny 20.9 44.0
+bush_thorny 67.7 44.3 flip
+bush_dry_tangled 108.2 44.4 flip
 tomb_flowers 75.0 44.5
-bush_dry_round 136.1 44.6 flip
-sapling_dead 95.3 44.6 flip
-leaves_pile 96.3 44.6 flip
-rock_large 69.7 44.7
-log_fallen 128.3 44.7
-leaves_scattered 80.0 44.8
-grass_dry_patch 127.2 44.8 flip
 grave_round 76.2 45.1
 skull_single 74.0 45.1 flip
-grass_dry_tall 21.2 45.3 flip
-pillar_fallen 81.1 45.4 flip
-leaves_pile 128.2 45.5
+ferns_withered 69.1 45.1 flip
+bush_dry_tangled 67.9 45.4 flip
+grass_dry_tall 66.6 45.5 flip
 grave_slab 74.7 45.6 flip
-bush_dry_round 129.4 45.6
-vines_dry_rock 79.7 45.7
-rock_rubble 70.6 45.7
-grass_dry_tall 69.2 45.7 flip
-tree_dry_small 95.5 45.7 flip
+leaves_pile 144.2 45.8 flip
+shrub_dry_tall 145.8 46.0 flip
 flowers_dead 75.5 46.2
-roots_clump 95.2 46.3 flip
-rock_crystal 148.5 46.5 flip
-skull_pile 79.8 46.7
-pillar_broken 81.4 46.8 flip
-thistles_dry 147.6 46.8
-pillar_broken 118.0 47.1 flip
-grass_dry_tall 150.3 47.1 flip
-rock_large 149.4 47.2 flip
+bush_dry_wide 67.0 46.2
+flowers_dead 65.9 46.2
+sapling_dead 143.4 46.6
+tree_dry_small 144.7 46.8 flip
+grass_dry_tall 70.5 47.2
 roots_clump 91.2 47.3 flip
-rock_cluster 148.2 47.4 flip
-sapling_dead 72.5 47.6
-leaves_pile 68.3 47.7
-flowers_dead 124.6 47.9 flip
-pillar_fallen 117.2 47.9
-skull_pile 118.8 47.9
+rock_large 71.6 47.4
+roots_clump 145.4 47.5
+grave_broken 78.7 47.5 flip
+bush_dry_round 126.7 47.5
+grave_round 79.7 47.8
 tree_dry_small 91.4 48.0
-roots_clump 70.8 48.1 flip
-skeleton_hand 77.9 48.1 flip
-tree_dry_small 71.6 48.3 flip
-skull_pair 76.3 48.4
+grass_dry_patch 78.7 48.0
+pillar_fallen 117.5 48.0
+leaves_pile 127.7 48.0
+flowers_dead 81.0 48.1
+pillar_broken 119.3 48.1 flip
 ribcage_arch 19.3 48.4 flip
-bush_dry_wide 124.2 48.4 flip
 shrub_dry_tall 90.2 48.4 flip
-log_fallen 67.3 48.4
-grass_dry_tall 124.9 48.6 flip
+thistles_dry 73.4 48.4
+rock_rubble 70.4 48.5
+log_fallen 126.7 48.6
 skull_pile 20.5 48.7
 sapling_dead 92.5 48.7
-grass_dry_patch 68.2 48.8 flip
-grass_dry_patch 75.5 49.0
-shrub_dry_tall 71.5 49.2 flip
-skull_pile 77.6 49.2 flip
+grass_dry_patch 127.6 49.1
 skeleton_hand 20.1 49.2
 leaves_pile 91.5 49.2
-bones_scattered 76.5 49.3
-skull_single 67.7 49.3
-bush_dry_tangled 124.7 49.4
-flowers_dead 129.2 49.4 flip
-branches_fallen 66.6 49.5 flip
-skull_single 131.3 49.9 flip
-grave_round 128.9 50.2
+vines_dry_rock 117.6 49.2
+skull_single 127.1 49.6
+branches_fallen 126.5 49.7 flip
+grass_dry_patch 110.3 49.9 flip
+log_fallen 109.3 50.0
+grass_dry_tall 77.5 50.1 flip
+skull_single 71.0 50.3
+rock_rubble 76.5 50.4 flip
+rock_crystal 111.7 50.4 flip
 pillar_broken 29.9 50.5
-tomb_flowers 130.2 50.7 flip
-grass_dry_tall 150.0 50.9 flip
-rock_rubble 149.1 51.5 flip
+sapling_dead 123.3 50.5
+skull_single 110.3 50.6
+thistles_dry 111.0 50.8 flip
+leaves_pile 149.8 50.8
+rock_large 77.5 50.9
+grave_slab 70.5 50.9
+shrub_dry_tall 151.7 51.0
+leaves_pile 124.3 51.1 flip
+branches_fallen 109.4 51.2 flip
+rock_large 113.2 51.2
+sapling_dead 149.4 51.5
+flowers_dead 69.8 51.6 flip
+tree_dry_small 123.4 51.6
 pillar_fallen 28.7 51.7 flip
-grave_broken 128.3 51.7
-pillar_broken 70.5 51.7 flip
 skull_pile 30.7 51.8
-rock_large 150.7 51.8 flip
-bush_dry_round 76.8 51.9
-leaves_pile 78.0 52.0
+tree_dry_small 150.8 51.8
+rock_crystal 76.7 51.9
+grave_round 70.8 52.0 flip
+rock_cluster 77.4 52.1 flip
+shrub_dry_tall 124.5 52.1
 vines_dry_rock 29.9 52.2 flip
-grass_dry_patch 79.0 52.4 flip
+roots_clump 122.6 52.3
+thistles_dry 76.8 52.4 flip
 rock_rubble 27.7 52.6
-pillar_fallen 70.9 52.6
-log_fallen 77.9 52.7
+leaves_pile 143.8 52.8 flip
 leaves_scattered 28.8 52.9 flip
-skull_single 79.0 53.2 flip
-leaves_scattered 72.3 53.3 flip
-tree_dry_small 113.1 53.6
-rock_rubble 71.7 53.7
-branches_fallen 78.3 53.8
-shrub_dry_tall 114.0 53.9
-roots_clump 112.3 54.3
+sapling_dead 143.3 53.3 flip
+shrub_dry_tall 145.2 53.3 flip
+skull_single 148.2 53.4 flip
+tree_dry_small 144.2 53.7 flip
+grave_slab 147.9 54.1
+roots_clump 144.5 54.4
+rock_cluster 126.4 54.5 flip
+rock_rubble 129.2 54.6
 tree_dry_small 97.0 54.7
+grass_dry_patch 150.2 54.8 flip
+flowers_dead 147.3 54.8
 leaves_pile 95.9 54.8
+rock_large 127.7 54.9
 roots_clump 98.5 54.9
-grass_dry_patch 12.8 55.4 flip
+grave_round 148.6 55.0
+grave_broken 150.1 55.4
 grass_dry_tall 23.9 55.5
 sapling_dead 96.2 55.5 flip
+grass_dry_patch 12.8 55.6 flip
+branches_fallen 14.6 55.6 flip
 grave_round 17.9 55.9
-branches_fallen 14.8 55.9 flip
 rock_large 24.4 56.2 flip
-log_fallen 13.1 56.3
+log_fallen 13.4 56.4 flip
+roots_clump 93.6 56.5 flip
+shrub_dry_tall 106.3 56.6
+leaves_pile 104.5 56.6
 grave_slab 19.1 56.8 flip
-branches_fallen 106.9 56.8
-bush_dry_round 94.3 57.0
-skull_single 105.7 57.0 flip
 tomb_flowers 18.0 57.1
-bush_dry_round 11.9 57.2 flip
-branches_fallen 91.2 57.3
-grass_dry_patch 105.1 57.3
-thistles_dry 32.4 57.4
-log_fallen 92.8 57.5 flip
+tree_dry_small 93.3 57.3 flip
+tree_dry_small 105.4 57.3 flip
+sapling_dead 103.8 57.4
 skull_single 19.0 57.6
 rock_cluster 25.4 57.6 flip
-log_fallen 105.5 57.7 flip
-skull_single 91.8 57.9 flip
-rock_cluster 31.6 57.9
-leaves_pile 94.0 58.0
+shrub_dry_tall 92.4 57.7 flip
+bush_dry_round 12.5 57.7
 thistles_dry 24.7 58.0 flip
+roots_clump 105.9 58.0
+ferns_withered 32.8 58.0 flip
 rock_large 86.8 58.1
-rock_crystal 32.8 58.2
-leaves_pile 104.6 58.2 flip
-grass_dry_patch 92.6 58.3 flip
+sapling_dead 94.3 58.1
+leaves_pile 93.5 58.3 flip
+bush_thorny 31.0 58.4
+grave_round 156.8 58.4 flip
 rock_cluster 88.4 58.5
 rock_rubble 85.8 58.5
-bush_dry_round 105.6 58.8
+leaves_pile 27.2 58.5
+bush_dry_tangled 32.2 58.8
+grass_dry_patch 155.3 59.0
 rock_crystal 87.6 59.2
 thistles_dry 88.2 59.2 flip
-rock_large 32.0 59.2 flip
-tree_dry_small 27.3 59.6
-leaves_pile 28.7 59.7
-roots_clump 26.8 60.0
-rock_rubble 33.2 60.0
-leaves_pile 159.2 60.0
-grass_dry_tall 31.9 60.2
-shrub_dry_tall 28.0 60.5
-log_fallen 158.4 60.7
-grass_dry_patch 159.3 60.9
+log_fallen 26.4 59.5
+bush_dry_wide 33.4 59.6 flip
+grass_dry_tall 32.0 59.6
+grass_dry_patch 27.8 59.7 flip
+flowers_dead 32.8 60.4 flip
+skull_single 157.6 60.4
+skull_single 27.3 60.5
+branches_fallen 26.2 60.7 flip
 shrub_dry_tall 51.2 60.9
-branches_fallen 88.8 61.0
-grass_dry_patch 118.8 61.1
-skull_single 119.9 61.5 flip
-skull_single 158.8 61.5
-skull_single 88.4 61.7
-branches_fallen 158.2 61.8
+shrub_dry_tall 29.9 61.2
+sapling_dead 89.2 61.4
+leaves_pile 90.3 62.0 flip
 roots_clump 52.9 62.0 flip
-log_fallen 118.6 62.1
-branches_fallen 120.3 62.1
 tree_dry_small 51.6 62.1 flip
-log_fallen 89.5 62.3
-bush_dry_wide 78.9 62.4 flip
-grass_dry_patch 88.7 62.6
-ferns_withered 77.2 62.6 flip
-bush_dry_tangled 77.9 62.8
-bush_dry_round 117.0 63.0 flip
+tree_dry_small 30.2 62.2
+roots_clump 31.3 62.2
+leaves_pile 29.1 62.3
+leaves_scattered 154.6 62.3 flip
+bush_dry_tangled 21.0 62.6 flip
+tree_dry_small 89.2 62.6
+ferns_withered 19.8 62.9
+sapling_dead 29.6 62.9 flip
+flowers_dead 118.3 63.0 flip
 sapling_dead 50.8 63.0
-bush_dry_round 91.1 63.1
-thistles_dry 152.7 63.1
-leaves_pile 89.6 63.2
-grass_dry_tall 78.8 63.2 flip
-rock_large 154.7 63.2 flip
-grass_dry_tall 155.5 63.2
-pillar_broken 140.1 63.4 flip
-flowers_dead 31.5 63.7
-bush_thorny 77.7 63.8 flip
-log_fallen 68.6 63.8 flip
-flowers_dead 158.5 63.9
-grave_round 30.4 64.1
-bush_dry_wide 158.2 64.4
-bush_dry_round 69.7 64.5 flip
-grass_dry_tall 159.2 64.7 flip
-pillar_fallen 140.5 64.7
-leaves_pile 68.7 64.7 flip
-grave_broken 28.9 64.9 flip
-tomb_flowers 30.8 65.2 flip
-bush_dry_tangled 159.0 65.4
-grass_dry_patch 29.9 65.4
-rock_rubble 141.1 65.7
-bush_thorny 160.2 65.9 flip
-ferns_withered 158.6 66.2
-grass_dry_patch 154.8 67.0
-grass_dry_patch 92.0 67.1 flip
-leaves_pile 91.0 67.2
-bush_dry_round 42.7 67.2 flip
-leaves_pile 43.9 67.5
-skull_single 155.5 67.5 flip
-log_fallen 154.3 67.7
-skull_single 93.0 67.9 flip
-log_fallen 91.8 68.1
-log_fallen 43.3 68.3
-branches_fallen 93.1 68.6
-skull_single 44.3 69.1 flip
-pillar_fallen 59.4 69.1
-ferns_withered 82.7 69.2
-pillar_broken 61.0 69.4 flip
-branches_fallen 43.4 69.5 flip
-bush_dry_tangled 82.3 69.7 flip
-bush_thorny 81.1 69.7
-flowers_dead 32.9 70.5 flip
-rock_rubble 124.1 70.6
-bush_dry_wide 83.0 70.7 flip
-grass_dry_tall 81.9 70.7
-skull_pile 59.8 70.7 flip
-leaves_scattered 123.2 70.9
-flowers_dead 83.0 71.4
-grass_dry_tall 33.1 71.4 flip
-tree_dry_small 132.5 71.4
-bush_dry_round 95.8 71.6
-pillar_fallen 124.1 71.6
-bush_dry_tangled 31.8 71.7
-sapling_dead 131.2 71.7
-vines_dry_rock 122.6 71.9 flip
-roots_clump 133.4 71.9
-bush_thorny 32.7 72.5
-ferns_withered 144.8 72.5 flip
-log_fallen 94.8 72.6 flip
-skull_pile 122.9 72.8
-pillar_broken 124.5 72.9 flip
-bush_thorny 143.5 73.0
-bush_dry_tangled 144.7 73.3 flip
-grass_dry_patch 95.6 73.4
-grass_dry_tall 98.4 73.5 flip
-rock_rubble 97.1 73.7 flip
-ribcage_arch 15.8 74.2 flip
-bush_dry_wide 145.6 74.2 flip
-rock_large 98.0 74.4
-ferns_withered 52.3 74.6
-flowers_dead 145.3 74.6 flip
-bush_thorny 51.0 75.0 flip
-bush_dry_tangled 52.1 75.2
-grass_dry_tall 105.1 75.3 flip
-skull_pile 16.7 75.3
-skeleton_hand 15.6 75.3 flip
-grass_dry_tall 162.0 75.5
-skull_pile 64.7 75.8
-rock_large 105.6 75.9 flip
-bush_dry_wide 52.8 76.0
-vines_dry_rock 65.6 76.0 flip
-thistles_dry 47.9 76.0 flip
-rock_rubble 104.1 76.1
-skull_pair 16.3 76.1 flip
-grass_dry_tall 51.8 76.2 flip
-leaves_scattered 66.8 76.4 flip
-rock_large 162.5 76.4
-rock_rubble 161.2 76.5
-flowers_dead 52.8 76.6
-rock_cluster 106.6 76.8
-leaves_scattered 140.2 76.8 flip
-pillar_broken 64.4 76.9
-pillar_fallen 65.6 77.0 flip
-rock_crystal 105.4 77.0
-rock_rubble 66.9 77.2 flip
-rock_cluster 163.8 77.2
-rock_rubble 141.0 77.3
-thistles_dry 106.2 77.4 flip
-rock_rubble 49.5 77.4
+pillar_fallen 155.3 63.0 flip
+shrub_dry_tall 90.1 63.4 flip
+vines_dry_rock 154.0 63.4 flip
+bush_dry_wide 117.7 63.5 flip
+bush_thorny 21.4 63.6
+grass_dry_tall 119.0 63.6
+bush_thorny 69.6 63.8
+bush_dry_tangled 68.3 64.0 flip
+skull_pile 154.2 64.0 flip
+bush_dry_tangled 118.4 64.5
+ferns_withered 68.5 64.5
+ferns_withered 77.0 64.6 flip
+bush_dry_wide 78.8 64.7
+bush_thorny 119.6 64.8
+bush_dry_tangled 77.7 64.9 flip
+ferns_withered 42.5 65.0
+grave_broken 170.0 65.0
+ferns_withered 118.3 65.1
+grass_dry_patch 169.0 65.1 flip
+flowers_dead 79.6 65.2
+grass_dry_tall 78.6 65.4
+bush_dry_tangled 43.3 65.5 flip
+bush_thorny 77.2 65.7
+bush_dry_wide 44.7 65.7 flip
+bush_dry_wide 96.5 65.9
+tomb_flowers 168.8 65.9 flip
+grave_round 170.0 66.0 flip
+bush_thorny 42.1 66.2
+flowers_dead 45.0 66.2 flip
+grass_dry_tall 97.5 66.2 flip
+leaves_pile 90.9 66.4
+flowers_dead 156.0 66.4 flip
+grass_dry_tall 43.8 66.5
+skull_single 167.8 66.6 flip
+shrub_dry_tall 92.4 67.0
+grave_slab 156.3 67.0
+bush_dry_tangled 97.0 67.0 flip
+grave_round 155.2 67.1
+bush_thorny 98.0 67.2 flip
+tree_dry_small 91.2 67.5 flip
+ferns_withered 96.7 67.5
+skull_pile 158.9 67.6 flip
+skull_pair 45.6 67.6
+grave_broken 154.1 67.7
+skull_single 157.1 67.7 flip
+skeleton_hand 47.3 68.0 flip
+sapling_dead 129.6 68.0
+bones_scattered 60.8 68.1
+bones_scattered 160.2 68.2 flip
+bones_scattered 45.4 68.2
+roots_clump 91.6 68.3
+leaves_pile 130.3 68.3
+skeleton_hand 157.8 68.4
+skull_pile 59.6 68.5
+grass_dry_patch 61.8 68.5
+skull_pile 46.2 68.6
+grass_dry_patch 160.6 68.9 flip
+skull_pair 61.1 68.9
+bush_dry_round 94.1 69.1 flip
+tree_dry_small 129.7 69.2
+roots_clump 129.0 69.4 flip
+skeleton_hand 59.3 69.4 flip
+rock_rubble 82.5 69.7 flip
+shrub_dry_tall 130.5 69.7
+leaves_pile 95.2 69.8
+ferns_withered 169.9 70.0 flip
+skull_pair 41.6 70.1 flip
+sapling_dead 35.8 70.3
+rock_crystal 80.6 70.5
+log_fallen 94.1 70.5
+roots_clump 33.3 70.7 flip
+bush_thorny 168.4 70.7
+bush_dry_tangled 170.2 70.8 flip
+rock_large 82.0 70.9
+grass_dry_tall 83.0 70.9 flip
+tree_dry_small 34.3 70.9
+skeleton_hand 42.5 70.9
+grass_dry_patch 94.9 71.1 flip
+skull_pile 41.6 71.1 flip
+pillar_fallen 54.4 71.1
+skull_single 94.0 71.5 flip
+branches_fallen 93.0 71.7 flip
+bush_dry_wide 171.0 71.7 flip
+grass_dry_tall 169.8 71.8 flip
+rock_large 166.5 71.9 flip
+grass_dry_tall 165.5 72.0
+leaves_scattered 54.6 72.0 flip
+rock_rubble 53.9 72.1 flip
+flowers_dead 171.0 72.4
+rock_rubble 165.8 72.8
+skull_pile 50.9 72.9 flip
+skull_pair 49.8 73.5
+bush_dry_round 135.0 73.8
+bones_scattered 50.6 73.9
+log_fallen 133.9 73.9
+branches_fallen 132.4 74.0 flip
+grass_dry_patch 49.6 74.3
+bush_thorny 15.0 74.4 flip
+skull_single 101.8 74.5 flip
+skull_single 132.8 74.5
+skull_pile 54.3 74.9
+grass_dry_patch 133.7 74.9
+flowers_dead 114.4 75.1
+grass_dry_tall 13.7 75.1
+tomb_flowers 102.9 75.2
+grave_slab 101.5 75.3 flip
+ferns_withered 15.6 75.3 flip
+bush_dry_wide 113.2 75.4
+bush_dry_tangled 15.0 75.5
+ribcage_arch 52.9 75.5 flip
+grass_dry_patch 103.9 75.7 flip
+bush_thorny 64.9 75.7 flip
+flowers_dead 13.1 75.9
+skeleton_hand 54.3 76.0
+skull_single 48.6 76.1 flip
+branches_fallen 49.6 76.1 flip
+bush_dry_wide 13.8 76.1 flip
+grass_dry_tall 114.6 76.2
+flowers_dead 100.8 76.2
+ferns_withered 66.7 76.2 flip
+grave_round 102.5 76.3 flip
+bush_dry_tangled 113.2 76.6 flip
+grass_dry_patch 47.7 76.7 flip
+bush_dry_tangled 65.9 76.7
+ferns_withered 140.2 76.9
+grass_dry_tall 64.4 77.0
+log_fallen 48.7 77.2
 pillar_fallen 42.7 77.5 flip
 pillar_broken 44.2 77.5 flip
-rock_large 48.1 77.6
-skull_pile 138.2 77.6
+leaves_pile 47.7 77.5 flip
+bush_dry_tangled 140.6 77.6
 rock_rubble 41.7 77.7 flip
-thistles_dry 163.6 77.7 flip
-grass_dry_tall 48.3 78.3
-bush_dry_wide 38.9 78.3 flip
+bush_thorny 139.3 77.7
+bush_dry_wide 65.5 77.7
+bush_dry_wide 141.5 78.0 flip
+flowers_dead 64.6 78.1
+bush_dry_round 48.2 78.3
 leaves_scattered 42.1 78.4
 skull_pile 44.4 78.4 flip
-flowers_dead 39.9 78.5 flip
 vines_dry_rock 43.2 78.6 flip
-grass_dry_tall 39.2 79.2 flip
-ferns_withered 37.2 79.2
-bush_dry_tangled 38.0 79.3
+bush_dry_round 40.1 78.7
+log_fallen 38.1 78.9 flip
+leaves_pile 16.1 79.1
+shrub_dry_tall 17.9 79.4
+leaves_pile 39.1 79.7
+grass_dry_patch 37.5 79.8 flip
 bush_thorny 75.3 79.9 flip
-bush_thorny 38.1 80.1 flip
-branches_fallen 15.7 80.2
+skull_pair 92.8 79.9 flip
+sapling_dead 15.9 79.9 flip
+tree_dry_small 17.1 80.1
 ferns_withered 77.1 80.4 flip
-grave_round 93.3 80.6 flip
-tomb_flowers 94.7 80.6 flip
-ribcage_arch 87.8 80.6
-log_fallen 16.7 80.7 flip
+thistles_dry 87.1 80.4 flip
+skull_pile 93.8 80.4 flip
+grass_dry_patch 91.8 80.5
+rock_crystal 87.8 80.6 flip
 grass_dry_tall 47.8 80.8 flip
+bones_scattered 92.8 80.8 flip
+grass_dry_tall 41.3 80.8
 bush_dry_tangled 76.4 80.9 flip
+rock_rubble 89.8 80.9 flip
 bush_thorny 49.8 80.9
-skeleton_hand 86.6 80.9 flip
-skull_single 15.4 81.0
 flowers_dead 46.7 81.1 flip
-grave_broken 93.5 81.4 flip
-grass_dry_patch 94.2 81.4
-skull_pile 87.4 81.4 flip
+leaves_pile 55.7 81.1
+rock_cluster 87.1 81.2 flip
+sapling_dead 54.8 81.3 flip
 grass_dry_tall 75.0 81.6 flip
+rock_large 88.8 81.6
 bush_dry_tangled 49.1 81.6 flip
 bush_dry_wide 47.4 81.7
 bush_dry_wide 76.2 81.9
-skull_pair 86.1 82.1
+tree_dry_small 55.7 81.9 flip
+grass_dry_tall 89.5 82.0
+bush_dry_tangled 41.0 82.0
+bush_thorny 42.7 82.1 flip
 ferns_withered 49.8 82.2
 flowers_dead 75.2 82.3 flip
-shrub_dry_tall 60.5 82.4 flip
-leaves_pile 58.9 82.5 flip
-bones_scattered 87.1 82.5 flip
-grass_dry_patch 86.4 82.9
-bush_dry_round 78.2 83.1
-tree_dry_small 60.0 83.2 flip
-sapling_dead 58.7 83.3 flip
-roots_clump 144.3 83.6 flip
-roots_clump 60.4 83.9 flip
-ferns_withered 55.2 84.0
-tree_dry_small 143.7 84.2 flip
-log_fallen 78.7 84.5
-ferns_withered 96.3 84.7
-bush_dry_tangled 55.0 84.9
-rock_rubble 40.2 85.0 flip
-sapling_dead 143.5 85.1 flip
-thistles_dry 21.9 85.2
-bush_thorny 53.8 85.2 flip
-bush_dry_tangled 96.3 85.5 flip
-pillar_broken 161.4 85.6
-branches_fallen 78.7 85.6 flip
-skeleton_hand 49.5 85.6
-grass_dry_tall 41.4 85.6
-rock_large 20.1 85.6 flip
-bush_dry_wide 98.0 85.7 flip
-ribcage_arch 50.4 85.8
-grass_dry_tall 19.2 85.8 flip
-bush_dry_wide 56.2 85.8
-bush_thorny 95.4 85.9 flip
-rock_large 40.4 86.0
-grass_dry_tall 55.2 86.0 flip
-pillar_fallen 159.5 86.2
-flowers_dead 98.0 86.5
-ferns_withered 22.7 86.5
-skull_pile 49.6 86.6 flip
-skull_pair 48.4 86.6 flip
-rock_rubble 19.9 86.6 flip
-flowers_dead 56.6 86.6
-bush_dry_wide 25.1 86.7
-rock_rubble 158.3 86.9 flip
-bush_dry_tangled 23.3 86.9 flip
-bones_scattered 49.1 87.0
-flowers_dead 43.7 87.1
-grass_dry_patch 48.3 87.1
-vines_dry_rock 160.4 87.2 flip
-flowers_dead 25.7 87.2 flip
-grass_dry_tall 45.0 87.3
-grass_dry_tall 24.3 87.5 flip
-leaves_scattered 159.1 87.6 flip
-bush_dry_wide 43.8 87.7
-bush_thorny 46.3 87.8
-bush_thorny 22.8 88.0
-bush_dry_tangled 45.1 88.1
-ferns_withered 45.3 88.9 flip
+bush_dry_round 145.4 82.5 flip
+ferns_withered 41.0 82.6 flip
+roots_clump 56.0 82.7
+grave_broken 61.3 83.0
+grass_dry_patch 60.9 83.4
+leaves_pile 145.4 83.5
+log_fallen 144.4 83.6
+ferns_withered 94.6 83.9
+bush_dry_wide 96.4 84.0 flip
+grave_round 62.0 84.1
+grass_dry_patch 144.9 84.1
+bush_dry_tangled 95.1 84.2 flip
+branches_fallen 143.4 84.2
+tomb_flowers 61.1 84.3
+skull_single 144.3 84.3 flip
+flowers_dead 97.2 84.4
+bush_dry_wide 58.5 84.7
+flowers_dead 59.3 84.7 flip
+branches_fallen 49.7 84.8
+skull_single 48.7 84.9 flip
+grass_dry_tall 96.5 84.9
+flowers_dead 62.7 84.9 flip
+grave_slab 62.0 85.0
+thistles_dry 51.1 85.0 flip
+bush_thorny 94.6 85.2 flip
+rock_crystal 52.1 85.3 flip
+skull_single 78.3 85.4
+grass_dry_patch 47.8 85.5
+bush_dry_tangled 57.9 85.7 flip
+bush_dry_round 20.5 85.8
+rock_cluster 50.9 85.8
+grass_dry_patch 77.9 85.9
+ferns_withered 57.2 85.9 flip
+leaves_pile 22.2 85.9
+log_fallen 48.5 86.1 flip
+log_fallen 78.5 86.2 flip
+rock_rubble 53.6 86.4
+bush_thorny 58.2 86.5 flip
+grass_dry_patch 23.3 86.5
+rock_large 52.0 86.6
+leaves_pile 47.4 86.7 flip
+log_fallen 21.9 86.9
+branches_fallen 41.0 87.3
+grass_dry_tall 52.7 87.3
+bush_dry_round 43.8 87.4
+skull_single 22.8 87.4
+bush_dry_round 48.1 87.6
+log_fallen 42.2 87.7 flip
+skull_single 41.4 87.8
+leaves_pile 42.8 88.2 flip
+branches_fallen 22.2 88.3
+grass_dry_patch 41.9 88.5 flip
+grass_dry_tall 158.8 88.7 flip
+rock_large 159.3 89.5
+rock_cluster 160.5 90.8
