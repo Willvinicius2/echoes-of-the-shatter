@@ -88,8 +88,22 @@ static func numero(alvo: Node2D, valor: float, cor: Color, grande := false, fort
 	var pai := alvo.get_parent()
 	if pai == null:
 		return
+	# Golpes no mesmo alvo dentro de `dmg_number_group_ms` somam num número só (doc 36 seção 6.1: menos amontoado)
+	var agora := Time.get_ticks_msec()
+	var ant = alvo.get_meta("dmg_num", null)
+	if ant != null and is_instance_valid(ant) and agora - int(alvo.get_meta("dmg_num_t", 0)) <= int(cfg().get("dmg_number_group_ms", 200)):
+		var soma: float = float(alvo.get_meta("dmg_num_v", 0.0)) + valor
+		alvo.set_meta("dmg_num_v", soma)
+		ant.texto = str(int(round(soma)))
+		ant.forte = ant.forte or grande or forte
+		if grande or forte:
+			ant.cor = cor
+		return
 	var n := DamageNumber.new()
 	n.texto = str(int(round(valor)))
+	alvo.set_meta("dmg_num", n)
+	alvo.set_meta("dmg_num_v", valor)
+	alvo.set_meta("dmg_num_t", agora)
 	n.cor = cor
 	n.tamanho = cfg()["dmg_number_size_kill" if grande else ("dmg_number_size_strong" if forte else "dmg_number_size")]
 	var esc: float = alvo.escala_sprite() if alvo.has_method("escala_sprite") else 1.0   # alvo grande: número mais alto e maior

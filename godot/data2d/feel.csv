@@ -61,3 +61,6 @@ zone_ring_time,0.15,s,anel de entrada das zonas no chao
 zone_fade_time,0.3,s,fade final das zonas no chao
 fx_max_animados,24,x,efeitos animados ao mesmo tempo antes de os novos nascerem na versao curta (doc 33 secao 4)
 fx_max_decalques,12,x,marcas no chao (pocas e brasas de efeitos, chao gelado) vivas ao mesmo tempo na tela (doc 36)
+fx_max_status,6,x,overlays grandes de status (frio, veneno, queimadura) ao mesmo tempo; acima disso o status vira icone pequeno sobre a cabeca (doc 36 secao 6.1)
+flash_amount,0.5,x,quanto o inimigo atingido fica branco (0 a 1)
+dmg_number_group_ms,200,ms,golpes no mesmo alvo dentro desta janela somam num unico numero

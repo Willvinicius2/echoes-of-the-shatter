@@ -70,7 +70,12 @@ static func overlay_status(inimigo: Node2D, dur: float) -> void:
 	if s == null:
 		return
 	s.name = "OverlayVeneno"
-	s.position = Vector2(0, -50)
+	if Vfx.status_cabe(inimigo.get_tree()):
+		s.position = Vector2(0, -50)
+		Vfx.registrar_status(s)
+	else:   # tela cheia: versão pequena sobre a cabeça (doc 36 seção 6.1)
+		s.position = Vector2(0, -62)
+		s.scale *= 0.35
 	inimigo.add_child(s)
 	inimigo.get_tree().create_timer(dur).timeout.connect(func():
 		if is_instance_valid(s):
@@ -130,7 +135,8 @@ static func _ciclone(jogador: Node2D, dir: Vector2, def: Dictionary, dano: float
 	var boca: Dictionary = jogador.boca_do_arco(dir) if jogador.has_method("boca_do_arco") \
 			else {"chao": jogador.global_position, "altura": 50.0}
 	Vfx.flash_boca(pai, boca["chao"] + Vector2(0, -boca["altura"]), dir)
-	Vfx.arco(pai, boca["chao"], boca["altura"], destino, ALTURA_CICLONE, VOO_CICLONE, corpo, VERDE, def.get("raio", 130.0),
+	# Sem sombra preenchida no destino (ajuste do Jev: cobria inimigos); o anel fino de entrada marca o alcance ao cair.
+	Vfx.arco(pai, boca["chao"], boca["altura"], destino, ALTURA_CICLONE, VOO_CICLONE, corpo, VERDE, 0.0,
 		func(ponto: Vector2):
 			if not is_instance_valid(pai) or not pai.is_inside_tree():
 				return

@@ -5,6 +5,7 @@ extends RefCounted
 ## `ao_morrer(inimigo)` na morte do inimigo para o Arauto do Trovão. Folhas em res://art2d/fx/raio/.
 
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const Feel = preload("res://scripts2d/feel_2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
 const PASTA := "res://art2d/fx/raio/"
 const COR := Color(0.55, 0.8, 1.0)
@@ -472,6 +473,8 @@ class Haste extends Node2D:
 ## halo que pulsa e faíscas curtas depois da descarga. Só aparência.
 class HasteCorpo extends Node2D:
 	var dona: Node2D
+	func _ready() -> void:
+		material = Feel.aditivo()   # brilho de verdade sobre a horda (revisora: haste discreta com 20 inimigos)
 	func _draw() -> void:
 		if dona == null:
 			return
@@ -480,9 +483,11 @@ class HasteCorpo extends Node2D:
 		var pulso: float = dona._pulso
 		var base := Vector2(0, -4)
 		var ponta := Vector2(0, -88)
-		var halo_r := 16.0 + 12.0 * pulso + 2.0 * sin(dona._t * 9.0)
-		draw_circle(ponta, halo_r * 1.8, Color(pal[1], 0.10 * apaga))
-		draw_circle(ponta, halo_r, Color(pal[1], (0.22 + 0.25 * pulso) * apaga))
+		var halo_r := 18.0 + 14.0 * pulso + 2.0 * sin(dona._t * 9.0)
+		draw_circle(ponta, halo_r * 2.2, Color(pal[1], 0.12 * apaga))
+		draw_circle(ponta, halo_r * 1.4, Color(pal[1], 0.18 * apaga))
+		draw_circle(ponta, halo_r, Color(pal[1], (0.35 + 0.35 * pulso) * apaga))
+		draw_circle(ponta, halo_r * 0.45, Color(pal[0], (0.5 + 0.5 * pulso) * apaga))
 		# haste: contorno, corpo e fio de luz (espessura variável: mais grossa embaixo)
 		draw_line(base, ponta, Color(pal[2], 0.95 * apaga), 9.0)
 		draw_line(base, ponta + Vector2(0, 4), Color(pal[1], 0.9 * apaga), 5.0)

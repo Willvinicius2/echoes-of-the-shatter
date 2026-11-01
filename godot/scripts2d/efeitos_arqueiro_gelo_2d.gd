@@ -218,7 +218,13 @@ static func _overlay(inimigo: Node, congelado := false) -> void:
 		if antigo.get_meta("folha", "") == folha or antigo.get_meta("folha", "") == "gelo_congelado":
 			return
 		antigo.queue_free()
-	var s := _sprite(inimigo, folha, 6 if not congelado else 4, Vector2(0, -22), 80.0 if not congelado else 96.0, 8.0)
+	# Teto de overlays grandes (doc 36 seção 6.1): com a tela cheia, o frio vira um floco pequeno sobre a cabeça;
+	# o anel completo fica só para o congelado (4º acúmulo).
+	var pequeno: bool = not congelado and not Vfx.status_cabe(inimigo.get_tree())
+	var s := _sprite(inimigo, folha, 6 if not congelado else 4, Vector2(0, -62) if pequeno else Vector2(0, -22),
+		26.0 if pequeno else (80.0 if not congelado else 96.0), 8.0)
+	if not pequeno:
+		Vfx.registrar_status(s)
 	s.name = nome
 	s.set_meta("folha", folha)
 	s.z_index = 1
@@ -267,6 +273,7 @@ class Cometa extends Node2D:
 	const PAL := [Color("F0FBFF"), Color("7FD3F2"), Color("123A5C")]
 	const QUEDA := 0.6
 	const ALTURA := 460.0
+	const FADE_CHAO := 0.6
 	var raio := 130.0
 	var dur_chao := 3.0
 	var dano := 0.0
@@ -354,23 +361,23 @@ class Cometa extends Node2D:
 	func _draw() -> void:
 		if not _caiu:
 			return
-		var apaga: float = Vfx.fade_zona(_t, dur_chao)
+		var apaga: float = clampf((dur_chao - _t) / FADE_CHAO, 0.0, 1.0)   # some nos últimos 0,6 s (ajuste do Jev)
 		var cresce := minf(1.0, _t * 6.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
 		var r := raio * cresce
-		draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.22 * apaga))
-		draw_circle(Vector2.ZERO, r * 0.6, Color(PAL[0], 0.18 * apaga))
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 6, Color(PAL[0], (0.55 + 0.15 * sin(_t * 5.0)) * apaga), 2.0)   # hexágono
-		draw_arc(Vector2.ZERO, r * 0.98, 0.0, TAU, 6, Color(PAL[2], 0.5 * apaga), 1.0)
+		draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.15 * apaga))
+		draw_circle(Vector2.ZERO, r * 0.6, Color(PAL[0], 0.12 * apaga))
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 6, Color(PAL[0], (0.4 + 0.1 * sin(_t * 5.0)) * apaga), 2.0)   # hexágono
+		draw_arc(Vector2.ZERO, r * 0.98, 0.0, TAU, 6, Color(PAL[2], 0.35 * apaga), 1.0)
 		for rc in _rachas:
 			var d := Vector2.from_angle(rc[0])
 			var fim: Vector2 = d * r * float(rc[1])
 			var meio: Vector2 = d * r * float(rc[2]) * float(rc[1])
 			var ramo: Vector2 = meio + d.rotated(0.9) * r * 0.22
-			draw_line(Vector2.ZERO, fim, Color(PAL[2], 0.7 * apaga), 2.0)
-			draw_line(Vector2.ZERO, fim, Color(PAL[0], 0.8 * apaga), 0.9)
-			draw_line(meio, ramo, Color(PAL[2], 0.6 * apaga), 1.5)
-			draw_line(meio, ramo, Color(PAL[0], 0.7 * apaga), 0.8)
+			draw_line(Vector2.ZERO, fim, Color(PAL[2], 0.5 * apaga), 2.0)
+			draw_line(Vector2.ZERO, fim, Color(PAL[0], 0.55 * apaga), 0.9)
+			draw_line(meio, ramo, Color(PAL[2], 0.4 * apaga), 1.5)
+			draw_line(meio, ramo, Color(PAL[0], 0.5 * apaga), 0.8)
 
 ## Corpo do cometa (filho em C5 enquanto cai): núcleo facetado que gira, halo frio e cauda de cristais para cima.
 class CometaCorpo extends Node2D:
@@ -477,8 +484,13 @@ class Nova extends Node2D:
 		var r := raio * (1.0 - pow(1.0 - k, 2.0))
 		var apaga := clampf((VIDA - _t) / 0.35, 0.0, 1.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
-		draw_circle(Vector2.ZERO, r, Color(PAL[0], 0.16 * apaga))               # chão fica branco
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(PAL[1], 0.35 * apaga), 10.0)   # halo
+		# gradiente radial: centro quase vazio, faixa clara perto da borda (nada de disco chapado)
+		draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.05 * apaga))
+		for i in 4:
+			var f := 0.55 + 0.11 * i
+			draw_arc(Vector2.ZERO, r * f, 0.0, TAU, 64, Color(PAL[1], (0.06 + 0.07 * i) * apaga), r * 0.12)
+		draw_arc(Vector2.ZERO, r * 0.97, 0.0, TAU, 64, Color(PAL[0], 0.3 * apaga), 8.0)   # brilho da borda
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(PAL[1], 0.45 * apaga), 10.0)   # halo
 		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(PAL[0], 0.95 * apaga), 2.5)    # borda clara
 		draw_arc(Vector2.ZERO, r * 0.9, 0.0, TAU, 64, Color(PAL[2], 0.5 * apaga), 1.0)
 		for pt in _pontas:   # pontas de cristal na borda (silhueta angular)

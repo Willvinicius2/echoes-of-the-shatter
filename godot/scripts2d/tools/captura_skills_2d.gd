@@ -60,6 +60,8 @@ func _initialize() -> void:
 		if h.defs[id]["tipo"] == "ativa" and i < 4:
 			h.equipar(i, id)
 			i += 1
+	for j in range(i, 4):   # o core equipa sozinho o que aprende (os pais também); só a skill pedida fica nos slots
+		h.equipar(j, "")
 	var qtd_inimigos: int = int(args[3]) if args.size() > 3 else 5
 	if p.has_method("_atualizar_heralds"):
 		p.call("_atualizar_heralds")

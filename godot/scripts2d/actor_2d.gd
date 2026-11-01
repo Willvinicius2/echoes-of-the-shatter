@@ -106,7 +106,7 @@ func _process(delta: float) -> void:
 		var ligado := _flash > 0.0
 		if ligado != _flash_ligado:   # só fala com o shader quando o flash liga ou desliga
 			_flash_ligado = ligado
-			_mat.set_shader_parameter("flash", 0.7 if ligado else 0.0)
+			_mat.set_shader_parameter("flash", float(Feel.cfg().get("flash_amount", 0.5)) if ligado else 0.0)
 	if sprite != null:
 		var desloc := Vector2.ZERO
 		if _shake_t > 0.0:

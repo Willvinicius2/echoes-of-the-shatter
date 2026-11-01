@@ -79,9 +79,12 @@ static func aura(jogador: Node2D) -> Node2D:
 
 ## Overlay de queimadura sobre o inimigo (a integradora liga isto ao status "queimadura" em enemy_2d.gd).
 static func overlay_queimadura(inimigo: Node2D) -> Node2D:
-	var o := Anim.new("queimadura", true, 70.0)
-	o.position = Vector2(0, -34)
+	var cabe: bool = Vfx.status_cabe(inimigo.get_tree())
+	var o := Anim.new("queimadura", true, 70.0 if cabe else 26.0)
+	o.position = Vector2(0, -34) if cabe else Vector2(0, -62)   # tela cheia: chama pequena sobre a cabeça (doc 36 seção 6.1)
 	o.modulate.a = 0.9
+	if cabe:
+		Vfx.registrar_status(o)
 	inimigo.add_child(o)
 	return o
 
