@@ -30,6 +30,21 @@ static var _shader: Shader
 static var _ponto: Texture2D
 static var _aditivo: CanvasItemMaterial
 static var _stop_ate := 0   # ticks (ms) em que o hit stop atual termina
+static var _stop_livre_ate := 0   # ticks (ms) antes dos quais um novo hit stop não começa (intervalo entre congelamentos)
+static var _impactos: Array = []   # faíscas, rajadas de partículas e números vivos: o teto evita tempestade de nós com auras e venenos
+static var _rajadas: Array = []
+static var _numeros: Array = []
+
+## Conta os nós vivos da lista (descarta os já liberados) e diz se ainda cabe mais um abaixo de `teto`.
+static func _cabe(lista: Array, teto: int) -> bool:
+	if lista.size() < teto:
+		return true
+	var i := lista.size() - 1
+	while i >= 0:
+		if not is_instance_valid(lista[i]):
+			lista.remove_at(i)
+		i -= 1
+	return lista.size() < teto
 
 static func cfg() -> Dictionary:
 	if _cfg.is_empty():
@@ -44,10 +59,16 @@ static func hit_stop(ms: float) -> void:
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null or tree.root == null:
 		return
-	var fim := Time.get_ticks_msec() + int(ms)
+	var agora := Time.get_ticks_msec()
+	# Sem intervalo, auras e venenos (dano em vários inimigos por segundo) deixavam o jogo em 5% de velocidade quase
+	# o tempo todo, o que parece FPS baixo. Depois de um congelamento há uma folga (hit_stop_cooldown_ms) sem outro.
+	if agora < _stop_livre_ate:
+		return
+	var fim := agora + int(ms)
 	if fim <= _stop_ate:
 		return
 	_stop_ate = fim
+	_stop_livre_ate = fim + int(cfg().get("hit_stop_cooldown_ms", 400))
 	Engine.time_scale = cfg()["hit_stop_scale"]
 	var guarda := tree.root.get_node_or_null("FeelHitStop")
 	if guarda == null:
@@ -88,7 +109,10 @@ static func numero(alvo: Node2D, valor: float, cor: Color, grande := false, fort
 	var pai := alvo.get_parent()
 	if pai == null:
 		return
+	if not (grande or forte) and not _cabe(_numeros, int(cfg().get("fx_max_numeros", 30))):
+		return   # tempestade de golpes pequenos: os números fatais e fortes continuam aparecendo
 	var n := DamageNumber.new()
+	_numeros.append(n)
 	n.texto = str(int(round(valor)))
 	n.cor = cor
 	n.tamanho = cfg()["dmg_number_size_kill" if grande else ("dmg_number_size_strong" if forte else "dmg_number_size")]
@@ -103,9 +127,10 @@ static func numero(alvo: Node2D, valor: float, cor: Color, grande := false, fort
 
 ## Faísca de impacto em `pos` (mundo), filha de `pai`.
 static func impacto(pai: Node, pos: Vector2, cor: Color, dir := Vector2.ZERO, escala := 1.0) -> void:
-	if pai == null:
+	if pai == null or not _cabe(_impactos, int(cfg().get("fx_max_impactos", 30))):
 		return
 	var fx := ImpactFx.new()
+	_impactos.append(fx)
 	fx.cor = cor
 	fx.tempo = cfg()["impact_time"] * (1.0 if escala <= 1.0 else 2.5)
 	fx.escala = escala
@@ -147,9 +172,10 @@ static func aditivo() -> CanvasItemMaterial:
 
 ## Rajada única de partículas em `pos` (mundo). `dir` zero espalha em todas as direções.
 static func particulas(pai: Node, pos: Vector2, cor: Color, qtd: int, vel: float, vida: float, dir := Vector2.ZERO, tam := 0.2) -> void:
-	if pai == null or qtd <= 0:
+	if pai == null or qtd <= 0 or not _cabe(_rajadas, int(cfg().get("fx_max_rajadas", 24))):
 		return
 	var p := CPUParticles2D.new()
+	_rajadas.append(p)
 	p.one_shot = true
 	p.explosiveness = 1.0
 	p.amount = qtd

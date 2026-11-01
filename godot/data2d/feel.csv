@@ -47,3 +47,7 @@ boss_entry_zoom,1.06,x,zoom inicial da camera na entrada do chefe (volta a 1 ate
 boss_entry_mark,150,px,raio da marca vermelha no chao durante a entrada do chefe
 weak_hit_pct,0.0,x,fracao da vida maxima abaixo da qual o golpe do jogador conta como fraco (numero branco)
 number_offset_x,42,px,sorteio horizontal da posicao inicial do numero de dano
+hit_stop_cooldown_ms,400,ms,folga sem novo congelamento depois de um hit stop (evita o jogo ficar em camera lenta com auras e venenos)
+fx_max_impactos,30,x,faiscas de impacto vivas ao mesmo tempo (acima disso as novas nao nascem)
+fx_max_rajadas,24,x,rajadas de particulas de impacto e morte vivas ao mesmo tempo
+fx_max_numeros,30,x,numeros de dano pequenos vivos ao mesmo tempo (fatais e fortes sempre aparecem)
