@@ -278,22 +278,16 @@ func _desenhar_barra() -> void:
 	_ctl.modulate.a = alfa
 	# moldura pintada em tamanho fixo no topo; a caveira fica centrada sobre a porta (cx) e a barra roxa e o nome
 	# serifado ficam dentro do canal da moldura (docs/arte/29_arte_ui_gpt_image.md)
-	var cx: float = vp.x * 0.5 + Csv.kv("res://data2d/hud_layout.csv")["chefe_deslocamento_x"]
 	var cor := Color(0.6, 0.2, 0.7) if fase == 1 else (Color(0.8, 0.25, 0.55) if fase == 2 else Color(0.9, 0.2, 0.2))
 	var frac := clampf(hp / hp_max, 0.0, 1.0)
 	var pcts := []
 	for f in fases:
 		if f > 1:
 			pcts.append(fases[f]["pct"])
-	var canal := Arte.barra_chefe(_ctl, cx, 4.0, frac, cor, pcts)
-	var base_y := canal.position.y + canal.size.y - 4.0
-	Arte.texto(_ctl, Vector2(canal.position.x + 14.0, base_y), Csv.t("hud.boss"), 16, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_LEFT, -1.0, true)
-	var total := total_fases()
-	var texto_fase: String = Csv.t("hud.boss_phase") % [fase, total]
-	var larg_txt := ThemeDB.fallback_font.get_string_size(texto_fase, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-	Arte.texto(_ctl, Vector2(canal.position.x, base_y), texto_fase, 14, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_RIGHT, canal.size.x - 12.0)
-	for i in total:   # losangos de fase à esquerda do texto: cheio = fase atual ou passada
-		Arte.runa(_ctl, Vector2(canal.end.x - 12.0 - larg_txt - 20.0 - (total - 1 - i) * 20.0, canal.position.y + canal.size.y * 0.5), i, i < fase)
+	var lay := Csv.kv("res://data2d/hud_layout.csv")
+	var canal := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, lay["chefe_largura"], lay["chefe_altura"], frac, cor, pcts)
+	Arte.texto(_ctl, Vector2(canal.position.x, canal.position.y - 6.0), Csv.t("hud.boss"), 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_LEFT)
+	Arte.texto(_ctl, Vector2(canal.position.x, canal.position.y - 6.0), Csv.t("hud.boss_phase") % [fase, total_fases()], 12, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, canal.size.x)
 
 ## Marca vermelha no chão por padrão: área (golpe), faixa (investida), cunha (leque) ou anel (anel).
 func _draw() -> void:

@@ -1,23 +1,23 @@
 chave,valor,unidade,nota
-margem,24,px,distancia da borda da tela
+margem,12,px,distancia da borda da tela
 barra_largura,300,px,largura das barras de vida/estamina/mana
 vida_altura,22,px,altura da barra de vida
 estamina_altura,12,px,altura da barra de estamina
 mana_altura,12,px,altura da barra de mana (reservada)
 barra_espaco,6,px,espaco entre barras
-lista_y,34,px,topo da lista de upgrades
-slot_tamanho,75,px,lado de cada slot de habilidade ativa (Q E F R)
-slot_espaco,10,px,espaco entre slots
+lista_y,12,px,topo da lista de upgrades
+slot_tamanho,46,px,lado de cada slot de habilidade ativa (Q E F R)
+slot_espaco,5,px,espaco entre slots
 slot_total,4,slots,slots de habilidade ativa (Q E F R); ataque e esquiva ficam em slots menores a esquerda
-slot_pequeno,58,px,lado dos slots de ataque basico e esquiva
-slot_grupo_espaco,18,px,distancia entre os slots pequenos e os de habilidade
-slot_base,9,px,distancia do rodape ate a base dos slots
+slot_pequeno,40,px,lado dos slots de ataque basico e esquiva
+slot_grupo_espaco,12,px,distancia entre os slots pequenos e os de habilidade
+slot_base,6,px,distancia do rodape ate a base dos slots
 icone_carta,64,px,lado do icone nas cartas de upgrade
-globo_raio,70,px,raio dos globos de vida e recurso
-globo_margem,4,px,distancia dos globos ate a borda da tela
+globo_raio,30,px,raio dos globos de vida e recurso
+globo_margem,6,px,distancia dos globos ate a borda da tela
 estamina_barra_largura,260,px,largura da barra fina de estamina sobre a barra de habilidades
-chefe_largura,620,px,largura da barra de vida do chefe
-plaqueta_largura,180,px,largura da plaqueta da sala
+chefe_largura,380,px,largura da barra de vida do chefe
+plaqueta_largura,110,px,largura da plaqueta da sala
 base_altura,86,px,altura da faixa de pedra do rodape
 chefe_deslocamento_x,32,px,deslocamento da moldura do chefe para a caveira ficar sobre a porta (coluna 12 da sala)
 faixa_modo,3,modo,fundo da barra de slots: 0 = faixa pintada justa; 1 = slots soltos; 2 = friso fino; 3 = base de pedra em arco com pico central
@@ -25,3 +25,4 @@ faixa_escala,0.5,x,escala da faixa pintada (arquivo 2x) ao montar o 9-slice
 rodape_altura,90,px,altura da sombra do rodape
 rodape_alfa,0.25,fracao,opacidade da sombra do rodape na borda de baixo
 estamina_barra,0,liga,1 = mostra a barra fina de estamina sobre os slots (a recarga ja aparece no slot de esquiva)
+chefe_altura,10,px,altura da barra fina de vida do chefe

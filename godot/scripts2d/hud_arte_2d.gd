@@ -102,8 +102,7 @@ static func cadeado(c: CanvasItem, p: Vector2, lado := 28.0) -> void:
 	c.draw_rect(Rect2(corpo.get_center() + Vector2(-1.2, 0), Vector2(2.4, lado * 0.22)), Color(0.04, 0.03, 0.03))
 
 ## Marca de fase do chefe: losango dourado cheio (fase atual ou já passada) ou vazado (próximas).
-static func runa(c: CanvasItem, p: Vector2, _tipo: int, acesa: bool) -> void:
-	var r := 7.0
+static func runa(c: CanvasItem, p: Vector2, _tipo: int, acesa: bool, r := 7.0) -> void:
 	var v := PackedVector2Array([p + Vector2(0, -r), p + Vector2(r, 0), p + Vector2(0, r), p + Vector2(-r, 0)])
 	if acesa:
 		c.draw_circle(p, r * 1.5, Color(_c("destaque").r, _c("destaque").g, _c("destaque").b, 0.18))
@@ -532,16 +531,22 @@ static func slot_forma(c: CanvasItem, r: Rect2, forma_id: String, icone: Texture
 ## Encaixe vazio recortado: vão octogonal escuro com aro apagado e a letra da tecla.
 static func encaixe_forma(c: CanvasItem, r: Rect2, tecla: String) -> void:
 	var forma := octogono(r)
-	c.draw_colored_polygon(_deslocar(forma, -3.0), Color(0.02, 0.02, 0.03, 0.78))
-	aro(c, forma, 3.5, false, 0.6)
+	c.draw_colored_polygon(_deslocar(forma, 4.0), Color(0, 0, 0, 0.35))
+	c.draw_colored_polygon(_deslocar(forma, -3.0), Color(0.02, 0.02, 0.03, 0.85))
+	aro(c, forma, 4.0, true, 0.9)
+	for i in [1, 3, 5, 7]:
+		var a := forma[i]
+		var b := forma[(i + 1) % 8]
+		var meio := (a + b) * 0.5
+		garra(c, meio, (meio - r.get_center()).normalized(), 6.0)
 	if tecla != "":
 		texto(c, Vector2(r.position.x, r.get_center().y + 8), tecla, 20, Color(_c("texto_suave").r, _c("texto_suave").g, _c("texto_suave").b, 0.85), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, true)
 
 ## Plaquinha de tecla em forma de escudinho (topo reto, base em ponta), centrada em `topo_centro` (borda do slot).
 static func tecla_escudo(c: CanvasItem, topo_centro: Vector2, tecla: String, pequeno := false) -> void:
-	var tam := 10 if pequeno else 12
-	var larg := maxf(20.0, 10.0 + tecla.length() * tam * 0.6)
-	var h := 15.0
+	var tam := 13 if pequeno else 13
+	var larg := maxf(24.0, 12.0 + tecla.length() * tam * 0.62)
+	var h := 17.0
 	var y := topo_centro.y - h * 0.7
 	var x := topo_centro.x
 	var e := PackedVector2Array([Vector2(x - larg * 0.5, y), Vector2(x + larg * 0.5, y), Vector2(x + larg * 0.5, y + h * 0.65),
@@ -549,7 +554,7 @@ static func tecla_escudo(c: CanvasItem, topo_centro: Vector2, tecla: String, peq
 	c.draw_colored_polygon(_deslocar(e, 1.5), Color(0, 0, 0, 0.7))
 	c.draw_colored_polygon(e, _c("pedra_clara"))
 	c.draw_polyline(_fechar(e), _c("metal_medio"), 1.2)
-	texto(c, Vector2(x - larg * 0.5, y + 11.0), tecla, tam, _c("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, larg)
+	texto(c, Vector2(x - larg * 0.5, y + 13.0), tecla, tam, _c("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, larg)
 
 ## Base de pedra em arco atrás dos slots: sobe das pontas para um pico central com gema, topo em ondas suaves,
 ## aro de ferro e fio dourado acompanhando a curva. x0..x1 na base da tela (y_base); `alt` = altura nas pontas,
@@ -583,6 +588,20 @@ static func base_arco(c: CanvasItem, x0: float, x1: float, y_base: float, alt: f
 				c.draw_line(Vector2(xj, yj), Vector2(minf(xj + 46.0, x1), yj), Color(0, 0, 0, 0.28), 1.0)
 				c.draw_line(Vector2(xj + 1, yj + 1), Vector2(minf(xj + 44.0, x1), yj + 1), Color(1, 1, 1, 0.05), 1.0)
 			xj += 46.0
+	# lajes com luz: blocos alternados mais claros e rebites nas juntas
+	for j in 3:
+		var yj2 := y_base - 22.0 - j * 15.0
+		for k in 40:
+			var xk := x0 + 20.0 + k * 46.0 + (j % 2) * 23.0
+			if xk > x1 - 20.0:
+				break
+			var uk := (xk - x0) / (x1 - x0)
+			var topo_k := y_base - alt - (pico - alt) * pow(sin(uk * PI), 0.6)
+			if yj2 > topo_k + 10.0 and (k + j) % 2 == 0:
+				c.draw_rect(Rect2(xk + 2.0, yj2 + 2.0, 40.0, 11.0), Color(1, 1, 1, 0.045))
+				c.draw_rect(Rect2(xk + 2.0, yj2 + 11.0, 40.0, 2.0), Color(0, 0, 0, 0.22))
+			if yj2 > topo_k + 10.0 and k % 3 == 1:
+				rebite(c, Vector2(xk, yj2 + 7.0), 1.8)
 	# veios de pedra (determinísticos)
 	for k in 9:
 		var u := 0.08 + k * 0.105
@@ -724,3 +743,90 @@ static func chifres_globo(c: CanvasItem, centro: Vector2, raio: float) -> void:
 		c.draw_polyline(curva, _c("metal_medio"), 6.0)
 		c.draw_polyline(curva, _c("metal_claro").darkened(0.15), 1.4)
 		losango(c, curva[14], 3.5, _c("destaque"))
+
+# ---------------------------------------------------------------------------------------------------------------
+# HUD v6 compacta: formas retas com poucos chanfros, moldura fina de ferro, sem faixa de fundo.
+# ---------------------------------------------------------------------------------------------------------------
+
+## Moldura fina de ferro (2 px) com um fio de luz em cima; o vão fica escuro e opaco o bastante para ler sobre o chão.
+static func _moldura_fina(c: CanvasItem, forma: PackedVector2Array, ativo := true) -> void:
+	c.draw_colored_polygon(_deslocar(forma, 2.0), Color(0, 0, 0, 0.35))
+	c.draw_polyline(_fechar(forma), _c("metal_claro") if ativo else _c("metal_medio"), 2.0)
+	c.draw_polyline(_fechar(_deslocar(forma, -2.0)), Color(0, 0, 0, 0.55), 1.0)
+
+## Slot compacto (octógono suave): ícone, varredura de recarga, tinta azul sem recurso e tecla pequena no canto.
+static func slot_mini(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float, tecla: String, brilho: Color, segundos := -1.0, sem_recurso := false) -> void:
+	var forma := octogono(r, 0.16)
+	var vao := _deslocar(forma, -2.0)
+	c.draw_colored_polygon(_deslocar(forma, 2.0), Color(0, 0, 0, 0.35))
+	c.draw_colored_polygon(vao, Color(0.03, 0.03, 0.045, 0.92))
+	var tinta := Color(0.45, 0.55, 1.0, 0.75) if sem_recurso else Color.WHITE
+	textura_em(c, icone, vao, r.grow(-2.0), tinta)
+	if recarga > 0.0:
+		var arco := PackedVector2Array([r.get_center()])
+		for p in _arco(r.get_center(), r.size.x, -PI * 0.5, -PI * 0.5 + TAU * recarga, 24):
+			arco.append(p)
+		for parte in Geometry2D.intersect_polygons(arco, vao):
+			c.draw_colored_polygon(parte, Color(0, 0, 0, 0.72))
+	_moldura_fina(c, forma, recarga <= 0.0 and not sem_recurso)
+	if recarga <= 0.0 and not sem_recurso:
+		c.draw_polyline(_fechar(_deslocar(forma, -3.0)), Color(brilho.r, brilho.g, brilho.b, 0.35), 1.0)
+	if recarga > 0.0 and segundos > 0.0:
+		var txt := ("%d" % ceili(segundos)) if segundos >= 1.0 else ("%.1f" % segundos)
+		texto(c, Vector2(r.position.x, r.get_center().y + 6.0), txt, 16, _c("texto"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+	if tecla != "":
+		texto(c, Vector2(r.position.x + 3.0, r.end.y - 3.0), tecla, 11, _c("destaque").lightened(0.25))
+
+## Encaixe vazio: vão escuro com moldura apagada e a tecla.
+static func encaixe_mini(c: CanvasItem, r: Rect2, tecla: String) -> void:
+	var forma := octogono(r, 0.16)
+	c.draw_colored_polygon(_deslocar(forma, -2.0), Color(0.02, 0.02, 0.03, 0.7))
+	_moldura_fina(c, forma, false)
+	if tecla != "":
+		texto(c, Vector2(r.position.x, r.get_center().y + 5.0), tecla, 14, Color(_c("texto_suave").r, _c("texto_suave").g, _c("texto_suave").b, 0.8), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+
+## Globo pequeno: vidro com líquido e aro fino de ferro, sem chifres.
+static func globo_mini(c: CanvasItem, centro: Vector2, raio: float, frac: float, fantasma: float, escura: Color, clara: Color, t: float, pulso := 0.0, vazio := false) -> void:
+	if pulso > 0.0:
+		clara = clara.lightened(0.3 * pulso)
+		escura = escura.lightened(0.18)
+	var r_in := raio - 3.0
+	c.draw_circle(centro + Vector2(0, 2), raio + 1.0, Color(0, 0, 0, 0.4))
+	c.draw_circle(centro, raio, _c("metal_escuro"))
+	c.draw_circle(centro, r_in, Color(0.02, 0.012, 0.02, 0.95))
+	if not vazio:
+		if fantasma > frac:
+			liquido(c, centro, r_in, fantasma, Color(0.45, 0.12, 0.1), Color(0.95, 0.62, 0.45), t, 1.7)
+		liquido(c, centro, r_in, frac, escura, clara, t)
+	else:
+		liquido(c, centro, r_in, 0.14, escura.darkened(0.5), clara.darkened(0.6), t, 0.9)
+	for k in 3:
+		c.draw_arc(centro, r_in - k * 1.2, 0.0, TAU, 32, Color(0, 0, 0, 0.3 - k * 0.08), 1.6)
+	c.draw_arc(centro, r_in * 0.7, PI * 1.1, PI * 1.5, 12, Color(1, 1, 1, 0.22), 2.0)
+	c.draw_arc(centro, raio - 1.0, 0.0, TAU, 40, _c("metal_claro"), 2.0)
+	c.draw_arc(centro, raio, 0.0, TAU, 40, Color(0, 0, 0, 0.7), 1.0)
+	if pulso > 0.0:
+		c.draw_arc(centro, raio + 1.0, 0.0, TAU, 40, Color(1.0, 0.25, 0.2, 0.9 * pulso), 2.5)
+
+## Plaquinha da sala e do tempo: retângulo com cantos chanfrados e duas linhas pequenas.
+static func placa_mini(c: CanvasItem, r: Rect2, titulo: String, apoio: String) -> void:
+	var forma := octogono(r, 0.2)
+	c.draw_colored_polygon(forma, Color(0.04, 0.035, 0.05, 0.8))
+	c.draw_polyline(_fechar(forma), _c("metal_medio"), 1.5)
+	texto(c, Vector2(r.position.x, r.position.y + 15.0), titulo, 12, _c("texto"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+	texto(c, Vector2(r.position.x, r.position.y + 29.0), apoio, 12, _c("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+
+## Barra do chefe fina e curta: trilho escuro, preenchimento, marcas finas nas fases. Devolve o retângulo da barra.
+static func barra_chefe_fina(c: CanvasItem, cx: float, y: float, largura: float, altura: float, frac: float, cor: Color, pcts: Array) -> Rect2:
+	var r := Rect2(cx - largura * 0.5, y, largura, altura)
+	var forma := octogono(r.grow(2.0), 0.25)
+	c.draw_colored_polygon(forma, Color(0.03, 0.02, 0.04, 0.9))
+	frac = clampf(frac, 0.0, 1.0)
+	if frac > 0.0:
+		c.draw_rect(Rect2(r.position, Vector2(r.size.x * frac, r.size.y)), cor)
+		c.draw_rect(Rect2(r.position, Vector2(r.size.x * frac, 2.0)), Color(1, 1, 1, 0.22))
+	for p in pcts:
+		var x := r.position.x + r.size.x * (float(p) / 100.0 if float(p) > 1.0 else float(p))
+		c.draw_line(Vector2(x, r.position.y - 1.0), Vector2(x, r.end.y + 1.0), Color(1, 1, 1, 0.6), 1.0)
+	c.draw_polyline(_fechar(forma), _c("metal_claro"), 1.5)
+	return r
