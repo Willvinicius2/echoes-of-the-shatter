@@ -143,7 +143,7 @@ mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 @lajes claro 5.7 102.7,89.6
 @lajes claro 5.2 107.3,58.3
 @anel 1 0.9
-@anel 2 1.3
+@anel 2 0.7 sigilo
 @props
 tree_dry_orange 26.7 1.1
 tree_dead_webs 120.2 1.3 flip

@@ -78,7 +78,7 @@ func carregar(caminho: String) -> bool:
 			lajes.append({"tom": q[1], "raio": float(q[2]) * tile, "centro": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile)})
 		elif l.begins_with("@anel "):
 			var q := l.split(" ", false)   # @anel índice_da_laje fator: anel de runas que acompanha o contorno da laje
-			aneis.append({"laje": int(q[1]), "fator": float(q[2])})
+			aneis.append({"laje": int(q[1]), "fator": float(q[2]), "sigilo": q.size() > 3 and q[3] == "sigilo"})
 		elif l.begins_with("@caminho ") or l.begins_with("@riacho "):
 			var q := l.split(" ", false)
 			var pts: Array = []
@@ -372,45 +372,85 @@ func _laje_esfumada(m: Dictionary, semente: int, tex: Texture2D, cor: Color, fat
 		mi.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	return mi
 
-## Anéis de runas contínuos (linha dourada aditiva e marcas curtas) que seguem o contorno de uma laje.
+## Anéis de runas: um sulco de pedra escuro com fio dourado dentro e glifos gravados com brilho a cada trecho.
+## Com `sigilo` o anel vira só um círculo de glifos com halo, sem sulco (marca o centro da arena).
 func _desenhar_aneis(raiz: Node2D) -> void:
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	var fonte: TileSetAtlasSource = _brilho_runas.tile_set.get_source(2)
+	var atlas: Texture2D = fonte.texture
+	var cols: int = atlas.get_width() / tile
 	for a in aneis:
 		var idx: int = a["laje"]
 		if idx < 0 or idx >= lajes.size():
 			continue
 		var m: Dictionary = lajes[idx]
 		var pts := _contorno(m["centro"], m["raio"] * float(a["fator"]), 11 + idx, 0.0)
+		var sigilo: bool = a.get("sigilo", false)
+		var n := pts.size()
 		pts.append(pts[0])
-		var brilho := Line2D.new()
-		brilho.points = pts
-		brilho.width = 12.0
-		brilho.default_color = Color(1.0, 0.72, 0.25, 0.2)
-		brilho.material = mat
-		raiz.add_child(brilho)
-		var linha := Line2D.new()
-		linha.points = pts
-		linha.width = 2.5
-		linha.default_color = Color(1.0, 0.82, 0.38, 0.75)
-		linha.material = mat
-		raiz.add_child(linha)
-		# Marcas de runa: pequenos traços radiais e losangos espaçados ao longo do anel.
-		var passo := 3
-		var k := 0
-		while k < pts.size() - 1:
-			var h := hash(Vector2i(k, idx + 77))
-			var c := pts[k]
-			var sentido := (pts[(k + 1) % (pts.size() - 1)] - pts[k]).normalized()
-			var normal := sentido.orthogonal()
-			var tam := 5.0 + posmod(h, 4)
-			var marca := Line2D.new()
-			marca.points = PackedVector2Array([c - normal * tam, c + normal * tam]) if posmod(h / 3, 2) == 0 else PackedVector2Array([c - sentido * 3.0 - normal * tam * 0.6, c + normal * tam * 0.6 + sentido * 3.0])
-			marca.width = 2.0
-			marca.default_color = Color(1.0, 0.85, 0.45, 0.8)
-			marca.material = mat
-			raiz.add_child(marca)
-			k += passo + posmod(h / 7, 3)
+		if sigilo:
+			var halo := Sprite2D.new()
+			halo.texture = _halo_dourado()
+			halo.position = m["centro"]
+			halo.scale = Vector2.ONE * (m["raio"] * float(a["fator"]) * 2.6 / 128.0)
+			halo.material = mat
+			raiz.add_child(halo)
+		else:
+			var sulco := Line2D.new()   # sulco escavado na pedra
+			sulco.points = pts
+			sulco.width = 9.0
+			sulco.default_color = Color(0.06, 0.05, 0.05, 0.7)
+			raiz.add_child(sulco)
+			var brilho := Line2D.new()
+			brilho.points = pts
+			brilho.width = 7.0
+			brilho.default_color = Color(1.0, 0.7, 0.22, 0.16)
+			brilho.material = mat
+			raiz.add_child(brilho)
+			var fio := Line2D.new()
+			fio.points = pts
+			fio.width = 2.0
+			fio.default_color = Color(1.0, 0.8, 0.35, 0.55)
+			fio.material = mat
+			raiz.add_child(fio)
+		# Glifos de runa do atlas, aditivos, espaçados ao longo do anel.
+		var comprimento := 0.0
+		for k in n:
+			comprimento += pts[k].distance_to(pts[k + 1])
+		var passo := 52.0 if not sigilo else maxf(comprimento / 8.0, 40.0)
+		var andou := passo * 0.5
+		for k in n:
+			var seg := pts[k].distance_to(pts[k + 1])
+			while andou < seg:
+				var c := pts[k].lerp(pts[k + 1], andou / maxf(seg, 0.001))
+				var h := hash(Vector2i(int(c.x), int(c.y)))
+				var rn: int = T_RUNAS[posmod(h, T_RUNAS.size())]
+				var glifo := Sprite2D.new()
+				var at := AtlasTexture.new()
+				at.atlas = atlas
+				at.region = Rect2((rn % cols) * tile, (rn / cols) * tile, tile, tile)
+				glifo.texture = at
+				glifo.position = c
+				glifo.rotation = (pts[k + 1] - pts[k]).angle() + PI * 0.5 if not sigilo else (c - m["centro"]).angle() + PI * 0.5
+				glifo.modulate = Color(1.3, 0.95, 0.45, 0.95)
+				glifo.material = mat
+				raiz.add_child(glifo)
+				andou += passo
+			andou -= seg
+
+func _halo_dourado() -> Texture2D:
+	var g := Gradient.new()
+	g.set_color(0, Color(1.0, 0.75, 0.3, 0.32))
+	g.set_color(1, Color(1.0, 0.6, 0.2, 0.0))
+	var t := GradientTexture2D.new()
+	t.gradient = g
+	t.width = 128
+	t.height = 128
+	t.fill = GradientTexture2D.FILL_RADIAL
+	t.fill_from = Vector2(0.5, 0.5)
+	t.fill_to = Vector2(1.0, 0.5)
+	return t
 
 ## Círculo ondulado (raio em px) para as manchas de laje; a mesma semente dá o mesmo contorno.
 func _contorno(centro: Vector2, raio: float, semente: int, serrilha := 0.0, n_pts := 0) -> PackedVector2Array:

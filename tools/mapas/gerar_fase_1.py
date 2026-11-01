@@ -335,7 +335,7 @@ for larg, pts in RIACHOS:
 for tom, cx, cy, r in LAJES:
     linhas.append("@lajes %s %g %g,%g" % (tom, r, cx, cy))
 linhas.append("@anel 1 0.9")   # anel externo da arena, dentro da laje escura
-linhas.append("@anel 2 1.3")   # anel interno, em volta do estrado
+linhas.append("@anel 2 0.7 sigilo")   # sigilo de glifos no centro da arena, onde o Guardião acorda
 linhas.append("@props")
 for pid, x, y, _, flip in sorted(props, key=lambda p: (p[2], p[1])):
     linhas.append("%s %g %g%s" % (pid, x, y, " flip" if flip else ""))

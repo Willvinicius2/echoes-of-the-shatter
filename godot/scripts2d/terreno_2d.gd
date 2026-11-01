@@ -246,19 +246,21 @@ static func _fins_do_caminho(raiz: Node2D, sala: Node2D, caminhos: Array, idx: i
 		mancha.scale = Vector2.ONE * (larg * 2.4 / 128.0 * 2.0)
 		raiz.add_child(mancha)
 		var lado := dir.orthogonal()
-		for k in 11:
-			var h := hash(Vector2i(k, idx * 17 + ponta + 901))
-			var t := (k + 1) * 11.0 + posmod(h, 7)
-			var raio := maxf(11.0 - k * 0.8, 3.5) * (0.8 + 0.4 * posmod(h / 3, 5) / 5.0)
-			var espalha := (posmod(h / 11, 100) / 100.0 - 0.5) * (larg * 0.8 + k * 5.0)
-			var c := p + dir * t + lado * espalha
-			var pts := PackedVector2Array()
-			for a in 7:
-				var ang := TAU * a / 7.0 + posmod(h, 6)
-				pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.7))
-			var tom := 0.4 + 0.2 * float(posmod(h / 5, 100)) / 100.0
-			_poligono(raiz, _expandir(pts, c, 1.6), Color(0.08, 0.09, 0.08, 0.7))
-			_poligono(raiz, pts, Color(tom, tom + 0.02, tom + 0.07))
+		# Cascalho em três montes que ralam com a distância: cada monte tem várias lajes coladas, de tamanhos diferentes.
+		for g in 3:
+			var hg := hash(Vector2i(g, idx * 17 + ponta + 901))
+			var base := p + dir * (26.0 + g * 40.0 + posmod(hg, 10)) + lado * ((posmod(hg / 7, 100) / 100.0 - 0.5) * larg * (0.8 + g * 0.4))
+			for k in 6 - g * 2:
+				var h := hash(Vector2i(k, hg))
+				var raio := 8.0 + posmod(h, 7) - g * 2.0
+				var c := base + Vector2(posmod(h / 5, 25) - 12, posmod(h / 31, 17) - 8)
+				var pts := PackedVector2Array()
+				for a in 7:
+					var ang := TAU * a / 7.0 + posmod(h, 6)
+					pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.7))
+				var tom := 0.36 + 0.2 * float(posmod(h / 5, 100)) / 100.0
+				_poligono(raiz, _expandir(pts, c, 1.8), Color(0.08, 0.09, 0.08, 0.75))
+				_poligono(raiz, pts, Color(tom, tom + 0.02, tom + 0.07))
 
 ## Lajes soltas e musgo espalhados pela borda do caminho.
 static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: int) -> void:
