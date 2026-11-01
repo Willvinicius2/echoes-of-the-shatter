@@ -173,7 +173,7 @@ func _desenhar_habilidades(vp: Vector2) -> void:
 	for q in [fr.position, Vector2(fr.end.x, fr.position.y), Vector2(fr.position.x, fr.end.y), fr.end]:
 		Arte.rebite(_ctl, q, 2.4)
 	var slots: Array = [
-		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
+		{"icone": (jogador.afinidade if ("afinidade" in jogador and jogador.afinidade != "") else "tiro"), "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": rec_esq, "cor": Tema.cor("estamina")},
 	]
 	if not jogador.has_method("slots_hud") and "habilidades" in jogador and jogador.habilidades != null:

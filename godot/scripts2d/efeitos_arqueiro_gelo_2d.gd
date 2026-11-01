@@ -22,6 +22,10 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			_estilhaco(jogador, dir, def)
 		"gelo_prisao":
 			_prisao(jogador, dir, def)
+		"cometa_gelo":
+			_cometa(jogador, dir, def)
+		"nova_gelo":
+			_nova(jogador, def)
 		_:
 			push_error("Efeito de gelo desconhecido: " + efeito)
 			return false
@@ -175,6 +179,31 @@ static func _lascas(origem: Node2D, dano: float, qtd: int, raio: float, def: Dic
 					acumular_frio(alvo, 1, def)
 			_anim(pai, "gelo_impacto", 8, para, 90.0, 0.35, 16.0))
 
+## Veste a flecha básica com a folha do gelo (Eco do Gelo).
+static func vestir_flecha(f: Node) -> void:
+	_vestir_flecha(f)
+
+## Cometa Gélido (doc 36, família queda do céu): sombra de aviso, bola de gelo cai em 0,6 s, explode (dano + `qtd`
+## acúmulos de frio no `raio`) e deixa CHÃO GELADO por `duracao` s (lentidão `valor`, rachaduras hexagonais).
+static func _cometa(jogador: Node2D, dir: Vector2, def: Dictionary) -> void:
+	var alcance: float = def.get("alcance", 600.0)
+	var centro: Vector2 = jogador.global_position + dir * 0.7 * alcance
+	if jogador.has_method("tem_alvo_auto") and jogador.tem_alvo_auto():
+		centro = jogador.ponto_mira(alcance)
+	var c := Cometa.new()
+	c.configurar(def, jogador.stats["arrow_damage"] * def.get("dano", 2.6))
+	c.global_position = centro
+	jogador.get_parent().add_child(c)
+
+## Nova Gélida (doc 36, família nova): anel de gelo cresce do arqueiro até `raio` em 0,3 s e fere quem alcança
+## (dano + 2 acúmulos de frio); `qtd` lascas voam para fora.
+static func _nova(jogador: Node2D, def: Dictionary) -> void:
+	var n := Nova.new()
+	n.configurar(def, jogador.stats["arrow_damage"] * def.get("dano", 1.8))
+	n.global_position = jogador.global_position
+	jogador.get_parent().add_child(n)
+	Feel.shake(jogador, 3.0, 0.15)
+
 ## Deixa o brilho/rastro da flecha azul e troca o desenho se houver folha.
 static func _vestir_flecha(f: Node) -> void:
 	if f.has_method("add_child") and ResourceLoader.exists(PASTA + "gelo_flecha.png"):
@@ -231,3 +260,240 @@ static func _sprite(pai: Node, folha: String, quadros: int, pos: Vector2, tam: f
 	else:
 		n.global_position = pos
 	return n
+
+## Cometa Gélido: um nó (C0) com sombra de aviso própria e o chão gelado; o corpo que cai é um filho em C5.
+## Silhueta própria (não é o meteoro recolorido): núcleo facetado que gira e cauda de cristais, sem chama.
+class Cometa extends Node2D:
+	const PAL := [Color("F0FBFF"), Color("7FD3F2"), Color("123A5C")]
+	const QUEDA := 0.6
+	const ALTURA := 460.0
+	var raio := 130.0
+	var dur_chao := 3.0
+	var dano := 0.0
+	var acumulos := 2
+	var lentidao := 0.35
+	var def := {}
+	var _t := 0.0
+	var _caiu := false
+	var _acc := 0.0
+	var _corpo: Node2D
+	var _rachas: Array = []   # [ang, comp, ramo]
+
+	func configurar(d: Dictionary, dn: float) -> void:
+		def = d
+		raio = d.get("raio", 130.0)
+		dur_chao = d.get("duracao", 3.0)
+		acumulos = maxi(1, int(d.get("qtd", 2)))
+		lentidao = d.get("valor", 0.35)
+		dano = dn
+		z_index = -1
+
+	func _ready() -> void:
+		Vfx.registrar_animado(self)
+		Vfx.sombra_aviso(get_parent(), global_position, raio, PAL[1], QUEDA)
+		_corpo = CometaCorpo.new()
+		_corpo.dona = self
+		_corpo.z_index = 6   # -1 + 6 = 5 (C5, céu)
+		_corpo.position = Vector2(0, -ALTURA)
+		add_child(_corpo)
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		for i in 7:
+			_rachas.append([TAU * i / 7.0 + rng.randf_range(-0.25, 0.25), rng.randf_range(0.55, 1.0), rng.randf_range(0.3, 0.7)])
+
+	func _physics_process(delta: float) -> void:
+		_t += delta
+		if not _caiu:
+			var f := clampf(_t / QUEDA, 0.0, 1.0)
+			_corpo.position.y = lerpf(-ALTURA, -16.0, f * f)   # cai acelerando
+			_corpo.queue_redraw()
+			if _t >= QUEDA:
+				_caiu = true
+				_t = 0.0
+				_corpo.queue_free()
+				_explodir()
+			return
+		_acc += delta
+		if _acc >= 0.4:
+			_acc = 0.0
+			for n in get_tree().get_nodes_in_group("hurtable"):
+				if n is Node2D and n.has_method("aplicar_status") and n.global_position.distance_to(global_position) <= raio:
+					n.aplicar_status("lentidao", 0.5, lentidao)
+		queue_redraw()
+		if _t >= dur_chao:
+			queue_free()
+
+	func _explodir() -> void:
+		var pai: Node = get_parent()
+		if pai == null:
+			return
+		Vfx.registrar_decalque(self)
+		var folha := PASTA + "gelo_explosao.png"
+		if ResourceLoader.exists(folha):
+			var tex: Texture2D = load(folha)
+			var sp := Sprite2D.new()
+			sp.texture = tex
+			sp.hframes = 8
+			sp.material = Feel.aditivo()
+			sp.scale = Vector2.ONE * (raio * 2.0 / (tex.get_width() / 8.0))
+			sp.z_index = 5
+			sp.position = Vector2(0, -10)
+			add_child(sp)
+			var tw := sp.create_tween()
+			tw.tween_method(func(q: float): sp.frame = clampi(int(q), 0, 7), 0.0, 7.999, 0.55)
+			tw.tween_callback(sp.queue_free)
+		Feel.impacto(pai, global_position + Vector2(0, -10), PAL[1], Vector2.ZERO, raio / 40.0)
+		Feel.shake(self, 4.0, 0.18)
+		for n in get_tree().get_nodes_in_group("hurtable"):
+			if n is Node2D and n.has_method("take_damage") and n.global_position.distance_to(global_position) <= raio:
+				n.take_damage(dano, global_position)
+				if is_instance_valid(n):
+					load("res://scripts2d/efeitos_arqueiro_gelo_2d.gd").acumular_frio(n, acumulos, def)
+
+	## Chão gelado (C0): placa branca-azulada achatada, rachaduras hexagonais que escurecem, borda que respira.
+	func _draw() -> void:
+		if not _caiu:
+			return
+		var apaga: float = Vfx.fade_zona(_t, dur_chao)
+		var cresce := minf(1.0, _t * 6.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
+		var r := raio * cresce
+		draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.22 * apaga))
+		draw_circle(Vector2.ZERO, r * 0.6, Color(PAL[0], 0.18 * apaga))
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 6, Color(PAL[0], (0.55 + 0.15 * sin(_t * 5.0)) * apaga), 2.0)   # hexágono
+		draw_arc(Vector2.ZERO, r * 0.98, 0.0, TAU, 6, Color(PAL[2], 0.5 * apaga), 1.0)
+		for rc in _rachas:
+			var d := Vector2.from_angle(rc[0])
+			var fim: Vector2 = d * r * float(rc[1])
+			var meio: Vector2 = d * r * float(rc[2]) * float(rc[1])
+			var ramo: Vector2 = meio + d.rotated(0.9) * r * 0.22
+			draw_line(Vector2.ZERO, fim, Color(PAL[2], 0.7 * apaga), 2.0)
+			draw_line(Vector2.ZERO, fim, Color(PAL[0], 0.8 * apaga), 0.9)
+			draw_line(meio, ramo, Color(PAL[2], 0.6 * apaga), 1.5)
+			draw_line(meio, ramo, Color(PAL[0], 0.7 * apaga), 0.8)
+
+## Corpo do cometa (filho em C5 enquanto cai): núcleo facetado que gira, halo frio e cauda de cristais para cima.
+class CometaCorpo extends Node2D:
+	var dona: Node2D
+	func _ready() -> void:
+		material = Feel.aditivo()
+	func _draw() -> void:
+		if dona == null:
+			return
+		var pal: Array = dona.PAL
+		var t: float = dona._t
+		var r: float = clampf(dona.raio * 0.22, 14.0, 34.0)
+		draw_circle(Vector2.ZERO, r * 2.2, Color(pal[1], 0.18))
+		draw_circle(Vector2.ZERO, r * 1.4, Color(pal[1], 0.35))
+		# cauda: cristais menores subindo atrás do núcleo
+		for i in 6:
+			var k := float(i + 1) / 6.0
+			var p := Vector2(sin(t * 13.0 + i) * r * 0.5, -r * (1.2 + 2.6 * k))
+			var tam := r * (0.45 - 0.3 * k)
+			var rot := t * 6.0 + i
+			var pts := PackedVector2Array([p + Vector2(0, -tam * 1.8).rotated(rot), p + Vector2(tam, 0).rotated(rot), p + Vector2(0, tam * 1.8).rotated(rot), p + Vector2(-tam, 0).rotated(rot)])
+			draw_colored_polygon(pts, Color(pal[1], 0.8 * (1.0 - k)))
+			draw_line(pts[0], pts[2], Color(pal[0], 1.0 - k), 1.0)
+		# núcleo facetado (hexágono girando) com miolo branco
+		var rot0 := t * 2.5
+		var nuc := PackedVector2Array()
+		for i in 6:
+			nuc.append(Vector2.from_angle(rot0 + TAU * i / 6.0) * r * (0.85 if i % 2 == 0 else 1.0))
+		draw_colored_polygon(nuc, Color(pal[1], 0.95))
+		draw_polyline(nuc + PackedVector2Array([nuc[0]]), Color(pal[2], 0.9), 2.0)
+		draw_circle(Vector2.ZERO, r * 0.45, Color(pal[0], 1.0))
+		for i in 3:
+			draw_line(nuc[i], nuc[i + 3], Color(pal[0], 0.7), 1.0)
+
+## Nova Gélida: anel no chão (C0) que cresce até `raio` em 0,3 s; cada inimigo é golpeado quando a borda o alcança.
+## `qtd` lascas (folha gelo_lasca, ou losangos) voam para fora até 1,6 × raio e giram.
+class Nova extends Node2D:
+	const PAL := [Color("F0FBFF"), Color("7FD3F2"), Color("123A5C")]
+	const EXPANDE := 0.3
+	const VIDA := 0.8
+	var raio := 200.0
+	var dano := 0.0
+	var lascas := 8
+	var def := {}
+	var _t := 0.0
+	var _atingidos: Array = []
+	var _pontas: Array = []   # [ang, tam]
+
+	func configurar(d: Dictionary, dn: float) -> void:
+		def = d
+		raio = d.get("raio", 200.0)
+		lascas = maxi(0, int(d.get("qtd", 8)))
+		dano = dn
+		z_index = -1
+
+	func _ready() -> void:
+		Vfx.registrar_animado(self)
+		var rng := RandomNumberGenerator.new()
+		rng.randomize()
+		for i in 18:
+			_pontas.append([TAU * i / 18.0 + rng.randf_range(-0.1, 0.1), rng.randf_range(0.5, 1.0)])
+		var pai: Node = get_parent()
+		var folha := PASTA + "gelo_lasca.png"
+		var tex: Texture2D = load(folha) if ResourceLoader.exists(folha) else null
+		for i in lascas:
+			var ang := TAU * i / float(lascas)
+			var s: Node2D
+			if tex != null:
+				var sp := Sprite2D.new()
+				sp.texture = tex
+				sp.hframes = 4
+				sp.frame = i % 4
+				sp.material = Feel.aditivo()
+				sp.scale = Vector2.ONE * (48.0 / (tex.get_width() / 4.0))
+				s = sp
+			else:
+				s = Lasca.new()
+			s.z_index = 4
+			s.rotation = ang
+			pai.add_child(s)
+			s.global_position = global_position + Vector2(0, -20)
+			var tw := s.create_tween().set_parallel(true)
+			tw.tween_property(s, "global_position", global_position + Vector2.from_angle(ang) * raio * 1.6 + Vector2(0, -20), 0.38).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+			tw.tween_property(s, "rotation", ang + TAU * 1.5, 0.38)
+			tw.tween_property(s, "modulate:a", 0.0, 0.2).set_delay(0.22)
+			tw.chain().tween_callback(s.queue_free)
+
+	func _physics_process(delta: float) -> void:
+		_t += delta
+		var r := raio * clampf(_t / EXPANDE, 0.0, 1.0)
+		for n in get_tree().get_nodes_in_group("hurtable"):
+			if n is Node2D and n.has_method("take_damage") and not _atingidos.has(n) and n.global_position.distance_to(global_position) <= r:
+				_atingidos.append(n)
+				n.take_damage(dano, global_position)
+				if is_instance_valid(n):
+					load("res://scripts2d/efeitos_arqueiro_gelo_2d.gd").acumular_frio(n, 2, def)
+					Feel.impacto(get_parent(), n.global_position + Vector2(0, -24), PAL[1], Vector2.ZERO, 0.8)
+		queue_redraw()
+		if _t >= VIDA:
+			queue_free()
+
+	func _draw() -> void:
+		var k := clampf(_t / EXPANDE, 0.0, 1.0)
+		var r := raio * (1.0 - pow(1.0 - k, 2.0))
+		var apaga := clampf((VIDA - _t) / 0.35, 0.0, 1.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
+		draw_circle(Vector2.ZERO, r, Color(PAL[0], 0.16 * apaga))               # chão fica branco
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(PAL[1], 0.35 * apaga), 10.0)   # halo
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(PAL[0], 0.95 * apaga), 2.5)    # borda clara
+		draw_arc(Vector2.ZERO, r * 0.9, 0.0, TAU, 64, Color(PAL[2], 0.5 * apaga), 1.0)
+		for pt in _pontas:   # pontas de cristal na borda (silhueta angular)
+			var d := Vector2.from_angle(pt[0])
+			var b := d * r
+			var alt: float = (10.0 + 18.0 * float(pt[1])) * (0.6 + 0.4 * k)
+			var tri := PackedVector2Array([b + d.orthogonal() * 5.0, b + d * alt, b - d.orthogonal() * 5.0])
+			draw_colored_polygon(tri, Color(PAL[1], 0.85 * apaga))
+			draw_line(b, b + d * alt, Color(PAL[0], apaga), 1.0)
+
+## Lasca desenhada em código quando a folha não existe.
+class Lasca extends Node2D:
+	func _ready() -> void:
+		material = Feel.aditivo()
+	func _draw() -> void:
+		var pts := PackedVector2Array([Vector2(16, 0), Vector2(0, 5), Vector2(-14, 0), Vector2(0, -5)])
+		draw_colored_polygon(pts, Color("7FD3F2"))
+		draw_line(pts[0], pts[2], Color("F0FBFF"), 1.2)

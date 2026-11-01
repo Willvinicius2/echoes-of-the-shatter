@@ -26,3 +26,8 @@ arqueiro,shock_arrow,projetil+raio+status
 arqueiro,chain_lightning,salto+raio+status
 arqueiro,storm_tornado,area+raio
 arqueiro,herald_thunder,herald+raio
+arqueiro,toxic_tornado,area+zona+veneno+status
+arqueiro,ice_comet,area+gelo+status
+arqueiro,frost_nova,area+gelo+status
+arqueiro,fire_serpent,area+fogo+status
+arqueiro,lightning_rod,zona+area+raio+status

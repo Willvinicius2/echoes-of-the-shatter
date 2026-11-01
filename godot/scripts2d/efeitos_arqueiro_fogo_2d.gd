@@ -42,6 +42,12 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			m.preparar(ini, dir, def.get("alcance", 320.0), def.get("raio", 44.0), dano, def.get("duracao", 5.0), def.get("qtd", 10), def.get("valor", 4.0))
 			jogador.get_parent().add_child(m)
 			m.global_position = ini
+		"serpente_fogo":
+			# Doc 36 (família rastejante): uma chama serpenteia pelo chão atrás do inimigo mais perto e deixa brasas.
+			var s := _Serpente.new()
+			s.preparar(dir, def, dano)
+			jogador.get_parent().add_child(s)
+			s.global_position = jogador.global_position + dir * 40.0
 		_:
 			push_error("Efeito de fogo desconhecido: " + efeito)
 			return false
@@ -79,6 +85,18 @@ static func overlay_queimadura(inimigo: Node2D) -> Node2D:
 	inimigo.add_child(o)
 	return o
 
+## Veste a flecha básica com o fogo (Eco das Cinzas): folha do projétil, queimadura ao acertar e uma brasa no chão
+## (`raio_brasa` px por 1 s) que queima quem pisar.
+static func vestir_flecha(f: Node, dur: float, dps: float, raio_brasa: float) -> void:
+	if f == null:
+		return
+	var v := _VigiaImpacto.new(dur, dps)
+	v.raio_brasa = raio_brasa
+	f.add_child(v)
+	var pr := Anim.new("flecha_proj", true)
+	pr.position = Vector2.ZERO
+	f.vis.add_child(pr)
+
 static func _ponto(jogador: Node2D, dir: Vector2, alcance: float) -> Vector2:
 	if jogador.has_method("tem_alvo_auto") and jogador.tem_alvo_auto():
 		return jogador.ponto_mira(alcance)
@@ -88,6 +106,7 @@ static func _ponto(jogador: Node2D, dir: Vector2, alcance: float) -> Vector2:
 class _VigiaImpacto extends Node:
 	var dur: float
 	var dps: float
+	var raio_brasa := 0.0   # > 0: deixa uma brasa no chão ao acertar (Eco das Cinzas)
 
 	func _init(d: float, v: float) -> void:
 		dur = d
@@ -108,6 +127,39 @@ class _VigiaImpacto extends Node:
 		cena.add_child.call_deferred(e)   # o pai está ocupado montando filhos durante o tree_exiting
 		for n in atingidos:
 			U.queimar(n, dur, dps)
+		if raio_brasa > 0.0 and Vfx.decalque_cabe(flecha.get_tree()):
+			var b := _Brasa.new()
+			b.raio = raio_brasa
+			b.dps = dps
+			b.global_position = pos
+			cena.add_child.call_deferred(b)
+
+## Brasa no chão (C0, 1 s): mancha escura com miolo que pulsa; queima quem pisar (pulsos de 0,5 s). Decalque com teto global.
+class _Brasa extends Node2D:
+	var raio := 40.0
+	var dps := 3.0
+	var _t := 0.0
+	var _acc := 0.0
+	func _ready() -> void:
+		z_index = -1
+		Vfx.registrar_decalque(self)
+	func _physics_process(delta: float) -> void:
+		_t += delta
+		_acc += delta
+		if _acc >= 0.5:
+			_acc = 0.0
+			for n in U.no_raio(self, global_position, raio):
+				U.queimar(n, 1.0, dps)
+		queue_redraw()
+		if _t >= 1.0:
+			queue_free()
+	func _draw() -> void:
+		var k := 1.0 - _t
+		var pulso := 0.75 + 0.25 * sin(_t * 18.0)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.5))
+		draw_circle(Vector2.ZERO, raio, Color(0.35, 0.08, 0.03, 0.5 * k))
+		draw_circle(Vector2.ZERO, raio * 0.6 * pulso, Color(COR_BRASA, 0.55 * k))
+		draw_circle(Vector2.ZERO, raio * 0.25 * pulso, Color(1.0, 0.85, 0.45, 0.8 * k))
 
 ## Flecha Meteoro: marca o chão, a bola cai, explode em área e deixa brasas que queimam por `duracao`.
 class _Meteoro extends Node2D:
@@ -219,3 +271,116 @@ class _Muralha extends Node2D:
 		var v := p - global_position
 		var s := clampf(v.dot(dir), 0.0, comp)
 		return (v - dir * s).length()
+
+## Serpente de Brasa (doc 36): cabeça de chama que anda pelo chão (velocidade = alcance / duracao) atrás do inimigo mais
+## perto, ondulando (`angulo` px de amplitude), fere quem toca a cada 0,4 s (`dano`), queima (`valor` dps por `qtd` s) e
+## deixa brasas vermelho-escuras atrás (diferentes das chamas altas da Muralha). Um nó: corpo e brasas em C0; a cabeça é
+## um filho (folha muralha_chama) em C4.
+class _Serpente extends Node2D:
+	const PAL := [Color("FFE27A"), Color("FF7A1F"), Color("5A1408")]
+	const COR_BRASA_SERP := Color(0.75, 0.16, 0.08)
+	var dir := Vector2.RIGHT
+	var vel := 240.0
+	var larg := 36.0
+	var dano := 0.0
+	var dur := 2.2
+	var dps := 4.0
+	var queima_s := 3.0
+	var amp := 40.0
+	var _t := 0.0
+	var _busca := 0.0
+	var _alvo: Node2D
+	var _hist: Array = []        # posições da cabeça (global)
+	var _brasas: Array = []      # [pos, t]
+	var _prox_brasa := 0.0
+	var _ultimo: Dictionary = {} # inimigo -> instante do último golpe
+	var _cabeca: Node2D
+	var _base := Vector2.ZERO    # posição sem a ondulação (global)
+
+	func preparar(d: Vector2, def: Dictionary, dn: float) -> void:
+		dir = d.normalized()
+		dur = maxf(def.get("duracao", 2.2), 0.3)
+		vel = def.get("alcance", 520.0) / dur
+		larg = def.get("raio", 36.0)
+		dano = dn
+		dps = def.get("valor", 4.0)
+		queima_s = def.get("qtd", 3.0)
+		amp = def.get("angulo", 40.0)
+		z_index = -1
+
+	func _ready() -> void:
+		Vfx.registrar_animado(self)
+		Vfx.registrar_decalque(self)
+		_base = global_position
+		_cabeca = Anim.new("muralha_chama", true, larg * 2.2)
+		_cabeca.z_index = 5   # -1 + 5 = 4
+		_cabeca.position = Vector2(0, -larg * 0.6)
+		add_child(_cabeca)
+
+	func _physics_process(delta: float) -> void:
+		_t += delta
+		_busca -= delta
+		if _busca <= 0.0 or not is_instance_valid(_alvo) or (_alvo.has_method("esta_morto") and _alvo.esta_morto()):
+			_busca = 0.2
+			_alvo = _mais_perto()
+		if is_instance_valid(_alvo):
+			var quer := (_alvo.global_position - _base).normalized()
+			dir = dir.slerp(quer, minf(1.0, 6.0 * delta)).normalized()   # vira aos poucos (serpente, não míssil)
+		_base += dir * vel * delta
+		var onda := dir.orthogonal() * sin(_t * 9.0) * amp * 0.5
+		global_position = _base + onda
+		if _hist.is_empty() or _hist.back().distance_to(global_position) > 6.0:
+			_hist.append(global_position)
+			if _hist.size() > 14:
+				_hist.pop_front()
+		_prox_brasa -= delta
+		if _prox_brasa <= 0.0:
+			_prox_brasa = 0.12
+			if _brasas.size() < 12:
+				_brasas.append([global_position, _t])
+		_brasas = _brasas.filter(func(b): return _t - b[1] < 1.2)
+		for n in U.no_raio(self, global_position, larg):
+			if _t - float(_ultimo.get(n, -10.0)) >= 0.4:
+				_ultimo[n] = _t
+				n.take_damage(dano, global_position - dir * 10.0)
+				U.queimar(n, queima_s, dps)
+		queue_redraw()
+		if _t >= dur:
+			var e := Anim.new("flecha_impacto", false, larg * 2.5)
+			e.global_position = global_position + Vector2(0, -larg * 0.5)
+			get_parent().add_child(e)
+			queue_free()
+
+	func _mais_perto() -> Node2D:
+		var melhor: Node2D = null
+		var melhor_d := 700.0
+		for n in get_tree().get_nodes_in_group("hurtable"):
+			if n is Node2D and n.has_method("take_damage"):
+				var d: float = n.global_position.distance_to(global_position)
+				if d <= melhor_d:
+					melhor_d = d
+					melhor = n
+		return melhor
+
+	## Corpo: rastro ondulado luminoso (grosso na cabeça, fino na cauda, núcleo amarelo); brasas vermelho-escuras atrás.
+	func _draw() -> void:
+		var apaga := clampf((dur - _t) / 0.3, 0.0, 1.0)
+		for b in _brasas:
+			var k := clampf(1.0 - (_t - b[1]) / 1.2, 0.0, 1.0)
+			var p: Vector2 = to_local(b[0])
+			draw_set_transform(p, 0.0, Vector2(1.0, 0.5))
+			draw_circle(Vector2.ZERO, 7.0 + 3.0 * k, Color(0.25, 0.05, 0.02, 0.55 * k))
+			draw_circle(Vector2.ZERO, 4.0 * k, Color(COR_BRASA_SERP, 0.9 * k))
+			draw_circle(Vector2(-1, -1), 1.6 * k, Color(PAL[0], 0.8 * k * (0.6 + 0.4 * sin(_t * 20.0 + b[1] * 7.0))))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var n := _hist.size()
+		if n < 2:
+			return
+		for i in range(1, n):
+			var k := float(i) / float(n - 1)
+			var a: Vector2 = to_local(_hist[i - 1])
+			var bb: Vector2 = to_local(_hist[i])
+			var w := (3.0 + larg * 0.55 * k) * (0.9 + 0.15 * sin(_t * 26.0 + i))
+			draw_line(a, bb, Color(PAL[2], 0.6 * apaga), w + 3.0)       # contorno escuro
+			draw_line(a, bb, Color(PAL[1], 0.85 * apaga), w)            # corpo laranja
+			draw_line(a, bb, Color(PAL[0], 0.9 * k * apaga), w * 0.38)  # núcleo claro

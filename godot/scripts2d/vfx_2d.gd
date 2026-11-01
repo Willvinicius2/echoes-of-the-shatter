@@ -201,6 +201,18 @@ static func lotado(tree: SceneTree) -> bool:
 		return false
 	return tree.get_nodes_in_group(GRUPO_ANIMADOS).size() >= int(Feel.cfg().get("fx_max_animados", 24))
 
+## Decalques de chão (poças, brasas, rachaduras; doc 36 seção 7): teto global `fx_max_decalques`. Quem deixa marca no
+## chão registra o nó aqui; quando lotou, marcas novas não nascem e as existentes somem em fade.
+const GRUPO_DECAIS := "fx_decalques"
+
+static func registrar_decalque(no: Node) -> void:
+	no.add_to_group(GRUPO_DECAIS)
+
+static func decalque_cabe(tree: SceneTree) -> bool:
+	if tree == null:
+		return true
+	return tree.get_nodes_in_group(GRUPO_DECAIS).size() < int(Feel.cfg().get("fx_max_decalques", 12))
+
 # ---------- zonas ----------
 
 ## Anel de entrada de uma zona (seção 2: nascem com anel de 0,15 s), na cor do elemento.

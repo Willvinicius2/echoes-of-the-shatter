@@ -59,6 +59,8 @@ func abrir(ids: Array, m := "sala", nivel := 0, fonte: RefCounted = null) -> voi
 				_titulo.text = Csv.t("upgrade.chest")
 			"gem":
 				_titulo.text = Csv.t("upgrade.gem")
+			"afinidade":
+				_titulo.text = Csv.t("upgrade.afinidade")
 			_:
 				_titulo.text = Csv.t("upgrade.title")
 	for c in _caixa.get_children():

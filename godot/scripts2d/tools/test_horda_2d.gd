@@ -86,7 +86,14 @@ func rodar() -> void:
 	check.call(xp_total > 0, "horda: mortes soltam gemas de XP")
 	await _esperar(func(): return run.ui.aberta, 3.0)
 	# A cada `skill_gem_every_levels` níveis vem uma gema de habilidade antes da carta de nível: escolhe e segue.
+	# A primeira gema do arqueiro é a escolha do Eco do básico (doc 36): quatro afinidades, e a escolha fica no jogador.
 	var gemas_nivel := 0
+	if run.ui.aberta and run.ui.modo == "afinidade":
+		check.call(run.ui._ids.size() == 4, "horda: a primeira gema oferece as quatro afinidades (%d)" % run.ui._ids.size())
+		gemas_nivel += 1
+		run.ui.escolher(1)
+		await t.physics_frame
+		check.call("afinidade" in run.player and run.player.afinidade == "eco_peste", "horda: o Eco escolhido fica no jogador (%s)" % str(run.player.get("afinidade")))
 	while run.ui.aberta and run.ui.modo == "gem" and gemas_nivel < 10:
 		gemas_nivel += 1
 		run.ui.escolher(0)

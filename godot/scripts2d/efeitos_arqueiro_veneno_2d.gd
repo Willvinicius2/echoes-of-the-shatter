@@ -6,6 +6,8 @@ extends RefCounted
 
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const Recolor = preload("res://scripts2d/recolor_2d.gd")
+const Placeholders = preload("res://scripts2d/placeholders.gd")
 const VERDE := Color(0.45, 0.9, 0.25)
 const PASTA := "res://art2d/fx/veneno/"
 ## Folhas em linha: nome -> [largura do quadro, altura, quadros, fps, loop]. Só formato de arte, sem balanceamento.
@@ -41,6 +43,8 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			z.configurar("chuva", def, jogador.stats["arrow_damage"] * dano, _anim_sprite, _anim_unica)
 			z.global_position = alvo
 			jogador.get_parent().add_child(z)
+		"tornado_toxico":
+			_ciclone(jogador, dir, def, jogador.stats["arrow_damage"] * dano)
 		_:
 			push_error("Efeito de veneno desconhecido: " + efeito)
 			return false
@@ -103,6 +107,37 @@ static func _bola(jogador: Node2D, dir: Vector2, def: Dictionary, dano: float) -
 			z.configurar("poca", def, dano, _anim_sprite, _anim_unica)
 			z.global_position = ponto
 			pai.add_child(z))
+
+## Veste a flecha básica com a folha do veneno (Eco da Peste); o rastro vetorial vem de vfx_identidade_2d.gd.
+static func vestir_flecha(f: Node) -> void:
+	if f != null and "vis" in f:
+		_anexar_anim(f.vis, "fx_veneno_flecha", Vector2.ZERO)
+
+# --- Ciclone Pestilento (doc 36, família tornado): a flecha sobe em arco e cai; no chão nasce um funil baixo e largo
+# que anda atrás do grupo mais denso, EMPURRA os inimigos para fora (o de tempestade puxa), envenena quem toca e
+# deixa poças no caminho. Um nó desenha as poças (C0); o filho desenha o funil e as bolhas (C4).
+const VOO_CICLONE := 0.55
+const ALTURA_CICLONE := 360.0
+
+static func _ciclone(jogador: Node2D, dir: Vector2, def: Dictionary, dano: float) -> void:
+	var destino: Vector2 = _ponto(jogador, dir, def.get("alcance", 600.0))
+	var pai := jogador.get_parent()
+	var corpo := Node2D.new()
+	var seta := Sprite2D.new()
+	seta.texture = load("res://art2d/fx/arrow.png") if ResourceLoader.exists("res://art2d/fx/arrow.png") else Placeholders.seta(Vector2i(64, 16))
+	corpo.add_child(seta)
+	_anexar_anim(corpo, "fx_veneno_flecha", Vector2.ZERO)
+	var boca: Dictionary = jogador.boca_do_arco(dir) if jogador.has_method("boca_do_arco") \
+			else {"chao": jogador.global_position, "altura": 50.0}
+	Vfx.flash_boca(pai, boca["chao"] + Vector2(0, -boca["altura"]), dir)
+	Vfx.arco(pai, boca["chao"], boca["altura"], destino, ALTURA_CICLONE, VOO_CICLONE, corpo, VERDE, def.get("raio", 130.0),
+		func(ponto: Vector2):
+			if not is_instance_valid(pai) or not pai.is_inside_tree():
+				return
+			var c := Ciclone.new()
+			c.configurar(def, dano)
+			c.global_position = ponto
+			pai.add_child(c), true)
 
 static func _ponto(jogador: Node2D, dir: Vector2, alcance: float) -> Vector2:
 	if jogador.has_method("tem_alvo_auto") and jogador.tem_alvo_auto():
@@ -216,3 +251,159 @@ class ZonaVeneno extends Node2D:
 				for n in _alvos():
 					n.take_damage(dano * 1.5, global_position)
 			queue_free()
+
+## Ciclone Pestilento. Números do CSV: raio, duracao, dano (por pulso de 0,5 s), qtd (dps do veneno), valor (px/s que anda).
+class Ciclone extends Node2D:
+	const PAL := [Color("E6FF8A"), Color("5CD12B"), Color("123D1A")]
+	const PULSO := 0.5
+	const EMPURRA := 120.0     # px/s para fora (aparência de "sopro"; o dano é do CSV)
+	var raio := 130.0
+	var duracao := 5.0
+	var dano := 0.0
+	var dps := 3.0
+	var anda := 70.0
+	var _t := 0.0
+	var _acc := 0.0
+	var _busca := 0.0
+	var _alvo := Vector2.INF
+	var _pocas: Array = []     # [pos (global), nasceu em s]
+	var _prox_poca := 0.0
+	var _funil: Node2D
+
+	func configurar(def: Dictionary, d: float) -> void:
+		raio = def.get("raio", 130.0)
+		duracao = def.get("duracao", 5.0)
+		dano = d
+		dps = def.get("qtd", 3.0)
+		anda = def.get("valor", 70.0)
+		z_index = -1
+
+	func _ready() -> void:
+		Vfx.registrar_animado(self)
+		Vfx.registrar_decalque(self)
+		_funil = CicloneFunil.new()
+		_funil.dona = self
+		_funil.z_index = 5   # -1 + 5 = 4 (C4)
+		add_child(_funil)
+		Vfx.anel_entrada(get_parent(), global_position, raio, PAL[1])
+
+	func _physics_process(delta: float) -> void:
+		_t += delta
+		_acc += delta
+		_busca -= delta
+		if _busca <= 0.0:
+			_busca = 0.5
+			_alvo = _onde_ir()
+		if _alvo != Vector2.INF and _alvo.distance_to(global_position) > 12.0:
+			global_position += (_alvo - global_position).normalized() * anda * delta
+		var tree := get_tree()
+		for n in tree.get_nodes_in_group("hurtable"):
+			if n is Node2D:
+				var v: Vector2 = n.global_position - global_position
+				if v.length() <= raio and v.length() > 1.0:
+					n.global_position += v.normalized() * EMPURRA * delta   # sopra para fora
+		if _acc >= PULSO:
+			_acc = 0.0
+			for n in tree.get_nodes_in_group("hurtable"):
+				if n is Node2D and n.has_method("take_damage"):
+					var dentro: bool = n.global_position.distance_to(global_position) <= raio
+					if not dentro:
+						for pc in _pocas:
+							if n.global_position.distance_to(pc[0]) <= 26.0:
+								dentro = true
+								break
+					if dentro:
+						n.take_damage(dano, global_position)
+						if is_instance_valid(n) and n.has_method("aplicar_status"):
+							n.aplicar_status("veneno", 2.0, dps)
+							n.aplicar_status("lentidao", 0.6, 0.3)
+		_prox_poca -= delta
+		if _prox_poca <= 0.0:
+			_prox_poca = 0.35
+			if _pocas.size() < 8 and Vfx.decalque_cabe(tree):
+				_pocas.append([global_position + Vector2(randf_range(-raio, raio) * 0.4, randf_range(-raio, raio) * 0.25), _t])
+		_pocas = _pocas.filter(func(pc): return _t - pc[1] < 1.6)
+		queue_redraw()
+		_funil.queue_redraw()
+		if _t >= duracao:
+			queue_free()
+
+	## Centro do grupo mais denso num raio de busca; sem grupo, o inimigo mais perto; sem ninguém, fica.
+	func _onde_ir() -> Vector2:
+		var melhor: Node2D = null
+		var melhor_n := 0
+		var melhor_d := INF
+		var vivos := get_tree().get_nodes_in_group("hurtable")
+		for a in vivos:
+			if not (a is Node2D) or a.global_position.distance_to(global_position) > raio * 5.0:
+				continue
+			var k := 0
+			for b in vivos:
+				if b is Node2D and a.global_position.distance_to(b.global_position) <= raio:
+					k += 1
+			var d: float = a.global_position.distance_to(global_position)
+			if k > melhor_n or (k == melhor_n and d < melhor_d):
+				melhor = a
+				melhor_n = k
+				melhor_d = d
+		return melhor.global_position if melhor != null else Vector2.INF
+
+	## Poças no chão (C0): elipses com borda escura e miolo claro, somem em 1,6 s.
+	func _draw() -> void:
+		var apaga: float = Vfx.fade_zona(_t, duracao)
+		for pc in _pocas:
+			var idade: float = _t - pc[1]
+			var k := clampf(1.0 - idade / 1.6, 0.0, 1.0)
+			var r := 10.0 + 14.0 * minf(idade * 4.0, 1.0)
+			var p: Vector2 = to_local(pc[0])
+			draw_set_transform(p, 0.0, Vector2(1.0, 0.5))
+			draw_circle(Vector2.ZERO, r + 2.0, Color(PAL[2], 0.55 * k * apaga))
+			draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.55 * k * apaga))
+			draw_circle(Vector2(-r * 0.3, -r * 0.3), r * 0.35, Color(PAL[0], 0.5 * k * apaga))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.5))
+		draw_arc(Vector2.ZERO, raio, 0.0, TAU, 48, Color(PAL[1], 0.25 * apaga), 2.0)   # área real do CSV
+
+## Funil do Ciclone (filho, C4): folha do tornado com matiz girado para o verde-ácido, ACHATADA (baixo e largo, silhueta
+## diferente do de tempestade), base de lama escura e bolhas que orbitam e estouram. Arte provisória até a folha própria.
+class CicloneFunil extends Node2D:
+	var dona: Node2D
+	var _tex: Texture2D
+	func _ready() -> void:
+		var c := "res://art2d/fx/raio/tornado_tempestade.png"
+		_tex = load(c) if ResourceLoader.exists(c) else null
+		material = Recolor.tornado_para_veneno()
+	func _draw() -> void:
+		if dona == null:
+			return
+		var pal: Array = dona.PAL
+		var t: float = dona._t
+		var raio: float = dona.raio
+		var apaga: float = Vfx.fade_zona(t, dona.duracao)
+		# base de lama: anel escuro girando (o funil arrasta o chão)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.5))
+		for i in 10:
+			var a := t * 4.0 + TAU * i / 10.0
+			var p := Vector2.from_angle(a) * raio * 0.55
+			draw_circle(p, 7.0 + 3.0 * sin(t * 6.0 + i), Color(pal[1], 0.35 * apaga))
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		if _tex != null:
+			var w := float(_tex.get_width()) / 8.0
+			var h := float(_tex.get_height())
+			var ex := raio * 2.2 / w      # mais largo...
+			var ey := ex * 0.62           # ...e mais baixo que o de tempestade
+			var qi := int(t * 12.0) % 8
+			draw_texture_rect_region(_tex, Rect2(Vector2(-w * 0.5 * ex, -h * ey + 14.0), Vector2(w * ex, h * ey)), Rect2(qi * w, 0, w, h))
+		else:
+			for i in 5:
+				var k := float(i) / 4.0
+				draw_arc(Vector2(0, -10.0 - 50.0 * k), raio * (0.3 + 0.7 * k), 0.0, TAU, 32, Color(pal[1], 0.5 * apaga), 3.0)
+		# bolhas: sobem em espiral e estouram em cima (miolo claro + contorno)
+		for i in 7:
+			var f := fmod(t * 0.9 + float(i) / 7.0, 1.0)
+			var ang := t * 5.0 + TAU * i / 7.0
+			var r := raio * (0.7 - 0.45 * f)
+			var p := Vector2(cos(ang) * r, -f * raio * 1.1 + sin(ang) * r * 0.3)
+			var tam := 3.0 + 3.0 * (1.0 - f)
+			draw_circle(p, tam + 1.2, Color(pal[2], 0.6 * apaga))
+			draw_circle(p, tam, Color(pal[1], 0.9 * apaga))
+			draw_circle(p + Vector2(-tam * 0.35, -tam * 0.35), tam * 0.4, Color(pal[0], apaga))

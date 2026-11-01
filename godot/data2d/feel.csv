@@ -60,3 +60,4 @@ arc_shadow_alpha,0.45,x,opacidade da sombra de aviso no ponto de queda
 zone_ring_time,0.15,s,anel de entrada das zonas no chao
 zone_fade_time,0.3,s,fade final das zonas no chao
 fx_max_animados,24,x,efeitos animados ao mesmo tempo antes de os novos nascerem na versao curta (doc 33 secao 4)
+fx_max_decalques,12,x,marcas no chao (pocas e brasas de efeitos, chao gelado) vivas ao mesmo tempo na tela (doc 36)
