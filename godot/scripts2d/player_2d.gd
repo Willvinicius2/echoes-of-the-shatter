@@ -126,7 +126,10 @@ func herald_morte(inimigo: Node2D, sobra := 0.0) -> void:
 func _atualizar_heralds() -> void:
 	if habilidades == null:
 		return
-	VenenoFx.aura_arauto(self) if habilidades.nivel("herald_plague") > 0 else _tirar_no("AuraPeste")
+	if habilidades.nivel("herald_plague") > 0:
+		VenenoFx.aura_arauto(self)
+	else:
+		_tirar_no("AuraPeste")
 	RaioFx.ativar_arauto(self, habilidades.def_nivel("herald_thunder") if habilidades.nivel("herald_thunder") > 0 else {})
 	if habilidades.nivel("arauto_cinzas") > 0:
 		if not has_node("AuraCinzas"):
