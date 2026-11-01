@@ -379,6 +379,89 @@ String ShatterRogue::estado_hash() const {
     return ler_texto([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_state_hash(rogue_, o, c, n); });
 }
 
+// --- XP, nível, baú, curva e modo horda (API 1.12) ---
+int ShatterRogue::horda_definir(bool ligado) {
+    int32_t r = -1;
+    shatter_rogue_horde_set(rogue_, ligado ? 1 : 0, &r);
+    return r;
+}
+
+int ShatterRogue::horda_vencer() {
+    int32_t r = -1;
+    shatter_rogue_horde_win(rogue_, &r);
+    return r;
+}
+
+Dictionary ShatterRogue::nivel_xp_da_morte(const String& inimigo, double xp_mult, bool elite) const {
+    std::string s = utf8(inimigo);
+    int64_t xp = 0;
+    uint8_t bau = 0;
+    int32_t r = -1;
+    shatter_rogue_level_kill_xp(rogue_, s.data(), s.size(), xp_mult, elite ? 1 : 0, &xp, &bau, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["xp"] = xp;
+    d["bau"] = bau != 0;
+    return d;
+}
+
+Dictionary ShatterRogue::nivel_ganhar_xp(int64_t xp) {
+    int32_t niveis = 0, r = -1;
+    shatter_rogue_level_gain_xp(rogue_, xp, &niveis, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["niveis"] = niveis;
+    return d;
+}
+
+int ShatterRogue::nivel_abrir_bau() {
+    int32_t r = -1;
+    shatter_rogue_level_open_chest(rogue_, &r);
+    return r;
+}
+
+Dictionary ShatterRogue::nivel_escolher(const String& upgrade, double hp) {
+    std::string s = utf8(upgrade);
+    double hp_out = hp;
+    int32_t r = -1;
+    shatter_rogue_level_choose(rogue_, s.data(), s.size(), hp, &hp_out, &r);
+    Dictionary d;
+    d["resultado"] = r;
+    d["hp"] = hp_out;
+    return d;
+}
+
+int ShatterRogue::nivel_sortear_de_novo() {
+    int32_t r = -1;
+    shatter_rogue_level_reroll(rogue_, &r);
+    return r;
+}
+
+int ShatterRogue::nivel_pular() {
+    int32_t r = -1;
+    shatter_rogue_level_skip(rogue_, &r);
+    return r;
+}
+
+ROGUE_ACAO_ID(nivel_banir, shatter_rogue_level_ban)
+
+Dictionary ShatterRogue::nivel_estado() const {
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) { return shatter_rogue_level_json(rogue_, o, c, n); });
+}
+
+Dictionary ShatterRogue::curva(const String& fase, int onda) const {
+    std::string f = utf8(fase);
+    return dict_de([&](uint8_t* o, size_t c, size_t* n) {
+        return shatter_rogue_curve_json(rogue_, f.data(), f.size(), static_cast<int32_t>(onda), o, c, n);
+    });
+}
+
+double ShatterRogue::vida_chefe(double base, double dps) const {
+    double hp = base;
+    shatter_rogue_boss_hp(rogue_, base, dps, &hp);
+    return hp;
+}
+
 void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("carregar_dados", "pasta"), &ShatterRogue::carregar_dados);
     ClassDB::bind_method(D_METHOD("definir_save", "caminho"), &ShatterRogue::definir_save);
@@ -400,6 +483,18 @@ void ShatterRogue::_bind_methods() {
     ClassDB::bind_method(D_METHOD("corrida_iniciar", "semente", "base"), &ShatterRogue::corrida_iniciar);
     ClassDB::bind_method(D_METHOD("corrida_fase"), &ShatterRogue::corrida_fase);
     ClassDB::bind_method(D_METHOD("corrida_caminhos", "etapa"), &ShatterRogue::corrida_caminhos);
+    ClassDB::bind_method(D_METHOD("horda_definir", "ligado"), &ShatterRogue::horda_definir);
+    ClassDB::bind_method(D_METHOD("horda_vencer"), &ShatterRogue::horda_vencer);
+    ClassDB::bind_method(D_METHOD("nivel_xp_da_morte", "inimigo", "xp_mult", "elite"), &ShatterRogue::nivel_xp_da_morte);
+    ClassDB::bind_method(D_METHOD("nivel_ganhar_xp", "xp"), &ShatterRogue::nivel_ganhar_xp);
+    ClassDB::bind_method(D_METHOD("nivel_abrir_bau"), &ShatterRogue::nivel_abrir_bau);
+    ClassDB::bind_method(D_METHOD("nivel_escolher", "upgrade", "hp"), &ShatterRogue::nivel_escolher);
+    ClassDB::bind_method(D_METHOD("nivel_sortear_de_novo"), &ShatterRogue::nivel_sortear_de_novo);
+    ClassDB::bind_method(D_METHOD("nivel_pular"), &ShatterRogue::nivel_pular);
+    ClassDB::bind_method(D_METHOD("nivel_banir", "upgrade"), &ShatterRogue::nivel_banir);
+    ClassDB::bind_method(D_METHOD("nivel_estado"), &ShatterRogue::nivel_estado);
+    ClassDB::bind_method(D_METHOD("curva", "fase", "onda"), &ShatterRogue::curva);
+    ClassDB::bind_method(D_METHOD("vida_chefe", "base", "dps"), &ShatterRogue::vida_chefe);
     ClassDB::bind_method(D_METHOD("corrida_inimigo_morto", "inimigo"), &ShatterRogue::corrida_inimigo_morto);
     ClassDB::bind_method(D_METHOD("corrida_escolher_carta", "upgrade", "hp"), &ShatterRogue::corrida_escolher_carta);
     ClassDB::bind_method(D_METHOD("corrida_descansar", "hp"), &ShatterRogue::corrida_descansar);

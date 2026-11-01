@@ -10,6 +10,7 @@ const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 const GuerreiroTestes = preload("res://scripts2d/tools/test_guerreiro_2d.gd")
 const AutocastTestes = preload("res://scripts2d/tools/test_autocast_2d.gd")
+const HordaTestes = preload("res://scripts2d/tools/test_horda_2d.gd")
 
 var falhas := 0
 
@@ -26,6 +27,7 @@ func _initialize() -> void:
 	quit(0 if falhas == 0 else 1)
 
 func _testar() -> void:
+	preload("res://scripts2d/run_2d.gd").modo_etapas = true   # fluxo antigo de etapas; o modo horda tem o teste dele
 	preload("res://scripts2d/habilidades_2d.gd").caminho = "user://teste_habilidades_geral_2d.json"
 	DirAccess.remove_absolute("user://teste_habilidades_geral_2d.json")
 	_testar_manifesto()
@@ -49,6 +51,7 @@ func _testar() -> void:
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
 	await AutocastTestes.new(self, check).rodar()
+	await HordaTestes.new(self, check).rodar()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")

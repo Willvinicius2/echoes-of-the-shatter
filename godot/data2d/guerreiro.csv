@@ -8,7 +8,7 @@ damage,18,hp,dano base do golpe de espada (1x)
 attack_cooldown,0.42,s,intervalo entre golpes do combo
 attack_range,88,px,alcance do golpe basico
 attack_arc,110,graus,abertura do cone do golpe basico
-attack_move_mult,0.55,x,fator de velocidade durante o golpe
+attack_move_mult,0.8,x,fator de velocidade durante o golpe (horda: automatico)
 combo_window,0.7,s,tempo para encadear o proximo golpe do combo
 combo2_mult,1.1,x,dano do 2o golpe
 combo3_mult,1.5,x,dano do 3o golpe

@@ -11,6 +11,8 @@ signal escolhido(id: String)
 
 var upgrades: RefCounted
 var aberta := false
+var modo := "sala"        # "sala" (sala limpa), "level" (subiu de nível) ou "chest" (baú de elite)
+var _titulo: Label
 var _ids: Array = []
 var _caixa: HBoxContainer
 var _fundo: ColorRect
@@ -31,6 +33,7 @@ func _ready() -> void:
 	col.add_theme_constant_override("separation", 28)
 	centro.add_child(col)
 	var titulo := Label.new()
+	_titulo = titulo
 	titulo.text = Csv.t("upgrade.title")
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 34)
@@ -41,8 +44,12 @@ func _ready() -> void:
 	col.add_child(_caixa)
 	_fundo.visible = false
 
-func abrir(ids: Array) -> void:
+## `m`: "sala", "level" ou "chest"; `nivel` aparece no título da carta de nível.
+func abrir(ids: Array, m := "sala", nivel := 0) -> void:
 	_ids = ids
+	modo = m
+	if _titulo != null:
+		_titulo.text = Csv.t("upgrade.level_up") % nivel if m == "level" else Csv.t("upgrade.chest" if m == "chest" else "upgrade.title")
 	for c in _caixa.get_children():
 		c.queue_free()
 	for i in ids.size():
