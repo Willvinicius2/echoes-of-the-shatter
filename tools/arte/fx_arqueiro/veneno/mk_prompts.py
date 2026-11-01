@@ -6,13 +6,13 @@ BASE = ("A horizontal sprite sheet of {n} animation frames in a single row, even
         "top-down 3/4 view, painterly with a thin dark outline, light from the upper left, rich toxic green (#7ddc3c) with yellow-green highlights and dark teal shadows, "
         "soft bubbles and wisps, NOT pixel art, no clay look, no glow bleeding outside its cell, effect centered in each cell. Subject: {s}")
 FOLHAS = {
- "fx_veneno_flecha": (6, "an arrow-shaped projectile flying to the right: a venom-dripping arrow head with a toxic green glow and a short bubbling trail, looping animation, subtle size pulse", "1536x1024"),
+ "fx_veneno_flecha": (6, "a LARGE, THICK arrow projectile flying to the right that fills most of its cell width: clearly readable wooden shaft, a big broad steel arrowhead dripping bright green venom, visible feathered fletching at the tail, thick toxic green glow and a short bubbling trail, looping animation with slight venom drip changes between frames", "1536x1024"),
  "fx_veneno_impacto": (8, "a poison impact burst: green splash that expands, droplets and small bubbles, then fades into thin mist", "1536x1024"),
- "fx_veneno_bola": (6, "a glowing sphere of toxic venom thrown upward: round blob of swirling green liquid with bubbles, wobbling, with small drips, looping", "1536x1024"),
+ "fx_veneno_bola": (6, "a glowing sphere of toxic venom thrown upward: round blob of swirling green liquid with bubbles, wobbling, with small drips, looping; the sphere is large and fills about 80% of its cell, keeping a strong bright inner glow", "1536x1024"),
  "fx_veneno_poca": (8, "a top-down puddle of toxic acid on the ground, viewed from above at a slight angle: bubbling green pool with popping bubbles and thin rising vapor, ring-shaped irregular edge, looping seamlessly", "1536x1024"),
  "fx_veneno_nuvem": (8, "a toxic gas cloud burst on the ground: green cloud puffs outward from the center with skull-shaped wisps hinted in the smoke, expands and dissolves at the end", "1536x1024"),
  "fx_veneno_chuva": (8, "a large area of corrosive green rain: slanted acid droplets falling over a circular patch of the ground that is splashing and eaten by acid, looping seamlessly", "1536x1024"),
- "fx_veneno_status": (6, "an overlay for a poisoned enemy: small green bubbles and sickly vapor rising upward around an empty center (the center must stay empty), looping", "1536x1024"),
+ "fx_veneno_status": (6, "an overlay for a poisoned enemy: dense clusters of many bright green bubbles and drops of different sizes rising upward around the body, with thick sickly green vapor wisps, high contrast and clearly visible, NOT a thin ring; the middle column stays mostly empty so the body shows through, looping", "1536x1024"),
  "fx_veneno_arauto_aura": (6, "a faint aura around a hero: thin swirling ring of green miasma with two tiny skull-like wisps orbiting, mostly transparent in the center, looping", "1536x1024"),
  "fx_veneno_arauto_gatilho": (8, "a plague burst: a green cloud expands outward in a ring with spores and little skulls of mist, spreading to the sides, then dissipates", "1536x1024"),
 }
