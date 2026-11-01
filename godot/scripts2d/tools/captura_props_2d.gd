@@ -21,6 +21,12 @@ func _initialize() -> void:
 	var tile: float = room.tile
 	# bonecos parados: na ponte, atrás de uma árvore, ao lado de uma tumba e no gramado
 	var pontos := [Vector2(12.0, 6.3), Vector2(2.1, 2.9), Vector2(3.7, 8.6), Vector2(16.0, 9.0), Vector2(12.2, 8.6)]
+	var extra: String = OS.get_environment("BONECOS")  # "x,y;x,y" em células, para testar na frente e atrás dos props
+	if extra != "":
+		pontos.clear()
+		for par in extra.split(";"):
+			var xy := par.split(",")
+			pontos.append(Vector2(float(xy[0]), float(xy[1])))
 	for p in pontos:
 		var spr := _boneco()
 		if spr != null:

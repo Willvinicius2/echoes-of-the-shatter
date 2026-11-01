@@ -207,7 +207,8 @@ func _montar() -> void:
 		var rp := RectangleShape2D.new()
 		rp.size = Vector2(float(d["solido_l"]), float(d["solido_a"]))
 		cp.shape = rp
-		cp.position = p["pos"] + Vector2(0, tile * 0.5 - float(d["solido_a"]) * 0.5)
+		# a colisão fica no centro da base que toca o chão (nas árvores, o pé do tronco), o mesmo ponto do y-sort
+		cp.position = p["pos"] + Vector2(0, tile * 0.5 - _apoio_prop(p["id"]))
 		corpo.add_child(cp)
 	if piso_grama and colunas * linhas > 2000:
 		_tons_do_gramado()
@@ -552,16 +553,34 @@ func colocar_props(alvo: Node2D) -> void:
 			spr.modulate = Color(0.8, 0.77, 0.76)  # copas de fundo menos saturadas
 		if spr.flip_h:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
+		# O nó entra no y-sort pelo ponto de apoio (centro da base que toca o chão; nas árvores, o pé do
+		# tronco), não pela borda de baixo do sprite: assim quem passa ao lado fica na frente do prop.
+		var pe: Vector2 = p["pos"] + Vector2(0, tile * 0.5)
+		var ap: float = Ancoragem.apoio(p["id"], tex, d, arte)
 		var no := Node2D.new()
-		no.position = p["pos"] + Vector2(0, tile * 0.5)
+		no.position = pe - Vector2(0, ap)
+		spr.position = Vector2(0, ap)
 		var atras := Node2D.new()
 		var frente := Node2D.new()
+		atras.position = spr.position
+		frente.position = spr.position
 		no.add_child(atras)   # tufos atrás do sprite
 		no.add_child(spr)
 		no.add_child(frente)  # tufos que cobrem um pouco o pé
-		Ancoragem.prender(chao, atras, frente, p["id"], tex, d, arte, spr.flip_h, no.position, piso_grama, k)
+		Ancoragem.prender(chao, atras, frente, p["id"], tex, d, arte, spr.flip_h, pe, piso_grama, k)
 		alvo.add_child(no)
 		k += 1
+
+## Altura do ponto de apoio do prop (px acima do pé), via ancoragem_2d.gd; 0 se faltar arte ou definição.
+func _apoio_prop(id: String) -> float:
+	var arte: Dictionary = _props_arte.get(id, {})
+	var d: Dictionary = _props_def.get(id, {})
+	if arte.is_empty() or d.is_empty():
+		return 0.0
+	var tex: Texture2D = _carregar_textura(arte["arquivo"])
+	if tex == null:
+		return float(d["solido_a"]) * 0.5
+	return preload("res://scripts2d/ancoragem_2d.gd").apoio(id, tex, d, arte)
 
 func _carregar_textura(caminho: String) -> Texture2D:
 	if ResourceLoader.exists(caminho):

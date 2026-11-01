@@ -33,22 +33,39 @@ static func tipo(id: String) -> String:
 			return "folhagem"
 	return "solido"
 
+## Base que toca o chão, em px já na escala do prop: [largura, profundidade]. Vem de solido_l/solido_a do
+## props_2d.csv; sem sólido, uma fração da largura do sprite.
+static func base(id: String, tex: Texture2D, def: Dictionary) -> Array:
+	var esc := float(def["escala"])
+	var t := tipo(id)
+	var bl := float(def["solido_l"])
+	var ba := float(def["solido_a"])
+	if bl <= 0.0:
+		bl = tex.get_width() * esc * (0.5 if t == "raso" else 0.6)
+	if ba <= 0.0:
+		ba = bl * 0.36
+	return [bl, ba]
+
+## Altura (px acima do pé do sprite) do ponto de apoio: o centro da base que toca o chão. É por esse ponto
+## que o prop entra no y-sort com os atores e onde fica a colisão. Nas árvores a folhagem caída desce
+## abaixo do tronco, então a base do tronco é medida na própria textura; sem isso a copa cobria a cabeça
+## de quem passava ao lado.
+static func apoio(id: String, tex: Texture2D, def: Dictionary, arte: Dictionary) -> float:
+	var b := base(id, tex, def)
+	var a: float = b[1] * 0.5
+	if tipo(id) == "arvore":
+		a += _altura_pe_tronco(tex, float(arte["pivo_x"])) * float(def["escala"])
+	return a
+
 ## `chao`: nó da sala para os decalques. `atras` e `frente`: filhos do nó do prop antes e depois do sprite.
 ## `pe`: posição do pé do prop (mesma do nó). `def` vem de props_2d.csv, `arte` de props_manifest.csv.
 static func prender(chao: Node2D, atras: Node2D, frente: Node2D, id: String, tex: Texture2D, def: Dictionary, arte: Dictionary, flip: bool, pe: Vector2, grama: bool, semente: int) -> void:
 	var esc := float(def["escala"])
 	var t := tipo(id)
-	var larg_tex := tex.get_width() * esc
-	var bl := float(def["solido_l"])
-	var ba := float(def["solido_a"])
-	if bl <= 0.0:
-		bl = larg_tex * (0.5 if t == "raso" else 0.6)
-	if ba <= 0.0:
-		ba = bl * 0.36
-	var centro := pe + Vector2(0, -ba * 0.45)  # centro da base desenhada no sprite (o pé é a aresta da frente)
-	if t == "arvore":
-		# nas árvores a folhagem caída desce abaixo do tronco: o pé do tronco é medido na própria textura
-		centro = pe + Vector2(0, -_altura_pe_tronco(tex, float(arte["pivo_x"])) * esc - ba * 0.3)
+	var b := base(id, tex, def)
+	var bl: float = b[0]
+	var ba: float = b[1]
+	var centro := pe + Vector2(0, -apoio(id, tex, def, arte))  # centro da base que toca o chão (mesmo ponto do y-sort)
 	var h := hash(Vector2i(semente, 71))
 	if grama and t != "raso":
 		_terra(chao, centro, bl, ba, t, h)
