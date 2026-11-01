@@ -32,6 +32,10 @@ var autocast := true           # combo e ativas disparam sozinhos (falso: só te
 var _alvo_basico := {}         # alvo do combo no autocast ({} = ninguém no alcance)
 var dodge_cd := 0.0
 var habilidades: RefCounted    # árvore e slots (habilidades_2d.gd); recargas das ativas ficam em habilidades.recargas
+# Experiência do modo horda, preenchida a cada quadro pela barra de XP (hud_xp_2d.gd) a partir do core; a HUD lê daqui.
+var nivel_jogador := 1
+var xp := 0.0
+var xp_proximo := 1.0
 var impeto := 0.0
 var guardando := false
 var combo := 0

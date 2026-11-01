@@ -28,6 +28,10 @@ var hp := 0.0
 var mana := 0.0
 var classe := "arqueiro"
 var habilidades: RefCounted   # árvore e slots da classe (habilidades_2d.gd)
+# Experiência do modo horda, preenchida a cada quadro pela barra de XP (hud_xp_2d.gd) a partir do core; a HUD lê daqui.
+var nivel_jogador := 1
+var xp := 0.0
+var xp_proximo := 1.0
 var estado := Estado.LIVRE
 var invencivel := 0.0
 var god_mode := false          # testes automáticos
