@@ -44,6 +44,10 @@ var cad_buff := 1.0            # habilidade Adrenalina: cadência de tiro
 var buff_t := 0.0
 var _salto_vel := 0.0          # >0: esquiva customizada (Salto Atrás) com esta velocidade
 var _rng := RandomNumberGenerator.new()
+## Habilidades que saem como projétil na direção da mira: entram no leque quando várias disparam juntas.
+const EFEITOS_PROJETIL := ["tiro_forte", "rajada", "explosiva", "tiro_veneno", "gelo_flecha", "gelo_estilhaco", "tiro_ardente", "flecha_eletrica"]
+var _leque_disparos: Array = []   # instantes (ms) dos últimos disparos de projétil
+var _prox_autocast_ms := 0
 
 func _ready() -> void:
 	stats = Csv.kv(stats_csv)
@@ -98,13 +102,31 @@ func usar_habilidade(slot: int, alvo := {}) -> bool:
 	if not alvo.is_empty() and not Alvos.mira_mouse:
 		dir = alvo["dir"]
 		alvo_ponto = alvo["ponto"]
+	var proj: bool = habilidades.slots[slot] != "" and EFEITOS_PROJETIL.has(habilidades.def_nivel(habilidades.slots[slot]).get("efeito", ""))
+	var agora := Time.get_ticks_msec()
+	if proj:
+		dir = dir.rotated(_desvio_leque(agora))
 	var ok: bool = habilidades.usar(slot, self, dir)
 	alvo_ponto = Vector2.INF
+	if ok and proj:
+		_leque_disparos.append(agora)
 	if ok:
 		if estado == Estado.LIVRE and has_method("animar_conjuracao"):   # mago: gesto de conjuração sem travar o movimento
 			call("animar_conjuracao")
 		facing = dir
 	return ok
+
+## Leque do autocast: o 1º disparo sai reto na mira; os que saem junto (dentro de `leque_janela`) abrem para os lados,
+## alternando +d, -d, +2d, -2d... Assim várias habilidades juntas formam um leque ordenado a partir do arqueiro,
+## e uma habilidade sozinha continua reta no alvo.
+func _desvio_leque(agora_ms: int) -> float:
+	var janela_ms := int(stats.get("leque_janela", 0.0) * 1000.0)
+	_leque_disparos = _leque_disparos.filter(func(t): return agora_ms - t <= janela_ms)
+	var k := _leque_disparos.size()
+	if k == 0:
+		return 0.0
+	var lado := 1.0 if k % 2 == 1 else -1.0
+	return deg_to_rad(stats.get("leque_graus", 0.0)) * floorf((k + 1) * 0.5) * lado
 
 ## Heralds: gatilhos de morte (docs/design/32). Cada Herald aprendido age quando o inimigo morre com o status certo.
 ## `sobra` = dano que passou da vida do inimigo no golpe fatal (overkill).
@@ -151,12 +173,15 @@ func usar_ult() -> bool:
 
 ## Autocast: cada ativa equipada (menos a ult e as manuais) sai assim que a recarga acaba e há alvo. Uma por quadro.
 func _autocast_habilidades() -> void:
+	if Time.get_ticks_msec() < _prox_autocast_ms:
+		return
 	for i in HabilidadesScript.SLOTS:
 		var id: String = habilidades.slots[i]
 		if not habilidades.automatica(id) or habilidades.recargas.has(id):
 			continue
 		var alvo: Dictionary = habilidades.alvo_auto(id, get_tree(), global_position, stats["arrow_range"])
 		if not alvo.is_empty() and usar_habilidade(i, alvo):
+			_prox_autocast_ms = Time.get_ticks_msec() + int(stats.get("autocast_intervalo", 0.0) * 1000.0)
 			return
 
 ## Ponto no chão para habilidades de área, limitado a `alcance`: o do autocast, senão o cursor (ou a mira).
