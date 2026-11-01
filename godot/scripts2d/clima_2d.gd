@@ -387,8 +387,8 @@ func _braseiro(b: Vector2) -> void:
 	brasa.initial_velocity_max = 60.0
 	brasa.damping_min = 8.0
 	brasa.damping_max = 16.0
-	brasa.scale_amount_min = 0.35
-	brasa.scale_amount_max = 0.6
+	brasa.scale_amount_min = 0.5
+	brasa.scale_amount_max = 0.85
 	brasa.color_ramp = _rampa([[0.0, Color(1, 0.9, 0.5, 1)], [0.6, Color(1, 0.45, 0.1, 0.9)], [1.0, Color(0.6, 0.12, 0.05, 0)]])
 	brasa.z_index = 12
 	add_child(brasa)

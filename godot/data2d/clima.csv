@@ -10,17 +10,17 @@ balanco_arbusto,5,px,inclinação de arbustos e mudas
 farfalhar_arbusto,1.2,px,tremor dos arbustos
 balanco_capim,24,px,inclinação do capim e dos juncos e cardos
 farfalhar_capim,4,px,tremor do capim
-folhas_max,48,,folhas soltas ao mesmo tempo na sala
-folhas_por_arvore,0.45,folhas/s,folhas que caem de cada árvore com folhagem (dobra na rajada)
-folhas_rajada,3.2,folhas/s,folhas que atravessam a sala no pico da rajada
+folhas_max,70,,folhas soltas ao mesmo tempo na sala
+folhas_por_arvore,0.65,folhas/s,folhas que caem de cada árvore com folhagem (dobra na rajada)
+folhas_rajada,4.6,folhas/s,folhas que atravessam a sala no pico da rajada
 folha_tempo_chao,7,s,tempo da folha caída no chão antes de sumir
 fogo_chamas,16,,línguas de fogo por braseiro
-fogo_brasas,6,,brasas subindo por braseiro
+fogo_brasas,10,,brasas subindo por braseiro
 fumaca_qtd,9,,baforadas de fumaça por braseiro
 fumaca_alpha,0.36,0..1,opacidade máxima da fumaça
 nuvens_qtd,3,,sombras de nuvem passando pelo chão (só salas com grama)
 nuvem_alpha,0.24,0..1,escuridão da sombra de nuvem
-nevoa_alpha,0.07,0..1,névoa rasteira clara nas salas de pedra (no lugar da sombra de nuvem)
+nevoa_alpha,0.11,0..1,névoa rasteira clara nas salas de pedra (no lugar da sombra de nuvem)
 nuvem_vel,16,px/s,velocidade da sombra de nuvem com vento base
-poeira_qtd,22,,partículas de poeira e pólen no ar
+poeira_qtd,32,,partículas de poeira e pólen no ar
 ondas_capim_alpha,0.05,0..1,brilho das ondas de vento no gramado
