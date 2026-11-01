@@ -1,0 +1,38 @@
+[
+ {
+  "id": "icone_frost_arrow",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: one arrow with a crystal ice head and frost trail, pointing up-right, snowflake sparkles. Glow color: ice-blue glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_glacial_shard",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: one large ice crystal splitting into three smaller flying shards. Glow color: ice-blue glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_ice_prison",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a jagged ring of tall ice spikes closing around a frozen center. Glow color: ice-blue glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ },
+ {
+  "id": "icone_herald_ice",
+  "tamanho": "1024x1024",
+  "prompt": "A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp pixel-art-like detail, matching the rich painterly style of the attached game screenshot (warm torch light, aged stone, autumn browns, teal accents). Composition: the tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners. Inside, a dark stone background with soft vignette and a colored glow halo behind the central glyph. The glyph is large, centered, readable at 64px, with strong light direction from top-left, shading, scratches and a dark outline. No text, no letters, no watermark, no flat plastic look, no clay look. Original design. Glyph: a pale-blue frozen skull-less crystal snowflake emblem bursting into shards, with a small archer-bow silhouette behind. Glow color: ice-blue glow. Use EXACTLY the same stone-and-iron frame, gold inner line and rivets as the second attached icon so the whole set matches; only the glyph, glow color and background tint change.",
+  "referencias": [
+   "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png",
+   "D:\\openclaude\\_trabalho-claude\\arte-ui-work\\icones\\icone_tiro.png"
+  ]
+ }
+]
