@@ -3,8 +3,9 @@ hud.wave_clear,Onda vencida! A próxima já vem
 hud.rest_open,Nicho de descanso: a vida foi recuperada. A próxima onda já vem
 hud.portal_open,O Guardião caiu! Entre no portal
 hud.boss_awaits,O Guardião desperta nas ruínas a nordeste. Vá até ele
-upgrade.level_up,Cristal de Eco %d! Escolha uma gema
-upgrade.chest,Baú de elite! Escolha uma gema rara
+upgrade.level_up,Cristal de Eco %d! Escolha um reforço
+upgrade.chest,Baú de elite! Escolha um reforço raro
 hud.boss_altar,O Guardião pode ser despertado no altar. Vá até ele quando estiver pronto
 hud.swarm,O prazo acabou: o enxame final chegou e o Guardião despertou
 hud.skill_gem,Gema de habilidade: %s
+upgrade.gem,Gema de habilidade! Escolha uma

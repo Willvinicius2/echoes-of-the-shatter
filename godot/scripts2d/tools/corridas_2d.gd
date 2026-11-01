@@ -103,7 +103,15 @@ func _corrida(n: int) -> Dictionary:
 		salas_tempo[sala + 1] = float(salas_tempo.get(sala + 1, 0.0)) + dt
 		r["sala_final"] = sala + 1
 		if int(t_corrida * 60.0) % 600 == 0:
-			print("[bot] wall=%d corrida %d t=%.0f sala=%d estado=%d vivos=%d hp=%.0f mortes=%d nivel=%s" % [Time.get_ticks_msec() / 1000, n + 1, t_corrida, sala + 1, run.estado, run.vivos, p.hp, r["mortes"], run.upgrades.nivel_estado().get("level", 0) if run.upgrades.has_method("nivel_estado") else 0])
+			var perto := INF
+			for e in get_nodes_in_group("hurtable"):
+				if is_instance_valid(e):
+					perto = minf(perto, e.global_position.distance_to(p.global_position))
+			print("[bot] wall=%d corrida %d t=%.0f sala=%d estado=%d vivos=%d hp=%.0f mortes=%d nivel=%s pausa=%s ui=%s/%s jog=%s pos=%s perto=%.0f slots=%s" % [
+				Time.get_ticks_msec() / 1000, n + 1, t_corrida, sala + 1, run.estado, run.vivos, p.hp, r["mortes"],
+				run.upgrades.nivel_estado().get("level", 0) if run.upgrades.has_method("nivel_estado") else 0,
+				paused, run.ui.aberta, run.ui.modo, p.estado, p.global_position.round(), perto,
+				p.habilidades.slots if "habilidades" in p and p.habilidades != null else []])
 		r["vida_final"] = p.hp
 		if run.estado == run.Estado.VENCEU:
 			r["resultado"] = "vitoria"

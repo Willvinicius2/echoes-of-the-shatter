@@ -41,6 +41,12 @@ func rodar() -> void:
 	await t.physics_frame
 	var p = run.player
 	p.god_mode = true
+	var cru: bool = p.habilidades.ordem.size() > 0
+	for id in p.habilidades.ordem:
+		cru = cru and p.habilidades.nivel(id) == 0
+	for sl in p.habilidades.slots:
+		cru = cru and sl == ""
+	check.call(cru, "horda: a corrida começa só com o ataque básico (nada aprendido, slots vazios)")
 	p.autocast = false
 	check.call(run.horda and run.room.aberta() and run.fase_horda != "", "horda: fase aberta usa o spawner do core")
 	await _esperar(func(): return t.get_nodes_in_group("hurtable").size() > 0, 3.0)
@@ -73,6 +79,13 @@ func rodar() -> void:
 		await _esperar(func(): return t.get_nodes_in_group("hurtable").size() > 0, 4.0)
 	check.call(xp_total > 0, "horda: mortes soltam gemas de XP")
 	await _esperar(func(): return run.ui.aberta, 3.0)
+	# A cada `skill_gem_every_levels` níveis vem uma gema de habilidade antes da carta de nível: escolhe e segue.
+	var gemas_nivel := 0
+	while run.ui.aberta and run.ui.modo == "gem" and gemas_nivel < 10:
+		gemas_nivel += 1
+		run.ui.escolher(0)
+		await t.physics_frame
+	check.call(gemas_nivel > 0, "horda: subir de nível também dá gema de habilidade")
 	check.call(run.ui.aberta and run.ui.modo == "level" and t.paused, "horda: subir de nível abre as cartas e pausa")
 	var tem_ataque := false
 	for id in run.ui._ids:
@@ -123,10 +136,14 @@ func rodar() -> void:
 	for id in h.ordem:
 		soma0 += h.nivel(id)
 	run._usar_gema_habilidade()
+	check.call(run.ui.aberta and run.ui.modo == "gem" and run.ui._ids.size() == int(run.config["skill_gem_cards"]), "horda: gema de habilidade abre a escolha entre %d habilidades" % run.ui._ids.size())
+	var escolhida: String = run.ui._ids[0] if run.ui._ids.size() > 0 else ""
+	run.ui.escolher(0)
 	var soma1 := 0
 	for id in h.ordem:
 		soma1 += h.nivel(id)
-	check.call(soma1 == soma0 + 1, "horda: gema de habilidade ensina ou melhora uma habilidade")
+	check.call(soma1 == soma0 + 1 and h.nivel(escolhida) == 1, "horda: a habilidade escolhida na gema é aprendida")
+	check.call(not h.eh_ativa(escolhida) or h.slots.has(escolhida), "horda: ativa nova da gema entra num slot livre")
 	run.queue_free()
 	await t.process_frame
 	RunScript.modo_etapas = antes
