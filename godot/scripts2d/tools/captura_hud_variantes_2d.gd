@@ -17,35 +17,35 @@ func _initialize() -> void:
 	root.add_child(run)
 	await physics_frame
 	var chefe := args.size() > 4 and args[4] == "chefe"
-	run.indice = 3 if chefe else 2
-	if chefe:
-		run._carregar_sala(3, {"id": "boss", "tipo": "combate", "room": "res://data2d/rooms/sala_boss.txt", "enemies": "crypt_guardian:1"})
-	else:
-		run._carregar_sala(2)
 	run.player.god_mode = true
 	run.hud._lay["faixa_modo"] = modo
-	if classe == "guerreiro":
-		var sk = run.upgrades
-		for id in ["w_charge", "w_keen_edge", "w_heavy_slash", "w_iron_skin", "w_shield_bash"]:
-			sk.escolher(id, run.player)
-	elif "habilidades" in run.player and run.player.habilidades != null:   # arqueiro/mago: 3 ativas do runtime
-		var h = run.player.habilidades
-		h.ganhar_pontos(20)
+	var h = run.player.habilidades
+	if h != null:   # as 3 primeiras ativas da classe, nos slots Q, E e F
+		h.ganhar_pontos(30)
 		var n := 0
 		for id in h.ordem:
-			if n < 3 and h.eh_ativa(id) and h.aprender(id):
+			if n < 3 and h.eh_ativa(id) and h.pode_aprender(id) and h.aprender(id):
 				n += 1
 	for i in 40:
 		await physics_frame
+	if chefe:
+		var b: Node2D = load("res://scripts2d/boss_2d.gd").new()
+		run.atores.add_child(b)
+		b.setup("crypt_guardian", run.player, run.player.global_position + Vector2(0, -260))
+		b.died.connect(run._on_inimigo_morto)
+		for i in 240:
+			await physics_frame
 	var p = run.player
 	p.hp = p.stats["hp_max"] * vida
+	p.god_mode = true
 	run.hud._hp_fantasma = minf(1.0, vida + 0.1)
 	p.dodge_cd = p.stats["dodge_cooldown"] * 0.55
-	if classe == "guerreiro":
-		p._cds["w_charge"] = run.upgrades.recarga("w_charge") * 0.6
+	if "impeto" in p:
 		p.impeto = 10.0
-	elif "habilidades" in p and p.habilidades != null and p.habilidades.slots[0] != "":
-		p.habilidades.recargas[p.habilidades.slots[0]] = float(p.habilidades.defs[p.habilidades.slots[0]]["cd"]) * 0.6
+	if p.habilidades != null and p.habilidades.slots[0] != "":
+		if "mana" in p:
+			p.mana = p.stats["mana_max"] * 0.7
+		p.habilidades.usar(0, p, Vector2.RIGHT)   # põe a primeira ativa em recarga de verdade (o core guarda o tempo)
 	run.hud.tempo = 83.0
 	for i in 6:
 		await physics_frame

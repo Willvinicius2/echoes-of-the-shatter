@@ -279,17 +279,13 @@ func _desenhar_barra() -> void:
 	# moldura pintada em tamanho fixo no topo; a caveira fica centrada sobre a porta (cx) e a barra roxa e o nome
 	# serifado ficam dentro do canal da moldura (docs/arte/29_arte_ui_gpt_image.md)
 	var cx: float = vp.x * 0.5 + Csv.kv("res://data2d/hud_layout.csv")["chefe_deslocamento_x"]
-	var canal := Arte.canal_chefe(cx, 4.0)
 	var cor := Color(0.6, 0.2, 0.7) if fase == 1 else (Color(0.8, 0.25, 0.55) if fase == 2 else Color(0.9, 0.2, 0.2))
-	_ctl.draw_rect(canal, Color(0.02, 0.015, 0.03))
 	var frac := clampf(hp / hp_max, 0.0, 1.0)
-	_ctl.draw_polygon(PackedVector2Array([canal.position, canal.position + Vector2(canal.size.x * frac, 0), canal.position + Vector2(canal.size.x * frac, canal.size.y), canal.position + Vector2(0, canal.size.y)]), PackedColorArray([cor.lightened(0.2), cor.lightened(0.2), cor.darkened(0.5), cor.darkened(0.5)]))
-	_ctl.draw_rect(Rect2(canal.position + Vector2(0, 1), Vector2(canal.size.x * frac, 3)), Color(1, 1, 1, 0.2))
+	var pcts := []
 	for f in fases:
 		if f > 1:
-			var x: float = canal.position.x + canal.size.x * fases[f]["pct"] / 100.0
-			_ctl.draw_rect(Rect2(x - 1.5, canal.position.y, 3, canal.size.y), Tema.cor("destaque"))
-	Arte.moldura_chefe(_ctl, cx, 4.0)
+			pcts.append(fases[f]["pct"])
+	var canal := Arte.barra_chefe(_ctl, cx, 4.0, frac, cor, pcts)
 	var base_y := canal.position.y + canal.size.y - 4.0
 	Arte.texto(_ctl, Vector2(canal.position.x + 14.0, base_y), Csv.t("hud.boss"), 16, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_LEFT, -1.0, true)
 	var total := total_fases()

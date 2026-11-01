@@ -600,28 +600,35 @@ static func base_arco(c: CanvasItem, x0: float, x1: float, y_base: float, alt: f
 	for u in [0.18, 0.82]:
 		rebite(c, topo[int(u * n)] + Vector2(0, 3), 2.2)
 
-## Placa gótica: base com cantos cortados, topo em arco ogival (ponta no centro) e ornamento de ferro.
+## Placa gótica em forma de estandarte: topo em arco ogival, laterais côncavas (cintura) e base em ponta central
+## com ombros curvos, aro de ferro e gema no ápice.
 static func placa_gotica(c: CanvasItem, r: Rect2, titulo: String, apoio: String) -> void:
 	var forma := PackedVector2Array()
-	var k := 10.0
-	var arco_h := 14.0
-	forma.append(Vector2(r.position.x, r.position.y + arco_h + 4))
-	var n := 14
-	for i in n + 1:   # ogiva: dois arcos que se encontram no centro
+	var n := 16
+	var arco_h := 15.0
+	for i in n + 1:   # topo: ogiva
 		var u := float(i) / n
-		var x := lerpf(r.position.x, r.end.x, u)
 		var d := absf(u - 0.5) * 2.0
-		forma.append(Vector2(x, r.position.y + arco_h * (1.0 - sqrt(maxf(0.0, 1.0 - d * d))) + arco_h * d * 0.25))
-	forma.append(Vector2(r.end.x, r.position.y + arco_h + 4))
-	forma.append(Vector2(r.end.x, r.end.y - k))
-	forma.append(Vector2(r.end.x - k, r.end.y))
-	forma.append(Vector2(r.position.x + k, r.end.y))
-	forma.append(Vector2(r.position.x, r.end.y - k))
+		forma.append(Vector2(lerpf(r.position.x, r.end.x, u), r.position.y + arco_h * (1.0 - sqrt(maxf(0.0, 1.0 - d * d))) + arco_h * d * 0.25))
+	for i in 1 + 8:   # lateral direita côncava, descendo até a base
+		var u := float(i) / 8.0
+		var y := lerpf(r.position.y + arco_h + 4.0, r.end.y - 14.0, u)
+		forma.append(Vector2(r.end.x - sin(u * PI) * 7.0, y))
+	forma.append(Vector2(r.end.x - 14.0, r.end.y - 4.0))
+	forma.append(Vector2(r.get_center().x + 22.0, r.end.y - 6.0))
+	forma.append(Vector2(r.get_center().x, r.end.y + 6.0))   # ponta central
+	forma.append(Vector2(r.get_center().x - 22.0, r.end.y - 6.0))
+	forma.append(Vector2(r.position.x + 14.0, r.end.y - 4.0))
+	for i in range(8, -1, -1):   # lateral esquerda côncava, subindo
+		var u := float(i) / 8.0
+		var y := lerpf(r.position.y + arco_h + 4.0, r.end.y - 14.0, u)
+		forma.append(Vector2(r.position.x + sin(u * PI) * 7.0, y))
 	c.draw_colored_polygon(_deslocar(forma, 3.0), Color(0, 0, 0, 0.5))
 	c.draw_colored_polygon(forma, _c("pedra"))
 	c.draw_colored_polygon(_deslocar(forma, -5.0), _c("pedra").darkened(0.25))
 	aro(c, forma, 3.5)
-	losango(c, Vector2(r.get_center().x, r.position.y + 2), 5.0, _c("destaque"))
+	losango(c, Vector2(r.get_center().x, r.position.y + 3), 5.5, _c("destaque"))
+	losango(c, Vector2(r.get_center().x, r.end.y + 1), 4.0, _c("destaque"))
 	texto(c, Vector2(r.position.x, r.position.y + arco_h + 22), titulo, 20, _c("destaque").lightened(0.2), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, true)
 	texto(c, Vector2(r.position.x, r.position.y + arco_h + 40), apoio, 14, _c("texto"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
 
@@ -649,3 +656,71 @@ static func ornamento_globo(c: CanvasItem, centro: Vector2, raio: float) -> void
 	c.draw_colored_polygon(crista, _c("metal_medio"))
 	c.draw_polyline(_fechar(crista), _c("metal_claro").darkened(0.1), 1.2)
 	losango(c, topo + Vector2(0, -4), 4.5, _c("destaque"))
+
+## Barra do chefe em forma de lâmina: canal com pontas afiadas, aro de ferro, chifres curvos nas extremidades e
+## crista central com caveira. `y` = topo da crista; retorna o retângulo útil do canal (texto e fases vão dentro).
+## `pcts` = porcentagens de vida em que cada fase começa (marcas douradas).
+static func barra_chefe(c: CanvasItem, cx: float, y: float, frac: float, cor: Color, pcts: Array) -> Rect2:
+	var larg := 640.0
+	var alt := 24.0
+	var cy := y + 46.0
+	var x0 := cx - larg * 0.5
+	var x1 := cx + larg * 0.5
+	var ponta := 34.0
+	var forma := PackedVector2Array([
+		Vector2(x0 - ponta, cy), Vector2(x0 + 4.0, cy - alt * 0.5), Vector2(cx - 40.0, cy - alt * 0.5),
+		Vector2(cx - 18.0, cy - alt * 0.5 - 7.0), Vector2(cx + 18.0, cy - alt * 0.5 - 7.0), Vector2(cx + 40.0, cy - alt * 0.5),
+		Vector2(x1 - 4.0, cy - alt * 0.5), Vector2(x1 + ponta, cy), Vector2(x1 - 4.0, cy + alt * 0.5),
+		Vector2(cx + 40.0, cy + alt * 0.5), Vector2(cx + 18.0, cy + alt * 0.5 + 7.0), Vector2(cx - 18.0, cy + alt * 0.5 + 7.0),
+		Vector2(cx - 40.0, cy + alt * 0.5), Vector2(x0 + 4.0, cy + alt * 0.5)])
+	var canal := Rect2(x0, cy - alt * 0.5, larg, alt)
+	# chifres curvos nas extremidades, atrás do aro
+	for lado in [-1.0, 1.0]:
+		var base := Vector2(x1 if lado > 0 else x0, cy)
+		var curva := PackedVector2Array()
+		for i in 13:
+			var u := float(i) / 12.0
+			curva.append(base + Vector2(lado * (ponta * 0.5 + u * 30.0), -u * u * 34.0 - sin(u * PI) * 4.0))
+		c.draw_polyline(curva, Color(0, 0, 0, 0.7), 11.0)
+		c.draw_polyline(curva, _c("metal_medio"), 7.5)
+		c.draw_polyline(curva, _c("metal_claro"), 1.2)
+		losango(c, curva[12], 4.0, _c("destaque"))
+	c.draw_colored_polygon(_deslocar(forma, 3.0), Color(0, 0, 0, 0.5))
+	c.draw_colored_polygon(forma, Color(0.02, 0.015, 0.03))
+	var f := clampf(frac, 0.0, 1.0)
+	if f > 0.0:
+		var enche := Rect2(x0 - ponta, cy - alt, larg + ponta * 2.0, alt * 2.0)
+		enche.size.x = (larg + ponta * 2.0) * f
+		var rect := PackedVector2Array([enche.position, Vector2(enche.end.x, enche.position.y), enche.end, Vector2(enche.position.x, enche.end.y)])
+		for parte in Geometry2D.intersect_polygons(rect, forma):
+			var cores := PackedColorArray()
+			for v in parte:
+				cores.append(cor.lightened(0.2).lerp(cor.darkened(0.5), clampf((v.y - (cy - alt * 0.5)) / alt, 0.0, 1.0)))
+			c.draw_polygon(parte, cores)
+		c.draw_rect(Rect2(x0, cy - alt * 0.5 + 1.0, larg * f, 3.0), Color(1, 1, 1, 0.18))
+	for p in pcts:
+		var xm := x0 + larg * float(p) / 100.0
+		c.draw_rect(Rect2(xm - 1.5, cy - alt * 0.5, 3.0, alt), _c("destaque"))
+	aro(c, forma, 5.0)
+	# crista central com caveira
+	var crista := PackedVector2Array([Vector2(cx - 30.0, cy - alt * 0.5 - 4.0), Vector2(cx - 14.0, cy - alt * 0.5 - 26.0), Vector2(cx, cy - alt * 0.5 - 40.0),
+		Vector2(cx + 14.0, cy - alt * 0.5 - 26.0), Vector2(cx + 30.0, cy - alt * 0.5 - 4.0)])
+	c.draw_colored_polygon(_deslocar(crista, 2.0), Color(0, 0, 0, 0.55))
+	c.draw_colored_polygon(crista, _c("metal_escuro"))
+	c.draw_polyline(_fechar(crista), _c("metal_medio"), 3.0)
+	caveira(c, Vector2(cx, cy - alt * 0.5 - 17.0), 10.0)
+	return canal
+
+## Chifres de ferro curvos que sobem pelos lados do globo (por trás do aro), com ponta dourada.
+static func chifres_globo(c: CanvasItem, centro: Vector2, raio: float) -> void:
+	for lado in [-1.0, 1.0]:
+		var curva := PackedVector2Array()
+		for i in 15:
+			var u := float(i) / 14.0
+			var ang := lerpf(-PI * 0.12, -PI * 0.62, u) if lado > 0 else lerpf(-PI * 0.88, -PI * 0.38, u)
+			var rr := raio * (1.04 + 0.16 * sin(u * PI * 0.9)) + u * 8.0
+			curva.append(centro + Vector2(cos(ang), sin(ang)) * rr)
+		c.draw_polyline(curva, Color(0, 0, 0, 0.7), 9.0)
+		c.draw_polyline(curva, _c("metal_medio"), 6.0)
+		c.draw_polyline(curva, _c("metal_claro").darkened(0.15), 1.4)
+		losango(c, curva[14], 3.5, _c("destaque"))

@@ -1108,7 +1108,7 @@ func _testar_hud_slots() -> void:
 	for k in ["impeto_escura", "impeto_clara", "sem_recurso"]:
 		check(Tema.cor(k) != Color.MAGENTA, "cor %s no tema" % k)
 	var antes: String = Classe.atual
-	for classe in ["arqueiro", "guerreiro"]:
+	for classe in ["arqueiro", "guerreiro", "mago"]:
 		Classe.atual = classe
 		var run = RunScene.instantiate()
 		run.com_menu = false
@@ -1130,17 +1130,27 @@ func _testar_hud_slots() -> void:
 				dentro = dentro and not r.intersects(todos[j])
 		check(dentro, "%s: slots dentro da tela, entre os globos e sem sobreposição" % classe)
 		check(rs["ativas"][0].size.x > rs["basicos"][0].size.x, "%s: ativas maiores que ataque e esquiva" % classe)
+		var h = run.player.habilidades
+		h.redistribuir()
 		var cs: Dictionary = hud.conteudo_slots()
-		if classe == "arqueiro":
-			check(cs["ativas"].all(func(e): return e.is_empty()), "arqueiro sem ativas: 4 encaixes vazios")
-		else:
-			run.upgrades.escolher("w_charge", run.player)
-			run.player._cds["w_charge"] = run.upgrades.recarga("w_charge") * 0.5
-			cs = hud.conteudo_slots()
-			var e: Dictionary = cs["ativas"][0]
-			check(not e.is_empty() and e["icone"] == "w_charge" and e["tecla"] == "hud.key.skill1", "guerreiro: ativa aprendida vai ao slot Q")
-			check(e.get("segundos", -1.0) > 0.0 and absf(e["recarga"] - 0.5) < 0.05, "guerreiro: slot traz fração e segundos de recarga")
-			check(cs["ativas"][3].is_empty(), "guerreiro: slots sem ativa ficam vazios")
+		check(cs["ativas"].all(func(e): return e.is_empty()), "%s sem ativas: 4 encaixes vazios" % classe)
+		h.ganhar_pontos(10)
+		var id := ""
+		for k in h.ordem:
+			if h.eh_ativa(k) and h.pode_aprender(k):
+				id = k
+				break
+		check(id != "" and h.aprender(id), "%s: aprende uma ativa" % classe)
+		if "mana" in run.player:
+			run.player.mana = run.player.stats["mana_max"]
+		if "impeto" in run.player:
+			run.player.impeto = run.player.stats["impeto_max"]
+		var usou: bool = h.usar(0, run.player, Vector2.RIGHT)
+		cs = hud.conteudo_slots()
+		var e: Dictionary = cs["ativas"][0]
+		check(not e.is_empty() and e["tecla"] == "hud.key.skill1", "%s: ativa aprendida vai ao slot Q" % classe)
+		check(not usou or (e.get("segundos", -1.0) > 0.0 and e["recarga"] > 0.0 and e["recarga"] <= 1.0), "%s: slot traz fração e segundos de recarga" % classe)
+		check(cs["ativas"][3].is_empty(), "%s: slots sem ativa ficam vazios" % classe)
 		run.queue_free()
 		await physics_frame
 	Classe.atual = antes

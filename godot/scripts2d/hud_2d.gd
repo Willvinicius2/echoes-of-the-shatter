@@ -46,7 +46,7 @@ func _desenhar() -> void:
 	if _rel < 8.0 and estado_ajuda_visivel():
 		var al := clampf((8.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
-		Arte.texto(_ctl, Vector2(0, vp.y - 135), Csv.t("hud.help"), 15, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		Arte.texto(_ctl, Vector2(24, vp.y - 176), Csv.t("hud.help"), 14, cor, HORIZONTAL_ALIGNMENT_LEFT, 560.0)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Rect2(vp.x * 0.5 - w * 0.5, 62, w, 18)
@@ -127,6 +127,8 @@ func _desenhar_globos(vp: Vector2) -> void:
 	var frac: float = clampf(jogador.hp / hmax, 0.0, 1.0)
 	var pulso := (0.4 + 0.6 * (0.5 + 0.5 * sin(_rel * 5.0))) if frac < 0.3 and frac > 0.0 else 0.0
 	var ev := _centro_globo(vp, false)
+	Arte.chifres_globo(_ctl, ev, raio)
+	Arte.chifres_globo(_ctl, _centro_globo(vp, true), raio)
 	Arte.globo(_ctl, ev, raio, frac, _hp_fantasma, Tema.cor("vida_escura"), Tema.cor("vida_clara"), _rel, pulso)
 	Arte.ornamento_globo(_ctl, ev, raio)
 	Arte.ornamento_globo(_ctl, _centro_globo(vp, true), raio)
@@ -177,8 +179,8 @@ func _desenhar_upgrades() -> void:
 		Arte.texto(_ctl, rd.position + Vector2(0, 19), dica, 15, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, larg)
 
 ## Conteúdo dos slots: `basicos` (ataque e esquiva) e `ativas` (4 entradas; {} = encaixe vazio). Lê, por duck typing,
-## o guerreiro (`slots_hud`, `skills`, `impeto`) ou o runtime comum de habilidades (`habilidades` com slots,
-## defs, recargas, recarga_slot e def_nivel; `mana`).
+## o jogador (`slots_hud` para os ícones do ataque e da esquiva) e o runtime comum de habilidades (`habilidades` com
+## slots, defs, recargas, recarga_slot e def_nivel); o recurso é o ímpeto (guerreiro) ou a mana.
 func conteudo_slots() -> Dictionary:
 	var total := int(_lay["slot_total"])
 	var cdmax: float = jogador.stats.get("dodge_cooldown", 1.0)
@@ -186,37 +188,29 @@ func conteudo_slots() -> Dictionary:
 		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(jogador.dodge_cd / maxf(cdmax, 0.01), 0.0, 1.0), "cor": Tema.cor("estamina")},
 	]
+	if jogador.has_method("slots_hud"):   # guerreiro: ícone do golpe
+		var sl: Array = jogador.slots_hud()
+		basicos[0]["icone"] = sl[0]["icone"]
+		basicos[0]["recarga"] = sl[0]["recarga"]
 	var ativas: Array = []
 	ativas.resize(total)
 	ativas.fill({})
-	if jogador.has_method("slots_hud"):   # guerreiro: golpe, esquiva e as ativas aprendidas
-		var sl: Array = jogador.slots_hud()
-		basicos[0] = sl[0]
-		basicos[1] = sl[1]
-		basicos[0]["cor"] = Tema.cor("destaque")
-		basicos[1]["cor"] = Tema.cor("estamina")
-		var sk = jogador.skills if "skills" in jogador else null
-		for i in mini(total, sl.size() - 2):
-			var e: Dictionary = sl[i + 2]
-			var id: String = e["icone"]
-			if id == "":
-				continue
-			e["cor"] = Tema.cor("destaque")
-			e["tecla"] = "hud.key.skill%d" % (i + 1)
-			if sk != null and sk.defs.has(id):
-				e["segundos"] = e["recarga"] * sk.recarga(id)
-				e["sem_recurso"] = "impeto" in jogador and sk.def(id)["custo"] > jogador.impeto
-			ativas[i] = e
-	elif "habilidades" in jogador and jogador.habilidades != null and jogador.habilidades.has_method("recarga_slot"):
+	if "habilidades" in jogador and jogador.habilidades != null and jogador.habilidades.has_method("recarga_slot"):
 		var hab = jogador.habilidades
+		var recurso := -1.0
+		if "impeto" in jogador:
+			recurso = jogador.impeto
+		elif "mana" in jogador:
+			recurso = jogador.mana
 		for i in mini(total, hab.slots.size()):
 			var id: String = hab.slots[i]
 			if id == "" or not hab.defs.has(id):
 				continue
 			var icone: String = hab.defs[id].get("icone", id)
 			ativas[i] = {"icone": icone if Icones.textura(icone) != null else "tiro", "tecla": "hud.key.skill%d" % (i + 1),
-				"recarga": hab.recarga_slot(i), "segundos": float(hab.recargas.get(id, 0.0)), "cor": Tema.cor("mana_clara"),
-				"sem_recurso": "mana" in jogador and float(hab.def_nivel(id)["custo"]) > jogador.mana}
+				"recarga": hab.recarga_slot(i), "segundos": float(hab.recargas.get(id, 0.0)),
+				"cor": Tema.cor("destaque") if "impeto" in jogador else Tema.cor("mana_clara"),
+				"sem_recurso": recurso >= 0.0 and float(hab.def_nivel(id)["custo"]) > recurso}
 	return {"basicos": basicos, "ativas": ativas}
 
 ## Barra de habilidades: ataque e esquiva em slots menores à esquerda e as 4 ativas (Q E F R) em slots grandes; encaixe
