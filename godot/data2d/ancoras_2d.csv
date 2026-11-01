@@ -1,0 +1,6 @@
+id,anim,linha,x,y,nota
+arqueiro,attack,0,24,-54,boca do arco na linha S (frente): mao do arco no quadro de soltar (quadro 4)
+arqueiro,attack,1,24,-55,boca do arco na linha SE
+arqueiro,attack,2,24,-59,boca do arco na linha E
+arqueiro,attack,3,26,-66,boca do arco na linha NE
+arqueiro,attack,4,-44,-62,boca do arco na linha N (de costas: o arco fica do lado esquerdo da folha)

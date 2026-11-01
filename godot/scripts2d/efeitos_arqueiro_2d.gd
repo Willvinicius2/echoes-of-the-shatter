@@ -31,9 +31,12 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			var n := int(def.get("qtd", 3))
 			var abertura: float = deg_to_rad(def.get("angulo", 40.0))
 			var espiral: bool = def.get("forma", "") == "espiral" or abertura >= TAU - 0.01   # volta inteira, sem sobrepor
+			var dirs := []   # do centro para as pontas, alternando os lados: saem do mesmo arco uma a uma
 			for i in n:
 				var a := 0.0 if n == 1 else (TAU * i / float(n) if espiral else -abertura * 0.5 + abertura * i / float(n - 1))
-				jogador.lancar_flecha(dir.rotated(a), dano, 0, 1.0, def)
+				dirs.append(dir.rotated(a))
+			dirs.sort_custom(func(x: Vector2, y: Vector2): return absf(dir.angle_to(x)) < absf(dir.angle_to(y)))
+			jogador.lancar_flechas(dirs, dano, 0, 1.0, def)
 		"chuva":
 			_zona("chuva", jogador, dir, def, jogador.stats["arrow_damage"] * dano, Color(0.9, 0.75, 0.35), int(def.get("qtd", 5)))
 		"armadilha":

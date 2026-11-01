@@ -51,3 +51,16 @@ hit_stop_cooldown_ms,400,ms,folga sem novo congelamento depois de um hit stop (e
 fx_max_impactos,30,x,faiscas de impacto vivas ao mesmo tempo (acima disso as novas nao nascem)
 fx_max_rajadas,24,x,rajadas de particulas de impacto e morte vivas ao mesmo tempo
 fx_max_numeros,30,x,numeros de dano pequenos vivos ao mesmo tempo (fatais e fortes sempre aparecem)
+aura_diametro,92,px,diametro da aura de Herald (camada C1, atras do ator; doc 33 secao 1)
+aura_alfa,0.45,x,opacidade maxima da aura de Herald
+aura_altura,4,px,centro da aura acima dos pes (elipse no chao, aos pes)
+aura_achatamento,0.5,x,escala vertical da aura (elipse no chao vista em 3/4)
+aura_acende_tempo,0.3,s,tempo em que a aura acende quando o gatilho do Herald dispara
+muzzle_flash_time,0.07,s,flash de boca do arco (2 quadros)
+muzzle_flash_scale,1.1,x,escala do flash de boca
+shot_recoil_px,3,px,recuo do sprite do arqueiro ao soltar a flecha
+shot_recoil_time,0.08,s,tempo do recuo do sprite
+arc_shadow_alpha,0.45,x,opacidade da sombra de aviso no ponto de queda
+zone_ring_time,0.15,s,anel de entrada das zonas no chao
+zone_fade_time,0.3,s,fade final das zonas no chao
+fx_max_animados,24,x,efeitos animados ao mesmo tempo antes de os novos nascerem na versao curta (doc 33 secao 4)
