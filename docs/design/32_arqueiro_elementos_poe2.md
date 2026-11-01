@@ -47,3 +47,10 @@ Arquivos compartilhados, donos únicos (evita conflito): `habilidades_arqueiro.c
 
 ## 5. Critério de pronto
 Os 4 tiros, 8 ativas e 4 Heralds carregam sem erro no `test_2d.gd`, disparam sozinhos pelo autocast (ult manual), cada um com animação própria aprovada pela revisora, números só no CSV, textos só por chave em `loc_2d.csv`, CI `cliente2d` verde.
+
+## 6. Notas da pesquisa de PoE 2 (thread de pesquisa, 01/11/2026)
+Fonte completa: `analises/poe2-arco-referencias.md` na pasta do projeto. Decisões técnicas tomadas aqui:
+- **Heralds são gatilhos de morte com status.** Coluna nova `gatilha_em` em `habilidades_arqueiro.csv` (dono: integradora), com os valores `choque_morte`, `congelado_morte`, `overkill`, `veneno_morte`. Trovão: morte de chocado solta raios; Gelo: morte de congelado explode; Cinzas: overkill explode e queima; Peste: morte de envenenado espalha veneno.
+- **Overkill** (Arauto das Cinzas) exige o dano que sobra no abate. O cliente calcula a partir da vida restante do inimigo no golpe fatal; só vai ao core se a regra precisar de determinismo (decidir na integração).
+- **Sinergias cruzadas** entram na fase de polimento, depois das 4 árvores base: Raio×Gelo (Trovão e Gelo ativam um ao outro) e Veneno×Fogo (nuvem de veneno detona com fogo).
+- Canalização vira autocast com salto curto. "Ritmo" (inspirado nas Frenzy Charges) e passivas de ascendência (dano perto/longe, munição, vento) ficam como backlog opcional.
