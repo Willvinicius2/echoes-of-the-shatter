@@ -39,6 +39,8 @@ var _efeitos: GDScript
 var miras := {}           # id -> {mira, ult, alcance, min_alvos} da classe (data2d/habilidades_mira.csv)
 ## Árvore de passivos da classe (passivos_2d.gd, doc 33): modifica o def das ativas e os stats do jogador.
 var passivos: RefCounted
+## Fator extra no tick das recargas (tree `global skill_cd_mult` que o core não viu): 1 = sem efeito.
+var cd_extra := 1.0
 
 ## Linhas de data2d/classes_2d.csv por id.
 static func classes() -> Dictionary:
@@ -227,7 +229,7 @@ func _acao(ok: bool) -> bool:
 
 func tick(delta: float) -> void:
 	if nucleo != null and not recargas.is_empty():
-		nucleo.habilidades_tick(delta)
+		nucleo.habilidades_tick(delta * cd_extra)
 		for id in recargas.keys():
 			recargas[id] = maxf(0.0, recargas[id] - delta)
 			if recargas[id] <= 0.0:
@@ -279,11 +281,21 @@ func iniciar_recarga(id: String, recurso: float) -> bool:
 ## Aplica as passivas aprendidas sobre os stats (idempotente: parte sempre de `base`), calculadas pelo core.
 func aplicar_passivas(base: Dictionary) -> Dictionary:
 	var s: Dictionary = base.duplicate() if nucleo == null else nucleo.aplicar_passivas(base)
-	return passivos.stats_globais(s) if passivos != null else s
+	return aplicar_passivos_globais(s)
 
-## Modificadores `global` da árvore de passivos sobre stats que o core já calculou (idempotente).
+## Modificadores `global` da árvore de passivos sobre stats que o core já calculou (idempotente). Também guarda os
+## `run_*` da partida (cartas e nós de preparo) para o resolver e o fator `cd_extra` da recarga das ativas.
 func aplicar_passivos_globais(stats: Dictionary) -> Dictionary:
-	return passivos.stats_globais(stats) if passivos != null else stats.duplicate()
+	if passivos == null:
+		return stats.duplicate()
+	var s: Dictionary = passivos.stats_globais(stats)
+	if passivos.definir_partida(s):
+		mudou.emit()
+	# O core só enxerga o skill_cd_mult das cartas; o que a árvore mexeu por cima chega aqui como fator do tick.
+	var antes := float(stats.get("skill_cd_mult", 1.0))
+	var depois := float(s.get("skill_cd_mult", 1.0))
+	cd_extra = antes / depois if antes > 0.0 and depois > 0.0 else 1.0
+	return s
 
 ## Estado da árvore no formato do save ({niveis, slots, pontos}).
 func para_dicionario() -> Dictionary:

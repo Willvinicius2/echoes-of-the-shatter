@@ -130,3 +130,12 @@ n_cinzas,fogo,notavel,2,617,238,p_fogo_4,skill:arauto_cinzas,raio,inc,0.35,,,n_c
 n_cinzas,fogo,notavel,2,617,238,p_fogo_4,skill:arauto_cinzas,valor,mais,0.25,,,n_cinzas
 n_fogo_vel,fogo,notavel,2,505,261,p_fogo_2,tag:fogo,vel,inc,0.15,,,n_fogo_vel
 n_fogo_vel,fogo,notavel,2,505,261,p_fogo_2,tag:fogo,dano,inc,0.1,,,n_fogo_vel
+pre_area,centro,pequeno,1,76,-163,c_dano_2,global,run_area,add,0.1,,,pre_area
+pre_proj,centro,notavel,2,0,180,c_cad_1+c_vel_1,global,run_proj,add,1,,,pre_proj
+pre_vel,centro,pequeno,1,174,-47,c_crit_1,global,run_vel,add,0.15,,,pre_vel
+pre_dur,centro,pequeno,1,-138,116,c_vida_1,global,run_dur,add,0.15,,,pre_dur
+pre_herald,centro,pequeno,1,138,116,c_cad_1,global,run_dmg_herald,add,0.15,,,pre_herald
+pre_elem,centro,notavel,2,-62,-169,c_dano_1,global,run_dmg_fogo,add,0.08,,,pre_elem
+pre_elem,centro,notavel,2,-62,-169,c_dano_1,global,run_dmg_gelo,add,0.08,,,pre_elem
+pre_elem,centro,notavel,2,-62,-169,c_dano_1,global,run_dmg_raio,add,0.08,,,pre_elem
+pre_elem,centro,notavel,2,-62,-169,c_dano_1,global,run_dmg_veneno,add,0.08,,,pre_elem
