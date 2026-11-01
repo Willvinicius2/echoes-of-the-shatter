@@ -108,6 +108,14 @@ Cada campo que o pipeline de modificadores pode alterar tem uma regra visual. Qu
 | `crit_chance`, `crit_mult` | `inc` | Só no acerto: anel branco e número maior. |
 | Keystones | — | Mãos Rápidas: flash de boca 50% menor em tudo. Tiro Único: projétil único 1,3× mais grosso com halo (dano alto). Mar de Flechas: leque com cópias a 70% de alfa. Tempestade Perpétua: aura dos Heralds com anel duplo. |
 
+### 5.2 Duas camadas de passivas: árvore fixa e passivas da partida (decisão do Will, 01/11)
+A árvore de passivos é permanente no personagem; na partida o jogador sobe skills e passivas por nível (Arautos, tamanho, tipo de dano, crítico, recarga, velocidade de ataque), e alguns nós da árvore deixam uma passiva da partida já pronta (`inicia`, doc design/33 seção 13). Os dois tipos mexem no mesmo `def`, então **o efeito na tela é o mesmo** (seções 5 e 5.1): quem muda o raio, muda o desenho do raio. O que muda é o que o jogador vê **fora do efeito**, para ele saber de onde veio o poder:
+- **Ao pegar uma passiva da partida** (carta de nível): pulso de 0,4 s na cor do elemento em volta do arqueiro e um ícone da passiva sobe até a barra de passivas da HUD. Não há mudança permanente na silhueta.
+- **Passiva da partida que muda uma skill** (ex.: +tamanho): na primeira vez que a skill dispara depois da carta, o efeito ganha um halo extra de 0,3 s ("agora está maior") e o ícone da skill na HUD pisca uma vez.
+- **Pré-prontas da árvore**: entram sem pulso; já estão no ícone da barra de passivas desde o início da corrida, com a borda da pedra da árvore (para distinguir das sorteadas, que têm borda da cor do elemento).
+- **Heralds** (Trovão, Cinzas, Gelo, Peste): aura de chão ao subir de nível ganha um anel extra por degrau (até 3 anéis), sem passar do alfa máximo da seção 1; no nível máximo, o gatilho solta uma faísca de cor do elemento ao disparar.
+- **Teto**: quando a soma das duas camadas chega ao limite (`passivas_limites.csv`), o efeito **não cresce mais**; o ícone da passiva mostra um cadeado discreto de "no limite", e novas cartas desse tipo não devem ser ofertadas.
+
 **Limite de acúmulo**: um efeito nunca ocupa mais de 3× a área base, nunca passa de 24 partículas, e o brilho total dele não passa de 1,5× o base. O que exceder vira cor mais saturada, não mais coisas na tela.
 
 ## 6. Cores base por elemento (tokens, ajustáveis pela revisora)
@@ -126,7 +134,7 @@ Saturação sobe e o miolo ganha branco conforme o nível do dano (seção 5).
 4. Revisora confere: camada correta, origem no `muzzle`, tamanho = área do CSV, leitura na horda, mesma régua de pintura do estandarte v2. Só então o Will vê.
 
 ## 8. Estado dos pedidos técnicos
-Implementação: `godot/scripts2d/vfx_2d.gd` e `godot/data2d/ancoras_2d.csv`, na thread "Criar habilidades e animações do arqueiro" (branch `feat/arqueiro-fisica`): saída do projétil por direção, `flash_boca` com recuo, `aura_c1` e `aura_acender`, `sombra_aviso`, `ProjetilArco` (parábola com sombra no chão e aviso no destino, usado pela bola de veneno e pelo tornado; o meteoro usa a sombra de aviso), anel de entrada e fade nas zonas, cópias de projétil escalonadas em 40 ms, orçamento `registrar_animado`/`lotado`. Esta thread (direção) revisa esse PR contra as seções 1 a 5 antes do merge.
+Estado em 01/11 à noite: PR 177 (flecha no peito e auras no chão) e 182 (árvore de passivos) já no master; o PR com saída no arco, auras, sombra de aviso e projétil em parábola ainda não abriu. Implementação: `godot/scripts2d/vfx_2d.gd` e `godot/data2d/ancoras_2d.csv`, na thread "Criar habilidades e animações do arqueiro" (branch `feat/arqueiro-fisica`): saída do projétil por direção, `flash_boca` com recuo, `aura_c1` e `aura_acender`, `sombra_aviso`, `ProjetilArco` (parábola com sombra no chão e aviso no destino, usado pela bola de veneno e pelo tornado; o meteoro usa a sombra de aviso), anel de entrada e fade nas zonas, cópias de projétil escalonadas em 40 ms, orçamento `registrar_animado`/`lotado`. Esta thread (direção) revisa esse PR contra as seções 1 a 5 antes do merge.
 
 Decisões de direção que valem sobre a implementação:
 - **Aura**: elipse no chão, aos pés, atrás do ator, alfa ≤ 0,45 (seção 1). Centrar no tronco só se a prova em tela mostrar leitura melhor; a elipse no chão foi a forma que o Will viu sem cortar o personagem.
