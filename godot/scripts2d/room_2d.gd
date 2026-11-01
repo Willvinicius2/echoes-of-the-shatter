@@ -669,6 +669,7 @@ func colocar_props(alvo: Node2D) -> void:
 			spr.modulate = Color(0.8, 0.77, 0.76)  # copas de fundo menos saturadas
 		if spr.flip_h:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
+		spr.material = Ancoragem.material_base(p["id"], tex, d)  # base escurecida: afunda no chão
 		# O nó entra no y-sort pelo ponto de apoio (centro da base que toca o chão; nas árvores, o pé do
 		# tronco), não pela borda de baixo do sprite: assim quem passa ao lado fica na frente do prop.
 		var pe: Vector2 = p["pos"] + Vector2(0, tile * 0.5)

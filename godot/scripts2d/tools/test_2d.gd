@@ -32,6 +32,7 @@ func _testar() -> void:
 	DirAccess.remove_absolute("user://teste_habilidades_geral_2d.json")
 	_testar_manifesto()
 	_testar_salas()
+	_testar_ancoragem()
 	await _testar_upgrades()
 	_testar_feel()
 	_testar_audio_e_ui()
@@ -1096,3 +1097,58 @@ func _testar_habilidades_arqueiro() -> void:
 	check(is_equal_approx(f.veneno_dps, 5.0), "flecha carrega veneno")
 	m2.queue_free()
 	await physics_frame
+
+
+## Padrão do pipeline: todo prop de toda sala nasce assentado no chão. Confere em cada sala que (1) o pivô do
+## manifesto fica na linha de baixo opaca do sprite (senão o objeto flutua ou afunda), (2) todo prop tem
+## decalques de contato no nó ChaoProps (pelo menos sombra larga e núcleo) e (3) props sólidos e arbustos têm
+## o material de base escurecida no sprite.
+func _testar_ancoragem() -> void:
+	var Ancoragem = preload("res://scripts2d/ancoragem_2d.gd")
+	var arte := {}
+	for r in Csv.rows("res://data2d/props_manifest.csv"):
+		arte[r["id"]] = r
+	var flutuando: Array = []
+	for id in arte:
+		var tex: Texture2D = load(arte[id]["arquivo"])
+		if tex == null:
+			continue
+		var base_px: float = Ancoragem._linha_base(tex) * tex.get_height()
+		if absf(float(arte[id]["pivo_y"]) - base_px) > 6.0:
+			flutuando.append(id)
+	check(flutuando.is_empty(), "pivô de todo prop fica na base opaca do sprite %s" % str(flutuando))
+	var dir := DirAccess.open("res://data2d/rooms")
+	var salas: Array = []
+	for f in dir.get_files():
+		if f.ends_with(".txt"):
+			salas.append("res://data2d/rooms/" + f)
+	salas.sort()
+	for caminho in salas:
+		var mundo := Node2D.new()
+		root.add_child(mundo)
+		var room = RoomScript.new()
+		mundo.add_child(room)
+		room.carregar(caminho)
+		var atores := Node2D.new()
+		atores.y_sort_enabled = true
+		mundo.add_child(atores)
+		room.colocar_props(atores)
+		var chao: Node2D = room.get_node("ChaoProps")
+		var n_props := 0
+		var sem_material := 0
+		var sem_contato := 0
+		for p in room.props:
+			if not room._props_arte.has(p["id"]):
+				continue
+			n_props += 1
+			var t: String = Ancoragem.tipo(p["id"])
+			if t == "solido" or t == "folhagem":
+				var d: Dictionary = room._props_def[p["id"]]
+				var tex: Texture2D = room._carregar_textura(room._props_arte[p["id"]]["arquivo"])
+				if Ancoragem.material_base(p["id"], tex, d) == null:
+					sem_material += 1
+		# cada prop deixa pelo menos 2 decalques (sombra larga e núcleo de contato)
+		if chao.get_child_count() < n_props * 2:
+			sem_contato = n_props
+		check(sem_material == 0 and sem_contato == 0, "props assentados na sala %s (%d props, %d decalques)" % [caminho.get_file(), n_props, chao.get_child_count()])
+		mundo.queue_free()

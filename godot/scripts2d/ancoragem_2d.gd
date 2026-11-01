@@ -15,7 +15,36 @@ void fragment() {
 }
 """
 
+## Escurece a faixa de baixo do sprite (oclusão ambiente): a base "afunda" na sombra do próprio chão em vez de
+## ficar clara até a última linha de pixels. `y0` = linha de baixo opaca (UV), `alt` = altura da faixa (UV).
+const BASE_SHADER := """
+shader_type canvas_item;
+uniform float y0 = 1.0;
+uniform float alt = 0.1;
+uniform float forca = 0.5;
+uniform vec3 tinta : source_color = vec3(0.07, 0.06, 0.06);
+void fragment() {
+	float k = clamp((UV.y - (y0 - alt)) / alt, 0.0, 1.0);
+	k = smoothstep(0.0, 1.0, k);
+	COLOR.rgb = mix(COLOR.rgb, tinta * COLOR.a, clamp(k * forca, 0.0, 1.0));
+}
+"""
+
+## Sombra colada à base com a forma real do sprite: só a faixa de baixo da silhueta, em preto.
+const BORDA_SHADER := """
+shader_type canvas_item;
+uniform float y0 = 1.0;
+uniform float alt = 0.1;
+uniform vec4 cor : source_color = vec4(0.0, 0.0, 0.0, 0.6);
+void fragment() {
+	float k = smoothstep(y0 - alt, y0, UV.y);
+	COLOR = vec4(cor.rgb, texture(TEXTURE, UV).a * cor.a * k);
+}
+"""
+
 static var _mat_sombra: ShaderMaterial
+static var _mats_base := {}
+static var _linhas_base := {}
 static var _tex_contato: Texture2D
 
 ## Classe visual do prop pelo id: árvore (raízes, sombra longa), raso (ossos, folhas, capim, samambaia:
@@ -60,6 +89,50 @@ static func apoio(id: String, tex: Texture2D, def: Dictionary, arte: Dictionary)
 		a += _altura_pe_tronco(tex, float(arte["pivo_x"])) * float(def["escala"])
 	return a
 
+## Linha de baixo opaca da textura (fração 0..1 da altura): onde a base realmente toca o chão.
+static func _linha_base(tex: Texture2D) -> float:
+	var chave := tex.get_rid()
+	if _linhas_base.has(chave):
+		return _linhas_base[chave]
+	var r := 1.0
+	var img := tex.get_image()
+	if img != null:
+		for y in range(img.get_height() - 1, -1, -1):
+			var achou := false
+			for x in range(0, img.get_width(), 2):
+				if img.get_pixel(x, y).a > 0.5:
+					achou = true
+					break
+			if achou:
+				r = float(y + 1) / float(img.get_height())
+				break
+	_linhas_base[chave] = r
+	return r
+
+## Altura da faixa de contato em fração da textura: ~metade da profundidade da base, no mínimo 8 px do sprite.
+static func _faixa(id: String, tex: Texture2D, def: Dictionary) -> float:
+	var b := base(id, tex, def)
+	var px := maxf(float(b[1]) / float(def["escala"]) * 1.7, 28.0)
+	return clampf(px / float(tex.get_height()), 0.02, 0.3)
+
+## Material do sprite do prop: base escurecida (props sólidos e arbustos). Árvores, que têm folhas caídas
+## abaixo do tronco, e props rasos ficam sem (têm raízes e contato próprios). Devolve null nesses casos.
+static func material_base(id: String, tex: Texture2D, def: Dictionary) -> Material:
+	var t := tipo(id)
+	if t == "arvore" or t == "raso":
+		return null
+	var chave := id
+	if _mats_base.has(chave):
+		return _mats_base[chave]
+	var m := ShaderMaterial.new()
+	m.shader = Shader.new()
+	m.shader.code = BASE_SHADER
+	m.set_shader_parameter("y0", _linha_base(tex))
+	m.set_shader_parameter("alt", _faixa(id, tex, def))
+	m.set_shader_parameter("forca", 0.35 if t == "folhagem" else 0.62)
+	_mats_base[chave] = m
+	return m
+
 ## `chao`: nó da sala para os decalques. `atras` e `frente`: filhos do nó do prop antes e depois do sprite.
 ## `pe`: posição do pé do prop (mesma do nó). `def` vem de props_2d.csv, `arte` de props_manifest.csv.
 static func prender(chao: Node2D, atras: Node2D, frente: Node2D, id: String, tex: Texture2D, def: Dictionary, arte: Dictionary, flip: bool, pe: Vector2, grama: bool, semente: int) -> void:
@@ -70,11 +143,15 @@ static func prender(chao: Node2D, atras: Node2D, frente: Node2D, id: String, tex
 	var ba: float = b[1]
 	var centro := pe + Vector2(0, -apoio(id, tex, def, arte))  # centro da base que toca o chão (mesmo ponto do y-sort)
 	var h := hash(Vector2i(semente, 71))
-	if grama and t != "raso":
+	if grama:
 		_terra(chao, centro, bl, ba, t, h)
 	if t != "raso":
 		_sombra_projetada(chao, tex, esc, arte, flip, centro, t)
 	_sombra_contato(chao, centro, bl, ba, t)
+	if t == "solido" or t == "folhagem":
+		_sombra_borda(chao, tex, id, def, arte, flip, pe, t)
+	if not grama and t == "solido":
+		_entulho(chao, centro, bl, ba, h)
 	if t == "arvore":
 		_raizes(chao, centro, bl, esc, h)
 	if grama and (t == "solido" or t == "arvore"):
@@ -108,7 +185,7 @@ static func _altura_pe_tronco(tex: Texture2D, pivo_x: float) -> float:
 ## Anel de terra pisada irregular, mais escuro perto da base e esmaecido fora, para o pé não encostar
 ## direto na grama chapada.
 static func _terra(chao: Node2D, centro: Vector2, bl: float, ba: float, t: String, h: int) -> void:
-	var f := 0.75 if t == "folhagem" else 1.0
+	var f := 0.75 if t == "folhagem" else (0.6 if t == "raso" else 1.0)
 	var rx := (bl * 0.7 + 8.0) * f
 	var ry := (ba * 0.9 + 6.0) * f
 	var anel := func(k: float, cor: Color, desloc: Vector2) -> void:
@@ -121,9 +198,9 @@ static func _terra(chao: Node2D, centro: Vector2, bl: float, ba: float, t: Strin
 		pg.polygon = pts
 		pg.color = cor
 		chao.add_child(pg)
-	anel.call(1.45, Color(0.19, 0.15, 0.09, 0.22), Vector2(3, 2))
-	anel.call(1.1, Color(0.2, 0.15, 0.09, 0.42), Vector2(2, 1))
-	anel.call(0.8, Color(0.16, 0.12, 0.07, 0.55), Vector2(1, 0))
+	anel.call(1.45, Color(0.15, 0.12, 0.07, 0.3), Vector2(3, 2))
+	anel.call(1.1, Color(0.15, 0.11, 0.07, 0.55), Vector2(2, 1))
+	anel.call(0.8, Color(0.1, 0.08, 0.05, 0.7), Vector2(1, 0))
 
 ## Sombra com a silhueta do sprite deitada no chão: espelhada no pé, achatada e inclinada para a direita.
 static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Dictionary, flip: bool, centro: Vector2, t: String) -> void:
@@ -147,6 +224,54 @@ static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Di
 	sp.self_modulate.a = 0.8 if t == "folhagem" else 1.0
 	chao.add_child(sp)
 
+## Faixa escura que acompanha a base do sprite (forma real, um pouco maior e deslocada para baixo): é o que
+## cola a aresta da frente no chão, onde a elipse suave sozinha ficava escondida sob o próprio sprite.
+static func _sombra_borda(chao: Node2D, tex: Texture2D, id: String, def: Dictionary, arte: Dictionary, flip: bool, pe: Vector2, t: String) -> void:
+	var esc := float(def["escala"])
+	var m := ShaderMaterial.new()
+	m.shader = Shader.new()
+	m.shader.code = BORDA_SHADER
+	m.set_shader_parameter("y0", _linha_base(tex))
+	m.set_shader_parameter("alt", _faixa(id, tex, def) * 0.8)
+	m.set_shader_parameter("cor", Color(0.0, 0.0, 0.01, 0.5 if t == "folhagem" else 0.9))
+	var sp := Sprite2D.new()
+	sp.texture = tex
+	sp.centered = false
+	sp.flip_h = flip
+	sp.offset = -Vector2(float(arte["pivo_x"]), float(arte["pivo_y"]))
+	if flip:
+		sp.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
+	sp.material = m
+	sp.position = pe + Vector2(3.0, 5.0)
+	sp.scale = Vector2(esc * 1.12, esc * 1.06)
+	chao.add_child(sp)
+
+## Lascas de pedra e poeira soltas junto da base em piso de pedra (no gramado quem faz isso são terra e capim).
+static func _entulho(chao: Node2D, centro: Vector2, bl: float, ba: float, h: int) -> void:
+	var n := 5 + posmod(h / 3, 3)
+	for k in n:
+		var hh := hash(Vector2i(h, k + 90))
+		var ang := TAU * float(posmod(hh, 360)) / 360.0
+		var raio := 0.62 + 0.3 * float(posmod(hh / 7, 10)) / 10.0
+		var p := centro + Vector2(cos(ang) * (bl * 0.5 + 3.0) * raio * 1.15, sin(ang) * (ba * 0.5 + 3.0) * raio * 1.1 + 2.0)
+		var w := 3.0 + float(posmod(hh / 5, 5))
+		var sombra := Polygon2D.new()
+		sombra.polygon = PackedVector2Array([Vector2(-w, 0.5), Vector2(0, -w * 0.5 + 0.5), Vector2(w + 1.5, 1.0), Vector2(w * 0.4, w * 0.6 + 1.5), Vector2(-w * 0.6, w * 0.5 + 1.0)])
+		sombra.position = p + Vector2(1.0, 1.0)
+		sombra.color = Color(0.0, 0.0, 0.01, 0.5)
+		chao.add_child(sombra)
+		var lasca := Polygon2D.new()
+		lasca.polygon = PackedVector2Array([Vector2(-w, 0.0), Vector2(-w * 0.3, -w * 0.55), Vector2(w * 0.8, -w * 0.3), Vector2(w, w * 0.2), Vector2(0, w * 0.5)])
+		lasca.position = p
+		var v := 0.22 + 0.1 * float(posmod(hh / 11, 10)) / 10.0
+		lasca.color = Color(v + 0.03, v, v - 0.02)
+		chao.add_child(lasca)
+		var luz := Polygon2D.new()
+		luz.polygon = PackedVector2Array([Vector2(-w * 0.8, -0.2), Vector2(-w * 0.3, -w * 0.5), Vector2(w * 0.5, -w * 0.3), Vector2(0, -w * 0.05)])
+		luz.position = p
+		luz.color = Color(v + 0.14, v + 0.12, v + 0.08, 0.8)
+		chao.add_child(luz)
+
 ## Sombra de contato: oclusão escura e macia colada à base, mais um núcleo mais fechado.
 static func _sombra_contato(chao: Node2D, centro: Vector2, bl: float, ba: float, t: String) -> void:
 	if _tex_contato == null:
@@ -162,17 +287,17 @@ static func _sombra_contato(chao: Node2D, centro: Vector2, bl: float, ba: float,
 		tx.fill_from = Vector2(0.5, 0.5)
 		tx.fill_to = Vector2(1.0, 0.5)
 		_tex_contato = tx
-	var alfa := 0.3 if t == "raso" else 0.55
+	var alfa := 0.4 if t == "raso" else 0.75
 	var largo := Sprite2D.new()
 	largo.texture = _tex_contato
-	largo.position = centro + Vector2(4, 3)
-	largo.scale = Vector2(bl * 1.5, ba * 1.9) / 128.0
+	largo.position = centro + Vector2(4, 3 + ba * 0.22)
+	largo.scale = Vector2(bl * 1.6, ba * 2.0) / 128.0
 	largo.modulate = Color(0.02, 0.03, 0.04, alfa * 0.8)
 	chao.add_child(largo)
 	var nucleo := Sprite2D.new()
 	nucleo.texture = _tex_contato
-	nucleo.position = centro + Vector2(1, 1)
-	nucleo.scale = Vector2(bl * 1.05, ba * 1.25) / 128.0
+	nucleo.position = centro + Vector2(1, 1 + ba * 0.3)
+	nucleo.scale = Vector2(bl * 1.15, ba * 1.4) / 128.0
 	nucleo.modulate = Color(0.02, 0.02, 0.03, alfa)
 	chao.add_child(nucleo)
 

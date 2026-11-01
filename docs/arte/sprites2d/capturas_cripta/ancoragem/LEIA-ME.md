@@ -35,3 +35,12 @@ O Will viu os arbustos ao lado do caminho de pedra "atravessando a cabeça" do p
 - `tools/mapa/aglomerados_fase1.py`: gera aglomerados (moitas, pedras, tronco caído, cemitério, ruína, ossuário, arvoredo) nos vazios da `fase_1.txt`, longe de trilhas, riachos, mata e marcadores; idempotente pelo sidecar `tools/mapa/fase_1.gerados.txt`. Rodada de 1/11: 2117 props antes, 558 gerados, 2675 no total.
 - `tools/video_trilha_2d.gd`: grava o Arqueiro andando pela trilha (`--write-movie`), com desvio opcional pela beira (`DESVIO`).
 Capturas: `arbusto_lado.jpg` (boneco ao lado do arbusto `bush_dry_round` da trilha principal), `arbusto_atras.jpg` (boneco atrás: arbusto a 45%, antes do ajuste para 55%), `aglomerado_ossuario.jpg` (aglomerado gerado perto do pilar caído), `video_quadro_arbusto.jpg` (quadro do vídeo `trilha_arbustos.mp4`, entregue na Library do projeto).
+
+## Assentamento como padrão do spawner (1/11/2026, 4º pedido do Will: "objetos parecem voar")
+Causa: nos pisos de pedra (sala do chefe, ossuário, arenas) o pilar ou a tumba ficava claro até a última linha de pixels e a sombra de contato morria escondida sob o próprio sprite; no gramado, moitas e folhas tinham contato quase invisível. Tudo é feito em `ancoragem_2d.gd` e `colocar_props`, então vale para todo prop novo de qualquer mapa sem configurar nada:
+- **Base afundada**: `material_base()` põe no sprite de props sólidos e arbustos um shader que escurece a faixa de baixo (altura proporcional à profundidade da base, medida na linha de baixo opaca da textura).
+- **Sombra na silhueta**: `_sombra_borda()` desenha, sob o prop, a faixa de baixo da própria silhueta em preto, maior e deslocada para baixo-direita; é o que sobra visível em volta da aresta da frente.
+- **Contato mais forte e deslocado para a frente**; terra pisada mais escura e também sob props rasos (folhas, ossos) no gramado.
+- **Entulho** (`_entulho()`): lascas de pedra com sombra junto da base em piso de pedra.
+- **Checagem automática** (`_testar_ancoragem` em `test_2d.gd`, roda no CI): o pivô de todo prop do manifesto fica na base opaca do sprite (±6 px), e em toda sala todo prop tem decalques de contato e, se sólido ou arbusto, o material de base.
+Capturas: `prancha_pedra.jpg` (sala do chefe, antes à esquerda e depois à direita) e `prancha_fase.jpg` (fase aberta).
