@@ -1129,7 +1129,7 @@ func _testar_hud_slots() -> void:
 			for j in range(i + 1, todos.size()):
 				dentro = dentro and not r.intersects(todos[j])
 		check(dentro, "%s: slots dentro da tela, entre os globos e sem sobreposição" % classe)
-		check(rs["ativas"][0].size.x > rs["basicos"][0].size.x, "%s: ativas maiores que ataque e esquiva" % classe)
+		check(rs["ativas"][0].size.x >= rs["basicos"][0].size.x, "%s: ativas do tamanho do ataque e da esquiva ou maiores" % classe)
 		var h = run.player.habilidades
 		h.redistribuir()
 		var cs: Dictionary = hud.conteudo_slots()

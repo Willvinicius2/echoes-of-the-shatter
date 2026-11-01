@@ -287,7 +287,7 @@ func _desenhar_barra() -> void:
 	var lay := Csv.kv("res://data2d/hud_layout.csv")
 	var canal := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, lay["chefe_largura"], lay["chefe_altura"], frac, cor, pcts)
 	Arte.texto(_ctl, Vector2(canal.position.x, canal.position.y - 6.0), Csv.t("hud.boss"), 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_LEFT)
-	Arte.texto(_ctl, Vector2(canal.position.x, canal.position.y - 6.0), Csv.t("hud.boss_phase") % [fase, total_fases()], 12, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, canal.size.x)
+	Arte.texto(_ctl, Vector2(canal.position.x, canal.position.y - 6.0), Csv.t("hud.boss_phase") % [fase, total_fases()], 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_RIGHT, canal.size.x)
 
 ## Marca vermelha no chão por padrão: área (golpe), faixa (investida), cunha (leque) ou anel (anel).
 func _draw() -> void:

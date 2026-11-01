@@ -775,15 +775,22 @@ static func slot_mini(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float,
 		var txt := ("%d" % ceili(segundos)) if segundos >= 1.0 else ("%.1f" % segundos)
 		texto(c, Vector2(r.position.x, r.get_center().y + 6.0), txt, 16, _c("texto"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
 	if tecla != "":
-		texto(c, Vector2(r.position.x + 3.0, r.end.y - 3.0), tecla, 11, _c("destaque").lightened(0.25))
+		tecla_canto(c, r, tecla)
+
+## Tecla no canto do slot: plaquinha escura com letra clara de 12 px.
+static func tecla_canto(c: CanvasItem, r: Rect2, tecla: String) -> void:
+	var larg := ThemeDB.fallback_font.get_string_size(tecla, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 6.0
+	c.draw_rect(Rect2(r.position + Vector2(2, r.size.y - 16.0), Vector2(larg, 14.0)), Color(0, 0, 0, 0.75))
+	texto(c, r.position + Vector2(5, r.size.y - 4.0), tecla, 12, Color(1, 0.95, 0.8))
 
 ## Encaixe vazio: vão escuro com moldura apagada e a tecla.
 static func encaixe_mini(c: CanvasItem, r: Rect2, tecla: String) -> void:
 	var forma := octogono(r, 0.16)
 	c.draw_colored_polygon(_deslocar(forma, -2.0), Color(0.02, 0.02, 0.03, 0.7))
-	_moldura_fina(c, forma, false)
+	_moldura_fina(c, forma, true)
 	if tecla != "":
-		texto(c, Vector2(r.position.x, r.get_center().y + 5.0), tecla, 14, Color(_c("texto_suave").r, _c("texto_suave").g, _c("texto_suave").b, 0.8), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+		cadeado(c, r.get_center() + Vector2(0, -8), 12.0)
+		tecla_canto(c, r, tecla)
 
 ## Globo pequeno: vidro com líquido e aro fino de ferro, sem chifres.
 static func globo_mini(c: CanvasItem, centro: Vector2, raio: float, frac: float, fantasma: float, escura: Color, clara: Color, t: float, pulso := 0.0, vazio := false) -> void:

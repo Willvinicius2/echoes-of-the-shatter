@@ -41,8 +41,8 @@ func _desenhar() -> void:
 		_desenhar_globos(vp)
 	_desenhar_upgrades()
 	Arte.placa_mini(_ctl, Rect2(vp.x - 6 - _lay["plaqueta_largura"], 6, _lay["plaqueta_largura"], 36), Csv.t("hud.room") % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
-	if _rel < 8.0 and estado_ajuda_visivel():
-		var al := clampf((8.0 - _rel) / 2.0, 0.0, 1.0)
+	if _rel < 5.0 and estado_ajuda_visivel():
+		var al := clampf((5.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
 		Arte.texto(_ctl, Vector2(0, vp.y - 66), Csv.t("hud.help"), 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
@@ -110,7 +110,7 @@ func _desenhar_globos(vp: Vector2) -> void:
 		Arte.cadeado(_ctl, ed + Vector2(0, -6), 14.0)
 
 func _texto_globo(centro: Vector2, raio: float, s: String) -> void:
-	Arte.texto(_ctl, centro + Vector2(-raio, 5), s, 12, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	Arte.texto(_ctl, centro + Vector2(-raio, 5), s, 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
 
 func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():

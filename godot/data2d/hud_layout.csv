@@ -9,11 +9,11 @@ lista_y,12,px,topo da lista de upgrades
 slot_tamanho,46,px,lado de cada slot de habilidade ativa (Q E F R)
 slot_espaco,5,px,espaco entre slots
 slot_total,4,slots,slots de habilidade ativa (Q E F R); ataque e esquiva ficam em slots menores a esquerda
-slot_pequeno,40,px,lado dos slots de ataque basico e esquiva
+slot_pequeno,46,px,lado dos slots de ataque basico e esquiva
 slot_grupo_espaco,12,px,distancia entre os slots pequenos e os de habilidade
 slot_base,6,px,distancia do rodape ate a base dos slots
 icone_carta,64,px,lado do icone nas cartas de upgrade
-globo_raio,30,px,raio dos globos de vida e recurso
+globo_raio,34,px,raio dos globos de vida e recurso
 globo_margem,6,px,distancia dos globos ate a borda da tela
 estamina_barra_largura,260,px,largura da barra fina de estamina sobre a barra de habilidades
 chefe_largura,380,px,largura da barra de vida do chefe
