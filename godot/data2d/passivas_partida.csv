@@ -1,0 +1,12 @@
+stat,alvo,campo,op,fator
+run_area,tag:area,raio,inc,1
+run_area,tag:multi,angulo,inc,1
+run_proj,tag:projetil,projeteis,add,1
+run_vel,tag:projetil,vel,inc,1
+run_dur,tag:zona,duracao,inc,1
+run_pierce,tag:projetil,perfura,add,1
+run_dmg_fogo,tag:fogo,dano,inc,1
+run_dmg_gelo,tag:gelo,dano,inc,1
+run_dmg_raio,tag:raio,dano,inc,1
+run_dmg_veneno,tag:veneno,dano,inc,1
+run_dmg_herald,tag:herald,dano,inc,1

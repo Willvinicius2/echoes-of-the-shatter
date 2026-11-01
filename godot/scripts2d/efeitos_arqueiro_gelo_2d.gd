@@ -27,17 +27,23 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 	return true
 
 ## Flecha Gélida: dano normal; cada acerto soma 1 acúmulo de frio (valor = lentidão por acúmulo, duracao = tempo do frio).
+## Forma "anel" (passivo Anel Gélido): no acerto, `qtd` lascas saem para os inimigos em volta (`raio`), em vez de
+## `qtd` valer como perfuração.
 static func _flecha_gelida(jogador: Node2D, dir: Vector2, def: Dictionary) -> void:
-	var f = jogador.lancar_flecha(dir, def.get("dano", 1.0), int(def.get("qtd", 0)))
+	var anel: bool = def.get("forma", "") == "anel"
+	var f = jogador.lancar_flecha(dir, def.get("dano", 1.0), 0 if anel else int(def.get("qtd", 0)), 1.0, def)
 	f.cor_fx = COR
 	_vestir_flecha(f)
+	var dano_lasca: float = jogador.stats["arrow_damage"] * def.get("dano", 1.0) * 0.5
 	f.body_entered.connect(func(corpo: Node):
 		if corpo.has_method("aplicar_status"):
-			acumular_frio(corpo, 1, def))
+			acumular_frio(corpo, 1, def)
+			if anel and corpo.is_inside_tree():
+				_lascas(corpo, dano_lasca, int(def.get("qtd", 6)), def.get("raio", 200.0), def))
 
 ## Estilhaço Glacial: o acerto racha em `qtd` lascas que vão para os outros alvos mais próximos (`raio` de busca).
 static func _estilhaco(jogador: Node2D, dir: Vector2, def: Dictionary) -> void:
-	var f = jogador.lancar_flecha(dir, def.get("dano", 1.0))
+	var f = jogador.lancar_flecha(dir, def.get("dano", 1.0), 0, 1.0, def)
 	f.cor_fx = COR
 	_vestir_flecha(f)
 	var dano_lasca: float = jogador.stats["arrow_damage"] * def.get("dano", 1.0) * def.get("valor", 0.5)
@@ -147,8 +153,8 @@ static func _lascas(origem: Node2D, dano: float, qtd: int, raio: float, def: Dic
 ## Deixa o brilho/rastro da flecha azul e troca o desenho se houver folha.
 static func _vestir_flecha(f: Node) -> void:
 	if f.has_method("add_child") and ResourceLoader.exists(PASTA + "gelo_flecha.png"):
-		var s := _sprite(f, "gelo_flecha", 6, Vector2(0, -30), 72.0, 14.0)
-		s.position = Vector2(0, -30)
+		var s := _sprite(f.vis, "gelo_flecha", 6, Vector2.ZERO, 72.0, 14.0)   # f.vis: nó do desenho, já no peito e girado
+		s.position = Vector2.ZERO
 
 static func _overlay(inimigo: Node, congelado := false) -> void:
 	var nome := "FrioFx"

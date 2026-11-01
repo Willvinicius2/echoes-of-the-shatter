@@ -17,18 +17,24 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 	var dano: float = jogador.stats["arrow_damage"] * def.get("dano", 1.0)
 	match efeito:
 		"tiro_ardente":
-			var f = jogador.lancar_flecha(dir, def.get("dano", 1.0))
+			var f = jogador.lancar_flecha(dir, def.get("dano", 1.0), 0, 1.0, def)
 			f.cor_fx = COR_FOGO
 			f.add_child(_VigiaImpacto.new(def.get("duracao", 3.0), def.get("valor", 4.0)))
 			var pr := Anim.new("flecha_proj", true)
-			pr.position = Vector2(0, -30)
-			f.add_child(pr)
+			pr.position = Vector2.ZERO
+			f.vis.add_child(pr)
 		"meteoro":
 			var alvo: Vector2 = _ponto(jogador, dir, def.get("alcance", 600.0))
-			var m := _Meteoro.new()
-			m.preparar(alvo, def.get("raio", 140.0), dano, def.get("duracao", 3.0), def.get("valor", 3.0))
-			jogador.get_parent().add_child(m)
-			m.global_position = alvo
+			# Forma "brasas" (passivo Chuva de Brasas): `qtd` quedas menores em linha na direção da mira, uma atrás da outra.
+			var quedas: int = maxi(1, int(def.get("qtd", 1))) if def.get("forma", "") == "brasas" else 1
+			var raio: float = def.get("raio", 140.0)
+			for i in quedas:
+				var p: Vector2 = alvo + dir * raio * 1.6 * float(i - (quedas - 1) / 2.0)
+				var m := _Meteoro.new()
+				m.preparar(p, raio, dano, def.get("duracao", 3.0), def.get("valor", 3.0))
+				m.atraso = 0.15 * i
+				jogador.get_parent().add_child(m)
+				m.global_position = p
 		"muralha":
 			var m := _Muralha.new()
 			var ini: Vector2 = jogador.global_position + dir * 60.0
@@ -62,7 +68,8 @@ static func ao_abate(jogador: Node2D, pos: Vector2, sobra: float, def: Dictionar
 static func aura(jogador: Node2D) -> Node2D:
 	var a := Anim.new("arauto_aura", true, 110.0)
 	a.modulate.a = 0.55
-	a.position = Vector2(0, -20)
+	a.position = Vector2(0, -4)   # no chão, aos pés, atrás do arqueiro
+	a.scale = Vector2(1.0, 0.5)
 	a.show_behind_parent = true
 	jogador.add_child(a)
 	return a
@@ -100,8 +107,8 @@ class _VigiaImpacto extends Node:
 		var pos: Vector2 = flecha.global_position
 		var atingidos := U.no_raio(flecha, pos, 36.0)
 		var e := Anim.new("flecha_impacto", false, 90.0)
-		e.global_position = pos + Vector2(0, -30)
-		cena.add_child(e)
+		e.position = pos + Vector2(0, -30)
+		cena.add_child.call_deferred(e)   # o pai está ocupado montando filhos durante o tree_exiting
 		for n in atingidos:
 			U.queimar(n, dur, dps)
 
@@ -111,6 +118,7 @@ class _Meteoro extends Node2D:
 	var dano: float
 	var dur: float
 	var dps: float
+	var atraso := 0.0   # forma "brasas": cada queda espera um pouco mais (só ritmo visual)
 	var _t := 0.0
 	var _caiu := false
 	var _queda: Node2D
@@ -128,6 +136,9 @@ class _Meteoro extends Node2D:
 		add_child(_queda)
 
 	func _physics_process(delta: float) -> void:
+		if atraso > 0.0:
+			atraso -= delta
+			return
 		_t += delta
 		queue_redraw()
 		if not _caiu:
