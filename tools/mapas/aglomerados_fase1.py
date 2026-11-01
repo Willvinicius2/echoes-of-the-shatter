@@ -4,10 +4,10 @@ grupos com sentido: cemitério pequeno, círculo de pedras, tronco caído, moita
 
 Lê godot/data2d/rooms/fase_1.txt, acha células livres longe da mata, das trilhas, do riacho, dos marcadores
 e dos props que já existem, sorteia centros com semente fixa e acrescenta os props no fim da lista `@props`.
-Rodar de novo é idempotente: as linhas geradas ficam copiadas em tools/mapa/fase_1.gerados.txt e são
+Rodar de novo é idempotente: as linhas geradas ficam copiadas em tools/mapas/fase_1.gerados.txt e são
 removidas da fase antes de gerar outra vez.
 
-    python3 tools/mapa/aglomerados_fase1.py [--alvo 0.30] [--semente 7]
+    python3 tools/mapas/aglomerados_fase1.py [--alvo 0.30] [--semente 7]
 """
 import argparse, math, random, re, sys
 from pathlib import Path
@@ -15,7 +15,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[2]
 ARQ = RAIZ / "godot/data2d/rooms/fase_1.txt"
 CSV = RAIZ / "godot/data2d/props_2d.csv"
-GERADOS = RAIZ / "tools/mapa/fase_1.gerados.txt"  # cópia das linhas geradas, para a próxima rodada substituí-las
+GERADOS = RAIZ / "tools/mapas/fase_1.gerados.txt"  # cópia das linhas geradas, para a próxima rodada substituí-las
 
 MODELOS = {  # nome: (peso, [(id, dx, dy), ...]) em células
     "moitas": (3, [("bush_dry_tangled", 0, 0), ("bush_dry_wide", 1.3, 0.4), ("bush_thorny", -1.1, 0.6),

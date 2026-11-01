@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Monta as folhas finais do Guerreiro (128 px, 5 direções) a partir das folhas brutas geradas por IA.
 
-Uso: python3 tools/sprites/montar_guerreiro.py [pasta_bruto] [pasta_saida]
+Uso: python3 tools/sprites2d/montar_guerreiro.py [pasta_bruto] [pasta_saida]
 Entrada: docs/arte/sprites2d/guerreiro/bruto/guerreiro_<anim>.png (grade N colunas x 5 linhas, fundo magenta,
 xadrez falso ou transparente, quadros desalinhados). Saída: godot/art2d/sprites/guerreiro/guerreiro_<anim>.png.
 Passos: remove o fundo, fatia a grade, escala cada folha para ~100 px de altura em pé, ancora os pés em (64,104)
