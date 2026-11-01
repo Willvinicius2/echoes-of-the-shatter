@@ -93,7 +93,7 @@ Cada campo que o pipeline de modificadores pode alterar tem uma regra visual. Qu
 | Campo do `def` | Op comum | Regra visual |
 |---|---|---|
 | `dano` | `inc`, `mais` | Intensidade (seção 5): até +50% = cor base; +50% a +150% = miolo branco; acima = miolo branco + halo + partículas extras. Nunca tamanho. |
-| `qtd` | `add` | Cópias no leque a partir da **mesma saída**, +6° por cópia extra (doc design 33, seção 7); acima de 5 cópias, as laterais com 70% de alfa; acima de 12, cortina de 8. |
+| `qtd` | `add` | Cópias no leque a partir da **mesma saída**, abertura `leque_graus` de `player.csv` (9° por cópia extra); acima de 5 cópias, as laterais com 70% de alfa; acima de 12, cortina de 8. |
 | `raio`, `angulo` | `inc` | Desenho escala com o valor (diâmetro = 2 × raio, cone com o ângulo real). `sombra_aviso` usa o mesmo raio. Cone de 360° (Anel Gélido, Salva em Espiral) vira anel completo com a mesma lasca/flecha. |
 | `alcance` | `inc` | Rastro não muda; o projétil só vive mais. Sem efeito visual extra. |
 | `duracao` | `inc` | Mais pulsos; último segundo pisca/afina. |
