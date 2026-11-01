@@ -1083,6 +1083,16 @@ func _testar_habilidades_arqueiro() -> void:
 	check(perto.tem_status("veneno") and not longe.tem_status("veneno"), "Arauto da Peste passa o veneno só a quem está no raio")
 	mh.queue_free()
 	await physics_frame
+	# leque do autocast: 1º disparo reto, os seguintes abrem +d, -d, +2d
+	var pl = load("res://scripts2d/player_2d.gd").new()
+	pl.stats = {"leque_graus": 10.0, "leque_janela": 0.4}
+	var graus: Array = []
+	for k in 4:
+		graus.append(snappedf(rad_to_deg(pl._desvio_leque(1000 + k * 50)), 0.1))
+		pl._leque_disparos.append(1000 + k * 50)
+	check(graus == [0.0, 10.0, -10.0, 20.0], "leque do autocast abre +d, -d, +2d (%s)" % str(graus))
+	check(is_equal_approx(pl._desvio_leque(5000), 0.0), "disparo isolado depois da janela sai reto")
+	pl.free()
 	# passiva de crítico e veneno: a flecha carrega os dados
 	var m2 := Node2D.new()
 	root.add_child(m2)

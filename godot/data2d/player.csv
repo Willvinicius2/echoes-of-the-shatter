@@ -24,3 +24,6 @@ crit_chance,0,fracao,chance de golpe crítico das flechas (habilidades somam)
 crit_mult,2,x,multiplicador do dano crítico
 poison_dps,0,hp/s,veneno aplicado pela flecha (habilidade Pontas Venenosas)
 poison_time,3,s,duração do veneno
+leque_graus,9,graus,abertura entre disparos de habilidades que saem juntas (leque coerente do autocast)
+leque_janela,0.4,s,tempo em que disparos contam como parte do mesmo leque
+autocast_intervalo,0.12,s,espera entre dois autocasts seguidos (as habilidades saem em sequência, não todas no mesmo quadro)
