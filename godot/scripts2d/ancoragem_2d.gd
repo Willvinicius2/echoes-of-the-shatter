@@ -18,17 +18,18 @@ void fragment() {
 static var _mat_sombra: ShaderMaterial
 static var _tex_contato: Texture2D
 
-## Classe visual do prop pelo id: árvore (raízes, sombra longa), raso (ossos, folhas: só contato leve),
-## folhagem (arbustos: contato e terra curta) ou sólido (tumbas, pedras, pilares).
+## Classe visual do prop pelo id: árvore (raízes, sombra longa), raso (ossos, folhas, capim, samambaia:
+## só contato leve e fica no chão, fora do y-sort), folhagem (arbustos: contato, terra curta, y-sort pelo
+## centro da base e semitransparente quando alguém passa atrás) ou sólido (tumbas, pedras, pilares).
 static func tipo(id: String) -> String:
 	if id == "tree_stump":
 		return "solido"
 	if id.begins_with("tree_") or id.begins_with("sapling_"):
 		return "arvore"
-	for pre in ["leaves_", "bones_", "skeleton_", "skull_single", "skull_pair", "skull_teal", "branches_", "flowers_", "grass_", "roots_"]:
+	for pre in ["leaves_", "bones_", "skeleton_", "skull_single", "skull_pair", "skull_teal", "branches_", "flowers_", "grass_", "roots_", "ferns_", "reeds_", "thistles_"]:
 		if id.begins_with(pre):
 			return "raso"
-	for pre in ["bush_", "shrub_", "ferns_", "reeds_", "thistles_"]:
+	for pre in ["bush_", "shrub_"]:
 		if id.begins_with(pre):
 			return "folhagem"
 	return "solido"
@@ -43,7 +44,9 @@ static func base(id: String, tex: Texture2D, def: Dictionary) -> Array:
 	if bl <= 0.0:
 		bl = tex.get_width() * esc * (0.5 if t == "raso" else 0.6)
 	if ba <= 0.0:
-		ba = bl * 0.36
+		# arbusto visto de cima em 3/4: a base ocupa boa parte da silhueta, então o centro dela fica bem
+		# acima da borda de baixo (decisão do Jev, 1/11: y-sort pelo centro da base + transparência)
+		ba = tex.get_height() * esc * 0.55 if t == "folhagem" else bl * 0.36
 	return [bl, ba]
 
 ## Altura (px acima do pé do sprite) do ponto de apoio: o centro da base que toca o chão. É por esse ponto

@@ -557,6 +557,7 @@ func colocar_props(alvo: Node2D) -> void:
 		# tronco), não pela borda de baixo do sprite: assim quem passa ao lado fica na frente do prop.
 		var pe: Vector2 = p["pos"] + Vector2(0, tile * 0.5)
 		var ap: float = Ancoragem.apoio(p["id"], tex, d, arte)
+		var tipo: String = Ancoragem.tipo(p["id"])
 		var no := Node2D.new()
 		no.position = pe - Vector2(0, ap)
 		spr.position = Vector2(0, ap)
@@ -568,8 +569,41 @@ func colocar_props(alvo: Node2D) -> void:
 		no.add_child(spr)
 		no.add_child(frente)  # tufos que cobrem um pouco o pé
 		Ancoragem.prender(chao, atras, frente, p["id"], tex, d, arte, spr.flip_h, pe, piso_grama, k)
-		alvo.add_child(no)
+		if tipo == "raso":
+			# capim, folhas, ossos: ficam no chão, sob todos os atores, fora do y-sort (decisão do Jev, 1/11)
+			add_child(no)
+		else:
+			alvo.add_child(no)
+			if tipo == "folhagem":
+				_ocultaveis.append({"no": no, "spr": spr, "meia": tex.get_width() * float(d["escala"]) * 0.5, "alt": tex.get_height() * float(d["escala"])})
 		k += 1
+
+var _ocultaveis: Array = []  # arbustos: {no, spr, meia, alt}; ficam semitransparentes com alguém atrás
+
+## Arbusto na frente do personagem fica a 45% de alfa enquanto ele está atrás (decisão do Jev, 1/11), para o
+## corpo não sumir atrás de uma moita de meio corpo. Árvores, pilares e tumbas altas não mudam: sumir atrás
+## delas é natural. O personagem é o `player` da corrida ou, nas ferramentas de captura, quem estiver no
+## grupo `arqueiro`.
+func _process(delta: float) -> void:
+	if _ocultaveis.is_empty():
+		return
+	var pl: Node2D = null
+	var run := get_parent()
+	if run != null:
+		pl = run.get("player") as Node2D
+	if pl == null:
+		pl = get_tree().get_first_node_in_group("arqueiro") as Node2D
+	if pl == null:
+		return
+	var pp := pl.global_position
+	for o in _ocultaveis:
+		var no: Node2D = o["no"]
+		var dy := no.global_position.y - pp.y
+		var atras: bool = dy > 0.0 and dy < o["alt"] * 0.9 and absf(pp.x - no.global_position.x) < o["meia"] + 10.0
+		var spr: Sprite2D = o["spr"]
+		var alvo_a := 0.45 if atras else 1.0
+		if absf(spr.modulate.a - alvo_a) > 0.01:
+			spr.modulate.a = move_toward(spr.modulate.a, alvo_a, delta * 5.0)
 
 ## Altura do ponto de apoio do prop (px acima do pé), via ancoragem_2d.gd; 0 se faltar arte ou definição.
 func _apoio_prop(id: String) -> float:

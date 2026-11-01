@@ -27,10 +27,14 @@ func _initialize() -> void:
 		for par in extra.split(";"):
 			var xy := par.split(",")
 			pontos.append(Vector2(float(xy[0]), float(xy[1])))
+	var primeiro := true
 	for p in pontos:
 		var spr := _boneco()
 		if spr != null:
 			spr.position = Vector2(p) * tile
+			if primeiro:
+				spr.add_to_group("arqueiro")  # o primeiro boneco conta como o jogador para os arbustos semitransparentes
+				primeiro = false
 			atores.add_child(spr)
 	var cam := Camera2D.new()
 	mundo.add_child(cam)
@@ -47,7 +51,7 @@ func _initialize() -> void:
 		cam.zoom = Vector2(z, z)
 	cam.enabled = true
 	cam.make_current()
-	for i in 30:
+	for i in 45:
 		await physics_frame
 	await RenderingServer.frame_post_draw
 	root.get_viewport().get_texture().get_image().save_png(saida)
