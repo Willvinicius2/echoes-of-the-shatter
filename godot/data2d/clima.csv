@@ -14,7 +14,6 @@ folhas_max,70,,folhas soltas ao mesmo tempo na sala
 folhas_por_arvore,0.65,folhas/s,folhas que caem de cada árvore com folhagem (dobra na rajada)
 folhas_rajada,4.6,folhas/s,folhas que atravessam a sala no pico da rajada
 folha_tempo_chao,7,s,tempo da folha caída no chão antes de sumir
-fogo_chamas,16,,línguas de fogo por braseiro
 fogo_brasas,10,,brasas subindo por braseiro
 fumaca_qtd,9,,baforadas de fumaça por braseiro
 fumaca_alpha,0.36,0..1,opacidade máxima da fumaça
@@ -24,3 +23,10 @@ nevoa_alpha,0.11,0..1,névoa rasteira clara nas salas de pedra (no lugar da somb
 nuvem_vel,16,px/s,velocidade da sombra de nuvem com vento base
 poeira_qtd,32,,partículas de poeira e pólen no ar
 ondas_capim_alpha,0.05,0..1,brilho das ondas de vento no gramado
+fogo_largura,40,px,largura do fogo animado do braseiro
+fogo_altura,56,px,altura do fogo animado do braseiro
+fogo_pixel,2,px,tamanho do pixel do fogo (combina com a pixel art)
+fogo_fps,12,quadros/s,quadros por segundo do fogo (passos como folha de sprites)
+tigela_borda,0.31,0..1,linha da borda da tigela no tile do braseiro (acima disso a chama pintada some)
+tigela_fundo,0.53,0..1,fundo da tigela (entre a borda e o fundo o fogo pintado vira carvão)
+escala_area_max,8,,teto do multiplicador de nuvens/poeira/folhas em mapas grandes

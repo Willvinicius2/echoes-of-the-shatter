@@ -6,6 +6,7 @@ extends Node2D
 ## e nos tufos do terreno, pelo nome do arquivo da textura.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Room = preload("res://scripts2d/room_2d.gd")
 
 const BALANCO_SHADER := """
 shader_type canvas_item;
@@ -30,6 +31,56 @@ void fragment() {
 	vec4 c = texture(TEXTURE, uv);
 	c.a *= step(0.0, uv.x) * step(uv.x, 1.0);
 	COLOR = c * cor_v;
+}
+"""
+
+## Fogo em pixel art desenhado quadro a quadro: ruído subindo, cortado em 4 cores, tempo em passos
+## (fps baixo, como uma folha de sprites) e inclinação com o vento.
+const FOGO_SHADER := """
+shader_type canvas_item;
+uniform vec2 res = vec2(18.0, 26.0);
+uniform float fps = 12.0;
+uniform float semente = 0.0;
+uniform float vento = 0.0;
+float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float ruido(vec2 p) {
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	f = f * f * (3.0 - 2.0 * f);
+	return mix(mix(h(i), h(i + vec2(1.0, 0.0)), f.x), mix(h(i + vec2(0.0, 1.0)), h(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+void fragment() {
+	vec2 p = (floor(UV * res) + 0.5) / res;
+	float t = floor(TIME * fps) / fps + semente;
+	float y = 1.0 - p.y;
+	float x = p.x - 0.5 - vento * 0.16 * y * y - sin(t * 2.1 + y * 5.0) * 0.03 * y;
+	float n = ruido(vec2(p.x * 5.0 + semente, p.y * 4.0 + t * 3.4)) * 0.6 + ruido(vec2(p.x * 11.0 - semente, p.y * 9.0 + t * 6.5)) * 0.4;
+	float largura = 0.44 * (1.0 - y * 0.75);
+	float corpo = 1.0 - smoothstep(largura * 0.35, largura, abs(x));
+	float nucleo = 1.0 - smoothstep(0.0, largura * 0.55, abs(x));
+	float calor = corpo * (1.0 - y * 1.3) + nucleo * 0.25 * (1.0 - y * 2.0) + (n - 0.5) * 1.05 * (0.35 + y);
+	vec4 c = vec4(0.0);
+	if (calor > 0.86) c = vec4(1.0, 0.94, 0.62, 1.0);
+	else if (calor > 0.62) c = vec4(1.0, 0.76, 0.24, 1.0);
+	else if (calor > 0.4) c = vec4(0.98, 0.47, 0.12, 1.0);
+	else if (calor > 0.22) c = vec4(0.78, 0.2, 0.07, 0.95);
+	COLOR = c;
+}
+"""
+
+## Brasas do fundo da tigela: o brilho de cada pixel de carvão sobe e desce em passos.
+const BRASA_SHADER := """
+shader_type canvas_item;
+render_mode blend_add;
+uniform float fps = 10.0;
+uniform float semente = 0.0;
+float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+void fragment() {
+	vec4 m = texture(TEXTURE, UV);
+	float t = floor(TIME * fps + semente);
+	vec2 cel = floor(UV * 16.0);
+	float b = mix(h(cel + t * 0.37), h(cel + (t + 1.0) * 0.37), 0.5);
+	COLOR = vec4(m.rgb * (0.35 + 0.9 * b), m.a);
 }
 """
 
@@ -73,6 +124,7 @@ var _chao: Node2D          # folhas caídas e sombras das folhas
 var _tamanho := Vector2.ZERO
 var _tex_cache := {}
 var _escala_area := 1.0
+var _mats_fogo: Array = []
 
 func _ready() -> void:
 	cfg = Csv.kv("res://data2d/clima.csv")
@@ -85,7 +137,7 @@ func _montar() -> void:
 	if sala == null or sala.is_queued_for_deletion():
 		return  # sala trocada no mesmo quadro: os props já são da próxima
 	_tamanho = sala.tamanho_px()
-	_escala_area = maxf(_tamanho.x * _tamanho.y / (1536.0 * 832.0), 1.0)  # salas maiores (mapa ampliado) ganham mais nuvem, poeira e folhas
+	_escala_area = clampf(_tamanho.x * _tamanho.y / (1536.0 * 832.0), 1.0, cfg["escala_area_max"])  # salas maiores (mapa ampliado) ganham mais nuvem, poeira e folhas
 	_chao = Node2D.new()
 	_chao.z_index = 2
 	_chao.draw.connect(_desenhar_chao)
@@ -125,6 +177,8 @@ func _process(delta: float) -> void:
 	vento = _forca_vento(_t)
 	for m in _mats.values():
 		m.set_shader_parameter("vento", vento)
+	for m in _mats_fogo:
+		m.set_shader_parameter("vento", vento * signf(dir_vento.x))
 	var w: Vector2 = dir_vento * vento * cfg["vento_vel_folha"]
 	for p in _fogo:
 		p["no"].gravity = p["base"] + w * p["fator"]
@@ -294,21 +348,54 @@ func _textura_suave(chave: String, lado: int, dura := false) -> GradientTexture2
 		_tex_cache[chave] = t
 	return _tex_cache[chave]
 
-## Língua de fogo: gota alongada, ponta para cima, com borda suave.
-func _textura_chama() -> ImageTexture:
-	if not _tex_cache.has("lingua"):
-		var w := 30
-		var h := 44
-		var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
-		for y in h:
-			var v := float(y) / (h - 1)          # 0 topo (ponta), 1 base
-			var meia := 0.5 * pow(v, 0.7) * (1.0 - pow(v, 6.0) * 0.35)
-			for x in w:
-				var u := absf((float(x) + 0.5) / w - 0.5)
-				var a := clampf((meia - u) / maxf(meia * 0.55, 0.001), 0.0, 1.0)
-				img.set_pixel(x, y, Color(1, 1, 1, a * a))
-		_tex_cache["lingua"] = ImageTexture.create_from_image(img)
-	return _tex_cache["lingua"]
+func _mat_shader(codigo: String, params: Dictionary) -> ShaderMaterial:
+	if not _tex_cache.has(codigo):
+		var sh := Shader.new()
+		sh.code = codigo
+		_tex_cache[codigo] = sh
+	var m := ShaderMaterial.new()
+	m.shader = _tex_cache[codigo]
+	for k in params:
+		m.set_shader_parameter(k, params[k])
+	return m
+
+## Tira a chama pintada do tile do braseiro: acima da borda da tigela fica transparente e o fogo
+## dentro da tigela vira carvão escuro. Devolve [tigela, máscara do carvão] (a máscara brilha por shader).
+static var _tigela_cache: Array = []
+
+func _tigela_sem_chama() -> Array:
+	if not _tigela_cache.is_empty():
+		return _tigela_cache
+	var camada = sala.get("_layer")
+	if not (camada is TileMapLayer) or camada.tile_set == null:
+		return []
+	var tex: Texture2D = camada.tile_set.get_source(0).texture
+	var img := tex.get_image()
+	if img == null:
+		return []
+	img.decompress()
+	img.convert(Image.FORMAT_RGBA8)
+	var t: int = sala.tile
+	var cols := img.get_width() / t
+	var idx: int = Room.T_BRASEIRO
+	var reg := img.get_region(Rect2i((idx % cols) * t, (idx / cols) * t, t, t))
+	var masc := Image.create(t, t, false, Image.FORMAT_RGBA8)
+	var borda := int(t * cfg["tigela_borda"])
+	var fundo := int(t * cfg["tigela_fundo"])
+	for y in t:
+		for x in t:
+			var c := reg.get_pixel(x, y)
+			if c.a < 0.1:
+				continue
+			var fogo := c.r > 0.55 and c.r > c.b + 0.25 and (c.g > 0.3 or c.r > 0.75)
+			if y < borda and (fogo or absf(x - t * 0.5) < t * 0.3):
+				reg.set_pixel(x, y, Color(0, 0, 0, 0))
+			elif y < fundo and fogo:
+				var v := 0.10 + 0.06 * float(posmod(x * 7 + y * 13, 3))
+				reg.set_pixel(x, y, Color(v * 1.4, v * 0.8, v * 0.6, c.a))
+				masc.set_pixel(x, y, Color(1.0, 0.42 + 0.3 * c.g, 0.1, 1.0))
+	_tigela_cache = [ImageTexture.create_from_image(reg), ImageTexture.create_from_image(masc)]
+	return _tigela_cache
 
 func _rampa(pontos: Array) -> Gradient:
 	var g := Gradient.new()
@@ -329,45 +416,52 @@ func _curva(a: float, b: float) -> Curve:
 
 func _braseiro(b: Vector2) -> void:
 	var boca := b + Vector2(0, -8)
-	# línguas de fogo por cima da chama pintada do tile: laranja por fora, miolo claro aditivo
-	var chama := CPUParticles2D.new()
-	chama.texture = _textura_chama()
-	chama.amount = int(cfg["fogo_chamas"])
-	chama.lifetime = 0.55
-	chama.randomness = 0.5
-	chama.position = boca + Vector2(0, 2)
-	chama.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	chama.emission_rect_extents = Vector2(11, 2)
-	chama.direction = Vector2(0, -1)
-	chama.spread = 8.0
-	chama.gravity = Vector2(0, -30)
-	chama.initial_velocity_min = 16.0
-	chama.initial_velocity_max = 30.0
-	chama.scale_amount_min = 0.6
-	chama.scale_amount_max = 0.95
-	chama.scale_amount_curve = _curva(1.0, 0.2)
-	chama.color_ramp = _rampa([[0.0, Color(1, 0.75, 0.25, 0.0)], [0.12, Color(1, 0.62, 0.16, 0.9)], [0.55, Color(0.95, 0.32, 0.08, 0.75)], [1.0, Color(0.5, 0.08, 0.04, 0.0)]])
-	chama.z_index = 4
-	add_child(chama)
-	_fogo.append({"no": chama, "base": Vector2(0, -30), "fator": 0.1})
+	# tigela sem a chama pintada (a célula do tile some) + fogo animado + carvão piscando
+	var cel := Vector2i(int(b.x) / int(sala.tile), int(b.y) / int(sala.tile))
+	var canto := Vector2(cel) * float(sala.tile)
+	var arte := _tigela_sem_chama()
+	if not arte.is_empty():
+		var camada = sala.get("_layer")
+		if camada is TileMapLayer:
+			camada.erase_cell(cel)
+		var tig := Sprite2D.new()
+		tig.texture = arte[0]
+		tig.centered = false
+		tig.position = canto
+		add_child(tig)
+		var carvao := Sprite2D.new()
+		carvao.texture = arte[1]
+		carvao.centered = false
+		carvao.position = canto
+		carvao.material = _mat_shader(BRASA_SHADER, {"semente": _rng.randf() * 50.0})
+		carvao.z_index = 1
+		add_child(carvao)
+	var fogo := ColorRect.new()
+	fogo.size = Vector2(cfg["fogo_largura"], cfg["fogo_altura"])
+	fogo.position = canto + Vector2(sala.tile * 0.5 - fogo.size.x * 0.5, sala.tile * 0.42 - fogo.size.y)
+	fogo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mf := _mat_shader(FOGO_SHADER, {"semente": _rng.randf() * 100.0, "fps": cfg["fogo_fps"], "res": fogo.size / cfg["fogo_pixel"]})
+	fogo.material = mf
+	fogo.z_index = 4
+	add_child(fogo)
+	_mats_fogo.append(mf)
+	# brilho aditivo fraco por cima, para a chama clarear o que está atrás
 	var miolo := CPUParticles2D.new()
-	miolo.texture = chama.texture
+	miolo.texture = _textura_suave("chama", 32, true)
 	miolo.material = _aditivo()
-	miolo.amount = maxi(int(cfg["fogo_chamas"]) / 2, 2)
-	miolo.lifetime = 0.4
-	miolo.randomness = 0.5
-	miolo.position = boca + Vector2(0, 2)
-	miolo.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	miolo.emission_rect_extents = Vector2(6, 2)
+	miolo.amount = 4
+	miolo.lifetime = 0.5
+	miolo.position = boca + Vector2(0, -8)
+	miolo.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	miolo.emission_sphere_radius = 4.0
 	miolo.direction = Vector2(0, -1)
-	miolo.spread = 6.0
+	miolo.spread = 10.0
 	miolo.gravity = Vector2(0, -20)
-	miolo.initial_velocity_min = 12.0
-	miolo.initial_velocity_max = 22.0
-	miolo.scale_amount_min = 0.3
-	miolo.scale_amount_max = 0.45
-	miolo.scale_amount_curve = _curva(1.0, 0.3)
-	miolo.color_ramp = _rampa([[0.0, Color(1, 0.95, 0.7, 0.0)], [0.2, Color(1, 0.9, 0.55, 0.7)], [1.0, Color(1, 0.5, 0.15, 0.0)]])
+	miolo.initial_velocity_min = 8.0
+	miolo.initial_velocity_max = 16.0
+	miolo.scale_amount_min = 0.7
+	miolo.scale_amount_max = 1.0
+	miolo.color_ramp = _rampa([[0.0, Color(1, 0.7, 0.3, 0.0)], [0.3, Color(1, 0.6, 0.2, 0.22)], [1.0, Color(1, 0.4, 0.1, 0.0)]])
 	miolo.z_index = 5
 	add_child(miolo)
 	_fogo.append({"no": miolo, "base": Vector2(0, -20), "fator": 0.08})
@@ -420,7 +514,7 @@ func _braseiro(b: Vector2) -> void:
 	fum.z_index = 13
 	add_child(fum)
 	_fogo.append({"no": fum, "base": Vector2(0, -3), "fator": 0.32})
-	for p in [chama, miolo, brasa, fum]:
+	for p in [miolo, brasa, fum]:
 		p.preprocess = p.lifetime
 
 # ---------------------------------------------------------------- céu e ar
