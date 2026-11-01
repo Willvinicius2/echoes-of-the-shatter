@@ -263,16 +263,16 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 	var tabuleiro_tex := _textura_tabuleiro()
 	# 1) sombra na água, em camadas translúcidas para a borda sair macia: anel em volta da ponte inteira
 	#    (oclusão dos dois lados) e sombra curta deslocada para baixo-direita
-	for camada in [[6.0, 0.22], [11.0, 0.16], [16.0, 0.1]]:
-		for q in Geometry2D.intersect_polygons(ret.call(a, b, meia + camada[0]), agua):
+	for camada in [[3.0, 0.16], [6.0, 0.12], [9.0, 0.09], [12.0, 0.07], [15.0, 0.05], [18.0, 0.03]]:
+		for q in _sombra_redonda(ret.call(a, b, meia), camada[0], agua):
 			_poligono(raiz, q, Color(0.01, 0.04, 0.06, camada[1]))
 	var desloc := Vector2(7.0, 11.0)
-	for camada in [[3.0, 0.2], [8.0, 0.14], [13.0, 0.08]]:
-		for q in Geometry2D.intersect_polygons(ret.call(a + desloc, b + desloc, meia + camada[0]), agua):
+	for camada in [[2.0, 0.16], [5.0, 0.12], [8.0, 0.09], [11.0, 0.07], [14.0, 0.05]]:
+		for q in _sombra_redonda(ret.call(a + desloc, b + desloc, meia), camada[0], agua):
 			_poligono(raiz, q, Color(0.01, 0.04, 0.06, camada[1]))
 	# 2) encontros: a laje do tabuleiro continua pela margem, com soleira escura só na junta com a trilha
 	for ponta in [[a - d * 8.0, a + d * 2.0], [b - d * 2.0, b + d * 8.0]]:
-		var sol: PackedVector2Array = ret.call(ponta[0], ponta[1], meia + 2.0)
+		var sol: PackedVector2Array = ret.call(ponta[0], ponta[1], meia)
 		var pg_sol := _poligono(raiz, sol, Color(0.7, 0.72, 0.78))
 		pg_sol.texture = tabuleiro_tex
 		pg_sol.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
@@ -295,10 +295,10 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 		var k := 0.0
 		while k <= comp_tab:
 			var p: Vector2 = a + d * k + n * lado * (meia + 8.0)
-			var onda := absf(sin(k * 0.19 + lado * 2.0)) * 2.2 + 1.5
+			var onda := 1.6 + sin(k * 0.11 + lado * 2.0) * 0.9
 			beira.append(p)
-			volta.append(p + n * lado * (onda + 2.5 + sin(k * 0.41) * 1.0))
-			k += 5.0
+			volta.append(p + n * lado * (onda + 2.5 + sin(k * 0.23) * 0.6))
+			k += 3.0
 		volta.reverse()
 		beira.append_array(volta)
 		for q in Geometry2D.intersect_polygons(beira, agua):
@@ -310,10 +310,13 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 		var c0: Vector2 = a + n * lado * (meia + 1.0) + d * 10.0
 		var c1: Vector2 = b + n * lado * (meia + 1.0) - d * 10.0
 		if lado < 0.0:
-			_poligono(raiz, ret.call(c0 + Vector2(8, 6), c1 + Vector2(8, 6), 7.0), Color(0.02, 0.03, 0.04, 0.35))
+			for camada in [[0.0, 0.22], [2.0, 0.12]]:
+				for q in _sombra_redonda(ret.call(c0 + Vector2(8, 6), c1 + Vector2(8, 6), 6.0), camada[0], tab):
+					_poligono(raiz, q, Color(0.02, 0.03, 0.04, camada[1]))
 		else:
-			for q in Geometry2D.intersect_polygons(ret.call(c0 + Vector2(10, 8), c1 + Vector2(10, 8), 7.0), agua):
-				_poligono(raiz, q, Color(0.01, 0.03, 0.05, 0.45))
+			for camada in [[0.0, 0.3], [2.0, 0.18], [4.0, 0.1], [6.0, 0.05]]:
+				for q in _sombra_redonda(ret.call(c0 + Vector2(10, 8), c1 + Vector2(10, 8), 6.0), camada[0], agua):
+					_poligono(raiz, q, Color(0.01, 0.03, 0.05, camada[1]))
 		var base: PackedVector2Array = ret.call(c0, c1, 7.0)
 		var corpo := PackedVector2Array(base)
 		for q in base:
@@ -341,13 +344,24 @@ static func _ponte(raiz: Node2D, trecho: PackedVector2Array, caminho: PackedVect
 			f.antialiased = true
 	return PackedVector2Array([a0, b0])
 
+## Sombra de cantos arredondados: o polígono expandido `folga` px com junção redonda, recortado por `limite`
+## (a água, ou o tabuleiro). Em camadas translúcidas, a borda sai macia e sem quinas retas.
+static func _sombra_redonda(pts: PackedVector2Array, folga: float, limite: PackedVector2Array) -> Array:
+	var out: Array = []
+	for q in Geometry2D.offset_polygon(pts, folga, Geometry2D.JOIN_ROUND):
+		for r in Geometry2D.intersect_polygons(q, limite):
+			out.append(r)
+	return out
+
 ## Bloco de pedra nas pontas das muretas, alinhado ao eixo da ponte: sombra no chão, corpo de 20 px
 ## (faces em sombra, a da esquerda um pouco mais clara) e tampa clara com fio de luz.
 static func _pilarete(raiz: Node2D, pt: Vector2, tex: Texture2D, d: Vector2, n: Vector2) -> void:
 	var quad := func(c: Vector2, half: float) -> PackedVector2Array:
 		return PackedVector2Array([c - d * half - n * half, c + d * half - n * half, c + d * half + n * half, c - d * half + n * half])
 	var alt := 20.0
-	_poligono(raiz, quad.call(pt + Vector2(7, 6), 11.0), Color(0.02, 0.03, 0.04, 0.4))
+	for camada in [[0.0, 0.22], [2.5, 0.12], [5.0, 0.06]]:
+		for q in Geometry2D.offset_polygon(quad.call(pt + Vector2(7, 6), 8.0), camada[0] + 1.0, Geometry2D.JOIN_ROUND):
+			_poligono(raiz, q, Color(0.02, 0.03, 0.04, camada[1]))
 	var base: PackedVector2Array = quad.call(pt, 10.0)
 	var corpo := PackedVector2Array(base)
 	for q in base:
