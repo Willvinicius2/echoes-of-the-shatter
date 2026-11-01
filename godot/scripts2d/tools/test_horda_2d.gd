@@ -117,6 +117,16 @@ func rodar() -> void:
 	check.call(run.estado == run.Estado.VENCEU, "horda: portal dá a vitória")
 	await _esperar(func(): return run.menus.tela == run.menus.Tela.FIM, 5.0)
 	t.paused = false
+	# Gema de habilidade: ensina ou melhora uma habilidade e ocupa um slot livre.
+	var h = p.habilidades
+	var soma0 := 0
+	for id in h.ordem:
+		soma0 += h.nivel(id)
+	run._usar_gema_habilidade()
+	var soma1 := 0
+	for id in h.ordem:
+		soma1 += h.nivel(id)
+	check.call(soma1 == soma0 + 1, "horda: gema de habilidade ensina ou melhora uma habilidade")
 	run.queue_free()
 	await t.process_frame
 	RunScript.modo_etapas = antes

@@ -437,6 +437,11 @@ func _morto_na_horda(e) -> void:
 		_soltar("xp", int(x["xp"]), e.global_position)
 	if bool(x.get("bau", false)):
 		_soltar("bau", 0, e.global_position)
+	# Gema de habilidade (estilo Path of Exile): elite e Guardião soltam uma que ensina ou melhora uma habilidade.
+	var chefe: bool = e.stats.get("kind", "") == "boss"
+	var chance := float(config.get("skill_gem_boss" if chefe else "skill_gem_elite", 0.0))
+	if (elite or chefe) and randf() < chance:
+		_soltar("habilidade", 1, e.global_position)
 	var r: Dictionary = nucleo.ondas_morto(int(e.get_meta("spawn_id", 0)))
 	if e.stats.get("kind", "") == "boss":
 		_pos_chefe = e.global_position
@@ -461,11 +466,35 @@ func atrair_coletaveis() -> void:
 func _on_coletada(g) -> void:
 	if estado == Estado.MORTO or estado == Estado.VENCEU:
 		return
+	if g.tipo == "habilidade":
+		_usar_gema_habilidade()
+		return
 	if g.tipo == "bau":
 		nucleo.nivel_abrir_bau()
 	else:
 		nucleo.nivel_ganhar_xp(int(g.valor))
 	_checar_oferta_nivel()
+
+## Gema de habilidade coletada: ensina (ou sobe de nível) uma habilidade sorteada que já pode ser aprendida.
+## Os pontos entram no saldo e são gastos na hora, então a regra de pré-requisito e nível máximo continua do core.
+func _usar_gema_habilidade() -> void:
+	var h = player.habilidades if "habilidades" in player else null
+	if h == null:
+		return
+	var cands := []
+	for id in h.ordem:
+		var d: Dictionary = h.defs[id]
+		var n: int = h.nivel(id)
+		var pai := str(d.get("pai", ""))
+		if n < int(d.get("nivel_max", 1)) and (n > 0 or pai == "" or h.nivel(pai) > 0):
+			cands.append(id)
+	if cands.is_empty():
+		return
+	var id: String = cands[randi() % cands.size()]
+	h.ganhar_pontos(int(h.defs[id].get("pontos", 1)))
+	if h.aprender(id) and h.eh_ativa(id) and not h.slots.has(id) and h.slots.has(""):
+		h.equipar(h.slots.find(""), id)
+	hud.mensagem = Csv.t("hud.skill_gem") % Csv.t("skill.%s.name" % id)
 
 ## Abre a tela de cartas se o core tem uma oferta de nível ou de baú esperando.
 func _checar_oferta_nivel() -> void:

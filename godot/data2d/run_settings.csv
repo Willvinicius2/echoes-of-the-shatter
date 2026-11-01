@@ -40,3 +40,5 @@ horde_aggro,100000,px,no modo horda os inimigos perseguem o jogador desta distan
 horde_leash_check,1.0,s,intervalo da conferencia de inimigos presos ou longe demais no modo horda
 horde_leash_dist,1700,px,inimigo comum mais longe que isto do jogador volta ao anel de spawn
 horde_stuck_dist,500,px,inimigo fora da vista e mais longe que isto que nao se aproximou desde a ultima conferencia volta ao anel
+skill_gem_elite,1.0,chance,chance de o elite soltar uma gema de habilidade (ensina ou melhora uma habilidade)
+skill_gem_boss,1.0,chance,chance de o Guardiao soltar uma gema de habilidade
