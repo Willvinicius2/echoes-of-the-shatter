@@ -15,6 +15,7 @@ const PlayerScript = preload("res://scripts2d/player_2d.gd")
 const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
 const BossScript = preload("res://scripts2d/boss_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
+const HudXpScript = preload("res://scripts2d/hud_xp_2d.gd")
 const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
 const ArvoreUiScript = preload("res://scripts2d/arvore_ui_2d.gd")
@@ -72,6 +73,7 @@ var _timer := 0.0
 var _estado_antes := Estado.LUTA
 var portal: Area2D          # saída da fase aberta, aberta depois do chefe
 var _pos_chefe := Vector2.ZERO
+var hud_xp: CanvasLayer       # barra de experiência e nível (modo horda)
 var arvore_fixa: RefCounted   # árvore permanente do personagem (core do hub); player.habilidades é a camada que o combate usa
 var _gemas_pendentes := 0   # gemas de habilidade esperando a tela atual fechar
 # Modo horda
@@ -107,6 +109,10 @@ func _ready() -> void:
 	hud.upgrades = upgrades
 	hud.total_salas = salas.size()
 	add_child(hud)
+	hud_xp = HudXpScript.new()
+	hud_xp.upgrades = upgrades
+	hud_xp.jogador = player
+	add_child(hud_xp)
 	ui = UpgradeUiScript.new()
 	ui.upgrades = upgrades
 	ui.escolhido.connect(_on_upgrade_escolhido)
@@ -186,6 +192,8 @@ func _trocar_classe() -> void:
 	_criar_classe()
 	hud.jogador = player
 	hud.upgrades = upgrades
+	hud_xp.upgrades = upgrades
+	hud_xp.jogador = player
 	ui.upgrades = upgrades
 
 func iniciar_corrida() -> void:
@@ -198,6 +206,7 @@ func iniciar_corrida() -> void:
 		g.queue_free()
 	fase_horda = _fase_do_spawner()
 	horda = not modo_etapas and int(config.get("horda", 0)) == 1 and fase_horda != ""
+	hud_xp.ativo = horda   # barra de XP e nível só no modo horda
 	nucleo.horda_definir(horda)   # antes de começar: no modo horda a sala nunca limpa e a vitória vem do portal
 	onda = 0
 	_aviso_altar = false

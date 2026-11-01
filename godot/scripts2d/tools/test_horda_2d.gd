@@ -47,6 +47,11 @@ func rodar() -> void:
 	for sl in p.habilidades.slots:
 		cru = cru and sl == ""
 	check.call(cru, "horda: a corrida começa só com o ataque básico (nada aprendido, slots vazios)")
+	# Barra de XP e nível no topo da tela, ligada ao core.
+	check.call(run.hud_xp != null and run.hud_xp.ativo, "horda: barra de XP e nível ligada")
+	run.hud_xp._process(0.016)
+	check.call(run.hud_xp._nivel == 1 and run.hud_xp._xp_prox > 1.0, "horda: barra de XP lê nível 1 e o XP do próximo do core")
+	check.call(p.nivel_jogador == 1 and p.xp_proximo > 1.0 and p.xp >= 0.0, "horda: jogador expõe nivel_jogador, xp e xp_proximo para a HUD")
 	# Camadas: a árvore fixa (core do hub) é outra que a da partida, e passiva de gema entra nos stats na hora.
 	check.call(run.arvore_fixa != null and run.arvore_fixa != p.habilidades, "horda: a camada de partida é separada da árvore fixa")
 	var dano0: float = p.stats["arrow_damage"]

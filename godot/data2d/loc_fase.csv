@@ -9,3 +9,5 @@ hud.boss_altar,O Guardião pode ser despertado no altar. Vá até ele quando est
 hud.swarm,O prazo acabou: o enxame final chegou e o Guardião despertou
 hud.skill_gem,Gema de habilidade: %s
 upgrade.gem,Gema de habilidade! Escolha uma
+hud.level,Nv %d
+hud.xp,%d / %d XP
