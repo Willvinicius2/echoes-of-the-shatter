@@ -1,0 +1,38 @@
+"""Gera prompts_fogo.json (árvore de FOGO do Arqueiro, doc 32_fogo). Rodar: python mk_prompts.py
+Depois: python D:\\openclaude\\EchoesOfTheShatter\\docs\\arte\\referencias-geracao\\scripts\\gerar.py prompts_fogo.json <saida_bruta>
+e fatiar.py para cortar em folhas de quadros. Nomes e quadros devem bater com FOLHAS de godot/scripts2d/fogo_util_2d.gd."""
+import json
+REPO = "D:/openclaude/_trabalho-claude/wt/fx-fogo"
+REFS = [REPO + r"\docs\arte\sprites2d\capturas_cripta\sala1.png"]
+BASE = ("Sprite sheet for a dark fantasy top-down ARPG, hand-painted style with a dark outline, strong light from the top-left, "
+        "matching the painterly look of the attached game screenshot (warm torch light, aged stone). It is NOT pixel art and NOT flat vector. "
+        "Exactly {n} animation frames arranged in ONE single horizontal row, equal spacing, each frame centered in its own invisible cell of equal width, "
+        "no overlap between frames, nothing outside the row. Flat solid pure magenta (#FF00FF) background everywhere, no gradients, no shadows on the background, "
+        "no magenta inside the effect. No text, no letters, no frame borders, no watermark. Effect colors: hot orange, yellow core, deep red edges, dark smoke, a few glowing embers. ")
+FOLHAS = {
+ "flecha_proj": (6, "Loop of a flaming arrow seen from above-side, flying to the RIGHT: arrowhead wrapped in fire with a long flickering tail of flame and sparks. Frames differ only in how the flames flicker."),
+ "flecha_impacto": (8, "One-shot fire impact burst, small: spark flash, fire puff that expands, ember sparks fly outward, then dies into thin smoke. Centered, growing then fading across the frames."),
+ "queimadura": (6, "Loop of a small burning overlay that sits on top of an enemy: several small licking flames and floating embers rising upward, base wide, tips flickering. Centered, small."),
+ "meteoro_queda": (6, "Loop of a falling meteor fireball seen from the side while falling straight down: rocky glowing core, big flame tail streaming UPWARD behind it, sparks. Frames differ in flame flicker and rotation of the rock."),
+ "meteoro_impacto": (8, "One-shot large meteor impact seen top-down at a 3/4 angle: white-hot flash, expanding fire shockwave ring, flying rock debris and embers, then a smoldering crater with smoke. Expands across the frames then fades. IMPORTANT: count carefully, the row must contain EIGHT frames (8), not seven."),
+ "brasas_chao": (6, "Loop of a patch of scorched ground seen top-down at a 3/4 angle: dark cracked charred earth in a rough circle with glowing orange embers and small low flames pulsing. Round, centered, same footprint in every frame, only the glow pulses."),
+ "muralha_chama": (8, "Loop of a single wall of flames segment seen from a 3/4 top-down angle: a thick column of fire rising from glowing embers on the ground, wide at the base, licking tongues of flame, sparks. Same base footprint in every frame, only the flames dance."),
+ "arauto_aura": (6, "Loop of a faint ring aura of small floating ash and embers circling at a character's feet and waist, thin glowing orange wisps and grey ash flakes. Make it clearly visible and opaque, bright glowing ember wisps and solid grey ash flakes in ONE single flattened ring (not two stacked rings), fully opaque pixels, centered."),
+ "arauto_explosao": (8, "One-shot explosion of fire made from ashes: a grey ash cloud flashes into an orange fireball that blows outward in a ring, ash flakes and embers fly out, then fade to falling ash. Centered, expanding then fading."),
+}
+ICONES = {
+ "icone_flecha_ardente": "a flaming arrow pointing up-right with a bright orange fire trail", "icone_flecha_meteoro": "a blazing meteor falling with a long flame tail onto a small impact ring",
+ "icone_muralha_brasas": "a wall of flames: a row of three tall fire tongues rising from glowing embers", "icone_arauto_cinzas": "a small burning skull of grey ash exploding into a ring of fire and embers",
+}
+ICON_PROMPT = ("A single square video-game ability icon for a dark fantasy top-down ARPG, hand-painted with crisp detail, matching the rich painterly style of the attached game screenshot. "
+ "The tile fills the entire square canvas edge to edge. Outer frame is a beveled dark stone and iron border with a thin worn gold inner line and four small rivets, slightly rounded corners, "
+ "EXACTLY the same frame as the second attached icon. Inside, a dark stone background with soft vignette and an orange-red glow halo behind the central glyph. The glyph is large, centered, readable at 64px, "
+ "strong light from top-left, dark outline. No text, no letters, no watermark, no clay look. Glyph: {g}.")
+out = []
+for k, (n, desc) in FOLHAS.items():
+    out.append({"id": "fogo_" + k, "tamanho": "1536x1024", "prompt": BASE.format(n=n) + desc, "referencias": REFS})
+for k, g in ICONES.items():
+    out.append({"id": k, "tamanho": "1024x1024", "prompt": ICON_PROMPT.format(g=g),
+                "referencias": REFS + [r"D:\openclaude\_trabalho-claude\arte-ui-work\icones\icone_tiro.png"]})
+json.dump(out, open("prompts_fogo.json", "w", encoding="utf-8"), indent=1, ensure_ascii=False)
+print(len(out), "prompts")
