@@ -31,7 +31,7 @@ Motor: **Godot 4 (.NET, C#)** (decisão do dono em 20/10/2026; antes Unity 6.3, 
 - `ShatterCore/bindings/csharp/` — P/Invoke em C# puro (herdado da Unity), usado pelo Godot .NET.
 - `art-src/herdado-unity/` — modelos FBX, texturas e JSON do kit da Cripta tirados da Unity, para importar no Godot.
 - `art-src/graybox/` — malhas provisórias do Blender (scripts, .blend, .fbx no Git LFS, prévias).
-- `tools/dados/validate_data.py` — validador de dados; `tools/core/build_core.cmd` — build e testes do ShatterCore no Windows.
+- `tools/dados/validate_data.py` — validador de dados; `tools/core/build_core.cmd` — build e testes do ShatterCore no Windows. Mapa das pastas de ferramentas em `tools/README.md`.
 - `.claude/agents/` — agentes do projeto: `escolhedor-ferramentas`, `painel-progresso`, `guardiao-github`, `pesquisador-referencias`. `.claude/catalogo-ferramentas.md` — catálogo atividade → skills/repos/ferramentas/modelo.
 - `prototipos/godot-f1/` — protótipo Godot F1 inteiro (histórico, referência de game feel); como rodar em `COMO_RODAR.md`.
 - `docs/README.md` — índice dos documentos por assunto (`design/`, `tecnico/`, `requisitos-qa/`, `arte/`, `pesquisa/`, `progresso/`).
