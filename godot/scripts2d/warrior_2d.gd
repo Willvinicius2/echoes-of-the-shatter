@@ -200,6 +200,9 @@ func _decidir_acao(entrada: Vector2) -> void:
 	if _quer_atacar() and _atk_cd <= 0.0:
 		_comecar_golpe()
 
+func mira_atual() -> Vector2:
+	return _aim
+
 func _quer_atacar() -> bool:
 	return Input.is_action_pressed("shoot") or auto_aim != Vector2.ZERO or not _alvo_basico.is_empty()
 
