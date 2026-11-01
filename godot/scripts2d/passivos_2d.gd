@@ -9,6 +9,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 
 const TAGS := "res://data2d/habilidades_tags.csv"
 const LIMITES := "res://data2d/passivas_limites.csv"
+const PARTIDA := "res://data2d/passivas_partida.csv"
 const OPS := ["add", "inc", "mais", "set"]
 const TIPOS := ["raiz", "pequeno", "notavel", "transforma", "keystone"]
 ## Campos do `def` que um nó pode mirar numa habilidade (`skill:` ou `tag:`). `projeteis` é virtual: vira `qtd` nas
@@ -31,6 +32,9 @@ var pontos := 0
 var persistir := true
 var tags := {}        # id da habilidade -> [tags]
 var limites := {}     # chave -> valor (passivas_limites.csv)
+## Passivas da partida (cartas de nível e nós de preparo): `run_*` nos stats do jogador viram modificadores sintéticos.
+var partida_defs: Array = []   # [{stat, alvo, campo, op, fator}] de passivas_partida.csv
+var partida := {}              # stat run_* -> valor acumulado na corrida (só os diferentes de zero)
 
 ## Carrega os nós da classe (`caminho_csv` = fixture dos testes). Arquivo ausente deixa a árvore vazia, sem erro.
 func carregar_classe(id: String, caminho_csv := "", caminho_tags := "") -> void:
@@ -41,6 +45,8 @@ func carregar_classe(id: String, caminho_csv := "", caminho_tags := "") -> void:
 	pontos = 0
 	limites = Csv.kv(LIMITES) if FileAccess.file_exists(LIMITES) else {}
 	tags = carregar_tags(id, caminho_tags)
+	partida_defs = carregar_partida()
+	partida.clear()
 	var csv: String = caminho_csv if caminho_csv != "" else "res://data2d/passivas_%s.csv" % id
 	if FileAccess.file_exists(csv):
 		for r in Csv.rows(csv):
@@ -69,6 +75,17 @@ static func carregar_tags(classe_id: String, arquivo := "") -> Dictionary:
 	for r in Csv.rows(csv):
 		if r.get("classe", "") == classe_id:
 			out[r["id"]] = _lista(r.get("tags", ""))
+	return out
+
+## Tabela que liga cada stat `run_*` a um modificador de habilidade (data2d/passivas_partida.csv).
+static func carregar_partida(arquivo := "") -> Array:
+	var out := []
+	var csv: String = arquivo if arquivo != "" else PARTIDA
+	if not FileAccess.file_exists(csv):
+		return out
+	for r in Csv.rows(csv):
+		out.append({"stat": str(r["stat"]), "alvo": str(r["alvo"]), "campo": str(r["campo"]),
+			"op": str(r.get("op", "inc")), "fator": _num(r.get("fator", "1"))})
 	return out
 
 static func _lista(s: String) -> Array:
@@ -184,9 +201,34 @@ func tags_de(id: String, extras: Array = []) -> Array:
 			out.append(e)
 	return out
 
+## Lê os `run_*` dos stats do jogador (já com cartas e nós de preparo) e guarda o que vale na partida. Devolve true se
+## mudou (a HUD e as habilidades releem o def).
+func definir_partida(stats: Dictionary) -> bool:
+	var novo := {}
+	for d in partida_defs:
+		var v: float = float(stats.get(d["stat"], 0.0))
+		if v != 0.0:
+			novo[d["stat"]] = v
+	var mudou_algo: bool = novo != partida
+	partida = novo
+	return mudou_algo
+
+## Modificadores sintéticos da partida (mesmo formato dos nós): valor = stat × fator.
+func mods_partida() -> Array:
+	var out := []
+	for d in partida_defs:
+		if partida.has(d["stat"]):
+			out.append({"alvo": d["alvo"], "campo": d["campo"], "op": d["op"],
+				"valor": float(partida[d["stat"]]) * float(d["fator"]), "forma": ""})
+	return out
+
 ## Modificadores ativos que valem para a habilidade `id` com estas tags (`global` fica de fora).
 func mods_para(id: String, tags_hab: Array, extra_ativos: Array = []) -> Array:
 	var out := []
+	for m in mods_partida():
+		var a: String = m["alvo"]
+		if a == "skill:" + id or (a.begins_with("tag:") and tags_hab.has(a.substr(4))):
+			out.append(m)
 	var lista: Array = ativos.keys()
 	for e in extra_ativos:
 		if not lista.has(e):
