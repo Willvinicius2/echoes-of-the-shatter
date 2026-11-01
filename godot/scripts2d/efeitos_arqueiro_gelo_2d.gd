@@ -161,6 +161,7 @@ static func _overlay(inimigo: Node, congelado := false) -> void:
 	s.name = nome
 	s.set_meta("folha", folha)
 	s.z_index = 1
+	s.modulate.a = 0.8 if congelado else 1.0   # o inimigo ainda aparece por baixo do gelo
 	inimigo.get_tree().create_timer(2.5 if congelado else 3.0).timeout.connect(func():
 		if is_instance_valid(s):
 			s.queue_free())
