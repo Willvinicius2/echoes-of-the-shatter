@@ -15,35 +15,7 @@ void fragment() {
 }
 """
 
-## Escurece a faixa de baixo do sprite (oclusão ambiente): a base "afunda" na sombra do próprio chão em vez de
-## ficar clara até a última linha de pixels. `y0` = linha de baixo opaca (UV), `alt` = altura da faixa (UV).
-const BASE_SHADER := """
-shader_type canvas_item;
-uniform float y0 = 1.0;
-uniform float alt = 0.1;
-uniform float forca = 0.5;
-uniform vec3 tinta : source_color = vec3(0.07, 0.06, 0.06);
-void fragment() {
-	float k = clamp((UV.y - (y0 - alt)) / alt, 0.0, 1.0);
-	k = smoothstep(0.0, 1.0, k);
-	COLOR.rgb = mix(COLOR.rgb, tinta * COLOR.a, clamp(k * forca, 0.0, 1.0));
-}
-"""
-
-## Sombra colada à base com a forma real do sprite: só a faixa de baixo da silhueta, em preto.
-const BORDA_SHADER := """
-shader_type canvas_item;
-uniform float y0 = 1.0;
-uniform float alt = 0.1;
-uniform vec4 cor : source_color = vec4(0.0, 0.0, 0.0, 0.6);
-void fragment() {
-	float k = smoothstep(y0 - alt, y0, UV.y);
-	COLOR = vec4(cor.rgb, texture(TEXTURE, UV).a * cor.a * k);
-}
-"""
-
 static var _mat_sombra: ShaderMaterial
-static var _mats_base := {}
 static var _linhas_base := {}
 static var _tex_contato: Texture2D
 
@@ -115,23 +87,80 @@ static func _faixa(id: String, tex: Texture2D, def: Dictionary) -> float:
 	var px := maxf(float(b[1]) / float(def["escala"]) * 1.7, 28.0)
 	return clampf(px / float(tex.get_height()), 0.02, 0.3)
 
-## Material do sprite do prop: base escurecida (props sólidos e arbustos). Árvores, que têm folhas caídas
-## abaixo do tronco, e props rasos ficam sem (têm raízes e contato próprios). Devolve null nesses casos.
-static func material_base(id: String, tex: Texture2D, def: Dictionary) -> Material:
+## Textura do sprite do prop com a faixa colada ao contorno de baixo escurecida (a base "afunda" no chão).
+## Props sólidos e arbustos; árvores (folhas caídas abaixo do tronco) e rasos ficam com a textura original.
+## Devolve null quando não se aplica.
+static func textura_base(id: String, tex: Texture2D, def: Dictionary) -> Texture2D:
 	var t := tipo(id)
 	if t == "arvore" or t == "raso":
 		return null
-	var chave := id
-	if _mats_base.has(chave):
-		return _mats_base[chave]
-	var m := ShaderMaterial.new()
-	m.shader = Shader.new()
-	m.shader.code = BASE_SHADER
-	m.set_shader_parameter("y0", _linha_base(tex))
-	m.set_shader_parameter("alt", _faixa(id, tex, def))
-	m.set_shader_parameter("forca", 0.35 if t == "folhagem" else 0.62)
-	_mats_base[chave] = m
-	return m
+	var c := contorno(id, tex, def)
+	return c.get("base", null)
+
+
+static var _cont_cache := {}
+
+## Contorno de apoio da base: para cada coluna do sprite, a linha de baixo opaca. Devolve
+## {"base": textura igual à do sprite com a faixa colada ao contorno escurecida, "sombra": textura só de alfa
+## preta que sai do contorno para baixo (a sombra de contato com a forma real da base)}. A elipse de antes ficava
+## sob a ponta da frente e deixava as arestas diagonais da base sem contato; agora o escuro segue cada aresta.
+static func contorno(id: String, tex: Texture2D, def: Dictionary) -> Dictionary:
+	if _cont_cache.has(id):
+		return _cont_cache[id]
+	var img := tex.get_image()
+	if img == null:
+		_cont_cache[id] = {}
+		return {}
+	if img.is_compressed():
+		img.decompress()
+	img.convert(Image.FORMAT_RGBA8)
+	var w := img.get_width()
+	var h := img.get_height()
+	var prof := float(base(id, tex, def)[1]) / float(def["escala"])
+	var faixa := clampf(prof * 0.9, 10.0, 34.0)      # px da textura acima do contorno que escurecem
+	var queda := clampf(prof * 0.55, 6.0, 18.0)       # px da textura abaixo do contorno com sombra
+	var yb := PackedFloat32Array()
+	yb.resize(w)
+	for x in w:
+		yb[x] = -1.0
+		for y in range(h - 1, -1, -1):
+			if img.get_pixel(x, y).a > 0.5:
+				yb[x] = float(y)
+				break
+	var pad := int(queda) + 6
+	var base_img := img.duplicate() as Image
+	var sombra := Image.create(w + 12, h + pad, false, Image.FORMAT_RGBA8)
+	var col := PackedFloat32Array()
+	col.resize(w + 12)
+	for x in w:
+		if yb[x] < 0.0:
+			continue
+		for y in range(maxi(int(yb[x] - faixa), 0), int(yb[x]) + 1):
+			var px := base_img.get_pixel(x, y)
+			if px.a < 0.05:
+				continue
+			var k := 1.0 - (yb[x] - float(y)) / faixa
+			k = k * k * (3.0 - 2.0 * k)
+			var f := 1.0 - 0.6 * k
+			base_img.set_pixel(x, y, Color(px.r * f * 0.95, px.g * f * 0.95, px.b * f, px.a))
+	# sombra: por coluna, alfa cai do contorno para baixo; depois espalha 5 px para os lados (borrão leve)
+	for x in w:
+		if yb[x] < 0.0:
+			continue
+		for d in range(-2, int(queda) + 1):
+			var y := int(yb[x]) + d
+			if y < 0 or y >= h + pad:
+				continue
+			var a := 0.85 * pow(1.0 - clampf(float(d) / queda, 0.0, 1.0), 1.4)
+			for dx in range(-5, 6):
+				var xx := x + dx + 6
+				var aa := a * (1.0 - absf(float(dx)) / 6.0)
+				if xx >= 0 and xx < w + 12 and aa > sombra.get_pixel(xx, y).a:
+					sombra.set_pixel(xx, y, Color(0.0, 0.0, 0.01, aa))
+	col.clear()
+	var r := {"base": ImageTexture.create_from_image(base_img), "sombra": ImageTexture.create_from_image(sombra)}
+	_cont_cache[id] = r
+	return r
 
 ## `chao`: nó da sala para os decalques. `atras` e `frente`: filhos do nó do prop antes e depois do sprite.
 ## `pe`: posição do pé do prop (mesma do nó). `def` vem de props_2d.csv, `arte` de props_manifest.csv.
@@ -224,26 +253,24 @@ static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Di
 	sp.self_modulate.a = 0.8 if t == "folhagem" else 1.0
 	chao.add_child(sp)
 
-## Faixa escura que acompanha a base do sprite (forma real, um pouco maior e deslocada para baixo): é o que
-## cola a aresta da frente no chão, onde a elipse suave sozinha ficava escondida sob o próprio sprite.
+## Sombra de contato com a forma real da base (ver `contorno`): sai de cada aresta de baixo do sprite, então as
+## diagonais da base de um pilar ou tumba encostam no chão em vez de só a ponta da frente.
 static func _sombra_borda(chao: Node2D, tex: Texture2D, id: String, def: Dictionary, arte: Dictionary, flip: bool, pe: Vector2, t: String) -> void:
+	var c := contorno(id, tex, def)
+	if c.is_empty():
+		return
 	var esc := float(def["escala"])
-	var m := ShaderMaterial.new()
-	m.shader = Shader.new()
-	m.shader.code = BORDA_SHADER
-	m.set_shader_parameter("y0", _linha_base(tex))
-	m.set_shader_parameter("alt", _faixa(id, tex, def) * 0.8)
-	m.set_shader_parameter("cor", Color(0.0, 0.0, 0.01, 0.5 if t == "folhagem" else 0.9))
 	var sp := Sprite2D.new()
-	sp.texture = tex
+	sp.texture = c["sombra"]
 	sp.centered = false
 	sp.flip_h = flip
-	sp.offset = -Vector2(float(arte["pivo_x"]), float(arte["pivo_y"]))
+	var ox := float(arte["pivo_x"]) + 6.0   # a textura de sombra tem 6 px de folga de cada lado
+	sp.offset = -Vector2(ox, float(arte["pivo_y"]))
 	if flip:
-		sp.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
-	sp.material = m
-	sp.position = pe + Vector2(3.0, 5.0)
-	sp.scale = Vector2(esc * 1.12, esc * 1.06)
+		sp.offset.x = -(float(c["sombra"].get_width()) - ox)
+	sp.position = pe + Vector2(1.0, 1.5)
+	sp.scale = Vector2.ONE * esc
+	sp.modulate.a = 0.6 if t == "folhagem" else 1.0
 	chao.add_child(sp)
 
 ## Lascas de pedra e poeira soltas junto da base em piso de pedra (no gramado quem faz isso são terra e capim).

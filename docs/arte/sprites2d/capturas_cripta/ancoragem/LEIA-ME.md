@@ -44,3 +44,6 @@ Causa: nos pisos de pedra (sala do chefe, ossuário, arenas) o pilar ou a tumba 
 - **Entulho** (`_entulho()`): lascas de pedra com sombra junto da base em piso de pedra.
 - **Checagem automática** (`_testar_ancoragem` em `test_2d.gd`, roda no CI): o pivô de todo prop do manifesto fica na base opaca do sprite (±6 px), e em toda sala todo prop tem decalques de contato e, se sólido ou arbusto, o material de base.
 Capturas: `prancha_pedra.jpg` (sala do chefe, antes à esquerda e depois à direita) e `prancha_fase.jpg` (fase aberta).
+
+### Segunda rodada: causa de fundo (Will: "ainda está voando")
+A primeira rodada só aumentou a força de efeitos em elipse. Num zoom de 6x ficou claro o problema: os sprites são pedestais em 3/4 com base em losango, e o contato era uma elipse sob a ponta da frente, sem tocar as duas arestas diagonais da base. O chão ao lado dessas arestas ficava limpo, então o objeto parecia pousado em cima do piso. Agora `contorno()` mede, coluna por coluna, a linha de baixo opaca do sprite e gera (1) uma textura do sprite com a faixa colada ao contorno escurecida e (2) uma textura de sombra preta que sai de cada aresta para baixo, com borrão lateral. Os shaders por UV da primeira rodada saíram. Capturas: `pilar_depois_zoom.png`, `prancha_pedra.jpg`, `prancha_grama.jpg`, `prancha_fase.jpg`.

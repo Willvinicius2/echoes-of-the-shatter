@@ -1102,7 +1102,7 @@ func _testar_habilidades_arqueiro() -> void:
 ## Padrão do pipeline: todo prop de toda sala nasce assentado no chão. Confere em cada sala que (1) o pivô do
 ## manifesto fica na linha de baixo opaca do sprite (senão o objeto flutua ou afunda), (2) todo prop tem
 ## decalques de contato no nó ChaoProps (pelo menos sombra larga e núcleo) e (3) props sólidos e arbustos têm
-## o material de base escurecida no sprite.
+## a textura de base escurecida no sprite.
 func _testar_ancoragem() -> void:
 	var Ancoragem = preload("res://scripts2d/ancoragem_2d.gd")
 	var arte := {}
@@ -1145,7 +1145,7 @@ func _testar_ancoragem() -> void:
 			if t == "solido" or t == "folhagem":
 				var d: Dictionary = room._props_def[p["id"]]
 				var tex: Texture2D = room._carregar_textura(room._props_arte[p["id"]]["arquivo"])
-				if Ancoragem.material_base(p["id"], tex, d) == null:
+				if Ancoragem.textura_base(p["id"], tex, d) == null:
 					sem_material += 1
 		# cada prop deixa pelo menos 2 decalques (sombra larga e núcleo de contato)
 		if chao.get_child_count() < n_props * 2:
