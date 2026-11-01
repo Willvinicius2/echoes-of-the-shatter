@@ -88,4 +88,5 @@ skill.arauto_cinzas.desc,O dano que sobra ao abater um inimigo vira uma explosã
 Estado da arte: ver a seção "Estado" abaixo, atualizada quando as folhas passarem pela revisora.
 
 ## Estado
-- Código e prompts prontos; sem arte final ainda (o jogo usa o desenho de código no lugar).
+- Código, prompts e as 9 folhas + 4 ícones gerados e commitados em `godot/art2d/fx/fogo/` (prancha de conferência: `/mnt/project-files/arqueiro/fogo/prancha_fogo.png`). Aguardando a revisora. Resíduo roxo suave nas bordas de fumaça (magenta); dá para endurecer o `key` se a revisora pedir.
+- Arauto das Cinzas, ajuste pela referência PoE 2: o abate só explode se a sobra passar de uma fração mínima da vida máxima do inimigo (proposta ~20%); a queimadura do Arauto não empilha, só renova. Se o integrador preferir, trocar `minimo` (absoluto) por `min_overkill_pct` no CSV e converter em `ao_abate`.
