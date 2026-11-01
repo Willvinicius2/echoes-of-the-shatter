@@ -189,6 +189,7 @@ func _testar_telegrafo() -> void:
 	var mundo := Node2D.new()
 	root.add_child(mundo)
 	var p = load("res://scripts2d/player_2d.gd").new()
+	p.autocast = false   # o teste é do telégrafo do inimigo: o jogador não pode matá-lo atirando sozinho (e vazar o mundo)
 	mundo.add_child(p)
 	var e = load("res://scripts2d/enemy_2d.gd").new()
 	mundo.add_child(e)
@@ -1094,6 +1095,15 @@ func _alvos_mago(mundo: Node, m: Node) -> Array:
 ## direção mirada (CSV de ancoragem, espelhado à esquerda), desce até a altura de voo; a aura de Herald fica atrás do
 ## ator, como elipse no chão, com alfa limitado; o projétil em arco cria a sombra de aviso no destino e chama o impacto ao cair.
 func _testar_fisica_habilidades() -> void:
+	var HabScript = load("res://scripts2d/habilidades_2d.gd")
+	var caminho_antes: String = HabScript.caminho
+	HabScript.caminho = "user://teste_fisica_habilidades_2d.json"   # save próprio: o que este teste aprende não vaza para os outros
+	DirAccess.remove_absolute(HabScript.caminho)
+	await _fisica_habilidades()
+	DirAccess.remove_absolute(HabScript.caminho)
+	HabScript.caminho = caminho_antes
+
+func _fisica_habilidades() -> void:
 	var Vfx = load("res://scripts2d/vfx_2d.gd")
 	var Feel = load("res://scripts2d/feel_2d.gd")
 	for k in ["aura_diametro", "aura_alfa", "aura_altura", "muzzle_flash_time", "shot_recoil_px", "arc_shadow_alpha", "zone_ring_time", "zone_fade_time"]:
