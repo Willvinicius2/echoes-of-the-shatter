@@ -47,6 +47,12 @@ func rodar() -> void:
 	for sl in p.habilidades.slots:
 		cru = cru and sl == ""
 	check.call(cru, "horda: a corrida começa só com o ataque básico (nada aprendido, slots vazios)")
+	# Camadas: a árvore fixa (core do hub) é outra que a da partida, e passiva de gema entra nos stats na hora.
+	check.call(run.arvore_fixa != null and run.arvore_fixa != p.habilidades, "horda: a camada de partida é separada da árvore fixa")
+	var dano0: float = p.stats["arrow_damage"]
+	run._aprender_gema("steady_aim")
+	check.call(p.habilidades.nivel("steady_aim") == 1 and p.stats["arrow_damage"] > dano0, "horda: passiva ganha na gema aumenta os stats (%.1f -> %.1f)" % [dano0, p.stats["arrow_damage"]])
+	check.call(run.arvore_fixa.nivel("steady_aim") == 0, "horda: a árvore fixa não muda com a gema da partida")
 	p.autocast = false
 	check.call(run.horda and run.room.aberta() and run.fase_horda != "", "horda: fase aberta usa o spawner do core")
 	await _esperar(func(): return t.get_nodes_in_group("hurtable").size() > 0, 3.0)

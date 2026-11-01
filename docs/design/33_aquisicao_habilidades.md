@@ -1,47 +1,54 @@
-# 33 — Como o personagem adquire habilidades na corrida de hordas
+# 33 — Como o personagem adquire habilidades
 
-Pedido do Will (01/11/2026): o personagem começa no mapa cru, só com o ataque básico, e ganha habilidades
-conforme sobe de nível e dropa gemas. Vale para as sete árvores do Arqueiro (precisão, caça, sombra, veneno,
-gelo, fogo, raio) e para os Heralds, e depois para o Mago e o Guerreiro com as árvores deles.
+Decisão do Will (01/11/2026, refinada no mesmo dia): o jogo tem **duas camadas** de progressão de habilidade.
 
-## Regras
+## Camada 1 — árvore fixa (permanente)
 
-1. **Começo cru.** Toda corrida de hordas começa sem nenhuma habilidade aprendida e com os 4 slots vazios.
-   Só o ataque básico dispara (autocast). A árvore da corrida é nova a cada corrida (núcleo próprio, sem
-   o saldo de pontos do hub, sem gravar save). Chave: `skill_from_scratch` em `run_settings.csv`.
-2. **Subir de nível.** As gemas de XP enchem o Cristal de Eco. Cada nível dá um reforço de atributo (carta,
-   como antes). A cada `skill_gem_every_levels` níveis (hoje 2) o jogador ganha uma gema de habilidade.
-   Os pontos por nível do core ficam desligados (`skill_points_every_levels = 0`).
-3. **Gema de habilidade por drop.** Elite (`skill_gem_elite`) e Guardião (`skill_gem_boss`) soltam uma gema
-   no chão, que voa até o jogador como as gemas de XP.
-4. **O que a gema faz.** Abre a escolha entre `skill_gem_cards` (hoje 3) habilidades sorteadas entre as que a
-   árvore já libera: raiz sem pré-requisito, ou filha cujo pai já foi aprendido, ainda abaixo do `nivel_max`.
-   Escolher uma já aprendida sobe um nível dela. Ativa nova entra no primeiro slot livre; passivas e Heralds
-   valem na hora. A gema guarda só o `id` de `habilidades_<classe>.csv`, sem duplicar dados. Se já há uma
-   tela aberta (carta de nível ou outra gema), a gema espera na fila e abre quando a atual fechar.
-5. **Cartas continuam** como reforço de atributo (vida, dano, velocidade), independentes das gemas.
+É a árvore de habilidades de hoje (tecla T), que fica no personagem para sempre, como a árvore de passivas do
+Path of Exile. O que o jogador deixa pronto nela vale em **toda** corrida: ela guarda as passivas que ele escolheu
+fixar, e os pontos gastos nela não zeram. Vive no core do hub (com save). As passivas dela entram nos stats por
+`corrida_stats` do core, como sempre.
 
-## Efeito no ritmo
+## Camada 2 — habilidades da partida (zeram a cada corrida)
 
-Com `skill_gem_every_levels = 2`, um jogador que chega ao nível 8 escolheu 4 habilidades por nível, mais as
-dos elites. As primeiras ondas são só de ataque básico, o que deixa o começo legível e faz cada gema pesar.
-Como a escolha é entre 3, dá para montar build (ir fundo numa árvore) ou espalhar.
+A corrida de hordas começa **só com o ataque básico**: nenhuma ativa, nenhum Herald, 4 slots vazios. Dentro da
+partida o jogador sobe o que **muda a cada corrida**: skills (ativas), Heralds (Herald of Thunder, Herald of Ashes,
+Peste, Gelo) e passivas de partida. Esta camada vive num core próprio, sem save, criado de novo no início da corrida
+(`skill_from_scratch`), e é a que o combate usa (`player.habilidades`). Os stats finais são
+`base + meta + cartas + árvore fixa + passivas da partida`.
 
-## O que fica no CSV (`run_settings.csv`)
+## Como a partida ganha habilidades
+
+1. **Subir de nível** (gemas de XP enchem o Cristal de Eco): cada nível dá um reforço de atributo (carta). A cada
+   `skill_gem_every_levels` níveis (2) o jogador ganha uma **gema de habilidade**.
+2. **Elite e Guardião** soltam uma gema de habilidade no chão (`skill_gem_elite`, `skill_gem_boss`).
+3. **A gema abre uma escolha** entre `skill_gem_cards` (3) habilidades sorteadas entre as que a árvore da classe
+   libera: raiz sem pré-requisito, ou filha cujo pai já foi aprendido na partida, abaixo do `nivel_max`. Escolher
+   uma já aprendida sobe o nível dela. Ativa nova entra no primeiro slot livre; passivas e Heralds valem na hora
+   (os stats são recalculados). A gema guarda só o `id` de `habilidades_<classe>.csv`.
+4. **Passivas de partida em carta** (reforços de atributo em `upgrades.csv`, sem código novo): dano, velocidade de
+   ataque, vida, esquiva, projéteis, perfuração, **chance de crítico** (`crit`), **dano crítico** (`crit_power`) e
+   **recarga de habilidades** (`focus`, `skill_cd_mult`). Aumentar o tamanho da habilidade depende de um stat de área
+   que os efeitos ainda não leem (pendente com a thread das habilidades do Arqueiro).
+
+As duas camadas se somam: uma passiva fixada na árvore e a mesma ganha na partida valem as duas.
+
+## Números (todos em `run_settings.csv`)
 
 | chave | hoje | o que faz |
 |---|---|---|
-| `skill_from_scratch` | 1 | corrida começa sem habilidades |
+| `skill_from_scratch` | 1 | corrida começa só com o ataque básico |
 | `skill_gem_every_levels` | 2 | gema de habilidade a cada N níveis |
 | `skill_gem_elite` | 1.0 | chance de o elite soltar gema |
 | `skill_gem_boss` | 1.0 | chance de o Guardião soltar gema |
 | `skill_gem_cards` | 3 | quantas habilidades a gema oferece |
-| `skill_points_every_levels` | 0 | pontos por nível do core (desligado) |
+| `skill_points_every_levels` | 0 | pontos por nível do core para a árvore fixa (desligado) |
 
 ## Pendências de design (para o Will)
 
-- O sorteio das 3 opções usa o RNG do cliente, então não é reproduzível por semente. Mover para o core se
-  quisermos replays e bot determinístico.
-- Raridade de gema (Heralds só em elite/Guardião) e custo de slot, como no Path of Exile.
-- Os 4 slots: quando enchem, uma ativa nova não entra em slot nenhum. Falta a troca de slot na tela da gema.
-- Balanceamento dos números acima é provisório e fica só nos CSV.
+- Como a árvore fixa ganha pontos: hoje só o Guardião derrotado dá pontos (`skill_points_boss`). Dar também XP de
+  conta por corrida é uma decisão de meta-progressão.
+- O sorteio das opções usa o RNG do cliente (não reproduzível por semente); mover para o core se quisermos replays.
+- Com os 4 slots cheios uma ativa nova não entra em slot nenhum: falta a troca de slot na tela da gema.
+- Stat de tamanho da habilidade (área) para as passivas de partida e a fixa.
+- Balanceamento provisório; tudo nos CSV.

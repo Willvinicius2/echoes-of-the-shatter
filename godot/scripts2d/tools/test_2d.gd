@@ -81,7 +81,7 @@ func _testar_upgrades() -> void:
 	var UpScript = preload("res://scripts2d/upgrades_2d.gd")
 	var PlayerScript = preload("res://scripts2d/player_2d.gd")
 	var up = UpScript.new()
-	check(up.defs.size() >= 6 and up.defs.size() <= 8, "pool de 6 a 8 upgrades")
+	check(up.defs.size() >= 6 and up.defs.size() <= 12, "pool de 6 a 12 upgrades")
 	for id in up.defs:
 		check(Csv.t("upgrade.%s.name" % id) != "upgrade.%s.name" % id and Csv.t("upgrade.%s.desc" % id) != "upgrade.%s.desc" % id, "texto de %s" % id)
 	var p = PlayerScript.new()

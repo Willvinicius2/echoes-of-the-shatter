@@ -7,3 +7,6 @@ multishot,arrow_count,add,1,2,ataque,rara
 pierce,arrow_pierce,add,1,2,ataque,rara
 evasion,dodge_cooldown,mult,-0.2,3,defesa,comum
 ember_tip,arrow_damage,add,4,2,ataque,rara
+crit,crit_chance,add,0.05,3,ataque,comum
+crit_power,crit_mult,add,0.25,3,ataque,rara
+focus,skill_cd_mult,mult,-0.08,3,utilidade,comum

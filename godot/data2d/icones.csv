@@ -83,3 +83,6 @@ shock_arrow,seta,#8cc8ff,arqueiro: icone pintado
 chain_lightning,seta,#8cc8ff,arqueiro: icone pintado
 storm_tornado,seta,#8cc8ff,arqueiro: icone pintado
 herald_thunder,seta,#8cc8ff,arqueiro: icone pintado
+crit,seta,#f2d36b,Olho Clinico
+crit_power,seta,#e85a4a,Golpe Fatal
+focus,seta,#8cc8ff,Mente Afiada

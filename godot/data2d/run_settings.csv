@@ -45,4 +45,4 @@ skill_gem_boss,1.0,chance,chance de o Guardiao soltar uma gema de habilidade
 skill_from_scratch,1,flag,modo horda: a corrida comeca sem habilidades (so o ataque basico) numa arvore propria da corrida e sem o saldo do hub
 skill_gem_every_levels,2,niveis,modo horda: a cada este numero de niveis do Cristal o jogador ganha uma gema de habilidade
 skill_gem_cards,3,cartas,quantas habilidades a gema oferece para escolher
-horde_stuck_checks,4,conferencias,inimigo na vista sem linha de visao e sem se aproximar por este numero de conferencias (horde_leash_check) volta ao anel
+horde_stuck_checks,4,conferencias,inimigo sem linha de visao e sem se aproximar por este numero de conferencias (horde_leash_check) volta ao anel

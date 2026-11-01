@@ -22,6 +22,7 @@ const MagoScript = preload("res://scripts2d/mago_2d.gd")
 const CorridaGuerreiroScript = preload("res://scripts2d/corrida_guerreiro_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
+const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
@@ -71,6 +72,7 @@ var _timer := 0.0
 var _estado_antes := Estado.LUTA
 var portal: Area2D          # saída da fase aberta, aberta depois do chefe
 var _pos_chefe := Vector2.ZERO
+var arvore_fixa: RefCounted   # árvore permanente do personagem (core do hub); player.habilidades é a camada que o combate usa
 var _gemas_pendentes := 0   # gemas de habilidade esperando a tela atual fechar
 # Modo horda
 var horda := false          # a corrida atual usa o spawner do core
@@ -136,18 +138,39 @@ func _ready() -> void:
 func _habilidades_do_zero() -> bool:
 	return not modo_etapas and int(config.get("horda", 0)) == 1 and int(config.get("skill_from_scratch", 0)) == 1
 
+## Duas camadas de habilidade (decisão do Will, doc 33): a árvore FIXA fica no personagem para sempre (core do hub, tecla T,
+## passivas valem em toda corrida). A camada de PARTIDA começa vazia a cada corrida (só o ataque básico) e guarda as ativas,
+## os Heralds e as passivas ganhos por nível e gemas; ela vive num core próprio, sem save. `player.habilidades` aponta para a
+## camada que o combate usa (partida no modo horda, fixa no resto).
+func _montar_camada_partida() -> void:
+	var tem_heralds: bool = player.has_method("_atualizar_heralds")
+	if tem_heralds and player.habilidades != arvore_fixa and player.habilidades.mudou.is_connected(player._atualizar_heralds):
+		player.habilidades.mudou.disconnect(player._atualizar_heralds)   # camada de partida da corrida anterior
+	if _habilidades_do_zero() and horda:
+		var h: RefCounted = HabilidadesScript.new()
+		h.persistir = false
+		h.carregar_classe(Classe.atual)   # sem núcleo: cria um core novo e vazio
+		player.habilidades = h
+		if tem_heralds:
+			h.mudou.connect(player._atualizar_heralds)
+			player._atualizar_heralds()
+	else:
+		player.habilidades = arvore_fixa
+	upgrades.camada_partida = player.habilidades if player.habilidades != arvore_fixa else null
+	upgrades.habilidades = arvore_fixa
+	if arvore != null:
+		arvore.definir(arvore_fixa)
+
 ## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro e mago: cartas do core; guerreiro: só a árvore comum).
 func _criar_classe() -> void:
 	var guerreiro: bool = Classe.atual == "guerreiro"
 	player = (WarriorScript if guerreiro else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
 	player.died.connect(_on_player_died)
 	atores.add_child(player)
+	arvore_fixa = player.habilidades   # recém-criado: ainda é a árvore fixa (core do meta); a camada de partida entra no início da corrida
 	upgrades = (CorridaGuerreiroScript if guerreiro else UpgradesScript).new()
 	upgrades.meta = meta
 	player.habilidades.nucleo = nucleo   # árvore de habilidades com as regras no core do meta (as 3 classes)
-	if _habilidades_do_zero():
-		player.habilidades.nucleo = null   # árvore própria da corrida: carregar_classe cria um core novo, vazio
-		player.habilidades.persistir = false
 	if guerreiro:
 		player.habilidades.carregar_classe("guerreiro")
 	else:  # arqueiro e mago: stats da classe e a árvore
@@ -195,13 +218,7 @@ func iniciar_corrida() -> void:
 	nucleo.corrida_cartas_externas(guerreiro)
 	if not guerreiro:
 		upgrades.semente = int(rng.seed)
-	if _habilidades_do_zero() and horda:
-		player.habilidades.nucleo = null   # árvore nova a cada corrida (nada aprendido, slots vazios)
-		player.habilidades.persistir = false
-		player.habilidades.carregar_classe(Classe.atual)
-		upgrades.habilidades = player.habilidades
-		if arvore != null:
-			arvore.definir(player.habilidades)
+	_montar_camada_partida()
 	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador; o arqueiro também começa a corrida no core
 	if guerreiro:
 		nucleo.corrida_iniciar(int(rng.seed), upgrades.base_numerica())
@@ -388,13 +405,14 @@ func _reposicionar_presos() -> void:
 		e.set_meta("dist_antes", d)
 		var parado := d >= antes - 4.0
 		var voltar := false
-		if not v.has_point(e.global_position):
-			voltar = d > longe or (d > preso and parado)
-		else:
-			# Na vista mas travado atrás de muro ou água (sem linha de visão): o jogador não o alcança nem ele ao jogador.
-			var n := int(e.get_meta("preso_n", 0)) + 1 if parado and not Alvos.ve(get_tree(), e.global_position, player.global_position) else 0
-			e.set_meta("preso_n", n)
-			voltar = n >= checks
+		if not v.has_point(e.global_position) and (d > longe or (d > preso and parado)):
+			voltar = true
+		# Sem linha de visão (muro, água) e sem se aproximar por `horde_stuck_checks` conferências: o jogador não o acerta
+		# e ele não chega ao jogador (chase direto, sem rota). Vale também perto e dentro da vista.
+		var n := int(e.get_meta("preso_n", 0)) + 1 if parado and not Alvos.ve(get_tree(), e.global_position, player.global_position) else 0
+		e.set_meta("preso_n", n)
+		if n >= checks:
+			voltar = true
 		if voltar:
 			var p: Array = room.pontos_fora_da_vista(v, float(config.get("spawn_margem_min", 1.0)) * t, float(config.get("spawn_margem_max", 4.0)) * t, 1, rng)
 			if not p.is_empty():
@@ -546,6 +564,7 @@ func _aprender_gema(id: String) -> void:
 	h.ganhar_pontos(int(h.defs[id].get("pontos", 1)))
 	if h.aprender(id) and h.eh_ativa(id) and not h.slots.has(id) and h.slots.has(""):
 		h.equipar(h.slots.find(""), id)
+	upgrades.reaplicar(player)   # passivas da partida entram nos stats agora
 	hud.mensagem = Csv.t("hud.skill_gem") % Csv.t("skill.%s.name" % id)
 
 ## Abre a tela de cartas se o core tem uma oferta de nível ou de baú esperando.

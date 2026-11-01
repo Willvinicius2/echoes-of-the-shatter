@@ -310,3 +310,9 @@ ramo.fogo.name,Fogo
 ramo.fogo.desc,Queimadura, meteoros e chão em brasas
 ramo.raio.name,Raio
 ramo.raio.desc,Choque, raios encadeados e tempestade
+upgrade.crit.name,Olho Clínico
+upgrade.crit.desc,+5% de chance de golpe crítico
+upgrade.crit_power.name,Golpe Fatal
+upgrade.crit_power.desc,+25% de dano nos críticos
+upgrade.focus.name,Mente Afiada
+upgrade.focus.desc,Habilidades recarregam 8% mais rápido

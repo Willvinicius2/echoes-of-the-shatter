@@ -13,6 +13,7 @@ const RunScene = preload("res://scenes2d/Run2D.tscn")
 
 const LIMITE_SALA := 240.0     # s simulados numa sala sem sair dela = travou (modo horda: LIMITE_ONDA)
 const LIMITE_ONDA := 420.0     # modo horda: uma onda pode durar ate este tempo com o teto cheio
+const BOT_SEM_ABATE := 45.0    # modo horda: sem nenhum abate por este tempo, o bot sai do canto onde encalhou (centro do mapa)
 const LIMITE_CORRIDA := 1500.0 # s simulados numa corrida inteira = travou
 const BOT_ONDA_CHEFE := 6      # modo horda: a partir desta onda o bot vai ao altar acordar o Guardião
 const BOT_COLETA := 3.0        # s entre as coletas de gemas (o bot não anda até elas; um jogador anda)
@@ -79,6 +80,8 @@ func _corrida(n: int) -> Dictionary:
 	var r := {"corrida": n + 1, "resultado": "travou", "sala_final": 1, "morreu_na_sala": 0, "tempo": 0.0, "cartas": 0, "vida_final": 0.0, "salas": salas_tempo,
 		"classe": preload("res://scripts2d/classe_2d.gd").atual, "horda": run.horda, "nivel": 1, "mortes": 0, "dps_chefe": 0.0, "vida_chefe": 0.0, "pico_vivos": 0}
 	var coleta_t := 0.0
+	var ultimo_abate := 0
+	var sem_abate := 0.0
 	var sala := 0
 	var t_sala := 0.0
 	var t_corrida := 0.0
@@ -95,6 +98,14 @@ func _corrida(n: int) -> Dictionary:
 		r["pico_vivos"] = maxi(int(r["pico_vivos"]), run.vivos)
 		if run.horda and run.estado == run.Estado.LUTA:
 			r["mortes"] = maxi(int(r["mortes"]), int(run.nucleo.ondas_estado().get("killed", 0)))
+		if run.horda and run.estado == run.Estado.LUTA:
+			# Encalhado num canto sem linha de tiro: um jogador andaria; o bot é levado ao centro do mapa.
+			sem_abate = 0.0 if int(r["mortes"]) != ultimo_abate else sem_abate + dt
+			ultimo_abate = int(r["mortes"])
+			if sem_abate > BOT_SEM_ABATE:
+				sem_abate = 0.0
+				var centro: Vector2 = run.room.tamanho_px() / 2.0
+				p.global_position = run.room.empurrar_para_dentro(centro + Vector2(rng.randf_range(-600.0, 600.0), rng.randf_range(-600.0, 600.0)))
 		if run.horda:
 			coleta_t += dt
 			if coleta_t >= BOT_COLETA:
@@ -104,13 +115,23 @@ func _corrida(n: int) -> Dictionary:
 		r["sala_final"] = sala + 1
 		if int(t_corrida * 60.0) % 600 == 0:
 			var perto := INF
+			var com_visao := 0
+			var na_tela := 0
+			var amostra := ""
 			for e in get_nodes_in_group("hurtable"):
 				if is_instance_valid(e):
-					perto = minf(perto, e.global_position.distance_to(p.global_position))
-			print("[bot] wall=%d corrida %d t=%.0f sala=%d estado=%d vivos=%d hp=%.0f mortes=%d nivel=%s pausa=%s ui=%s/%s jog=%s pos=%s perto=%.0f slots=%s" % [
+					var dist: float = e.global_position.distance_to(p.global_position)
+					if dist < perto:
+						perto = dist
+						amostra = "%s est=%s pos=%s" % [e.stats.get("id", "?"), e.estado, e.global_position.round()]
+					if preload("res://scripts2d/alvos_2d.gd").ve(self, p.global_position, e.global_position):
+						com_visao += 1
+					if run.vista().has_point(e.global_position):
+						na_tela += 1
+			print("[bot] wall=%d corrida %d t=%.0f sala=%d estado=%d vivos=%d hp=%.0f mortes=%d nivel=%s pausa=%s ui=%s/%s jog=%s pos=%s perto=%.0f los=%d tela=%d mais_perto=[%s] slots=%s" % [
 				Time.get_ticks_msec() / 1000, n + 1, t_corrida, sala + 1, run.estado, run.vivos, p.hp, r["mortes"],
 				run.upgrades.nivel_estado().get("level", 0) if run.upgrades.has_method("nivel_estado") else 0,
-				paused, run.ui.aberta, run.ui.modo, p.estado, p.global_position.round(), perto,
+				paused, run.ui.aberta, run.ui.modo, p.estado, p.global_position.round(), perto, com_visao, na_tela, amostra,
 				p.habilidades.slots if "habilidades" in p and p.habilidades != null else []])
 		r["vida_final"] = p.hp
 		if run.estado == run.Estado.VENCEU:
