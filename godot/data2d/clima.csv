@@ -30,3 +30,5 @@ fogo_fps,12,quadros/s,quadros por segundo do fogo (passos como folha de sprites)
 tigela_borda,0.31,0..1,linha da borda da tigela no tile do braseiro (acima disso a chama pintada some)
 tigela_fundo,0.53,0..1,fundo da tigela (entre a borda e o fundo o fogo pintado vira carvão)
 escala_area_max,8,,teto do multiplicador de nuvens/poeira/folhas em mapas grandes
+poca_alpha,0.28,0..1,força da poça de luz quente no chão em volta do braseiro
+poca_raio,230,px,raio da poça de luz quente do braseiro
