@@ -278,6 +278,19 @@ TEST(rogue_levels_horde_mode_and_win) {
     RogueState t(d);
     ASSERT_TRUE(t.RestoreState(s.StateJson()));
     EXPECT_TRUE(t.Horde());
+    // Sem salas limpas, os pontos de habilidade vêm dos níveis.
+    const int every = d.SkillPointsEveryLevels();
+    if (every > 0 && t.ClassIndex() >= 0) {
+        RogueState h(d);
+        h.SetHorde(true);
+        h.StartRun(4, Base());
+        const std::int64_t p0 = h.SkillPoints();
+        std::int64_t need = 0;
+        for (int l = 1; l <= every; ++l) need += d.XpForLevel(l);
+        h.GainXp(need);
+        EXPECT_EQ(h.CharLevel(), every + 1);
+        EXPECT_EQ(h.SkillPoints(), p0 + 1);
+    }
 }
 
 TEST(rogue_levels_boss_hp_adaptive) {

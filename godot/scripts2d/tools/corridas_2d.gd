@@ -11,7 +11,8 @@ extends SceneTree
 const Csv = preload("res://scripts2d/csv2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 
-const LIMITE_SALA := 240.0     # s simulados numa sala sem sair dela = travou
+const LIMITE_SALA := 240.0     # s simulados numa sala sem sair dela = travou (modo horda: LIMITE_ONDA)
+const LIMITE_ONDA := 420.0     # modo horda: uma onda pode durar ate este tempo com o teto cheio
 const LIMITE_CORRIDA := 1500.0 # s simulados numa corrida inteira = travou
 const BOT_ONDA_CHEFE := 6      # modo horda: a partir desta onda o bot vai ao altar acordar o Guardião
 const BOT_COLETA := 3.0        # s entre as coletas de gemas (o bot não anda até elas; um jogador anda)
@@ -111,7 +112,7 @@ func _corrida(n: int) -> Dictionary:
 			r["resultado"] = "morte"
 			r["morreu_na_sala"] = sala + 1
 			break
-		if t_sala > LIMITE_SALA or t_corrida > LIMITE_CORRIDA:
+		if t_sala > (LIMITE_ONDA if run.horda else LIMITE_SALA) or t_corrida > LIMITE_CORRIDA:
 			push_error("corrida %d travada na sala %d (estado %d)" % [n + 1, sala + 1, run.estado])
 			break
 		esquiva_t = maxf(0.0, esquiva_t - dt)
@@ -207,7 +208,7 @@ func _agir_horda(p, pode_esquivar: bool, alvo, melhor: float) -> bool:
 		if d < 450.0 and d > 0.01:
 			fuga += de / (d * d) * 10000.0
 	var centro: Vector2 = run.room.tamanho_px() / 2.0
-	var ao_centro := (centro - p.global_position) / maxf(1.0, centro.length())
+	var ao_centro: Vector2 = (centro - p.global_position) / maxf(1.0, centro.length())
 	var mover: Vector2
 	if fuga.length() > 0.05:
 		var lado := Vector2(-fuga.y, fuga.x).normalized()

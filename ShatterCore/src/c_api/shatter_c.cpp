@@ -5327,9 +5327,10 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_gain_xp(shatter_rogu
                                                                   std::int32_t* result) SHATTER_NOEXCEPT {
     if (rogue == nullptr || levels == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
     int n = 0;
+    const std::int64_t before = rogue->state.SkillPoints();
     *result = static_cast<std::int32_t>(rogue->state.GainXp(amount, &n));
     *levels = n;
-    return SHATTER_OK;
+    return rogue->state.SkillPoints() != before ? RogueAutoSave(rogue) : SHATTER_OK;  // pontos de habilidade são do meta
 }
 
 SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_open_chest(shatter_rogue* rogue, std::int32_t* result) SHATTER_NOEXCEPT {

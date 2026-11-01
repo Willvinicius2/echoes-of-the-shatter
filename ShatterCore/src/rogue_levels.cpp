@@ -89,7 +89,9 @@ void RogueData::FinalizeLevels() {
         }
         out = static_cast<std::int64_t>(v);
     };
-    std::int64_t cards = 0, chest = 0, rerolls = 0, skips = 0, bans = 0;
+    std::int64_t cards = 0, chest = 0, rerolls = 0, skips = 0, bans = 0, every = 0;
+    optInt("skill_points_every_levels", kMaxCards, every);
+    skillEveryLevels_ = static_cast<int>(every);
     optInt("xp_level_base", kMaxXp, xpLevelBase_);
     optInt("xp_level_step", kMaxXp, xpLevelStep_);
     optInt("level_cards", kMaxCards, cards);
@@ -286,6 +288,8 @@ RogueRunResult RogueState::GainXp(std::int64_t amount, int* levelsOut) {
         ++charLevel_;
         ++gained;
         ++pendingLevels_;
+        const int every = data_->SkillPointsEveryLevels();
+        if (horde_ && class_ >= 0 && every > 0 && (charLevel_ - 1) % every == 0) AddSkillPoints(1);
     }
     if (XpNext() <= 0) xp_ = 0;
     NextLevelOffer();

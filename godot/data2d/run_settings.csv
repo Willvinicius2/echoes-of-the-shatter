@@ -20,12 +20,13 @@ spawn_margem_max,4.0,tiles,e no maximo esta distancia fora da borda da tela
 next_wave_delay,1.5,s,pausa entre o fim de uma onda (e a carta) e a proxima na fase aberta
 boss_hint_time,3.0,s,tempo do aviso de onde o chefe espera na fase aberta
 xp_level_base,5,xp,XP para o nivel 2 (gemas de XP; plano 31 H4)
-xp_level_step,8,xp,XP a mais por nivel (nivel n pede base + passo x (n - 1))
+xp_level_step,6,xp,XP a mais por nivel (nivel n pede base + passo x (n - 1))
 level_cards,3,cartas,cartas oferecidas a cada nivel (ao menos uma de ataque)
 chest_cards,3,cartas,cartas raras oferecidas pelo bau de elite
 level_rerolls,2,vezes,sorteios novos da oferta de nivel por corrida
 level_skips,1,vezes,ofertas que o jogador pode pular por corrida
 level_bans,1,vezes,cartas que o jogador pode banir por corrida
+skill_points_every_levels,4,niveis,modo horda: 1 ponto de habilidade a cada este numero de niveis (as salas nao limpam)
 boss_fight_time,45,s,tempo-alvo da luta com o chefe: vida = DPS medido x este tempo
 boss_hp_min,0.6,x,vida minima do chefe (fracao da vida base de enemies.csv)
 boss_hp_max,2.5,x,vida maxima do chefe (multiplo da vida base)

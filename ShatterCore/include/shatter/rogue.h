@@ -234,6 +234,9 @@ public:
     int LevelRerolls() const { return levelRerolls_; }
     int LevelSkips() const { return levelSkips_; }
     int LevelBans() const { return levelBans_; }
+    // Modo horda: 1 ponto de habilidade à classe a cada `skill_points_every_levels` níveis (0 = nunca). Sem salas
+    // limpas, é o que substitui o skill_points_room.
+    int SkillPointsEveryLevels() const { return skillEveryLevels_; }
     // Materiais conhecidos (drops.csv e depois receitas.csv, na ordem em que aparecem).
     const std::vector<ContentId>& Materials() const { return materials_; }
 
@@ -292,7 +295,7 @@ private:
     double restHeal_ = 0.0;
     std::int64_t skillPointsRoom_ = 0, skillPointsBoss_ = 0;
     std::int64_t xpLevelBase_ = 0, xpLevelStep_ = 0;
-    int levelCards_ = 0, chestCards_ = 0, levelRerolls_ = 0, levelSkips_ = 0, levelBans_ = 0;
+    int levelCards_ = 0, chestCards_ = 0, levelRerolls_ = 0, levelSkips_ = 0, levelBans_ = 0, skillEveryLevels_ = 0;
     double bossFightTime_ = 0.0, bossHpMin_ = 0.0, bossHpMax_ = 0.0;
     bool finalized_ = false;
 };
