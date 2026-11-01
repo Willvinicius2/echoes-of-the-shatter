@@ -25,6 +25,7 @@ var altura := 30.0          # altura atual do desenho sobre o chão
 var altura_voo := 30.0      # altura de cruzeiro (peito dos inimigos)
 var altura_dist := 0.0      # distância para descer da altura inicial até a de cruzeiro (0 = já nasce na de cruzeiro)
 var _altura_ini := 30.0
+var _desloc_ini := Vector2.ZERO   # desvio do desenho em relação à colisão ao nascer (boca do arco ao lado do corpo)
 var _viajado := 0.0
 var _trilha: Line2D
 var _brilho: Sprite2D
@@ -33,8 +34,11 @@ var _cor := Color(0.45, 1.0, 0.5)
 ## Antes o corpo todo girava e o desvio para cima girava junto: o desenho saía ao lado da trilha e do acerto.
 var vis := Node2D.new()
 
+## A colisão sai de `origem` na linha da mira; só o desenho nasce em `desloc` (px de lado, a partir da colisão) e na
+## altura `alt_ini` (a boca do arco) e converge para a colisão e para `alt_voo` em `alt_dist` px: a flecha sai da mão
+## e acerta onde o jogador mirou.
 func setup(equipe: String, origem: Vector2, dir: Vector2, vel: float, dano: float, alcance: float,
-		alt_ini := 30.0, alt_voo := 30.0, alt_dist := 0.0) -> void:
+		alt_ini := 30.0, alt_voo := 30.0, alt_dist := 0.0, desloc := Vector2.ZERO) -> void:
 	team = equipe
 	global_position = origem
 	velocity = dir.normalized() * vel
@@ -45,12 +49,13 @@ func setup(equipe: String, origem: Vector2, dir: Vector2, vel: float, dano: floa
 	altura = alt_ini
 	altura_voo = alt_voo
 	altura_dist = alt_dist
+	_desloc_ini = desloc
 
 func cor_atual() -> Color:
 	return _cor
 
 func ponta() -> Vector2:
-	return global_position + Vector2(0, -altura)
+	return vis.global_position
 
 func _ready() -> void:
 	collision_layer = 0
@@ -70,7 +75,7 @@ func _ready() -> void:
 	else:
 		sp.texture = Placeholders.seta(Vector2i(64, 16))
 		sp.modulate = Color(0.55, 0.38, 0.22) if team == "player" else Color(0.6, 1.0, 0.9)  # haste de madeira escura
-	vis.position = Vector2(0, -altura)  # só o desenho sobe; a colisão fica no chão
+	vis.position = _desloc_ini + Vector2(0, -altura)  # só o desenho sobe e sai da mão; a colisão fica no chão
 	sp.scale = Vector2(c["arrow_scale"], 1.0)  # só alonga: haste continua fina
 	_brilho = Sprite2D.new()
 	_brilho.texture = Feel.ponto()
@@ -113,9 +118,10 @@ func _physics_process(delta: float) -> void:
 	var passo := velocity * delta
 	global_position += passo
 	_viajado += passo.length()
-	if altura_dist > 0.0 and absf(altura - altura_voo) > 0.01:
-		altura = lerpf(_altura_ini, altura_voo, clampf(_viajado / altura_dist, 0.0, 1.0))
-		vis.position.y = -altura
+	if altura_dist > 0.0 and _viajado < altura_dist + 1.0:
+		var f := clampf(_viajado / altura_dist, 0.0, 1.0)
+		altura = lerpf(_altura_ini, altura_voo, f)
+		vis.position = _desloc_ini.lerp(Vector2.ZERO, f) + Vector2(0, -altura)
 	if _trilha != null:
 		_trilha.add_point(ponta())
 		if _trilha.get_point_count() > int(Feel.cfg()["arrow_trail_points"]):

@@ -1126,7 +1126,8 @@ func _fisica_habilidades() -> void:
 	check(is_equal_approx(dir_o["chao"].x - p.global_position.x, -(dir_e["chao"].x - p.global_position.x)), "mirando à esquerda a boca do arco é o espelho da direita")
 	check(dir_n["chao"].x < p.global_position.x, "de costas (norte) o arco fica do outro lado")
 	var f = p.lancar_flecha(Vector2.RIGHT)
-	check(f.global_position.is_equal_approx(dir_e["chao"]) and is_equal_approx(f.altura, dir_e["altura"]), "a flecha nasce na boca do arco")
+	check(f.global_position.is_equal_approx(dir_e["origem"]) and is_equal_approx(f.altura, dir_e["altura"]), "a colisão da flecha nasce na linha da mira")
+	check(f.vis.global_position.is_equal_approx(dir_e["chao"] + Vector2(0.0, -dir_e["altura"])), "o desenho da flecha nasce na boca do arco")
 	check(f.vis.position.y < -40.0, "o desenho da flecha começa na altura do arco")
 	var flashes := 0
 	for n in m.get_children():
@@ -1139,6 +1140,7 @@ func _fisica_habilidades() -> void:
 		await physics_frame
 	if is_instance_valid(f):
 		check(f.altura < dir_e["altura"], "em voo a flecha desce da altura do arco para a de voo")
+		check(absf(f.vis.position.x) < absf(dir_e["desloc"].x), "em voo o desenho converge para a linha da mira")
 	# aura C1: atrás do ator, centrada no tronco, alfa limitado, diâmetro do feel.csv
 	var desenho := Sprite2D.new()
 	desenho.texture = Feel.ponto()

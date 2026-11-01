@@ -358,17 +358,19 @@ static func _ancoras_de(id: String) -> Dictionary:
 	return _ancoras[id]
 
 ## Boca do arco para a direção `dir` (doc 33 seção 2): {chao: ponto no chão (mundo) sob a mão do arco, altura: px
-## acima do chão}. Sai da linha da folha que o sprite mostra nessa direção, espelhada quando a linha é espelhada.
+## acima do chão, origem: onde a colisão da flecha nasce (linha da mira, como antes), desloc: da origem até a mão}. Sai da linha da folha que o sprite mostra nessa direção, espelhada quando a linha é espelhada.
 ## Sprite sem ancoragem (outra classe) cai no antigo `arrow_spawn_dist` à frente dos pés, na altura de voo.
 func boca_do_arco(dir: Vector2) -> Dictionary:
 	var anc := _ancoras_de(sprite_id)
 	var d: Array = SpriteLoader.dir_for(dir if dir != Vector2.ZERO else facing, SpriteLoader.info(sprite_id)["dirs"])
+	var origem: Vector2 = global_position + dir * float(stats["arrow_spawn_dist"])
 	if anc.is_empty() or not anc.has(d[0]):
-		return {"chao": global_position + dir * stats["arrow_spawn_dist"], "altura": stats["arrow_altura"]}
+		return {"chao": origem, "altura": stats["arrow_altura"], "origem": origem, "desloc": Vector2.ZERO}
 	var p: Vector2 = anc[d[0]]
 	if d[1]:
 		p.x = -p.x
-	return {"chao": global_position + Vector2(p.x, 0.0), "altura": -p.y}
+	var chao: Vector2 = global_position + Vector2(p.x, 0.0)
+	return {"chao": chao, "altura": -p.y, "origem": origem, "desloc": chao - origem}
 
 ## Cria e lança uma flecha com os stats do jogador (crítico, veneno, perfuração). Usada pelo tiro e pelas habilidades.
 ## A flecha nasce na boca do arco, com flash de boca e recuo do sprite, e desce até a altura de voo (doc 33 seção 2).
@@ -392,8 +394,8 @@ func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult :
 	if stats["crit_chance"] > 0.0 and _rng.randf() < stats["crit_chance"]:
 		dano *= stats["crit_mult"]
 	var boca := boca_do_arco(dir)
-	f.setup("player", boca["chao"], dir, stats["arrow_speed"] * vel_mult * float(def.get("vel", 1.0)), dano, stats["arrow_range"],
-		boca["altura"], stats["arrow_altura"], stats["arrow_altura_dist"])
+	f.setup("player", boca["origem"], dir, stats["arrow_speed"] * vel_mult * float(def.get("vel", 1.0)), dano, stats["arrow_range"],
+		boca["altura"], stats["arrow_altura"], stats["arrow_altura_dist"], boca["desloc"])
 	f.pierce = int(stats["arrow_pierce"]) + pierce_extra + int(def.get("perfura", 0))  # gancho de upgrades e passivos
 	f.add_to_group("flecha_jogador")
 	if stats["poison_dps"] > 0.0:
