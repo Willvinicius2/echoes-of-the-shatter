@@ -6,7 +6,8 @@ Dono: thread "Dirigir o visual das habilidades". Vale para as quatro árvores do
 1. **Flecha não sai do arco.** `player_2d.gd::lancar_flecha` nasce em `global_position + dir * arrow_spawn_dist` (36 px **a partir dos pés**, `player.csv`). O arco está na altura da mão e muda com a direção do sprite. Resultado: o tiro nasce no chão, ao lado do corpo.
 2. **Aura corta o personagem.** As auras são sprites filhos soltos: fogo usa `show_behind_parent` e altura -20; veneno usa -30 sem ficar atrás; gelo e raio não têm regra. Quando a aura é desenhada por cima do arqueiro, ela "fatia" o sprite.
 3. **Falta física.** Projéteis são linhas retas sem ancoragem, sem sombra, sem recuo e sem reação do alvo. Zonas e quedas (meteoro, chuva, bola de veneno) não têm sombra de aviso nem ponto de impacto lido no chão.
-4. **Formatos de folha inconsistentes.** Os quadros variam (96, 128, 241, 256, 464 px) e as escalas se contradizem entre árvores; um mesmo elemento muda de tamanho entre efeitos.
+4. **A folha de ataque mira para a direita nas 5 direções (causa raiz dos "ataques esquisitos").** Em `arqueiro_attack.png`, as linhas S, SE, E, NE e N mostram o arco apontado para o leste e uma flecha pintada voando para a direita (prancha: `capturas-arqueiro/vfx/attack_mira_por_linha.png`). Olhando para baixo ou para cima, o sprite atira para o lado enquanto o projétil real vai para o alvo: duas flechas, duas direções. A folha `idle` está certa; só a `attack` precisa de redesenho (seção 2.1). Enquanto isso, o jogo tira a flecha pintada solta (quadros 4 e 5 limpos: `attack_limpeza_antes_depois.png`) e faz o projétil nascer na mão do arco.
+5. **Formatos de folha inconsistentes.** Os quadros variam (96, 128, 241, 256, 464 px) e as escalas se contradizem entre árvores; um mesmo elemento muda de tamanho entre efeitos.
 
 ## 1. Camadas (z) e ordem de desenho
 Do fundo para a frente. Todo efeito escolhe uma só camada; nenhuma aura atravessa o personagem.
@@ -21,15 +22,27 @@ Do fundo para a frente. Todo efeito escolhe uma só camada; nenhuma aura atraves
 | C5 Céu | z 5 | colunas que descem do alto (raio, meteoro) (só o corpo que cai; a sombra de aviso fica em C0) |
 
 Regras:
-- **Aura é C1, nunca C3.** Sempre atrás do arqueiro, centrada no tronco (≈ -34 px dos pés), diâmetro entre 1,1× e 1,4× a altura do sprite, alfa máximo 0,45. Se a leitura exigir algo à frente, vira **partículas pequenas orbitando** (≤ 8 px), nunca um quadro grande por cima.
+- **Aura é C1, nunca C3.** Forma oficial: **elipse no chão, aos pés** (achatada a 0,5 na vertical, centro 4 px acima do pé), sempre desenhada atrás do arqueiro, alfa máximo 0,45. É o que `aura_c1()` de `vfx_2d.gd` (thread do Arqueiro) deve aplicar; as quatro árvores passam por ele. Se a leitura exigir algo à frente, vira **partículas pequenas orbitando** (≤ 8 px), nunca um quadro grande por cima. Números em `feel.csv`.
 - Nada em C3/C4 cobre o rosto do arqueiro por mais de 1 quadro (corte do disparo).
 - Decalques (C0) ficam sob a sombra dos atores; o inimigo pisando numa poça não some sob ela.
 
 ## 2. Origem e saída do tiro (física coerente)
-- Cada direção do sprite do arqueiro (5 direções + flip, doc 25) ganha um **ponto de boca do arco** `muzzle[dir]` em px a partir dos pés, medido na pose de disparo (vem do arquivo de ancoragem, não do código). O tiro nasce **ali**, nunca em `pés + 36`.
-- Sequência de disparo (para o arqueiro e para o efeito): 1) puxar (carga, 80–120 ms, brilho do elemento cresce na ponta da flecha); 2) soltar: **flash de boca** 2 quadros no `muzzle` + recuo de 2–3 px do sprite; 3) voo.
+- Cada direção do sprite do arqueiro (5 direções + flip, doc 25) tem um **ponto de saída** em px a partir do pé, medido no quadro 4 de `attack` (onde a flecha encosta no arco): `godot/data2d/ancoras_2d.csv` (thread do Arqueiro, PR `feat/arqueiro-fisica`): o helper lê a linha pela direção, espelha o x quando o sprite está espelhado e multiplica pela escala do sprite. A flecha nasce ali (colisão no chão sob a mão, desenho na altura do arco descendo até os 30 px padrão nos primeiros 240 px). Medidas no quadro 4 (px do pé): S (24, −54), SE (24, −55), E (24, −59), NE (26, −66), N (−44, −62, empunhadura à esquerda na vista de costas). Quando a folha for redesenhada (2.1), só o CSV muda.
+- Sequência de disparo (para o arqueiro e para o efeito): 1) puxar (carga, 80–120 ms, brilho do elemento cresce na ponta da flecha); 2) soltar: **flash de boca** 2 quadros na saída + recuo de 3 px do sprite (`flash_boca` de `vfx_2d.gd`, números em `feel.csv`); 3) voo.
+
+### 2.1 Brief do redesenho da folha `arqueiro_attack.png` (thread de sprites do arqueiro)
+Mesmo formato do doc 25 (6 quadros × 5 linhas, 128 px, pé em 64×104, flecha solta no quadro 4). O que muda é **para onde o arco aponta em cada linha**, e a flecha pintada some do quadro 4 em diante (o jogo desenha o projétil real).
+
+| Linha | Direção | Como o arco aparece | Onde a flecha encosta no arco (alvo da medida, px do pé) |
+|---|---|---|---|
+| 0 | S (frente) | Arco visto de frente, quase um círculo achatado na frente do peito; braço do arco estendido para a câmera, ponta da flecha apontada para baixo da tela | (0 a 6, −52) |
+| 1 | SE | Arco em 3/4, inclinado para baixo-direita; a flecha desce em diagonal | (22, −54) |
+| 2 | E | Como hoje (perfil, arco vertical, flecha horizontal) | (23, −59) |
+| 3 | NE | Arco em 3/4 inclinado para cima-direita; a flecha sobe em diagonal; cabeça levemente erguida | (22, −66) |
+| 4 | N (costas) | Arco visto por trás do arqueiro, acima dos ombros; só a parte de cima do arco e as pontas aparecem; flecha apontada para cima da tela | (0 a 6, −74) |
+Regras: quadros 0–3 mostram a flecha nocada (puxando); quadro 4 = corda solta **sem** flecha; quadro 5 = braço voltando. Mesma luz (alto à esquerda), mesmo contorno e mesma paleta da folha `idle`. Prancha de referência do problema: `capturas-arqueiro/vfx/attack_mira_por_linha.png`. Depois do redesenho, remedir e atualizar `saidas_2d.csv`.
 - Projétil herda a direção e a **rotação** da mira; o rabo (rastro) cresce com a velocidade. Sombra no chão sob o projétil só para projéteis que sobem (parábola): sombra segue o chão, corpo sobe.
-- Projétil em arco (bola de veneno, meteoro, flecha para o alto): sobe com ease-out, fica no pico ≤ 1 quadro, cai com ease-in; **a sombra de aviso cresce no ponto de impacto desde o disparo** (círculo escuro com borda do elemento, 0,4 s antes de cair no mínimo).
+- Projétil em arco (bola de veneno, meteoro, flecha para o alto): sobe com ease-out, fica no pico ≤ 1 quadro, cai com ease-in; **a sombra de aviso cresce no ponto de impacto desde o disparo** (círculo escuro com anel do elemento, 0,4 s antes de cair no mínimo): `sombra_aviso` de `vfx_2d.gd` (e `ProjetilArco` para o que sobe e cai), mesmo círculo que `zona_2d.gd` desenha, para a sombra ter o tamanho exato da área.
 - Impacto: 1º quadro é o mais brilhante; o alvo reage no mesmo quadro (flash branco 60 ms, empurrão ≤ 4 px na direção do golpe). Sem reação do alvo, o golpe "não aconteceu".
 - Zonas: nascem com anel de entrada (0,15 s), pulsam no ritmo do dano (um pulso visual por tick), saem com fade de 0,3 s. Nunca somem de uma vez.
 
@@ -74,6 +87,27 @@ Princípio: **o jogador reconhece o modificador sem ler texto**. Cada modificado
 | **Herald equipado** | Aura de C1 (seção 1); ao disparar o gatilho, o efeito sai do inimigo morto (C4), nunca da aura | A aura acende por 0,3 s quando o gatilho dispara |
 | **Sinergia cruzada** (Raio×Gelo, Veneno×Fogo) | Mistura as duas paletas só no ponto de contato (faísca azul numa explosão de gelo; nuvem verde que vira chama), cada elemento mantém sua forma | |
 
+### 5.1 Conferido contra a árvore de passivos (`docs/design/33_arvore_passivos_arqueiro.md`)
+Cada campo que o pipeline de modificadores pode alterar tem uma regra visual. Quem implementa o `resolver()` só precisa passar o `def` final: o efeito lê o campo e aplica a linha abaixo.
+
+| Campo do `def` | Op comum | Regra visual |
+|---|---|---|
+| `dano` | `inc`, `mais` | Intensidade (seção 5): até +50% = cor base; +50% a +150% = miolo branco; acima = miolo branco + halo + partículas extras. Nunca tamanho. |
+| `qtd` | `add` | Cópias no leque a partir da **mesma saída**, +6° por cópia extra (doc design 33, seção 7); acima de 5 cópias, as laterais com 70% de alfa; acima de 12, cortina de 8. |
+| `raio`, `angulo` | `inc` | Desenho escala com o valor (diâmetro = 2 × raio, cone com o ângulo real). `sombra_aviso` usa o mesmo raio. Cone de 360° (Anel Gélido, Salva em Espiral) vira anel completo com a mesma lasca/flecha. |
+| `alcance` | `inc` | Rastro não muda; o projétil só vive mais. Sem efeito visual extra. |
+| `duracao` | `inc` | Mais pulsos; último segundo pisca/afina. |
+| `cd` | `inc` negativo | Cadência maior: flash de boca menor, rastro mais fino, nunca mais brilho por tiro. |
+| `vel` | `inc` | Rastro mais longo e fino, corpo esticado até 1,3×; lento = corpo gordo e brilho forte. A descida do desenho até a altura padrão encurta proporcionalmente para não parecer "curva". |
+| `perfura` | `add` | Ponta afiada, rastro reto; faísca sai do outro lado do alvo. |
+| `ricochete` / `saltos` | `add` | Segmento visível entre alvos; cada salto 15% mais fraco em alfa e espessura. Raio Bifurcado: dois segmentos saindo do mesmo ponto, cada um com 70% do brilho. |
+| `chance_status` | `inc` | Sem mudança no projétil; só o overlay do status aparece mais vezes. Acima de 100% (garantido), a ponta ganha um brilho fixo da cor do status. |
+| `valor` / `dano_status` (força do status) | `inc` | Overlay do status mais saturado e com 1 partícula a mais por degrau; tamanho igual. |
+| `forma` (nós Transforma) | `set` | Mantém folha e paleta, muda só o arranjo: Muro de Flechas = zona retangular com o mesmo pulso; Pústulas = 3 bolas menores (escala 0,55) em sequência; Chuva de Brasas = 3 meteoros a 0,65 com sombras de aviso separadas; Tornado Errante = o mesmo tornado com rastro de poeira no chão enquanto anda. Arte nova só se a forma não couber. |
+| `cargas`, `fracao`, `min_overkill_pct` (Heralds) | `add`, `inc` | A aura mostra as cargas como pontinhos no anel (máx. 5 visíveis); o gatilho usa `aura_acender`. Raio maior do gatilho escala a explosão (regra de `raio`). |
+| `crit_chance`, `crit_mult` | `inc` | Só no acerto: anel branco e número maior. |
+| Keystones | — | Mãos Rápidas: flash de boca 50% menor em tudo. Tiro Único: projétil único 1,3× mais grosso com halo (dano alto). Mar de Flechas: leque com cópias a 70% de alfa. Tempestade Perpétua: aura dos Heralds com anel duplo. |
+
 **Limite de acúmulo**: um efeito nunca ocupa mais de 3× a área base, nunca passa de 24 partículas, e o brilho total dele não passa de 1,5× o base. O que exceder vira cor mais saturada, não mais coisas na tela.
 
 ## 6. Cores base por elemento (tokens, ajustáveis pela revisora)
@@ -91,11 +125,16 @@ Saturação sobe e o miolo ganha branco conforme o nível do dano (seção 5).
 3. Conferir na tela: arqueiro em 3 direções, 1 inimigo, 20 inimigos e 100 inimigos. Capturas antes/depois no PR.
 4. Revisora confere: camada correta, origem no `muzzle`, tamanho = área do CSV, leitura na horda, mesma régua de pintura do estandarte v2. Só então o Will vê.
 
-## 8. Pedidos técnicos (donos: integradora e thread do Arqueiro)
-1. **Ponto de boca por direção** (`muzzle[dir]`) e uso em `lancar_flecha` no lugar de `arrow_spawn_dist` dos pés. Dono: thread "Criar habilidades e animações do arqueiro" (medir na folha do arqueiro, gravar em CSV).
-2. **Auras**: um helper único `aura_c1(jogador, folha, escala)` que aplica a seção 1 (atrás do ator, alfa, centro no tronco), e as quatro árvores o usam no lugar de cada `aura()` própria.
-3. **Sombra de aviso** para projéteis em arco e quedas (helper compartilhado).
-4. **Recolor por shader** (paleta por elemento e nível) para variações de intensidade e elemento convertido, evitando uma folha nova por gema.
-5. **Orçamento de efeitos** (seção 4): contador global de efeitos ativos e o modo "pontinho" do status em massa.
-6. Normalizar as folhas existentes (potência de 2, manifesto) por script.
-7. Quando a árvore de passivas/gemas definir os modificadores reais, esta tabela (seção 5) é conferida contra a lista final; o que não tiver linha aqui ganha uma.
+## 8. Estado dos pedidos técnicos
+Implementação: `godot/scripts2d/vfx_2d.gd` e `godot/data2d/ancoras_2d.csv`, na thread "Criar habilidades e animações do arqueiro" (branch `feat/arqueiro-fisica`): saída do projétil por direção, `flash_boca` com recuo, `aura_c1` e `aura_acender`, `sombra_aviso`, `ProjetilArco` (parábola com sombra no chão e aviso no destino, usado pela bola de veneno e pelo tornado; o meteoro usa a sombra de aviso), anel de entrada e fade nas zonas, cópias de projétil escalonadas em 40 ms, orçamento `registrar_animado`/`lotado`. Esta thread (direção) revisa esse PR contra as seções 1 a 5 antes do merge.
+
+Decisões de direção que valem sobre a implementação:
+- **Aura**: elipse no chão, aos pés, atrás do ator, alfa ≤ 0,45 (seção 1). Centrar no tronco só se a prova em tela mostrar leitura melhor; a elipse no chão foi a forma que o Will viu sem cortar o personagem.
+- **Tamanho de área = raio do CSV**, sempre (seção 3).
+- **Lista de efeitos de projétil** sai da coluna `tags` do CSV (pacote P1 do doc design/33), não de constante no código.
+
+Pendentes (donos):
+- **Redesenho da folha `attack`** por direção (2.1): thread de sprites do arqueiro; depois, remedir `ancoras_2d.csv`. A limpeza da flecha pintada solta nos quadros 4 e 5 já entrou (PR 183).
+- **Recolor por shader** (paleta por elemento e nível) para intensidade e elemento convertido: thread do Arqueiro, junto do `resolver()`.
+- **Normalizar as folhas existentes** (potência de 2, manifesto) por script: fase de polimento.
+- **Modo "pontinho"** do status em massa (seção 4): integradora (`enemy_2d.gd`).
