@@ -147,8 +147,8 @@ static func _lascas(origem: Node2D, dano: float, qtd: int, raio: float, def: Dic
 ## Deixa o brilho/rastro da flecha azul e troca o desenho se houver folha.
 static func _vestir_flecha(f: Node) -> void:
 	if f.has_method("add_child") and ResourceLoader.exists(PASTA + "gelo_flecha.png"):
-		var s := _sprite(f, "gelo_flecha", 6, Vector2(0, -30), 72.0, 14.0)
-		s.position = Vector2(0, -30)
+		var s := _sprite(f.vis, "gelo_flecha", 6, Vector2.ZERO, 72.0, 14.0)   # f.vis: nó do desenho, já no peito e girado
+		s.position = Vector2.ZERO
 
 static func _overlay(inimigo: Node, congelado := false) -> void:
 	var nome := "FrioFx"
