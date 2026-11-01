@@ -136,7 +136,8 @@ grade[int(ay) - 3][int(ax)] = "G"
 grade[int(ay) + 4][int(ax)] = "X"
 
 # Lajes das ruínas: manchas de contorno orgânico (o jogo desenha o polígono com textura de pedra).
-LAJES = [("escuro", ax, ay, ar), ("claro", ax, ay, ar + 3.2)]
+# Ordem de desenho: a mancha clara larga, a escura da arena por cima e um estrado claro no centro.
+LAJES = [("claro", ax, ay, ar + 3.2), ("escuro", ax, ay, ar), ("claro", ax, ay, 3.2)]
 for _ in range(40):
     cx, cy = rng.uniform(100, 172), rng.uniform(8, 92)
     if math.dist((cx, cy), (ax, ay)) < ar + 4 or perto_riacho(cx, cy, 4):
@@ -249,6 +250,26 @@ espalhar(ARVORES, 40, (6, 6, 76, 94), 2.0)
 espalhar(MATO, 110, (6, 6, 78, 94), 0.8)
 espalhar(PEDRAS, 18, (6, 6, 76, 94), 1.4)
 
+# Bosques: grupos de árvores com touceiras em volta (um ponto de interesse a cada tela) e trilhas de capim alto.
+for _ in range(60):
+    cx, cy = rng.uniform(8, 172), rng.uniform(8, 92)
+    if grade[int(cy)][int(cx)] == "m" or perto_caminho(cx, cy, 3.0) or perto_riacho(cx, cy, 3.0) or em_laje(cx, cy) \
+            or na_arena(cx, cy, 5) or math.dist((cx, cy), P) < 8:
+        continue
+    for _ in range(rng.randint(3, 6)):
+        espalhar(ARVORES, 1, (cx - 2.2, cy - 1.8, cx + 2.2, cy + 1.8), 1.1, tentativas=12)
+    for _ in range(rng.randint(5, 9)):
+        espalhar(MATO, 1, (cx - 3.2, cy - 2.6, cx + 3.2, cy + 2.6), 0.55, tentativas=12)
+for _ in range(45):
+    x, y = rng.uniform(8, 172), rng.uniform(8, 92)
+    ang = rng.uniform(0, math.tau)
+    for k in range(rng.randint(6, 11)):
+        ang += rng.uniform(-0.5, 0.5)
+        x, y = x + math.cos(ang) * 0.9, y + math.sin(ang) * 0.9
+        if 1 <= x < W - 1 and 1 <= y < H - 1 and not em_laje(x, y):
+            espalhar(["grass_dry_tall", "grass_dry_tall", "reeds_dry", "thistles_dry", "grass_dry_patch"], 1,
+                     (x - 0.2, y - 0.2, x + 0.2, y + 0.2), 0.45, tentativas=3, sem_caminho=0.6)
+
 # Zona 2: margens dos riachos.
 beira = lambda x, y: perto_riacho(x, y, 1.6) and not perto_riacho(x, y, 0.9)
 espalhar(["reeds_dry"], 90, (70, 0, 130, 100), 0.6, tentativas=12000, filtro=beira)
@@ -269,6 +290,34 @@ for k in range(10):
     x, y = ax + math.cos(a) * (ar + 2.6), ay + math.sin(a) * (ar + 2.2)
     if not perto_caminho(x, y, 1.2) and grade[int(y)][int(x)] not in "mB":
         props.append(("pillar_runes" if k % 2 else "pillar_tall", round(x, 1), round(y, 1), 1.0, False))
+
+# Arena por dentro: círculo de pilares, estátuas e altares entre o centro de luta e o anel; centro livre.
+for k in range(8):
+    a = k * math.tau / 8 + math.pi / 8
+    x, y = ax + math.cos(a) * 7.6, ay + math.sin(a) * 6.6
+    if not perto_caminho(x, y, 1.0):
+        props.append((["pillar_runes", "pillar_cracked", "pillar_runes", "pillar_broken"][k % 4], round(x, 1), round(y, 1), 1.0, False))
+for k, (pid, ang, d) in enumerate([("tomb_angel", -0.5, 9.0), ("tomb_angel", math.pi + 0.5, 9.0), ("altar_candles", -math.pi / 2, 8.6),
+                                   ("skull_mound_candles", -math.pi / 2 - 0.45, 8.8), ("skull_mound_candles", -math.pi / 2 + 0.45, 8.8),
+                                   ("rock_crystal", 0.2, 9.2), ("rock_crystal", math.pi - 0.2, 9.2), ("pillar_fallen", 2.0, 9.3),
+                                   ("bones_scattered", 1.2, 5.2), ("bones_scattered", 2.6, 5.6), ("skull_pile", -2.6, 5.4),
+                                   ("skull_single", 0.4, 4.6), ("bones_ribcage", 3.6, 6.0), ("skeleton_hand", -1.0, 5.0)]):
+    x, y = ax + math.cos(ang) * d, ay + math.sin(ang) * d * 0.85
+    if not perto_caminho(x, y, 0.8):
+        props.append((pid, round(x, 1), round(y, 1), 0.8, k % 2 == 1))
+
+# Transição pedra-grama: cascalho, capim e raízes na beira de cada mancha de laje.
+for tom, cx, cy, r in LAJES:
+    if (cx, cy) == (ax, ay) and r < ar:
+        continue
+    n = int(r * math.tau / 1.3)
+    for k in range(n):
+        a = k * math.tau / n + rng.uniform(-0.2, 0.2)
+        d = r + rng.uniform(-0.3, 0.6)
+        x, y = round(cx + math.cos(a) * d, 1), round(cy + math.sin(a) * d, 1)
+        if 1 <= x < W - 1 and 1 <= y < H - 1 and grade[int(y)][int(x)] != "m" and not perto_caminho(x, y, 0.4) \
+                and not perto_riacho(x, y, 0.6) and all(math.dist((x, y), (px, py)) >= 0.55 + pr for _, px, py, pr, _ in props):
+            props.append((rng.choice(["rock_rubble", "grass_dry_patch", "grass_dry_patch", "roots_clump", "leaves_scattered", "leaves_scattered", "ferns_withered", "skull_single", "flowers_dead"]), x, y, 0.55, rng.random() < 0.5))
 
 linhas = ["".join(l) for l in grade]
 linhas.append("@piso grama")

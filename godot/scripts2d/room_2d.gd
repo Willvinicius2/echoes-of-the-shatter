@@ -113,7 +113,9 @@ func _montar() -> void:
 	_piso = TileMapLayer.new()  # piso sob os objetos, para o fundo transparente de braseiro e pilar não ficar preto
 	_piso.tile_set = ts
 	if piso_grama:
-		_piso.modulate = Color(0.8, 0.83, 0.78)  # gramado mais escuro para o caminho e os inimigos se destacarem
+		# Gramado: um pouco mais escuro que o atlas para caminho e inimigos se destacarem; na fase aberta, mais claro
+		# (a revisão achou o mapa grande escuro demais) e com variação de tom em _tons_do_gramado.
+		_piso.modulate = Color(0.94, 0.96, 0.88) if colunas * linhas > 2000 else Color(0.8, 0.83, 0.78)
 	add_child(_piso)
 	_mata = TileMapLayer.new()  # chão da mata fechada, bem mais escuro que o gramado
 	_mata.tile_set = ts
@@ -207,9 +209,13 @@ func _montar() -> void:
 		cp.shape = rp
 		cp.position = p["pos"] + Vector2(0, tile * 0.5 - float(d["solido_a"]) * 0.5)
 		corpo.add_child(cp)
+	if piso_grama and colunas * linhas > 2000:
+		_tons_do_gramado()
 	_sombra_da_mata()
 	_desenhar_lajes()
 	Terreno.montar(self, caminhos, riachos, piso_grama, tile)
+	if aberta():
+		_achar_vinheta()
 	_mapear_livres()
 	_porta_corpo = StaticBody2D.new()
 	_porta_corpo.collision_layer = 1
@@ -235,6 +241,34 @@ func _montar() -> void:
 		cs.position = _centro(c.x, c.y) + Vector2(0, tile * 0.5)
 		_porta_area.add_child(cs)
 	_porta_area.body_entered.connect(func(_c): porta_usada.emit())
+
+## Fase aberta: manchas grandes e suaves de grama seca (clara) e de grama funda (escura) espalhadas pelo mapa,
+## para o gramado não ser a mesma textura repetida de ponta a ponta.
+func _tons_do_gramado() -> void:
+	var g := Gradient.new()
+	g.set_color(0, Color(1, 1, 1, 1))
+	g.set_color(1, Color(1, 1, 1, 0))
+	var tex := GradientTexture2D.new()
+	tex.gradient = g
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 128
+	tex.height = 128
+	var raiz := Node2D.new()
+	add_child(raiz)
+	move_child(raiz, _layer.get_index())
+	var cores := [Color(0.78, 0.72, 0.36, 0.22), Color(0.55, 0.62, 0.3, 0.2), Color(0.12, 0.2, 0.08, 0.22), Color(0.42, 0.32, 0.18, 0.18)]
+	for y in range(0, linhas, 5):
+		for x in range(0, colunas, 5):
+			var h := hash(Vector2i(x * 31, y * 17))
+			var sp := Sprite2D.new()
+			sp.texture = tex
+			sp.position = Vector2((x + posmod(h, 50) / 10.0) * tile, (y + posmod(h / 50, 50) / 10.0) * tile)
+			sp.scale = Vector2(3.0 + posmod(h / 7, 30) / 10.0, 2.2 + posmod(h / 11, 20) / 10.0)
+			sp.rotation = posmod(h / 13, 314) / 100.0
+			sp.modulate = cores[posmod(h / 3, cores.size())]
+			raiz.add_child(sp)
 
 ## Mata fechada como uma massa escura de borda macia: manchas radiais sobrepostas em cada célula da mata
 ## (uma sim, outra não no miolo), sem o degrau dos tiles.
@@ -290,7 +324,7 @@ func _desenhar_lajes() -> void:
 		orla.color = Color(0.13, 0.11, 0.08, 0.35)
 		var orla2 := Polygon2D.new()   # segunda orla, mais larga e fraca: a pedra some no gramado aos poucos
 		orla2.polygon = _contorno(m["centro"], m["raio"] + 22.0, 11 + i)
-		orla2.color = Color(0.16, 0.13, 0.09, 0.18)
+		orla2.color = Color(0.22, 0.3, 0.12, 0.28)   # musgo: a pedra passa para o gramado aos poucos
 		orlas.add_child(orla2)
 		orlas.add_child(orla)
 		var pg := Polygon2D.new()
@@ -340,6 +374,20 @@ func _piso_vizinho(x: int, y: int) -> String:
 		if int(conta.get(k, 0)) > int(conta.get(melhor, 0)):
 			melhor = k
 	return melhor
+
+## A vinheta do terreno é do tamanho da sala; na fase aberta ela escureceria tudo longe do centro do mapa.
+## Aqui ela passa a seguir a câmera (run_2d chama seguir_vinheta), com o tamanho da tela.
+var _vinheta: Sprite2D
+func _achar_vinheta() -> void:
+	for c in get_children():
+		if c is Sprite2D and c.z_index == 20 and c.texture is GradientTexture2D:
+			_vinheta = c
+
+func seguir_vinheta(centro: Vector2, tam_vista: Vector2) -> void:
+	if _vinheta == null:
+		return
+	_vinheta.position = centro
+	_vinheta.scale = tam_vista * 1.5 / float(_vinheta.texture.get_width())
 
 ## Fase aberta: o mapa é maior que a tela (a câmera segue o jogador e as ondas nascem fora da vista).
 func aberta() -> bool:
