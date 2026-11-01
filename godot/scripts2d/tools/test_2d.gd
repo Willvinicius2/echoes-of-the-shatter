@@ -85,7 +85,7 @@ func _testar_upgrades() -> void:
 	var UpScript = preload("res://scripts2d/upgrades_2d.gd")
 	var PlayerScript = preload("res://scripts2d/player_2d.gd")
 	var up = UpScript.new()
-	check(up.defs.size() >= 6 and up.defs.size() <= 8, "pool de 6 a 8 upgrades")
+	check(up.defs.size() >= 6 and up.defs.size() <= 24, "pool de 6 a 24 upgrades (%d)" % up.defs.size())
 	for id in up.defs:
 		check(Csv.t("upgrade.%s.name" % id) != "upgrade.%s.name" % id and Csv.t("upgrade.%s.desc" % id) != "upgrade.%s.desc" % id, "texto de %s" % id)
 	var p = PlayerScript.new()
@@ -878,6 +878,44 @@ func _testar_passivos() -> void:
 	for id in ha.ordem:
 		if ha.eh_ativa(id):
 			check(not ha.tags_de(id).is_empty(), "ativa %s tem tags" % id)
+
+	# Camada da partida (doc 34): run_* dos stats viram modificadores das habilidades por tag; nós de preparo e cartas
+	# entram pelo mesmo caminho.
+	check(not pa.partida_defs.is_empty(), "passivas_partida.csv carregada")
+	var stats_run := Csv.kv("res://data2d/player.csv")
+	for pd in pa.partida_defs:
+		check(stats_run.has(pd["stat"]), "%s existe em player.csv" % pd["stat"])
+		check(pd["alvo"].begins_with("tag:") and Pas.CAMPOS_SKILL.has(pd["campo"]) and Pas.OPS.has(pd["op"]), "linha de partida %s válida" % pd["stat"])
+	var ups := Csv.rows("res://data2d/upgrades.csv")
+	for r in ups:
+		check(stats_run.has(r["stat"]), "carta %s mira o stat %s" % [r["id"], r["stat"]])
+	var antes_p: Dictionary = pa.resolver("flecha_meteoro", {"raio": 100.0, "dano": 10.0}, ["area", "fogo"])
+	check(antes_p["raio"] == 100.0 and antes_p["dano"] == 10.0, "sem partida o def não muda")
+	check(pa.definir_partida({"run_area": 0.3, "run_dmg_fogo": 0.2, "run_proj": 0.0}), "definir_partida avisa a mudança")
+	check(not pa.definir_partida({"run_area": 0.3, "run_dmg_fogo": 0.2}), "mesmos valores não avisam de novo")
+	var dp: Dictionary = pa.resolver("flecha_meteoro", {"raio": 100.0, "dano": 10.0}, ["area", "fogo"])
+	check(is_equal_approx(dp["raio"], 130.0) and is_equal_approx(dp["dano"], 12.0), "carta de área e de fogo: raio 130, dano 12 (%s)" % str(dp))
+	var dg: Dictionary = pa.resolver("outra", {"raio": 100.0, "dano": 10.0}, ["area", "gelo"])
+	check(is_equal_approx(dg["raio"], 130.0) and is_equal_approx(dg["dano"], 10.0), "bônus de fogo não vaza para o gelo")
+	pa.definir_partida({"run_proj": 2.0, "run_area": 9.0})
+	check(pa.resolver("x", {"qtd": 3.0}, ["projetil", "multi"])["qtd"] == 5.0 and pa.resolver("x", {"dano": 1.0}, ["projetil"])["proj_extra"] == 2.0, "run_proj soma em qtd (multi) ou vira cópias")
+	check(is_equal_approx(pa.resolver("x", {"raio": 100.0}, ["area"])["raio"], 250.0), "carta de área também respeita o teto de 150%")
+	pa.definir_partida({})
+	# nó de preparo: o nó soma no stat da partida e a habilidade já nasce maior
+	pa.ganhar_pontos(5)
+	check(pa.ativar("c_dano_1") and pa.ativar("c_dano_2") and pa.ativar("pre_area"), "nó de preparo ativa pela árvore fixa")
+	var sg: Dictionary = ha.aplicar_passivos_globais({"skill_cd_mult": 1.0, "run_area": 0.15})
+	check(is_equal_approx(sg["run_area"], 0.25), "preparo soma +0,10 ao stat da partida (%s)" % str(sg["run_area"]))
+	check(is_equal_approx(pa.resolver("flecha_meteoro", {"raio": 100.0}, ["area"])["raio"], 125.0), "habilidade nasce com a área do preparo mais a carta")
+	# recarga: o skill_cd_mult da árvore chega ao tick das ativas
+	pa.ativos["p_somb_3"] = true
+	ha.aplicar_passivos_globais({"skill_cd_mult": 1.0})
+	check(ha.cd_extra > 1.0, "árvore reduz a recarga das ativas (cd_extra %s)" % str(ha.cd_extra))
+	pa.ativos.erase("p_somb_3")
+	ha.aplicar_passivos_globais({"skill_cd_mult": 1.0})
+	check(is_equal_approx(ha.cd_extra, 1.0), "sem nó de recarga o fator volta a 1")
+	pa.redistribuir()
+	pa.definir_partida({})
 
 	# A flecha do jogador lê o def resolvido: velocidade, perfuração e cópias em leque.
 	var run = RunScene.instantiate()

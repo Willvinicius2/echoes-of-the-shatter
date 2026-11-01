@@ -30,3 +30,13 @@ autocast_intervalo,0.12,s,espera entre dois autocasts seguidos (as habilidades s
 arrow_altura,30,px,altura do desenho da flecha em voo (peito dos inimigos)
 arrow_altura_dist,240,px,distancia em que a flecha desce da boca do arco ate a altura de voo
 projetil_atraso,0.04,s,atraso entre copias de um mesmo disparo (multishot e leque saem do mesmo arco uma a uma)
+run_area,0,fracao,aumento de raio e abertura das habilidades de area (cartas e nos de preparo)
+run_proj,0,projeteis,projeteis extras por habilidade de projetil
+run_vel,0,fracao,aumento de velocidade dos projeteis das habilidades
+run_dur,0,fracao,aumento de duracao das zonas
+run_pierce,0,corpos,perfuracao extra das habilidades de projetil
+run_dmg_fogo,0,fracao,aumento de dano das habilidades de fogo
+run_dmg_gelo,0,fracao,aumento de dano das habilidades de gelo
+run_dmg_raio,0,fracao,aumento de dano das habilidades de raio
+run_dmg_veneno,0,fracao,aumento de dano das habilidades de veneno
+run_dmg_herald,0,fracao,aumento de dano dos Arautos

@@ -481,3 +481,41 @@ tree.passive_keystone,Keystone (só um por vez)
 tree.passive_transform,Transforma a habilidade
 tree.passive_stats,Jogador
 tree.passive_empty,Esta classe ainda não tem árvore de passivos
+upgrade.wide_reach.name,Alcance Amplo
+upgrade.wide_reach.desc,+15% de área das habilidades
+upgrade.extra_shot.name,Projétil Extra
+upgrade.extra_shot.desc,+1 projétil por habilidade de projétil
+upgrade.swift_shots.name,Disparo Veloz
+upgrade.swift_shots.desc,+20% de velocidade dos projéteis das habilidades
+upgrade.lingering.name,Efeito Duradouro
+upgrade.lingering.desc,+20% de duração das zonas
+upgrade.piercing_skills.name,Ponta Dilacerante
+upgrade.piercing_skills.desc,As habilidades de projétil atravessam +1 inimigo
+upgrade.flame_lore.name,Saber das Chamas
+upgrade.flame_lore.desc,+20% de dano das habilidades de fogo
+upgrade.frost_lore.name,Saber do Gelo
+upgrade.frost_lore.desc,+20% de dano das habilidades de gelo
+upgrade.storm_lore.name,Saber da Tempestade
+upgrade.storm_lore.desc,+20% de dano das habilidades de raio
+upgrade.venom_lore.name,Saber do Veneno
+upgrade.venom_lore.desc,+20% de dano das habilidades de veneno
+upgrade.herald_might.name,Força dos Arautos
+upgrade.herald_might.desc,+25% de dano dos Arautos
+upgrade.keen_eye.name,Olho Clínico
+upgrade.keen_eye.desc,+5% de chance de crítico
+upgrade.deadly_aim.name,Mira Letal
+upgrade.deadly_aim.desc,+25% de dano crítico
+upgrade.focus.name,Foco
+upgrade.focus.desc,Habilidades recarregam 8% mais rápido
+passivo.pre_area.name,Mãos Largas
+passivo.pre_area.desc,Começa a corrida com +10% de área nas habilidades
+passivo.pre_proj.name,Aljava Dupla
+passivo.pre_proj.desc,Começa a corrida com +1 projétil por habilidade de projétil
+passivo.pre_vel.name,Corda Tensa
+passivo.pre_vel.desc,Começa a corrida com +15% de velocidade dos projéteis
+passivo.pre_dur.name,Raízes Fundas
+passivo.pre_dur.desc,Começa a corrida com +15% de duração das zonas
+passivo.pre_herald.name,Pacto dos Arautos
+passivo.pre_herald.desc,Começa a corrida com +15% de dano dos Arautos
+passivo.pre_elem.name,Iniciado dos Elementos
+passivo.pre_elem.desc,Começa a corrida com +8% de dano em fogo, gelo, raio e veneno
