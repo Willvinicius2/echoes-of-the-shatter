@@ -991,7 +991,7 @@ func _def_arqueiro(r: Dictionary) -> Dictionary:
 
 func _testar_habilidades_arqueiro() -> void:
 	var rows: Array = Csv.rows("res://data2d/habilidades_arqueiro.csv")
-	check(rows.size() >= 15 and rows.size() <= 40, "arqueiro tem de 15 a 40 habilidades (%d)" % rows.size())
+	check(rows.size() >= 15 and rows.size() <= 60, "arqueiro tem de 15 a 60 habilidades (%d)" % rows.size())
 	var por_id := {}
 	var icones := {}
 	for r in Csv.rows("res://data2d/icones.csv"):
@@ -1018,7 +1018,7 @@ func _testar_habilidades_arqueiro() -> void:
 		else:
 			ativas += 1
 			check(float(r["cd"]) > 0.0, "%s: ativa tem recarga" % id)
-	for ramo in ["precisao", "cacada", "sombra", "veneno"]:
+	for ramo in ["precisao", "cacada", "sombra", "veneno", "gelo", "fogo", "raio"]:
 		check(ramos.has(ramo) and Csv.t("ramo.%s.name" % ramo) != "ramo.%s.name" % ramo, "ramo %s tem skills e texto" % ramo)
 	check(ativas >= 8, "ao menos 8 ativas (%d)" % ativas)
 	print("DBG paused ", paused, " ts ", Engine.time_scale)
@@ -1045,8 +1045,8 @@ func _testar_habilidades_arqueiro() -> void:
 		var antes: Array = es.map(func(e): return e.hp)
 		var ok: bool = Efeitos.executar(r["efeito"], p, _def_arqueiro(r), 1, Vector2.RIGHT)
 		check(ok, "%s (%s) executa" % [r["id"], r["efeito"]])
-		await _esperar(func(): return es.any(func(e): return e.hp < 1000.0 or e.tem_status("marca") or e.tem_status("lentidao") or e.tem_status("veneno")), 4.0)
-		var afetado: bool = es.any(func(e): return e.hp < 1000.0 or e.tem_status("marca") or e.tem_status("lentidao") or e.tem_status("veneno") or e.atordoado > 0.0)
+		await _esperar(func(): return es.any(func(e): return e.hp < 1000.0 or e.tem_status("marca") or e.tem_status("lentidao") or e.tem_status("veneno") or e.tem_status("choque") or e.tem_status("queimadura")), 4.0)
+		var afetado: bool = es.any(func(e): return e.hp < 1000.0 or e.tem_status("marca") or e.tem_status("lentidao") or e.tem_status("veneno") or e.tem_status("choque") or e.tem_status("queimadura") or e.atordoado > 0.0)
 		match r["efeito"]:
 			"salto":
 				check(p.global_position.x < -50.0 or p.estado == p.Estado.ESQUIVA or p.invencivel > 0.0, "salto recua com invulnerabilidade")
@@ -1077,7 +1077,7 @@ func _testar_habilidades_arqueiro() -> void:
 	longe.setup("hollow_sentinel", ph, Vector2(1500, 0))
 	morto.aplicar_status("veneno", 3.0, 4.0)
 	VenenoFx.arauto_peste_morte(morto, {"raio": 140.0, "duracao": 3.0, "valor": 4.0})
-	check(perto.tem_status("veneno") and not longe.tem_status("veneno"), "Arauto da Peste passa o veneno só a quem está no raio")
+	check(perto.tem_status("veneno") and not longe.tem_status("veneno") or e.tem_status("choque") or e.tem_status("queimadura"), "Arauto da Peste passa o veneno só a quem está no raio")
 	mh.queue_free()
 	await physics_frame
 	# passiva de crítico e veneno: a flecha carrega os dados

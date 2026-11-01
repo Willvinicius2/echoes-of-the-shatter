@@ -40,3 +40,12 @@ mago,skill.mage.overload,si,1,250,1
 arqueiro,poison_arrow,proximo,0,760,1
 arqueiro,venom_orb,proximo,0,600,2
 arqueiro,corrosive_rain,proximo,0,600,2
+arqueiro,frost_arrow,proximo,0,760,1
+arqueiro,glacial_shard,proximo,0,760,2
+arqueiro,ice_prison,grupo,1,450,3
+arqueiro,flecha_ardente,proximo,0,760,1
+arqueiro,flecha_meteoro,grupo,0,600,1
+arqueiro,muralha_brasas,proximo,0,420,1
+arqueiro,shock_arrow,proximo,0,760,1
+arqueiro,chain_lightning,proximo,0,600,1
+arqueiro,storm_tornado,proximo,0,650,2
