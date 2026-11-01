@@ -59,11 +59,14 @@ void fragment() {
 	float corpo = 1.0 - smoothstep(largura * 0.35, largura, abs(x));
 	float nucleo = 1.0 - smoothstep(0.0, largura * 0.55, abs(x));
 	float calor = corpo * (1.0 - y * 1.3) + nucleo * 0.25 * (1.0 - y * 2.0) + (n - 0.5) * 1.05 * (0.35 + y);
-	vec4 c = vec4(0.0);
-	if (calor > 0.86) c = vec4(1.0, 0.94, 0.62, 1.0);
-	else if (calor > 0.62) c = vec4(1.0, 0.76, 0.24, 1.0);
-	else if (calor > 0.4) c = vec4(0.98, 0.47, 0.12, 1.0);
-	else if (calor > 0.22) c = vec4(0.78, 0.2, 0.07, 0.95);
+	calor -= y * y * 0.35;  // pontas finas que somem no alto, sem blocos soltos
+	// faixas de cor com transição macia (combina com a arte pintada em volta)
+	vec3 cor = vec3(0.78, 0.2, 0.07);
+	cor = mix(cor, vec3(0.98, 0.47, 0.12), smoothstep(0.34, 0.46, calor));
+	cor = mix(cor, vec3(1.0, 0.76, 0.24), smoothstep(0.56, 0.68, calor));
+	cor = mix(cor, vec3(1.0, 0.94, 0.62), smoothstep(0.8, 0.92, calor));
+	float a = smoothstep(0.18, 0.3, calor);
+	vec4 c = vec4(cor, a);
 	COLOR = c;
 }
 """
@@ -461,7 +464,7 @@ func _braseiro(b: Vector2) -> void:
 	miolo.initial_velocity_max = 16.0
 	miolo.scale_amount_min = 0.7
 	miolo.scale_amount_max = 1.0
-	miolo.color_ramp = _rampa([[0.0, Color(1, 0.7, 0.3, 0.0)], [0.3, Color(1, 0.6, 0.2, 0.22)], [1.0, Color(1, 0.4, 0.1, 0.0)]])
+	miolo.color_ramp = _rampa([[0.0, Color(1, 0.7, 0.3, 0.0)], [0.3, Color(1, 0.6, 0.2, 0.12)], [1.0, Color(1, 0.4, 0.1, 0.0)]])
 	miolo.z_index = 5
 	add_child(miolo)
 	_fogo.append({"no": miolo, "base": Vector2(0, -20), "fator": 0.08})
