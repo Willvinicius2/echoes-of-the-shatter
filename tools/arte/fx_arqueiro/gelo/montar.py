@@ -8,6 +8,35 @@ from PIL import Image
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "ui_gpt_image"))
 from key import key
 
+def key_verde(path):
+    a = np.asarray(Image.open(path).convert("RGB")).astype(float)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    gv = g - np.maximum(r, b)
+    alpha = np.clip(1 - (gv - 40) / 90, 0, 1)
+    sp = np.clip(g - np.maximum(r, b), 0, None) * (alpha < 1)
+    a[..., 1] -= sp * 0.8
+    a[..., 1] = np.minimum(a[..., 1], np.maximum(r, b))  # tira o tom turquesa/verde: fica azul-gelo
+    rgb = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGB").convert("HSV")
+    h = np.array(rgb).astype(float)
+    m = (h[..., 0] > 85) & (h[..., 0] < 149)  # verde-ciano -> azul-gelo (210 graus = 149)
+    h[..., 0][m] = 149 - (149 - h[..., 0][m]) * 0.12
+    a = np.array(Image.fromarray(h.astype(np.uint8), "HSV").convert("RGB")).astype(float)
+    return Image.fromarray(np.dstack([a, alpha * 255]).astype(np.uint8), "RGBA")
+
+def cortes(im, n):
+    """Acha os n+1 limites de quadro nos maiores vazios da projecao horizontal (o modelo nem sempre respeita a grade)."""
+    w = im.width
+    col = (np.array(im)[..., 3] > 20).sum(axis=0)
+    lim = [0]
+    for i in range(1, n):
+        c = i * w // n; r = w // (n * 3)
+        seg = col[c - r:c + r]
+        # centro do vazio mais largo (ou do minimo) perto da grade
+        z = np.where(seg == seg.min())[0]
+        lim.append(c - r + int(z[len(z) // 2]))
+    lim.append(w)
+    return lim
+
 def limpa_bordas(c):
     """O modelo as vezes deixa lascas do quadro vizinho na borda da celula: apaga os pedacos pequenos que tocam
     a borda esquerda/direita (menos de 20% da area do maior pedaco)."""
@@ -30,8 +59,10 @@ def main(ent, sai):
         p = os.path.join(ent, it["id"] + ".png")
         if not os.path.exists(p):
             print("falta", p); continue
-        im = key(p); n = it["quadros"]; w = im.width // n
-        cel = [limpa_bordas(im.crop((i * w, 0, (i + 1) * w, im.height))) for i in range(n)]
+        im = key_verde(p) if it.get('fundo') == 'verde' else key(p); n = it["quadros"]; w = im.width // n
+        lim = cortes(im, n) if it.get('fundo') == 'verde' else [i * w for i in range(n + 1)]
+        cel = [limpa_bordas(im.crop((lim[i], 0, lim[i + 1], im.height))) for i in range(n)]
+        cel = [c.crop((0, 0, c.width, c.height)) for c in cel]
         # caixa comum: união dos conteúdos, centrada na célula
         box = None
         for c in cel:

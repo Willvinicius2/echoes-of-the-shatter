@@ -12,10 +12,11 @@
   "id": "gelo_impacto",
   "quadros": 8,
   "tamanho": "1536x1024",
-  "prompt": "Hand-painted 2D game VFX sprite sheet for a dark fantasy top-down ARPG, painterly style matching the attached screenshot (not pixel art, not flat vector, no clay look). Crisp dark-blue outline, light from top-left, icy palette: white core, pale cyan, sky blue, deep blue shadow. Layout: exactly 8 frames in ONE horizontal row, equal spacing, each frame centered in its own equal-width cell, nothing touching the cell borders. Solid flat magenta (#FF00FF) background everywhere, no ground, no text, no watermark, no UI. Animation order left to right. Subject: an ice impact burst, no arrow: a shatter of ice crystals bursting outward from a bright white-cyan flash, growing in frames 1-4 then splintering shards and frost mist fading out in frames 5-8. IMPORTANT: each frame occupies at most 70% of its cell width, with wide empty magenta margins between frames; no shard or mist may cross into a neighbouring cell.",
+  "prompt": "Hand-painted 2D game VFX sprite sheet for a dark fantasy top-down ARPG, painterly style matching the attached screenshot (not pixel art, not flat vector, no clay look). Crisp dark-blue outline, light from top-left, icy palette: white core, pale cyan, sky blue, deep blue shadow. Layout: exactly 8 frames in ONE horizontal row, equal spacing, each frame centered in its own equal-width cell, nothing touching the cell borders. Solid flat pure green (#00FF00) background everywhere, no ground, no text, no watermark, no UI. Animation order left to right. Subject: an ice impact burst, no arrow: a shatter of ice crystals bursting outward from a bright white-cyan flash, growing in frames 1-4 then splintering shards and frost mist fading out in frames 5-8. IMPORTANT: each frame occupies at most 70% of its cell width, with wide empty green margins between frames; no shard or mist may cross into a neighbouring cell. Colors stay ice-blue and white-blue powder until the very last frame; NO purple, violet or magenta tones anywhere in the effect. Fade-out frames use pale blue-white frost dust.",
   "referencias": [
    "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
-  ]
+  ],
+  "fundo": "verde"
  },
  {
   "id": "gelo_lasca",
@@ -39,7 +40,7 @@
   "id": "gelo_congelado",
   "quadros": 4,
   "tamanho": "1536x1024",
-  "prompt": "Hand-painted 2D game VFX sprite sheet for a dark fantasy top-down ARPG, painterly style matching the attached screenshot (not pixel art, not flat vector, no clay look). Crisp dark-blue outline, light from top-left, icy palette: white core, pale cyan, sky blue, deep blue shadow. Layout: exactly 4 frames in ONE horizontal row, equal spacing, each frame centered in its own equal-width cell, nothing touching the cell borders. Solid flat magenta (#FF00FF) background everywhere, no ground, no text, no watermark, no UI. Animation order left to right. Subject: a loop overlay of a frozen block: a translucent pale-blue ice shell with sharp crystal spikes and frost cracks around an EMPTY center (center left magenta so the enemy shows through), subtle glint moving across it over 4 frames.",
+  "prompt": "Hand-painted 2D game VFX sprite sheet for a dark fantasy top-down ARPG, painterly style matching the attached screenshot (not pixel art, not flat vector, no clay look). Crisp dark-blue outline, light from top-left, icy palette: white core, pale cyan, sky blue, deep blue shadow. Layout: exactly 4 frames in ONE horizontal row, equal spacing, each frame centered in its own equal-width cell, nothing touching the cell borders. Solid flat magenta (#FF00FF) background everywhere, no ground, no text, no watermark, no UI. Animation order left to right. Subject: a loop overlay of a frozen block: a translucent pale-blue ice shell with sharp crystal spikes and frost cracks around a center filled with a light translucent frost haze and thin clear ice (soft, low opacity so a creature underneath stays visible, NOT an empty hole), subtle glint moving across it over 4 frames. The 4 frames must clearly differ: change the crack pattern and the glint brightness/position from frame to frame, spikes slightly shifting. Colors stay ice-blue and white-blue powder until the very last frame; NO purple, violet or magenta tones anywhere in the effect.",
   "referencias": [
    "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
   ]
@@ -57,10 +58,11 @@
   "id": "gelo_explosao",
   "quadros": 8,
   "tamanho": "1536x1024",
-  "prompt": "Hand-painted 2D game VFX sprite sheet for a dark fantasy top-down ARPG, painterly style matching the attached screenshot (not pixel art, not flat vector, no clay look). Crisp dark-blue outline, light from top-left, icy palette: white core, pale cyan, sky blue, deep blue shadow. Layout: exactly 8 frames in ONE horizontal row, equal spacing, each frame centered in its own equal-width cell, nothing touching the cell borders. Solid flat magenta (#FF00FF) background everywhere, no ground, no text, no watermark, no UI. Animation order left to right. Subject: a frozen-enemy shatter explosion: an ice block bursting, big crystal shards flying radially outward with a white-cyan shockwave ring and frost mist, 8 frames from flash to fade.",
+  "prompt": "Hand-painted 2D game VFX sprite sheet for a dark fantasy top-down ARPG, painterly style matching the attached screenshot (not pixel art, not flat vector, no clay look). Crisp dark-blue outline, light from top-left, icy palette: white core, pale cyan, sky blue, deep blue shadow. Layout: exactly 8 frames in ONE horizontal row, equal spacing, each frame centered in its own equal-width cell, nothing touching the cell borders. Solid flat pure green (#00FF00) background everywhere, no ground, no text, no watermark, no UI. Animation order left to right. Subject: a frozen-enemy shatter explosion: an ice block bursting, big crystal shards flying radially outward with a white-cyan shockwave ring and frost mist, 8 frames from flash to fade. IMPORTANT: each frame occupies at most 70% of its cell width, crystals centered with wide empty green margins; nothing crosses into a neighbouring cell. Colors stay ice-blue and white-blue powder until the very last frame; NO purple, violet or magenta tones anywhere in the effect. Fade-out frames use pale blue-white frost dust.",
   "referencias": [
    "D:\\openclaude\\_trabalho-claude\\arte-ui\\docs\\arte\\sprites2d\\capturas_cripta\\sala1.png"
-  ]
+  ],
+  "fundo": "verde"
  },
  {
   "id": "gelo_aura",
