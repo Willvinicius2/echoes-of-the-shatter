@@ -22,6 +22,7 @@ const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const PortalScript = preload("res://scripts2d/portal_2d.gd")
+const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
 
 enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO, ROTA, PROXIMA }
 
@@ -103,6 +104,10 @@ func _ready() -> void:
 	menus.sair.connect(get_tree().quit)
 	add_child(menus)
 	Audio.musica("music_cripta")
+	if OS.is_debug_build():
+		ConsoleDev.new(self).registrar()   # comandos de playtest no console ` (LimboConsole)
+	elif has_node("/root/LimboConsole"):
+		get_node("/root/LimboConsole").enabled = false   # build de release: sem console
 	iniciar_corrida()
 	if com_menu:
 		_ir_titulo()

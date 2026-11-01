@@ -1,0 +1,10 @@
+# gdlint do cliente Godot. Regras de estilo que o código atual não segue ficam
+# desligadas (linhas longas, ordem de classe, nomes); o que sobra pega erro real.
+disable:
+- max-line-length
+- class-definitions-order
+- function-argument-name
+- max-file-lines
+- max-public-methods
+- duplicated-load
+- unused-argument

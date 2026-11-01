@@ -18,7 +18,7 @@ void fragment() {
 	float risco = smoothstep(0.93, 1.0, onda) * smoothstep(0.0, 0.5, esparso);
 	COLOR = mix(base, brilho, risco * 0.85);
 }
-""" 
+"""
 
 ## Curva suave (Catmull-Rom) por pontos em px, com passo aproximado `passo` px.
 static func spline(pts: Array, passo := 10.0) -> PackedVector2Array:
