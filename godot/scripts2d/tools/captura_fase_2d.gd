@@ -22,6 +22,7 @@ func _initialize() -> void:
 		"3_ruinas": room._centro(124, 52),
 		"6_bosque_e_borda": room._centro(30, 12),
 		"4_arena_guardiao": room.posicao_chefe + Vector2(0, 200),
+		"7_fim_estrada": room._centro(140, 29),
 	}
 	for nome in pontos:
 		run.player.global_position = pontos[nome]

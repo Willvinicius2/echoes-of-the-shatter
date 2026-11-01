@@ -302,7 +302,8 @@ func _on_inimigo_morto(e) -> void:
 func _physics_process(delta: float) -> void:
 	if estado == Estado.LUTA or estado == Estado.LIMPA or estado == Estado.PROXIMA:
 		tempo += delta
-	hud.tempo = tempo
+	if hud:
+		hud.tempo = tempo
 	if _timer > 0.0:
 		_timer -= delta
 		if _timer <= 0.0:
