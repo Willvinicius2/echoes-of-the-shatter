@@ -53,6 +53,7 @@ _subresources={
 },
 "M_PedraEscura": {
 "use_external/enabled": true,
+"use_external/fallback_path": "res://art/materials/M_PedraEscura.tres",
 "use_external/path": "res://art/materials/M_PedraEscura.tres"
 }
 }

@@ -1,6 +1,6 @@
 id,anim,linha,x,y,nota
-arqueiro,attack,0,24,-54,boca do arco na linha S (frente): mao do arco no quadro de soltar (quadro 4)
-arqueiro,attack,1,24,-55,boca do arco na linha SE
-arqueiro,attack,2,24,-59,boca do arco na linha E
-arqueiro,attack,3,26,-66,boca do arco na linha NE
-arqueiro,attack,4,-44,-62,boca do arco na linha N (de costas: o arco fica do lado esquerdo da folha)
+arqueiro,attack,0,6,-48,boca do arco na linha S (frente): mao do arco no quadro de soltar (quadro 4), folha redesenhada por direcao
+arqueiro,attack,1,38,-42,boca do arco na linha SE (arco inclinado para baixo-direita)
+arqueiro,attack,2,40,-57,boca do arco na linha E
+arqueiro,attack,3,26,-75,boca do arco na linha NE (arco inclinado para cima-direita)
+arqueiro,attack,4,-7,-72,boca do arco na linha N (de costas: arco acima do ombro esquerdo da folha)

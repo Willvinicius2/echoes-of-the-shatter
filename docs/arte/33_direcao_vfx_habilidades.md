@@ -142,7 +142,7 @@ Decisões de direção que valem sobre a implementação:
 - **Lista de efeitos de projétil** sai da coluna `tags` do CSV (pacote P1 do doc design/33), não de constante no código.
 
 Pendentes (donos):
-- **Redesenho da folha `attack`** por direção (2.1): thread de sprites do arqueiro; depois, remedir `ancoras_2d.csv`. A limpeza da flecha pintada solta nos quadros 4 e 5 já entrou (PR 183).
+- **Redesenho da folha `attack`** por direção (2.1): **feito** (gpt-image, uma faixa por direção; `tools/sprites2d/gerar_prompts_attack.py` + `montar_attack_direcional.py`); pontos de saída remedidos no quadro 4 em `ancoras_2d.csv`: S (6, −48), SE (38, −42), E (40, −57), NE (26, −75), N (−7, −72). As linhas NE e N têm escala ~10% menor para o arco caber no quadro. A limpeza da flecha pintada solta nos quadros 4 e 5 já entrou (PR 183).
 - **Recolor por shader** (paleta por elemento e nível) para intensidade e elemento convertido: thread do Arqueiro, junto do `resolver()`.
 - **Normalizar as folhas existentes** (potência de 2, manifesto) por script: fase de polimento.
 - **Modo "pontinho"** do status em massa (seção 4): integradora (`enemy_2d.gd`).
