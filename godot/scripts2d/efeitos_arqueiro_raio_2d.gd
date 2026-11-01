@@ -17,7 +17,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, _nivel: i
 	var dano: float = def.get("dano", 1.0)
 	match efeito:
 		"flecha_eletrica":
-			var f = jogador.lancar_flecha(dir, dano)
+			var f = jogador.lancar_flecha(dir, dano, 0, 1.0, def)
 			f.cor_fx = COR
 			var dur: float = def.get("duracao", 3.0)
 			var val: float = def.get("valor", 0.15)
@@ -25,8 +25,8 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, _nivel: i
 				if is_instance_valid(corpo) and corpo.has_method("aplicar_status") and corpo.has_method("take_damage"):
 					aplicar_choque(corpo, dur, val))
 			var sp := Quadros.new()
-			sp.preparar(_tex("flecha_eletrica_proj"), 6, 14.0, true, Vector2(0, -30))
-			f.add_child(sp)
+			sp.preparar(_tex("flecha_eletrica_proj"), 6, 14.0, true, Vector2.ZERO)
+			f.vis.add_child(sp)
 		"raio_encadeado":
 			var alvo := _mais_proximo(jogador, jogador.global_position, dir, def.get("alcance", 600.0), [])
 			if alvo == null:
@@ -61,15 +61,25 @@ static func aplicar_choque(inimigo: Node2D, dur: float, valor: float) -> void:
 	ov.dur = dur
 	inimigo.add_child(ov)
 
+## Forma "bifurcado" (passivo Raio Bifurcado): depois do primeiro alvo a corrente se divide em dois ramos, cada um
+## com os saltos restantes, sem repetir alvo.
 static func _encadear(jogador: Node2D, primeiro: Node2D, def: Dictionary) -> void:
 	var saltos := int(def.get("qtd", 4))
+	var visitados: Array = []
+	var origem: Vector2 = jogador.global_position + Vector2(0, -30)
+	_cadeia(jogador, primeiro, origem, def, saltos, 0, visitados)
+	if def.get("forma", "") == "bifurcado" and is_instance_valid(primeiro) and primeiro.is_inside_tree():
+		var raio: float = def.get("raio", 220.0)
+		var ponto: Vector2 = primeiro.global_position + Vector2(0, -24)
+		var outro := _mais_proximo(jogador, primeiro.global_position, Vector2.ZERO, raio, visitados)
+		_cadeia(jogador, outro, ponto, def, saltos - 1, 1, visitados)
+
+static func _cadeia(jogador: Node2D, primeiro: Node2D, origem: Vector2, def: Dictionary, saltos: int, salto_inicial: int, visitados: Array) -> void:
 	var raio: float = def.get("raio", 220.0)      # distância máxima entre um alvo e o próximo
 	var queda: float = def.get("valor", 0.2)      # fração de dano perdida a cada salto
 	var dano: float = jogador.stats["arrow_damage"] * def.get("dano", 1.0)
 	var dur_choque: float = def.get("duracao", 3.0)
 	var cena: Node = jogador.get_parent()
-	var visitados: Array = []
-	var origem: Vector2 = jogador.global_position + Vector2(0, -30)
 	var atual: Node2D = primeiro
 	for i in saltos:
 		if atual == null:
@@ -77,7 +87,7 @@ static func _encadear(jogador: Node2D, primeiro: Node2D, def: Dictionary) -> voi
 		visitados.append(atual)
 		var ponto: Vector2 = atual.global_position + Vector2(0, -24)
 		_arco(cena, origem, ponto)
-		var d := dano * pow(1.0 - clampf(queda, 0.0, 0.9), i)
+		var d := dano * pow(1.0 - clampf(queda, 0.0, 0.9), i + salto_inicial)
 		atual.take_damage(d, origem)
 		if is_instance_valid(atual) and atual.has_method("aplicar_status"):
 			aplicar_choque(atual, dur_choque, 0.15)
@@ -130,7 +140,10 @@ static func ativar_arauto(jogador: Node2D, def: Dictionary) -> void:
 	jogador.set_meta("arauto_trovao", def)
 	var aura := Quadros.new()
 	aura.name = "AuraArauto"
-	aura.preparar(_tex("arauto_trovao_aura"), 6, 10.0, true, Vector2(0, -20))
+	aura.preparar(_tex("arauto_trovao_aura"), 6, 10.0, true, Vector2.ZERO)
+	aura.position = Vector2(0, -4)   # no chão, aos pés
+	aura.scale = Vector2(1.0, 0.5)
+	aura.show_behind_parent = true   # atrás do arqueiro, não cortando o corpo
 	aura.modulate.a = 0.7
 	jogador.add_child(aura)
 
@@ -235,12 +248,14 @@ class Overlay extends Node2D:
 		draw_texture_rect_region(tex, Rect2(Vector2(-w, -h) * 0.5, Vector2(w, h)), Rect2(int(_t * 14.0) % 6 * w, 0, w, h))
 
 ## Tornado: puxa os inimigos para o centro e fere em pulsos por `duracao` s. Números vêm do CSV (def).
+## Forma "errante" (passivo Tornado Errante): o tornado anda atrás do inimigo mais próximo (`valor` px/s).
 class Tornado extends Node2D:
 	var raio := 150.0
 	var duracao := 4.0
 	var dano := 0.0
 	var puxa := 90.0      # px/s
 	var pulso := 0.5
+	var errante := false
 	var tex: Texture2D
 	var _t := 0.0
 	var _acc := 0.0
@@ -249,6 +264,7 @@ class Tornado extends Node2D:
 		raio = def.get("raio", 150.0)
 		duracao = def.get("duracao", 4.0)
 		puxa = def.get("valor", 90.0)
+		errante = def.get("forma", "") == "errante"
 		dano = base_dano * def.get("dano", 1.0)
 		var c := "res://art2d/fx/raio/tornado_tempestade.png"
 		tex = load(c) if ResourceLoader.exists(c) else null
@@ -257,6 +273,15 @@ class Tornado extends Node2D:
 	func _physics_process(delta: float) -> void:
 		_t += delta
 		_acc += delta
+		if errante:
+			var alvo: Node2D = null
+			var melhor := INF
+			for n in get_tree().get_nodes_in_group("hurtable"):
+				if n is Node2D and n.global_position.distance_squared_to(global_position) < melhor:
+					melhor = n.global_position.distance_squared_to(global_position)
+					alvo = n
+			if alvo != null and sqrt(melhor) > raio * 0.3:
+				global_position += (alvo.global_position - global_position).normalized() * puxa * delta
 		for n in get_tree().get_nodes_in_group("hurtable"):
 			if n is Node2D and n.global_position.distance_to(global_position) <= raio:
 				var v: Vector2 = global_position - n.global_position

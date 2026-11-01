@@ -46,3 +46,5 @@ skill_from_scratch,1,flag,modo horda: a corrida comeca sem habilidades (so o ata
 skill_gem_every_levels,2,niveis,modo horda: a cada este numero de niveis do Cristal o jogador ganha uma gema de habilidade
 skill_gem_cards,3,cartas,quantas habilidades a gema oferece para escolher
 horde_stuck_checks,4,conferencias,inimigo sem linha de visao e sem se aproximar por este numero de conferencias (horde_leash_check) volta ao anel
+passive_points_wave,1,pontos,pontos da arvore de passivos (doc 33) ganhos ao vencer cada onda ou sala
+passive_points_boss,3,pontos,pontos de passivo extras ao derrotar o chefe

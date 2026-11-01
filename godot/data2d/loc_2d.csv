@@ -310,9 +310,212 @@ ramo.fogo.name,Fogo
 ramo.fogo.desc,Queimadura, meteoros e chão em brasas
 ramo.raio.name,Raio
 ramo.raio.desc,Choque, raios encadeados e tempestade
-upgrade.crit.name,Olho Clínico
-upgrade.crit.desc,+5% de chance de golpe crítico
-upgrade.crit_power.name,Golpe Fatal
-upgrade.crit_power.desc,+25% de dano nos críticos
-upgrade.focus.name,Mente Afiada
+passivo.arqueiro.name,Arqueiro
+passivo.arqueiro.desc,Raiz da árvore: todo caminho começa aqui
+passivo.c_dano_1.name,Punho Firme
+passivo.c_dano_1.desc,+6% de dano de todas as flechas
+passivo.c_dano_2.name,Braço Treinado
+passivo.c_dano_2.desc,+6% de dano de todas as flechas
+passivo.c_crit_1.name,Olhar Atento
+passivo.c_crit_1.desc,+4% de chance de crítico
+passivo.c_cad_1.name,Mãos Ágeis
+passivo.c_cad_1.desc,Tiro básico 8% mais rápido
+passivo.c_vel_1.name,Corda Tensa
+passivo.c_vel_1.desc,+10% de velocidade das flechas
+passivo.c_vida_1.name,Fôlego
+passivo.c_vida_1.desc,+8% de vida máxima
+passivo.k_maos_rapidas.name,Mãos Rápidas
+passivo.k_maos_rapidas.desc,"Recarga das habilidades 30% menor e tiro básico 25% mais rápido, mas 20% menos dano em tudo"
+passivo.p_prec_1.name,Ponta Afiada
+passivo.p_prec_1.desc,+8% de dano das habilidades de projétil
+passivo.p_prec_2.name,Voo Reto
+passivo.p_prec_2.desc,+10% de velocidade dos projéteis das habilidades
+passivo.p_prec_3.name,Ferro Frio
+passivo.p_prec_3.desc,Projéteis das habilidades atravessam +1 inimigo
+passivo.n_prec_crit.name,Olho de Falcão
+passivo.n_prec_crit.desc,+5% de chance de crítico e +25% de dano crítico
+passivo.n_power_shot.name,Disparo Pesado
+passivo.n_power_shot.desc,Disparo Carregado: 20% mais dano e atravessa +1 inimigo
+passivo.n_sniper.name,Tiro de Longe
+passivo.n_sniper.desc,Tiro Certeiro: 30% mais dano e 25% mais rápido
+passivo.t_lanca.name,Lança de Ferro
+passivo.t_lanca.desc,"Disparo Carregado vira uma lança: atravessa tudo em linha, 50% mais rápida, 15% menos dano"
+passivo.k_tiro_unico.name,Tiro Único
+passivo.k_tiro_unico.desc,"+25% de dano das flechas, +2 perfuração e Disparo Carregado 60% mais forte; Leque, Salva e Estilhaço disparam só 1 projétil"
+passivo.p_caca_1.name,Alcance Largo
+passivo.p_caca_1.desc,+12% de área das habilidades de área
+passivo.p_caca_2.name,Chão Marcado
+passivo.p_caca_2.desc,+15% de duração das zonas no chão
+passivo.p_caca_3.name,Aljava Cheia
+passivo.p_caca_3.desc,+1 projétil nas habilidades de vários projéteis
+passivo.n_leque.name,Leque Aberto
+passivo.n_leque.desc,Leque de Flechas: cone 30% mais aberto e 15% mais dano
+passivo.n_chuva.name,Tempestade de Flechas
+passivo.n_chuva.desc,Chuva de Flechas: +3 pulsos e 20% mais área
+passivo.n_explosiva.name,Pólvora Fina
+passivo.n_explosiva.desc,Flecha Explosiva: 35% mais área e 15% mais dano
+passivo.t_espiral.name,Salva em Espiral
+passivo.t_espiral.desc,"Leque de Flechas vira uma volta inteira de 8 flechas, cada uma com 35% menos dano"
+passivo.k_mar_flechas.name,Mar de Flechas
+passivo.k_mar_flechas.desc,"+2 projéteis no tiro básico e em toda habilidade de projétil, cada um com 25% menos dano"
+passivo.p_somb_1.name,Passo Leve
+passivo.p_somb_1.desc,+6% de velocidade de movimento
+passivo.p_somb_2.name,Passo Longo
+passivo.p_somb_2.desc,+6% de velocidade de movimento
+passivo.p_somb_3.name,Ritmo
+passivo.p_somb_3.desc,Recarga das habilidades 5% menor
+passivo.p_somb_4.name,Golpe Oportuno
+passivo.p_somb_4.desc,+5% de dano de todas as habilidades ativas
+passivo.n_salto.name,Recuo Certeiro
+passivo.n_salto.desc,Salto Atrás: recua 30% mais longe e o tiro ao pousar dá 30% mais dano
+passivo.n_adrenalina.name,Sangue Quente
+passivo.n_adrenalina.desc,Adrenalina: dura 40% mais e é 20% mais forte
+passivo.n_fumaca.name,Névoa Densa
+passivo.n_fumaca.desc,Bomba de Fumaça: 40% mais área e inimigos 10% mais lentos
+passivo.n_vento.name,Vento a Favor
+passivo.n_vento.desc,Projéteis 20% mais rápidos e flechas alcançam 15% mais longe
+passivo.p_raio_1.name,Faísca
+passivo.p_raio_1.desc,+10% de dano das habilidades de raio
+passivo.p_raio_2.name,Corrente
+passivo.p_raio_2.desc,+10% de dano das habilidades de raio
+passivo.p_raio_3.name,Choque Forte
+passivo.p_raio_3.desc,Choque 25% mais forte (o inimigo recebe mais dano)
+passivo.p_raio_4.name,Choque Longo
+passivo.p_raio_4.desc,+20% de duração do choque e das habilidades de raio
+passivo.n_chain_saltos.name,Mais Elos
+passivo.n_chain_saltos.desc,Raio Encadeado: salta em +2 inimigos
+passivo.n_chain_raio.name,Elos Largos
+passivo.n_chain_raio.desc,Raio Encadeado: salta 30% mais longe e perde 25% menos dano por salto
+passivo.t_bifurcado.name,Raio Bifurcado
+passivo.t_bifurcado.desc,"Raio Encadeado se divide em dois ramos no primeiro alvo (um salto a menos, 30% menos dano por ramo)"
+passivo.n_tornado.name,Olho da Tormenta
+passivo.n_tornado.desc,Tornado de Tempestade: 25% maior e dura 25% mais
+passivo.t_errante.name,Tornado Errante
+passivo.t_errante.desc,"Tornado de Tempestade persegue o inimigo mais próximo, mas dura 30% menos"
+passivo.n_trovao.name,Trovão Alto
+passivo.n_trovao.desc,Arauto do Trovão: raio 30% maior e 25% mais forte
+passivo.k_tempestade.name,Tempestade Perpétua
+passivo.k_tempestade.desc,"Arautos 50% mais fortes e 50% maiores, mas todo status dura 40% menos"
+passivo.p_ven_1.name,Peçonha
+passivo.p_ven_1.desc,+12% de dano contínuo do veneno
+passivo.p_ven_2.name,Peçonha Negra
+passivo.p_ven_2.desc,+12% de dano contínuo do veneno
+passivo.p_ven_3.name,Veneno Lento
+passivo.p_ven_3.desc,+20% de duração do veneno e das zonas de veneno
+passivo.p_ven_4.name,Charco
+passivo.p_ven_4.desc,+15% de duração das zonas no chão
+passivo.p_ven_5.name,Espinho Tóxico
+passivo.p_ven_5.desc,+10% de dano direto das habilidades de veneno
+passivo.n_poison_arrow.name,Flecha Untada
+passivo.n_poison_arrow.desc,Flecha Peçonhenta: atravessa +1 inimigo e envenena 20% mais forte
+passivo.n_orb.name,Poça Funda
+passivo.n_orb.desc,Bola de Veneno: poça 30% maior e dura 20% mais
+passivo.t_pustulas.name,Pústulas
+passivo.t_pustulas.desc,Bola de Veneno pulsa mais vezes numa poça 30% menor
+passivo.n_corrosive.name,Chuva Ácida
+passivo.n_corrosive.desc,Chuva Corrosiva: +2 pulsos e 20% mais área
+passivo.n_plague.name,Peste Negra
+passivo.n_plague.desc,Arauto da Peste: espalha 35% mais longe e 25% mais forte
+passivo.n_ven_vel.name,Dardo Rápido
+passivo.n_ven_vel.desc,Projéteis de veneno 15% mais rápidos e atravessam +1 inimigo
+passivo.p_gelo_1.name,Geada
+passivo.p_gelo_1.desc,+10% de dano das habilidades de gelo
+passivo.p_gelo_2.name,Gelo Negro
+passivo.p_gelo_2.desc,+10% de dano das habilidades de gelo
+passivo.p_gelo_3.name,Frio Cortante
+passivo.p_gelo_3.desc,Frio 20% mais forte (lentidão por acúmulo)
+passivo.p_gelo_4.name,Frio Longo
+passivo.p_gelo_4.desc,+20% de duração do frio e das habilidades de gelo
+passivo.p_gelo_5.name,Cristal Veloz
+passivo.p_gelo_5.desc,Projéteis de gelo 15% mais rápidos
+passivo.n_frost.name,Flecha de Cristal
+passivo.n_frost.desc,Flecha Gélida: atravessa +1 inimigo e 15% mais dano
+passivo.t_anel.name,Anel Gélido
+passivo.t_anel.desc,"Flecha Gélida solta 6 lascas em volta do alvo ao acertar, com 20% menos dano"
+passivo.n_shard.name,Mil Lascas
+passivo.n_shard.desc,Estilhaço Glacial: +2 lascas que buscam 25% mais longe
+passivo.n_prison.name,Inverno
+passivo.n_prison.desc,Prisão de Gelo: 25% maior e congela 25% mais tempo
+passivo.n_herald_ice.name,Estilhaçar
+passivo.n_herald_ice.desc,Arauto do Gelo: explosão 30% maior e 25% mais forte
+passivo.n_gelo_crit.name,Quebra Frágil
+passivo.n_gelo_crit.desc,+30% de dano crítico e +10% de dano de gelo
+passivo.p_fogo_1.name,Brasa
+passivo.p_fogo_1.desc,+10% de dano das habilidades de fogo
+passivo.p_fogo_2.name,Chama Viva
+passivo.p_fogo_2.desc,+10% de dano das habilidades de fogo
+passivo.p_fogo_3.name,Queimadura Funda
+passivo.p_fogo_3.desc,Queimadura 20% mais forte
+passivo.p_fogo_4.name,Fogo Lento
+passivo.p_fogo_4.desc,+20% de duração da queimadura e das habilidades de fogo
+passivo.p_fogo_5.name,Labareda
+passivo.p_fogo_5.desc,+10% de área das habilidades de fogo
+passivo.n_ardente.name,Ponta em Brasa
+passivo.n_ardente.desc,Flecha Ardente: atravessa +1 inimigo e queima 30% mais tempo
+passivo.n_meteoro.name,Impacto
+passivo.n_meteoro.desc,Flecha Meteoro: 30% mais área e 20% mais dano
+passivo.t_brasas.name,Chuva de Brasas
+passivo.t_brasas.desc,Flecha Meteoro vira 3 quedas menores em linha (35% menos área e 25% menos dano cada)
+passivo.n_muralha.name,Muro Alto
+passivo.n_muralha.desc,Muralha de Brasas: 30% mais comprida e dura 30% mais
+passivo.n_cinzas.name,Cinzas ao Vento
+passivo.n_cinzas.desc,Arauto das Cinzas: explosão 35% maior e 25% mais forte
+passivo.n_fogo_vel.name,Rastro de Fogo
+passivo.n_fogo_vel.desc,Projéteis de fogo 15% mais rápidos e +10% de dano de fogo
+setor.centro,Arqueiro
+setor.precisao,Precisão
+setor.cacada,Caçada
+setor.sombra,Sombra
+setor.raio,Raio
+setor.veneno,Veneno
+setor.gelo,Gelo
+setor.fogo,Fogo
+tree.tab_skills,Habilidades
+tree.tab_passives,Passivos
+tree.passive_points,Pontos de passivo
+tree.passive_cost,Custo: %d
+tree.passive_active,Ativo
+tree.passive_locked,Bloqueado
+tree.passive_preview,Antes → depois
+tree.passive_keystone,Keystone (só um por vez)
+tree.passive_transform,Transforma a habilidade
+tree.passive_stats,Jogador
+tree.passive_empty,Esta classe ainda não tem árvore de passivos
+upgrade.wide_reach.name,Alcance Amplo
+upgrade.wide_reach.desc,+15% de área das habilidades
+upgrade.extra_shot.name,Projétil Extra
+upgrade.extra_shot.desc,+1 projétil por habilidade de projétil
+upgrade.swift_shots.name,Disparo Veloz
+upgrade.swift_shots.desc,+20% de velocidade dos projéteis das habilidades
+upgrade.lingering.name,Efeito Duradouro
+upgrade.lingering.desc,+20% de duração das zonas
+upgrade.piercing_skills.name,Ponta Dilacerante
+upgrade.piercing_skills.desc,As habilidades de projétil atravessam +1 inimigo
+upgrade.flame_lore.name,Saber das Chamas
+upgrade.flame_lore.desc,+20% de dano das habilidades de fogo
+upgrade.frost_lore.name,Saber do Gelo
+upgrade.frost_lore.desc,+20% de dano das habilidades de gelo
+upgrade.storm_lore.name,Saber da Tempestade
+upgrade.storm_lore.desc,+20% de dano das habilidades de raio
+upgrade.venom_lore.name,Saber do Veneno
+upgrade.venom_lore.desc,+20% de dano das habilidades de veneno
+upgrade.herald_might.name,Força dos Arautos
+upgrade.herald_might.desc,+25% de dano dos Arautos
+upgrade.keen_eye.name,Olho Clínico
+upgrade.keen_eye.desc,+5% de chance de crítico
+upgrade.deadly_aim.name,Mira Letal
+upgrade.deadly_aim.desc,+25% de dano crítico
+upgrade.focus.name,Foco
 upgrade.focus.desc,Habilidades recarregam 8% mais rápido
+passivo.pre_area.name,Mãos Largas
+passivo.pre_area.desc,Começa a corrida com +10% de área nas habilidades
+passivo.pre_proj.name,Aljava Dupla
+passivo.pre_proj.desc,Começa a corrida com +1 projétil por habilidade de projétil
+passivo.pre_vel.name,Corda Tensa
+passivo.pre_vel.desc,Começa a corrida com +15% de velocidade dos projéteis
+passivo.pre_dur.name,Raízes Fundas
+passivo.pre_dur.desc,Começa a corrida com +15% de duração das zonas
+passivo.pre_herald.name,Pacto dos Arautos
+passivo.pre_herald.desc,Começa a corrida com +15% de dano dos Arautos
+passivo.pre_elem.name,Iniciado dos Elementos
+passivo.pre_elem.desc,Começa a corrida com +8% de dano em fogo, gelo, raio e veneno

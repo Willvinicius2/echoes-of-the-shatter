@@ -1,13 +1,13 @@
-# 33 — Como o personagem adquire habilidades
+# 35 — Como o personagem adquire habilidades (skills e Heralds da partida)
 
 Decisão do Will (01/11/2026, refinada no mesmo dia): o jogo tem **duas camadas** de progressão de habilidade.
 
 ## Camada 1 — árvore fixa (permanente)
 
-É a árvore de habilidades de hoje (tecla T), que fica no personagem para sempre, como a árvore de passivas do
-Path of Exile. O que o jogador deixa pronto nela vale em **toda** corrida: ela guarda as passivas que ele escolheu
-fixar, e os pontos gastos nela não zeram. Vive no core do hub (com save). As passivas dela entram nos stats por
-`corrida_stats` do core, como sempre.
+Fica no personagem para sempre, como a árvore de passivas do Path of Exile: a árvore de passivos que modifica as
+skills (`33_arvore_passivos_arqueiro.md`, `passivos_2d.gd`) e a árvore de habilidades de hoje (tecla T, core do hub,
+com save). O que o jogador deixa pronto nelas vale em **toda** corrida e os pontos gastos não zeram. As passivas
+entram nos stats por `corrida_stats` do core e por `aplicar_passivos_stats`, como sempre.
 
 ## Camada 2 — habilidades da partida (zeram a cada corrida)
 
@@ -26,12 +26,11 @@ Peste, Gelo) e passivas de partida. Esta camada vive num core próprio, sem save
    libera: raiz sem pré-requisito, ou filha cujo pai já foi aprendido na partida, abaixo do `nivel_max`. Escolher
    uma já aprendida sobe o nível dela. Ativa nova entra no primeiro slot livre; passivas e Heralds valem na hora
    (os stats são recalculados). A gema guarda só o `id` de `habilidades_<classe>.csv`.
-4. **Passivas de partida em carta** (reforços de atributo em `upgrades.csv`, sem código novo): dano, velocidade de
-   ataque, vida, esquiva, projéteis, perfuração, **chance de crítico** (`crit`), **dano crítico** (`crit_power`) e
-   **recarga de habilidades** (`focus`, `skill_cd_mult`). Aumentar o tamanho da habilidade depende de um stat de área
-   que os efeitos ainda não leem (pendente com a thread das habilidades do Arqueiro).
+4. **Passivas de partida** (área, velocidade, projéteis, duração, dano por elemento, Heralds, crítico, recarga) são as
+   cartas de nível e baú e os nós de preparo de `34_passivas_da_partida.md` (`run_*` em `upgrades.csv`). Esta
+   doc cuida só de **skills e Heralds**, que vêm pela gema.
 
-As duas camadas se somam: uma passiva fixada na árvore e a mesma ganha na partida valem as duas.
+As camadas se somam: o que está fixo na árvore, o que a gema ensinou na partida e as cartas `run_*` valem juntos.
 
 ## Números (todos em `run_settings.csv`)
 
@@ -50,5 +49,4 @@ As duas camadas se somam: uma passiva fixada na árvore e a mesma ganha na parti
   conta por corrida é uma decisão de meta-progressão.
 - O sorteio das opções usa o RNG do cliente (não reproduzível por semente); mover para o core se quisermos replays.
 - Com os 4 slots cheios uma ativa nova não entra em slot nenhum: falta a troca de slot na tela da gema.
-- Stat de tamanho da habilidade (área) para as passivas de partida e a fixa.
 - Balanceamento provisório; tudo nos CSV.

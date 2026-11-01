@@ -24,3 +24,13 @@ crit_chance,0,fracao,chance de golpe crítico das flechas (habilidades somam)
 crit_mult,2,x,multiplicador do dano crítico
 poison_dps,0,hp/s,veneno aplicado pela flecha (habilidade Pontas Venenosas)
 poison_time,3,s,duração do veneno
+run_area,0,fracao,aumento de raio e abertura das habilidades de area (cartas e nos de preparo)
+run_proj,0,projeteis,projeteis extras por habilidade de projetil
+run_vel,0,fracao,aumento de velocidade dos projeteis das habilidades
+run_dur,0,fracao,aumento de duracao das zonas
+run_pierce,0,corpos,perfuracao extra das habilidades de projetil
+run_dmg_fogo,0,fracao,aumento de dano das habilidades de fogo
+run_dmg_gelo,0,fracao,aumento de dano das habilidades de gelo
+run_dmg_raio,0,fracao,aumento de dano das habilidades de raio
+run_dmg_veneno,0,fracao,aumento de dano das habilidades de veneno
+run_dmg_herald,0,fracao,aumento de dano dos Arautos

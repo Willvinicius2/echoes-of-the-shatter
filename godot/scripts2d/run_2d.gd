@@ -624,6 +624,7 @@ func _abrir_porta() -> void:
 	if room.aberta():
 		_fim_da_onda()
 		return
+	_pontos_passivos(false)
 	room.abrir_porta()
 	Audio.tocar("door_open")
 	hud.mensagem = Csv.t("hud.rest" if no_atual["tipo"] == "descanso" else "hud.room_clear")
@@ -632,13 +633,24 @@ func _abrir_porta() -> void:
 ## Fase aberta: onda vencida leva à seguinte depois de uma pausa curta; depois do chefe, abre o portal.
 func _fim_da_onda() -> void:
 	if indice < salas.size() - 1:
+		_pontos_passivos(false)
 		hud.mensagem = Csv.t("hud.rest_open" if no_atual["tipo"] == "descanso" else "hud.wave_clear")
 		estado = Estado.PROXIMA
 		_timer = float(config.get("next_wave_delay", 1.5))
 		return
+	_pontos_passivos(true)
 	_abrir_portal()
 	hud.mensagem = Csv.t("hud.portal_open")
 	estado = Estado.LIMPA
+
+## Pontos da árvore de passivos (doc 33): `passive_points_wave` por onda ou sala vencida, `passive_points_boss` pelo chefe.
+## O saldo é permanente (passivos_2d.gd grava por classe).
+func _pontos_passivos(chefe: bool) -> void:
+	if player == null or not "habilidades" in player or player.habilidades == null or player.habilidades.passivos == null:
+		return
+	var n := int(config.get("passive_points_boss" if chefe else "passive_points_wave", 0))
+	if n > 0 and not player.habilidades.passivos.defs.is_empty():
+		player.habilidades.passivos.ganhar_pontos(n)
 
 ## Mensagem central que some sozinha depois de `tempo` s (se outra não tomou o lugar).
 func _avisar(texto: String, tempo: float) -> void:

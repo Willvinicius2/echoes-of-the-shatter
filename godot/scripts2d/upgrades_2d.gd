@@ -44,6 +44,7 @@ func restaurar(jogador: Node) -> void:
 		_base_bruta = jogador.stats.duplicate()
 	_nucleo().corrida_iniciar(semente, _base_bruta)
 	jogador.stats = _stats_finais()   # base + meta + upgrades + passivas da árvore fixa (core) + passivas da partida
+	_passivos_globais(jogador)
 	sincronizar(false)
 	mudou.emit()
 
@@ -77,6 +78,7 @@ func escolher(id: String, jogador: Node) -> bool:
 	if int(r["resultado"]) != 0:
 		return false
 	jogador.stats = _stats_finais()
+	_passivos_globais(jogador)
 	jogador.hp = float(r["hp"])
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
 	sincronizar()
@@ -88,7 +90,13 @@ func reaplicar(jogador: Node) -> void:
 	if s.is_empty():
 		return   # sem corrida: os stats voltam com a próxima corrida_iniciar
 	jogador.stats = s
+	_passivos_globais(jogador)
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
+
+## Nós `global` da árvore de passivos (passivos_2d.gd) por cima dos stats que o core calculou.
+static func _passivos_globais(jogador: Node) -> void:
+	if jogador.has_method("aplicar_passivos_stats"):
+		jogador.aplicar_passivos_stats()
 
 # --- Cartas de nível e de baú (API 1.12, pacote H4 do plano 31): regras no core, aqui só a ponte ---------------------
 
@@ -102,6 +110,7 @@ func escolher_nivel(id: String, jogador: Node) -> bool:
 	if int(r["resultado"]) != 0:
 		return false
 	jogador.stats = _stats_finais()
+	_passivos_globais(jogador)
 	jogador.hp = float(r["hp"])
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
 	sincronizar()
