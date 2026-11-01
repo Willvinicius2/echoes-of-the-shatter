@@ -132,6 +132,11 @@ for x, y in [(36, 75), (60, 64), (100, 48), (122, 41), (106, 22), (66, 16), (128
 grade[P[1]][P[0]] = "P"
 for x, y in E_INICIO:
     grade[y][x] = "E"
+# Runas no chão do centro da arena, onde se luta (anel pequeno em volta do estrado).
+for y in range(int(ay) - 5, int(ay) + 6):
+    for x in range(int(ax) - 5, int(ax) + 6):
+        if 3.4 <= math.dist((x, y), (ax, ay)) < 4.4 and grade[y][x] == ".":
+            grade[y][x] = "r"
 grade[int(ay) - 3][int(ax)] = "G"
 grade[int(ay) + 4][int(ax)] = "X"
 
@@ -269,6 +274,10 @@ for _ in range(45):
         if 1 <= x < W - 1 and 1 <= y < H - 1 and not em_laje(x, y):
             espalhar(["grass_dry_tall", "grass_dry_tall", "reeds_dry", "thistles_dry", "grass_dry_patch"], 1,
                      (x - 0.2, y - 0.2, x + 0.2, y + 0.2), 0.45, tentativas=3, sem_caminho=0.6)
+
+# Tufos baixos e flores secas pelo gramado todo, em escala menor, para o chão perto do personagem não ficar liso.
+espalhar(["grass_dry_patch", "flowers_dead", "leaves_scattered", "thistles_dry", "leaves_pile"], 420, (6, 6, 174, 94), 0.5,
+         sem_caminho=0.5, filtro=lambda x, y: not em_laje(x, y))
 
 # Zona 2: margens dos riachos.
 beira = lambda x, y: perto_riacho(x, y, 1.6) and not perto_riacho(x, y, 0.9)

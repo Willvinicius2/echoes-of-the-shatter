@@ -333,6 +333,8 @@ func _desenhar_lajes() -> void:
 		pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 		pg.uv = pg.polygon
 		pg.color = Color(0.85, 0.82, 0.8) if escuro else Color(0.92, 0.92, 0.9)
+		if not escuro and i > 0 and lajes[i - 1]["tom"] == "escuro" and m["raio"] < lajes[i - 1]["raio"]:
+			pg.color = Color(0.72, 0.68, 0.66, 0.8)   # estrado sobre a laje escura: contraste baixo, sem cara de tapete
 		raiz.add_child(pg)
 
 ## Círculo ondulado (raio em px) para as manchas de laje; a mesma semente dá o mesmo contorno.
