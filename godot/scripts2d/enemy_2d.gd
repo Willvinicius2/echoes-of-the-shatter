@@ -317,9 +317,10 @@ func _feedback_golpe(amount: float, origem: Vector2, morreu: bool) -> void:
 	var c := Feel.cfg()
 	var forte: bool = not morreu and amount >= hp_max * c["strong_hit_pct"]
 	var stop: float = c["hit_stop_kill_ms"] if morreu else (c["hit_stop_strong_ms"] if forte else c["hit_stop_hit_ms"])
-	Feel.hit_stop(stop)
-	Feel.shake(self, c["shake_kill_amp" if morreu else "shake_hit_amp"], c["shake_kill_time" if morreu else "shake_hit_time"])
-	tremer_sprite(c["sprite_shake_px"], c["sprite_shake_time"])
+	if origem != Vector2.ZERO or morreu:   # veneno e queimadura (sem origem) não congelam nem tremem a tela a cada pulso
+		Feel.hit_stop(stop)
+		Feel.shake(self, c["shake_kill_amp" if morreu else "shake_hit_amp"], c["shake_kill_time" if morreu else "shake_hit_time"])
+		tremer_sprite(c["sprite_shake_px"], c["sprite_shake_time"])
 	Feel.numero(self, amount, Color(1.0, 0.85, 0.2) if (morreu or forte) else (Color(1.0, 0.65, 0.15) if amount >= hp_max * c["weak_hit_pct"] else Color.WHITE), morreu, forte)
 	if origem != Vector2.ZERO:
 		var dir := (global_position - origem).normalized()
