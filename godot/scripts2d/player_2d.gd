@@ -12,6 +12,9 @@ const GeloFx = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
 const FogoFx = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
 const RaioFx = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const ANCORAS := "res://data2d/ancoras_2d.csv"   # boca do arco por linha da folha (doc 33 seção 2)
+static var _ancoras := {}   # sprite_id -> {linha: Vector2 (px a partir dos pés)}
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
@@ -106,6 +109,8 @@ func usar_habilidade(slot: int, alvo := {}) -> bool:
 	var agora := Time.get_ticks_msec()
 	if proj:
 		dir = dir.rotated(_desvio_leque(agora))
+	var facing_antes := facing
+	facing = dir   # antes de disparar: a boca do arco e o sprite seguem a direção do tiro, não a do passo anterior
 	var ok: bool = habilidades.usar(slot, self, dir)
 	alvo_ponto = Vector2.INF
 	if ok and proj:
@@ -113,7 +118,8 @@ func usar_habilidade(slot: int, alvo := {}) -> bool:
 	if ok:
 		if estado == Estado.LIVRE and has_method("animar_conjuracao"):   # mago: gesto de conjuração sem travar o movimento
 			call("animar_conjuracao")
-		facing = dir
+	else:
+		facing = facing_antes
 	return ok
 
 ## Leque do autocast: o 1º disparo sai reto na mira; os que saem junto (dentro de `leque_janela`) abrem para os lados,
@@ -133,16 +139,22 @@ func _desvio_leque(agora_ms: int) -> float:
 func herald_morte(inimigo: Node2D, sobra := 0.0) -> void:
 	if habilidades == null:
 		return
-	if habilidades.nivel("herald_plague") > 0:
+	if habilidades.nivel("herald_plague") > 0 and inimigo.tem_status("veneno"):
 		VenenoFx.arauto_peste_morte(inimigo, habilidades.def_nivel("herald_plague"))
+		Vfx.aura_acender(self, "AuraPeste")
 	if habilidades.nivel("herald_ice") > 0:
 		GeloFx.arauto_vigiar(inimigo, self, habilidades.def_nivel("herald_ice"))   # explode no died.emit, se estiver congelado
+		if GeloFx.esta_congelado(inimigo):
+			Vfx.aura_acender(self, "AuraGelo")
 	if habilidades.nivel("herald_thunder") > 0:
 		RaioFx.ao_morrer(inimigo)
+		if inimigo.tem_status("choque"):
+			Vfx.aura_acender(self, "AuraArauto")
 	if habilidades.nivel("arauto_cinzas") > 0:
 		var d: Dictionary = habilidades.def_nivel("arauto_cinzas").duplicate()
 		d["minimo"] = float(inimigo.hp_max) * float(d.get("qtd", 0.0)) / 100.0   # qtd = sobra mínima em % da vida máxima
-		FogoFx.ao_abate(self, inimigo.global_position, sobra, d)
+		if FogoFx.ao_abate(self, inimigo.global_position, sobra, d):
+			Vfx.aura_acender(self, "AuraCinzas")
 
 ## Auras e gatilhos dos Heralds seguem o que está aprendido (liga e desliga quando a árvore muda).
 func _atualizar_heralds() -> void:
@@ -153,6 +165,11 @@ func _atualizar_heralds() -> void:
 	else:
 		_tirar_no("AuraPeste")
 	RaioFx.ativar_arauto(self, habilidades.def_nivel("herald_thunder") if habilidades.nivel("herald_thunder") > 0 else {})
+	if habilidades.nivel("herald_ice") > 0:
+		if not has_node("AuraGelo"):
+			GeloFx.aura(self)
+	else:
+		_tirar_no("AuraGelo")
 	if habilidades.nivel("arauto_cinzas") > 0:
 		if not has_node("AuraCinzas"):
 			FogoFx.aura(self).name = "AuraCinzas"
@@ -329,20 +346,67 @@ func _on_frame_changed() -> void:
 func mira_atual() -> Vector2:
 	return _aim
 
+## Pontos de ancoragem da folha (data2d/ancoras_2d.csv): linha da animação de ataque -> boca do arco em px dos pés.
+static func _ancoras_de(id: String) -> Dictionary:
+	if not _ancoras.has(id):
+		var d := {}
+		for r in Csv.rows(ANCORAS):
+			if r["id"] == id and r["anim"] == "attack":
+				d[int(r["linha"])] = Vector2(float(r["x"]), float(r["y"]))
+		_ancoras[id] = d
+	return _ancoras[id]
+
+## Boca do arco para a direção `dir` (doc 33 seção 2): {chao: ponto no chão (mundo) sob a mão do arco, altura: px
+## acima do chão}. Sai da linha da folha que o sprite mostra nessa direção, espelhada quando a linha é espelhada.
+## Sprite sem ancoragem (outra classe) cai no antigo `arrow_spawn_dist` à frente dos pés, na altura de voo.
+func boca_do_arco(dir: Vector2) -> Dictionary:
+	var anc := _ancoras_de(sprite_id)
+	var d: Array = SpriteLoader.dir_for(dir if dir != Vector2.ZERO else facing, SpriteLoader.info(sprite_id)["dirs"])
+	if anc.is_empty() or not anc.has(d[0]):
+		return {"chao": global_position + dir * stats["arrow_spawn_dist"], "altura": stats["arrow_altura"]}
+	var p: Vector2 = anc[d[0]]
+	if d[1]:
+		p.x = -p.x
+	return {"chao": global_position + Vector2(p.x, 0.0), "altura": -p.y}
+
 ## Cria e lança uma flecha com os stats do jogador (crítico, veneno, perfuração). Usada pelo tiro e pelas habilidades.
+## A flecha nasce na boca do arco, com flash de boca e recuo do sprite, e desce até a altura de voo (doc 33 seção 2).
 func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0) -> Node:
 	var f := ArrowScript.new()
 	var dano: float = stats["arrow_damage"] * dano_mult
 	if stats["crit_chance"] > 0.0 and _rng.randf() < stats["crit_chance"]:
 		dano *= stats["crit_mult"]
-	f.setup("player", global_position + dir * stats["arrow_spawn_dist"], dir,
-		stats["arrow_speed"] * vel_mult, dano, stats["arrow_range"])
+	var boca := boca_do_arco(dir)
+	f.setup("player", boca["chao"], dir, stats["arrow_speed"] * vel_mult, dano, stats["arrow_range"],
+		boca["altura"], stats["arrow_altura"], stats["arrow_altura_dist"])
 	f.pierce = int(stats["arrow_pierce"]) + pierce_extra  # gancho de upgrades
 	if stats["poison_dps"] > 0.0:
 		f.veneno_dps = stats["poison_dps"]
 		f.veneno_t = stats["poison_time"]
 	get_parent().add_child(f)
+	var c := Feel.cfg()
+	Vfx.flash_boca(get_parent(), boca["chao"] + Vector2(0.0, -boca["altura"]), dir, f)
+	recuar_sprite(dir, c["shot_recoil_px"], c["shot_recoil_time"])
 	return f
+
+## Várias cópias do mesmo disparo saem do mesmo arco uma a uma, com `projetil_atraso` entre elas (doc 33 seção 5).
+## `dirs` são as direções já abertas em leque. Devolve a primeira flecha (as outras saem depois).
+func lancar_flechas(dirs: Array, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0) -> Node:
+	var primeira: Node = null
+	var atraso: float = stats.get("projetil_atraso", 0.0)
+	var eu: WeakRef = weakref(self)   # o temporizador não segura o jogador: se ele sumir antes, a cópia não sai
+	for i in dirs.size():
+		var d: Vector2 = dirs[i]
+		if i == 0 or atraso <= 0.0:
+			var f := lancar_flecha(d, dano_mult, pierce_extra, vel_mult)
+			if primeira == null:
+				primeira = f
+		else:
+			get_tree().create_timer(atraso * i).timeout.connect(func():
+				var j: Node = eu.get_ref()
+				if j != null and j.is_inside_tree() and not j.esta_morto():
+					j.lancar_flecha(d, dano_mult, pierce_extra, vel_mult))
+	return primeira
 
 ## Salto das habilidades: avança `dist` px na direção `dir` em `dur` s, invulnerável. Não gasta a recarga da esquiva.
 func saltar(dir: Vector2, dist: float, dur: float) -> void:
@@ -363,8 +427,10 @@ func dar_buff(dur: float, vel: float, cad: float) -> void:
 
 func _soltar_flecha() -> void:
 	var n := int(stats["arrow_count"])  # gancho de upgrades: multishot abre as flechas em leque
+	var dirs := []
 	for i in n:
-		lancar_flecha(_aim.rotated(deg_to_rad(stats["multishot_spread"]) * (i - (n - 1) * 0.5)))
+		dirs.append(_aim.rotated(deg_to_rad(stats["multishot_spread"]) * (i - (n - 1) * 0.5)))
+	lancar_flechas(dirs)
 	Audio.tocar("shoot")
 	var c := Feel.cfg()
 	velocity -= _aim * c["player_recoil"]

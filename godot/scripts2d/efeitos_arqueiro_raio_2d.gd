@@ -4,8 +4,11 @@ extends RefCounted
 ## A integradora delega daqui por `match` (efeitos "flecha_eletrica", "raio_encadeado", "tornado") e chama
 ## `ao_morrer(inimigo)` na morte do inimigo para o Arauto do Trovão. Folhas em res://art2d/fx/raio/.
 
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const Placeholders = preload("res://scripts2d/placeholders.gd")
 const PASTA := "res://art2d/fx/raio/"
 const COR := Color(0.55, 0.8, 1.0)
+const ALTURA_TORNADO := 380.0   # altura visual da flecha que sobe antes de cair como tornado
 const ATRASO_TORNADO := 0.55   # só tempo visual da flecha subindo e caindo (não é balanceamento)
 
 const EFEITOS := ["flecha_eletrica", "raio_encadeado", "tornado"]
@@ -35,15 +38,29 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, _nivel: i
 		"tornado":
 			var p := _ponto(jogador, dir, def.get("alcance", 600.0))
 			var cena: Node = jogador.get_parent()
-			var marca := Quadros.new()   # a flecha cai do alto: coluna de raio curta sobre o ponto
-			marca.preparar(_tex("raio_coluna"), 6, 14.0, false, Vector2(0, -96))
-			marca.global_position = p
-			cena.add_child(marca)
-			jogador.get_tree().create_timer(ATRASO_TORNADO).timeout.connect(func():
-				if is_instance_valid(cena) and cena.is_inside_tree():
+			# A flecha sai do arco, sobe em arco (sombra no chão, aviso no ponto de queda) e cai: no chão vira o tornado.
+			var boca: Dictionary = jogador.boca_do_arco(dir) if jogador.has_method("boca_do_arco") \
+					else {"chao": jogador.global_position, "altura": 50.0}
+			var corpo := Node2D.new()
+			var sp := Quadros.new()
+			sp.preparar(_tex("flecha_eletrica_proj"), 6, 14.0, true, Vector2.ZERO)
+			if sp.tex == null:
+				var seta := Sprite2D.new()
+				seta.texture = load("res://art2d/fx/arrow.png") if ResourceLoader.exists("res://art2d/fx/arrow.png") else Placeholders.seta(Vector2i(64, 16))
+				corpo.add_child(seta)
+			corpo.add_child(sp)
+			Vfx.flash_boca(cena, boca["chao"] + Vector2(0, -boca["altura"]), dir)
+			Vfx.arco(cena, boca["chao"], boca["altura"], p, ALTURA_TORNADO, ATRASO_TORNADO, corpo, COR, def.get("raio", 150.0),
+				func(ponto: Vector2):
+					if not is_instance_valid(cena) or not cena.is_inside_tree():
+						return
+					var marca := Quadros.new()   # coluna de raio curta no ponto em que a flecha caiu
+					marca.preparar(_tex("raio_coluna"), 6, 14.0, false, Vector2(0, -96))
+					marca.global_position = ponto
+					cena.add_child(marca)
 					var t := Tornado.new()
-					t.setup(p, def, jogador.stats["arrow_damage"])
-					cena.add_child(t))
+					t.setup(ponto, def, jogador.stats["arrow_damage"])
+					cena.add_child(t), true)
 		_:
 			push_error("Efeito de raio desconhecido: " + efeito)
 			return false
@@ -128,14 +145,10 @@ static func ativar_arauto(jogador: Node2D, def: Dictionary) -> void:
 		jogador.remove_meta("arauto_trovao")
 		return
 	jogador.set_meta("arauto_trovao", def)
-	var aura := Quadros.new()
-	aura.name = "AuraArauto"
+	var aura := Quadros.new()   # aura na camada C1 (elipse no chão, atrás do arqueiro; regra única em vfx_2d.gd)
 	aura.preparar(_tex("arauto_trovao_aura"), 6, 10.0, true, Vector2.ZERO)
-	aura.position = Vector2(0, -4)   # no chão, aos pés
-	aura.scale = Vector2(1.0, 0.5)
-	aura.show_behind_parent = true   # atrás do arqueiro, não cortando o corpo
-	aura.modulate.a = 0.7
-	jogador.add_child(aura)
+	var natural: float = float(aura.tex.get_width()) / 6.0 if aura.tex != null else 96.0
+	Vfx.aura_c1(jogador, aura, natural, "AuraArauto")
 
 # ---- ajudas ----
 static func _tex(nome: String) -> Texture2D:

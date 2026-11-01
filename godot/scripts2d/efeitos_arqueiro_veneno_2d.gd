@@ -5,6 +5,7 @@ extends RefCounted
 ## Gancho do Herald: `arauto_peste_morte(inimigo, def)`. A integradora liga os dois em efeitos_arqueiro_2d.gd.
 
 const Feel = preload("res://scripts2d/feel_2d.gd")
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const VERDE := Color(0.45, 0.9, 0.25)
 const PASTA := "res://art2d/fx/veneno/"
 ## Folhas em linha: nome -> [largura do quadro, altura, quadros, fps, loop]. Só formato de arte, sem balanceamento.
@@ -72,46 +73,36 @@ static func overlay_status(inimigo: Node2D, dur: float) -> void:
 			s.queue_free())
 
 ## Aura leve do Herald no arqueiro (liga/desliga conforme a gema equipada).
+## Aura do Arauto da Peste na camada C1 (elipse no chão, atrás do arqueiro; regra única em vfx_2d.gd). Nó "AuraPeste".
 static func aura_arauto(jogador: Node2D) -> void:
 	if jogador.has_node("AuraPeste"):
 		return
 	var s := _anim_sprite("fx_veneno_arauto_aura")
 	if s == null:
 		return
-	s.name = "AuraPeste"
-	s.position = Vector2(0, -4)   # no chão, aos pés
-	s.scale = Vector2(1.0, 0.5)   # achatada: anel no chão, não uma bolha sobre o corpo
-	s.show_behind_parent = true   # desenhada atrás do arqueiro
-	s.modulate.a = 0.6
-	jogador.add_child(s)
+	Vfx.aura_c1(jogador, s, float(FOLHAS["fx_veneno_arauto_aura"][0]), "AuraPeste")
 
-# --- Bola de Veneno: sobe, desaparece do quadro, cai no alvo, vira poça e estoura em nuvem ---
+# --- Bola de Veneno: sai do arco, sobe em arco com sombra no chão e aviso no ponto de queda, vira poça e estoura ---
+const VOO_BOLA := 0.55     # só ritmo visual
+const ALTURA_BOLA := 320.0
+
 static func _bola(jogador: Node2D, dir: Vector2, def: Dictionary, dano: float) -> void:
 	var destino: Vector2 = _ponto(jogador, dir, def.get("alcance", 450.0))
 	var pai := jogador.get_parent()
-	var bola := _anim_sprite("fx_veneno_bola")
-	var origem: Vector2 = jogador.global_position + Vector2(0, -50)
-	var voo := 0.55
-	var altura := 320.0
-	var no := Node2D.new()
-	no.global_position = origem
-	pai.add_child(no)
-	if bola != null:
-		no.add_child(bola)
-	else:
-		Feel.impacto(pai, origem, VERDE)
-	var tw := no.create_tween()
-	tw.tween_method(func(t: float):   # arco parabólico: x,y lineares e altura em seno
-		var base: Vector2 = origem.lerp(destino, t)
-		no.global_position = base + Vector2(0, -altura * sin(PI * t) * 1.0), 0.0, 1.0, voo)
-	tw.tween_callback(func():
-		no.queue_free()
-		if not is_instance_valid(pai) or not pai.is_inside_tree():
-			return
-		var z := ZonaVeneno.new()
-		z.configurar("poca", def, dano, _anim_sprite, _anim_unica)
-		z.global_position = destino
-		pai.add_child(z))
+	var bola: Node2D = _anim_sprite("fx_veneno_bola")
+	if bola == null:
+		bola = Node2D.new()
+	var boca: Dictionary = jogador.boca_do_arco(dir) if jogador.has_method("boca_do_arco") \
+			else {"chao": jogador.global_position, "altura": 50.0}
+	Vfx.flash_boca(pai, boca["chao"] + Vector2(0, -boca["altura"]), dir)
+	Vfx.arco(pai, boca["chao"], boca["altura"], destino, ALTURA_BOLA, VOO_BOLA, bola, VERDE, def.get("raio", 110.0),
+		func(ponto: Vector2):
+			if not is_instance_valid(pai) or not pai.is_inside_tree():
+				return
+			var z := ZonaVeneno.new()
+			z.configurar("poca", def, dano, _anim_sprite, _anim_unica)
+			z.global_position = ponto
+			pai.add_child(z))
 
 static func _ponto(jogador: Node2D, dir: Vector2, alcance: float) -> Vector2:
 	if jogador.has_method("tem_alvo_auto") and jogador.tem_alvo_auto():
@@ -196,6 +187,7 @@ class ZonaVeneno extends Node2D:
 		if s != null:
 			s.scale = Vector2.ONE * (raio * 2.0 / 192.0)
 			add_child(s)
+		Vfx.anel_entrada(get_parent(), global_position, raio, VERDE)   # anel de entrada (doc 33 seção 2)
 
 	func _alvos() -> Array:
 		var out := []
@@ -217,6 +209,7 @@ class ZonaVeneno extends Node2D:
 						n.aplicar_status("marca", duracao / float(pulsos) + 0.5, valor)   # corrosão = recebe mais dano
 					if dps_veneno > 0.0:
 						n.aplicar_status("veneno", 2.0, dps_veneno)
+		modulate.a = Vfx.fade_zona(_t, duracao)   # some em fade, nunca de uma vez
 		if _t >= duracao:
 			if tipo == "poca":   # estouro final em nuvem
 				_unica.call(get_parent(), "fx_veneno_nuvem", global_position, raio / 96.0)
