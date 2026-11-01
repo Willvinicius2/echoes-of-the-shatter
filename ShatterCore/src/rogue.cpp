@@ -67,6 +67,19 @@ bool Header(const CsvTable& t, const std::vector<std::string_view>& want, std::s
     return ok;
 }
 
+// Cabeçalho fixo seguido de colunas opcionais, na ordem (API 1.12). Devolve quantas opcionais vieram, ou -1.
+int HeaderOpt(const CsvTable& t, const std::vector<std::string_view>& want, const std::vector<std::string_view>& opt,
+              std::string_view table, std::vector<ContentError>& errs) {
+    bool ok = t.header.size() >= want.size() && t.header.size() <= want.size() + opt.size();
+    for (std::size_t i = 0; ok && i < t.header.size(); ++i)
+        ok = t.header[i] == (i < want.size() ? want[i] : opt[i - want.size()]);
+    if (!ok) {
+        errs.push_back({std::string(table), t.headerLine, "unexpected header"});
+        return -1;
+    }
+    return static_cast<int>(t.header.size() - want.size());
+}
+
 bool Int64In(std::string_view cell, std::int64_t lo, std::int64_t hi, std::int64_t& out) {
     std::int64_t v = 0;
     if (!detail::ParseInt64(cell, v) || v < lo || v > hi) return false;
@@ -250,7 +263,8 @@ bool RogueData::LoadTableCsv(std::string_view table, std::string_view text) {
             recipes_.push_back(std::move(x));
         }
     } else if (table == "drops.csv") {
-        if (!Header(t, {"inimigo", "fragmentos", "material", "material_qtd"}, table, errors_)) return false;
+        const int extra = HeaderOpt(t, {"inimigo", "fragmentos", "material", "material_qtd"}, {"xp"}, table, errors_);
+        if (extra < 0) return false;
         for (const CsvRow& r : t.rows) {
             RogueDrop d;
             d.enemy = S(r, 0);
@@ -260,6 +274,7 @@ bool RogueData::LoadTableCsv(std::string_view table, std::string_view text) {
             if (!Int64In(r.cells[3], 0, kMaxCount, d.materialQty)) bad(r, "material_qtd out of range");
             if (!d.material.empty() && d.materialQty < 1) bad(r, "material without quantity");
             if (d.material.empty() && d.materialQty != 0) bad(r, "material_qtd without material");
+            if (extra > 0 && !r.cells[4].empty() && !Int64In(r.cells[4], 0, kMaxCount, d.xp)) bad(r, "xp out of range");
             for (const RogueDrop& o : drops_)
                 if (o.enemy == d.enemy) bad(r, "duplicate inimigo '" + d.enemy + "'");
             drops_.push_back(std::move(d));
@@ -311,7 +326,8 @@ bool RogueData::LoadTableCsv(std::string_view table, std::string_view text) {
             settings_.emplace_back(key, v);
         }
     } else if (table == "upgrades.csv") {
-        if (!Header(t, {"id", "stat", "modo", "valor", "nivel_max"}, table, errors_)) return false;
+        const int extra = HeaderOpt(t, {"id", "stat", "modo", "valor", "nivel_max"}, {"tipo", "raridade"}, table, errors_);
+        if (extra < 0) return false;
         for (const CsvRow& r : t.rows) {
             RogueUpgrade u;
             u.id = S(r, 0);
@@ -321,6 +337,13 @@ bool RogueData::LoadTableCsv(std::string_view table, std::string_view text) {
             if (!Mode(r.cells[2], u.mode)) bad(r, "modo must be add or mult");
             if (!detail::ParseDouble(r.cells[3], u.value)) bad(r, "valor is not a number");
             if (!IntIn(r.cells[4], 1, kMaxLevel, u.maxLevel)) bad(r, "nivel_max out of range");
+            if (extra >= 1 && !r.cells[5].empty()) u.kind = S(r, 5);
+            if (u.kind != "ataque" && u.kind != "defesa" && u.kind != "utilidade")
+                bad(r, "tipo must be ataque, defesa or utilidade");
+            u.attack = u.kind == "ataque";
+            const std::string rar = extra >= 2 ? S(r, 6) : std::string();
+            if (!rar.empty() && rar != "comum" && rar != "rara") bad(r, "raridade must be comum or rara");
+            u.rare = rar == "rara";
             if (IndexById(upgrades_, u.id) >= 0) bad(r, "duplicate id '" + u.id + "'");
             upgrades_.push_back(std::move(u));
         }
@@ -481,6 +504,12 @@ bool RogueData::LoadDirectory(const std::string& dir) {
         const std::string text((std::istreambuf_iterator<char>(phasesIn)), std::istreambuf_iterator<char>());
         ok = LoadWavePhasesCsv(text) && ok;
     }
+    // Curva de horda por onda: opcional (API 1.12).
+    std::ifstream curveIn(d / "curva_horda.csv", std::ios::binary);
+    if (curveIn) {
+        const std::string text((std::istreambuf_iterator<char>(curveIn)), std::istreambuf_iterator<char>());
+        ok = LoadCurveCsv(text) && ok;
+    }
     return ok;
 }
 
@@ -544,6 +573,7 @@ bool RogueData::Finalize() {
     };
     optIntKey("skill_points_room", skillPointsRoom_);
     optIntKey("skill_points_boss", skillPointsBoss_);
+    FinalizeLevels();
 
     // Árvores: pai existe na mesma classe e não há ciclo (um nó num ciclo nunca abriria).
     for (RogueClass& c : classes_) {
@@ -920,7 +950,8 @@ std::vector<ContentId> RogueState::AvailableUpgrades() const {
     if (data_ == nullptr) return out;
     const auto& ups = data_->Upgrades();
     for (std::size_t i = 0; i < ups.size(); ++i)
-        if (runLevels_[i] < ups[i].maxLevel && Unlocked(ups[i].id)) out.push_back(ups[i].id);
+        if (runLevels_[i] < ups[i].maxLevel && Unlocked(ups[i].id) && (banned_.size() <= i || banned_[i] == 0))
+            out.push_back(ups[i].id);
     return out;
 }
 
@@ -951,6 +982,7 @@ bool RogueState::StartRun(std::uint64_t seed, const RogueStats& baseStats) {
     runLevels_.assign(data_->Upgrades().size(), 0);
     base_ = ApplyMeta(baseStats);
     ClearCooldowns();
+    ResetLevels();
     EnterNode(0, 0);
     return credited;
 }
@@ -1000,6 +1032,10 @@ RogueRunResult RogueState::EnemyKilled(std::string_view enemyId, RogueKill* out)
         gainFragments_ = SatAdd(gainFragments_, d->fragments);
         if (!d->material.empty()) AddGainMaterial(d->material, d->materialQty);
     }
+    if (horde_) {  // modo horda: só o drop; a fase aberta termina com WinRun
+        if (out != nullptr) *out = k;
+        return RogueRunResult::Ok;
+    }
     if (alive_ > 0) --alive_;
     if (alive_ == 0 && phase_ == RoguePhase::Fight) {
         k.roomCleared = true;
@@ -1038,15 +1074,19 @@ RogueRunResult RogueState::ChooseCard(std::string_view upgradeId, double hp, dou
     if (i < 0) return RogueRunResult::Unknown;
     const std::size_t k = static_cast<std::size_t>(i);
     if (runLevels_[k] >= data_->Upgrades()[k].maxLevel) return RogueRunResult::NotOffered;
+    BumpUpgrade(k, hp, hpOut);
+    offer_.clear();
+    phase_ = RoguePhase::Cleared;
+    return RogueRunResult::Ok;
+}
+
+void RogueState::BumpUpgrade(std::size_t k, double hp, double* hpOut) {
     double before = 0.0, after = 0.0;
     const bool hasHp = FindStat(RunStats(), kHpMaxStat, before);
     ++runLevels_[k];
     if (hasHp) FindStat(RunStats(), kHpMaxStat, after);
     const double gain = hasHp ? after - before : 0.0;
     if (hpOut != nullptr) *hpOut = gain > 0.0 ? hp + gain : hp;
-    offer_.clear();
-    phase_ = RoguePhase::Cleared;
-    return RogueRunResult::Ok;
 }
 
 RogueRunResult RogueState::Rest(double hp, double* hpOut) {
@@ -1089,6 +1129,9 @@ RogueRunResult RogueState::PlayerDied() {
         return RogueRunResult::WrongPhase;
     phase_ = RoguePhase::Dead;
     offer_.clear();
+    levelOffer_.clear();
+    offerKind_ = 0;
+    pendingLevels_ = pendingChests_ = 0;
     return RogueRunResult::Ok;
 }
 
@@ -1108,6 +1151,7 @@ bool RogueState::FinishRun() {
     CreditGains();
     phase_ = RoguePhase::None;
     offer_.clear();
+    ResetLevels();
     alive_ = 0;
     restPending_ = false;
     return true;
@@ -1129,6 +1173,7 @@ std::string RogueState::StateJson() const {
     o.Set("active", std::move(act));
     // Só aparece ligado: o estado sem o modo continua byte a byte o da API 1.8 (mesmo hash).
     if (externalCards_) o.Set("external_cards", Value(true));
+    if (horde_) o.Set("horde", Value(true));  // só ligado: sem o modo, o JSON é o da 1.11
     Value run = Value::MakeObject();
     run.Set("phase", Value(RoguePhaseName(phase_)));
     run.Set("seed", json::FromUInt64(seed_));
@@ -1161,6 +1206,7 @@ std::string RogueState::StateJson() const {
             if (cooldowns_[i] > 0.0) cd.Set(skills[i].id, Value(cooldowns_[i]));
         if (cd.Size() > 0) run.Set("cooldowns", std::move(cd));
     }
+    if (levelUsed_) run.Set("progress", LevelStateValue());
     o.Set("run", std::move(run));
     return json::Serialize(o, false);
 }
@@ -1184,6 +1230,9 @@ bool RogueState::RestoreState(std::string_view text, std::string* error) {
     const Value& ext = d["external_cards"];
     if (ext.type() != json::Type::Null && ext.type() != json::Type::Bool) return fail("bad external_cards");
     t.externalCards_ = ext.AsBool(false);
+    const Value& hor = d["horde"];
+    if (hor.type() != json::Type::Null && hor.type() != json::Type::Bool) return fail("bad horde");
+    t.horde_ = hor.AsBool(false);
     const Value& run = d["run"];
     if (run.type() != json::Type::Object) return fail("run is not an object");
     bool okPhase = false;
@@ -1241,6 +1290,8 @@ bool RogueState::RestoreState(std::string_view text, std::string* error) {
         if (i < 0 || !m.second.IsNumber() || !(left > 0.0) || left > 1e12) return fail("bad cooldown");
         t.cooldowns_[static_cast<std::size_t>(i)] = left;
     }
+    t.ResetLevels();
+    if (run["progress"].type() != json::Type::Null && !t.LevelStateFrom(run["progress"])) return fail("bad progress");
     *this = std::move(t);
     return true;
 }

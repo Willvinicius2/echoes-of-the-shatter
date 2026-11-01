@@ -81,3 +81,30 @@ func reaplicar(jogador: Node) -> void:
 		return   # sem corrida: os stats voltam com a próxima corrida_iniciar
 	jogador.stats = s
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
+
+# --- Cartas de nível e de baú (API 1.12, pacote H4 do plano 31): regras no core, aqui só a ponte ---------------------
+
+## {level, xp, xp_next, pending_levels, pending_chests, kind ("" | "level" | "chest"), offer, rerolls, skips, bans, banned}
+func nivel_estado() -> Dictionary:
+	return _nucleo().nivel_estado()
+
+## Escolhe uma carta da oferta de nível ou de baú; aplica os stats novos no jogador.
+func escolher_nivel(id: String, jogador: Node) -> bool:
+	var r: Dictionary = _nucleo().nivel_escolher(id, jogador.hp)
+	if int(r["resultado"]) != 0:
+		return false
+	jogador.stats = nucleo.corrida_stats()
+	jogador.hp = float(r["hp"])
+	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
+	sincronizar()
+	return true
+
+## Sortear de novo, pular e banir (os botões ficam para o pacote H6). true se o core aceitou.
+func sortear_de_novo() -> bool:
+	return _nucleo().nivel_sortear_de_novo() == 0
+
+func pular() -> bool:
+	return _nucleo().nivel_pular() == 0
+
+func banir(id: String) -> bool:
+	return _nucleo().nivel_banir(id) == 0

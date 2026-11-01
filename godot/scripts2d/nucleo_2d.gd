@@ -12,7 +12,7 @@ extends RefCounted
 
 const ARQUIVOS := ["meta", "receitas", "drops", "rota", "run", "run_settings", "upgrades"]
 ## Tabelas que o core lê se existirem (ondas e ondas_fases: spawner de hordas).
-const OPCIONAIS := ["ondas", "ondas_fases"]
+const OPCIONAIS := ["ondas", "ondas_fases", "curva_horda"]
 const CLASSES := "res://data2d/classes_2d.csv"
 const PASTA := "user://dados_core"
 

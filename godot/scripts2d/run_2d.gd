@@ -4,6 +4,10 @@ extends Node2D
 ## cada etapa é uma onda que nasce fora da vista e, depois do chefe, um portal leva à vitória.
 ## Salas antigas com porta `D` (24 x 13) continuam com câmera fixa e porta.
 ## O cliente só apresenta: o fluxo da corrida (etapas, rotas, cartas, ganhos, vitória e derrota) é do módulo `rogue` do ShatterCore.
+## Modo horda (run_settings `horda` = 1, pacote H4 do plano 31): na fase aberta a corrida inteira é uma fase do spawner do
+## core (ondas.csv, curva_horda.csv): quem nasce, quando, onde e com que força vem do core; o Guardião espera no altar G e
+## acorda quando o jogador chega perto (a partir de despertar_onda) ou no prazo; depois dele, o portal dá a vitória.
+## Cada morte solta uma gema de XP (valor do core) e o elite solta um baú; o nível e as cartas são regras do core.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
@@ -22,7 +26,11 @@ const MenusScript = preload("res://scripts2d/menus_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const PortalScript = preload("res://scripts2d/portal_2d.gd")
+const GemaScript = preload("res://scripts2d/gema_2d.gd")
 const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
+
+## Testes do fluxo antigo de etapas (salas com porta, rotas) ligam isto antes de criar a corrida.
+static var modo_etapas := false
 
 enum Estado { LUTA, LIMPA, MORTO, VENCEU, ESCOLHA, MENU, PAUSA, TRANSICAO, ROTA, PROXIMA }
 
@@ -62,6 +70,16 @@ var _timer := 0.0
 var _estado_antes := Estado.LUTA
 var portal: Area2D          # saída da fase aberta, aberta depois do chefe
 var _pos_chefe := Vector2.ZERO
+# Modo horda
+var horda := false          # a corrida atual usa o spawner do core
+var fase_horda := ""        # id da fase em ondas.csv
+var onda := 0               # onda atual (HUD e bot)
+var _aviso_altar := false
+var _aviso_enxame := false
+var _mortes_dps: Array = [] # [tempo, vida] das mortes recentes: DPS medido para a vida do chefe
+var vida_chefe := 0.0       # vida que o core deu ao chefe (bot e testes)
+var dps_medido := 0.0
+var _laco_t := 0.0
 
 func _ready() -> void:
 	config = Csv.kv("res://data2d/run_settings.csv")
@@ -143,6 +161,18 @@ func iniciar_corrida() -> void:
 		nucleo.corrida_terminar()   # corrida abandonada: classe e modo de cartas só mudam fora de corrida viva (credita os ganhos)
 	if Classe.atual != _classe_montada:
 		_trocar_classe()
+	nucleo.ondas_parar()
+	for g in get_tree().get_nodes_in_group("coletaveis"):
+		g.queue_free()
+	fase_horda = _fase_do_spawner()
+	horda = not modo_etapas and int(config.get("horda", 0)) == 1 and fase_horda != ""
+	nucleo.horda_definir(horda)   # antes de começar: no modo horda a sala nunca limpa e a vitória vem do portal
+	onda = 0
+	_aviso_altar = false
+	_aviso_enxame = false
+	_mortes_dps = []
+	vida_chefe = 0.0
+	dps_medido = 0.0
 	# O core credita os ganhos pendentes de uma corrida abandonada (reiniciar, título) ao começar a próxima.
 	rng.seed = int(config["seed"]) + corridas
 	corridas += 1
@@ -208,6 +238,12 @@ func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 	hud.mensagem = ""
 	hud.chefe = null
 	_ajustar_camera(not manter)
+	if horda and room.aberta():
+		nucleo.ondas_iniciar(fase_horda, int(rng.seed))
+		vivos = 0
+		hud.total_salas = int(nucleo.ondas_estado().get("waves_total", 1))
+		estado = Estado.LUTA
+		return
 	_spawn_inimigos(no["enemies"])
 	estado = Estado.LUTA
 	if no["tipo"] == "descanso":
@@ -288,7 +324,164 @@ func _spawn_inimigos(spec: String) -> void:
 			k += 1
 			vivos += 1
 
+## Primeira fase do spawner (ondas_fases.csv); "" se não há ondas.
+func _fase_do_spawner() -> String:
+	var fases: Array = nucleo.ondas_definicoes().get("phases", [])
+	return str(fases[0]["id"]) if fases.size() > 0 else ""
+
+# --- Modo horda -------------------------------------------------------------------------------------------------
+
+## Um quadro do spawner: nascem os que o core mandou, o Guardião acorda no altar e a HUD acompanha a onda.
+func _tick_horda(delta: float) -> void:
+	for s in nucleo.ondas_tick(delta):
+		_nascer(s)
+	_laco_t += delta
+	if _laco_t >= float(config.get("horde_leash_check", 1.0)):
+		_laco_t = 0.0
+		_reposicionar_presos()
+	var w: Dictionary = nucleo.ondas_estado()
+	onda = int(w.get("wave", 0))
+	vivos = int(w.get("alive", 0))
+	hud.sala = mini(onda, hud.total_salas)
+	if bool(w.get("swarm", false)) and not _aviso_enxame:
+		_aviso_enxame = true
+		_avisar(Csv.t("hud.swarm"), float(config.get("boss_hint_time", 3.0)))
+	if bool(w.get("boss_spawned", false)) or room.posicao_chefe == Vector2.ZERO:
+		return
+	if int(w.get("can_wake", -1)) == 0:
+		if not _aviso_altar:
+			_aviso_altar = true
+			_avisar(Csv.t("hud.boss_altar"), float(config.get("boss_hint_time", 3.0)))
+		if player.global_position.distance_to(room.posicao_chefe) <= float(config.get("boss_wake_radius", 260.0)):
+			acordar_chefe()
+
+## Inimigos comuns sem caminho até o jogador (presos atrás do riacho ou de ruínas) ou longe demais voltam ao anel de
+## spawn, fora da vista: a horda não se perde pelo mapa (perseguição em linha reta, sem pathfinding).
+func _reposicionar_presos() -> void:
+	var v := vista()
+	var longe := float(config.get("horde_leash_dist", 1700.0))
+	var preso := float(config.get("horde_stuck_dist", 500.0))
+	var t := float(room.tile)
+	for e in get_tree().get_nodes_in_group("hurtable"):
+		if not e.has_meta("spawn_id") or e.stats.get("kind", "") == "boss" or v.has_point(e.global_position):
+			continue
+		var d: float = e.global_position.distance_to(player.global_position)
+		var antes := float(e.get_meta("dist_antes", INF))
+		e.set_meta("dist_antes", d)
+		if d > longe or (d > preso and d >= antes - 4.0):
+			var p: Array = room.pontos_fora_da_vista(v, float(config.get("spawn_margem_min", 1.0)) * t, float(config.get("spawn_margem_max", 4.0)) * t, 1, rng)
+			if not p.is_empty():
+				e.global_position = p[0]
+				e.set_meta("dist_antes", INF)
+
+## O jogador chegou ao altar (ou o bot/teste pediu): o core acorda o Guardião se já pode.
+func acordar_chefe() -> int:
+	var r: int = nucleo.ondas_acordar_chefe()
+	if r == 0:
+		for s in nucleo.ondas_tick(0.0001):
+			_nascer(s)
+	return r
+
+## DPS do jogador: vida dos inimigos mortos na janela dps_window (s) dividida pela janela (ou pelo tempo de luta).
+func _medir_dps() -> float:
+	var janela := float(config.get("dps_window", 20.0))
+	var soma := 0.0
+	for m in _mortes_dps:
+		if tempo - float(m[0]) <= janela:
+			soma += float(m[1])
+	return soma / maxf(1.0, minf(janela, tempo))
+
+func _nascer(s: Dictionary) -> void:
+	var chefe: bool = bool(s.get("boss", false))
+	var id := str(s["enemy"])
+	var e: Node2D = (BossScript if chefe else EnemyScript).new()
+	atores.add_child(e)
+	var onde: Vector2
+	if chefe and room.posicao_chefe != Vector2.ZERO:
+		onde = room.posicao_chefe
+	else:
+		onde = room.empurrar_para_dentro(player.global_position + Vector2.from_angle(float(s["angle"])) * float(s["radius"]))
+	e.setup(id, player, onde)
+	if chefe:
+		dps_medido = _medir_dps()
+		vida_chefe = float(nucleo.vida_chefe(float(e.stats["hp"]), dps_medido))   # vida adaptativa: regra do core
+		e.stats["hp"] = vida_chefe
+		e.hp = vida_chefe
+		e.hp_max = vida_chefe
+		_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
+	else:
+		var hp_mult := float(s.get("hp_mult", 1.0))
+		e.stats["hp"] = float(e.stats["hp"]) * hp_mult
+		e.hp = e.stats["hp"]
+		e.hp_max = e.hp
+		e.stats["damage"] = float(e.stats["damage"]) * float(s.get("damage_mult", 1.0))
+		e.stats["speed"] = float(e.stats["speed"]) * float(s.get("speed_mult", 1.0))
+		e.stats["aggro"] = maxf(float(e.stats["aggro"]), float(config.get("horde_aggro", 0.0)))   # nascem fora da tela e vêm atrás
+	if bool(s.get("elite", false)):
+		e.set_meta("elite", true)
+		e.modulate = Color(1.3, 1.08, 0.62)
+		e.scale = Vector2(1.2, 1.2)
+	e.set_meta("spawn_id", int(s["id"]))
+	e.set_meta("xp_mult", float(s.get("xp_mult", 1.0)))
+	e.died.connect(_on_inimigo_morto)
+
+func _morto_na_horda(e) -> void:
+	var id: String = e.stats.get("id", "")
+	nucleo.corrida_inimigo_morto(id)   # drops e ganhos (no modo horda a sala nunca limpa)
+	_mortes_dps.append([tempo, float(e.hp_max)])
+	if _mortes_dps.size() > 400:
+		_mortes_dps = _mortes_dps.slice(200)
+	var elite: bool = e.has_meta("elite")
+	var x: Dictionary = nucleo.nivel_xp_da_morte(id, float(e.get_meta("xp_mult", 1.0)), elite)
+	if int(x.get("xp", 0)) > 0:
+		_soltar("xp", int(x["xp"]), e.global_position)
+	if bool(x.get("bau", false)):
+		_soltar("bau", 0, e.global_position)
+	var r: Dictionary = nucleo.ondas_morto(int(e.get_meta("spawn_id", 0)))
+	if e.stats.get("kind", "") == "boss":
+		_pos_chefe = e.global_position
+	if bool(r.get("completa", false)) and estado == Estado.LUTA:
+		atrair_coletaveis()
+		estado = Estado.LIMPA
+		_abrir_portal()
+		hud.mensagem = Csv.t("hud.portal_open")
+
+func _soltar(tipo: String, valor: int, pos: Vector2) -> void:
+	var g := Node2D.new()
+	g.set_script(GemaScript)
+	g.setup(tipo, valor, pos, player, config)
+	g.coletada.connect(_on_coletada)
+	atores.add_child.call_deferred(g)
+
+## Tudo que está no chão voa para o jogador (fim da fase; o bot e os testes também usam).
+func atrair_coletaveis() -> void:
+	for g in get_tree().get_nodes_in_group("coletaveis"):
+		g.atraida = true
+
+func _on_coletada(g) -> void:
+	if estado == Estado.MORTO or estado == Estado.VENCEU:
+		return
+	if g.tipo == "bau":
+		nucleo.nivel_abrir_bau()
+	else:
+		nucleo.nivel_ganhar_xp(int(g.valor))
+	_checar_oferta_nivel()
+
+## Abre a tela de cartas se o core tem uma oferta de nível ou de baú esperando.
+func _checar_oferta_nivel() -> void:
+	if ui.aberta or not upgrades.has_method("nivel_estado"):
+		return
+	var n: Dictionary = upgrades.nivel_estado()
+	var oferta: Array = n.get("offer", [])
+	if oferta.is_empty() or estado == Estado.MORTO or estado == Estado.VENCEU:
+		return
+	var nivel := int(n.get("level", 1)) - int(n.get("pending_levels", 0))
+	ui.abrir(oferta, str(n.get("kind", "level")), nivel)
+
 func _on_inimigo_morto(e) -> void:
+	if horda:
+		_morto_na_horda(e)
+		return
 	vivos -= 1
 	if e.stats.get("kind", "") == "boss":
 		_pos_chefe = e.global_position
@@ -302,6 +495,8 @@ func _on_inimigo_morto(e) -> void:
 func _physics_process(delta: float) -> void:
 	if estado == Estado.LUTA or estado == Estado.LIMPA or estado == Estado.PROXIMA:
 		tempo += delta
+	if horda and estado == Estado.LUTA and room != null and room.aberta():
+		_tick_horda(delta)
 	if hud:
 		hud.tempo = tempo
 	if _timer > 0.0:
@@ -366,6 +561,10 @@ func _abrir_portal() -> void:
 	Audio.tocar("door_open")
 
 func _on_upgrade_escolhido(id: String) -> void:
+	if ui.modo != "sala":   # carta de nível ou de baú: a luta continua; abre a próxima oferta, se houver
+		upgrades.escolher_nivel(id, player)
+		_checar_oferta_nivel()
+		return
 	upgrades.escolher(id, player)
 	_abrir_porta()
 
@@ -377,6 +576,14 @@ func posicao_saida() -> Vector2:
 
 func _on_porta() -> void:
 	if estado != Estado.LIMPA or _timer > 0.0:
+		return
+	if horda:   # modo horda: a única saída é o portal depois do Guardião
+		if portal == null or not is_instance_valid(portal) or nucleo.horda_vencer() != 0:
+			return
+		estado = Estado.VENCEU
+		hud.mensagem = Csv.t("hud.victory")
+		Audio.tocar("victory")
+		_timer = config["restart_delay"]
 		return
 	if room.aberta() and indice == salas.size() - 1 and (portal == null or not is_instance_valid(portal)):
 		return
@@ -421,6 +628,7 @@ func _entrar_na_sala(no: Dictionary) -> void:
 
 func _on_player_died() -> void:
 	nucleo.corrida_jogador_morreu()
+	nucleo.ondas_parar()
 	estado = Estado.MORTO
 	hud.mensagem = Csv.t("hud.dead")
 	Audio.tocar("defeat")

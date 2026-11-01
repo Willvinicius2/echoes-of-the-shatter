@@ -27,6 +27,11 @@
 
 namespace shatter {
 
+namespace json {
+class Value;
+}  // namespace json
+
+
 // Versão do save do meta do rogue (campo `versao`; igual a VERSAO do meta_2d.gd).
 inline constexpr std::int64_t kRogueSaveVersion = 1;
 // Versão do JSON de estado completo (RogueState::StateJson / RestoreState).
@@ -62,6 +67,7 @@ struct RogueDrop {             // drops.csv
     std::int64_t fragments = 0;
     ContentId material;
     std::int64_t materialQty = 0;
+    std::int64_t xp = 0;       // coluna opcional `xp` (API 1.12): XP da gema que o inimigo solta
 };
 
 struct RogueEnemyCount {
@@ -84,6 +90,21 @@ struct RogueUpgrade {          // upgrades.csv
     RogueMode mode = RogueMode::Add;
     double value = 0.0;
     int maxLevel = 1;
+    // Colunas opcionais `tipo` e `raridade` (API 1.12). A oferta de nível tem ao menos uma carta de ataque; o baú de
+    // elite só oferece cartas raras (se não sobrar nenhuma, qualquer uma).
+    std::string kind = "utilidade";  // ataque | defesa | utilidade
+    bool attack = false;             // kind == "ataque"
+    bool rare = false;               // raridade == "rara" (senão "comum")
+};
+
+// curva_horda.csv (opcional, API 1.12): multiplicadores por onda de uma fase. Onda = ondas da fase + 1 é o enxame final.
+struct RogueCurveRow {
+    std::string phase;
+    int wave = 0;
+    double hp = 1.0;           // vida dos inimigos comuns da onda
+    double damage = 1.0;       // dano
+    double speed = 1.0;        // velocidade de movimento
+    double xp = 1.0;           // XP da gema
 };
 
 // Pares stat -> valor, na ordem em que o chamador mandou (a saída mantém a ordem).
@@ -200,6 +221,22 @@ public:
     // ondas_fases.csv (opcional, obrigatório se houver ondas.csv): regras de cada fase. nullptr se não existe.
     const std::vector<RogueWavePhaseDef>& WavePhaseDefs() const { return wavePhases_; }
     const RogueWavePhaseDef* FindWavePhaseDef(std::string_view phase) const;
+    // curva_horda.csv (opcional): linha da fase e onda, ou nullptr (multiplicadores 1).
+    const std::vector<RogueCurveRow>& Curve() const { return curve_; }
+    const RogueCurveRow* FindCurve(std::string_view phase, int wave) const;
+    // Vida do chefe adaptativa (API 1.12): DPS medido do jogador x boss_fight_time de run_settings, presa entre
+    // boss_hp_min e boss_hp_max vezes a vida base. Sem boss_fight_time (ou DPS <= 0 ou inválido), devolve a vida base.
+    double BossHp(double baseHp, double dps) const;
+    // XP para passar do nível `level` ao seguinte: xp_level_base + xp_level_step x (level - 1). 0 = sem níveis.
+    std::int64_t XpForLevel(int level) const;
+    int LevelCards() const { return levelCards_; }
+    int ChestCards() const { return chestCards_; }
+    int LevelRerolls() const { return levelRerolls_; }
+    int LevelSkips() const { return levelSkips_; }
+    int LevelBans() const { return levelBans_; }
+    // Modo horda: 1 ponto de habilidade à classe a cada `skill_points_every_levels` níveis (0 = nunca). Sem salas
+    // limpas, é o que substitui o skill_points_room.
+    int SkillPointsEveryLevels() const { return skillEveryLevels_; }
     // Materiais conhecidos (drops.csv e depois receitas.csv, na ordem em que aparecem).
     const std::vector<ContentId>& Materials() const { return materials_; }
 
@@ -230,6 +267,8 @@ public:
     std::int64_t SkillPointsBoss() const { return skillPointsBoss_; }
 
 private:
+    bool LoadCurveCsv(std::string_view csvText);       // rogue_levels.cpp
+    void FinalizeLevels();                             // rogue_levels.cpp (no Finalize)
     bool LoadWavesCsv(std::string_view csvText);       // rogue_waves.cpp
     bool LoadWavePhasesCsv(std::string_view csvText);  // rogue_waves.cpp
     void CheckWaves();                                 // rogue_waves.cpp (no Finalize)
@@ -246,6 +285,7 @@ private:
     std::vector<RogueClass> classes_;
     std::vector<RogueWaveDef> waves_;
     std::vector<RogueWavePhaseDef> wavePhases_;
+    std::vector<RogueCurveRow> curve_;
     std::vector<ContentId> materials_;
     std::vector<std::pair<std::string, double>> settings_;
     std::vector<ContentError> errors_;
@@ -254,6 +294,9 @@ private:
     std::int64_t roomClearFragments_ = 0, eliteFragments_ = 0, victoryFragments_ = 0;
     double restHeal_ = 0.0;
     std::int64_t skillPointsRoom_ = 0, skillPointsBoss_ = 0;
+    std::int64_t xpLevelBase_ = 0, xpLevelStep_ = 0;
+    int levelCards_ = 0, chestCards_ = 0, levelRerolls_ = 0, levelSkips_ = 0, levelBans_ = 0, skillEveryLevels_ = 0;
+    double bossFightTime_ = 0.0, bossHpMin_ = 0.0, bossHpMax_ = 0.0;
     bool finalized_ = false;
 };
 
@@ -452,6 +495,43 @@ public:
     // Escolhe o caminho da bifurcação (índice em Paths(Stage())).
     RogueRunResult ChoosePath(int pathIndex);
     RogueRunResult PlayerDied();
+
+    // --- Modo horda (API 1.12): a corrida inteira numa fase aberta com o spawner (rogue_waves.h) ---------------
+    // Ligado, EnemyKilled só soma o drop (a sala nunca limpa nem sorteia cartas) e a corrida termina com WinRun. Só
+    // muda fora de corrida viva, como SetExternalCards; não é zerado por StartRun.
+    RogueRunResult SetHorde(bool on);
+    bool Horde() const { return horde_; }
+    // Venceu a fase (chefe morto e portal usado): + victory_fragments e skill_points_boss. Só no modo horda, em luta.
+    RogueRunResult WinRun(RogueKill* out = nullptr);
+
+    // --- XP, nível e cartas de nível (API 1.12; plano 31, pacote H4) ---------------------------------------------
+    // XP da gema de um inimigo: xp do drops.csv x xpMult (curva da onda), arredondado; elite também solta um baú.
+    // Não muda nada (o cliente cria a gema e o baú no chão e chama GainXp e OpenChest ao pegar).
+    RogueRunResult KillXp(std::string_view enemyId, double xpMult, bool elite, std::int64_t* xp, bool* chest) const;
+    // Soma XP; cada nível que fecha fica pendente e vira uma oferta de level_cards cartas (ao menos uma de ataque, se
+    // houver). Sem xp_level_base, não há níveis. Com cartas externas o nível sobe sem oferta. Vale com corrida viva.
+    RogueRunResult GainXp(std::int64_t amount, int* levelsOut = nullptr);
+    // Baú de elite: uma oferta de chest_cards cartas raras (depois das ofertas de nível já pendentes).
+    RogueRunResult OpenChest();
+    // Escolhe uma carta da oferta de nível ou de baú: sobe o nível do upgrade (como ChooseCard) e abre a próxima oferta.
+    RogueRunResult ChooseLevelCard(std::string_view upgradeId, double hp, double* hpOut = nullptr);
+    // Sorteia a oferta atual de novo (gasta 1 de level_rerolls).
+    RogueRunResult RerollLevel();
+    // Pula a oferta atual sem carta (gasta 1 de level_skips) e abre a próxima.
+    RogueRunResult SkipLevel();
+    // Bane uma carta da oferta atual pelo resto da corrida (gasta 1 de level_bans) e sorteia a oferta de novo.
+    RogueRunResult BanCard(std::string_view upgradeId);
+    std::int64_t RunXp() const { return xp_; }             // XP dentro do nível atual
+    int CharLevel() const { return charLevel_; }           // nível na corrida (começa em 1)
+    std::int64_t XpNext() const;                           // XP que fecha o nível atual (0 = sem níveis)
+    int PendingLevels() const { return pendingLevels_; }   // ofertas de nível na fila (fora a atual)
+    int PendingChests() const { return pendingChests_; }
+    const std::vector<ContentId>& LevelOffer() const { return levelOffer_; }
+    const char* LevelOfferKind() const;                    // "", "level" ou "chest"
+    int RerollsLeft() const { return rerolls_; }
+    int SkipsLeft() const { return skips_; }
+    int BansLeft() const { return bans_; }
+    bool Banned(std::string_view upgradeId) const;
     RogueSummary Summary() const;
     // Fim da corrida (tela de resumo): credita os ganhos e volta a None. false se não havia corrida.
     bool FinishRun();
@@ -466,6 +546,14 @@ private:
     void EnterNode(int stage, int pathIndex);
     void CreditGains();
     void DrawCards(int count);
+    void ResetLevels();
+    // Sobe o upgrade k um nível e devolve a vida com o ganho de hp_max (ChooseCard e ChooseLevelCard).
+    void BumpUpgrade(std::size_t k, double hp, double* hpOut);
+    json::Value LevelStateValue() const;
+    bool LevelStateFrom(const json::Value& v);
+    void DrawLevelOffer();
+    void NextLevelOffer();
+    RogueRunResult LevelPhaseOk() const;
     void AddGainMaterial(const ContentId& id, std::int64_t qty);
     void ResetSkillState();
     void ClearCooldowns();
@@ -498,6 +586,18 @@ private:
     RogueStats base_;                       // stats base com o meta aplicado (restaurar)
     std::int64_t gainFragments_ = 0;
     std::vector<std::pair<ContentId, std::int64_t>> gainMaterials_;
+    // modo horda e níveis (API 1.12). levelUsed_: algo de nível aconteceu nesta corrida (só então o estado leva
+    // "progress"; sem isso o JSON é o da 1.11, mesmo hash).
+    bool horde_ = false;
+    bool levelUsed_ = false;
+    std::int64_t xp_ = 0;
+    int charLevel_ = 1;
+    int pendingLevels_ = 0, pendingChests_ = 0;
+    int offerKind_ = 0;                      // 0 nenhuma, 1 nível, 2 baú
+    std::vector<ContentId> levelOffer_;
+    std::uint64_t levelDraws_ = 0;
+    int rerolls_ = 0, skips_ = 0, bans_ = 0;
+    std::vector<std::uint8_t> banned_;      // por upgrade
 };
 
 // Gravação atômica do save do meta: grava `path + ".tmp"`, confere relendo e troca pelo principal.

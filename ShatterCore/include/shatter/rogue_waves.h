@@ -54,7 +54,9 @@ struct RogueWaveSpawn {
     double angle = 0.0;        // radianos em [0, 2π): direção a partir do jogador
     double radius = 0.0;       // px: distância ao jogador (raio_min..raio_max da fase)
     double hpMult = 1.0;       // elite: elite_vida; senão 1
-    double damageMult = 1.0;   // elite: elite_dano; senão 1
+    double damageMult = 1.0;   // elite: elite_dano; senão 1 (x a curva da onda, API 1.12)
+    double speedMult = 1.0;    // curva_horda.csv da onda (API 1.12); 1 sem curva e no chefe
+    double xpMult = 1.0;       // idem, para a XP da gema
 };
 
 class RogueWaves {

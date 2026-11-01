@@ -128,7 +128,7 @@ TEST(c_api_rogue_wave_queue_and_kill) {
     EXPECT_EQ(st["phase"].AsString(), std::string("cripta"));
     EXPECT_EQ(st["alive"].AsInt(-1), static_cast<std::int64_t>(n));
     EXPECT_EQ(st["waves_total"].AsInt(0), 8);
-    EXPECT_EQ(st["cap"].AsInt(0), 12);
+    EXPECT_EQ(st["cap"].AsInt(0), 18);  // teto da onda 1 (ondas.csv, calibrado no H4)
     EXPECT_NEAR(st["deadline"].AsDouble(0.0), 480.0, 1e-9);
     EXPECT_FALSE(st["swarm"].AsBool(true));
     EXPECT_EQ(st["can_wake"].AsInt(-1), SHATTER_ROGUE_WAVE_TOO_EARLY);

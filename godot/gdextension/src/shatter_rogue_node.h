@@ -84,6 +84,20 @@ public:
     bool ondas_restaurar(const String& texto);
     String ondas_hash() const;
 
+    // XP, nível, baú, curva, vida do chefe e modo horda (API 1.12, docs/09 seção 19). Códigos: SHATTER_ROGUE_RUN_*.
+    int horda_definir(bool ligado);
+    int horda_vencer();
+    Dictionary nivel_xp_da_morte(const String& inimigo, double xp_mult, bool elite) const;  // {"resultado","xp","bau"}
+    Dictionary nivel_ganhar_xp(int64_t xp);                         // {"resultado", "niveis"}
+    int nivel_abrir_bau();
+    Dictionary nivel_escolher(const String& upgrade, double hp);    // {"resultado", "hp"}
+    int nivel_sortear_de_novo();
+    int nivel_pular();
+    int nivel_banir(const String& upgrade);
+    Dictionary nivel_estado() const;
+    Dictionary curva(const String& fase, int onda) const;           // {"hp","damage","speed","xp"}
+    double vida_chefe(double base, double dps) const;
+
     // Estado completo e determinismo.
     String estado_texto() const;
     bool estado_restaurar(const String& texto);

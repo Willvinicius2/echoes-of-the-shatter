@@ -84,6 +84,9 @@ Value SpawnValue(const RogueWaveSpawn& s) {
     o.Set("radius", Value(s.radius));
     o.Set("hp_mult", Value(s.hpMult));
     o.Set("damage_mult", Value(s.damageMult));
+    // Só com curva: sem curva_horda.csv o estado é o da 1.11 (mesmo hash).
+    if (s.speedMult != 1.0) o.Set("speed_mult", Value(s.speedMult));
+    if (s.xpMult != 1.0) o.Set("xp_mult", Value(s.xpMult));
     return o;
 }
 
@@ -103,6 +106,9 @@ bool SpawnFromValue(const Value& v, RogueWaveSpawn& s) {
     s.radius = v["radius"].AsDouble(0.0);
     s.hpMult = v["hp_mult"].AsDouble(1.0);
     s.damageMult = v["damage_mult"].AsDouble(1.0);
+    s.speedMult = v["speed_mult"].AsDouble(1.0);
+    s.xpMult = v["xp_mult"].AsDouble(1.0);
+    if (!(s.speedMult > 0.0) || !(s.xpMult > 0.0)) return false;
     return s.angle >= 0.0 && s.angle < kTwoPi && s.radius >= 0.0;
 }
 
@@ -373,6 +379,13 @@ RogueWaveSpawn RogueWaves::MakeSpawn(bool boss) {
     if (s.elite) {
         s.hpMult = d.eliteHp;
         s.damageMult = d.eliteDamage;
+    }
+    // Curva de horda (API 1.12): só nos comuns e elites; a vida do chefe é a adaptativa (RogueData::BossHp).
+    if (const RogueCurveRow* c = boss ? nullptr : data_->FindCurve(pdef_->id, s.wave)) {
+        s.hpMult *= c->hp;
+        s.damageMult *= c->damage;
+        s.speedMult = c->speed;
+        s.xpMult = c->xp;
     }
     return s;
 }

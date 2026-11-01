@@ -1918,8 +1918,8 @@ double HitDamage(const shatter_db* db, const shatter_statblock* attacker, const 
 }  // namespace
 
 TEST(c_api_15_minor_5_layout_combat_rules_and_basic_kits) {
-    EXPECT_EQ(SHATTER_C_API_MINOR, 11u);  // 1.5 ganhou a 1.6, a 1.7, a 1.8 (roguelike 2D), a 1.9 (cartas externas), a 1.10 (habilidades) e a 1.11 (hordas): só adições
-    EXPECT_EQ(shatter_api_minor(), 11u);
+    EXPECT_EQ(SHATTER_C_API_MINOR, 12u);  // 1.5 ganhou a 1.6, a 1.7, a 1.8 (roguelike 2D), a 1.9 (cartas externas), a 1.10 (habilidades) e a 1.11 (hordas): só adições
+    EXPECT_EQ(shatter_api_minor(), 12u);
     EXPECT_EQ(shatter_api_version(), 1u);
     EXPECT_EQ(static_cast<int>(SHATTER_TAG_GUARD), static_cast<int>(Mask(Tag::Guard)));
 

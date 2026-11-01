@@ -5133,6 +5133,8 @@ Value RogueSpawnValue(const RogueWaveSpawn& w) {
     o.Set("radius", Value(w.radius));
     o.Set("hp_mult", Value(w.hpMult));
     o.Set("damage_mult", Value(w.damageMult));
+    o.Set("speed_mult", Value(w.speedMult));
+    o.Set("xp_mult", Value(w.xpMult));
     return o;
 }
 
@@ -5291,6 +5293,126 @@ SHATTER_API shatter_status SHATTER_CALL shatter_rogue_wave_state_hash(const shat
                                                                     std::size_t* needed) SHATTER_NOEXCEPT {
     if (rogue == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
     return WriteOut(rogue->waves.StateHash(), out, cap, needed);
+}
+
+// --- XP, nível, baú, curva e modo horda (API 1.12) ---
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_horde_set(shatter_rogue* rogue, std::uint8_t on,
+                                                              std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.SetHorde(on != 0));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_horde_win(shatter_rogue* rogue, std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    RogueKill k;
+    *result = static_cast<std::int32_t>(rogue->state.WinRun(&k));
+    return k.skillPoints > 0 ? RogueAutoSave(rogue) : SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_kill_xp(const shatter_rogue* rogue, const char* enemy_id,
+                                                                  std::size_t enemy_id_len, double xp_mult, std::uint8_t elite,
+                                                                  std::int64_t* xp, std::uint8_t* chest,
+                                                                  std::int32_t* result) SHATTER_NOEXCEPT {
+    std::string_view s;
+    if (rogue == nullptr || xp == nullptr || chest == nullptr || result == nullptr || !RogueId(enemy_id, enemy_id_len, s))
+        return SHATTER_INVALID_ARGUMENT;
+    bool c = false;
+    *result = static_cast<std::int32_t>(rogue->state.KillXp(s, xp_mult, elite != 0, xp, &c));
+    *chest = c ? 1 : 0;
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_gain_xp(shatter_rogue* rogue, std::int64_t amount, std::int32_t* levels,
+                                                                  std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || levels == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    int n = 0;
+    const std::int64_t before = rogue->state.SkillPoints();
+    *result = static_cast<std::int32_t>(rogue->state.GainXp(amount, &n));
+    *levels = n;
+    return rogue->state.SkillPoints() != before ? RogueAutoSave(rogue) : SHATTER_OK;  // pontos de habilidade são do meta
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_open_chest(shatter_rogue* rogue, std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.OpenChest());
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_choose(shatter_rogue* rogue, const char* upgrade_id,
+                                                                 std::size_t upgrade_id_len, double hp, double* hp_out,
+                                                                 std::int32_t* result) SHATTER_NOEXCEPT {
+    std::string_view s;
+    if (rogue == nullptr || hp_out == nullptr || result == nullptr || !RogueId(upgrade_id, upgrade_id_len, s))
+        return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.ChooseLevelCard(s, hp, hp_out));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_reroll(shatter_rogue* rogue, std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.RerollLevel());
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_skip(shatter_rogue* rogue, std::int32_t* result) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || result == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.SkipLevel());
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_ban(shatter_rogue* rogue, const char* upgrade_id, std::size_t upgrade_id_len,
+                                                              std::int32_t* result) SHATTER_NOEXCEPT {
+    std::string_view s;
+    if (rogue == nullptr || result == nullptr || !RogueId(upgrade_id, upgrade_id_len, s)) return SHATTER_INVALID_ARGUMENT;
+    *result = static_cast<std::int32_t>(rogue->state.BanCard(s));
+    return SHATTER_OK;
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_level_json(const shatter_rogue* rogue, std::uint8_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || needed == nullptr) return SHATTER_INVALID_ARGUMENT;
+    const RogueState& s = rogue->state;
+    Value o = Value::MakeObject();
+    o.Set("level", Value(s.CharLevel()));
+    o.Set("xp", Value(s.RunXp()));
+    o.Set("xp_next", Value(s.XpNext()));
+    o.Set("pending_levels", Value(s.PendingLevels()));
+    o.Set("pending_chests", Value(s.PendingChests()));
+    o.Set("kind", Value(std::string(s.LevelOfferKind())));
+    Value offer = Value::MakeArray();
+    for (const ContentId& id : s.LevelOffer()) offer.Push(Value(id));
+    o.Set("offer", std::move(offer));
+    o.Set("rerolls", Value(s.RerollsLeft()));
+    o.Set("skips", Value(s.SkipsLeft()));
+    o.Set("bans", Value(s.BansLeft()));
+    Value ban = Value::MakeArray();
+    for (const RogueUpgrade& u : rogue->data.Upgrades())
+        if (s.Banned(u.id)) ban.Push(Value(u.id));
+    o.Set("banned", std::move(ban));
+    o.Set("horde", Value(s.Horde()));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_curve_json(const shatter_rogue* rogue, const char* phase_id, std::size_t phase_id_len,
+                                                               std::int32_t wave, std::uint8_t* out, std::size_t cap,
+                                                               std::size_t* needed) SHATTER_NOEXCEPT {
+    std::string_view p;
+    if (rogue == nullptr || needed == nullptr || !RogueId(phase_id, phase_id_len, p)) return SHATTER_INVALID_ARGUMENT;
+    const RogueCurveRow* c = rogue->data.FindCurve(p, wave);
+    Value o = Value::MakeObject();
+    o.Set("hp", Value(c != nullptr ? c->hp : 1.0));
+    o.Set("damage", Value(c != nullptr ? c->damage : 1.0));
+    o.Set("speed", Value(c != nullptr ? c->speed : 1.0));
+    o.Set("xp", Value(c != nullptr ? c->xp : 1.0));
+    return WriteJson(o, false, out, cap, needed);
+}
+
+SHATTER_API shatter_status SHATTER_CALL shatter_rogue_boss_hp(const shatter_rogue* rogue, double base_hp, double dps,
+                                                            double* hp_out) SHATTER_NOEXCEPT {
+    if (rogue == nullptr || hp_out == nullptr) return SHATTER_INVALID_ARGUMENT;
+    *hp_out = rogue->data.BossHp(base_hp, dps);
+    return SHATTER_OK;
 }
 
 }  // extern "C"

@@ -13,7 +13,7 @@ dodge_speed,620,px/s,velocidade da esquiva
 dodge_time,0.25,s,duracao da esquiva
 dodge_cooldown,0.9,s,recarga da esquiva
 hit_iframes,0.6,s,invulnerabilidade apos levar dano
-attack_move_mult,0.6,x,fator de velocidade enquanto conjura o basico
+attack_move_mult,0.85,x,fator de velocidade enquanto conjura o basico (horda: automatico)
 arrow_count,1,orbes,orbes por disparo
 arrow_pierce,0,corpos,inimigos atravessados pelo orbe
 multishot_spread,10,graus,abertura entre orbes
