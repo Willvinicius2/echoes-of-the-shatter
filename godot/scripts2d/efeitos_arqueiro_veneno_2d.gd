@@ -31,7 +31,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			f.veneno_dps = def.get("valor", 4.0)       # dps do veneno vem do CSV
 			f.veneno_t = def.get("duracao", 3.0)
 			f.cor_fx = VERDE
-			_anexar_anim(f, "fx_veneno_flecha", Vector2(0, -30))
+			_anexar_anim(f.vis, "fx_veneno_flecha", Vector2.ZERO)
 		"bola_veneno":
 			_bola(jogador, dir, def, jogador.stats["arrow_damage"] * dano)
 		"chuva_corrosiva":
@@ -79,7 +79,9 @@ static func aura_arauto(jogador: Node2D) -> void:
 	if s == null:
 		return
 	s.name = "AuraPeste"
-	s.position = Vector2(0, -30)
+	s.position = Vector2(0, -4)   # no chão, aos pés
+	s.scale = Vector2(1.0, 0.5)   # achatada: anel no chão, não uma bolha sobre o corpo
+	s.show_behind_parent = true   # desenhada atrás do arqueiro
 	s.modulate.a = 0.6
 	jogador.add_child(s)
 

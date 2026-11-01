@@ -21,8 +21,8 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			f.cor_fx = COR_FOGO
 			f.add_child(_VigiaImpacto.new(def.get("duracao", 3.0), def.get("valor", 4.0)))
 			var pr := Anim.new("flecha_proj", true)
-			pr.position = Vector2(0, -30)
-			f.add_child(pr)
+			pr.position = Vector2.ZERO
+			f.vis.add_child(pr)
 		"meteoro":
 			var alvo: Vector2 = _ponto(jogador, dir, def.get("alcance", 600.0))
 			var m := _Meteoro.new()
@@ -62,7 +62,8 @@ static func ao_abate(jogador: Node2D, pos: Vector2, sobra: float, def: Dictionar
 static func aura(jogador: Node2D) -> Node2D:
 	var a := Anim.new("arauto_aura", true, 110.0)
 	a.modulate.a = 0.55
-	a.position = Vector2(0, -20)
+	a.position = Vector2(0, -4)   # no chão, aos pés, atrás do arqueiro
+	a.scale = Vector2(1.0, 0.5)
 	a.show_behind_parent = true
 	jogador.add_child(a)
 	return a
