@@ -22,7 +22,7 @@ ICONES = {
     "icone_arauto_trovao": "icone_herald_thunder",
 }
 
-def recorta(im, n, w, h):
+def recorta(im, n, w, h, faixa=None):
     """Divide a folha em n colunas iguais. Usa uma caixa de proporcao w:h comum a todos os
     quadros (centrada no centro de cada coluna), para o loop nao tremer, e reduz ao tamanho final."""
     import numpy as np
@@ -41,6 +41,9 @@ def recorta(im, n, w, h):
     r = w / h
     bh = max(2 * hy, 2 * hx / r) * 1.06
     bw = bh * r
+    if faixa:  # folha larga (arco): mantem a largura e corta so a faixa central de altura 'faixa' x largura
+        bw = 2 * hx * 1.0
+        bh = bw * faixa
     out = Image.new("RGBA", (w * n, h), (0, 0, 0, 0))
     for i in range(n):
         x0, x1 = round(i * cw), round((i + 1) * cw)
@@ -48,18 +51,29 @@ def recorta(im, n, w, h):
         cx = (x1 - x0) / 2
         canvas = Image.new("RGBA", (round(bw), round(bh)), (0, 0, 0, 0))
         canvas.alpha_composite(cell, (round(bw / 2 - cx), round(bh / 2 - cy))) if bw/2-cx >= 0 and bh/2-cy >= 0 else canvas.paste(cell, (round(bw / 2 - cx), round(bh / 2 - cy)))
+        if faixa:  # esmaece o corte vertical para nao ficar serrilhado
+            import numpy as np
+            a = np.asarray(canvas).astype(float)
+            t = np.linspace(0, 1, a.shape[0])
+            f = np.clip(np.minimum(t, 1 - t) / 0.18, 0, 1)[:, None]
+            a[..., 3] *= f
+            canvas = Image.fromarray(a.astype('uint8'), 'RGBA')
         out.alpha_composite(canvas.resize((w, h), Image.LANCZOS), (i * w, 0))
     return out
 
-def main(src, raiz):
+def main(src, raiz, so=None):
     fx = os.path.join(raiz, "godot", "art2d", "fx", "raio")
     ui = os.path.join(raiz, "godot", "art2d", "ui")
     for nome, (n, w, h) in FOLHAS.items():
+        if so and nome not in so:
+            continue
         im = key(os.path.join(src, nome + ".png"))
         # o bbox por quadro recentra; para folhas de loop isso pode tremer, entao usa bbox global da folha
-        recorta(im, n, w, h).save(os.path.join(fx, nome + ".png"))
+        recorta(im, n, w, h, 0.34 if nome == 'raio_arco' else None).save(os.path.join(fx, nome + ".png"))
         print(nome, "ok")
     for nome, dest in ICONES.items():
+        if so:
+            continue
         im = Image.open(os.path.join(src, nome + ".png")).convert("RGBA")
         W, H = im.size
         m = int(W * 0.012)
@@ -71,4 +85,4 @@ def main(src, raiz):
         print(dest, "ok")
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], set(sys.argv[3:]) or None)
