@@ -63,7 +63,7 @@ Folhas em `godot/art2d/fx/raio/` (quadros em linha, fundo transparente):
 | `raio_coluna.png` | 6 | 64x192 | raio do céu (queda do tornado e Arauto) |
 | `arauto_trovao_aura.png` | 6 | 96x96 | aura no arqueiro |
 
-**Estado: provisória.** O ambiente desta thread (nuvem) não tem o Codex CLI nem acesso ao gpt-image, então as folhas foram desenhadas em código (`tools/arte/fx_arqueiro/raio/gerar_procedural.py`) para o jogo já funcionar. Elas **não** passaram pela revisora e não valem como arte final. A arte pintada sai no PC do Will:
+**Estado: arte pintada (gpt-image) gerada em 01/11/2026, aguardando a revisora e o Will; as folhas em código do `gerar_procedural.py` ficam só como histórico.** Pós-processo: `tools/arte/fx_arqueiro/raio/pos_processa.py`. Texto antigo da versão provisória: O ambiente desta thread (nuvem) não tem o Codex CLI nem acesso ao gpt-image, então as folhas foram desenhadas em código (`tools/arte/fx_arqueiro/raio/gerar_procedural.py`) para o jogo já funcionar. Elas **não** passaram pela revisora e não valem como arte final. A arte pintada sai no PC do Will:
 `python docs\arte\referencias-geracao\scripts\gerar.py tools\arte\fx_arqueiro\raio\prompts_raio.json D:\openclaude\_trabalho-claude\fx-raio`, depois `tools/arte/ui_gpt_image/key.py` (remove o magenta) e recorte em quadros iguais. Substituir os PNGs de mesmo nome (o código lê quadros pela largura total / nº de quadros, então os nomes e contagens de quadros precisam bater com a tabela).
 
 ## Não verificado
