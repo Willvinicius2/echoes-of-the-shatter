@@ -4,6 +4,7 @@ extends RefCounted
 ## A integradora delega daqui por `match` (efeitos "flecha_eletrica", "raio_encadeado", "tornado") e chama
 ## `ao_morrer(inimigo)` na morte do inimigo para o Arauto do Trovão. Folhas em res://art2d/fx/raio/.
 
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const PASTA := "res://art2d/fx/raio/"
 const COR := Color(0.55, 0.8, 1.0)
 const ATRASO_TORNADO := 0.55   # só tempo visual da flecha subindo e caindo (não é balanceamento)
@@ -131,11 +132,8 @@ static func ativar_arauto(jogador: Node2D, def: Dictionary) -> void:
 	var aura := Quadros.new()
 	aura.name = "AuraArauto"
 	aura.preparar(_tex("arauto_trovao_aura"), 6, 10.0, true, Vector2.ZERO)
-	aura.position = Vector2(0, -4)   # no chão, aos pés
-	aura.scale = Vector2(1.0, 0.5)
-	aura.show_behind_parent = true   # atrás do arqueiro, não cortando o corpo
-	aura.modulate.a = 0.7
-	jogador.add_child(aura)
+	aura.modulate.a = 0.45
+	Vfx.aura_chao(jogador, aura)   # no chão, aos pés, atrás do arqueiro (docs/arte/33)
 
 # ---- ajudas ----
 static func _tex(nome: String) -> Texture2D:

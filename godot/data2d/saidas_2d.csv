@@ -1,0 +1,6 @@
+id,linha,x,y,nota
+arqueiro,0,20,-57,S: ponto onde a flecha encosta no arco no quadro 4 de attack (medido na folha; px a partir do pe 64x104)
+arqueiro,1,28,-56,SE
+arqueiro,2,23,-59,E
+arqueiro,3,28,-65,NE
+arqueiro,4,-36,-67,N (costas): empunhadura do arco que fica a esquerda; a folha atual pinta a flecha saindo pela direita e sera redesenhada (docs/arte/33)

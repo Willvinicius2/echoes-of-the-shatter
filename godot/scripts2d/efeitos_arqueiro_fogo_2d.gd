@@ -4,6 +4,7 @@ extends RefCounted
 ## Sem arte (PNG ausente) cada efeito cai num desenho de código, para o jogo e o teste headless nunca quebrarem.
 ## Nenhum número de balanceamento aqui: tudo vem do `def` (data2d/habilidades_arqueiro.csv).
 
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const U = preload("res://scripts2d/fogo_util_2d.gd")
 const Anim = preload("res://scripts2d/fogo_anim_2d.gd")
 const COR_FOGO := Color(1.0, 0.55, 0.15)
@@ -61,12 +62,8 @@ static func ao_abate(jogador: Node2D, pos: Vector2, sobra: float, def: Dictionar
 ## Aura leve no arqueiro enquanto o Arauto está equipado. Devolve o nó para a integradora guardar e remover.
 static func aura(jogador: Node2D) -> Node2D:
 	var a := Anim.new("arauto_aura", true, 110.0)
-	a.modulate.a = 0.55
-	a.position = Vector2(0, -4)   # no chão, aos pés, atrás do arqueiro
-	a.scale = Vector2(1.0, 0.5)
-	a.show_behind_parent = true
-	jogador.add_child(a)
-	return a
+	a.modulate.a = 0.45
+	return Vfx.aura_chao(jogador, a)   # no chão, aos pés, atrás do arqueiro (docs/arte/33)
 
 ## Overlay de queimadura sobre o inimigo (a integradora liga isto ao status "queimadura" em enemy_2d.gd).
 static func overlay_queimadura(inimigo: Node2D) -> Node2D:

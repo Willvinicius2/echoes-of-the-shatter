@@ -47,3 +47,13 @@ boss_entry_zoom,1.06,x,zoom inicial da camera na entrada do chefe (volta a 1 ate
 boss_entry_mark,150,px,raio da marca vermelha no chao durante a entrada do chefe
 weak_hit_pct,0.0,x,fracao da vida maxima abaixo da qual o golpe do jogador conta como fraco (numero branco)
 number_offset_x,42,px,sorteio horizontal da posicao inicial do numero de dano
+fx_saida_tempo,0.12,s,tempo para o desenho do projetil ir da boca do arco a altura padrao do peito
+fx_flash_boca_tempo,0.07,s,duracao do flash na boca do arco (2 quadros)
+fx_flash_boca_escala,0.7,x,escala do flash na boca do arco
+fx_recuo_px,3,px,recuo do sprite ao soltar a flecha
+fx_recuo_tempo,0.08,s,tempo de volta do recuo
+fx_aura_altura,-4,px,altura da aura de Herald em relacao ao pe (no chao)
+fx_aura_achatamento,0.5,x,escala vertical da aura (elipse no chao)
+fx_aura_alfa_max,0.45,x,alfa maximo da aura (nunca cobre o personagem)
+fx_aviso_alfa,0.35,x,alfa do circulo escuro da sombra de aviso de queda
+fx_max_animados,24,x,efeitos animados ao mesmo tempo antes de nascerem na versao curta

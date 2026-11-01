@@ -15,6 +15,7 @@ const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
 
 enum Estado { LIVRE, ATIRANDO, ESQUIVA, MORTO }
 
@@ -98,12 +99,15 @@ func usar_habilidade(slot: int, alvo := {}) -> bool:
 	if not alvo.is_empty() and not Alvos.mira_mouse:
 		dir = alvo["dir"]
 		alvo_ponto = alvo["ponto"]
+	var facing_antes := facing
+	facing = dir   # antes de disparar: a saída do projétil (saidas_2d.csv) lê a direção do sprite
 	var ok: bool = habilidades.usar(slot, self, dir)
 	alvo_ponto = Vector2.INF
 	if ok:
 		if estado == Estado.LIVRE and has_method("animar_conjuracao"):   # mago: gesto de conjuração sem travar o movimento
 			call("animar_conjuracao")
-		facing = dir
+	else:
+		facing = facing_antes
 	return ok
 
 ## Heralds: gatilhos de morte (docs/design/32). Cada Herald aprendido age quando o inimigo morre com o status certo.
@@ -317,6 +321,7 @@ func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult :
 		f.veneno_dps = stats["poison_dps"]
 		f.veneno_t = stats["poison_time"]
 	get_parent().add_child(f)
+	Vfx.lancar_do_arco(self, f)   # o desenho nasce na boca do arco (saidas_2d.csv); a colisão segue no chão
 	return f
 
 ## Salto das habilidades: avança `dist` px na direção `dir` em `dur` s, invulnerável. Não gasta a recarga da esquiva.
@@ -340,6 +345,7 @@ func _soltar_flecha() -> void:
 	var n := int(stats["arrow_count"])  # gancho de upgrades: multishot abre as flechas em leque
 	for i in n:
 		lancar_flecha(_aim.rotated(deg_to_rad(stats["multishot_spread"]) * (i - (n - 1) * 0.5)))
+	Vfx.flash_boca(self, _aim, Color(1.0, 0.95, 0.8))
 	Audio.tocar("shoot")
 	var c := Feel.cfg()
 	velocity -= _aim * c["player_recoil"]
