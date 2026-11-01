@@ -149,11 +149,12 @@ func rodar() -> void:
 	run._usar_gema_habilidade()
 	check.call(run.ui.aberta and run.ui.modo == "gem" and run.ui._ids.size() == int(run.config["skill_gem_cards"]), "horda: gema de habilidade abre a escolha entre %d habilidades" % run.ui._ids.size())
 	var escolhida: String = run.ui._ids[0] if run.ui._ids.size() > 0 else ""
+	var nivel_antes: int = h.nivel(escolhida)
 	run.ui.escolher(0)
 	var soma1 := 0
 	for id in h.ordem:
 		soma1 += h.nivel(id)
-	check.call(soma1 == soma0 + 1 and h.nivel(escolhida) == 1, "horda: a habilidade escolhida na gema é aprendida")
+	check.call(soma1 == soma0 + 1 and h.nivel(escolhida) == nivel_antes + 1, "horda: a habilidade escolhida na gema é aprendida")
 	check.call(not h.eh_ativa(escolhida) or h.slots.has(escolhida), "horda: ativa nova da gema entra num slot livre")
 	run.queue_free()
 	await t.process_frame
