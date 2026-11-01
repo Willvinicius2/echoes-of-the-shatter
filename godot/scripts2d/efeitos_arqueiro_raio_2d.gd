@@ -415,7 +415,7 @@ class Haste extends Node2D:
 			return
 		var cena: Node = get_parent()
 		var visitados: Array = []
-		var ponta: Vector2 = global_position + Vector2(0, -62)
+		var ponta: Vector2 = global_position + Vector2(0, -88)
 		for i in alvos:
 			var n: Node2D = _mais_perto(visitados)
 			if n == null:
@@ -438,7 +438,7 @@ class Haste extends Node2D:
 			_pulso = 1.0
 			_faiscas.clear()
 			for i in 6:
-				_faiscas.append([_rng.randf() * TAU, _rng.randf_range(6.0, 16.0)])
+				_faiscas.append([_rng.randf() * TAU, _rng.randf_range(10.0, 24.0)])
 
 	func _mais_perto(excluir: Array) -> Node2D:
 		var melhor: Node2D = null
@@ -456,16 +456,17 @@ class Haste extends Node2D:
 		var apaga: float = Vfx.fade_zona(_t, duracao)
 		var carga: float = clampf(_acc / intervalo, 0.0, 1.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
-		draw_arc(Vector2.ZERO, raio, 0.0, TAU, 56, Color(PAL[1], (0.10 + 0.25 * _pulso) * apaga), 2.0)
-		var r_in := lerpf(34.0, 18.0, carga) + 10.0 * _pulso
-		draw_circle(Vector2.ZERO, r_in * 1.3, Color(PAL[1], 0.08 * apaga))
-		draw_arc(Vector2.ZERO, r_in, 0.0, TAU, 32, Color(PAL[2], 0.6 * apaga), 3.0)
-		draw_arc(Vector2.ZERO, r_in, 0.0, TAU, 32, Color(PAL[1], (0.55 + 0.45 * _pulso) * apaga), 1.6)
+		draw_arc(Vector2.ZERO, raio, 0.0, TAU, 56, Color(PAL[2], 0.35 * apaga), 4.0)
+		draw_arc(Vector2.ZERO, raio, 0.0, TAU, 56, Color(PAL[1], (0.18 + 0.35 * _pulso) * apaga), 2.0)
+		var r_in := lerpf(46.0, 24.0, carga) + 12.0 * _pulso
+		draw_circle(Vector2.ZERO, r_in * 1.3, Color(PAL[1], 0.14 * apaga))
+		draw_arc(Vector2.ZERO, r_in, 0.0, TAU, 32, Color(PAL[2], 0.8 * apaga), 4.0)
+		draw_arc(Vector2.ZERO, r_in, 0.0, TAU, 32, Color(PAL[1], (0.7 + 0.3 * _pulso) * apaga), 2.2)
 		for i in 6:
 			var a := _t * 1.2 + TAU * i / 6.0
 			var p1 := Vector2.from_angle(a) * (r_in - 4.0)
-			var p2 := Vector2.from_angle(a) * (r_in + 6.0 + 4.0 * _pulso)
-			draw_line(p1, p2, Color(PAL[0], (0.5 + 0.5 * _pulso) * apaga), 1.5)
+			var p2 := Vector2.from_angle(a) * (r_in + 10.0 + 6.0 * _pulso)
+			draw_line(p1, p2, Color(PAL[0], (0.6 + 0.4 * _pulso) * apaga), 2.2)
 
 ## Desenho da haste (filho da Haste, C4): flecha fincada com contorno escuro, núcleo claro, cristal na ponta,
 ## halo que pulsa e faíscas curtas depois da descarga. Só aparência.
@@ -478,24 +479,24 @@ class HasteCorpo extends Node2D:
 		var apaga: float = Vfx.fade_zona(dona._t, dona.duracao)
 		var pulso: float = dona._pulso
 		var base := Vector2(0, -4)
-		var ponta := Vector2(0, -62)
-		var halo_r := 12.0 + 10.0 * pulso + 2.0 * sin(dona._t * 9.0)
+		var ponta := Vector2(0, -88)
+		var halo_r := 16.0 + 12.0 * pulso + 2.0 * sin(dona._t * 9.0)
 		draw_circle(ponta, halo_r * 1.8, Color(pal[1], 0.10 * apaga))
 		draw_circle(ponta, halo_r, Color(pal[1], (0.22 + 0.25 * pulso) * apaga))
 		# haste: contorno, corpo e fio de luz (espessura variável: mais grossa embaixo)
-		draw_line(base, ponta, Color(pal[2], 0.95 * apaga), 6.0)
-		draw_line(base, ponta + Vector2(0, 4), Color(pal[1], 0.9 * apaga), 3.2)
-		draw_line(base + Vector2(0, -10), ponta + Vector2(0, 6), Color(pal[0], (0.7 + 0.3 * pulso) * apaga), 1.3)
+		draw_line(base, ponta, Color(pal[2], 0.95 * apaga), 9.0)
+		draw_line(base, ponta + Vector2(0, 4), Color(pal[1], 0.9 * apaga), 5.0)
+		draw_line(base + Vector2(0, -12), ponta + Vector2(0, 8), Color(pal[0], (0.7 + 0.3 * pulso) * apaga), 2.0)
 		# empenas da flecha
 		for lado in [-1.0, 1.0]:
 			var pe := base + Vector2(0, -6)
-			draw_line(pe, pe + Vector2(6.0 * lado, 7.0), Color(pal[2], 0.9 * apaga), 2.5)
-			draw_line(pe, pe + Vector2(6.0 * lado, 7.0), Color(pal[1], 0.8 * apaga), 1.0)
+			draw_line(pe, pe + Vector2(9.0 * lado, 10.0), Color(pal[2], 0.9 * apaga), 3.5)
+			draw_line(pe, pe + Vector2(9.0 * lado, 10.0), Color(pal[1], 0.8 * apaga), 1.6)
 		# cristal da ponta (losango) com miolo branco
-		var c := PackedVector2Array([ponta + Vector2(0, -12), ponta + Vector2(5, 0), ponta + Vector2(0, 8), ponta + Vector2(-5, 0)])
+		var c := PackedVector2Array([ponta + Vector2(0, -18), ponta + Vector2(8, 0), ponta + Vector2(0, 12), ponta + Vector2(-8, 0)])
 		draw_colored_polygon(c, Color(pal[1], apaga))
-		draw_polyline(c + PackedVector2Array([c[0]]), Color(pal[2], apaga), 1.5)
-		draw_line(c[0], c[2], Color(pal[0], apaga), 1.2)
+		draw_polyline(c + PackedVector2Array([c[0]]), Color(pal[2], apaga), 2.0)
+		draw_line(c[0], c[2], Color(pal[0], apaga), 2.0)
 		# faíscas depois da descarga: tracinhos que saem da ponta e somem
 		for f in dona._faiscas:
 			var d := Vector2.from_angle(f[0])

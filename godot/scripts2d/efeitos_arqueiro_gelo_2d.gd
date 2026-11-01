@@ -444,7 +444,7 @@ class Nova extends Node2D:
 				sp.hframes = 4
 				sp.frame = i % 4
 				sp.material = Feel.aditivo()
-				sp.scale = Vector2.ONE * (48.0 / (tex.get_width() / 4.0))
+				sp.scale = Vector2.ONE * (72.0 / (tex.get_width() / 4.0))
 				s = sp
 			else:
 				s = Lasca.new()

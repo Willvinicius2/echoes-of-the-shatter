@@ -126,10 +126,18 @@ Afinidades (`afinidades_arqueiro.csv`): colunas `id, elemento, dano, vel, perfur
 
 ## 6. Arte: o que se reaproveita e o que é novo
 - **Rastro e impacto por elemento**: `godot/scripts2d/vfx_identidade_2d.gd` (vetorial, herdado da thread de direção visual), ligado ao básico com afinidade e às flechas elementais.
-- **Recolor por shader** (doc 33, "elemento convertido"): o funil do Ciclone Pestilento usa a folha `raio/tornado_tempestade.png` com matiz girado para o verde ácido mais as bolhas desenhadas por código; o Cometa Gélido usa `fogo/meteoro_queda.png` com matiz para o ciano e a explosão `gelo/gelo_explosao.png`. Shader único em `godot/scripts2d/recolor_2d.gd`.
+- **Recolor por shader** (doc 33, "elemento convertido"): shader único em `godot/scripts2d/recolor_2d.gd`. Parecer do Jev (01/11): recolor sozinho não muda a silhueta, então ele só entra junto com forma própria. Hoje: o funil do Ciclone Pestilento usa `raio/tornado_tempestade.png` com matiz para o verde ácido **mais** o funil achatado, o anel de lama e as bolhas em espiral desenhadas por código; o Cometa Gélido é **todo desenhado por código** (núcleo facetado hexagonal, cauda de cristais, halo), e só a explosão reaproveita `gelo/gelo_explosao.png`.
+- **Arte provisória**: o funil do Ciclone e o corpo do Cometa são provisórios até as folhas pintadas chegarem. A revisora aprova a leitura da mecânica e a paleta; a arte final vem do backlog abaixo.
 - **Folhas já existentes**: `gelo/gelo_lasca.png` (Nova), `raio/raio_arco.png`, `raio/raio_coluna.png`, `raio/raio_impacto.png` (Haste), `fogo/muralha_chama.png` e `fogo/brasas_chao.png` (Serpente).
-- **Novas folhas pintadas** (backlog para o pipeline gpt-image no PC, prompts em `tools/arte/fx_arqueiro/leque/prompts_leque.json`): funil do ciclone verde próprio, cometa de gelo com cauda de cristal, cabeça da serpente. Até lá valem recolor e código, que a revisora aprova como arte de jogo ou devolve.
+- **Novas folhas pintadas** (backlog para o pipeline gpt-image no PC, prompts em `tools/arte/fx_arqueiro/leque/prompts_leque.json`): funil do ciclone verde próprio, cometa de gelo com cauda de cristal, cabeça da serpente, e **Trovoada** (nova de raio: estrela radial de relâmpagos saindo do arqueiro, nunca um anel, para não repetir a Nova Gélida). Até lá valem recolor e código, que a revisora aprova como arte de jogo ou devolve.
+- **Serpente × Muralha de Brasas**: a serpente rasteja (corpo afilado, brasas vermelho-escuro `COR_BRASA_SERP` baixas no chão) e a muralha sobe (chamas altas e claras). Mesma paleta, silhuetas opostas.
 - Ícones: geométricos de `icones.csv` até a leva de ícones pintados (doc 28).
+
+### 6.1 Hierarquia de brilho (ajuste do Jev)
+- Só o **primeiro alvo** de uma descarga ou salto recebe impacto cheio; alvos seguintes ficam em 40 a 60% (Haste: arco do 2º alvo a 60% e sem impacto; Eco do Trovão: impacto do salto a 70%).
+- **Teto global de decalques** no chão: `fx_max_decalques` em `feel.csv` (12). Poças, brasas e chão gelado passam por `Vfx.decalque_cabe()` antes de nascer.
+- Afinidade do básico é discreta: rastro curto e impacto pequeno; a skill ativa é sempre a mais brilhante da tela.
+- Teste obrigatório: capturas com **1 e 20 inimigos** e versão em **escala de cinza**. As quatro afinidades precisam diferir sem cor: arco que salta (Trovão), flecha lenta e longa que atravessa (Peste), anel de cristais no alvo (Gelo), explosão curta com brasa no chão (Cinzas).
 
 ## 7. Orçamento (FPS; PR 188 é a base)
 - Cada skill nova = 1 nó com `_draw`; sprites auxiliares ≤ 8 e curtos (lascas da Nova, arcos da Haste).
@@ -141,7 +149,7 @@ Afinidades (`afinidades_arqueiro.csv`): colunas `id, elemento, dano, vel, perfur
 ## 8. Plano de execução
 1. Este documento + parecer do Jev (famílias, nomes, paletas).
 2. PR único `feat/leque-skills` sobre o master já com o PR 186: afinidades (CSV, UI de escolha, `efeitos_arqueiro_afinidade_2d.gd`, teste), cinco skills (CSV, loc, ícones, efeitos por elemento, testes no `_testar_habilidades_arqueiro`), `recolor_2d.gd`, `vfx_identidade_2d.gd`, ferramenta de captura `tools/captura_skills_2d.gd` estendida às skills novas e às afinidades.
-3. Capturas por skill (xvfb, 1 inimigo / 20 inimigos) para a revisora; ajustes; CI verde; merge.
+3. Capturas por skill (xvfb, 1 inimigo / 20 inimigos / escala de cinza) para a revisora; ajustes; CI verde; merge.
 4. Backlog: folhas pintadas da seção 6, formas da seção 5, novas da família 3.5.
 
 ## 9. Checklist da revisora (Jev)
@@ -150,4 +158,6 @@ Afinidades (`afinidades_arqueiro.csv`): colunas `id, elemento, dano, vel, perfur
 - [ ] Área desenhada = raio do CSV; sombra de aviso antes de toda queda.
 - [ ] Nada cobre o arqueiro (C1 para auras, decalques em C0).
 - [ ] Com 20 inimigos a tela continua legível (hierarquia de brilho do doc 33 seção 4).
-- [ ] Afinidade: as quatro flechas diferem em velocidade, forma da ponta e impacto, não só em cor.
+- [ ] Afinidade: as quatro flechas diferem em velocidade, forma da ponta e impacto, não só em cor (teste em escala de cinza).
+- [ ] Rastros e impactos vetoriais com acabamento pintado: miolo claro, halo, espessura variável e faíscas; nenhuma linha ou ponto chapado.
+- [ ] Recolor por shader só com paleta aprovada (azul-gelo, verde-ácido, azul elétrico, laranja-brasa) e junto com silhueta própria.

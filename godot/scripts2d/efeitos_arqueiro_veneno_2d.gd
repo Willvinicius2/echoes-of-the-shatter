@@ -320,8 +320,8 @@ class Ciclone extends Node2D:
 		_prox_poca -= delta
 		if _prox_poca <= 0.0:
 			_prox_poca = 0.35
-			if _pocas.size() < 8 and Vfx.decalque_cabe(tree):
-				_pocas.append([global_position + Vector2(randf_range(-raio, raio) * 0.4, randf_range(-raio, raio) * 0.25), _t])
+			if _pocas.size() < 5 and Vfx.decalque_cabe(tree):   # poucas e espalhadas: não viram um borrão com 20 inimigos
+				_pocas.append([global_position + Vector2(randf_range(-raio, raio) * 0.7, randf_range(-raio, raio) * 0.4), _t])
 		_pocas = _pocas.filter(func(pc): return _t - pc[1] < 1.6)
 		queue_redraw()
 		_funil.queue_redraw()
@@ -354,12 +354,12 @@ class Ciclone extends Node2D:
 		for pc in _pocas:
 			var idade: float = _t - pc[1]
 			var k := clampf(1.0 - idade / 1.6, 0.0, 1.0)
-			var r := 10.0 + 14.0 * minf(idade * 4.0, 1.0)
+			var r := 8.0 + 10.0 * minf(idade * 4.0, 1.0)
 			var p: Vector2 = to_local(pc[0])
 			draw_set_transform(p, 0.0, Vector2(1.0, 0.5))
-			draw_circle(Vector2.ZERO, r + 2.0, Color(PAL[2], 0.55 * k * apaga))
-			draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.55 * k * apaga))
-			draw_circle(Vector2(-r * 0.3, -r * 0.3), r * 0.35, Color(PAL[0], 0.5 * k * apaga))
+			draw_circle(Vector2.ZERO, r + 2.0, Color(PAL[2], 0.5 * k * apaga))
+			draw_circle(Vector2.ZERO, r, Color(PAL[1].darkened(0.25), 0.4 * k * apaga))
+			draw_circle(Vector2(-r * 0.3, -r * 0.3), r * 0.3, Color(PAL[0], 0.35 * k * apaga))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.5))
 		draw_arc(Vector2.ZERO, raio, 0.0, TAU, 48, Color(PAL[1], 0.25 * apaga), 2.0)   # área real do CSV
 

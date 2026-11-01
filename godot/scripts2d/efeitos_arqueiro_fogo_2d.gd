@@ -312,7 +312,7 @@ class _Serpente extends Node2D:
 		Vfx.registrar_animado(self)
 		Vfx.registrar_decalque(self)
 		_base = global_position
-		_cabeca = Anim.new("muralha_chama", true, larg * 2.2)
+		_cabeca = Anim.new("muralha_chama", true, larg * 3.0)
 		_cabeca.z_index = 5   # -1 + 5 = 4
 		_cabeca.position = Vector2(0, -larg * 0.6)
 		add_child(_cabeca)
