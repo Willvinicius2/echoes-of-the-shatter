@@ -96,6 +96,8 @@ func usar_habilidade(slot: int, alvo := {}) -> bool:
 	var ok: bool = habilidades.usar(slot, self, dir)
 	alvo_ponto = Vector2.INF
 	if ok:
+		if estado == Estado.LIVRE and has_method("animar_conjuracao"):   # mago: gesto de conjuração sem travar o movimento
+			call("animar_conjuracao")
 		facing = dir
 	return ok
 
