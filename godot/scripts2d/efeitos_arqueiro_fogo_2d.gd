@@ -101,8 +101,8 @@ class _VigiaImpacto extends Node:
 		var pos: Vector2 = flecha.global_position
 		var atingidos := U.no_raio(flecha, pos, 36.0)
 		var e := Anim.new("flecha_impacto", false, 90.0)
-		e.global_position = pos + Vector2(0, -30)
-		cena.add_child(e)
+		e.position = pos + Vector2(0, -30)
+		cena.add_child.call_deferred(e)   # o pai está ocupado montando filhos durante o tree_exiting
 		for n in atingidos:
 			U.queimar(n, dur, dps)
 
