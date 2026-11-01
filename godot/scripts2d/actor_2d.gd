@@ -19,6 +19,9 @@ var _morrendo := false
 var _flash_ligado := false
 var _dir_k := -1
 var _sombra_a := 1.0
+var _recuo := Vector2.ZERO   # recuo do sprite ao disparar (doc 33 seção 2): só o desenho, a colisão não muda
+var _recuo_t := 0.0
+var _recuo_total := 0.0
 
 func setup_sprite(id: String) -> void:
 	char_id = id
@@ -76,6 +79,14 @@ func tremer_sprite(px: float, tempo: float) -> void:
 	_shake_t = tempo
 	_shake_total = tempo
 
+## Recua o sprite `px` contra `dir` e volta em `tempo` s (coice do arco). Soma-se ao tremor.
+func recuar_sprite(dir: Vector2, px: float, tempo: float) -> void:
+	if px <= 0.0 or tempo <= 0.0:
+		return
+	_recuo = -dir.normalized() * px
+	_recuo_t = tempo
+	_recuo_total = tempo
+
 ## Dissolve o sprite em pixels e some com a sombra; depois remove o ator.
 func dissolver(tempo: float) -> void:
 	if _morrendo:
@@ -97,11 +108,14 @@ func _process(delta: float) -> void:
 			_flash_ligado = ligado
 			_mat.set_shader_parameter("flash", 0.7 if ligado else 0.0)
 	if sprite != null:
+		var desloc := Vector2.ZERO
 		if _shake_t > 0.0:
 			_shake_t -= delta
-			sprite.position = Vector2.from_angle(randf() * TAU) * _shake_px * clampf(_shake_t / _shake_total, 0.0, 1.0)
-		else:
-			sprite.position = Vector2.ZERO
+			desloc = Vector2.from_angle(randf() * TAU) * _shake_px * clampf(_shake_t / _shake_total, 0.0, 1.0)
+		if _recuo_t > 0.0:
+			_recuo_t -= delta
+			desloc += _recuo * clampf(_recuo_t / _recuo_total, 0.0, 1.0)
+		sprite.position = desloc
 		_respirar(delta)
 	if _precisa_redesenhar():
 		queue_redraw()

@@ -3,6 +3,7 @@ extends Node2D
 ## Parâmetros vêm da linha da habilidade em data2d/habilidades_*.csv, já escalonada pelo nível.
 
 const Feel = preload("res://scripts2d/feel_2d.gd")
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
 
 var tipo := "chuva"
 var raio := 100.0
@@ -23,6 +24,9 @@ func setup(t: String, pos: Vector2, r: float, dur: float, dmg: float, c: Color) 
 	dano = dmg
 	cor = c
 	z_index = -1
+
+func _ready() -> void:
+	Vfx.anel_entrada(get_parent(), global_position, raio, cor)   # a zona nasce com anel de entrada (doc 33 seção 2)
 
 func _alvos(r: float) -> Array:
 	var out := []
@@ -63,5 +67,6 @@ func _physics_process(delta: float) -> void:
 
 func _draw() -> void:
 	var a := 0.18 + 0.08 * sin(_t * 8.0)
-	draw_circle(Vector2.ZERO, raio, Color(cor.r, cor.g, cor.b, a))
-	draw_arc(Vector2.ZERO, raio, 0.0, TAU, 40, Color(cor.r, cor.g, cor.b, 0.7), 2.0)
+	var apaga := Vfx.fade_zona(_t, duracao) if tipo != "armadilha" else 1.0   # some em fade, nunca de uma vez
+	draw_circle(Vector2.ZERO, raio, Color(cor.r, cor.g, cor.b, a * apaga))
+	draw_arc(Vector2.ZERO, raio, 0.0, TAU, 40, Color(cor.r, cor.g, cor.b, 0.7 * apaga), 2.0)

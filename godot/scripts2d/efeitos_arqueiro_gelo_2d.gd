@@ -5,6 +5,7 @@ extends RefCounted
 ## Contrato igual ao de efeitos_arqueiro_2d.gd: executar(efeito, jogador, def, nivel, mira) -> bool.
 
 const Feel = preload("res://scripts2d/feel_2d.gd")
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const PASTA := "res://art2d/fx/gelo/"
 const COR := Color(0.6, 0.88, 1.0)
 const COR_FUNDO := Color(0.35, 0.65, 0.95)
@@ -119,6 +120,30 @@ static func arauto_vigiar(inimigo: Node, jogador: Node2D, def: Dictionary) -> vo
 				if is_instance_valid(n):
 					acumular_frio(n, 1, def)
 		, CONNECT_ONE_SHOT)
+
+## Aura do Arauto do Gelo na camada C1 (elipse no chão, atrás do arqueiro; regra única em vfx_2d.gd). Nó "AuraGelo".
+static func aura(jogador: Node2D) -> Node2D:
+	var caminho := PASTA + "gelo_aura.png"
+	var s: Node2D
+	var natural := 64.0
+	if ResourceLoader.exists(caminho):
+		var tex: Texture2D = load(caminho)
+		var sp := Sprite2D.new()
+		sp.texture = tex
+		sp.hframes = 6
+		sp.material = Feel.aditivo()
+		natural = tex.get_width() / 6.0
+		var tw := sp.create_tween().set_loops()
+		tw.tween_method(func(q: float): sp.frame = clampi(int(q), 0, 5), 0.0, 5.999, 6.0 / 8.0)
+		s = sp
+	else:
+		var sp := Sprite2D.new()
+		sp.texture = Feel.ponto()
+		sp.material = Feel.aditivo()
+		sp.modulate = Color(COR.r, COR.g, COR.b, 0.7)
+		natural = 32.0
+		s = sp
+	return Vfx.aura_c1(jogador, s, natural, "AuraGelo")
 
 ## Aplica o Arauto a todos os inimigos vivos; chamar de tempos em tempos (ex.: a cada 0,5 s) enquanto a gema estiver equipada.
 static func arauto_varrer(jogador: Node2D, def: Dictionary) -> void:
