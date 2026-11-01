@@ -78,6 +78,7 @@ func definir_classe(id: String) -> void:
 		if stats.has(k) and str(cl[k]) != "":
 			stats[k] = float(cl[k])
 	habilidades.carregar_classe(id)
+	aplicar_passivos_stats()
 	mana = stats["mana_max"]
 
 func gastar_mana(n: float) -> bool:
@@ -371,15 +372,30 @@ func boca_do_arco(dir: Vector2) -> Dictionary:
 
 ## Cria e lança uma flecha com os stats do jogador (crítico, veneno, perfuração). Usada pelo tiro e pelas habilidades.
 ## A flecha nasce na boca do arco, com flash de boca e recuo do sprite, e desce até a altura de voo (doc 33 seção 2).
-func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0) -> Node:
+## `def` é a linha da habilidade já resolvida pela árvore de passivos: `vel` multiplica a velocidade, `perfura` soma
+## corpos atravessados e `proj_extra` lança cópias em leque (abertura `multishot_spread`) do mesmo tiro.
+## Acima de `max_projeteis` (passivas_limites.csv) flechas vivas, o tiro não nasce (devolve a mais antiga).
+func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0, def := {}) -> Node:
+	var vivas: Array = get_tree().get_nodes_in_group("flecha_jogador")
+	if vivas.size() >= _max_projeteis():
+		return vivas[0]
+	var extra := int(def.get("proj_extra", 0))
+	if extra > 0:
+		var sem := def.duplicate()
+		sem["proj_extra"] = 0
+		var abertura := deg_to_rad(stats.get("multishot_spread", 12.0))
+		for i in extra:
+			var lado := 1.0 if i % 2 == 0 else -1.0
+			lancar_flecha(dir.rotated(abertura * lado * float(i / 2 + 1)), dano_mult, pierce_extra, vel_mult, sem)
 	var f := ArrowScript.new()
 	var dano: float = stats["arrow_damage"] * dano_mult
 	if stats["crit_chance"] > 0.0 and _rng.randf() < stats["crit_chance"]:
 		dano *= stats["crit_mult"]
 	var boca := boca_do_arco(dir)
-	f.setup("player", boca["chao"], dir, stats["arrow_speed"] * vel_mult, dano, stats["arrow_range"],
+	f.setup("player", boca["chao"], dir, stats["arrow_speed"] * vel_mult * float(def.get("vel", 1.0)), dano, stats["arrow_range"],
 		boca["altura"], stats["arrow_altura"], stats["arrow_altura_dist"])
-	f.pierce = int(stats["arrow_pierce"]) + pierce_extra  # gancho de upgrades
+	f.pierce = int(stats["arrow_pierce"]) + pierce_extra + int(def.get("perfura", 0))  # gancho de upgrades e passivos
+	f.add_to_group("flecha_jogador")
 	if stats["poison_dps"] > 0.0:
 		f.veneno_dps = stats["poison_dps"]
 		f.veneno_t = stats["poison_time"]
@@ -391,22 +407,32 @@ func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult :
 
 ## Várias cópias do mesmo disparo saem do mesmo arco uma a uma, com `projetil_atraso` entre elas (doc 33 seção 5).
 ## `dirs` são as direções já abertas em leque. Devolve a primeira flecha (as outras saem depois).
-func lancar_flechas(dirs: Array, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0) -> Node:
+func lancar_flechas(dirs: Array, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0, def := {}) -> Node:
 	var primeira: Node = null
 	var atraso: float = stats.get("projetil_atraso", 0.0)
 	var eu: WeakRef = weakref(self)   # o temporizador não segura o jogador: se ele sumir antes, a cópia não sai
 	for i in dirs.size():
 		var d: Vector2 = dirs[i]
 		if i == 0 or atraso <= 0.0:
-			var f := lancar_flecha(d, dano_mult, pierce_extra, vel_mult)
+			var f := lancar_flecha(d, dano_mult, pierce_extra, vel_mult, def)
 			if primeira == null:
 				primeira = f
 		else:
 			get_tree().create_timer(atraso * i).timeout.connect(func():
 				var j: Node = eu.get_ref()
 				if j != null and j.is_inside_tree() and not j.esta_morto():
-					j.lancar_flecha(d, dano_mult, pierce_extra, vel_mult))
+					j.lancar_flecha(d, dano_mult, pierce_extra, vel_mult, def))
 	return primeira
+
+func _max_projeteis() -> int:
+	if habilidades != null and habilidades.passivos != null:
+		return int(habilidades.passivos.limite("max_projeteis", 120.0))
+	return 120
+
+## Stats finais: o core já somou meta, upgrades e passivas da árvore; aqui entram os nós `global` dos passivos.
+func aplicar_passivos_stats() -> void:
+	if habilidades != null:
+		stats = habilidades.aplicar_passivos_globais(stats)
 
 ## Salto das habilidades: avança `dist` px na direção `dir` em `dur` s, invulnerável. Não gasta a recarga da esquiva.
 func saltar(dir: Vector2, dist: float, dur: float) -> void:

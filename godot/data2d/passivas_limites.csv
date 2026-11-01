@@ -1,0 +1,9 @@
+chave,valor,unidade,nota
+qtd_add_max,6,unidades,maximo somado em qtd ou copias extras de projetil por habilidade (doc 33 secao 3.3)
+area_inc_max,1.5,fracao,soma maxima dos aumentos de raio e angulo
+angulo_max,360,graus,abertura maxima de um cone
+vel_inc_max,1.0,fracao,soma maxima dos aumentos de velocidade de projetil
+vel_min,0.25,x,multiplicador minimo de velocidade de projetil
+cd_min_frac,0.35,fracao,recarga nunca cai abaixo desta fracao da base (skill_cd_mult e shoot_cooldown)
+keystones_max,1,nos,keystones ativos ao mesmo tempo
+max_projeteis,120,projeteis,projeteis do jogador vivos ao mesmo tempo (acima disso o tiro nao nasce)
