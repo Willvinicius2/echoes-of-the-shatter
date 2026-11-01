@@ -58,6 +58,7 @@ func _testar() -> void:
 	await _testar_leque_skills()
 	await AutocastTestes.new(self, check).rodar()
 	await HordaTestes.new(self, check).rodar()
+	await _testar_hud_slots()
 
 func _testar_audio_e_ui() -> void:
 	var Audio = preload("res://scripts2d/audio_2d.gd")
@@ -1438,6 +1439,63 @@ func _testar_leque_skills() -> void:
 		check(is_equal_approx(g.velocity.length(), vel_neutra), "%s não mexe nas flechas das habilidades" % id)
 		mundo.queue_free()
 		await physics_frame
+
+## HUD: barra de slots (2 pequenos + 4 ativas) dentro da tela, sem sobrepor os globos; ativas vazias no arqueiro e
+## preenchidas pelas skills aprendidas do guerreiro, com segundos de recarga.
+func _testar_hud_slots() -> void:
+	var Classe = preload("res://scripts2d/classe_2d.gd")
+	var Tema = preload("res://scripts2d/tema_2d.gd")
+	for k in ["hud.fury", "hud.key.skill1", "hud.key.skill4"]:
+		check(Csv.t(k) != k, "loc %s" % k)
+	for k in ["impeto_escura", "impeto_clara", "sem_recurso"]:
+		check(Tema.cor(k) != Color.MAGENTA, "cor %s no tema" % k)
+	var antes: String = Classe.atual
+	for classe in ["arqueiro", "guerreiro", "mago"]:
+		Classe.atual = classe
+		var run = RunScene.instantiate()
+		run.com_menu = false
+		root.add_child(run)
+		await physics_frame
+		run.player.god_mode = true
+		var hud = run.hud
+		var vp := Vector2(1600, 900)
+		var rs: Dictionary = hud.retangulos_slots(vp)
+		check(rs["basicos"].size() == 2 and rs["ativas"].size() == 4, "%s: 2 slots básicos e 4 ativas" % classe)
+		var todos: Array = rs["basicos"] + rs["ativas"]
+		var raio: float = hud._lay["globo_raio"]
+		var dentro := true
+		for i in todos.size():
+			var r: Rect2 = todos[i]
+			dentro = dentro and Rect2(Vector2.ZERO, vp).encloses(r)
+			dentro = dentro and r.position.x > hud._centro_globo(vp, true).x + raio
+			for j in range(i + 1, todos.size()):
+				dentro = dentro and not r.intersects(todos[j])
+		check(dentro, "%s: slots dentro da tela, à direita dos globos e sem sobreposição" % classe)
+		check(rs["ativas"][0].size.x >= rs["basicos"][0].size.x, "%s: ativas do tamanho do ataque e da esquiva ou maiores" % classe)
+		var h = run.player.habilidades
+		h.redistribuir()
+		var cs: Dictionary = hud.conteudo_slots()
+		check(cs["ativas"].all(func(e): return e.is_empty()), "%s sem ativas: 4 encaixes vazios" % classe)
+		h.ganhar_pontos(10)
+		var id := ""
+		for k in h.ordem:
+			if h.eh_ativa(k) and h.pode_aprender(k):
+				id = k
+				break
+		check(id != "" and h.aprender(id), "%s: aprende uma ativa" % classe)
+		if "mana" in run.player:
+			run.player.mana = run.player.stats["mana_max"]
+		if "impeto" in run.player:
+			run.player.impeto = run.player.stats["impeto_max"]
+		var usou: bool = h.usar(0, run.player, Vector2.RIGHT)
+		cs = hud.conteudo_slots()
+		var e: Dictionary = cs["ativas"][0]
+		check(not e.is_empty() and e["tecla"] == "hud.key.skill1", "%s: ativa aprendida vai ao slot Q" % classe)
+		check(not usou or (e.get("segundos", -1.0) > 0.0 and e["recarga"] > 0.0 and e["recarga"] <= 1.0), "%s: slot traz fração e segundos de recarga" % classe)
+		check(cs["ativas"][3].is_empty(), "%s: slots sem ativa ficam vazios" % classe)
+		run.queue_free()
+		await physics_frame
+	Classe.atual = antes
 
 ## Padrão do pipeline: todo prop de toda sala nasce assentado no chão. Confere em cada sala que (1) o pivô do
 ## manifesto fica na linha de baixo opaca do sprite (senão o objeto flutua ou afunda), (2) todo prop tem

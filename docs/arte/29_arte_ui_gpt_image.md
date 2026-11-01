@@ -25,3 +25,26 @@ Substitui os ícones procedurais do doc 28 (o gerador `tools/arte/gen_icones_hab
 
 ## Ícones das 18 habilidades do Arqueiro (31/10/2026)
 `tools/arte/ui_gpt_image/prompts_icones_arqueiro.json`: 18 prompts no mesmo molde dos 10 aprovados (moldura de pedra e ferro igual ao ícone Tiro, 128 px depois do `prep.py`). Saída esperada: `godot/art2d/ui/icone_<id>.png` com `<id>` = id da skill em `data2d/habilidades_arqueiro.csv`. Depois de gerar, trocar a coluna `icone` do CSV para o próprio id e acrescentar linhas em `data2d/icones.csv` (o `icones_2d.gd` já prioriza o PNG).
+
+## HUD v3: molduras leves e slots das ativas (31/10/2026)
+Decisões do Jev (`jev-latest`, `POST /v1/systemone`, três consultas com capturas; confiança abaixo de 0,5 é provisória):
+- Fundo da barra de slots: **slots soltos com friso fino de ferro** (47%, contra 40% slots soltos e 13% faixa justa; provisória). A faixa pintada continua disponível em `hud_layout.csv` (`faixa_modo` 0 = faixa justa em 9-slice, 1 = soltos, 2 = friso).
+- Rodapé escuro reduzido a 90 px e 25% (85%); globos de raio 84 para 70 (96%).
+- 4 slots grandes de 75 px para Q E F R (94%), ataque e esquiva em slots menores à esquerda (77%; 58 px depois da conferência final); encaixe vazio só com a letra, sem cadeado (92%).
+- Recarga com varredura e segundos no centro (42%, provisória); ícone tingido de azul quando falta mana ou ímpeto (66%).
+- Barra fina de estamina removida, porque o slot de esquiva já mostra a recarga (57%, provisória; `estamina_barra` = 1 a traz de volta).
+- Globo da direita: mana real quando o jogador tem `mana` (runtime de habilidades), ímpeto no guerreiro, trancado nos outros casos.
+Código em `hud_2d.gd` (`retangulos_slots`, `conteudo_slots`) e `hud_arte_2d.gd` (`slot`, `encaixe_vazio`, `nove_fatias`, `friso`). Capturas com `godot/scripts2d/tools/captura_hud_variantes_2d.gd`; antes e depois em `/mnt/project-files/hud/v3/`.
+
+## HUD v4: formas recortadas (31/10/2026)
+O Will reprovou a v3 por estar "tudo muito quadrado". A v4 troca as caixas por formas recortadas, desenhadas em código (`hud_arte_2d.gd`): slots das ativas em octógono chanfrado com garras de ferro nos chanfros, ataque e esquiva em medalhões redondos, plaquinha de tecla em escudinho, base de pedra em arco com pico central e gema (`faixa_modo` 3), placa da sala com topo ogival, buffs em losango e globos com crista e garras. Jev: a v4 deixou de parecer quadrada (81%) e é melhor que a v3 (95%); o ajuste pedido, ornamento nos globos (45%, provisória), já entrou. Capturas em `/mnt/project-files/hud/v4/`.
+
+## HUD v5: lapidação (1/11/2026)
+O Will viu a v4 e disse que melhorou, mas ainda estava quadrada. A v5 troca a barra do chefe por uma lâmina com pontas afiadas, chifres curvos e crista central com caveira (`Arte.barra_chefe`, chamada em `boss_2d.gd`), faz a placa da sala virar estandarte (topo ogival, laterais côncavas, ponta embaixo), põe chifres de ferro nos globos, move o texto de ajuda para o canto inferior esquerdo e tira os rótulos soltos "Vida" e "Mana". Os slots leem o runtime comum de habilidades para as três classes (o guerreiro também usa `habilidades` agora). Jev: menos quadrada que a v4 (77%); o que ainda pesava era a placa da sala (55%) e a moldura dos globos (53%), tratados nesta passada. Capturas em `/mnt/project-files/hud/v5/`.
+
+## HUD v6: compacta e discreta (1/11/2026)
+O Will reprovou a v5: curvada demais, esquisita e ocupando muita tela. A v6 remove a base de pedra em arco e a sombra do rodapé; sobram globos de 84 px nos cantos com aro fino de ferro, seis slots (todos de 46 px) em fileira curta centralizada (ataque, esquiva, Q E F R) com moldura fina e tecla pequena, placa da sala de 110 x 36 px, barra do chefe fina (10 px, 380 px de largura) com marcas de fase e só o nome e a fase em texto, e a ajuda pequena que some sozinha. Peças em `hud_arte_2d.gd` (`slot_mini`, `encaixe_mini`, `globo_mini`, `placa_mini`, `barra_chefe_fina`); medidas em `hud_layout.csv`. As peças da v3 a v5 (`base_arco`, `barra_chefe`, `placa_gotica` etc.) ficam no arquivo sem uso. Capturas em `/mnt/project-files/hud/v6/`.
+Ajustes de legibilidade da v6 (revisor): globos de 84 px, todos os slots com 46 px e a mesma moldura, tecla em plaquinha escura no canto (12 px), encaixe vazio com cadeado pequeno, ajuda some em 5 s e fase do chefe com texto claro. Capturas `v6b_*` em `/mnt/project-files/hud/v6/`.
+
+## HUD v7: globos juntos à esquerda e barra de XP (1/11/2026)
+Pedido do Will: vida e mana juntas no canto esquerdo, maiores, e uma barrinha de XP. Os globos têm 100 px (raio 50, `globo_raio`) e ficam lado a lado (`globo_espaco`); os slots ficam centralizados à direita deles. A barra de XP (6 px, `xp_altura`) fica acima da fileira de slots, com "Nv N" e "xp / próximo XP"; lê `upgrades.nivel_estado()` ({level, xp, xp_next}, só no modo horda) e some quando o método não existe. Capturas em `/mnt/project-files/hud/v7/`.

@@ -52,6 +52,8 @@ func _initialize() -> void:
 	run.camera.position_smoothing_enabled = false
 	run.camera.position = tam / 2.0
 	run.hud.visible = false
+	if room._vinheta != null:
+		room._vinheta.visible = false   # a vinheta acompanha a câmera do jogo; no mapa inteiro ela viraria um retângulo escuro
 	for i in 5:
 		await physics_frame
 	await _salvar(pasta.path_join("0_mapa_inteiro.png"))
