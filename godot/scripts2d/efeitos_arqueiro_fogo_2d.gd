@@ -134,12 +134,16 @@ class _Meteoro extends Node2D:
 		_queda.position = Vector2(0, -420)
 		_queda.z_index = 6   # céu (C5): -1 + 6
 		add_child(_queda)
-		_aviso = Vfx.sombra_aviso(get_parent(), global_position, raio, COR_BRASA, TEMPO_QUEDA)   # sombra de aviso (C0)
+		if atraso > 0.0:
+			_queda.visible = false   # forma "brasas": a queda só aparece (e avisa no chão) quando chega a vez dela
 
 	func _physics_process(delta: float) -> void:
 		if atraso > 0.0:
 			atraso -= delta
 			return
+		if _aviso == null:
+			_queda.visible = true
+			_aviso = Vfx.sombra_aviso(get_parent(), global_position, raio, COR_BRASA, TEMPO_QUEDA)   # sombra de aviso (C0)
 		_t += delta
 		queue_redraw()
 		if not _caiu:
