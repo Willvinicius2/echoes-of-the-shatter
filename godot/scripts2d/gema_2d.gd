@@ -20,7 +20,7 @@ func setup(t: String, v: int, pos: Vector2, jogador: Node2D, cfg: Dictionary) ->
 	valor = v
 	global_position = pos + Vector2(randf_range(-10.0, 10.0), randf_range(-10.0, 10.0))
 	alvo = jogador
-	ima = float(cfg.get("gem_magnet_radius", ima)) * (1.6 if tipo == "bau" else 1.0)
+	ima = float(cfg.get("gem_magnet_radius", ima)) * (1.6 if tipo != "xp" else 1.0)
 	pegar = float(cfg.get("gem_pickup_radius", pegar))
 	velocidade = float(cfg.get("gem_speed", velocidade))
 	z_index = 0
@@ -52,6 +52,13 @@ func _draw() -> void:
 		draw_rect(r, Color(0.95, 0.75, 0.3), false, 2.0)
 		draw_rect(Rect2(-3, -13 + sobe, 6, 6), Color(1.0, 0.85, 0.35))
 		draw_circle(Vector2(0, -10 + sobe), 18.0, Color(1.0, 0.8, 0.3, 0.12 + 0.06 * sin(_t * 6.0)))
+		return
+	if tipo == "habilidade":
+		var c2 := Color(1.0, 0.6, 0.15)
+		var q := PackedVector2Array([Vector2(0, -12 + sobe), Vector2(8, -4 + sobe), Vector2(5, 6 + sobe), Vector2(-5, 6 + sobe), Vector2(-8, -4 + sobe)])
+		draw_circle(Vector2(0, -2 + sobe), 16.0, Color(c2, 0.18))
+		draw_colored_polygon(q, c2)
+		draw_polyline(q + PackedVector2Array([q[0]]), c2.lightened(0.6), 1.5)
 		return
 	var grande := valor >= 3
 	var s := 7.0 if grande else 5.0

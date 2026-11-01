@@ -9,7 +9,8 @@ var ordem: Array = []
 var niveis := {}
 var semente := 1
 var meta: RefCounted
-var habilidades: RefCounted   # passivas da árvore (habilidades_2d.gd)
+var habilidades: RefCounted   # passivas da árvore fixa (habilidades_2d.gd)
+var camada_partida: RefCounted   # habilidades da corrida (gemas); as passivas somam por cima da árvore fixa
 var _base_bruta := {}
 var _base := {}
 
@@ -32,7 +33,8 @@ func reaplicar(jogador: Node) -> void:
 	jogador.hp_changed.emit(jogador.hp, jogador.stats["hp_max"])
 
 func _com_passivas() -> Dictionary:
-	return habilidades.aplicar_passivas(_base) if habilidades != null else _base.duplicate()
+	var s: Dictionary = habilidades.aplicar_passivas(_base) if habilidades != null else _base.duplicate()
+	return camada_partida.aplicar_passivas(s) if camada_partida != null else s
 
 ## Stats base numéricos (sem o meta) que o core usa na corrida: cura do descanso e bônus permanentes.
 func base_numerica() -> Dictionary:

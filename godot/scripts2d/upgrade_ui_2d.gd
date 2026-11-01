@@ -11,7 +11,8 @@ signal escolhido(id: String)
 
 var upgrades: RefCounted
 var aberta := false
-var modo := "sala"        # "sala" (sala limpa), "level" (subiu de nível) ou "chest" (baú de elite)
+var modo := "sala"        # "sala" (sala limpa), "level" (subiu de nível), "chest" (baú de elite) ou "gem" (gema de habilidade)
+var _fonte: RefCounted    # de onde vêm `defs` e `nivel(id)` das cartas abertas (upgrades ou a árvore de habilidades)
 var _titulo: Label
 var _ids: Array = []
 var _caixa: HBoxContainer
@@ -44,12 +45,22 @@ func _ready() -> void:
 	col.add_child(_caixa)
 	_fundo.visible = false
 
-## `m`: "sala", "level" ou "chest"; `nivel` aparece no título da carta de nível.
-func abrir(ids: Array, m := "sala", nivel := 0) -> void:
+## `m`: "sala", "level", "chest" ou "gem"; `nivel` aparece no título da carta de nível. `fonte` (opcional) é de onde
+## vêm as definições e o nível das cartas: a árvore de habilidades no modo "gem", senão `upgrades`.
+func abrir(ids: Array, m := "sala", nivel := 0, fonte: RefCounted = null) -> void:
 	_ids = ids
 	modo = m
+	_fonte = fonte if fonte != null else upgrades
 	if _titulo != null:
-		_titulo.text = Csv.t("upgrade.level_up") % nivel if m == "level" else Csv.t("upgrade.chest" if m == "chest" else "upgrade.title")
+		match m:
+			"level":
+				_titulo.text = Csv.t("upgrade.level_up") % nivel
+			"chest":
+				_titulo.text = Csv.t("upgrade.chest")
+			"gem":
+				_titulo.text = Csv.t("upgrade.gem")
+			_:
+				_titulo.text = Csv.t("upgrade.title")
 	for c in _caixa.get_children():
 		c.queue_free()
 	for i in ids.size():
@@ -61,10 +72,10 @@ func abrir(ids: Array, m := "sala", nivel := 0) -> void:
 		b.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
 		b.expand_icon = true
 		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		var nv: int = upgrades.nivel(id) + 1
-		var pre := "skill" if upgrades.defs[id].has("ramo") else "upgrade"  # habilidades do guerreiro têm ramo
+		var nv: int = _fonte.nivel(id) + 1
+		var pre := "skill" if _fonte.defs[id].has("ramo") else "upgrade"  # habilidades (árvore) têm ramo
 		b.text = "[%d]\n%s\n\n%s\n\n%s" % [i + 1, Csv.t("%s.%s.name" % [pre, id]), Csv.t("%s.%s.desc" % [pre, id]),
-			Csv.t("upgrade.level") % [nv, upgrades.defs[id]["nivel_max"]]]
+			Csv.t("upgrade.level") % [nv, _fonte.defs[id]["nivel_max"]]]
 		b.pressed.connect(escolher.bind(i))
 		_caixa.add_child(b)
 	_fundo.visible = true
