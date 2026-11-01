@@ -118,8 +118,7 @@ ax, ay, ar = ARENA
 for y in range(H):
     for x in range(W):
         d = math.dist((x, y), (ax, ay))
-        if ar + 0.6 <= d < ar + 1.5 and grade[y][x] == "." and not perto_caminho(x, y, 0.6):
-            grade[y][x] = "r"
+        pass   # os anéis de runas são desenhados pelo jogo (@anel), contínuos, e não mais tiles quebrados
 for dx, dy in [(-7, -6), (7, -6), (-7, 6), (7, 6)]:
     grade[int(ay + dy)][int(ax + dx)] = "B"
 
@@ -135,8 +134,7 @@ for x, y in E_INICIO:
 # Runas no chão do centro da arena, onde se luta (anel pequeno em volta do estrado).
 for y in range(int(ay) - 5, int(ay) + 6):
     for x in range(int(ax) - 5, int(ax) + 6):
-        if 3.4 <= math.dist((x, y), (ax, ay)) < 4.4 and grade[y][x] == ".":
-            grade[y][x] = "r"
+        pass
 grade[int(ay) - 3][int(ax)] = "G"
 grade[int(ay) + 4][int(ax)] = "X"
 
@@ -336,6 +334,8 @@ for larg, pts in RIACHOS:
     linhas.append("@riacho %s %s" % (larg, " ".join("%g,%g" % p for p in pts)))
 for tom, cx, cy, r in LAJES:
     linhas.append("@lajes %s %g %g,%g" % (tom, r, cx, cy))
+linhas.append("@anel 1 0.9")   # anel externo da arena, dentro da laje escura
+linhas.append("@anel 2 1.3")   # anel interno, em volta do estrado
 linhas.append("@props")
 for pid, x, y, _, flip in sorted(props, key=lambda p: (p[2], p[1])):
     linhas.append("%s %g %g%s" % (pid, x, y, " flip" if flip else ""))

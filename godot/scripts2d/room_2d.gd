@@ -42,6 +42,7 @@ var _props_def := {}
 var _props_arte := {}
 var _layer: TileMapLayer
 var _piso: TileMapLayer
+var aneis: Array = []   # [{laje, fator}]
 var _brilho_runas: TileMapLayer
 var piso_grama := false
 var braseiros: Array[Vector2] = []
@@ -75,6 +76,9 @@ func carregar(caminho: String) -> bool:
 			var q := l.split(" ", false)
 			var xy := q[3].split(",")
 			lajes.append({"tom": q[1], "raio": float(q[2]) * tile, "centro": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile)})
+		elif l.begins_with("@anel "):
+			var q := l.split(" ", false)   # @anel índice_da_laje fator: anel de runas que acompanha o contorno da laje
+			aneis.append({"laje": int(q[1]), "fator": float(q[2])})
 		elif l.begins_with("@caminho ") or l.begins_with("@riacho "):
 			var q := l.split(" ", false)
 			var pts: Array = []
@@ -319,33 +323,105 @@ func _desenhar_lajes() -> void:
 	for i in lajes.size():
 		var m: Dictionary = lajes[i]
 		var escuro: bool = m["tom"] == "escuro"
-		var orla := Polygon2D.new()
-		orla.polygon = _contorno(m["centro"], m["raio"] + 10.0, 11 + i)
-		orla.color = Color(0.13, 0.11, 0.08, 0.35)
-		var orla2 := Polygon2D.new()   # segunda orla, mais larga e fraca: a pedra some no gramado aos poucos
-		orla2.polygon = _contorno(m["centro"], m["raio"] + 22.0, 11 + i)
-		orla2.color = Color(0.22, 0.3, 0.12, 0.28)   # musgo: a pedra passa para o gramado aos poucos
-		orlas.add_child(orla2)
-		orlas.add_child(orla)
-		var pg := Polygon2D.new()
-		pg.polygon = _contorno(m["centro"], m["raio"], 11 + i)
-		pg.texture = tex_escuro if escuro else tex_claro
-		pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-		pg.uv = pg.polygon
-		pg.color = Color(0.85, 0.82, 0.8) if escuro else Color(0.92, 0.92, 0.9)
+		# Sombra de terra e musgo esfumadas (sem contorno duro) sob a pedra.
+		orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.22, 0.3, 0.12, 0.3), 1.0, 56.0))
+		orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.13, 0.11, 0.08, 0.4), 1.0, 30.0))
+		var cor_laje := Color(0.85, 0.82, 0.8) if escuro else Color(0.92, 0.92, 0.9)
 		if not escuro and i > 0 and lajes[i - 1]["tom"] == "escuro" and m["raio"] < lajes[i - 1]["raio"]:
-			pg.color = Color(0.72, 0.68, 0.66, 0.8)   # estrado sobre a laje escura: contraste baixo, sem cara de tapete
-		raiz.add_child(pg)
+			cor_laje = Color(0.72, 0.68, 0.66, 0.8)   # estrado sobre a laje escura: contraste baixo, sem cara de tapete
+		raiz.add_child(_laje_esfumada(m, 11 + i, tex_escuro if escuro else tex_claro, cor_laje, 0.95, 34.0))
+	_desenhar_aneis(raiz)
+
+## Laje de contorno irregular com a beira esfumada: o miolo é opaco e uma faixa externa perde a opacidade até zero,
+## então a pedra some no gramado sem a divisa reta de antes.
+func _laje_esfumada(m: Dictionary, semente: int, tex: Texture2D, cor: Color, fator_dentro: float, faixa: float) -> MeshInstance2D:
+	var np := maxi(48, int(m["raio"] / 2.5))   # a mesma contagem de pontos nos dois contornos
+	var dentro := _contorno(m["centro"], m["raio"] * fator_dentro, semente, 0.06, np)
+	var fora := _contorno(m["centro"], m["raio"] * fator_dentro + faixa, semente, 0.06, np)
+	var n := dentro.size()
+	var pts := PackedVector2Array()
+	pts.append_array(dentro)
+	pts.append_array(fora)
+	var cores := PackedColorArray()
+	for k in n:
+		cores.append(cor)
+	for k in n:
+		cores.append(Color(cor.r, cor.g, cor.b, 0.0))
+	var idx := PackedInt32Array()
+	var tri := Geometry2D.triangulate_polygon(dentro)
+	for t in range(0, tri.size() - 2, 3):
+		idx.append_array(PackedInt32Array([tri[t], tri[t + 1], tri[t + 2]]))
+	for k in n:
+		var k2 := (k + 1) % n
+		idx.append_array(PackedInt32Array([k, k2, n + k2, k, n + k2, n + k]))
+	var uvs := PackedVector2Array()
+	for p in pts:
+		uvs.append(p / Vector2(tex.get_size()) if tex != null else Vector2.ZERO)
+	var arr := []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = pts
+	arr[Mesh.ARRAY_COLOR] = cores
+	arr[Mesh.ARRAY_TEX_UV] = uvs
+	arr[Mesh.ARRAY_INDEX] = idx
+	var malha := ArrayMesh.new()
+	malha.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	var mi := MeshInstance2D.new()
+	mi.mesh = malha
+	if tex != null:
+		mi.texture = tex
+		mi.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	return mi
+
+## Anéis de runas contínuos (linha dourada aditiva e marcas curtas) que seguem o contorno de uma laje.
+func _desenhar_aneis(raiz: Node2D) -> void:
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	for a in aneis:
+		var idx: int = a["laje"]
+		if idx < 0 or idx >= lajes.size():
+			continue
+		var m: Dictionary = lajes[idx]
+		var pts := _contorno(m["centro"], m["raio"] * float(a["fator"]), 11 + idx, 0.0)
+		pts.append(pts[0])
+		var brilho := Line2D.new()
+		brilho.points = pts
+		brilho.width = 12.0
+		brilho.default_color = Color(1.0, 0.72, 0.25, 0.2)
+		brilho.material = mat
+		raiz.add_child(brilho)
+		var linha := Line2D.new()
+		linha.points = pts
+		linha.width = 2.5
+		linha.default_color = Color(1.0, 0.82, 0.38, 0.75)
+		linha.material = mat
+		raiz.add_child(linha)
+		# Marcas de runa: pequenos traços radiais e losangos espaçados ao longo do anel.
+		var passo := 3
+		var k := 0
+		while k < pts.size() - 1:
+			var h := hash(Vector2i(k, idx + 77))
+			var c := pts[k]
+			var sentido := (pts[(k + 1) % (pts.size() - 1)] - pts[k]).normalized()
+			var normal := sentido.orthogonal()
+			var tam := 5.0 + posmod(h, 4)
+			var marca := Line2D.new()
+			marca.points = PackedVector2Array([c - normal * tam, c + normal * tam]) if posmod(h / 3, 2) == 0 else PackedVector2Array([c - sentido * 3.0 - normal * tam * 0.6, c + normal * tam * 0.6 + sentido * 3.0])
+			marca.width = 2.0
+			marca.default_color = Color(1.0, 0.85, 0.45, 0.8)
+			marca.material = mat
+			raiz.add_child(marca)
+			k += passo + posmod(h / 7, 3)
 
 ## Círculo ondulado (raio em px) para as manchas de laje; a mesma semente dá o mesmo contorno.
-func _contorno(centro: Vector2, raio: float, semente: int) -> PackedVector2Array:
+func _contorno(centro: Vector2, raio: float, semente: int, serrilha := 0.0, n_pts := 0) -> PackedVector2Array:
 	var pts := PackedVector2Array()
-	var n := maxi(32, int(raio / 4.0))
+	var n := n_pts if n_pts > 0 else maxi(48, int(raio / 2.5))
 	var f1 := 2.0 + posmod(semente * 7, 3)
 	var f2 := 5.0 + posmod(semente * 13, 4)
 	for k in n:
 		var a := k * TAU / n
 		var onda := 0.12 * sin(a * f1 + semente) + 0.06 * sin(a * f2 + semente * 2.3) + 0.03 * sin(a * 11.0 + semente * 0.7)
+		onda += serrilha * (float(posmod(hash(Vector2i(k, semente)), 100)) / 100.0 - 0.5)   # beira irregular, sem curva lisa
 		pts.append(centro + Vector2(cos(a), sin(a)) * raio * (1.0 + onda))
 	return pts
 

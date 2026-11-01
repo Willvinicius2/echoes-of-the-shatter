@@ -131,6 +131,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			_lajes_soltas(raiz, q, 11 + i)
 			_musgo_na_borda(raiz, q)
 			_tufos_na_borda(raiz, q, 11 + i)
+		_fins_do_caminho(raiz, sala, caminhos, i, linha, tile)
 		var trecho := PackedVector2Array()
 		for p in spline(c["pts"], 6.0):
 			for ag in aguas:
@@ -208,6 +209,56 @@ static func _musgo_na_borda(raiz: Node2D, contorno: PackedVector2Array) -> void:
 		var cor := Color(0.13, 0.2, 0.1, 0.3 + 0.12 * float(posmod(h / 7, 4)) / 3.0)
 		_poligono(raiz, pts, cor)
 		i += 2 + posmod(h / 5, 4)
+
+## Pontas do caminho que não cruzam outro caminho nem a borda do mapa: em vez do corte reto, lajes soltas cada vez
+## menores e mais espaçadas, como uma estrada que se desfaz.
+static func _fins_do_caminho(raiz: Node2D, sala: Node2D, caminhos: Array, idx: int, linha: PackedVector2Array, tile: int) -> void:
+	if linha.size() < 3:
+		return
+	var larg: float = float(caminhos[idx]["larg"]) * tile
+	var cols: int = int(sala.get("colunas"))
+	var lins: int = int(sala.get("linhas"))
+	for ponta in 2:
+		var p: Vector2 = linha[0] if ponta == 0 else linha[linha.size() - 1]
+		var q: Vector2 = linha[mini(4, linha.size() - 1)] if ponta == 0 else linha[maxi(linha.size() - 5, 0)]
+		var dir := (p - q).normalized()
+		if dir == Vector2.ZERO:
+			continue
+		var margem := 8.0 * tile
+		if p.x < margem or p.y < margem or p.x > cols * tile - margem or p.y > lins * tile - margem:
+			continue
+		var cruza := false
+		for j in caminhos.size():
+			if j == idx:
+				continue
+			for pt in spline(caminhos[j]["pts"], 20.0):
+				if pt.distance_to(p) < larg * 1.5:
+					cruza = true
+					break
+			if cruza:
+				break
+		if cruza:
+			continue
+		# Mancha macia da cor da laje sobre a ponta, para a estrada afundar no chão em vez de terminar num corte reto.
+		var mancha := Sprite2D.new()
+		mancha.texture = _radial_cache("fim_estrada", Color(0.17, 0.14, 0.12, 0.92), 128, Color(0.17, 0.14, 0.12, 0.0))
+		mancha.position = p + dir * larg * 0.2
+		mancha.scale = Vector2.ONE * (larg * 2.4 / 128.0 * 2.0)
+		raiz.add_child(mancha)
+		var lado := dir.orthogonal()
+		for k in 11:
+			var h := hash(Vector2i(k, idx * 17 + ponta + 901))
+			var t := (k + 1) * 11.0 + posmod(h, 7)
+			var raio := maxf(11.0 - k * 0.8, 3.5) * (0.8 + 0.4 * posmod(h / 3, 5) / 5.0)
+			var espalha := (posmod(h / 11, 100) / 100.0 - 0.5) * (larg * 0.8 + k * 5.0)
+			var c := p + dir * t + lado * espalha
+			var pts := PackedVector2Array()
+			for a in 7:
+				var ang := TAU * a / 7.0 + posmod(h, 6)
+				pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.7))
+			var tom := 0.4 + 0.2 * float(posmod(h / 5, 100)) / 100.0
+			_poligono(raiz, _expandir(pts, c, 1.6), Color(0.08, 0.09, 0.08, 0.7))
+			_poligono(raiz, pts, Color(tom, tom + 0.02, tom + 0.07))
 
 ## Lajes soltas e musgo espalhados pela borda do caminho.
 static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: int) -> void:
