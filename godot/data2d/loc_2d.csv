@@ -310,6 +310,9 @@ ramo.fogo.name,Fogo
 ramo.fogo.desc,Queimadura, meteoros e chão em brasas
 ramo.raio.name,Raio
 ramo.raio.desc,Choque, raios encadeados e tempestade
+hud.fury,Ímpeto
+hud.nivel,Nv %d
+hud.xp_valor,%d / %d XP
 passivo.arqueiro.name,Arqueiro
 passivo.arqueiro.desc,Raiz da árvore: todo caminho começa aqui
 passivo.c_dano_1.name,Punho Firme
