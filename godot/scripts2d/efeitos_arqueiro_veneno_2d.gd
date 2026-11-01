@@ -27,7 +27,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 	var dano: float = def.get("dano", 1.0)
 	match efeito:
 		"tiro_veneno":
-			var f = jogador.lancar_flecha(dir, dano, int(def.get("qtd", 0)), 1.0)
+			var f = jogador.lancar_flecha(dir, dano, int(def.get("qtd", 0)), 1.0, def)
 			f.veneno_dps = def.get("valor", 4.0)       # dps do veneno vem do CSV
 			f.veneno_t = def.get("duracao", 3.0)
 			f.cor_fx = VERDE

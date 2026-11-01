@@ -15,24 +15,25 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 	var dano: float = def.get("dano", 1.0)
 	match efeito:
 		"tiro_forte":
-			var f = jogador.lancar_flecha(dir, dano, int(def.get("qtd", 0)), def.get("valor", 1.0))
+			var f = jogador.lancar_flecha(dir, dano, int(def.get("qtd", 0)), def.get("valor", 1.0), def)
 			f.cor_fx = Color(1.0, 0.7, 0.3)
 		"rajada":
 			var n := int(def.get("qtd", 3))
 			var passo: float = def.get("duracao", 0.1)
 			for i in n:
 				if i == 0:
-					jogador.lancar_flecha(dir, dano)
+					jogador.lancar_flecha(dir, dano, 0, 1.0, def)
 				else:
 					jogador.get_tree().create_timer(passo * i).timeout.connect(func():
 						if is_instance_valid(jogador) and not jogador.esta_morto():
-							jogador.lancar_flecha(jogador.mira_atual(), dano))
+							jogador.lancar_flecha(jogador.mira_atual(), dano, 0, 1.0, def))
 		"leque":
 			var n := int(def.get("qtd", 3))
 			var abertura: float = deg_to_rad(def.get("angulo", 40.0))
+			var espiral: bool = def.get("forma", "") == "espiral" or abertura >= TAU - 0.01   # volta inteira, sem sobrepor
 			for i in n:
-				var a := 0.0 if n == 1 else -abertura * 0.5 + abertura * i / float(n - 1)
-				jogador.lancar_flecha(dir.rotated(a), dano)
+				var a := 0.0 if n == 1 else (TAU * i / float(n) if espiral else -abertura * 0.5 + abertura * i / float(n - 1))
+				jogador.lancar_flecha(dir.rotated(a), dano, 0, 1.0, def)
 		"chuva":
 			_zona("chuva", jogador, dir, def, jogador.stats["arrow_damage"] * dano, Color(0.9, 0.75, 0.35), int(def.get("qtd", 5)))
 		"armadilha":
@@ -40,7 +41,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 		"fumaca":
 			_zona("fumaca", jogador, dir, def, 0.0, Color(0.55, 0.6, 0.7), 1)
 		"explosiva":
-			var f = jogador.lancar_flecha(dir, 0.6)
+			var f = jogador.lancar_flecha(dir, 0.6, 0, 1.0, def)
 			f.explode_raio = def.get("raio", 120.0)
 			f.explode_dano = jogador.stats["arrow_damage"] * dano
 			f.cor_fx = Color(1.0, 0.5, 0.2)
@@ -53,7 +54,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			jogador.saltar(-dir, def.get("alcance", 280.0), def.get("duracao", 0.2))
 			jogador.get_tree().create_timer(def.get("duracao", 0.2)).timeout.connect(func():
 				if is_instance_valid(jogador) and not jogador.esta_morto():
-					jogador.lancar_flecha(dir, dano))
+					jogador.lancar_flecha(dir, dano, 0, 1.0, def))
 		"furia":
 			var v: float = def.get("valor", 0.35)
 			jogador.dar_buff(def.get("duracao", 5.0), 1.0 + v * 0.5, 1.0 / (1.0 - minf(v, 0.8)))

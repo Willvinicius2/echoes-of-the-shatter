@@ -71,6 +71,7 @@ func definir_classe(id: String) -> void:
 		if stats.has(k) and str(cl[k]) != "":
 			stats[k] = float(cl[k])
 	habilidades.carregar_classe(id)
+	aplicar_passivos_stats()
 	mana = stats["mana_max"]
 
 func gastar_mana(n: float) -> bool:
@@ -305,19 +306,44 @@ func mira_atual() -> Vector2:
 	return _aim
 
 ## Cria e lança uma flecha com os stats do jogador (crítico, veneno, perfuração). Usada pelo tiro e pelas habilidades.
-func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0) -> Node:
+## `def` é a linha da habilidade já resolvida pela árvore de passivos: `vel` multiplica a velocidade, `perfura` soma
+## corpos atravessados e `proj_extra` lança cópias em leque (abertura `multishot_spread`) do mesmo tiro.
+## Acima de `max_projeteis` (passivas_limites.csv) flechas vivas, o tiro não nasce (devolve a mais antiga).
+func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult := 1.0, def := {}) -> Node:
+	var vivas: Array = get_tree().get_nodes_in_group("flecha_jogador")
+	if vivas.size() >= _max_projeteis():
+		return vivas[0]
+	var extra := int(def.get("proj_extra", 0))
+	if extra > 0:
+		var sem := def.duplicate()
+		sem["proj_extra"] = 0
+		var abertura := deg_to_rad(stats.get("multishot_spread", 12.0))
+		for i in extra:
+			var lado := 1.0 if i % 2 == 0 else -1.0
+			lancar_flecha(dir.rotated(abertura * lado * float(i / 2 + 1)), dano_mult, pierce_extra, vel_mult, sem)
 	var f := ArrowScript.new()
 	var dano: float = stats["arrow_damage"] * dano_mult
 	if stats["crit_chance"] > 0.0 and _rng.randf() < stats["crit_chance"]:
 		dano *= stats["crit_mult"]
 	f.setup("player", global_position + dir * stats["arrow_spawn_dist"], dir,
-		stats["arrow_speed"] * vel_mult, dano, stats["arrow_range"])
-	f.pierce = int(stats["arrow_pierce"]) + pierce_extra  # gancho de upgrades
+		stats["arrow_speed"] * vel_mult * float(def.get("vel", 1.0)), dano, stats["arrow_range"])
+	f.pierce = int(stats["arrow_pierce"]) + pierce_extra + int(def.get("perfura", 0))  # gancho de upgrades e passivos
+	f.add_to_group("flecha_jogador")
 	if stats["poison_dps"] > 0.0:
 		f.veneno_dps = stats["poison_dps"]
 		f.veneno_t = stats["poison_time"]
 	get_parent().add_child(f)
 	return f
+
+func _max_projeteis() -> int:
+	if habilidades != null and habilidades.passivos != null:
+		return int(habilidades.passivos.limite("max_projeteis", 120.0))
+	return 120
+
+## Stats finais: o core já somou meta, upgrades e passivas da árvore; aqui entram os nós `global` dos passivos.
+func aplicar_passivos_stats() -> void:
+	if habilidades != null:
+		stats = habilidades.aplicar_passivos_globais(stats)
 
 ## Salto das habilidades: avança `dist` px na direção `dir` em `dur` s, invulnerável. Não gasta a recarga da esquiva.
 func saltar(dir: Vector2, dist: float, dur: float) -> void:
