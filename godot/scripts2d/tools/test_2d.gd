@@ -1125,10 +1125,10 @@ func _testar_hud_slots() -> void:
 		for i in todos.size():
 			var r: Rect2 = todos[i]
 			dentro = dentro and Rect2(Vector2.ZERO, vp).encloses(r)
-			dentro = dentro and r.position.x > hud._centro_globo(vp, false).x + raio and r.end.x < hud._centro_globo(vp, true).x - raio
+			dentro = dentro and r.position.x > hud._centro_globo(vp, true).x + raio
 			for j in range(i + 1, todos.size()):
 				dentro = dentro and not r.intersects(todos[j])
-		check(dentro, "%s: slots dentro da tela, entre os globos e sem sobreposição" % classe)
+		check(dentro, "%s: slots dentro da tela, à direita dos globos e sem sobreposição" % classe)
 		check(rs["ativas"][0].size.x >= rs["basicos"][0].size.x, "%s: ativas do tamanho do ataque e da esquiva ou maiores" % classe)
 		var h = run.player.habilidades
 		h.redistribuir()

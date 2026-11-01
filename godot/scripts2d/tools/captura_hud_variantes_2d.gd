@@ -47,6 +47,7 @@ func _initialize() -> void:
 			p.mana = p.stats["mana_max"] * 0.7
 		p.habilidades.usar(0, p, Vector2.RIGHT)   # põe a primeira ativa em recarga de verdade (o core guarda o tempo)
 	run.hud.tempo = 83.0
+	run.hud.xp_demo = {"level": 4, "xp": 37, "xp_next": 60}
 	for i in 6:
 		await physics_frame
 	await RenderingServer.frame_post_draw

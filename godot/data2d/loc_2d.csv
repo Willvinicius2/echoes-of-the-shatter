@@ -311,3 +311,5 @@ ramo.fogo.desc,Queimadura, meteoros e chão em brasas
 ramo.raio.name,Raio
 ramo.raio.desc,Choque, raios encadeados e tempestade
 hud.fury,Ímpeto
+hud.nivel,Nv %d
+hud.xp_valor,%d / %d XP

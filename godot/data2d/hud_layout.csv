@@ -13,7 +13,7 @@ slot_pequeno,46,px,lado dos slots de ataque basico e esquiva
 slot_grupo_espaco,12,px,distancia entre os slots pequenos e os de habilidade
 slot_base,6,px,distancia do rodape ate a base dos slots
 icone_carta,64,px,lado do icone nas cartas de upgrade
-globo_raio,42,px,raio dos globos de vida e recurso
+globo_raio,50,px,raio dos globos de vida e recurso
 globo_margem,6,px,distancia dos globos ate a borda da tela
 estamina_barra_largura,260,px,largura da barra fina de estamina sobre a barra de habilidades
 chefe_largura,380,px,largura da barra de vida do chefe
@@ -26,3 +26,5 @@ rodape_altura,90,px,altura da sombra do rodape
 rodape_alfa,0.25,fracao,opacidade da sombra do rodape na borda de baixo
 estamina_barra,0,liga,1 = mostra a barra fina de estamina sobre os slots (a recarga ja aparece no slot de esquiva)
 chefe_altura,10,px,altura da barra fina de vida do chefe
+globo_espaco,6,px,distancia entre o globo de vida e o de recurso (os dois ficam a esquerda)
+xp_altura,6,px,altura da barra fina de XP acima dos slots

@@ -39,12 +39,13 @@ func _desenhar() -> void:
 	if jogador != null and "hp" in jogador:
 		_desenhar_habilidades(vp)
 		_desenhar_globos(vp)
+		_desenhar_xp(vp)
 	_desenhar_upgrades()
 	Arte.placa_mini(_ctl, Rect2(vp.x - 6 - _lay["plaqueta_largura"], 6, _lay["plaqueta_largura"], 36), Csv.t("hud.room") % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
 	if _rel < 5.0 and estado_ajuda_visivel():
 		var al := clampf((5.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
-		Arte.texto(_ctl, Vector2(0, vp.y - 66), Csv.t("hud.help"), 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		Arte.texto(_ctl, Vector2(0, vp.y - 84), Csv.t("hud.help"), 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
@@ -60,10 +61,12 @@ func _tempo_texto() -> String:
 	var total := int(tempo)
 	return "%02d:%02d" % [total / 60, total % 60]
 
+## Os dois globos ficam juntos no canto inferior esquerdo: vida (`direita` = false) e recurso (`direita` = true, ao lado).
 func _centro_globo(vp: Vector2, direita: bool) -> Vector2:
 	var r: float = _lay["globo_raio"]
 	var m: float = _lay["globo_margem"]
-	return Vector2(vp.x - m - r if direita else m + r, vp.y - m - r)
+	var x: float = m + r + ((2.0 * r + _lay.get("globo_espaco", 6.0)) if direita else 0.0)
+	return Vector2(x, vp.y - m - r)
 
 ## Retângulos da barra de slots: 2 pequenos (ataque e esquiva) à esquerda e as ativas (Q E F R), o grupo centrado.
 func retangulos_slots(vp: Vector2) -> Dictionary:
@@ -86,6 +89,35 @@ func retangulos_slots(vp: Vector2) -> Dictionary:
 		x += lado + esp
 	var grupo := Rect2((vp.x - largura) * 0.5, base - lado, largura, lado)
 	return {"basicos": basicos, "ativas": ativas, "grupo": grupo}
+
+## Barra fina de XP acima da fileira de slots, com o nível. Só aparece no modo horda (o upgrades expõe `nivel_estado`).
+func _desenhar_xp(vp: Vector2) -> void:
+	var e := dados_xp()
+	if e.is_empty():
+		return
+	var g: Rect2 = retangulos_slots(vp)["grupo"]
+	var r := Rect2(g.position.x, g.position.y - 14.0, g.size.x, _lay.get("xp_altura", 6.0))
+	var prox := maxf(1.0, float(e.get("xp_next", 1)))
+	var frac := clampf(float(e.get("xp", 0)) / prox, 0.0, 1.0)
+	_ctl.draw_rect(r.grow(1.5), Color(0, 0, 0, 0.7))
+	_ctl.draw_rect(r, Color(0.05, 0.05, 0.08, 0.9))
+	if frac > 0.0:
+		_ctl.draw_rect(Rect2(r.position, Vector2(r.size.x * frac, r.size.y)), Tema.cor("destaque"))
+		_ctl.draw_rect(Rect2(r.position, Vector2(r.size.x * frac, 2.0)), Color(1, 1, 1, 0.25))
+	_ctl.draw_rect(r.grow(1.5), Tema.cor("metal_claro"), false, 1.0)
+	Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 4.0), Csv.t("hud.nivel") % int(e.get("level", 1)), 13, Tema.cor("texto"))
+	Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 4.0), Csv.t("hud.xp_valor") % [int(e.get("xp", 0)), int(prox)], 12, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x)
+
+## XP do jogador: `upgrades.nivel_estado()` ({level, xp, xp_next}) no modo horda; vazio fora dele. `xp_demo` serve às capturas.
+var xp_demo := {}
+func dados_xp() -> Dictionary:
+	if not xp_demo.is_empty():
+		return xp_demo
+	if upgrades != null and upgrades.has_method("nivel_estado"):
+		var e = upgrades.nivel_estado()
+		if e is Dictionary and e.has("xp_next"):
+			return e
+	return {}
 
 ## Vida (esquerda) e recurso (direita, reservado e vazio). Vida baixa pulsa no aro.
 func _desenhar_globos(vp: Vector2) -> void:
