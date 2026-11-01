@@ -164,3 +164,19 @@ O que está no `master` a partir deste PR, tudo no cliente 2D (GDScript) e nos C
 - **Testes**: `_testar_passivos` em `scripts2d/tools/test_2d.gd` (fixture `data2d/testes/passivas_teste.csv`): ordem add/inc/mais/set, tetos, grafo, keystone, save, dados reais do arqueiro e a flecha lendo o def.
 
 Fica para depois (backlog, em ordem): `cd` e `custo` por habilidade ou tag exigem o core (hoje só `global` via `skill_cd_mult`; é contrato novo da API C, Opus); `chance_status`; formas `muro` e `pustulas` de verdade; ícones próprios dos nós; ligação com as cartas de nível (P5) e calibração pelo bot (P6); Guerreiro e Mago só precisam do CSV `passivas_<classe>.csv` e das tags.
+
+## 13. Decisão do Will (01/11/2026): árvore fixa mais passivas da partida
+A árvore de passivos (seções 4 a 12) é **permanente no personagem**, como no PoE 2: os pontos ficam entre corridas e a build é a mesma ao começar cada partida. Dentro da partida o jogador **sobe skills e passivas por nível** (cartas de nível, doc 31 H4): os Arautos (Trovão, Cinzas, Gelo, Peste) e passivas de partida como mais tamanho de habilidade, tipo de dano, crítico, recarga e velocidade de ataque. Alguns nós da árvore podem deixar uma dessas passivas de partida **já pronta** ao começar a corrida. Quais cartas existem e como sobem é da thread "Lapidar skills, passivos e progressão"; este doc só fixa o encaixe técnico.
+
+| Camada | Quando muda | Dura | Fonte dos modificadores |
+|---|---|---|---|
+| **Árvore** (fixa) | entre corridas, com pontos de passivo | para sempre, redistribuição gratuita | `passivas_<classe>.csv` (nós ativos) |
+| **Passivas da partida** | a cada nível dentro da corrida (1 de 3 cartas) | até o fim da corrida | linhas de cartas no mesmo formato de nó (`alvo,campo,op,valor,forma`) |
+| **Pré-prontas** | ao começar a corrida | até o fim da corrida | nó da árvore com `inicia=<id da carta>`: a carta entra no nível 1 sem ser sorteada |
+
+Como encaixa no que já foi implementado:
+- **Mesmo pipeline.** Uma carta de "+20% de tamanho" é um modificador `tag:area,raio,inc,0.20`; uma de recarga é `global,skill_cd_mult,inc,-0.05`; um Arauto subindo de nível é `skill:herald_thunder,raio,inc`. `passivos_2d.resolver(id, def, tags, extra_ativos)` já aceita nós extras (hoje usado só na pré-visualização), então as cartas entram como `extra_ativos` da corrida e **somam com a árvore**, sem código novo de cálculo.
+- **Tetos únicos.** `passivas_limites.csv` vale para a soma das duas camadas (área +150%, quantidade +6, recarga mínima 35%, velocidade +100%): a corrida não passa disso, por mais cartas que apareçam.
+- **Estado da corrida.** Os `extra_ativos` ficam no jogador (lista de ids de carta com nível) e zeram ao morrer ou vencer; o save permanente guarda só a árvore. Pontos de passivo da seção 4 continuam por onda e chefe.
+- **Pré-prontas.** Coluna nova `inicia` em `passivas_<classe>.csv` (vazia na maioria dos nós). Ao iniciar a corrida, as cartas dos nós ativos com `inicia` entram na lista da corrida no nível 1. É o que torna "tenho o Arauto do Trovão desde o começo" uma escolha de build.
+- **Próximos passos (pacote P5).** (1) `cartas_passivas.csv` com as passivas da partida (id, nível máximo, modificadores por nível, raridade); (2) a oferta de nível do H4 sorteia também essas cartas; (3) o jogador guarda `extra_ativos`; (4) coluna `inicia` e testes; (5) HUD mostra as passivas ativas. A oferta de nível hoje vive no core (`nivel_estado`/`nivel_escolher`), então a parte de sorteio é contrato novo da API C se as cartas passivas precisarem de peso e raridade lá; senão o cliente sorteia entre as cartas do CSV. Decidir com a thread de progressão antes de tocar no core.
