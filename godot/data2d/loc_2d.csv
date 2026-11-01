@@ -270,3 +270,13 @@ menu.class_change,Trocar classe
 class.arqueiro.desc,"Ataca de longe: mire com o mouse, mantenha distância e esquive."
 class.guerreiro.desc,"Luta corpo a corpo: combo de espada, escudo e habilidades em Q, E, F e R."
 class.mago.desc,"Magia à distância: orbe arcano no clique, fogo, gelo e raio em Q, E, F e R. Cuide da mana."
+skill.poison_arrow.name,Flecha Peçonhenta
+skill.poison_arrow.desc,Acerta e envenena o alvo: dano contínuo que se acumula
+skill.venom_orb.name,Bola de Veneno
+skill.venom_orb.desc,Lança uma bola ao alto que cai e vira poça venenosa; ao fim estoura em nuvem
+skill.corrosive_rain.name,Chuva Corrosiva
+skill.corrosive_rain.desc,Chuva de ácido em área: fere e faz os inimigos receberem mais dano
+skill.herald_plague.name,Arauto da Peste
+skill.herald_plague.desc,Inimigo envenenado que morre espalha o veneno aos vizinhos
+ramo.veneno.name,Veneno
+ramo.veneno.desc,Dano contínuo que se acumula e se espalha

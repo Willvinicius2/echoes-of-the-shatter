@@ -6,6 +6,7 @@ signal died(enemy)
 const Csv = preload("res://scripts2d/csv2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
+const Veneno = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
 
 enum Estado { PERSEGUE, TELEGRAFA, ATACANDO, MORTO }
 
@@ -168,6 +169,8 @@ func aplicar_status(tipo: String, dur: float, valor := 0.0) -> void:
 		return
 	var atual: Dictionary = _status.get(tipo, {"t": 0.0, "v": 0.0})
 	_status[tipo] = {"t": maxf(atual["t"], dur), "v": maxf(atual["v"], valor)}
+	if tipo == "veneno":
+		Veneno.overlay_status(self, dur)
 	_recalcular_status()
 
 func tem_status(tipo: String) -> bool:
@@ -216,6 +219,8 @@ func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 		velocity = Vector2.ZERO
 		remove_from_group("hurtable")
 		set_deferred("collision_layer", 0)
+		if alvo != null and alvo.has_method("herald_morte"):
+			alvo.herald_morte(self)   # gatilhos de morte dos Heralds (veneno, depois gelo, raio, fogo)
 		died.emit(self)
 		Feel.morte(get_parent(), global_position + Vector2(0, -30), Color(0.8, 0.95, 1.0))
 		if has_anim("death"):

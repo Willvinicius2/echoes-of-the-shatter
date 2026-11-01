@@ -37,3 +37,6 @@ mago,skill.mage.blink,fuga,0,110,1
 mago,skill.mage.thunderstorm,grupo,0,600,1
 mago,skill.mage.mana_surge,si,0,400,1
 mago,skill.mage.overload,si,1,250,1
+arqueiro,poison_arrow,proximo,0,760,1
+arqueiro,venom_orb,proximo,0,600,2
+arqueiro,corrosive_rain,proximo,0,600,2

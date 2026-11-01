@@ -17,3 +17,7 @@ smoke_bomb,sombra,ativa,2,backstep_shot,2,3,fumaca,12,0,,,,150,4,350,0.55,0.15,,
 shadow_dance,sombra,passiva,2,wind_feet,2,3,stat,,,,,,,,,-0.1,,dodge_cooldown,mult,shadow_dance
 adrenaline,sombra,ativa,3,smoke_bomb,3,3,furia,18,0,,,,,5,,0.35,0.15,,,adrenaline
 hunter_vigor,sombra,passiva,3,shadow_dance,3,3,stat,,,,,,,,,25,,hp_max,add,hunter_vigor
+poison_arrow,veneno,ativa,1,,1,3,tiro_veneno,3,0,1.0,0,,,3,,4,0.15,,,poison_arrow
+venom_orb,veneno,ativa,2,poison_arrow,2,3,bola_veneno,9,0,1.2,4,,110,3.2,450,0.35,0.15,,,venom_orb
+corrosive_rain,veneno,ativa,3,venom_orb,3,3,chuva_corrosiva,14,0,0.9,6,,150,4.5,450,0.25,0.12,,,corrosive_rain
+herald_plague,veneno,passiva,3,poison_arrow,3,3,arauto,,,,,,140,3,,4,0.2,,,herald_plague

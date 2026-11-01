@@ -7,6 +7,7 @@ signal hp_changed(hp: float, hp_max: float)
 signal mana_changed(mana: float, mana_max: float)
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const VenenoFx = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
@@ -100,6 +101,13 @@ func usar_habilidade(slot: int, alvo := {}) -> bool:
 			call("animar_conjuracao")
 		facing = dir
 	return ok
+
+## Heralds: gatilhos de morte (docs/design/32). Cada Herald aprendido age quando o inimigo morre com o status certo.
+func herald_morte(inimigo: Node2D) -> void:
+	if habilidades == null:
+		return
+	if habilidades.nivel("herald_plague") > 0:
+		VenenoFx.arauto_peste_morte(inimigo, habilidades.def_nivel("herald_plague"))
 
 ## Ult: a ativa marcada como ult no slot sai só aqui (tecla de ult), mirando no inimigo do autocast quando há um.
 func usar_ult() -> bool:
