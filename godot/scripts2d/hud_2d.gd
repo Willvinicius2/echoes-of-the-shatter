@@ -45,7 +45,7 @@ func _desenhar() -> void:
 	if _rel < 5.0 and estado_ajuda_visivel():
 		var al := clampf((5.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
-		Arte.texto(_ctl, Vector2(0, vp.y - 84), Csv.t("hud.help"), 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		Arte.texto(_ctl, Vector2(0, vp.y - 94), Csv.t("hud.help"), 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
