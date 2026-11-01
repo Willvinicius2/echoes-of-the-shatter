@@ -211,7 +211,8 @@ func _montar() -> void:
 		var rp := RectangleShape2D.new()
 		rp.size = Vector2(float(d["solido_l"]), float(d["solido_a"]))
 		cp.shape = rp
-		cp.position = p["pos"] + Vector2(0, tile * 0.5 - float(d["solido_a"]) * 0.5)
+		# a colisão fica no centro da base que toca o chão (nas árvores, o pé do tronco), o mesmo ponto do y-sort
+		cp.position = p["pos"] + Vector2(0, tile * 0.5 - _apoio_prop(p["id"]))
 		corpo.add_child(cp)
 	if piso_grama and colunas * linhas > 2000:
 		_tons_do_gramado()
@@ -639,9 +640,14 @@ func abrir_porta() -> void:
 	_porta_corpo.queue_free()
 	_porta_area.set_deferred("monitoring", true)
 
-## Cria os sprites dos props dentro de `alvo` (Node2D com y_sort_enabled, o mesmo dos atores).
-## O pé do prop fica na base da célula, então jogador e inimigos passam na frente ou atrás pela ordem em Y.
+## Cria os sprites dos props dentro de `alvo` (Node2D com y_sort_enabled, o mesmo dos atores) e os
+## decalques que os prendem ao chão (sombras, terra, raízes) num nó da própria sala, sob os atores.
 func colocar_props(alvo: Node2D) -> void:
+	var Ancoragem = preload("res://scripts2d/ancoragem_2d.gd")
+	var chao := Node2D.new()
+	chao.name = "ChaoProps"
+	add_child(chao)
+	var k := 0
 	for p in props:
 		var arte: Dictionary = _props_arte.get(p["id"], {})
 		var d: Dictionary = _props_def.get(p["id"], {})
@@ -663,17 +669,68 @@ func colocar_props(alvo: Node2D) -> void:
 			spr.modulate = Color(0.8, 0.77, 0.76)  # copas de fundo menos saturadas
 		if spr.flip_h:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
+		# O nó entra no y-sort pelo ponto de apoio (centro da base que toca o chão; nas árvores, o pé do
+		# tronco), não pela borda de baixo do sprite: assim quem passa ao lado fica na frente do prop.
+		var pe: Vector2 = p["pos"] + Vector2(0, tile * 0.5)
+		var ap: float = Ancoragem.apoio(p["id"], tex, d, arte)
+		var tipo: String = Ancoragem.tipo(p["id"])
 		var no := Node2D.new()
-		no.position = p["pos"] + Vector2(0, tile * 0.5)
-		var sombra := Node2D.new()
-		no.add_child(sombra)  # antes do sprite, para ficar sob ele
+		no.position = pe - Vector2(0, ap)
+		spr.position = Vector2(0, ap)
+		var atras := Node2D.new()
+		var frente := Node2D.new()
+		atras.position = spr.position
+		frente.position = spr.position
+		no.add_child(atras)   # tufos atrás do sprite
 		no.add_child(spr)
-		var arvore: bool = String(p["id"]).begins_with("tree_")
-		sombra.draw.connect(func():
-			sombra.draw_set_transform(Vector2(20, 2) if arvore else Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
-			sombra.draw_circle(Vector2.ZERO, tex.get_width() * float(d["escala"]) * (0.5 if arvore else 0.35), Color(0, 0, 0, 0.42)))
-		sombra.queue_redraw()
-		alvo.add_child(no)
+		no.add_child(frente)  # tufos que cobrem um pouco o pé
+		Ancoragem.prender(chao, atras, frente, p["id"], tex, d, arte, spr.flip_h, pe, piso_grama, k)
+		if tipo == "raso":
+			# capim, folhas, ossos: ficam no chão, sob todos os atores, fora do y-sort (decisão do Jev, 1/11)
+			add_child(no)
+		else:
+			alvo.add_child(no)
+			if tipo == "folhagem":
+				_ocultaveis.append({"no": no, "spr": spr, "meia": tex.get_width() * float(d["escala"]) * 0.5, "alt": tex.get_height() * float(d["escala"])})
+		k += 1
+
+var _ocultaveis: Array = []  # arbustos: {no, spr, meia, alt}; ficam semitransparentes com alguém atrás
+
+## Arbusto na frente do personagem fica a 55% de alfa enquanto ele está atrás (decisão do Jev, 1/11), para o
+## corpo não sumir atrás de uma moita de meio corpo. Árvores, pilares e tumbas altas não mudam: sumir atrás
+## delas é natural. O personagem é o `player` da corrida ou, nas ferramentas de captura, quem estiver no
+## grupo `arqueiro`.
+func _process(delta: float) -> void:
+	if _ocultaveis.is_empty():
+		return
+	var pl: Node2D = null
+	var run := get_parent()
+	if run != null:
+		pl = run.get("player") as Node2D
+	if pl == null:
+		pl = get_tree().get_first_node_in_group("arqueiro") as Node2D
+	if pl == null:
+		return
+	var pp := pl.global_position
+	for o in _ocultaveis:
+		var no: Node2D = o["no"]
+		var dy := no.global_position.y - pp.y
+		var atras: bool = dy > 0.0 and dy < o["alt"] * 0.9 and absf(pp.x - no.global_position.x) < o["meia"] + 10.0
+		var spr: Sprite2D = o["spr"]
+		var alvo_a := 0.55 if atras else 1.0
+		if absf(spr.modulate.a - alvo_a) > 0.01:
+			spr.modulate.a = move_toward(spr.modulate.a, alvo_a, delta * 5.0)
+
+## Altura do ponto de apoio do prop (px acima do pé), via ancoragem_2d.gd; 0 se faltar arte ou definição.
+func _apoio_prop(id: String) -> float:
+	var arte: Dictionary = _props_arte.get(id, {})
+	var d: Dictionary = _props_def.get(id, {})
+	if arte.is_empty() or d.is_empty():
+		return 0.0
+	var tex: Texture2D = _carregar_textura(arte["arquivo"])
+	if tex == null:
+		return float(d["solido_a"]) * 0.5
+	return preload("res://scripts2d/ancoragem_2d.gd").apoio(id, tex, d, arte)
 
 func _carregar_textura(caminho: String) -> Texture2D:
 	if ResourceLoader.exists(caminho):
