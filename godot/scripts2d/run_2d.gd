@@ -13,6 +13,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
 const PlayerScript = preload("res://scripts2d/player_2d.gd")
 const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
+const PixelMundoScript = preload("res://scripts2d/pixel_mundo_2d.gd")
 const BossScript = preload("res://scripts2d/boss_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
 const HudXpScript = preload("res://scripts2d/hud_xp_2d.gd")
@@ -105,7 +106,12 @@ func _ready() -> void:
 	while not nucleo.corrida_caminhos(etapa).is_empty():
 		salas.append(_no_do_core(nucleo.corrida_caminhos(etapa)[0]))
 		etapa += 1
+	if PixelMundoScript.ligado(config):
+		var pixel_mundo := PixelMundoScript.new()
+		add_child(pixel_mundo)   # antes da HUD na árvore; fica acima do mundo
+		pixel_mundo.iniciar(config)
 	hud = HudScript.new()
+	hud.layer = 2
 	hud.jogador = player
 	hud.upgrades = upgrades
 	hud.total_salas = salas.size()
