@@ -48,6 +48,4 @@ skill_gem_cards,3,cartas,quantas habilidades a gema oferece para escolher
 horde_stuck_checks,4,conferencias,inimigo sem linha de visao e sem se aproximar por este numero de conferencias (horde_leash_check) volta ao anel
 passive_points_wave,1,pontos,pontos da arvore de passivos (doc 33) ganhos ao vencer cada onda ou sala
 passive_points_boss,3,pontos,pontos de passivo extras ao derrotar o chefe
-pixel_base_x,640,px,largura da grade interna de pixel art do mundo (0 desliga o filtro); 640x360 escala inteira em 1920x1080 (3x) e 2560x1440 (4x)
-pixel_base_y,360,px,altura da grade interna de pixel art do mundo
-pixel_niveis_cor,0,niveis,niveis por canal de cor (0 desliga; 16 a 32 da cara de paleta limitada)
+pixel_altura,360,px,altura da grade interna de pixel art: o mundo renderiza num SubViewport com esta altura (largura pela proporcao da janela) e sobe com escala inteira e nearest; 0 desliga. 360 = 4x em 2K, 3x em 1080p

@@ -13,7 +13,6 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
 const PlayerScript = preload("res://scripts2d/player_2d.gd")
 const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
-const PixelMundoScript = preload("res://scripts2d/pixel_mundo_2d.gd")
 const BossScript = preload("res://scripts2d/boss_2d.gd")
 const HudScript = preload("res://scripts2d/hud_2d.gd")
 const HudXpScript = preload("res://scripts2d/hud_xp_2d.gd")
@@ -89,6 +88,18 @@ var vida_chefe := 0.0       # vida que o core deu ao chefe (bot e testes)
 var dps_medido := 0.0
 var _laco_t := 0.0
 
+## Raiz da interface quando o mundo roda num SubViewport de pixel art (main_2d.gd); nula = tudo neste nó.
+var ui_raiz: Node = null
+
+func _ui(n: Node) -> void:
+	(ui_raiz if ui_raiz != null else self).add_child(n)
+
+func _exit_tree() -> void:
+	if ui_raiz != null:
+		for n in [hud, hud_xp, ui, arvore, menus]:
+			if is_instance_valid(n):
+				n.queue_free()
+
 func _ready() -> void:
 	config = Csv.kv("res://data2d/run_settings.csv")
 	atores = Node2D.new()
@@ -106,30 +117,25 @@ func _ready() -> void:
 	while not nucleo.corrida_caminhos(etapa).is_empty():
 		salas.append(_no_do_core(nucleo.corrida_caminhos(etapa)[0]))
 		etapa += 1
-	if PixelMundoScript.ligado(config):
-		var pixel_mundo := PixelMundoScript.new()
-		add_child(pixel_mundo)   # antes da HUD na árvore; fica acima do mundo
-		pixel_mundo.iniciar(config)
 	hud = HudScript.new()
-	hud.layer = 2
 	hud.jogador = player
 	hud.upgrades = upgrades
 	hud.total_salas = salas.size()
-	add_child(hud)
+	_ui(hud)
 	hud_xp = HudXpScript.new()
 	hud_xp.upgrades = upgrades
 	hud_xp.jogador = player
-	add_child(hud_xp)
+	_ui(hud_xp)
 	ui = UpgradeUiScript.new()
 	ui.upgrades = upgrades
 	ui.escolhido.connect(_on_upgrade_escolhido)
-	add_child(ui)
+	_ui(ui)
 	arvore = ArvoreUiScript.new()
 	arvore.definir(player.habilidades if "habilidades" in player else null)
 	arvore.fechada.connect(func() -> void:
 		if upgrades.has_method("reaplicar"):
 			upgrades.reaplicar(player))
-	add_child(arvore)
+	_ui(arvore)
 	menus = MenusScript.new()
 	menus.meta = meta
 	menus.jogar.connect(_on_jogar)
@@ -137,7 +143,7 @@ func _ready() -> void:
 	menus.ao_titulo.connect(_ir_titulo)
 	menus.pausa_pedida.connect(_on_pausa_pedida)
 	menus.sair.connect(get_tree().quit)
-	add_child(menus)
+	_ui(menus)
 	Audio.musica("music_cripta")
 	if OS.is_debug_build():
 		ConsoleDev.new(self).registrar()   # comandos de playtest no console ` (LimboConsole)

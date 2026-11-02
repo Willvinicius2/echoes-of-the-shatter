@@ -1,6 +1,6 @@
 # Cliente 2D (corrida top-down)
 
-Cena principal: `scenes2d/Run2D.tscn` (GDScript, sem C#). Código em `scripts2d/`, dados em `data2d/` (CSV e salas em texto), arte em `art2d/`. O cliente só apresenta: meta, Forja, cartas e fluxo da corrida são do módulo `rogue` do ShatterCore, chamado pela GDExtension `ShatterRogue` (`godot/gdextension/`).
+Cena principal: `scenes2d/Main2D.tscn` (`scripts2d/main_2d.gd`), que roda o mundo (`Run2D.tscn`) num SubViewport de pixel art: altura interna `pixel_altura` (360) em `run_settings.csv`, escala inteira e filtro nearest; HUD e menus ficam na janela. `pixel_altura,0` desliga. Os scripts de teste e captura instanciam `Run2D.tscn` direto (sem pixel art); `tools/captura_pixel_2d.gd` passa pela Main2D. (GDScript, sem C#). Código em `scripts2d/`, dados em `data2d/` (CSV e salas em texto), arte em `art2d/`. O cliente só apresenta: meta, Forja, cartas e fluxo da corrida são do módulo `rogue` do ShatterCore, chamado pela GDExtension `ShatterRogue` (`godot/gdextension/`).
 
 - Controles: WASD move, mouse mira, clique atira, Espaço esquiva, R reinicia ao morrer.
 - Guerreiro: no título, o botão "Classe" alterna Arqueiro/Guerreiro (ou `-- --classe=guerreiro` na linha de comando). Clique = combo de espada em 3 golpes; Q, E, F, R usam as habilidades ativas na ordem em que foram aprendidas (cartas ao limpar a sala; segurar a tecla da Postura de Guarda). Árvore em `data2d/habilidades_guerreiro.csv`; regras do personagem em `data2d/guerreiro.csv`.
