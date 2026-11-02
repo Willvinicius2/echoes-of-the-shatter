@@ -178,8 +178,7 @@ func _respirar(delta: float) -> void:
 		# pixel art na grade: 1 px do sprite = 1 px da grade, então a escala é 1 / zoom da câmera (esticar pisca;
 		# a respiração vem dos quadros da folha)
 		var cam := get_viewport().get_camera_2d()
-		var z := cam.zoom.x if cam != null else 1.0
-		var e := 1.0 / maxf(z, 0.05)
+		var e := _esc_base if cam == null else 1.0 / maxf(cam.zoom.x, 0.05)   # sem câmera (testes), fica na escala do CSV
 		if absf(sprite.scale.x - e) > 0.001:
 			sprite.scale = Vector2(e, e)
 		return
