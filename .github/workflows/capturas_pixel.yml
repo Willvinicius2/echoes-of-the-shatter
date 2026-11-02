@@ -47,9 +47,7 @@ jobs:
         run: |
           mkdir -p capturas
           for res in 1600x900 2560x1440; do
-            for sala in 0 1 2 3; do
-              timeout -k 5 120 xvfb-run -a -s "-screen 0 ${res}x24" $GODOT --path proj --rendering-driver opengl3 --resolution "$res" --script res://scripts2d/tools/captura_pixel_2d.gd -- "$PWD/capturas/sala_${sala}_${res}.png" "$sala" 120 || true
-            done
+            timeout -k 5 150 xvfb-run -a -s "-screen 0 ${res}x24" $GODOT --path proj --rendering-driver opengl3 --resolution "$res" --script res://scripts2d/tools/captura_pixel_2d.gd -- "$PWD/capturas/fase_${res}" || true
           done
           ls -la capturas
       - uses: actions/upload-artifact@v4
