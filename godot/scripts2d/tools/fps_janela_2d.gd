@@ -1,6 +1,7 @@
 extends SceneTree
 ## Mede FPS e tempos reais COM JANELA (nao use --headless): cena Run2D, arqueiro com habilidades ativas.
 ##   godot --path godot --script res://scripts2d/tools/fps_janela_2d.gd -- [segundos=30] [id=hollow_sentinel] [vsync=0]
+## Arg 5 (imortais=1): os inimigos nascidos ficam com vida enorme, para a contagem de vivos não variar entre rodadas.
 ## Fases: inicio da fase, horda de 200, horda de 500 (acumulada). Imprime por fase: FPS medio, p99,
 ## ms de processo/fisica, draw calls, nos. Vsync desligado por padrao para ver o custo real do quadro.
 const RunScene = preload("res://scenes2d/Run2D.tscn")
@@ -47,9 +48,14 @@ func _executar() -> void:
 			elif alvo != null: alvo.visible = false
 			print("oculto: ", nome, " ", alvo)
 	await _fase("1 inicio", seg)
+	var imortais := (int(args[4]) if args.size() > 4 else 0) != 0
 	ConsoleDev.spawnar_horda(run, id, 200)
+	if imortais:
+		_imortalizar(run)
 	await _fase("2 horda 200", seg)
 	ConsoleDev.spawnar_horda(run, id, 300)
+	if imortais:
+		_imortalizar(run)
 	await _fase("3 horda 500", seg)
 	quit()
 
@@ -88,6 +94,12 @@ func _fase(nome: String, seg: float) -> void:
 	print("FASE %s: FPS medio %.1f | quadro medio %.2f ms | p99 %.2f ms (%.1f FPS) | pior %.1f ms | >33ms: %d | >50ms: %d | processo %.2f ms | fisica %.2f ms | draw calls %d | nos %d | inimigos %d" % [
 		nome, 1000.0 / media, media, p99, 1000.0 / p99, ord[-1], n33, n50, proc / n * 1000.0, fis / n * 1000.0, int(dc / n),
 		int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), get_nodes_in_group("hurtable").size()])
+
+func _imortalizar(run: Node) -> void:
+	for n in get_nodes_in_group("hurtable"):
+		if n != run.player and "stats" in n and "hp_max" in n and n.hp_max < 1e8:
+			n.hp = 1e9
+			n.hp_max = 1e9
 
 func _aprender(h: RefCounted, id: String) -> void:
 	var pai: String = h.defs[id]["pai"]

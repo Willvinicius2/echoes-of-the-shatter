@@ -732,13 +732,40 @@ func colocar_props(alvo: Node2D) -> void:
 				_ocultaveis.append({"no": no, "spr": spr, "meia": tex.get_width() * float(d["escala"]) * 0.5, "alt": tex.get_height() * float(d["escala"])})
 		k += 1
 
+const Culling = preload("res://scripts2d/culling_2d.gd")
 var _ocultaveis: Array = []  # arbustos: {no, spr, meia, alt}; ficam semitransparentes com alguém atrás
 
 ## Arbusto na frente do personagem fica a 55% de alfa enquanto ele está atrás (decisão do Jev, 1/11), para o
 ## corpo não sumir atrás de uma moita de meio corpo. Árvores, pilares e tumbas altas não mudam: sumir atrás
 ## delas é natural. O personagem é o `player` da corrida ou, nas ferramentas de captura, quem estiver no
 ## grupo `arqueiro`.
+## Agrupa em blocos a decoração estática (contêineres com centenas de filhos) para o renderizador não percorrer
+## tudo fora da tela. Chamado pelo clima, depois de ele ter achado a vegetação balançante. Só com tela.
+func agrupar_estatico() -> void:
+	if _blocos_ativos:
+		return
+	_blocos_ativos = true
+	for c in get_children():
+		if c.get_class() == "Node2D" and c.get_child_count() >= 300 and not (c as Node2D).y_sort_enabled:
+			_blocos.append_array(Culling.agrupar(c))
+	_vista_blocos()
+
+var _blocos: Array = []
+var _blocos_ativos := false
+var _quadro_blocos := 0
+
+func _vista_blocos() -> void:
+	var vp := get_viewport()
+	if vp == null:
+		return
+	var r: Rect2 = get_canvas_transform().affine_inverse() * vp.get_visible_rect()
+	Culling.atualizar(_blocos, r)
+
 func _process(delta: float) -> void:
+	if not _blocos.is_empty():
+		_quadro_blocos += 1
+		if _quadro_blocos % 2 == 0:
+			_vista_blocos()
 	if _ocultaveis.is_empty():
 		return
 	var pl: Node2D = null
