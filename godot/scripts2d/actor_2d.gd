@@ -177,8 +177,9 @@ func _respirar(delta: float) -> void:
 	if _esc_base != 1.0:
 		# pixel art na grade: 1 px do sprite = 1 px da grade, então a escala é 1 / zoom da câmera (esticar pisca;
 		# a respiração vem dos quadros da folha)
-		var cam := get_viewport().get_camera_2d()
-		var e := _esc_base if cam == null else 1.0 / maxf(cam.zoom.x, 0.05)   # sem câmera (testes), fica na escala do CSV
+		var vp := get_viewport()
+		var cam := vp.get_camera_2d() if vp is SubViewport else null   # só o mundo de pixel art (SubViewport) escala por 1/zoom
+		var e := _esc_base if cam == null else 1.0 / maxf(cam.zoom.x, 0.05)   # fora do SubViewport (testes, modo normal), fica na escala do CSV
 		if absf(sprite.scale.x - e) > 0.001:
 			sprite.scale = Vector2(e, e)
 		return
