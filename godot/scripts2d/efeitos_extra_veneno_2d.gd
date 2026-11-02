@@ -187,6 +187,7 @@ class Nuvem extends Node2D:
 	func _ready() -> void:
 		z_index = 3
 		var s := Px.criar("spore_burst", raio * 1.6 / maxf(Px.tamanho("spore_burst").x, 1.0), false, "base")
+		s.modulate = Color(0.75, 1.15, 0.5)   # puxa o azul-turquesa da folha para o verde-ácido do veneno
 		add_child(s)
 		if s is AnimatedSprite2D:
 			s.animation_finished.connect(queue_free)

@@ -100,7 +100,7 @@ class Lanca extends Node2D:
 		for i in 12:   # geada no chão ao longo da linha, nasce atrás da ponta
 			var u := (float(i) + 0.5) / 12.0
 			if u <= voo:
-				U.elipse(self, dir * comp * u + Vector2(0, 0), larg * 1.1, Color(0.85, 0.96, 1.0, 0.35 * alfa))
+				U.elipse(self, dir * comp * u + Vector2(0, 0), larg * 1.1, Color(0.85, 0.96, 1.0, 0.1 * alfa))   # névoa gelada fina, não disco
 		if _t >= VOO:   # estilhaços saindo da linha para os dois lados
 			var k := (_t - VOO) / (VIDA - VOO)
 			for i in 14:
@@ -162,7 +162,7 @@ class Espinhos extends Node2D:
 			var p := _pos(i)
 			var sobe := 1.0 - pow(1.0 - minf(idade / 0.1, 1.0), 3.0)
 			var alfa := 1.0 - clampf((idade - 0.6) / 0.4, 0.0, 1.0)
-			U.elipse(self, p, raio * 0.8, Color(0.85, 0.96, 1.0, 0.4 * alfa))
+			U.elipse(self, p, raio * 0.8, Color(0.85, 0.96, 1.0, 0.1 * alfa))
 			for j in 5:   # rachaduras no chão
 				var a := TAU * float(j) / 5.0 + float(i)
 				draw_line(p, p + Vector2.from_angle(a) * Vector2(raio, raio * 0.5) * 0.9, Color(0.4, 0.6, 0.9, 0.55 * alfa), 1.5)

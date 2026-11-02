@@ -186,7 +186,7 @@ class Bomba extends Node2D:
 
 	func _ready() -> void:
 		z_index = 5
-		scale = Vector2(1.6, 1.6)   # bomba legível a 640x360
+		scale = Vector2(2.1, 2.1)   # bomba legível a 640x360
 		_ultimo = global_position
 
 	func _physics_process(delta: float) -> void:
