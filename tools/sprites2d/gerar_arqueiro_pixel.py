@@ -19,6 +19,7 @@ PIVO = (32, 52)         # pé
 ELEV = math.radians(32)  # elevação da câmera
 LUZ = np.array([-0.5, 0.6, 0.62])
 LUZ = LUZ / np.linalg.norm(LUZ)
+ESPELHADAS = ()   # E e NE usam o modelo espelhado para mostrar o braço do arco e o arco
 DIRS = [0, 45, 90, 135, 180]   # S, SE, E, NE, N (graus de giro do modelo)
 
 # ---------------- paleta (rampas escuro -> claro) ----------------
@@ -146,10 +147,10 @@ PARTE = {"corpo": 1, "cabeca": 2, "braco": 3, "perna": 4, "arco": 5, "corda": 6,
 def modelo_torso():
     g = Pts()
     P = PARTE["corpo"]
-    add(g, elipsoide((0, 0, 19.8), (4.7, 3.7, 6.4), "tunica", P))
-    add(g, elipsoide((0, 0, 15.2), (5.2, 4.2, 3.9), "tunica", P))       # saia da túnica
+    add(g, elipsoide((0, 0, 19.8), (4.9, 4.3, 6.4), "tunica", P))
+    add(g, elipsoide((0, 0, 15.2), (5.3, 4.7, 3.9), "tunica", P))       # saia da túnica
     for sx in (-1, 1):                                                   # ombros na silhueta
-        add(g, elipsoide((sx * 5.0, 0.0, 23.6), (2.8, 2.9, 2.5), "tunica", P))
+        add(g, elipsoide((sx * 5.2, 0.0, 23.4), (3.3, 3.3, 2.8), "tunica", P))
     add(g, anel((0, 0, 14.6), 4.8, 3.9, 0.95, "cinto", P))              # cinto
     add(g, elipsoide((3.9, 2.6, 14.2), (1.5, 1.2, 1.5), "couro", P))    # bolsinha
     add(g, elipsoide((-5.7, 0.2, 24.6), (3.1, 3.1, 2.3), "couro", P))   # ombreira
@@ -172,10 +173,12 @@ def modelo_torso():
     # capuz caído nos ombros (gola grossa)
     add(g, anel((0, -0.5, 24.6), 4.5, 3.6, 1.0, "tunica", P))
     # aljava nas costas, inclinada, mais fina e de lado
-    add(g, capsula((2.8, -4.9, 12.0), (-2.8, -5.3, 28.6), 2.35, 2.35, "couro", P))
-    add(g, anel((-2.6, -5.5, 28.6), 1.5, 1.5, 0.4, "ferro", P))
-    for dx, dy, papel in ((-0.8, 0.0, "pena1"), (0.6, -0.6, "pena2"), (-2.0, -0.9, "pena1")):
-        add(g, capsula((-2.6 + dx * 0.4, -5.5 + dy * 0.4, 28.8), (-3.6 + dx, -5.9 + dy, 34.6), 0.6, 0.85, papel, P))
+    add(g, capsula((2.8, -4.9, 12.0), (-2.8, -5.3, 28.6), 2.6, 2.6, "couro", P))
+    add(g, anel((-2.8, -5.3, 28.6), 2.0, 2.0, 0.5, "ferro", P))
+    add(g, anel((2.0, -5.0, 14.0), 2.2, 2.2, 0.5, "ferro", P))   # reforço da ponta de baixo
+    for dx, dy, papel in ((-1.2, 0.2, "corda"), (0.4, -0.6, "corda"), (-2.4, -1.0, "corda")):
+        add(g, capsula((-2.8 + dx * 0.4, -5.3 + dy * 0.4, 28.8), (-3.2 + dx, -5.6 + dy, 31.4), 0.45, 0.45, "couro", P))
+        add(g, capsula((-3.1 + dx, -5.5 + dy, 29.6), (-3.2 + dx, -5.6 + dy, 32.2), 0.85, 0.55, papel, P))
     return g.cat()
 
 
@@ -208,7 +211,10 @@ def modelo_cabeca():
                  ((-6.0, 2.4, 32.0), (1.2, 1.5, 2.2)), ((6.2, 2.4, 31.4), (1.2, 1.6, 3.0)),
                  ((1.6, 6.3, 34.0), (1.2, 1.1, 2.4))):
         add(hair, elipsoide(c, r, "cabelo", H_))
-    return g.cat(), hair.cat()
+    hp_, hn_, hr_, hg_ = hair.cat()
+    c0 = np.array([0.0, 0.5, 33.0])
+    hp_ = c0 + (hp_ - c0) * np.array([0.90, 0.90, 0.80])   # cabelo ~20% menor
+    return g.cat(), (hp_, hn_, hr_, hg_)
 
 
 # ---------------- álgebra ----------------
@@ -357,8 +363,8 @@ def montar(pose):
         dyn.append(capsula(nock, tips[-1], 0.45, 0.45, "corda", PARTE["corda"], 0.2))
         if pose["arrow"]:
             cab = np.array(HL) + np.array([0.2, 4.2, 0.0])
-            dyn.append(capsula(nock + np.array([0, -1.0, 0]), cab, 0.65, 0.65, "pena1", PARTE["flecha"], 0.2))
-            dyn.append(capsula(cab, cab + np.array([0, 1.4, 0]), 0.7, 0.2, "ferro", PARTE["flecha"], 0.2))
+            dyn.append(capsula(nock + np.array([0, -1.0, 0]), cab, 0.8, 0.8, "pena1", PARTE["flecha"], 0.2))
+            dyn.append(capsula(cab, cab + np.array([0, 1.6, 0]), 0.9, 0.2, "ferro", PARTE["flecha"], 0.2))
     for d in dyn:
         out.append(d)
     pos = np.concatenate([o[0] for o in out])
@@ -375,8 +381,11 @@ def montar(pose):
 
 
 # ---------------- render ----------------
-def renderizar(pose, graus):
+def renderizar(pose, graus, espelho=False):
     pos, nor, pap, par = montar(pose)
+    if espelho:   # modelo espelhado: o arco fica do lado da câmera nas vistas de lado
+        pos = pos * np.array([-1.0, 1.0, 1.0])
+        nor = nor * np.array([-1.0, 1.0, 1.0])
     R = rot_z(-math.radians(graus))
     pos = pos @ R.T
     nor = nor @ R.T
@@ -458,7 +467,7 @@ def anim_idle(i, n=6):
     resp = [0.0, 0.0, 0.6, 1.0, 0.6, 0.0][i]
     p["head_dz"] = resp * 0.5
     p["torso_dz"] = -1.8 + resp * 0.35
-    p["handL"] = (7.6, 1.8, 12.8 + resp * 0.4)
+    p["handL"] = (7.4, 4.6, 13.4 + resp * 0.4)
     p["handR"] = (-7.4, 0.8, 12.8 + resp * 0.4)
     p["head_pitch"] = -0.03 * s_
     p["hair_dx"] = [0.0, 0.3, 0.6, 0.3, 0.0, -0.3][i]
@@ -572,7 +581,7 @@ def folha(nome):
     sheet = Image.new("RGBA", (n * F, 5 * F), (0, 0, 0, 0))
     for r, g in enumerate(DIRS):
         for q in range(n):
-            sheet.paste(renderizar(fn(q, n), g), (q * F, r * F))
+            sheet.paste(renderizar(fn(q, n), g, r in ESPELHADAS), (q * F, r * F))
     return sheet
 
 
@@ -582,7 +591,8 @@ def ancoras(esc):
     tip = np.array(p["handL"], float) + np.array([0.2, 5.6, 0.0]) + np.array([0, p["root_dy"], 0])
     linhas = []
     for r, g in enumerate(DIRS):
-        q = rot_z(-math.radians(g)) @ tip
+        t_ = tip * np.array([-1.0, 1.0, 1.0]) if r in ESPELHADAS else tip
+        q = rot_z(-math.radians(g)) @ t_
         sx = q[0]
         sy = -q[2] * math.cos(ELEV) + q[1] * math.sin(ELEV)
         linhas.append((r, round(sx * esc), round(sy * esc)))
