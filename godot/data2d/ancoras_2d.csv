@@ -1,6 +1,6 @@
 id,anim,linha,x,y,nota
-arqueiro,attack,0,14,-33,boca do arco na linha S (pixel art 64x64, escala 2.5; gerado por tools/sprites2d/gerar_arqueiro_pixel.py --ancoras)
-arqueiro,attack,1,36,-44,boca do arco na linha SE (pixel art 64x64, escala 2.5; gerado por tools/sprites2d/gerar_arqueiro_pixel.py --ancoras)
-arqueiro,attack,2,38,-61,boca do arco na linha E (pixel art 64x64, escala 2.5; gerado por tools/sprites2d/gerar_arqueiro_pixel.py --ancoras)
-arqueiro,attack,3,17,-73,boca do arco na linha NE (pixel art 64x64, escala 2.5; gerado por tools/sprites2d/gerar_arqueiro_pixel.py --ancoras)
-arqueiro,attack,4,-13,-74,boca do arco na linha N (pixel art 64x64, escala 2.5; gerado por tools/sprites2d/gerar_arqueiro_pixel.py --ancoras)
+arqueiro,attack,0,5,-13,boca do arco na linha S (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
+arqueiro,attack,1,15,-18,boca do arco na linha SE (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
+arqueiro,attack,2,15,-24,boca do arco na linha E (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
+arqueiro,attack,3,7,-29,boca do arco na linha NE (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
+arqueiro,attack,4,-5,-29,boca do arco na linha N (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)

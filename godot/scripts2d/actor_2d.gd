@@ -131,7 +131,14 @@ func _precisa_redesenhar() -> bool:
 ## Respiração do idle por código (os quadros da folha mal mudam): o corpo estica de 2 a 3 px a partir dos pés.
 func _respirar(delta: float) -> void:
 	if _esc_base != 1.0:
-		return   # pixel art na grade: esticar o sprite pisca; a respiração vem dos quadros da folha
+		# pixel art na grade: 1 px do sprite = 1 px da grade, então a escala é 1 / zoom da câmera (esticar pisca;
+		# a respiração vem dos quadros da folha)
+		var cam := get_viewport().get_camera_2d()
+		var z := cam.zoom.x if cam != null else 1.0
+		var e := 1.0 / maxf(z, 0.05)
+		if absf(sprite.scale.x - e) > 0.001:
+			sprite.scale = Vector2(e, e)
+		return
 	if _anim_base == "idle":
 		_fase_respiro += delta * 2.4
 		var r := sin(_fase_respiro)

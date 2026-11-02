@@ -27,18 +27,20 @@ def H(s):
     return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
 
 RAMPAS = {
-    "cabelo": [H("6e2c14"), H("a94a1a"), H("d56f27"), H("f0a24a")],
-    "pele": [H("b9714c"), H("e0a070"), H("f4c9a0")],
-    "tunica": [H("2e4a24"), H("4a7332"), H("6f9c45"), H("9bc45e")],
-    "couro": [H("3b2216"), H("5e3a21"), H("84552e"), H("a8723d")],
-    "bota": [H("34200f"), H("5a3720"), H("7e5230")],
-    "calca": [H("23231c"), H("38372a"), H("50503a")],
-    "arco": [H("5a3216"), H("8e5a28"), H("c08a42"), H("e8be72")],
-    "corda": [H("cfc3a4"), H("cfc3a4"), H("ece4cc")],
-    "pena1": [H("7a6a1e"), H("c9b037"), H("efdc6a")],
+    "cabelo": [H("7a4a18"), H("b8801f"), H("e0aa35"), H("fbe087")],
+    "pele": [H("a8603f"), H("d68f64"), H("eebb8c"), H("fbddb8")],
+    "tunica": [H("2f3e1c"), H("4a6128"), H("6f8c36"), H("a2c24f")],
+    "capuz": [H("24362a"), H("385239"), H("557a4c"), H("86ab6e")],
+    "couro": [H("33200f"), H("57361c"), H("80542a"), H("a9783c")],
+    "bota": [H("2b1a0e"), H("4a2e19"), H("6b4426")],
+    "calca": [H("2a2a1f"), H("403e2c"), H("5c5840")],
+    "arco": [H("6a3f1c"), H("a06a30"), H("d09a52"), H("f1cd88")],
+    "corda": [H("e6dcc0"), H("e6dcc0"), H("fffbe8")],
+    "pena1": [H("a8861a"), H("efc92e"), H("fff08a")],
     "pena2": [H("2e5a2a"), H("4f8a3c"), H("7fb552")],
-    "ferro": [H("4a4f5c"), H("7a8294"), H("b5bccb")],
+    "ferro": [H("4a4f5c"), H("7a8294"), H("c5ccdb")],
     "olho": [H("1a1210")] * 3,
+    "boca": [H("7a3326")] * 3,
     "cinto": [H("26170f"), H("3b2216"), H("5e3a21")],
 }
 NOMES = list(RAMPAS.keys())
@@ -144,48 +146,63 @@ def modelo_torso():
     P = PARTE["corpo"]
     add(g, elipsoide((0, 0, 19.8), (4.7, 3.7, 6.4), "tunica", P))
     add(g, elipsoide((0, 0, 15.2), (5.2, 4.2, 3.9), "tunica", P))       # saia da túnica
+    for sx in (-1, 1):                                                   # ombros na silhueta
+        add(g, elipsoide((sx * 5.0, 0.0, 23.6), (2.8, 2.9, 2.5), "tunica", P))
     add(g, anel((0, 0, 14.6), 4.8, 3.9, 0.95, "cinto", P))              # cinto
     add(g, elipsoide((3.9, 2.6, 14.2), (1.5, 1.2, 1.5), "couro", P))    # bolsinha
-    add(g, elipsoide((-5.7, 0.2, 24.0), (3.0, 3.0, 2.3), "couro", P))   # ombreira
-    add(g, anel((-5.7, 0.2, 24.1), 2.7, 2.7, 0.55, "couro", P))
-    # tira cruzada no peito (acompanha a superfície)
-    for t in np.linspace(0, 1, 18):
+    add(g, elipsoide((-5.7, 0.2, 24.6), (3.1, 3.1, 2.3), "couro", P))   # ombreira
+    add(g, anel((-5.7, 0.2, 24.7), 2.8, 2.8, 0.55, "couro", P))
+    for t in np.linspace(0, 1, 18):                                      # tira cruzada no peito
         x = -3.6 + 7.0 * t
         z = 25.3 - 10.4 * t
         k = 1 - (x / 4.7) ** 2 - ((z - 19.8) / 6.4) ** 2
         if k > 0:
             y = 3.7 * math.sqrt(k) + 0.25
             add(g, elipsoide((x, y, z), (1.0, 0.8, 1.0), "couro", PARTE["corpo"], 0.2))
-    # gola
-    add(g, anel((0, 0.4, 26.3), 3.3, 2.7, 0.8, "tunica", P))
-    # aljava nas costas, inclinada
-    add(g, capsula((1.8, -5.0, 12.5), (-3.2, -5.6, 29.0), 2.3, 2.3, "couro", P))
-    add(g, anel((-3.2, -5.6, 29.0), 1.8, 1.8, 0.45, "ferro", P))
+    # tira da aljava atravessando as costas (no sentido contrário), para ler de costas
+    for t in np.linspace(0, 1, 18):
+        x = 3.6 - 7.0 * t
+        z = 25.3 - 10.4 * t
+        k = 1 - (x / 4.7) ** 2 - ((z - 19.8) / 6.4) ** 2
+        if k > 0:
+            y = -3.7 * math.sqrt(k) - 0.25
+            add(g, elipsoide((x, y, z), (1.0, 0.8, 1.0), "couro", PARTE["corpo"], 0.2))
+    # capuz caído nos ombros (gola grossa)
+    add(g, anel((0, -0.5, 24.6), 4.5, 3.6, 1.15, "capuz", P))
+    add(g, elipsoide((0, -3.8, 24.0), (4.4, 2.6, 3.2), "capuz", P))     # bolsa do capuz nas costas
+    # aljava nas costas, inclinada, mais fina e de lado
+    add(g, capsula((2.6, -5.0, 12.5), (-2.6, -5.5, 28.6), 1.9, 1.9, "couro", P))
+    add(g, anel((-2.6, -5.5, 28.6), 1.5, 1.5, 0.4, "ferro", P))
     for dx, dy, papel in ((-0.8, 0.0, "pena1"), (0.6, -0.6, "pena2"), (-2.0, -0.9, "pena1")):
-        add(g, capsula((-3.2 + dx * 0.4, -5.6 + dy * 0.4, 29.2), (-4.2 + dx, -5.9 + dy, 35.0), 0.6, 0.85, papel, P))
+        add(g, capsula((-2.6 + dx * 0.4, -5.5 + dy * 0.4, 28.8), (-3.6 + dx, -5.9 + dy, 34.6), 0.6, 0.85, papel, P))
     return g.cat()
 
 
 def modelo_cabeca():
+    """Devolve (cabeça sem cabelo, cabelo)."""
     g = Pts()
     P = PARTE["cabeca"]
     H_ = PARTE["cabelo"]
     add(g, elipsoide((0, 0.5, 32.0), (7.2, 6.6, 6.9), "pele", P))
-    # olhos (1 a 2 px)
     for sx in (-2.7, 2.7):
-        add(g, elipsoide((sx, 6.6, 31.6), (1.1, 0.8, 1.8), "olho", P, 0.15))
-    # cabelo: calota atrás e no alto, franja, tufos desgrenhados
-    add(g, elipsoide((0, -0.9, 33.4), (7.9, 7.2, 7.0), "cabelo", H_))
-    add(g, elipsoide((0, 4.0, 37.0), (6.4, 3.0, 2.5), "cabelo", H_))
-    add(g, elipsoide((-4.3, 5.0, 34.8), (2.6, 2.2, 2.6), "cabelo", H_))
-    add(g, elipsoide((4.4, 4.9, 34.9), (2.4, 2.1, 2.5), "cabelo", H_))
-    add(g, elipsoide((-1.3, 6.0, 35.6), (1.7, 1.5, 2.0), "cabelo", H_))
-    for c, r in (((-4.8, 0.5, 38.2), (2.2, 2.2, 3.3)), ((-1.2, 0.0, 40.8), (2.3, 2.3, 3.4)),
-                 ((3.2, 1.0, 40.2), (2.2, 2.2, 3.4)), ((6.4, 0.5, 37.6), (2.0, 2.0, 3.0)),
-                 ((-7.2, -1.0, 35.0), (2.0, 2.4, 3.0)), ((0.8, -5.2, 37.0), (3.2, 2.4, 3.2)),
-                 ((-4.0, -4.6, 33.2), (2.6, 2.4, 3.2)), ((4.4, -4.6, 33.2), (2.6, 2.4, 3.2))):
-        add(g, elipsoide(c, r, "cabelo", H_))
-    return g.cat()
+        add(g, elipsoide((sx, 6.5, 31.4), (1.15, 0.8, 1.6), "olho", P, 0.15))     # olho 2 px
+        add(g, capsula((sx - 1.5 * np.sign(sx) * -1, 6.2, 34.0), (sx + 1.5 * np.sign(sx) * -1, 6.2, 34.3), 0.5, 0.5, "cabelo", H_, 0.15))
+    add(g, elipsoide((0, 6.9, 28.3), (1.1, 0.6, 0.5), "boca", P, 0.12))           # boca
+    add(g, elipsoide((0, 7.0, 30.0), (0.7, 0.6, 0.8), "pele", P, 0.15))           # nariz
+    # capuz: calota atrás e no alto, bico caído nas costas
+    add(g, elipsoide((0, -1.8, 34.6), (7.9, 6.6, 6.6), "capuz", P))
+    add(g, elipsoide((0, -7.0, 29.6), (3.4, 3.4, 5.0), "capuz", P))
+    add(g, anel((0, 0.8, 37.4), 6.8, 5.6, 0.7, "capuz", P))                       # borda do capuz na testa
+    hair = Pts()
+    # franja dourada saindo sob a borda do capuz, em mechas
+    for c, r in (((-4.8, 4.2, 36.0), (1.8, 1.6, 1.9)), ((-2.4, 5.4, 36.2), (1.6, 1.4, 2.0)),
+                 ((0.2, 5.6, 36.3), (1.6, 1.4, 2.1)), ((2.8, 5.2, 36.1), (1.7, 1.5, 2.0)),
+                 ((5.0, 4.0, 35.6), (1.7, 1.6, 2.0)), ((-6.8, 1.6, 32.6), (1.3, 1.6, 2.8)),
+                 ((6.8, 1.8, 32.4), (1.3, 1.6, 2.8)), ((0, -6.8, 26.5), (4.2, 2.4, 3.4)),
+                 ((-3.4, -6.4, 25.5), (1.7, 1.8, 2.8)), ((3.4, -6.4, 25.5), (1.7, 1.8, 2.8)),
+                 ((0.0, -7.2, 23.5), (1.9, 1.8, 2.4))):
+        add(hair, elipsoide(c, r, "cabelo", H_))
+    return g.cat(), hair.cat()
 
 
 # ---------------- álgebra ----------------
@@ -246,8 +263,8 @@ _cache = {}
 def estaticos():
     if "t" not in _cache:
         _cache["t"] = modelo_torso()
-        _cache["h"] = modelo_cabeca()
-    return _cache["t"], _cache["h"]
+        _cache["h"], _cache["hr"] = modelo_cabeca()
+    return _cache["t"], _cache["h"], _cache["hr"]
 
 
 def prim_dyn(lista, prim):
@@ -256,7 +273,7 @@ def prim_dyn(lista, prim):
 
 def montar(pose):
     """Devolve (pos, normais, papel, parte) do modelo posado, antes da câmera."""
-    T, Hd = estaticos()
+    T, Hd, Hr = estaticos()
     out = []
     # torso: yaw e pitch em torno do quadril
     pv_t = np.array([0, 0, 13.0])
@@ -276,6 +293,9 @@ def montar(pose):
     hp = (Hd[0] - pv_h) @ Rh.T + pv_h + np.array([0, pose["head_dy"], pose["head_dz"]])
     hn = Hd[1] @ Rh.T
     out.append((tf_t(hp), tf_t_n(hn), Hd[2], Hd[3]))
+    sw = np.array([pose.get("hair_dx", 0.0), 0.0, pose.get("hair_dz", 0.0)])
+    hrp = (Hr[0] - pv_h) @ Rh.T + pv_h + np.array([0, pose["head_dy"], pose["head_dz"]]) + sw
+    out.append((tf_t(hrp), tf_t_n(Hr[1] @ Rh.T), Hr[2], Hr[3]))
 
     sL, sR = tf_t(SH_L), tf_t(SH_R)
     Ry = rot_z(pose["hip_yaw"])
@@ -309,29 +329,29 @@ def montar(pose):
         dyn.append(capsula(A + np.array([0, 0.2, -1.0]), ante, 2.5, 1.9, "bota", PARTE["perna"]))
     # arco: acompanha a mão esquerda, plano vertical, pontas voltadas para o arqueiro
     if pose["bow_on"]:
-        Rb = rot_z(pose.get("bow_yaw", 0.75)) @ rot_x(pose["bow_tilt"])
+        Rb = rot_z(pose.get("bow_yaw", 1.05)) @ rot_x(pose["bow_tilt"])
         grip = np.array(HL) + np.array([1.4, 0.6, 0.0])
         tips = []
         prev = None
         for t in np.linspace(-1, 1, 14):
-            z = 13.0 * t
-            y = 1.3 - 4.2 * t * t
+            z = 15.0 * t
+            y = 2.0 - 6.6 * t * t
             p = grip + Rb @ np.array([0, y, z])
             tips.append(p)
             if prev is not None:
                 papel = "arco" if abs(t) > 0.2 else "couro"
-                rr = 1.15 if abs(t) > 0.2 else 1.5
+                rr = 1.25 if abs(t) > 0.2 else 1.6
                 dyn.append(capsula(prev, p, rr, rr, papel, PARTE["arco"], 0.22))
             prev = p
         # corda
         nock = tips[0] * 0.5 + tips[-1] * 0.5
         if pose["pull"] > 0:
             nock = nock * (1 - pose["pull"]) + (np.array(HR) + np.array([0, -0.2, 0.0])) * pose["pull"]
-        dyn.append(capsula(tips[0], nock, 0.38, 0.38, "corda", PARTE["corda"], 0.2))
-        dyn.append(capsula(nock, tips[-1], 0.38, 0.38, "corda", PARTE["corda"], 0.2))
+        dyn.append(capsula(tips[0], nock, 0.45, 0.45, "corda", PARTE["corda"], 0.2))
+        dyn.append(capsula(nock, tips[-1], 0.45, 0.45, "corda", PARTE["corda"], 0.2))
         if pose["arrow"]:
             cab = np.array(HL) + np.array([0.2, 4.2, 0.0])
-            dyn.append(capsula(nock + np.array([0, -1.0, 0]), cab, 0.5, 0.5, "pena1", PARTE["flecha"], 0.2))
+            dyn.append(capsula(nock + np.array([0, -1.0, 0]), cab, 0.65, 0.65, "pena1", PARTE["flecha"], 0.2))
             dyn.append(capsula(cab, cab + np.array([0, 1.4, 0]), 0.7, 0.2, "ferro", PARTE["flecha"], 0.2))
     for d in dyn:
         out.append(d)
@@ -403,15 +423,21 @@ def renderizar(pose, graus):
                     rampa = RAMPAS[NOMES[pp2[y, x]]]
                     img[y, x] = (*rampa[0], 255)
                     break
-    # contorno externo
+    # contorno externo seletivo: cor escura do próprio material vizinho (nunca preto chapado)
     alfa = img[..., 3] > 0
-    viz = np.zeros_like(alfa)
-    viz[1:, :] |= alfa[:-1, :]
-    viz[:-1, :] |= alfa[1:, :]
-    viz[:, 1:] |= alfa[:, :-1]
-    viz[:, :-1] |= alfa[:, 1:]
-    borda = viz & ~alfa
-    img[borda] = (*CONTORNO, 255)
+    for y in range(F):
+        for x in range(F):
+            if alfa[y, x]:
+                continue
+            viz = [(y + dy, x + dx) for dy, dx in ((-1, 0), (1, 0), (0, -1), (0, 1))
+                   if 0 <= y + dy < F and 0 <= x + dx < F and alfa[y + dy, x + dx]]
+            if not viz:
+                continue
+            # vizinho mais escuro dá o tom: baixo/esquerda pesam mais (sombra), topo mais claro
+            yy, xx = min(viz, key=lambda q: int(sum(int(v) for v in img[q[0], q[1], :3])))
+            c = np.array(img[yy, xx, :3], float)
+            c = c * 0.38 + np.array([14, 8, 12]) * 0.62 * 0.5
+            img[y, x] = (*[int(v) for v in c], 255)
     return Image.fromarray(img, "RGBA")
 
 
@@ -421,16 +447,16 @@ def L(a, b, t):
 
 
 def anim_idle(i, n=6):
-    s = math.sin(2 * math.pi * i / n)
+    s_ = math.sin(2 * math.pi * i / n)
     p = pose_base()
-    resp = [0.0, 0.0, 0.5, 1.0, 0.5, 0.0][i]
-    p["torso_dz"] = 0.0
+    resp = [0.0, 0.0, 0.6, 1.0, 0.6, 0.0][i]
     p["head_dz"] = resp * 0.5
+    p["torso_dz"] = resp * 0.35
     p["handL"] = (7.6, 1.8, 12.8 + resp * 0.4)
     p["handR"] = (-7.4, 0.8, 12.8 + resp * 0.4)
-    p["root_dz"] = 0.0
-    p["torso_pitch"] = 0.0
-    p["head_pitch"] = -0.03 * s
+    p["head_pitch"] = -0.03 * s_
+    p["hair_dx"] = [0.0, 0.3, 0.6, 0.3, 0.0, -0.3][i]
+    p["hair_dz"] = [0.0, -0.2, -0.4, -0.2, 0.0, 0.0][i]
     return p
 
 
@@ -473,7 +499,7 @@ def anim_attack(i, n=6):
     p["pull"] = [0.0, 0.35, 0.8, 1.0, 0.0, 0.0][i]
     p["arrow"] = i in (0, 1, 2, 3)
     p["bow_tilt"] = 0.0
-    p["bow_yaw"] = 0.0
+    p["bow_yaw"] = 0.6
     p["root_dy"] = -0.6 if i == 4 else 0.0
     return p
 
@@ -561,7 +587,7 @@ def main():
     saida = sys.argv[1]
     previa = "--previa" in sys.argv
     if "--ancoras" in sys.argv:
-        for r, x, y in ancoras(2.5):
+        for r, x, y in ancoras(1.0):
             print(f"arqueiro,attack,{r},{x},{y}")
         return
     only = [a for a in sys.argv[2:] if not a.startswith("--")]

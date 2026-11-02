@@ -1,2 +1,2 @@
 id,escala,nota
-arqueiro,2.5,sprite pixel art desenhado na grade: 1 px do sprite = 1 px da grade 640x360 com zoom 0.4 (1/zoom)
+arqueiro,2.5,escala de mundo para numeros e alcances (1/zoom 0.4 em 360 de altura); o desenho usa 1/zoom da camera em tempo de execucao
