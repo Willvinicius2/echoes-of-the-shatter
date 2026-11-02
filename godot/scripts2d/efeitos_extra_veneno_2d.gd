@@ -80,7 +80,7 @@ class Foco extends Node2D:
 	func _physics_process(delta: float) -> void:
 		_t += delta
 		_acc += delta
-		var vivo := is_instance_valid(alvo) and alvo.is_inside_tree() and not (alvo.has_method("esta_morto") and alvo.esta_morto())
+		var vivo: bool = is_instance_valid(alvo) and alvo.is_inside_tree() and not (alvo.has_method("esta_morto") and alvo.esta_morto())
 		if vivo:
 			global_position = alvo.global_position
 		elif _acc >= 0.1:

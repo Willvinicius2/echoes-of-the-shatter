@@ -47,6 +47,8 @@ static func raio_zz(ci: CanvasItem, a: Vector2, b: Vector2, cor: Color, larg: fl
 
 ## Cristal de gelo (losango alongado) em `pos`, apontando para `ang`, com faceta clara. `comp` é o comprimento total.
 static func cristal(ci: CanvasItem, pos: Vector2, ang: float, comp: float, larg: float, alfa := 1.0) -> void:
+	if comp < 3.0:
+		return
 	var f := Vector2.from_angle(ang)
 	var o := f.orthogonal()
 	var topo := pos + f * comp
@@ -57,6 +59,8 @@ static func cristal(ci: CanvasItem, pos: Vector2, ang: float, comp: float, larg:
 
 ## Língua de chama (gota) com base em `pos`, altura `h`, três camadas de cor (vermelho, laranja, amarelo).
 static func chama(ci: CanvasItem, pos: Vector2, h: float, w: float, sem: float, alfa := 1.0) -> void:
+	if h < 3.0 or w < 1.5:
+		return
 	var bal := ruido(sem, 3.0) * w * 0.6   # a ponta balança
 	var camadas := [[1.0, Color(0.75, 0.16, 0.05, 0.85)], [0.72, Color(1.0, 0.5, 0.1, 0.92)], [0.42, Color(1.0, 0.9, 0.4, 0.95)]]
 	for c in camadas:
@@ -67,7 +71,7 @@ static func chama(ci: CanvasItem, pos: Vector2, h: float, w: float, sem: float, 
 		var hh := h * (0.55 + 0.45 * k)
 		ci.draw_colored_polygon(PackedVector2Array([
 			pos + Vector2(-ww, 0), pos + Vector2(-ww * 0.8, -hh * 0.4), pos + Vector2(bal * k, -hh),
-			pos + Vector2(ww * 0.8, -hh * 0.4), pos + Vector2(ww, 0), pos + Vector2(0, ww * 0.45)]), cor)
+			pos + Vector2(ww * 0.8, -hh * 0.4), pos + Vector2(ww, 0)]), cor)
 
 ## Esfera brilhante (halo + corpo + ponto claro).
 static func orbe(ci: CanvasItem, pos: Vector2, r: float, cor: Color, alfa := 1.0) -> void:

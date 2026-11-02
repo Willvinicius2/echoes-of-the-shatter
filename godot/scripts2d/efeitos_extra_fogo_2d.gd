@@ -42,31 +42,11 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, mira: Vec
 			f.body_entered.connect(func(corpo: Node):
 				if is_instance_valid(corpo) and corpo is Node2D and corpo.has_method("take_damage") and corpo.is_inside_tree():
 					var ctx := {"vistos": {}, "vivas": 0}
-					armar(cena, corpo, def, dano, 0, def.get("duracao", 1.2), ctx), CONNECT_ONE_SHOT)
+					Bomba.armar(cena, corpo, def, dano, 0, def.get("duracao", 1.2), ctx), CONNECT_ONE_SHOT)
 		_:
 			push_error("Efeito de fogo (leque 2) desconhecido: " + efeito)
 			return false
 	return true
-
-## Prende uma bomba num inimigo. `geracao` 0 é a da flecha; cada explosão arma as vizinhas (geração + 1) até `qtd` gerações,
-## cada geração com `valor` do dano da anterior. `ctx` evita bomba repetida no mesmo inimigo e limita o total.
-static func armar(cena: Node, alvo: Node2D, def: Dictionary, dano_base: float, geracao: int, pavio: float, ctx: Dictionary) -> void:
-	if not is_instance_valid(alvo) or ctx["vistos"].has(alvo.get_instance_id()) or int(ctx["vivas"]) >= MAX_CADEIA:
-		return
-	ctx["vistos"][alvo.get_instance_id()] = true
-	ctx["vivas"] = int(ctx["vivas"]) + 1
-	var b := Bomba.new()
-	b.alvo = alvo
-	b.def = def
-	b.geracao = geracao
-	b.pavio = pavio
-	b.dano = dano_base * pow(clampf(def.get("valor", 0.6), 0.1, 1.0), float(geracao))
-	b.dano_base = dano_base
-	b.ctx = ctx
-	b.raio = def.get("raio", 90.0)
-	b.max_ger = int(def.get("qtd", 2))
-	cena.add_child(b)
-	b.global_position = alvo.global_position
 
 ## Sopro Flamejante: cone de chamas na frente do arqueiro, que acompanha a mira por `duracao` s e queima quem está dentro.
 class Sopro extends Node2D:
@@ -193,6 +173,26 @@ class Bomba extends Node2D:
 	var _t := 0.0
 	var _ultimo := Vector2.ZERO
 
+	## Prende uma bomba num inimigo. `geracao` 0 é a da flecha; cada explosão arma as vizinhas (geração + 1) até `qtd` gerações,
+	## cada geração com `valor` do dano da anterior. `ctx` evita bomba repetida no mesmo inimigo e limita o total.
+	static func armar(cena: Node, alvo: Node2D, def: Dictionary, dano_base: float, geracao: int, pavio: float, ctx: Dictionary) -> void:
+		if not is_instance_valid(alvo) or ctx["vistos"].has(alvo.get_instance_id()) or int(ctx["vivas"]) >= MAX_CADEIA:
+			return
+		ctx["vistos"][alvo.get_instance_id()] = true
+		ctx["vivas"] = int(ctx["vivas"]) + 1
+		var b := Bomba.new()
+		b.alvo = alvo
+		b.def = def
+		b.geracao = geracao
+		b.pavio = pavio
+		b.dano = dano_base * pow(clampf(def.get("valor", 0.6), 0.1, 1.0), float(geracao))
+		b.dano_base = dano_base
+		b.ctx = ctx
+		b.raio = def.get("raio", 90.0)
+		b.max_ger = int(def.get("qtd", 2))
+		cena.add_child(b)
+		b.global_position = alvo.global_position
+
 	func _ready() -> void:
 		z_index = 5
 		_ultimo = global_position
@@ -220,7 +220,7 @@ class Bomba extends Node2D:
 		if geracao < max_ger:
 			for e in atingidos:
 				if is_instance_valid(e):
-					armar(cena, e, def, dano_base, geracao + 1, PAVIO_CADEIA, ctx)
+					Bomba.armar(cena, e, def, dano_base, geracao + 1, PAVIO_CADEIA, ctx)
 		ctx["vivas"] = maxi(int(ctx["vivas"]) - 1, 0)
 		queue_free()
 
