@@ -1,0 +1,107 @@
+name: capturas-skills
+# Capturas e GIFs reais do jogo (xvfb) para revisão visual, sem depender do PC do Will.
+# Como usar: ponha o rótulo `capturas` no PR (ou rode "Run workflow" em outra branch/PR com este arquivo).
+# O resultado fica no artefato `capturas-skills` e na branch `capturas/pr-<número>` (PNG + GIF por skill, 1 e 20 inimigos).
+# Reaproveitável: troque o script/argumentos em `workflow_dispatch` (ex.: salas, HUD, outra resolução) sem criar outro workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      skills:
+        description: "ids de captura_skills_2d.gd separados por espaço (vazio = as 12 skills do leque 2)"
+        default: ""
+      inimigos:
+        description: "números de inimigos separados por espaço"
+        default: "5 20"
+      script:
+        description: "script de captura (usa a mesma linha de comando: pasta id quadros inimigos)"
+        default: "res://scripts2d/tools/captura_skills_2d.gd"
+  pull_request:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  capturas:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'capturas')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    continue-on-error: true  # só tira capturas, não testa: nunca bloqueia o PR
+    env:
+      SKILLS: ${{ github.event.inputs.skills || 'thunder_burst sky_storm storm_orbs plague_spread toxic_mines acid_geyser icicle_lance ice_spikes blizzard flame_breath ring_of_fire fuse_bomb' }}
+      INIMIGOS: ${{ github.event.inputs.inimigos || '5 20' }}
+      SCRIPT: ${{ github.event.inputs.script || 'res://scripts2d/tools/captura_skills_2d.gd' }}
+      GODOT: ./Godot_v4.4.1-stable_linux.x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
+        run: |
+          git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
+          cmake -S godot/gdextension -B build-ext -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
+          cmake --build build-ext -j"$(nproc)"
+      - name: Baixar Godot e dependências de tela virtual
+        run: |
+          curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.4.1-stable_linux.x86_64
+          pip install -q numpy pillow
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1 libxi6 libxcursor1 libxrandr2 libxinerama1 ffmpeg
+      - name: Montar projeto só com o cliente 2D (sem C#)
+        run: |
+          mkdir proj
+          for d in scripts2d scenes2d data2d art2d gdextension addons; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          ln -s "$PWD/godot/shatter_rogue.gdextension" proj/shatter_rogue.gdextension
+          python3 - <<'PY'
+          import re
+          s = open('godot/project.godot').read()
+          s = s.replace('"4.7", "C#", "Forward Plus"', '"4.4", "Forward Plus"')
+          s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
+          open('proj/project.godot', 'w').write(s)
+          PY
+          timeout -k 5 180 $GODOT --headless --path proj --import || true
+      - name: Capturar (quadros a cada 6 passos físicos) e montar GIFs
+        run: |
+          mkdir -p capturas quadros
+          QUADROS=$(python3 -c "print(','.join(str(4+5*i) for i in range(30)))")
+          for id in $SKILLS; do
+            for n in $INIMIGOS; do
+              d="quadros/${id}_${n}"
+              mkdir -p "$d"
+              timeout -k 5 150 xvfb-run -a -s "-screen 0 1280x720x24" $GODOT --path proj --rendering-driver opengl3 --script "$SCRIPT" -- "$PWD/$d" "$id" "$QUADROS" "$n" || true
+              ls "$d"/*.png >/dev/null 2>&1 || { echo "sem quadros para $id/$n"; continue; }
+              # quadro de pico: o que mais difere da mediana da sequência (o fundo e o que não muda somem na mediana)
+              python3 - "$d" "$id" "capturas/${id}_${n}inimigos.png" <<'PY' || cp "$d/${id}_12.png" "capturas/${id}_${n}inimigos.png" 2>/dev/null || true
+          import sys, glob, shutil
+          import numpy as np
+          from PIL import Image
+          pasta, id_, saida = sys.argv[1:4]
+          arqs = sorted(glob.glob(f"{pasta}/{id_}_*.png"), key=lambda p: int(p.rsplit("_", 1)[1][:-4]))
+          imgs = np.stack([np.asarray(Image.open(p).convert("RGB").resize((640, 360)), dtype=np.int16) for p in arqs])
+          med = np.median(imgs, axis=0)
+          pico = int(np.argmax([np.abs(i - med).sum() for i in imgs]))
+          print("pico", id_, pico + 1, "de", len(arqs))
+          shutil.copy(arqs[pico], saida)
+          PY
+              ffmpeg -loglevel error -y -framerate 8 -i "$d/${id}_%d.png" -vf "scale=640:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse" "capturas/${id}_${n}inimigos.gif" || true
+              ffmpeg -loglevel error -y -i "capturas/${id}_${n}inimigos.png" -vf "format=gray" "capturas/${id}_${n}inimigos_cinza.png" || true
+            done
+          done
+          ls -la capturas
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capturas-skills
+          path: capturas/
+      - name: Publicar na branch capturas/pr-<número> (para quem não acessa o artefato)
+        if: github.event_name == 'pull_request'
+        run: |
+          cd capturas
+          if ! ls *.png >/dev/null 2>&1; then echo "sem capturas; nada a publicar"; exit 0; fi
+          git init -q
+          git checkout -q -b "capturas/pr-${{ github.event.pull_request.number }}"
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "capturas do PR ${{ github.event.pull_request.number }}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "capturas/pr-${{ github.event.pull_request.number }}"
