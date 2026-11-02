@@ -111,7 +111,7 @@ static func numero(alvo: Node2D, valor: float, cor: Color, grande := false, fort
 		return
 	# Golpes no mesmo alvo dentro de `dmg_number_group_ms` somam num número só (doc 36 seção 6.1: menos amontoado)
 	var agora := Time.get_ticks_msec()
-	var ant = alvo.get_meta("dmg_num", null)
+	var ant = alvo.get_meta("dmg_num") if alvo.has_meta("dmg_num") else null   # get_meta sem a chave e sem padrão imprime erro
 	if ant != null and is_instance_valid(ant) and agora - int(alvo.get_meta("dmg_num_t", 0)) <= int(cfg().get("dmg_number_group_ms", 200)):
 		var soma: float = float(alvo.get_meta("dmg_num_v", 0.0)) + valor
 		alvo.set_meta("dmg_num_v", soma)
