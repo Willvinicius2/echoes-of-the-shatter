@@ -27,10 +27,11 @@ def H(s):
     return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
 
 RAMPAS = {
-    "cabelo": [H("7a4a18"), H("b8801f"), H("e0aa35"), H("fbe087")],
-    "pele": [H("a8603f"), H("d68f64"), H("eebb8c"), H("fbddb8")],
+    "cabelo": [H("8a4a1a"), H("c47a2a"), H("e8a43e"), H("fbd877")],
+    "pele": [H("b8704a"), H("e0a074"), H("f6cfa4"), H("fff0d4")],
+    "sobr": [H("4a2a14")] * 3,
     "tunica": [H("2f3e1c"), H("4a6128"), H("6f8c36"), H("a2c24f")],
-    "capuz": [H("24362a"), H("385239"), H("557a4c"), H("86ab6e")],
+    "capuz": [H("1a2a20"), H("2a4230"), H("40613a"), H("668850")],
     "couro": [H("33200f"), H("57361c"), H("80542a"), H("a9783c")],
     "bota": [H("2b1a0e"), H("4a2e19"), H("6b4426")],
     "calca": [H("2a2a1f"), H("403e2c"), H("5c5840")],
@@ -40,7 +41,8 @@ RAMPAS = {
     "pena2": [H("2e5a2a"), H("4f8a3c"), H("7fb552")],
     "ferro": [H("4a4f5c"), H("7a8294"), H("c5ccdb")],
     "olho": [H("1a1210")] * 3,
-    "boca": [H("7a3326")] * 3,
+    "boca": [H("a65a3c")] * 3,
+    "brilho": [H("fff6dc")] * 3,
     "cinto": [H("26170f"), H("3b2216"), H("5e3a21")],
 }
 NOMES = list(RAMPAS.keys())
@@ -168,10 +170,9 @@ def modelo_torso():
             y = -3.7 * math.sqrt(k) - 0.25
             add(g, elipsoide((x, y, z), (1.0, 0.8, 1.0), "couro", PARTE["corpo"], 0.2))
     # capuz caído nos ombros (gola grossa)
-    add(g, anel((0, -0.5, 24.6), 4.5, 3.6, 1.15, "capuz", P))
-    add(g, elipsoide((0, -3.8, 24.0), (4.4, 2.6, 3.2), "capuz", P))     # bolsa do capuz nas costas
+    add(g, anel((0, -0.5, 24.6), 4.5, 3.6, 1.0, "tunica", P))
     # aljava nas costas, inclinada, mais fina e de lado
-    add(g, capsula((2.6, -5.0, 12.5), (-2.6, -5.5, 28.6), 1.9, 1.9, "couro", P))
+    add(g, capsula((2.8, -4.9, 12.0), (-2.8, -5.3, 28.6), 2.35, 2.35, "couro", P))
     add(g, anel((-2.6, -5.5, 28.6), 1.5, 1.5, 0.4, "ferro", P))
     for dx, dy, papel in ((-0.8, 0.0, "pena1"), (0.6, -0.6, "pena2"), (-2.0, -0.9, "pena1")):
         add(g, capsula((-2.6 + dx * 0.4, -5.5 + dy * 0.4, 28.8), (-3.6 + dx, -5.9 + dy, 34.6), 0.6, 0.85, papel, P))
@@ -186,21 +187,26 @@ def modelo_cabeca():
     add(g, elipsoide((0, 0.5, 32.0), (7.2, 6.6, 6.9), "pele", P))
     for sx in (-2.7, 2.7):
         add(g, elipsoide((sx, 6.5, 31.4), (1.15, 0.8, 1.6), "olho", P, 0.15))     # olho 2 px
-        add(g, capsula((sx - 1.5 * np.sign(sx) * -1, 6.2, 34.0), (sx + 1.5 * np.sign(sx) * -1, 6.2, 34.3), 0.5, 0.5, "cabelo", H_, 0.15))
-    add(g, elipsoide((0, 6.9, 28.3), (1.1, 0.6, 0.5), "boca", P, 0.12))           # boca
+        add(g, elipsoide((sx + 0.35, 7.1, 32.0), (0.45, 0.35, 0.5), "brilho", P, 0.12))  # brilho de 1 px
+        add(g, capsula((sx - 1.5 * np.sign(sx) * -1, 6.2, 34.0), (sx + 1.5 * np.sign(sx) * -1, 6.2, 34.3), 0.5, 0.5, "sobr", P, 0.15))
+    add(g, elipsoide((0, 6.8, 28.4), (0.9, 0.5, 0.3), "boca", P, 0.12))           # boca
     add(g, elipsoide((0, 7.0, 30.0), (0.7, 0.6, 0.8), "pele", P, 0.15))           # nariz
-    # capuz: calota atrás e no alto, bico caído nas costas
-    add(g, elipsoide((0, -1.8, 34.6), (7.9, 6.6, 6.6), "capuz", P))
-    add(g, elipsoide((0, -7.0, 29.6), (3.4, 3.4, 5.0), "capuz", P))
-    add(g, anel((0, 0.8, 37.4), 6.8, 5.6, 0.7, "capuz", P))                       # borda do capuz na testa
+    # capuz caído nas costas: só atrás e nas laterais, nunca cobre o topo nem a testa
+    add(g, elipsoide((0, -5.6, 28.6), (5.8, 3.2, 4.8), "capuz", P))
+    add(g, elipsoide((-6.2, -2.4, 29.0), (1.5, 3.2, 3.4), "capuz", P))
+    add(g, elipsoide((6.2, -2.4, 29.0), (1.5, 3.2, 3.4), "capuz", P))
     hair = Pts()
-    # franja dourada saindo sob a borda do capuz, em mechas
-    for c, r in (((-4.8, 4.2, 36.0), (1.8, 1.6, 1.9)), ((-2.4, 5.4, 36.2), (1.6, 1.4, 2.0)),
-                 ((0.2, 5.6, 36.3), (1.6, 1.4, 2.1)), ((2.8, 5.2, 36.1), (1.7, 1.5, 2.0)),
-                 ((5.0, 4.0, 35.6), (1.7, 1.6, 2.0)), ((-6.8, 1.6, 32.6), (1.3, 1.6, 2.8)),
-                 ((6.8, 1.8, 32.4), (1.3, 1.6, 2.8)), ((0, -6.8, 26.5), (4.2, 2.4, 3.4)),
-                 ((-3.4, -6.4, 25.5), (1.7, 1.8, 2.8)), ((3.4, -6.4, 25.5), (1.7, 1.8, 2.8)),
-                 ((0.0, -7.2, 23.5), (1.9, 1.8, 2.4))):
+    # calota de cabelo + mechas espetadas no topo e na frente (realce amarelo-claro vem da rampa)
+    add(hair, elipsoide((0.4, -0.6, 34.2), (7.2, 6.6, 4.6), "cabelo", H_))
+    add(hair, elipsoide((-0.8, 4.2, 35.6), (5.6, 2.4, 2.2), "cabelo", H_))
+    # mechas assimétricas: esquerda curta, direita mais longa, tufo caído na testa
+    for c, r in (((-4.8, 4.2, 35.8), (1.4, 1.5, 2.0)), ((-2.0, 5.2, 36.6), (1.4, 1.4, 2.2)),
+                 ((3.4, 5.4, 36.4), (1.5, 1.5, 2.4)), ((5.4, 3.8, 35.6), (1.5, 1.6, 2.2)),
+                 ((-3.6, 1.0, 38.2), (1.6, 1.7, 2.2)), ((0.0, -0.2, 39.0), (1.8, 1.8, 2.6)),
+                 ((3.8, 0.4, 39.6), (1.7, 1.7, 3.0)), ((6.6, 0.6, 36.4), (1.6, 1.8, 2.8)),
+                 ((-6.6, 0.8, 35.8), (1.5, 1.7, 2.4)), ((0, -5.2, 34.4), (3.4, 2.4, 3.2)),
+                 ((-6.0, 2.4, 32.0), (1.2, 1.5, 2.2)), ((6.2, 2.4, 31.4), (1.2, 1.6, 3.0)),
+                 ((1.6, 6.3, 34.0), (1.2, 1.1, 2.4))):
         add(hair, elipsoide(c, r, "cabelo", H_))
     return g.cat(), hair.cat()
 
@@ -242,7 +248,7 @@ def ik2(S, T, l1, l2, pole):
 def pose_base():
     return dict(
         root_dz=0.0, root_dy=0.0, root_pitch=0.0, root_pivo=(0, 0, 12.0),
-        torso_yaw=0.0, torso_pitch=0.0, torso_dz=0.0,
+        torso_yaw=0.0, torso_pitch=0.0, torso_dz=-1.8,
         head_yaw=0.0, head_pitch=0.0, head_roll=0.0, head_dz=0.0, head_dy=0.0,
         handL=(7.6, 1.8, 12.8), handR=(-7.4, 0.8, 12.8),
         footL=(2.4, 0.4, 2.6), footR=(-2.4, 0.4, 2.6),
@@ -323,24 +329,24 @@ def montar(pose):
                                   ("R", hR, np.array(pose["footR"], float), pose["kneeR"])):
         K, A = ik2(hip, foot + np.array([0, 0, 1.6]), 5.0, 4.8, pole)
         dyn.append(capsula(hip, K, 2.5, 2.35, "calca", PARTE["perna"]))
-        dyn.append(capsula(K, A, 2.45, 2.55, "bota", PARTE["perna"]))
+        dyn.append(capsula(K, A, 2.6, 2.7, "bota", PARTE["perna"]))
         dyn.append(anel(K + np.array([0, 0, -0.9]), 2.3, 2.3, 0.45, "couro", PARTE["perna"]))
         ante = foot + np.array([0, 3.0, -0.6])
-        dyn.append(capsula(A + np.array([0, 0.2, -1.0]), ante, 2.5, 1.9, "bota", PARTE["perna"]))
+        dyn.append(capsula(A + np.array([0, 0.2, -1.2]), ante + np.array([0, 0.8, 0]), 3.0, 2.3, "bota", PARTE["perna"]))
     # arco: acompanha a mão esquerda, plano vertical, pontas voltadas para o arqueiro
     if pose["bow_on"]:
         Rb = rot_z(pose.get("bow_yaw", 1.05)) @ rot_x(pose["bow_tilt"])
-        grip = np.array(HL) + np.array([1.4, 0.6, 0.0])
+        grip = np.array(HL) + np.array([3.2, 0.6, -1.6])
         tips = []
         prev = None
         for t in np.linspace(-1, 1, 14):
-            z = 15.0 * t
-            y = 2.0 - 6.6 * t * t
+            z = 13.0 * t
+            y = 2.0 - 5.6 * t * t
             p = grip + Rb @ np.array([0, y, z])
             tips.append(p)
             if prev is not None:
                 papel = "arco" if abs(t) > 0.2 else "couro"
-                rr = 1.25 if abs(t) > 0.2 else 1.6
+                rr = 1.5 if abs(t) > 0.2 else 1.9
                 dyn.append(capsula(prev, p, rr, rr, papel, PARTE["arco"], 0.22))
             prev = p
         # corda
@@ -451,7 +457,7 @@ def anim_idle(i, n=6):
     p = pose_base()
     resp = [0.0, 0.0, 0.6, 1.0, 0.6, 0.0][i]
     p["head_dz"] = resp * 0.5
-    p["torso_dz"] = resp * 0.35
+    p["torso_dz"] = -1.8 + resp * 0.35
     p["handL"] = (7.6, 1.8, 12.8 + resp * 0.4)
     p["handR"] = (-7.4, 0.8, 12.8 + resp * 0.4)
     p["head_pitch"] = -0.03 * s_
