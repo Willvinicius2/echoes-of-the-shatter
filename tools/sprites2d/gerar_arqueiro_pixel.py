@@ -28,7 +28,7 @@ def H(s):
     return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
 
 RAMPAS = {
-    "cabelo": [H("8a4a1a"), H("c47a2a"), H("e8a43e"), H("fbd877")],
+    "cabelo": [H("8a4a1a"), H("c47a2a"), H("e8a43e"), H("f2c85e")],
     "pele": [H("b8704a"), H("e0a074"), H("f6cfa4"), H("fff0d4")],
     "sobr": [H("4a2a14")] * 3,
     "tunica": [H("2f3e1c"), H("4a6128"), H("6f8c36"), H("a2c24f")],
@@ -210,10 +210,8 @@ def modelo_cabeca():
                  ((-6.6, 0.8, 35.8), (1.5, 1.7, 2.4)), ((0, -5.2, 34.4), (3.4, 2.4, 3.2)),
                  ((-6.0, 2.4, 32.0), (1.2, 1.5, 2.2)), ((6.2, 2.4, 31.4), (1.2, 1.6, 3.0)),
                  ((1.6, 6.3, 34.0), (1.2, 1.1, 2.4))):
-        add(hair, elipsoide(c, r, "cabelo", H_))
+        add(hair, elipsoide((c[0], c[1], 35.5 + (c[2] - 35.5) * 0.84), (r[0], r[1], r[2] * 0.86), "cabelo", H_))
     hp_, hn_, hr_, hg_ = hair.cat()
-    c0 = np.array([0.0, 0.5, 33.0])
-    hp_ = c0 + (hp_ - c0) * np.array([0.90, 0.90, 0.80])   # cabelo ~20% menor
     return g.cat(), (hp_, hn_, hr_, hg_)
 
 
@@ -257,7 +255,7 @@ def pose_base():
         torso_yaw=0.0, torso_pitch=0.0, torso_dz=-1.8,
         head_yaw=0.0, head_pitch=0.0, head_roll=0.0, head_dz=0.0, head_dy=0.0,
         handL=(7.6, 1.8, 12.8), handR=(-7.4, 0.8, 12.8),
-        footL=(2.4, 0.4, 2.6), footR=(-2.4, 0.4, 2.6),
+        footL=(3.2, 0.4, 2.6), footR=(-3.2, 0.4, 2.6),
         poleL=(1.0, -0.5, -0.4), poleR=(-1.0, -0.5, -0.4),
         kneeL=(0.25, 1.0, 0.0), kneeR=(-0.25, 1.0, 0.0),
         bow_tilt=0.0, bow_on=True, pull=0.0, arrow=False, hip_yaw=0.0,
@@ -434,7 +432,7 @@ def renderizar(pose, graus, espelho=False):
                 continue
             for dy, dx in ((-1, 0), (0, -1), (1, 0), (0, 1)):
                 yy, xx = y + dy, x + dx
-                if pp2[yy, xx] >= 0 and pr2[yy, xx] != pr2[y, x] and zb2[yy, xx] - zb2[y, x] > 2.2:
+                if pp2[yy, xx] >= 0 and pr2[yy, xx] != pr2[y, x] and zb2[yy, xx] - zb2[y, x] > 3.6:
                     rampa = RAMPAS[NOMES[pp2[y, x]]]
                     img[y, x] = (*rampa[0], 255)
                     break
@@ -505,8 +503,8 @@ def anim_attack(i, n=6):
     p["footL"] = (1.8, 3.8, 2.6)
     p["footR"] = (-1.8, -3.4, 2.6)
     p["torso_pitch"] = -0.04
-    hand_bow = [(5.0, 6.5, 22.0), (5.2, 9.0, 24.2), (5.2, 10.0, 25.0), (5.2, 10.2, 25.2), (5.2, 10.2, 25.2), (5.0, 9.0, 24.0)][i]
-    draw = [(-0.5, 5.5, 22.0), (-1.5, 4.0, 24.5), (-3.2, 2.2, 26.0), (-4.4, 1.0, 26.8), (-1.2, 3.8, 25.0), (-1.0, 5.0, 23.2)][i]
+    hand_bow = [(6.0, 6.5, 21.6), (6.2, 9.0, 22.4), (6.2, 10.0, 22.8), (6.2, 10.2, 23.0), (6.2, 10.2, 23.0), (6.0, 9.0, 22.2)][i]
+    draw = [(-0.5, 5.5, 20.8), (-1.5, 4.0, 22.0), (-2.6, 2.2, 22.8), (-3.4, 1.0, 23.2), (-1.2, 3.8, 22.4), (-1.0, 5.0, 21.4)][i]
     p["handL"] = hand_bow
     p["handR"] = draw
     p["poleL"] = (0.8, -0.2, -1.0)
