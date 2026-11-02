@@ -129,8 +129,8 @@ class Tempestade extends Node2D:
 		_rng.randomize()
 		Vfx.registrar_animado(self)
 		Vfx.anel_entrada(get_parent(), global_position, raio, COR)
-		var nuvem := Px.criar("storm_cloud", raio * 1.5 / maxf(Px.tamanho("storm_cloud").x, 1.0), true, "base")
-		nuvem.position = Vector2(0, -150)
+		var nuvem := Px.criar("storm_cloud", raio * 0.95 / maxf(Px.tamanho("storm_cloud").x, 1.0), true, "base")
+		nuvem.position = Vector2(0, -120)
 		nuvem.modulate.a = 0.0
 		add_child(nuvem)
 		nuvem.create_tween().tween_property(nuvem, "modulate:a", 1.0, 0.35)
@@ -219,7 +219,7 @@ class Orbes extends Node2D:
 		z_index = 4
 		Vfx.registrar_animado(self)
 		for i in n:
-			var s := Px.criar("ball_lightning", 0.8, true, "centro")
+			var s := Px.criar("ball_lightning", 1.4, true, "centro")
 			add_child(s)
 			_sprites.append(s)
 
@@ -249,7 +249,6 @@ class Orbes extends Node2D:
 		var sem := floorf(_t * 18.0)
 		for i in n:
 			var a := _pos(i) + alt
-			if n > 1:
-				U.raio_zz(self, a, _pos((i + 1) % n) + alt, COR, 1.6, sem + i, 0.55 * k, 5)
+			draw_circle(a, 1.0, Color(COR, 0.0))   # (sem arcos ligando as esferas: o polígono grande poluía a tela)
 		for s in _sprites:
 			s.modulate.a = k

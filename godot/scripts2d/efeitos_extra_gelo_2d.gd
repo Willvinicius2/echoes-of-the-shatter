@@ -53,7 +53,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, mira: Vec
 ## Lança de Gelo: uma lança de cristal cruza a linha à frente num instante, fere e gela (qtd acúmulos) tudo no caminho
 ## e se estilhaça em lascas que voam para os lados. Deixa uma trilha de geada que some em ~1 s.
 class Lanca extends Node2D:
-	const VOO := 0.12       # só ritmo visual
+	const VOO := 0.18       # só ritmo visual
 	const VIDA := 1.0
 	var dir := Vector2.RIGHT
 	var comp := 640.0
@@ -139,7 +139,7 @@ class Espinhos extends Node2D:
 			if not _feito[i] and _t >= float(i) * PASSO:
 				_feito[i] = true
 				if i % 2 == 0:   # um cacho de espinhos pintado a cada dois pontos da fila
-					var cacho := Px.criar("ice_spikes", raio * 2.6 / maxf(Px.tamanho("ice_spikes").x, 1.0), false, "base")
+					var cacho := Px.criar("ice_spikes", raio * 4.6 / maxf(Px.tamanho("ice_spikes").x, 1.0), false, "base")
 					cacho.position = _pos(i)
 					add_child(cacho)
 					if cacho is AnimatedSprite2D:
@@ -167,8 +167,8 @@ class Espinhos extends Node2D:
 				var a := TAU * float(j) / 5.0 + float(i)
 				draw_line(p, p + Vector2.from_angle(a) * Vector2(raio, raio * 0.5) * 0.9, Color(0.4, 0.6, 0.9, 0.55 * alfa), 1.5)
 			var h := ALTURA * sobe * (1.0 - 0.18 * float(i) / float(n))
-			if i % 2 == 1:   # os pontos sem cacho pintado ganham um cristal menor por código
-				U.cristal(self, p, -PI / 2, h * 0.6, 8.0, alfa)
+			if h < 0.0:
+				U.cristal(self, p, -PI / 2, h, 8.0, alfa)
 
 ## Nevasca: tempestade de neve gira em volta do arqueiro por `duracao` s; a cada pulso fere e soma 1 de frio em quem está dentro.
 class Nevasca extends Node2D:

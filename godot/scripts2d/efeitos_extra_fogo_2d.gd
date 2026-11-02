@@ -122,7 +122,9 @@ class Anel extends Node2D:
 		if _acc >= PULSO:
 			_acc = 0.0
 			for e in U.no_raio(self, global_position, raio + banda * 0.5):
-				if absf(e.global_position.distance_to(global_position) - raio) <= banda * 0.5:
+				var v: Vector2 = e.global_position - global_position
+				v.y *= 2.0   # o anel pintado é uma elipse (visão 3/4): a faixa que queima é a mesma elipse
+				if absf(v.length() - raio) <= banda * 0.5:
 					e.take_damage(dano, global_position)
 					if is_instance_valid(e):
 						Fu.queimar(e, queima_s, dps)
@@ -134,8 +136,6 @@ class Anel extends Node2D:
 		var cresce := 1.0 - pow(1.0 - clampf(_t / 0.35, 0.0, 1.0), 3.0)
 		var k := clampf((dur - _t) / 0.5, 0.0, 1.0)
 		var r := raio * cresce
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 56, Color(0.35, 0.06, 0.02, 0.45 * k), banda)   # chão chamuscado sob o anel
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 56, Color(1.0, 0.4, 0.08, 0.3 * k), banda * 0.5)
 		_anel.modulate.a = k
 		_anel.scale = Vector2.ONE * ((raio * 2.0 + banda) / maxf(Px.tamanho("fire_ring").x, 1.0)) * maxf(cresce, 0.05)
 

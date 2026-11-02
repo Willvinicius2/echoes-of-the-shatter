@@ -184,7 +184,7 @@ class Nuvem extends Node2D:
 	var _t := 0.0
 	func _ready() -> void:
 		z_index = 3
-		var s := Px.criar("poison_cloud", raio * 2.2 / maxf(Px.tamanho("poison_cloud").x, 1.0), false, "base")
+		var s := Px.criar("poison_cloud", raio * 2.8 / maxf(Px.tamanho("poison_cloud").x, 1.0), false, "base")
 		add_child(s)
 		if s is AnimatedSprite2D:
 			s.animation_finished.connect(queue_free)

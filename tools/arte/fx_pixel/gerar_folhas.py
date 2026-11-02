@@ -40,6 +40,22 @@ def main():
             bb = q.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox()
             if bb:
                 caixas = bb if caixas is None else (min(caixas[0], bb[0]), min(caixas[1], bb[1]), max(caixas[2], bb[2]), max(caixas[3], bb[3]))
+        if gid == "lightning_strike":   # o efeito original escurece a tela em volta; no jogo isso vira uma mancha preta
+            def sem_halo(q):
+                px = q.load()
+                for y in range(q.size[1]):
+                    for x in range(q.size[0]):
+                        r, g, b, a = px[x, y]
+                        if a and max(r, g, b) < 90:
+                            px[x, y] = (0, 0, 0, 0)
+                return q
+            quadros = [sem_halo(q) for q in quadros]
+            bb = None
+            for q in quadros:
+                b2 = q.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox()
+                if b2:
+                    bb = b2 if bb is None else (min(bb[0], b2[0]), min(bb[1], b2[1]), max(bb[2], b2[2]), max(bb[3], b2[3]))
+            caixas = bb or caixas
         quadros = [q.crop(caixas) for q in quadros]
         w, h = quadros[0].size
         cols = max(1, min(len(quadros), int(math.ceil(math.sqrt(len(quadros) * h / w)))))

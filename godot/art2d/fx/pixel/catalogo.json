@@ -15,9 +15,9 @@
  },
  "lightning_strike": {
   "n": 14,
-  "w": 223,
-  "h": 258,
-  "cols": 5,
+  "w": 124,
+  "h": 236,
+  "cols": 6,
   "fps": 12.0
  },
  "ball_lightning": {

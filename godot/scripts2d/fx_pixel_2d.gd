@@ -8,7 +8,7 @@ const DIR := "res://art2d/fx/pixel/"
 const CATALOGO := {
 	"thunderclap": {"n": 24, "w": 253, "h": 131, "cols": 4, "fps": 12.0},
 	"storm_cloud": {"n": 36, "w": 154, "h": 170, "cols": 7, "fps": 12.0},
-	"lightning_strike": {"n": 14, "w": 223, "h": 258, "cols": 5, "fps": 12.0},
+	"lightning_strike": {"n": 14, "w": 124, "h": 236, "cols": 6, "fps": 12.0},
 	"ball_lightning": {"n": 48, "w": 116, "h": 89, "cols": 7, "fps": 12.0},
 	"spore_burst": {"n": 39, "w": 99, "h": 105, "cols": 7, "fps": 12.0},
 	"poison_cloud": {"n": 48, "w": 212, "h": 53, "cols": 4, "fps": 12.0},
