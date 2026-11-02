@@ -374,7 +374,7 @@ func boca_do_arco(dir: Vector2) -> Dictionary:
 	var origem: Vector2 = global_position + dir * float(stats["arrow_spawn_dist"])
 	if anc.is_empty() or not anc.has(d[0]):
 		return {"chao": origem, "altura": stats["arrow_altura"], "origem": origem, "desloc": Vector2.ZERO}
-	var p: Vector2 = anc[d[0]] * sprite.scale.x   # âncoras em px do sprite; a escala do sprite as leva ao mundo
+	var p: Vector2 = anc[d[0]] * (sprite.scale.x / maxf(_esc_base, 0.001))   # âncoras na escala do CSV; segue a escala atual do sprite
 	if d[1]:
 		p.x = -p.x
 	var chao: Vector2 = global_position + Vector2(p.x, 0.0)

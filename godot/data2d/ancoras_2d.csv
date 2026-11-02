@@ -1,6 +1,6 @@
 id,anim,linha,x,y,nota
-arqueiro,attack,0,5,-13,boca do arco na linha S (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
-arqueiro,attack,1,15,-18,boca do arco na linha SE (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
-arqueiro,attack,2,15,-24,boca do arco na linha E (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
-arqueiro,attack,3,7,-29,boca do arco na linha NE (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
-arqueiro,attack,4,-5,-29,boca do arco na linha N (px do sprite 64x64; gerado por gerar_arqueiro_pixel.py --ancoras)
+arqueiro,attack,0,16,-29,boca do arco na linha S (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
+arqueiro,attack,1,38,-41,boca do arco na linha SE (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
+arqueiro,attack,2,38,-57,boca do arco na linha E (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
+arqueiro,attack,3,16,-69,boca do arco na linha NE (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
+arqueiro,attack,4,-16,-69,boca do arco na linha N (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
