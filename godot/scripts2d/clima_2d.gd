@@ -307,20 +307,57 @@ func _poligono_folha(f: Dictionary) -> PackedVector2Array:
 	var tr := Transform2D(f["ang"], f["p"] - Vector2(0, f["z"]))
 	return tr * pts
 
+## Folhas e sombras vão num único lote de triângulos por camada (um comando de desenho em vez de
+## centenas de draw_colored_polygon/draw_line/draw_circle por quadro: era o maior custo da cena).
+class Lote:
+	var pts := PackedVector2Array()
+	var cores := PackedColorArray()
+	var idx := PackedInt32Array()
+
+	## Leque convexo (o primeiro ponto é o centro do leque).
+	func poligono(p: PackedVector2Array, c: Color) -> void:
+		var base := pts.size()
+		pts.append_array(p)
+		for i in p.size():
+			cores.append(c)
+		for i in range(1, p.size() - 1):
+			idx.append(base)
+			idx.append(base + i)
+			idx.append(base + i + 1)
+
+	## Traço fino como retângulo.
+	func linha(a: Vector2, b: Vector2, c: Color, larg: float) -> void:
+		var d := (b - a).normalized().orthogonal() * larg * 0.5
+		poligono(PackedVector2Array([a - d, a + d, b + d, b - d]), c)
+
+	func circulo(centro: Vector2, raio: float, c: Color) -> void:
+		var p := PackedVector2Array()
+		for i in 8:
+			p.append(centro + Vector2.from_angle(TAU * i / 8.0) * raio)
+		poligono(p, c)
+
+	func desenhar(no: CanvasItem) -> void:
+		if idx.is_empty():
+			return
+		RenderingServer.canvas_item_add_triangle_array(no.get_canvas_item(), idx, pts, cores)
+
 func _desenhar_chao() -> void:
+	var lote := Lote.new()
 	for f in _folhas:
 		var a := 1.0 - clampf((f["t_chao"] - (cfg["folha_tempo_chao"] - 1.5)) / 1.5, 0.0, 1.0)
 		if f["chao"]:
 			var c: Color = f["cor"].darkened(0.2)
 			c.a = 0.92 * a
 			var pts := _poligono_folha(f)
-			_chao.draw_colored_polygon(pts, c)
-			_chao.draw_line(pts[0], pts[3], c.darkened(0.4), 1.0)
+			lote.poligono(pts, c)
+			lote.linha(pts[0], pts[3], c.darkened(0.4), 1.0)
 		else:  # sombra da folha no chão, mais fraca quanto mais alta
 			var s := clampf(1.0 - f["z"] / 120.0, 0.0, 1.0)
-			_chao.draw_circle(f["p"], f["tam"] * 0.6, Color(0, 0, 0, 0.28 * s))
+			lote.circulo(f["p"], f["tam"] * 0.6, Color(0, 0, 0, 0.28 * s))
+	lote.desenhar(_chao)
 
 func _desenhar_ar() -> void:
+	var lote := Lote.new()
 	for f in _folhas:
 		if f["chao"]:
 			continue
@@ -329,10 +366,11 @@ func _desenhar_ar() -> void:
 		var a := clampf(f["z"] / 12.0, 0.0, 1.0)
 		c.a = 0.95 * (0.4 + 0.6 * a)
 		var pts := _poligono_folha(f)
-		_ar.draw_colored_polygon(pts, c)
+		lote.poligono(pts, c)
 		# metade de baixo mais escura (volume) e nervura central
-		_ar.draw_colored_polygon(PackedVector2Array([pts[0], pts[3], pts[4], pts[5]]), c.darkened(0.22))
-		_ar.draw_line(pts[0], pts[3], c.darkened(0.45), 1.2)
+		lote.poligono(PackedVector2Array([pts[0], pts[3], pts[4], pts[5]]), c.darkened(0.22))
+		lote.linha(pts[0], pts[3], c.darkened(0.45), 1.2)
+	lote.desenhar(_ar)
 
 # ---------------------------------------------------------------- fogo e fumaça
 

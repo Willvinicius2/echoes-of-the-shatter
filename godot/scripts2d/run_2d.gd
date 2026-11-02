@@ -89,6 +89,7 @@ var dps_medido := 0.0
 var _laco_t := 0.0
 
 func _ready() -> void:
+	preload("res://scripts2d/aquecimento_2d.gd").iniciar()   # texturas e scripts de efeito em segundo plano (sem travada no primeiro uso)
 	config = Csv.kv("res://data2d/run_settings.csv")
 	atores = Node2D.new()
 	atores.y_sort_enabled = true
