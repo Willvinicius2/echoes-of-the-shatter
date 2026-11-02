@@ -152,6 +152,8 @@ func _montar() -> void:
 	_ar.draw.connect(_desenhar_ar)
 	add_child(_ar)
 	_vegetacao()
+	if sala.has_method("agrupar_estatico"):
+		sala.agrupar_estatico()   # depois da vegetação: ela procura os sprites nos filhos diretos
 	for b in sala.braseiros:
 		_braseiro(b)
 	_criar_poeira()

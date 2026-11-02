@@ -15,6 +15,12 @@ var _shake_t := 0.0
 var _shake_total := 0.0
 var _shake_px := 0.0
 var _mat: ShaderMaterial     # flash branco, dissolução e brilho do sprite
+## true: o sprite só tem material próprio enquanto o flash ou a dissolução estão ativos (sai de um pool).
+## Sem material próprio todos os inimigos do mesmo tipo desenham juntos, num lote só; com 500 em tela, um
+## material por inimigo quebrava o lote e multiplicava as draw calls. O chefe e o jogador mantêm o fixo.
+var _mat_sob_demanda := false
+static var _pool_mat: Array[ShaderMaterial] = []
+var _desloc_ant := Vector2.ZERO
 var _morrendo := false
 var _flash_ligado := false
 var _dir_k := -1
@@ -28,8 +34,9 @@ func setup_sprite(id: String) -> void:
 	sprite = AnimatedSprite2D.new()
 	sprite.sprite_frames = SpriteLoader.frames_for(id)
 	sprite.offset = SpriteLoader.info(id)["offset"]
-	_mat = Feel.material_ator()
-	sprite.material = _mat
+	if not _mat_sob_demanda:
+		_mat = Feel.material_ator()
+		sprite.material = _mat
 	add_child(sprite)
 	sprite.frame_changed.connect(_on_frame_changed)
 	sprite.animation_finished.connect(_on_anim_finished)
@@ -44,6 +51,8 @@ func play(base: String, restart := false) -> void:
 		return   # caminho rápido: mesma animação e direção, nada a trocar
 	if not has_anim(base):
 		return
+	if _mat_sob_demanda:
+		set_process(true)   # troca de animação: o _process confere o redesenho e volta a dormir
 	_dir_k = k
 	var d := SpriteLoader.dir_for(facing, SpriteLoader.info(char_id)["dirs"])
 	sprite.flip_h = d[1]
@@ -72,10 +81,33 @@ func anim_base() -> String:
 
 func flash() -> void:
 	_flash = Feel.cfg()["flash_time"]
+	set_process(true)
+
+## Pega um material do pool (ou cria) com os parâmetros zerados e liga no sprite.
+func _pegar_mat() -> void:
+	if _mat != null:
+		return
+	if _pool_mat.is_empty():
+		_mat = Feel.material_ator()
+	else:
+		_mat = _pool_mat.pop_back()
+	_mat.set_shader_parameter("flash", 0.0)
+	_mat.set_shader_parameter("dissolve", 0.0)
+	sprite.material = _mat
+
+## Devolve o material ao pool e deixa o sprite com o material padrão (entra no lote).
+func _soltar_mat() -> void:
+	if _mat == null or not _mat_sob_demanda or _morrendo:
+		return
+	_mat.set_shader_parameter("flash", 0.0)
+	sprite.material = null
+	_pool_mat.append(_mat)
+	_mat = null
 
 ## Treme só o sprite (a colisão não muda), decaindo até zero em `tempo` s.
 func tremer_sprite(px: float, tempo: float) -> void:
 	_shake_px = px
+	set_process(true)
 	_shake_t = tempo
 	_shake_total = tempo
 
@@ -84,6 +116,7 @@ func recuar_sprite(dir: Vector2, px: float, tempo: float) -> void:
 	if px <= 0.0 or tempo <= 0.0:
 		return
 	_recuo = -dir.normalized() * px
+	set_process(true)
 	_recuo_t = tempo
 	_recuo_total = tempo
 
@@ -92,6 +125,8 @@ func dissolver(tempo: float) -> void:
 	if _morrendo:
 		return
 	_morrendo = true
+	set_process(true)
+	_pegar_mat()
 	var tw := create_tween()
 	tw.tween_method(func(v: float) -> void:
 		_mat.set_shader_parameter("dissolve", v)
@@ -100,13 +135,18 @@ func dissolver(tempo: float) -> void:
 
 
 func _process(delta: float) -> void:
-	if _mat != null:
+	if _mat != null or _mat_sob_demanda:
 		if _flash > 0.0:
 			_flash -= delta
 		var ligado := _flash > 0.0
 		if ligado != _flash_ligado:   # só fala com o shader quando o flash liga ou desliga
 			_flash_ligado = ligado
-			_mat.set_shader_parameter("flash", float(Feel.cfg().get("flash_amount", 0.5)) if ligado else 0.0)
+			if ligado:
+				_pegar_mat()
+				_mat.set_shader_parameter("flash", float(Feel.cfg().get("flash_amount", 0.5)))
+			elif _mat != null:
+				_mat.set_shader_parameter("flash", 0.0)
+				_soltar_mat()
 	if sprite != null:
 		var desloc := Vector2.ZERO
 		if _shake_t > 0.0:
@@ -115,10 +155,14 @@ func _process(delta: float) -> void:
 		if _recuo_t > 0.0:
 			_recuo_t -= delta
 			desloc += _recuo * clampf(_recuo_t / _recuo_total, 0.0, 1.0)
-		sprite.position = desloc
+		if desloc != _desloc_ant or not _mat_sob_demanda:   # mexer na posição do filho todo quadro invalida o transform à toa
+			_desloc_ant = desloc
+			sprite.position = desloc
 		_respirar(delta)
 	if _precisa_redesenhar():
 		queue_redraw()
+	elif _mat_sob_demanda and _flash <= 0.0 and _shake_t <= 0.0 and _recuo_t <= 0.0 and not _morrendo 			and _anim_base != "idle" and _flash_ligado == false:
+		set_process(false)   # nada animado por código: acorda de novo por evento (golpe, troca de animação)
 
 ## O desenho só muda em casos pontuais (aviso, barra de vida, sombra sumindo): redesenhar todo quadro
 ## custa caro com centenas de atores. Quem tem desenho animado sobrescreve.
@@ -135,7 +179,11 @@ func _respirar(delta: float) -> void:
 	elif sprite.scale != Vector2.ONE:
 		sprite.scale = Vector2.ONE
 
+var _sombra_externa := false   # true: a sombra é desenhada pelo sombras_2d.gd (MultiMesh)
+
 func _draw() -> void:
+	if _sombra_externa:
+		return
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.4))
 	draw_circle(Vector2.ZERO, shadow_radius, Color(0, 0, 0, 0.4 * _sombra_a))
 

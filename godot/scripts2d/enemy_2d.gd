@@ -8,6 +8,7 @@ const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const Veneno = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
 const Fogo = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
+const Sombras = preload("res://scripts2d/sombras_2d.gd")
 
 enum Estado { PERSEGUE, TELEGRAFA, ATACANDO, MORTO }
 
@@ -29,8 +30,8 @@ var _status := {}               # id -> {t: segundos restantes, v: valor}
 ## Inimigos vivos na cena: com horda grande, quem só persegue atualiza a cada 2 ou 3 quadros (com o `delta`
 ## acumulado), cada um numa fase própria, para o custo de física não crescer linear com a horda.
 static var vivos_n := 0
-const HORDA_PASSO2 := 400
-const HORDA_PASSO3 := 900
+const HORDA_PASSO2 := 150
+const HORDA_PASSO3 := 320
 const CELULA := 40.0
 static var _grade := {}
 static var _grade_quadro := -1
@@ -44,6 +45,9 @@ var _keep := 0.0
 var _burst := 0.0
 var _kb_decay := 0.0
 var raio_despertar := 0.0       # > 0: começa adormecido; acorda (com o grupo) quando o jogador chega a essa distância ou fere alguém
+
+func _init() -> void:
+	_mat_sob_demanda = true   # material de flash/dissolução só quando preciso (o chefe desliga isto no _init dele)
 
 func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	stats = Csv.enemy(id)
@@ -69,6 +73,7 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	add_to_group("hurtable")
 	shadow_radius = stats["radius"] * 1.2
 	setup_sprite(id)
+	_sombra_externa = Sombras.registrar(self)
 	var cs := CollisionShape2D.new()
 	var sh := CircleShape2D.new()
 	sh.radius = stats["radius"]
@@ -106,10 +111,21 @@ func _descontar() -> void:
 		vivos_n -= 1
 
 func _exit_tree() -> void:
+	Sombras.remover(self)
 	_descontar()
 
+var _hp_desenhado := -1.0
+var _estado_desenhado := -1
+
+## Só redesenha (sombra, barra de vida, aviso) quando algo mudou: o aviso é animado, o resto muda por evento.
 func _precisa_redesenhar() -> bool:
-	return estado != Estado.PERSEGUE or _morrendo or hp < hp_max
+	if estado == Estado.TELEGRAFA or _morrendo:
+		return true
+	if hp != _hp_desenhado or estado != _estado_desenhado:
+		_hp_desenhado = hp
+		_estado_desenhado = estado
+		return true
+	return false
 
 func _physics_process(delta: float) -> void:
 	if estado == Estado.MORTO or alvo == null:
@@ -226,6 +242,7 @@ func _on_frame_changed() -> void:
 		alvo.take_damage(stats["damage"], global_position)
 
 func _on_anim_finished() -> void:
+	set_process(true)
 	if estado == Estado.ATACANDO:
 		estado = Estado.PERSEGUE
 	elif estado == Estado.MORTO:
