@@ -1366,7 +1366,11 @@ func _testar_leque_skills() -> void:
 			miras[r["id"]] = r["mira"]
 	# skill -> [status esperado, onde pôr os inimigos (px à direita do arqueiro)]
 	var casos := {"toxic_tornado": ["veneno", 420.0], "ice_comet": ["lentidao", 420.0], "frost_nova": ["lentidao", 150.0],
-		"lightning_rod": ["choque", 380.0], "fire_serpent": ["queimadura", 300.0]}
+		"lightning_rod": ["choque", 380.0], "fire_serpent": ["queimadura", 300.0],
+		"thunder_burst": ["choque", 150.0], "sky_storm": ["choque", 420.0], "storm_orbs": ["choque", 90.0],
+		"plague_spread": ["veneno", 300.0], "toxic_mines": ["veneno", 350.0], "acid_geyser": ["veneno", 420.0],
+		"icicle_lance": ["lentidao", 300.0], "ice_spikes": ["lentidao", 300.0], "blizzard": ["lentidao", 150.0],
+		"flame_breath": ["queimadura", 150.0], "ring_of_fire": ["queimadura", 150.0], "fuse_bomb": ["queimadura", 300.0]}
 	for id in casos:
 		check(por_id.has(id) and tags.has(id) and miras.has(id), "%s está no CSV, nas tags e no autocast" % id)
 		if not por_id.has(id):

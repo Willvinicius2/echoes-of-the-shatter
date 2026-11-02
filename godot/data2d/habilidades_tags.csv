@@ -31,3 +31,15 @@ arqueiro,ice_comet,area+gelo+status
 arqueiro,frost_nova,area+gelo+status
 arqueiro,fire_serpent,area+fogo+status
 arqueiro,lightning_rod,zona+area+raio+status
+arqueiro,thunder_burst,area+raio+status
+arqueiro,sky_storm,area+zona+raio+status
+arqueiro,storm_orbs,area+raio+status
+arqueiro,plague_spread,projetil+veneno+status
+arqueiro,toxic_mines,zona+area+veneno+status
+arqueiro,acid_geyser,area+veneno+status
+arqueiro,icicle_lance,projetil+gelo+status
+arqueiro,ice_spikes,area+gelo+status
+arqueiro,blizzard,area+zona+gelo+status
+arqueiro,flame_breath,area+fogo+status
+arqueiro,ring_of_fire,zona+area+fogo+status
+arqueiro,fuse_bomb,projetil+area+fogo+status

@@ -543,3 +543,27 @@ skill.eco_cinzas.desc,"Flecha básica em chamas: +10% de dano, queima e deixa um
 upgrade.afinidade,Escolha o Eco do seu arco (vale pela corrida)
 ramo.afinidade.name,Ecos
 hud.afinidade,Eco escolhido: %s
+skill.thunder_burst.name,Trovoada
+skill.thunder_burst.desc,"Oito raios saem do arqueiro em estrela, em todas as direções, ferindo e chocando quem estiver no caminho"
+skill.sky_storm.name,Tempestade de Raios
+skill.sky_storm.desc,"Uma nuvem de tempestade se forma no ponto mirado e derruba colunas de raio do céu, uma por uma, sobre os inimigos"
+skill.storm_orbs.name,Orbes Tempestuosos
+skill.storm_orbs.desc,"Esferas elétricas giram em volta do arqueiro, ligadas por arcos, e chocam tudo o que encostar"
+skill.plague_spread.name,Contágio
+skill.plague_spread.desc,"A flecha infecta o alvo e o veneno pula dele para todos em volta; se ele morre, a peste passa ao mais próximo"
+skill.toxic_mines.name,Minas Tóxicas
+skill.toxic_mines.desc,"Planta minas de esporos no chão que estouram em nuvem de veneno quando um inimigo se aproxima"
+skill.acid_geyser.name,Gêiser Ácido
+skill.acid_geyser.desc,"Jatos de ácido brotam do chão sob os inimigos mais próximos, ferem, envenenam e atordoam"
+skill.icicle_lance.name,Lança de Gelo
+skill.icicle_lance.desc,"Uma lança de cristal cruza a linha à frente num instante, gela tudo no caminho e se estilhaça"
+skill.ice_spikes.name,Espinhos de Gelo
+skill.ice_spikes.desc,"Uma onda de espinhos de gelo brota do chão em linha, ferindo e gelando quem está em cima"
+skill.blizzard.name,Nevasca
+skill.blizzard.desc,"Uma tempestade de neve acompanha o arqueiro, ferindo e gelando todos em volta, a cada pulso"
+skill.flame_breath.name,Sopro Flamejante
+skill.flame_breath.desc,"O arqueiro cospe um cone de chamas que acompanha a mira e queima tudo à frente"
+skill.ring_of_fire.name,Anel de Fogo
+skill.ring_of_fire.desc,"Um círculo de chamas se acende no chão: quem cruza o anel queima enquanto ele durar"
+skill.fuse_bomb.name,Bomba-Rastilho
+skill.fuse_bomb.desc,"A flecha vira uma bomba de pavio no alvo; ao explodir, arma as bombas dos vizinhos em cadeia"
