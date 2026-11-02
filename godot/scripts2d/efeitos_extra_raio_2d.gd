@@ -103,9 +103,10 @@ class Estrela extends Node2D:
 		for i in qtd:
 			var d := Vector2.from_angle(rot + TAU * float(i) / float(qtd))
 			var fim := org + d * raio * cresce
-			U.raio_zz(self, org, fim, COR, 3.0, float(i) * 3.7 + floorf(_t * 30.0), alfa, 8)
+			U.raio_zz(self, org, fim, COR, 4.5, float(i) * 3.7 + floorf(_t * 30.0), alfa, 8)
 			draw_circle(fim, 6.0 * alfa, Color(1, 1, 1, 0.8 * alfa))   # ponta do raio
-		U.orbe(self, org, 14.0 * (1.0 - _t / VIDA * 0.5), COR, alfa)
+		draw_circle(org, 56.0 * (1.0 - _t / VIDA), Color(0.85, 0.95, 1.0, 0.45 * alfa))   # clarão central da estrela
+		U.orbe(self, org, 18.0 * (1.0 - _t / VIDA * 0.5), COR, alfa)
 		draw_arc(org, raio * cresce, 0.0, TAU, 48, Color(COR, 0.18 * alfa), 2.0)   # anel de alcance, discreto
 
 ## Tempestade de Raios: uma nuvem escura se forma sobre o ponto mirado e derruba `golpes` colunas de raio em inimigos da área,
@@ -219,7 +220,7 @@ class Orbes extends Node2D:
 		z_index = 4
 		Vfx.registrar_animado(self)
 		for i in n:
-			var s := Px.criar("ball_lightning", 1.4, true, "centro")
+			var s := Px.criar("ball_lightning", 2.2, true, "centro")
 			add_child(s)
 			_sprites.append(s)
 
@@ -249,6 +250,9 @@ class Orbes extends Node2D:
 		var sem := floorf(_t * 18.0)
 		for i in n:
 			var a := _pos(i) + alt
-			draw_circle(a, 1.0, Color(COR, 0.0))   # (sem arcos ligando as esferas: o polígono grande poluía a tela)
+			U.raio_zz(self, a, _pos((i + 1) % n) + alt, COR, 2.4, sem + float(i), 0.9 * k, 6)   # arco elétrico entre as esferas
 		for s in _sprites:
 			s.modulate.a = k
+		for i in n:   # halo elétrico por trás de cada esfera: o orbe é a coisa mais clara da tela
+			draw_circle(_pos(i) + alt, 20.0 * k, Color(COR, 0.22 * k))
+			draw_circle(_pos(i) + alt, 11.0 * k, Color(0.85, 0.95, 1.0, 0.35 * k))

@@ -68,8 +68,13 @@ class Sopro extends Node2D:
 	func _ready() -> void:
 		z_index = 3
 		Vfx.registrar_animado(self)
-		_chama = Px.criar("fire_breath", comp / maxf(Px.tamanho("fire_breath").x, 1.0), true, "ponta")
+		_chama = Node2D.new()   # três chamas em leque (centro e ±16°) formam um cone largo
 		add_child(_chama)
+		for a in [-0.28, 0.0, 0.28]:
+			var f := Px.criar("fire_breath", comp / maxf(Px.tamanho("fire_breath").x, 1.0), true, "ponta", a)
+			if a != 0.0:
+				f.modulate.a = 0.8
+			_chama.add_child(f)
 
 	func _physics_process(delta: float) -> void:
 		if not is_instance_valid(jogador) or not jogador.is_inside_tree():
@@ -113,8 +118,12 @@ class Anel extends Node2D:
 		z_index = -1
 		Vfx.registrar_animado(self)
 		Vfx.registrar_decalque(self)
-		_anel = Px.criar("fire_ring", (raio * 2.0 + banda) / maxf(Px.tamanho("fire_ring").x, 1.0), true, "centro")
+		_anel = Node2D.new()   # dois anéis de chamas, o de dentro 14% menor, dobram a espessura da faixa
 		add_child(_anel)
+		var esc := (raio * 2.0 + banda) / maxf(Px.tamanho("fire_ring").x, 1.0)
+		for k in [1.0, 0.86]:
+			var r := Px.criar("fire_ring", esc * k, true, "centro")
+			_anel.add_child(r)
 
 	func _physics_process(delta: float) -> void:
 		_t += delta
@@ -137,7 +146,7 @@ class Anel extends Node2D:
 		var k := clampf((dur - _t) / 0.5, 0.0, 1.0)
 		var r := raio * cresce
 		_anel.modulate.a = k
-		_anel.scale = Vector2.ONE * ((raio * 2.0 + banda) / maxf(Px.tamanho("fire_ring").x, 1.0)) * maxf(cresce, 0.05)
+		_anel.scale = Vector2.ONE * maxf(cresce, 0.05)
 
 ## Bomba-Rastilho: esfera com pavio aceso presa ao inimigo; quando o pavio acaba, explode e arma as bombas dos vizinhos.
 class Bomba extends Node2D:
@@ -177,6 +186,7 @@ class Bomba extends Node2D:
 
 	func _ready() -> void:
 		z_index = 5
+		scale = Vector2(1.6, 1.6)   # bomba legível a 640x360
 		_ultimo = global_position
 
 	func _physics_process(delta: float) -> void:
@@ -208,7 +218,7 @@ class Bomba extends Node2D:
 
 	func _draw() -> void:
 		var f := clampf(_t / pavio, 0.0, 1.0)
-		var c := Vector2(0, -44)
+		var c := Vector2(0, -50)
 		var pisca := 0.5 + 0.5 * sin(_t * (8.0 + 30.0 * f))
 		draw_circle(c + Vector2(0, 3), 11.0, Color(0, 0, 0, 0.25))
 		draw_circle(c, 10.0, Color(0.12, 0.1, 0.1))

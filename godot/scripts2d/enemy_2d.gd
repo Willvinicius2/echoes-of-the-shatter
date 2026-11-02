@@ -272,7 +272,7 @@ func atualizar_tint() -> void:
 		frio = 4
 	if frio > 0 and (_status.has("lentidao") or _status.has("atordoamento")):
 		c *= Color.WHITE.lerp(Color(0.55, 0.8, 1.0), clampf(0.3 + 0.2 * float(frio), 0.0, 1.0))
-	sprite.modulate = c
+	sprite.modulate = Color.WHITE.lerp(c, 0.55)   # tinte parcial: a silhueta do inimigo continua legível
 
 func tem_status(tipo: String) -> bool:
 	return _status.has(tipo)

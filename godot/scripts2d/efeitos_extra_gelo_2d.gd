@@ -68,7 +68,7 @@ class Lanca extends Node2D:
 	func _ready() -> void:
 		z_index = 3
 		Vfx.registrar_animado(self)
-		_lanca = Px.criar("ice_lance", 1.8, false, "centro", dir.angle())
+		_lanca = Px.criar("ice_lance", 2.8, false, "centro", dir.angle())
 		_lanca.position = Vector2(0, -24)
 		add_child(_lanca)
 
@@ -86,7 +86,7 @@ class Lanca extends Node2D:
 	func _process(delta: float) -> void:
 		_t += delta
 		_lanca.position = Vector2(0, -24) + dir * comp * clampf(_t / VOO, 0.0, 1.0)
-		_lanca.modulate.a = 1.0 - clampf((_t - VOO) / 0.25, 0.0, 1.0)
+		_lanca.modulate.a = 1.0 - clampf((_t - VOO) / 0.5, 0.0, 1.0)
 		queue_redraw()
 		if _t >= VIDA:
 			queue_free()
@@ -209,7 +209,7 @@ class Nevasca extends Node2D:
 		var kk := clampf(minf(_t / 0.4, (dur - _t) / 0.5), 0.0, 1.0)
 		for i in _vortices.size():
 			var v: Node2D = _vortices[i]
-			v.modulate.a = kk
+			v.modulate = Color(1.35, 1.35, 1.5, kk)   # mais claro: lê em escala de cinza
 			if i > 0:
 				var a := _t * 0.9 + TAU * float(i - 1) / 4.0
 				v.position = Vector2(cos(a), sin(a) * 0.6) * raio * 0.62 * kk

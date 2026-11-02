@@ -165,15 +165,17 @@ class Mina extends Node2D:
 	func _draw() -> void:
 		var surgir := clampf(_t / 0.15, 0.0, 1.0)
 		var armada := _t >= ARMA
-		U.elipse(self, Vector2.ZERO, 22.0 * surgir, Color(0.05, 0.12, 0.04, 0.5))
-		for i in 6:   # espinhos em volta do casco
-			var a := TAU * float(i) / 6.0
+		var m := 2.0   # mina grande o bastante para ler a 640x360
+		U.elipse(self, Vector2.ZERO, 22.0 * m * surgir, Color(0.1, 0.25, 0.05, 0.6))
+		U.elipse_arco(self, Vector2.ZERO, 22.0 * m * surgir, Color(0.7, 1.0, 0.3, 0.7), 2.0)   # poça verde clara sob a mina
+		for i in 8:   # espinhos em volta do casco
+			var a := TAU * float(i) / 8.0
 			var d := Vector2.from_angle(a)
-			draw_colored_polygon(PackedVector2Array([d.orthogonal() * 4.0 + d * 8.0, d * 17.0 * surgir, -d.orthogonal() * 4.0 + d * 8.0]), Color(0.22, 0.4, 0.14, 0.95))
-		draw_circle(Vector2(0, -4), 10.0 * surgir, Color(0.16, 0.3, 0.1, 1.0))
-		draw_circle(Vector2(-2, -6), 5.0 * surgir, Color(0.3, 0.5, 0.2, 1.0))
+			draw_colored_polygon(PackedVector2Array([d.orthogonal() * 4.0 * m + d * 8.0 * m, d * 17.0 * m * surgir + Vector2(0, -6.0 * m), -d.orthogonal() * 4.0 * m + d * 8.0 * m]), Color(0.45, 0.75, 0.2, 0.95))
+		draw_circle(Vector2(0, -4.0 * m), 10.0 * m * surgir, Color(0.2, 0.42, 0.12, 1.0))
+		draw_circle(Vector2(-2.0 * m, -6.0 * m), 5.0 * m * surgir, Color(0.5, 0.8, 0.3, 1.0))
 		var pisca := 0.5 + 0.5 * sin(_t * (14.0 if armada else 4.0))
-		draw_circle(Vector2(0, -5), 4.0 * surgir, Color(0.7, 1.0, 0.3, (0.55 + 0.45 * pisca) if armada else 0.3))
+		draw_circle(Vector2(0, -5.0 * m), 4.0 * m * surgir, Color(0.85, 1.0, 0.4, (0.55 + 0.45 * pisca) if armada else 0.3))
 		if armada:
 			U.elipse_arco(self, Vector2.ZERO, GATILHO, Color(VERDE, 0.1 + 0.08 * pisca), 1.5)
 
@@ -184,12 +186,19 @@ class Nuvem extends Node2D:
 	var _t := 0.0
 	func _ready() -> void:
 		z_index = 3
-		var s := Px.criar("poison_cloud", raio * 2.8 / maxf(Px.tamanho("poison_cloud").x, 1.0), false, "base")
+		var s := Px.criar("spore_burst", raio * 1.6 / maxf(Px.tamanho("spore_burst").x, 1.0), false, "base")
 		add_child(s)
 		if s is AnimatedSprite2D:
 			s.animation_finished.connect(queue_free)
 		else:
 			queue_free()
+	func _process(delta: float) -> void:
+		_t += delta
+		queue_redraw()
+	func _draw() -> void:
+		var f := clampf(_t / 0.5, 0.0, 1.0)   # área do estouro: disco verde que abre até o raio e some
+		U.elipse(self, Vector2.ZERO, raio * (0.3 + 0.7 * f), Color(0.4, 0.8, 0.15, 0.35 * (1.0 - f)))
+		U.elipse_arco(self, Vector2.ZERO, raio * (0.3 + 0.7 * f), Color(0.8, 1.0, 0.4, 0.8 * (1.0 - f)), 3.0)
 
 ## Jato de ácido do chão: fere e envenena quem está em cima, com um empurrão curto (atordoamento).
 class Geiser extends Node2D:
@@ -227,7 +236,7 @@ class Geiser extends Node2D:
 		var l := 30.0 * (1.0 - f * 0.4)
 		var oco := sin(_t * 30.0) * 3.0
 		draw_colored_polygon(PackedVector2Array([Vector2(-l, 0), Vector2(-l * 0.6 + oco, -h * 0.5), Vector2(-l * 0.4, -h), Vector2(l * 0.4, -h),
-			Vector2(l * 0.6 - oco, -h * 0.5), Vector2(l, 0)]), Color(0.3, 0.65, 0.12, 0.85 * alfa))
+			Vector2(l * 0.6 - oco, -h * 0.5), Vector2(l, 0)]), Color(0.3, 0.65, 0.12, 0.5 * alfa))
 		draw_colored_polygon(PackedVector2Array([Vector2(-l * 0.5, 0), Vector2(-l * 0.25, -h * 0.55), Vector2(0, -h * 0.97), Vector2(l * 0.25, -h * 0.55), Vector2(l * 0.5, 0)]),
 			Color(0.7, 1.0, 0.35, 0.8 * alfa))
 		for i in 9:   # gotas que sobem e caem em parábola
