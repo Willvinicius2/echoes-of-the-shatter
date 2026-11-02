@@ -6,6 +6,7 @@ extends RefCounted
 const U = preload("res://scripts2d/efeitos_extra_util_2d.gd")
 const Gelo = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const Px = preload("res://scripts2d/fx_pixel_2d.gd")
 const COR := Color(0.6, 0.88, 1.0)
 const EFEITOS := ["lanca_gelo", "espinhos_gelo", "nevasca"]
 
@@ -62,10 +63,14 @@ class Lanca extends Node2D:
 	var def: Dictionary = {}
 	var _t := 0.0
 	var _feito := false
+	var _lanca: Node2D
 
 	func _ready() -> void:
 		z_index = 3
 		Vfx.registrar_animado(self)
+		_lanca = Px.criar("ice_lance", 1.8, false, "centro", dir.angle())
+		_lanca.position = Vector2(0, -24)
+		add_child(_lanca)
 
 	func _physics_process(_delta: float) -> void:
 		if _feito:
@@ -80,6 +85,8 @@ class Lanca extends Node2D:
 
 	func _process(delta: float) -> void:
 		_t += delta
+		_lanca.position = Vector2(0, -24) + dir * comp * clampf(_t / VOO, 0.0, 1.0)
+		_lanca.modulate.a = 1.0 - clampf((_t - VOO) / 0.25, 0.0, 1.0)
 		queue_redraw()
 		if _t >= VIDA:
 			queue_free()
@@ -94,15 +101,7 @@ class Lanca extends Node2D:
 			var u := (float(i) + 0.5) / 12.0
 			if u <= voo:
 				U.elipse(self, dir * comp * u + Vector2(0, 0), larg * 1.1, Color(0.85, 0.96, 1.0, 0.35 * alfa))
-		if _t < VOO + 0.04:   # a lança em voo: haste fina e comprida com ponta grossa
-			var ponta := org + dir * comp * voo
-			var cauda := ponta - dir * minf(comp * voo, 300.0)
-			var cabeca := ponta - dir * 46.0
-			var haste := PackedVector2Array([cauda + o * 2.0, cabeca + o * 7.0, ponta, cabeca - o * 7.0, cauda - o * 2.0])
-			draw_colored_polygon(haste, Color(0.2, 0.45, 0.85, 0.95))
-			draw_colored_polygon(PackedVector2Array([cauda, cabeca + o * 3.5, ponta, cabeca - o * 1.0]), Color(0.85, 0.97, 1.0, 0.95))
-			U.orbe(self, ponta, 6.0, Color(0.85, 0.97, 1.0))
-		else:   # estilhaços saindo da linha para os dois lados
+		if _t >= VOO:   # estilhaços saindo da linha para os dois lados
 			var k := (_t - VOO) / (VIDA - VOO)
 			for i in 14:
 				var u := (float(i) + 0.5) / 14.0
@@ -139,6 +138,12 @@ class Espinhos extends Node2D:
 		for i in n:
 			if not _feito[i] and _t >= float(i) * PASSO:
 				_feito[i] = true
+				if i % 2 == 0:   # um cacho de espinhos pintado a cada dois pontos da fila
+					var cacho := Px.criar("ice_spikes", raio * 2.6 / maxf(Px.tamanho("ice_spikes").x, 1.0), false, "base")
+					cacho.position = _pos(i)
+					add_child(cacho)
+					if cacho is AnimatedSprite2D:
+						cacho.animation_finished.connect(cacho.queue_free)
 				var p := global_position + _pos(i)
 				for e in U.no_raio(self, p, raio):
 					e.take_damage(dano, p)
@@ -162,9 +167,8 @@ class Espinhos extends Node2D:
 				var a := TAU * float(j) / 5.0 + float(i)
 				draw_line(p, p + Vector2.from_angle(a) * Vector2(raio, raio * 0.5) * 0.9, Color(0.4, 0.6, 0.9, 0.55 * alfa), 1.5)
 			var h := ALTURA * sobe * (1.0 - 0.18 * float(i) / float(n))
-			U.cristal(self, p + Vector2(-16, 2), -PI / 2 - 0.35, h * 0.6, 7.0, alfa)
-			U.cristal(self, p + Vector2(16, 2), -PI / 2 + 0.35, h * 0.62, 7.0, alfa)
-			U.cristal(self, p, -PI / 2, h, 11.0, alfa)
+			if i % 2 == 1:   # os pontos sem cacho pintado ganham um cristal menor por código
+				U.cristal(self, p, -PI / 2, h * 0.6, 8.0, alfa)
 
 ## Nevasca: tempestade de neve gira em volta do arqueiro por `duracao` s; a cada pulso fere e soma 1 de frio em quem está dentro.
 class Nevasca extends Node2D:
@@ -178,10 +182,16 @@ class Nevasca extends Node2D:
 	var _acc := 0.0
 	var _onda := 1.0   # 0..1: anel do último pulso
 
+	var _vortices: Array = []
+
 	func _ready() -> void:
 		add_to_group("nevasca")
 		z_index = -1
 		Vfx.registrar_animado(self)
+		for i in 5:   # 1 funil no centro e 4 em volta, girando devagar
+			var v := Px.criar("blizzard_vortex", 1.6 if i == 0 else 1.1, true, "base")
+			add_child(v)
+			_vortices.append(v)
 
 	func _physics_process(delta: float) -> void:
 		_t += delta
@@ -196,6 +206,14 @@ class Nevasca extends Node2D:
 				e.take_damage(dano, global_position)
 				if is_instance_valid(e):
 					Gelo.acumular_frio(e, 1, d)
+		var kk := clampf(minf(_t / 0.4, (dur - _t) / 0.5), 0.0, 1.0)
+		for i in _vortices.size():
+			var v: Node2D = _vortices[i]
+			v.modulate.a = kk
+			if i > 0:
+				var a := _t * 0.9 + TAU * float(i - 1) / 4.0
+				v.position = Vector2(cos(a), sin(a) * 0.6) * raio * 0.62 * kk
+			v.z_index = int(v.position.y)
 		queue_redraw()
 		if _t >= dur:
 			queue_free()

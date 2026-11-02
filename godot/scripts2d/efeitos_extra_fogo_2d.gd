@@ -6,6 +6,7 @@ extends RefCounted
 const U = preload("res://scripts2d/efeitos_extra_util_2d.gd")
 const Fu = preload("res://scripts2d/fogo_util_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const Px = preload("res://scripts2d/fx_pixel_2d.gd")
 const EFEITOS := ["sopro_chamas", "anel_fogo", "bomba_rastilho"]
 const MAX_CADEIA := 14   # teto de bombas vivas numa mesma reação em cadeia (orçamento de FPS)
 
@@ -62,9 +63,13 @@ class Sopro extends Node2D:
 	var _t := 0.0
 	var _acc := 0.0
 
+	var _chama: Node2D
+
 	func _ready() -> void:
 		z_index = 3
 		Vfx.registrar_animado(self)
+		_chama = Px.criar("fire_breath", comp / maxf(Px.tamanho("fire_breath").x, 1.0), true, "ponta")
+		add_child(_chama)
 
 	func _physics_process(delta: float) -> void:
 		if not is_instance_valid(jogador) or not jogador.is_inside_tree():
@@ -84,25 +89,11 @@ class Sopro extends Node2D:
 					e.take_damage(dano, global_position)
 					if is_instance_valid(e):
 						Fu.queimar(e, queima_s, dps)
-		queue_redraw()
+		_chama.position = dir * 26.0 + Vector2(0, -26)
+		_chama.rotation = dir.angle()
+		_chama.modulate.a = clampf(minf(_t / 0.12, (dur + 0.3 - _t) / 0.3), 0.0, 1.0)
 		if _t >= dur + 0.3:
 			queue_free()
-
-	func _draw() -> void:
-		var k := clampf(minf(_t / 0.12, (dur + 0.3 - _t) / 0.3), 0.0, 1.0)
-		var org := dir * 26.0 + Vector2(0, -26)
-		draw_circle(org, 15.0 * k, Color(1.0, 0.6, 0.15, 0.35))
-		var chamas: Array = []
-		for i in 36:   # línguas que saem da boca, abrem no cone e crescem com a distância; as de trás desenham primeiro
-			var ciclo := _t * 2.4 + float(i) * 0.0278 * 7.0
-			var u := fposmod(ciclo, 1.0)
-			var lado := U.ruido(float(i), floorf(ciclo))
-			var p := org + dir.rotated(lado * meio_ang) * comp * u * k
-			chamas.append([p, u])
-		chamas.sort_custom(func(a, b): return a[1] > b[1])
-		for c in chamas:
-			var u: float = c[1]
-			U.chama(self, c[0] + Vector2(0, 8.0 * u), (16.0 + 30.0 * u) * k, 5.0 + 13.0 * u, u * 13.0 + _t * 9.0, 1.0 - u * u * 0.8)
 
 ## Anel de Fogo: círculo de chamas parado no chão; quem está na faixa do anel queima e leva dano em pulsos.
 class Anel extends Node2D:
@@ -116,10 +107,14 @@ class Anel extends Node2D:
 	var _t := 0.0
 	var _acc := 0.0
 
+	var _anel: Node2D
+
 	func _ready() -> void:
 		z_index = -1
 		Vfx.registrar_animado(self)
 		Vfx.registrar_decalque(self)
+		_anel = Px.criar("fire_ring", (raio * 2.0 + banda) / maxf(Px.tamanho("fire_ring").x, 1.0), true, "centro")
+		add_child(_anel)
 
 	func _physics_process(delta: float) -> void:
 		_t += delta
@@ -141,21 +136,8 @@ class Anel extends Node2D:
 		var r := raio * cresce
 		draw_arc(Vector2.ZERO, r, 0.0, TAU, 56, Color(0.35, 0.06, 0.02, 0.45 * k), banda)   # chão chamuscado sob o anel
 		draw_arc(Vector2.ZERO, r, 0.0, TAU, 56, Color(1.0, 0.4, 0.08, 0.3 * k), banda * 0.5)
-		var n := 30
-		for passo in 2:   # primeiro as chamas do fundo (parte de cima do círculo), depois as da frente
-			for i in n:
-				var a := TAU * float(i) / float(n)
-				var s := sin(a)
-				if (s < 0.0) != (passo == 0):
-					continue
-				var p := Vector2(cos(a), s) * r
-				var h := (30.0 + 22.0 * (0.5 + 0.5 * U.ruido(float(i), floorf(_t * 9.0)))) * k
-				U.chama(self, p, h, 11.0, float(i) * 1.7 + _t * 7.0, k)
-		for i in 14:   # brasas que sobem
-			var fase := fposmod(_t * 0.7 + float(i) * 0.19, 1.0)
-			var a := float(i) * 1.9
-			var p := Vector2(cos(a), sin(a)) * r + Vector2(0, -20.0 - 70.0 * fase)
-			draw_circle(p, 2.2 * (1.0 - fase) * k + 0.6, Color(1.0, 0.75, 0.3, 0.9 * (1.0 - fase) * k))
+		_anel.modulate.a = k
+		_anel.scale = Vector2.ONE * ((raio * 2.0 + banda) / maxf(Px.tamanho("fire_ring").x, 1.0)) * maxf(cresce, 0.05)
 
 ## Bomba-Rastilho: esfera com pavio aceso presa ao inimigo; quando o pavio acaba, explode e arma as bombas dos vizinhos.
 class Bomba extends Node2D:
@@ -245,20 +227,10 @@ class Explosao extends Node2D:
 	var _t := 0.0
 	func _ready() -> void:
 		z_index = 6
-	func _process(delta: float) -> void:
-		_t += delta
-		queue_redraw()
-		if _t >= VIDA:
+		var s := Px.criar("barrel_explosion", raio * 2.6 / maxf(Px.tamanho("barrel_explosion").x, 1.0), false, "base")
+		s.position = Vector2(0, 14)
+		add_child(s)
+		if s is AnimatedSprite2D:
+			s.animation_finished.connect(queue_free)
+		else:
 			queue_free()
-	func _draw() -> void:
-		var f := clampf(_t / VIDA, 0.0, 1.0)
-		var abre := 1.0 - pow(1.0 - minf(f * 2.2, 1.0), 2.0)
-		var alfa := 1.0 - f * f
-		var c := Vector2(0, -16)
-		draw_circle(c, raio * abre, Color(0.75, 0.16, 0.05, 0.5 * alfa))
-		draw_circle(c, raio * abre * 0.75, Color(1.0, 0.5, 0.1, 0.65 * alfa))
-		draw_circle(c, raio * abre * 0.45, Color(1.0, 0.9, 0.45, 0.8 * alfa))
-		draw_arc(c, raio * (0.6 + 0.5 * f), 0.0, TAU, 40, Color(1.0, 0.8, 0.4, 0.8 * alfa), 3.0)
-		for i in 12:
-			var a := TAU * float(i) / 12.0 + 0.2
-			draw_line(c + Vector2.from_angle(a) * raio * 0.5 * abre, c + Vector2.from_angle(a) * raio * (0.7 + 0.5 * f), Color(1.0, 0.85, 0.4, 0.9 * alfa), 2.0)

@@ -6,6 +6,7 @@ extends RefCounted
 const U = preload("res://scripts2d/efeitos_extra_util_2d.gd")
 const Raio = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const Px = preload("res://scripts2d/fx_pixel_2d.gd")
 const COR := Color(0.45, 0.72, 1.0)
 const EFEITOS := ["trovoada", "tempestade_raios", "orbes_tempestade"]
 
@@ -67,6 +68,9 @@ class Estrela extends Node2D:
 	func _ready() -> void:
 		z_index = 3
 		Vfx.registrar_animado(self)
+		var onda := Px.criar("thunderclap", raio * 2.0 / maxf(Px.tamanho("thunderclap").x, 1.0), false, "centro")
+		onda.position = Vector2(0, -4)
+		add_child(onda)
 
 	func _physics_process(delta: float) -> void:
 		_t += delta
@@ -125,6 +129,14 @@ class Tempestade extends Node2D:
 		_rng.randomize()
 		Vfx.registrar_animado(self)
 		Vfx.anel_entrada(get_parent(), global_position, raio, COR)
+		var nuvem := Px.criar("storm_cloud", raio * 1.5 / maxf(Px.tamanho("storm_cloud").x, 1.0), true, "base")
+		nuvem.position = Vector2(0, -150)
+		nuvem.modulate.a = 0.0
+		add_child(nuvem)
+		nuvem.create_tween().tween_property(nuvem, "modulate:a", 1.0, 0.35)
+		get_tree().create_timer(maxf(dur - 0.4, 0.2)).timeout.connect(func():
+			if is_instance_valid(nuvem):
+				nuvem.create_tween().tween_property(nuvem, "modulate:a", 0.0, 0.4))
 
 	func _physics_process(delta: float) -> void:
 		_t += delta
@@ -164,13 +176,7 @@ class Tempestade extends Node2D:
 
 	func _draw() -> void:
 		var f := clampf(_t / 0.35, 0.0, 1.0) * clampf((dur + AVISO - _t) / 0.4, 0.0, 1.0)
-		var topo := Vector2(0, -300)
-		for i in 7:   # nuvem: bolhas escuras sobrepostas, com o interior iluminado a cada raio
-			var a := float(i) / 6.0 * TAU
-			var p := topo + Vector2(cos(a) * raio * 0.38, sin(a) * raio * 0.1 + sin(_t * 1.3 + i) * 5.0)
-			draw_circle(p, (raio * 0.2) * f, Color(0.14, 0.17, 0.3, 0.7 * f))
-			draw_circle(p + Vector2(0, -6), (raio * 0.12) * f, Color(0.35, 0.45, 0.7, (0.35 + 0.5 * _flash) * f))
-		draw_circle(topo, raio * 0.26 * f, Color(0.1, 0.12, 0.24, 0.8 * f))
+		draw_circle(Vector2(0, -150), raio * 0.5 * _flash, Color(0.6, 0.75, 1.0, 0.08 * _flash))   # clarão do raio sobre a nuvem
 		U.elipse_arco(self, Vector2.ZERO, raio, Color(COR, 0.22 * f), 2.0)   # limite da área sobre o chão
 
 ## Coluna de raio caindo do céu (curta). Nó solto no mundo, na posição do impacto.
@@ -180,16 +186,20 @@ class Coluna extends Node2D:
 	var _t := 0.0
 	func _ready() -> void:
 		z_index = 5
+		var raio_px := Px.criar("lightning_strike", 1.6, false, "base")
+		add_child(raio_px)
+		if raio_px is AnimatedSprite2D:
+			raio_px.animation_finished.connect(queue_free)
+		else:
+			queue_free()
 	func _process(delta: float) -> void:
 		_t += delta
 		queue_redraw()
-		if _t >= VIDA:
+		if _t >= VIDA * 6.0:
 			queue_free()
 	func _draw() -> void:
 		var alfa := 1.0 - clampf(_t / VIDA, 0.0, 1.0)
-		U.raio_zz(self, Vector2(sem * 0.0, -440), Vector2.ZERO, COR, 4.5, sem + floorf(_t * 40.0), alfa, 10)
 		U.elipse(self, Vector2.ZERO, 54.0 * (0.5 + _t / VIDA), Color(0.7, 0.88, 1.0, 0.35 * alfa))
-		draw_circle(Vector2(0, -4), 13.0 * alfa, Color(1, 1, 1, 0.9 * alfa))
 
 ## Orbes Tempestuosos: `n` esferas elétricas giram em volta do arqueiro, ligadas por arcos; ferem e chocam quem encosta.
 class Orbes extends Node2D:
@@ -202,10 +212,16 @@ class Orbes extends Node2D:
 	var _t := 0.0
 	var _ultimo: Dictionary = {}
 
+	var _sprites: Array = []
+
 	func _ready() -> void:
 		add_to_group("orbes_tempestade")
 		z_index = 4
 		Vfx.registrar_animado(self)
+		for i in n:
+			var s := Px.criar("ball_lightning", 0.8, true, "centro")
+			add_child(s)
+			_sprites.append(s)
 
 	func _pos(i: int) -> Vector2:
 		return Vector2.from_angle(_t * 3.2 + TAU * float(i) / float(n)) * raio_orb
@@ -220,6 +236,8 @@ class Orbes extends Node2D:
 					e.take_damage(dano, p)
 					if is_instance_valid(e):
 						Raio.aplicar_choque(e, 2.0, val)
+		for i in _sprites.size():
+			_sprites[i].position = _pos(i) + Vector2(0, -22)
 		queue_redraw()
 		if _t >= dur:
 			queue_free()
@@ -233,5 +251,5 @@ class Orbes extends Node2D:
 			var a := _pos(i) + alt
 			if n > 1:
 				U.raio_zz(self, a, _pos((i + 1) % n) + alt, COR, 1.6, sem + i, 0.55 * k, 5)
-		for i in n:
-			U.orbe(self, _pos(i) + alt, 9.0 * k, COR, k)
+		for s in _sprites:
+			s.modulate.a = k

@@ -4,6 +4,7 @@ extends RefCounted
 
 const U = preload("res://scripts2d/efeitos_extra_util_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const Px = preload("res://scripts2d/fx_pixel_2d.gd")
 const VERDE := Color(0.45, 0.9, 0.25)
 const EFEITOS := ["contagio", "minas_toxicas", "geiser_acido"]
 const DUR_VENENO := 3.0   # tempo de cada aplicação de veneno das nuvens e jatos (renovado a cada pulso)
@@ -73,6 +74,8 @@ class Foco extends Node2D:
 	var _acc := 0.4
 	var _ligados: Array = []   # posições globais dos contaminados no último pulso
 
+	var _prox_esporo := 0.0
+
 	func _ready() -> void:
 		z_index = 2
 		Vfx.registrar_animado(self)
@@ -80,6 +83,9 @@ class Foco extends Node2D:
 	func _physics_process(delta: float) -> void:
 		_t += delta
 		_acc += delta
+		if _t >= _prox_esporo:   # cogumelo de esporos estoura sobre o foco a cada 1,3 s
+			_prox_esporo = _t + 1.3
+			Px.tocar(get_parent(), "spore_burst", global_position + Vector2(0, 4), 0.9, "base", 0.0, 3)
 		var vivo: bool = is_instance_valid(alvo) and alvo.is_inside_tree() and not (alvo.has_method("esta_morto") and alvo.esta_morto())
 		if vivo:
 			global_position = alvo.global_position
@@ -178,21 +184,12 @@ class Nuvem extends Node2D:
 	var _t := 0.0
 	func _ready() -> void:
 		z_index = 3
-	func _process(delta: float) -> void:
-		_t += delta
-		queue_redraw()
-		if _t >= VIDA:
+		var s := Px.criar("poison_cloud", raio * 2.2 / maxf(Px.tamanho("poison_cloud").x, 1.0), false, "base")
+		add_child(s)
+		if s is AnimatedSprite2D:
+			s.animation_finished.connect(queue_free)
+		else:
 			queue_free()
-	func _draw() -> void:
-		var f := clampf(_t / VIDA, 0.0, 1.0)
-		var alfa := 1.0 - f * f
-		U.elipse(self, Vector2.ZERO, raio * (0.4 + 0.6 * minf(f * 3.0, 1.0)), Color(0.3, 0.65, 0.12, 0.3 * alfa))
-		for i in 9:
-			var a := float(i) * 0.7 + 1.1
-			var r := raio * 0.62 * sqrt(float(i + 1) / 9.0)
-			var p := Vector2(cos(a), sin(a) * 0.6) * r * minf(f * 2.5, 1.0) + Vector2(0, -f * 36.0 - float(i % 3) * 8.0)
-			draw_circle(p, 16.0 + 10.0 * f, Color(0.35, 0.7, 0.15, 0.4 * alfa))
-			draw_circle(p + Vector2(-3, -3), 8.0 + 5.0 * f, Color(0.65, 0.95, 0.35, 0.35 * alfa))
 
 ## Jato de ácido do chão: fere e envenena quem está em cima, com um empurrão curto (atordoamento).
 class Geiser extends Node2D:
@@ -207,6 +204,7 @@ class Geiser extends Node2D:
 	func _ready() -> void:
 		z_index = 3
 		Vfx.registrar_animado(self)
+		add_child(Px.criar("acid_splash", AREA * 2.4 / maxf(Px.tamanho("acid_splash").x, 1.0), false, "base"))
 
 	func _physics_process(delta: float) -> void:
 		_t += delta
