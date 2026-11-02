@@ -1,4 +1,4 @@
-﻿extends SceneTree
+extends SceneTree
 ## Mede FPS e tempos reais COM JANELA (nao use --headless): cena Run2D, arqueiro com habilidades ativas.
 ##   godot --path godot --script res://scripts2d/tools/fps_janela_2d.gd -- [segundos=30] [id=hollow_sentinel] [vsync=0]
 ## Fases: inicio da fase, horda de 200, horda de 500 (acumulada). Imprime por fase: FPS medio, p99,
