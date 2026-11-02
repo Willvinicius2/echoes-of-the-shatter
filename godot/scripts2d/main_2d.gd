@@ -28,6 +28,11 @@ func _ready() -> void:
 	var sv := SubViewport.new()
 	sv.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
 	sv.handle_input_locally = true
+	sv.disable_3d = true                      # mundo 100% 2D: sem o caminho 3D do Forward+ no SubViewport
+	sv.snap_2d_transforms_to_pixel = true     # posições na grade de pixels (sem tremida de sub-pixel)
+	sv.snap_2d_vertices_to_pixel = true
+	sv.msaa_2d = Viewport.MSAA_DISABLED
+	sv.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_cont.add_child(sv)
 	run.ui_raiz = self   # a interface sai do SubViewport e fica na janela
 	sv.add_child(run)
