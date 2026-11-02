@@ -86,6 +86,8 @@ static func acumular_frio(inimigo: Node, qtd: int, def: Dictionary) -> void:
 	inimigo.set_meta("frio_acumulos", n)
 	inimigo.aplicar_status("lentidao", def.get("duracao", 3.0), minf(def.get("valor", 0.15) * n, 0.7))
 	_overlay(inimigo)
+	if inimigo.has_method("atualizar_tint"):
+		inimigo.atualizar_tint()
 	if n >= MAX_ACUMULOS:
 		inimigo.set_meta("frio_acumulos", 0)
 		congelar(inimigo, def.get("duracao", 3.0) * 0.5)
@@ -96,6 +98,8 @@ static func congelar(inimigo: Node, dur: float) -> void:
 		return
 	inimigo.aplicar_status("atordoamento", dur)
 	inimigo.set_meta("congelado_ate", Time.get_ticks_msec() + int(dur * 1000.0))
+	if inimigo.has_method("atualizar_tint"):
+		inimigo.atualizar_tint()
 	_overlay(inimigo, true)
 
 static func esta_congelado(inimigo: Node) -> bool:

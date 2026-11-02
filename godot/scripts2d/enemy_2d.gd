@@ -253,6 +253,26 @@ func aplicar_status(tipo: String, dur: float, valor := 0.0) -> void:
 	elif tipo == "queimadura" and not has_node("OverlayQueimadura"):
 		Fogo.overlay_queimadura(self).name = "OverlayQueimadura"
 	_recalcular_status()
+	atualizar_tint()
+
+## Cor do sprite por status (legibilidade com horda, crítica de 02/11): veneno esverdeia, queimadura avermelha, choque esbranquiça,
+## frio azula mais a cada acúmulo (4 = congelado). Só mexe em `sprite.modulate`; sem status volta ao branco.
+func atualizar_tint() -> void:
+	if sprite == null:
+		return
+	var c := Color.WHITE
+	if _status.has("veneno"):
+		c *= Color(0.7, 1.0, 0.55)
+	if _status.has("queimadura"):
+		c *= Color(1.0, 0.72, 0.55)
+	if _status.has("choque"):
+		c *= Color(0.82, 0.88, 1.0)
+	var frio := int(get_meta("frio_acumulos", 0))
+	if has_meta("congelado_ate") and Time.get_ticks_msec() < int(get_meta("congelado_ate")):
+		frio = 4
+	if frio > 0 and (_status.has("lentidao") or _status.has("atordoamento")):
+		c *= Color.WHITE.lerp(Color(0.55, 0.8, 1.0), clampf(0.3 + 0.2 * float(frio), 0.0, 1.0))
+	sprite.modulate = c
 
 func tem_status(tipo: String) -> bool:
 	return _status.has(tipo)
@@ -285,6 +305,7 @@ func _tick_status(delta: float) -> void:
 			return
 	if mudou:
 		_recalcular_status()
+		atualizar_tint()
 
 func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
 	if estado == Estado.MORTO:
