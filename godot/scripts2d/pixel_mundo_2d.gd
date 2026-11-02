@@ -1,12 +1,12 @@
 extends CanvasLayer
 ## Filtro de pixel art do mundo: reduz a imagem do jogo (sem a HUD) para uma grade interna baixa
-## (pixel_base_x por pixel_base_y, ex. 480x270) com amostragem "nearest" e, se quiser, paleta reduzida.
+## (pixel_base_x por pixel_base_y, ex. 640x360) com amostragem "nearest" e, se quiser, paleta reduzida.
 ## Fica acima do mundo e abaixo da HUD. Números em run_settings.csv (pixel_*).
 
 const SHADER_CODIGO := """
 shader_type canvas_item;
 uniform sampler2D tela : hint_screen_texture, filter_nearest, repeat_disable;
-uniform vec2 grade = vec2(480.0, 270.0);
+uniform vec2 grade = vec2(640.0, 360.0);
 uniform float niveis = 0.0;
 void fragment() {
 	vec2 sz = vec2(textureSize(tela, 0));
