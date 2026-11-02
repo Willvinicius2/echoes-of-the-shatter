@@ -1,0 +1,68 @@
+name: capturas-pixel
+# Capturas das salas com o filtro de pixel art, para revisão visual. Ponha o rótulo `capturas-pixel` no PR.
+# Resultado: artefato `capturas-pixel` e branch `capturas/pr-<número>-pixel`.
+on:
+  pull_request:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  capturas:
+    if: contains(github.event.pull_request.labels.*.name, 'capturas-pixel')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true  # só tira capturas: nunca bloqueia o PR
+    env:
+      GODOT: ./Godot_v4.4.1-stable_linux.x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
+        run: |
+          git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
+          cmake -S godot/gdextension -B build-ext -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
+          cmake --build build-ext -j"$(nproc)"
+      - name: Baixar Godot e dependências de tela virtual
+        run: |
+          curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.4.1-stable_linux.x86_64
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1 libxi6 libxcursor1 libxrandr2 libxinerama1
+      - name: Montar projeto só com o cliente 2D (sem C#)
+        run: |
+          mkdir proj
+          for d in scripts2d scenes2d data2d art2d gdextension addons; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          ln -s "$PWD/godot/shatter_rogue.gdextension" proj/shatter_rogue.gdextension
+          python3 - <<'PY'
+          import re
+          s = open('godot/project.godot').read()
+          s = s.replace('"4.7", "C#", "Forward Plus"', '"4.4", "Forward Plus"')
+          s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
+          open('proj/project.godot', 'w').write(s)
+          PY
+          timeout -k 5 180 $GODOT --headless --path proj --import || true
+      - name: Capturar as salas
+        run: |
+          mkdir -p capturas
+          for res in 1600x900 2560x1440; do
+            timeout -k 5 150 xvfb-run -a -s "-screen 0 ${res}x24" $GODOT --path proj --rendering-driver opengl3 --resolution "$res" --script res://scripts2d/tools/captura_pixel_2d.gd -- "$PWD/capturas/fase_${res}" || true
+          done
+          ls -la capturas
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capturas-pixel
+          path: capturas/
+      - name: Publicar na branch capturas/pr-<número>-pixel
+        run: |
+          cd capturas
+          if ! ls *.png >/dev/null 2>&1; then echo "sem capturas"; exit 0; fi
+          git init -q
+          git checkout -q -b "capturas/pr-${{ github.event.pull_request.number }}-pixel"
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "capturas do PR ${{ github.event.pull_request.number }}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "capturas/pr-${{ github.event.pull_request.number }}-pixel"

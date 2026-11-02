@@ -255,7 +255,11 @@ func _criar_barra() -> void:
 	_ctl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ctl.draw.connect(_desenhar_barra)
 	_barra.add_child(_ctl)
-	add_child(_barra)
+	if get_viewport() == get_tree().root:
+		add_child(_barra)
+	else:   # mundo num SubViewport de pixel art: a barra fica na janela, nítida
+		get_tree().root.add_child(_barra)
+		tree_exiting.connect(_barra.queue_free)
 
 func _process(delta: float) -> void:
 	if _glow_t > 0.0:
