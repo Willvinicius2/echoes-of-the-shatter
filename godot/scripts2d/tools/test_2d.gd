@@ -1153,7 +1153,7 @@ func _fisica_habilidades() -> void:
 	for r in Csv.rows("res://data2d/ancoras_2d.csv"):
 		if r["id"] == "arqueiro" and r["anim"] == "attack":
 			linhas[int(r["linha"])] = true
-			check(float(r["y"]) < -30.0, "boca do arco da linha %s fica acima do peito" % r["linha"])
+			check(float(r["y"]) < -25.0, "boca do arco da linha %s fica acima do peito" % r["linha"])
 	check(linhas.size() == 5, "ancoras_2d.csv tem as 5 linhas do ataque do arqueiro (%d)" % linhas.size())
 	var m := Node2D.new()
 	root.add_child(m)

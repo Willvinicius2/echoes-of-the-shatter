@@ -24,6 +24,7 @@ var _desloc_ant := Vector2.ZERO
 var _morrendo := false
 var _flash_ligado := false
 var _dir_k := -1
+var _esc_base := 1.0   # escala de mundo do sprite (sprites_escala.csv)
 var _sombra_a := 1.0
 var _recuo := Vector2.ZERO   # recuo do sprite ao disparar (doc 33 seção 2): só o desenho, a colisão não muda
 var _recuo_t := 0.0
@@ -34,6 +35,8 @@ func setup_sprite(id: String) -> void:
 	sprite = AnimatedSprite2D.new()
 	sprite.sprite_frames = SpriteLoader.frames_for(id)
 	sprite.offset = SpriteLoader.info(id)["offset"]
+	_esc_base = float(SpriteLoader.info(id)["escala"])
+	sprite.scale = Vector2(_esc_base, _esc_base)
 	if not _mat_sob_demanda:
 		_mat = Feel.material_ator()
 		sprite.material = _mat
@@ -74,7 +77,7 @@ func evento(base: String) -> int:
 	return SpriteLoader.info(char_id)["evento"].get(base, 0)
 
 func escala_sprite() -> float:
-	return float(SpriteLoader.info(char_id)["lado"]) / 128.0
+	return float(SpriteLoader.info(char_id)["lado"]) * float(SpriteLoader.info(char_id)["escala"]) / 128.0
 
 func anim_base() -> String:
 	return _anim_base
@@ -171,13 +174,22 @@ func _precisa_redesenhar() -> bool:
 
 ## Respiração do idle por código (os quadros da folha mal mudam): o corpo estica de 2 a 3 px a partir dos pés.
 func _respirar(delta: float) -> void:
+	if _esc_base != 1.0:
+		# pixel art na grade: 1 px do sprite = 1 px da grade, então a escala é 1 / zoom da câmera (esticar pisca;
+		# a respiração vem dos quadros da folha)
+		var vp := get_viewport()
+		var cam := vp.get_camera_2d() if vp is SubViewport else null   # só o mundo de pixel art (SubViewport) escala por 1/zoom
+		var e := _esc_base if cam == null else 1.0 / maxf(cam.zoom.x, 0.05)   # fora do SubViewport (testes, modo normal), fica na escala do CSV
+		if absf(sprite.scale.x - e) > 0.001:
+			sprite.scale = Vector2(e, e)
+		return
 	if _anim_base == "idle":
 		_fase_respiro += delta * 2.4
 		var r := sin(_fase_respiro)
 		var k := 1.0 / escala_sprite()  # sprite maior (chefe) respira a mesma quantidade de px, não a mesma fração
-		sprite.scale = Vector2(1.0 - 0.012 * k * r, 1.0 + 0.026 * k * r)
-	elif sprite.scale != Vector2.ONE:
-		sprite.scale = Vector2.ONE
+		sprite.scale = Vector2(1.0 - 0.012 * k * r, 1.0 + 0.026 * k * r) * _esc_base
+	elif sprite.scale != Vector2(_esc_base, _esc_base):
+		sprite.scale = Vector2(_esc_base, _esc_base)
 
 var _sombra_externa := false   # true: a sombra é desenhada pelo sombras_2d.gd (MultiMesh)
 
