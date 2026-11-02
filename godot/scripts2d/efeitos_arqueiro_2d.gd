@@ -61,13 +61,13 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 		"furia":
 			var v: float = def.get("valor", 0.35)
 			jogador.dar_buff(def.get("duracao", 5.0), 1.0 + v * 0.5, 1.0 / (1.0 - minf(v, 0.8)))
-		"tiro_veneno", "bola_veneno", "chuva_corrosiva":
+		"tiro_veneno", "bola_veneno", "chuva_corrosiva", "tornado_toxico":
 			return Veneno.executar(efeito, jogador, def, nivel, mira)
-		"gelo_flecha", "gelo_estilhaco", "gelo_prisao":
+		"gelo_flecha", "gelo_estilhaco", "gelo_prisao", "cometa_gelo", "nova_gelo":
 			return Gelo.executar(efeito, jogador, def, nivel, mira)
-		"tiro_ardente", "meteoro", "muralha":
+		"tiro_ardente", "meteoro", "muralha", "serpente_fogo":
 			return Fogo.executar(efeito, jogador, def, nivel, mira)
-		"flecha_eletrica", "raio_encadeado", "tornado":
+		"flecha_eletrica", "raio_encadeado", "tornado", "haste_eletrica":
 			return Raio.executar(efeito, jogador, def, nivel, mira)
 		_:
 			push_error("Efeito de arqueiro desconhecido: " + efeito)

@@ -522,3 +522,24 @@ passivo.pre_herald.name,Pacto dos Arautos
 passivo.pre_herald.desc,Começa a corrida com +15% de dano dos Arautos
 passivo.pre_elem.name,Iniciado dos Elementos
 passivo.pre_elem.desc,Começa a corrida com +8% de dano em fogo, gelo, raio e veneno
+skill.toxic_tornado.name,Ciclone Pestilento
+skill.toxic_tornado.desc,"A flecha sobe e cai como um ciclone de miasma que anda atrás da horda, sopra os inimigos para fora, envenena e deixa poças"
+skill.ice_comet.name,Cometa Gélido
+skill.ice_comet.desc,"Um cometa de gelo cai do céu: fere, soma frio e deixa o chão gelado e rachado, lento para quem pisa"
+skill.frost_nova.name,Nova Gélida
+skill.frost_nova.desc,"Um anel de gelo explode do arqueiro em todas as direções, fere e gela quem alcança e lança lascas"
+skill.fire_serpent.name,Serpente de Brasa
+skill.fire_serpent.desc,"Uma chama serpenteia pelo chão atrás do inimigo mais perto, queima quem toca e deixa brasas no caminho"
+skill.lightning_rod.name,Haste Elétrica
+skill.lightning_rod.desc,"A flecha finca no chão e vira um para-raios: descarrega raios nos inimigos em volta enquanto durar"
+skill.eco_trovao.name,Eco do Trovão
+skill.eco_trovao.desc,"Flecha básica mais rápida; ao acertar, um arco salta para um vizinho e choca os dois"
+skill.eco_peste.name,Eco da Peste
+skill.eco_peste.desc,"Flecha básica mais lenta e pesada que atravessa um corpo e envenena tudo o que toca"
+skill.eco_gelo.name,Eco do Gelo
+skill.eco_gelo.desc,"Flecha básica de cristal: cada acerto soma frio; no quarto, o inimigo congela"
+skill.eco_cinzas.name,Eco das Cinzas
+skill.eco_cinzas.desc,"Flecha básica em chamas: +10% de dano, queima e deixa uma brasa no chão"
+upgrade.afinidade,Escolha o Eco do seu arco (vale pela corrida)
+ramo.afinidade.name,Ecos
+hud.afinidade,Eco escolhido: %s

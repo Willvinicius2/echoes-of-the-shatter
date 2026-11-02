@@ -30,6 +30,7 @@ const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const PortalScript = preload("res://scripts2d/portal_2d.gd")
 const GemaScript = preload("res://scripts2d/gema_2d.gd")
+const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
 const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
 
 ## Testes do fluxo antigo de etapas (salas com porta, rotas) ligam isto antes de criar a corrida.
@@ -157,6 +158,8 @@ func _montar_camada_partida() -> void:
 		h.persistir = false
 		h.carregar_classe(Classe.atual)   # sem núcleo: cria um core novo e vazio
 		player.habilidades = h
+		if "afinidade" in player:
+			player.afinidade = ""   # o Eco do básico é escolhido de novo a cada corrida (doc 36)
 		if tem_heralds:
 			h.mudou.connect(player._atualizar_heralds)
 			player._atualizar_heralds()
@@ -559,12 +562,41 @@ func _usar_gema_habilidade() -> void:
 	if ui.aberta:
 		_gemas_pendentes += 1
 		return
+	# Primeira gema do arqueiro na corrida: escolha do Eco do básico entre as QUATRO afinidades (doc 36 seção 2).
+	if "afinidade" in player and player.afinidade == "" and int(config.get("affinity_first_gem", 1)) == 1 and not AfinidadeFx.ids().is_empty():
+		ui.abrir(AfinidadeFx.ids(), "afinidade", 0, AfinidadeFonte.new())
+		return
 	var cands := _gemas_possiveis()
 	if cands.is_empty():
 		return
 	cands.shuffle()
-	var ids: Array = cands.slice(0, maxi(1, int(config.get("skill_gem_cards", 3))))
+	var n := maxi(1, int(config.get("skill_gem_cards", 3)))
+	# A afinidade garante uma skill do seu elemento na oferta, quando houver (doc 36 seção 0).
+	if "afinidade" in player and player.afinidade != "":
+		var el: String = AfinidadeFx.elemento(player.afinidade)
+		var h = player.habilidades
+		var i_el: int = cands.find_custom(func(id): return h.defs[id].get("ramo", "") == el)
+		if i_el >= n:
+			var id_el = cands[i_el]
+			cands.remove_at(i_el)
+			cands.insert(0, id_el)
+	var ids: Array = cands.slice(0, n)
 	ui.abrir(ids, "gem", 0, player.habilidades)
+
+## Fonte das cartas de afinidade para a tela de escolha: `defs[id]` com `ramo` e `nivel_max`, `nivel(id)` sempre 0.
+class AfinidadeFonte extends RefCounted:
+	var defs := {}
+	func _init() -> void:
+		for id in AfinidadeFx.ids():
+			defs[id] = {"ramo": "afinidade", "nivel_max": 1, "icone": id}
+	func nivel(_id: String) -> int:
+		return 0
+
+## Escolha do Eco do básico: o jogador guarda o id; a HUD e a flecha leem dali.
+func _escolher_afinidade(id: String) -> void:
+	if "afinidade" in player:
+		player.afinidade = id
+	hud.mensagem = Csv.t("hud.afinidade") % Csv.t("skill.%s.name" % id)
 
 ## Escolha da gema: soma os pontos da habilidade e aprende pelo core (pré-requisito e nível máximo continuam dele);
 ## ativa nova entra no primeiro slot livre.
@@ -684,6 +716,8 @@ func _abrir_portal() -> void:
 func _on_upgrade_escolhido(id: String) -> void:
 	if ui.modo == "gem":
 		_aprender_gema(id)
+	elif ui.modo == "afinidade":
+		_escolher_afinidade(id)
 	elif ui.modo != "sala":   # carta de nível ou de baú: a luta continua
 		upgrades.escolher_nivel(id, player)
 	if ui.modo != "sala":   # abre a próxima oferta, se houver: gema na fila primeiro, depois nível ou baú

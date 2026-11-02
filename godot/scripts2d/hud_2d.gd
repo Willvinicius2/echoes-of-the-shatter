@@ -179,7 +179,7 @@ func conteudo_slots() -> Dictionary:
 	var total := int(_lay["slot_total"])
 	var cdmax: float = jogador.stats.get("dodge_cooldown", 1.0)
 	var basicos: Array = [
-		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
+		{"icone": (jogador.afinidade if ("afinidade" in jogador and jogador.afinidade != "") else "tiro"), "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(jogador.dodge_cd / maxf(cdmax, 0.01), 0.0, 1.0), "cor": Tema.cor("estamina")},
 	]
 	if jogador.has_method("slots_hud"):   # guerreiro: ícone do golpe

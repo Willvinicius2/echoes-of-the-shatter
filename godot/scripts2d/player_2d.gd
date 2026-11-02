@@ -12,6 +12,7 @@ const GeloFx = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
 const FogoFx = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
 const RaioFx = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
+const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const ANCORAS := "res://data2d/ancoras_2d.csv"   # boca do arco por linha da folha (doc 33 seção 2)
 static var _ancoras := {}   # sprite_id -> {linha: Vector2 (px a partir dos pés)}
@@ -28,6 +29,9 @@ var hp := 0.0
 var mana := 0.0
 var classe := "arqueiro"
 var habilidades: RefCounted   # árvore e slots da classe (habilidades_2d.gd)
+## Afinidade do ataque básico ("Eco", doc 36 seção 2): id de data2d/afinidades_arqueiro.csv ou vazio (básico neutro).
+## Escolhida na primeira gema da corrida; zera a cada corrida (run_2d.gd).
+var afinidade := ""
 # Experiência do modo horda, preenchida a cada quadro pela barra de XP (hud_xp_2d.gd) a partir do core; a HUD lê daqui.
 var nivel_jogador := 1
 var xp := 0.0
@@ -406,6 +410,8 @@ func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult :
 		f.veneno_dps = stats["poison_dps"]
 		f.veneno_t = stats["poison_time"]
 	get_parent().add_child(f)
+	if afinidade != "" and def.is_empty():   # só o tiro básico (as habilidades sempre passam o def delas)
+		AfinidadeFx.aplicar(self, f, AfinidadeFx.def_de(self, afinidade))
 	var c := Feel.cfg()
 	Vfx.flash_boca(get_parent(), boca["chao"] + Vector2(0.0, -boca["altura"]), dir, f)
 	recuar_sprite(dir, c["shot_recoil_px"], c["shot_recoil_time"])

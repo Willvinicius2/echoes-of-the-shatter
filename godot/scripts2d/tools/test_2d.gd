@@ -55,6 +55,7 @@ func _testar() -> void:
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
 	await _testar_fisica_habilidades()
+	await _testar_leque_skills()
 	await AutocastTestes.new(self, check).rodar()
 	await HordaTestes.new(self, check).rodar()
 	await _testar_hud_slots()
@@ -1346,6 +1347,98 @@ func _testar_habilidades_arqueiro() -> void:
 	check(is_equal_approx(f.veneno_dps, 5.0), "flecha carrega veneno")
 	m2.queue_free()
 	await physics_frame
+
+## Doc 36: as cinco skills novas acertam quem está onde elas agem (status próprio de cada uma) e as quatro afinidades
+## mudam a flecha básica (velocidade, perfuração e status), sem mexer no tiro das habilidades.
+func _testar_leque_skills() -> void:
+	var Efeitos = load("res://scripts2d/efeitos_arqueiro_2d.gd")
+	var Afin = load("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
+	var rows: Array = Csv.rows("res://data2d/habilidades_arqueiro.csv")
+	var por_id := {}
+	for r in rows:
+		por_id[r["id"]] = r
+	var tags := {}
+	for r in Csv.rows("res://data2d/habilidades_tags.csv"):
+		tags[r["id"]] = r["tags"]
+	var miras := {}
+	for r in Csv.rows("res://data2d/habilidades_mira.csv"):
+		if r["classe"] == "arqueiro":
+			miras[r["id"]] = r["mira"]
+	# skill -> [status esperado, onde pôr os inimigos (px à direita do arqueiro)]
+	var casos := {"toxic_tornado": ["veneno", 420.0], "ice_comet": ["lentidao", 420.0], "frost_nova": ["lentidao", 150.0],
+		"lightning_rod": ["choque", 380.0], "fire_serpent": ["queimadura", 300.0]}
+	for id in casos:
+		check(por_id.has(id) and tags.has(id) and miras.has(id), "%s está no CSV, nas tags e no autocast" % id)
+		if not por_id.has(id):
+			continue
+		var mundo := Node2D.new()
+		root.add_child(mundo)
+		var p = load("res://scripts2d/player_2d.gd").new()
+		p.god_mode = true
+		p.auto_aim = Vector2.RIGHT
+		p.autocast = false   # sem o tiro básico, para o status vir só da skill
+		mundo.add_child(p)
+		var es: Array = []
+		for k in 3:
+			var e = load("res://scripts2d/enemy_2d.gd").new()
+			mundo.add_child(e)
+			e.setup("hollow_sentinel", p, p.global_position + Vector2(casos[id][1] + 30 * k, 20 * (k - 1)))
+			e.hp = 100000.0
+			e.hp_max = 100000.0
+			e.stats["aggro"] = 0.0
+			es.append(e)
+		await physics_frame
+		p.auto_aim = Vector2.ZERO   # a mira forçada já serviu para apontar; sem ela o jogador não atira sozinho
+		var ok: bool = Efeitos.executar(por_id[id]["efeito"], p, _def_arqueiro(por_id[id]), 1, Vector2.RIGHT)
+		check(ok, "%s executa" % id)
+		var st: String = casos[id][0]
+		await _esperar(func(): return es.any(func(e): return e.tem_status(st)), 4.0)
+		check(es.any(func(e): return e.tem_status(st)), "%s aplica %s em quem está na área" % [id, st])
+		check(es.any(func(e): return e.hp < 100000.0), "%s causa dano" % id)
+		mundo.queue_free()
+		await physics_frame
+	# afinidades: cada Eco muda a flecha básica
+	var esperado := {"eco_trovao": "choque", "eco_peste": "veneno", "eco_gelo": "lentidao", "eco_cinzas": "queimadura"}
+	check(Afin.ids().size() == 4, "quatro afinidades no CSV (%d)" % Afin.ids().size())
+	for id in Afin.ids():
+		check(Csv.t("skill.%s.name" % id) != "skill.%s.name" % id, "texto da afinidade %s" % id)
+		var mundo := Node2D.new()
+		root.add_child(mundo)
+		var p = load("res://scripts2d/player_2d.gd").new()
+		p.god_mode = true
+		p.autocast = false
+		mundo.add_child(p)
+		var e = load("res://scripts2d/enemy_2d.gd").new()
+		mundo.add_child(e)
+		e.setup("hollow_sentinel", p, p.global_position + Vector2(140, 0))
+		e.hp = 100000.0
+		e.hp_max = 100000.0
+		e.stats["aggro"] = 0.0
+		var e2 = load("res://scripts2d/enemy_2d.gd").new()   # vizinho para o salto do Trovão
+		mundo.add_child(e2)
+		e2.setup("hollow_sentinel", p, p.global_position + Vector2(200, 60))
+		e2.hp = 100000.0
+		e2.hp_max = 100000.0
+		e2.stats["aggro"] = 0.0
+		await physics_frame
+		var neutra = p.lancar_flecha(Vector2.RIGHT)
+		var vel_neutra: float = neutra.velocity.length()
+		neutra.queue_free()
+		p.afinidade = id
+		var f = p.lancar_flecha(Vector2.RIGHT)
+		var d: Dictionary = Afin.def_de(p, id)
+		check(is_equal_approx(f.velocity.length(), vel_neutra * d["vel"]), "%s muda a velocidade da flecha (x%.2f)" % [id, d["vel"]])
+		check(f.pierce == int(p.stats["arrow_pierce"]) + int(d["perfura"]), "%s ajusta a perfuração" % id)
+		var st2: String = esperado[id]
+		await _esperar(func(): return e.tem_status(st2), 2.0)
+		check(e.tem_status(st2), "%s aplica %s ao acertar" % [id, st2])
+		if id == "eco_trovao":
+			await _esperar(func(): return e2.tem_status("choque"), 1.0)
+			check(e2.tem_status("choque"), "Eco do Trovão salta para o vizinho")
+		var g = p.lancar_flecha(Vector2.RIGHT, 1.0, 0, 1.0, {"dano": 1.0})
+		check(is_equal_approx(g.velocity.length(), vel_neutra), "%s não mexe nas flechas das habilidades" % id)
+		mundo.queue_free()
+		await physics_frame
 
 ## HUD: barra de slots (2 pequenos + 4 ativas) dentro da tela, sem sobrepor os globos; ativas vazias no arqueiro e
 ## preenchidas pelas skills aprendidas do guerreiro, com segundos de recarga.

@@ -1,0 +1,5 @@
+id,elemento,dano,vel,perfura,qtd,raio,duracao,valor,icone,nota
+eco_trovao,raio,1.0,1.2,0,1,160,2.0,0.5,eco_trovao,flecha 20% mais rapida; ao acertar um arco salta para qtd vizinhos a ate raio px com valor do dano e choque por duracao s
+eco_peste,veneno,0.9,0.85,1,1,0,3.0,3,eco_peste,flecha mais lenta que atravessa perfura corpos; cada toque envenena valor hp/s por duracao s
+eco_gelo,gelo,1.0,1.0,0,1,0,3.0,0.15,eco_gelo,cada acerto soma qtd acumulos de frio (valor de lentidao por acumulo, duracao s); no 4o congela
+eco_cinzas,fogo,1.1,1.0,0,1,40,2.5,3,eco_cinzas,dano +10%; queima valor hp/s por duracao s e deixa brasa de raio px no chao por 1 s

@@ -33,3 +33,8 @@ shock_arrow,raio,ativa,1,,1,3,flecha_eletrica,4,0,1.2,,,,3,,0.15,0.15,,,shock_ar
 chain_lightning,raio,ativa,2,shock_arrow,2,3,raio_encadeado,9,0,1.6,4,,220,3,600,0.2,0.15,,,chain_lightning
 storm_tornado,raio,ativa,3,chain_lightning,3,3,tornado,16,0,0.9,,,150,4,650,90,0.15,,,storm_tornado
 herald_thunder,raio,passiva,2,shock_arrow,2,3,arauto,,,1.5,,,180,3,,,,,,herald_thunder
+toxic_tornado,veneno,ativa,3,venom_orb,3,3,tornado_toxico,15,0,0.5,3,,130,5,600,70,0.15,,,toxic_tornado
+ice_comet,gelo,ativa,2,frost_arrow,2,3,cometa_gelo,10,0,2.6,2,,130,3,600,0.35,0.15,,,ice_comet
+frost_nova,gelo,ativa,3,glacial_shard,3,3,nova_gelo,12,0,1.8,8,360,200,3,,0.2,0.12,,,frost_nova
+fire_serpent,fogo,ativa,2,flecha_ardente,2,3,serpente_fogo,9,0,1.0,3,40,36,2.2,520,4,0.15,,,fire_serpent
+lightning_rod,raio,ativa,2,shock_arrow,2,3,haste_eletrica,11,0,0.8,2,,220,5,600,0.4,0.15,,,lightning_rod
