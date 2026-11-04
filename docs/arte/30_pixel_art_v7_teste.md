@@ -13,3 +13,5 @@ Pendente: cabelo direcional (E/NE/N ainda uma massa), rosto de 9 px mais legíve
 
 ## r4 (04/11/2026): ligado ao jogo
 Aprovado como nível alvo pela direção visual (r3). Ajustes finais: joelho marcado na corrida, boca clara de 2 px, arco menor e afastado do torso em S, aljava fria. As folhas v7 (quadro 72, pivô 36,64) substituem as do v6 em `godot/art2d/sprites/arqueiro/`; `sprites_manifest.csv` e as âncoras de ataque foram recalculados (`gerar_arqueiro_pixel_v7.py --ancoras` x 2,5). A escala de mundo (2,5) não mudou, então a figura (54 px) fica maior na tela que a v6 (42 px), de propósito, para a silhueta humana ler em 2K.
+
+Piso de lajes e braseiro de `godot/art2d/teste_v7/`: o braseiro foi aprovado; o piso é **provisório** (não ligado ao jogo) até o próximo PR curto.
