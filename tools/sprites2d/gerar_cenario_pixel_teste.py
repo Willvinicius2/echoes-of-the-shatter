@@ -9,36 +9,46 @@ PEDRA = [H("1d1a22"), H("2e2a36"), H("423d4c"), H("5a5466"), H("77708a")]
 LIMO = [H("1f2a1c"), H("34502a"), H("55793a")]
 FOGO = [H("7a1f12"), H("c8421a"), H("f58a22"), H("ffd24a"), H("fff3b0")]
 
-def piso(n=32, semente=11):
-    """Lajes irregulares (Voronoi com borda toroidal, ladrilha sem emenda): junta escura, chanfro claro em cima e à esquerda."""
+def piso(n=80, semente=5):
+    """Lajes irregulares (8 pedras por ladrilha, Voronoi toroidal): juntas de pouco contraste, tom plano por pedra,
+    chanfro de 1 px só na borda de cima e da esquerda, musgo em manchas."""
     r = random.Random(semente)
-    sem = [(r.uniform(0, n), r.uniform(0, n)) for _ in range(7)]
-    tom = [r.choice([1, 2, 2, 2, 3]) for _ in sem]
+    sem = []
+    while len(sem) < 8:   # distância mínima entre sementes evita pedras minúsculas
+        c = (r.uniform(0, n), r.uniform(0, n))
+        if all(min(abs(c[0] - q[0]), n - abs(c[0] - q[0])) ** 2 + min(abs(c[1] - q[1]), n - abs(c[1] - q[1])) ** 2 > 22 ** 2 for q in sem):
+            sem.append(c)
+    tom = [1, 2, 3, 2, 1, 3, 2, 2]
+    r.shuffle(tom)
     def cel(x, y):
         best, bi, sec = 1e9, 0, 1e9
         for i, (sx, sy) in enumerate(sem):
             dx = min(abs(x - sx), n - abs(x - sx)); dy = min(abs(y - sy), n - abs(y - sy))
-            d = dx * dx + dy * dy * 1.3
+            d = dx * dx + dy * dy
             if d < best: sec, best, bi = best, d, i
             elif d < sec: sec = d
         return bi, sec ** .5 - best ** .5
-    im = Image.new("RGBA", (n, n)); px = im.load()
     ids = [[cel(x, y) for x in range(n)] for y in range(n)]
+    im = Image.new("RGBA", (n, n)); px = im.load()
+    JUNTA = H("26222e")
     for y in range(n):
         for x in range(n):
             i, gap = ids[y][x]
-            if gap < 1.6: c = PEDRA[0]
+            if gap < 1.3:
+                c = JUNTA
             else:
-                up = ids[(y - 1) % n][x][0]; lf = ids[y][(x - 1) % n][0]
-                dn = ids[(y + 1) % n][x][0]; rt = ids[y][(x + 1) % n][0]
                 c = PEDRA[tom[i]]
-                if gap < 3.2 and (up != i or lf != i or ids[(y - 2) % n][x][0] != i and gap < 2.4): c = PEDRA[min(tom[i] + 1, 4)]
-                elif gap < 3.2 and (dn != i or rt != i): c = PEDRA[max(tom[i] - 1, 1)]
+                if ids[(y - 1) % n][x][1] < 1.3 or ids[y][(x - 1) % n][1] < 1.3:
+                    c = PEDRA[min(tom[i] + 1, 4)]
             px[x, y] = c + (255,)
-    for (x, y) in [(5, 4), (6, 5), (6, 6), (7, 7), (7, 8), (8, 9)]:
-        px[x, y] = PEDRA[0] + (255,)
-    for (x, y) in [(24, 20), (25, 20), (24, 21), (26, 21), (25, 22)]:
-        px[x, y] = LIMO[1 + (x + y) % 2] + (255,)
+    # musgo: manchas (3 a 6 px) coladas na junta, só em 3 pedras
+    for k in (1, 4, 6):
+        sx, sy = sem[k]
+        for dy in range(-7, 8):
+            for dx in range(-9, 10):
+                x, y = int(sx + dx) % n, int(sy + dy) % n
+                if ids[y][x][0] == k and ids[y][x][1] < 6.5 and ((dx * 7 + dy * 3) % 5) < 3:
+                    px[x, y] = LIMO[(x + y) % 2 + 1] + (255,)
     return im
 
 def brasseiro():
@@ -86,8 +96,8 @@ def cena(saida, folha, esc=6):
     pis = piso(); br = brasseiro()
     W, Hh = 192, 108   # 1/ (360/108 ~ 3.3) escala: recorte de 16:9 do mundo
     im = Image.new("RGBA", (W, Hh), (0, 0, 0, 255))
-    for y in range(0, Hh, 32):
-        for x in range(0, W, 32): im.paste(pis, (x, y))
+    for y in range(0, Hh, 80):
+        for x in range(0, W, 80): im.paste(pis, (x, y))
     # brilho do braseiro no chão: 3 faixas com dither de Bayer 2x2 (pixel art, sem gradiente liso)
     cx, cy = 156, 72
     bayer = [[0, 2], [3, 1]]
@@ -106,5 +116,5 @@ def cena(saida, folha, esc=6):
 
 if __name__ == "__main__":
     s = sys.argv[1]; os.makedirs(s, exist_ok=True)
-    piso().save(os.path.join(s, "piso_laje_32.png")); brasseiro().save(os.path.join(s, "brasseiro_32x48.png"))
+    piso().save(os.path.join(s, "piso_laje_80.png")); brasseiro().save(os.path.join(s, "brasseiro_32x48.png"))
     cena(s, sys.argv[2])
