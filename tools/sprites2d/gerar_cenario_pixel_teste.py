@@ -88,7 +88,20 @@ def cena(saida, folha, esc=6):
     im = Image.new("RGBA", (W, Hh), (0, 0, 0, 255))
     for y in range(0, Hh, 32):
         for x in range(0, W, 32): im.paste(pis, (x, y))
-    im.alpha_composite(br, (120, 30)); im.alpha_composite(arq, (48, 24)); im.alpha_composite(arq2, (92, 40))
+    # brilho do braseiro no chão: 3 faixas com dither de Bayer 2x2 (pixel art, sem gradiente liso)
+    cx, cy = 156, 72
+    bayer = [[0, 2], [3, 1]]
+    px = im.load()
+    for y in range(Hh):
+        for x in range(W):
+            d = (((x - cx) / 40.0) ** 2 + ((y - cy) / 20.0) ** 2) ** 0.5
+            if d < 1.0:
+                nivel = (1.0 - d) * 4.0 - bayer[y % 2][x % 2] * 0.25
+                if nivel > 0.3:
+                    a = 0.10 if nivel < 1.2 else 0.20 if nivel < 2.4 else 0.32
+                    r, g, b, _ = px[x, y]
+                    px[x, y] = (int(r + (FOGO[2][0] - r) * a), int(g + (FOGO[2][1] - g) * a), int(b + (FOGO[2][2] - b) * a), 255)
+    im.alpha_composite(br, (140, 30)); im.alpha_composite(arq, (40, 24)); im.alpha_composite(arq2, (92, 40))
     im.resize((W * esc, Hh * esc), Image.NEAREST).save(os.path.join(saida, "cena_teste_v7.png"))
 
 if __name__ == "__main__":

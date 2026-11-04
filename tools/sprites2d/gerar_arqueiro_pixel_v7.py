@@ -38,9 +38,12 @@ RAMPAS = {
     "cabelo": [H("8a4a1a"), H("c47a2a"), H("e8a43e"), H("f2c85e")],
     "pele": [H("b8704a"), H("e0a074"), H("f6cfa4"), H("fff0d4")],
     "sobr": [H("4a2a14")] * 3,
+    "cabelo_s": [H("3a1c08"), H("6a3410"), H("8a4a1a"), H("c47a2a")],
+    "pele_s": [H("8c4e32")] * 3,
+    "arco_f": [H("3e2410"), H("6a3f1c"), H("8a5628"), H("b07a3c")],
     "tunica": [H("2f3e1c"), H("4a6128"), H("6f8c36"), H("a2c24f")],
     "capuz": [H("1a2a20"), H("2a4230"), H("40613a"), H("668850")],
-    "couro": [H("33200f"), H("57361c"), H("80542a"), H("a9783c")],
+    "couro": [H("2a180a"), H("57361c"), H("8c5c2e"), H("c4924c")],
     "bota": [H("2b1a0e"), H("4a2e19"), H("6b4426")],
     "calca": [H("2a2a1f"), H("403e2c"), H("5c5840")],
     "arco": [H("6a3f1c"), H("a06a30"), H("d09a52"), H("f1cd88")],
@@ -51,7 +54,7 @@ RAMPAS = {
     "olho": [H("1a1210")] * 3,
     "boca": [H("a65a3c")] * 3,
     "brilho": [H("fff6dc")] * 3,
-    "cinto": [H("26170f"), H("3b2216"), H("5e3a21")],
+    "cinto": [H("26170f"), H("5e3a21"), H("c8a050")],
 }
 NOMES = list(RAMPAS.keys())
 CONTORNO = H("1c120d")
@@ -178,7 +181,7 @@ def modelo_torso():
             y = -3.7 * math.sqrt(k) - 0.25
             add(g, elipsoide((x, y, z), (1.0, 0.8, 1.0), "couro", PARTE["corpo"], 0.2))
     # capuz caído nos ombros (gola grossa)
-    add(g, anel((0, -0.5, 24.6), 4.5, 3.6, 1.0, "tunica", P))
+    add(g, anel((0, -0.8, 23.6), 4.2, 3.4, 0.9, "tunica", P))
     # aljava nas costas, inclinada, mais fina e de lado
     add(g, capsula((2.4, -4.6, 15.0), (-2.4, -5.0, 28.6), 1.9, 1.9, "couro", P))
     add(g, anel((-2.4, -5.0, 28.6), 1.5, 1.5, 0.5, "ferro", P))
@@ -196,11 +199,13 @@ def modelo_cabeca():
     H_ = PARTE["cabelo"]
     add(g, elipsoide((0, 0.5, 32.0), (7.2, 6.6, 6.9), "pele", P))
     for sx in (-2.7, 2.7):
-        add(g, elipsoide((sx, 6.5, 31.4), (1.15, 0.8, 1.6), "olho", P, 0.15))     # olho 2 px
-        add(g, elipsoide((sx + 0.35, 7.1, 32.0), (0.45, 0.35, 0.5), "brilho", P, 0.12))  # brilho de 1 px
+        add(g, elipsoide((sx, 6.5, 31.4), (1.35, 0.9, 1.9), "olho", P, 0.15))     # olho 2 px
+        add(g, elipsoide((sx + 0.4, 7.2, 32.2), (0.6, 0.45, 0.65), "brilho", P, 0.12))  # brilho de 1 px
         add(g, capsula((sx - 1.5 * np.sign(sx) * -1, 6.2, 34.0), (sx + 1.5 * np.sign(sx) * -1, 6.2, 34.3), 0.5, 0.5, "sobr", P, 0.15))
     add(g, elipsoide((0, 6.8, 28.4), (0.9, 0.5, 0.3), "boca", P, 0.12))           # boca
-    add(g, elipsoide((0, 7.0, 30.0), (0.7, 0.6, 0.8), "pele", P, 0.15))           # nariz
+    add(g, elipsoide((0, 7.6, 30.0), (0.8, 0.9, 1.0), "pele", P, 0.15))           # nariz
+    add(g, elipsoide((0, 6.4, 27.0), (2.4, 1.8, 1.4), "pele", P, 0.15))           # queixo
+    add(g, elipsoide((0, 6.3, 34.6), (6.0, 1.6, 1.3), "pele_s", P, 0.15))         # sombra sob a franja           # nariz
     # capuz caído nas costas: só atrás e nas laterais, nunca cobre o topo nem a testa
     add(g, elipsoide((0, -5.2, 28.6), (4.6, 2.2, 3.2), "capuz", P))
     add(g, elipsoide((-5.4, -2.4, 29.0), (1.0, 2.2, 2.4), "capuz", P))
@@ -218,6 +223,14 @@ def modelo_cabeca():
                  ((-6.0, 2.4, 32.0), (1.2, 1.5, 2.2)), ((6.2, 2.4, 31.4), (1.2, 1.6, 3.0)),
                  ((1.6, 6.3, 34.0), (1.2, 1.1, 2.4))):
         add(hair, elipsoide((c[0], c[1], 35.5 + (c[2] - 35.5) * 0.84), (r[0], r[1], r[2] * 0.86), "cabelo", H_))
+    # nuca e laterais sombreadas (separam o cabelo do capuz em N e NE)
+    add(hair, elipsoide((0, -5.0, 31.0), (6.0, 2.2, 3.0), "cabelo_s", H_))
+    add(hair, elipsoide((-5.8, -1.0, 32.0), (1.6, 3.4, 2.6), "cabelo_s", H_))
+    add(hair, elipsoide((5.8, -1.0, 32.0), (1.6, 3.4, 2.6), "cabelo_s", H_))
+    # mechas recortadas, finas e inclinadas
+    for c, r in (((-2.5, -3.0, 41.0), (0.9, 1.0, 2.6)), ((1.8, -3.5, 41.4), (0.9, 1.0, 2.8)), ((4.6, -2.0, 39.8), (0.9, 1.0, 2.4)),
+                 ((-5.2, -2.0, 39.0), (0.9, 1.0, 2.4)), ((0.0, 3.0, 40.6), (0.9, 1.0, 2.2)), ((-3.4, 2.6, 40.0), (0.8, 0.9, 2.0))):
+        add(hair, elipsoide(c, r, "cabelo", H_, 0.18))
     hp_, hn_, hr_, hg_ = hair.cat()
     return g.cat(), (hp_, hn_, hr_, hg_)
 
@@ -347,7 +360,7 @@ def montar(pose):
     # arco: acompanha a mão esquerda, plano vertical, pontas voltadas para o arqueiro
     if pose["bow_on"]:
         Rb = rot_z(pose.get("bow_yaw", 1.05)) @ rot_x(pose["bow_tilt"])
-        grip = np.array(HL) + np.array([3.2, 0.6, -1.6])
+        grip = np.array(HL) + np.array([1.5, 0.4, -0.3])
         tips = []
         prev = None
         for t in np.linspace(-1, 1, 14):
@@ -356,7 +369,7 @@ def montar(pose):
             p = grip + Rb @ np.array([0, y, z])
             tips.append(p)
             if prev is not None:
-                papel = "arco" if abs(t) > 0.2 else "couro"
+                papel = ("arco" if t > 0 else "arco_f") if abs(t) > 0.2 else "couro"
                 rr = 1.5 if abs(t) > 0.2 else 1.9
                 dyn.append(capsula(prev, p, rr, rr, papel, PARTE["arco"], 0.22))
             prev = p
@@ -456,7 +469,7 @@ def renderizar(pose, graus, espelho=False):
                 continue
             for dy, dx in ((-1, 0), (0, -1), (1, 0), (0, 1)):
                 yy, xx = y + dy, x + dx
-                if pp2[yy, xx] >= 0 and pr2[yy, xx] != pr2[y, x] and zb2[yy, xx] - zb2[y, x] > 3.6:
+                if pp2[yy, xx] >= 0 and pr2[yy, xx] != pr2[y, x] and zb2[yy, xx] - zb2[y, x] > 2.4:
                     rampa = RAMPAS[NOMES[pp2[y, x]]]
                     img[y, x] = (*rampa[0], 255)
                     break
@@ -501,17 +514,18 @@ def anim_run(i, n=8):
     ph = 2 * math.pi * i / n
     p = pose_base()
     sw = math.sin(ph)
-    p["root_dz"] = abs(math.cos(ph)) * 1.3 - 0.6
+    p["root_dz"] = abs(math.sin(ph)) * 1.3 - 0.6
     p["torso_pitch"] = -0.16  # inclina para a frente
     p["torso_yaw"] = 0.10 * sw
     p["head_pitch"] = 0.10
     p["head_yaw"] = -0.10 * sw
     for lado, sg in (("L", 1), ("R", -1)):
         f = math.sin(ph + (0 if lado == "L" else math.pi))
-        lift = max(0.0, math.cos(ph + (0 if lado == "L" else math.pi))) * 3.4
-        p["foot" + lado] = (2.4 * sg, 0.4 + 4.6 * f, 2.6 + lift)
-    p["handL"] = (7.0, 2.0 - 2.2 * sw, 13.8 + 0.8 * abs(sw))
-    p["handR"] = (-7.0, 1.0 + 4.4 * sw, 13.4 + 0.6 * abs(sw))
+        lift = max(0.0, math.cos(ph + (0 if lado == "L" else math.pi))) * 5.0
+        p["foot" + lado] = (2.8 * sg, 0.4 + 5.2 * f, 2.6 + lift)
+    p["bow_tilt"] = 0.10 * sw
+    p["handL"] = (7.0, 2.0 - 3.0 * sw, 14.2 + 1.0 * abs(sw))
+    p["handR"] = (-7.0, 1.0 + 6.0 * sw, 13.4 + 1.2 * abs(sw))
     p["poleL"] = (1.0, -0.8, -0.4)
     p["poleR"] = (-1.0, -0.8, -0.4)
     return p
