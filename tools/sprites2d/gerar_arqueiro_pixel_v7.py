@@ -36,6 +36,7 @@ def H(s):
 
 RAMPAS = {
     "cabelo": [H("4e2a10"), H("7e5020"), H("a87430"), H("e6b648")],
+    "aljava": [H("1f2030"), H("3a3a52"), H("5c5a74"), H("8a86a0")],
     "sola": [H("160d07")] * 3,
     "costas_s": [H("1b2412")] * 3,
     "corda_s": [H("3a2a1a")] * 3,
@@ -55,7 +56,7 @@ RAMPAS = {
     "pena2": [H("2e5a2a"), H("4f8a3c"), H("7fb552")],
     "ferro": [H("4a4f5c"), H("7a8294"), H("c5ccdb")],
     "olho": [H("1a1210")] * 3,
-    "boca": [H("a65a3c")] * 3,
+    "boca": [H("f0c8a4")] * 3,
     "brilho": [H("fff6dc")] * 3,
     "cinto": [H("8a6a30"), H("c8a050"), H("e8c878")],
 }
@@ -187,7 +188,7 @@ def modelo_torso():
     # capuz caído nos ombros (gola grossa)
     add(g, anel((0, -0.8, 23.6), 4.2, 3.4, 0.9, "tunica", P))
     # aljava nas costas, inclinada, mais fina e de lado
-    add(g, capsula((2.4, -4.6, 15.0), (-2.4, -5.0, 28.6), 1.9, 1.9, "couro", P))
+    add(g, capsula((2.4, -4.6, 15.0), (-2.4, -5.0, 28.6), 1.9, 1.9, "aljava", P))
     add(g, anel((-2.4, -5.0, 28.6), 1.5, 1.5, 0.5, "ferro", P))
     add(g, anel((1.8, -4.7, 16.0), 1.6, 1.6, 0.5, "ferro", P))   # reforço da ponta de baixo
     for dx, dy, papel in ((-1.2, 0.2, "corda"), (0.4, -0.6, "pena1"), (-2.4, -1.0, "corda")):
@@ -206,7 +207,7 @@ def modelo_cabeca():
         add(g, elipsoide((sx, 6.5, 31.4), (1.35, 0.9, 1.9), "olho", P, 0.15))     # olho 2 px
         add(g, elipsoide((sx + 0.4, 7.2, 32.2), (0.6, 0.45, 0.65), "brilho", P, 0.12))  # brilho de 1 px
         add(g, capsula((sx - 1.5 * np.sign(sx) * -1, 6.2, 34.0), (sx + 1.5 * np.sign(sx) * -1, 6.2, 34.3), 0.5, 0.5, "sobr", P, 0.15))
-    add(g, elipsoide((0, 6.8, 28.4), (0.9, 0.5, 0.3), "boca", P, 0.12))           # boca
+    add(g, elipsoide((0, 6.8, 28.6), (1.5, 0.5, 0.32), "boca", P, 0.12))           # boca
     add(g, elipsoide((0, 7.6, 30.0), (0.8, 0.9, 1.0), "pele", P, 0.15))           # nariz
     add(g, elipsoide((0, 6.4, 27.0), (2.4, 1.8, 1.4), "pele", P, 0.15))           # queixo
     add(g, elipsoide((0, 6.3, 34.6), (6.0, 1.6, 1.3), "pele_s", P, 0.15))         # sombra sob a franja           # nariz
@@ -358,18 +359,18 @@ def montar(pose):
         K, A = ik2(hip, foot + np.array([0, 0, 1.6]), 5.0, 4.8, pole)
         dyn.append(capsula(hip, K, 1.95, 1.8, "calca", PARTE["perna"]))
         dyn.append(capsula(K, A, 1.9, 2.0, "bota", PARTE["perna"]))
-        dyn.append(anel(K + np.array([0, 0, -0.9]), 1.8, 1.8, 0.45, "couro", PARTE["perna"]))
+        dyn.append(anel(K + np.array([0, 0, -0.9]), 2.1, 2.1, 0.6, "couro", PARTE["perna"]))
         dyn.append(elipsoide(foot + np.array([0, 1.8, -1.0]), (2.0, 3.6, 0.8), "sola", PARTE["perna"], 0.2))
         ante = foot + np.array([0, 3.0, -0.6])
         dyn.append(capsula(A + np.array([0, 0.2, -1.2]), ante + np.array([0, 0.8, 0]), 2.1, 1.7, "bota", PARTE["perna"]))
     # arco: acompanha a mão esquerda, plano vertical, pontas voltadas para o arqueiro
     if pose["bow_on"]:
         Rb = rot_z(pose.get("bow_yaw", 1.05)) @ rot_x(pose["bow_tilt"])
-        grip = np.array(HL) + np.array([1.5, 0.4, -0.3])
+        grip = np.array(HL) + np.array([2.3, 0.4, -0.3])
         tips = []
         prev = None
         for t in np.linspace(-1, 1, 14):
-            z = 13.0 * t
+            z = 11.0 * t
             y = 2.0 - 5.6 * t * t
             p = grip + Rb @ np.array([0, y, z])
             tips.append(p)
@@ -532,6 +533,8 @@ def anim_run(i, n=8):
         lift = max(0.0, math.cos(ph + (0 if lado == "L" else math.pi))) * 3.8
         p["foot" + lado] = (2.8 * sg, 0.4 + 4.2 * f, 2.6 + lift)
     p["bow_tilt"] = 0.10 * sw
+    p["kneeL"] = (0.25, 2.4, 0.0)
+    p["kneeR"] = (-0.25, 2.4, 0.0)
     p["handL"] = (7.0, 2.0 - 3.0 * sw, 14.2 + 1.0 * abs(sw))
     p["handR"] = (-7.0, 1.0 + 6.0 * sw, 13.4 + 1.2 * abs(sw))
     p["poleL"] = (1.0, -0.8, -0.4)
@@ -633,12 +636,13 @@ def ancoras(esc):
     """Boca do arco (ponta da flecha no quadro de soltar) por linha, em px do mundo a partir dos pés."""
     p = anim_attack(4)
     tip = np.array(p["handL"], float) + np.array([0.2, 5.6, 0.0]) + np.array([0, p["root_dy"], 0])
+    tip = proporcao(tip[None, :])[0]
     linhas = []
     for r, g in enumerate(DIRS):
         t_ = tip * np.array([-1.0, 1.0, 1.0]) if r in ESPELHADAS else tip
         q = rot_z(-math.radians(g)) @ t_
-        sx = q[0]
-        sy = -q[2] * math.cos(ELEV) + q[1] * math.sin(ELEV)
+        sx = q[0] * ESC
+        sy = (-q[2] * math.cos(ELEV) + q[1] * math.sin(ELEV)) * ESC
         linhas.append((r, round(sx * esc), round(sy * esc)))
     return linhas
 

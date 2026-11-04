@@ -10,3 +10,6 @@ Mudanças (`tools/sprites2d/gerar_arqueiro_pixel_v7.py`, mesmo método do v6):
 Cenário (`tools/sprites2d/gerar_cenario_pixel_teste.py`): piso de lajes irregulares 32x32 sem emenda e braseiro de pedra 32x48, pixel a pixel, mesma paleta fria/quente. Arquivos em `godot/art2d/teste_v7/` (não ligados ao jogo ainda).
 
 Pendente: cabelo direcional (E/NE/N ainda uma massa), rosto de 9 px mais legível, animação de corrida com balanço de braços, calibrar `sprites_escala.csv` e âncoras para 72 px.
+
+## r4 (04/11/2026): ligado ao jogo
+Aprovado como nível alvo pela direção visual (r3). Ajustes finais: joelho marcado na corrida, boca clara de 2 px, arco menor e afastado do torso em S, aljava fria. As folhas v7 (quadro 72, pivô 36,64) substituem as do v6 em `godot/art2d/sprites/arqueiro/`; `sprites_manifest.csv` e as âncoras de ataque foram recalculados (`gerar_arqueiro_pixel_v7.py --ancoras` x 2,5). A escala de mundo (2,5) não mudou, então a figura (54 px) fica maior na tela que a v6 (42 px), de propósito, para a silhueta humana ler em 2K.
