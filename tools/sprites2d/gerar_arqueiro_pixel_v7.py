@@ -20,9 +20,9 @@ ELEV = math.radians(32)
 ESC = 1.32   # px por unidade do modelo (v7: figura de ~54 px)
 
 # proporção v7: pernas longas, cabeça menor (~5 cabeças)
-PERNA_K = 1.75
+PERNA_K = 1.9
 TRONCO_K = 1.12
-CABECA_K = 0.66
+CABECA_K = 0.58
   # elevação da câmera
 LUZ = np.array([-0.5, 0.6, 0.62])
 LUZ = LUZ / np.linalg.norm(LUZ)
@@ -35,10 +35,13 @@ def H(s):
     return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
 
 RAMPAS = {
-    "cabelo": [H("8a4a1a"), H("c47a2a"), H("e8a43e"), H("f2c85e")],
+    "cabelo": [H("4e2a10"), H("7e5020"), H("a87430"), H("e6b648")],
+    "sola": [H("160d07")] * 3,
+    "costas_s": [H("1b2412")] * 3,
+    "corda_s": [H("3a2a1a")] * 3,
     "pele": [H("b8704a"), H("e0a074"), H("f6cfa4"), H("fff0d4")],
     "sobr": [H("4a2a14")] * 3,
-    "cabelo_s": [H("3a1c08"), H("6a3410"), H("8a4a1a"), H("c47a2a")],
+    "cabelo_s": [H("2e1606"), H("4e2a10"), H("6a4018"), H("7e5020")],
     "pele_s": [H("8c4e32")] * 3,
     "arco_f": [H("3e2410"), H("6a3f1c"), H("8a5628"), H("b07a3c")],
     "tunica": [H("2f3e1c"), H("4a6128"), H("6f8c36"), H("a2c24f")],
@@ -54,7 +57,7 @@ RAMPAS = {
     "olho": [H("1a1210")] * 3,
     "boca": [H("a65a3c")] * 3,
     "brilho": [H("fff6dc")] * 3,
-    "cinto": [H("26170f"), H("5e3a21"), H("c8a050")],
+    "cinto": [H("8a6a30"), H("c8a050"), H("e8c878")],
 }
 NOMES = list(RAMPAS.keys())
 CONTORNO = H("1c120d")
@@ -180,15 +183,16 @@ def modelo_torso():
         if k > 0:
             y = -3.7 * math.sqrt(k) - 0.25
             add(g, elipsoide((x, y, z), (1.0, 0.8, 1.0), "couro", PARTE["corpo"], 0.2))
+    add(g, elipsoide((0.3, -4.2, 20.0), (2.4, 0.7, 3.8), "costas_s", P))   # sombra no meio das costas
     # capuz caído nos ombros (gola grossa)
     add(g, anel((0, -0.8, 23.6), 4.2, 3.4, 0.9, "tunica", P))
     # aljava nas costas, inclinada, mais fina e de lado
     add(g, capsula((2.4, -4.6, 15.0), (-2.4, -5.0, 28.6), 1.9, 1.9, "couro", P))
     add(g, anel((-2.4, -5.0, 28.6), 1.5, 1.5, 0.5, "ferro", P))
     add(g, anel((1.8, -4.7, 16.0), 1.6, 1.6, 0.5, "ferro", P))   # reforço da ponta de baixo
-    for dx, dy, papel in ((-1.2, 0.2, "corda"), (0.4, -0.6, "corda"), (-2.4, -1.0, "corda")):
-        add(g, capsula((-2.8 + dx * 0.4, -5.3 + dy * 0.4, 28.8), (-3.2 + dx, -5.6 + dy, 31.4), 0.45, 0.45, "couro", P))
-        add(g, capsula((-3.1 + dx, -5.5 + dy, 29.6), (-3.2 + dx, -5.6 + dy, 32.2), 0.85, 0.55, papel, P))
+    for dx, dy, papel in ((-1.2, 0.2, "corda"), (0.4, -0.6, "pena1"), (-2.4, -1.0, "corda")):
+        add(g, capsula((-2.8 + dx * 0.4, -5.3 + dy * 0.4, 28.8), (-3.2 + dx, -5.6 + dy, 31.4), 0.45, 0.45, "corda", P))
+        add(g, capsula((-3.1 + dx, -5.5 + dy, 29.6), (-3.2 + dx, -5.6 + dy, 33.4), 0.85, 0.55, papel, P))
     return g.cat()
 
 
@@ -222,7 +226,7 @@ def modelo_cabeca():
                  ((-6.6, 0.8, 35.8), (1.5, 1.7, 2.4)), ((0, -5.2, 34.4), (3.4, 2.4, 3.2)),
                  ((-6.0, 2.4, 32.0), (1.2, 1.5, 2.2)), ((6.2, 2.4, 31.4), (1.2, 1.6, 3.0)),
                  ((1.6, 6.3, 34.0), (1.2, 1.1, 2.4))):
-        add(hair, elipsoide((c[0], c[1], 35.5 + (c[2] - 35.5) * 0.84), (r[0], r[1], r[2] * 0.86), "cabelo", H_))
+        add(hair, elipsoide((c[0], c[1], 35.5 + (c[2] - 35.5) * 0.84), (r[0] * 0.8, r[1] * 0.85, r[2] * 0.86), "cabelo", H_))
     # nuca e laterais sombreadas (separam o cabelo do capuz em N e NE)
     add(hair, elipsoide((0, -5.0, 31.0), (6.0, 2.2, 3.0), "cabelo_s", H_))
     add(hair, elipsoide((-5.8, -1.0, 32.0), (1.6, 3.4, 2.6), "cabelo_s", H_))
@@ -355,6 +359,7 @@ def montar(pose):
         dyn.append(capsula(hip, K, 1.95, 1.8, "calca", PARTE["perna"]))
         dyn.append(capsula(K, A, 1.9, 2.0, "bota", PARTE["perna"]))
         dyn.append(anel(K + np.array([0, 0, -0.9]), 1.8, 1.8, 0.45, "couro", PARTE["perna"]))
+        dyn.append(elipsoide(foot + np.array([0, 1.8, -1.0]), (2.0, 3.6, 0.8), "sola", PARTE["perna"], 0.2))
         ante = foot + np.array([0, 3.0, -0.6])
         dyn.append(capsula(A + np.array([0, 0.2, -1.2]), ante + np.array([0, 0.8, 0]), 2.1, 1.7, "bota", PARTE["perna"]))
     # arco: acompanha a mão esquerda, plano vertical, pontas voltadas para o arqueiro
@@ -377,6 +382,9 @@ def montar(pose):
         nock = tips[0] * 0.5 + tips[-1] * 0.5
         if pose["pull"] > 0:
             nock = nock * (1 - pose["pull"]) + (np.array(HR) + np.array([0, -0.2, 0.0])) * pose["pull"]
+        sh = np.array([0.9, -0.4, 0.0])
+        dyn.append(capsula(tips[0] + sh, nock + sh, 0.45, 0.45, "corda_s", PARTE["corda"], 0.2))
+        dyn.append(capsula(nock + sh, tips[-1] + sh, 0.45, 0.45, "corda_s", PARTE["corda"], 0.2))
         dyn.append(capsula(tips[0], nock, 0.45, 0.45, "corda", PARTE["corda"], 0.2))
         dyn.append(capsula(nock, tips[-1], 0.45, 0.45, "corda", PARTE["corda"], 0.2))
         if pose["arrow"]:
@@ -521,8 +529,8 @@ def anim_run(i, n=8):
     p["head_yaw"] = -0.10 * sw
     for lado, sg in (("L", 1), ("R", -1)):
         f = math.sin(ph + (0 if lado == "L" else math.pi))
-        lift = max(0.0, math.cos(ph + (0 if lado == "L" else math.pi))) * 5.0
-        p["foot" + lado] = (2.8 * sg, 0.4 + 5.2 * f, 2.6 + lift)
+        lift = max(0.0, math.cos(ph + (0 if lado == "L" else math.pi))) * 3.8
+        p["foot" + lado] = (2.8 * sg, 0.4 + 4.2 * f, 2.6 + lift)
     p["bow_tilt"] = 0.10 * sw
     p["handL"] = (7.0, 2.0 - 3.0 * sw, 14.2 + 1.0 * abs(sw))
     p["handR"] = (-7.0, 1.0 + 6.0 * sw, 13.4 + 1.2 * abs(sw))
