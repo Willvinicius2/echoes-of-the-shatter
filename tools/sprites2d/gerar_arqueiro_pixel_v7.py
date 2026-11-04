@@ -35,7 +35,7 @@ def H(s):
     return tuple(int(s[i:i + 2], 16) for i in (0, 2, 4))
 
 RAMPAS = {
-    "cabelo": [H("4e2a10"), H("7e5020"), H("a87430"), H("e6b648")],
+    "cabelo": [H("4e2a10"), H("8a5a24"), H("c89438"), H("f6dc70")],
     "aljava": [H("1f2030"), H("3a3a52"), H("5c5a74"), H("8a86a0")],
     "sola": [H("160d07")] * 3,
     "costas_s": [H("1b2412")] * 3,
@@ -203,18 +203,18 @@ def modelo_cabeca():
     P = PARTE["cabeca"]
     H_ = PARTE["cabelo"]
     add(g, elipsoide((0, 0.5, 32.0), (7.2, 6.6, 6.9), "pele", P))
-    for sx in (-2.7, 2.7):
+    for sx in (-3.0, 3.0):
         add(g, elipsoide((sx, 6.5, 31.4), (1.35, 0.9, 1.9), "olho", P, 0.15))     # olho 2 px
         add(g, elipsoide((sx + 0.4, 7.2, 32.2), (0.6, 0.45, 0.65), "brilho", P, 0.12))  # brilho de 1 px
         add(g, capsula((sx - 1.5 * np.sign(sx) * -1, 6.2, 34.0), (sx + 1.5 * np.sign(sx) * -1, 6.2, 34.3), 0.5, 0.5, "sobr", P, 0.15))
-    add(g, elipsoide((0, 6.8, 28.6), (1.5, 0.5, 0.32), "boca", P, 0.12))           # boca
+    add(g, elipsoide((0, 6.8, 28.6), (0.8, 0.4, 0.25), "boca", P, 0.12))           # boca
     add(g, elipsoide((0, 7.6, 30.0), (0.8, 0.9, 1.0), "pele", P, 0.15))           # nariz
     add(g, elipsoide((0, 6.4, 27.0), (2.4, 1.8, 1.4), "pele", P, 0.15))           # queixo
     add(g, elipsoide((0, 6.3, 34.6), (6.0, 1.6, 1.3), "pele_s", P, 0.15))         # sombra sob a franja           # nariz
     # capuz caído nas costas: só atrás e nas laterais, nunca cobre o topo nem a testa
-    add(g, elipsoide((0, -5.2, 28.6), (4.6, 2.2, 3.2), "capuz", P))
-    add(g, elipsoide((-5.4, -2.4, 29.0), (1.0, 2.2, 2.4), "capuz", P))
-    add(g, elipsoide((5.4, -2.4, 29.0), (1.0, 2.2, 2.4), "capuz", P))
+    add(g, elipsoide((0, -5.2, 26.2), (4.2, 2.0, 2.3), "capuz", P))
+    add(g, elipsoide((-5.4, -2.4, 27.0), (1.0, 2.2, 1.8), "capuz", P))
+    add(g, elipsoide((5.4, -2.4, 27.0), (1.0, 2.2, 1.8), "capuz", P))
     hair = Pts()
     # calota de cabelo + mechas espetadas no topo e na frente (realce amarelo-claro vem da rampa)
     add(hair, elipsoide((0.4, -0.6, 34.2), (7.2, 6.6, 4.6), "cabelo", H_))
@@ -464,7 +464,7 @@ def renderizar(pose, graus, espelho=False):
         if n == 1:
             k = 0
         else:
-            lim = [0.30, 0.62, 0.90][: n - 1] if n == 4 else [0.34, 0.74][: n - 1]
+            lim = ([0.30, 0.52, 0.76] if NOMES[papel[i]] == "cabelo" else [0.30, 0.62, 0.90])[: n - 1] if n == 4 else [0.34, 0.74][: n - 1]
             k = sum(1 for t in lim if l >= t)
         c = rampa[min(k, n - 1)]
         img[i // F, i % F] = (*c, 255)
