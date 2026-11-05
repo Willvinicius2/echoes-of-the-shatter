@@ -116,7 +116,7 @@ def salvar(nome, linhas):
 
 def main():
     salvar("run", [anim("walking", d) for d in DIRS])
-    salvar("attack", [[(capa_verde if d == "south" else (lambda i: i))(sem_flecha(arco_marrom(f))) for f in anim("attack2", d)] for d in DIRS])
+    salvar("attack", [[(capa_verde if d == "south" else (lambda i: i))(sem_flecha(arco_marrom(f))) for f in anim("attack2", d)[:6]] for d in DIRS])
     salvar("idle", [[deslocar(rot(d), 0, o) for o in (0, 0, 0, 1, 1, 0)] for d in DIRS])
     salvar("hit", [[flash(deslocar(rot(d), -DX[d] * s, 0), k) for s, k in ((1, 0.8), (2, 0.4), (1, 0.0))] for d in DIRS])
     dod = []
