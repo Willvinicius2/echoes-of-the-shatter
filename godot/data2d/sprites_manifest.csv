@@ -1,10 +1,10 @@
 id,anim,arquivo,quadro,quadros,fps,loop,direcoes,pivo_x,pivo_y,evento_quadro
-arqueiro,idle,res://art2d/sprites/arqueiro/arqueiro_idle.png,72,6,8,true,5,36,64,-1
-arqueiro,run,res://art2d/sprites/arqueiro/arqueiro_run.png,72,8,12,true,5,36,64,-1
-arqueiro,attack,res://art2d/sprites/arqueiro/arqueiro_attack.png,72,6,14,false,5,36,64,4
-arqueiro,dodge,res://art2d/sprites/arqueiro/arqueiro_dodge.png,72,6,14,false,5,36,64,-1
-arqueiro,hit,res://art2d/sprites/arqueiro/arqueiro_hit.png,72,3,12,false,5,36,64,-1
-arqueiro,death,res://art2d/sprites/arqueiro/arqueiro_death.png,72,8,10,false,5,36,64,-1
+arqueiro,idle,res://art2d/sprites/arqueiro/arqueiro_idle.png,92,6,8,true,5,46,76,-1
+arqueiro,run,res://art2d/sprites/arqueiro/arqueiro_run.png,92,6,12,true,5,46,76,-1
+arqueiro,attack,res://art2d/sprites/arqueiro/arqueiro_attack.png,92,6,14,false,5,46,76,4
+arqueiro,dodge,res://art2d/sprites/arqueiro/arqueiro_dodge.png,92,6,14,false,5,46,76,-1
+arqueiro,hit,res://art2d/sprites/arqueiro/arqueiro_hit.png,92,3,12,false,5,46,76,-1
+arqueiro,death,res://art2d/sprites/arqueiro/arqueiro_death.png,92,6,10,false,5,46,76,-1
 hollow_sentinel,idle,res://art2d/sprites/hollow_sentinel/hollow_sentinel_idle.png,128,6,8,true,5,64,104,-1
 hollow_sentinel,run,res://art2d/sprites/hollow_sentinel/hollow_sentinel_run.png,128,8,12,true,5,64,104,-1
 hollow_sentinel,attack,res://art2d/sprites/hollow_sentinel/hollow_sentinel_attack.png,128,6,12,false,5,64,104,3
