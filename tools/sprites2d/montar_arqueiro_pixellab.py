@@ -33,6 +33,17 @@ def rot(d):
     return centro(Image.open(os.path.join(SRC, "rotations", d + ".png")).convert("RGBA"))
 
 
+def arco_marrom(im):
+    """O modelo pintou o arco de vermelho vivo em algumas direções: volta para o marrom do arco."""
+    px = im.load()
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = px[x, y]
+            if a and r > 170 and g < 110 and b < 90:
+                px[x, y] = (int(r * 0.62), int(g * 1.25 + 30), int(b * 1.1 + 18), a)
+    return im
+
+
 def deslocar(im, dx, dy):
     o = Image.new("RGBA", im.size, (0, 0, 0, 0))
     o.alpha_composite(im, (dx, dy))
@@ -59,7 +70,7 @@ def salvar(nome, linhas):
 
 def main():
     salvar("run", [anim("walking", d) for d in DIRS])
-    salvar("attack", [anim("attack", d) for d in DIRS])
+    salvar("attack", [[arco_marrom(f) for f in anim("attack2", d)] for d in DIRS])
     salvar("idle", [[deslocar(rot(d), 0, o) for o in (0, 0, 0, 1, 1, 0)] for d in DIRS])
     salvar("hit", [[flash(deslocar(rot(d), -DX[d] * s, 0), k) for s, k in ((1, 0.8), (2, 0.4), (1, 0.0))] for d in DIRS])
     dod = []

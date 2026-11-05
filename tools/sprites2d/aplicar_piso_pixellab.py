@@ -7,7 +7,14 @@ R = os.path.join(os.path.dirname(__file__), "..", "..")
 atlas_p = os.path.join(R, "godot", "art2d", "tiles", "cripta_tiles.png")
 a = Image.open(os.path.join(R, "art-src", "pixellab", "cenario", "wang_0.png")).convert("RGBA")
 b = Image.open(os.path.join(R, "art-src", "pixellab", "cenario", "wang_15.png")).convert("RGBA")
-up = lambda im: im.resize((64, 64), Image.NEAREST)
+def tint(im):
+    """Teal do PixelLab -> cinza-arroxeado frio do atlas das paredes (mapeia luminância)."""
+    g = ImageOps.grayscale(im.convert("RGB"))
+    lo, hi = g.getextrema()
+    mapa = ImageOps.colorize(ImageOps.autocontrast(g), (26, 24, 36), (128, 122, 138), mid=(70, 66, 80))
+    mapa.putalpha(im.getchannel("A"))
+    return mapa
+up = lambda im: tint(im).resize((64, 64), Image.NEAREST)
 var = [up(a), up(b), ImageOps.mirror(up(b)), ImageOps.flip(up(a))]
 escuro = ImageEnhance.Brightness(up(a)).enhance(0.55)
 A = Image.open(atlas_p).convert("RGBA")
