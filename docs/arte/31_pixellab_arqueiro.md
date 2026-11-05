@@ -9,3 +9,5 @@ Substitui o v7 feito à mão (Will achou ruim). Plano grátis (40 gerações; us
 Segunda rodada (05/11): ataque regerado ("attack2", sem flecha no prompt; o modelo ainda desenha uma flecha pequena em S/E/NE/N, a flecha de verdade sai como projétil do motor) e arco vermelho de E corrigido para marrom; piso recolorido para cinza-arroxeado do atlas; cena de teste em `tools/sprites2d/cena_teste_pixellab.py`.
 
 Limitações conhecidas (antes da 2ª rodada, a do piso azulado está resolvida): a animação de ataque gerada atira para o lado direito do quadro nas direções S/SE/E e esconde a flecha em NE/N (a âncora de disparo fica na mão do arco); o piso azul-esverdeado destoa das paredes cinzas do atlas pintado; idle quase parado.
+
+Nota: o arqueiro agora é um ranger de capuz verde (capa verde-musgo, armadura prateada), não mais o capuz escuro do v7.
