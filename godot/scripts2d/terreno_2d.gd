@@ -466,8 +466,10 @@ static func _fins_do_caminho(raiz: Node2D, sala: Node2D, caminhos: Array, idx: i
 					var ang := TAU * a / 7.0 + posmod(h, 6)
 					pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.7))
 				var tom := 0.26 if posmod(h / 5, 2) == 0 else 0.36  # só 2 tons, mais escuros: o cinza claro saltava do gramado
-				_poligono(raiz, _expandir(pts, c, 2.2), Color(0.05, 0.05, 0.08, 0.95))  # contorno escuro
+				_poligono(raiz, _expandir(pts, c, 2.2), Color(0.02, 0.02, 0.04, 1.0))  # contorno escuro (quase preto)
 				_poligono(raiz, pts, Color(tom, tom + 0.02, tom + 0.07))
+				_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.1))  # faceta clara (luz de cima-esquerda)
+				_poligono(raiz, PackedVector2Array([pts[3], pts[4], pts[5], pts[6], c]), Color(0.0, 0.0, 0.04, 0.3))  # faceta de sombra de 1 tom
 
 ## Pedrinhas e lajes soltas na borda do caminho: pequenas, achatadas, com sombra curta para baixo-direita
 ## (a mesma luz dos props) em vez de um contorno escuro em volta, para não parecerem seixos flutuando.
@@ -489,9 +491,11 @@ static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: i
 		var contorno_escuro := PackedVector2Array()
 		for q in pts:
 			contorno_escuro.append(c + (q - c) * 1.22)
-		_poligono(raiz, contorno_escuro, Color(0.07, 0.07, 0.1))  # contorno escuro de ~1 px
+		_poligono(raiz, contorno_escuro, Color(0.03, 0.03, 0.05))  # contorno escuro de ~1 px (quase preto: a pedra cinza não some no gramado)
 		_poligono(raiz, pts, cor)
 		_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.1))  # faceta clara
+		# faceta de sombra na metade de baixo, de 1 tom (luz de cima-esquerda), para a laje não ficar chapada
+		_poligono(raiz, PackedVector2Array([pts[3], pts[4], pts[5], pts[6], c]), Color(0.0, 0.0, 0.04, 0.28))
 		i += 10 + posmod(h / 3, 7)
 
 ## Manchas grandes e suaves de terra e grama amarelada sob tudo, para o gramado não ser textura chapada.

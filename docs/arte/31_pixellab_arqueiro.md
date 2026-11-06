@@ -20,3 +20,9 @@ Linha única combinada com o Will: 1) arqueiro em pixel art no jogo, 2) fase com
 - Props e vegetação: `tools/sprites2d/pixelar_props.py [passo=2] [cores=14]` lê os originais HD de `art-src/props-hd-originais/` e grava em `godot/art2d/props/` com grade de 1 px de mundo (a mesma do arqueiro; `pixelar_props.py 1 18`, parecer do Jev), 18 cores, teto de altura para vegetação baixa (30 a 40 px), pilha de caveiras menor e menos saturada por prop, contorno escuro de 1 px de grade e alfa binário; ajusta `props_manifest.csv` (tamanho e pivô na base opaca) e a `escala` em `props_2d.csv` (= passo / ampliação inteira), sem mudar o tamanho na tela. `altar_candles` fica como era (velas animadas por código).
 - Braseiro: `tools/sprites2d/aplicar_braseiro_pixellab.py` troca a célula 15 do atlas pelo braseiro de pedra do PixelLab em 1:1; o `clima_2d.gd` tira a chama pintada e põe o fogo animado (`clima.csv`: fogo 26x36, `tigela_borda` 0,31 serve para esta arte). Captura de perto: `scripts2d/tools/captura_braseiro_2d.gd`.
 - Braseiro: 25% maior (vizinho mais próximo), sem a chama pintada.
+
+## Polimento da fase (06/11, follow-ups da etapa 2)
+- Sombra de contato dos props (`ancoragem_2d.gd`): 1 tom chapado (alfa 0.55) com borda e laterais em dither ordenado Bayer 4x4, sem o blur de 5 px; a sombra projetada usa `step(0.5, alfa)` para não esmaecer ao inclinar.
+- Cascalho no fim dos caminhos e lajes soltas (`terreno_2d.gd`): contorno quase preto e duas facetas (clara em cima à esquerda, sombra de 1 tom embaixo à direita), no lugar de 2 tons chapados.
+- Tronco seco grande (`tree_dead_large`) conferido: grade de 1 px (escala 1), sem blocos ampliados.
+- Dica de controles do HUD: sem faixa escura (tapava galhos do chão), contorno de 1 px em 4 direções.

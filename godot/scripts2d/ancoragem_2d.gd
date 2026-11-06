@@ -11,7 +11,7 @@ const SOMBRA_SHADER := """
 shader_type canvas_item;
 uniform vec4 cor : source_color = vec4(0.0, 0.0, 0.0, 0.4);
 void fragment() {
-	COLOR = vec4(cor.rgb, texture(TEXTURE, UV).a * cor.a);
+	COLOR = vec4(cor.rgb, step(0.5, texture(TEXTURE, UV).a) * cor.a);
 }
 """
 
@@ -143,7 +143,9 @@ static func contorno(id: String, tex: Texture2D, def: Dictionary) -> Dictionary:
 			k = k * k * (3.0 - 2.0 * k)
 			var f := 1.0 - 0.6 * k
 			base_img.set_pixel(x, y, Color(px.r * f * 0.95, px.g * f * 0.95, px.b * f, px.a))
-	# sombra: por coluna, alfa cai do contorno para baixo; depois espalha 5 px para os lados (borrão leve)
+	# sombra chapada de 1 tom: por coluna, cai do contorno para baixo; a borda de baixo e as laterais usam
+	# dither ordenado (Bayer 4x4) em vez de gradiente, para casar com a grade de pixel art
+	const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 	for x in w:
 		if yb[x] < 0.0:
 			continue
@@ -151,12 +153,14 @@ static func contorno(id: String, tex: Texture2D, def: Dictionary) -> Dictionary:
 			var y := int(yb[x]) + d
 			if y < 0 or y >= h + pad:
 				continue
-			var a := 0.85 * pow(1.0 - clampf(float(d) / queda, 0.0, 1.0), 1.4)
-			for dx in range(-5, 6):
+			var a := 1.0 - clampf(float(d) / queda, 0.0, 1.0)
+			for dx in range(-3, 4):
 				var xx := x + dx + 6
-				var aa := a * (1.0 - absf(float(dx)) / 6.0)
-				if xx >= 0 and xx < w + 12 and aa > sombra.get_pixel(xx, y).a:
-					sombra.set_pixel(xx, y, Color(0.0, 0.0, 0.01, aa))
+				var aa := a * (1.0 - absf(float(dx)) / 4.0)
+				var lim: float = (float(BAYER[(y & 3) * 4 + (xx & 3)]) + 0.5) / 16.0
+				if aa > 0.9 or aa > lim:
+					if xx >= 0 and xx < w + 12:
+						sombra.set_pixel(xx, y, Color(0.0, 0.0, 0.01, 0.55))
 	col.clear()
 	var r := {"base": ImageTexture.create_from_image(base_img), "sombra": ImageTexture.create_from_image(sombra)}
 	_cont_cache[id] = r

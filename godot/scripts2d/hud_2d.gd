@@ -46,8 +46,9 @@ func _desenhar() -> void:
 		var al := clampf((5.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
 		var ajuda := Csv.t("hud.help")
-		var lt := ThemeDB.fallback_font.get_string_size(ajuda, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		_ctl.draw_rect(Rect2((vp.x - lt) * 0.5 - 10.0, vp.y - 148.0, lt + 20.0, 22.0), Color(0.02, 0.02, 0.03, 0.85 * al))  # faixa escura: a dica fica legível sobre qualquer chão
+		# sem faixa: ela tapava os galhos e props do chão; o contorno escuro de 1 px em 4 direções mantém a leitura
+		for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+			_ctl.draw_string(ThemeDB.fallback_font, Vector2(0, vp.y - 133) + d, ajuda, HORIZONTAL_ALIGNMENT_CENTER, vp.x, 12, Color(0, 0, 0, al))
 		Arte.texto(_ctl, Vector2(0, vp.y - 133), ajuda, 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
