@@ -72,7 +72,7 @@ def olhos(hd, novo):
             brilho = {"ciano": (235, 255, 255, 255), "laranja": (255, 235, 150, 255), "roxo": (245, 220, 255, 255)}[tipo]
             ex, ey = int(cx * k), int(cy * k)
             saida[(ex, ey)] = miolo
-            if len(grupo) >= 8:
+            if len(grupo) >= 8 or tipo == "laranja":
                 saida[(ex + 1, ey)] = miolo   # olho de 2 px de largura
             saida[(ex, ey)] = brilho if len(grupo) >= 14 else miolo
     return saida
@@ -111,7 +111,7 @@ def olhos_vazio(res, linha):
         return
     cx = round(sum(c[0] for c in melhor) / len(melhor))
     cy = round(sum(c[1] for c in melhor) / len(melhor))
-    cor = (215, 150, 255, 255)
+    cor = (200, 110, 255, 255)  # roxo-neon vivo
     alvos = [(cx - 2, cy), (cx + 1, cy)]
     for ax, ay in alvos:
         if (ax, ay) in escuro:

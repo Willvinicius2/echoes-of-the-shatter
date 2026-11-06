@@ -79,6 +79,14 @@ func evento(base: String) -> int:
 func escala_sprite() -> float:
 	return float(SpriteLoader.info(char_id)["lado"]) * float(SpriteLoader.info(char_id)["escala"]) / 128.0
 
+## Altura do topo do desenho acima do pé, em px de mundo (negativa): barra de vida e números de dano. Sprite em pixel art
+## (escala do CSV != 1) usa o pivô da arte vezes a escala atual; os HD antigos seguem a fórmula de sempre.
+func topo_visual() -> float:
+	var inf := SpriteLoader.info(char_id)
+	if inf["tem_arquivo"] and _esc_base != 1.0:
+		return -(float(inf["lado"]) * 0.5 - float(inf["offset"].y)) * sprite.scale.x * 0.88
+	return -90.0 * escala_sprite()
+
 func anim_base() -> String:
 	return _anim_base
 
