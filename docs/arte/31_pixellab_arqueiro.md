@@ -11,3 +11,6 @@ Segunda rodada (05/11): ataque regerado ("attack2", sem flecha no prompt; o mode
 Limitações conhecidas (antes da 2ª rodada, a do piso azulado está resolvida): a animação de ataque gerada atira para o lado direito do quadro nas direções S/SE/E e esconde a flecha em NE/N (a âncora de disparo fica na mão do arco); o piso azul-esverdeado destoa das paredes cinzas do atlas pintado; idle quase parado.
 
 Nota: o arqueiro agora é um ranger de capuz verde (capa verde-musgo, armadura prateada), não mais o capuz escuro do v7.
+
+## Etapa 1 do roteiro (06/11): fechar o arqueiro no jogo
+Linha única combinada com o Will: 1) arqueiro em pixel art no jogo, 2) fase completa jogável com o arqueiro até o chefe, 3) só então guerreiro, mago e mapas novos. Pendências do arqueiro herdadas do PR 205: capturas no Godot (CI, rótulo `capturas-pixel`), corrida de S com passada mais aberta, braseiro novo ligado ao tile, variantes de laje (o glifo se repete no piso).
