@@ -465,8 +465,8 @@ static func _fins_do_caminho(raiz: Node2D, sala: Node2D, caminhos: Array, idx: i
 				for a in 7:
 					var ang := TAU * a / 7.0 + posmod(h, 6)
 					pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.7))
-				var tom := 0.36 + 0.2 * float(posmod(h / 5, 100)) / 100.0
-				_poligono(raiz, _expandir(pts, c, 1.8), Color(0.08, 0.09, 0.08, 0.75))
+				var tom := 0.26 if posmod(h / 5, 2) == 0 else 0.36  # só 2 tons, mais escuros: o cinza claro saltava do gramado
+				_poligono(raiz, _expandir(pts, c, 2.2), Color(0.05, 0.05, 0.08, 0.95))  # contorno escuro
 				_poligono(raiz, pts, Color(tom, tom + 0.02, tom + 0.07))
 
 ## Pedrinhas e lajes soltas na borda do caminho: pequenas, achatadas, com sombra curta para baixo-direita
