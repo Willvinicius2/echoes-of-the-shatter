@@ -359,11 +359,17 @@ func _spawn_inimigos(spec: String) -> void:
 	if room.aberta() and (indice > 0 or pontos.is_empty()):
 		var t := float(room.tile)
 		pontos = room.pontos_fora_da_vista(vista(), float(config.get("spawn_margem_min", 1.0)) * t, float(config.get("spawn_margem_max", 4.0)) * t, maxi(total, 1), rng)
-	for i in range(pontos.size() - 1, 0, -1):
-		var j := rng.randi_range(0, i)
-		var tmp = pontos[i]
-		pontos[i] = pontos[j]
-		pontos[j] = tmp
+	# Fase aberta, primeira onda: os pontos E seguem a estrada (do início à arena) e a ordem da onda manda
+	# (esqueletos no começo, morcegos no meio, sentinelas no portão); nas outras ondas, embaralha.
+	var em_ordem: bool = room.aberta() and indice == 0 and pontos.size() > 1
+	if em_ordem:
+		pontos.sort_custom(func(a, b): return a.x < b.x)
+	else:
+		for i in range(pontos.size() - 1, 0, -1):
+			var j := rng.randi_range(0, i)
+			var tmp = pontos[i]
+			pontos[i] = pontos[j]
+			pontos[j] = tmp
 	var k := 0
 	vivos = 0
 	for parte in spec.split("|", false):
