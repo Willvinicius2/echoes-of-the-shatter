@@ -481,13 +481,17 @@ static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: i
 		for a in 7:
 			var ang := TAU * a / 7.0 + posmod(h, 6)
 			pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.6))
-		var tom := 0.4 + 0.2 * float(posmod(h / 5, 100)) / 100.0
+		var tom := 0.3 if posmod(h / 5, 2) == 0 else 0.4  # só 2 tons de cinza, como as lajes do piso
 		var musgo: bool = posmod(h / 13, 4) == 0
-		var cor := Color(0.28, 0.4, 0.2) if musgo else Color(tom, tom + 0.02, tom + 0.07)
+		var cor := Color(0.22, 0.32, 0.16) if musgo else Color(tom, tom + 0.02, tom + 0.07)
 		var sombra := _poligono(raiz, pts, Color(0.04, 0.05, 0.05, 0.6))
 		sombra.position = Vector2(2.0, 2.5)
+		var contorno_escuro := PackedVector2Array()
+		for q in pts:
+			contorno_escuro.append(c + (q - c) * 1.22)
+		_poligono(raiz, contorno_escuro, Color(0.07, 0.07, 0.1))  # contorno escuro de ~1 px
 		_poligono(raiz, pts, cor)
-		_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.12))  # faceta clara
+		_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.1))  # faceta clara
 		i += 10 + posmod(h / 3, 7)
 
 ## Manchas grandes e suaves de terra e grama amarelada sob tudo, para o gramado não ser textura chapada.

@@ -780,8 +780,8 @@ static func slot_mini(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float,
 ## Tecla no canto do slot: plaquinha escura com letra clara de 12 px.
 static func tecla_canto(c: CanvasItem, r: Rect2, tecla: String) -> void:
 	var larg := ThemeDB.fallback_font.get_string_size(tecla, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 6.0
-	c.draw_rect(Rect2(r.position + Vector2(2, r.size.y - 16.0), Vector2(larg, 14.0)), Color(0, 0, 0, 0.75))
-	texto(c, r.position + Vector2(5, r.size.y - 4.0), tecla, 12, Color(1, 0.95, 0.8))
+	c.draw_rect(Rect2(r.position + Vector2(2, r.size.y - 20.0), Vector2(larg, 14.0)), Color(0, 0, 0, 0.75))
+	texto(c, r.position + Vector2(5, r.size.y - 8.0), tecla, 12, Color(1, 0.95, 0.8))
 
 ## Encaixe vazio: vão escuro com moldura apagada e a tecla.
 static func encaixe_mini(c: CanvasItem, r: Rect2, tecla: String) -> void:
