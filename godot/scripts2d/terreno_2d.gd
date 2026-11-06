@@ -467,7 +467,7 @@ static func _fins_do_caminho(raiz: Node2D, sala: Node2D, caminhos: Array, idx: i
 					pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.7))
 				var tom := 0.26 if posmod(h / 5, 2) == 0 else 0.36  # só 2 tons, mais escuros: o cinza claro saltava do gramado
 				_poligono(raiz, _expandir(pts, c, 2.2), Color(0.02, 0.02, 0.04, 1.0))  # contorno escuro (quase preto)
-				_poligono(raiz, pts, Color(tom, tom + 0.02, tom + 0.07))
+				_poligono(raiz, pts, Color(tom + 0.03, tom + 0.02, tom))
 				_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.1))  # faceta clara (luz de cima-esquerda)
 				_poligono(raiz, PackedVector2Array([pts[3], pts[4], pts[5], pts[6], c]), Color(0.0, 0.0, 0.04, 0.3))  # faceta de sombra de 1 tom
 
@@ -485,7 +485,7 @@ static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: i
 			pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.6))
 		var tom := 0.3 if posmod(h / 5, 2) == 0 else 0.4  # só 2 tons de cinza, como as lajes do piso
 		var musgo: bool = posmod(h / 13, 4) == 0
-		var cor := Color(0.22, 0.32, 0.16) if musgo else Color(tom, tom + 0.02, tom + 0.07)
+		var cor := Color(0.22, 0.32, 0.16) if musgo else Color(tom + 0.03, tom + 0.02, tom)
 		var sombra := _poligono(raiz, pts, Color(0.04, 0.05, 0.05, 0.6))
 		sombra.position = Vector2(2.0, 2.5)
 		var contorno_escuro := PackedVector2Array()

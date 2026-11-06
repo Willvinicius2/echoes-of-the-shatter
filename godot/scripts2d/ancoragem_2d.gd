@@ -11,7 +11,13 @@ const SOMBRA_SHADER := """
 shader_type canvas_item;
 uniform vec4 cor : source_color = vec4(0.0, 0.0, 0.0, 0.4);
 void fragment() {
-	COLOR = vec4(cor.rgb, step(0.5, texture(TEXTURE, UV).a) * cor.a);
+	// ponta da sombra (topo do sprite, UV.y baixo) serrilhada com dither ordenado 4x4 em vez de esmaecer
+	int bx = int(mod(FRAGCOORD.x, 4.0));
+	int by = int(mod(FRAGCOORD.y, 4.0));
+	float lim = (float((bx * 5 + by * 7 + bx * by) % 16) + 0.5) / 16.0;
+	float ponta = smoothstep(0.0, 0.28, UV.y);
+	float ok = step(0.5, texture(TEXTURE, UV).a) * step(lim, ponta + 0.02);
+	COLOR = vec4(cor.rgb, ok * cor.a);
 }
 """
 
@@ -231,9 +237,7 @@ static func _terra(chao: Node2D, centro: Vector2, bl: float, ba: float, t: Strin
 		pg.polygon = pts
 		pg.color = cor
 		chao.add_child(pg)
-	anel.call(1.45, Color(0.15, 0.12, 0.07, 0.3), Vector2(3, 2))
-	anel.call(1.1, Color(0.15, 0.11, 0.07, 0.55), Vector2(2, 1))
-	anel.call(0.8, Color(0.1, 0.08, 0.05, 0.7), Vector2(1, 0))
+	anel.call(1.0, Color(0.12, 0.09, 0.06, 0.5), Vector2(2, 1))  # 1 anel de 1 tom (antes 3 com alfa em degradê, borrava)
 
 ## Sombra com a silhueta do sprite deitada no chão: espelhada no pé, achatada e inclinada para a direita.
 static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Dictionary, flip: bool, centro: Vector2, t: String) -> void:
@@ -241,7 +245,7 @@ static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Di
 		_mat_sombra = ShaderMaterial.new()
 		_mat_sombra.shader = Shader.new()
 		_mat_sombra.shader.code = SOMBRA_SHADER
-		_mat_sombra.set_shader_parameter("cor", Color(0.02, 0.03, 0.05, 0.34))
+		_mat_sombra.set_shader_parameter("cor", Color(0.02, 0.03, 0.05, 0.3))
 	var sp := Sprite2D.new()
 	sp.texture = tex
 	sp.centered = false
@@ -250,7 +254,7 @@ static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Di
 	if flip:
 		sp.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
 	sp.material = _mat_sombra
-	var achata := 0.46 if t == "arvore" else (0.3 if t == "folhagem" else 0.4)
+	var achata := 0.46 if t == "arvore" else (0.3 if t == "folhagem" else 0.28)  # sólido: sombra ~30% mais curta (revisão)
 	var inclina := 0.6 if t == "arvore" else 0.5
 	# ponto local (x, y) com y <= 0 acima do pé vira (x*esc - y*esc*inclina, -y*esc*achata): deitado e para baixo-direita
 	sp.transform = Transform2D(Vector2(esc, 0.0), Vector2(-inclina * esc, -achata * esc), centro)
