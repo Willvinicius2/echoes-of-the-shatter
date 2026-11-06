@@ -372,6 +372,10 @@ func _draw() -> void:
 		var larg := 40.0
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		var topo := -90.0 * (escala_sprite())
+		var inf := SpriteLoader.info(char_id)
+		if inf["tem_arquivo"] and _esc_base != 1.0:
+			# sprite em pixel art (escala do CSV != 1): o topo do desenho é o pivô (px da arte) vezes a escala atual do sprite, não o lado do quadro HD
+			topo = -(float(inf["lado"]) * 0.5 - float(inf["offset"].y)) * sprite.scale.x * 0.88
 		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0, 0, 0, 0.7))
 		draw_rect(Rect2(-larg / 2.0, topo, larg * hp / hp_max, 5.0), Color(0.8, 0.15, 0.15))
 
