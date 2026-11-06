@@ -26,3 +26,4 @@ Linha única combinada com o Will: 1) arqueiro em pixel art no jogo, 2) fase com
 - Cascalho no fim dos caminhos e lajes soltas (`terreno_2d.gd`): contorno quase preto e duas facetas (clara em cima à esquerda, sombra de 1 tom embaixo à direita), no lugar de 2 tons chapados.
 - Tronco seco grande (`tree_dead_large`) conferido: grade de 1 px (escala 1), sem blocos ampliados.
 - Dica de controles do HUD: sem faixa escura (tapava galhos do chão), contorno de 1 px em 4 direções.
+- Follow-ups da revisão (PR 210): sombra projetada de sólidos 30% mais curta e mais fraca, com a ponta serrilhada em dither; terra pisada sob arbustos num anel só de 1 tom (eram 3 com alfa em degradê); pedras do cascalho e lajes soltas em cinza quente (antes azulado).
