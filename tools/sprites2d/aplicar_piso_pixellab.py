@@ -14,8 +14,13 @@ def tint(im):
     mapa = ImageOps.colorize(ImageOps.autocontrast(g), (26, 24, 36), (128, 122, 138), mid=(70, 66, 80))
     mapa.putalpha(im.getchannel("A"))
     return mapa
+def lisa(b, a):
+    """b sem o glifo: troca a laje inferior direita (onde ele fica) pela da laje a, que é lisa; as emendas continuam."""
+    c = b.copy()
+    c.paste(a.crop((17, 18, 31, 31)), (17, 18))
+    return c
 up = lambda im: tint(im).resize((64, 64), Image.NEAREST)
-var = [up(a), up(b), ImageOps.mirror(up(b)), ImageOps.flip(up(a))]
+var = [up(a), up(b), ImageOps.mirror(up(lisa(b, a))), ImageOps.flip(up(a))]  # só 1 de 4 lajes leva glifo
 escuro = ImageEnhance.Brightness(up(a)).enhance(0.55)
 A = Image.open(atlas_p).convert("RGBA")
 for i, t in enumerate(var):
