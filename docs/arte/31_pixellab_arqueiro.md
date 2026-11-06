@@ -14,3 +14,9 @@ Nota: o arqueiro agora é um ranger de capuz verde (capa verde-musgo, armadura p
 
 ## Etapa 1 do roteiro (06/11): fechar o arqueiro no jogo
 Linha única combinada com o Will: 1) arqueiro em pixel art no jogo, 2) fase completa jogável com o arqueiro até o chefe, 3) só então guerreiro, mago e mapas novos. Pendências do arqueiro herdadas do PR 205: capturas no Godot (CI, rótulo `capturas-pixel`), corrida de S com passada mais aberta, braseiro novo ligado ao tile, variantes de laje (o glifo se repete no piso).
+
+## Etapa 2 (06/11): fase jogável com o arqueiro em pixel art
+- Corrida de frente (S) regerada no PixelLab (modo v3, 8 quadros, `corrida_s_loop`; a geração com `template running-6-frames` perdeu o arco e foi descartada). Usa os quadros 3 a 8; os antigos ficam em `art-src/pixellab/arqueiro/animations/walking_s_antigo/`. Plano grátis: sobram 2 gerações das 40. O host `backblaze.pixellab.ai` não é liberado no container; as imagens vêm em base64 pelo `GET /v2/background-jobs/<id>`.
+- Props e vegetação: `tools/sprites2d/pixelar_props.py [passo=2] [cores=14]` lê os originais HD de `art-src/props-hd-originais/` e grava em `godot/art2d/props/` com grade de 2 px de mundo (a mesma do piso), 14 cores por prop, contorno escuro de 1 px de grade e alfa binário; ajusta `props_manifest.csv` (tamanho e pivô na base opaca) e a `escala` em `props_2d.csv` (= passo / ampliação inteira), sem mudar o tamanho na tela. `altar_candles` fica como era (velas animadas por código).
+- Braseiro: `tools/sprites2d/aplicar_braseiro_pixellab.py` troca a célula 15 do atlas pelo braseiro de pedra do PixelLab em 1:1; o `clima_2d.gd` tira a chama pintada e põe o fogo animado (`clima.csv`: fogo 26x36, `tigela_borda` 0,31 serve para esta arte). Captura de perto: `scripts2d/tools/captura_braseiro_2d.gd`.
+- Limites: os props têm pixel de 2 px de mundo e o arqueiro de 1 px; se o Jev achar o contraste forte, rode o script com passo 1.
