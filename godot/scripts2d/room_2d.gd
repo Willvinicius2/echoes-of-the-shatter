@@ -700,6 +700,8 @@ func colocar_props(alvo: Node2D) -> void:
 		spr.flip_h = p["flip"]
 		if p["id"] in ["tree_dry_orange", "bush_dry_red"]:
 			spr.modulate = Color(0.72, 0.68, 0.68)  # laranja e vermelho mais calmos, para inimigos e projéteis saltarem
+		elif String(p["id"]).begins_with("rock_"):
+			spr.modulate = Color(0.62, 0.6, 0.66)  # pedras mais escuras: o cinza claro chapado saltava do gramado
 		elif String(p["id"]).begins_with("tree_"):
 			spr.modulate = Color(0.8, 0.77, 0.76)  # copas de fundo menos saturadas
 		if spr.flip_h:
