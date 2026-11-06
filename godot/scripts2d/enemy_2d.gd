@@ -372,7 +372,8 @@ func _draw() -> void:
 		var larg := 40.0
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		var topo := topo_visual()
-		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0, 0, 0, 0.7))
+		draw_rect(Rect2(-larg / 2.0 - 1.0, topo - 1.0, larg + 2.0, 7.0), Color(0.02, 0.02, 0.03, 0.95))   # borda escura de 1 px
+		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0.12, 0.05, 0.06, 1.0))
 		draw_rect(Rect2(-larg / 2.0, topo, larg * hp / hp_max, 5.0), Color(0.8, 0.15, 0.15))
 
 ## Aviso de ataque: área vermelha que enche até o golpe (melee) ou linha de mira (ranged/chefe).

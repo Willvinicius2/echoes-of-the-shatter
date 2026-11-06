@@ -75,6 +75,9 @@ def olhos(hd, novo):
             if len(grupo) >= 8 or tipo == "laranja":
                 saida[(ex + 1, ey)] = miolo   # olho de 2 px de largura
             saida[(ex, ey)] = brilho if len(grupo) >= 14 else miolo
+            if tipo == "laranja":   # olho do morcego 2x2 px
+                saida[(ex, ey + 1)] = miolo
+                saida[(ex + 1, ey + 1)] = miolo
     return saida
 
 
