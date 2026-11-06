@@ -68,4 +68,4 @@ fx_max_decalques,12,x,marcas no chao (pocas e brasas de efeitos, chao gelado) vi
 fx_max_status,6,x,overlays grandes de status (frio, veneno, queimadura) ao mesmo tempo; acima disso o status vira icone pequeno sobre a cabeca (doc 36 secao 6.1)
 flash_amount,0.5,x,quanto o inimigo atingido fica branco (0 a 1)
 dmg_number_group_ms,200,ms,golpes no mesmo alvo dentro desta janela somam num unico numero
-dmg_pixel_escala,0.95,x,aumento do texto dos numeros de dano para continuar legivel na grade de pixel art
+dmg_pixel_escala,0.68,x,aumento do texto dos numeros de dano para continuar legivel na grade de pixel art

@@ -128,7 +128,7 @@ static func numero(alvo: Node2D, valor: float, cor: Color, grande := false, fort
 	alvo.set_meta("dmg_num", n)
 	alvo.set_meta("dmg_num_v", valor)
 	alvo.set_meta("dmg_num_t", agora)
-	n.cor = cor
+	n.cor = Color(1.0, 0.55, 0.15) if (forte and not grande) else cor   # golpe forte/crítico em laranja; morte e dano comum mantêm a cor do chamador
 	n.tamanho = cfg()["dmg_number_size_kill" if grande else ("dmg_number_size_strong" if forte else "dmg_number_size")]
 	var esc: float = alvo.escala_sprite() if alvo.has_method("escala_sprite") else 1.0   # alvo grande: número mais alto e maior
 	n.tamanho *= clampf(esc, 1.0, 1.4) * float(cfg().get("dmg_pixel_escala", 1.0))
