@@ -19,11 +19,15 @@ MAN = os.path.join(R, "godot", "data2d", "props_manifest.csv")
 DEF = os.path.join(R, "godot", "data2d", "props_2d.csv")
 PASSO = float(sys.argv[1]) if len(sys.argv) > 1 else 2.0
 CORES = int(sys.argv[2]) if len(sys.argv) > 2 else 14
+AJUSTE = {"skull_pile": (0.6, 0.55)}  # id: (fator de tamanho, fator de saturação) — pilha das ruínas menor e mais apagada
+# Teto de altura (px de mundo = px de grade com passo 1) para a vegetação baixa: do joelho à cintura do arqueiro (42 px)
+TETO = {"grass_": 30, "ferns_": 32, "reeds_": 34, "thistles_": 32, "flowers_": 28, "leaves_": 22, "branches_": 30,
+        "bush_": 38, "shrub_": 40, "roots_": 28, "log_": 34, "bones_": 30, "skull_": 28, "skeleton_": 30}
 PULAR = {"altar_candles"}  # tem velas animadas por código (halo); mantém a arte
 M = 1  # margem em pixels de grade para o contorno
 
 
-def pixelar(im, escala):
+def pixelar(im, escala, sat=1.0):
     w, h = im.size
     lw = max(4, round(w * escala / PASSO))
     lh = max(4, round(h * escala / PASSO))
@@ -42,6 +46,9 @@ def pixelar(im, escala):
         for x in range(lw):
             k = max(px_a[x, y], 1) / 255.0
             cp[x, y] = (min(255, int(px_r[x, y] / k)), min(255, int(px_g[x, y] / k)), min(255, int(px_b[x, y] / k)))
+    if sat != 1.0:
+        from PIL import ImageEnhance
+        cor = ImageEnhance.Color(cor).enhance(sat)
     q = cor.quantize(colors=CORES, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert("RGB")
     out = Image.new("RGBA", (lw + 2 * M, lh + 2 * M), (0, 0, 0, 0))
     mk = Image.new("L", out.size, 0)
@@ -75,11 +82,16 @@ def main():
         if pid in PULAR or pid not in d_por_id:
             continue
         escala = float(d_por_id[pid]["escala"])
+        fator, sat = AJUSTE.get(pid, (1.0, 1.0))
+        escala *= fator
+        for pre, teto in TETO.items():
+            if pid.startswith(pre) and int(m["altura"]) * escala > teto:
+                escala *= teto / (int(m["altura"]) * escala)
         im = Image.open(os.path.join(ORIG, pid + ".png")).convert("RGBA")
         ow, oh = int(m["largura"]), int(m["altura"])
         px, py = int(m["pivo_x"]), int(m["pivo_y"])
-        out, (lw, lh) = pixelar(im, escala)
-        k = max(1, round(PASSO / escala))
+        out, (lw, lh) = pixelar(im, escala, sat)
+        k = 1 if PASSO <= 1 else max(1, round(PASSO / escala))
         # pivô em pixels da grade: a base do prop fica na altura original; margem do contorno entra
         pxl = (px * escala / PASSO) + M
         pyl = (py * escala / PASSO) + M

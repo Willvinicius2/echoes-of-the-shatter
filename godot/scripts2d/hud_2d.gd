@@ -47,8 +47,8 @@ func _desenhar() -> void:
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
 		var ajuda := Csv.t("hud.help")
 		var lt := ThemeDB.fallback_font.get_string_size(ajuda, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-		_ctl.draw_rect(Rect2((vp.x - lt) * 0.5 - 10.0, vp.y - 128.0, lt + 20.0, 20.0), Color(0.02, 0.02, 0.03, 0.6 * al))  # faixa escura: a dica fica legível sobre qualquer chão
-		Arte.texto(_ctl, Vector2(0, vp.y - 114), ajuda, 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		_ctl.draw_rect(Rect2((vp.x - lt) * 0.5 - 10.0, vp.y - 148.0, lt + 20.0, 22.0), Color(0.02, 0.02, 0.03, 0.85 * al))  # faixa escura: a dica fica legível sobre qualquer chão
+		Arte.texto(_ctl, Vector2(0, vp.y - 133), ajuda, 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])

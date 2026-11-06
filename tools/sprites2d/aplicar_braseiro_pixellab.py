@@ -11,7 +11,11 @@ b = Image.open(os.path.join(R, "godot", "art2d", "pixellab", "braseiro_pedra_48x
 A = Image.open(atlas_p).convert("RGBA")
 IDX, T = 15, 64
 x0, y0 = (IDX % 8) * T, (IDX // 8) * T
+# a chama pintada acima da borda (linhas 0..15) sai: o fogo animado a refaz; a arte cresce 25% (vizinho mais próximo)
+b = b.crop((0, 16, 48, 64))
+b = b.resize((60, 60), Image.NEAREST)
 A.paste(Image.new("RGBA", (T, T), (0, 0, 0, 0)), (x0, y0))
-A.alpha_composite(b, (x0 + (T - 48) // 2, y0 + 4))
+bb = b.getbbox()
+A.alpha_composite(b.crop(bb), (x0 + (T - (bb[2] - bb[0])) // 2, y0 + 63 - (bb[3] - bb[1])))
 A.save(atlas_p)
 print("braseiro aplicado na célula", IDX)
