@@ -693,6 +693,8 @@ static func _tufos_na_borda(sala: Node2D, contorno: PackedVector2Array, semente:
 			sp.centered = false
 			sp.offset = -Vector2(arte[1], arte[2])
 			sp.scale = Vector2.ONE * escalas[k]
+			if ids[k] == "rock_rubble":
+				sp.modulate = Color(0.55, 0.53, 0.6)  # pedrinhas escuras: o cinza claro chapado saltava do gramado
 			sp.position = contorno[i] + Vector2(posmod(h / 7, 9) - 4, posmod(h / 63, 7) - 3)
 			sala.add_child(sp)
 		i += 9 + posmod(h / 3, 8)
