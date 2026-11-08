@@ -545,7 +545,8 @@ static func _textura_lajes_claras(fator: float) -> Texture2D:
 		return _textura_lajes()
 	if _lajes_claras.has(fator):
 		return _lajes_claras[fator]
-	var img := _textura_lajes().get_image()
+	var img := Image.new()
+	img.copy_from(_textura_lajes().get_image())   # sem janela (e no editor) get_image() devolve a imagem guardada na textura: mexer nela clarearia as lajes de todo o mapa
 	for y in img.get_height():
 		for x in img.get_width():
 			var c := img.get_pixel(x, y)
