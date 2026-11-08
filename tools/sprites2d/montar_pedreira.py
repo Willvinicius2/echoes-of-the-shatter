@@ -9,6 +9,11 @@ Saídas (em godot/art2d/props/):
   pedreira_carrinho.png        carrinho de pedra tombado para o lado da roda quebrada, blocos derramados
   pedreira_portico.png         pórtico de guindaste (marco do trecho): pés em A, viga, roldana, corrente e bloco pendurado
   pedreira_poste_lanterna.png  poste com braço, correntinha e lanterna de ferro acesa
+  pedreira_portao.png          portão final da fase (fundo da luta contra o elite): dois bastiões maciços de blocos de
+                               calcário com vão livre de 2 tiles, verga grossa com pedra-chave, grade de ferro levantada
+                               por correntes e guindaste de madeira com roldana e contrapeso no topo do bastião direito
+  pedreira_lasca_0/1/2.png     lascas angulares de bloco cortado soltas no chão (1, 2 e 3 fragmentos), no lugar das
+                               pedras redondas da área 1
 
 Pivô de todos = centro da borda de baixo. Uso: python3 -I tools/sprites2d/montar_pedreira.py [--previas DIR]
 Só PIL e numpy; reaproveita `Tela`, `rachadura`, `pintar_grupo` e os padrões de corrente de montar_marcos.py
@@ -167,22 +172,24 @@ def morder(t, pixels, cor_fresca, rng, n, larg=(2, 4), prof=(1, 2)):
 
 # ---------------------------------------------------------------- calcário
 def bloco_calcario(t, x, y, w, h, d, s, rng, cunhas=False, rachado=True, lascas=1, mordidas=1, cima=C3,
-                   cunhas_lado=False):
+                   cunhas_lado=False, faixa=None):
     """Bloco de calcário cortado em 3/4 oblíquo: face de cima (w x d) a partir de (x, y), face frontal (w x h)
     embaixo, lateral direita de `s` px que sobe 1 px por coluna. Mesma leitura das lajes da Cripta (rock_slabs):
     face de cima clara e mosqueada, face frontal escura com uma faixa média logo abaixo da quina, base funda,
     lateral em sombra; textura só trocando entre os tons do material; quinas duras (pedra cortada), uma lasca ou
     outra. `cunhas` = fileira de marcas de cunha na quina de cima; `cunhas_lado` = a mesma fileira na aresta
-    esquerda (bloco caído de lado). Devolve a caixa ocupada."""
+    esquerda (bloco caído de lado); `faixa` = (início, teto) em px da faixa média abaixo da quina (padrão: h/3 até
+    h/2). Devolve a caixa ocupada."""
     fy0 = y + d
     fy1 = fy0 + h - 1
     t.rect(x, y, x + w - 1, fy0 - 1, cima)
     t.rect(x, fy0, x + w - 1, fy1, C1)
     # faixa média irregular logo abaixo da quina (a luz ainda pega o alto da face frontal)
-    lim = fy0 + max(2, h // 3)
+    f_ini, f_teto = faixa if faixa else (max(2, h // 3), h // 2)
+    lim = fy0 + f_ini
     for px in range(x, x + w):
         if rng.random() < 0.35:
-            lim = max(fy0 + 2, min(fy0 + h // 2, lim + rng.choice((-1, 1))))
+            lim = max(fy0 + 2, min(fy0 + f_teto, lim + rng.choice((-1, 1))))
         t.vline(px, fy0, lim, C2)
         t.put(px, fy1, C0)
         if h >= 10 and rng.random() < 0.5:
@@ -1020,6 +1027,369 @@ def montar_poste_lanterna(seed=69):
     return recortar(t)
 
 
+# ---------------------------------------------------------------- portão (alvenaria, grade e guindaste)
+def fiada_blocos(t, x0, x1, fy0, h, d, rng, evitar=(), cunhas_p=0.3, larg=(30, 52)):
+    """Uma fiada de blocos de calcário encostados de x0 a x1 (inclusive): face frontal de fy0 a fy0+h-1, face de cima
+    `d` px acima (nas fiadas de baixo ela fica escondida pela fiada seguinte). Juntas verticais de 1 px em C0, fugindo
+    das juntas da fiada de baixo (`evitar`) para desencontrar. Devolve as juntas desta fiada."""
+    juntas = []
+    x = x0
+    while x <= x1:
+        w = rng.randint(*larg)
+        for _ in range(3):                      # junta cai perto de uma da fiada de baixo: alarga ou encurta o bloco
+            if any(abs(x + w - j) < 8 for j in evitar):
+                w += rng.choice((-9, 9))
+        w = max(18, w)
+        if x1 - (x + w) < 18:                   # o último bloco pega o resto
+            w = x1 - x + 1
+        ini = rng.randint(h // 3, h * 3 // 5)     # altura da faixa clara varia por bloco (sem listra contínua)
+        bloco_calcario(t, x, fy0 - d, w, h, d, 0, rng, cunhas=rng.random() < cunhas_p, lascas=0, mordidas=0,
+                       faixa=(ini, min(h - 4, ini + h // 4)))
+        if d >= 16 and rng.random() < 0.6:      # junta cruzada na face de cima (bloco mais curto na profundidade)
+            jy = fy0 - d + rng.randint(9, d - 9)
+            t.hline(x + 1, x + w - 2, jy, C0)
+            t.hline(x + 1, x + w - 2, jy + 1, C4)
+        x += w
+        if x <= x1:
+            t.vline(x, fy0 - d, fy0 + h - 1, C0)
+            t.vline(x + 1, fy0 + 1, fy0 + h // 3, C3)    # fio de luz no bloco à direita da junta
+            juntas.append(x)
+            x += 1
+    return juntas
+
+
+def lateral_parede(t, x, y_topo, y_base, s, juntas_h=()):
+    """Lateral direita de uma parede de blocos (face em sombra, chapada), subindo 1 px por coluna como nos blocos
+    soltos; `juntas_h` = linhas (y) das juntas horizontais, marcadas em C0 na lateral."""
+    for i in range(s):
+        cx = x + i
+        t.vline(cx, y_topo - i - 1, y_base - i - 1, C1)
+        t.put(cx, y_topo - i - 1, C3 if i < 2 else C2)
+        t.put(cx, y_base - i - 1, C0)
+        for jy in juntas_h:
+            t.put(cx, jy - i - 1, C0)
+
+
+def bastiao(t, chao, alt, d_topo, s, rng, corpo, plinto, alt_plinto, lado):
+    """Bastião maciço de blocos de calcário: `corpo` = (x0, x1) da face frontal acima do plinto, `plinto` = (x0, x1)
+    das fiadas de baixo (sai `lado`: -1 para a esquerda, +1 para a direita), lateral direita de `s` px. Fiadas de baixo
+    para cima com juntas desencontradas; a fiada de cima traz a face de cima (d_topo). Devolve (y da face de cima,
+    y do topo da face frontal, y do topo do plinto)."""
+    e = nova(t.w, t.h)
+    alturas = []
+    resto = alt
+    while resto > 0:
+        a = rng.randint(19, 25)
+        if resto - a < 12:
+            a = resto
+        alturas.append(a)
+        resto -= a
+    fy1 = chao
+    juntas = []
+    juntas_h = []
+    y_plinto = None
+    for i, a in enumerate(alturas):
+        fy0 = fy1 - a + 1
+        ultima = i == len(alturas) - 1
+        no_plinto = chao - fy1 < alt_plinto
+        x0, x1 = plinto if no_plinto else corpo
+        if no_plinto and chao - fy0 + 1 >= alt_plinto:          # topo do plinto: a fiada acima já é do corpo
+            y_plinto = fy0
+        d = d_topo if ultima else 2
+        juntas = fiada_blocos(e, x0, x1, fy0, a, d, rng, evitar=juntas, cunhas_p=0.18 if not ultima else 0.7)
+        if not ultima:
+            juntas_h.append(fy0 - 1)
+        else:
+            for px in range(x0, x1 + 1):         # quina da face de cima com a frontal: aresta de luz contínua
+                if e.cor(px, fy0) == C3:
+                    e.put(px, fy0, C4)
+        fy1 = fy0 - 1
+    y_topo = fy1 + 1 - d_topo
+    # degrau do plinto: face de cima fina na parte que sobra para fora do corpo
+    if y_plinto is not None and plinto != corpo:
+        if lado < 0:
+            px0, px1 = plinto[0], corpo[0] - 1
+        else:
+            px0, px1 = corpo[1] + 1, plinto[1]
+        e.rect(px0, y_plinto - 4, px1, y_plinto - 1, C3)
+        e.hline(px0, px1, y_plinto - 4, C4)
+        if lado < 0:
+            e.vline(px0, y_plinto - 4, y_plinto - 1, C4)
+        for px in range(px0, px1 + 1):
+            if rng.random() < 0.3:
+                e.put(px, y_plinto - rng.randint(1, 3), C2)
+    # lateral direita: do corpo (toda a altura) e do plinto (quando ele sai para a direita)
+    if lado > 0 and plinto != corpo:
+        lateral_parede(e, plinto[1] + 1, y_plinto, chao, s, [j for j in juntas_h if j > y_plinto])
+        lateral_parede(e, corpo[1] + 1, y_topo, y_plinto - 1, s, [j for j in juntas_h if j < y_plinto])
+        # quina do degrau na lateral
+        for i in range(s):
+            e.put(corpo[1] + 1 + i, y_plinto - 1 - i - 1, C3)
+    else:
+        lateral_parede(e, corpo[1] + 1, y_topo, chao, s, juntas_h)
+    # mordidas na silhueta: topo da face de cima e aresta externa
+    xa, xb = (plinto[0], corpo[1]) if lado < 0 else (corpo[0], plinto[1])
+    morder(e, [(px, y_topo, 0, 1) for px in range(corpo[0] + 4, corpo[1] - 4)], C2, rng, 4, larg=(2, 4), prof=(1, 2))
+    x_ext = corpo[0] if lado < 0 else corpo[1] + s
+    dx_in = 1 if lado < 0 else -1
+    morder(e, [(x_ext, py, dx_in, 0) for py in range(y_topo + 6, y_plinto - 6)], C2, rng, 3, larg=(2, 4), prof=(1, 2))
+    colar_contornado(t, e)
+    return y_topo, fy1 + 1, y_plinto
+
+
+def grade_ferro(t, x0, x1, y_topo, y_fim, passo, travessas):
+    """Grade de ferro (portcullis) levantada: barras verticais de 3 px com ponta para baixo, travessas horizontais com
+    rebites nos cruzamentos. Vazada entre as barras (alfa binário)."""
+    xs = list(range(x0, x1 - 2, passo))
+    for x in xs:
+        t.vline(x, y_topo, y_fim - 3, F3)
+        t.vline(x + 1, y_topo, y_fim - 3, F2)
+        t.vline(x + 2, y_topo, y_fim - 3, F1)
+        t.put(x, y_fim - 2, F2)
+        t.put(x + 1, y_fim - 2, F1)
+        t.put(x + 2, y_fim - 2, F0)
+        t.put(x + 1, y_fim - 1, F1)
+        t.put(x + 1, y_fim, F0)
+    for ty in travessas:
+        t.hline(x0 - 2, xs[-1] + 4, ty, F3)
+        t.hline(x0 - 2, xs[-1] + 4, ty + 1, F2)
+        t.hline(x0 - 2, xs[-1] + 4, ty + 2, F2)
+        t.hline(x0 - 2, xs[-1] + 4, ty + 3, F1)
+        for x in xs:
+            t.put(x + 1, ty + 1, F3)
+            t.put(x + 1, ty + 2, F0)
+        t.put(x0 - 2, ty + 3, F0)
+        t.put(xs[-1] + 4, ty, F2)
+    return xs
+
+
+CAVEIRA = [
+    "..bbbb..",
+    ".bBBBbs.",
+    "bBBBBBbs",
+    "bBBBBBbs",
+    "bKKBKKbs",
+    ".bKbbKs.",
+    "..bsbs..",
+    "..sKsK..",
+]
+MAPA_CAVEIRA = {"K": K0, "B": B2, "b": C4, "s": C3}
+
+
+def caveira_pequena(t, x, y):
+    desenhar_padrao(t, CAVEIRA, x, y, MAPA_CAVEIRA)
+
+
+def pedra_chave(t, cx, y_cima, y_frente0, y_frente1, rng):
+    """Pedra-chave da verga: bloco trapezoidal (mais largo em cima) saltado para a frente, com face de cima própria e
+    uma caveirinha entalhada no meio."""
+    meia_c, meia_b = 13, 9
+    t.rect(cx - meia_c, y_cima, cx + meia_c, y_frente0 - 1, C3)
+    t.hline(cx - meia_c, cx + meia_c, y_cima, C4)
+    t.vline(cx - meia_c, y_cima, y_frente0 - 1, C4)
+    poligono(t, [(cx - meia_c, y_frente0), (cx + meia_c, y_frente0), (cx + meia_b, y_frente1), (cx - meia_b, y_frente1)], C2)
+    for y in range(y_frente0, y_frente1 + 1):
+        f = (y - y_frente0) / float(y_frente1 - y_frente0)
+        meia = int(round(meia_c + (meia_b - meia_c) * f))
+        if f > 0.62:
+            t.hline(cx - meia, cx + meia, y, C1)
+        t.put(cx - meia, y, C4 if f < 0.7 else C3)
+        t.put(cx + meia, y, C0)
+        if y == y_frente1:
+            t.hline(cx - meia, cx + meia, y, C0)
+    t.hline(cx - meia_c + 1, cx + meia_c - 1, y_frente0, C3)
+    for _ in range(14):
+        px, py = rng.randint(cx - meia_b + 1, cx + meia_b - 1), rng.randint(y_frente0 + 1, y_frente1 - 2)
+        c = t.cor(px, py)
+        if c == C2 and rng.random() < 0.5:
+            t.put(px, py, C3 if rng.random() < 0.4 else C1)
+        elif c == C1:
+            t.put(px, py, C2 if rng.random() < 0.5 else C0)
+    caveira_pequena(t, cx - 4, y_frente0 + 5)
+
+
+def montar_portao(seed=81):
+    """Portão da Pedreira (fundo da luta contra o elite): dois bastiões maciços de calcário com um vão livre de 2 tiles
+    no meio, verga grossa com pedra-chave, grade de ferro levantada pendurada em correntes e guindaste de madeira no
+    topo do bastião direito, com roldana e contrapeso de pedra."""
+    rng = random.Random(seed)
+    W, H = 416, 256
+    t = nova(W, H)
+    chao = H - 2
+    ALT, D_TOPO, S = 176, 36, 6
+    # bastiões: 143 px cada (corpo 129 + lateral 6 + degrau do plinto 8), vão de 128 px (x 144..271)
+    ye_topo, ye_frente, ye_plinto = bastiao(t, chao, ALT, D_TOPO, S, rng, corpo=(9, 137), plinto=(1, 137),
+                                            alt_plinto=66, lado=-1)
+    yd_topo, yd_frente, yd_plinto = bastiao(t, chao, ALT, D_TOPO, S, rng, corpo=(272, 400), plinto=(272, 408),
+                                            alt_plinto=66, lado=+1)
+    # blocos soltos em cima do bastião esquerdo
+    e = nova(W, H)
+    bloco_calcario(e, 30, ye_topo + 6, 30, 12, 9, 4, rng, cunhas=True, lascas=1, mordidas=1)
+    colar_contornado(t, e)
+    e = nova(W, H)
+    bloco_calcario(e, 66, ye_topo + 14, 22, 10, 7, 3, rng, lascas=1, mordidas=0)
+    colar_contornado(t, e)
+    e = nova(W, H)
+    pedra_bruta(e, [(96, ye_topo + 22), (106, ye_topo + 20), (112, ye_topo + 25), (104, ye_topo + 29)], 3, rng)
+    colar_contornado(t, e)
+    # grade de ferro levantada (atrás da verga, que esconde o topo dela)
+    y_verga_baixo = chao - 124                   # borda de baixo da verga: 124 px acima do chão
+    y_pontas = chao - 64                         # pontas da grade: 64 px acima do chão
+    e = nova(W, H)
+    grade_ferro(e, 151, 265, y_verga_baixo - 8, y_pontas, 16, (y_verga_baixo + 9, y_verga_baixo + 30, y_verga_baixo + 50))
+    colar_contornado(t, e)
+    # verga: bloco grosso de calcário com marcas de cunha, apoiado nas duas faces frontais
+    vh, vd = 28, 10
+    vy = y_verga_baixo - vh - vd + 1
+    cx = 208
+    # correntes de içar: da barra acima da verga até a travessa de cima da grade, passando por trás da verga (entram
+    # por ranhuras); desenhadas antes da verga para ela cobrir o meio
+    y_barra = vy - 12
+    e = nova(W, H)
+    e.rect(176, y_barra, 240, y_barra + 2, F2)
+    e.hline(176, 240, y_barra, F3)
+    e.hline(177, 239, y_barra + 2, F1)
+    for x in (176, 236):
+        y = y_barra + 3
+        while y + 6 <= y_verga_baixo + 10:
+            y = corrente(e, x, y, 1, com_gancho=False)
+            desenhar_padrao(e, marcos.CORRENTE_BARRA, x, y, MAPA_FERRO)
+            y += 2
+    colar_contornado(t, e)
+    e = nova(W, H)
+    bloco_calcario(e, 130, vy, 152, vh, vd, 4, rng, cunhas=True, lascas=0, mordidas=2)
+    for x in (176, 236):                         # ranhuras na face de cima da verga por onde as correntes descem
+        t.rect(x - 1, vy + 2, x + 5, vy + 4, C0)
+        t.hline(x, x + 4, vy + 5, C4)
+    colar_contornado(t, e)
+    e = nova(W, H)
+    pedra_chave(e, cx, vy, vy + vd + 6, y_verga_baixo + 4, rng)
+    colar_contornado(t, e)
+    # caveirinhas em cima da verga, perto das pontas (detalhe pequeno)
+    e = nova(W, H)
+    caveira_pequena(e, 146, vy - 7)
+    caveira_pequena(e, 268, vy - 6)
+    colar_contornado(t, e)
+    # guindaste no topo do bastião direito: poste, viga em balanço sobre o vão, escora, amarrações
+    y_viga = chao - 251
+    LP = 10
+    e = nova(W, H)
+    poste(e, 311, y_viga + 9, yd_topo + 18, LP, rng)
+    colar_contornado(t, e)
+    e = nova(W, H)
+    travessa(e, 196, 358, y_viga, 10, rng)
+    for x in (204, 346):                         # cintas de ferro nas pontas da viga
+        e.rect(x, y_viga, x + 2, y_viga + 9, F1)
+        e.vline(x, y_viga, y_viga + 9, F2)
+        e.put(x + 1, y_viga + 1, F3)
+        e.put(x + 1, y_viga + 6, F3)
+    colar_contornado(t, e)
+    e = nova(W, H)
+    barra_inclinada(e, 236, y_viga + 10, 311, yd_topo + 2, 7, rng)
+    colar_contornado(t, e)
+    e = nova(W, H)
+    amarracao(e, 310, y_viga + 11, LP + 2, 4, rng)
+    amarracao(e, 310, yd_topo + 3, LP + 2, 3, rng, ponta=False)
+    colar_contornado(t, e)
+    # pé do poste: calço de pedra na face de cima
+    e = nova(W, H)
+    bloco_calcario(e, 305, yd_topo + 15, 23, 6, 5, 3, rng, rachado=False, lascas=0, mordidas=0)
+    colar_contornado(t, e)
+    # roldana pendurada na ponta da viga e corrente até a barra de içar
+    e = nova(W, H)
+    e.rect(cx - 1, y_viga + 10, cx, y_viga + 15, F1)
+    e.vline(cx - 1, y_viga + 10, y_viga + 15, F2)
+    roldana(e, cx, y_viga + 22, 7)
+    colar_contornado(t, e)
+    e = nova(W, H)
+    y = y_viga + 29
+    while y + 6 <= y_barra:
+        y = corrente(e, cx - 2, y, 1, com_gancho=False)
+        if y + 8 <= y_barra:
+            desenhar_padrao(e, marcos.CORRENTE_BARRA, cx - 2, y, MAPA_FERRO)
+            y += 2
+    colar_contornado(t, e)
+    # contrapeso: bloco de pedra pendurado por corrente na ponta direita da viga
+    e = nova(W, H)
+    y = corrente(e, 345, y_viga + 10, 3, com_gancho=True)
+    colar_contornado(t, e)
+    e = nova(W, H)
+    bloco_calcario(e, 335, y + 2, 24, 13, 8, 3, rng, cunhas=False, lascas=1, mordidas=0)
+    e.vline(347, y + 2, y + 2 + 8 + 12, R2)
+    e.vline(348, y + 2, y + 2 + 8 + 12, R1)
+    colar_contornado(t, e)
+    # lascas e entulho no pé dos bastiões (fora do vão)
+    for pts, alt in (
+        ([(4, chao - 6), (14, chao - 8), (19, chao - 4), (10, chao - 1)], 3),
+        ([(120, chao - 5), (128, chao - 7), (133, chao - 3), (126, chao - 1)], 2),
+        ([(286, chao - 6), (296, chao - 9), (302, chao - 4), (292, chao - 1)], 3),
+        ([(392, chao - 4), (401, chao - 6), (406, chao - 2), (398, chao)], 2),
+    ):
+        e = nova(W, H)
+        pedra_bruta(e, pts, alt, rng)
+        colar_contornado(t, e)
+    e = nova(W, H)
+    entulho(e, 2, 134, chao, rng, 10)
+    entulho(e, 282, 412, chao, rng, 10)
+    colar_contornado(t, e)
+    t.encaixar_paleta(PALETA)
+    return recortar(t)
+
+
+# ---------------------------------------------------------------- lascas de bloco
+def lasca_cortada(t, x, y, w, h, alt, rng):
+    """Fragmento angular de bloco cortado: topo de 4 ou 5 vértices com arestas retas, face de cima clara, lateral
+    escura, base funda (pedra_bruta), e uma faceta diagonal quebrada no topo."""
+    pts = [(x, y + rng.randint(2, 4)), (x + w // 2 - rng.randint(0, 2), y), (x + w - 1, y + rng.randint(1, 3)),
+           (x + w - rng.randint(2, 4), y + h - 1), (x + rng.randint(1, 3), y + h - 2)]
+    if rng.random() < 0.4:
+        pts.pop(rng.choice((1, 4)))
+    pedra_bruta(t, pts, alt, rng)
+    # faceta: um lado do topo vira C2 com aresta C4 (quebra em outro plano)
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    fx = (min(xs) + max(xs)) // 2 + rng.randint(1, 3)
+    for py in range(min(ys), max(ys) + 1):
+        for px in range(fx, max(xs) + 1):
+            if t.opaco(px, py) and t.cor(px, py) in (C3, C4):
+                t.put(px, py, C2)
+        if t.opaco(fx, py) and t.cor(fx, py) == C2:
+            t.put(fx, py, C4)
+
+
+def sombra_chao(t, cor=C0):
+    """Sombra própria de 1 tom colada embaixo-direita do que já está desenhado (1 px), fora do contorno."""
+    op = t.a[..., 3] > 0
+    somb = np.zeros_like(op)
+    somb[1:, :] |= op[:-1, :]
+    somb[1:, 1:] |= op[:-1, :-1]
+    somb[:, 1:] |= op[:, :-1]
+    ys, xs = np.where(somb & ~op)
+    for x, y in zip(xs, ys):
+        t.put(int(x), int(y), cor)
+
+
+def montar_lascas(variante, seed=93):
+    rng = random.Random(seed + variante * 7)
+    if variante == 0:
+        W, H = 26, 18
+        pecas = [(2, 2, 21, 9, 4)]
+    elif variante == 1:
+        W, H = 38, 22
+        pecas = [(2, 6, 17, 9, 4), (16, 2, 19, 10, 3)]
+    else:
+        W, H = 48, 26
+        pecas = [(14, 2, 21, 11, 5), (1, 10, 14, 7, 3), (34, 12, 12, 6, 2)]
+    t = nova(W, H)
+    for x, y, w, h, alt in pecas:
+        e = nova(W, H)
+        lasca_cortada(e, x, y, w, h, alt, rng)
+        colar_contornado(t, e)
+    sombra_chao(t)
+    t.encaixar_paleta(PALETA)
+    return recortar(t)
+
+
 # ---------------------------------------------------------------- saída
 def recortar(t):
     """Caixa justa; o pivô fica no centro da borda de baixo."""
@@ -1037,6 +1407,10 @@ def main():
         ("pedreira_carrinho", montar_carrinho()),
         ("pedreira_portico", montar_portico()),
         ("pedreira_poste_lanterna", montar_poste_lanterna()),
+        ("pedreira_portao", montar_portao()),
+        ("pedreira_lasca_0", montar_lascas(0)),
+        ("pedreira_lasca_1", montar_lascas(1)),
+        ("pedreira_lasca_2", montar_lascas(2)),
     ]
     os.makedirs(PROPS, exist_ok=True)
     for nome, arr in props:
