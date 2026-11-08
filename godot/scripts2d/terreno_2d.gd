@@ -104,8 +104,10 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 	# Caminho: contorno limpo fora da água; dentro dela, pedras de travessia.
 	var travessias: Array = []
 	var pedras_antes: Array = []   # lajes dos caminhos já desenhados: o cruzamento não leva terra, musgo nem pedras soltas sobre elas
+	var lajes_estrada := _textura_lajes_claras(float(sala.brilho_estrada))
 	for i in caminhos.size():
 		var c: Dictionary = caminhos[i]
+		var lajes_do_caminho: Texture2D = lajes_estrada if i == 0 else lajes   # a estrada principal (a primeira) leva `@brilho_estrada` a mais de luz: o caminho se lê do fundo
 		var linha := spline(c["pts"])
 		var fc := faixa(linha, c["larg"] * tile, 4.0, 11 + i)
 		if fc.is_empty():
@@ -130,7 +132,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 				_poligono(raiz, b, cor_terra)
 		for q in fora_agua_fc:
 			var pg := _poligono(raiz, q, Color(1, 1, 1))
-			pg.texture = lajes
+			pg.texture = lajes_do_caminho
 			pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 			pg.uv = q
 			var borda := _sem_pontos_dentro(q, pedras_antes)
@@ -146,7 +148,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 					trecho.append(p)
 					break
 		if trecho.size() >= 2:
-			var eixo := _ponte(raiz, trecho, spline(c["pts"], 6.0), lajes, aguas, margens, linhas, c["larg"] * tile)
+			var eixo := _ponte(raiz, trecho, spline(c["pts"], 6.0), lajes_do_caminho, aguas, margens, linhas, c["larg"] * tile)
 			if eixo.size() == 2:
 				travessias.append(eixo)
 	# Colisão da água: livre só no corredor das pedras de travessia.
@@ -534,6 +536,23 @@ static func _manchas_de_chao(raiz: Node2D, sala: Node2D, tile: int) -> void:
 		raiz.add_child(sp)
 
 static var _lajes_tex: Texture2D
+static var _lajes_claras: Dictionary = {}   # fator de luz -> textura
+
+## As mesmas lajes com `fator` a mais de luz. O `color` e o `modulate` de um Polygon2D não passam de 1.0 (o renderizador
+## de compatibilidade corta), então o brilho vai direto nos pixels; as lajes são bem mais escuras que 1.0, nada estoura.
+static func _textura_lajes_claras(fator: float) -> Texture2D:
+	if is_equal_approx(fator, 1.0):
+		return _textura_lajes()
+	if _lajes_claras.has(fator):
+		return _lajes_claras[fator]
+	var img := _textura_lajes().get_image()
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			img.set_pixel(x, y, Color(minf(c.r * fator, 1.0), minf(c.g * fator, 1.0), minf(c.b * fator, 1.0), c.a))
+	var tex := ImageTexture.create_from_image(img)
+	_lajes_claras[fator] = tex
+	return tex
 
 ## Textura de lajes de pedra (128 px, repete sem emenda): células irregulares em cinza-azulado, junta escura, rachaduras e musgo.
 static func _textura_lajes() -> Texture2D:

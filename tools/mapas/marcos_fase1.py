@@ -3,14 +3,16 @@
 
 Roda DEPOIS do gerador (`gerar_fase_1.py` chama `aplicar` no fim, em memória) e deixa o mapa com uma espinha clara:
 uma estrada de pedra larga do início do arqueiro até o portão da arena, com 2 curvas e 1 bifurcação curta para um
-bolsão com recompensa; as outras estradas que cortavam a principal saem (sobra só a trilha do norte, estreita). Em
-volta da estrada a mata alta recua (nada denso atrás dela) e entram os marcos, cada um com luz própria:
+bolsão com recompensa; as outras estradas saem (as que cortavam a principal e a trilha solta do norte, que não ligava
+a nada). Em volta da estrada a mata alta recua (nada denso atrás dela) e entram os marcos, cada um com luz própria:
   1. início: dois pilares com glifo e braseiros;
-  2. meio: ponte sobre o riacho e, logo depois, a alameda de pilares quebrados (ruína);
+  2. meio: ponte sobre o riacho e, logo depois, a ruína: dois pilares sustentando a verga quebrada e uma alameda de
+     pilares caídos;
   3. bifurcação: árvore seca grande com velas na base;
   4. antes da arena: clareira de descanso com braseiros (o respiro) e a avenida final até o portão de caveiras e brasas.
 Também grava as diretivas que o cliente lê: `@luz` (halos dos marcos), `@bolsao` (baú de recompensa) e `@guarda`
-(encontros adormecidos por trecho, que acordam por proximidade; o fluxo do core continua sendo a horda).
+(encontros adormecidos por trecho, que acordam por proximidade; o fluxo do core continua sendo a horda). O cemitério
+do oeste, que o gerador pôs em grade, vira clareiras com túmulos espalhados sem regularidade.
 
 Uso: python3 tools/mapas/marcos_fase1.py [arquivo]   (lê e grava no lugar; o arquivo precisa ser a saída pura do
 gerador). Mesma saída a cada execução (semente fixa).
@@ -43,8 +45,10 @@ TRILHA_BOLSAO_FIM = (100.4, 40.6)  # onde a trilha encosta na clareira
 
 # Estradas do gerador que saem (cruzavam a principal e criavam bifurcações demais) e a que fica, só mais estreita.
 REMOVER_ESTRADAS = [(24, 18, 21, 30), (56, 68, 62, 80), (114, 46, 120, 58), (90, 22, 96, 34)]   # primeiros 2 pontos de cada
-TRILHA_NORTE_FIM = (118, 23)       # a trilha do norte para antes da arena (um só portão)
+LARG_TRILHA_NORTE = 1.5            # a trilha solta do norte (x 24..118, y ~18) sai: era a única @caminho dessa largura
+BRILHO_ESTRADA = 1.10             # as lajes da estrada principal levam 10% mais luz que o resto do piso (`@brilho_estrada`)
 ARCO_RUINA_DX = 0.8125             # a verga quebrada (arco_ruina, 172 px, pivô no centro) tem o pilar 52 px à esquerda do pivô: deslocamento em tiles
+RUINA_2O_PILAR = 1.55              # o segundo pilar (rachado) fica a 1,55 tiles do primeiro: a ponta da verga (104 px, 1,6 tile, à direita do pilar alto) pousa nele
 E_ESTRADA = [(15, 2.6), (30, -2.6), (45, 2.6), (60, -2.6), (75, 2.6), (110, 2.6), (118, -2.8), (123, 2.8), (139, -2.6), (144, 2.6)]   # pontos E (s, lateral), longe dos marcos; o primeiro a ~9 tiles do início (alcance da flecha)
 
 
@@ -186,6 +190,81 @@ MATA = ["tree_dry_large", "tree_dead_large", "tree_dry_pile", "tree_dead_medium"
         "tree_dry_orange", "tree_teal_leaves"]
 
 
+# Cemitério do oeste: as caixas onde o gerador pôs túmulos em grade e as clareiras que passam a ficar com eles
+# (x, y, raio em tiles, quantidade). Os centros ficam em chão aberto, longe das manchas de mata fechada.
+TUMULOS = ["grave_slab", "grave_round", "grave_broken", "grave_dirt_cross", "tomb_angel", "tomb_flowers"]
+ARVORES_SECAS = ["tree_dry_large", "tree_dry_leaning", "tree_dry_small", "tree_dry_thin", "tree_dead_large",
+                 "tree_dead_medium", "tree_hollow", "tree_dead_webs"]
+CAIXAS_CEMITERIO = [(26, 20, 64, 54), (6, 56, 22, 72)]
+CLAREIRAS = [(31.0, 28.0, 4.7, 9), (44.5, 22.0, 3.7, 6), (57.5, 23.5, 3.8, 6), (30.0, 45.0, 5.0, 10),
+             (45.5, 47.5, 4.9, 9), (14.0, 64.5, 4.7, 9)]
+
+
+def reorganizar_cemiterio(props, grade, gerador):
+    """Troca os túmulos em grade por clareiras. Devolve quantos túmulos ficaram."""
+    def na_caixa(p):
+        return p[0] in TUMULOS and any(x0 <= p[1] < x1 and y0 <= p[2] < y1 for x0, y0, x1, y1 in CAIXAS_CEMITERIO)
+
+    props[:] = [p for p in props if not na_caixa(p)]
+
+    def aberto_em_volta(x, y):
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                xx, yy = int(x) + dx, int(y) + dy
+                if not (2 <= xx < W - 2 and 2 <= yy < H - 2) or grade[yy][xx] == "m":
+                    return False
+        return True
+
+    total = 0
+    for cx, cy, raio, n in CLAREIRAS:
+        # clareira: a mata alta e as moitas dentro dela saem; o mato baixo fica
+        props[:] = [p for p in props if not ((eh_arvore(p[0]) or eh_folhagem(p[0])) and math.dist((p[1], p[2]), (cx, cy)) < raio - 0.4)]
+        locais = [p for p in props if math.dist((p[1], p[2]), (cx, cy)) < raio + 4.0]
+
+        def bloqueado(x, y, r_solido=1.5, r_arvore=1.7):
+            for p in locais:
+                d = math.dist((p[1], p[2]), (x, y))
+                if eh_arvore(p[0]):
+                    if d < r_arvore:
+                        return True
+                elif eh_solido(p[0]) and d < r_solido:
+                    return True
+            return False
+
+        pontos = []
+        tent = 0
+        while len(pontos) < n and tent < 600:
+            tent += 1
+            ang, r = gerador.uniform(0.0, math.tau), raio * math.sqrt(gerador.random())
+            x, y = round(cx + math.cos(ang) * r, 1), round(cy + math.sin(ang) * r * 0.85, 1)
+            if not aberto_em_volta(x, y) or bloqueado(x, y) or any(math.dist((x, y), q) < 2.15 for q in pontos):
+                continue
+            pontos.append((x, y))
+            if len(pontos) < n and gerador.random() < 0.3:          # jazigo de família: o vizinho encostado
+                ang2 = gerador.uniform(0.0, math.tau)
+                x2, y2 = round(x + math.cos(ang2) * 1.35, 1), round(y + math.sin(ang2) * 1.1, 1)
+                if aberto_em_volta(x2, y2) and not bloqueado(x2, y2) and all(math.dist((x2, y2), q) > 1.2 for q in pontos):
+                    pontos.append((x2, y2))
+        for k, (x, y) in enumerate(pontos):
+            props[:] = [p for p in props if not (eh_raso(p[0]) and math.dist((p[1], p[2]), (x, y)) < 0.8)]
+            ident = "tomb_angel" if k == 0 and raio > 4.5 else gerador.choice(TUMULOS[:4] + ["tomb_flowers"])
+            props.append([ident, x, y, gerador.random() < 0.4])
+            total += 1
+        # roda de árvores secas em volta, com falhas (por onde se entra na clareira)
+        folga = [gerador.random() < 0.28 for _ in range(14)]
+        folga[gerador.randrange(14)] = True
+        for k in range(14):
+            if folga[k]:
+                continue
+            ang = k * math.tau / 14 + gerador.uniform(-0.15, 0.15)
+            r = raio + 1.3 + gerador.uniform(-0.3, 0.7)
+            x, y = round(cx + math.cos(ang) * r, 1), round(cy + math.sin(ang) * r * 0.85, 1)
+            if not (3 < x < W - 3 and 3 < y < H - 3) or grade[int(y)][int(x)] == "m" or bloqueado(x, y, 1.2, 1.6):
+                continue
+            props.append([gerador.choice(ARVORES_SECAS), x, y, gerador.random() < 0.5])
+    return total
+
+
 def aplicar(linhas):
     sala = Sala(linhas)
     grade, props = sala.grade, sala.props
@@ -199,6 +278,7 @@ def aplicar(linhas):
     velhas = sala.caminhos()
     novas_dir = []
     removidas = []
+    trilha_norte = []   # a trilha solta do norte também sai, mas o mato que volta para a faixa dela usa outro sorteio
     for l in sala.diretivas:
         if l.startswith("@caminho "):
             q = l.split()
@@ -210,10 +290,9 @@ def aplicar(linhas):
             if any(pts[0] == (a, b) and pts[1] == (c, d) for a, b, c, d in REMOVER_ESTRADAS):
                 removidas.append(pts)
                 continue
-            if larg == 1.5:                                   # trilha do norte: mais estreita e termina antes da arena
-                fim = [p for p in pts if p[0] <= TRILHA_NORTE_FIM[0]] + [TRILHA_NORTE_FIM]
-                pts = fim
-                l = "@caminho %g %s" % (LARG_TRILHA, " ".join("%g,%g" % p for p in pts))
+            if larg == LARG_TRILHA_NORTE:                     # trilha solta do norte: não liga a nada e cruza o riacho sem ponte
+                trilha_norte.append(pts)
+                continue
         novas_dir.append(l)
     # a nova estrada principal vai primeiro (o jogo usa a primeira @caminho como a trilha dos vídeos e das capturas)
     s_bif = BIFURCACAO_S
@@ -321,28 +400,34 @@ def aplicar(linhas):
     def na_laje(x, y):
         return any(math.dist((x, y), (cx, cy)) < r for cx, cy, r in em_laje)
 
-    preenchidos = 0
-    for pts in removidas:
+    def preencher(pts, gerador):
+        """Devolve mato baixo (e pedrinhas) à faixa de uma estrada que saiu; `gerador` é o sorteio usado."""
+        feitos = 0
         curva = Curva(pts, 0.5)
         s = 0.0
         while s < curva.comprimento:
             cx, cy = curva.em(s)
             s += 0.9
             for _ in range(2):
-                x = cx + rng.uniform(-2.0, 2.0)
-                y = cy + rng.uniform(-2.0, 2.0)
+                x = cx + gerador.uniform(-2.0, 2.0)
+                y = cy + gerador.uniform(-2.0, 2.0)
                 if not (3 < x < W - 3 and 3 < y < H - 3) or not aberto(x, y) or sobre_pista(x, y) or mancha_agua(x, y):
                     continue
                 if na_laje(x, y) or ocupado(x, y, 0.55):
                     continue
-                if rng.random() < 0.18:
-                    ident = rng.choice(MATO[:8] + ["rock_rubble"]) if rng.random() < 0.5 else rng.choice(BAIXO)
+                if gerador.random() < 0.18:
+                    ident = gerador.choice(MATO[:8] + ["rock_rubble"]) if gerador.random() < 0.5 else gerador.choice(BAIXO)
                 else:
-                    ident = rng.choice(BAIXO + MATO[:6])
-                props.append([ident, round(x, 1), round(y, 1), rng.random() < 0.45])
-                preenchidos += 1
+                    ident = gerador.choice(BAIXO + MATO[:6])
+                props.append([ident, round(x, 1), round(y, 1), gerador.random() < 0.45])
+                feitos += 1
+        return feitos
+
+    preenchidos = sum(preencher(pts, rng) for pts in removidas)
+    rng_norte = random.Random(6606)   # sorteio próprio: o da camada (rng) segue como era para o resto do mapa
+    preenchidos_norte = sum(preencher(pts, rng_norte) for pts in trilha_norte)
     # moitas e uma árvore a cada tanto nas faixas, para não ficar um corredor só de capim
-    notas["props_nas_faixas_antigas"] = preenchidos
+    notas["props_nas_faixas_antigas"] = preenchidos + preenchidos_norte
 
     # orla de árvores nas células novas de mata (anel do bolsão)
     def vizinho_aberto(x, y, r=3.2):
@@ -360,6 +445,12 @@ def aplicar(linhas):
         px, py = round(x + rng.uniform(0.1, 0.9), 1), round(y + rng.uniform(0.1, 0.9), 1)
         if not ocupado(px, py, 1.15):
             props.append([rng.choice(MATA), px, py, rng.random() < 0.5])
+
+    # ---- 3b. Cemitério do oeste: a grade do gerador (túmulos a cada 3 x 4 tiles) vira clareiras ----
+    # Cada clareira é uma mancha de chão limpo com túmulos espalhados por sorteio de disco (distância mínima, alguns
+    # em par, como jazigos de família) e uma roda de árvores secas em volta, com falhas. Sorteio próprio (rng_cem).
+    notas["tumulos"] = reorganizar_cemiterio(props, grade, random.Random(9091))
+
     # ---- 4. Marcos ----
     # A câmera mostra só ~10 x 5,6 tiles e o personagem fica no centro: o que está ao norte da estrada (acima) só
     # aparece se a base estiver a menos de 2,8 tiles, e o que é alto some pela borda de cima. Por isso as peças altas
@@ -399,15 +490,17 @@ def aplicar(linhas):
     capturas["1_inicio"] = P
 
     # 4.2 Meio: ruína logo depois da ponte (a ponte do riacho é desenhada pelo jogo): fileira de pilares à direita da
-    # estrada, o primeiro alto com a verga quebrada (arco_ruina) avançando para a frente, mais uma fileira de fundo,
-    # um pilar caído, entulho e cotocos baixos à esquerda.
+    # estrada, o primeiro alto com a verga quebrada (arco_ruina) avançando para a frente e pousando, na ponta, num
+    # segundo pilar rachado (a verga não paira mais sobre o vazio), mais uma fileira de fundo, um pilar caído, entulho
+    # e cotocos baixos à esquerda.
     s_ponte = estrada.s_mais_perto(84, 56)
     notas["ponte_s"] = round(s_ponte, 1)
     r0 = s_ponte + 5.6
-    fileira = [(0.0, "pillar_tall"), (4.2, "pillar_cracked"), (8.0, "pillar_broken")]
-    for ds, ident in fileira:
-        x, y = estrada.em(r0 + ds, 2.9)
-        limpar(x, y, 1.7)
+    fileira = [(0.0, "pillar_tall"), (RUINA_2O_PILAR, "pillar_cracked"), (4.1, "pillar_broken")]
+    posicoes = [(ident, *estrada.em(r0 + ds, 2.9)) for ds, ident in fileira]
+    for ident, x, y in posicoes:
+        limpar(x, y, 1.7)   # limpa em volta de todos antes de pôr qualquer um: os dois primeiros pilares ficam a 1,55 tile
+    for ident, x, y in posicoes:
         pb(ident, x, y, ident != "pillar_tall" and rng.random() < 0.5)
         if ident == "pillar_tall":
             notas["arco_ruina_pilar"] = (round(x, 2), round(y, 2))
@@ -434,8 +527,8 @@ def aplicar(linhas):
     gx2, gy2 = estrada.em(r0 + 10.0, 2.4)
     guardas.append((gx2, gy2, RAIO_GUARDA, 1.0, "crypt_bat:2"))
     marcos_zonas.append((*estrada.em(r0 + 5.0), 8.0))
-    capturas["2_ruina"] = estrada.em(r0 + 1.0)
-    capturas["2a_ruina_perto"] = estrada.em(r0 + 1.6, 1.8)   # na beira sul da estrada: a base dos pilares e a verga entram na tela
+    capturas["2_ruina"] = estrada.em(r0 + 2.4, 1.5)          # na beira sul da estrada: a ruína inteira (verga, dois pilares e a fileira) entra acima da barra de baixo
+    capturas["2a_ruina_perto"] = estrada.em(r0 + 0.8, 2.0)   # mais perto: a base dos dois pilares e a ponta da verga
 
     # 4.3 Bifurcação: árvore seca grande do outro lado da estrada (à direita, de onde ela aparece de longe) com velas
     # na base, e dois montes de velas em cada lado da boca da trilha do bolsão
@@ -559,6 +652,7 @@ def aplicar(linhas):
         sala.diretivas.append("@luz %g,%g %g %g,%g,%g,%g" % (round(x, 2), round(y, 2), r, cr, cg, cb, ca))
     for x, y, rec in bolsoes:
         sala.diretivas.append("@bolsao %g,%g %s" % (round(x, 2), round(y, 2), rec))
+    sala.diretivas.append("@brilho_estrada %g" % BRILHO_ESTRADA)
     for x, y, raio, forca, spec in guardas:
         sala.diretivas.append("@guarda %g,%g %g %g %s" % (round(x, 2), round(y, 2), raio, forca, spec))
     notas["marcos_zonas"] = marcos_zonas

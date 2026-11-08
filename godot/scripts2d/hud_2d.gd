@@ -47,9 +47,10 @@ func _desenhar() -> void:
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
 		var ajuda := Csv.t("hud.help")
 		# sem faixa: ela tapava os galhos e props do chão; o contorno escuro de 1 px em 4 direções mantém a leitura
+		var y_ajuda: float = vp.y - _lay["dica_base"]
 		for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
-			_ctl.draw_string(ThemeDB.fallback_font, Vector2(0, vp.y - 133) + d, ajuda, HORIZONTAL_ALIGNMENT_CENTER, vp.x, 12, Color(0, 0, 0, al))
-		Arte.texto(_ctl, Vector2(0, vp.y - 133), ajuda, 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+			_ctl.draw_string(ThemeDB.fallback_font, Vector2(0, y_ajuda) + d, ajuda, HORIZONTAL_ALIGNMENT_CENTER, vp.x, 12, Color(0, 0, 0, al))
+		Arte.texto(_ctl, Vector2(0, y_ajuda), ajuda, 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])

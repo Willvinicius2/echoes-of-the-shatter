@@ -59,6 +59,20 @@ func _testar_marcos(run) -> void:
 	if meus.size() != esperados:
 		return
 	check.call(meus.all(func(e): return e.global_position.distance_to(g0["pos"]) <= float(run.config["guard_spread"]) + 32.0), "marcos: os integrantes nascem em volta do ponto do mapa")
+	# nenhum ponto sorteado, em nenhum dos encontros do mapa, cai sob o sprite alto de árvore, pilar, tumba ou verga
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var sob := 0
+	var sorteados := 0
+	for g in room.guardas:
+		var n := 0
+		for parte in String(g["spec"]).split("|", false):
+			n += int(parte.split(":")[1])
+		for q in room.pontos_livres_perto(g["pos"], float(run.config["guard_spread"]), n, rng):
+			sorteados += 1
+			if room.sob_sprite_alto(q):
+				sob += 1
+	check.call(room._sprites_altos.size() > 50 and sorteados > 0 and sob == 0, "marcos: os encontros nascem fora do sprite de árvores, pilares e vergas (%d de %d sob um sprite, %d sprites altos)" % [sob, sorteados, room._sprites_altos.size()])
 	var dorme: bool = meus.all(func(e): return e.raio_despertar > 0.0)
 	var vizinhos_dormem: bool = t.get_nodes_in_group("hurtable").filter(func(e): return e.has_meta("guarda") and not meus.has(e)).all(func(e): return e.raio_despertar > 0.0)
 	check.call(dorme and vizinhos_dormem, "marcos: o encontro nasce adormecido")

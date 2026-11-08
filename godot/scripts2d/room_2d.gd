@@ -11,6 +11,7 @@ extends Node2D
 ## Marcos da fase aberta (tools/mapas/marcos_fase1.py): `@luz x,y raio r,g,b,a` (células; raio em células) é um halo de
 ## luz de um marco, `@bolsao x,y recompensa` é o baú fixo de um bolsão e `@guarda x,y raio forca id:n|id:n` é um encontro
 ## adormecido (raio em px para acordar, força multiplica a curva da onda atual; nasce quando o jogador se aproxima).
+## `@brilho_estrada 1.1` multiplica a cor das lajes da estrada principal (a primeira `@caminho`): o chão do caminho fica um pouco mais claro que o resto.
 ## Depois da grade, a linha `@props` abre a lista de props: `id coluna linha [flip]` (coluna e linha
 ## podem ser fracionárias; ids em data2d/props_2d.csv, arte em props_manifest.csv).
 
@@ -43,6 +44,7 @@ var celulas_porta: Array[Vector2i] = []
 var props: Array = []  # {id, pos (pé do prop em px), flip}
 var _props_def := {}
 var _props_arte := {}
+var _sprites_altos: Array[Rect2] = []   # retângulos (px) dos sprites de árvores, pilares, tumbas e vergas: quem nasce neles fica escondido ou colado ao prop
 var _layer: TileMapLayer
 var _piso: TileMapLayer
 var aneis: Array = []   # [{laje, fator}]
@@ -50,6 +52,7 @@ var _brilho_runas: TileMapLayer
 var piso_grama := false
 var braseiros: Array[Vector2] = []
 var caminhos: Array = []  # {larg (células), pts (px)}
+var brilho_estrada := 1.0   # `@brilho_estrada`: fator de luz das lajes da primeira `@caminho` (1 = igual ao resto)
 var riachos: Array = []
 var lajes: Array = []  # {tom, raio (px), centro (px)}
 var luzes: Array = []     # `@luz`: {pos (px), raio (px), cor}
@@ -99,6 +102,8 @@ func carregar(caminho: String) -> bool:
 			var q := l.split(" ", false)   # @guarda x,y raio_px forca id:n|id:n
 			var xy := q[1].split(",")
 			guardas.append({"pos": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile), "raio": float(q[2]), "forca": float(q[3]), "spec": q[4]})
+		elif l.begins_with("@brilho_estrada "):
+			brilho_estrada = float(l.split(" ", false)[1])
 		elif l.begins_with("@caminho ") or l.begins_with("@riacho "):
 			var q := l.split(" ", false)
 			var pts: Array = []
@@ -612,10 +617,20 @@ func empurrar_para_dentro(pos: Vector2) -> Vector2:
 				break
 	return _centro(melhor.x, melhor.y)
 
+## O ponto `p` cai sobre o sprite de uma árvore, pilar, tumba ou verga (com `folga` px de margem)? O encontro que nasce
+## ali parece sair do prop, ou fica atrás dele; o sorteio dos encontros evita esses pontos. Sem sprites colocados
+## (testes sem tela), nenhum ponto cai.
+func sob_sprite_alto(p: Vector2, folga := 20.0) -> bool:
+	for r in _sprites_altos:
+		if r.grow_individual(-r.size.x * 0.1, 0.0, -r.size.x * 0.1, 0.0).grow(folga).has_point(p):
+			return true
+	return false
+
 ## `n` pontos livres a `raio` px de `centro` para os integrantes de um encontro (`@guarda`), bem espalhados: o primeiro
-## sai do `rng` da corrida (determinístico) e cada seguinte é a célula livre mais longe dos já escolhidos. Com menos
-## células livres que integrantes, o excedente forma um anel curto em volta de pontos já usados; sem célula livre
-## perto, parte da mais próxima.
+## sai do `rng` da corrida (determinístico) e cada seguinte é a célula livre mais longe dos já escolhidos. Pontos sob o
+## sprite de um prop alto (`sob_sprite_alto`) ficam de fora, a não ser que sejam os únicos. Com menos células livres
+## que integrantes, o excedente forma um anel curto em volta de pontos já usados; sem célula livre perto, parte da
+## mais próxima.
 func pontos_livres_perto(centro: Vector2, raio: float, n: int, rng: RandomNumberGenerator) -> Array[Vector2]:
 	var out: Array[Vector2] = []
 	if n <= 0:
@@ -625,6 +640,12 @@ func pontos_livres_perto(centro: Vector2, raio: float, n: int, rng: RandomNumber
 		var p := _centro(c.x, c.y)
 		if p.distance_to(centro) <= raio:
 			cand.append(p)
+	var descobertos: Array[Vector2] = []
+	for q in cand:
+		if not sob_sprite_alto(q):
+			descobertos.append(q)
+	if not descobertos.is_empty():
+		cand = descobertos
 	if cand.is_empty():
 		cand.append(empurrar_para_dentro(centro))
 	out.append(cand[rng.randi_range(0, cand.size() - 1)])
@@ -767,6 +788,11 @@ func colocar_props(alvo: Node2D) -> void:
 		var pe: Vector2 = p["pos"] + Vector2(0, tile * 0.5)
 		var ap: float = Ancoragem.apoio(p["id"], tex, d, arte)
 		var tipo: String = Ancoragem.tipo(p["id"])
+		var esc_p := float(d["escala"])
+		if tipo in ["arvore", "solido", "aereo"] and tex.get_height() * esc_p >= tile * 1.1:
+			var larg_p := tex.get_width() * esc_p
+			var esq_p := (larg_p - float(arte["pivo_x"]) * esc_p) if p["flip"] else float(arte["pivo_x"]) * esc_p
+			_sprites_altos.append(Rect2(pe.x - esq_p, pe.y - float(arte["pivo_y"]) * esc_p, larg_p, tex.get_height() * esc_p))
 		var no := Node2D.new()
 		no.position = pe - Vector2(0, ap)
 		spr.position = Vector2(0, ap)
