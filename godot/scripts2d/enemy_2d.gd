@@ -45,6 +45,7 @@ var _keep := 0.0
 var _burst := 0.0
 var _kb_decay := 0.0
 var raio_despertar := 0.0       # > 0: começa adormecido; acorda (com o grupo) quando o jogador chega a essa distância ou fere alguém
+var grupo_despertar := "inimigos_adormecidos"   # quem dorme junto: a sala toda, ou um encontro do mapa (`@guarda`)
 
 func _init() -> void:
 	_mat_sob_demanda = true   # material de flash/dissolução só quando preciso (o chefe desliga isto no _init dele)
@@ -199,17 +200,18 @@ func _mover_parado() -> void:
 		move_and_slide()
 
 ## Adormecidos acordam juntos: o primeiro que vê o jogador (ou leva dano) chama o resto da sala.
-func adormecer(raio: float) -> void:
+func adormecer(raio: float, grupo := "inimigos_adormecidos") -> void:
 	raio_despertar = raio
-	add_to_group("inimigos_adormecidos")
+	grupo_despertar = grupo
+	add_to_group(grupo)
 
 func despertar_grupo() -> void:
 	if is_inside_tree():
-		get_tree().call_group("inimigos_adormecidos", "despertar")
+		get_tree().call_group(grupo_despertar, "despertar")
 
 func despertar() -> void:
 	raio_despertar = 0.0
-	remove_from_group("inimigos_adormecidos")
+	remove_from_group(grupo_despertar)
 
 func alvo_morto() -> bool:
 	return alvo.has_method("esta_morto") and alvo.esta_morto()

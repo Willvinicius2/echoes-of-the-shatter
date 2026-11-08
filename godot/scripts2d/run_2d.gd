@@ -87,6 +87,11 @@ var _mortes_dps: Array = [] # [tempo, vida] das mortes recentes: DPS medido para
 var vida_chefe := 0.0       # vida que o core deu ao chefe (bot e testes)
 var dps_medido := 0.0
 var _laco_t := 0.0
+# Encontros do mapa (`@guarda`): lista dos que ainda não nasceram; a força segue a curva da onda atual
+var _guardas_pend: Array = []
+var _guardas_t := 0.0
+var _guarda_n := 0
+var _mult_onda := {}        # hp/dano/velocidade/xp do último inimigo comum que o core mandou nascer (curva_horda.csv)
 
 ## Raiz da interface quando o mundo roda num SubViewport de pixel art (main_2d.gd); nula = tudo neste nó.
 var ui_raiz: Node = null
@@ -301,6 +306,7 @@ func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 		nucleo.ondas_iniciar(fase_horda, int(rng.seed))
 		vivos = 0
 		hud.total_salas = int(nucleo.ondas_estado().get("waves_total", 1))
+		_montar_marcos()
 		estado = Estado.LUTA
 		return
 	_spawn_inimigos(no["enemies"])
@@ -389,6 +395,59 @@ func _spawn_inimigos(spec: String) -> void:
 			k += 1
 			vivos += 1
 
+## Marcos do mapa no modo horda: o baú de cada bolsão (`@bolsao`) e a lista de encontros (`@guarda`).
+func _montar_marcos() -> void:
+	_guardas_pend = room.guardas.duplicate()
+	_guardas_t = 0.0
+	_guarda_n = 0
+	_mult_onda = {}
+	for b in room.bolsoes:
+		var g := Node2D.new()
+		g.set_script(GemaScript)
+		g.setup("bau", 0, b["pos"], player, config, true)
+		g.coletada.connect(_on_coletada)
+		atores.add_child(g)
+
+## Encontros do mapa: quando o jogador chega a `guard_spawn_dist` de um, ele nasce adormecido no lugar (um grupo só
+## acorda junto) e passa a valer a curva da onda atual vezes a força do mapa. Sem nascimento do core ainda, espera.
+func _tick_guardas(delta: float) -> void:
+	_guardas_t += delta
+	if _guardas_t < 0.5 or _guardas_pend.is_empty() or _mult_onda.is_empty():
+		return
+	_guardas_t = 0.0
+	var perto := float(config.get("guard_spawn_dist", 1100.0))
+	for g in _guardas_pend.duplicate():
+		if player.global_position.distance_to(g["pos"]) <= perto:
+			_guardas_pend.erase(g)
+			_nascer_guarda(g)
+
+func _nascer_guarda(g: Dictionary) -> void:
+	var grupo := "guarda_%d" % _guarda_n
+	_guarda_n += 1
+	var partes := String(g["spec"]).split("|", false)
+	var total := 0
+	for parte in partes:
+		total += int(parte.split(":")[1])
+	var pontos: Array[Vector2] = room.pontos_livres_perto(g["pos"], float(config.get("guard_spread", 140.0)), total, rng)
+	var forca := float(g["forca"])
+	var k := 0
+	for parte in partes:
+		var p := parte.split(":")
+		for _n in int(p[1]):
+			var e: Node2D = EnemyScript.new()
+			atores.add_child(e)
+			e.setup(p[0], player, pontos[k])
+			e.stats["hp"] = float(e.stats["hp"]) * float(_mult_onda["hp"]) * forca
+			e.hp = e.stats["hp"]
+			e.hp_max = e.hp
+			e.stats["damage"] = float(e.stats["damage"]) * float(_mult_onda["damage"]) * forca
+			e.stats["speed"] = float(e.stats["speed"]) * float(_mult_onda["speed"])
+			e.set_meta("guarda", true)
+			e.set_meta("xp_mult", float(_mult_onda["xp"]))
+			e.adormecer(float(g["raio"]), grupo)
+			e.died.connect(_on_inimigo_morto)
+			k += 1
+
 ## Primeira fase do spawner (ondas_fases.csv); "" se não há ondas.
 func _fase_do_spawner() -> String:
 	var fases: Array = nucleo.ondas_definicoes().get("phases", [])
@@ -400,6 +459,7 @@ func _fase_do_spawner() -> String:
 func _tick_horda(delta: float) -> void:
 	for s in nucleo.ondas_tick(delta):
 		_nascer(s)
+	_tick_guardas(delta)
 	_laco_t += delta
 	if _laco_t >= float(config.get("horde_leash_check", 1.0)):
 		_laco_t = 0.0
@@ -494,6 +554,8 @@ func _nascer(s: Dictionary) -> void:
 		e.stats["damage"] = float(e.stats["damage"]) * float(s.get("damage_mult", 1.0))
 		e.stats["speed"] = float(e.stats["speed"]) * float(s.get("speed_mult", 1.0))
 		e.stats["aggro"] = maxf(float(e.stats["aggro"]), float(config.get("horde_aggro", 0.0)))   # nascem fora da tela e vêm atrás
+		if not bool(s.get("elite", false)):
+			_mult_onda = {"hp": hp_mult, "damage": float(s.get("damage_mult", 1.0)), "speed": float(s.get("speed_mult", 1.0)), "xp": float(s.get("xp_mult", 1.0))}
 	if bool(s.get("elite", false)):
 		e.set_meta("elite", true)
 		e.modulate = Color(1.3, 1.08, 0.62)
@@ -519,7 +581,9 @@ func _morto_na_horda(e) -> void:
 	var chance := float(config.get("skill_gem_boss" if chefe else "skill_gem_elite", 0.0))
 	if (elite or chefe) and randf() < chance:
 		_soltar("habilidade", 1, e.global_position)
-	var r: Dictionary = nucleo.ondas_morto(int(e.get_meta("spawn_id", 0)))
+	var r: Dictionary = {}
+	if not e.has_meta("guarda"):   # os encontros do mapa ficam fora da conta do spawner
+		r = nucleo.ondas_morto(int(e.get_meta("spawn_id", 0)))
 	if e.stats.get("kind", "") == "boss":
 		_pos_chefe = e.global_position
 	if bool(r.get("completa", false)) and estado == Estado.LUTA:
@@ -538,7 +602,8 @@ func _soltar(tipo: String, valor: int, pos: Vector2) -> void:
 ## Tudo que está no chão voa para o jogador (fim da fase; o bot e os testes também usam).
 func atrair_coletaveis() -> void:
 	for g in get_tree().get_nodes_in_group("coletaveis"):
-		g.atraida = true
+		if not g.fixo:
+			g.atraida = true
 
 func _on_coletada(g) -> void:
 	if estado == Estado.MORTO or estado == Estado.VENCEU:

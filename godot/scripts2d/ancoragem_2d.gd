@@ -27,8 +27,11 @@ static var _tex_contato: Texture2D
 
 ## Classe visual do prop pelo id: árvore (raízes, sombra longa), raso (ossos, folhas, capim, samambaia:
 ## só contato leve e fica no chão, fora do y-sort), folhagem (arbustos: contato, terra curta, y-sort pelo
-## centro da base e semitransparente quando alguém passa atrás) ou sólido (tumbas, pedras, pilares).
+## centro da base e semitransparente quando alguém passa atrás), aéreo (`arco_*`: verga de pedra sobre dois pilares,
+## sem sombra nem contato; o pivô na borda de baixo é a linha de chão dos pilares) ou sólido (tumbas, pedras, pilares).
 static func tipo(id: String) -> String:
+	if id.begins_with("arco_"):
+		return "aereo"   # verga de pedra sobre dois pilares: sem sombra nem contato no chão, y-sort pela linha de base dos pilares
 	if id == "tree_stump":
 		return "solido"
 	if id.begins_with("tree_") or id.begins_with("sapling_"):
@@ -61,6 +64,8 @@ static func base(id: String, tex: Texture2D, def: Dictionary) -> Array:
 ## abaixo do tronco, então a base do tronco é medida na própria textura; sem isso a copa cobria a cabeça
 ## de quem passava ao lado.
 static func apoio(id: String, tex: Texture2D, def: Dictionary, arte: Dictionary) -> float:
+	if tipo(id) == "aereo":
+		return 0.0   # o pivô do sprite (centro da borda de baixo) já é a linha de chão dos pilares: o y-sort vem dela
 	var b := base(id, tex, def)
 	var a: float = b[1] * 0.5
 	if tipo(id) == "arvore":
@@ -98,7 +103,7 @@ static func _faixa(id: String, tex: Texture2D, def: Dictionary) -> float:
 ## Devolve null quando não se aplica.
 static func textura_base(id: String, tex: Texture2D, def: Dictionary) -> Texture2D:
 	var t := tipo(id)
-	if t == "arvore" or t == "raso":
+	if t == "arvore" or t == "raso" or t == "aereo":
 		return null
 	var c := contorno(id, tex, def)
 	return c.get("base", null)
@@ -177,6 +182,8 @@ static func contorno(id: String, tex: Texture2D, def: Dictionary) -> Dictionary:
 static func prender(chao: Node2D, atras: Node2D, frente: Node2D, id: String, tex: Texture2D, def: Dictionary, arte: Dictionary, flip: bool, pe: Vector2, grama: bool, semente: int) -> void:
 	var esc := float(def["escala"])
 	var t := tipo(id)
+	if t == "aereo":
+		return   # a verga paira sobre os pilares: nada de sombra, contato, terra ou tufos
 	var b := base(id, tex, def)
 	var bl: float = b[0]
 	var ba: float = b[1]

@@ -1,5 +1,7 @@
 id,escala,solido_l,solido_a
 altar_candles,0.5,64,22
+arco_portal,1,0,0
+arco_ruina,1,0,0
 bones_chains,1,0,0
 bones_ribcage,1,0,0
 bones_scattered,1,0,0

@@ -6,10 +6,12 @@ cercada por mata fechada (`m`) com borda irregular, e bosques internos abrem cla
 estreitas. Zonas: cemitério e bosque a oeste, riacho com afluente no meio, ruínas da cripta e ossário
 a leste, arena do Guardião no nordeste (G: onde ele espera; X: portal único, aberto depois dele).
 As lajes das ruínas e da arena saem como manchas `@lajes` de contorno orgânico, não como tiles.
-Mesma saída a cada execução (semente fixa). Uso: python3 tools/mapas/gerar_fase_1.py
+Mesma saída a cada execução (semente fixa). Uso: python3 tools/mapas/gerar_fase_1.py [--sem-marcos]
+Por padrão a saída passa pela camada de `marcos_fase1.py` (estrada principal, bolsão, marcos); `--sem-marcos` grava só o mapa base.
 """
 import math
 import random
+import sys
 from pathlib import Path
 
 W, H = 180, 100
@@ -368,5 +370,12 @@ linhas.append("@anel 2 0.7 sigilo")   # sigilo de glifos no centro da arena, ond
 linhas.append("@props")
 for pid, x, y, _, flip in sorted(props, key=lambda p: (p[2], p[1])):
     linhas.append("%s %g %g%s" % (pid, x, y, " flip" if flip else ""))
-SAIDA.write_text("\n".join(linhas) + "\n")
-print("%s: %d x %d, %d props, %d lajes" % (SAIDA.name, W, H, len(props), len(LAJES)))
+texto = "\n".join(linhas) + "\n"
+if "--sem-marcos" not in sys.argv:
+    # estrada de pedra do início à arena, bifurcação com bolsão, marcos com luz e encontros (ver marcos_fase1.py)
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from marcos_fase1 import aplicar
+    texto, notas = aplicar(texto.split("\n"))
+    print("marcos: estrada de %s tiles" % notas["comprimento_estrada_tiles"])
+SAIDA.write_text(texto)
+print("%s: %d x %d, %d props base, %d lajes" % (SAIDA.name, W, H, len(props), len(LAJES)))
