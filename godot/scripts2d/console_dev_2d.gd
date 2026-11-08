@@ -7,9 +7,11 @@ extends RefCounted
 ##   horda <id> <n>       nasce n inimigos do id (enemies.csv) em volta do jogador
 ##   sala <n>             vai para a sala n (começa em 0)
 ##   status               mostra posição e vida
+##   fases_abertas        abre/fecha todas as fases no título (atalho de teste e captura; não grava no save)
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
+const Fase = preload("res://scripts2d/fase_2d.gd")
 
 var run: Node
 
@@ -26,6 +28,7 @@ func registrar() -> bool:
 	con.overwrite_command(horda, "horda", "horda <id> <n>: nasce n inimigos em volta do jogador")
 	con.overwrite_command(sala, "sala", "sala <n>: vai para a sala n (0 = primeira)")
 	con.overwrite_command(status, "status", "posição e vida do jogador")
+	con.overwrite_command(fases_abertas, "fases_abertas", "abre/fecha todas as fases no título (não grava no save)")
 	con.add_argument_autocomplete_source("horda", 0, ids_inimigos)
 	return true
 
@@ -53,6 +56,12 @@ func horda(id: String, n: int) -> void:
 
 func sala(n: int) -> void:
 	run._carregar_sala(clampi(n, 0, run.salas.size() - 1))
+
+func fases_abertas() -> void:
+	Fase.todas_abertas = not Fase.todas_abertas
+	_info("todas as fases abertas: %s" % Fase.todas_abertas)
+	if run.menus != null and run.menus.tela == run.menus.Tela.TITULO:
+		run.menus.mostrar_titulo()
 
 func status() -> void:
 	_info("pos %s  hp %.0f/%.0f  inimigos %d" % [run.player.global_position, run.player.hp, run.player.stats["hp_max"], run.get_tree().get_nodes_in_group("hurtable").size()])

@@ -51,3 +51,9 @@ passive_points_boss,3,pontos,pontos de passivo extras ao derrotar o chefe
 pixel_altura,360,px,altura da grade interna de pixel art: o mundo renderiza num SubViewport com esta altura (largura pela proporcao da janela) e sobe com escala inteira e nearest; 0 desliga. 360 = 4x em 2K e 3x em 1080p
 guard_spawn_dist,1100,px,encontro do mapa (@guarda) nasce adormecido quando o jogador chega a esta distancia do lugar dele
 guard_spread,140,px,integrantes de um encontro nascem espalhados neste raio em volta do ponto do mapa
+gate_elite_scale,1.5,x,chefe da fase que e um inimigo comum (elite do portao): escala do sprite e do raio de colisao
+gate_elite_intro,1.4,s,entrada do elite do portao: parado e invulneravel enquanto a luz do portao sobe e some
+gate_elite_flash_size,420,px,diametro do clarao de luz aditivo no portao durante a entrada do elite
+gate_elite_shake_amp,7,px,tremor de tela na entrada do elite do portao
+gate_elite_shake_time,0.6,s,duracao do tremor de tela na entrada do elite do portao
+dev_fases_abertas,0,0/1,so em build de debug: 1 abre todas as fases no titulo (testes e capturas; nao grava no save)
