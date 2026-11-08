@@ -6,6 +6,7 @@ extends SceneTree
 const Csv = preload("res://scripts2d/csv2d.gd")
 const SpriteLoader = preload("res://scripts2d/sprite_loader.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
+const Terreno = preload("res://scripts2d/terreno_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 const GuerreiroTestes = preload("res://scripts2d/tools/test_guerreiro_2d.gd")
@@ -164,6 +165,7 @@ func _testar_salas() -> void:
 			check(sala.posicao_portal != Vector2.ZERO and sala.posicao_chefe != Vector2.ZERO, "%s tem lugar do chefe G e portal X" % r["room"])
 			check(sala.celulas_livres.size() > sala.colunas * sala.linhas * 0.35, "%s: ao menos 35%% do mapa livre para nascer" % r["room"])
 			check(sala.colunas * sala.linhas >= 24 * 13 * 25 * 2, "%s: área de ao menos 50 salas antigas" % r["room"])
+			_testar_espinha_do_mapa(sala, r["room"])
 		else:
 			check(sala.colunas == 24 and sala.linhas == 13, "%s tem 24x13" % r["room"])
 			check(sala.celulas_porta.size() > 0, "%s tem porta" % r["room"])
@@ -179,6 +181,58 @@ func _testar_salas() -> void:
 			ok_props = ok_props and (aberta or not (solido and c.x >= 11 and c.x <= 13 and c.y >= 2 and c.y <= 4))
 		check(ok_props, "%s: props com arte, definição e porta livre" % r["room"])
 		sala.free()
+
+## Espinha da fase 1 (tools/mapas/marcos_fase1.py): estrada de pedra larga do início ao portão da arena, uma bifurcação
+## curta que leva ao bolsão do baú, e os marcos de cada trecho com luz própria (a verga do portão fica sobre dois pilares).
+func _testar_espinha_do_mapa(sala, nome: String) -> void:
+	var t := float(sala.tile)
+	check(sala.caminhos.size() >= 2, "%s: estrada principal e a trilha do bolsão" % nome)
+	if sala.caminhos.size() < 2:
+		return
+	var estrada: Dictionary = sala.caminhos[0]
+	var pts: Array = estrada["pts"]
+	check(float(estrada["larg"]) >= 2.0, "%s: estrada principal larga (%.1f tiles)" % [nome, estrada["larg"]])
+	check(pts[0].distance_to(sala.spawn_jogador) <= 8.0 * t, "%s: a estrada começa no arqueiro" % nome)
+	check(pts[pts.size() - 1].distance_to(sala.posicao_chefe) <= 14.0 * t, "%s: a estrada chega à arena do Guardião" % nome)
+	var linha := Terreno.spline(PackedVector2Array(pts), 16.0)
+	var trilha: Dictionary = sala.caminhos[1]
+	var tpts: Array = trilha["pts"]
+	var d_boca := INF
+	for q in linha:
+		d_boca = minf(d_boca, q.distance_to(tpts[0]))
+	check(d_boca <= 0.5 * t and float(trilha["larg"]) < float(estrada["larg"]), "%s: a trilha sai da estrada, mais estreita" % nome)
+	check(sala.bolsoes.size() == 1 and tpts[tpts.size() - 1].distance_to(sala.bolsoes[0]["pos"]) <= 5.0 * t, "%s: a trilha leva ao baú do bolsão" % nome)
+	var portao := Vector2.ZERO
+	var pilares_inicio := 0
+	for pr in sala.props:
+		if pr["id"] == "arco_portal":
+			portao = pr["pos"]
+		elif pr["id"] == "pillar_runes" and pr["pos"].distance_to(sala.spawn_jogador) <= 10.0 * t:
+			pilares_inicio += 1
+	check(portao != Vector2.ZERO and portao.distance_to(pts[pts.size() - 1]) <= 10.0 * t, "%s: portão com verga antes da arena" % nome)
+	check(pilares_inicio == 2, "%s: dois pilares com glifo no início (%d)" % [nome, pilares_inicio])
+	check(sala.luzes.size() >= 8 and sala.guardas.size() >= 5, "%s: luzes dos marcos e encontros (%d, %d)" % [nome, sala.luzes.size(), sala.guardas.size()])
+	# Estrada nunca vazia: os encontros que estão na estrada (o do bolsão fica longe dela) ficam a no máximo ~24 tiles um do
+	# outro (6 s a 260 px/s), e o primeiro a menos de 30 tiles do começo dela; o respiro e a avenida final são o descanso.
+	var posicoes: Array[float] = []
+	for g in sala.guardas:
+		var d_min := INF
+		var s_min := 0.0
+		var andado := 0.0
+		for k in linha.size():
+			if k > 0:
+				andado += linha[k - 1].distance_to(linha[k])
+			var d: float = linha[k].distance_to(g["pos"])
+			if d < d_min:
+				d_min = d
+				s_min = andado
+		if d_min <= 4.0 * t:
+			posicoes.append(s_min / t)
+	posicoes.sort()
+	var maior_vazio := posicoes[0] if not posicoes.is_empty() else INF
+	for k in range(1, posicoes.size()):
+		maior_vazio = maxf(maior_vazio, posicoes[k] - posicoes[k - 1])
+	check(posicoes.size() >= 6 and maior_vazio <= 30.0 and posicoes[1] - posicoes[0] <= 26.0, "%s: encontros ao longo da estrada, sem trecho vazio maior que ~6 s (%d, maior vazio %.1f tiles)" % [nome, posicoes.size(), maior_vazio])
 
 func _testar_feel() -> void:
 	var Feel = load("res://scripts2d/feel_2d.gd")
@@ -1512,6 +1566,8 @@ func _testar_ancoragem() -> void:
 		arte[r["id"]] = r
 	var flutuando: Array = []
 	for id in arte:
+		if Ancoragem.tipo(id) == "aereo":
+			continue   # verga sobre dois pilares: o pivô é a linha de chão deles, bem abaixo da pedra (o sprite não toca o chão)
 		var tex: Texture2D = load(arte[id]["arquivo"])
 		if tex == null:
 			continue
@@ -1519,6 +1575,8 @@ func _testar_ancoragem() -> void:
 		if absf(float(arte[id]["pivo_y"]) - base_px) > 6.0:
 			flutuando.append(id)
 	check(flutuando.is_empty(), "pivô de todo prop fica na base opaca do sprite %s" % str(flutuando))
+	var tex_arco: Texture2D = load(arte["arco_portal"]["arquivo"])
+	check(Ancoragem.tipo("arco_portal") == "aereo" and Ancoragem.apoio("arco_portal", tex_arco, {"escala": "1", "solido_l": "0", "solido_a": "0"}, arte["arco_portal"]) == 0.0, "arco do portão é aéreo: sem sombra e y-sort pela linha de chão dos pilares")
 	var dir := DirAccess.open("res://data2d/rooms")
 	var salas: Array = []
 	for f in dir.get_files():
@@ -1542,8 +1600,10 @@ func _testar_ancoragem() -> void:
 		for p in room.props:
 			if not room._props_arte.has(p["id"]):
 				continue
-			n_props += 1
 			var t: String = Ancoragem.tipo(p["id"])
+			if t == "aereo":
+				continue   # sem sombra nem contato no chão (ver ancoragem_2d.gd)
+			n_props += 1
 			if t == "solido" or t == "folhagem":
 				var d: Dictionary = room._props_def[p["id"]]
 				var tex: Texture2D = room._carregar_textura(room._props_arte[p["id"]]["arquivo"])

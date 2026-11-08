@@ -103,6 +103,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 		pg.texture = lajes  # a UV só precisa de uma textura qualquer; o shader ignora a cor
 	# Caminho: contorno limpo fora da água; dentro dela, pedras de travessia.
 	var travessias: Array = []
+	var pedras_antes: Array = []   # lajes dos caminhos já desenhados: o cruzamento não leva terra, musgo nem pedras soltas sobre elas
 	for i in caminhos.size():
 		var c: Dictionary = caminhos[i]
 		var linha := spline(c["pts"])
@@ -123,6 +124,8 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			var fora_anel: Array = [anel]
 			for m in margens:
 				fora_anel = _subtrair(fora_anel, m)
+			for pa in pedras_antes:
+				fora_anel = _subtrair(fora_anel, pa)
 			for b in fora_anel:
 				_poligono(raiz, b, cor_terra)
 		for q in fora_agua_fc:
@@ -130,9 +133,11 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			pg.texture = lajes
 			pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 			pg.uv = q
-			_lajes_soltas(raiz, q, 11 + i)
-			_musgo_na_borda(raiz, q)
-			_tufos_na_borda(raiz, q, 11 + i)
+			var borda := _sem_pontos_dentro(q, pedras_antes)
+			_lajes_soltas(raiz, borda, 11 + i)
+			_musgo_na_borda(raiz, borda)
+			_tufos_na_borda(raiz, borda, 11 + i)
+		pedras_antes.append(fc)
 		_fins_do_caminho(raiz, sala, caminhos, i, linha, tile)
 		var trecho := PackedVector2Array()
 		for p in spline(c["pts"], 6.0):
@@ -164,6 +169,21 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 	_luz(sala, riachos, grama, tile)
 	if grama:
 		_vagalumes(sala, tile)
+
+## Os pontos do contorno que não caem dentro de nenhum dos polígonos `outros` (lajes de caminhos já desenhados).
+static func _sem_pontos_dentro(contorno: PackedVector2Array, outros: Array) -> PackedVector2Array:
+	if outros.is_empty():
+		return contorno
+	var out := PackedVector2Array()
+	for p in contorno:
+		var dentro := false
+		for o in outros:
+			if Geometry2D.is_point_in_polygon(p, o):
+				dentro = true
+				break
+		if not dentro:
+			out.append(p)
+	return out
 
 static func _subtrair(polis: Array, tira: PackedVector2Array) -> Array:
 	var out: Array = []
@@ -611,6 +631,11 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 		if String(p["id"]).contains("candles"):
 			var h := _mancha(sala, p["pos"] + Vector2(0, 10), Vector2(230, 230), _radial_cache("vela", Color(1.0, 0.72, 0.3, 0.34), 256), 3, true)
 			amb.add_halo(h)
+	for l in sala.luzes:   # `@luz`: luz própria dos marcos do mapa (pilares do início, ruína, bifurcação, bolsão, portão)
+		var cor: Color = l["cor"]
+		var d: float = float(l["raio"]) * 2.0
+		var h := _mancha(sala, l["pos"], Vector2(d, d), _radial_cache("luz_%s" % cor.to_html(true), cor, 256), 3, true)
+		amb.add_halo(h)
 	var folha := _arte_prop("leaves_scattered")
 	var n_riacho := 0
 	for r in riachos:

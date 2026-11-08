@@ -8,6 +8,9 @@ extends Node2D
 ## `@caminho largura x,y x,y ...` e `@riacho largura x,y ...` (células; curva suave) desenham caminho de pedra
 ## e riacho; o riacho bloqueia jogador e inimigos (camada 8) menos onde o caminho o cruza.
 ## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png).
+## Marcos da fase aberta (tools/mapas/marcos_fase1.py): `@luz x,y raio r,g,b,a` (células; raio em células) é um halo de
+## luz de um marco, `@bolsao x,y recompensa` é o baú fixo de um bolsão e `@guarda x,y raio forca id:n|id:n` é um encontro
+## adormecido (raio em px para acordar, força multiplica a curva da onda atual; nasce quando o jogador se aproxima).
 ## Depois da grade, a linha `@props` abre a lista de props: `id coluna linha [flip]` (coluna e linha
 ## podem ser fracionárias; ids em data2d/props_2d.csv, arte em props_manifest.csv).
 
@@ -49,6 +52,9 @@ var braseiros: Array[Vector2] = []
 var caminhos: Array = []  # {larg (células), pts (px)}
 var riachos: Array = []
 var lajes: Array = []  # {tom, raio (px), centro (px)}
+var luzes: Array = []     # `@luz`: {pos (px), raio (px), cor}
+var bolsoes: Array = []   # `@bolsao`: {pos (px), recompensa}
+var guardas: Array = []   # `@guarda`: {pos (px), raio (px), forca, spec}
 var _mata: TileMapLayer
 var _porta_area: Area2D
 var _porta_corpo: StaticBody2D
@@ -79,6 +85,20 @@ func carregar(caminho: String) -> bool:
 		elif l.begins_with("@anel "):
 			var q := l.split(" ", false)   # @anel índice_da_laje fator: anel de runas que acompanha o contorno da laje
 			aneis.append({"laje": int(q[1]), "fator": float(q[2]), "sigilo": q.size() > 3 and q[3] == "sigilo"})
+		elif l.begins_with("@luz "):
+			var q := l.split(" ", false)   # @luz x,y raio r,g,b,a (células; o raio também em células)
+			var xy := q[1].split(",")
+			var rgba := q[3].split(",")
+			luzes.append({"pos": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile), "raio": float(q[2]) * tile,
+				"cor": Color(float(rgba[0]), float(rgba[1]), float(rgba[2]), float(rgba[3]))})
+		elif l.begins_with("@bolsao "):
+			var q := l.split(" ", false)   # @bolsao x,y recompensa
+			var xy := q[1].split(",")
+			bolsoes.append({"pos": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile), "recompensa": q[2]})
+		elif l.begins_with("@guarda "):
+			var q := l.split(" ", false)   # @guarda x,y raio_px forca id:n|id:n
+			var xy := q[1].split(",")
+			guardas.append({"pos": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile), "raio": float(q[2]), "forca": float(q[3]), "spec": q[4]})
 		elif l.begins_with("@caminho ") or l.begins_with("@riacho "):
 			var q := l.split(" ", false)
 			var pts: Array = []
@@ -591,6 +611,39 @@ func empurrar_para_dentro(pos: Vector2) -> Vector2:
 			if d == 0.0:
 				break
 	return _centro(melhor.x, melhor.y)
+
+## `n` pontos livres a `raio` px de `centro` para os integrantes de um encontro (`@guarda`), bem espalhados: o primeiro
+## sai do `rng` da corrida (determinístico) e cada seguinte é a célula livre mais longe dos já escolhidos. Com menos
+## células livres que integrantes, o excedente forma um anel curto em volta de pontos já usados; sem célula livre
+## perto, parte da mais próxima.
+func pontos_livres_perto(centro: Vector2, raio: float, n: int, rng: RandomNumberGenerator) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	if n <= 0:
+		return out
+	var cand: Array[Vector2] = []
+	for c in celulas_livres:
+		var p := _centro(c.x, c.y)
+		if p.distance_to(centro) <= raio:
+			cand.append(p)
+	if cand.is_empty():
+		cand.append(empurrar_para_dentro(centro))
+	out.append(cand[rng.randi_range(0, cand.size() - 1)])
+	while out.size() < n:
+		if out.size() >= cand.size():
+			var base: Vector2 = out[out.size() % cand.size()]
+			out.append(base + Vector2.from_angle(TAU * float(out.size()) / float(n)) * tile * 0.45)
+			continue
+		var melhor: Vector2 = cand[0]
+		var d_melhor := -1.0
+		for q in cand:
+			var d := INF
+			for o in out:
+				d = minf(d, o.distance_squared_to(q))
+			if d > d_melhor:
+				d_melhor = d
+				melhor = q
+		out.append(melhor)
+	return out
 
 ## Pontos de nascimento fora da área vista (`vista`, em px), no anel entre `margem_min` e `margem_max` px além dela.
 ## Sem célula no anel (canto do mapa), usa as livres mais perto dele. Sorteio pelo `rng` da corrida (determinístico).

@@ -1,0 +1,19 @@
+# Passagem de bastão: mapa da primeira área (arqueiro)
+
+Atualizado em 08/11/2026 (thread "Terminar o mapa da área 1 do arqueiro"). O detalhe técnico do mapa está em `docs/arte/31_pixellab_arqueiro.md` (seção "Mapa da área 1").
+
+## Feito
+- PRs 209 a 213 mergeados (sombras, cascalho, inimigos em pixel art, olhos, números de dano, barra de vida).
+- Estrada de pedra principal do arqueiro até a arena (160 tiles, 2 curvas, 1 bifurcação curta para o bolsão com baú), com os marcos pedidos: pilares com símbolo e braseiros no início, ruína no meio, árvore seca grande na bifurcação, respiro com braseiros e portão de caveiras e brasas antes da arena, cada um com luz própria.
+- Encontros adormecidos ao longo da estrada (um a cada ~20 tiles até o respiro), trecho 3 denso, respiro e avenida final calmos.
+- Mapa continua 180 x 100. Capturas, visão geral e vídeo da estrada em `/mnt/project-files/pixellab/etapa2/area1/`.
+
+## Falta (opcionais, nesta ordem)
+1. Barra de vida do morcego 4 px mais alta.
+2. Fonte bitmap para os números de dano (o projeto ainda não tem fonte pixel licenciada).
+3. Elites e chefe em escala 1,5 a 2x.
+4. Segunda área: reaproveitar `marcos_fase1.py` como modelo (estrada, marcos com luz, encontros por trecho).
+
+## Atenção
+- Push forçado é negado: use merge normal.
+- Regerar o mapa: `python3 tools/mapas/gerar_fase_1.py` (sai igual a cada vez); conferir com `python3 tools/mapas/visao_geral_fase1.py saida.png` e `godot --path godot --script res://scripts2d/tools/captura_marcos_2d.gd -- prefixo` (precisa de janela/xvfb).
