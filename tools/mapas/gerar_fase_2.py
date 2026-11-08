@@ -413,7 +413,7 @@ S_T3 = estrada.s_mais_perto(124, 23.2)
 x_p3, y_p3 = em(S_T3, 3.8)
 pôr("pedreira_portico", x_p3, y_p3, False, forcar=True)
 marcos_s["portico"] = S_T3
-capturas["4_andaimes"] = (*em(S_T3 - 1.0), ":g")
+capturas["4_andaimes"] = None   # definido abaixo, com a câmera à frente do arqueiro
 
 # ---- Descanso e avenida do portão ----
 S_FIM = estrada.comprimento
@@ -440,7 +440,9 @@ for dx in (-3.0, 3.0):                                            # braseiros em
     marcar(gx + dx, gy + 2.2, "B")
 for dx, dy in [(-4.0, 0.9), (4.1, 0.8)]:                          # caveiras só como detalhe, ao pé dos bastiões
     pôr("skull_pile", gx + dx, gy + dy, forcar=True)
-luzes.append((ELITE[0], ELITE[1] - 0.3, 3.8, (1.0, 0.4, 0.14, 0.4)))   # luz própria do elite: ele espera dentro de um poço de luz quente
+# luz própria do elite: ele espera dentro de um poço de luz quente, centrado nos pés (revisão do crítico: com o centro no peito e
+# 0,4 de intensidade a luz somava +43 de vermelho no osso e apagava os olhos ciano; agora o chão brilha e o sprite fica com a metade)
+luzes.append((ELITE[0], ELITE[1] + 0.2, 3.0, (1.0, 0.4, 0.14, 0.28)))
 marcos_s["portao"] = S_PORT
 # O portão fecha a clareira: a rocha liga os pés dos bastiões às paredes (as linhas gy-1 e gy; o pé deles toma a faixa de baixo
 # da linha gy) e o único caminho para o portal (X) é o vão de 2 tiles no meio.
@@ -487,6 +489,11 @@ capturas["3c_bifurcacao"] = com_camera((fx - 1.0, fy - 0.2), (fx - 0.5, fy - 2.0
 capturas["6_portao_elite"] = com_camera((gx - 1.6, gy + 3.6), (gx, gy + 0.2), ":e")   # o elite parado na frente do portão, com a luz dele
 capturas["6a_portao_perto"] = com_camera((gx, gy + 0.62), (gx, gy - 1.3))   # o portão inteiro, do guindaste aos pés dos bastiões
 capturas["5_descanso"] = com_camera(em(S_DESC - 1.5), (rx, ry + 1.3))   # a clareira de laje com o braseiro do lado sul à vista
+# os andaimes: o encontro forma um anel em volta de S_T3 - 1 (os encontros nascem em volta do ponto do mapa), então o arqueiro fica
+# 4 tiles atrás do anel, na estrada, e a câmera pega o grupo inteiro à frente dele: nenhum guarda cola atrás do capuz (revisão do
+# crítico: o torso do cavaleiro dourado engolia a cabeça do arqueiro)
+centro_t3 = em(S_T3 - 1.0)
+capturas["4_andaimes"] = com_camera(em(S_T3 - 5.0), (centro_t3[0] - 0.9, centro_t3[1] + 0.15), ":g")
 
 # pousos de laje nas duas pontas da ponte e plataformas de pedra cortada espalhadas pelo salão e pelo terraço (quebram o ocre)
 lajes.append(("claro", 2.3, xa - 1.9, 40.0))

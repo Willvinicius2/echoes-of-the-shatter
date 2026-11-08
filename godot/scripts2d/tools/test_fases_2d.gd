@@ -262,6 +262,10 @@ func _testar_corrida_e_elite() -> void:
 	check.call(absf(e.sprite.scale.x - e._esc_base * f) < 0.01, "elite: sprite %.2f x" % (e.sprite.scale.x / e._esc_base))
 	check.call(is_equal_approx(e.hp_max, run.nucleo.vida_chefe(float(base["hp"]), run.dps_medido)), "elite: vida adaptativa do core (%.0f)" % e.hp_max)
 	check.call(run.hud.chefe == e and run.hud.chefe_nome == "enemy.ossuary_captain.name", "elite: barra grande da HUD com o nome dele")
+	var y_barra := float(run.hud._lay["chefe_elite_y"])
+	check.call(y_barra >= 40.0 and y_barra <= 60.0, "elite: a barra desce da faixa do topo (y %.0f) e deixa o nome com placa à vista" % y_barra)
+	var halo: Sprite2D = e.get_node_or_null("LuzDoElite")
+	check.call(halo != null and halo.show_behind_parent, "elite: a luz própria fica atrás do sprite (não pinta o osso de laranja)")
 	check.call(run.room.find_child("ClaraoPortao", true, false) != null, "elite: clarão de luz no portão")
 	check.call(e.invulneravel(), "elite: entra invulnerável")
 	var hp0: float = e.hp

@@ -99,7 +99,7 @@ mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 @luz 59.85,37.7 3.8 1,0.55,0.2,0.34
 @luz 70.95,41.2 3.6 1,0.55,0.2,0.26
 @luz 79.05,36.8 3.6 1,0.55,0.2,0.26
-@luz 146,12.7 3.8 1,0.4,0.14,0.4
+@luz 146,13.2 3 1,0.4,0.14,0.28
 @luz 142.37,16.11 3.4 1,0.55,0.2,0.26
 @luz 146.9,19.75 3.4 1,0.55,0.2,0.26
 @luz 60,25.6 4.4 1,0.55,0.2,0.4
