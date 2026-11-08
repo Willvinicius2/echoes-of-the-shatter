@@ -656,12 +656,17 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 	var amb := Ambiente.new()
 	sala.add_child(amb)
 	_mancha(sala, Vector2(larg, alt) * 0.5, Vector2(larg * 1.5, alt * 1.5), _radial_cache("vinheta", Color(0, 0, 0, 0), 256, Color(0.02, 0.02, 0.05, 0.7)), 20)
+	# Pedreira: o halo aditivo sobre lajes claras estourava o canal verde (verde-limão no pátio, branco no meio): laranja mais
+	# avermelhado e mais fraco, e a vela com menos verde também.
+	var pedreira: bool = tema == "pedreira"
+	var cor_tocha := Color(1.0, 0.42, 0.12, 0.34) if pedreira else Color(1.0, 0.55, 0.18, 0.62 if grama else 0.4)
+	var cor_vela := Color(1.0, 0.55, 0.2, 0.28) if pedreira else Color(1.0, 0.72, 0.3, 0.34)
 	for b in sala.braseiros:
-		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache("tocha_grama" if grama else "tocha", Color(1.0, 0.55, 0.18, 0.62 if grama else 0.4), 256), 3, true)
+		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache("tocha_pedreira" if pedreira else ("tocha_grama" if grama else "tocha"), cor_tocha, 256), 3, true)
 		amb.add_halo(h)
 	for p in sala.props:
 		if String(p["id"]).contains("candles"):
-			var h := _mancha(sala, p["pos"] + Vector2(0, 10), Vector2(230, 230), _radial_cache("vela", Color(1.0, 0.72, 0.3, 0.34), 256), 3, true)
+			var h := _mancha(sala, p["pos"] + Vector2(0, 10), Vector2(230, 230), _radial_cache("vela_pedreira" if pedreira else "vela", cor_vela, 256), 3, true)
 			amb.add_halo(h)
 	for l in sala.luzes:   # `@luz`: luz própria dos marcos do mapa (pilares do início, ruína, bifurcação, bolsão, portão)
 		var cor: Color = l["cor"]

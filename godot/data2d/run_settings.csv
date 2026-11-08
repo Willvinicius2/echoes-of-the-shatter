@@ -56,4 +56,6 @@ gate_elite_intro,1.4,s,entrada do elite do portao: parado e invulneravel enquant
 gate_elite_flash_size,420,px,diametro do clarao de luz aditivo no portao durante a entrada do elite
 gate_elite_shake_amp,7,px,tremor de tela na entrada do elite do portao
 gate_elite_shake_time,0.6,s,duracao do tremor de tela na entrada do elite do portao
+gate_elite_luz_tamanho,380,px,luz propria do elite do portao: diametro do halo aditivo laranja preso a ele (0 desliga)
+gate_elite_luz_alfa,0.38,0..1,luz propria do elite do portao: intensidade do halo (pulsa entre 70% e 100% disto)
 dev_fases_abertas,0,0/1,so em build de debug: 1 abre todas as fases no titulo (testes e capturas; nao grava no save)

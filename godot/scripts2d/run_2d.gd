@@ -620,8 +620,29 @@ func _preparar_elite_portao(e: Node2D) -> void:
 	hud.chefe = e
 	hud.chefe_nome = "enemy.%s.name" % str(e.stats["id"])
 	_clarao_portao(e.global_position, dur)
+	_luz_do_elite(e)
 	Feel.shake(e, float(config.get("gate_elite_shake_amp", 0.0)), float(config.get("gate_elite_shake_time", 0.0)))
 	_avisar(Csv.t(hud.chefe_nome), float(config.get("boss_hint_time", 3.0)))
+
+## Luz própria do elite do portão (revisão do Jev: ele precisa se destacar do fundo): um halo aditivo laranja-vermelho preso a
+## ele, que ilumina o sprite e o chão em volta e pulsa devagar, como brasa. Some junto com ele.
+func _luz_do_elite(e: Node2D) -> void:
+	var lado := float(config.get("gate_elite_luz_tamanho", 0.0))
+	if lado <= 0.0:
+		return
+	var alfa := float(config.get("gate_elite_luz_alfa", 0.4))
+	var halo := Sprite2D.new()
+	halo.name = "LuzDoElite"
+	halo.texture = Feel.ponto()
+	halo.material = Feel.aditivo()
+	halo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	halo.modulate = Color(1.0, 0.42, 0.14, alfa)
+	halo.scale = Vector2.ONE * lado / float(halo.texture.get_width())
+	halo.position = Vector2(0, -28)
+	e.add_child(halo)
+	var tw := halo.create_tween().set_loops()
+	tw.tween_property(halo, "modulate:a", alfa * 0.7, 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(halo, "modulate:a", alfa, 0.9).set_trans(Tween.TRANS_SINE)
 
 ## Clarão aditivo no portão: um halo e uma coluna de luz que sobem e somem durante a entrada (`dur` s).
 func _clarao_portao(pos: Vector2, dur: float) -> void:

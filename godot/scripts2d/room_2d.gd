@@ -8,11 +8,13 @@ extends Node2D
 ## `@caminho largura x,y x,y ...` e `@riacho largura x,y ...` (células; curva suave) desenham caminho de pedra
 ## e riacho; o riacho bloqueia jogador e inimigos (camada 8) menos onde o caminho o cruza.
 ## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png); `@piso pedreira` é o mesmo
-## piso aberto na versão seca e poeirenta da Pedreira dos Ecos (atlas cripta_pedreira.png, tools/sprites2d/recolorir_piso_pedreira.py).
+## piso aberto na versão seca e poeirenta da Pedreira dos Ecos (atlas cripta_pedreira.png, tools/sprites2d/recolorir_piso_pedreira.py):
+## lajes aquecidas (arenito), massa de rocha `m` em marrom-escuro e uma orla de terra irregular entre ela e o chão (orla_terra_2d.gd).
 ## Fosso da Pedreira (tools/mapas/fosso_pixel.py): `f` é uma célula de fosso (bloqueia jogador e inimigos na camada 8, como a água;
 ## flecha e magia passam por cima) e `=` é uma célula da ponte de tábuas (andável, dentro do fosso). `@decalque arquivo x y [topo]`
 ## cola um PNG pintado por código no chão (x, y em px de mundo: canto de cima à esquerda); com `topo` fica por cima dos caminhos
-## (as pontes), sem ele por baixo (os fossos).
+## (as pontes), sem ele por baixo (os fossos). Em props_2d.csv a coluna `pes` lista, em px relativos ao pivô, os retângulos
+## `x0:y0:x1:y1|...` que bloqueiam num prop vazado (pórtico, bastiões do portão): o resto do sprite é só para os olhos.
 ## Marcos da fase aberta (tools/mapas/marcos_fase1.py): `@luz x,y raio r,g,b,a` (células; raio em células) é um halo de
 ## luz de um marco, `@bolsao x,y recompensa` é o baú fixo de um bolsão e `@guarda x,y raio forca id:n|id:n` é um encontro
 ## adormecido (raio em px para acordar, força multiplica a curva da onda atual; nasce quando o jogador se aproxima).
@@ -25,6 +27,8 @@ signal porta_usada
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
 const Terreno = preload("res://scripts2d/terreno_2d.gd")
+const OrlaTerra = preload("res://scripts2d/orla_terra_2d.gd")
+const COR_MASSA_PEDREIRA := Color(0.56, 0.54, 0.62)   # a rocha da pedreira é o tile do piso em marrom-escuro (o preto da mata some a emenda com o ocre)
 const ATLAS := "res://art2d/tiles/cripta_tiles.png"
 const ATLAS_GRAMA := "res://art2d/tiles/cripta_grama.png"
 const ATLAS_PEDREIRA := "res://art2d/tiles/cripta_pedreira.png"
@@ -164,7 +168,7 @@ func _montar() -> void:
 	_mata = TileMapLayer.new()  # chão da mata fechada, bem mais escuro que o gramado
 	_mata.tile_set = ts
 	if piso_grama:
-		_mata.modulate = _piso.modulate   # o escuro da mata vem das manchas suaves de _sombra_da_mata, sem degrau de tile
+		_mata.modulate = COR_MASSA_PEDREIRA if tema == "pedreira" else _piso.modulate   # o escuro da mata vem das manchas suaves de _sombra_da_mata, sem degrau de tile
 	add_child(_mata)
 	_layer = TileMapLayer.new()
 	_layer.tile_set = ts
@@ -267,7 +271,10 @@ func _montar() -> void:
 			corpo.add_child(cpe)
 	if piso_grama and colunas * linhas > 2000:
 		_tons_do_gramado()
-	_sombra_da_mata()
+	if tema == "pedreira":
+		OrlaTerra.montar(self, _grade, colunas, linhas, tile, _layer)   # rocha marrom com orla de terra irregular (sem a sombra preta da mata)
+	else:
+		_sombra_da_mata()
 	_desenhar_lajes()
 	_montar_fossos()
 	Terreno.montar(self, caminhos, riachos, piso_grama, tile)

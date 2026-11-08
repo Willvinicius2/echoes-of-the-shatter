@@ -78,3 +78,7 @@ tree_skull,res://art2d/props/tree_skull.png,128,134,64,134
 tree_stump,res://art2d/props/tree_stump.png,105,80,52,80
 tree_teal_leaves,res://art2d/props/tree_teal_leaves.png,102,121,51,121
 vines_dry_rock,res://art2d/props/vines_dry_rock.png,103,85,51,85
+pedreira_portao,res://art2d/props/pedreira_portao.png,416,254,208,254
+pedreira_lasca_0,res://art2d/props/pedreira_lasca_0.png,24,13,12,13
+pedreira_lasca_1,res://art2d/props/pedreira_lasca_1.png,36,20,18,20
+pedreira_lasca_2,res://art2d/props/pedreira_lasca_2.png,48,21,24,21
