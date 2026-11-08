@@ -35,6 +35,10 @@ const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
 const Fase = preload("res://scripts2d/fase_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 
+## Variação dos guardas adormecidos (`_variar_guarda`): para onde cada irmão do mesmo tipo olha e o tom de ferrugem do segundo esqueleto.
+const OLHARES_GUARDA: Array[Vector2] = [Vector2(0.0, 1.0), Vector2(-1.0, 0.55), Vector2(1.0, 0.55), Vector2(-1.0, 0.0), Vector2(1.0, 0.0)]
+const FERRUGEM_GUARDA := Color(1.0, 0.86, 0.74)
+
 ## Testes do fluxo antigo de etapas (salas com porta, rotas) ligam isto antes de criar a corrida.
 static var modo_etapas := false
 
@@ -444,6 +448,8 @@ func _nascer_guarda(g: Dictionary) -> void:
 	var pontos: Array[Vector2] = room.pontos_livres_perto(g["pos"], float(config.get("guard_spread", 140.0)), total, rng)
 	var forca := float(g["forca"])
 	var k := 0
+	var irmaos := {}   # quantos do mesmo tipo já nasceram neste encontro
+	var semente := posmod(hash(Vector2i(g["pos"])), OLHARES_GUARDA.size())
 	for parte in partes:
 		var p := parte.split(":")
 		for _n in int(p[1]):
@@ -459,7 +465,24 @@ func _nascer_guarda(g: Dictionary) -> void:
 			e.set_meta("xp_mult", float(_mult_onda["xp"]))
 			e.adormecer(float(g["raio"]), grupo)
 			e.died.connect(_on_inimigo_morto)
+			var irmao: int = irmaos.get(p[0], 0)
+			irmaos[p[0]] = irmao + 1
+			_variar_guarda(e, irmao, semente)
 			k += 1
+
+## Guardas do mesmo tipo não ficam em fila de clones (revisão do crítico): cada irmão olha para um lado (o espelhamento é da
+## própria folha), começa a respirar em um quadro diferente e o segundo esqueleto ganha um tom a mais de ferrugem. Tudo sai do
+## ponto do encontro e da ordem do guarda, então a cena é a mesma a cada execução (e nas capturas). Ao acordar, ele volta a
+## olhar para o jogador como sempre.
+func _variar_guarda(e: Node2D, irmao: int, semente: int) -> void:
+	var passo := irmao * 2 + semente
+	e.facing = OLHARES_GUARDA[passo % OLHARES_GUARDA.size()].normalized()
+	e.play("idle", true)
+	var quadros: int = e.sprite.sprite_frames.get_frame_count(e.sprite.animation)
+	if quadros > 1:
+		e.sprite.set_frame_and_progress(passo % quadros, 0.0)
+	if irmao == 1 and String(e.stats["id"]) == "skeleton_soldier":
+		e.sprite.self_modulate = FERRUGEM_GUARDA
 
 ## Fase do spawner (ondas_fases.csv) da fase escolhida (`onda_fase` em fases_2d.csv); sem ela, a primeira do core;
 ## "" se não há ondas.
@@ -625,7 +648,8 @@ func _preparar_elite_portao(e: Node2D) -> void:
 	_avisar(Csv.t(hud.chefe_nome), float(config.get("boss_hint_time", 3.0)))
 
 ## Luz própria do elite do portão (revisão do Jev: ele precisa se destacar do fundo): um halo aditivo laranja-vermelho preso a
-## ele, que ilumina o sprite e o chão em volta e pulsa devagar, como brasa. Some junto com ele.
+## ele, que pulsa devagar, como brasa. Fica ATRÁS do sprite (revisão do crítico: por cima, a luz pintava o osso de laranja e
+## apagava os olhos ciano): ilumina o chão em volta e recorta o elite contra ele. Some junto com ele.
 func _luz_do_elite(e: Node2D) -> void:
 	var lado := float(config.get("gate_elite_luz_tamanho", 0.0))
 	if lado <= 0.0:
@@ -636,6 +660,7 @@ func _luz_do_elite(e: Node2D) -> void:
 	halo.texture = Feel.ponto()
 	halo.material = Feel.aditivo()
 	halo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	halo.show_behind_parent = true
 	halo.modulate = Color(1.0, 0.42, 0.14, alfa)
 	halo.scale = Vector2.ONE * lado / float(halo.texture.get_width())
 	halo.position = Vector2(0, -28)

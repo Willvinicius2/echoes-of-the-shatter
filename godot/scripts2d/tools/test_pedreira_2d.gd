@@ -154,10 +154,11 @@ func _testar_mapa(sala) -> void:
 	for d in sala.decalques:
 		arquivos_ok = arquivos_ok and FileAccess.file_exists(String(d["arquivo"]))
 	check.call(sala.decalques.size() >= 7 and arquivos_ok, "Pedreira: decalques dos fossos e da ponte existem (%d)" % sala.decalques.size())
-	# luz própria do elite: um halo laranja forte sobre o G, mais largo que o do braseiro comum
+	# luz própria do elite: um poço laranja nos pés do G, mais largo que o do braseiro comum e sem estourar o osso do sprite (a
+	# intensidade cai de 0,4 para 0,28 na revisão do crítico: o sprite do elite recebe só metade do vermelho)
 	var luz_elite := false
 	for l in sala.luzes:
-		if l["pos"].distance_to(sala.posicao_chefe) <= 1.5 * sala.tile and float(l["raio"]) >= 3.0 * sala.tile and l["cor"].a >= 0.3 and l["cor"].r > l["cor"].b * 3.0:
+		if l["pos"].distance_to(sala.posicao_chefe) <= 1.5 * sala.tile and float(l["raio"]) >= 3.0 * sala.tile and l["cor"].a >= 0.25 and l["cor"].a <= 0.34 and l["cor"].r > l["cor"].b * 3.0:
 			luz_elite = true
 	check.call(luz_elite, "Pedreira: o elite do portão espera dentro de um poço de luz quente (@luz sobre o G)")
 	# a luz dos braseiros e lampiões é laranja (nada de verde/branco estourado): vermelho e verde no halo, azul bem menor

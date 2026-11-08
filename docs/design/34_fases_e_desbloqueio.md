@@ -18,8 +18,8 @@ O chefe da Pedreira é o `ossuary_captain`, um inimigo `melee` comum de `enemies
 - usa a IA comum (não o script do Guardião), espera no ponto `G` do mapa e acorda quando o jogador chega perto, como o Guardião;
 - escala `gate_elite_scale` (1,5) no sprite e no raio de colisão, sem o tom dourado nem a escala 1,2 dos elites de onda; conta como elite para XP, baú e gema;
 - entrada de `gate_elite_intro` (1,4 s): fica parado e invulnerável, com um clarão de luz aditivo no portão, um tremor leve de tela e o aviso com o nome dele;
-- luz própria: um halo aditivo laranja preso a ele (`gate_elite_luz_tamanho` e `gate_elite_luz_alfa` em `run_settings.csv`, pulsa de 70% a 100%), além do poço de luz do mapa (`@luz` sobre o G); aparece na captura do portão;
-- barra de vida grande no topo da tela, com o nome por chave de localização (`enemy.ossuary_captain.name`). Ela some quando ele morre.
+- luz própria: um halo aditivo laranja preso a ele, atrás do sprite (`gate_elite_luz_tamanho` e `gate_elite_luz_alfa` em `run_settings.csv`, pulsa de 70% a 100%), além do poço de luz do mapa nos pés dele (`@luz` de 3 tiles sobre o G); acendem o chão e recortam o elite, sem pintar o osso de laranja; aparece na captura do portão;
+- barra de vida grande no topo da tela (`chefe_elite_y` em `hud_layout.csv`, 20 px abaixo da barra do Guardião), com o nome numa placa escura e por chave de localização (`enemy.ossuary_captain.name`). Ela some quando ele morre.
 O portão onde ele espera é o `pedreira_portao` (portal de pedra maciça com grade de ferro e guindaste, não o arco da área 1); só se chega ao portal (X) pelo vão dele. A Cripta não muda: o Guardião continua com o script e a barra dele.
 
 ## Como testar

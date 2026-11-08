@@ -54,8 +54,9 @@ func _desenhar() -> void:
 		Arte.texto(_ctl, Vector2(0, y_ajuda), ajuda, 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
-		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
-		Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 6.0), Csv.t(chefe_nome), 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_LEFT, w)
+		# a barra do elite desce 20 px da faixa do topo e o nome ganha uma placa escura (a verga do portão é clara)
+		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, _lay["chefe_elite_y"], w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
+		Arte.placa_nome(_ctl, r.position.x, r.position.y - 6.0, Csv.t(chefe_nome), 13, Tema.cor("texto"))
 	if mensagem != "":
 		Arte.texto(_ctl, Vector2(0, vp.y * 0.3), mensagem, 32, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 

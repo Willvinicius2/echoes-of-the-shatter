@@ -76,6 +76,22 @@ func _testar_marcos(run) -> void:
 	var dorme: bool = meus.all(func(e): return e.raio_despertar > 0.0)
 	var vizinhos_dormem: bool = t.get_nodes_in_group("hurtable").filter(func(e): return e.has_meta("guarda") and not meus.has(e)).all(func(e): return e.raio_despertar > 0.0)
 	check.call(dorme and vizinhos_dormem, "marcos: o encontro nasce adormecido")
+	# guardas do mesmo tipo não nascem em fila de clones: cada irmão olha para um lado, respira em outro quadro, e só o segundo esqueleto leva o tom de ferrugem
+	var n_antes: int = run._guarda_n
+	run._nascer_guarda({"pos": room.spawn_jogador + Vector2(0, 260), "raio": 1.0, "forca": 1.0, "spec": "skeleton_soldier:3"})
+	var irmaos: Array = t.get_nodes_in_group("hurtable").filter(func(e): return e.has_meta("guarda") and e.grupo_despertar == "guarda_%d" % n_antes)
+	check.call(irmaos.size() == 3, "guardas: o encontro de teste nasce com 3 esqueletos (%d)" % irmaos.size())
+	if irmaos.size() == 3:
+		var olhares := {}
+		var quadros := {}
+		var ferrugem := 0
+		for e in irmaos:
+			olhares[posmod(int(round(e.facing.angle() / (PI / 4.0))), 8)] = true
+			quadros[e.sprite.frame] = true
+			ferrugem += 1 if e.sprite.self_modulate != Color.WHITE else 0
+		check.call(olhares.size() == 3 and quadros.size() == 3 and ferrugem == 1, "guardas: 3 esqueletos olham para %d lados, começam em %d quadros e só %d tem o tom de ferrugem" % [olhares.size(), quadros.size(), ferrugem])
+	for e in irmaos:
+		e.queue_free()
 	var e0 = meus[0]
 	var base: Dictionary = Csv.enemy(e0.stats["id"])
 	var mult: Dictionary = run._mult_onda
