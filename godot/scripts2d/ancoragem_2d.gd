@@ -49,14 +49,24 @@ static var _mat_vao: ShaderMaterial
 static var _linhas_base := {}
 static var _tex_contato: Texture2D
 
+## Pórticos de guindaste da Pedreira: estrutura de madeira vazada, alta demais (~2,7x o arqueiro) para ser sólida de ponta a
+## ponta. Entram como "aéreo" (y-sort pela linha de chão dos pés, só a sombra projetada, sem a faixa de sombra sob a verga),
+## só os pés bloqueiam (coluna `pes` de props_2d.csv) e a peça toda fica semitransparente com alguém atrás (`ocultavel`).
+const PORTICOS := ["pedreira_portico"]
+
+## Portão de pedra da Pedreira (`pedreira_portao`): dois bastiões maciços com a abertura no meio e a verga e a grade de ferro no
+## alto. Também "aéreo" (y-sort pela linha de chão dos bastiões), só os bastiões bloqueiam (`pes`), a peça fica semitransparente
+## com alguém atrás (quem passa pela abertura não some sob a verga) e a faixa de sombra cola na borda de baixo da verga.
+const PORTOES := ["pedreira_portao"]
+
 ## Classe visual do prop pelo id: árvore (raízes, sombra longa), raso (ossos, folhas, capim, samambaia:
 ## só contato leve e fica no chão, fora do y-sort), folhagem (arbustos: contato, terra curta, y-sort pelo
 ## centro da base e semitransparente quando alguém passa atrás), aéreo (`arco_*`: verga de pedra sobre dois pilares,
 ## só com a sombra projetada no chão, sem contato; o pivô na borda de baixo é a linha de chão dos pilares) ou sólido
 ## (tumbas, pedras, pilares).
 static func tipo(id: String) -> String:
-	if id.begins_with("arco_"):
-		return "aereo"   # verga de pedra sobre dois pilares: só a sombra projetada, y-sort pela linha de base dos pilares
+	if id.begins_with("arco_") or id in PORTICOS or id in PORTOES:
+		return "aereo"   # verga de pedra sobre dois pilares (ou pórtico de madeira): só a sombra projetada, y-sort pela linha de base
 	if id == "tree_stump":
 		return "solido"
 	if id.begins_with("tree_") or id.begins_with("sapling_"):
@@ -68,6 +78,10 @@ static func tipo(id: String) -> String:
 		if id.begins_with(pre):
 			return "folhagem"
 	return "solido"
+
+## O prop fica semitransparente enquanto alguém está atrás dele: arbustos (folhagem) e os pórticos, que são altos e vazados.
+static func ocultavel(id: String) -> bool:
+	return tipo(id) == "folhagem" or id in PORTICOS or id in PORTOES
 
 ## Base que toca o chão, em px já na escala do prop: [largura, profundidade]. Vem de solido_l/solido_a do
 ## props_2d.csv; sem sólido, uma fração da largura do sprite.
@@ -212,7 +226,8 @@ static func prender(chao: Node2D, atras: Node2D, frente: Node2D, id: String, tex
 		# de 1 tom, borda em dither, a uns 35 px abaixo da linha dos pilares e deslocada para a direita) e uma faixa de
 		# 7 px de sombra cola na borda de baixo dela, para a pedra não parecer colada no fundo
 		_sombra_projetada(chao, tex, esc, arte, flip, pe, t)
-		_sombra_do_vao(chao, tex, esc, arte, flip, pe)
+		if id.begins_with("arco_") or id in PORTOES:
+			_sombra_do_vao(chao, tex, esc, arte, flip, pe)   # o pórtico de madeira paira alto demais para a faixa colar na viga
 		return
 	var b := base(id, tex, def)
 	var bl: float = b[0]

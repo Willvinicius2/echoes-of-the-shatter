@@ -12,6 +12,7 @@ var sala := 1
 var total_salas := 1
 var mensagem := ""
 var chefe: Node2D
+var chefe_nome := "hud.chefe_nome"   # chave de loc do nome sobre a barra do chefe (o elite do portão usa enemy.<id>.name)
 var upgrades: RefCounted
 var tempo := 0.0
 var _ctl: Control
@@ -54,7 +55,7 @@ func _desenhar() -> void:
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
 		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
-		Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 6.0), Csv.t("hud.boss"), 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_LEFT, w)
+		Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 6.0), Csv.t(chefe_nome), 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_LEFT, w)
 	if mensagem != "":
 		Arte.texto(_ctl, Vector2(0, vp.y * 0.3), mensagem, 32, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 

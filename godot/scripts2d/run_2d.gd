@@ -32,6 +32,8 @@ const PortalScript = preload("res://scripts2d/portal_2d.gd")
 const GemaScript = preload("res://scripts2d/gema_2d.gd")
 const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
 const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
+const Fase = preload("res://scripts2d/fase_2d.gd")
+const Feel = preload("res://scripts2d/feel_2d.gd")
 
 ## Testes do fluxo antigo de etapas (salas com porta, rotas) ligam isto antes de criar a corrida.
 static var modo_etapas := false
@@ -92,6 +94,10 @@ var _guardas_pend: Array = []
 var _guardas_t := 0.0
 var _guarda_n := 0
 var _mult_onda := {}        # hp/dano/velocidade/xp do último inimigo comum que o core mandou nascer (curva_horda.csv)
+# Fases (fases_2d.csv, doc 34): a corrida usa a sala e a fase do spawner da fase escolhida no título.
+var fase_id := ""           # id em fases_2d.csv da corrida atual ("" no fluxo antigo de etapas)
+var chefe_elite := false    # o chefe da fase é um inimigo comum (elite do portão), não um `kind=boss`
+var _fases_novas: Array = []   # fases que a vitória desta corrida abriu (aviso na tela de fim, uma vez)
 
 ## Raiz da interface quando o mundo roda num SubViewport de pixel art (main_2d.gd); nula = tudo neste nó.
 var ui_raiz: Node = null
@@ -114,6 +120,9 @@ func _ready() -> void:
 	Classe.ler_argumentos()
 	meta = MetaScript.new()
 	meta.carregar()
+	Fase.ler_argumentos()
+	if OS.is_debug_build() and int(config.get("dev_fases_abertas", 0)) == 1:
+		Fase.todas_abertas = true   # atalho de dev (testes e capturas): não grava no save
 	nucleo = meta.nucleo
 	_criar_classe()
 	camera = Camera2D.new()
@@ -225,7 +234,10 @@ func iniciar_corrida() -> void:
 	nucleo.ondas_parar()
 	for g in get_tree().get_nodes_in_group("coletaveis"):
 		g.queue_free()
+	fase_id = "" if modo_etapas else Fase.jogavel()
+	_fases_novas = []
 	fase_horda = _fase_do_spawner()
+	chefe_elite = _chefe_da_fase_e_elite()
 	horda = not modo_etapas and int(config.get("horda", 0)) == 1 and fase_horda != ""
 	hud_xp.ativo = horda   # barra de XP e nível só no modo horda
 	nucleo.horda_definir(horda)   # antes de começar: no modo horda a sala nunca limpa e a vitória vem do portal
@@ -293,7 +305,7 @@ func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 		room = RoomScript.new()
 		add_child(room)
 		move_child(room, 0)
-		room.carregar(no["room"])
+		room.carregar(_sala_da_corrida(no["room"]))
 		room.colocar_props(atores)
 		room.porta_usada.connect(_on_porta)
 		player.global_position = room.spawn_jogador
@@ -301,6 +313,7 @@ func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 	hud.sala = i + 1
 	hud.mensagem = ""
 	hud.chefe = null
+	hud.chefe_nome = "hud.chefe_nome"
 	_ajustar_camera(not manter)
 	if horda and room.aberta():
 		nucleo.ondas_iniciar(fase_horda, int(rng.seed))
@@ -448,10 +461,35 @@ func _nascer_guarda(g: Dictionary) -> void:
 			e.died.connect(_on_inimigo_morto)
 			k += 1
 
-## Primeira fase do spawner (ondas_fases.csv); "" se não há ondas.
+## Fase do spawner (ondas_fases.csv) da fase escolhida (`onda_fase` em fases_2d.csv); sem ela, a primeira do core;
+## "" se não há ondas.
 func _fase_do_spawner() -> String:
 	var fases: Array = nucleo.ondas_definicoes().get("phases", [])
-	return str(fases[0]["id"]) if fases.size() > 0 else ""
+	if fases.is_empty():
+		return ""
+	var quer := Fase.onda_fase(fase_id) if fase_id != "" else ""
+	for f in fases:
+		if str(f["id"]) == quer:
+			return quer
+	return str(fases[0]["id"])
+
+## Sala da corrida: a da fase escolhida (fases_2d.csv); no fluxo antigo de etapas, a do nó do core (run.csv).
+func _sala_da_corrida(do_no: String) -> String:
+	if modo_etapas or fase_id == "" or Fase.sala(fase_id) == "":
+		return do_no
+	return Fase.sala(fase_id)
+
+## O chefe da fase do spawner é um inimigo comum de enemies.csv (elite do portão, ex. a Pedreira) e não um `kind=boss`?
+func _chefe_da_fase_e_elite() -> bool:
+	for f in nucleo.ondas_definicoes().get("phases", []):
+		if str(f["id"]) == fase_horda:
+			var id := str(f.get("boss", ""))
+			return id != "" and str(Csv.enemy(id).get("kind", "boss")) != "boss"
+	return false
+
+## Chefe da fase: o Guardião (`kind=boss`) ou o elite do portão (nasceu do core com `boss=true`).
+static func eh_chefe(e: Node) -> bool:
+	return e.stats.get("kind", "") == "boss" or e.has_meta("chefe_portao")
 
 # --- Modo horda -------------------------------------------------------------------------------------------------
 
@@ -470,13 +508,13 @@ func _tick_horda(delta: float) -> void:
 	hud.sala = mini(onda, hud.total_salas)
 	if bool(w.get("swarm", false)) and not _aviso_enxame:
 		_aviso_enxame = true
-		_avisar(Csv.t("hud.swarm"), float(config.get("boss_hint_time", 3.0)))
+		_avisar(Csv.t("hud.gate_swarm" if chefe_elite else "hud.swarm"), float(config.get("boss_hint_time", 3.0)))
 	if bool(w.get("boss_spawned", false)) or room.posicao_chefe == Vector2.ZERO:
 		return
 	if int(w.get("can_wake", -1)) == 0:
 		if not _aviso_altar:
 			_aviso_altar = true
-			_avisar(Csv.t("hud.boss_altar"), float(config.get("boss_hint_time", 3.0)))
+			_avisar(Csv.t("hud.gate_altar" if chefe_elite else "hud.boss_altar"), float(config.get("boss_hint_time", 3.0)))
 		if player.global_position.distance_to(room.posicao_chefe) <= float(config.get("boss_wake_radius", 260.0)):
 			acordar_chefe()
 
@@ -489,7 +527,7 @@ func _reposicionar_presos() -> void:
 	var checks := int(config.get("horde_stuck_checks", 4))
 	var t := float(room.tile)
 	for e in get_tree().get_nodes_in_group("hurtable"):
-		if not e.has_meta("spawn_id") or e.stats.get("kind", "") == "boss":
+		if not e.has_meta("spawn_id") or eh_chefe(e):
 			continue
 		var d: float = e.global_position.distance_to(player.global_position)
 		var antes := float(e.get_meta("dist_antes", INF))
@@ -531,7 +569,9 @@ func _medir_dps() -> float:
 func _nascer(s: Dictionary) -> void:
 	var chefe: bool = bool(s.get("boss", false))
 	var id := str(s["enemy"])
-	var e: Node2D = (BossScript if chefe else EnemyScript).new()
+	# Chefe que não é `kind=boss` (elite do portão): IA comum, não o Guardião (BossScript e boss_patterns_2d.csv).
+	var portao: bool = chefe and str(Csv.enemy(id).get("kind", "boss")) != "boss"
+	var e: Node2D = (BossScript if chefe and not portao else EnemyScript).new()
 	atores.add_child(e)
 	var onde: Vector2
 	if chefe and room.posicao_chefe != Vector2.ZERO:
@@ -545,7 +585,10 @@ func _nascer(s: Dictionary) -> void:
 		e.stats["hp"] = vida_chefe
 		e.hp = vida_chefe
 		e.hp_max = vida_chefe
-		_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
+		if portao:
+			_preparar_elite_portao(e)
+		else:
+			_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
 	else:
 		var hp_mult := float(s.get("hp_mult", 1.0))
 		e.stats["hp"] = float(e.stats["hp"]) * hp_mult
@@ -564,6 +607,69 @@ func _nascer(s: Dictionary) -> void:
 	e.set_meta("xp_mult", float(s.get("xp_mult", 1.0)))
 	e.died.connect(_on_inimigo_morto)
 
+## Elite do portão (decisão do Jev para a Pedreira): conta como elite (XP, baú e gema de elite) mas sem o tom dourado
+## nem a escala dos elites de onda; cresce `gate_elite_scale` (sprite e colisão), entra parado e invulnerável por
+## `gate_elite_intro` s com o clarão no portão, tremor e o nome dele, e ganha a barra de chefe da HUD.
+func _preparar_elite_portao(e: Node2D) -> void:
+	e.set_meta("elite", true)
+	e.set_meta("chefe_portao", true)
+	e.stats["hp_bar"] = 0.0   # a barra é a grande da HUD, não a da cabeça
+	e.aumentar(float(config.get("gate_elite_scale", 1.5)))
+	var dur := float(config.get("gate_elite_intro", 1.4))
+	e.iniciar_entrada(dur)
+	hud.chefe = e
+	hud.chefe_nome = "enemy.%s.name" % str(e.stats["id"])
+	_clarao_portao(e.global_position, dur)
+	_luz_do_elite(e)
+	Feel.shake(e, float(config.get("gate_elite_shake_amp", 0.0)), float(config.get("gate_elite_shake_time", 0.0)))
+	_avisar(Csv.t(hud.chefe_nome), float(config.get("boss_hint_time", 3.0)))
+
+## Luz própria do elite do portão (revisão do Jev: ele precisa se destacar do fundo): um halo aditivo laranja-vermelho preso a
+## ele, que ilumina o sprite e o chão em volta e pulsa devagar, como brasa. Some junto com ele.
+func _luz_do_elite(e: Node2D) -> void:
+	var lado := float(config.get("gate_elite_luz_tamanho", 0.0))
+	if lado <= 0.0:
+		return
+	var alfa := float(config.get("gate_elite_luz_alfa", 0.4))
+	var halo := Sprite2D.new()
+	halo.name = "LuzDoElite"
+	halo.texture = Feel.ponto()
+	halo.material = Feel.aditivo()
+	halo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	halo.modulate = Color(1.0, 0.42, 0.14, alfa)
+	halo.scale = Vector2.ONE * lado / float(halo.texture.get_width())
+	halo.position = Vector2(0, -28)
+	e.add_child(halo)
+	var tw := halo.create_tween().set_loops()
+	tw.tween_property(halo, "modulate:a", alfa * 0.7, 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(halo, "modulate:a", alfa, 0.9).set_trans(Tween.TRANS_SINE)
+
+## Clarão aditivo no portão: um halo e uma coluna de luz que sobem e somem durante a entrada (`dur` s).
+func _clarao_portao(pos: Vector2, dur: float) -> void:
+	var lado := float(config.get("gate_elite_flash_size", 420.0))
+	var luz := Node2D.new()
+	luz.name = "ClaraoPortao"
+	luz.position = pos
+	luz.z_index = 15
+	luz.modulate = Color(1, 1, 1, 0)
+	for forma in [Vector2(1.0, 0.7), Vector2(0.28, 1.6)]:   # halo achatado no chão e coluna alta
+		var sp := Sprite2D.new()
+		sp.texture = Feel.ponto()
+		sp.material = Feel.aditivo()
+		sp.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		sp.modulate = Color(1.5, 1.25, 0.8)   # aditivo acima de 1: o portão estoura de luz
+		sp.scale = forma * lado / float(sp.texture.get_width())
+		sp.position = Vector2(0, -lado * forma.y * 0.35) if forma.y > 1.0 else Vector2.ZERO
+		luz.add_child(sp)
+	room.add_child(luz)
+	luz.scale = Vector2(0.4, 0.4)
+	var tw := luz.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(luz, "modulate:a", 1.0, dur * 0.35)
+	tw.tween_property(luz, "scale", Vector2.ONE, dur * 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tw.chain().tween_property(luz, "modulate:a", 0.0, dur * 0.65)
+	tw.chain().tween_callback(luz.queue_free)
+
 func _morto_na_horda(e) -> void:
 	var id: String = e.stats.get("id", "")
 	nucleo.corrida_inimigo_morto(id)   # drops e ganhos (no modo horda a sala nunca limpa)
@@ -577,20 +683,22 @@ func _morto_na_horda(e) -> void:
 	if bool(x.get("bau", false)):
 		_soltar("bau", 0, e.global_position)
 	# Gema de habilidade (estilo Path of Exile): elite e Guardião soltam uma que ensina ou melhora uma habilidade.
-	var chefe: bool = e.stats.get("kind", "") == "boss"
+	var chefe: bool = eh_chefe(e)
 	var chance := float(config.get("skill_gem_boss" if chefe else "skill_gem_elite", 0.0))
 	if (elite or chefe) and randf() < chance:
 		_soltar("habilidade", 1, e.global_position)
 	var r: Dictionary = {}
 	if not e.has_meta("guarda"):   # os encontros do mapa ficam fora da conta do spawner
 		r = nucleo.ondas_morto(int(e.get_meta("spawn_id", 0)))
-	if e.stats.get("kind", "") == "boss":
+	if chefe:
 		_pos_chefe = e.global_position
+	if hud.chefe == e:
+		hud.chefe = null   # barra grande do elite do portão sai com ele
 	if bool(r.get("completa", false)) and estado == Estado.LUTA:
 		atrair_coletaveis()
 		estado = Estado.LIMPA
 		_abrir_portal()
-		hud.mensagem = Csv.t("hud.portal_open")
+		hud.mensagem = Csv.t("hud.gate_open" if chefe_elite else "hud.portal_open")
 
 func _soltar(tipo: String, valor: int, pos: Vector2) -> void:
 	var g := Node2D.new()
@@ -827,6 +935,7 @@ func _on_porta() -> void:
 		if portal == null or not is_instance_valid(portal) or nucleo.horda_vencer() != 0:
 			return
 		estado = Estado.VENCEU
+		_fases_novas = meta.vencer_fase(fase_id)   # registra a fase vencida; as que abriram agora vão para a tela de fim
 		hud.mensagem = Csv.t("hud.victory")
 		Audio.tocar("victory")
 		_timer = config["restart_delay"]
@@ -897,7 +1006,11 @@ func _mostrar_fim() -> void:
 		resumo.append(Csv.t("menu.sum_materials") % ", ".join(mats))
 	nucleo.corrida_terminar()
 	meta.sincronizar()
-	menus.mostrar_fim(estado == Estado.VENCEU, resumo)
+	var avisos := []
+	for id in _fases_novas:
+		avisos.append(Csv.t("fase.desbloqueada") % Csv.t(str(Fase.dados(id).get("nome", id))))
+	_fases_novas = []
+	menus.mostrar_fim(estado == Estado.VENCEU, resumo, avisos)
 	get_tree().paused = true
 
 func _total_upgrades() -> int:

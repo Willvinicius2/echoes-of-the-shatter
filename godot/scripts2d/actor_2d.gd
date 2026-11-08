@@ -25,6 +25,7 @@ var _morrendo := false
 var _flash_ligado := false
 var _dir_k := -1
 var _esc_base := 1.0   # escala de mundo do sprite (sprites_escala.csv)
+var escala_extra := 1.0   # multiplica a escala do sprite (elite do portão); a colisão é ajustada por quem muda isto
 var _sombra_a := 1.0
 var _recuo := Vector2.ZERO   # recuo do sprite ao disparar (doc 33 seção 2): só o desenho, a colisão não muda
 var _recuo_t := 0.0
@@ -85,7 +86,7 @@ func topo_visual() -> float:
 	var inf := SpriteLoader.info(char_id)
 	if inf["tem_arquivo"] and _esc_base != 1.0:
 		return -(float(inf["lado"]) * 0.5 - float(inf["offset"].y)) * sprite.scale.x * 0.88
-	return -90.0 * escala_sprite()
+	return -90.0 * escala_sprite() * escala_extra
 
 func anim_base() -> String:
 	return _anim_base
@@ -187,17 +188,18 @@ func _respirar(delta: float) -> void:
 		# a respiração vem dos quadros da folha)
 		var vp := get_viewport()
 		var cam := vp.get_camera_2d() if vp is SubViewport else null   # só o mundo de pixel art (SubViewport) escala por 1/zoom
-		var e := _esc_base if cam == null else 1.0 / maxf(cam.zoom.x, 0.05)   # fora do SubViewport (testes, modo normal), fica na escala do CSV
+		var e := (_esc_base if cam == null else 1.0 / maxf(cam.zoom.x, 0.05)) * escala_extra   # fora do SubViewport (testes, modo normal), fica na escala do CSV
 		if absf(sprite.scale.x - e) > 0.001:
 			sprite.scale = Vector2(e, e)
 		return
+	var base := _esc_base * escala_extra
 	if _anim_base == "idle":
 		_fase_respiro += delta * 2.4
 		var r := sin(_fase_respiro)
 		var k := 1.0 / escala_sprite()  # sprite maior (chefe) respira a mesma quantidade de px, não a mesma fração
-		sprite.scale = Vector2(1.0 - 0.012 * k * r, 1.0 + 0.026 * k * r) * _esc_base
-	elif sprite.scale != Vector2(_esc_base, _esc_base):
-		sprite.scale = Vector2(_esc_base, _esc_base)
+		sprite.scale = Vector2(1.0 - 0.012 * k * r, 1.0 + 0.026 * k * r) * base
+	elif sprite.scale != Vector2(base, base):
+		sprite.scale = Vector2(base, base)
 
 var _sombra_externa := false   # true: a sombra é desenhada pelo sombras_2d.gd (MultiMesh)
 

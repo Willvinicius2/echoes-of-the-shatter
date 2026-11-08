@@ -1,0 +1,4 @@
+id,sala,onda_fase,nome,descricao,requer
+cripta,res://data2d/rooms/fase_1.txt,cripta,fase.cripta.nome,fase.cripta.desc,
+pedreira,res://data2d/rooms/fase_1.txt,pedreira,fase.pedreira.nome,fase.pedreira.desc,cripta
+sem_mapa,res://data2d/rooms/fase_inexistente_teste.txt,pedreira,fase.pedreira.nome,fase.pedreira.desc,
