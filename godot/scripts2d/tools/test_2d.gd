@@ -211,6 +211,17 @@ func _testar_espinha_do_mapa(sala, nome: String) -> void:
 			pilares_inicio += 1
 	check(portao != Vector2.ZERO and portao.distance_to(pts[pts.size() - 1]) <= 10.0 * t, "%s: portão com verga antes da arena" % nome)
 	check(pilares_inicio == 2, "%s: dois pilares com glifo no início (%d)" % [nome, pilares_inicio])
+	check(absf(float(sala.brilho_estrada) - 1.1) < 0.001, "%s: as lajes da estrada principal levam 10%% mais luz (@brilho_estrada %.2f)" % [nome, sala.brilho_estrada])
+	# o brilho está nos pixels da textura da estrada (o `color` de um Polygon2D não passa de 1.0 e não clareia nada)
+	var img_base: Image = Terreno._textura_lajes().get_image()
+	var img_clara: Image = Terreno._textura_lajes_claras(float(sala.brilho_estrada)).get_image()
+	var lum_base := 0.0
+	var lum_clara := 0.0
+	for py in img_base.get_height():
+		for px in img_base.get_width():
+			lum_base += img_base.get_pixel(px, py).get_luminance()
+			lum_clara += img_clara.get_pixel(px, py).get_luminance()
+	check(lum_clara / lum_base > 1.08 and lum_clara / lum_base < 1.12, "%s: a textura da estrada principal é ~10%% mais clara que a das outras lajes (x%.3f)" % [nome, lum_clara / lum_base])
 	check(sala.luzes.size() >= 8 and sala.guardas.size() >= 5, "%s: luzes dos marcos e encontros (%d, %d)" % [nome, sala.luzes.size(), sala.guardas.size()])
 	# Estrada nunca vazia: os encontros que estão na estrada (o do bolsão fica longe dela) ficam a no máximo ~24 tiles um do
 	# outro (6 s a 260 px/s), e o primeiro a menos de 30 tiles do começo dela; o respiro e a avenida final são o descanso.
@@ -1576,7 +1587,16 @@ func _testar_ancoragem() -> void:
 			flutuando.append(id)
 	check(flutuando.is_empty(), "pivô de todo prop fica na base opaca do sprite %s" % str(flutuando))
 	var tex_arco: Texture2D = load(arte["arco_portal"]["arquivo"])
-	check(Ancoragem.tipo("arco_portal") == "aereo" and Ancoragem.apoio("arco_portal", tex_arco, {"escala": "1", "solido_l": "0", "solido_a": "0"}, arte["arco_portal"]) == 0.0, "arco do portão é aéreo: sem sombra e y-sort pela linha de chão dos pilares")
+	check(Ancoragem.tipo("arco_portal") == "aereo" and Ancoragem.apoio("arco_portal", tex_arco, {"escala": "1", "solido_l": "0", "solido_a": "0"}, arte["arco_portal"]) == 0.0, "arco do portão é aéreo: y-sort pela linha de chão dos pilares")
+	# a verga projeta só a sombra no chão (um decalque com o shader de sombra); contato, terra e tufos ficam de fora
+	var chao_arco := Node2D.new()
+	var atras_arco := Node2D.new()
+	var frente_arco := Node2D.new()
+	Ancoragem.prender(chao_arco, atras_arco, frente_arco, "arco_portal", tex_arco, {"escala": "1", "solido_l": "0", "solido_a": "0"}, arte["arco_portal"], false, Vector2(100, 100), true, 1)
+	check(chao_arco.get_child_count() == 1 and chao_arco.get_child(0) is Sprite2D and (chao_arco.get_child(0) as Sprite2D).material != null and atras_arco.get_child_count() == 0 and frente_arco.get_child_count() == 0, "arco do portão projeta a sombra de 1 tom no chão (um decalque, sem contato nem tufos)")
+	chao_arco.free()
+	atras_arco.free()
+	frente_arco.free()
 	var dir := DirAccess.open("res://data2d/rooms")
 	var salas: Array = []
 	for f in dir.get_files():
@@ -1602,7 +1622,7 @@ func _testar_ancoragem() -> void:
 				continue
 			var t: String = Ancoragem.tipo(p["id"])
 			if t == "aereo":
-				continue   # sem sombra nem contato no chão (ver ancoragem_2d.gd)
+				continue   # só a sombra projetada, sem contato (ver ancoragem_2d.gd; conferido acima)
 			n_props += 1
 			if t == "solido" or t == "folhagem":
 				var d: Dictionary = room._props_def[p["id"]]

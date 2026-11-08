@@ -13,5 +13,5 @@ Scripts de apoio, um assunto por pasta. Rode sempre da raiz do repositório.
 | `mapas/` | Geração das fases do mapa 2D (`gerar_fase_1.py`, que chama `marcos_fase1.py` no fim: estrada, marcos, bolsão e encontros; `aglomerados_fase1.py`) e `visao_geral_fase1.py` (visão geral anotada do mapa). |
 | `painel/` | Gera o painel de progresso a partir de `docs/progresso/estado.json`. |
 | `roteiro/` | Gera o roteiro do sócio. |
-| `sprites2d/` | Montagem, recorte e limpeza das folhas de sprites 2D (heróis, inimigos, props, chão; `montar_marcos.py` faz as vergas do portão e da ruína e o baú do bolsão). |
+| `sprites2d/` | Montagem, recorte e limpeza das folhas de sprites 2D (heróis, inimigos, props, chão; `montar_marcos.py` faz as vergas do portão e da ruína e o baú do bolsão; `dessaturar_folhas_arvore.py` tira um tom do ciano da árvore `tree_teal_leaves`). |
 | `votacao/` | Componente de votação embutido no painel. |

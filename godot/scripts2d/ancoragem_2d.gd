@@ -28,10 +28,11 @@ static var _tex_contato: Texture2D
 ## Classe visual do prop pelo id: árvore (raízes, sombra longa), raso (ossos, folhas, capim, samambaia:
 ## só contato leve e fica no chão, fora do y-sort), folhagem (arbustos: contato, terra curta, y-sort pelo
 ## centro da base e semitransparente quando alguém passa atrás), aéreo (`arco_*`: verga de pedra sobre dois pilares,
-## sem sombra nem contato; o pivô na borda de baixo é a linha de chão dos pilares) ou sólido (tumbas, pedras, pilares).
+## só com a sombra projetada no chão, sem contato; o pivô na borda de baixo é a linha de chão dos pilares) ou sólido
+## (tumbas, pedras, pilares).
 static func tipo(id: String) -> String:
 	if id.begins_with("arco_"):
-		return "aereo"   # verga de pedra sobre dois pilares: sem sombra nem contato no chão, y-sort pela linha de base dos pilares
+		return "aereo"   # verga de pedra sobre dois pilares: só a sombra projetada, y-sort pela linha de base dos pilares
 	if id == "tree_stump":
 		return "solido"
 	if id.begins_with("tree_") or id.begins_with("sapling_"):
@@ -183,7 +184,10 @@ static func prender(chao: Node2D, atras: Node2D, frente: Node2D, id: String, tex
 	var esc := float(def["escala"])
 	var t := tipo(id)
 	if t == "aereo":
-		return   # a verga paira sobre os pilares: nada de sombra, contato, terra ou tufos
+		# a verga paira sobre os pilares: nada de contato, terra ou tufos, mas a sombra dela cai no chão (faixa achatada
+		# de 1 tom, borda em dither, a uns 35 px abaixo da linha dos pilares e deslocada para a direita)
+		_sombra_projetada(chao, tex, esc, arte, flip, pe, t)
+		return
 	var b := base(id, tex, def)
 	var bl: float = b[0]
 	var ba: float = b[1]

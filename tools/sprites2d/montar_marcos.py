@@ -412,6 +412,30 @@ def desenhar_chave(t, cx, ty0, fy0, fy1, rng):
         t.put(cx - meia_baixo - 1 + 3 - dy, yk1 - dy, S6)
 
 
+def escurecer_base(t, x0, x1, fy1, cx_chave=None, aneis=(), alt=4):
+    """Borda de baixo da face frontal em 4 tons cada vez mais escuros (S3, S2, S2, K1): a verga ganha espessura e se
+    separa do que está atrás. Segue a borda real de cada coluna (as mordidas e a quebra mudam a última linha) e deixa
+    em paz o ouro dos anéis, a pedra-chave, as faces frescas da quebra (S8, S9) e tudo que não for pedra escura."""
+    escuros = {S3, S4, S5, S6}
+    tons = [S3, S2, S2, K1]
+    for x in range(x0, x1 + 1):
+        if cx_chave is not None and abs(x - cx_chave) <= 17:
+            continue
+        if any(abs(x - a) <= 2 for a in aneis):
+            continue
+        yb = None
+        for y in range(fy1, fy1 - 6, -1):
+            if t.opaco(x, y):
+                yb = y
+                break
+        if yb is None:
+            continue
+        for k in range(alt):
+            y = yb - (alt - 1 - k)
+            if t.opaco(x, y) and t.cor(x, y) in escuros:
+                t.put(x, y, tons[k])
+
+
 def lascar_ponta(t, x_ponta, lado, ty0, fy0, fy1, rng, tam_cima=4, tam_baixo=6):
     """Quebra as quinas de uma ponta da viga (lado=-1 esquerda, +1 direita) e pinta a face fresca."""
     for y in range(ty0, fy0):               # quina de cima: triângulo
@@ -673,6 +697,7 @@ def montar_portal(caveira_g, caveira_p, caveira_p2, seed=7):
     lascar_ponta(t, W - 2, +1, ty0, fy0, fy1, rng, tam_cima=6, tam_baixo=5)
     mordidas_baixo(t, 1, W - 2, fy1, rng, 3, evitar=(cx,) + aneis)
     mordidas_cima(t, 1, W - 2, ty0, rng, 3, evitar=(cx, cx - 62, cx + 62) + aneis)
+    escurecer_base(t, 1, W - 2, fy1, cx_chave=cx, aneis=aneis)
 
     # pedestais e caveiras sobre a face de cima
     base = fy0 - 2
@@ -705,33 +730,41 @@ def montar_ruina(caveira_p, seed=11):
     t = Tela(W, H)
     x_quebra = 138
     fy0, _ = desenhar_viga(t, 0, W - 1, ty0, rng, cx_chave=None, aneis=(centro_pilar + 18,), glifos=True)
-    lascar_ponta(t, 0, -1, ty0, fy0, fy1, rng, tam_cima=3, tam_baixo=5)
+    lascar_ponta(t, 0, -1, ty0, fy0, fy1, rng, tam_cima=4, tam_baixo=7)
     mordidas_baixo(t, 0, x_quebra - 10, fy1, rng, 2, evitar=(centro_pilar + 18,))
     mordidas_cima(t, 0, x_quebra - 10, ty0, rng, 2, evitar=(centro_pilar + 18, 90))
 
-    # quebra irregular à direita: perfil em passeio aleatório com dentes
-    # perfil em degraus (facetas de 2 a 5 linhas), cada degrau recuando ou avançando bastante
+    # quebra irregular à direita: o perfil da face frontal é desenhado em blocos que avançam e recuam bem (de 3 a 6
+    # linhas de altura, de 5 a 12 px de diferença entre vizinhos), como uma pedra que rompeu em lascas; cada bloco leva
+    # um deslocamento de 1 px a mais ou a menos por sorteio. A face de cima rompe antes, em ziguezague. Nada de espeto
+    # de 1 px: nenhuma saliência tem menos de 3 linhas.
+    blocos = [(4, 5), (3, -4), (6, 9), (3, 0), (3, -7), (5, 7), (4, -2)]   # (linhas, deslocamento em relação a x_quebra)
     perfil = {}
-    y = ty0
-    bx = x_quebra - 8
-    while y <= fy1:
-        alt = rng.randint(2, 5)
-        bx += rng.choice((-7, -4, -2, 3, 5, 8))
-        bx = max(x_quebra - 12, min(x_quebra + 18, bx))
+    y = fy0
+    for alt, desl in blocos:
+        j = rng.choice((-1, 0, 1))
         for dy in range(alt):
-            if y + dy <= fy1:
-                perfil[y + dy] = bx + (dy if rng.random() < 0.5 else 0)
+            perfil[y + dy] = x_quebra + desl + j
         y += alt
-    # dois dentes curtos e grossos que sobram na face frontal (a pedra rompeu em lascas)
+    assert y == fy1 + 1, (y, fy1)
+    # cantos chanfrados: a saliência afina nas pontas, como lasca de pedra e não como dente de serra
+    faixas, y = [], fy0
+    for alt, _ in blocos:
+        faixas.append((y, y + alt - 1))
+        y += alt
+    for k, (ya, yb) in enumerate(faixas):
+        v = perfil[ya]
+        viz = [perfil[faixas[k - 1][1]]] if k > 0 else []
+        viz += [perfil[faixas[k + 1][0]]] if k < len(faixas) - 1 else []
+        if all(v > o for o in viz) and yb - ya >= 2:
+            perfil[ya] -= 2
+            perfil[yb] -= 2
+            if yb - ya >= 4:
+                perfil[ya + 1] -= 1
+                perfil[yb - 1] -= 1
     px_corpo = max(perfil.values())
-    for y0, alt in ((fy0 + 3, 5), (fy0 + 17, 4)):
-        avanco = rng.randint(4, 6)
-        for dy in range(alt):
-            afina = 0 if 0 < dy < alt - 1 else 2
-            perfil[y0 + dy] = min(W - 1, perfil[y0 + dy] + avanco - afina)
-    # a face de cima rompe antes da frontal (um naco a menos no alto)
-    for y in range(ty0, fy0 + 1):
-        perfil[y] = min(perfil[y], x_quebra - 14 + 2 * (y - ty0) + rng.randint(0, 1))
+    for y in range(ty0, fy0):
+        perfil[y] = x_quebra - 16 + 2 * (y - ty0) + rng.choice((-2, 0, 0, 2))
     for y, px in perfil.items():
         for x in range(px, W):
             t.apagar(x, y)
@@ -762,7 +795,10 @@ def montar_ruina(caveira_p, seed=11):
     rachadura(t, perfil[ty0 + 3] - 3, ty0 + 3, 9, rng, S5, None,
               mascara=lambda px, py: t.opaco(px, py) and t.cor(px, py) in (S8, S7), dy_pref=0)
 
-    # fragmentos: um naco grande a meio caminho de cair, um menor mais abaixo, pedrinhas
+    escurecer_base(t, 0, W - 1, fy1, aneis=(centro_pilar + 18,))
+
+    # fragmentos: dois nacos grandes (a pedra que sobrou da quebra cai em dois pedaços, um a meio caminho de cair e
+    # outro já no chão), nenhum com menos de 10 px: nada de pixels nem pedrinhas soltas
     def naco(cx, cy, w, h, inclina=0):
         """Pedra facetada: topo em luz, lado esquerdo claro, lado direito e base em sombra, risco interno."""
         for y in range(h):
@@ -785,10 +821,7 @@ def montar_ruina(caveira_p, seed=11):
 
     px_base = min(px_corpo + 2, W - 24)
     naco(px_base + 10, fy0 + 9, 12, 10, inclina=3)
-    naco(px_base + 16, fy1 + 5, 8, 7, inclina=-2)
-    naco(px_base + 5, fy1 + 13, 5, 4)
-    naco(px_base + 12, fy1 + 19, 4, 3)
-    naco(px_base + 3, fy0 + 25, 3, 3)
+    naco(px_base + 14, fy1 + 9, 11, 9, inclina=-2)
     # pedra solta em cima da face, perto da quebra
     naco(perfil[ty0 + 2] - 10, ty0 - 2, 8, 6, inclina=1)
 
