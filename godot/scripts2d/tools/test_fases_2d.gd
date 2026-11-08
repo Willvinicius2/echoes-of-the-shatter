@@ -82,13 +82,18 @@ func _testar_tabela() -> void:
 		check.call(str(p["boss"]) == "ossuary_captain" and Csv.enemy("ossuary_captain")["kind"] != "boss", "pedreira: o chefe é o Capitão do Ossuário, inimigo comum (elite do portão)")
 		check.call(p["waves"].size() == 7, "pedreira: 7 ondas (%d)" % p["waves"].size())
 		var sem_capitao := true
-		var assinatura := 0
+		var todas := ""
 		for w in p["waves"]:
 			var mix := JSON.stringify(w)
 			sem_capitao = sem_capitao and not mix.contains("ossuary_captain")
-			assinatura += 1 if mix.contains("ash_hound") and mix.contains("stone_herald") else 0
+			todas += mix
 		check.call(sem_capitao, "pedreira: o capitão não aparece nas ondas comuns")
-		check.call(assinatura >= 5, "pedreira: matilhas e arautos em quase todas as ondas (%d)" % assinatura)
+		# a assinatura pensada (matilhas de ash_hound e stone_herald) espera as folhas do PixelLab; até lá as ondas só usam
+		# inimigos que têm arte (test_pedreira_2d.gd confere que nenhum sem folha entra) e variam entre os seis que existem
+		var tipos := 0
+		for id in ["skeleton_soldier", "hollow_sentinel", "crypt_bat", "wandering_ghost", "ghost_archer", "chain_wraith"]:
+			tipos += 1 if todas.contains(id) else 0
+		check.call(tipos >= 5, "pedreira: as ondas variam entre os inimigos que têm arte (%d dos 6)" % tipos)
 	if por_id.has("cripta"):
 		check.call(str(por_id["cripta"]["boss"]) == "crypt_guardian", "cripta: o chefe continua o Guardião")
 	m = null

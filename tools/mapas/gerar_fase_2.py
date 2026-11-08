@@ -379,7 +379,6 @@ for ds, lat, ident, flip in [(-6, 3.2, "pedreira_blocos", False), (2, -3.3, "roc
     pôr(ident, x, y, flip, forcar=True)
 poste(S_RAMPA + 5.0, 2.3, True)
 marcos_s["rampa"] = S_RAMPA
-capturas["2_rampa"] = (*em(S_RAMPA), ":g")   # `:g` = os encontros ao alcance nascem adormecidos e dormem na foto
 
 # ---- Bifurcação do bolsão (trecho 2): a trilha sai da estrada para o norte; o marco é a luz dos lampiões na boca dela e o
 # guindaste do outro lado da estrada (alto, aparece por baixo da tela) ----
@@ -396,7 +395,6 @@ x_g, y_g = em(S_FORK + 2.0, 3.9)
 limpar(x_g, y_g, 1.6)
 pôr("pedreira_portico", x_g, y_g, False, forcar=True)             # guindaste do marco, do lado sul da estrada
 marcos_s["bifurcacao"] = S_FORK
-capturas["3c_bifurcacao"] = (fx - 1.0, fy + 0.8, ":g")
 
 # ---- Campo de fossos (trecho 2): ponte com lampiões ----
 xa, xb = PONTE_XA, PONTE_XB      # bordas da ponte (unidades do mapa)
@@ -481,6 +479,11 @@ def com_camera(jogador, alvo, extra=""):
     return (jogador[0], jogador[1], "%s:cx%d:cy%d" % (extra, round((alvo[0] - jogador[0]) * TILE), round((alvo[1] - jogador[1]) * TILE)))
 
 
+# `:g` = os encontros ao alcance nascem adormecidos e dormem na foto; a rampa: o arqueiro 3,5 tiles antes do encontro e a câmera à frente dele
+capturas["2_rampa"] = com_camera(em(S_RAMPA - 3.5), em(S_RAMPA - 1.0), ":g")
+# a bifurcação: o arqueiro na beira norte da estrada e a câmera 1,8 tile ao norte dele, com os dois lampiões inteiros, as velas e a
+# boca da trilha do bolsão (o poste tem 107 px: mais alto que isso o arqueiro sairia do quadro)
+capturas["3c_bifurcacao"] = com_camera((fx - 1.0, fy - 0.2), (fx - 0.5, fy - 2.0), ":g")
 capturas["6_portao_elite"] = com_camera((gx - 1.6, gy + 3.6), (gx, gy + 0.2), ":e")   # o elite parado na frente do portão, com a luz dele
 capturas["6a_portao_perto"] = com_camera((gx, gy + 0.62), (gx, gy - 1.3))   # o portão inteiro, do guindaste aos pés dos bastiões
 capturas["5_descanso"] = com_camera(em(S_DESC - 1.5), (rx, ry + 1.3))   # a clareira de laje com o braseiro do lado sul à vista

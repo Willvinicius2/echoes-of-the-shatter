@@ -1,6 +1,6 @@
 # 34 — Fases jogáveis, desbloqueio e elite do portão
 
-Fluxo que permite ter mais de uma fase no cliente 2D (Ato I: Cripta dos Ecos e Pedreira dos Ecos). O mapa da Pedreira (`godot/data2d/rooms/fase_2.txt`) vem de outro processo; enquanto ele não existe, a Pedreira aparece no título como "em breve".
+Fluxo que permite ter mais de uma fase no cliente 2D (Ato I: Cripta dos Ecos e Pedreira dos Ecos). O mapa da Pedreira (`godot/data2d/rooms/fase_2.txt`, gerado por `tools/mapas/gerar_fase_2.py`; visão geral, arte e capturas em `docs/arte/35_pedreira_dos_ecos.md`) já existe, então a Pedreira abre pelo título depois da primeira vitória na Cripta; o cartão "em breve" só aparece se o arquivo da sala sumir.
 
 ## Regra de destrancar
 - A Cripta (`cripta`) começa aberta. A Pedreira (`pedreira`) abre depois da primeira vitória na Cripta (passar pelo portal depois do chefe).
@@ -10,7 +10,7 @@ Fluxo que permite ter mais de uma fase no cliente 2D (Ato I: Cripta dos Ecos e P
 
 ## Tabelas
 - `godot/data2d/fases_2d.csv` (cliente): `id, sala, onda_fase, nome, descricao, requer`. `nome` e `descricao` são chaves de `loc_fase.csv`; `onda_fase` é o id da fase em `ondas_fases.csv`; `requer` é o id da fase que precisa ser vencida (vazio = aberta).
-- `ondas_fases.csv`, `ondas.csv` e `curva_horda.csv` (core): a Pedreira tem 7 ondas em 420 s (a Cripta tem 8 em 480 s). O começo é um pouco mais duro que na Cripta (orçamento 100 contra 80 e curva de vida 0,32 contra 0,25 na onda 1), e o fim tem o mesmo teto (orçamento 520, teto 40, curva 1,0/0,85 na última onda e 1,1/0,95 no enxame). Os elites usam `elite_vida` 4 e `elite_dano` 1,5. A assinatura da fase são as matilhas de `ash_hound` (peso 4 em todas as ondas) e o `stone_herald` (da onda 2 em diante, peso 1 a 3). O portão desperta a partir da onda 4.
+- `ondas_fases.csv`, `ondas.csv` e `curva_horda.csv` (core): a Pedreira tem 7 ondas em 420 s (a Cripta tem 8 em 480 s). O começo é um pouco mais duro que na Cripta (orçamento 100 contra 80 e curva de vida 0,32 contra 0,25 na onda 1), e o fim tem o mesmo teto (orçamento 520, teto 40, curva 1,0/0,85 na última onda e 1,1/0,95 no enxame). Os elites usam `elite_vida` 4 e `elite_dano` 1,5. As ondas só usam inimigos que já têm folha de sprite e stats: `skeleton_soldier`, `hollow_sentinel`, `crypt_bat`, `wandering_ghost`, `ghost_archer` e `chain_wraith` (o teste `test_pedreira_2d.gd` falha com qualquer outro). A assinatura pensada para a fase, as matilhas de `ash_hound` e o `stone_herald`, está **pendente de arte (PixelLab sem saldo)**: quando as folhas existirem, voltam às ondas (`ash_hound` em todas e `stone_herald` da onda 2 em diante, como no desenho original). O portão desperta a partir da onda 4.
 - Save: o save do meta (`user://save_2d.json`) é escrito pelo core, então as fases ficam num arquivo ao lado, `user://save_2d_fases.json`: `{"versao": 1, "fases_vencidas": [...], "fase_escolhida": "..."}`. Save antigo, sem esse arquivo, abre sem nenhuma fase vencida e na Cripta.
 
 ## Elite do portão
@@ -18,11 +18,12 @@ O chefe da Pedreira é o `ossuary_captain`, um inimigo `melee` comum de `enemies
 - usa a IA comum (não o script do Guardião), espera no ponto `G` do mapa e acorda quando o jogador chega perto, como o Guardião;
 - escala `gate_elite_scale` (1,5) no sprite e no raio de colisão, sem o tom dourado nem a escala 1,2 dos elites de onda; conta como elite para XP, baú e gema;
 - entrada de `gate_elite_intro` (1,4 s): fica parado e invulnerável, com um clarão de luz aditivo no portão, um tremor leve de tela e o aviso com o nome dele;
+- luz própria: um halo aditivo laranja preso a ele (`gate_elite_luz_tamanho` e `gate_elite_luz_alfa` em `run_settings.csv`, pulsa de 70% a 100%), além do poço de luz do mapa (`@luz` sobre o G); aparece na captura do portão;
 - barra de vida grande no topo da tela, com o nome por chave de localização (`enemy.ossuary_captain.name`). Ela some quando ele morre.
-A Cripta não muda: o Guardião continua com o script e a barra dele.
+O portão onde ele espera é o `pedreira_portao` (portal de pedra maciça com grade de ferro e guindaste, não o arco da área 1); só se chega ao portal (X) pelo vão dele. A Cripta não muda: o Guardião continua com o script e a barra dele.
 
 ## Como testar
-- Suíte: `godot --headless --path godot --script res://scripts2d/tools/test_2d.gd` (os testes de fases ficam em `scripts2d/tools/test_fases_2d.gd`; a corrida da Pedreira usa `data2d/testes/fases_teste.csv`, que aponta a Pedreira para a sala de `fase_1.txt`).
+- Suíte: `godot --headless --path godot --script res://scripts2d/tools/test_2d.gd` (os testes de fases ficam em `scripts2d/tools/test_fases_2d.gd` e os do mapa, do portão, da orla de terra e das ondas da Pedreira em `scripts2d/tools/test_pedreira_2d.gd`; a corrida da Pedreira usa `data2d/testes/fases_teste.csv`, que aponta a Pedreira para a sala de `fase_1.txt`).
 - Abrir todas as fases sem vencer: comando `fases_abertas` no console (`), `dev_fases_abertas,1` em `run_settings.csv` (só build de debug) ou `-- --fases-abertas`. `-- --fase=pedreira` escolhe a fase pela linha de comando.
 - Capturas: `scripts2d/tools/captura_fases_2d.gd -- <prefixo>` (título, tela de fim e o elite do portão).
 

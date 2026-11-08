@@ -13,7 +13,7 @@ Atualizado em 08/11/2026 (thread "Terminar o mapa da área 1 do arqueiro"). O de
 1. ~~Barra de vida do morcego 4 px mais alta~~ (feito no polimento depois da PR 215: `hp_bar_dy` em `enemies.csv`).
 2. ~~Fonte bitmap para os números de dano~~ (feito: Jersey 15, 20 e 25, SIL OFL, em `godot/art2d/fonts/`).
 3. Elites e chefe em escala 1,5 a 2x (decisão de arte: a escala 1,5 deixa os pixels maiores que a grade; 2 inteiro fica "grosso").
-4. Segunda área: reaproveitar `marcos_fase1.py` como modelo (estrada, marcos com luz, encontros por trecho) e puxar o piso para um cinza mais quente, com o ciano só de acento.
+4. ~~Segunda área~~ (feito: Pedreira dos Ecos, `tools/mapas/gerar_fase_2.py`; terreno aprovado, inimigos pendentes por falta de saldo no PixelLab; ver `docs/arte/35_pedreira_dos_ecos.md`).
 
 ## Atenção
 - Push forçado é negado: use merge normal.
