@@ -27,6 +27,11 @@ leaves_pile,res://art2d/props/leaves_pile.png,35,24,18,24
 leaves_scattered,res://art2d/props/leaves_scattered.png,38,24,19,24
 log_fallen,res://art2d/props/log_fallen.png,48,36,24,36
 mausoleum_door,res://art2d/props/mausoleum_door.png,125,134,63,134
+pedreira_andaime,res://art2d/props/pedreira_andaime.png,105,133,52,133
+pedreira_blocos,res://art2d/props/pedreira_blocos.png,106,68,53,68
+pedreira_carrinho,res://art2d/props/pedreira_carrinho.png,101,52,50,52
+pedreira_portico,res://art2d/props/pedreira_portico.png,156,171,78,171
+pedreira_poste_lanterna,res://art2d/props/pedreira_poste_lanterna.png,36,107,5,107
 pillar_broken,res://art2d/props/pillar_broken.png,104,116,52,116
 pillar_cracked,res://art2d/props/pillar_cracked.png,88,131,44,131
 pillar_fallen,res://art2d/props/pillar_fallen.png,123,97,62,97

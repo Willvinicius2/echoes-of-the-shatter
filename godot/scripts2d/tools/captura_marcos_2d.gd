@@ -1,12 +1,13 @@
 extends SceneTree
 ## Capturas dos marcos da fase aberta pela cena principal (Main2D, com o mundo no SubViewport de pixel art; precisa de
 ## janela, use xvfb no CI):
-##   godot --path godot --resolution 1600x900 --script res://scripts2d/tools/captura_marcos_2d.gd -- prefixo nome:x:y[:g][:d][:cx<px>][:cy<px>] ...
+##   godot --path godot --resolution 1600x900 --script res://scripts2d/tools/captura_marcos_2d.gd -- prefixo [sala=<arquivo>] nome:x:y[:g][:d][:cx<px>][:cy<px>] ...
 ## Cada ponto é "nome:x:y" (células do mapa, aceita fração): o jogador vai para lá e grava <prefixo>_<nome>.png. A
 ## corrida fica parada (sem horda nem tiro automático); o sufixo ":g" faz os encontros (`@guarda`) ao alcance
 ## nascerem adormecidos, e eles seguem dormindo na foto; os sufixos ":cx<px>" e ":cy<px>" deslocam só a câmera (px do mundo;
 ## cx positivo vai para a direita, cy positivo desce) para o marco ficar acima do HUD e o jogador não tapar a cena; a dica de
-## controles dos primeiros segundos fica escondida, a não ser que o ponto peça ":d". Sem pontos, captura o início, a ruína (de
+## controles dos primeiros segundos fica escondida, a não ser que o ponto peça ":d". `sala=<arquivo>` (logo depois do prefixo)
+## troca o mapa antes das fotos (por exemplo `sala=res://data2d/rooms/fase_2.txt`); sem ele fica a fase 1 e, sem pontos, captura o início, a ruína (de
 ## longe e de perto), a bifurcação, a trilha do bolsão, o trecho 3, o bolsão, o respiro, a estrada com a luz do respiro ao
 ## fundo, a aproximação do portão, o portão e a entrada da arena (as coordenadas vêm de tools/mapas/marcos_fase1.py, notas `capturas`).
 const MainScene = preload("res://scenes2d/Main2D.tscn")
@@ -19,12 +20,19 @@ func _initialize() -> void:
 		quit(2))
 	var args := OS.get_cmdline_user_args()
 	var prefixo: String = args[0] if args.size() > 0 else "captura_marcos"
-	var pontos: Array = Array(args.slice(1)) if args.size() > 1 else PONTOS_PADRAO
+	var resto: Array = Array(args.slice(1))
+	var sala := ""
+	if resto.size() > 0 and String(resto[0]).begins_with("sala="):
+		sala = String(resto[0]).substr(5)
+		resto = resto.slice(1)
+	var pontos: Array = resto if resto.size() > 0 else PONTOS_PADRAO
 	var main = MainScene.instantiate()
 	root.add_child(main)
 	await physics_frame
 	var run = main.run
 	run.menus.fechar()
+	if sala != "":
+		run._carregar_sala(0, {"id": "captura", "tipo": "combate", "room": sala, "enemies": ""})
 	run.estado = run.Estado.LIMPA   # sem horda nem encontros por conta própria; a câmera segue o jogador fora do menu
 	paused = false
 	run.player.god_mode = true
