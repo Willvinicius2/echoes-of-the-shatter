@@ -677,6 +677,7 @@ def corrente(t, x, y, elos, com_gancho=True):
 # ---------------------------------------------------------------- montagem dos arcos
 PILAR_ALT = 149          # altura do pillar_tall (topo em y=0 do sprite dele)
 APOIO = 14               # linhas do topo do pilar cobertas pela viga (face de cima do capitel: linhas 0..13)
+BAIXAR_VERGA_RUINA = 2   # a verga da ruína desce mais 2 px sobre o capitel esquerdo: assenta nele em vez de só encostar (revisão do Jev)
 
 
 def montar_portal(caveira_g, caveira_p, caveira_p2, seed=7):
@@ -724,7 +725,7 @@ def montar_ruina(caveira_p, seed=11):
     H = 206
     chao = H
     topo_pilar = chao - PILAR_ALT
-    fy1 = topo_pilar + APOIO - 1
+    fy1 = topo_pilar + APOIO - 1 + BAIXAR_VERGA_RUINA
     ty0 = fy1 - FRENTE - TOPO + 1
     centro_pilar = 34
     t = Tela(W, H)

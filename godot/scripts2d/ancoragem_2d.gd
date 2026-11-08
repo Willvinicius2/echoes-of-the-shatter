@@ -21,7 +21,31 @@ void fragment() {
 }
 """
 
+## Faixa de sombra logo abaixo da borda de baixo da verga: a silhueta do sprite descida até `altura` px, sem o próprio
+## sprite (segue as mordidas e a quebra da pedra). 1 tom chapado; só os 2 últimos px são serrilhados em dither 4x4.
+const SOMBRA_VAO_SHADER := """
+shader_type canvas_item;
+uniform vec4 cor : source_color = vec4(0.0, 0.0, 0.0, 0.3);
+uniform float altura = 7.0;
+void fragment() {
+	int bx = int(mod(FRAGCOORD.x, 4.0));
+	int by = int(mod(FRAGCOORD.y, 4.0));
+	float lim = (float((bx * 5 + by * 7 + bx * by) % 16) + 0.5) / 16.0;
+	float aqui = step(0.5, texture(TEXTURE, UV).a);
+	float d = 99.0;
+	for (int i = 1; i <= 10; i++) {
+		if (texture(TEXTURE, UV - vec2(0.0, float(i) * TEXTURE_PIXEL_SIZE.y)).a > 0.5) {
+			d = min(d, float(i));
+		}
+	}
+	float forca = clamp((altura + 1.0 - d) / 3.0, 0.0, 1.0);
+	float ok = (1.0 - aqui) * step(lim, forca) * step(0.01, forca);
+	COLOR = vec4(cor.rgb, ok * cor.a);
+}
+"""
+
 static var _mat_sombra: ShaderMaterial
+static var _mat_vao: ShaderMaterial
 static var _linhas_base := {}
 static var _tex_contato: Texture2D
 
@@ -185,8 +209,10 @@ static func prender(chao: Node2D, atras: Node2D, frente: Node2D, id: String, tex
 	var t := tipo(id)
 	if t == "aereo":
 		# a verga paira sobre os pilares: nada de contato, terra ou tufos, mas a sombra dela cai no chão (faixa achatada
-		# de 1 tom, borda em dither, a uns 35 px abaixo da linha dos pilares e deslocada para a direita)
+		# de 1 tom, borda em dither, a uns 35 px abaixo da linha dos pilares e deslocada para a direita) e uma faixa de
+		# 7 px de sombra cola na borda de baixo dela, para a pedra não parecer colada no fundo
 		_sombra_projetada(chao, tex, esc, arte, flip, pe, t)
+		_sombra_do_vao(chao, tex, esc, arte, flip, pe)
 		return
 	var b := base(id, tex, def)
 	var bl: float = b[0]
@@ -270,6 +296,27 @@ static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Di
 	# ponto local (x, y) com y <= 0 acima do pé vira (x*esc - y*esc*inclina, -y*esc*achata): deitado e para baixo-direita
 	sp.transform = Transform2D(Vector2(esc, 0.0), Vector2(-inclina * esc, -achata * esc), centro)
 	sp.self_modulate.a = 0.8 if t == "folhagem" else 1.0
+	chao.add_child(sp)
+
+## Faixa de sombra (`SOMBRA_VAO_SHADER`) colada na borda de baixo de uma verga: o sprite é desenhado na mesma posição e
+## escala dele, mas só a faixa abaixo da silhueta aparece.
+static func _sombra_do_vao(chao: Node2D, tex: Texture2D, esc: float, arte: Dictionary, flip: bool, pe: Vector2) -> void:
+	if _mat_vao == null:
+		_mat_vao = ShaderMaterial.new()
+		_mat_vao.shader = Shader.new()
+		_mat_vao.shader.code = SOMBRA_VAO_SHADER
+		_mat_vao.set_shader_parameter("cor", Color(0.02, 0.03, 0.05, 0.3))
+		_mat_vao.set_shader_parameter("altura", 7.0)
+	var sp := Sprite2D.new()
+	sp.texture = tex
+	sp.centered = false
+	sp.flip_h = flip
+	sp.offset = -Vector2(float(arte["pivo_x"]), float(arte["pivo_y"]))
+	if flip:
+		sp.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
+	sp.material = _mat_vao
+	sp.position = pe
+	sp.scale = Vector2.ONE * esc
 	chao.add_child(sp)
 
 ## Sombra de contato com a forma real da base (ver `contorno`): sai de cada aresta de baixo do sprite, então as

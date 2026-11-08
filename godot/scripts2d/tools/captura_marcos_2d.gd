@@ -69,6 +69,8 @@ func _initialize() -> void:
 			centro += Vector2(camera_dx, camera_dy)
 			run.room.seguir_vinheta(centro, run.vista().size)
 		run.camera.position = centro
+		run.camera.position_smoothing_enabled = false   # a corrida religa o suavizado ao ajustar a câmera: sem isto a foto sai deslocada depois de um salto longo
+		run.camera.reset_smoothing()
 		for i in 40:
 			await physics_frame
 		await RenderingServer.frame_post_draw
