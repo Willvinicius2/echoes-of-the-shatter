@@ -22,3 +22,6 @@ godot/art2d/audio/*.wav -filter -diff -merge binary
 
 # Fonte serifada da HUD (DejaVu, ~380 KB, licença livre em art2d/ui/LICENCA.md): fora do LFS, como o áudio do cliente 2D
 godot/art2d/ui/*.ttf -filter -diff -merge binary
+
+# Fontes pixel dos números de dano (Jersey 15, 20 e 25, SIL OFL, ~375 KB no total): fora do LFS, como a fonte da HUD
+godot/art2d/fonts/*.ttf -filter -diff -merge binary

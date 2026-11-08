@@ -251,6 +251,17 @@ func _testar_feel() -> void:
 		check(Feel.cfg().has(k), "feel.csv tem " + k)
 	for r in Csv.rows("res://data2d/enemies.csv"):
 		check(float(r["windup"]) >= 0.0 and float(r["windup"]) <= 1.0, "%s: windup entre 0 e 1 s" % r["id"])
+		check(r.has("hp_bar_dy") and float(r["hp_bar_dy"]) >= 0.0 and float(r["hp_bar_dy"]) <= 12.0, "%s: hp_bar_dy (barra de vida mais alta) entre 0 e 12 px" % r["id"])
+	check(Csv.enemy("crypt_bat")["hp_bar_dy"] == 4.0, "a barra de vida do morcego fica 4 px mais alta")
+	# números de dano em fonte pixel (Jersey 15, 20 e 25): os três arquivos importam como FontFile e o degrau vem do tamanho pedido
+	var NumeroDano = load("res://scripts2d/damage_number_2d.gd")
+	for caminho in NumeroDano.FONTES:
+		check(load(caminho) is FontFile, "fonte pixel dos números de dano importada (%s)" % String(caminho).get_file())
+	var esc_px: float = float(Feel.cfg()["dmg_pixel_escala"])
+	var t_normal: float = float(Feel.cfg()["dmg_number_size"]) * esc_px
+	var t_forte: float = float(Feel.cfg()["dmg_number_size_strong"]) * esc_px
+	var t_fatal: float = float(Feel.cfg()["dmg_number_size_kill"]) * esc_px
+	check(NumeroDano.degrau_de(t_normal) == 0 and NumeroDano.degrau_de(t_forte) == 1 and NumeroDano.degrau_de(t_fatal) == 1 and NumeroDano.degrau_de(t_fatal * 1.4) == 2, "número de dano: normal na fonte 15, forte e fatal na 20, fatal em alvo grande na 25 (%.1f, %.1f, %.1f)" % [t_normal, t_forte, t_fatal])
 
 ## O inimigo corpo a corpo avisa antes de bater: o dano só sai depois do windup, e a esquiva a tempo evita o golpe.
 func _testar_telegrafo() -> void:
@@ -1588,12 +1599,16 @@ func _testar_ancoragem() -> void:
 	check(flutuando.is_empty(), "pivô de todo prop fica na base opaca do sprite %s" % str(flutuando))
 	var tex_arco: Texture2D = load(arte["arco_portal"]["arquivo"])
 	check(Ancoragem.tipo("arco_portal") == "aereo" and Ancoragem.apoio("arco_portal", tex_arco, {"escala": "1", "solido_l": "0", "solido_a": "0"}, arte["arco_portal"]) == 0.0, "arco do portão é aéreo: y-sort pela linha de chão dos pilares")
-	# a verga projeta só a sombra no chão (um decalque com o shader de sombra); contato, terra e tufos ficam de fora
+	# a verga projeta só sombra no chão: a silhueta deitada e a faixa colada na borda de baixo (dois decalques com o shader
+	# de sombra); contato, terra e tufos ficam de fora
 	var chao_arco := Node2D.new()
 	var atras_arco := Node2D.new()
 	var frente_arco := Node2D.new()
 	Ancoragem.prender(chao_arco, atras_arco, frente_arco, "arco_portal", tex_arco, {"escala": "1", "solido_l": "0", "solido_a": "0"}, arte["arco_portal"], false, Vector2(100, 100), true, 1)
-	check(chao_arco.get_child_count() == 1 and chao_arco.get_child(0) is Sprite2D and (chao_arco.get_child(0) as Sprite2D).material != null and atras_arco.get_child_count() == 0 and frente_arco.get_child_count() == 0, "arco do portão projeta a sombra de 1 tom no chão (um decalque, sem contato nem tufos)")
+	var decalques_ok := chao_arco.get_child_count() == 2
+	for dec in chao_arco.get_children():
+		decalques_ok = decalques_ok and dec is Sprite2D and (dec as Sprite2D).material != null
+	check(decalques_ok and atras_arco.get_child_count() == 0 and frente_arco.get_child_count() == 0, "arco do portão projeta a sombra de 1 tom no chão e a faixa sob a verga (dois decalques, sem contato nem tufos)")
 	chao_arco.free()
 	atras_arco.free()
 	frente_arco.free()

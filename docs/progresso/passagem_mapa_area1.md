@@ -10,9 +10,9 @@ Atualizado em 08/11/2026 (thread "Terminar o mapa da área 1 do arqueiro"). O de
 - Acabamento pedido pelas duas revisões da PR 214 (trilha solta fora, cemitério em clareiras, ruína com 2 pilares, sombra e borda escura nos arcos, encontros fora dos sprites, +10% de luz na estrada, dica de controles mais alta, árvore de folhas ciano menos saturada): detalhe em `docs/arte/31_pixellab_arqueiro.md`, seção "Acabamento da área 1".
 
 ## Falta (opcionais, nesta ordem)
-1. Barra de vida do morcego 4 px mais alta.
-2. Fonte bitmap para os números de dano (o projeto ainda não tem fonte pixel licenciada).
-3. Elites e chefe em escala 1,5 a 2x.
+1. ~~Barra de vida do morcego 4 px mais alta~~ (feito no polimento depois da PR 215: `hp_bar_dy` em `enemies.csv`).
+2. ~~Fonte bitmap para os números de dano~~ (feito: Jersey 15, 20 e 25, SIL OFL, em `godot/art2d/fonts/`).
+3. Elites e chefe em escala 1,5 a 2x (decisão de arte: a escala 1,5 deixa os pixels maiores que a grade; 2 inteiro fica "grosso").
 4. Segunda área: reaproveitar `marcos_fase1.py` como modelo (estrada, marcos com luz, encontros por trecho) e puxar o piso para um cinza mais quente, com o ciano só de acento.
 
 ## Atenção
