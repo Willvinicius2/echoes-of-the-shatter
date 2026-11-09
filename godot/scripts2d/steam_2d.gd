@@ -6,6 +6,7 @@ extends RefCounted
 ## o código só consulta se a nuvem está ligada. Eventos e IDs das conquistas ficam em data2d/conquistas.csv.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Arquivo = preload("res://scripts2d/arquivo_2d.gd")
 
 static var caminho := "user://steam_2d.json"   # os testes apontam para outro arquivo
 
@@ -80,13 +81,11 @@ func nuvem_ativa() -> bool:
 
 func _ler() -> void:
 	desbloqueadas = {}
-	if FileAccess.file_exists(caminho):
-		var d = JSON.parse_string(FileAccess.get_file_as_string(caminho))
+	if Arquivo.existe(caminho):
+		var d = JSON.parse_string(Arquivo.ler(caminho))
 		if d is Dictionary and d.get("conquistas") is Array:
 			for id in d["conquistas"]:
 				desbloqueadas[str(id)] = true
 
 func _gravar() -> void:
-	var f := FileAccess.open(caminho, FileAccess.WRITE)
-	if f != null:
-		f.store_string(JSON.stringify({"versao": 1, "conquistas": desbloqueadas.keys()}))
+	Arquivo.gravar(caminho, JSON.stringify({"versao": 1, "conquistas": desbloqueadas.keys()}))

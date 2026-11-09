@@ -4,6 +4,7 @@ extends RefCounted
 ## as ações. O save é gravado pelo core (JSON versionado, mesmo formato de antes). Números em data2d/*.csv.
 
 const Nucleo = preload("res://scripts2d/nucleo_2d.gd")
+const Arquivo = preload("res://scripts2d/arquivo_2d.gd")
 const Fase = preload("res://scripts2d/fase_2d.gd")
 
 static var caminho := "user://save_2d.json"   # os testes apontam para outro arquivo
@@ -157,9 +158,9 @@ func carregar_fases() -> void:
 	fases_vencidas = []
 	fase_escolhida = ""
 	var p := caminho_fases()
-	if FileAccess.file_exists(p):
+	if Arquivo.existe(p):
 		var j := JSON.new()   # arquivo inválido: abre como save novo, sem erro no log
-		var d = j.data if j.parse(FileAccess.get_file_as_string(p)) == OK else null
+		var d = j.data if j.parse(Arquivo.ler(p)) == OK else null
 		if d is Dictionary:
 			for id in d.get("fases_vencidas", []):
 				if id is String and not fases_vencidas.has(id):
@@ -169,12 +170,7 @@ func carregar_fases() -> void:
 	Fase.definir(fase_escolhida)
 
 func salvar_fases() -> bool:
-	var f := FileAccess.open(caminho_fases(), FileAccess.WRITE)
-	if f == null:
-		return false
-	f.store_string(JSON.stringify({"versao": 1, "fases_vencidas": fases_vencidas, "fase_escolhida": fase_escolhida}, "\t"))
-	f.close()
-	return true
+	return Arquivo.gravar(caminho_fases(), JSON.stringify({"versao": 1, "fases_vencidas": fases_vencidas, "fase_escolhida": fase_escolhida}, "\t"))
 
 ## Fase escolhida no título (grava para a próxima sessão).
 func escolher_fase(id: String) -> void:

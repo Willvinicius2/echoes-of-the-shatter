@@ -4,6 +4,7 @@ extends RefCounted
 ## Sem Steam e sem arquivo de opções o jogo usa os padrões.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Arquivo = preload("res://scripts2d/arquivo_2d.gd")
 
 const VERSAO := 1
 const BUS_MUSICA := "Musica"
@@ -150,19 +151,15 @@ func aplicar() -> void:
 		_aplicar_tecla(a)
 
 func salvar() -> bool:
-	var f := FileAccess.open(caminho, FileAccess.WRITE)
-	if f == null:
-		return false
-	f.store_string(JSON.stringify({"versao": VERSAO, "vol": vol, "tela_cheia": tela_cheia, "vsync": vsync,
+	return Arquivo.gravar(caminho, JSON.stringify({"versao": VERSAO, "vol": vol, "tela_cheia": tela_cheia, "vsync": vsync,
 		"tutorial_visto": tutorial_visto, "prologo_visto": prologo_visto, "teclas": teclas}, "\t"))
-	return true
 
 ## Lê o arquivo (se houver) e aplica. Arquivo ausente ou corrompido deixa os padrões.
 func carregar() -> bool:
 	restaurar_padroes()
 	var ok := false
-	if FileAccess.file_exists(caminho):
-		var d = JSON.parse_string(FileAccess.get_file_as_string(caminho))
+	if Arquivo.existe(caminho):
+		var d = JSON.parse_string(Arquivo.ler(caminho))
 		if d is Dictionary and int(d.get("versao", 0)) == VERSAO:
 			for t in vol:
 				vol[t] = clampf(float(d.get("vol", {}).get(t, vol[t])), 0.0, 1.0)
