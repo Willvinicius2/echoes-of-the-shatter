@@ -3,6 +3,7 @@ extends Area2D
 ## A colisão anda no chão (global_position); o desenho (`vis`) fica `altura` px acima, girado na direção do voo.
 ## A flecha nasce na altura da boca do arco e desce até `altura_voo` nos primeiros `altura_dist` px (doc 33 seção 2).
 
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 
@@ -147,9 +148,8 @@ func _on_body(corpo: Node) -> void:
 
 func _explodir() -> void:
 	Feel.impacto(get_parent(), ponta(), cor_fx, Vector2.ZERO, explode_raio / 40.0)
-	for n in get_tree().get_nodes_in_group("hurtable"):
-		if n is Node2D and n.global_position.distance_to(global_position) <= explode_raio:
-			n.take_damage(explode_dano, global_position)
+	for n in Alvos.no_raio(get_tree(), global_position, explode_raio):
+		n.take_damage(explode_dano, global_position)
 
 ## Solta o rastro para sumir sozinho e remove a flecha.
 func _fim() -> void:
