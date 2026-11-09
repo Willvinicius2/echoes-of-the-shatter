@@ -331,17 +331,24 @@ func _comecar_tiro() -> void:
 	facing = _aim
 	play("attack", true)
 
+const RUN_RITMO := 1.25   # ciclo de corrida um pouco mais rápido que o fps da folha: o passo acompanha o chão
+
 func _animar(entrada: Vector2) -> void:
 	match estado:
 		Estado.ATIRANDO, Estado.ESQUIVA:
+			sprite.speed_scale = 1.0
 			if estado == Estado.ATIRANDO:
 				facing = _aim
 		_:
 			if entrada != Vector2.ZERO:
-				facing = _aim if _aim != Vector2.ZERO else entrada
+				# Corre olhando para onde anda (se a mira fosse o cursor, andar para trás parecia deslizar);
+				# só mira enquanto atira. Os pés andam no ritmo da velocidade real.
+				facing = _aim if (_quer_atirar() and _aim != Vector2.ZERO) else entrada.normalized()
 				play("run")
+				sprite.speed_scale = clampf(velocity.length() / maxf(float(stats["speed"]), 1.0), 0.5, 1.6) * RUN_RITMO
 			else:
 				facing = _aim
+				sprite.speed_scale = 1.0
 				play("idle")
 
 func _on_frame_changed() -> void:

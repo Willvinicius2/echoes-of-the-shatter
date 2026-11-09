@@ -170,6 +170,9 @@ func _process(delta: float) -> void:
 		if desloc != _desloc_ant or not _mat_sob_demanda:   # mexer na posição do filho todo quadro invalida o transform à toa
 			_desloc_ant = desloc
 			sprite.position = desloc
+		if char_id == "arqueiro" and _anim_base == "run":
+			# quique do passo (a folha quase não move o corpo): sobe 1 px da folha em cada apoio de pé
+			sprite.position.y = desloc.y - (sprite.scale.y if sprite.frame % 3 == 1 else 0.0)
 		_respirar(delta)
 	if _precisa_redesenhar():
 		queue_redraw()
