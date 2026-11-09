@@ -90,10 +90,16 @@ jobs:
           ./Godot_v4.7.2-stable_linux.x86_64 --headless --fixed-fps 60 --path proj --script res://scripts2d/tools/estresse_2d.gd -- 300 150 | tee estresse.txt || true
           { echo '### Estresse de horda (300 inimigos, headless)'; grep 'ms/quadro\|nos:' estresse.txt; } >> "$GITHUB_STEP_SUMMARY" || true
 
-  corridas-bot:
+  # 6 corridas em 3 jobs paralelos de 2 (antes: 1 job de 6 corridas, ~40 min).
+  corridas-bot-shard:
+    name: corridas-bot-shard (${{ matrix.shard }})
     needs: extensao-linux
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -121,16 +127,25 @@ jobs:
         run: ./Godot_v${GODOT_VERSION}_linux.x86_64 --headless --path proj --import
       - name: 6 corridas automáticas (bot)
         run: |
-          ./Godot_v${GODOT_VERSION}_linux.x86_64 --headless --fixed-fps 600 --path proj --script res://scripts2d/tools/corridas_2d.gd -- 6 "$PWD/metricas" ${{ github.run_number }} | tee saida_bot.txt
+          ./Godot_v${GODOT_VERSION}_linux.x86_64 --headless --fixed-fps 600 --path proj --script res://scripts2d/tools/corridas_2d.gd -- 2 "$PWD/metricas" $((${{ github.run_number }} * 10 + ${{ matrix.shard }})) | tee saida_bot.txt
           ! grep -q "SCRIPT ERROR" saida_bot.txt
       - name: Resumo do job
         if: always()
-        run: cat metricas/metricas_corridas.md >> "$GITHUB_STEP_SUMMARY" || true
+        run: |
+          { echo "### Corridas do bot, parte ${{ matrix.shard }}"; cat metricas/metricas_corridas.md; } >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: metricas-corridas
+          name: metricas-corridas-${{ matrix.shard }}
           path: metricas/
+
+  # Mantém o nome "corridas-bot" (checagem obrigatória): passa quando as 3 partes passam.
+  corridas-bot:
+    needs: corridas-bot-shard
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.corridas-bot-shard.result }}" = "success"
 
   export:
     needs: [extensao-linux, extensao-windows]
