@@ -49,6 +49,12 @@ static func carregar_padroes() -> Dictionary:
 	out["entrada"] = entrada
 	return out
 
+func _init() -> void:
+	_mat_sob_demanda = false   # o brilho do chefe usa o material fixo
+
+func _precisa_redesenhar() -> bool:
+	return estado != Estado.PERSEGUE or _morrendo or hp < hp_max   # o chefe mantém o redesenho antigo
+
 func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	super.setup(id, jogador, pos)
 	stats["hp_bar"] = 0.0     # a barra do chefe é a da tela, não a da cabeça
@@ -255,7 +261,11 @@ func _criar_barra() -> void:
 	_ctl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ctl.draw.connect(_desenhar_barra)
 	_barra.add_child(_ctl)
-	add_child(_barra)
+	if get_viewport() == get_tree().root:
+		add_child(_barra)
+	else:   # mundo num SubViewport de pixel art: a barra fica na janela, nítida
+		get_tree().root.add_child(_barra)
+		tree_exiting.connect(_barra.queue_free)
 
 func _process(delta: float) -> void:
 	if _glow_t > 0.0:

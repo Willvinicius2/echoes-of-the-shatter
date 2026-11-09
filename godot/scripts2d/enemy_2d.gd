@@ -8,6 +8,7 @@ const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const Veneno = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
 const Fogo = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
+const Sombras = preload("res://scripts2d/sombras_2d.gd")
 
 enum Estado { PERSEGUE, TELEGRAFA, ATACANDO, MORTO }
 
@@ -29,8 +30,8 @@ var _status := {}               # id -> {t: segundos restantes, v: valor}
 ## Inimigos vivos na cena: com horda grande, quem só persegue atualiza a cada 2 ou 3 quadros (com o `delta`
 ## acumulado), cada um numa fase própria, para o custo de física não crescer linear com a horda.
 static var vivos_n := 0
-const HORDA_PASSO2 := 400
-const HORDA_PASSO3 := 900
+const HORDA_PASSO2 := 150
+const HORDA_PASSO3 := 320
 const CELULA := 40.0
 static var _grade := {}
 static var _grade_quadro := -1
@@ -44,6 +45,11 @@ var _keep := 0.0
 var _burst := 0.0
 var _kb_decay := 0.0
 var raio_despertar := 0.0       # > 0: começa adormecido; acorda (com o grupo) quando o jogador chega a essa distância ou fere alguém
+var grupo_despertar := "inimigos_adormecidos"   # quem dorme junto: a sala toda, ou um encontro do mapa (`@guarda`)
+var entrada_t := 0.0            # > 0: entrada do elite do portão (parado e invulnerável) por mais estes segundos
+
+func _init() -> void:
+	_mat_sob_demanda = true   # material de flash/dissolução só quando preciso (o chefe desliga isto no _init dele)
 
 func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	stats = Csv.enemy(id)
@@ -69,12 +75,42 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	add_to_group("hurtable")
 	shadow_radius = stats["radius"] * 1.2
 	setup_sprite(id)
+	_sombra_externa = Sombras.registrar(self)
 	var cs := CollisionShape2D.new()
 	var sh := CircleShape2D.new()
 	sh.radius = stats["radius"]
 	cs.shape = sh
 	add_child(cs)
 	play("idle", true)
+
+## Cresce `f` vezes: sprite (escala_extra), raio de colisão, `stats["radius"]` (alcance de golpes que leem o raio) e sombra.
+func aumentar(f: float) -> void:
+	escala_extra = f
+	stats["radius"] = float(stats["radius"]) * f
+	shadow_radius = float(stats["radius"]) * 1.2
+	for c in get_children():
+		if c is CollisionShape2D and c.shape is CircleShape2D:
+			c.shape.radius = stats["radius"]
+	if sprite != null:
+		sprite.scale *= f
+	set_process(true)
+
+## Entrada (elite do portão): parado e invulnerável por `dur` s; depois persegue normalmente.
+func iniciar_entrada(dur: float) -> void:
+	entrada_t = dur
+	velocity = Vector2.ZERO
+	play("idle", true)
+
+func invulneravel() -> bool:
+	return entrada_t > 0.0
+
+## Conta a entrada; true enquanto ela dura (o inimigo fica parado).
+func _na_entrada(delta: float) -> bool:
+	if entrada_t <= 0.0:
+		return false
+	entrada_t = maxf(0.0, entrada_t - delta)
+	velocity = Vector2.ZERO
+	return true
 
 ## Separação leve (no lugar da colisão física entre inimigos, que custava O(n²)): empurra para longe de quem está
 ## na mesma célula da grade, reconstruída uma vez por quadro de física. No máximo 4 vizinhos por inimigo.
@@ -106,13 +142,24 @@ func _descontar() -> void:
 		vivos_n -= 1
 
 func _exit_tree() -> void:
+	Sombras.remover(self)
 	_descontar()
 
+var _hp_desenhado := -1.0
+var _estado_desenhado := -1
+
+## Só redesenha (sombra, barra de vida, aviso) quando algo mudou: o aviso é animado, o resto muda por evento.
 func _precisa_redesenhar() -> bool:
-	return estado != Estado.PERSEGUE or _morrendo or hp < hp_max
+	if estado == Estado.TELEGRAFA or _morrendo:
+		return true
+	if hp != _hp_desenhado or estado != _estado_desenhado:
+		_hp_desenhado = hp
+		_estado_desenhado = estado
+		return true
+	return false
 
 func _physics_process(delta: float) -> void:
-	if estado == Estado.MORTO or alvo == null:
+	if estado == Estado.MORTO or alvo == null or _na_entrada(delta):
 		return
 	if estado == Estado.PERSEGUE and vivos_n > HORDA_PASSO2:
 		var passo := 2 if vivos_n <= HORDA_PASSO3 else 3
@@ -183,17 +230,18 @@ func _mover_parado() -> void:
 		move_and_slide()
 
 ## Adormecidos acordam juntos: o primeiro que vê o jogador (ou leva dano) chama o resto da sala.
-func adormecer(raio: float) -> void:
+func adormecer(raio: float, grupo := "inimigos_adormecidos") -> void:
 	raio_despertar = raio
-	add_to_group("inimigos_adormecidos")
+	grupo_despertar = grupo
+	add_to_group(grupo)
 
 func despertar_grupo() -> void:
 	if is_inside_tree():
-		get_tree().call_group("inimigos_adormecidos", "despertar")
+		get_tree().call_group(grupo_despertar, "despertar")
 
 func despertar() -> void:
 	raio_despertar = 0.0
-	remove_from_group("inimigos_adormecidos")
+	remove_from_group(grupo_despertar)
 
 func alvo_morto() -> bool:
 	return alvo.has_method("esta_morto") and alvo.esta_morto()
@@ -226,6 +274,7 @@ func _on_frame_changed() -> void:
 		alvo.take_damage(stats["damage"], global_position)
 
 func _on_anim_finished() -> void:
+	set_process(true)
 	if estado == Estado.ATACANDO:
 		estado = Estado.PERSEGUE
 	elif estado == Estado.MORTO:
@@ -253,6 +302,26 @@ func aplicar_status(tipo: String, dur: float, valor := 0.0) -> void:
 	elif tipo == "queimadura" and not has_node("OverlayQueimadura"):
 		Fogo.overlay_queimadura(self).name = "OverlayQueimadura"
 	_recalcular_status()
+	atualizar_tint()
+
+## Cor do sprite por status (legibilidade com horda, crítica de 02/11): veneno esverdeia, queimadura avermelha, choque esbranquiça,
+## frio azula mais a cada acúmulo (4 = congelado). Só mexe em `sprite.modulate`; sem status volta ao branco.
+func atualizar_tint() -> void:
+	if sprite == null:
+		return
+	var c := Color.WHITE
+	if _status.has("veneno"):
+		c *= Color(0.7, 1.0, 0.55)
+	if _status.has("queimadura"):
+		c *= Color(1.0, 0.72, 0.55)
+	if _status.has("choque"):
+		c *= Color(0.82, 0.88, 1.0)
+	var frio := int(get_meta("frio_acumulos", 0))
+	if has_meta("congelado_ate") and Time.get_ticks_msec() < int(get_meta("congelado_ate")):
+		frio = 4
+	if frio > 0 and (_status.has("lentidao") or _status.has("atordoamento")):
+		c *= Color.WHITE.lerp(Color(0.55, 0.8, 1.0), clampf(0.3 + 0.2 * float(frio), 0.0, 1.0))
+	sprite.modulate = Color.WHITE.lerp(c, 0.55)   # tinte parcial: a silhueta do inimigo continua legível
 
 func tem_status(tipo: String) -> bool:
 	return _status.has(tipo)
@@ -285,9 +354,10 @@ func _tick_status(delta: float) -> void:
 			return
 	if mudou:
 		_recalcular_status()
+		atualizar_tint()
 
 func take_damage(amount: float, _origem := Vector2.ZERO) -> void:
-	if estado == Estado.MORTO:
+	if estado == Estado.MORTO or (entrada_t > 0.0 and amount < 1.0e8):   # 1e8+: atalho de teste/console (matar_todos)
 		return
 	amount *= dano_mult
 	if raio_despertar > 0.0:
@@ -333,8 +403,9 @@ func _draw() -> void:
 	if stats.get("hp_bar", 0.0) > 0.0 and estado != Estado.MORTO and hp < hp_max:
 		var larg := 40.0
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		var topo := -90.0 * (escala_sprite())
-		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0, 0, 0, 0.7))
+		var topo := topo_visual() - float(stats.get("hp_bar_dy", 0.0))   # hp_bar_dy: px a mais acima do topo (o morcego bate asa por cima da barra)
+		draw_rect(Rect2(-larg / 2.0 - 1.0, topo - 1.0, larg + 2.0, 7.0), Color(0.02, 0.02, 0.03, 0.95))   # borda escura de 1 px
+		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0.12, 0.05, 0.06, 1.0))
 		draw_rect(Rect2(-larg / 2.0, topo, larg * hp / hp_max, 5.0), Color(0.8, 0.15, 0.15))
 
 ## Aviso de ataque: área vermelha que enche até o golpe (melee) ou linha de mira (ranged/chefe).

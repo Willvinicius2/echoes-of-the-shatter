@@ -11,6 +11,8 @@ const SteamScript = preload("res://scripts2d/steam_2d.gd")
 const TutorialScript = preload("res://scripts2d/tutorial_2d.gd")
 const PrologoScript = preload("res://scripts2d/prologo_2d.gd")
 const SpriteLoader = preload("res://scripts2d/sprite_loader.gd")
+const Fase = preload("res://scripts2d/fase_2d.gd")
+const Arte = preload("res://scripts2d/hud_arte_2d.gd")
 const FUNDO_TITULO := "res://art2d/ui/titulo_fundo.jpg"
 const FONTE_TITULO := "res://art2d/ui/DejaVuSerif-Bold.ttf"
 
@@ -129,11 +131,107 @@ func mostrar_titulo() -> void:
 	if meta != null:
 		linhas = _resumo_hub()
 	_no_hub = true
-	var botoes := [["menu.play", _jogar_do_titulo], ["menu.forge", mostrar_forja], ["menu.meta", mostrar_meta]]
+	var botoes := [["menu.play", _jogar_do_titulo, jogar_bloqueado()], ["menu.forge", mostrar_forja], ["menu.meta", mostrar_meta]]
 	if opcoes.prologo_visto:
 		botoes.append(["menu.prologue", prologo.iniciar])
 	botoes.append_array([["menu.options", func() -> void: mostrar_opcoes(mostrar_titulo)], ["menu.quit", sair]])
-	_montar(Tela.TITULO, "menu.title", "menu.subtitle", botoes, linhas, _cartao_classe())
+	var cartoes := VBoxContainer.new()
+	cartoes.add_theme_constant_override("separation", 10)
+	cartoes.add_child(_cartao_classe())
+	if not Fase.ids().is_empty():
+		cartoes.add_child(_cartao_fase())
+	_montar(Tela.TITULO, "menu.title", "menu.subtitle", botoes, linhas, cartoes)
+
+## Jogar fica desativado na fase escolhida trancada ou sem mapa ainda ("em breve").
+func jogar_bloqueado() -> bool:
+	return not Fase.ids().is_empty() and not Fase.pode_jogar(Fase.atual)
+
+## Cartão da fase no título (mesma moldura do cartão da classe): nome, uma linha de descrição e setas para trocar
+## (mouse ou ← →). Trancada: cadeado e a dica de qual fase vencer; sem mapa ainda: a dica "em breve".
+func _cartao_fase() -> Control:
+	var id := Fase.atual
+	var d: Dictionary = Fase.dados(id)
+	var aberta := Fase.desbloqueada(id)
+	var cartao := PanelContainer.new()
+	cartao.name = "CartaoFase"
+	cartao.add_theme_stylebox_override("panel", Tema.caixa(Tema.cor("pedra_clara"), Tema.cor("borda"), 2, 5, 10))
+	var linha := HBoxContainer.new()
+	linha.add_theme_constant_override("separation", 10)
+	cartao.add_child(linha)
+	linha.add_child(_seta_fase("SetaAnterior", "menu.fase_ant", -1))
+	var col := VBoxContainer.new()
+	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 4)
+	linha.add_child(col)
+	var ids := Fase.ids()
+	var conta := Label.new()
+	conta.text = Csv.t("menu.fase") % [ids.find(id) + 1, ids.size()]
+	conta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	conta.add_theme_font_size_override("font_size", 13)
+	conta.add_theme_color_override("font_color", Tema.cor("texto_suave"))
+	col.add_child(conta)
+	var topo := HBoxContainer.new()
+	topo.alignment = BoxContainer.ALIGNMENT_CENTER
+	topo.add_theme_constant_override("separation", 8)
+	col.add_child(topo)
+	if not aberta:
+		var cad := Control.new()
+		cad.name = "Cadeado"
+		cad.custom_minimum_size = Vector2(26, 30)
+		cad.draw.connect(func() -> void: Arte.cadeado(cad, Vector2(13, 11), 20.0))
+		topo.add_child(cad)
+	var nome := Label.new()
+	nome.name = "NomeFase"
+	nome.text = Csv.t(str(d.get("nome", id)))
+	nome.add_theme_font_size_override("font_size", 24)
+	nome.add_theme_color_override("font_color", Tema.cor("destaque") if aberta else Tema.cor("texto_suave"))
+	topo.add_child(nome)
+	var desc := Label.new()
+	desc.text = Csv.t(str(d.get("descricao", "")))
+	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.custom_minimum_size = Vector2(320, 0)
+	desc.add_theme_font_size_override("font_size", 15)
+	desc.add_theme_color_override("font_color", Tema.cor("texto_suave"))
+	col.add_child(desc)
+	var dica := ""
+	if not aberta:
+		dica = Csv.t("fase.trancada") % Csv.t(str(Fase.dados(Fase.requer(id)).get("nome", Fase.requer(id))))
+	elif not Fase.disponivel(id):
+		dica = Csv.t("fase.em_breve")
+	if dica != "":
+		var l := Label.new()
+		l.name = "DicaFase"
+		l.text = dica
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(320, 0)
+		l.add_theme_font_size_override("font_size", 15)
+		l.add_theme_color_override("font_color", Tema.cor("destaque"))
+		col.add_child(l)
+	linha.add_child(_seta_fase("SetaProxima", "menu.fase_prox", 1))
+	return cartao
+
+func _seta_fase(nome: String, chave: String, passo: int) -> Button:
+	var b := Button.new()
+	b.name = nome
+	b.text = Csv.t(chave)
+	b.custom_minimum_size = Vector2(40, 0)
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.add_theme_font_override("font", load(FONTE_TITULO))
+	b.add_theme_font_size_override("font_size", 20)
+	b.disabled = Fase.ids().size() < 2
+	b.pressed.connect(func() -> void: trocar_fase(passo))
+	return b
+
+## Passa para a fase seguinte (`passo` 1) ou anterior (-1) da tabela, grava a escolha e redesenha o título.
+func trocar_fase(passo: int) -> void:
+	Audio.tocar("ui_click")
+	Fase.alternar(passo)
+	if meta != null and meta.has_method("escolher_fase"):
+		meta.escolher_fase(Fase.atual)
+	mostrar_titulo()
 
 ## Cartão da classe no título: retrato animado, nome, estilo de jogo e o botão que troca a classe.
 func _cartao_classe() -> Control:
@@ -229,14 +327,28 @@ func mostrar_pausa() -> void:
 		["menu.resume", retomar], ["menu.restart", jogar],
 		["menu.options", func() -> void: mostrar_opcoes(mostrar_pausa)], ["menu.to_title", ao_titulo]])
 
-## `resumo` é um Array de linhas já formatadas (tempo, salas, upgrades).
-func mostrar_fim(venceu: bool, resumo: Array) -> void:
+## `resumo` é um Array de linhas já formatadas (tempo, salas, upgrades). `avisos`: linhas em destaque (ex. fase nova aberta).
+func mostrar_fim(venceu: bool, resumo: Array, avisos: Array = []) -> void:
 	_no_hub = false
 	steam.evento("corrida_fim")
 	if venceu:
 		steam.evento("vitoria")
+	var extra: VBoxContainer = null
+	if not avisos.is_empty():
+		extra = VBoxContainer.new()
+		extra.name = "AvisosFim"
+		for a in avisos:
+			var l := Label.new()
+			l.text = a
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			l.add_theme_font_size_override("font_size", 26)
+			l.add_theme_color_override("font_color", Tema.cor("destaque"))
+			l.add_theme_font_override("font", load(FONTE_TITULO))
+			l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+			l.add_theme_constant_override("outline_size", 6)
+			extra.add_child(l)
 	_montar(Tela.FIM, "menu.victory" if venceu else "menu.game_over", "", [
-		["menu.play_again", jogar], ["menu.to_title", ao_titulo]], resumo)
+		["menu.play_again", jogar], ["menu.to_title", ao_titulo]], resumo, extra)
 
 ## Loja de melhorias permanentes: cada botão compra um nível; o saldo vem do save.
 func mostrar_meta() -> void:
@@ -343,7 +455,12 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 	_arte.visible = _no_hub
 	_fundo.visible = true
 	if primeiro != null:
-		primeiro.grab_focus.call_deferred()
+		_focar.call_deferred(primeiro)
+
+## Foco no botão, se ele ainda está na tela (ela pode ter sido remontada no mesmo quadro, ex. setas do cartão de fase).
+func _focar(b) -> void:   # sem tipo: o botão pode já ter sido liberado
+	if is_instance_valid(b) and b.is_inside_tree():
+		b.grab_focus()
 
 func _rotulo(texto: String, tam: int, cor := Color(0.9, 0.88, 0.84)) -> Label:
 	var l := Label.new()
@@ -379,6 +496,10 @@ func _input(ev: InputEvent) -> void:
 			opcoes.remapear(acao, ev.physical_keycode)
 			opcoes.salvar()
 		mostrar_teclas()
+		get_viewport().set_input_as_handled()
+		return
+	if tela == Tela.TITULO and (ev.keycode == KEY_LEFT or ev.keycode == KEY_RIGHT) and not prologo.ativo and Fase.ids().size() > 1:
+		trocar_fase(-1 if ev.keycode == KEY_LEFT else 1)   # ← → trocam a fase no título
 		get_viewport().set_input_as_handled()
 		return
 	if tela == Tela.FIM and ev.physical_keycode == KEY_R:

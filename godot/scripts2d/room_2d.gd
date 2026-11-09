@@ -7,7 +7,18 @@ extends Node2D
 ## câmera seguindo o jogador e um portal em `X` depois do chefe.
 ## `@caminho largura x,y x,y ...` e `@riacho largura x,y ...` (células; curva suave) desenham caminho de pedra
 ## e riacho; o riacho bloqueia jogador e inimigos (camada 8) menos onde o caminho o cruza.
-## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png).
+## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png); `@piso pedreira` é o mesmo
+## piso aberto na versão seca e poeirenta da Pedreira dos Ecos (atlas cripta_pedreira.png, tools/sprites2d/recolorir_piso_pedreira.py):
+## lajes aquecidas (arenito), massa de rocha `m` em marrom-escuro e uma orla de terra irregular entre ela e o chão (orla_terra_2d.gd).
+## Fosso da Pedreira (tools/mapas/fosso_pixel.py): `f` é uma célula de fosso (bloqueia jogador e inimigos na camada 8, como a água;
+## flecha e magia passam por cima) e `=` é uma célula da ponte de tábuas (andável, dentro do fosso). `@decalque arquivo x y [topo]`
+## cola um PNG pintado por código no chão (x, y em px de mundo: canto de cima à esquerda); com `topo` fica por cima dos caminhos
+## (as pontes), sem ele por baixo (os fossos). Em props_2d.csv a coluna `pes` lista, em px relativos ao pivô, os retângulos
+## `x0:y0:x1:y1|...` que bloqueiam num prop vazado (pórtico, bastiões do portão): o resto do sprite é só para os olhos.
+## Marcos da fase aberta (tools/mapas/marcos_fase1.py): `@luz x,y raio r,g,b,a` (células; raio em células) é um halo de
+## luz de um marco, `@bolsao x,y recompensa` é o baú fixo de um bolsão e `@guarda x,y raio forca id:n|id:n` é um encontro
+## adormecido (raio em px para acordar, força multiplica a curva da onda atual; nasce quando o jogador se aproxima).
+## `@brilho_estrada 1.1` multiplica a cor das lajes da estrada principal (a primeira `@caminho`): o chão do caminho fica um pouco mais claro que o resto.
 ## Depois da grade, a linha `@props` abre a lista de props: `id coluna linha [flip]` (coluna e linha
 ## podem ser fracionárias; ids em data2d/props_2d.csv, arte em props_manifest.csv).
 
@@ -16,8 +27,11 @@ signal porta_usada
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
 const Terreno = preload("res://scripts2d/terreno_2d.gd")
+const OrlaTerra = preload("res://scripts2d/orla_terra_2d.gd")
+const COR_MASSA_PEDREIRA := Color(0.56, 0.54, 0.62)   # a rocha da pedreira é o tile do piso em marrom-escuro (o preto da mata some a emenda com o ocre)
 const ATLAS := "res://art2d/tiles/cripta_tiles.png"
 const ATLAS_GRAMA := "res://art2d/tiles/cripta_grama.png"
+const ATLAS_PEDREIRA := "res://art2d/tiles/cripta_pedreira.png"
 const T_PISO := 0
 const T_PISO_ESCURO := 6
 const T_PORTA_FECHADA := 7
@@ -40,15 +54,22 @@ var celulas_porta: Array[Vector2i] = []
 var props: Array = []  # {id, pos (pé do prop em px), flip}
 var _props_def := {}
 var _props_arte := {}
+var _sprites_altos: Array[Rect2] = []   # retângulos (px) dos sprites de árvores, pilares, tumbas e vergas: quem nasce neles fica escondido ou colado ao prop
 var _layer: TileMapLayer
 var _piso: TileMapLayer
 var aneis: Array = []   # [{laje, fator}]
 var _brilho_runas: TileMapLayer
 var piso_grama := false
+var tema := ""   # "" = o da Cripta; "pedreira" (`@piso pedreira`): chão seco, lajes quentes, sem vaga-lumes
+var decalques: Array = []   # `@decalque`: {arquivo, pos (px), topo}
 var braseiros: Array[Vector2] = []
 var caminhos: Array = []  # {larg (células), pts (px)}
+var brilho_estrada := 1.0   # `@brilho_estrada`: fator de luz das lajes da primeira `@caminho` (1 = igual ao resto)
 var riachos: Array = []
 var lajes: Array = []  # {tom, raio (px), centro (px)}
+var luzes: Array = []     # `@luz`: {pos (px), raio (px), cor}
+var bolsoes: Array = []   # `@bolsao`: {pos (px), recompensa}
+var guardas: Array = []   # `@guarda`: {pos (px), raio (px), forca, spec}
 var _mata: TileMapLayer
 var _porta_area: Area2D
 var _porta_corpo: StaticBody2D
@@ -72,6 +93,12 @@ func carregar(caminho: String) -> bool:
 			em_props = true
 		elif l == "@piso grama":
 			piso_grama = true
+		elif l == "@piso pedreira":
+			piso_grama = true   # piso aberto como o gramado (manchas de chão, tufos, atlas de 4 variantes + lajes), com o tema da Pedreira
+			tema = "pedreira"
+		elif l.begins_with("@decalque "):
+			var q := l.split(" ", false)   # @decalque arquivo x y [topo]
+			decalques.append({"arquivo": q[1], "pos": Vector2(float(q[2]), float(q[3])), "topo": q.size() > 4 and q[4] == "topo"})
 		elif l.begins_with("@lajes "):
 			var q := l.split(" ", false)
 			var xy := q[3].split(",")
@@ -79,6 +106,22 @@ func carregar(caminho: String) -> bool:
 		elif l.begins_with("@anel "):
 			var q := l.split(" ", false)   # @anel índice_da_laje fator: anel de runas que acompanha o contorno da laje
 			aneis.append({"laje": int(q[1]), "fator": float(q[2]), "sigilo": q.size() > 3 and q[3] == "sigilo"})
+		elif l.begins_with("@luz "):
+			var q := l.split(" ", false)   # @luz x,y raio r,g,b,a (células; o raio também em células)
+			var xy := q[1].split(",")
+			var rgba := q[3].split(",")
+			luzes.append({"pos": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile), "raio": float(q[2]) * tile,
+				"cor": Color(float(rgba[0]), float(rgba[1]), float(rgba[2]), float(rgba[3]))})
+		elif l.begins_with("@bolsao "):
+			var q := l.split(" ", false)   # @bolsao x,y recompensa
+			var xy := q[1].split(",")
+			bolsoes.append({"pos": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile), "recompensa": q[2]})
+		elif l.begins_with("@guarda "):
+			var q := l.split(" ", false)   # @guarda x,y raio_px forca id:n|id:n
+			var xy := q[1].split(",")
+			guardas.append({"pos": Vector2((float(xy[0]) + 0.5) * tile, (float(xy[1]) + 0.5) * tile), "raio": float(q[2]), "forca": float(q[3]), "spec": q[4]})
+		elif l.begins_with("@brilho_estrada "):
+			brilho_estrada = float(l.split(" ", false)[1])
 		elif l.begins_with("@caminho ") or l.begins_with("@riacho "):
 			var q := l.split(" ", false)
 			var pts: Array = []
@@ -113,6 +156,7 @@ func _eh_parede(x: int, y: int) -> bool:
 	return _grade[y][x] in ["#", "D"]
 
 func _montar() -> void:
+	Terreno.tema = tema   # as texturas e cores procedurais do terreno (lajes, musgo, luz) seguem o tema da sala
 	var ts := _tileset()
 	_piso = TileMapLayer.new()  # piso sob os objetos, para o fundo transparente de braseiro e pilar não ficar preto
 	_piso.tile_set = ts
@@ -124,7 +168,7 @@ func _montar() -> void:
 	_mata = TileMapLayer.new()  # chão da mata fechada, bem mais escuro que o gramado
 	_mata.tile_set = ts
 	if piso_grama:
-		_mata.modulate = _piso.modulate   # o escuro da mata vem das manchas suaves de _sombra_da_mata, sem degrau de tile
+		_mata.modulate = COR_MASSA_PEDREIRA if tema == "pedreira" else _piso.modulate   # o escuro da mata vem das manchas suaves de _sombra_da_mata, sem degrau de tile
 	add_child(_mata)
 	_layer = TileMapLayer.new()
 	_layer.tile_set = ts
@@ -195,8 +239,8 @@ func _montar() -> void:
 				_pintar_grama(Vector2i(x, y), posmod(hash(Vector2i(x, y)), 4), 1 if c == "p" else 0)
 			elif c != "#" and c != "D":
 				_pintar(Vector2i(x, y), T_PISO + posmod(hash(Vector2i(x, y)), 4), _piso)
-			if c != "." and c != "p" and not (c in ["P", "E", "X", "G"]):
-				_pintar(Vector2i(x, y), idx)
+			if c != "." and c != "p" and c != "f" and c != "=" and not (c in ["P", "E", "X", "G"]):
+				_pintar(Vector2i(x, y), idx)   # fosso e ponte (`f`, `=`) ficam sobre o chão: a arte vem dos decalques
 			elif c in ["P", "E", "X", "G"]:   # marcador sobre laje de pedra: o piso segue o dos vizinhos
 				var viz := _piso_vizinho(x, y)
 				if viz == "q":
@@ -205,20 +249,36 @@ func _montar() -> void:
 					_pintar(Vector2i(x, y), T_PISO + posmod(hash(Vector2i(x, y)), 4))
 	for p in props:
 		var d: Dictionary = _props_def.get(p["id"], {})
-		if d.is_empty() or float(d["solido_l"]) <= 0.0:
+		if d.is_empty():
 			continue
-		var cp := CollisionShape2D.new()
-		var rp := RectangleShape2D.new()
-		rp.size = Vector2(float(d["solido_l"]), float(d["solido_a"]))
-		cp.shape = rp
-		# a colisão fica no centro da base que toca o chão (nas árvores, o pé do tronco), o mesmo ponto do y-sort
-		cp.position = p["pos"] + Vector2(0, tile * 0.5 - _apoio_prop(p["id"]))
-		corpo.add_child(cp)
+		if float(d["solido_l"]) > 0.0:
+			var cp := CollisionShape2D.new()
+			var rp := RectangleShape2D.new()
+			rp.size = Vector2(float(d["solido_l"]), float(d["solido_a"]))
+			cp.shape = rp
+			# a colisão fica no centro da base que toca o chão (nas árvores, o pé do tronco), o mesmo ponto do y-sort
+			cp.position = p["pos"] + Vector2(0, tile * 0.5 - _apoio_prop(p["id"]))
+			corpo.add_child(cp)
+		for pe_r in pes_do_prop(d):   # props vazados (pórtico): só os pés bloqueiam
+			var cpe := CollisionShape2D.new()
+			var rpe := RectangleShape2D.new()
+			rpe.size = pe_r.size
+			cpe.shape = rpe
+			var centro_pe: Vector2 = pe_r.get_center()
+			if p["flip"]:
+				centro_pe.x = -centro_pe.x
+			cpe.position = p["pos"] + Vector2(0, tile * 0.5) + centro_pe
+			corpo.add_child(cpe)
 	if piso_grama and colunas * linhas > 2000:
 		_tons_do_gramado()
-	_sombra_da_mata()
+	if tema == "pedreira":
+		OrlaTerra.montar(self, _grade, colunas, linhas, tile, _layer)   # rocha marrom com orla de terra irregular (sem a sombra preta da mata)
+	else:
+		_sombra_da_mata()
 	_desenhar_lajes()
+	_montar_fossos()
 	Terreno.montar(self, caminhos, riachos, piso_grama, tile)
+	_colar_decalques(true)
 	if aberta():
 		_achar_vinheta()
 	_mapear_livres()
@@ -247,9 +307,120 @@ func _montar() -> void:
 		_porta_area.add_child(cs)
 	_porta_area.body_entered.connect(func(_c): porta_usada.emit())
 
+## Fossos da Pedreira: as células `f` bloqueiam o passo (camada 8, como a água: flecha e magia passam por cima) e os
+## decalques de chão (PNG pintados por tools/mapas/fosso_pixel.py) são colados por baixo dos caminhos; os de `topo`
+## (as pontes de tábuas) entram depois do terreno, por cima do caminho.
+func _montar_fossos() -> void:
+	var tem := false
+	for l in _grade:
+		if "f" in l:
+			tem = true
+			break
+	if tem:
+		var corpo := StaticBody2D.new()
+		corpo.name = "CorpoFossos"
+		corpo.collision_layer = 8
+		corpo.collision_mask = 0
+		add_child(corpo)
+		for y in linhas:
+			var inicio := -1
+			for x in colunas + 1:
+				var fosso: bool = x < colunas and _grade[y][x] == "f"
+				if fosso and inicio < 0:
+					inicio = x
+				elif not fosso and inicio >= 0:
+					var cs := CollisionShape2D.new()
+					var r := RectangleShape2D.new()
+					r.size = Vector2((x - inicio) * tile, tile)
+					cs.shape = r
+					cs.position = Vector2((inicio + (x - inicio) / 2.0) * tile, (y + 0.5) * tile)
+					corpo.add_child(cs)
+					inicio = -1
+	_colar_decalques(false)
+
+func _colar_decalques(topo: bool) -> void:
+	var raiz := Node2D.new()
+	raiz.name = "DecalquesTopo" if topo else "Decalques"
+	add_child(raiz)
+	for d in decalques:
+		if bool(d["topo"]) != topo:
+			continue
+		var tex: Texture2D = _carregar_textura(d["arquivo"])
+		if tex == null:
+			push_error("Decalque ausente: " + str(d["arquivo"]))
+			continue
+		var sp := Sprite2D.new()
+		sp.texture = tex
+		sp.centered = false
+		sp.position = d["pos"]
+		raiz.add_child(sp)
+
+## A célula (coluna, linha) é de fosso (`f`)? Fora do mapa não é.
+func eh_fosso(x: int, y: int) -> bool:
+	return x >= 0 and y >= 0 and x < colunas and y < linhas and _grade[y][x] == "f"
+
+## Os fossos como retângulos em px (corridas de células `f` iguais em linhas seguidas viram um só), cada um alargado em
+## `margem` px: o terreno os tira dos caminhos, para a estrada parar na borda do fosso em vez de passar por cima dele.
+func rects_fosso(margem := 0.0) -> Array:
+	var out: Array = []
+	var abertos := {}   # "x0:x1" -> linha em que o retângulo começou
+	for y in linhas + 1:
+		var corridas := {}
+		if y < linhas:
+			var inicio := -1
+			for x in colunas + 1:
+				var fosso: bool = x < colunas and _grade[y][x] == "f"
+				if fosso and inicio < 0:
+					inicio = x
+				elif not fosso and inicio >= 0:
+					corridas["%d:%d" % [inicio, x]] = true
+					inicio = -1
+		for chave in abertos.keys():
+			if not corridas.has(chave):
+				var q: PackedStringArray = String(chave).split(":")
+				var r := Rect2(float(q[0]) * tile, float(abertos[chave]) * tile, float(int(q[1]) - int(q[0])) * tile, float(y - int(abertos[chave])) * tile).grow(margem)
+				out.append(PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]))
+				abertos.erase(chave)
+		for chave in corridas.keys():
+			if not abertos.has(chave):
+				abertos[chave] = y
+	return out
+
+## Manchas de poeira e de terra do piso da Pedreira: PNG em branco com alfa binário (tools/sprites2d/manchas_piso_pedreira.py),
+## miolo chapado e beira em dither, para o chão ocre não ser a mesma textura de ponta a ponta nem ter borrão de degradê.
+const MANCHAS_PEDREIRA := ["res://art2d/tiles/pedreira_mancha_0.png", "res://art2d/tiles/pedreira_mancha_1.png", "res://art2d/tiles/pedreira_mancha_2.png", "res://art2d/tiles/pedreira_mancha_3.png"]
+const TONS_MANCHA_PEDREIRA := [Color(0.95, 0.82, 0.56, 0.3), Color(0.82, 0.62, 0.32, 0.26), Color(0.2, 0.12, 0.06, 0.32), Color(0.56, 0.32, 0.15, 0.24)]   # poeira clara, ocre, terra escura, ferrugem
+
+func _manchas_da_pedreira() -> void:
+	var texs: Array[Texture2D] = []
+	for caminho in MANCHAS_PEDREIRA:
+		var tx := _carregar_textura(caminho)
+		if tx != null:
+			texs.append(tx)
+	if texs.is_empty():
+		return
+	var raiz := Node2D.new()
+	add_child(raiz)
+	move_child(raiz, _layer.get_index())
+	for y in range(0, linhas, 4):
+		for x in range(0, colunas, 4):
+			var h := hash(Vector2i(x * 31, y * 17))
+			if posmod(h / 19, 100) < 20:
+				continue   # um passo em cinco sem mancha: o chão respira
+			var sp := Sprite2D.new()
+			sp.texture = texs[posmod(h / 7, texs.size())]
+			sp.position = Vector2((x + posmod(h, 40) / 10.0) * tile, (y + posmod(h / 50, 40) / 10.0) * tile).round()   # px inteiros da grade
+			sp.flip_h = posmod(h / 11, 2) == 0
+			sp.flip_v = posmod(h / 13, 2) == 0
+			sp.modulate = TONS_MANCHA_PEDREIRA[posmod(h / 3, TONS_MANCHA_PEDREIRA.size())]
+			raiz.add_child(sp)
+
 ## Fase aberta: manchas grandes e suaves de grama seca (clara) e de grama funda (escura) espalhadas pelo mapa,
 ## para o gramado não ser a mesma textura repetida de ponta a ponta.
 func _tons_do_gramado() -> void:
+	if tema == "pedreira":
+		_manchas_da_pedreira()
+		return
 	var g := Gradient.new()
 	g.set_color(0, Color(1, 1, 1, 1))
 	g.set_color(1, Color(1, 1, 1, 0))
@@ -328,6 +499,8 @@ func _desenhar_lajes() -> void:
 		orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.22, 0.3, 0.12, 0.3), 1.0, minf(56.0, m["raio"] * 0.9)))
 		orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.13, 0.11, 0.08, 0.4), 1.0, minf(30.0, m["raio"] * 0.5)))
 		var cor_laje := Color(0.85, 0.82, 0.8) if escuro else Color(0.92, 0.92, 0.9)
+		if tema == "pedreira":
+			cor_laje = Color(0.9, 0.78, 0.6) if escuro else Color(1.0, 0.9, 0.7)   # arenito: a laje esquenta para casar com o chão ocre
 		if not escuro and i > 0 and lajes[i - 1]["tom"] == "escuro" and m["raio"] < lajes[i - 1]["raio"]:
 			cor_laje = Color(0.72, 0.68, 0.66, 0.8)   # estrado sobre a laje escura: contraste baixo, sem cara de tapete
 		raiz.add_child(_laje_esfumada(m, 11 + i, tex_escuro if escuro else tex_claro, cor_laje, 0.95, minf(34.0, m["raio"] * 0.6)))
@@ -559,7 +732,7 @@ func _mapear_livres() -> void:
 					bloq[c + Vector2i(dx, dy)] = true
 	for p in props:
 		var d: Dictionary = _props_def.get(p["id"], {})
-		if not d.is_empty() and float(d["solido_l"]) > 0.0:
+		if not d.is_empty() and (float(d["solido_l"]) > 0.0 or not pes_do_prop(d).is_empty()):
 			var c := Vector2i(int(p["pos"].x / tile), int(p["pos"].y / tile))
 			for dx in range(-1, 2):
 				bloq[c + Vector2i(dx, 0)] = true
@@ -591,6 +764,55 @@ func empurrar_para_dentro(pos: Vector2) -> Vector2:
 			if d == 0.0:
 				break
 	return _centro(melhor.x, melhor.y)
+
+## O ponto `p` cai sobre o sprite de uma árvore, pilar, tumba ou verga (com `folga` px de margem)? O encontro que nasce
+## ali parece sair do prop, ou fica atrás dele; o sorteio dos encontros evita esses pontos. Sem sprites colocados
+## (testes sem tela), nenhum ponto cai.
+func sob_sprite_alto(p: Vector2, folga := 20.0) -> bool:
+	for r in _sprites_altos:
+		if r.grow_individual(-r.size.x * 0.1, 0.0, -r.size.x * 0.1, 0.0).grow(folga).has_point(p):
+			return true
+	return false
+
+## `n` pontos livres a `raio` px de `centro` para os integrantes de um encontro (`@guarda`), bem espalhados: o primeiro
+## sai do `rng` da corrida (determinístico) e cada seguinte é a célula livre mais longe dos já escolhidos. Pontos sob o
+## sprite de um prop alto (`sob_sprite_alto`) ficam de fora, a não ser que sejam os únicos. Com menos células livres
+## que integrantes, o excedente forma um anel curto em volta de pontos já usados; sem célula livre perto, parte da
+## mais próxima.
+func pontos_livres_perto(centro: Vector2, raio: float, n: int, rng: RandomNumberGenerator) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	if n <= 0:
+		return out
+	var cand: Array[Vector2] = []
+	for c in celulas_livres:
+		var p := _centro(c.x, c.y)
+		if p.distance_to(centro) <= raio:
+			cand.append(p)
+	var descobertos: Array[Vector2] = []
+	for q in cand:
+		if not sob_sprite_alto(q):
+			descobertos.append(q)
+	if not descobertos.is_empty():
+		cand = descobertos
+	if cand.is_empty():
+		cand.append(empurrar_para_dentro(centro))
+	out.append(cand[rng.randi_range(0, cand.size() - 1)])
+	while out.size() < n:
+		if out.size() >= cand.size():
+			var base: Vector2 = out[out.size() % cand.size()]
+			out.append(base + Vector2.from_angle(TAU * float(out.size()) / float(n)) * tile * 0.45)
+			continue
+		var melhor: Vector2 = cand[0]
+		var d_melhor := -1.0
+		for q in cand:
+			var d := INF
+			for o in out:
+				d = minf(d, o.distance_squared_to(q))
+			if d > d_melhor:
+				d_melhor = d
+				melhor = q
+		out.append(melhor)
+	return out
 
 ## Pontos de nascimento fora da área vista (`vista`, em px), no anel entre `margem_min` e `margem_max` px além dela.
 ## Sem célula no anel (canto do mapa), usa as livres mais perto dele. Sorteio pelo `rng` da corrida (determinístico).
@@ -658,7 +880,7 @@ func _tileset() -> TileSet:
 		for x in tex.get_width() / tile:
 			sr.create_tile(Vector2i(x, y))
 	ts.add_source(sr, 2)
-	var tg := _carregar_textura(ATLAS_GRAMA)
+	var tg := _carregar_textura(ATLAS_PEDREIRA if tema == "pedreira" else ATLAS_GRAMA)
 	if tg != null:
 		var sg := TileSetAtlasSource.new()
 		sg.texture = tg
@@ -700,6 +922,8 @@ func colocar_props(alvo: Node2D) -> void:
 		spr.flip_h = p["flip"]
 		if p["id"] in ["tree_dry_orange", "bush_dry_red"]:
 			spr.modulate = Color(0.72, 0.68, 0.68)  # laranja e vermelho mais calmos, para inimigos e projéteis saltarem
+		elif String(p["id"]).begins_with("rock_"):
+			spr.modulate = Color(0.62, 0.6, 0.66)  # pedras mais escuras: o cinza claro chapado saltava do gramado
 		elif String(p["id"]).begins_with("tree_"):
 			spr.modulate = Color(0.8, 0.77, 0.76)  # copas de fundo menos saturadas
 		if spr.flip_h:
@@ -712,6 +936,11 @@ func colocar_props(alvo: Node2D) -> void:
 		var pe: Vector2 = p["pos"] + Vector2(0, tile * 0.5)
 		var ap: float = Ancoragem.apoio(p["id"], tex, d, arte)
 		var tipo: String = Ancoragem.tipo(p["id"])
+		var esc_p := float(d["escala"])
+		if tipo in ["arvore", "solido", "aereo"] and tex.get_height() * esc_p >= tile * 1.1:
+			var larg_p := tex.get_width() * esc_p
+			var esq_p := (larg_p - float(arte["pivo_x"]) * esc_p) if p["flip"] else float(arte["pivo_x"]) * esc_p
+			_sprites_altos.append(Rect2(pe.x - esq_p, pe.y - float(arte["pivo_y"]) * esc_p, larg_p, tex.get_height() * esc_p))
 		var no := Node2D.new()
 		no.position = pe - Vector2(0, ap)
 		spr.position = Vector2(0, ap)
@@ -728,17 +957,44 @@ func colocar_props(alvo: Node2D) -> void:
 			add_child(no)
 		else:
 			alvo.add_child(no)
-			if tipo == "folhagem":
-				_ocultaveis.append({"no": no, "spr": spr, "meia": tex.get_width() * float(d["escala"]) * 0.5, "alt": tex.get_height() * float(d["escala"])})
+			if Ancoragem.ocultavel(p["id"]):
+				_ocultaveis.append({"no": no, "spr": spr, "meia": tex.get_width() * float(d["escala"]) * 0.5, "alt": tex.get_height() * float(d["escala"]), "alfa": 0.5 if tipo == "aereo" else 0.55})
 		k += 1
 
-var _ocultaveis: Array = []  # arbustos: {no, spr, meia, alt}; ficam semitransparentes com alguém atrás
+const Culling = preload("res://scripts2d/culling_2d.gd")
+var _ocultaveis: Array = []  # arbustos e pórticos: {no, spr, meia, alt, alfa}; ficam semitransparentes com alguém atrás
 
 ## Arbusto na frente do personagem fica a 55% de alfa enquanto ele está atrás (decisão do Jev, 1/11), para o
 ## corpo não sumir atrás de uma moita de meio corpo. Árvores, pilares e tumbas altas não mudam: sumir atrás
 ## delas é natural. O personagem é o `player` da corrida ou, nas ferramentas de captura, quem estiver no
 ## grupo `arqueiro`.
+## Agrupa em blocos a decoração estática (contêineres com centenas de filhos) para o renderizador não percorrer
+## tudo fora da tela. Chamado pelo clima, depois de ele ter achado a vegetação balançante. Só com tela.
+func agrupar_estatico() -> void:
+	if _blocos_ativos:
+		return
+	_blocos_ativos = true
+	for c in get_children():
+		if c.get_class() == "Node2D" and c.get_child_count() >= 300 and not (c as Node2D).y_sort_enabled:
+			_blocos.append_array(Culling.agrupar(c))
+	_vista_blocos()
+
+var _blocos: Array = []
+var _blocos_ativos := false
+var _quadro_blocos := 0
+
+func _vista_blocos() -> void:
+	var vp := get_viewport()
+	if vp == null:
+		return
+	var r: Rect2 = get_canvas_transform().affine_inverse() * vp.get_visible_rect()
+	Culling.atualizar(_blocos, r)
+
 func _process(delta: float) -> void:
+	if not _blocos.is_empty():
+		_quadro_blocos += 1
+		if _quadro_blocos % 2 == 0:
+			_vista_blocos()
 	if _ocultaveis.is_empty():
 		return
 	var pl: Node2D = null
@@ -755,9 +1011,25 @@ func _process(delta: float) -> void:
 		var dy := no.global_position.y - pp.y
 		var atras: bool = dy > 0.0 and dy < o["alt"] * 0.9 and absf(pp.x - no.global_position.x) < o["meia"] + 10.0
 		var spr: Sprite2D = o["spr"]
-		var alvo_a := 0.55 if atras else 1.0
+		var alvo_a: float = float(o["alfa"]) if atras else 1.0
 		if absf(spr.modulate.a - alvo_a) > 0.01:
 			spr.modulate.a = move_toward(spr.modulate.a, alvo_a, delta * 5.0)
+
+## Retângulos de colisão extras de um prop vazado (coluna `pes` de props_2d.csv: "x0:y0:x1:y1|x0:y0:x1:y1"), em px a partir
+## do pivô (centro da borda de baixo do sprite), y negativo para cima. Sem a coluna ou vazia, não há pés.
+static func pes_do_prop(d: Dictionary) -> Array:
+	var out: Array = []
+	var txt: String = String(d.get("pes", ""))
+	if txt == "":
+		return out
+	for parte in txt.split("|"):
+		var q := parte.split(":")
+		if q.size() != 4:
+			continue
+		var a := Vector2(float(q[0]), float(q[1]))
+		var b := Vector2(float(q[2]), float(q[3]))
+		out.append(Rect2(Vector2(minf(a.x, b.x), minf(a.y, b.y)), Vector2(absf(b.x - a.x), absf(b.y - a.y))))
+	return out
 
 ## Altura do ponto de apoio do prop (px acima do pé), via ancoragem_2d.gd; 0 se faltar arte ou definição.
 func _apoio_prop(id: String) -> float:

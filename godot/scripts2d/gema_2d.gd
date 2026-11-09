@@ -13,12 +13,17 @@ var ima := 140.0
 var pegar := 24.0
 var velocidade := 520.0
 var atraida := false      # true: voa para o jogador de qualquer distância (onda vencida, fim da fase)
+var fixo := false         # baú do bolsão (`@bolsao`): fica no lugar, sem ímã; só abre quando o jogador chega nele
 var _t := 0.0
+static var _tex_bolsao: Texture2D
 
-func setup(t: String, v: int, pos: Vector2, jogador: Node2D, cfg: Dictionary) -> void:
+const ARTE_BOLSAO := "res://art2d/props/bau_bolsao.png"
+
+func setup(t: String, v: int, pos: Vector2, jogador: Node2D, cfg: Dictionary, fixar := false) -> void:
 	tipo = t
 	valor = v
-	global_position = pos + Vector2(randf_range(-10.0, 10.0), randf_range(-10.0, 10.0))
+	fixo = fixar
+	global_position = pos if fixar else pos + Vector2(randf_range(-10.0, 10.0), randf_range(-10.0, 10.0))
 	alvo = jogador
 	ima = float(cfg.get("gem_magnet_radius", ima)) * (1.6 if tipo != "xp" else 1.0)
 	pegar = float(cfg.get("gem_pickup_radius", pegar))
@@ -37,7 +42,7 @@ func _physics_process(delta: float) -> void:
 		coletada.emit(self)
 		queue_free()
 		return
-	if atraida or d <= ima:
+	if not fixo and (atraida or d <= ima):
 		atraida = true   # pegou no ímã: não para mais
 		global_position += para / maxf(d, 0.001) * minf(d, (velocidade + _t * 60.0) * delta)
 
@@ -45,6 +50,11 @@ func _draw() -> void:
 	var sobe := sin(_t * 4.0) * 2.0
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	draw_circle(Vector2(0, 4), 7.0 if tipo == "xp" else 14.0, Color(0, 0, 0, 0.3))
+	if tipo == "bau" and fixo and _arte_bolsao() != null:
+		var arte := _arte_bolsao()
+		draw_texture(arte, Vector2(-arte.get_width() / 2.0, -arte.get_height()))   # pivô na base; o brilho é por código
+		draw_circle(Vector2(0, -arte.get_height() * 0.5), 26.0, Color(1.0, 0.8, 0.3, 0.1 + 0.05 * sin(_t * 3.0)))
+		return
 	if tipo == "bau":
 		var r := Rect2(-13, -18 + sobe, 26, 18)
 		draw_rect(r, Color(0.36, 0.22, 0.12))
@@ -67,3 +77,9 @@ func _draw() -> void:
 	draw_circle(Vector2(0, sobe - 6), s * 1.9, Color(c, 0.15))
 	draw_colored_polygon(pts, c)
 	draw_polyline(pts + PackedVector2Array([pts[0]]), c.lightened(0.5), 1.5)
+
+## Arte do baú do bolsão (art2d/props/bau_bolsao.png); null enquanto não existe (aí vale o desenho provisório).
+static func _arte_bolsao() -> Texture2D:
+	if _tex_bolsao == null and ResourceLoader.exists(ARTE_BOLSAO):
+		_tex_bolsao = load(ARTE_BOLSAO)
+	return _tex_bolsao

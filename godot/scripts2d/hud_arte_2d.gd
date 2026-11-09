@@ -780,8 +780,8 @@ static func slot_mini(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float,
 ## Tecla no canto do slot: plaquinha escura com letra clara de 12 px.
 static func tecla_canto(c: CanvasItem, r: Rect2, tecla: String) -> void:
 	var larg := ThemeDB.fallback_font.get_string_size(tecla, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 6.0
-	c.draw_rect(Rect2(r.position + Vector2(2, r.size.y - 16.0), Vector2(larg, 14.0)), Color(0, 0, 0, 0.75))
-	texto(c, r.position + Vector2(5, r.size.y - 4.0), tecla, 12, Color(1, 0.95, 0.8))
+	c.draw_rect(Rect2(r.position + Vector2(2, r.size.y - 20.0), Vector2(larg, 14.0)), Color(0, 0, 0, 0.75))
+	texto(c, r.position + Vector2(5, r.size.y - 8.0), tecla, 12, Color(1, 0.95, 0.8))
 
 ## Encaixe vazio: vão escuro com moldura apagada e a tecla.
 static func encaixe_mini(c: CanvasItem, r: Rect2, tecla: String) -> void:
@@ -836,4 +836,16 @@ static func barra_chefe_fina(c: CanvasItem, cx: float, y: float, largura: float,
 		var x := r.position.x + r.size.x * (float(p) / 100.0 if float(p) > 1.0 else float(p))
 		c.draw_line(Vector2(x, r.position.y - 1.0), Vector2(x, r.end.y + 1.0), Color(1, 1, 1, 0.6), 1.0)
 	c.draw_polyline(_fechar(forma), _c("metal_claro"), 1.5)
+	return r
+
+## Nome do elite (ou do chefe) sobre a ponta esquerda da barra: placa escura de cantos chanfrados atrás do texto, para ler
+## sobre qualquer fundo (a verga clara do portão de pedra, a rocha). `base_y` é a linha de base do texto; a placa assenta
+## na borda de cima da barra (`base_y + 4`). Devolve o retângulo da placa.
+static func placa_nome(c: CanvasItem, x: float, base_y: float, s: String, tam: int, cor: Color) -> Rect2:
+	var larg := ThemeDB.fallback_font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1.0, tam).x
+	var r := Rect2(x, base_y - tam - 3.0, larg + 18.0, tam + 7.0)
+	var forma := octogono(r, 0.28)
+	c.draw_colored_polygon(forma, Color(0.03, 0.02, 0.04, 0.92))
+	c.draw_polyline(_fechar(forma), _c("metal_medio"), 1.5)
+	texto(c, Vector2(r.position.x + 9.0, base_y), s, tam, cor)
 	return r

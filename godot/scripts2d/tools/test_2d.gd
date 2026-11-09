@@ -6,6 +6,7 @@ extends SceneTree
 const Csv = preload("res://scripts2d/csv2d.gd")
 const SpriteLoader = preload("res://scripts2d/sprite_loader.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
+const Terreno = preload("res://scripts2d/terreno_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 const GuerreiroTestes = preload("res://scripts2d/tools/test_guerreiro_2d.gd")
@@ -55,8 +56,11 @@ func _testar() -> void:
 	await GuerreiroTestes.new(self, check).rodar()
 	await _testar_habilidades_arqueiro()
 	await _testar_fisica_habilidades()
+	await _testar_leque_skills()
 	await AutocastTestes.new(self, check).rodar()
 	await HordaTestes.new(self, check).rodar()
+	await preload("res://scripts2d/tools/test_fases_2d.gd").new(self, check).rodar()   # fases, desbloqueio e elite do portão (doc 34)
+	preload("res://scripts2d/tools/test_pedreira_2d.gd").new(self, check).rodar()   # mapa, terreno, portão e ondas da Pedreira (doc 35)
 	await _testar_hud_slots()
 
 func _testar_audio_e_ui() -> void:
@@ -163,6 +167,7 @@ func _testar_salas() -> void:
 			check(sala.posicao_portal != Vector2.ZERO and sala.posicao_chefe != Vector2.ZERO, "%s tem lugar do chefe G e portal X" % r["room"])
 			check(sala.celulas_livres.size() > sala.colunas * sala.linhas * 0.35, "%s: ao menos 35%% do mapa livre para nascer" % r["room"])
 			check(sala.colunas * sala.linhas >= 24 * 13 * 25 * 2, "%s: área de ao menos 50 salas antigas" % r["room"])
+			_testar_espinha_do_mapa(sala, r["room"])
 		else:
 			check(sala.colunas == 24 and sala.linhas == 13, "%s tem 24x13" % r["room"])
 			check(sala.celulas_porta.size() > 0, "%s tem porta" % r["room"])
@@ -179,12 +184,86 @@ func _testar_salas() -> void:
 		check(ok_props, "%s: props com arte, definição e porta livre" % r["room"])
 		sala.free()
 
+## Espinha da fase 1 (tools/mapas/marcos_fase1.py): estrada de pedra larga do início ao portão da arena, uma bifurcação
+## curta que leva ao bolsão do baú, e os marcos de cada trecho com luz própria (a verga do portão fica sobre dois pilares).
+func _testar_espinha_do_mapa(sala, nome: String) -> void:
+	var t := float(sala.tile)
+	check(sala.caminhos.size() >= 2, "%s: estrada principal e a trilha do bolsão" % nome)
+	if sala.caminhos.size() < 2:
+		return
+	var estrada: Dictionary = sala.caminhos[0]
+	var pts: Array = estrada["pts"]
+	check(float(estrada["larg"]) >= 2.0, "%s: estrada principal larga (%.1f tiles)" % [nome, estrada["larg"]])
+	check(pts[0].distance_to(sala.spawn_jogador) <= 8.0 * t, "%s: a estrada começa no arqueiro" % nome)
+	check(pts[pts.size() - 1].distance_to(sala.posicao_chefe) <= 14.0 * t, "%s: a estrada chega à arena do Guardião" % nome)
+	var linha := Terreno.spline(PackedVector2Array(pts), 16.0)
+	var trilha: Dictionary = sala.caminhos[1]
+	var tpts: Array = trilha["pts"]
+	var d_boca := INF
+	for q in linha:
+		d_boca = minf(d_boca, q.distance_to(tpts[0]))
+	check(d_boca <= 0.5 * t and float(trilha["larg"]) < float(estrada["larg"]), "%s: a trilha sai da estrada, mais estreita" % nome)
+	check(sala.bolsoes.size() == 1 and tpts[tpts.size() - 1].distance_to(sala.bolsoes[0]["pos"]) <= 5.0 * t, "%s: a trilha leva ao baú do bolsão" % nome)
+	var portao := Vector2.ZERO
+	var pilares_inicio := 0
+	for pr in sala.props:
+		if pr["id"] == "arco_portal":
+			portao = pr["pos"]
+		elif pr["id"] == "pillar_runes" and pr["pos"].distance_to(sala.spawn_jogador) <= 10.0 * t:
+			pilares_inicio += 1
+	check(portao != Vector2.ZERO and portao.distance_to(pts[pts.size() - 1]) <= 10.0 * t, "%s: portão com verga antes da arena" % nome)
+	check(pilares_inicio == 2, "%s: dois pilares com glifo no início (%d)" % [nome, pilares_inicio])
+	check(absf(float(sala.brilho_estrada) - 1.1) < 0.001, "%s: as lajes da estrada principal levam 10%% mais luz (@brilho_estrada %.2f)" % [nome, sala.brilho_estrada])
+	# o brilho está nos pixels da textura da estrada (o `color` de um Polygon2D não passa de 1.0 e não clareia nada)
+	var img_base: Image = Terreno._textura_lajes().get_image()
+	var img_clara: Image = Terreno._textura_lajes_claras(float(sala.brilho_estrada)).get_image()
+	var lum_base := 0.0
+	var lum_clara := 0.0
+	for py in img_base.get_height():
+		for px in img_base.get_width():
+			lum_base += img_base.get_pixel(px, py).get_luminance()
+			lum_clara += img_clara.get_pixel(px, py).get_luminance()
+	check(lum_clara / lum_base > 1.08 and lum_clara / lum_base < 1.12, "%s: a textura da estrada principal é ~10%% mais clara que a das outras lajes (x%.3f)" % [nome, lum_clara / lum_base])
+	check(sala.luzes.size() >= 8 and sala.guardas.size() >= 5, "%s: luzes dos marcos e encontros (%d, %d)" % [nome, sala.luzes.size(), sala.guardas.size()])
+	# Estrada nunca vazia: os encontros que estão na estrada (o do bolsão fica longe dela) ficam a no máximo ~24 tiles um do
+	# outro (6 s a 260 px/s), e o primeiro a menos de 30 tiles do começo dela; o respiro e a avenida final são o descanso.
+	var posicoes: Array[float] = []
+	for g in sala.guardas:
+		var d_min := INF
+		var s_min := 0.0
+		var andado := 0.0
+		for k in linha.size():
+			if k > 0:
+				andado += linha[k - 1].distance_to(linha[k])
+			var d: float = linha[k].distance_to(g["pos"])
+			if d < d_min:
+				d_min = d
+				s_min = andado
+		if d_min <= 4.0 * t:
+			posicoes.append(s_min / t)
+	posicoes.sort()
+	var maior_vazio := posicoes[0] if not posicoes.is_empty() else INF
+	for k in range(1, posicoes.size()):
+		maior_vazio = maxf(maior_vazio, posicoes[k] - posicoes[k - 1])
+	check(posicoes.size() >= 6 and maior_vazio <= 30.0 and posicoes[1] - posicoes[0] <= 26.0, "%s: encontros ao longo da estrada, sem trecho vazio maior que ~6 s (%d, maior vazio %.1f tiles)" % [nome, posicoes.size(), maior_vazio])
+
 func _testar_feel() -> void:
 	var Feel = load("res://scripts2d/feel_2d.gd")
 	for k in ["hit_stop_hit_ms", "hit_stop_kill_ms", "shake_player_amp", "enemy_knockback", "dmg_number_time"]:
 		check(Feel.cfg().has(k), "feel.csv tem " + k)
 	for r in Csv.rows("res://data2d/enemies.csv"):
 		check(float(r["windup"]) >= 0.0 and float(r["windup"]) <= 1.0, "%s: windup entre 0 e 1 s" % r["id"])
+		check(r.has("hp_bar_dy") and float(r["hp_bar_dy"]) >= 0.0 and float(r["hp_bar_dy"]) <= 12.0, "%s: hp_bar_dy (barra de vida mais alta) entre 0 e 12 px" % r["id"])
+	check(Csv.enemy("crypt_bat")["hp_bar_dy"] == 4.0, "a barra de vida do morcego fica 4 px mais alta")
+	# números de dano em fonte pixel (Jersey 15, 20 e 25): os três arquivos importam como FontFile e o degrau vem do tamanho pedido
+	var NumeroDano = load("res://scripts2d/damage_number_2d.gd")
+	for caminho in NumeroDano.FONTES:
+		check(load(caminho) is FontFile, "fonte pixel dos números de dano importada (%s)" % String(caminho).get_file())
+	var esc_px: float = float(Feel.cfg()["dmg_pixel_escala"])
+	var t_normal: float = float(Feel.cfg()["dmg_number_size"]) * esc_px
+	var t_forte: float = float(Feel.cfg()["dmg_number_size_strong"]) * esc_px
+	var t_fatal: float = float(Feel.cfg()["dmg_number_size_kill"]) * esc_px
+	check(NumeroDano.degrau_de(t_normal) == 0 and NumeroDano.degrau_de(t_forte) == 1 and NumeroDano.degrau_de(t_fatal) == 1 and NumeroDano.degrau_de(t_fatal * 1.4) == 2, "número de dano: normal na fonte 15, forte e fatal na 20, fatal em alvo grande na 25 (%.1f, %.1f, %.1f)" % [t_normal, t_forte, t_fatal])
 
 ## O inimigo corpo a corpo avisa antes de bater: o dano só sai depois do windup, e a esquiva a tempo evita o golpe.
 func _testar_telegrafo() -> void:
@@ -1152,7 +1231,7 @@ func _fisica_habilidades() -> void:
 	for r in Csv.rows("res://data2d/ancoras_2d.csv"):
 		if r["id"] == "arqueiro" and r["anim"] == "attack":
 			linhas[int(r["linha"])] = true
-			check(float(r["y"]) < -30.0, "boca do arco da linha %s fica acima do peito" % r["linha"])
+			check(float(r["y"]) < -25.0, "boca do arco da linha %s fica acima do peito" % r["linha"])
 	check(linhas.size() == 5, "ancoras_2d.csv tem as 5 linhas do ataque do arqueiro (%d)" % linhas.size())
 	var m := Node2D.new()
 	root.add_child(m)
@@ -1347,6 +1426,102 @@ func _testar_habilidades_arqueiro() -> void:
 	m2.queue_free()
 	await physics_frame
 
+## Doc 36: as cinco skills novas acertam quem está onde elas agem (status próprio de cada uma) e as quatro afinidades
+## mudam a flecha básica (velocidade, perfuração e status), sem mexer no tiro das habilidades.
+func _testar_leque_skills() -> void:
+	var Efeitos = load("res://scripts2d/efeitos_arqueiro_2d.gd")
+	var Afin = load("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
+	var rows: Array = Csv.rows("res://data2d/habilidades_arqueiro.csv")
+	var por_id := {}
+	for r in rows:
+		por_id[r["id"]] = r
+	var tags := {}
+	for r in Csv.rows("res://data2d/habilidades_tags.csv"):
+		tags[r["id"]] = r["tags"]
+	var miras := {}
+	for r in Csv.rows("res://data2d/habilidades_mira.csv"):
+		if r["classe"] == "arqueiro":
+			miras[r["id"]] = r["mira"]
+	# skill -> [status esperado, onde pôr os inimigos (px à direita do arqueiro)]
+	var casos := {"toxic_tornado": ["veneno", 420.0], "ice_comet": ["lentidao", 420.0], "frost_nova": ["lentidao", 150.0],
+		"lightning_rod": ["choque", 380.0], "fire_serpent": ["queimadura", 300.0],
+		"thunder_burst": ["choque", 150.0], "sky_storm": ["choque", 420.0], "storm_orbs": ["choque", 90.0],
+		"plague_spread": ["veneno", 300.0], "toxic_mines": ["veneno", 350.0], "acid_geyser": ["veneno", 420.0],
+		"icicle_lance": ["lentidao", 300.0], "ice_spikes": ["lentidao", 300.0], "blizzard": ["lentidao", 150.0],
+		"flame_breath": ["queimadura", 150.0], "ring_of_fire": ["queimadura", 150.0], "fuse_bomb": ["queimadura", 300.0]}
+	for id in casos:
+		check(por_id.has(id) and tags.has(id) and miras.has(id), "%s está no CSV, nas tags e no autocast" % id)
+		if not por_id.has(id):
+			continue
+		var mundo := Node2D.new()
+		root.add_child(mundo)
+		var p = load("res://scripts2d/player_2d.gd").new()
+		p.god_mode = true
+		p.auto_aim = Vector2.RIGHT
+		p.autocast = false   # sem o tiro básico, para o status vir só da skill
+		mundo.add_child(p)
+		var es: Array = []
+		for k in 3:
+			var e = load("res://scripts2d/enemy_2d.gd").new()
+			mundo.add_child(e)
+			e.setup("hollow_sentinel", p, p.global_position + Vector2(casos[id][1] + 30 * k, 20 * (k - 1)))
+			e.hp = 100000.0
+			e.hp_max = 100000.0
+			e.stats["aggro"] = 0.0
+			es.append(e)
+		await physics_frame
+		p.auto_aim = Vector2.ZERO   # a mira forçada já serviu para apontar; sem ela o jogador não atira sozinho
+		var ok: bool = Efeitos.executar(por_id[id]["efeito"], p, _def_arqueiro(por_id[id]), 1, Vector2.RIGHT)
+		check(ok, "%s executa" % id)
+		var st: String = casos[id][0]
+		await _esperar(func(): return es.any(func(e): return e.tem_status(st)), 4.0)
+		check(es.any(func(e): return e.tem_status(st)), "%s aplica %s em quem está na área" % [id, st])
+		check(es.any(func(e): return e.hp < 100000.0), "%s causa dano" % id)
+		mundo.queue_free()
+		await physics_frame
+	# afinidades: cada Eco muda a flecha básica
+	var esperado := {"eco_trovao": "choque", "eco_peste": "veneno", "eco_gelo": "lentidao", "eco_cinzas": "queimadura"}
+	check(Afin.ids().size() == 4, "quatro afinidades no CSV (%d)" % Afin.ids().size())
+	for id in Afin.ids():
+		check(Csv.t("skill.%s.name" % id) != "skill.%s.name" % id, "texto da afinidade %s" % id)
+		var mundo := Node2D.new()
+		root.add_child(mundo)
+		var p = load("res://scripts2d/player_2d.gd").new()
+		p.god_mode = true
+		p.autocast = false
+		mundo.add_child(p)
+		var e = load("res://scripts2d/enemy_2d.gd").new()
+		mundo.add_child(e)
+		e.setup("hollow_sentinel", p, p.global_position + Vector2(140, 0))
+		e.hp = 100000.0
+		e.hp_max = 100000.0
+		e.stats["aggro"] = 0.0
+		var e2 = load("res://scripts2d/enemy_2d.gd").new()   # vizinho para o salto do Trovão
+		mundo.add_child(e2)
+		e2.setup("hollow_sentinel", p, p.global_position + Vector2(200, 60))
+		e2.hp = 100000.0
+		e2.hp_max = 100000.0
+		e2.stats["aggro"] = 0.0
+		await physics_frame
+		var neutra = p.lancar_flecha(Vector2.RIGHT)
+		var vel_neutra: float = neutra.velocity.length()
+		neutra.queue_free()
+		p.afinidade = id
+		var f = p.lancar_flecha(Vector2.RIGHT)
+		var d: Dictionary = Afin.def_de(p, id)
+		check(is_equal_approx(f.velocity.length(), vel_neutra * d["vel"]), "%s muda a velocidade da flecha (x%.2f)" % [id, d["vel"]])
+		check(f.pierce == int(p.stats["arrow_pierce"]) + int(d["perfura"]), "%s ajusta a perfuração" % id)
+		var st2: String = esperado[id]
+		await _esperar(func(): return e.tem_status(st2), 2.0)
+		check(e.tem_status(st2), "%s aplica %s ao acertar" % [id, st2])
+		if id == "eco_trovao":
+			await _esperar(func(): return e2.tem_status("choque"), 1.0)
+			check(e2.tem_status("choque"), "Eco do Trovão salta para o vizinho")
+		var g = p.lancar_flecha(Vector2.RIGHT, 1.0, 0, 1.0, {"dano": 1.0})
+		check(is_equal_approx(g.velocity.length(), vel_neutra), "%s não mexe nas flechas das habilidades" % id)
+		mundo.queue_free()
+		await physics_frame
+
 ## HUD: barra de slots (2 pequenos + 4 ativas) dentro da tela, sem sobrepor os globos; ativas vazias no arqueiro e
 ## preenchidas pelas skills aprendidas do guerreiro, com segundos de recarga.
 func _testar_hud_slots() -> void:
@@ -1415,6 +1590,8 @@ func _testar_ancoragem() -> void:
 		arte[r["id"]] = r
 	var flutuando: Array = []
 	for id in arte:
+		if Ancoragem.tipo(id) == "aereo":
+			continue   # verga sobre dois pilares: o pivô é a linha de chão deles, bem abaixo da pedra (o sprite não toca o chão)
 		var tex: Texture2D = load(arte[id]["arquivo"])
 		if tex == null:
 			continue
@@ -1422,6 +1599,21 @@ func _testar_ancoragem() -> void:
 		if absf(float(arte[id]["pivo_y"]) - base_px) > 6.0:
 			flutuando.append(id)
 	check(flutuando.is_empty(), "pivô de todo prop fica na base opaca do sprite %s" % str(flutuando))
+	var tex_arco: Texture2D = load(arte["arco_portal"]["arquivo"])
+	check(Ancoragem.tipo("arco_portal") == "aereo" and Ancoragem.apoio("arco_portal", tex_arco, {"escala": "1", "solido_l": "0", "solido_a": "0"}, arte["arco_portal"]) == 0.0, "arco do portão é aéreo: y-sort pela linha de chão dos pilares")
+	# a verga projeta só sombra no chão: a silhueta deitada e a faixa colada na borda de baixo (dois decalques com o shader
+	# de sombra); contato, terra e tufos ficam de fora
+	var chao_arco := Node2D.new()
+	var atras_arco := Node2D.new()
+	var frente_arco := Node2D.new()
+	Ancoragem.prender(chao_arco, atras_arco, frente_arco, "arco_portal", tex_arco, {"escala": "1", "solido_l": "0", "solido_a": "0"}, arte["arco_portal"], false, Vector2(100, 100), true, 1)
+	var decalques_ok := chao_arco.get_child_count() == 2
+	for dec in chao_arco.get_children():
+		decalques_ok = decalques_ok and dec is Sprite2D and (dec as Sprite2D).material != null
+	check(decalques_ok and atras_arco.get_child_count() == 0 and frente_arco.get_child_count() == 0, "arco do portão projeta a sombra de 1 tom no chão e a faixa sob a verga (dois decalques, sem contato nem tufos)")
+	chao_arco.free()
+	atras_arco.free()
+	frente_arco.free()
 	var dir := DirAccess.open("res://data2d/rooms")
 	var salas: Array = []
 	for f in dir.get_files():
@@ -1445,8 +1637,10 @@ func _testar_ancoragem() -> void:
 		for p in room.props:
 			if not room._props_arte.has(p["id"]):
 				continue
-			n_props += 1
 			var t: String = Ancoragem.tipo(p["id"])
+			if t == "aereo":
+				continue   # só a sombra projetada, sem contato (ver ancoragem_2d.gd; conferido acima)
+			n_props += 1
 			if t == "solido" or t == "folhagem":
 				var d: Dictionary = room._props_def[p["id"]]
 				var tex: Texture2D = room._carregar_textura(room._props_arte[p["id"]]["arquivo"])

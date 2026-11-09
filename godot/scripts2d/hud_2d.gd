@@ -12,6 +12,7 @@ var sala := 1
 var total_salas := 1
 var mensagem := ""
 var chefe: Node2D
+var chefe_nome := "hud.chefe_nome"   # chave de loc do nome sobre a barra do chefe (o elite do portão usa enemy.<id>.name)
 var upgrades: RefCounted
 var tempo := 0.0
 var _ctl: Control
@@ -45,11 +46,17 @@ func _desenhar() -> void:
 	if _rel < 5.0 and estado_ajuda_visivel():
 		var al := clampf((5.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
-		Arte.texto(_ctl, Vector2(0, vp.y - 94), Csv.t("hud.help"), 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		var ajuda := Csv.t("hud.help")
+		# sem faixa: ela tapava os galhos e props do chão; o contorno escuro de 1 px em 4 direções mantém a leitura
+		var y_ajuda: float = vp.y - _lay["dica_base"]
+		for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+			_ctl.draw_string(ThemeDB.fallback_font, Vector2(0, y_ajuda) + d, ajuda, HORIZONTAL_ALIGNMENT_CENTER, vp.x, 12, Color(0, 0, 0, al))
+		Arte.texto(_ctl, Vector2(0, y_ajuda), ajuda, 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
 		var w: float = _lay["chefe_largura"]
-		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, 22.0, w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
-		Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 6.0), Csv.t("hud.boss"), 13, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_LEFT, w)
+		# a barra do elite desce 20 px da faixa do topo e o nome ganha uma placa escura (a verga do portão é clara)
+		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, _lay["chefe_elite_y"], w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
+		Arte.placa_nome(_ctl, r.position.x, r.position.y - 6.0, Csv.t(chefe_nome), 13, Tema.cor("texto"))
 	if mensagem != "":
 		Arte.texto(_ctl, Vector2(0, vp.y * 0.3), mensagem, 32, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
@@ -179,7 +186,7 @@ func conteudo_slots() -> Dictionary:
 	var total := int(_lay["slot_total"])
 	var cdmax: float = jogador.stats.get("dodge_cooldown", 1.0)
 	var basicos: Array = [
-		{"icone": "tiro", "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
+		{"icone": (jogador.afinidade if ("afinidade" in jogador and jogador.afinidade != "") else "tiro"), "tecla": "hud.key.shoot", "recarga": jogador.recarga_tiro() if jogador.has_method("recarga_tiro") else 0.0, "cor": Tema.cor("destaque")},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(jogador.dodge_cd / maxf(cdmax, 0.01), 0.0, 1.0), "cor": Tema.cor("estamina")},
 	]
 	if jogador.has_method("slots_hud"):   # guerreiro: ícone do golpe

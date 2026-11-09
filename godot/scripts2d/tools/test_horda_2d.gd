@@ -32,6 +32,87 @@ func _escolher_tudo(run) -> int:
 		n += 1
 	return n
 
+## Marcos da fase 1: o baú do bolsão fica no lugar (sem ímã, nem no fim da onda) e cada encontro `@guarda` nasce
+## adormecido quando o jogador chega perto, acorda junto, vale a curva da onda atual vezes a força do mapa e fica fora
+## da conta do spawner.
+func _testar_marcos(run) -> void:
+	var p = run.player
+	var room = run.room
+	var baus: Array = t.get_nodes_in_group("coletaveis").filter(func(g): return g.fixo)
+	check.call(room.bolsoes.size() == 1 and baus.size() == 1, "marcos: o baú do bolsão está no chão desde o começo")
+	if baus.size() == 1:
+		var onde: Vector2 = baus[0].global_position
+		run.atrair_coletaveis()
+		await t.physics_frame
+		check.call(not baus[0].atraida and baus[0].global_position == onde, "marcos: o baú do bolsão não voa atrás do jogador")
+	check.call(not run._mult_onda.is_empty() and run._guardas_pend.size() == room.guardas.size(), "marcos: encontros à espera e curva da onda copiada do core")
+	var g0: Dictionary = room.guardas[0]
+	var partes: Array = String(g0["spec"]).split("|", false)
+	var esperados := 0
+	for parte in partes:
+		esperados += int(parte.split(":")[1])
+	p.global_position = g0["pos"] + Vector2(0, 700)   # dentro do alcance de nascer, fora do raio de acordar
+	run._guardas_t = 1.0
+	run._tick_guardas(0.0)
+	var meus: Array = t.get_nodes_in_group("hurtable").filter(func(e): return e.has_meta("guarda") and e.grupo_despertar == "guarda_0")   # o primeiro da lista nasce primeiro
+	check.call(meus.size() == esperados, "marcos: o encontro nasce com %d integrantes (%d)" % [esperados, meus.size()])
+	if meus.size() != esperados:
+		return
+	check.call(meus.all(func(e): return e.global_position.distance_to(g0["pos"]) <= float(run.config["guard_spread"]) + 32.0), "marcos: os integrantes nascem em volta do ponto do mapa")
+	# nenhum ponto sorteado, em nenhum dos encontros do mapa, cai sob o sprite alto de árvore, pilar, tumba ou verga
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var sob := 0
+	var sorteados := 0
+	for g in room.guardas:
+		var n := 0
+		for parte in String(g["spec"]).split("|", false):
+			n += int(parte.split(":")[1])
+		for q in room.pontos_livres_perto(g["pos"], float(run.config["guard_spread"]), n, rng):
+			sorteados += 1
+			if room.sob_sprite_alto(q):
+				sob += 1
+	check.call(room._sprites_altos.size() > 50 and sorteados > 0 and sob == 0, "marcos: os encontros nascem fora do sprite de árvores, pilares e vergas (%d de %d sob um sprite, %d sprites altos)" % [sob, sorteados, room._sprites_altos.size()])
+	var dorme: bool = meus.all(func(e): return e.raio_despertar > 0.0)
+	var vizinhos_dormem: bool = t.get_nodes_in_group("hurtable").filter(func(e): return e.has_meta("guarda") and not meus.has(e)).all(func(e): return e.raio_despertar > 0.0)
+	check.call(dorme and vizinhos_dormem, "marcos: o encontro nasce adormecido")
+	# guardas do mesmo tipo não nascem em fila de clones: cada irmão olha para um lado, respira em outro quadro, e só o segundo esqueleto leva o tom de ferrugem
+	var n_antes: int = run._guarda_n
+	run._nascer_guarda({"pos": room.spawn_jogador + Vector2(0, 260), "raio": 1.0, "forca": 1.0, "spec": "skeleton_soldier:3"})
+	var irmaos: Array = t.get_nodes_in_group("hurtable").filter(func(e): return e.has_meta("guarda") and e.grupo_despertar == "guarda_%d" % n_antes)
+	check.call(irmaos.size() == 3, "guardas: o encontro de teste nasce com 3 esqueletos (%d)" % irmaos.size())
+	if irmaos.size() == 3:
+		var olhares := {}
+		var quadros := {}
+		var ferrugem := 0
+		for e in irmaos:
+			olhares[posmod(int(round(e.facing.angle() / (PI / 4.0))), 8)] = true
+			quadros[e.sprite.frame] = true
+			ferrugem += 1 if e.sprite.self_modulate != Color.WHITE else 0
+		check.call(olhares.size() == 3 and quadros.size() == 3 and ferrugem == 1, "guardas: 3 esqueletos olham para %d lados, começam em %d quadros e só %d tem o tom de ferrugem" % [olhares.size(), quadros.size(), ferrugem])
+	for e in irmaos:
+		e.queue_free()
+	var e0 = meus[0]
+	var base: Dictionary = Csv.enemy(e0.stats["id"])
+	var mult: Dictionary = run._mult_onda
+	check.call(absf(e0.hp_max - float(base["hp"]) * float(mult["hp"]) * float(g0["forca"])) < 0.01, "marcos: vida do encontro = curva da onda x força do mapa (%.1f)" % e0.hp_max)
+	check.call(not run._guardas_pend.has(g0), "marcos: o encontro que nasceu sai da lista")
+	e0.take_damage(0.001)   # ferir um acorda o grupo dele
+	check.call(meus.all(func(e): return e.raio_despertar == 0.0), "marcos: ferir um acorda o encontro todo")
+	var outros: Array = t.get_nodes_in_group("hurtable").filter(func(e): return e.has_meta("guarda") and not meus.has(e))
+	check.call(outros.all(func(e): return e.raio_despertar > 0.0), "marcos: os outros encontros seguem dormindo")
+	var vivos_core := int(run.nucleo.ondas_estado()["alive"])
+	e0.take_damage(1.0e9)
+	check.call(int(run.nucleo.ondas_estado()["alive"]) == vivos_core, "marcos: morte de encontro não conta no spawner")
+	if baus.size() == 1:   # o baú do bolsão abre ao encostar: carta de baú, e ele some do chão
+		p.global_position = baus[0].global_position
+		await _esperar(func(): return run.ui.aberta, 3.0)
+		check.call(run.ui.aberta and run.ui.modo == "chest", "marcos: encostar no baú do bolsão abre a carta de baú")
+		_escolher_tudo(run)
+		await t.physics_frame
+		check.call(not is_instance_valid(baus[0]), "marcos: o baú do bolsão some depois de aberto")
+	p.global_position = room.spawn_jogador
+
 func rodar() -> void:
 	var antes: bool = RunScript.modo_etapas
 	RunScript.modo_etapas = false
@@ -74,6 +155,7 @@ func rodar() -> void:
 		if not e.has_meta("elite"):
 			curva_ok = curva_ok and absf(e.hp_max - Csv.enemy(e.stats["id"])["hp"] * float(c1["hp"])) < 0.01
 	check.call(curva_ok, "horda: vida com a curva da onda")
+	await _testar_marcos(run)
 	# Mortes soltam gemas; coletar sobe o nível e abre as cartas com ao menos uma de ataque.
 	var xp_total := 0
 	var n0: Dictionary = run.upgrades.nivel_estado()
@@ -91,7 +173,14 @@ func rodar() -> void:
 	check.call(xp_total > 0, "horda: mortes soltam gemas de XP")
 	await _esperar(func(): return run.ui.aberta, 3.0)
 	# A cada `skill_gem_every_levels` níveis vem uma gema de habilidade antes da carta de nível: escolhe e segue.
+	# A primeira gema do arqueiro é a escolha do Eco do básico (doc 36): quatro afinidades, e a escolha fica no jogador.
 	var gemas_nivel := 0
+	if run.ui.aberta and run.ui.modo == "afinidade":
+		check.call(run.ui._ids.size() == 4, "horda: a primeira gema oferece as quatro afinidades (%d)" % run.ui._ids.size())
+		gemas_nivel += 1
+		run.ui.escolher(1)
+		await t.physics_frame
+		check.call("afinidade" in run.player and run.player.afinidade == "eco_peste", "horda: o Eco escolhido fica no jogador (%s)" % str(run.player.get("afinidade")))
 	while run.ui.aberta and run.ui.modo == "gem" and gemas_nivel < 10:
 		gemas_nivel += 1
 		run.ui.escolher(0)

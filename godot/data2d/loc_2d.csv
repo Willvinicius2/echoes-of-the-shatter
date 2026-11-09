@@ -522,3 +522,48 @@ passivo.pre_herald.name,Pacto dos Arautos
 passivo.pre_herald.desc,Começa a corrida com +15% de dano dos Arautos
 passivo.pre_elem.name,Iniciado dos Elementos
 passivo.pre_elem.desc,Começa a corrida com +8% de dano em fogo, gelo, raio e veneno
+skill.toxic_tornado.name,Ciclone Pestilento
+skill.toxic_tornado.desc,"A flecha sobe e cai como um ciclone de miasma que anda atrás da horda, sopra os inimigos para fora, envenena e deixa poças"
+skill.ice_comet.name,Cometa Gélido
+skill.ice_comet.desc,"Um cometa de gelo cai do céu: fere, soma frio e deixa o chão gelado e rachado, lento para quem pisa"
+skill.frost_nova.name,Nova Gélida
+skill.frost_nova.desc,"Um anel de gelo explode do arqueiro em todas as direções, fere e gela quem alcança e lança lascas"
+skill.fire_serpent.name,Serpente de Brasa
+skill.fire_serpent.desc,"Uma chama serpenteia pelo chão atrás do inimigo mais perto, queima quem toca e deixa brasas no caminho"
+skill.lightning_rod.name,Haste Elétrica
+skill.lightning_rod.desc,"A flecha finca no chão e vira um para-raios: descarrega raios nos inimigos em volta enquanto durar"
+skill.eco_trovao.name,Eco do Trovão
+skill.eco_trovao.desc,"Flecha básica mais rápida; ao acertar, um arco salta para um vizinho e choca os dois"
+skill.eco_peste.name,Eco da Peste
+skill.eco_peste.desc,"Flecha básica mais lenta e pesada que atravessa um corpo e envenena tudo o que toca"
+skill.eco_gelo.name,Eco do Gelo
+skill.eco_gelo.desc,"Flecha básica de cristal: cada acerto soma frio; no quarto, o inimigo congela"
+skill.eco_cinzas.name,Eco das Cinzas
+skill.eco_cinzas.desc,"Flecha básica em chamas: +10% de dano, queima e deixa uma brasa no chão"
+upgrade.afinidade,Escolha o Eco do seu arco (vale pela corrida)
+ramo.afinidade.name,Ecos
+hud.afinidade,Eco escolhido: %s
+skill.thunder_burst.name,Trovoada
+skill.thunder_burst.desc,"Oito raios saem do arqueiro em estrela, em todas as direções, ferindo e chocando quem estiver no caminho"
+skill.sky_storm.name,Tempestade de Raios
+skill.sky_storm.desc,"Uma nuvem de tempestade se forma no ponto mirado e derruba colunas de raio do céu, uma por uma, sobre os inimigos"
+skill.storm_orbs.name,Orbes Tempestuosos
+skill.storm_orbs.desc,"Esferas elétricas giram em volta do arqueiro, ligadas por arcos, e chocam tudo o que encostar"
+skill.plague_spread.name,Contágio
+skill.plague_spread.desc,"A flecha infecta o alvo e o veneno pula dele para todos em volta; se ele morre, a peste passa ao mais próximo"
+skill.toxic_mines.name,Minas Tóxicas
+skill.toxic_mines.desc,"Planta minas de esporos no chão que estouram em nuvem de veneno quando um inimigo se aproxima"
+skill.acid_geyser.name,Gêiser Ácido
+skill.acid_geyser.desc,"Jatos de ácido brotam do chão sob os inimigos mais próximos, ferem, envenenam e atordoam"
+skill.icicle_lance.name,Lança de Gelo
+skill.icicle_lance.desc,"Uma lança de cristal cruza a linha à frente num instante, gela tudo no caminho e se estilhaça"
+skill.ice_spikes.name,Espinhos de Gelo
+skill.ice_spikes.desc,"Uma onda de espinhos de gelo brota do chão em linha, ferindo e gelando quem está em cima"
+skill.blizzard.name,Nevasca
+skill.blizzard.desc,"Uma tempestade de neve acompanha o arqueiro, ferindo e gelando todos em volta, a cada pulso"
+skill.flame_breath.name,Sopro Flamejante
+skill.flame_breath.desc,"O arqueiro cospe um cone de chamas que acompanha a mira e queima tudo à frente"
+skill.ring_of_fire.name,Anel de Fogo
+skill.ring_of_fire.desc,"Um círculo de chamas se acende no chão: quem cruza o anel queima enquanto ele durar"
+skill.fuse_bomb.name,Bomba-Rastilho
+skill.fuse_bomb.desc,"A flecha vira uma bomba de pavio no alvo; ao explodir, arma as bombas dos vizinhos em cadeia"
