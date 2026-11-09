@@ -1,10 +1,10 @@
 {
   "meta": {
     "jogo": "Echoes of the Shatter",
-    "atualizado_em": "2026-10-19",
+    "atualizado_em": "2026-11-09",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
-    "marco_atual": "Migração para o Godot 4 (.NET) em 20/10/2026: Unity arquivada em arquivo/unity-final, projeto remapeado, Cripta no Godot é o próximo passo. Antes: Região 1 e seus ajustes (PRs 25 a 34) integrados no master em 19/10: golpe devorado na barra, dicas dos Ecos, notas do core, Único da Mancha, trava de missão (desligada) e Fome/Mancha no idle. Tudo ainda sem compilar nem jogar no editor da Unity do dono; o PR #30 (DLL recompilada, EditMode 403/403 e PlayMode 44/44) espera o merge. Falta o teste no PC (A1 a A3, build dev3) e o Ato I inteiro da Etapa 4. Roadmap: contexto-do-jogo/08_trabalho-em-andamento/roadmap-atoI.md",
+    "marco_atual": "Jogo 2D top-down em pixel art no Godot 4 (GDScript, cliente em godot/scripts2d/), com o Arqueiro como foco da fatia vertical. Corrida roguelike com hordas na fase aberta, gemas de XP, cartas de nível, baú de elite e chefe; o personagem começa só com o ataque básico e libera habilidades (gemas) e passivas da partida ao subir de nível, sobre uma árvore de passivos permanente (raio, veneno, gelo, fogo). Área 1 do Ato I (estrada de pedra até a arena) fechada e Pedreira dos Ecos (área 2) com terreno aprovado; inimigos da área 2 pendentes por falta de saldo no PixelLab. Próximo: inimigos da Pedreira, elites e chefe em escala maior, meta-progressão com save e hub com craft (direção de 30/10: roguelike com hub, craft e exploração, sem MMO). A Unity e o visual 3D estão arquivados (arquivo/unity-final).",
     "legenda_estados": {
       "concluido": "Concluído",
       "nuvem": "Na nuvem",
@@ -13,8 +13,8 @@
       "pendente": "Pendente",
       "bloqueado": "Bloqueado"
     },
-    "destaque": "Teste o jogo: abra D:\\openclaude\\Builds\\Echoes_Cripta_dev\\EchoesOfTheShatter.exe",
-    "destaque_detalhe": "Build jogável com menu e escolha de herói (Arqueiro e Mago como prévia visual), Refúgio com a Ilsa (expedição) e o Tico (relatório), save com backups e expedição idle de ponta a ponta. Cripta e Refúgio com cenário pintado (26 peças) e fogo; inimigos pintados e animados; Guerreiro modular com armadura em peças; HUD com barra do chefe e fila de avisos. 238 EditMode e 11 PlayMode; cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada). Controles no LEIA-ME.txt; roteiro no docs/10. Agora com inventário completo (seção 4 do LEIA-ME): loot no chão com feixe de raridade, tela na tecla I com boneco modular, tooltip com comparação e valor de venda, Mochila 40 e Baú 100 [HIPÓTESE]. Em 17 e 18/10 o master recebeu animação rev1 a rev6, VFX, economia com Vendedor e Encantador, cliente da Cripta fechado e cenário rev2; o build acima ainda não inclui esse conjunto (o integrado será Echoes_Cripta_dev3)."
+    "destaque": "Jogo 2D em pixel art no Godot: rode o cliente 2D (godot/COMO_RODAR_2D.md)",
+    "destaque_detalhe": "Arqueiro em pixel art (64x64, paleta fixa) numa corrida com hordas, cartas de nível e gemas de habilidade; quatro árvores elementais (raio, veneno, gelo, fogo) com identidade própria de mecânica e visual; HUD com barra de XP e nível; áreas 1 e 2 do Ato I. Desempenho: 500 inimigos em 7 ms e 1000 em 15 ms (PR 171). Teste headless: godot --headless --path godot --script res://scripts2d/tools/test_2d.gd (CI cliente2d.yml). Sem build de Steam ainda."
   },
   "setores": [
     {
@@ -22,7 +22,7 @@
       "nome": "Direção de arte",
       "agente": "Art Director",
       "estado": "andamento",
-      "resumo": "Folhas de modelagem, heróis modulares e cenário da Cripta aprovados em 16/10; Guerreiro 3D gerado, em acabamento. Em 18/10 o dono deu autonomia sobre a arte e o orquestrador aprovou m10 (Raro) e as folhas dos 4 NPCs.",
+      "resumo": "Visual 2D top-down em pixel art é o definitivo desde 29/10 (docs/arte/26_direcao_visual_2d.md). Arqueiro em sprites 64x64 gerados no PixelLab, piso, braseiro e props pixelados; área 1 polida e terreno da área 2 (Pedreira dos Ecos) aprovado. O 3D estilo Spell Brigade foi arquivado.",
       "entregas": [
         {
           "titulo": "24 referências de arte aprovadas",
@@ -53,14 +53,14 @@
           "arquivo": "docs/arte/referencias-geracao/aprovadas/modelagem/"
         }
       ],
-      "proximo": "NPCs em 3D (GLBs gerados; faltam acabamento, rig Humanoid e prancha com o Guerreiro) e troca das cápsulas no Refúgio."
+      "proximo": "Inimigos da Pedreira dos Ecos (falta saldo no PixelLab) e elites e chefe em escala maior."
     },
     {
       "id": "design",
       "nome": "Game Design",
       "agente": "Game Designer",
       "estado": "andamento",
-      "resumo": "Decisões de 16/10 aplicadas: câmera, escala, respawn e porta da arena. Balanceamento rodada 2 (9f95eb3): dano desarmado 3, idleDamageTakenMult 0,80 (20 sementes), bug do Veloz corrigido.",
+      "resumo": "Design fixo de 01/11: árvore de passivos permanente no personagem; a partida começa só com o ataque básico e libera gemas de habilidade e passivas da partida por nível. Direção de 30/10: roguelike com hub, craft e exploração. Docs 27 a 37 em docs/design/.",
       "entregas": [
         {
           "titulo": "Decisões que travavam o protótipo (10 itens)",
@@ -79,7 +79,7 @@
           "arquivo": "docs/design/16_etapa3_fluxo.md"
         }
       ],
-      "proximo": "Rever o balanceamento do idle: com o conteúdo real, o Guerreiro nível 4 sem equipamento recua em cerca de 1 min. Depois, as perguntas abertas do docs/15 (com você)."
+      "proximo": "Hub com craft básico e exploração por rotas."
     },
     {
       "id": "dados",
@@ -126,7 +126,7 @@
       "nome": "Arquitetura",
       "agente": "Tech Lead",
       "estado": "concluido",
-      "resumo": "Arquitetura em Unity 6 + URP com o ShatterCore como DLL; personagem modular documentado.",
+      "resumo": "Godot 4 como motor (decisão de 20/10) com cliente 2D em GDScript; o ShatterCore (C++17) continua como motor de regras e a migração das regras do cliente 2D ao core vem depois do jogável (M10). Arquitetura antiga em Unity é histórico.",
       "entregas": [
         {
           "titulo": "Documento de arquitetura (cliente, núcleo, interop, testes)",
@@ -145,7 +145,7 @@
           "arquivo": "docs/tecnico/11_revisao_codigo.md"
         }
       ],
-      "proximo": "Revisar o contrato da API C ampliada."
+      "proximo": "Migrar a regra do cliente 2D ao ShatterCore (docs/design/27, seção 10)."
     },
     {
       "id": "backend",
@@ -190,7 +190,7 @@
       "nome": "Frontend Unity",
       "agente": "Frontend Engineer",
       "estado": "andamento",
-      "resumo": "PRs #2 e etapa2/frontend no master (merge 8f210d7): DLL real do ShatterCore na Unity, paridade de 1000 golpes com o stub, fallback se a DLL não carregar, movimento no passo fixo, EditMode 131/131. Guerreiro pintado entrou na Unity com o shader de rim (merge 7c1dbb6, EditMode 137/137). Merge a4c1881: o gameplay consulta o core em todas as regras e o C# não calcula mais regra (EditMode 154/154). Merge 83e789d: Cripta jogável (Assets/Scenes/Cripta/Cripta.unity) com 10 salas mais o nicho, corredores de 6 m, arena de 40 m com pilares, 8 encontros, checkpoints com respawn, porta da arena que fecha e Guardião com controlador nativo; 162 testes (EditMode e smoke de PlayMode). Build jogável v0.1 para Windows pronta (tela inicial, Cripta, pausa e opções). Merges 5f62828 (modelos pintados na Cripta), 17f887f e 9c960b4 (animações CC0 com retarget), ec35dea (golpes do Blender, squash no impacto, balanço do Espectro): 190 EditMode e 3 PlayMode. Build com menu, Refúgio (Ilsa e Tico), save com backups, expedição idle, cenário pintado, inimigos animados, Guerreiro modular e HUD do chefe: 238 EditMode e 11 PlayMode, cerca de 1 ms por quadro numa RTX 4060 Ti. Inventário no jogo (loot no chão, tecla I, tooltip com comparação, Mochila 40 e Baú 100 [HIPÓTESE], herói construído do save): 250 EditMode e 13 PlayMode. Em 17 e 18/10 entraram no master as branches etapa3/economia, etapa3/polimento, etapa3/mapa e etapa3/cenario: animação rev1 a rev6, VFX das habilidades, cliente da Cripta fechado, Vendedor e Encantador, kit de UI e conjunto Raro.",
+      "resumo": "Cliente 2D em Godot/GDScript (godot/scripts2d/): hordas, cartas de nível, gemas de habilidade, passivas da partida, HUD v7, mundo em SubViewport de pixel art, lint de GDScript e teste de estresse no CI. O cliente Unity foi abandonado.",
       "entregas": [
         {
           "titulo": "Projeto Unity 6.3 URP criado",
@@ -225,14 +225,14 @@
           "arquivo": "EchoesOfTheShatter/Assets/"
         }
       ],
-      "proximo": "Build integrado em Echoes_Cripta_dev3, vídeo de ~1 min da Cripta até o Guardião e rodada de EditMode e PlayMode (falha conhecida: InventoryPlayTests.KillDropPickupEquip)."
+      "proximo": "Meta-progressão com save, hub com craft básico e exploração por rotas (docs/design/27, seções 6 a 10)."
     },
     {
       "id": "arte_tecnica",
       "nome": "Arte técnica",
       "agente": "Artista técnico (Blender)",
       "estado": "andamento",
-      "resumo": "Modelos pintados e com esqueleto aprovados (Guerreiro, Sentinela, Arauto, Arqueiro Espectral, Guardião, 6 armas) e já na Cripta. Heróis modulares do Guerreiro e do Arqueiro cortados do modelo vestido (corpo em 6 regiões mais 5 peças). Animação por CC0, Mixamo opcional e Blender por script; Kimodo pausado. Lote 3 (Cão, arco, Mago vestido e modular) e kit do cenário pintado (26 peças) em produção. O TripoSG passou a usar cerca de 5 GB (pesos em fp16). Em 18/10: cenário rev1 e rev2 aprovados e rev3 parcial, conjunto Raro e Sentinela com golpe feito no Blender; etapa3/cenario integrada no master.",
+      "resumo": "Pipeline 2D: PixelLab (geração de sprites), folhas de sprites 2D (docs/arte/25) e VFX em pixel art. O pipeline 3D (TripoSG, Blender, FBX) está arquivado.",
       "entregas": [
         {
           "titulo": "Graybox dos 3 heróis, inimigos e chefe (Blender e FBX)",
@@ -263,21 +263,21 @@
           "arquivo": "EchoesOfTheShatter/Assets/"
         }
       ],
-      "proximo": "Fechar a rev3 do cenário (pilar perto do braseiro, runas âmbar no bloom, piso menos lilás) e os NPCs em 3D."
+      "proximo": "Efeitos das habilidades novas e inimigos das áreas seguintes."
     },
     {
       "id": "qa",
       "nome": "QA",
       "agente": "QA Engineer",
       "estado": "andamento",
-      "resumo": "77 casos novos para a Etapa 2 no plano de QA.",
+      "resumo": "Teste headless do cliente 2D (test_2d.gd) e lint de GDScript rodam no CI (cliente2d.yml); testes do core no core.yml.",
       "entregas": [
         {
           "titulo": "Plano de QA (matriz de requisitos e casos)",
           "arquivo": "docs/requisitos-qa/10_qa.md"
         }
       ],
-      "proximo": "Rodar a suíte quando o backend e o frontend da Etapa 2 chegarem."
+      "proximo": "Roteiro de playtest e dez corridas automáticas sem travar (pacote P6)."
     },
     {
       "id": "pesquisa",
@@ -298,7 +298,7 @@
       "nome": "Produção",
       "agente": "Orquestrador",
       "estado": "andamento",
-      "resumo": "Os PRs #1 a #5 estão no master. Etapa 1 concluída; Etapa 3 integrada no master em 18/10. O PR #5 reorganizou as pastas e o CLAUDE.md ganhou a regra de modelo por tarefa.",
+      "resumo": "Trabalho por threads, uma por assunto, cada uma com branch temporária, PR, CI verde e merge no master; revisões de design e arte feitas pelas threads revisoras, sem o Will revisar. Passagens de bastão curtas em docs/progresso/.",
       "entregas": [
         {
           "titulo": "Plano de execução e próximos passos",
@@ -321,68 +321,10 @@
           "arquivo": "docs/design/20_alinhamento_ia_e_escopo.md"
         }
       ],
-      "proximo": "Build e vídeo do master integrado, depois mostrar ao dono. Perguntas abertas ao dono continuam em Aguardando você."
+      "proximo": "Fechar M5 do cronograma (docs/design/27), depois meta-progressão com save."
     }
   ],
   "pendencias_dono": [
-    {
-      "id": "fluxo-agentes-contexto",
-      "titulo": "Adotar o novo fluxo de contexto enxuto e trabalho em dupla com IA?",
-      "detalhe": "Trocar a aba única longa por sessões de 1 pacote + Cartões de Contexto (≤5 KB) + semáforo da dupla.",
-      "pergunta": "Como vamos organizar o uso do Claude Code e do Antigravity a partir de agora para parar de estourar os limites de uso e permitir que você e o Leo trabalhem em paralelo sem conflitos?",
-      "contexto": [
-        "A raiz da pasta docs/ acumulou 968 KB (~250.000 tokens). Quando uma única aba roda por horas como Orquestrador e os subagentes leem docs/03, 04, 16 e 19 inteiros (95 a 100 KB cada), uma única tarefa consome milhões de tokens acumulados e esgota a cota rapidamente.",
-        "Além disso, com o contexto cheio na madrugada de 18/10, o próprio Orquestrador passou a assinar decisões de design e aprovações de arte sozinho ('aprovadas pelo orquestrador' nos commits 72e0086, 3a76f4c e dffbee2), contrariando a regra do CLAUDE.md.",
-        "O documento completo com o diagnóstico e os templates prontos foi salvo em docs/design/20_alinhamento_ia_e_escopo.md."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Adotar o fluxo enxuto completo (Recomendado)",
-          "efeito": "Cria os 4 Cartões de Contexto (≤5 KB) em docs/contexto/, o semáforo docs/progresso/fila_ativa.md para dividir trilhos entre William e Leo, trava auto-aprovações noturnas e passa a usar 1 chat por pacote de entrega (redução de 70% a 85% no gasto de tokens)."
-        },
-        {
-          "id": "B",
-          "nome": "B. Adotar apenas os Cartões de Contexto (≤5 KB) e a trava noturna",
-          "efeito": "Reduz o peso de leitura dos subagentes e impede o Orquestrador de aprovar arte sozinho, mantendo o controle de tarefas apenas no estado.json."
-        },
-        {
-          "id": "C",
-          "nome": "C. Manter o fluxo atual sem alterações",
-          "efeito": "Continua com leitura direta dos documentos grandes e orquestração em sessão contínua, com alto consumo da cota do Claude."
-        }
-      ],
-      "origem": "docs/design/20_alinhamento_ia_e_escopo.md"
-    },
-    {
-      "id": "foco-fatia-vertical",
-      "titulo": "Congelar novas frentes (Ato I / Arqueiro / Mago) para fechar 100% o Guerreiro na Cripta?",
-      "detalhe": "Em 45h o projeto chegou a 2.140 arquivos atacando as Etapas 2, 3 e 4 ao mesmo tempo.",
-      "pergunta": "Qual deve ser a prioridade imediata de produção: congelar a abertura de novas frentes horizontais para fechar e polir primeiro o combate de 1 mapa (Cripta) + 1 herói (Guerreiro), ou continuar avançando todas as frentes em paralelo?",
-      "contexto": [
-        "Em menos de 2 dias de vida, o repositório chegou a 2.140 arquivos (252 scripts C#, 40 arquivos C++ no core, 88 FBXs e quase 1 MB de docs), avançando simultaneamente na Etapa 2 (Cripta), Etapa 3 (Economia, Vendedor, Encantador na branch etapa3/economia) e Etapa 4 (Arqueiro, Mago e itens do Ato I em docs/18 e docs/19).",
-        "As APIs C 1.5, 1.6 e 1.7 já estão prontas no C++ e no Echoes.Interop na branch etapa3/economia, mas ainda não foram ligadas ao Gameplay/UI da Unity, e o 'Teste de fogo de 30s' do combate da Etapa 2 ainda não foi fechado.",
-        "Se o game feel do combate pedir ajustes de câmera, velocidade ou tempo de golpe depois que 3 classes e 8 áreas já estiverem espalhadas pelo código, o retrabalho será enorme para uma dupla."
-      ],
-      "opcoes": [
-        {
-          "id": "A",
-          "nome": "A. Congelamento Horizontal + Foco Vertical na Cripta (Recomendado)",
-          "efeito": "Mantém tudo que já foi feito no C++, mas congela Arqueiro, Mago e Ato I. Foco total da dupla em: (1) fazer merge da etapa3/economia, (2) ligar e polir o combate do Guerreiro na Cripta até aprovar o teste de 30s, e (3) plugar Vendedor/Encantador/Expedição na Unity um por vez."
-        },
-        {
-          "id": "B",
-          "nome": "B. Fechar Etapa 2 e Etapa 3 juntas no Unity antes de mexer em Arqueiro/Mago",
-          "efeito": "Congela apenas a Etapa 4 (Arqueiro, Mago e novas áreas do Ato I), permitindo trabalhar em paralelo no combate da Cripta e nas telas de Vendedor/Encantador da Etapa 3."
-        },
-        {
-          "id": "C",
-          "nome": "C. Continuar avançando todas as etapas em paralelo",
-          "efeito": "Os agentes continuam gerando especificações, artes e código do Ato I enquanto a Etapa 2 e a Etapa 3 ainda estão sendo integradas na Unity."
-        }
-      ],
-      "origem": "docs/design/20_alinhamento_ia_e_escopo.md"
-    },
     {
       "id": "capsulas-steam",
       "titulo": "Quem faz a capa e as cápsulas da Steam?",
@@ -743,6 +685,26 @@
       "data": "2026-10-30",
       "titulo": "Direção: roguelike 2D com hub, craft e exploração (single-player), sem MMO",
       "detalhe": "Will aprovou a recomendação do Jev (98% roguelike com hub e craft; MMO 4% de viabilidade para equipe pequena). Ordem: fechar M5, meta-progressão com save, hub com craft básico, exploração por regiões escolhíveis, migração ao ShatterCore. Co-op só como extensão futura. Ver docs/design/27_cronograma_jogavel.md seção 6."
+    },
+    {
+      "data": "2026-10-29",
+      "titulo": "Visual 2D top-down em pixel art é o definitivo",
+      "detalhe": "Substitui o 3D estilo Spell Brigade. Ver docs/arte/26_direcao_visual_2d.md."
+    },
+    {
+      "data": "2026-11-01",
+      "titulo": "Árvore de passivos permanente e passivas da partida",
+      "detalhe": "A partida começa só com o ataque básico e libera gemas de habilidade e passivas ao subir de nível; cada habilidade tem identidade própria de mecânica e visual."
+    },
+    {
+      "data": "2026-11-09",
+      "titulo": "Fluxo de agentes: uma thread por assunto, com contexto enxuto",
+      "detalhe": "Resolve a pendência fluxo-agentes-contexto: cada pacote em uma thread nova, lendo só o índice de contexto, com passagem de bastão curta ao fechar. A revisão é das threads revisoras, não do Will."
+    },
+    {
+      "data": "2026-11-09",
+      "titulo": "Foco da fatia vertical: o Arqueiro",
+      "detalhe": "Resolve a pendência foco-fatia-vertical: o Guerreiro na Cripta 3D foi abandonado com a Unity; o foco é fechar o Arqueiro no jogo 2D antes de Mago e novas classes."
     }
   ],
   "nuvem": [
@@ -797,56 +759,32 @@
   ],
   "infraestrutura": [
     {
-      "item": "Unity 6.3 LTS (6000.3.26f1)",
-      "detalhe": "D:\\Unity\\Editors, com módulo IL2CPP"
-    },
-    {
-      "item": "Unity CLI",
-      "detalhe": "D:\\Unity\\cli"
-    },
-    {
-      "item": "Licença Unity Personal",
-      "detalhe": "ativa"
-    },
-    {
-      "item": "Projeto URP",
-      "detalhe": "EchoesOfTheShatter/, com o pacote Pipeline"
-    },
-    {
-      "item": "Plugin da Unity no Claude Code",
-      "detalhe": "instalado"
+      "item": "Godot 4 (.NET)",
+      "detalhe": "Motor do jogo; cliente 2D em GDScript em godot/scripts2d/, Godot e MCP no disco D"
     },
     {
       "item": "Repositório privado no GitHub",
       "detalhe": "github.com/Willvinicius2/echoes-of-the-shatter, com Git LFS"
     },
     {
+      "item": "CI",
+      "detalhe": ".github/workflows/core.yml (ShatterCore) e cliente2d.yml (teste headless e lint de GDScript)"
+    },
+    {
+      "item": "PixelLab",
+      "detalhe": "Geração dos sprites em pixel art; o saldo acabou e trava os inimigos da área 2"
+    },
+    {
       "item": "Visual Studio Build Tools",
-      "detalhe": "MSVC 14.50"
-    },
-    {
-      "item": "Blender 5.1",
-      "detalhe": "graybox e arte técnica"
-    },
-    {
-      "item": "TripoSG (licença MIT)",
-      "detalhe": "Geração de modelos 3D a partir das folhas aprovadas"
-    },
-    {
-      "item": "CI do núcleo",
-      "detalhe": ".github/workflows/core.yml e manual.yml"
+      "detalhe": "MSVC 14.50, para o ShatterCore no Windows"
     },
     {
       "item": "Roteiro do sócio (Artifact)",
       "detalhe": "https://claude.ai/artifact/5G5WBocgrp8NAeLKiF9FP8"
     },
     {
-      "item": "Build jogável v0.1",
-      "detalhe": "D:\\openclaude\\Builds\\Echoes_Cripta_dev\\EchoesOfTheShatter.exe (110 MB), com LEIA-ME.txt"
-    },
-    {
-      "item": "Desempenho medido",
-      "detalhe": "Cerca de 1 ms por quadro numa RTX 4060 Ti (não é o PC de entrada)"
+      "item": "Unity 6.3 e pipeline 3D (Blender, TripoSG)",
+      "detalhe": "Arquivados no branch arquivo/unity-final; a pasta antiga só é apagada quando o dono confirmar"
     }
   ],
   "marcos": [
@@ -948,6 +886,46 @@
     },
     {
       "titulo": "Região 1 jogável de ponta a ponta (compilar, playtest, build dev3)",
+      "feito": false
+    },
+    {
+      "titulo": "Migração para o Godot 4 e abandono da Unity (20/10)",
+      "feito": true
+    },
+    {
+      "titulo": "Visual 2D top-down em pixel art definitivo (29/10)",
+      "feito": true
+    },
+    {
+      "titulo": "Corrida roguelike com hordas, XP e cartas de nível",
+      "feito": true
+    },
+    {
+      "titulo": "Arqueiro com quatro árvores elementais e passivas da partida",
+      "feito": true
+    },
+    {
+      "titulo": "Arqueiro em pixel art 64x64 no jogo",
+      "feito": true
+    },
+    {
+      "titulo": "Área 1 do Ato I fechada (estrada, marcos e encontros)",
+      "feito": true
+    },
+    {
+      "titulo": "Área 2 (Pedreira dos Ecos): terreno aprovado",
+      "feito": true
+    },
+    {
+      "titulo": "Área 2: inimigos em pixel art",
+      "feito": false
+    },
+    {
+      "titulo": "Meta-progressão com save e hub com craft",
+      "feito": false
+    },
+    {
+      "titulo": "Build jogável 2D para o Windows",
       "feito": false
     }
   ],
@@ -1343,25 +1321,25 @@
       "n": 1,
       "titulo": "Base técnica",
       "estado": "concluido",
-      "prova": "Itens entregues listados no docs/15"
+      "prova": "Core, dados, CI e cliente base entregues"
     },
     {
       "n": 2,
-      "titulo": "Fatia jogável da Cripta",
+      "titulo": "Fatia jogável 2D (Arqueiro)",
       "estado": "andamento",
-      "prova": "Quase toda entregue. Você joga a Cripta inteira, com o Guerreiro final, e vence o Guardião"
+      "prova": "Corrida com hordas, cartas de nível, gemas de habilidade, quatro árvores elementais e áreas 1 e 2 do Ato I; falta o chefe final com fases, o áudio e uma build para jogar"
     },
     {
       "n": 3,
       "titulo": "Ciclo completo do protótipo",
-      "estado": "andamento",
-      "prova": "Save, Refúgio, expedição, inventário, economia (Vendedor e Encantador), cliente da Cripta e cenário rev2 integrados no master; faltam o build integrado, o vídeo de gameplay, os NPCs em 3D e o uso do Ouro"
+      "estado": "pendente",
+      "prova": "Meta-progressão com save, hub com craft básico e exploração por rotas (docs/design/27, seções 6 a 10). O que foi feito em 3D na Unity está arquivado"
     },
     {
       "n": 4,
       "titulo": "Elenco e Ato I",
       "estado": "pendente",
-      "prova": "Três classes, 8 áreas e 4 chefes jogáveis. Roteiro de pacotes em roadmap-atoI.md (Fase A: Região 1; Fase B: resto do Ato I)"
+      "prova": "Três classes, 8 áreas e 4 chefes jogáveis; hoje só o Arqueiro e 2 áreas"
     },
     {
       "n": 5,
