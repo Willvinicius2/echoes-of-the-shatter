@@ -1,7 +1,8 @@
 # Echoes of the Shatter — instruções para o Claude Code
 
-ARPG single-player em 3D estilizado (câmera fixa 3/4) com expedições idle, para Steam (Acesso Antecipado).
-Motor: **Godot 4 (.NET, C#)** (decisão do dono em 20/10/2026; antes Unity 6.3, UE 5.8 e o Godot 4 do plano original). O ShatterCore (C++17) vira biblioteca nativa chamada por P/Invoke. Plano e o que mudou: `docs/tecnico/23_migracao_godot.md`. O último estado da Unity está no branch `arquivo/unity-final`; não restaure Unity no `master`.
+ARPG single-player em **2D top-down, pixel art** (definitivo desde 29/10/2026), com corridas de horda e expedições idle, para Steam (Acesso Antecipado).
+**O jogo de hoje é o cliente 2D**: GDScript em `godot/scripts2d/`, dados em `godot/data2d/`, arte em `godot/art2d/`, regras no ShatterCore por GDExtension (`godot/gdextension/`). Comece por `godot/COMO_RODAR_2D.md`. O que este arquivo diz sobre 3D, Cripta em 3D, TripoSG, C# e P/Invoke é histórico, salvo quando o dono pedir arte 3D.
+Motor: **Godot 4** (o CI roda o 4.4.1; histórico: .NET, C#) (decisão do dono em 20/10/2026; antes Unity 6.3, UE 5.8 e o Godot 4 do plano original). O ShatterCore (C++17) vira biblioteca nativa chamada por P/Invoke. Plano e o que mudou: `docs/tecnico/23_migracao_godot.md`. O último estado da Unity está no branch `arquivo/unity-final`; não restaure Unity no `master`.
 
 ## Máquina e disco
 - O disco C está cheio: tudo do projeto fica no disco D. Repositório em `D:\openclaude\EchoesOfTheShatter`, arquivos de trabalho em `D:\openclaude\_trabalho-claude`.
@@ -97,4 +98,4 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 - O protótipo Godot F1 fica em `prototipos/godot-f1/` como referência de game feel (2D, GDScript). Não é a base do jogo atual. Como rodar: `prototipos/godot-f1/COMO_RODAR.md`.
 
 ## Próximo passo
-Etapa 2, fatia jogável da Cripta, agora no Godot (ver `docs/design/15_etapas.md` e `docs/tecnico/23_migracao_godot.md`): primeiro a Cripta montada no Godot via MCP, depois o Guerreiro, ligados ao core. Layout da Cripta na escala A (`docs/tecnico/14_layout_cripta.md`), modelos 3D gerados pelo TripoSG a partir de `docs/arte/referencias-geracao/aprovadas/modelagem/` e cenário da Cripta.
+Atualizado em 09/11/2026. Ato I no cliente 2D com o Arqueiro em pixel art: a área 1 e a Pedreira dos Ecos (área 2, `docs/arte/35_pedreira_dos_ecos.md`) estão no `master`. Em seguida: inimigos próprios da Pedreira (dependem de arte do PixelLab), as demais áreas do Ato I e o leque de habilidades com identidade própria (`docs/design/36_leque_skills_identidade.md`, `37_leque_skills_2.md`). Fases e desbloqueio em `docs/design/34_fases_e_desbloqueio.md`; horda em `docs/design/31_plano_hordas.md`. O trecho antigo sobre a Cripta em 3D montada via MCP não vale mais.

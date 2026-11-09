@@ -6,6 +6,7 @@ extends RefCounted
 ## O estado (nós ativos e pontos) fica no cliente, em user://passivos_2d.json, por classe.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const Arquivo = preload("res://scripts2d/arquivo_2d.gd")
 
 const TAGS := "res://data2d/habilidades_tags.csv"
 const LIMITES := "res://data2d/passivas_limites.csv"
@@ -424,10 +425,7 @@ func _salvar() -> void:
 		return
 	var tudo := _ler_arquivo()
 	tudo[classe] = para_dicionario()
-	var f := FileAccess.open(caminho, FileAccess.WRITE)
-	if f != null:
-		f.store_string(JSON.stringify(tudo))
-		f.close()
+	Arquivo.gravar(caminho, JSON.stringify(tudo))
 
 func _carregar() -> void:
 	if not persistir or caminho == "":
@@ -439,7 +437,7 @@ func _carregar() -> void:
 			ativos[str(id)] = true
 
 static func _ler_arquivo() -> Dictionary:
-	if caminho == "" or not FileAccess.file_exists(caminho):
+	if caminho == "" or not Arquivo.existe(caminho):
 		return {}
-	var j = JSON.parse_string(FileAccess.get_file_as_string(caminho))
+	var j = JSON.parse_string(Arquivo.ler(caminho))
 	return j if typeof(j) == TYPE_DICTIONARY else {}
