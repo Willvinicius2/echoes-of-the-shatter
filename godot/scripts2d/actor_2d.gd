@@ -51,6 +51,11 @@ func has_anim(base: String) -> bool:
 ## Toca a animação `base` na direção de `facing`. Mantém o quadro ao só trocar de direção.
 func play(base: String, restart := false) -> void:
 	var k := posmod(int(round(facing.angle() / (PI / 4.0))), 8)
+	if _dir_k >= 0 and k != _dir_k and not restart:
+		# histerese: perto da fronteira entre dois setores mantém o antigo (até 12 graus além), sem piscar
+		var centro := float(_dir_k) * PI / 4.0
+		if absf(angle_difference(centro, facing.angle())) < PI / 8.0 + deg_to_rad(12.0):
+			k = _dir_k
 	if not restart and k == _dir_k and base == _anim_base and sprite.is_playing():
 		return   # caminho rápido: mesma animação e direção, nada a trocar
 	if not has_anim(base):
@@ -58,7 +63,7 @@ func play(base: String, restart := false) -> void:
 	if _mat_sob_demanda:
 		set_process(true)   # troca de animação: o _process confere o redesenho e volta a dormir
 	_dir_k = k
-	var d := SpriteLoader.dir_for(facing, SpriteLoader.info(char_id)["dirs"])
+	var d := SpriteLoader.dir_for(Vector2.from_angle(float(k) * PI / 4.0), SpriteLoader.info(char_id)["dirs"])
 	sprite.flip_h = d[1]
 	var nome := "%s_%d" % [base, d[0]]
 	if base == _anim_base and not restart:
