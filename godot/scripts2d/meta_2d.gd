@@ -4,6 +4,7 @@ extends RefCounted
 ## as ações. O save é gravado pelo core (JSON versionado, mesmo formato de antes). Números em data2d/*.csv.
 
 const Nucleo = preload("res://scripts2d/nucleo_2d.gd")
+const Fase = preload("res://scripts2d/fase_2d.gd")
 
 static var caminho := "user://save_2d.json"   # os testes apontam para outro arquivo
 
@@ -21,6 +22,8 @@ var amuletos := {}    # id do amuleto criado -> true
 var equipado := ""    # amuleto equipado (1 slot)
 var estoque := {}     # id do consumível -> unidades guardadas
 var ativos := {}      # consumíveis gastos ao partir; valem só para a corrida atual
+var fases_vencidas: Array = []   # ids de fases_2d.csv já vencidas (arquivo `<save>_fases.json`)
+var fase_escolhida := ""         # fase escolhida no título
 
 func _init() -> void:
 	nucleo = Nucleo.criar()
@@ -138,5 +141,54 @@ func salvar() -> bool:
 func carregar() -> bool:
 	var r: int = nucleo.meta_carregar()
 	preload("res://scripts2d/habilidades_2d.gd").migrar_legado(nucleo, caminho)   # árvore de antes do core (uma vez)
+	carregar_fases()
 	sincronizar()
 	return r == 0
+
+# --- Fases (seleção e desbloqueio, docs/design/34_fases_e_desbloqueio.md) ------------------------------------------
+# O save do meta é escrito pelo core (formato dele, sem campos do cliente); as fases ficam num arquivo ao lado,
+# `<save>_fases.json` ({"versao": 1, "fases_vencidas": [ids], "fase_escolhida": id}). Sem o arquivo (save antigo):
+# nenhuma fase vencida e a primeira da tabela escolhida.
+
+static func caminho_fases() -> String:
+	return caminho.get_basename() + "_fases.json"
+
+func carregar_fases() -> void:
+	fases_vencidas = []
+	fase_escolhida = ""
+	var p := caminho_fases()
+	if FileAccess.file_exists(p):
+		var j := JSON.new()   # arquivo inválido: abre como save novo, sem erro no log
+		var d = j.data if j.parse(FileAccess.get_file_as_string(p)) == OK else null
+		if d is Dictionary:
+			for id in d.get("fases_vencidas", []):
+				if id is String and not fases_vencidas.has(id):
+					fases_vencidas.append(id)
+			fase_escolhida = str(d.get("fase_escolhida", ""))
+	Fase.vencidas = fases_vencidas.duplicate()
+	Fase.definir(fase_escolhida)
+
+func salvar_fases() -> bool:
+	var f := FileAccess.open(caminho_fases(), FileAccess.WRITE)
+	if f == null:
+		return false
+	f.store_string(JSON.stringify({"versao": 1, "fases_vencidas": fases_vencidas, "fase_escolhida": fase_escolhida}, "\t"))
+	f.close()
+	return true
+
+## Fase escolhida no título (grava para a próxima sessão).
+func escolher_fase(id: String) -> void:
+	Fase.definir(id)
+	fase_escolhida = Fase.atual
+	salvar_fases()
+
+## Vitória na fase `id`: registra e devolve as fases que abriram agora (vazio se nada novo; o aviso sai só uma vez).
+func vencer_fase(id: String) -> Array:
+	if id == "":
+		return []
+	var novas: Array = Fase.abertas_por(id)
+	if not fases_vencidas.has(id):
+		fases_vencidas.append(id)
+		salvar_fases()
+	Fase.vencidas = fases_vencidas.duplicate()
+	return novas

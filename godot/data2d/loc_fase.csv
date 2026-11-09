@@ -9,3 +9,19 @@ hud.boss_altar,O Guardião pode ser despertado no altar. Vá até ele quando est
 hud.swarm,O prazo acabou: o enxame final chegou e o Guardião despertou
 hud.skill_gem,Gema de habilidade: %s
 upgrade.gem,Gema de habilidade! Escolha uma
+hud.level,Nv %d
+hud.xp,%d / %d XP
+fase.cripta.nome,Cripta dos Ecos
+fase.cripta.desc,Ossadas e morcegos nas catacumbas; o Guardião espera no altar.
+fase.pedreira.nome,Pedreira dos Ecos
+fase.pedreira.desc,Matilhas de cinza e arautos de pedra; o Capitão do Ossuário guarda o portão.
+menu.fase,Fase %d de %d
+menu.fase_ant,◀
+menu.fase_prox,▶
+fase.trancada,Vença a %s para abrir
+fase.em_breve,Em breve: o mapa desta fase ainda está sendo construído
+fase.desbloqueada,%s desbloqueada!
+hud.chefe_nome,Guardião da Cripta
+hud.gate_altar,O guardião do portão pode ser despertado. Vá até o portão quando estiver pronto
+hud.gate_swarm,O prazo acabou: o enxame final chegou e o guardião do portão despertou
+hud.gate_open,O guardião do portão caiu! Entre no portal

@@ -15,7 +15,7 @@ player_recoil,90,px/s,empurrao para tras ao soltar a flecha
 enemy_knockback,260,px/s,empurrao no inimigo atingido (reduzido por kb_resist)
 knockback_decay,900,px/s2,desaceleracao do empurrao
 dmg_number_time,0.65,s,tempo de vida do numero de dano
-dmg_number_rise,42,px,quanto o numero sobe
+dmg_number_rise,28,px,quanto o numero sobe
 dmg_number_size,22,px,tamanho da fonte do numero
 dmg_number_size_kill,28,px,tamanho do numero no golpe que mata
 impact_time,0.14,s,duracao da faisca de impacto
@@ -47,3 +47,25 @@ boss_entry_zoom,1.06,x,zoom inicial da camera na entrada do chefe (volta a 1 ate
 boss_entry_mark,150,px,raio da marca vermelha no chao durante a entrada do chefe
 weak_hit_pct,0.0,x,fracao da vida maxima abaixo da qual o golpe do jogador conta como fraco (numero branco)
 number_offset_x,42,px,sorteio horizontal da posicao inicial do numero de dano
+hit_stop_cooldown_ms,400,ms,folga sem novo congelamento depois de um hit stop (evita o jogo ficar em camera lenta com auras e venenos)
+fx_max_impactos,30,x,faiscas de impacto vivas ao mesmo tempo (acima disso as novas nao nascem)
+fx_max_rajadas,24,x,rajadas de particulas de impacto e morte vivas ao mesmo tempo
+fx_max_numeros,30,x,numeros de dano pequenos vivos ao mesmo tempo (fatais e fortes sempre aparecem)
+aura_diametro,92,px,diametro da aura de Herald (camada C1, atras do ator; doc 33 secao 1)
+aura_alfa,0.45,x,opacidade maxima da aura de Herald
+aura_altura,4,px,centro da aura acima dos pes (elipse no chao, aos pes)
+aura_achatamento,0.5,x,escala vertical da aura (elipse no chao vista em 3/4)
+aura_acende_tempo,0.3,s,tempo em que a aura acende quando o gatilho do Herald dispara
+muzzle_flash_time,0.07,s,flash de boca do arco (2 quadros)
+muzzle_flash_scale,1.1,x,escala do flash de boca
+shot_recoil_px,3,px,recuo do sprite do arqueiro ao soltar a flecha
+shot_recoil_time,0.08,s,tempo do recuo do sprite
+arc_shadow_alpha,0.45,x,opacidade da sombra de aviso no ponto de queda
+zone_ring_time,0.15,s,anel de entrada das zonas no chao
+zone_fade_time,0.3,s,fade final das zonas no chao
+fx_max_animados,24,x,efeitos animados ao mesmo tempo antes de os novos nascerem na versao curta (doc 33 secao 4)
+fx_max_decalques,12,x,marcas no chao (pocas e brasas de efeitos, chao gelado) vivas ao mesmo tempo na tela (doc 36)
+fx_max_status,6,x,overlays grandes de status (frio, veneno, queimadura) ao mesmo tempo; acima disso o status vira icone pequeno sobre a cabeca (doc 36 secao 6.1)
+flash_amount,0.5,x,quanto o inimigo atingido fica branco (0 a 1)
+dmg_number_group_ms,200,ms,golpes no mesmo alvo dentro desta janela somam num unico numero
+dmg_pixel_escala,0.68,x,aumento do texto dos numeros de dano para continuar legivel na grade de pixel art
