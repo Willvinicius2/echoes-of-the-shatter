@@ -50,14 +50,14 @@ O que a fase realmente usa (todos com folha de sprite e stats): `skeleton_soldie
 **Pendentes de arte (PixelLab sem saldo):** `ash_hound` (Cão de Cinza), `stone_herald` (Arauto de Pedra) e `ossuary_warden` (Carcereiro do Ossuário, que reusa a folha do `stone_herald`). Têm stats em `enemies.csv` e linha em `sprites_manifest.csv`, mas os PNG não existem, então **nenhuma fase os usa**. Direção do Jev para as folhas: o mesmo padrão do esqueleto, do cavaleiro e do elite do Ossuário aprovados (PixelLab, 1,1x o arqueiro e elite em 1,5x, 24 cores, contorno de 1 px, olhos luminosos de 2x2 px, luz quente de lado, 8 direções; o jogo usa as 5 do formato em `25_formato_folhas_sprites_2d.md` e espelha o resto). Só entram no jogo quando existir folha nesse nível, com a prévia vista pelo Jev antes de integrar. Ordem quando houver saldo: Cão de Cinza (idle, corrida e mordida), Arauto de Pedra (idle, andar e golpe) e, se sobrar, o Carcereiro do Ossuário.
 
 **Cripta com substitutos (até as folhas chegarem).** As ondas 3 a 8 da Cripta e o enxame sorteavam esses três, então mostravam a caixa provisória. Decisão do Jev, só em `ondas.csv` e `ondas_fases.csv` (os 8 encontros do mapa da Cripta já usavam só inimigos com arte):
-- Cão de Cinza vira Morcego da Cripta (`crypt_bat`, que mantém o papel de rápido e de pouca vida) e Eco Caído (`fallen_echo`). A direção pede no máximo 4 morcegos vivos ao mesmo tempo, mas o core só limita o total de vivos (`teto`), não um tipo, então o peso do morcego nunca passa do que já existia (3 nas ondas 3 e 5 e no enxame, 2 na onda 7) e entra com peso 1 onde não havia (ondas 4, 6 e 8);
+- Cão de Cinza vira Morcego da Cripta (`crypt_bat`, que mantém o papel de rápido e de pouca vida) e Eco Caído (`fallen_echo`). O peso do morcego nunca passa do que já existia (3 nas ondas 3 e 5 e no enxame, 2 na onda 7) e entra com peso 1 onde não havia (ondas 4, 6 e 8). A direção chegou a pedir no máximo 4 morcegos vivos ao mesmo tempo e depois retirou a regra (era orientação visual, e o jogo já convive com mais morcegos); o core só limita o total de vivos por onda (`teto`), não um tipo, e um teto por tipo ficou no backlog, só se o playtest mostrar poluição na tela;
 - Arauto de Pedra vira Espectro Acorrentado (`chain_wraith`, lento e forte);
 - Carcereiro do Ossuário vira um segundo Capitão do Ossuário (`ossuary_captain`) em escala normal, sem a escala 1,5 nem a luz laranja (isso é só do elite do portão da Pedreira, que continua único). O pesado extra só aparece na onda 8, como mini-clímax, onde o Carcereiro já aparecia.
 
 Mudanças, linha a linha (todas na fase `cripta`):
-- onda 3: `ash_hound:3` sai e o `fallen_echo` sobe de 2 para 5;
+- onda 3: `ash_hound:3` sai e o `fallen_echo` sobe de 2 para 6 (meio degrau além da troca de peso, pedido do Jev para recuperar a pressão da matilha);
 - onda 4: `ash_hound:3` vira `crypt_bat:1` e `fallen_echo:2`;
-- onda 5: `ash_hound:3` vira `fallen_echo:3`;
+- onda 5: `ash_hound:3` vira `fallen_echo:4` (o mesmo meio degrau);
 - onda 6: `ash_hound:3` vira `crypt_bat:1` e o `fallen_echo` sobe de 2 para 4; `stone_herald:1:3` sai e o `chain_wraith` sobe de 2 para 3;
 - onda 7: `ash_hound:3` vira `fallen_echo:3`; `stone_herald:1:3` sai e o `chain_wraith` sobe de 2 para 3; o `ossuary_captain` fica como estava;
 - onda 8: `ash_hound:3` vira `crypt_bat:1` e `fallen_echo:2`; `ossuary_warden:1:4` sai e o `ossuary_captain` sobe de 1 para 2;
