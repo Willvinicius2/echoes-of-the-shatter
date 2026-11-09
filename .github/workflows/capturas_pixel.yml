@@ -16,19 +16,15 @@ jobs:
     timeout-minutes: 40
     continue-on-error: true  # só tira capturas: nunca bloqueia o PR
     env:
-      GODOT: ./Godot_v4.4.1-stable_linux.x86_64
+      GODOT: ./Godot_v4.7.2-stable_linux.x86_64
     steps:
       - uses: actions/checkout@v4
-      - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
-        run: |
-          git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
-          cmake -S godot/gdextension -B build-ext -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
-          cmake --build build-ext -j"$(nproc)"
+      - uses: ./.github/actions/gdextension
       - name: Baixar Godot e dependências de tela virtual
         run: |
-          curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
           unzip -q godot.zip
-          chmod +x Godot_v4.4.1-stable_linux.x86_64
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
           sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1 libxi6 libxcursor1 libxrandr2 libxinerama1
       - name: Montar projeto só com o cliente 2D (sem C#)
         run: |
@@ -38,7 +34,7 @@ jobs:
           python3 - <<'PY'
           import re
           s = open('godot/project.godot').read()
-          s = s.replace('"4.7", "C#", "Forward Plus"', '"4.4", "Forward Plus"')
+          s = s.replace('"4.7", "C#", "Forward Plus"', '"4.7", "Forward Plus"')
           s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
           open('proj/project.godot', 'w').write(s)
           PY

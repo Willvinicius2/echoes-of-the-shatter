@@ -1,0 +1,29 @@
+name: Compilar a GDExtension
+description: >
+  Compila ShatterCore + godot-cpp 4.4 em godot/gdextension/bin. O resultado é guardado em cache
+  pelo conteúdo de ShatterCore/, godot/gdextension/ e desta ação; sem mudança nesses arquivos
+  a compilação (cerca de 5 min) é pulada. A extensão 4.4 carrega no Godot 4.7 (compatibility_minimum).
+runs:
+  using: composite
+  steps:
+    - name: Cache da extensão compilada
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: godot/gdextension/bin
+        key: gdext-${{ runner.os }}-cpp44-${{ hashFiles('ShatterCore/**', 'godot/gdextension/**', '.github/actions/gdextension/action.yml') }}
+    - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          cmake -S godot/gdextension -B build-ext -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
+          cmake --build build-ext --config Release
+        else
+          cmake -S godot/gdextension -B build-ext -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
+          cmake --build build-ext -j"$(nproc)"
+        fi
+    - name: Conferir
+      shell: bash
+      run: ls -la godot/gdextension/bin

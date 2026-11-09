@@ -22,10 +22,11 @@ on:
       - "tools/**"
       - ".github/workflows/core.yml"
 
-# Uma execução por ref: um push novo cancela a anterior.
+# Em PR, um push novo cancela a execução anterior da mesma ref. No master cada commit tem o seu
+# grupo (por SHA): merges seguidos não cancelam a validação do commit anterior.
 concurrency:
-  group: core-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: core-${{ github.workflow }}-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
