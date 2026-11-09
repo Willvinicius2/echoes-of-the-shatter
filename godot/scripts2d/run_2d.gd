@@ -32,6 +32,12 @@ const PortalScript = preload("res://scripts2d/portal_2d.gd")
 const GemaScript = preload("res://scripts2d/gema_2d.gd")
 const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
 const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
+const Fase = preload("res://scripts2d/fase_2d.gd")
+const Feel = preload("res://scripts2d/feel_2d.gd")
+
+## Variação dos guardas adormecidos (`_variar_guarda`): para onde cada irmão do mesmo tipo olha e o tom de ferrugem do segundo esqueleto.
+const OLHARES_GUARDA: Array[Vector2] = [Vector2(0.0, 1.0), Vector2(-1.0, 0.55), Vector2(1.0, 0.55), Vector2(-1.0, 0.0), Vector2(1.0, 0.0)]
+const FERRUGEM_GUARDA := Color(1.0, 0.86, 0.74)
 
 ## Testes do fluxo antigo de etapas (salas com porta, rotas) ligam isto antes de criar a corrida.
 static var modo_etapas := false
@@ -87,6 +93,15 @@ var _mortes_dps: Array = [] # [tempo, vida] das mortes recentes: DPS medido para
 var vida_chefe := 0.0       # vida que o core deu ao chefe (bot e testes)
 var dps_medido := 0.0
 var _laco_t := 0.0
+# Encontros do mapa (`@guarda`): lista dos que ainda não nasceram; a força segue a curva da onda atual
+var _guardas_pend: Array = []
+var _guardas_t := 0.0
+var _guarda_n := 0
+var _mult_onda := {}        # hp/dano/velocidade/xp do último inimigo comum que o core mandou nascer (curva_horda.csv)
+# Fases (fases_2d.csv, doc 34): a corrida usa a sala e a fase do spawner da fase escolhida no título.
+var fase_id := ""           # id em fases_2d.csv da corrida atual ("" no fluxo antigo de etapas)
+var chefe_elite := false    # o chefe da fase é um inimigo comum (elite do portão), não um `kind=boss`
+var _fases_novas: Array = []   # fases que a vitória desta corrida abriu (aviso na tela de fim, uma vez)
 
 ## Raiz da interface quando o mundo roda num SubViewport de pixel art (main_2d.gd); nula = tudo neste nó.
 var ui_raiz: Node = null
@@ -109,6 +124,9 @@ func _ready() -> void:
 	Classe.ler_argumentos()
 	meta = MetaScript.new()
 	meta.carregar()
+	Fase.ler_argumentos()
+	if OS.is_debug_build() and int(config.get("dev_fases_abertas", 0)) == 1:
+		Fase.todas_abertas = true   # atalho de dev (testes e capturas): não grava no save
 	nucleo = meta.nucleo
 	_criar_classe()
 	camera = Camera2D.new()
@@ -220,7 +238,10 @@ func iniciar_corrida() -> void:
 	nucleo.ondas_parar()
 	for g in get_tree().get_nodes_in_group("coletaveis"):
 		g.queue_free()
+	fase_id = "" if modo_etapas else Fase.jogavel()
+	_fases_novas = []
 	fase_horda = _fase_do_spawner()
+	chefe_elite = _chefe_da_fase_e_elite()
 	horda = not modo_etapas and int(config.get("horda", 0)) == 1 and fase_horda != ""
 	hud_xp.ativo = horda   # barra de XP e nível só no modo horda
 	nucleo.horda_definir(horda)   # antes de começar: no modo horda a sala nunca limpa e a vitória vem do portal
@@ -288,7 +309,7 @@ func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 		room = RoomScript.new()
 		add_child(room)
 		move_child(room, 0)
-		room.carregar(no["room"])
+		room.carregar(_sala_da_corrida(no["room"]))
 		room.colocar_props(atores)
 		room.porta_usada.connect(_on_porta)
 		player.global_position = room.spawn_jogador
@@ -296,11 +317,13 @@ func _carregar_sala(i: int, no: Dictionary = {}) -> void:
 	hud.sala = i + 1
 	hud.mensagem = ""
 	hud.chefe = null
+	hud.chefe_nome = "hud.chefe_nome"
 	_ajustar_camera(not manter)
 	if horda and room.aberta():
 		nucleo.ondas_iniciar(fase_horda, int(rng.seed))
 		vivos = 0
 		hud.total_salas = int(nucleo.ondas_estado().get("waves_total", 1))
+		_montar_marcos()
 		estado = Estado.LUTA
 		return
 	_spawn_inimigos(no["enemies"])
@@ -362,11 +385,17 @@ func _spawn_inimigos(spec: String) -> void:
 	if room.aberta() and (indice > 0 or pontos.is_empty()):
 		var t := float(room.tile)
 		pontos = room.pontos_fora_da_vista(vista(), float(config.get("spawn_margem_min", 1.0)) * t, float(config.get("spawn_margem_max", 4.0)) * t, maxi(total, 1), rng)
-	for i in range(pontos.size() - 1, 0, -1):
-		var j := rng.randi_range(0, i)
-		var tmp = pontos[i]
-		pontos[i] = pontos[j]
-		pontos[j] = tmp
+	# Fase aberta, primeira onda: os pontos E seguem a estrada (do início à arena) e a ordem da onda manda
+	# (esqueletos no começo, morcegos no meio, sentinelas no portão); nas outras ondas, embaralha.
+	var em_ordem: bool = room.aberta() and indice == 0 and pontos.size() > 1
+	if em_ordem:
+		pontos.sort_custom(func(a, b): return a.x < b.x)
+	else:
+		for i in range(pontos.size() - 1, 0, -1):
+			var j := rng.randi_range(0, i)
+			var tmp = pontos[i]
+			pontos[i] = pontos[j]
+			pontos[j] = tmp
 	var k := 0
 	vivos = 0
 	for parte in spec.split("|", false):
@@ -386,10 +415,107 @@ func _spawn_inimigos(spec: String) -> void:
 			k += 1
 			vivos += 1
 
-## Primeira fase do spawner (ondas_fases.csv); "" se não há ondas.
+## Marcos do mapa no modo horda: o baú de cada bolsão (`@bolsao`) e a lista de encontros (`@guarda`).
+func _montar_marcos() -> void:
+	_guardas_pend = room.guardas.duplicate()
+	_guardas_t = 0.0
+	_guarda_n = 0
+	_mult_onda = {}
+	for b in room.bolsoes:
+		var g := Node2D.new()
+		g.set_script(GemaScript)
+		g.setup("bau", 0, b["pos"], player, config, true)
+		g.coletada.connect(_on_coletada)
+		atores.add_child(g)
+
+## Encontros do mapa: quando o jogador chega a `guard_spawn_dist` de um, ele nasce adormecido no lugar (um grupo só
+## acorda junto) e passa a valer a curva da onda atual vezes a força do mapa. Sem nascimento do core ainda, espera.
+func _tick_guardas(delta: float) -> void:
+	_guardas_t += delta
+	if _guardas_t < 0.5 or _guardas_pend.is_empty() or _mult_onda.is_empty():
+		return
+	_guardas_t = 0.0
+	var perto := float(config.get("guard_spawn_dist", 1100.0))
+	for g in _guardas_pend.duplicate():
+		if player.global_position.distance_to(g["pos"]) <= perto:
+			_guardas_pend.erase(g)
+			_nascer_guarda(g)
+
+func _nascer_guarda(g: Dictionary) -> void:
+	var grupo := "guarda_%d" % _guarda_n
+	_guarda_n += 1
+	var partes := String(g["spec"]).split("|", false)
+	var total := 0
+	for parte in partes:
+		total += int(parte.split(":")[1])
+	var pontos: Array[Vector2] = room.pontos_livres_perto(g["pos"], float(config.get("guard_spread", 140.0)), total, rng)
+	var forca := float(g["forca"])
+	var k := 0
+	var irmaos := {}   # quantos do mesmo tipo já nasceram neste encontro
+	var semente := posmod(hash(Vector2i(g["pos"])), OLHARES_GUARDA.size())
+	for parte in partes:
+		var p := parte.split(":")
+		for _n in int(p[1]):
+			var e: Node2D = EnemyScript.new()
+			atores.add_child(e)
+			e.setup(p[0], player, pontos[k])
+			e.stats["hp"] = float(e.stats["hp"]) * float(_mult_onda["hp"]) * forca
+			e.hp = e.stats["hp"]
+			e.hp_max = e.hp
+			e.stats["damage"] = float(e.stats["damage"]) * float(_mult_onda["damage"]) * forca
+			e.stats["speed"] = float(e.stats["speed"]) * float(_mult_onda["speed"])
+			e.set_meta("guarda", true)
+			e.set_meta("xp_mult", float(_mult_onda["xp"]))
+			e.adormecer(float(g["raio"]), grupo)
+			e.died.connect(_on_inimigo_morto)
+			var irmao: int = irmaos.get(p[0], 0)
+			irmaos[p[0]] = irmao + 1
+			_variar_guarda(e, irmao, semente)
+			k += 1
+
+## Guardas do mesmo tipo não ficam em fila de clones (revisão do crítico): cada irmão olha para um lado (o espelhamento é da
+## própria folha), começa a respirar em um quadro diferente e o segundo esqueleto ganha um tom a mais de ferrugem. Tudo sai do
+## ponto do encontro e da ordem do guarda, então a cena é a mesma a cada execução (e nas capturas). Ao acordar, ele volta a
+## olhar para o jogador como sempre.
+func _variar_guarda(e: Node2D, irmao: int, semente: int) -> void:
+	var passo := irmao * 2 + semente
+	e.facing = OLHARES_GUARDA[passo % OLHARES_GUARDA.size()].normalized()
+	e.play("idle", true)
+	var quadros: int = e.sprite.sprite_frames.get_frame_count(e.sprite.animation)
+	if quadros > 1:
+		e.sprite.set_frame_and_progress(passo % quadros, 0.0)
+	if irmao == 1 and String(e.stats["id"]) == "skeleton_soldier":
+		e.sprite.self_modulate = FERRUGEM_GUARDA
+
+## Fase do spawner (ondas_fases.csv) da fase escolhida (`onda_fase` em fases_2d.csv); sem ela, a primeira do core;
+## "" se não há ondas.
 func _fase_do_spawner() -> String:
 	var fases: Array = nucleo.ondas_definicoes().get("phases", [])
-	return str(fases[0]["id"]) if fases.size() > 0 else ""
+	if fases.is_empty():
+		return ""
+	var quer := Fase.onda_fase(fase_id) if fase_id != "" else ""
+	for f in fases:
+		if str(f["id"]) == quer:
+			return quer
+	return str(fases[0]["id"])
+
+## Sala da corrida: a da fase escolhida (fases_2d.csv); no fluxo antigo de etapas, a do nó do core (run.csv).
+func _sala_da_corrida(do_no: String) -> String:
+	if modo_etapas or fase_id == "" or Fase.sala(fase_id) == "":
+		return do_no
+	return Fase.sala(fase_id)
+
+## O chefe da fase do spawner é um inimigo comum de enemies.csv (elite do portão, ex. a Pedreira) e não um `kind=boss`?
+func _chefe_da_fase_e_elite() -> bool:
+	for f in nucleo.ondas_definicoes().get("phases", []):
+		if str(f["id"]) == fase_horda:
+			var id := str(f.get("boss", ""))
+			return id != "" and str(Csv.enemy(id).get("kind", "boss")) != "boss"
+	return false
+
+## Chefe da fase: o Guardião (`kind=boss`) ou o elite do portão (nasceu do core com `boss=true`).
+static func eh_chefe(e: Node) -> bool:
+	return e.stats.get("kind", "") == "boss" or e.has_meta("chefe_portao")
 
 # --- Modo horda -------------------------------------------------------------------------------------------------
 
@@ -397,6 +523,7 @@ func _fase_do_spawner() -> String:
 func _tick_horda(delta: float) -> void:
 	for s in nucleo.ondas_tick(delta):
 		_nascer(s)
+	_tick_guardas(delta)
 	_laco_t += delta
 	if _laco_t >= float(config.get("horde_leash_check", 1.0)):
 		_laco_t = 0.0
@@ -407,13 +534,13 @@ func _tick_horda(delta: float) -> void:
 	hud.sala = mini(onda, hud.total_salas)
 	if bool(w.get("swarm", false)) and not _aviso_enxame:
 		_aviso_enxame = true
-		_avisar(Csv.t("hud.swarm"), float(config.get("boss_hint_time", 3.0)))
+		_avisar(Csv.t("hud.gate_swarm" if chefe_elite else "hud.swarm"), float(config.get("boss_hint_time", 3.0)))
 	if bool(w.get("boss_spawned", false)) or room.posicao_chefe == Vector2.ZERO:
 		return
 	if int(w.get("can_wake", -1)) == 0:
 		if not _aviso_altar:
 			_aviso_altar = true
-			_avisar(Csv.t("hud.boss_altar"), float(config.get("boss_hint_time", 3.0)))
+			_avisar(Csv.t("hud.gate_altar" if chefe_elite else "hud.boss_altar"), float(config.get("boss_hint_time", 3.0)))
 		if player.global_position.distance_to(room.posicao_chefe) <= float(config.get("boss_wake_radius", 260.0)):
 			acordar_chefe()
 
@@ -426,7 +553,7 @@ func _reposicionar_presos() -> void:
 	var checks := int(config.get("horde_stuck_checks", 4))
 	var t := float(room.tile)
 	for e in get_tree().get_nodes_in_group("hurtable"):
-		if not e.has_meta("spawn_id") or e.stats.get("kind", "") == "boss":
+		if not e.has_meta("spawn_id") or eh_chefe(e):
 			continue
 		var d: float = e.global_position.distance_to(player.global_position)
 		var antes := float(e.get_meta("dist_antes", INF))
@@ -468,7 +595,9 @@ func _medir_dps() -> float:
 func _nascer(s: Dictionary) -> void:
 	var chefe: bool = bool(s.get("boss", false))
 	var id := str(s["enemy"])
-	var e: Node2D = (BossScript if chefe else EnemyScript).new()
+	# Chefe que não é `kind=boss` (elite do portão): IA comum, não o Guardião (BossScript e boss_patterns_2d.csv).
+	var portao: bool = chefe and str(Csv.enemy(id).get("kind", "boss")) != "boss"
+	var e: Node2D = (BossScript if chefe and not portao else EnemyScript).new()
 	atores.add_child(e)
 	var onde: Vector2
 	if chefe and room.posicao_chefe != Vector2.ZERO:
@@ -482,7 +611,10 @@ func _nascer(s: Dictionary) -> void:
 		e.stats["hp"] = vida_chefe
 		e.hp = vida_chefe
 		e.hp_max = vida_chefe
-		_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
+		if portao:
+			_preparar_elite_portao(e)
+		else:
+			_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
 	else:
 		var hp_mult := float(s.get("hp_mult", 1.0))
 		e.stats["hp"] = float(e.stats["hp"]) * hp_mult
@@ -491,6 +623,8 @@ func _nascer(s: Dictionary) -> void:
 		e.stats["damage"] = float(e.stats["damage"]) * float(s.get("damage_mult", 1.0))
 		e.stats["speed"] = float(e.stats["speed"]) * float(s.get("speed_mult", 1.0))
 		e.stats["aggro"] = maxf(float(e.stats["aggro"]), float(config.get("horde_aggro", 0.0)))   # nascem fora da tela e vêm atrás
+		if not bool(s.get("elite", false)):
+			_mult_onda = {"hp": hp_mult, "damage": float(s.get("damage_mult", 1.0)), "speed": float(s.get("speed_mult", 1.0)), "xp": float(s.get("xp_mult", 1.0))}
 	if bool(s.get("elite", false)):
 		e.set_meta("elite", true)
 		e.modulate = Color(1.3, 1.08, 0.62)
@@ -498,6 +632,71 @@ func _nascer(s: Dictionary) -> void:
 	e.set_meta("spawn_id", int(s["id"]))
 	e.set_meta("xp_mult", float(s.get("xp_mult", 1.0)))
 	e.died.connect(_on_inimigo_morto)
+
+## Elite do portão (decisão do Jev para a Pedreira): conta como elite (XP, baú e gema de elite) mas sem o tom dourado
+## nem a escala dos elites de onda; cresce `gate_elite_scale` (sprite e colisão), entra parado e invulnerável por
+## `gate_elite_intro` s com o clarão no portão, tremor e o nome dele, e ganha a barra de chefe da HUD.
+func _preparar_elite_portao(e: Node2D) -> void:
+	e.set_meta("elite", true)
+	e.set_meta("chefe_portao", true)
+	e.stats["hp_bar"] = 0.0   # a barra é a grande da HUD, não a da cabeça
+	e.aumentar(float(config.get("gate_elite_scale", 1.5)))
+	var dur := float(config.get("gate_elite_intro", 1.4))
+	e.iniciar_entrada(dur)
+	hud.chefe = e
+	hud.chefe_nome = "enemy.%s.name" % str(e.stats["id"])
+	_clarao_portao(e.global_position, dur)
+	_luz_do_elite(e)
+	Feel.shake(e, float(config.get("gate_elite_shake_amp", 0.0)), float(config.get("gate_elite_shake_time", 0.0)))
+	_avisar(Csv.t(hud.chefe_nome), float(config.get("boss_hint_time", 3.0)))
+
+## Luz própria do elite do portão (revisão do Jev: ele precisa se destacar do fundo): um halo aditivo laranja-vermelho preso a
+## ele, que pulsa devagar, como brasa. Fica ATRÁS do sprite (revisão do crítico: por cima, a luz pintava o osso de laranja e
+## apagava os olhos ciano): ilumina o chão em volta e recorta o elite contra ele. Some junto com ele.
+func _luz_do_elite(e: Node2D) -> void:
+	var lado := float(config.get("gate_elite_luz_tamanho", 0.0))
+	if lado <= 0.0:
+		return
+	var alfa := float(config.get("gate_elite_luz_alfa", 0.4))
+	var halo := Sprite2D.new()
+	halo.name = "LuzDoElite"
+	halo.texture = Feel.ponto()
+	halo.material = Feel.aditivo()
+	halo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	halo.show_behind_parent = true
+	halo.modulate = Color(1.0, 0.42, 0.14, alfa)
+	halo.scale = Vector2.ONE * lado / float(halo.texture.get_width())
+	halo.position = Vector2(0, -28)
+	e.add_child(halo)
+	var tw := halo.create_tween().set_loops()
+	tw.tween_property(halo, "modulate:a", alfa * 0.7, 0.9).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(halo, "modulate:a", alfa, 0.9).set_trans(Tween.TRANS_SINE)
+
+## Clarão aditivo no portão: um halo e uma coluna de luz que sobem e somem durante a entrada (`dur` s).
+func _clarao_portao(pos: Vector2, dur: float) -> void:
+	var lado := float(config.get("gate_elite_flash_size", 420.0))
+	var luz := Node2D.new()
+	luz.name = "ClaraoPortao"
+	luz.position = pos
+	luz.z_index = 15
+	luz.modulate = Color(1, 1, 1, 0)
+	for forma in [Vector2(1.0, 0.7), Vector2(0.28, 1.6)]:   # halo achatado no chão e coluna alta
+		var sp := Sprite2D.new()
+		sp.texture = Feel.ponto()
+		sp.material = Feel.aditivo()
+		sp.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		sp.modulate = Color(1.5, 1.25, 0.8)   # aditivo acima de 1: o portão estoura de luz
+		sp.scale = forma * lado / float(sp.texture.get_width())
+		sp.position = Vector2(0, -lado * forma.y * 0.35) if forma.y > 1.0 else Vector2.ZERO
+		luz.add_child(sp)
+	room.add_child(luz)
+	luz.scale = Vector2(0.4, 0.4)
+	var tw := luz.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(luz, "modulate:a", 1.0, dur * 0.35)
+	tw.tween_property(luz, "scale", Vector2.ONE, dur * 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tw.chain().tween_property(luz, "modulate:a", 0.0, dur * 0.65)
+	tw.chain().tween_callback(luz.queue_free)
 
 func _morto_na_horda(e) -> void:
 	var id: String = e.stats.get("id", "")
@@ -512,18 +711,22 @@ func _morto_na_horda(e) -> void:
 	if bool(x.get("bau", false)):
 		_soltar("bau", 0, e.global_position)
 	# Gema de habilidade (estilo Path of Exile): elite e Guardião soltam uma que ensina ou melhora uma habilidade.
-	var chefe: bool = e.stats.get("kind", "") == "boss"
+	var chefe: bool = eh_chefe(e)
 	var chance := float(config.get("skill_gem_boss" if chefe else "skill_gem_elite", 0.0))
 	if (elite or chefe) and randf() < chance:
 		_soltar("habilidade", 1, e.global_position)
-	var r: Dictionary = nucleo.ondas_morto(int(e.get_meta("spawn_id", 0)))
-	if e.stats.get("kind", "") == "boss":
+	var r: Dictionary = {}
+	if not e.has_meta("guarda"):   # os encontros do mapa ficam fora da conta do spawner
+		r = nucleo.ondas_morto(int(e.get_meta("spawn_id", 0)))
+	if chefe:
 		_pos_chefe = e.global_position
+	if hud.chefe == e:
+		hud.chefe = null   # barra grande do elite do portão sai com ele
 	if bool(r.get("completa", false)) and estado == Estado.LUTA:
 		atrair_coletaveis()
 		estado = Estado.LIMPA
 		_abrir_portal()
-		hud.mensagem = Csv.t("hud.portal_open")
+		hud.mensagem = Csv.t("hud.gate_open" if chefe_elite else "hud.portal_open")
 
 func _soltar(tipo: String, valor: int, pos: Vector2) -> void:
 	var g := Node2D.new()
@@ -535,7 +738,8 @@ func _soltar(tipo: String, valor: int, pos: Vector2) -> void:
 ## Tudo que está no chão voa para o jogador (fim da fase; o bot e os testes também usam).
 func atrair_coletaveis() -> void:
 	for g in get_tree().get_nodes_in_group("coletaveis"):
-		g.atraida = true
+		if not g.fixo:
+			g.atraida = true
 
 func _on_coletada(g) -> void:
 	if estado == Estado.MORTO or estado == Estado.VENCEU:
@@ -759,6 +963,7 @@ func _on_porta() -> void:
 		if portal == null or not is_instance_valid(portal) or nucleo.horda_vencer() != 0:
 			return
 		estado = Estado.VENCEU
+		_fases_novas = meta.vencer_fase(fase_id)   # registra a fase vencida; as que abriram agora vão para a tela de fim
 		hud.mensagem = Csv.t("hud.victory")
 		Audio.tocar("victory")
 		_timer = config["restart_delay"]
@@ -829,7 +1034,11 @@ func _mostrar_fim() -> void:
 		resumo.append(Csv.t("menu.sum_materials") % ", ".join(mats))
 	nucleo.corrida_terminar()
 	meta.sincronizar()
-	menus.mostrar_fim(estado == Estado.VENCEU, resumo)
+	var avisos := []
+	for id in _fases_novas:
+		avisos.append(Csv.t("fase.desbloqueada") % Csv.t(str(Fase.dados(id).get("nome", id))))
+	_fases_novas = []
+	menus.mostrar_fim(estado == Estado.VENCEU, resumo, avisos)
 	get_tree().paused = true
 
 func _total_upgrades() -> int:

@@ -49,6 +49,12 @@ static func carregar_padroes() -> Dictionary:
 	out["entrada"] = entrada
 	return out
 
+func _init() -> void:
+	_mat_sob_demanda = false   # o brilho do chefe usa o material fixo
+
+func _precisa_redesenhar() -> bool:
+	return estado != Estado.PERSEGUE or _morrendo or hp < hp_max   # o chefe mantém o redesenho antigo
+
 func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	super.setup(id, jogador, pos)
 	stats["hp_bar"] = 0.0     # a barra do chefe é a da tela, não a da cabeça

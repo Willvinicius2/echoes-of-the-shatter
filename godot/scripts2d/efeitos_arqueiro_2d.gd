@@ -7,6 +7,10 @@ const Veneno = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
 const Gelo = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
 const Fogo = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
 const Raio = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
+const ExtraRaio = preload("res://scripts2d/efeitos_extra_raio_2d.gd")
+const ExtraVeneno = preload("res://scripts2d/efeitos_extra_veneno_2d.gd")
+const ExtraGelo = preload("res://scripts2d/efeitos_extra_gelo_2d.gd")
+const ExtraFogo = preload("res://scripts2d/efeitos_extra_fogo_2d.gd")
 
 static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: int, mira: Vector2) -> bool:
 	if jogador == null or not jogador.is_inside_tree() or jogador.esta_morto():
@@ -69,6 +73,14 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 			return Fogo.executar(efeito, jogador, def, nivel, mira)
 		"flecha_eletrica", "raio_encadeado", "tornado", "haste_eletrica":
 			return Raio.executar(efeito, jogador, def, nivel, mira)
+		"trovoada", "tempestade_raios", "orbes_tempestade":
+			return ExtraRaio.executar(efeito, jogador, def, mira)
+		"contagio", "minas_toxicas", "geiser_acido":
+			return ExtraVeneno.executar(efeito, jogador, def, mira)
+		"lanca_gelo", "espinhos_gelo", "nevasca":
+			return ExtraGelo.executar(efeito, jogador, def, mira)
+		"sopro_chamas", "anel_fogo", "bomba_rastilho":
+			return ExtraFogo.executar(efeito, jogador, def, mira)
 		_:
 			push_error("Efeito de arqueiro desconhecido: " + efeito)
 			return false

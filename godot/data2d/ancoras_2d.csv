@@ -1,6 +1,6 @@
 id,anim,linha,x,y,nota
-arqueiro,attack,0,6,-48,boca do arco na linha S (frente): mao do arco no quadro de soltar (quadro 4), folha redesenhada por direcao
-arqueiro,attack,1,38,-42,boca do arco na linha SE (arco inclinado para baixo-direita)
-arqueiro,attack,2,40,-57,boca do arco na linha E
-arqueiro,attack,3,26,-75,boca do arco na linha NE (arco inclinado para cima-direita)
-arqueiro,attack,4,-7,-72,boca do arco na linha N (de costas: arco acima do ombro esquerdo da folha)
+arqueiro,attack,0,21,-66,boca do arco na linha S (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
+arqueiro,attack,1,50,-82,boca do arco na linha SE (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
+arqueiro,attack,2,50,-104,boca do arco na linha E (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
+arqueiro,attack,3,21,-120,boca do arco na linha NE (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)
+arqueiro,attack,4,-21,-119,boca do arco na linha N (px do mundo na escala 2.5 de sprites_escala.csv; o jogo multiplica por escala atual / 2.5)

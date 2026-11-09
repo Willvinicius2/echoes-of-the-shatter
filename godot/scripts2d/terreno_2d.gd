@@ -5,6 +5,10 @@ extends RefCounted
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Ambiente = preload("res://scripts2d/ambiente_2d.gd")
 
+## Tema da sala que está sendo montada (o `tema` do room_2d.gd: "" = Cripta, "pedreira" = seco e poeirento). As cores procedurais
+## (lajes, musgo, luz) leem daqui; o room_2d.gd o define antes de montar qualquer coisa.
+static var tema := ""
+
 const AGUA_SHADER := """
 shader_type canvas_item;
 uniform vec4 fundo : source_color = vec4(0.06, 0.2, 0.24, 1.0);
@@ -103,8 +107,12 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 		pg.texture = lajes  # a UV só precisa de uma textura qualquer; o shader ignora a cor
 	# Caminho: contorno limpo fora da água; dentro dela, pedras de travessia.
 	var travessias: Array = []
+	var pedras_antes: Array = []   # lajes dos caminhos já desenhados: o cruzamento não leva terra, musgo nem pedras soltas sobre elas
+	var lajes_estrada := _textura_lajes_claras(float(sala.brilho_estrada))
+	var fossos: Array = sala.rects_fosso(10.0) if sala.has_method("rects_fosso") else []   # a estrada para na borda do fosso (a ponte, em `=`, cruza por cima)
 	for i in caminhos.size():
 		var c: Dictionary = caminhos[i]
+		var lajes_do_caminho: Texture2D = lajes_estrada if i == 0 else lajes   # a estrada principal (a primeira) leva `@brilho_estrada` a mais de luz: o caminho se lê do fundo
 		var linha := spline(c["pts"])
 		var fc := faixa(linha, c["larg"] * tile, 4.0, 11 + i)
 		if fc.is_empty():
@@ -112,6 +120,8 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 		var fora_agua_fc: Array = [fc]
 		for m in margens:
 			fora_agua_fc = _subtrair(fora_agua_fc, m)
+		for fo in fossos:
+			fora_agua_fc = _subtrair(fora_agua_fc, fo)
 		# Terra úmida em 3 degraus translúcidos (4 a 6 px cada), com ruído próprio: a borda esfuma no gramado sem corte reto.
 		for degrau in 3:
 			var folga: float = [14.0, 9.0, 4.0][degrau]
@@ -123,16 +133,22 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			var fora_anel: Array = [anel]
 			for m in margens:
 				fora_anel = _subtrair(fora_anel, m)
+			for fo in fossos:
+				fora_anel = _subtrair(fora_anel, fo)
+			for pa in pedras_antes:
+				fora_anel = _subtrair(fora_anel, pa)
 			for b in fora_anel:
 				_poligono(raiz, b, cor_terra)
 		for q in fora_agua_fc:
 			var pg := _poligono(raiz, q, Color(1, 1, 1))
-			pg.texture = lajes
+			pg.texture = lajes_do_caminho
 			pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 			pg.uv = q
-			_lajes_soltas(raiz, q, 11 + i)
-			_musgo_na_borda(raiz, q)
-			_tufos_na_borda(raiz, q, 11 + i)
+			var borda := _sem_pontos_dentro(q, pedras_antes)
+			_lajes_soltas(raiz, borda, 11 + i)
+			_musgo_na_borda(raiz, borda)
+			_tufos_na_borda(raiz, borda, 11 + i)
+		pedras_antes.append(fc)
 		_fins_do_caminho(raiz, sala, caminhos, i, linha, tile)
 		var trecho := PackedVector2Array()
 		for p in spline(c["pts"], 6.0):
@@ -141,7 +157,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 					trecho.append(p)
 					break
 		if trecho.size() >= 2:
-			var eixo := _ponte(raiz, trecho, spline(c["pts"], 6.0), lajes, aguas, margens, linhas, c["larg"] * tile)
+			var eixo := _ponte(raiz, trecho, spline(c["pts"], 6.0), lajes_do_caminho, aguas, margens, linhas, c["larg"] * tile)
 			if eixo.size() == 2:
 				travessias.append(eixo)
 	# Colisão da água: livre só no corredor das pedras de travessia.
@@ -162,8 +178,23 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			cp.polygon = b
 			corpo_agua.add_child(cp)
 	_luz(sala, riachos, grama, tile)
-	if grama:
+	if grama and tema != "pedreira":   # a Pedreira é seca e de dia: sem vaga-lumes
 		_vagalumes(sala, tile)
+
+## Os pontos do contorno que não caem dentro de nenhum dos polígonos `outros` (lajes de caminhos já desenhados).
+static func _sem_pontos_dentro(contorno: PackedVector2Array, outros: Array) -> PackedVector2Array:
+	if outros.is_empty():
+		return contorno
+	var out := PackedVector2Array()
+	for p in contorno:
+		var dentro := false
+		for o in outros:
+			if Geometry2D.is_point_in_polygon(p, o):
+				dentro = true
+				break
+		if not dentro:
+			out.append(p)
+	return out
 
 static func _subtrair(polis: Array, tira: PackedVector2Array) -> Array:
 	var out: Array = []
@@ -413,7 +444,7 @@ static func _musgo_na_borda(raiz: Node2D, contorno: PackedVector2Array) -> void:
 			var ang := TAU * a / 8.0
 			var rr := raio * (0.7 + 0.5 * float(posmod(h / (a + 3), 10)) / 10.0)
 			pts.append(c + Vector2(cos(ang) * rr, sin(ang) * rr * 0.7))
-		var cor := Color(0.13, 0.2, 0.1, 0.3 + 0.12 * float(posmod(h / 7, 4)) / 3.0)
+		var cor := Color(0.17, 0.11, 0.06, 0.44 + 0.14 * float(posmod(h / 7, 4)) / 3.0) if tema == "pedreira" else Color(0.13, 0.2, 0.1, 0.3 + 0.12 * float(posmod(h / 7, 4)) / 3.0)
 		_poligono(raiz, pts, cor)
 		i += 2 + posmod(h / 5, 4)
 
@@ -465,9 +496,11 @@ static func _fins_do_caminho(raiz: Node2D, sala: Node2D, caminhos: Array, idx: i
 				for a in 7:
 					var ang := TAU * a / 7.0 + posmod(h, 6)
 					pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.7))
-				var tom := 0.36 + 0.2 * float(posmod(h / 5, 100)) / 100.0
-				_poligono(raiz, _expandir(pts, c, 1.8), Color(0.08, 0.09, 0.08, 0.75))
-				_poligono(raiz, pts, Color(tom, tom + 0.02, tom + 0.07))
+				var tom := 0.26 if posmod(h / 5, 2) == 0 else 0.36  # só 2 tons, mais escuros: o cinza claro saltava do gramado
+				_poligono(raiz, _expandir(pts, c, 2.2), Color(0.02, 0.02, 0.04, 1.0))  # contorno escuro (quase preto)
+				_poligono(raiz, pts, Color(tom + 0.03, tom + 0.02, tom))
+				_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.1))  # faceta clara (luz de cima-esquerda)
+				_poligono(raiz, PackedVector2Array([pts[3], pts[4], pts[5], pts[6], c]), Color(0.0, 0.0, 0.04, 0.3))  # faceta de sombra de 1 tom
 
 ## Pedrinhas e lajes soltas na borda do caminho: pequenas, achatadas, com sombra curta para baixo-direita
 ## (a mesma luz dos props) em vez de um contorno escuro em volta, para não parecerem seixos flutuando.
@@ -481,13 +514,19 @@ static func _lajes_soltas(raiz: Node2D, contorno: PackedVector2Array, semente: i
 		for a in 7:
 			var ang := TAU * a / 7.0 + posmod(h, 6)
 			pts.append(c + Vector2(cos(ang) * raio * (0.8 + 0.4 * posmod(h / (a + 2), 5) / 5.0), sin(ang) * raio * 0.6))
-		var tom := 0.4 + 0.2 * float(posmod(h / 5, 100)) / 100.0
+		var tom := 0.3 if posmod(h / 5, 2) == 0 else 0.4  # só 2 tons de cinza, como as lajes do piso
 		var musgo: bool = posmod(h / 13, 4) == 0
-		var cor := Color(0.28, 0.4, 0.2) if musgo else Color(tom, tom + 0.02, tom + 0.07)
+		var cor := Color(0.22, 0.32, 0.16) if musgo else Color(tom + 0.03, tom + 0.02, tom)
 		var sombra := _poligono(raiz, pts, Color(0.04, 0.05, 0.05, 0.6))
 		sombra.position = Vector2(2.0, 2.5)
+		var contorno_escuro := PackedVector2Array()
+		for q in pts:
+			contorno_escuro.append(c + (q - c) * 1.22)
+		_poligono(raiz, contorno_escuro, Color(0.03, 0.03, 0.05))  # contorno escuro de ~1 px (quase preto: a pedra cinza não some no gramado)
 		_poligono(raiz, pts, cor)
-		_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.12))  # faceta clara
+		_poligono(raiz, PackedVector2Array([pts[0], pts[1], pts[2]]), Color(1, 1, 1, 0.1))  # faceta clara
+		# faceta de sombra na metade de baixo, de 1 tom (luz de cima-esquerda), para a laje não ficar chapada
+		_poligono(raiz, PackedVector2Array([pts[3], pts[4], pts[5], pts[6], c]), Color(0.0, 0.0, 0.04, 0.28))
 		i += 10 + posmod(h / 3, 7)
 
 ## Manchas grandes e suaves de terra e grama amarelada sob tudo, para o gramado não ser textura chapada.
@@ -505,13 +544,33 @@ static func _manchas_de_chao(raiz: Node2D, sala: Node2D, tile: int) -> void:
 		sp.modulate = Color(0.34, 0.25, 0.14, 0.7) if terra else Color(0.62, 0.58, 0.24, 0.5)
 		raiz.add_child(sp)
 
-static var _lajes_tex: Texture2D
+static var _lajes_por_tema: Dictionary = {}   # tema -> textura das lajes
+static var _lajes_claras: Dictionary = {}   # "tema|fator de luz" -> textura
+
+## As mesmas lajes com `fator` a mais de luz. O `color` e o `modulate` de um Polygon2D não passam de 1.0 (o renderizador
+## de compatibilidade corta), então o brilho vai direto nos pixels; as lajes são bem mais escuras que 1.0, nada estoura.
+static func _textura_lajes_claras(fator: float) -> Texture2D:
+	if is_equal_approx(fator, 1.0):
+		return _textura_lajes()
+	var chave := "%s|%s" % [tema, fator]
+	if _lajes_claras.has(chave):
+		return _lajes_claras[chave]
+	var img := Image.new()
+	img.copy_from(_textura_lajes().get_image())   # sem janela (e no editor) get_image() devolve a imagem guardada na textura: mexer nela clarearia as lajes de todo o mapa
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			img.set_pixel(x, y, Color(minf(c.r * fator, 1.0), minf(c.g * fator, 1.0), minf(c.b * fator, 1.0), c.a))
+	var tex := ImageTexture.create_from_image(img)
+	_lajes_claras[chave] = tex
+	return tex
 
 ## Textura de lajes de pedra (128 px, repete sem emenda): células irregulares em cinza-azulado, junta escura, rachaduras e musgo.
 static func _textura_lajes() -> Texture2D:
-	if _lajes_tex != null:
-		return _lajes_tex
+	if _lajes_por_tema.has(tema):
+		return _lajes_por_tema[tema]
 	var n := 128
+	var seco: bool = tema == "pedreira"
 	var pts: Array[Vector2] = []
 	var tons: Array[Color] = []
 	for gy in 4:
@@ -520,7 +579,7 @@ static func _textura_lajes() -> Texture2D:
 			pts.append(Vector2((gx + 0.2 + 0.6 * posmod(h, 100) / 100.0) * n / 4.0, (gy + 0.2 + 0.6 * posmod(h / 101, 100) / 100.0) * n / 4.0))
 			var t := 0.78 + 0.5 * float(posmod(h / 7, 100)) / 100.0
 			var quente := 0.04 * float(posmod(h / 3, 100)) / 100.0
-			tons.append(Color(0.43 * t + quente, 0.46 * t, 0.52 * t))
+			tons.append(Color(0.6 * t + quente, 0.55 * t, 0.47 * t) if seco else Color(0.43 * t + quente, 0.46 * t, 0.52 * t))   # pedreira: calcário claro e pouco saturado, para a estrada saltar do chão ocre
 	var img := Image.create(n, n, false, Image.FORMAT_RGB8)
 	for y in n:
 		for x in n:
@@ -549,11 +608,12 @@ static func _textura_lajes() -> Texture2D:
 			elif posmod(hash(Vector2i(x / 3, y / 3 + idx)), 53) == 0:
 				c = c * 0.7  # rachadura
 			if borda < 6.0 and posmod(hash(Vector2i(x, y + 7)), 9) == 0:
-				c = c.lerp(Color(0.25, 0.36, 0.17), 0.7)  # musgo na junta
+				c = c.lerp(Color(0.33, 0.26, 0.15) if seco else Color(0.25, 0.36, 0.17), 0.7)  # musgo (na pedreira, poeira) na junta
 			c.a = 1.0
 			img.set_pixel(x, y, c)
-	_lajes_tex = ImageTexture.create_from_image(img)
-	return _lajes_tex
+	var tex_lajes := ImageTexture.create_from_image(img)
+	_lajes_por_tema[tema] = tex_lajes
+	return tex_lajes
 
 static func _radial(cor: Color, lado: int, borda := Color(0, 0, 0, 0)) -> GradientTexture2D:
 	var g := Gradient.new()
@@ -596,13 +656,23 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 	var amb := Ambiente.new()
 	sala.add_child(amb)
 	_mancha(sala, Vector2(larg, alt) * 0.5, Vector2(larg * 1.5, alt * 1.5), _radial_cache("vinheta", Color(0, 0, 0, 0), 256, Color(0.02, 0.02, 0.05, 0.7)), 20)
+	# Pedreira: o halo aditivo sobre lajes claras estourava o canal verde (verde-limão no pátio, branco no meio): laranja mais
+	# avermelhado e mais fraco, e a vela com menos verde também.
+	var pedreira: bool = tema == "pedreira"
+	var cor_tocha := Color(1.0, 0.42, 0.12, 0.34) if pedreira else Color(1.0, 0.55, 0.18, 0.62 if grama else 0.4)
+	var cor_vela := Color(1.0, 0.55, 0.2, 0.28) if pedreira else Color(1.0, 0.72, 0.3, 0.34)
 	for b in sala.braseiros:
-		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache("tocha_grama" if grama else "tocha", Color(1.0, 0.55, 0.18, 0.62 if grama else 0.4), 256), 3, true)
+		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache("tocha_pedreira" if pedreira else ("tocha_grama" if grama else "tocha"), cor_tocha, 256), 3, true)
 		amb.add_halo(h)
 	for p in sala.props:
 		if String(p["id"]).contains("candles"):
-			var h := _mancha(sala, p["pos"] + Vector2(0, 10), Vector2(230, 230), _radial_cache("vela", Color(1.0, 0.72, 0.3, 0.34), 256), 3, true)
+			var h := _mancha(sala, p["pos"] + Vector2(0, 10), Vector2(230, 230), _radial_cache("vela_pedreira" if pedreira else "vela", cor_vela, 256), 3, true)
 			amb.add_halo(h)
+	for l in sala.luzes:   # `@luz`: luz própria dos marcos do mapa (pilares do início, ruína, bifurcação, bolsão, portão)
+		var cor: Color = l["cor"]
+		var d: float = float(l["raio"]) * 2.0
+		var h := _mancha(sala, l["pos"], Vector2(d, d), _radial_cache("luz_%s" % cor.to_html(true), cor, 256), 3, true)
+		amb.add_halo(h)
 	var folha := _arte_prop("leaves_scattered")
 	var n_riacho := 0
 	for r in riachos:
@@ -615,7 +685,8 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 		var musgo := Polygon2D.new()
 		var y0: float = 2 * tile
 		musgo.polygon = PackedVector2Array([Vector2(tile, y0), Vector2(larg - tile, y0), Vector2(larg - tile, y0 + 34), Vector2(tile, y0 + 34)])
-		musgo.vertex_colors = PackedColorArray([Color(0.2, 0.28, 0.12, 0.75), Color(0.2, 0.28, 0.12, 0.75), Color(0.2, 0.28, 0.12, 0.0), Color(0.2, 0.28, 0.12, 0.0)])
+		var cor_musgo := Color(0.27, 0.2, 0.11) if tema == "pedreira" else Color(0.2, 0.28, 0.12)
+		musgo.vertex_colors = PackedColorArray([Color(cor_musgo, 0.75), Color(cor_musgo, 0.75), Color(cor_musgo, 0.0), Color(cor_musgo, 0.0)])
 		sala.add_child(musgo)
 
 ## Poucas folhas laranja caindo devagar pela sala.
@@ -689,6 +760,8 @@ static func _tufos_na_borda(sala: Node2D, contorno: PackedVector2Array, semente:
 			sp.centered = false
 			sp.offset = -Vector2(arte[1], arte[2])
 			sp.scale = Vector2.ONE * escalas[k]
+			if ids[k] == "rock_rubble":
+				sp.modulate = Color(0.55, 0.53, 0.6)  # pedrinhas escuras: o cinza claro chapado saltava do gramado
 			sp.position = contorno[i] + Vector2(posmod(h / 7, 9) - 4, posmod(h / 63, 7) - 3)
 			sala.add_child(sp)
 		i += 9 + posmod(h / 3, 8)

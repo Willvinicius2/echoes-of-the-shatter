@@ -11,18 +11,62 @@ const SOMBRA_SHADER := """
 shader_type canvas_item;
 uniform vec4 cor : source_color = vec4(0.0, 0.0, 0.0, 0.4);
 void fragment() {
-	COLOR = vec4(cor.rgb, texture(TEXTURE, UV).a * cor.a);
+	// ponta da sombra (topo do sprite, UV.y baixo) serrilhada com dither ordenado 4x4 em vez de esmaecer
+	int bx = int(mod(FRAGCOORD.x, 4.0));
+	int by = int(mod(FRAGCOORD.y, 4.0));
+	float lim = (float((bx * 5 + by * 7 + bx * by) % 16) + 0.5) / 16.0;
+	float ponta = smoothstep(0.0, 0.28, UV.y);
+	float ok = step(0.5, texture(TEXTURE, UV).a) * step(lim, ponta + 0.02);
+	COLOR = vec4(cor.rgb, ok * cor.a);
+}
+"""
+
+## Faixa de sombra logo abaixo da borda de baixo da verga: a silhueta do sprite descida até `altura` px, sem o próprio
+## sprite (segue as mordidas e a quebra da pedra). 1 tom chapado; só os 2 últimos px são serrilhados em dither 4x4.
+const SOMBRA_VAO_SHADER := """
+shader_type canvas_item;
+uniform vec4 cor : source_color = vec4(0.0, 0.0, 0.0, 0.3);
+uniform float altura = 7.0;
+void fragment() {
+	int bx = int(mod(FRAGCOORD.x, 4.0));
+	int by = int(mod(FRAGCOORD.y, 4.0));
+	float lim = (float((bx * 5 + by * 7 + bx * by) % 16) + 0.5) / 16.0;
+	float aqui = step(0.5, texture(TEXTURE, UV).a);
+	float d = 99.0;
+	for (int i = 1; i <= 10; i++) {
+		if (texture(TEXTURE, UV - vec2(0.0, float(i) * TEXTURE_PIXEL_SIZE.y)).a > 0.5) {
+			d = min(d, float(i));
+		}
+	}
+	float forca = clamp((altura + 1.0 - d) / 3.0, 0.0, 1.0);
+	float ok = (1.0 - aqui) * step(lim, forca) * step(0.01, forca);
+	COLOR = vec4(cor.rgb, ok * cor.a);
 }
 """
 
 static var _mat_sombra: ShaderMaterial
+static var _mat_vao: ShaderMaterial
 static var _linhas_base := {}
 static var _tex_contato: Texture2D
 
+## Pórticos de guindaste da Pedreira: estrutura de madeira vazada, alta demais (~2,7x o arqueiro) para ser sólida de ponta a
+## ponta. Entram como "aéreo" (y-sort pela linha de chão dos pés, só a sombra projetada, sem a faixa de sombra sob a verga),
+## só os pés bloqueiam (coluna `pes` de props_2d.csv) e a peça toda fica semitransparente com alguém atrás (`ocultavel`).
+const PORTICOS := ["pedreira_portico"]
+
+## Portão de pedra da Pedreira (`pedreira_portao`): dois bastiões maciços com a abertura no meio e a verga e a grade de ferro no
+## alto. Também "aéreo" (y-sort pela linha de chão dos bastiões), só os bastiões bloqueiam (`pes`), a peça fica semitransparente
+## com alguém atrás (quem passa pela abertura não some sob a verga) e a faixa de sombra cola na borda de baixo da verga.
+const PORTOES := ["pedreira_portao"]
+
 ## Classe visual do prop pelo id: árvore (raízes, sombra longa), raso (ossos, folhas, capim, samambaia:
 ## só contato leve e fica no chão, fora do y-sort), folhagem (arbustos: contato, terra curta, y-sort pelo
-## centro da base e semitransparente quando alguém passa atrás) ou sólido (tumbas, pedras, pilares).
+## centro da base e semitransparente quando alguém passa atrás), aéreo (`arco_*`: verga de pedra sobre dois pilares,
+## só com a sombra projetada no chão, sem contato; o pivô na borda de baixo é a linha de chão dos pilares) ou sólido
+## (tumbas, pedras, pilares).
 static func tipo(id: String) -> String:
+	if id.begins_with("arco_") or id in PORTICOS or id in PORTOES:
+		return "aereo"   # verga de pedra sobre dois pilares (ou pórtico de madeira): só a sombra projetada, y-sort pela linha de base
 	if id == "tree_stump":
 		return "solido"
 	if id.begins_with("tree_") or id.begins_with("sapling_"):
@@ -34,6 +78,10 @@ static func tipo(id: String) -> String:
 		if id.begins_with(pre):
 			return "folhagem"
 	return "solido"
+
+## O prop fica semitransparente enquanto alguém está atrás dele: arbustos (folhagem) e os pórticos, que são altos e vazados.
+static func ocultavel(id: String) -> bool:
+	return tipo(id) == "folhagem" or id in PORTICOS or id in PORTOES
 
 ## Base que toca o chão, em px já na escala do prop: [largura, profundidade]. Vem de solido_l/solido_a do
 ## props_2d.csv; sem sólido, uma fração da largura do sprite.
@@ -55,6 +103,8 @@ static func base(id: String, tex: Texture2D, def: Dictionary) -> Array:
 ## abaixo do tronco, então a base do tronco é medida na própria textura; sem isso a copa cobria a cabeça
 ## de quem passava ao lado.
 static func apoio(id: String, tex: Texture2D, def: Dictionary, arte: Dictionary) -> float:
+	if tipo(id) == "aereo":
+		return 0.0   # o pivô do sprite (centro da borda de baixo) já é a linha de chão dos pilares: o y-sort vem dela
 	var b := base(id, tex, def)
 	var a: float = b[1] * 0.5
 	if tipo(id) == "arvore":
@@ -92,7 +142,7 @@ static func _faixa(id: String, tex: Texture2D, def: Dictionary) -> float:
 ## Devolve null quando não se aplica.
 static func textura_base(id: String, tex: Texture2D, def: Dictionary) -> Texture2D:
 	var t := tipo(id)
-	if t == "arvore" or t == "raso":
+	if t == "arvore" or t == "raso" or t == "aereo":
 		return null
 	var c := contorno(id, tex, def)
 	return c.get("base", null)
@@ -143,7 +193,9 @@ static func contorno(id: String, tex: Texture2D, def: Dictionary) -> Dictionary:
 			k = k * k * (3.0 - 2.0 * k)
 			var f := 1.0 - 0.6 * k
 			base_img.set_pixel(x, y, Color(px.r * f * 0.95, px.g * f * 0.95, px.b * f, px.a))
-	# sombra: por coluna, alfa cai do contorno para baixo; depois espalha 5 px para os lados (borrão leve)
+	# sombra chapada de 1 tom: por coluna, cai do contorno para baixo; a borda de baixo e as laterais usam
+	# dither ordenado (Bayer 4x4) em vez de gradiente, para casar com a grade de pixel art
+	const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 	for x in w:
 		if yb[x] < 0.0:
 			continue
@@ -151,12 +203,14 @@ static func contorno(id: String, tex: Texture2D, def: Dictionary) -> Dictionary:
 			var y := int(yb[x]) + d
 			if y < 0 or y >= h + pad:
 				continue
-			var a := 0.85 * pow(1.0 - clampf(float(d) / queda, 0.0, 1.0), 1.4)
-			for dx in range(-5, 6):
+			var a := 1.0 - clampf(float(d) / queda, 0.0, 1.0)
+			for dx in range(-3, 4):
 				var xx := x + dx + 6
-				var aa := a * (1.0 - absf(float(dx)) / 6.0)
-				if xx >= 0 and xx < w + 12 and aa > sombra.get_pixel(xx, y).a:
-					sombra.set_pixel(xx, y, Color(0.0, 0.0, 0.01, aa))
+				var aa := a * (1.0 - absf(float(dx)) / 4.0)
+				var lim: float = (float(BAYER[(y & 3) * 4 + (xx & 3)]) + 0.5) / 16.0
+				if aa > 0.9 or aa > lim:
+					if xx >= 0 and xx < w + 12:
+						sombra.set_pixel(xx, y, Color(0.0, 0.0, 0.01, 0.55))
 	col.clear()
 	var r := {"base": ImageTexture.create_from_image(base_img), "sombra": ImageTexture.create_from_image(sombra)}
 	_cont_cache[id] = r
@@ -167,6 +221,14 @@ static func contorno(id: String, tex: Texture2D, def: Dictionary) -> Dictionary:
 static func prender(chao: Node2D, atras: Node2D, frente: Node2D, id: String, tex: Texture2D, def: Dictionary, arte: Dictionary, flip: bool, pe: Vector2, grama: bool, semente: int) -> void:
 	var esc := float(def["escala"])
 	var t := tipo(id)
+	if t == "aereo":
+		# a verga paira sobre os pilares: nada de contato, terra ou tufos, mas a sombra dela cai no chão (faixa achatada
+		# de 1 tom, borda em dither, a uns 35 px abaixo da linha dos pilares e deslocada para a direita) e uma faixa de
+		# 7 px de sombra cola na borda de baixo dela, para a pedra não parecer colada no fundo
+		_sombra_projetada(chao, tex, esc, arte, flip, pe, t)
+		if id.begins_with("arco_") or id in PORTOES:
+			_sombra_do_vao(chao, tex, esc, arte, flip, pe)   # o pórtico de madeira paira alto demais para a faixa colar na viga
+		return
 	var b := base(id, tex, def)
 	var bl: float = b[0]
 	var ba: float = b[1]
@@ -227,9 +289,7 @@ static func _terra(chao: Node2D, centro: Vector2, bl: float, ba: float, t: Strin
 		pg.polygon = pts
 		pg.color = cor
 		chao.add_child(pg)
-	anel.call(1.45, Color(0.15, 0.12, 0.07, 0.3), Vector2(3, 2))
-	anel.call(1.1, Color(0.15, 0.11, 0.07, 0.55), Vector2(2, 1))
-	anel.call(0.8, Color(0.1, 0.08, 0.05, 0.7), Vector2(1, 0))
+	anel.call(1.0, Color(0.12, 0.09, 0.06, 0.5), Vector2(2, 1))  # 1 anel de 1 tom (antes 3 com alfa em degradê, borrava)
 
 ## Sombra com a silhueta do sprite deitada no chão: espelhada no pé, achatada e inclinada para a direita.
 static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Dictionary, flip: bool, centro: Vector2, t: String) -> void:
@@ -237,7 +297,7 @@ static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Di
 		_mat_sombra = ShaderMaterial.new()
 		_mat_sombra.shader = Shader.new()
 		_mat_sombra.shader.code = SOMBRA_SHADER
-		_mat_sombra.set_shader_parameter("cor", Color(0.02, 0.03, 0.05, 0.34))
+		_mat_sombra.set_shader_parameter("cor", Color(0.02, 0.03, 0.05, 0.3))
 	var sp := Sprite2D.new()
 	sp.texture = tex
 	sp.centered = false
@@ -246,11 +306,32 @@ static func _sombra_projetada(chao: Node2D, tex: Texture2D, esc: float, arte: Di
 	if flip:
 		sp.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
 	sp.material = _mat_sombra
-	var achata := 0.46 if t == "arvore" else (0.3 if t == "folhagem" else 0.4)
+	var achata := 0.46 if t == "arvore" else (0.3 if t == "folhagem" else 0.28)  # sólido: sombra ~30% mais curta (revisão)
 	var inclina := 0.6 if t == "arvore" else 0.5
 	# ponto local (x, y) com y <= 0 acima do pé vira (x*esc - y*esc*inclina, -y*esc*achata): deitado e para baixo-direita
 	sp.transform = Transform2D(Vector2(esc, 0.0), Vector2(-inclina * esc, -achata * esc), centro)
 	sp.self_modulate.a = 0.8 if t == "folhagem" else 1.0
+	chao.add_child(sp)
+
+## Faixa de sombra (`SOMBRA_VAO_SHADER`) colada na borda de baixo de uma verga: o sprite é desenhado na mesma posição e
+## escala dele, mas só a faixa abaixo da silhueta aparece.
+static func _sombra_do_vao(chao: Node2D, tex: Texture2D, esc: float, arte: Dictionary, flip: bool, pe: Vector2) -> void:
+	if _mat_vao == null:
+		_mat_vao = ShaderMaterial.new()
+		_mat_vao.shader = Shader.new()
+		_mat_vao.shader.code = SOMBRA_VAO_SHADER
+		_mat_vao.set_shader_parameter("cor", Color(0.02, 0.03, 0.05, 0.3))
+		_mat_vao.set_shader_parameter("altura", 7.0)
+	var sp := Sprite2D.new()
+	sp.texture = tex
+	sp.centered = false
+	sp.flip_h = flip
+	sp.offset = -Vector2(float(arte["pivo_x"]), float(arte["pivo_y"]))
+	if flip:
+		sp.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
+	sp.material = _mat_vao
+	sp.position = pe
+	sp.scale = Vector2.ONE * esc
 	chao.add_child(sp)
 
 ## Sombra de contato com a forma real da base (ver `contorno`): sai de cada aresta de baixo do sprite, então as

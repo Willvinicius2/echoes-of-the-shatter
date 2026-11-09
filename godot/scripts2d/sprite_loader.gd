@@ -30,10 +30,18 @@ static func info(id: String) -> Dictionary:
 		_build(id)
 	return _info[id]
 
+## Escala de mundo do sprite (data2d/sprites_escala.csv): sprites de pixel art desenhados direto na grade entram
+## ampliados por 1/zoom da câmera, para 1 px do sprite = 1 px da grade. Sem linha, 1.
+static func _escala_de(id: String) -> float:
+	for r in Csv.rows("res://data2d/sprites_escala.csv"):
+		if r["id"] == id:
+			return float(r["escala"])
+	return 1.0
+
 static func _build(id: String) -> void:
 	var sf := SpriteFrames.new()
 	sf.remove_animation("default")
-	var inf := {"offset": Vector2.ZERO, "dirs": 5, "lado": 128, "evento": {}, "tem_arquivo": false}
+	var inf := {"offset": Vector2.ZERO, "dirs": 5, "lado": 128, "evento": {}, "tem_arquivo": false, "escala": _escala_de(id)}
 	for r in Csv.rows(MANIFESTO):
 		if r["id"] != id:
 			continue

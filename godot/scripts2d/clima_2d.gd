@@ -152,6 +152,8 @@ func _montar() -> void:
 	_ar.draw.connect(_desenhar_ar)
 	add_child(_ar)
 	_vegetacao()
+	if sala.has_method("agrupar_estatico"):
+		sala.agrupar_estatico()   # depois da vegetação: ela procura os sprites nos filhos diretos
 	for b in sala.braseiros:
 		_braseiro(b)
 	_criar_poeira()
@@ -481,7 +483,7 @@ func _braseiro(b: Vector2) -> void:
 		add_child(carvao)
 	var fogo := ColorRect.new()
 	fogo.size = Vector2(cfg["fogo_largura"], cfg["fogo_altura"])
-	fogo.position = canto + Vector2(sala.tile * 0.5 - fogo.size.x * 0.5, sala.tile * 0.42 - fogo.size.y)
+	fogo.position = canto + Vector2(sala.tile * 0.5 - fogo.size.x * 0.5, sala.tile * float(cfg["fogo_base"]) - fogo.size.y)
 	fogo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mf := _mat_shader(FOGO_SHADER, {"semente": _rng.randf() * 100.0, "fps": cfg["fogo_fps"], "res": fogo.size / cfg["fogo_pixel"]})
 	fogo.material = mf

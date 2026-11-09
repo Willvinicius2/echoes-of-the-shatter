@@ -128,7 +128,7 @@ static func numero(alvo: Node2D, valor: float, cor: Color, grande := false, fort
 	alvo.set_meta("dmg_num", n)
 	alvo.set_meta("dmg_num_v", valor)
 	alvo.set_meta("dmg_num_t", agora)
-	n.cor = cor
+	n.cor = Color(1.0, 0.55, 0.15) if (forte and not grande) else cor   # golpe forte/crítico em laranja; morte e dano comum mantêm a cor do chamador
 	n.tamanho = cfg()["dmg_number_size_kill" if grande else ("dmg_number_size_strong" if forte else "dmg_number_size")]
 	var esc: float = alvo.escala_sprite() if alvo.has_method("escala_sprite") else 1.0   # alvo grande: número mais alto e maior
 	n.tamanho *= clampf(esc, 1.0, 1.4) * float(cfg().get("dmg_pixel_escala", 1.0))
@@ -137,7 +137,7 @@ static func numero(alvo: Node2D, valor: float, cor: Color, grande := false, fort
 	n.tempo = cfg()["dmg_number_time"]
 	n.subida = cfg()["dmg_number_rise"]
 	pai.add_child(n)
-	n.global_position = alvo.global_position + Vector2(randf_range(-1.0, 1.0) * cfg()["number_offset_x"], (-90.0 * maxf(esc, 0.7) - 8.0) + randf_range(-10.0, 6.0))
+	n.global_position = alvo.global_position + Vector2(randf_range(-1.0, 1.0) * cfg()["number_offset_x"], ((alvo.topo_visual() if alvo.has_method("topo_visual") else -90.0 * maxf(esc, 0.7)) - 8.0) + randf_range(-10.0, 6.0))
 
 ## Faísca de impacto em `pos` (mundo), filha de `pai`.
 static func impacto(pai: Node, pos: Vector2, cor: Color, dir := Vector2.ZERO, escala := 1.0) -> void:
