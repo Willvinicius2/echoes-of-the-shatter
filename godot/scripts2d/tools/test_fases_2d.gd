@@ -2,9 +2,11 @@ extends RefCounted
 ## Testes da seleção de fase e do elite do portão (docs/design/34_fases_e_desbloqueio.md), chamados por test_2d.gd:
 ## tabela de fases, regra de destrancar, save das fases (save antigo abre), cartão da fase no título, corrida usando a
 ## sala e a fase do spawner escolhidas e o elite do portão (IA comum, escala, barra grande, entrada invulnerável, portal).
+## Também confere que nenhuma fase usa inimigo sem arte pronta (regra: nada de caixa provisória no jogo).
 ## A corrida usa data2d/testes/fases_teste.csv, em que a Pedreira aponta para a sala de fase_1.txt (não depende de fase_2.txt).
 
 const Csv = preload("res://scripts2d/csv2d.gd")
+const ArteInimigos = preload("res://scripts2d/tools/arte_inimigos_2d.gd")
 const Fase = preload("res://scripts2d/fase_2d.gd")
 const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
@@ -47,6 +49,7 @@ func rodar() -> void:
 	OpcoesScript.caminho = OPCOES
 	_limpar()
 	_testar_tabela()
+	_testar_arte_das_fases()
 	_testar_regra()
 	_testar_save()
 	await _testar_menu()
@@ -97,6 +100,23 @@ func _testar_tabela() -> void:
 	if por_id.has("cripta"):
 		check.call(str(por_id["cripta"]["boss"]) == "crypt_guardian", "cripta: o chefe continua o Guardião")
 	m = null
+
+## Regra da direção de arte: nenhuma fase vai ao jogador com a caixa provisória. Toda fase da tabela só pode pôr na tela inimigos
+## prontos (stats, as 5 animações com as 5 direções e folhas do tamanho do manifesto): ondas, chefe, enxame e encontros do mapa.
+## Quando a folha de um inimigo pendente (ash_hound, stone_herald, ossuary_warden) chegar, ele volta às ondas da Cripta
+## (docs/arte/35_pedreira_dos_ecos.md).
+func _testar_arte_das_fases() -> void:
+	var fases := Csv.rows("res://data2d/fases_2d.csv")
+	check.call(fases.size() >= 2, "arte das fases: a tabela tem %d fases" % fases.size())
+	for f in fases:
+		var ids := ArteInimigos.usados_na_fase(String(f["onda_fase"]), String(f["sala"]))
+		check.call(ids.size() >= 5, "arte da fase %s: %d tipos de inimigo no total" % [f["id"], ids.size()])
+		var sem_arte: Array[String] = []
+		for id in ids:
+			var m := ArteInimigos.motivo(id)
+			if m != "":
+				sem_arte.append("%s (%s)" % [id, m])
+		check.call(sem_arte.is_empty(), "arte da fase %s: só inimigos prontos, sem caixa provisória %s" % [f["id"], str(sem_arte)])
 
 ## Regra: aberta sem requisito, ou com a fase exigida vencida, ou com o atalho de dev. Sala ausente = "em breve", sem erro.
 func _testar_regra() -> void:
