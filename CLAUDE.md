@@ -64,6 +64,7 @@ Não use o modelo mais caro para trabalho que o mais barato resolve: isso gasta 
 - Nunca use `--force` no `master`, nunca reescreva histórico já enviado e nunca apague branch sem o ok do dono.
 - O hook Stop de `.claude/settings.json` (`tools/git/checar_envio.py`) não deixa a sessão encerrar a vez com commit que não está no GitHub.
 - Ao fechar uma etapa, ou quando o dono pedir, rode o agente `guardiao-github` (confere todas as worktrees e envia o que faltar) e depois o `painel-progresso`.
+- Capturas, prévias e PNGs de revisão nunca entram no Git (o histórico já chegou a 822 MB): guarde em `/mnt/project-files/capturas/` ou no artefato do CI e cite o caminho no PR. Ver `docs/tecnico/27_capturas_fora_do_git.md`.
 - Ficam fora do GitHub de propósito: caches, `venv`, saídas brutas do TripoSG em `_trabalho-claude/modelos3d/`, imagens de trabalho do Codex, packs KayKit e os assets do Spell Brigade. A arte aprovada entra no repositório.
 
 ## Como compilar e testar o ShatterCore

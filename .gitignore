@@ -43,3 +43,13 @@ godot/gdextension/bin/
 
 # Cache local do TripoSG (gerado no PC)
 .tripo/
+
+# Capturas e prévias de revisão: saída gerada por script, não entra no Git (ver docs/tecnico/27_capturas_fora_do_git.md).
+# Guarde na pasta compartilhada /mnt/project-files/capturas/<assunto>/ ou publique pelo CI (artefato / branch capturas/pr-N).
+/art-src/**/previas/
+/art-src/**/previews/
+/art-src/**/capturas/
+/godot/capturas_*/
+/docs/arte/sprites2d/capturas_*/*/
+/capturas/
+/capturas_*/
