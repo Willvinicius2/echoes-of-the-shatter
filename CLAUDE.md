@@ -1,14 +1,14 @@
 # Echoes of the Shatter — instruções para o Claude Code
 
-ARPG single-player em **2D top-down, pixel art** (definitivo desde 29/10/2026), com corridas de horda e expedições idle, para Steam (Acesso Antecipado).
-**O jogo de hoje é o cliente 2D**: GDScript em `godot/scripts2d/`, dados em `godot/data2d/`, arte em `godot/art2d/`, regras no ShatterCore por GDExtension (`godot/gdextension/`). Comece por `godot/COMO_RODAR_2D.md`. O que este arquivo diz sobre 3D, Cripta em 3D, TripoSG, C# e P/Invoke é histórico, salvo quando o dono pedir arte 3D.
-Motor: **Godot 4** (o CI roda o 4.4.1; histórico: .NET, C#) (decisão do dono em 20/10/2026; antes Unity 6.3, UE 5.8 e o Godot 4 do plano original). O ShatterCore (C++17) vira biblioteca nativa chamada por P/Invoke. Plano e o que mudou: `docs/tecnico/23_migracao_godot.md`. O último estado da Unity está no branch `arquivo/unity-final`; não restaure Unity no `master`.
+ARPG roguelike single-player em 2D top-down em pixel art (visual 2D definitivo desde 29/10/2026) com expedições idle, para Steam (Acesso Antecipado).
+Motor: **Godot 4 (.NET, C#)** (decisão do dono em 20/10/2026; antes Unity 6.3, UE 5.8 e o Godot 4 do plano original). O ShatterCore (C++17) vira biblioteca nativa chamada por P/Invoke. Plano e o que mudou: `docs/tecnico/23_migracao_godot.md`. O último estado da Unity está no branch `arquivo/unity-final`; não restaure Unity no `master`.
 
 ## Máquina e disco
 - O disco C está cheio: tudo do projeto fica no disco D. Repositório em `D:\openclaude\EchoesOfTheShatter`, arquivos de trabalho em `D:\openclaude\_trabalho-claude`.
 - Godot e MCP do Godot ficam no disco D. O projeto Godot fica em `godot/` (criado pela migração). A pasta Unity antiga do PC só é apagada quando o dono confirmar.
 
-## Direção de arte (aprovada em 16/10/2026)
+## Direção de arte
+- **Vigente: 2D top-down em pixel art** (`docs/arte/26_direcao_visual_2d.md`). As linhas abaixo sobre 3D estilo Spell Brigade são histórico de 16/10 e só valem como referência de estilo.
 - O visual segue o estilo do Spell Brigade: 3D estilizado pintado à mão, heróis chibi, magia em neon e UI de pedra escura. As decisões de renderização estão em `docs/arte/08_decisoes_visual_3d.md`.
 - As referências aprovadas e as folhas oficiais de heróis, inimigos, chefes, cenários e ícones estão em `docs/arte/referencias-geracao/` (ver o README dessa pasta). Todo personagem novo deve seguir essas folhas.
 - Os assets extraídos do Spell Brigade (`D:\openclaude\spell-brigade-re`) servem só de referência de estilo. Nunca entram no projeto nem no build.
@@ -93,9 +93,9 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 - Arte 3D: o `escolhedor-ferramentas` também é o revisor crítico; o que ia para aprovação do dono passa antes por ele, e só chega ao dono o que estiver bonito. O dono continua sendo quem aprova a arte.
 
 ## Pendências de decisão
-- **PRIORIDADE MÁXIMA — Alinhamento de Contexto, Dupla e Escopo (`docs/design/20_alinhamento_ia_e_escopo.md`):** Antes de iniciar qualquer nova frente ou disparar subagentes, leia `docs/design/20_alinhamento_ia_e_escopo.md` e peça ao dono para decidir as duas pendências prioritárias em `docs/progresso/estado.json` (`fluxo-agentes-contexto` e `foco-fatia-vertical`). Não aprove artes nem decisões de design em nome do dono.
+- Fluxo dos agentes (decidido em 09/11/2026): uma thread por assunto, contexto enxuto pelo índice `docs/design/20_alinhamento_ia_e_escopo.md` e pelos cartões de contexto, passagem de bastão curta ao fechar. Foco da fatia vertical: o Arqueiro no jogo 2D. Não aprove artes nem decisões de design em nome do dono; a revisão é das threads revisoras.
 - Versão do Godot 4.x/.NET e o carregamento da biblioteca nativa no export: definir ao criar o projeto (doc 23).
 - O protótipo Godot F1 fica em `prototipos/godot-f1/` como referência de game feel (2D, GDScript). Não é a base do jogo atual. Como rodar: `prototipos/godot-f1/COMO_RODAR.md`.
 
 ## Próximo passo
-Atualizado em 09/11/2026. Ato I no cliente 2D com o Arqueiro em pixel art: a área 1 e a Pedreira dos Ecos (área 2, `docs/arte/35_pedreira_dos_ecos.md`) estão no `master`. Em seguida: inimigos próprios da Pedreira (dependem de arte do PixelLab), as demais áreas do Ato I e o leque de habilidades com identidade própria (`docs/design/36_leque_skills_identidade.md`, `37_leque_skills_2.md`). Fases e desbloqueio em `docs/design/34_fases_e_desbloqueio.md`; horda em `docs/design/31_plano_hordas.md`. O trecho antigo sobre a Cripta em 3D montada via MCP não vale mais.
+Fatia jogável 2D do Arqueiro (ver `docs/design/27_cronograma_jogavel.md` e `docs/progresso/estado.json`): inimigos em pixel art da Pedreira dos Ecos (área 2, falta saldo no PixelLab), elites e chefe em escala maior, depois meta-progressão com save, hub com craft básico e exploração por rotas, e por fim a migração das regras ao ShatterCore.
