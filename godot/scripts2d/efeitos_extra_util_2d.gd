@@ -1,15 +1,15 @@
 extends RefCounted
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 ## Utilidades de desenho e de alvo das skills do segundo leque (doc 37): tudo vetorial, sem sprite sheet nova.
 ## Desenho "pintado" em três camadas (contorno/halo escuro, corpo na cor do elemento, miolo claro) para nada ficar chapado.
 
 ## Inimigos vivos num círculo.
 static func no_raio(arvore: Node, centro: Vector2, r: float) -> Array:
 	var out := []
-	for n in arvore.get_tree().get_nodes_in_group("hurtable"):
-		if n is Node2D and n.has_method("take_damage") and n.global_position.distance_to(centro) <= r:
-			if n.has_method("esta_morto") and n.esta_morto():
-				continue
-			out.append(n)
+	for n in Alvos.no_raio(arvore.get_tree(), centro, r, "take_damage"):
+		if n.has_method("esta_morto") and n.esta_morto():
+			continue
+		out.append(n)
 	return out
 
 ## Inimigos vivos mais perto de `centro` (até `max_n`), dentro de `alcance`, do mais perto ao mais longe.

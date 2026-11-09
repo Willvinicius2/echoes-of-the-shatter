@@ -4,6 +4,7 @@ extends RefCounted
 ## existentes (lentidao, atordoamento). Sem arte em res://art2d/fx/gelo/ cai em desenho por código (Feel.ponto).
 ## Contrato igual ao de efeitos_arqueiro_2d.gd: executar(efeito, jogador, def, nivel, mira) -> bool.
 
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const PASTA := "res://art2d/fx/gelo/"
@@ -67,11 +68,10 @@ static func _prisao(jogador: Node2D, dir: Vector2, def: Dictionary) -> void:
 	var raio: float = def.get("raio", 170.0)
 	var dano: float = jogador.stats["arrow_damage"] * def.get("dano", 1.0)
 	_anim(jogador.get_parent(), "gelo_prisao", 8, centro, raio * 2.0, 0.9, 12.0)
-	for n in jogador.get_tree().get_nodes_in_group("hurtable"):
-		if n is Node2D and n.has_method("aplicar_status") and n.global_position.distance_to(centro) <= raio:
-			n.take_damage(dano, centro)
-			if is_instance_valid(n):
-				congelar(n, def.get("duracao", 2.0))
+	for n in Alvos.no_raio(jogador.get_tree(), centro, raio, "aplicar_status"):
+		n.take_damage(dano, centro)
+		if is_instance_valid(n):
+			congelar(n, def.get("duracao", 2.0))
 
 # ---------- frio, congelamento ----------
 const MAX_ACUMULOS := 4   # no máximo de acúmulos o inimigo congela
@@ -122,11 +122,10 @@ static func arauto_vigiar(inimigo: Node, jogador: Node2D, def: Dictionary) -> vo
 		var raio: float = def.get("raio", 150.0)
 		var dano: float = jogador.stats["arrow_damage"] * def.get("dano", 1.0)
 		_anim(pai, "gelo_explosao", 8, pos, raio * 2.0, 0.55, 14.0)
-		for n in jogador.get_tree().get_nodes_in_group("hurtable"):
-			if n != e and n is Node2D and n.global_position.distance_to(pos) <= raio:
-				n.take_damage(dano, pos)
-				if is_instance_valid(n):
-					acumular_frio(n, 1, def)
+		for n in Alvos.no_raio(jogador.get_tree(), pos, raio, "", e):
+			n.take_damage(dano, pos)
+			if is_instance_valid(n):
+				acumular_frio(n, 1, def)
 		, CONNECT_ONE_SHOT)
 
 ## Aura do Arauto do Gelo na camada C1 (elipse no chão, atrás do arqueiro; regra única em vfx_2d.gd). Nó "AuraGelo".
@@ -161,10 +160,7 @@ static func arauto_varrer(jogador: Node2D, def: Dictionary) -> void:
 
 # ---------- visual ----------
 static func _lascas(origem: Node2D, dano: float, qtd: int, raio: float, def: Dictionary) -> void:
-	var alvos := []
-	for n in origem.get_tree().get_nodes_in_group("hurtable"):
-		if n != origem and n is Node2D and n.has_method("aplicar_status") and n.global_position.distance_to(origem.global_position) <= raio:
-			alvos.append(n)
+	var alvos := Alvos.no_raio(origem.get_tree(), origem.global_position, raio, "aplicar_status", origem)
 	alvos.sort_custom(func(a, b): return a.global_position.distance_squared_to(origem.global_position) < b.global_position.distance_squared_to(origem.global_position))
 	var pai: Node = origem.get_parent()
 	for i in mini(qtd, alvos.size()):
@@ -327,9 +323,8 @@ class Cometa extends Node2D:
 		_acc += delta
 		if _acc >= 0.4:
 			_acc = 0.0
-			for n in get_tree().get_nodes_in_group("hurtable"):
-				if n is Node2D and n.has_method("aplicar_status") and n.global_position.distance_to(global_position) <= raio:
-					n.aplicar_status("lentidao", 0.5, lentidao)
+			for n in Alvos.no_raio(get_tree(), global_position, raio, "aplicar_status"):
+				n.aplicar_status("lentidao", 0.5, lentidao)
 		queue_redraw()
 		if _t >= dur_chao:
 			queue_free()
@@ -355,11 +350,10 @@ class Cometa extends Node2D:
 			tw.tween_callback(sp.queue_free)
 		Feel.impacto(pai, global_position + Vector2(0, -10), PAL[1], Vector2.ZERO, raio / 40.0)
 		Feel.shake(self, 4.0, 0.18)
-		for n in get_tree().get_nodes_in_group("hurtable"):
-			if n is Node2D and n.has_method("take_damage") and n.global_position.distance_to(global_position) <= raio:
-				n.take_damage(dano, global_position)
-				if is_instance_valid(n):
-					load("res://scripts2d/efeitos_arqueiro_gelo_2d.gd").acumular_frio(n, acumulos, def)
+		for n in Alvos.no_raio(get_tree(), global_position, raio, "take_damage"):
+			n.take_damage(dano, global_position)
+			if is_instance_valid(n):
+				load("res://scripts2d/efeitos_arqueiro_gelo_2d.gd").acumular_frio(n, acumulos, def)
 
 	## Chão gelado (C0): placa branca-azulada achatada, rachaduras hexagonais que escurecem, borda que respira.
 	func _draw() -> void:
@@ -472,8 +466,8 @@ class Nova extends Node2D:
 	func _physics_process(delta: float) -> void:
 		_t += delta
 		var r := raio * clampf(_t / EXPANDE, 0.0, 1.0)
-		for n in get_tree().get_nodes_in_group("hurtable"):
-			if n is Node2D and n.has_method("take_damage") and not _atingidos.has(n) and n.global_position.distance_to(global_position) <= r:
+		for n in Alvos.no_raio(get_tree(), global_position, r, "take_damage"):
+			if not _atingidos.has(n):
 				_atingidos.append(n)
 				n.take_damage(dano, global_position)
 				if is_instance_valid(n):

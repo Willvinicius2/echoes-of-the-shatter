@@ -4,6 +4,7 @@ extends RefCounted
 ## Sem arte (PNG ausente) cada efeito cai num desenho de código, para o jogo e o teste headless nunca quebrarem.
 ## Nenhum número de balanceamento aqui: tudo vem do `def` (data2d/habilidades_arqueiro.csv).
 
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const U = preload("res://scripts2d/fogo_util_2d.gd")
 const Anim = preload("res://scripts2d/fogo_anim_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
@@ -65,11 +66,10 @@ static func ao_abate(jogador: Node2D, pos: Vector2, sobra: float, def: Dictionar
 	e.global_position = pos
 	e.z_index = 4
 	cena.add_child(e)
-	for n in cena.get_tree().get_nodes_in_group("hurtable"):
-		if n is Node2D and n.global_position.distance_to(pos) <= raio and n.has_method("take_damage"):
-			n.take_damage(dano, pos)
-			if n.has_method("aplicar_status"):
-				n.aplicar_status("queimadura", def.get("duracao", 3.0), def.get("dps", 3.0))
+	for n in Alvos.no_raio(cena.get_tree(), pos, raio, "take_damage"):
+		n.take_damage(dano, pos)
+		if n.has_method("aplicar_status"):
+			n.aplicar_status("queimadura", def.get("duracao", 3.0), def.get("dps", 3.0))
 	return true
 
 ## Aura do Arauto das Cinzas na camada C1 (elipse no chão, atrás do arqueiro; regra única em vfx_2d.gd). Nó "AuraCinzas".

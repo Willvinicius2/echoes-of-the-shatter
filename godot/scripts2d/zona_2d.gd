@@ -2,6 +2,7 @@ extends Node2D
 ## Zona no chão criada por habilidades: chuva (dano em pulsos), fumaça (lentidão) e armadilha (dispara uma vez).
 ## Parâmetros vêm da linha da habilidade em data2d/habilidades_*.csv, já escalonada pelo nível.
 
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
 
@@ -29,11 +30,7 @@ func _ready() -> void:
 	Vfx.anel_entrada(get_parent(), global_position, raio, cor)   # a zona nasce com anel de entrada (doc 33 seção 2)
 
 func _alvos(r: float) -> Array:
-	var out := []
-	for n in get_tree().get_nodes_in_group("hurtable"):
-		if n is Node2D and n.global_position.distance_to(global_position) <= r:
-			out.append(n)
-	return out
+	return Alvos.no_raio(get_tree(), global_position, r)
 
 func _physics_process(delta: float) -> void:
 	_t += delta
