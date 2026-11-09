@@ -1,0 +1,12 @@
+id,escala,nota
+arqueiro,2.5,escala de mundo para numeros e alcances (1/zoom 0.4 em 360 de altura); o desenho usa 1/zoom da camera em tempo de execucao
+chain_wraith,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+crypt_bat,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+crypt_guardian,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+ghost_archer,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+hollow_sentinel,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+skeleton_soldier,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+wandering_ghost,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+cinder_archer,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+fallen_echo,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
+ossuary_captain,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade

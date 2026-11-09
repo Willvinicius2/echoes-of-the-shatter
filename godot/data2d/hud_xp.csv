@@ -1,0 +1,7 @@
+chave,valor,unidade,nota
+altura,8,px,altura da barra de experiencia no topo da tela
+margem,0,px,recuo lateral da barra
+fonte,18,px,tamanho do texto do nivel
+fonte_xp,14,px,tamanho do texto de XP atual/proximo
+suavizar,8,1/s,velocidade com que a barra sobe ao ganhar XP
+barra_propria,1,flag,1 desenha a barra no topo da tela; 0 quando a HUD principal ja desenha (ela le jogador.xp)

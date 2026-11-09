@@ -150,12 +150,17 @@ TEST(c_api_rogue_wave_defs) {
     Rogue g;
     const json::Value d =
         Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_rogue_wave_defs_json(g.r, o, c, n); }));
-    ASSERT_EQ(d["phases"].Size(), std::size_t(1));
+    ASSERT_EQ(d["phases"].Size(), std::size_t(2));  // cripta e pedreira (godot/data2d)
     const json::Value& ph = d["phases"].At(0);
     EXPECT_EQ(ph["id"].AsString(), std::string("cripta"));
     ASSERT_EQ(ph["waves"].Size(), std::size_t(8));
     EXPECT_EQ(ph["boss"].AsString(), std::string("crypt_guardian"));
     EXPECT_EQ(ph["swarm"]["wave"].AsInt(0), 9);
+    const json::Value& pe = d["phases"].At(1);
+    EXPECT_EQ(pe["id"].AsString(), std::string("pedreira"));
+    EXPECT_EQ(pe["waves"].Size(), std::size_t(7));
+    EXPECT_EQ(pe["boss"].AsString(), std::string("ossuary_captain"));
+    EXPECT_EQ(pe["swarm"]["wave"].AsInt(0), 8);
     EXPECT_TRUE(ph["ring_max"].AsDouble(0.0) >= ph["ring_min"].AsDouble(1.0));
     EXPECT_TRUE(ph["waves"].At(0)["enemies"].Size() > 0);
 }

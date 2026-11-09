@@ -177,7 +177,7 @@ TEST(rogue_waves_finalize_cross_checks) {
     int missing = 0;
     for (const ContentError& e : d.Errors())
         missing += e.message.find("has no") != std::string::npos ? 1 : 0;
-    EXPECT_EQ(missing, 2);  // cripta sem linha de fase e "outra" sem ondas
+    EXPECT_EQ(missing, 3);  // cripta e pedreira sem linha de fase e "outra" sem ondas
     fs::remove_all(dir);
 }
 
@@ -254,7 +254,8 @@ TEST(rogue_waves_deadline_brings_swarm_and_boss) {
     EXPECT_FALSE(w.BossSpawned());
     bot.bossLife = 1e9;  // o chefe vai seguir vivo: o enxame gasta o orçamento e para
     int elitesBefore = 0;
-    for (const RogueWaveDef& d : RealData().Waves()) elitesBefore += d.elites;
+    for (const RogueWaveDef& d : RealData().Waves())
+        if (d.phase == "cripta") elitesBefore += d.elites;
     EXPECT_TRUE(bot.elites >= elitesBefore);  // as 8 ondas passaram inteiras
     for (int i = 0; i < 4; ++i) bot.Step(w, 0.25);
     EXPECT_TRUE(w.Swarm());
