@@ -45,6 +45,7 @@ jobs:
           for res in 1600x900 2560x1440; do
             timeout -k 5 150 xvfb-run -a -s "-screen 0 ${res}x24" $GODOT --path proj --rendering-driver opengl3 --resolution "$res" --script res://scripts2d/tools/captura_pixel_2d.gd -- "$PWD/capturas/fase_${res}" || true
           done
+          timeout -k 5 150 xvfb-run -a -s "-screen 0 1920x1080x24" $GODOT --path proj --rendering-driver opengl3 --resolution 1920x1080 --script res://scripts2d/tools/captura_chefes_2d.gd -- "$PWD/capturas/pedreira" || true
           ls -la capturas
       - uses: actions/upload-artifact@v4
         if: always()

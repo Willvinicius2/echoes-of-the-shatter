@@ -636,7 +636,8 @@ func _nascer(s: Dictionary) -> void:
 	if bool(s.get("elite", false)):
 		e.set_meta("elite", true)
 		e.modulate = Color(1.3, 1.08, 0.62)
-		e.scale = Vector2(1.2, 1.2)
+		if not e.virar_elite(float(config.get("elite_scale", 1.5))):
+			e.scale = Vector2(1.2, 1.2)   # sem folha elite (Cão de Cinza): como antes
 	e.set_meta("spawn_id", int(s["id"]))
 	e.set_meta("xp_mult", float(s.get("xp_mult", 1.0)))
 	e.died.connect(_on_inimigo_morto)
@@ -648,7 +649,7 @@ func _preparar_elite_portao(e: Node2D) -> void:
 	e.set_meta("elite", true)
 	e.set_meta("chefe_portao", true)
 	e.stats["hp_bar"] = 0.0   # a barra é a grande da HUD, não a da cabeça
-	e.aumentar(float(config.get("gate_elite_scale", 1.5)))
+	e.virar_elite(float(config.get("gate_elite_scale", 1.5)))
 	var dur := float(config.get("gate_elite_intro", 1.4))
 	e.iniciar_entrada(dur)
 	hud.chefe = e

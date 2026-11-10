@@ -286,8 +286,10 @@ func _testar_corrida_e_elite() -> void:
 	for c in e.get_children():
 		if c is CollisionShape2D:
 			forma = c.shape
-	check.call(is_equal_approx(e.escala_extra, f) and is_equal_approx(float(e.stats["radius"]), float(base["radius"]) * f) and forma != null and is_equal_approx(forma.radius, float(e.stats["radius"])), "elite: escala %.1f no sprite e no raio de colisão" % f)
-	check.call(absf(e.sprite.scale.x - e._esc_base * f) < 0.01, "elite: sprite %.2f x" % (e.sprite.scale.x / e._esc_base))
+	var arte_elite: bool = e.char_id == "ossuary_captain_elite"
+	check.call(arte_elite and is_equal_approx(e.escala_extra, 1.0), "elite: usa a folha própria 1,5x re-renderizada (sem esticar pixel)")
+	check.call(is_equal_approx(float(e.stats["radius"]), float(base["radius"]) * f) and forma != null and is_equal_approx(forma.radius, float(e.stats["radius"])), "elite: raio de colisão x%.1f" % f)
+	check.call(absf(e.sprite.scale.x - e._esc_base) < 0.01, "elite: sprite na escala de mundo da grade (%.2f)" % e.sprite.scale.x)
 	check.call(is_equal_approx(e.hp_max, run.nucleo.vida_chefe(float(base["hp"]), run.dps_medido)), "elite: vida adaptativa do core (%.0f)" % e.hp_max)
 	check.call(run.hud.chefe == e and run.hud.chefe_nome == "enemy.ossuary_captain.name", "elite: barra grande da HUD com o nome dele")
 	var y_barra := float(run.hud._lay["chefe_elite_y"])
