@@ -618,8 +618,11 @@ func _nascer(s: Dictionary) -> void:
 		e.hp_max = vida_chefe
 		if portao:
 			_preparar_elite_portao(e)
-		else:
+		elif player.global_position.distance_to(onde) > 2.0 * float(config.get("boss_wake_radius", 260.0)):
+			# só quando ele acorda longe (prazo do enxame); se foi o jogador que chegou ao altar, a barra do chefe já diz tudo
 			_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
+		else:
+			hud.mensagem = ""   # o convite para ir ao altar sai quando ele acorda
 	else:
 		var hp_mult := float(s.get("hp_mult", 1.0))
 		e.stats["hp"] = float(e.stats["hp"]) * hp_mult
