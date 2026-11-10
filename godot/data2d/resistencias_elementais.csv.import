@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dpijf4waayide"
+
+[deps]
+
+files=["res://data2d/resistencias_elementais.fogo.translation", "res://data2d/resistencias_elementais.gelo.translation", "res://data2d/resistencias_elementais.raio.translation", "res://data2d/resistencias_elementais.veneno.translation"]
+
+source_file="res://data2d/resistencias_elementais.csv"
+dest_files=["res://data2d/resistencias_elementais.fogo.translation", "res://data2d/resistencias_elementais.gelo.translation", "res://data2d/resistencias_elementais.raio.translation", "res://data2d/resistencias_elementais.veneno.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

@@ -7,6 +7,10 @@ extends RefCounted
 ##   gas_inflamado    queimadura em alvo envenenado -> explosão de gás: dano proporcional ao veneno, consome o veneno
 ##   quebra_gelida    choque em alvo congelado      -> estilhaça o gelo: dano grande em área, descongela
 ##   corrente_toxica  choque em alvo envenenado     -> o veneno pula por arcos para os vizinhos
+##   conducao_agua    choque em alvo na margem d'água -> a corrente corre pela água e choca vizinhos que também estão nela
+##   apagar_fogo      queimadura em alvo na água     -> a água apaga a chama (o status não pega), só sobe vapor
+## Resistências por inimigo (data2d/resistencias_elementais.csv): multiplicador do valor e da duração do status do elemento;
+## 0 = imune. Ver `mult()`.
 ## Cada inimigo tem recarga de reação (meta `reacao_ate`) para uma reação não disparar a outra em cadeia infinita.
 
 const Csv = preload("res://scripts2d/csv2d.gd")
@@ -16,7 +20,10 @@ const U = preload("res://scripts2d/efeitos_extra_util_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const BASE_DANO := 10.0
 
+const DIST_AGUA := 70.0   # px da margem do riacho que contam como "na água"
+const ELEMENTO := {"veneno": "veneno", "queimadura": "fogo", "choque": "raio", "lentidao": "gelo"}
 static var _defs := {}
+static var _resist := {}
 static var _por_gatilho := {}
 
 static func carregar() -> void:
@@ -33,6 +40,16 @@ static func carregar() -> void:
 			_por_gatilho[d["gatilho"]] = []
 		_por_gatilho[d["gatilho"]].append(d)
 
+## Multiplicador de resistência do inimigo `id` ao elemento do status `tipo` (1 = neutro, 0 = imune).
+static func mult(id: String, tipo: String) -> float:
+	if _resist.is_empty():
+		for r in Csv.rows("res://data2d/resistencias_elementais.csv"):
+			_resist[r["id"]] = r
+	var el: String = ELEMENTO.get(tipo, "")
+	if el == "" or not _resist.has(id):
+		return 1.0
+	return float(_resist[id][el])
+
 static func defs() -> Dictionary:
 	carregar()
 	return _defs
@@ -44,6 +61,11 @@ static func sob(e: Node, exige: String) -> bool:
 			return int(e.get_meta("frio_acumulos", 0)) > 0 and e.has_method("tem_status") and e.tem_status("lentidao")
 		"congelado":
 			return e.has_meta("congelado_ate") and Time.get_ticks_msec() < int(e.get_meta("congelado_ate"))
+		"agua":
+			for sala in e.get_tree().get_nodes_in_group("sala_2d"):
+				if sala.has_method("perto_agua") and sala.perto_agua(e.global_position, DIST_AGUA):
+					return true
+			return false
 		_:
 			return e.has_method("tem_status") and e.tem_status(exige)
 
@@ -75,6 +97,21 @@ static func _disparar(d: Dictionary, alvo: Node2D) -> void:
 	var dano: float = _dano_base(alvo) * float(d["dano"]) / 10.0
 	var vizinhos: Array = U.no_raio(alvo, pos, d["raio"])
 	match d["id"]:
+		"conducao_agua":
+			var alcance: Array = []
+			for n in vizinhos:
+				if n != alvo and _perto_agua(n):
+					alcance.append(n)
+			alcance.sort_custom(func(a: Node2D, b: Node2D): return a.global_position.distance_squared_to(pos) < b.global_position.distance_squared_to(pos))
+			var pts_a: Array = []
+			alvo.take_damage(dano, pos)
+			for n in alcance.slice(0, int(d["valor"])):
+				n.aplicar_status("choque", 2.0, 0.15)
+				n.take_damage(dano, pos)
+				pts_a.append(n.global_position)
+			Marca.criar(pai, pos, "conducao", d, pts_a)
+		"apagar_fogo":
+			Marca.criar(pai, pos, "vapor", d)
 		"vapor":
 			alvo.set_meta("frio_acumulos", 0)
 			alvo._status.erase("lentidao")
@@ -115,7 +152,11 @@ static func _disparar(d: Dictionary, alvo: Node2D) -> void:
 				n.take_damage(dano, pos)
 				pts.append(n.global_position)
 			Marca.criar(pai, pos, "corrente", d, pts)
-	Feel.numero(alvo, dano, d["cor"], false, true)
+	if dano >= 1.0:
+		Feel.numero(alvo, dano, d["cor"], false, true)
+
+static func _perto_agua(n: Node2D) -> bool:
+	return sob(n, "agua")
 
 static func _limpar_queimadura(alvo: Node2D) -> void:
 	alvo._status.erase("queimadura")
@@ -179,6 +220,11 @@ class Marca extends Node2D:
 					var ang := TAU * float(i) / 10.0 + 0.3
 					U.cristal(self, Vector2.from_angle(ang) * r * 0.3, ang, 10.0 + 26.0 * (1.0 - k) , 4.0, a)
 				draw_arc(Vector2.ZERO, r, 0, TAU, 36, Color(0.8, 0.97, 1.0, 0.8 * a), 2.0)
+			"conducao":   # arcos azuis que correm pela água e uma poça de brilho
+				U.elipse(self, Vector2.ZERO, r * 0.5, Color(0.4, 0.8, 1.0, 0.35 * a))
+				for i in pts.size():
+					U.raio_zz(self, Vector2.ZERO, pts[i] - global_position, Color(0.5, 0.85, 1.0), 2.5, float(i) + _t * 20.0, a)
+				U.elipse_arco(self, Vector2.ZERO, r * 0.6, Color(0.8, 0.95, 1.0, a), 2.0)
 			"corrente":   # arcos verdes e amarelos até os vizinhos
 				for i in pts.size():
 					U.raio_zz(self, Vector2.ZERO, pts[i] - global_position, Color(0.75, 1.0, 0.3), 2.5, float(i) + _t * 20.0, a)

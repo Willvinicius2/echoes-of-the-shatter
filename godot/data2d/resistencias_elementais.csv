@@ -1,0 +1,14 @@
+id,fogo,gelo,raio,veneno
+hollow_sentinel,1,1,1,1
+ash_hound,0.3,1.5,1,1
+stone_herald,1,0.5,1,0
+ghost_archer,1,1,1.3,0.5
+crypt_guardian,0.7,0.7,0.7,0.5
+skeleton_soldier,1,1,1.3,0
+wandering_ghost,1.3,1,1.5,0.3
+chain_wraith,1,1,1.5,0.7
+crypt_bat,1.3,1,1.5,1
+ossuary_captain,1,1,1.3,0
+ossuary_warden,1,0.6,1.3,0
+cinder_archer,0.2,1.5,1,1
+fallen_echo,1.3,1,1,0.5
