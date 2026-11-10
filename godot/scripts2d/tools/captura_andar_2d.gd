@@ -34,9 +34,46 @@ func _initialize() -> void:
 	p.god_mode = true
 	mundo.add_child(p)
 	await physics_frame
-	var passos := int(seg * float(Engine.physics_ticks_per_second))
+	var modo: String = args[2] if args.size() > 2 else "andar"
 	var n := 0
 	var t := 0
+	if modo == "acao":
+		# atirar e esquivar: corre para a direita mirando para a esquerda (tiro para trás), solta a mira e segue correndo
+		# (volta a olhar o movimento), depois esquiva em três direções
+		var tps := int(Engine.physics_ticks_per_second)
+		var roteiro := [
+			{"move": Vector2.RIGHT, "aim": Vector2.LEFT, "t": 2.0},
+			{"move": Vector2.RIGHT, "aim": Vector2.ZERO, "t": 1.0},
+			{"move": Vector2.DOWN, "aim": Vector2.UP, "t": 2.0},
+			{"move": Vector2.ZERO, "aim": Vector2.ZERO, "t": 0.5},
+		]
+		for r in roteiro:
+			p.auto_move = r["move"]
+			p.auto_aim = r["aim"]
+			for k in int(float(r["t"]) * tps):
+				await physics_frame
+				cam.position = p.global_position
+				t += 1
+				if t % 4 == 0:
+					await RenderingServer.frame_post_draw
+					n += 1
+					root.get_viewport().get_texture().get_image().save_png("%s/andar_%d.png" % [pasta, n])
+		p.auto_aim = Vector2.ZERO
+		for d in [Vector2.RIGHT, Vector2(-1, -1), Vector2.DOWN]:
+			p.auto_move = Vector2.ZERO
+			p._aim = d
+			p.call("_comecar_esquiva", d)
+			for k in int(0.9 * tps):
+				await physics_frame
+				cam.position = p.global_position
+				t += 1
+				if t % 4 == 0:
+					await RenderingServer.frame_post_draw
+					n += 1
+					root.get_viewport().get_texture().get_image().save_png("%s/andar_%d.png" % [pasta, n])
+		quit()
+		return
+	var passos := int(seg * float(Engine.physics_ticks_per_second))
 	for d in DIRS:
 		p.auto_move = d.normalized()
 		for k in passos:

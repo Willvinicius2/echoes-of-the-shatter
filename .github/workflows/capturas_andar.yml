@@ -49,6 +49,10 @@ jobs:
           timeout -k 5 600 xvfb-run -a -s "-screen 0 1280x720x24" $GODOT --path proj --rendering-driver opengl3 --script res://scripts2d/tools/captura_andar_2d.gd -- "$PWD/quadros" 2 || true
           ls quadros | wc -l
           ffmpeg -loglevel error -y -framerate 15 -i quadros/andar_%d.png -c:v libx264 -pix_fmt yuv420p capturas/andar_8_direcoes.mp4
+          rm -rf quadros
+          mkdir -p quadros
+          timeout -k 5 300 xvfb-run -a -s "-screen 0 1280x720x24" $GODOT --path proj --rendering-driver opengl3 --script res://scripts2d/tools/captura_andar_2d.gd -- "$PWD/quadros" 2 acao || true
+          ffmpeg -loglevel error -y -framerate 15 -i quadros/andar_%d.png -c:v libx264 -pix_fmt yuv420p capturas/atirar_esquivar.mp4 || true
           cp quadros/andar_1.png quadros/andar_20.png quadros/andar_50.png quadros/andar_80.png capturas/ || true
       - uses: actions/upload-artifact@v4
         if: always()
