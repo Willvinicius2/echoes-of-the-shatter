@@ -57,6 +57,7 @@ func _testar() -> void:
 	await _testar_habilidades_arqueiro()
 	await _testar_fisica_habilidades()
 	await _testar_leque_skills()
+	await preload("res://scripts2d/tools/test_reacoes_2d.gd").new(self, check).rodar()   # reações elementais (doc 38)
 	await AutocastTestes.new(self, check).rodar()
 	await HordaTestes.new(self, check).rodar()
 	await preload("res://scripts2d/tools/test_fases_2d.gd").new(self, check).rodar()   # fases, desbloqueio e elite do portão (doc 34)

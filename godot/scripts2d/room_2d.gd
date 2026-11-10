@@ -80,6 +80,7 @@ func tamanho_px() -> Vector2:
 	return Vector2(colunas * tile, linhas * tile)
 
 func carregar(caminho: String) -> bool:
+	add_to_group("sala_2d")
 	tile = int(Csv.kv("res://data2d/run_settings.csv")["tile"])
 	var f := FileAccess.open(caminho, FileAccess.READ)
 	if f == null:
@@ -588,6 +589,20 @@ func seguir_vinheta(centro: Vector2, tam_vista: Vector2) -> void:
 		return
 	_vinheta.position = centro
 	_vinheta.scale = tam_vista * 1.5 / float(_vinheta.texture.get_width())
+
+var _agua_pts: Array = []   # [{pts: PackedVector2Array (spline em px), meia: meia-largura em px}], montado na primeira consulta
+
+## `p` está a até `dist` px da margem de algum riacho (dentro da água também conta)? Usado pelas reações com a água.
+func perto_agua(p: Vector2, dist: float) -> bool:
+	if _agua_pts.is_empty() and not riachos.is_empty():
+		for r in riachos:
+			_agua_pts.append({"pts": Terreno.spline(r["pts"], tile * 0.5), "meia": float(r["larg"]) * tile * 0.5})
+	for a in _agua_pts:
+		var pts: PackedVector2Array = a["pts"]
+		for i in pts.size() - 1:
+			if Geometry2D.get_closest_point_to_segment(p, pts[i], pts[i + 1]).distance_to(p) - float(a["meia"]) <= dist:
+				return true
+	return false
 
 ## Fase aberta: o mapa é maior que a tela (a câmera segue o jogador e as ondas nascem fora da vista).
 func aberta() -> bool:
