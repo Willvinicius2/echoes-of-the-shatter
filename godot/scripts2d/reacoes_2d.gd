@@ -164,6 +164,120 @@ static func _limpar_queimadura(alvo: Node2D) -> void:
 		alvo.get_node("OverlayQueimadura").queue_free()
 	alvo._recalcular_status()
 
+## Elementos que o inimigo `id` resiste (mult <= 0.6), é imune (0) ou sofre mais (>= 1.3): [{el, m}], na ordem do CSV.
+## Alimenta os ícones junto da barra de vida (dica de quem não fica a perder tempo com o elemento errado).
+static func dicas(id: String) -> Array:
+	mult(id, "veneno")   # garante o CSV carregado
+	var out: Array = []
+	if not _resist.has(id):
+		return out
+	for el in ["fogo", "gelo", "raio", "veneno"]:
+		var m := float(_resist[id][el])
+		if m <= 0.6 or m >= 1.3:
+			out.append({"el": el, "m": m})
+	return out
+
+const DICA_ESC := 1.4   # tamanho do ícone de resistência (px de arte x este fator)
+const COR_EL := {"fogo": Color(1.0, 0.55, 0.15), "gelo": Color(0.55, 0.9, 1.0), "raio": Color(1.0, 0.95, 0.35), "veneno": Color(0.55, 0.95, 0.3)}
+
+## Ícone de 9 px: silhueta do elemento sobre fundo escuro, com seta vermelha para cima (sofre mais), cinza para baixo
+## (resiste) ou um corte vermelho (imune). `c` = centro do ícone.
+static func desenhar_dica(ci: CanvasItem, c: Vector2, d: Dictionary) -> void:
+	var cor: Color = COR_EL[d["el"]]
+	var m: float = d["m"]
+	ci.draw_set_transform(c, 0.0, Vector2(DICA_ESC, DICA_ESC))
+	ci.draw_circle(Vector2.ZERO, 5.5, Color(0.02, 0.02, 0.03, 0.9))
+	match d["el"]:
+		"fogo":
+			ci.draw_colored_polygon(PackedVector2Array([Vector2(0, -4.5), Vector2(3, 0), Vector2(2, 3.5), Vector2(-2, 3.5), Vector2(-3, 0)]), cor)
+		"gelo":
+			ci.draw_colored_polygon(PackedVector2Array([Vector2(0, -4.5), Vector2(3, 0), Vector2(0, 4.5), Vector2(-3, 0)]), cor)
+		"raio":
+			ci.draw_polyline(PackedVector2Array([Vector2(1.5, -4.5), Vector2(-2, 0.5), Vector2(1.5, 0.5), Vector2(-1.5, 4.5)]), cor, 2.0)
+		"veneno":
+			ci.draw_circle(Vector2(0, 1), 3.2, cor)
+			ci.draw_colored_polygon(PackedVector2Array([Vector2(0, -4.5), Vector2(2.4, -0.5), Vector2(-2.4, -0.5)]), cor)
+	if m <= 0.0:
+		ci.draw_line(Vector2(-5, 5), Vector2(5, -5), Color(0.95, 0.15, 0.15), 2.0)
+	elif m <= 0.6:
+		ci.draw_colored_polygon(PackedVector2Array([Vector2(-3, 5.5), Vector2(3, 5.5), Vector2(0, 9.0)]), Color(0.6, 0.62, 0.7))
+	else:
+		ci.draw_colored_polygon(PackedVector2Array([Vector2(-3, -5.5), Vector2(3, -5.5), Vector2(0, -9.0)]), Color(1.0, 0.3, 0.25))
+	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+# ---------------- Mapa: braseiros e pilares ----------------
+## Braseiros (`B`) e pilares (`O`) do mapa reagem ao fogo, ao raio e ao gelo quando o inimigo atingido está perto deles
+## (data2d/reacoes_mapa.csv). A sala (grupo sala_2d) responde `estruturas_perto(pos, dist)` com dicionários vivos
+## {tipo, pos, ate}; `ate` é a recarga da estrutura (ms), que também evita a cadeia entre vizinhos.
+##   braseiro + fogo  -> labareda: a chama sobe e queima quem está em volta
+##   braseiro + raio  -> descarga: a brasa solta arcos e choca até 2 inimigos
+##   braseiro + gelo  -> apaga: o braseiro apaga por alguns segundos (sem labareda nem descarga) e sobe fumaça
+##   pilar + raio     -> para-raios: o pilar atrai o raio e descarrega em até 2 inimigos
+static var _mapa := {}
+
+static func carregar_mapa() -> void:
+	if not _mapa.is_empty():
+		return
+	for r in Csv.rows("res://data2d/reacoes_mapa.csv"):
+		var d := {"id": r["id"], "estrutura": r["estrutura"], "gatilho": r["gatilho"], "recarga": float(r["recarga"])}
+		for k in ["dano", "raio", "valor", "alcance"]:
+			d[k] = float(r[k])
+		var c: PackedStringArray = str(r["cor"]).split("/")
+		d["cor"] = Color(float(c[0]), float(c[1]), float(c[2]))
+		_mapa[r["estrutura"] + "/" + r["gatilho"]] = d
+
+static func defs_mapa() -> Dictionary:
+	carregar_mapa()
+	return _mapa
+
+## Chamar de aplicar_status junto de `tentar`. Devolve o id da reação do mapa disparada ("" = nenhuma).
+static func tentar_mapa(alvo: Node2D, gatilho: String) -> String:
+	carregar_mapa()
+	if not alvo.is_inside_tree():
+		return ""
+	var agora := Time.get_ticks_msec()
+	for sala in alvo.get_tree().get_nodes_in_group("sala_2d"):
+		if not sala.has_method("estruturas_perto"):
+			continue
+		for est in sala.estruturas_perto(alvo.global_position, 140.0):
+			var d: Dictionary = _mapa.get(str(est["tipo"]) + "/" + gatilho, {})
+			if d.is_empty() or agora < int(est["ate"]) or est["pos"].distance_to(alvo.global_position) > d["alcance"]:
+				continue
+			if est["tipo"] == "braseiro" and agora < int(est.get("apagado", 0)):
+				continue   # braseiro apagado não faz nada até reacender
+			est["ate"] = agora + int(d["recarga"] * 1000.0)
+			_disparar_mapa(d, est, alvo)
+			return d["id"]
+	return ""
+
+static func _disparar_mapa(d: Dictionary, est: Dictionary, alvo: Node2D) -> void:
+	var pai := alvo.get_parent()
+	var pos: Vector2 = est["pos"]
+	var dano: float = _dano_base(alvo) * float(d["dano"]) / 10.0
+	var vizinhos: Array = U.no_raio(alvo, pos, d["raio"])
+	match d["id"]:
+		"braseiro_labareda":
+			for n in vizinhos:
+				n.take_damage(dano, pos)
+				if n != alvo and n.has_method("aplicar_status"):
+					n.aplicar_status("queimadura", 3.0, d["valor"])
+			Marca.criar(pai, pos, "labareda", d)
+		"braseiro_descarga", "pilar_pararaios":
+			vizinhos = vizinhos.filter(func(n): return n != alvo)
+			vizinhos.sort_custom(func(a: Node2D, b: Node2D): return a.global_position.distance_squared_to(pos) < b.global_position.distance_squared_to(pos))
+			var pts: Array = [alvo.global_position]
+			alvo.take_damage(dano, pos)
+			for n in vizinhos.slice(0, int(d["valor"])):
+				n.aplicar_status("choque", 2.0, 0.15)
+				n.take_damage(dano, pos)
+				pts.append(n.global_position)
+			Marca.criar(pai, pos, "descarga" if d["id"] == "braseiro_descarga" else "pararaios", d, pts)
+		"braseiro_apaga":
+			est["apagado"] = Time.get_ticks_msec() + int(d["valor"] * 1000.0)
+			Marca.criar(pai, pos, "fumaca", d)
+	if dano >= 1.0 and d["id"] != "braseiro_apaga":
+		Feel.numero(alvo, dano, d["cor"], false, true)
+
 ## Visual curto de cada reação (só `_draw`, sem sprite): cada uma tem silhueta própria.
 class Marca extends Node2D:
 	var forma := ""
@@ -225,6 +339,22 @@ class Marca extends Node2D:
 				for i in pts.size():
 					U.raio_zz(self, Vector2.ZERO, pts[i] - global_position, Color(0.5, 0.85, 1.0), 2.5, float(i) + _t * 20.0, a)
 				U.elipse_arco(self, Vector2.ZERO, r * 0.6, Color(0.8, 0.95, 1.0, a), 2.0)
+			"labareda":   # coluna de fogo que sobe do braseiro e anel de brasas
+				for i in 5:
+					var ox := (float(i) - 2.0) * 14.0
+					U.chama(self, Vector2(ox, 0), 90.0 * (1.0 - 0.3 * absf(float(i) - 2.0)) * (0.4 + 0.6 * sqrt(k)), 26.0, float(i) + _t * 12.0, a)
+				draw_arc(Vector2.ZERO, r, 0, TAU, 36, Color(1.0, 0.6, 0.2, 0.7 * a), 3.0)
+			"descarga", "pararaios":   # arcos que saem da estrutura até cada alvo; o pilar também ganha um halo azul
+				var cc2 := Color(1.0, 0.9, 0.4) if forma == "descarga" else Color(0.65, 0.85, 1.0)
+				for i in pts.size():
+					U.raio_zz(self, Vector2(0, -20), pts[i] - global_position, cc2, 3.0, float(i) + _t * 20.0, a)
+				draw_circle(Vector2(0, -20), 12.0 * a + 4.0, Color(cc2.r, cc2.g, cc2.b, 0.7 * a))
+				if forma == "pararaios":
+					U.elipse_arco(self, Vector2(0, -20), r * 0.35, Color(0.8, 0.95, 1.0, a), 2.0)
+			"fumaca":   # braseiro apagado: fumaça cinza que sobe devagar
+				for i in 5:
+					var ox2 := sin(float(i) * 2.1 + _t * 3.0) * 8.0
+					draw_circle(Vector2(ox2, -20.0 - 60.0 * k - float(i) * 6.0), 10.0 + 8.0 * k, Color(0.55, 0.57, 0.62, 0.55 * a))
 			"corrente":   # arcos verdes e amarelos até os vizinhos
 				for i in pts.size():
 					U.raio_zz(self, Vector2.ZERO, pts[i] - global_position, Color(0.75, 1.0, 0.3), 2.5, float(i) + _t * 20.0, a)

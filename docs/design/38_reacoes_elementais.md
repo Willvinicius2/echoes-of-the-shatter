@@ -22,5 +22,20 @@ Os riachos do mapa (`@riacho`) contam como água: a sala entra no grupo `sala_2d
 ## Resistências por inimigo
 `data2d/resistencias_elementais.csv` (multiplicador do valor e da duração do status; 0 = imune, aparece um 0 cinza). Exemplos: esqueletos e Herald de pedra são imunes a veneno, Cão de Cinzas e Arqueiro de Brasas resistem ao fogo e sofrem mais com gelo, fantasmas e morcegos conduzem mais o raio, o Guardião resiste a tudo um pouco. Só afeta os status das habilidades, não o dano direto.
 
+## Dica de resistência na barra de vida
+Ao lado da barra de vida de cada inimigo aparece um ícone por elemento que ele resiste (multiplicador até 0,6), é imune (0) ou sofre mais (a partir de 1,3): silhueta do elemento (chama, losango de gelo, raio, gota) com uma seta vermelha para cima (sofre mais), seta cinza para baixo (resiste) ou um corte vermelho (imune). Código: `Reacoes.dicas()` e `Reacoes.desenhar_dica()`, desenhado em `enemy_2d._draw`. Só aparece com a barra (inimigo ferido).
+
+## Braseiros e pilares do mapa
+Os braseiros (`B`) e pilares (`O`) das salas reagem quando um inimigo perto deles (até 130 px) recebe o elemento. Números em `godot/data2d/reacoes_mapa.csv`; a `room_2d` responde `estruturas_perto()` e cada estrutura tem recarga própria (1,5 s), então a reação não vira cadeia.
+
+| Estrutura | Gatilho | Efeito | Visual |
+|---|---|---|---|
+| Braseiro | fogo | labareda: dano e queimadura em quem está em volta | coluna de fogo e anel de brasas |
+| Braseiro | raio | descarga: choca os 2 inimigos mais perto do braseiro | arcos amarelos |
+| Braseiro | gelo (acúmulos de frio) | apaga o braseiro por 5 s: sem labareda nem descarga | fumaça cinza |
+| Pilar | raio | para-raios: descarrega em até 2 inimigos | arcos azul-claros e halo no pilar |
+
+Testes em `test_reacoes_2d.gd` (sala falsa `sala_falsa_mapa_2d.gd`). Vídeo de conferência: `scripts2d/tools/video_reacoes_2d.gd` (arena limpa, uma cena legendada por reação; comando no cabeçalho do script).
+
 ## Ainda não feito
-Dica visual do que cada inimigo resiste (ícone junto à barra de vida), mesmo sistema para Mago e Guerreiro, braseiros e pilares do mapa reagindo a fogo e raio.
+Mesmo sistema para Mago e Guerreiro (hoje só o Arqueiro aplica frio com acúmulos, então "gelo" vale só para ele), e apagar o braseiro no desenho da `room_2d` (hoje a reação é lógica e a fumaça aparece, mas a chama do braseiro do mapa continua acesa).

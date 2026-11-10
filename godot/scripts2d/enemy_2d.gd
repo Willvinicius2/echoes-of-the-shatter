@@ -49,6 +49,8 @@ var raio_despertar := 0.0       # > 0: começa adormecido; acorda (com o grupo) 
 var grupo_despertar := "inimigos_adormecidos"   # quem dorme junto: a sala toda, ou um encontro do mapa (`@guarda`)
 var entrada_t := 0.0            # > 0: entrada do elite do portão (parado e invulnerável) por mais estes segundos
 
+var _dicas: Array = []   # resistências a mostrar junto da barra de vida
+
 func _init() -> void:
 	_mat_sob_demanda = true   # material de flash/dissolução só quando preciso (o chefe desliga isto no _init dele)
 
@@ -75,6 +77,7 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	collision_mask = 1 | 8
 	add_to_group("hurtable")
 	shadow_radius = stats["radius"] * 1.2
+	_dicas = Reacoes.dicas(id)
 	setup_sprite(id)
 	_sombra_externa = Sombras.registrar(self)
 	var cs := CollisionShape2D.new()
@@ -317,6 +320,9 @@ func aplicar_status(tipo: String, dur: float, valor := 0.0) -> void:
 		var reagiu := Reacoes.tentar(self, gat)
 		if estado == Estado.MORTO or reagiu == "apagar_fogo":
 			return
+		Reacoes.tentar_mapa(self, gat)   # braseiros e pilares do mapa também reagem (recarga própria de cada um)
+		if estado == Estado.MORTO:
+			return
 	var atual: Dictionary = _status.get(tipo, {"t": 0.0, "v": 0.0})
 	_status[tipo] = {"t": maxf(atual["t"], dur), "v": maxf(atual["v"], valor)}
 	if tipo == "veneno":
@@ -429,6 +435,8 @@ func _draw() -> void:
 		draw_rect(Rect2(-larg / 2.0 - 1.0, topo - 1.0, larg + 2.0, 7.0), Color(0.02, 0.02, 0.03, 0.95))   # borda escura de 1 px
 		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0.12, 0.05, 0.06, 1.0))
 		draw_rect(Rect2(-larg / 2.0, topo, larg * hp / hp_max, 5.0), Color(0.8, 0.15, 0.15))
+		for i in _dicas.size():   # ícones do que resiste, é imune ou sofre mais (reacoes_2d.gd)
+			Reacoes.desenhar_dica(self, Vector2(larg / 2.0 + 11.0 + 16.0 * i, topo + 2.5), _dicas[i])
 
 ## Aviso de ataque: área vermelha que enche até o golpe (melee) ou linha de mira (ranged/chefe).
 func _desenhar_aviso() -> void:
