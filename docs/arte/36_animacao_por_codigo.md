@@ -67,7 +67,7 @@ O aviso do golpe soma o `windup` de 0,7 s (idle com a área vermelha enchendo) e
 
 ### No jogo
 - Escala 2,5 (1 px da arte = 1 px da grade), cerca de 1,45x a Sentinela Oca. O pé da frente cai até 16 px abaixo do pivô, conforme a direção.
-- O quadro tem folga em cima (punhos erguidos e pilha da morte), então `hp_bar_dy` do Arauto é **-72** em `enemies.csv`: `enemy_2d.gd` (`topo_visual`) desce a barra de vida e os números de dano para perto da cabeça. Valor negativo só existe para ele e para o Carcereiro; os positivos continuam subindo só a barra.
+- O quadro tem folga em cima (punhos erguidos e pilha da morte), então `hp_bar_dy` do Arauto é **-64** em `enemies.csv`: `enemy_2d.gd` (`topo_visual`) desce a barra de vida e os números de dano para perto da cabeça, a cerca de 8 px acima do topo da cabeça (mais baixo a barra se confundia com o ombro e o musgo). Valor negativo só existe para ele e para o Carcereiro; os positivos continuam subindo só a barra. A coluna `hp_bar` é o múltiplo da largura padrão de 40 px (`largura_barra()`): 1,5 no Arauto e no Carcereiro, e será o valor dos próximos mini-chefes, porque a barra comum fica pequena para um inimigo desse tamanho (revisão da Direção visual com o Jev, 10/11/2026).
 - Paleta: 20 cores no conjunto (pedra 5, musgo 4, terra 4, olho 4, pupila, linha interna e contorno). O teste `_testar_arte_do_arauto` (`test_pedreira_2d.gd`, compartilha o auxiliar com o do cão) confere o pivô e o tamanho do quadro, o pé e o centro do idle nas 5 direções, o alfa, a paleta, os quadros vazios, a borda e o contato do golpe no quadro 5.
 - O Carcereiro do Ossuário (`ossuary_warden`) continua pendente: o manifesto aponta para a mesma folha do Arauto, mas ele só volta às ondas com uma prévia própria aprovada pelo Jev.
 

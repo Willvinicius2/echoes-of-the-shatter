@@ -424,6 +424,11 @@ func _feedback_golpe(amount: float, origem: Vector2, morreu: bool) -> void:
 		var dir := (global_position - origem).normalized()
 		_kb = dir * c["enemy_knockback"] * (1.0 - stats.get("kb_resist", 0.0))
 
+## Largura da barra de vida sobre a cabeça: `hp_bar` de enemies.csv é o múltiplo de 40 px (1 = padrão; 1,5 no Arauto de Pedra e
+## nos futuros mini-chefes, que são grandes para a barra comum; 0 = sem barra).
+func largura_barra() -> float:
+	return 40.0 * float(stats.get("hp_bar", 1.0))
+
 ## `hp_bar_dy` negativo (Arauto de Pedra: o quadro de 176 px tem folga em cima para os punhos erguidos e para a pilha da morte)
 ## desce o topo, e com ele a barra de vida e os números de dano; o positivo só sobe a barra (ver `_draw`).
 func topo_visual() -> float:
@@ -434,7 +439,7 @@ func _draw() -> void:
 	if estado == Estado.TELEGRAFA and _wind_total > 0.0:
 		_desenhar_aviso()
 	if stats.get("hp_bar", 0.0) > 0.0 and estado != Estado.MORTO and hp < hp_max:
-		var larg := 40.0
+		var larg := largura_barra()
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		var topo := topo_visual() - maxf(0.0, float(stats.get("hp_bar_dy", 0.0)))   # hp_bar_dy positivo: px a mais acima do topo (o morcego bate asa por cima da barra)
 		draw_rect(Rect2(-larg / 2.0 - 1.0, topo - 1.0, larg + 2.0, 7.0), Color(0.02, 0.02, 0.03, 0.95))   # borda escura de 1 px
