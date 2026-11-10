@@ -99,4 +99,4 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 - O protótipo Godot F1 fica em `prototipos/godot-f1/` como referência de game feel (2D, GDScript). Não é a base do jogo atual. Como rodar: `prototipos/godot-f1/COMO_RODAR.md`.
 
 ## Próximo passo
-Fatia jogável 2D do Arqueiro (ver `docs/design/27_cronograma_jogavel.md` e `docs/progresso/estado.json`): inimigos em pixel art da Pedreira dos Ecos (área 2, falta saldo no PixelLab), elites e chefe em escala maior, depois meta-progressão com save, hub com craft básico e exploração por rotas, e por fim a migração das regras ao ShatterCore.
+Fatia jogável 2D do Arqueiro (ver `docs/design/27_cronograma_jogavel.md` e `docs/progresso/estado.json`): elites e chefe em escala maior e o Carcereiro do Ossuário com arte própria (a Pedreira dos Ecos já tem o Cão de Cinza e o Arauto de Pedra; sem saldo no PixelLab e sem pagar nada, a arte sai por código: `docs/arte/36_animacao_por_codigo.md`), depois meta-progressão com save, hub com craft básico e exploração por rotas, e por fim a migração das regras ao ShatterCore.

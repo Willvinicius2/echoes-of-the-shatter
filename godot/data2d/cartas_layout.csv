@@ -5,7 +5,7 @@ sub_fonte,15,px,linha de ajuda sob o titulo
 enfeite_largura,320,px,fio dourado com losango sob o titulo
 respiro,14,px,espaco entre a ajuda e as cartas
 carta_largura,250,px,largura de cada carta (tela logica de 1280 x 720; quatro cabem lado a lado)
-carta_altura,356,px,altura de cada carta
+carta_altura,400,px,altura de cada carta (com o icone de 144 px cabe descricao de ate 5 linhas)
 carta_espaco,22,px,distancia entre as cartas
 carta_margem,14,px,margem interna da carta
 icone_lado,144,px,lado do icone na carta (pixel art de 48 px em 2x; use multiplos de 48)

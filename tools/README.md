@@ -4,7 +4,7 @@ Scripts de apoio, um assunto por pasta. Rode sempre da raiz do repositório.
 
 | Pasta | Para quê |
 |---|---|
-| `arte/` | Arte gerada por script: ícones, tokens, pranchas, UI com gpt-image (`ui_gpt_image/`), efeitos do Arqueiro (`fx_arqueiro/`). |
+| `arte/` | Arte gerada por script: ícones, tokens, pranchas, UI com gpt-image (`ui_gpt_image/`), efeitos do Arqueiro (`fx_arqueiro/`) e os ícones definitivos do Arqueiro desenhados por código, sem serviço pago (`icones_por_codigo/`, doc 29). |
 | `audio/` | Geração de áudio provisório. |
 | `build/` | Export 2D do Godot e checagens do build. |
 | `core/` | Build e testes do ShatterCore no Windows (`build_core.cmd`). |

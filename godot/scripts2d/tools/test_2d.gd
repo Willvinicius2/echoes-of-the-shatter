@@ -258,6 +258,7 @@ func _testar_feel() -> void:
 	check(Csv.enemy("crypt_bat")["hp_bar_dy"] == 4.0, "a barra de vida do morcego fica 4 px mais alta")
 	# Arauto de Pedra: o quadro de 176 px tem folga em cima (punhos erguidos, pilha da morte); a barra e os números descem para a cabeça
 	check(float(Csv.enemy("stone_herald")["hp_bar_dy"]) < 0.0, "a barra de vida do Arauto de Pedra desce (hp_bar_dy negativo)")
+	check(float(Csv.enemy("stone_herald")["hp_bar"]) >= 1.5 and float(Csv.enemy("ash_hound")["hp_bar"]) == 1.0, "a barra de vida do Arauto de Pedra é 1,5x mais larga que a padrão (hp_bar é o múltiplo de 40 px)")
 	var mundo_arauto := Node2D.new()
 	root.add_child(mundo_arauto)
 	var alvo_falso := Node2D.new()
@@ -268,6 +269,11 @@ func _testar_feel() -> void:
 	arauto.set_physics_process(false)
 	var topo_quadro: float = -(176.0 * 0.5 - arauto.sprite.offset.y) * arauto.sprite.scale.x * 0.88
 	check(arauto.topo_visual() > topo_quadro + 60.0 and arauto.topo_visual() < -120.0, "topo do Arauto de Pedra: a barra e os números ficam perto da cabeça (%.0f; o topo do quadro é %.0f)" % [arauto.topo_visual(), topo_quadro])
+	var cao_barra = load("res://scripts2d/enemy_2d.gd").new()
+	mundo_arauto.add_child(cao_barra)
+	cao_barra.setup("ash_hound", alvo_falso, Vector2(-900, 0))
+	cao_barra.set_physics_process(false)
+	check(is_equal_approx(arauto.largura_barra(), 60.0) and is_equal_approx(cao_barra.largura_barra(), 40.0), "largura da barra de vida: 60 px no Arauto e 40 px num inimigo comum (%.0f e %.0f)" % [arauto.largura_barra(), cao_barra.largura_barra()])
 	mundo_arauto.queue_free()
 	# números de dano em fonte pixel (Jersey 15, 20 e 25): os três arquivos importam como FontFile e o degrau vem do tamanho pedido
 	var NumeroDano = load("res://scripts2d/damage_number_2d.gd")

@@ -20,3 +20,5 @@ Pintado à mão com glifo central, brilho colorido e moldura de pedra/metal escu
 | vitality | Vigor (carta) | coração com runa | vermelho |
 
 Gerador: `python3 tools/arte/gen_icones_habilidade.py` (Pillow; reproduz os PNG). Prévia: `docs/arte/sprites2d/icones_habilidades_previa.png`. Os `.import` do Godot nascem na primeira abertura do projeto.
+
+Em 10/11/2026 os ícones do Arqueiro derivados de outras habilidades passaram a ser desenhados por código (sem serviço pago): `tools/arte/icones_por_codigo/`, descrito no doc 29.
