@@ -5,6 +5,7 @@ extends SceneTree
 const MainScene = preload("res://scenes2d/Main2D.tscn")
 const Enemy = preload("res://scripts2d/enemy_2d.gd")
 const Boss = preload("res://scripts2d/boss_2d.gd")
+const Fase = preload("res://scripts2d/fase_2d.gd")
 
 func _initialize() -> void:
 	var args := OS.get_cmdline_user_args()
