@@ -11,7 +11,7 @@ Contrato entre a arte (threads de sprites) e o cliente 2D (`godot/scripts2d/`). 
 ## Quadro e pivô
 | Classe de tamanho | Quadro | Pé (pivô) | Quem |
 |---|---|---|---|
-| M | 128 x 128 px | x=64, y=104 | arqueiro, sentinela oca, cão de cinza, arqueiro fantasma |
+| M | 128 x 128 px | x=64, y=104 | arqueiro, sentinela oca, arqueiro fantasma (formato HD antigo; os inimigos em pixel art usam o quadro de 92 px do esqueleto, com o pivô no pé, em escala 2.5 no `sprites_escala.csv`) |
 | G | 192 x 192 px | x=96, y=156 | arauto de pedra |
 | XG | 256 x 256 px | x=128, y=208 | Guardião da Cripta (chefe) |
 
@@ -42,7 +42,7 @@ Uma folha PNG por animação: colunas = quadros, linhas = direções. Largura = 
 | hit | 3 | 12 | não | recuo ao levar dano |
 | death | 8 | 10 | não | último quadro fica parado no chão |
 
-Inimigos usam `idle`, `run` (andar), `attack`, `hit` e `death`; sem `dodge`. O quadro de impacto/disparo de `attack` é a coluna `evento_quadro` do manifesto. Cão de cinza: `attack` = bote (8 quadros).
+Inimigos usam `idle`, `run` (andar), `attack`, `hit` e `death`; sem `dodge`. O quadro de impacto/disparo de `attack` é a coluna `evento_quadro` do manifesto. Cão de cinza: `attack` = bote (8 quadros, contato no quadro 4); suas folhas são de 92 px com o pivô em (46, 74), geradas por código (`docs/arte/36_animacao_por_codigo.md`).
 
 ## Arquivos
 ```

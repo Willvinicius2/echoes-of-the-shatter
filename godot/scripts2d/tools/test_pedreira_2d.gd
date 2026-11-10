@@ -118,6 +118,7 @@ func rodar() -> void:
 	_testar_passagem(sala)
 	sala.free()
 	_testar_arte_dos_props()
+	_testar_arte_do_cao()
 	_testar_ondas()
 
 func _def(id: String) -> Dictionary:
@@ -427,8 +428,8 @@ func _testar_passagem(sala) -> void:
 		check.call(g.chegou(sem_vao, sala.posicao_chefe) and not g.chegou(sem_vao, sala.posicao_portal), "passagem: tapando o vão, o portal fica fechado (o portão é o único caminho)")
 
 ## O inimigo tem arte quando passa em `ArteInimigos` (stats em enemies.csv, as 5 animações do manifesto com as folhas, as 5
-## direções e o tamanho certo). ash_hound e stone_herald têm linha no manifesto mas ainda não têm as folhas, e o stone_herald
-## também serve ao ossuary_warden.
+## direções e o tamanho certo). O stone_herald tem linha no manifesto mas ainda não tem as folhas, e também serve ao
+## ossuary_warden.
 func _inimigo_pronto(id: String) -> bool:
 	return ArteInimigos.pronto(id)
 
@@ -448,6 +449,78 @@ func _testar_arte_dos_props() -> void:
 		check.call(int(m["pivo_y"]) == int(m["altura"]) and absi(int(m["pivo_x"]) * 2 - int(m["largura"])) <= 1, "%s: pivô no centro do pé" % id)
 		if id.begins_with("pedreira_lasca_"):
 			check.call(float(def["solido_l"]) == 0.0 and float(def["solido_a"]) == 0.0 and String(def.get("pes", "")) == "", "%s: lasca sem colisor (o arqueiro passa por cima)" % id)
+
+## Cão de Cinza, animado por código a partir da base aprovada (tools/sprites2d/cao_de_cinza): quadro de 92 px com o pé no pivô
+## nas 5 direções, alfa binário, paleta curta (a base tem 22 cores; boca, dentes e brasa apagando somam poucas), nenhum quadro
+## vazio e nenhum pixel colado na borda do quadro (o bote e a morte não podem ser cortados).
+func _testar_arte_do_cao() -> void:
+	var linhas := {}
+	for r in Csv.rows("res://data2d/sprites_manifest.csv"):
+		if r["id"] == "ash_hound":
+			linhas[r["anim"]] = r
+	check.call(linhas.size() == 5, "cão de cinza: 5 animações no manifesto (%d)" % linhas.size())
+	if linhas.size() != 5:
+		return
+	var cores := {}
+	var alfa_binario := true
+	var vazios := 0
+	var cortados := 0
+	var pe_fora: Array[String] = []
+	for anim in linhas:
+		var m: Dictionary = linhas[anim]
+		var img := Image.load_from_file(ProjectSettings.globalize_path(m["arquivo"]))
+		if img == null:
+			check.call(false, "cão de cinza: carrega a folha %s" % anim)
+			continue
+		img.convert(Image.FORMAT_RGBA8)
+		var lado := int(m["quadro"])
+		var n := int(m["quadros"])
+		check.call(lado == 92 and int(m["pivo_x"]) == 46 and int(m["pivo_y"]) == 74, "cão de cinza %s: quadro de 92 px com o pivô em (46, 74)" % anim)
+		var d := img.get_data()
+		var larg := img.get_width()
+		for i in range(larg * img.get_height()):
+			var a := d[i * 4 + 3]
+			if a == 0:
+				continue
+			if a != 255:
+				alfa_binario = false
+			else:
+				cores[(d[i * 4] << 16) | (d[i * 4 + 1] << 8) | d[i * 4 + 2]] = true
+		for dir in 5:
+			for q in n:
+				var x0 := q * lado
+				var y0 := dir * lado
+				var algum := false
+				for k in range(lado):
+					for borda in [Vector2i(k, 0), Vector2i(k, lado - 1), Vector2i(0, k), Vector2i(lado - 1, k)]:
+						if d[((y0 + borda.y) * larg + x0 + borda.x) * 4 + 3] != 0:
+							cortados += 1
+				for y in range(lado):
+					for x in range(lado):
+						if d[((y0 + y) * larg + x0 + x) * 4 + 3] != 0:
+							algum = true
+							break
+					if algum:
+						break
+				if not algum:
+					vazios += 1
+				if anim == "idle" and q == 0:
+					var pe := -1
+					for y in range(lado - 1, -1, -1):
+						for x in range(lado):
+							if d[((y0 + y) * larg + x0 + x) * 4 + 3] != 0:
+								pe = y
+								break
+						if pe >= 0:
+							break
+					if absi(pe - int(m["pivo_y"])) > 1:
+						pe_fora.append("dir %d: pé na linha %d" % [dir, pe])
+	check.call(alfa_binario, "cão de cinza: alfa binário (pixel art sem meio-tom)")
+	check.call(cores.size() <= 26, "cão de cinza: paleta curta (%d cores, no máximo 26)" % cores.size())
+	check.call(vazios == 0, "cão de cinza: nenhum quadro vazio (%d)" % vazios)
+	check.call(cortados == 0, "cão de cinza: nenhum pixel colado na borda do quadro (%d)" % cortados)
+	check.call(pe_fora.is_empty(), "cão de cinza: o pé do idle fica no pivô nas 5 direções %s" % str(pe_fora))
+	check.call(int(linhas["attack"]["evento_quadro"]) == 4 and int(linhas["attack"]["quadros"]) == 8, "cão de cinza: o bote tem 8 quadros e o contato é o quadro 4")
 
 ## Ondas da Pedreira só com inimigos que já têm folha de sprite e stats: nada de caixa marrom provisória no jogo.
 func _testar_ondas() -> void:
