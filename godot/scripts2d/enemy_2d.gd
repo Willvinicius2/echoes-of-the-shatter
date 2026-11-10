@@ -8,6 +8,7 @@ const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const Veneno = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
 const Fogo = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
+const Reacoes = preload("res://scripts2d/reacoes_2d.gd")
 const Sombras = preload("res://scripts2d/sombras_2d.gd")
 
 enum Estado { PERSEGUE, TELEGRAFA, ATACANDO, MORTO }
@@ -303,6 +304,13 @@ func _projetil(dir: Vector2, dano: float) -> void:
 func aplicar_status(tipo: String, dur: float, valor := 0.0) -> void:
 	if estado == Estado.MORTO:
 		return
+	# Reações elementais (reacoes_2d.gd): checadas antes de gravar o status novo. Choque e queimadura reagem sempre;
+	# a lentidão só conta como frio quando vem dos acúmulos do Arqueiro (meta frio_acumulos).
+	var gat := tipo if (tipo == "queimadura" or tipo == "choque") else ("frio" if tipo == "lentidao" and int(get_meta("frio_acumulos", 0)) > 0 else "")
+	if gat != "":
+		Reacoes.tentar(self, gat)
+		if estado == Estado.MORTO:
+			return
 	var atual: Dictionary = _status.get(tipo, {"t": 0.0, "v": 0.0})
 	_status[tipo] = {"t": maxf(atual["t"], dur), "v": maxf(atual["v"], valor)}
 	if tipo == "veneno":

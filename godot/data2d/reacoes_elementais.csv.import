@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cd7b22muhvk2x"
+
+[deps]
+
+files=["res://data2d/reacoes_elementais.gatilho.translation", "res://data2d/reacoes_elementais.exige.translation", "res://data2d/reacoes_elementais.dano.translation", "res://data2d/reacoes_elementais.raio.translation", "res://data2d/reacoes_elementais.valor.translation", "res://data2d/reacoes_elementais.recarga.translation", "res://data2d/reacoes_elementais.cor.translation"]
+
+source_file="res://data2d/reacoes_elementais.csv"
+dest_files=["res://data2d/reacoes_elementais.gatilho.translation", "res://data2d/reacoes_elementais.exige.translation", "res://data2d/reacoes_elementais.dano.translation", "res://data2d/reacoes_elementais.raio.translation", "res://data2d/reacoes_elementais.valor.translation", "res://data2d/reacoes_elementais.recarga.translation", "res://data2d/reacoes_elementais.cor.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
