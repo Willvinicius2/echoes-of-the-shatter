@@ -6,6 +6,9 @@ Habilidades, reforços e Ecos do arqueiro que ainda não têm ícone próprio us
 moldura de pedra e ferro fica intacta. Quando o ícone definitivo for pintado (doc 29), basta gravar por cima
 do mesmo arquivo e tirar a linha da tabela abaixo.
 
+Em 10/11/2026 os outros 29 ganharam ícone definitivo, desenhado por código (`tools/arte/icones_por_codigo`, doc 29);
+sobram aqui os 6 que a revisão mandou refazer. Quando eles forem aprovados, esta ferramenta pode ser apagada.
+
 Uso: python3 tools/arte/derivar_icones.py [pasta_saida]   (padrão: art-src/ui/icones_pintados; depois rode tools/arte/pixelizar_icones.py)
 """
 import colorsys, sys
@@ -20,43 +23,13 @@ SUAVE = 3        # px de transição entre a moldura e o miolo
 # modo "girar" leva a cor dominante ao matiz; "rodar" soma os graus ao matiz de tudo; "tingir" pinta tudo com o matiz
 TABELA = {
     # habilidades do arqueiro
-    "toxic_tornado":  ("storm_tornado", 100, "girar"),
-    "ice_comet":      ("flecha_meteoro", 200, "girar"),
-    "frost_nova":     ("skill.mage.frost_nova", None, ""),
     "fire_serpent":   ("skill.mage.fire_wall", None, ""),
-    "lightning_rod":  ("skill.mage.thunderstorm", None, ""),
-    "thunder_burst":  ("skill.mage.overload", None, ""),
-    "sky_storm":      ("corrosive_rain", 222, "girar"),
-    "storm_orbs":     ("skill.mage.chain_lightning", 215, "girar"),
-    "plague_spread":  ("skill.mage.inferno_nova", 100, "girar"),
-    "toxic_mines":    ("smoke_bomb", 100, "rodar"),
-    "acid_geyser":    ("skill.mage.flame_breath", 95, "girar"),
-    "icicle_lance":   ("skill.mage.frost_bolt", None, ""),
-    "ice_spikes":     ("skill.mage.glacial_spike", None, ""),
-    "blizzard":       ("skill.mage.blizzard", None, ""),
     "flame_breath":   ("skill.mage.flame_breath", None, ""),
     "ring_of_fire":   ("skill.mage.inferno_nova", None, ""),
-    "fuse_bomb":      ("skill.mage.meteor", None, ""),
     # cartas de reforço
-    "ember_tip":      ("skill.mage.embers", None, ""),
     "wide_reach":     ("skill.mage.frost_nova", 42, "girar"),
-    "extra_shot":     ("multishot", 200, "girar"),
-    "swift_shots":    ("power_shot", 168, "girar"),
-    "lingering":      ("skill.mage.mana_surge", None, ""),
-    "piercing_skills": ("pierce", 280, "girar"),
-    "flame_lore":     ("skill.mage.fireball", None, ""),
-    "frost_lore":     ("skill.mage.chill", None, ""),
-    "storm_lore":     ("skill.mage.static_charge", 215, "girar"),
-    "venom_lore":     ("w_bloodlust", 100, "girar"),
     "herald_might":   ("w_battle_cry", None, ""),
-    "keen_eye":       ("steady_aim", 190, "girar"),
-    "deadly_aim":     ("hunters_mark", 42, "girar"),
     "focus":          ("esquiva", 42, "girar"),
-    # Ecos do ataque básico: a flecha do ícone Tiro com a luz do elemento
-    "eco_trovao":     ("tiro", 215, "tingir"),
-    "eco_peste":      ("tiro", 100, "tingir"),
-    "eco_gelo":       ("tiro", 190, "tingir"),
-    "eco_cinzas":     ("tiro", 24, "tingir"),
 }
 
 

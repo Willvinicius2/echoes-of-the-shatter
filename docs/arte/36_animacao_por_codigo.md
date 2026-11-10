@@ -1,6 +1,6 @@
 # Animação por código dos inimigos (sem serviço pago)
 
-Estado em 10/11/2026. O saldo do PixelLab acabou e o dono decidiu **não pagar nada**: a arte que dependia dele (as animações do Cão de Cinza e do Arauto de Pedra, depois os ícones) passa a sair de ferramentas gratuitas, rodando na própria máquina. Este documento registra os dois métodos usados até agora: o do **Cão de Cinza** (a base aprovada é recortada e só se move) e o do **Arauto de Pedra** (modelo de pedra feito por código e desenhado em pixel art). Os outros inimigos entram aqui quando existirem.
+Estado em 10/11/2026. O saldo do PixelLab acabou e o dono decidiu **não pagar nada**: a arte que dependia dele (as animações do Cão de Cinza e do Arauto de Pedra, depois os ícones, que estão no doc 29) passa a sair de ferramentas gratuitas, rodando na própria máquina. Este documento registra os dois métodos usados até agora: o do **Cão de Cinza** (a base aprovada é recortada e só se move) e o do **Arauto de Pedra** (modelo de pedra feito por código e desenhado em pixel art). Os outros inimigos entram aqui quando existirem.
 
 ## Cão de Cinza
 
