@@ -104,12 +104,12 @@ func _testar_tabela() -> void:
 		check.call(str(por_id["cripta"]["boss"]) == "crypt_guardian", "cripta: o chefe continua o Guardião")
 		var cripta := JSON.stringify(por_id["cripta"]["waves"])
 		check.call(cripta.contains("stone_herald"), "cripta: o Arauto de Pedra voltou às ondas (a folha por código está pronta)")
+		check.call(cripta.contains("ossuary_warden"), "cripta: o Carcereiro do Ossuário voltou às ondas (a folha por código está pronta)")
 	m = null
 
 ## Regra da direção de arte: nenhuma fase vai ao jogador com a caixa provisória. Toda fase da tabela só pode pôr na tela inimigos
 ## prontos (stats, as 5 animações com as 5 direções e folhas do tamanho do manifesto): ondas, chefe, enxame e encontros do mapa.
-## Quando a folha de um inimigo pendente (ossuary_warden) chegar, ele volta às ondas da Cripta
-## (docs/arte/35_pedreira_dos_ecos.md). O ash_hound e o stone_herald já voltaram.
+## Todos os inimigos pendentes já voltaram às ondas (ash_hound, stone_herald e ossuary_warden); ver docs/arte/35_pedreira_dos_ecos.md.
 func _testar_arte_das_fases() -> void:
 	var fases := Csv.rows("res://data2d/fases_2d.csv")
 	check.call(fases.size() >= 2, "arte das fases: a tabela tem %d fases" % fases.size())

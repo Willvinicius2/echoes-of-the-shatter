@@ -120,6 +120,7 @@ func rodar() -> void:
 	_testar_arte_dos_props()
 	_testar_arte_do_cao()
 	_testar_arte_do_arauto()
+	_testar_arte_do_carcereiro()
 	_testar_ondas()
 
 func _def(id: String) -> Dictionary:
@@ -462,6 +463,10 @@ func _testar_arte_do_cao() -> void:
 ## no pivô (88, 132) (o pé da frente fica logo abaixo dele), alfa binário, no máximo 24 cores, nenhum quadro vazio e nenhum pixel
 ## colado na borda (a martelada com os punhos erguidos e a pilha da morte ocupam o quadro quase todo) e o golpe de 8 quadros com
 ## o contato (os punhos no chão) no quadro 5.
+func _testar_arte_do_carcereiro() -> void:
+	_conferir_folhas_por_codigo({"id": "ossuary_warden", "nome": "carcereiro do ossuario", "lado": 176, "pivo": Vector2i(88, 132), "cores": 24,
+		"contato": 5, "pe": Vector2i(0, 20), "centro": 6})
+
 func _testar_arte_do_arauto() -> void:
 	_conferir_folhas_por_codigo({"id": "stone_herald", "nome": "arauto de pedra", "lado": 176, "pivo": Vector2i(88, 132), "cores": 24,
 		"contato": 5, "pe": Vector2i(0, 20), "centro": 6})

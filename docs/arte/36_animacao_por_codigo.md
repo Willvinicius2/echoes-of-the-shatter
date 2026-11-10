@@ -85,3 +85,14 @@ Prévia vista pelo Jev em 10/11/2026: aprovada para integrar (escala boa, corrid
 - Estilo de pedra lascada e peças grandes; o que pede detalhe fino (rosto, tecido, mão com dedos) fica fora do alcance do renderizador.
 - Peça ou animação nova pede mexer em `golem.py` e `animacao.py` e conferir as 5 direções nas folhas de contato antes de gerar.
 - Inimigo de outra silhueta (como o Carcereiro, de ossos) pede um modelo próprio, não só outra paleta.
+
+## Carcereiro do Ossuário
+
+Elite de silhueta própria, sem serviço pago (10/11/2026). O modelo é um esqueleto alto de carcereiro feito por código no mesmo renderizador do Arauto: caveira com coroa de pontas de ferro e órbitas em brasa, caixa torácica aberta (costelas finas sobre uma cavidade escura, para os vãos aparecerem), ombreiras de ferro com espinho, correntes cruzadas no peito, algemas nos punhos, argola de chaves no cinto e uma marreta de ferro na mão direita. O que o separa do Arauto é a silhueta de ossos finos com vãos e a paleta (osso, ferro azul-acinzentado, sombra marrom-escura, brasa âmbar), não só a cor.
+
+- Ferramenta: `tools/sprites2d/carcereiro_do_ossuario/` (`carcereiro.py` é o modelo; `render.py`, `animacao.py`, `montar_folhas.py` e `contato.py` são cópias adaptadas das do Arauto, com a mesma árvore de juntas).
+- Folhas: `godot/art2d/sprites/ossuary_warden/` (176 px, pivô (88, 132), as 5 animações do Arauto: idle 6, run 8, attack 8 com contato no quadro 5, hit 3, death 8; 20 cores no máximo; alfa binário). O ataque é uma marretada de uma mão só (o braço sobe até 138 graus para a marreta caber no quadro) com poeira no ponto da cabeça de ferro; a morte desmonta o esqueleto num monte de ossos com a marreta caída.
+- Escala 2,5 como o Arauto; `hp_bar` 1,5 e `hp_bar_dy` -64 já estavam em `enemies.csv`.
+- De volta à onda 8 da Cripta (`ossuary_warden:1:4` ao lado do Capitão). O teste `_testar_arte_do_carcereiro` usa o mesmo auxiliar do Arauto e do cão.
+- Gerar: `python3 tools/sprites2d/carcereiro_do_ossuario/montar_folhas.py` (em torno de 20 s) e `contato.py <anim> todas 2 <png>` para a revisão (fora do Git; as folhas de contato desta rodada estão em `/mnt/project-files/capturas/carcereiro/`).
+- Limites: a mão esquerda segura nada (o braço acompanha a animação do golem); estilo de peças finas, sem rosto detalhado.
