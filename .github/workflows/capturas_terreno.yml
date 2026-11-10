@@ -16,17 +16,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
-        run: |
-          git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
-          cmake -S godot/gdextension -B build-ext -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
-          cmake --build build-ext -j"$(nproc)"
-          ls -la godot/gdextension/bin
+      - uses: ./.github/actions/gdextension
       - name: Baixar Godot
         run: |
-          curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
           unzip -q godot.zip
-          chmod +x Godot_v4.4.1-stable_linux.x86_64
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
           sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1 libxi6 libxcursor1 libxrandr2 libxinerama1
       - name: Montar projeto só com o cliente 2D (sem C#)
         run: |
@@ -36,15 +31,15 @@ jobs:
           python3 - <<'PY'
           import re
           s = open('godot/project.godot').read()
-          s = s.replace('"4.7", "C#", "Forward Plus"', '"4.4", "Forward Plus"')
+          s = s.replace('"4.7", "C#", "Forward Plus"', '"4.7", "Forward Plus"')
           s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
           open('proj/project.godot', 'w').write(s)
           PY
-          timeout -k 5 180 ./Godot_v4.4.1-stable_linux.x86_64 --headless --path proj --import || true
+          timeout -k 5 180 ./Godot_v4.7.2-stable_linux.x86_64 --headless --path proj --import || true
       - name: Capturar salas 1 e 3, antes (master) e depois (este commit)
         run: |
           mkdir capturas
-          cap() { timeout -k 5 90 xvfb-run -a -s "-screen 0 1280x720x24" ./Godot_v4.4.1-stable_linux.x86_64 --path proj --rendering-driver opengl3 --script res://scripts2d/tools/captura_sala_2d.gd -- "$PWD/capturas/$1" "res://data2d/rooms/$2.txt" || true; }
+          cap() { timeout -k 5 90 xvfb-run -a -s "-screen 0 1280x720x24" ./Godot_v4.7.2-stable_linux.x86_64 --path proj --rendering-driver opengl3 --script res://scripts2d/tools/captura_sala_2d.gd -- "$PWD/capturas/$1" "res://data2d/rooms/$2.txt" || true; }
           cp godot/scripts2d/terreno_2d.gd /tmp/terreno_depois.gd
           git show origin/master:godot/scripts2d/terreno_2d.gd > godot/scripts2d/terreno_2d.gd
           cap antes_sala1.png sala_1; cap antes_sala3.png sala_3

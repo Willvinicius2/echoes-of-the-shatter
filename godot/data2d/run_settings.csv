@@ -49,6 +49,7 @@ horde_stuck_checks,4,conferencias,inimigo sem linha de visao e sem se aproximar 
 passive_points_wave,1,pontos,pontos da arvore de passivos (doc 33) ganhos ao vencer cada onda ou sala
 passive_points_boss,3,pontos,pontos de passivo extras ao derrotar o chefe
 pixel_altura,360,px,altura da grade interna de pixel art: o mundo renderiza num SubViewport com esta altura (largura pela proporcao da janela) e sobe com escala inteira e nearest; 0 desliga. 360 = 4x em 2K e 3x em 1080p
+pixel_ref_altura,900,px,altura de tela em que camera_zoom foi pensado: com o mundo em SubViewport de pixel art o zoom da camera sobe por pixel_altura/este valor para manter o campo de visao
 guard_spawn_dist,1100,px,encontro do mapa (@guarda) nasce adormecido quando o jogador chega a esta distancia do lugar dele
 guard_spread,140,px,integrantes de um encontro nascem espalhados neste raio em volta do ponto do mapa
 gate_elite_scale,1.5,x,chefe da fase que e um inimigo comum (elite do portao): escala do sprite e do raio de colisao
