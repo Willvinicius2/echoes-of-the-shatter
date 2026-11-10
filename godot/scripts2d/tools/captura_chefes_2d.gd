@@ -28,21 +28,9 @@ func _initialize() -> void:
 	p.global_position = base
 	await _foto(run, p, base, [["stone_herald", 300.0], ["ossuary_warden", 640.0]], 380.0, "%s_arauto_carcereiro.png" % prefixo)
 	await _foto(run, p, base, [["crypt_guardian", 360.0]], 180.0, "%s_guardiao.png" % prefixo)
-	# diagnóstico do amarelado perto do braseiro: o Guardião junto à chama com cada camada do clima desligada
-	var clima_d = get_first_node_in_group("clima_2d")
-	if clima_d != null:
-		for po in clima_d._pocas:
-			po["sp"].visible = false
-		await _foto(run, p, base, [["crypt_guardian", 360.0]], 180.0, "%s_diag_sem_pocas.png" % prefixo)
-		for f in clima_d._fogo:
-			f["no"].visible = false
-		clima_d._poeira.visible = false
-		clima_d._ar.visible = false
-		await _foto(run, p, base, [["crypt_guardian", 360.0]], 180.0, "%s_diag_sem_particulas.png" % prefixo)
-		clima_d.visible = false
-		await _foto(run, p, base, [["crypt_guardian", 360.0]], 180.0, "%s_diag_sem_clima.png" % prefixo)
-		clima_d.visible = true
-		# segunda rodada num ponto da sala longe de qualquer braseiro: confere o tom da pedra e do osso sem a luz do fogo
+	# a 1 tile do braseiro, com a luz do fogo sob os atores, o Guardião tem de manter o vermelho
+	await _foto(run, p, base, [["crypt_guardian", 360.0]], 180.0, "%s_guardiao_perto.png" % prefixo)
+	# segunda rodada num ponto da sala longe de qualquer braseiro: confere o tom da pedra e do osso sem a luz do fogo
 	var longe := _ponto_longe_de_braseiros(run, base)
 	if longe.distance_to(base) > 1.0:
 		base = longe
