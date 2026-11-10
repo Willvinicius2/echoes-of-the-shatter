@@ -45,6 +45,18 @@ func setup_sprite(id: String) -> void:
 	sprite.frame_changed.connect(_on_frame_changed)
 	sprite.animation_finished.connect(_on_anim_finished)
 
+## Troca a folha do sprite por outra do manifesto (elite: `<id>_elite`, re-renderizada maior na grade nativa, sem esticar
+## pixel). Devolve false e não muda nada se a folha não existe.
+func usar_arte(id: String) -> bool:
+	if sprite == null or not bool(SpriteLoader.info(id)["tem_arquivo"]):
+		return false
+	char_id = id
+	sprite.sprite_frames = SpriteLoader.frames_for(id)
+	sprite.offset = SpriteLoader.info(id)["offset"]
+	_esc_base = float(SpriteLoader.info(id)["escala"])
+	sprite.scale = Vector2(_esc_base, _esc_base) * escala_extra
+	return true
+
 func has_anim(base: String) -> bool:
 	return sprite.sprite_frames.has_animation("%s_0" % base)
 

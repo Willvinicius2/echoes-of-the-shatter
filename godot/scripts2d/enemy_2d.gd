@@ -87,15 +87,23 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	add_child(cs)
 	play("idle", true)
 
+## Elite 1,5x: troca para a folha `<id>_elite` (re-renderizada maior na grade nativa) e cresce só a colisão e a sombra; sem
+## folha elite, cresce o sprite esticado como antes. Devolve true se usou a folha elite.
+func virar_elite(f: float) -> bool:
+	var tem := usar_arte(str(stats["id"]) + "_elite")
+	aumentar(f, not tem)
+	return tem
+
 ## Cresce `f` vezes: sprite (escala_extra), raio de colisão, `stats["radius"]` (alcance de golpes que leem o raio) e sombra.
-func aumentar(f: float) -> void:
-	escala_extra = f
+func aumentar(f: float, escalar_sprite := true) -> void:
+	if escalar_sprite:
+		escala_extra = f
 	stats["radius"] = float(stats["radius"]) * f
 	shadow_radius = float(stats["radius"]) * 1.2
 	for c in get_children():
 		if c is CollisionShape2D and c.shape is CircleShape2D:
 			c.shape.radius = stats["radius"]
-	if sprite != null:
+	if sprite != null and escalar_sprite:
 		sprite.scale *= f
 	set_process(true)
 

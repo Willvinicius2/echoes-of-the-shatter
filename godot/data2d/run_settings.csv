@@ -53,6 +53,7 @@ pixel_ref_altura,900,px,altura de tela em que camera_zoom foi pensado: com o mun
 guard_spawn_dist,1100,px,encontro do mapa (@guarda) nasce adormecido quando o jogador chega a esta distancia do lugar dele
 guard_spread,140,px,integrantes de um encontro nascem espalhados neste raio em volta do ponto do mapa
 gate_elite_scale,1.5,x,chefe da fase que e um inimigo comum (elite do portao): escala do sprite e do raio de colisao
+elite_scale,1.5,x,elite de onda com folha propria (<id>_elite no manifesto): escala do raio de colisao; o sprite vem re-renderizado 1.5x na grade nativa
 gate_elite_intro,1.4,s,entrada do elite do portao: parado e invulneravel enquanto a luz do portao sobe e some
 gate_elite_flash_size,420,px,diametro do clarao de luz aditivo no portao durante a entrada do elite
 gate_elite_shake_amp,7,px,tremor de tela na entrada do elite do portao
