@@ -161,6 +161,8 @@ func estado_braseiro(pos: Vector2, estado: int) -> void:
 			b["carvao"].visible = not apagado
 		b["poca"]["alpha"] = b["alpha0"] * (0.0 if apagado else 1.0)
 		b["poca"]["sp"].modulate = Color(0.5, 0.8, 1.0, b["alpha0"] * 1.6) if estado == 2 else Color(1.0, 0.55, 0.2, b["poca"]["alpha"])
+		b["poca_cima"]["alpha"] = b["alpha0_cima"] * (0.0 if apagado else 1.0)
+		b["poca_cima"]["sp"].modulate = Color(0.5, 0.8, 1.0, b["alpha0_cima"] * 1.6) if estado == 2 else Color(1.0, 0.55, 0.2, b["poca_cima"]["alpha"])
 
 func _ready() -> void:
 	add_to_group("clima_2d")
@@ -537,11 +539,23 @@ func _braseiro(b: Vector2) -> void:
 	poca.modulate = Color(1.0, 0.55, 0.2, cfg["poca_alpha"])
 	poca.scale = Vector2(cfg["poca_raio"], cfg["poca_raio"] * 0.8) / 64.0
 	poca.position = b + Vector2(0, 6)
-	poca.z_index = 3
+	poca.z_index = -1   # decisão do Jev (10/11): a poça é cenário e fica sob os atores; luz por cima lava o sprite e apaga o contraste
 	add_child(poca)
-	var d_poca := {"sp": poca, "fase": _rng.randf() * TAU, "alpha": cfg["poca_alpha"]}
+	var fase_poca := _rng.randf() * TAU
+	var d_poca := {"sp": poca, "fase": fase_poca, "alpha": cfg["poca_alpha"]}
 	_pocas.append(d_poca)
-	var estado_b := {"pos": b, "fogo": fogo, "poca": d_poca, "carvao": carvao_ref, "alpha0": float(cfg["poca_alpha"])}
+	# só um resto fraco de luz quente por cima dos atores (o Arqueiro ainda recebe um pouco do fogo)
+	var poca_cima := Sprite2D.new()
+	poca_cima.texture = poca.texture
+	poca_cima.material = _aditivo()
+	poca_cima.modulate = Color(1.0, 0.55, 0.2, cfg["poca_cima_alpha"])
+	poca_cima.scale = poca.scale
+	poca_cima.position = poca.position
+	poca_cima.z_index = 3
+	add_child(poca_cima)
+	var d_cima := {"sp": poca_cima, "fase": fase_poca, "alpha": cfg["poca_cima_alpha"]}
+	_pocas.append(d_cima)
+	var estado_b := {"pos": b, "fogo": fogo, "poca": d_poca, "poca_cima": d_cima, "carvao": carvao_ref, "alpha0": float(cfg["poca_alpha"]), "alpha0_cima": float(cfg["poca_cima_alpha"])}
 	_braseiros.append(estado_b)
 	# brilho aditivo fraco por cima, para a chama clarear o que está atrás
 	var miolo := CPUParticles2D.new()

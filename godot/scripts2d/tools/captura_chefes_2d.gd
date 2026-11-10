@@ -26,16 +26,24 @@ func _initialize() -> void:
 	p.autocast = false
 	var base: Vector2 = run.room.spawn_jogador + Vector2(0, 40)
 	p.global_position = base
-	var lista := [["stone_herald", 300.0], ["ossuary_warden", 640.0], ["crypt_guardian", 1000.0]]
+	await _foto(run, p, base, [["stone_herald", 300.0], ["ossuary_warden", 640.0]], 380.0, "%s_arauto_carcereiro.png" % prefixo)
+	await _foto(run, p, base, [["crypt_guardian", 360.0]], 180.0, "%s_guardiao.png" % prefixo)
+	quit()
+
+## Cria os chefes de `lista` ([id, deslocamento x]) ao lado do jogador, centra a câmera em `base + cam_x` e grava a imagem.
+func _foto(run, p, base: Vector2, lista: Array, cam_x: float, arquivo: String) -> void:
+	var criados: Array = []
 	for it in lista:
 		var e = (Boss if it[0] == "crypt_guardian" else Enemy).new()
 		run.atores.add_child(e)
 		e.setup(it[0], p, base + Vector2(float(it[1]), 0))
 		e.set_physics_process(false)
-	run.camera.position = base + Vector2(500, 0)
+		criados.append(e)
+	run.camera.position = base + Vector2(cam_x, 0)
 	run.camera.reset_smoothing()
 	for i in 40:
 		await physics_frame
 	await RenderingServer.frame_post_draw
-	root.get_viewport().get_texture().get_image().save_png("%s_chefes.png" % prefixo)
-	quit()
+	root.get_viewport().get_texture().get_image().save_png(arquivo)
+	for e in criados:
+		e.queue_free()
