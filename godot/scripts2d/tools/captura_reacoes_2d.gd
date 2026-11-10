@@ -71,7 +71,21 @@ func _initialize() -> void:
 	# 2. braseiro aceso, 3. apagado por gelo
 	var alvo := _inimigo("skeleton_soldier", base + Vector2(40, 36))
 	await _perto(base)
+	for n in get_nodes_in_group("hurtable"):
+		n.global_position += Vector2(0, 600)   # braseiro isolado: tira os inimigos da frente
+	await _frames(5)
 	await _tirar("2_braseiro_aceso")
+	br["apagado"] = Time.get_ticks_msec() + 30000
+	await _frames(10)
+	await _tirar("2b_braseiro_apagado_isolado")
+	br["apagado"] = 0
+	br["carga"] = Time.get_ticks_msec() + 30000
+	await _frames(10)
+	await _tirar("2c_braseiro_carregado")
+	br["carga"] = 0
+	await _frames(5)
+	for n in get_nodes_in_group("hurtable"):
+		n.global_position -= Vector2(0, 600)
 	alvo.aplicar_status("lentidao", 3.0, 0.3)   # sem acúmulo de frio não conta como gelo
 	alvo.set_meta("frio_acumulos", 1)
 	alvo.aplicar_status("lentidao", 3.0, 0.3)
@@ -118,6 +132,6 @@ func ids_com_dica() -> Array:
 	Reacoes.mult("skeleton_soldier", "fogo")
 	var out: Array = []
 	for id in Reacoes._resist.keys():
-		if not Reacoes.dicas(id).is_empty():
+		if not Reacoes.dicas(id).is_empty() and DirAccess.dir_exists_absolute("res://art2d/sprites/" + id):   # só inimigo com folha completa
 			out.append(id)
 	return out

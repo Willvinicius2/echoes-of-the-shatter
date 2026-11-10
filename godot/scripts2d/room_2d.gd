@@ -647,6 +647,9 @@ func _atualizar_estruturas() -> void:
 			if is_instance_valid(e["spr"]):
 				e["spr"].texture = e["tex_carga"] if novo == 2 else e["tex"]
 			continue
+		if get_tree() != null and not get_tree().get_nodes_in_group("clima_2d").is_empty() and e["tipo"] == "braseiro":
+			get_tree().call_group("clima_2d", "estado_braseiro", e["pos"], novo)   # o clima desenha o braseiro (tigela, fogo, brasas)
+			continue
 		if not _tem_estados:
 			continue
 		var c: Vector2i = e["cel"]

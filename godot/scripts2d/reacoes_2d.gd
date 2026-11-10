@@ -179,7 +179,8 @@ static func dicas(id: String) -> Array:
 
 const COR_EL := {"fogo": Color(1.0, 0.55, 0.15), "gelo": Color(0.55, 0.9, 1.0), "raio": Color(1.0, 0.95, 0.35), "veneno": Color(0.55, 0.95, 0.3)}
 const DICA_LADO := 16   # ícone de resistência em px de tela: 1 px de arte = 1 px de tela, contorno preto de 1 px
-const DICA_PASSO := 18  # distância entre ícones vizinhos junto da barra de vida
+const DICA_ESC := 1.5   # ícone desenhado a 1,5x em jogo (o mundo é mostrado a menos de 1 px por px): ~16 px legíveis em 1280x720
+const DICA_PASSO := 26  # distância entre ícones vizinhos junto da barra de vida
 ## Silhuetas 12x12 (a = corpo, b = realce); o contorno preto de 1 px e a insígnia são gerados em `_icone`.
 const FORMAS := {
 	"fogo": ["......a.....", ".....aa.....", "....aaa..a..", "...aaaaa.aa.", "...aabaaaaa.", "..aaabbaaaaa", "..aabbbbaaaa", "..aabbbbbaaa", "..aaabbbbaaa", "...aaabbaaa.", "....aaaaaa..", ".....aaaa..."],
@@ -241,7 +242,8 @@ static func _icone(el: String, m: float) -> ImageTexture:
 ## (sofre mais), cinza para baixo (resiste) ou um X vermelho (imune). `c` = centro do ícone.
 static func desenhar_dica(ci: CanvasItem, c: Vector2, d: Dictionary) -> void:
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	ci.draw_texture(_icone(d["el"], d["m"]), (c - Vector2(DICA_LADO, DICA_LADO) * 0.5).round())
+	var lado := float(DICA_LADO) * DICA_ESC
+	ci.draw_texture_rect(_icone(d["el"], d["m"]), Rect2((c - Vector2(lado, lado) * 0.5).round(), Vector2(lado, lado)), false)
 
 # ---------------- Mapa: braseiros e pilares ----------------
 ## Braseiros (`B`) e pilares (`O`) do mapa reagem ao fogo, ao raio e ao gelo quando o inimigo atingido está perto deles
@@ -436,7 +438,7 @@ class Marca extends Node2D:
 				for i in n:
 					var ang := TAU * float(i) / float(n) + 0.4
 					var c := Vector2(cos(ang) * r * 0.5 if vap else sin(float(i) * 2.1 + _t * 3.0) * 7.0, (sin(ang) * r * 0.25 if vap else -14.0) - (46.0 if vap else 56.0) * k - float(i) * (0.0 if vap else 5.0))
-					_disco(c.round(), (11.0 if vap else 8.0) + 8.0 * k, tons[1 if k < 0.6 else 2], tons[0 if k < 0.6 else 1], true)
+					_disco(c.round(), (11.0 if vap else 13.0) + 8.0 * k, tons[1 if k < 0.6 else 2], tons[0 if k < 0.6 else 1], true)
 			"rachadura":   # fendas vermelhas e azuis de 1 px com contorno escuro, mais brasas
 				for i in 8:
 					var ang := TAU * float(i) / 8.0 + 0.2
