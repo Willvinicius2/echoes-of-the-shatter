@@ -1,7 +1,7 @@
 {
   "meta": {
     "jogo": "Echoes of the Shatter",
-    "atualizado_em": "2026-11-09",
+    "atualizado_em": "2026-11-10",
     "dono_do_arquivo": "agente painel-progresso",
     "repositorio": "github.com/Willvinicius2/echoes-of-the-shatter (privado, Git LFS)",
     "marco_atual": "Jogo 2D top-down em pixel art no Godot 4 (GDScript, cliente em godot/scripts2d/), com o Arqueiro como foco da fatia vertical. Corrida roguelike com hordas na fase aberta, gemas de XP, cartas de nível, baú de elite e chefe; o personagem começa só com o ataque básico e libera habilidades (gemas) e passivas da partida ao subir de nível, sobre uma árvore de passivos permanente (raio, veneno, gelo, fogo). Área 1 do Ato I (estrada de pedra até a arena) fechada e Pedreira dos Ecos (área 2) com terreno e inimigos aprovados (Cão de Cinza e Arauto de Pedra animados por código, sem serviço pago; o Carcereiro do Ossuário segue pendente) e os ícones do Arqueiro desenhados por código. Próximo: elites e chefe em escala maior, meta-progressão com save e hub com craft (direção de 30/10: roguelike com hub, craft e exploração, sem MMO). A Unity e o visual 3D estão arquivados (arquivo/unity-final).",
@@ -918,7 +918,7 @@
     },
     {
       "titulo": "Área 2: inimigos em pixel art",
-      "feito": false
+      "feito": true
     },
     {
       "titulo": "Meta-progressão com save e hub com craft",
