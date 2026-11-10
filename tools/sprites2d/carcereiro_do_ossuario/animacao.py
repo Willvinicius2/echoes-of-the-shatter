@@ -12,6 +12,7 @@ import carcereiro as G
 YAW = {'S': 0.0, 'SE': 45.0, 'E': 90.0, 'NE': 135.0, 'N': 180.0}
 ORDEM = ['S', 'SE', 'E', 'NE', 'N']
 PARTES = G.construir()
+DESLOC = (-0.11, 0.0, 0.0)     # centra o desenho no pivô (a marreta puxa o conjunto para um lado nas vistas de frente)
 SUP = ['tronco', 'cabeca', 'ombreiraL', 'ombreiraR', 'bracoL', 'bracoR', 'antebracoL', 'antebracoR']
 I3 = np.eye(3)
 
@@ -193,7 +194,7 @@ def quadro(est, yaw, quadro_px=R.QUADRO):
     rx, rz = est['tilt']
     Rt = R.euler(rx, 0, rz) if (rx or rz) else I3
     raiz_R = Ry @ Rt
-    t = Ry @ np.array(est['t'], float)
+    t = Ry @ (np.array(est['t'], float) + np.array(DESLOC))
     partes = PARTES + est['partes_extra'] if est['partes_extra'] else PARTES
     cena = R.montar_cena(partes, G.JUNTAS, est['pose'], raiz_R, t, est['extra'])
     img = R.sombrear(cena, olho=est['olho'], cinza=est['cinza'])
