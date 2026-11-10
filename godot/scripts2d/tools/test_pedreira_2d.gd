@@ -459,17 +459,17 @@ func _testar_arte_do_cao() -> void:
 	_conferir_folhas_por_codigo({"id": "ash_hound", "nome": "cão de cinza", "lado": 92, "pivo": Vector2i(46, 74), "cores": 26,
 		"contato": 4, "pe": Vector2i(-1, 1), "centro": -1})
 
-## Arauto de Pedra, modelo 3D de pedra feito por código (tools/sprites2d/arauto_de_pedra): quadro de 176 px com o centro dos pés
-## no pivô (88, 132) (o pé da frente fica logo abaixo dele), alfa binário, no máximo 24 cores, nenhum quadro vazio e nenhum pixel
+## Arauto de Pedra, modelo 3D de pedra feito por código (tools/sprites2d/arauto_de_pedra): quadro de 256 px com o centro dos pés
+## no pivô (128, 192) (o pé da frente fica logo abaixo dele), alfa binário, no máximo 24 cores, nenhum quadro vazio e nenhum pixel
 ## colado na borda (a martelada com os punhos erguidos e a pilha da morte ocupam o quadro quase todo) e o golpe de 8 quadros com
 ## o contato (os punhos no chão) no quadro 5.
 func _testar_arte_do_carcereiro() -> void:
-	_conferir_folhas_por_codigo({"id": "ossuary_warden", "nome": "carcereiro do ossuario", "lado": 176, "pivo": Vector2i(88, 132), "cores": 24,
-		"contato": 5, "pe": Vector2i(0, 20), "centro": 6})
+	_conferir_folhas_por_codigo({"id": "ossuary_warden", "nome": "carcereiro do ossuario", "lado": 256, "pivo": Vector2i(128, 192), "cores": 24,
+		"contato": 5, "pe": Vector2i(0, 30), "centro": 9})
 
 func _testar_arte_do_arauto() -> void:
-	_conferir_folhas_por_codigo({"id": "stone_herald", "nome": "arauto de pedra", "lado": 176, "pivo": Vector2i(88, 132), "cores": 24,
-		"contato": 5, "pe": Vector2i(0, 20), "centro": 6})
+	_conferir_folhas_por_codigo({"id": "stone_herald", "nome": "arauto de pedra", "lado": 256, "pivo": Vector2i(128, 192), "cores": 24,
+		"contato": 5, "pe": Vector2i(0, 30), "centro": 9})
 
 ## Conferência comum das folhas feitas por código. `cfg`: id, nome (para as mensagens), lado e pivo esperados no manifesto, cores
 ## (máximo), contato (quadro do golpe com 8 quadros), pe (faixa, em px abaixo do pivô, da linha mais baixa do idle) e centro

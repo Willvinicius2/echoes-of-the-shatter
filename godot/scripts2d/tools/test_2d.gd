@@ -254,9 +254,9 @@ func _testar_feel() -> void:
 		check(Feel.cfg().has(k), "feel.csv tem " + k)
 	for r in Csv.rows("res://data2d/enemies.csv"):
 		check(float(r["windup"]) >= 0.0 and float(r["windup"]) <= 1.0, "%s: windup entre 0 e 1 s" % r["id"])
-		check(r.has("hp_bar_dy") and float(r["hp_bar_dy"]) >= -90.0 and float(r["hp_bar_dy"]) <= 12.0, "%s: hp_bar_dy (positivo sobe a barra; negativo desce a barra e os números de quem tem folga em cima do quadro, como o Arauto) entre -90 e 12 px" % r["id"])
+		check(r.has("hp_bar_dy") and float(r["hp_bar_dy"]) >= -110.0 and float(r["hp_bar_dy"]) <= 12.0, "%s: hp_bar_dy (positivo sobe a barra; negativo desce a barra e os números de quem tem folga em cima do quadro, como o Arauto) entre -110 e 12 px" % r["id"])
 	check(Csv.enemy("crypt_bat")["hp_bar_dy"] == 4.0, "a barra de vida do morcego fica 4 px mais alta")
-	# Arauto de Pedra: o quadro de 176 px tem folga em cima (punhos erguidos, pilha da morte); a barra e os números descem para a cabeça
+	# Arauto de Pedra: o quadro de 256 px tem folga em cima (punhos erguidos, pilha da morte); a barra e os números descem para a cabeça
 	check(float(Csv.enemy("stone_herald")["hp_bar_dy"]) < 0.0, "a barra de vida do Arauto de Pedra desce (hp_bar_dy negativo)")
 	check(float(Csv.enemy("stone_herald")["hp_bar"]) >= 1.5 and float(Csv.enemy("ash_hound")["hp_bar"]) == 1.0, "a barra de vida do Arauto de Pedra é 1,5x mais larga que a padrão (hp_bar é o múltiplo de 40 px)")
 	var mundo_arauto := Node2D.new()
@@ -267,7 +267,7 @@ func _testar_feel() -> void:
 	mundo_arauto.add_child(arauto)
 	arauto.setup("stone_herald", alvo_falso, Vector2(900, 0))
 	arauto.set_physics_process(false)
-	var topo_quadro: float = -(176.0 * 0.5 - arauto.sprite.offset.y) * arauto.sprite.scale.x * 0.88
+	var topo_quadro: float = -(256.0 * 0.5 - arauto.sprite.offset.y) * arauto.sprite.scale.x * 0.88
 	check(arauto.topo_visual() > topo_quadro + 60.0 and arauto.topo_visual() < -120.0, "topo do Arauto de Pedra: a barra e os números ficam perto da cabeça (%.0f; o topo do quadro é %.0f)" % [arauto.topo_visual(), topo_quadro])
 	var cao_barra = load("res://scripts2d/enemy_2d.gd").new()
 	mundo_arauto.add_child(cao_barra)

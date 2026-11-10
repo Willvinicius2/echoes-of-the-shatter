@@ -429,7 +429,7 @@ func _feedback_golpe(amount: float, origem: Vector2, morreu: bool) -> void:
 func largura_barra() -> float:
 	return 40.0 * float(stats.get("hp_bar", 1.0))
 
-## `hp_bar_dy` negativo (Arauto de Pedra: o quadro de 176 px tem folga em cima para os punhos erguidos e para a pilha da morte)
+## `hp_bar_dy` negativo (Arauto de Pedra: o quadro de 256 px tem folga em cima para os punhos erguidos e para a pilha da morte)
 ## desce o topo, e com ele a barra de vida e os números de dano; o positivo só sobe a barra (ver `_draw`).
 func topo_visual() -> float:
 	return super.topo_visual() - minf(0.0, float(stats.get("hp_bar_dy", 0.0)))
