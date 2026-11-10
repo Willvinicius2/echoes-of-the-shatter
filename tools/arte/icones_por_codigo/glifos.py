@@ -16,6 +16,8 @@ OURO = [(40, 26, 8), (108, 74, 22), (184, 136, 46), (236, 198, 98), (255, 238, 1
 PEDRA = [(10, 10, 14), (38, 36, 44), (74, 70, 78), (118, 112, 116), (168, 160, 156)]
 OSSO = [(40, 30, 22), (120, 100, 78), (196, 176, 140), (240, 228, 196)]
 VIDRO_VERDE = [(6, 30, 20), (20, 90, 60), (50, 170, 110), (120, 232, 170), (220, 255, 230)]
+ROXO = [(12, 6, 28), (52, 22, 108), (112, 54, 196), (170, 118, 244), (232, 208, 255)]
+ESCAMA = [(8, 4, 6), (36, 14, 14), (82, 32, 22), (144, 66, 34), (208, 114, 54)]
 
 
 def tela(cor, raio=48, forca=0.5, cx=64, cy=64):
@@ -286,6 +288,99 @@ def nuvem_tempestade(t, cx, cy, largura, semente, cor_luz=(0.5, 0.65, 1.0)):
     t.somar(P.borda_luz(cum).clip(0, 1) * cum, (0.75, 0.85, 1.0), 0.65)
     t.brilho(P.elipse(cx, cy + 10, largura * 0.36, 6), cor_luz, 7, 0.6)
     return cum
+
+
+def girar_pts(pts, cx, cy, graus, k=1.0):
+    """Gira e escala uma lista de pontos locais (x para a frente, y para baixo) em volta da origem (cx, cy)."""
+    a = np.radians(graus)
+    c, s = np.cos(a), np.sin(a)
+    return [(cx + (x * c - y * s) * k, cy + (x * s + y * c) * k) for x, y in pts]
+
+
+def tubo_perfil(pts, perfil, n=160):
+    """Curva (spline) com largura dada por nós (posição 0..1, largura): serpentes, caudas."""
+    c = P.spline(pts, n)
+    pos = np.linspace(0, 1, len(c))
+    nos = np.array(perfil, float)
+    larg = np.interp(pos, nos[:, 0], nos[:, 1])
+    def f(d, k):
+        for (x, y), w in zip(c, larg):
+            r = w * k / 2
+            d.ellipse([x * k - r, y * k - r, x * k + r, y * k + r], fill=255)
+    return P.desenhar(f)
+
+
+def polar(cx, cy):
+    dx, dy = X - cx, Y - cy
+    return np.hypot(dx, dy), np.degrees(np.arctan2(dy, dx))
+
+
+def petala(cx, cy, ang, r0, r1, larg, curva, n=14):
+    """Língua de chama que sai do anel: do raio r0 ao r1 em volta de (cx, cy), larga na base, ponta curvada para o lado."""
+    esq, dir_ = [], []
+    for i in range(n + 1):
+        s = i / n
+        r = r0 + (r1 - r0) * s
+        w = larg * (1 - s) ** 0.85 * (1 + 0.18 * np.sin(s * 5.0))
+        a = np.radians(ang + curva * s * s)
+        u = np.array([np.cos(a), np.sin(a)])
+        v = np.array([-u[1], u[0]])
+        c = np.array([cx, cy]) + u * r
+        esq.append(tuple(c + v * w / 2))
+        dir_.append(tuple(c - v * w / 2))
+    return P.poligono(esq + dir_[::-1])
+
+
+def lingua(base, ang, comp, larg, curva=0.0, n=16):
+    """Língua de chama reta (ou levemente curvada para o lado) que parte de `base` na direção `ang`; devolve (máscara, posição 0..1
+    ao longo da língua em cada pixel)."""
+    a = np.radians(ang)
+    u = np.array([np.cos(a), np.sin(a)])
+    v = np.array([-u[1], u[0]])
+    b = np.array(base, float)
+    esq, dir_ = [], []
+    for i in range(n + 1):
+        q = i / n
+        w = larg * (1 - q) ** 0.8 * (1 + 0.15 * np.sin(q * 5.0))
+        c = b + u * comp * q + v * curva * q * q
+        esq.append(tuple(c + v * w / 2))
+        dir_.append(tuple(c - v * w / 2))
+    m = P.poligono(esq + dir_[::-1])
+    pos = np.clip(((X - b[0]) * u[0] + (Y - b[1]) * u[1]) / comp, 0, 1)
+    return m, pos
+
+
+def girar_em(pts, ox, oy, graus):
+    """Gira pontos em volta de (ox, oy)."""
+    a = np.radians(graus)
+    c, s = np.cos(a), np.sin(a)
+    return [(ox + (x - ox) * c - (y - oy) * s, oy + (x - ox) * s + (y - oy) * c) for x, y in pts]
+
+
+def trompa(pts, w0, w1, expoente=2.2, n=110):
+    """Tubo que alarga devagar e abre no fim (trompa, sino): largura w0 na boquilha e w1 na boca, com s ** expoente."""
+    c = P.spline(pts, n)
+    def f(d, k):
+        m = len(c)
+        for i, (x, y) in enumerate(c):
+            r = (w0 + (w1 - w0) * (i / max(1, m - 1)) ** expoente) * k / 2
+            d.ellipse([x * k - r, y * k - r, x * k + r, y * k + r], fill=255)
+    return P.desenhar(f)
+
+
+CHAMA_LARANJA = [(150, 30, 6), (240, 96, 14), (255, 150, 30), (255, 206, 90)]
+CHAMA_GELO = [(14, 80, 150), (40, 160, 240), (100, 210, 255), (190, 240, 255)]
+CHAMA_VENENO = [(14, 100, 14), (50, 180, 30), (110, 230, 50), (190, 255, 120)]
+CHAMA_RAIO = [(60, 24, 160), (120, 70, 240), (170, 120, 255), (216, 190, 255)]
+
+
+def chama_pequena(t, base, ang, comp, larg, paleta, brilho_cor):
+    """Chama de silhueta limpa (gota alongada com a ponta torta) de uma cor só, com núcleo um tom mais claro (nunca branco)."""
+    m, pos = lingua(base, ang, comp, larg, curva=3.0)
+    t.brilho(m, brilho_cor, 3.0, 0.3)
+    t.pintar(m, P.rampa(np.clip(0.78 - pos * 0.7, 0, 1), paleta), 1.0)
+    n, pn = lingua(base, ang, comp * 0.6, larg * 0.42, curva=1.5)
+    t.pintar(n, P.rampa(np.clip(1.0 - pn * 0.5, 0, 1), paleta), 0.95)
 
 
 # --- protótipos ------------------------------------------------------------------------------------------------
@@ -892,11 +987,6 @@ def deadly_aim():
     return t.reduzir()
 
 
-def _eco_base(cor, r_pena, r_haste=None, r_ponta=None, p0=(26, 102), p1=(104, 24)):
-    t = tela(cor, 54, 0.42, 64, 64)
-    return t
-
-
 def eco_trovao():
     cor = (0.5, 0.7, 1.0)
     t = tela(cor, 54, 0.45, 64, 64)
@@ -966,10 +1056,281 @@ def eco_cinzas():
     return t.reduzir()
 
 
+def wide_reach():
+    """Leque de cinco flechas de ouro claro, bem separadas, abrindo em arco sobre um setor escuro, com um fio de arco além das pontas."""
+    cor = (1.0, 0.85, 0.4)
+    t = tela(cor, 54, 0.22, 64, 60)
+    haste = [(205, 170, 108), (240, 216, 150), (255, 244, 200), (255, 252, 236)]
+    ponta_c = [(150, 100, 30), (222, 172, 70), (255, 224, 124), (255, 250, 218)]
+    pena = [(130, 100, 56), (200, 164, 100), (240, 214, 150), (255, 244, 206)]
+    origem = np.array([64.0, 112.0])
+    # setor escuro de fundo (a área que o leque cobre)
+    r, ang = polar(origem[0], origem[1])
+    setor = P.gauss(((r < 88) & (np.abs(ang + 90) < 50)).astype(np.float32), 1.2)
+    t.pintar(setor, P.rampa(np.clip(r / 92.0, 0, 1) ** 1.3 * 0.55 + 0.05, [(10, 7, 4), (30, 20, 8), (62, 42, 14), (96, 68, 24)]), 0.75)
+    pontas = []
+    for ang_f, comp, w in [(-42, 66, 5.6), (-21, 82, 5.8), (0, 92, 6.6), (21, 82, 5.8), (42, 66, 5.6)]:
+        a = np.radians(ang_f - 90)
+        u = np.array([np.cos(a), np.sin(a)])
+        p1 = origem + u * comp
+        pontas.append(tuple(p1))
+        flecha(t, tuple(origem + u * 11), tuple(p1), haste=w, ponta=(28, 15) if ang_f == 0 else (25, 13.5), pena=(9, 6.5),
+               r_haste=haste, r_ponta=ponta_c, r_pena=pena, brilho_cor=None, n_penas=2)
+    # fio de arco além das pontas, bem fino, só para dizer "área"
+    arco = P.traco(P.spline([(x + (x - 64.0) * 0.06, y - 6.0) for x, y in pontas], 60), 1.6)
+    t.brilho(arco, cor, 2.6, 0.5)
+    t.pintar(arco, P.rampa(0.8, OURO), 0.8)
+    # pino do leque
+    t.sombra(P.circulo(64, 112, 10), 2, 0.5)
+    esfera(t, 64, 112, 9.5, OURO, brilho=0.5)
+    faiscas(t, 12, (64, 50), 42, 8, cor)
+    return t.reduzir()
+
+def focus():
+    """Seta circular roxa com friso dourado em volta de um raio pequeno, de ouro."""
+    cor = (0.62, 0.36, 1.0)
+    t = tela(cor, 54, 0.4, 64, 64)
+    cx, cy, R, esp = 64.0, 64.0, 37.0, 12.0
+    r, ang = polar(cx, cy)
+    # arco de 296 graus, em sentido horário, que termina numa ponta de seta no alto
+    a0, a1 = -48.0, 248.0
+    rel = (ang - a0) % 360.0
+    arco = ((np.abs(r - R) < esp / 2) & (rel < (a1 - a0))).astype(np.float32)
+    # ponta da seta
+    th = np.radians(a1)
+    fim = np.array([cx + R * np.cos(th), cy + R * np.sin(th)])
+    tang = np.array([-np.sin(th), np.cos(th)])
+    nrm = np.array([np.cos(th), np.sin(th)])
+    ponta = P.poligono([tuple(fim + tang * 22), tuple(fim + nrm * 15 - tang * 2), tuple(fim - nrm * 15 - tang * 2)])
+    tudo = np.maximum(arco, ponta)
+    t.brilho(tudo, cor, 6, 0.55)
+    t.sombra(P.deslocar(tudo, 1.5, 2.5), 2.5, 0.5)
+    t.volume(tudo, OURO, 2.2, 1.0, brilho_borda=0.4)
+    miolo = np.clip(P.gauss(tudo, 1.5) * 1.6 - 0.62, 0, 1)
+    t.volume(miolo, ROXO, 2.0, 1.0, brilho_borda=0.25)
+    # raio pequeno no centro
+    raio = P.poligono([(71, 36), (51, 68), (62, 68), (55, 92), (79, 57), (67, 57)])
+    t.brilho(raio, (1.0, 0.85, 0.3), 5, 0.9)
+    t.sombra(P.deslocar(raio, 1.0, 2.0), 2.0, 0.5)
+    t.volume(raio, OURO, 1.4, 1.0, brilho_borda=0.35)
+    t.pintar(np.clip(P.gauss(raio, 1.1) * 1.8 - 0.8, 0, 1), (1, 0.98, 0.85), 0.9)
+    faiscas(t, 14, (64, 64), 46, 8, cor)
+    return t.reduzir()
+
+def ring_of_fire():
+    """Anel de chamas visto de cima: buraco escuro no meio, miolo claro no anel e línguas de fogo para fora."""
+    cor = (1.0, 0.4, 0.08)
+    t = tela(cor, 56, 0.28, 64, 64)
+    cx, cy = 64.0, 64.0
+    rng = np.random.default_rng(77)
+    r, ang = polar(cx, cy)
+    # chão escuro do buraco, com um fio de brasa na borda de dentro
+    furo = P.circulo(cx, cy, 25)
+    t.pintar(furo, P.rampa(np.clip((r - 6) / 28.0, 0, 1) ** 2.0 * 0.5, [(5, 4, 8), (26, 8, 8), (70, 16, 10)]), 1.0)
+    # duas camadas de línguas: as de trás, longas e vermelhas, e as da frente, curtas e claras
+    n1 = 18
+    for k in range(n1):
+        a = k * 360.0 / n1 + rng.uniform(-5, 5)
+        m = petala(cx, cy, a, 27, 50 + rng.uniform(-5, 4), 15.0, 18)
+        v = np.clip((r - 27) / 24.0, 0, 1)
+        t.pintar(m, P.rampa(0.62 - v * 0.55, [(70, 8, 6), (170, 30, 8), (235, 90, 16), (255, 150, 30)]), 1.0)
+    for k in range(n1):
+        a = k * 360.0 / n1 + 10 + rng.uniform(-4, 4)
+        m = petala(cx, cy, a, 27, 42 + rng.uniform(-4, 3), 12.5, 14)
+        v = np.clip((r - 27) / 17.0, 0, 1)
+        t.pintar(m, P.rampa(0.95 - v * 0.6, [(160, 30, 8), (240, 100, 20), (255, 170, 40), (255, 225, 120), (255, 245, 190)]), 1.0)
+    # anel de brasa viva
+    anel = ((np.abs(r - 29.5) < 3.4)).astype(np.float32)
+    anel = P.gauss(anel, 0.5)
+    t.brilho(anel, (1.0, 0.8, 0.3), 4, 0.7)
+    t.pintar(anel, P.rampa(0.68 + 0.2 * np.clip(1 - np.abs(r - 29.5) / 3.4, 0, 1), FOGO), 1.0)
+    # fio de luz na borda do buraco
+    borda = np.exp(-((r - 25.0) / 1.2) ** 2)
+    t.somar(borda, (1.0, 0.45, 0.12), 0.8)
+    faiscas(t, 15, (64, 64), 50, 16, (1.0, 0.6, 0.15))
+    return t.reduzir()
+
+def flame_breath():
+    """Cabeça de dragão de perfil com a boca aberta soprando um cone de chamas que se abre para a ponta."""
+    cor = (1.0, 0.45, 0.1)
+    t = tela(cor, 56, 0.3, 74, 52)
+    cx, cy, graus, k = 24.0, 92.0, -28.0, 0.78
+    def L(pts):
+        return girar_pts(pts, cx, cy, graus, k)
+    abertura = 32.0
+    gancho = (-4.0, 8.0)
+    # pescoço e chifre
+    pescoco = P.tubo(L([(-14, 6), (-28, 26), (-44, 46), (-64, 66)]), 30 * k, 40 * k)
+    chifre = P.poligono(L([(-6, -28), (-26, -42), (-52, -42), (-36, -32), (-20, -20)]))
+    espinhos = [P.poligono(L([(-18 - 9 * i, -22 + 12 * i), (-30 - 9 * i, -32 + 12 * i), (-22 - 9 * i, -12 + 12 * i)])) for i in range(2)]
+    crani = P.poligono(L([(-26, 8), (-30, -10), (-20, -26), (-2, -32), (22, -24), (44, -17), (60, -12), (66, -3), (60, 3), (42, 5), (22, 5), (0, 5)]))
+    mandi = P.poligono(L(girar_em([(-14, 8), (-10, 20), (6, 26), (34, 24), (54, 16), (58, 9), (40, 11), (14, 10)], gancho[0], gancho[1], abertura)))
+    corpo = P.seguir(pescoco, chifre, crani, mandi, *espinhos)
+    t.sombra(P.deslocar(corpo, 1.5, 3.0), 3.0, 0.55)
+    t.brilho(corpo, (1.0, 0.45, 0.1), 7, 0.22)
+    # interior da boca: o vão entre as mandíbulas, aceso pelo fogo
+    cant = L([gancho])[0]
+    ponta_sup = L([(60, 4)])[0]
+    ponta_inf = L(girar_em([(56, 9)], gancho[0], gancho[1], abertura))[0]
+    boca = P.poligono([cant, ponta_sup, ponta_inf])
+    # pele de escamas: luz do fogo (da frente) somada à luz de cima
+    def pele(m, tom=0.0):
+        v1 = P.luz_da_forma(m, 2.4, 1.0, luz=(0.85, -0.25, 0.5))
+        v2 = P.luz_da_forma(m, 2.4, 1.0)
+        v = np.clip(0.55 * v1 + 0.45 * v2 + tom + (P.ruido(5, 6, 3) - 0.5) * 0.18, 0, 1)
+        t.pintar(m, P.rampa(v, ESCAMA), 1.0)
+        bl = np.clip(P.borda_luz(m, 1.2, luz=(0.9, -0.4)), 0, 1)
+        t.somar(bl * m, (1.0, 0.55, 0.2), 0.55)
+    pele(np.maximum(pescoco, espinhos[0]))
+    pele(espinhos[1], 0.05)
+    pele(chifre, 0.12)
+    pele(mandi, -0.06)
+    t.pintar(boca, (0.2, 0.04, 0.03), 1.0)
+    t.somar(P.gauss(boca, 3.0), (1.0, 0.4, 0.08), 0.8)
+    pele(crani)
+    # dentes
+    for x in (16, 28, 40, 52):
+        m = P.poligono(L([(x - 3.4, 4), (x + 3.4, 4), (x, 13)]))
+        t.pintar(m, P.rampa(0.8, OSSO), 1.0)
+    for x in (24, 36, 48):
+        m = P.poligono(L(girar_em([(x - 3.2, 11), (x + 3.2, 11), (x, 3)], gancho[0], gancho[1], abertura)))
+        t.pintar(m, P.rampa(0.8, OSSO), 1.0)
+    # olho, sobrancelha e narina
+    olho = P.elipse(*L([(15, -14)])[0], 6.2 * k, 3.8 * k, graus - 16)
+    t.brilho(olho, (1.0, 0.8, 0.2), 4, 0.9)
+    t.pintar(olho, P.rampa(0.75, [(120, 50, 10), (255, 170, 30), (255, 230, 90), (255, 250, 200)]), 1.0)
+    t.pintar(P.elipse(*L([(15, -14)])[0], 1.3 * k, 3.4 * k, graus - 16), (0.05, 0.02, 0.02), 1.0)
+    ponto_a, ponto_b = L([(3, -21)])[0], L([(28, -17)])[0]
+    t.pintar(P.traco([ponto_a, ponto_b], 3.2 * k), (0.07, 0.03, 0.03), 0.9)
+    t.pintar(P.elipse(*L([(54, -6)])[0], 2.6 * k, 1.7 * k, graus), (0.04, 0.02, 0.02), 1.0)
+    # cone de fogo saindo da boca: línguas em leque, estreito na boca e largo na ponta
+    m0 = (np.array(ponta_sup) + np.array(ponta_inf)) / 2
+    eixo = -22.0
+    cone_total = np.zeros((W, W), np.float32)
+    camadas = []
+    for j, dv in enumerate((-31, -21, -11, 0, 11, 21, 31)):
+        comp = 62.0 - abs(dv) * 0.5 + (4 if j % 2 else -3)
+        m, pos = lingua(m0 + np.array([0.0, (j - 3) * 1.2]), eixo + dv, comp, 15.0, curva=dv * 0.18)
+        camadas.append((m, pos, abs(dv)))
+        cone_total = np.maximum(cone_total, m)
+    t.brilho(cone_total, cor, 7, 0.45)
+    rampa_fogo = [(78, 8, 6), (170, 30, 8), (236, 92, 16), (255, 154, 34), (255, 214, 96)]
+    for m, pos, dv in sorted(camadas, key=lambda c: -c[2]):
+        t.pintar(m, P.rampa(np.clip(1.0 - pos * 0.85 - dv / 90.0 + 0.18, 0, 1), rampa_fogo), 1.0)
+    for j, dv in enumerate((-20, -7, 7, 20)):
+        m, pos = lingua(m0, eixo + dv, 40.0 - abs(dv) * 0.4, 9.0, curva=dv * 0.1)
+        t.pintar(m, P.rampa(np.clip(1.0 - pos * 0.7 + 0.12, 0, 1), [(170, 36, 8), (250, 120, 24), (255, 190, 60), (255, 236, 150), (255, 250, 210)]), 1.0)
+    faiscas(t, 13, tuple(m0 + np.array([np.cos(np.radians(eixo)), np.sin(np.radians(eixo))]) * 46), 30, 12, (1.0, 0.6, 0.15))
+    return t.reduzir()
+
+def fire_serpent():
+    """Serpente de fogo em S, de escamas em brasa, com cabeça de crista, olho aceso e língua bífida, bem recortada no fundo escuro."""
+    cor = (1.0, 0.4, 0.08)
+    t = tela(cor, 54, 0.26, 64, 64)
+    pts = [(24, 100), (40, 107), (62, 104), (80, 93), (88, 78), (80, 64), (62, 58), (48, 50), (46, 36), (58, 26), (74, 24)]
+    corpo = tubo_perfil(pts, [(0.0, 3.0), (0.22, 11.0), (0.55, 17.0), (0.85, 14.0), (1.0, 13.0)])
+    # cabeça: cunha apontada para a direita, no fim do corpo
+    hx, hy = 78.0, 24.0
+    def Hd(pp):
+        return girar_pts(pp, hx, hy, -4.0, 1.0)
+    cabeca = P.poligono(Hd([(-12, -10), (4, -13), (20, -9), (31, -3), (32, 3), (21, 9), (4, 12), (-12, 10)]))
+    tudo = P.seguir(corpo, cabeca)
+    # crista de chamas que corre para trás da cabeça, por trás dela
+    for ang_c, comp_c, larg_c in ((-168, 20, 8.0), (-150, 22, 8.5), (-132, 18, 7.5)):
+        m, pos = lingua(Hd([(-6, -7)])[0], ang_c, comp_c, larg_c, curva=-3)
+        t.brilho(m, cor, 3, 0.45)
+        t.pintar(m, P.rampa(np.clip(0.98 - pos * 0.7, 0, 1), [(150, 28, 8), (240, 100, 18), (255, 170, 44), (255, 228, 120)]), 1.0)
+    t.sombra(P.deslocar(tudo, 1.5, 3.0), 3.0, 0.6)
+    t.brilho(tudo, cor, 6, 0.32)
+    # contorno escuro para recortar a silhueta
+    contorno = np.clip(P.gauss(tudo, 1.6) * 3.0 - 0.45, 0, 1)
+    t.pintar(contorno, (0.05, 0.01, 0.01), 1.0)
+    # corpo em brasa: relevo e uma faixa de luz no dorso
+    pos, lado, dist = coord_curva(pts, 160)
+    v = P.luz_da_forma(corpo, 3.2, 1.2)
+    perfil = np.array([(0.0, 3.0), (0.22, 11.0), (0.55, 17.0), (0.85, 14.0), (1.0, 13.0)])
+    meia = np.interp(pos, perfil[:, 0], perfil[:, 1]) / 2.0
+    centro = np.clip(1.0 - dist / np.maximum(meia, 1.0), 0, 1) ** 1.3          # dorso quente no eixo, bordas em crosta
+    escamas = 0.5 + 0.5 * np.cos(pos * 2 * np.pi * 15.0)
+    ruid = (P.ruido(9, 8, 3) - 0.5) * 0.16
+    vv = np.clip(0.10 + 0.62 * centro + 0.24 * v - 0.26 * P.degrau(escamas, 0.7, 1.0) + ruid, 0, 1)
+    t.pintar(corpo, P.rampa(vv, [(24, 4, 4), (84, 12, 8), (170, 36, 10), (240, 92, 16), (255, 170, 46), (255, 226, 126)]), 1.0)
+    # barriga mais clara na parte de dentro das curvas
+    barriga = corpo * np.clip(1.0 - dist / 8.0, 0, 1) * (lado > 0)
+    t.somar(barriga * 0.0, (1, 0.8, 0.3), 0.0)
+    # cabeça
+    vc = np.clip(0.2 + P.luz_da_forma(cabeca, 2.2, 1.2) * 0.8 + (P.ruido(10, 6, 3) - 0.5) * 0.1, 0, 1)
+    t.pintar(cabeca, P.rampa(vc, [(30, 5, 5), (110, 18, 8), (196, 50, 12), (250, 112, 22), (255, 190, 60)]), 1.0)
+    bl = np.clip(P.borda_luz(tudo, 1.1, luz=(-1.0, -1.0)), 0, 1)
+    t.somar(bl * tudo, (1.0, 0.8, 0.4), 0.45)
+    # olho aceso com pupila de fenda
+    ox, oy = Hd([(9, -4.0)])[0]
+    olho = P.elipse(ox, oy, 4.6, 3.2, -20)
+    t.brilho(olho, (1.0, 0.9, 0.3), 3.5, 0.9)
+    t.pintar(olho, P.rampa(0.9, [(160, 90, 10), (255, 210, 60), (255, 244, 170), (255, 255, 235)]), 1.0)
+    t.pintar(P.elipse(ox + 0.4, oy, 1.0, 2.6, -20), (0.04, 0.01, 0.01), 1.0)
+    # boca e língua bífida
+    boca = P.traco(Hd([(4, 5.5), (30, 3.2)]), 1.6)
+    t.pintar(boca, (0.08, 0.01, 0.01), 0.9)
+    tl = Hd([(30, 3.5), (40, 4.5), (47, 1.0)]), Hd([(40, 4.5), (47, 8.5)])
+    for seg in tl:
+        m = P.traco(seg, 2.0)
+        t.brilho(m, (1.0, 0.3, 0.1), 2.2, 0.6)
+        t.pintar(m, (1.0, 0.45, 0.14), 1.0)
+    # brasas soltas
+    faiscas(t, 21, (64, 64), 48, 16, (1.0, 0.55, 0.12))
+    return t.reduzir()
+
+def herald_might():
+    """Trompa de guerra de bronze, com o tubo curvo à vista e a campânula larga (40% da altura do ícone), soprando quatro chamas
+    pequenas de cores distintas (cinzas, gelo, peste e trovão)."""
+    cor = (1.0, 0.75, 0.35)
+    t = tela(cor, 54, 0.07, 68, 72)
+    pts = [(18, 102), (32, 110), (52, 108), (68, 96), (77, 80), (82, 66)]   # da boquilha à boca
+    corpo = trompa(pts, 7.0, 54.0, 2.7)
+    # a ponta redonda do último círculo vira uma cúpula: corta o corpo no plano da boca
+    corpo = corpo * (((X - 82.0) * 0.28 + (Y - 64.0) * -0.96) <= 6.0)
+    contorno = np.clip(P.gauss(corpo, 1.6) * 3.0 - 0.45, 0, 1)
+    t.sombra(P.deslocar(corpo, 1.5, 3.0), 3.0, 0.55)
+    t.pintar(contorno, (0.05, 0.03, 0.02), 1.0)
+    t.volume(corpo, OURO, 3.6, 1.3, brilho_borda=0.4)
+    pos, lado, dist = coord_curva(pts, 120)
+    # argolas de bronze escuro com fio de luz ao lado: marcam a curva do tubo
+    for s0, gr in ((0.08, 0.026), (0.30, 0.022), (0.52, 0.022), (0.72, 0.024), (0.88, 0.020)):
+        faixa = corpo * (np.abs(pos - s0) < gr)
+        t.pintar(faixa, P.rampa(0.16 + 0.1 * np.clip(-lado, 0, 1), OURO), 0.95)
+        fio = corpo * (np.abs(pos - (s0 + gr * 1.5)) < gr * 0.5)
+        t.pintar(fio, P.rampa(0.92, OURO), 0.85)
+    # boquilha: anel escuro na ponta fina
+    bq = P.circulo(18, 102, 4.4)
+    t.pintar(bq, (0.07, 0.04, 0.02), 1.0)
+    t.pintar(P.anel(18, 102, 4.0, 1.4), P.rampa(0.9, OURO), 0.9)
+    # boca: borda de bronze larga e interior escuro aceso por dentro
+    cx, cy = 82.0, 64.0
+    ang = np.degrees(np.arctan2(-0.96, 0.28)) + 90
+    t.pintar(P.elipse(cx, cy, 29.5, 10.5, ang), P.rampa(0.3, OURO), 1.0)
+    boca = P.elipse(cx, cy, 26.0, 8.6, ang)
+    t.pintar(P.elipse(cx, cy, 28.0, 9.8, ang), P.rampa(0.85, OURO), 1.0)
+    dentro = np.clip(1.0 - np.hypot((X - cx) / 26.0, (Y - cy) / 10.0), 0, 1)
+    t.pintar(boca, P.rampa(0.06 + 0.7 * dentro, [(16, 6, 3), (60, 22, 6), (150, 70, 20), (236, 150, 50)]), 1.0)
+    # quatro chamas menores em fila saindo da boca, uma cor para cada Arauto
+    u = np.array([0.28, -0.96])
+    v = np.array([0.96, 0.28])
+    base_ang = np.degrees(np.arctan2(u[1], u[0]))
+    chamas = [(-17.0, -14, CHAMA_LARANJA, (1.0, 0.5, 0.1)), (-6.0, -5, CHAMA_GELO, (0.5, 0.85, 1.0)),
+              (6.0, 5, CHAMA_VENENO, (0.35, 1.0, 0.2)), (17.0, 14, CHAMA_RAIO, (0.5, 0.45, 1.0))]
+    for d, dang, paleta, bril in chamas:
+        b = np.array([cx, cy]) + v * d - u * 1.0
+        chama_pequena(t, tuple(b), base_ang + dang, 28.0, 10.0, paleta, bril)
+    faiscas(t, 64, (80, 34), 22, 5, cor)
+    return t.reduzir()
+
+
 GLIFOS = {
     "toxic_tornado": toxic_tornado,
     "ice_comet": ice_comet,
     "frost_nova": frost_nova,
+    "fire_serpent": fire_serpent,
     "lightning_rod": lightning_rod,
     "thunder_burst": thunder_burst,
     "sky_storm": sky_storm,
@@ -980,8 +1341,11 @@ GLIFOS = {
     "icicle_lance": icicle_lance,
     "ice_spikes": ice_spikes,
     "blizzard": blizzard,
+    "flame_breath": flame_breath,
+    "ring_of_fire": ring_of_fire,
     "fuse_bomb": fuse_bomb,
     "ember_tip": ember_tip,
+    "wide_reach": wide_reach,
     "extra_shot": extra_shot,
     "swift_shots": swift_shots,
     "lingering": lingering,
@@ -990,8 +1354,10 @@ GLIFOS = {
     "frost_lore": frost_lore,
     "storm_lore": storm_lore,
     "venom_lore": venom_lore,
+    "herald_might": herald_might,
     "keen_eye": keen_eye,
     "deadly_aim": deadly_aim,
+    "focus": focus,
     "eco_trovao": eco_trovao,
     "eco_peste": eco_peste,
     "eco_gelo": eco_gelo,
