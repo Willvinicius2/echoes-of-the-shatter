@@ -10,7 +10,7 @@ import numpy as np
 
 QUADRO = 256
 PIVO = (128, 192)
-ESC = 45.0                      # px por metro
+ESC = 38.0                      # px por metro
 SS = 3                          # amostras por pixel (por eixo)
 PITCH = math.radians(35.0)      # a câmera olha para baixo 35 graus
 D = np.array([0.0, -math.sin(PITCH), -math.cos(PITCH)])     # direção dos raios
