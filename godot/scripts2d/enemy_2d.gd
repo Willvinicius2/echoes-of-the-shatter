@@ -112,6 +112,9 @@ func _na_entrada(delta: float) -> bool:
 	velocity = Vector2.ZERO
 	return true
 
+const SEPARA_PARADO_MIN := 0.35   # empurrão mínimo dos vizinhos para um inimigo parado se mexer
+const SEPARA_PARADO_VEL := 0.55   # fração da velocidade dele nesse afastamento
+
 ## Separação leve (no lugar da colisão física entre inimigos, que custava O(n²)): empurra para longe de quem está
 ## na mesma célula da grade, reconstruída uma vez por quadro de física. No máximo 4 vizinhos por inimigo.
 func _separacao() -> Vector2:
@@ -217,6 +220,11 @@ func _physics_process(delta: float) -> void:
 				_rajada()
 	if mover != Vector2.ZERO:
 		mover = (mover + _separacao() * 0.8).limit_length(1.0)
+	elif estado == Estado.PERSEGUE:
+		# Parado ao alcance do golpe: ainda se afasta dos vizinhos (devagar), senão a horda vira uma pilha só sobre o jogador.
+		var sep := _separacao()
+		if sep.length() > SEPARA_PARADO_MIN:
+			mover = sep.limit_length(SEPARA_PARADO_VEL)
 	velocity = mover * _speed * vel_mult + _kb
 	if velocity != Vector2.ZERO:   # parado e sem empurrão: nada a resolver na física
 		move_and_slide()

@@ -38,6 +38,7 @@ var _no_hub := false            # telas abertas a partir do título (Forja, Melh
 var _retrato_classe: TextureRect   # idle da classe escolhida, animado no cartão do título
 var _retrato_t := 0.0
 var _caixa: VBoxContainer
+var _centro: CenterContainer
 var _fade: ColorRect
 var _tween: Tween
 
@@ -57,11 +58,12 @@ func _ready() -> void:
 	_arte.modulate = Color(0.5, 0.5, 0.58)
 	_arte.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fundo.add_child(_arte)
-	var centro := CenterContainer.new()
-	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fundo.add_child(centro)
+	_centro = CenterContainer.new()
+	_centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fundo.add_child(_centro)
 	var painel := PanelContainer.new()
-	centro.add_child(painel)
+	painel.add_theme_stylebox_override("panel", Tema.caixa(Color(Tema.cor("pedra"), 0.94), Tema.cor("borda"), 3, 6, 24))
+	_centro.add_child(painel)
 	_caixa = VBoxContainer.new()
 	_caixa.add_theme_constant_override("separation", 14)
 	_caixa.custom_minimum_size = Vector2(380, 0)
@@ -241,7 +243,7 @@ func _cartao_classe() -> Control:
 	linha.add_theme_constant_override("separation", 14)
 	cartao.add_child(linha)
 	_retrato_classe = TextureRect.new()
-	_retrato_classe.custom_minimum_size = Vector2(112, 112)
+	_retrato_classe.custom_minimum_size = Vector2(96, 96)
 	_retrato_classe.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_retrato_classe.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_retrato_classe.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -425,9 +427,11 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 		_caixa.remove_child(c)
 		c.queue_free()
 	_caixa.custom_minimum_size.x = 560 if t == Tela.TITULO else 420
-	var titulo_l := _rotulo(Csv.t(titulo), 52 if t == Tela.TITULO else 40, Tema.cor("destaque"))
+	_caixa.add_theme_constant_override("separation", 10 if t == Tela.TITULO else 14)
+	_centro.anchor_left = 0.3 if t == Tela.TITULO else 0.0   # título: o painel vai para a direita e deixa os heróis da arte à vista
+	var titulo_l := _rotulo(Csv.t(titulo), 46 if t == Tela.TITULO else 40, Tema.cor("destaque"))
+	titulo_l.add_theme_font_override("font", load(FONTE_TITULO))
 	if t == Tela.TITULO:
-		titulo_l.add_theme_font_override("font", load(FONTE_TITULO))
 		titulo_l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 		titulo_l.add_theme_constant_override("outline_size", 8)
 	if subtitulo != "":
@@ -437,7 +441,15 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 	if extra != null:
 		_caixa.add_child(extra)
 	var primeiro: Button = null
-	for b in botoes:
+	# Título: Jogar em destaque e as demais opções em duas colunas (a lista em fila única não cabia em 720 px de altura).
+	var grade: GridContainer = null
+	if t == Tela.TITULO:
+		grade = GridContainer.new()
+		grade.columns = 2
+		grade.add_theme_constant_override("h_separation", 10)
+		grade.add_theme_constant_override("v_separation", 8)
+	for i in botoes.size():
+		var b: Array = botoes[i]
 		var btn := Button.new()
 		btn.text = Csv.t(b[0])   # texto já formatado (loja) volta como veio: chave ausente devolve a própria string
 		btn.custom_minimum_size = Vector2(0, 46)
@@ -448,9 +460,26 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 				(b[1] as Signal).emit()
 			else:
 				(b[1] as Callable).call())
-		_caixa.add_child(btn)
+		if grade != null and i == 0:
+			btn.custom_minimum_size.y = 52
+			btn.add_theme_font_size_override("font_size", 22)
+			btn.add_theme_font_override("font", load(FONTE_TITULO))
+			btn.add_theme_color_override("font_color", Tema.cor("destaque"))
+			btn.add_theme_color_override("font_focus_color", Tema.cor("destaque"))
+			_caixa.add_child(btn)
+			_caixa.add_child(grade)
+		elif grade != null:
+			btn.custom_minimum_size.y = 40
+			btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			grade.add_child(btn)
+		else:
+			_caixa.add_child(btn)
 		if primeiro == null and not btn.disabled:
 			primeiro = btn
+	if grade != null and grade.get_child_count() % 2 == 1:   # número ímpar: o último ocupa a linha inteira, fora da grade
+		var ultimo := grade.get_child(grade.get_child_count() - 1)
+		grade.remove_child(ultimo)
+		_caixa.add_child(ultimo)
 	tela = t
 	_arte.visible = _no_hub
 	_fundo.visible = true

@@ -25,3 +25,12 @@ chefe_clara,#a050c8,topo da barra do chefe
 impeto_escura,#4a1a06,fundo do globo de impeto (guerreiro)
 impeto_clara,#e0782a,topo do globo de impeto (guerreiro)
 sem_recurso,#1a2a66,tinta do icone quando falta mana ou impeto
+ramo_fogo,#f08a3c,cartas: destaque das habilidades e do Eco de fogo
+ramo_gelo,#8fd8f5,cartas: destaque de gelo
+ramo_raio,#7fb0ff,cartas: destaque de raio
+ramo_veneno,#8fdc4a,cartas: destaque de veneno
+ramo_precisao,#e0c070,cartas: destaque do ramo Precisao
+ramo_cacada,#d9a05a,cartas: destaque do ramo Caca
+ramo_sombra,#b090e0,cartas: destaque do ramo Sombra
+carta_comum,#9a96a6,cartas de reforco comuns: borda e etiqueta
+carta_rara,#e6c060,cartas de reforco raras: borda e etiqueta

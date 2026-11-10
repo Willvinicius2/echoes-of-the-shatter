@@ -88,6 +88,7 @@ var _gemas_pendentes := 0   # gemas de habilidade esperando a tela atual fechar
 var horda := false          # a corrida atual usa o spawner do core
 var fase_horda := ""        # id da fase em ondas.csv
 var onda := 0               # onda atual (HUD e bot)
+var abates := 0             # inimigos derrotados na corrida (tela de fim)
 var _aviso_altar := false
 var _aviso_enxame := false
 var _mortes_dps: Array = [] # [tempo, vida] das mortes recentes: DPS medido para a vida do chefe
@@ -244,9 +245,11 @@ func iniciar_corrida() -> void:
 	fase_horda = _fase_do_spawner()
 	chefe_elite = _chefe_da_fase_e_elite()
 	horda = not modo_etapas and int(config.get("horda", 0)) == 1 and fase_horda != ""
+	hud.chave_sala = "hud.wave" if horda else "hud.room"
 	hud_xp.ativo = horda   # barra de XP e nível só no modo horda
 	nucleo.horda_definir(horda)   # antes de começar: no modo horda a sala nunca limpa e a vitória vem do portal
 	onda = 0
+	abates = 0
 	_aviso_altar = false
 	_aviso_enxame = false
 	_mortes_dps = []
@@ -531,6 +534,7 @@ func _tick_horda(delta: float) -> void:
 		_reposicionar_presos()
 	var w: Dictionary = nucleo.ondas_estado()
 	onda = int(w.get("wave", 0))
+	abates = int(w.get("killed", abates))
 	vivos = int(w.get("alive", 0))
 	hud.sala = mini(onda, hud.total_salas)
 	if bool(w.get("swarm", false)) and not _aviso_enxame:
@@ -769,7 +773,7 @@ class AfinidadeFonte extends RefCounted:
 func _escolher_afinidade(id: String) -> void:
 	if "afinidade" in player:
 		player.afinidade = id
-	hud.mensagem = Csv.t("hud.afinidade") % Csv.t("skill.%s.name" % id)
+	_avisar(Csv.t("hud.afinidade") % Csv.t("skill.%s.name" % id), float(config.get("boss_hint_time", 3.0)))
 
 ## Escolha da gema: soma os pontos da habilidade e aprende pelo core (pré-requisito e nível máximo continuam dele);
 ## ativa nova entra no primeiro slot livre.
@@ -779,7 +783,7 @@ func _aprender_gema(id: String) -> void:
 	if h.aprender(id) and h.eh_ativa(id) and not h.slots.has(id) and h.slots.has(""):
 		h.equipar(h.slots.find(""), id)
 	upgrades.reaplicar(player)   # passivas da partida entram nos stats agora
-	hud.mensagem = Csv.t("hud.skill_gem") % Csv.t("skill.%s.name" % id)
+	_avisar(Csv.t("hud.skill_gem") % Csv.t("skill.%s.name" % id), float(config.get("boss_hint_time", 3.0)))
 
 ## Abre a tela de cartas se o core tem uma oferta de nível ou de baú esperando.
 func _checar_oferta_nivel() -> void:
@@ -979,10 +983,13 @@ func _mostrar_fim() -> void:
 			mats.append("%s x%d" % [Csv.t("material." + m["id"]), int(m["qty"])])
 	var resumo := [
 		Csv.t("menu.sum_time") % formatar_tempo(tempo),
-		Csv.t("menu.sum_rooms") % [int(r["stage_reached"]) + 1, int(r["stages_total"])],
+		Csv.t("menu.sum_waves") % [maxi(onda, 1), hud.total_salas] if horda else Csv.t("menu.sum_rooms") % [int(r["stage_reached"]) + 1, int(r["stages_total"])],
 		Csv.t("menu.sum_upgrades") % _total_upgrades(),
 		Csv.t("menu.sum_fragments") % int(r["fragments"]),
 	]
+	if horda:
+		resumo.insert(2, Csv.t("menu.sum_level") % _nivel_atual())
+		resumo.insert(3, Csv.t("menu.sum_kills") % abates)
 	if not mats.is_empty():
 		resumo.append(Csv.t("menu.sum_materials") % ", ".join(mats))
 	nucleo.corrida_terminar()
