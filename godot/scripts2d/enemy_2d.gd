@@ -442,9 +442,13 @@ func _draw() -> void:
 		var larg := largura_barra()
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		var topo := topo_visual() - maxf(0.0, float(stats.get("hp_bar_dy", 0.0)))   # hp_bar_dy positivo: px a mais acima do topo (o morcego bate asa por cima da barra)
-		draw_rect(Rect2(-larg / 2.0 - 1.0, topo - 1.0, larg + 2.0, 7.0), Color(0.02, 0.02, 0.03, 0.95))   # borda escura de 1 px
-		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0.12, 0.05, 0.06, 1.0))
-		draw_rect(Rect2(-larg / 2.0, topo, larg * hp / hp_max, 5.0), Color(0.8, 0.15, 0.15))
+		var x0 := roundf(-larg / 2.0)
+		draw_rect(Rect2(x0 - 1.0, topo - 1.0, larg + 2.0, 7.0), Color(0.0, 0.0, 0.0, 1.0))   # contorno preto opaco de 1 px: separa a barra do sprite
+		draw_rect(Rect2(x0, topo, larg, 5.0), Color(0.12, 0.05, 0.06, 1.0))
+		var cheio := roundf(larg * hp / hp_max)
+		draw_rect(Rect2(x0, topo, cheio, 5.0), Color(0.8, 0.15, 0.15))
+		draw_rect(Rect2(x0, topo, cheio, 1.0), Color(1.0, 0.45, 0.4))   # brilho de 1 px no topo
+		draw_rect(Rect2(x0, topo + 4.0, cheio, 1.0), Color(0.5, 0.08, 0.1))   # sombra de 1 px embaixo
 		for i in _dicas.size():   # ícones do que resiste, é imune ou sofre mais (reacoes_2d.gd)
 			Reacoes.desenhar_dica(self, Vector2(larg / 2.0 + 16.0 + Reacoes.DICA_PASSO * i, topo + 2.5), _dicas[i])
 

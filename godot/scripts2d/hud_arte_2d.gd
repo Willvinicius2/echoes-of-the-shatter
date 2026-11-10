@@ -16,6 +16,26 @@ static func serifa() -> Font:
 		_serifa = load(caminho) if ResourceLoader.exists(caminho) else ThemeDB.fallback_font
 	return _serifa
 
+static var _pixel: Font
+
+## Fonte bitmap em pixel da placa do canto (Jersey 20, SIL OFL, art2d/fonts/LEIA-ME.md); só no tamanho nativo (20), sem
+## anti-serrilhado. Sem o arquivo, cai na fonte padrão.
+static func pixel() -> Font:
+	if _pixel == null:
+		var caminho := "res://art2d/fonts/Jersey20-Regular.ttf"
+		_pixel = load(caminho) if ResourceLoader.exists(caminho) else ThemeDB.fallback_font
+	return _pixel
+
+const _VIZ8: Array[Vector2] = [Vector2(-1, -1), Vector2(0, -1), Vector2(1, -1), Vector2(-1, 0), Vector2(1, 0), Vector2(-1, 1), Vector2(0, 1), Vector2(1, 1)]
+
+## Texto em fonte pixel com contorno de 1 px em 8 direções (mesma receita dos números de dano); posição em px inteiros.
+static func texto_pixel(c: CanvasItem, pos: Vector2, s: String, cor: Color, alinh := HORIZONTAL_ALIGNMENT_LEFT, larg := -1.0) -> void:
+	var f := pixel()
+	pos = pos.round()
+	for d in _VIZ8:
+		c.draw_string(f, pos + d, s, alinh, larg, 20, Color(0, 0, 0, 1.0))
+	c.draw_string(f, pos, s, alinh, larg, 20, cor)
+
 static var _texturas := {}
 
 ## Peça de arte pintada da HUD (art2d/ui/<nome>.png, ver docs/arte/29_arte_ui_gpt_image.md); null se faltar.
@@ -881,8 +901,8 @@ static func placa_mini(c: CanvasItem, r: Rect2, titulo: String, apoio: String) -
 	var forma := octogono(r, 0.2)
 	c.draw_colored_polygon(forma, Color(0.04, 0.035, 0.05, 0.8))
 	c.draw_polyline(_fechar(forma), _c("metal_medio"), 1.5)
-	texto(c, Vector2(r.position.x, r.position.y + 15.0), titulo, 12, _c("texto"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
-	texto(c, Vector2(r.position.x, r.position.y + 29.0), apoio, 12, _c("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+	texto_pixel(c, Vector2(r.position.x, r.position.y + 15.0), titulo, _c("texto"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
+	texto_pixel(c, Vector2(r.position.x, r.position.y + 31.0), apoio, _c("texto_suave"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
 
 ## Barra do chefe fina e curta: trilho escuro, preenchimento, marcas finas nas fases. Devolve o retângulo da barra.
 static func barra_chefe_fina(c: CanvasItem, cx: float, y: float, largura: float, altura: float, frac: float, cor: Color, pcts: Array) -> Rect2:
