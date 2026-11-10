@@ -1,8 +1,8 @@
 extends Node
 ## Cena principal: roda o mundo (Run2D) num SubViewport de baixa resolução e sobe com escala inteira e filtro
 ## nearest, para o visual de pixel art. A HUD, os menus e a barra do chefe ficam na janela, nítidos.
-## O container estica o SubViewport pela janela: tamanho do mundo = janela / stretch_shrink, com
-## stretch_shrink inteiro (janela 1440 de altura e pixel_altura 360 = 4x). O mouse chega ao mundo já convertido.
+## A janela usa escala de conteúdo por altura (tela lógica de pixel_altura x 2) e o container usa stretch_shrink 2:
+## o mundo tem pixel_altura de altura e sobe com escala inteira em 1080p (3x) e 2K (4x). O mouse chega ao mundo já convertido.
 ## pixel_altura em run_settings.csv (0 desliga e o mundo roda direto na janela).
 const RunScene = preload("res://scenes2d/Run2D.tscn")
 const Csv = preload("res://scripts2d/csv2d.gd")
@@ -37,12 +37,13 @@ func _ready() -> void:
 	run.ui_raiz = self   # a interface sai do SubViewport e fica na janela
 	sv.add_child(run)
 	sv.size_changed.connect(_ao_mudar_tamanho)
-	get_window().size_changed.connect(_ajustar_escala)
-	_ajustar_escala()
-
-func _ajustar_escala() -> void:
-	var alt := get_viewport().get_visible_rect().size.y
-	_cont.stretch_shrink = maxi(1, roundi(alt / float(_altura)))
+	# Interface em tela lógica de (altura x 2): 1280x720 com altura 360. O Godot escala por altura_janela/720
+	# (1,5x em 1080p, 2x em 2K), então a HUD fica legível e o mundo, com stretch_shrink 2, sobe 3x ou 4x exatos.
+	var janela := get_window()
+	janela.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	janela.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	janela.content_scale_size = Vector2i(roundi(_altura * 2.0 * 16.0 / 9.0), _altura * 2)
+	_cont.stretch_shrink = 2
 
 func _ao_mudar_tamanho() -> void:
 	if is_instance_valid(run) and run.get("room") != null:

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Gera a build jogável do cliente 2D (GDScript, sem C#).
-# Uso: tools/build/build_2d.sh [saida] [godot]   (Godot 4.4.x com export templates instalados)
+# Uso: tools/build/build_2d.sh [saida] [godot]   (Godot 4.7.x com export templates instalados)
 set -euo pipefail
 raiz="$(cd "$(dirname "$0")/../.." && pwd)"
 saida="${1:-$raiz/build}"
@@ -24,7 +24,7 @@ python3 - "$raiz" "$proj" <<'PY'
 import re, sys
 raiz, proj = sys.argv[1:3]
 s = open(raiz + '/godot/project.godot').read()
-s = s.replace('"4.7", "C#", "Forward Plus"', '"4.4", "Forward Plus"')
+s = s.replace('"4.7", "C#", "Forward Plus"', '"4.7", "Forward Plus"')
 s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
 open(proj + '/project.godot', 'w').write(s)
 PY
