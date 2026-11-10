@@ -441,7 +441,7 @@ func _draw() -> void:
 		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0.12, 0.05, 0.06, 1.0))
 		draw_rect(Rect2(-larg / 2.0, topo, larg * hp / hp_max, 5.0), Color(0.8, 0.15, 0.15))
 		for i in _dicas.size():   # ícones do que resiste, é imune ou sofre mais (reacoes_2d.gd)
-			Reacoes.desenhar_dica(self, Vector2(larg / 2.0 + 11.0 + 16.0 * i, topo + 2.5), _dicas[i])
+			Reacoes.desenhar_dica(self, Vector2(larg / 2.0 + 16.0 + Reacoes.DICA_PASSO * i, topo + 2.5), _dicas[i])
 
 ## Aviso de ataque: área vermelha que enche até o golpe (melee) ou linha de mira (ranged/chefe).
 func _desenhar_aviso() -> void:

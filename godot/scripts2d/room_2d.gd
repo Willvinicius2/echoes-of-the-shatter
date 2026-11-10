@@ -221,11 +221,11 @@ func _montar() -> void:
 					idx = T_PISO_ESCURO
 				"O":
 					idx = T_PILAR
-					_estruturas.append({"tipo": "pilar", "pos": _centro(x, y), "ate": 0})
+					_estruturas.append({"tipo": "pilar", "pos": _centro(x, y), "ate": 0, "cel": Vector2i(x, y), "est": 0})
 				"B":
 					idx = T_BRASEIRO
 					braseiros.append(_centro(x, y))
-					_estruturas.append({"tipo": "braseiro", "pos": _centro(x, y), "ate": 0})
+					_estruturas.append({"tipo": "braseiro", "pos": _centro(x, y), "ate": 0, "cel": Vector2i(x, y), "est": 0})
 				"P":
 					spawn_jogador = _centro(x, y)
 				"E":
@@ -287,6 +287,7 @@ func _montar() -> void:
 	if aberta():
 		_achar_vinheta()
 	_mapear_livres()
+	_montar_estados_estruturas()
 	_porta_corpo = StaticBody2D.new()
 	_porta_corpo.collision_layer = 1
 	_porta_corpo.collision_mask = 0
@@ -607,6 +608,58 @@ func perto_agua(p: Vector2, dist: float) -> bool:
 				return true
 	return false
 
+## Estados visuais do braseiro e do pilar: aceso/normal (tile do atlas), apagado pelo gelo e carregado pelo raio.
+## As duas variações são o mesmo tile recolorido (estruturas_estado_2d.gd) numa fonte extra do tileset (id 3).
+const EstadosEstrutura = preload("res://scripts2d/estruturas_estado_2d.gd")
+var _tem_estados := false
+
+func _montar_estados_estruturas() -> void:
+	if _estruturas.is_empty() or _layer.tile_set.get_source(0).texture == null:
+		return
+	var img: Image = _layer.tile_set.get_source(0).texture.get_image()
+	if img == null or img.is_empty():
+		return
+	img.convert(Image.FORMAT_RGBA8)
+	var src := TileSetAtlasSource.new()
+	src.texture = EstadosEstrutura.faixa(img, T_BRASEIRO, T_PILAR, tile)
+	src.texture_region_size = Vector2i(tile, tile)
+	for i in 3:
+		src.create_tile(Vector2i(i, 0))
+	_layer.tile_set.add_source(src, 3)
+	_tem_estados = true
+
+## Estado desejado de uma estrutura agora: 0 normal, 1 braseiro apagado, 2 carregado de raio (braseiro ou pilar).
+func _estado_estrutura(e: Dictionary, agora: int) -> int:
+	if e["tipo"] == "braseiro" and agora < int(e.get("apagado", 0)):
+		return 1
+	if agora < int(e.get("carga", 0)):
+		return 2
+	return 0
+
+func _atualizar_estruturas() -> void:
+	var agora := Time.get_ticks_msec()
+	for e in _estruturas:
+		var novo := _estado_estrutura(e, agora)
+		if novo == int(e["est"]):
+			continue
+		e["est"] = novo
+		if e.has("spr"):   # pilar rúnico (prop): troca a textura do sprite
+			if is_instance_valid(e["spr"]):
+				e["spr"].texture = e["tex_carga"] if novo == 2 else e["tex"]
+			continue
+		if get_tree() != null and not get_tree().get_nodes_in_group("clima_2d").is_empty() and e["tipo"] == "braseiro":
+			get_tree().call_group("clima_2d", "estado_braseiro", e["pos"], novo)   # o clima desenha o braseiro (tigela, fogo, brasas)
+			continue
+		if not _tem_estados:
+			continue
+		var c: Vector2i = e["cel"]
+		if novo == 0:
+			_pintar(c, T_BRASEIRO if e["tipo"] == "braseiro" else T_PILAR)
+		elif e["tipo"] == "braseiro":
+			_layer.set_cell(c, 3, Vector2i(EstadosEstrutura.ESTADO_BRASEIRO_APAGADO if novo == 1 else EstadosEstrutura.ESTADO_BRASEIRO_CARREGADO, 0))
+		else:
+			_layer.set_cell(c, 3, Vector2i(EstadosEstrutura.ESTADO_PILAR_CARREGADO, 0))
+
 ## Braseiros e pilares a até `dist` px de `p` (dicionários vivos: a recarga fica neles).
 func estruturas_perto(p: Vector2, dist: float) -> Array:
 	return _estruturas.filter(func(e): return e["pos"].distance_to(p) <= dist)
@@ -836,6 +889,9 @@ func colocar_props(alvo: Node2D) -> void:
 			var larg_p := tex.get_width() * esc_p
 			var esq_p := (larg_p - float(arte["pivo_x"]) * esc_p) if p["flip"] else float(arte["pivo_x"]) * esc_p
 			_sprites_altos.append(Rect2(pe.x - esq_p, pe.y - float(arte["pivo_y"]) * esc_p, larg_p, tex.get_height() * esc_p))
+		if p["id"] == "pillar_runes":   # o pilar rúnico da estrada reage ao raio como o pilar `O` (reacoes_2d.gd)
+			_estruturas.append({"tipo": "pilar", "pos": pe - Vector2(0, tile * 0.3), "ate": 0, "est": 0, "spr": spr,
+				"tex": spr.texture, "tex_carga": EstadosEstrutura.runas_azuis(spr.texture)})
 		var no := Node2D.new()
 		no.position = pe - Vector2(0, ap)
 		spr.position = Vector2(0, ap)
@@ -886,6 +942,7 @@ func _vista_blocos() -> void:
 	Culling.atualizar(_blocos, r)
 
 func _process(delta: float) -> void:
+	_atualizar_estruturas()
 	if not _blocos.is_empty():
 		_quadro_blocos += 1
 		if _quadro_blocos % 2 == 0:

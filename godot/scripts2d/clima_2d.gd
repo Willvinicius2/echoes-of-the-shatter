@@ -135,8 +135,35 @@ var _tex_cache := {}
 var _escala_area := 1.0
 var _mats_fogo: Array = []
 var _pocas: Array = []
+var _braseiros: Array = []   # {pos, fogo, poca, carvao, miolo, brasa, fum}: os nós de cada braseiro, para o estado apagado/carregado
+
+## Estado do braseiro em `pos` (reações do mapa, room_2d): 0 aceso, 1 apagado pelo gelo (sem chama, brasa e luz; só carvão
+## escuro e fumaça), 2 carregado de raio (luz e chama azul-brancas). Chamado por room_2d._atualizar_estruturas.
+func estado_braseiro(pos: Vector2, estado: int) -> void:
+	for b in _braseiros:
+		if (b["pos"] as Vector2).distance_to(pos) > 4.0 or not is_instance_valid(b["fogo"]):
+			continue
+		var apagado := estado == 1
+		b["fogo"].visible = estado == 0
+		if estado == 2 and not b.has("raio"):   # chama azul: a bola de raio em pixel art sobre a tigela
+			var Px = preload("res://scripts2d/fx_pixel_2d.gd")
+			var bola: Node2D = Px.criar("ball_lightning", 0.5, true, "centro")
+			bola.position = (b["pos"] as Vector2) + Vector2(0, -22)
+			bola.z_index = 5
+			add_child(bola)
+			b["raio"] = bola
+		if b.has("raio"):
+			b["raio"].visible = estado == 2
+		b["miolo"].emitting = not apagado
+		b["brasa"].emitting = not apagado
+		b["fum"].amount = int(b["amount_fum"]) * (2 if apagado else 1)
+		if b["carvao"] != null:
+			b["carvao"].visible = not apagado
+		b["poca"]["alpha"] = b["alpha0"] * (0.0 if apagado else 1.0)
+		b["poca"]["sp"].modulate = Color(0.5, 0.8, 1.0, b["alpha0"] * 1.6) if estado == 2 else Color(1.0, 0.55, 0.2, b["poca"]["alpha"])
 
 func _ready() -> void:
+	add_to_group("clima_2d")
 	cfg = Csv.kv("res://data2d/clima.csv")
 	dir_vento = Vector2(cfg["vento_dir_x"], cfg["vento_dir_y"]).normalized()
 	_rng.seed = hash(get_instance_id())
@@ -476,6 +503,7 @@ func _braseiro(b: Vector2) -> void:
 	var cel := Vector2i(int(b.x) / int(sala.tile), int(b.y) / int(sala.tile))
 	var canto := Vector2(cel) * float(sala.tile)
 	var arte := _tigela_sem_chama()
+	var carvao_ref: Sprite2D = null
 	if not arte.is_empty():
 		var camada = sala.get("_layer")
 		if camada is TileMapLayer:
@@ -492,6 +520,7 @@ func _braseiro(b: Vector2) -> void:
 		carvao.material = _mat_shader(BRASA_SHADER, {"semente": _rng.randf() * 50.0})
 		carvao.z_index = 1
 		add_child(carvao)
+		carvao_ref = carvao
 	var fogo := ColorRect.new()
 	fogo.size = Vector2(cfg["fogo_largura"], cfg["fogo_altura"])
 	fogo.position = canto + Vector2(sala.tile * 0.5 - fogo.size.x * 0.5, sala.tile * float(cfg["fogo_base"]) - fogo.size.y)
@@ -510,7 +539,10 @@ func _braseiro(b: Vector2) -> void:
 	poca.position = b + Vector2(0, 6)
 	poca.z_index = 3
 	add_child(poca)
-	_pocas.append({"sp": poca, "fase": _rng.randf() * TAU, "alpha": cfg["poca_alpha"]})
+	var d_poca := {"sp": poca, "fase": _rng.randf() * TAU, "alpha": cfg["poca_alpha"]}
+	_pocas.append(d_poca)
+	var estado_b := {"pos": b, "fogo": fogo, "poca": d_poca, "carvao": carvao_ref, "alpha0": float(cfg["poca_alpha"])}
+	_braseiros.append(estado_b)
 	# brilho aditivo fraco por cima, para a chama clarear o que está atrás
 	var miolo := CPUParticles2D.new()
 	miolo.texture = _textura_suave("chama", 32, true)
@@ -582,6 +614,10 @@ func _braseiro(b: Vector2) -> void:
 	_fogo.append({"no": fum, "base": Vector2(0, -3), "fator": 0.32})
 	for p in [miolo, brasa, fum]:
 		p.preprocess = p.lifetime
+	estado_b["miolo"] = miolo
+	estado_b["brasa"] = brasa
+	estado_b["fum"] = fum
+	estado_b["amount_fum"] = fum.amount
 
 # ---------------------------------------------------------------- céu e ar
 
