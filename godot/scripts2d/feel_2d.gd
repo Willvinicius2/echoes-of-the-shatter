@@ -15,10 +15,11 @@ uniform vec4 glow_color : source_color = vec4(1.0, 0.3, 0.2, 1.0);
 uniform float glow : hint_range(0.0, 1.0) = 0.0;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
 void fragment() {
-	float n = hash(floor(UV * vec2(textureSize(TEXTURE, 0)) / 3.0));
+	// some pixel a pixel (grão de um pixel da folha), com uma borda fina acesa: sem confete de blocos soltos pela tela
+	float n = hash(floor(UV * vec2(textureSize(TEXTURE, 0))));
 	float keep = step(dissolve, n);
-	float rim = (1.0 - step(dissolve + 0.12, n)) * step(0.001, dissolve);
-	COLOR.rgb = mix(COLOR.rgb, edge_color.rgb, rim);
+	float rim = (1.0 - step(dissolve + 0.05, n)) * step(0.001, dissolve);
+	COLOR.rgb = mix(COLOR.rgb, edge_color.rgb, rim * 0.7);
 	COLOR.a *= keep;
 	COLOR.rgb = mix(COLOR.rgb, vec3(1.0), flash);
 	COLOR.rgb += glow_color.rgb * glow * COLOR.a;
@@ -217,8 +218,8 @@ static func particulas(pai: Node, pos: Vector2, cor: Color, qtd: int, vel: float
 ## Poeira e almas na morte de um inimigo.
 static func morte(pai: Node, pos: Vector2, cor: Color) -> void:
 	var c := cfg()
-	particulas(pai, pos, cor, int(c["death_particles"]), 110.0, c["death_particle_time"], Vector2.ZERO, 0.16)
-	particulas(pai, pos, Color(1, 1, 1, 0.8), int(c["death_particles"]) / 3, 50.0, c["death_particle_time"] * 0.8, Vector2.UP, 0.1)
+	particulas(pai, pos, cor, int(c["death_particles"]), 110.0, c["death_particle_time"], Vector2.ZERO, 0.09)
+	particulas(pai, pos, Color(1, 1, 1, 0.8), int(c["death_particles"]) / 3, 50.0, c["death_particle_time"] * 0.8, Vector2.UP, 0.07)
 
 ## Zoom que começa em `fator` vezes o atual e volta ao normal em `tempo` s.
 static func zoom_punch(ref: Node, fator: float, tempo: float) -> void:

@@ -48,3 +48,10 @@ Ajustes de legibilidade da v6 (revisor): globos de 84 px, todos os slots com 46 
 
 ## HUD v7: globos juntos à esquerda e barra de XP (1/11/2026)
 Pedido do Will: vida e mana juntas no canto esquerdo, maiores, e uma barrinha de XP. Os globos têm 100 px (raio 50, `globo_raio`) e ficam lado a lado (`globo_espaco`); os slots ficam centralizados à direita deles. A barra de XP (6 px, `xp_altura`) fica acima da fileira de slots, com "Nv N" e "xp / próximo XP"; lê `upgrades.nivel_estado()` ({level, xp, xp_next}, só no modo horda) e some quando o método não existe. Capturas em `/mnt/project-files/hud/v7/`.
+
+## Ícones e HUD em pixel art (10/11/2026)
+Pedido da Direção visual: os ícones pintados em HD destoavam do mundo em pixel art. Desde então:
+- As pinturas aprovadas ficam em `art-src/ui/icones_pintados/icone_<id>.png` (128 px, fonte). O jogo usa a versão em pixel art de `godot/art2d/ui/icone_<id>.png` (48 px, 22 cores, fundo chapado, moldura de ferro com cantoneiras de bronze desenhada pixel a pixel), gerada por `python3 tools/arte/pixelizar_icones.py`. Ícone novo: grave a pintura em `art-src/ui/icones_pintados/` e rode o script. As cartas mostram em 3x sem suavizar (`icone_lado` em `cartas_layout.csv`, múltiplo de 48); os slots da HUD mostram em 1x (slot de 52 px).
+- `tools/arte/derivar_icones.py` continua derivando os ícones que ainda não têm pintura própria, agora dentro de `art-src/ui/icones_pintados/`; rode o `pixelizar_icones.py` em seguida.
+- Globos de vida e de recurso: aro e vidro em `godot/art2d/ui/hud_globo_pixel.png` (`python3 tools/arte/gerar_hud_pixel.py`, arte original por código) e líquido em fileiras de pixel (`globo_pixel` em `hud_arte_2d.gd`).
+- Título: `godot/art2d/ui/titulo_fundo.png` é uma cena do próprio jogo (arqueiro na estrada dos braseiros), gravada por `godot/scripts2d/tools/captura_titulo_2d.gd` em 320 x 180 e mostrada em 4x. A key art pintada `titulo_fundo.jpg` ficou só no prólogo.

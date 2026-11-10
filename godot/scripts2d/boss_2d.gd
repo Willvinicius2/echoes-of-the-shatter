@@ -239,7 +239,7 @@ func _entrar_fase(f: int) -> void:
 	_glow_t = _glow_total
 	_mat.set_shader_parameter("glow_color", Color(0.9, 0.25, 0.55) if f == 2 else Color(1.0, 0.2, 0.15))
 	Feel.impacto(get_parent(), global_position, Color(1.0, 0.3, 0.4), Vector2.ZERO, c["boss_phase_wave"] / 20.0)
-	Feel.particulas(get_parent(), global_position + Vector2(0, -50), Color(1.0, 0.35, 0.4), 28, 220.0, 0.6, Vector2.ZERO, 0.2)
+	Feel.particulas(get_parent(), global_position + Vector2(0, -50), Color(1.0, 0.35, 0.4), 12, 220.0, 0.6, Vector2.ZERO, 0.12)
 	fase_mudou.emit(f)
 
 func _ao_morrer() -> void:

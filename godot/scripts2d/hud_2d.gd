@@ -60,7 +60,8 @@ func _desenhar() -> void:
 		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, _lay["chefe_elite_y"], w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
 		Arte.placa_nome(_ctl, r.position.x, r.position.y - 6.0, Csv.t(chefe_nome), 13, Tema.cor("texto"))
 	if mensagem != "" and not get_tree().paused:
-		Arte.texto(_ctl, Vector2(0, vp.y * 0.3), mensagem, 32, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
+		# no alto da tela, abaixo da barra do chefe: o centro fica livre para a luta
+		Arte.texto(_ctl, Vector2(0, _lay.get("mensagem_y", 118.0)), mensagem, int(_lay.get("mensagem_fonte", 24.0)), Tema.cor("destaque").lightened(0.25), HORIZONTAL_ALIGNMENT_CENTER, vp.x, true)
 
 ## A lista completa de controles só aparece nos primeiros segundos (os slots já têm as plaquinhas de tecla).
 func estado_ajuda_visivel() -> bool:
@@ -136,18 +137,18 @@ func _desenhar_globos(vp: Vector2) -> void:
 	var pulso := (0.4 + 0.6 * (0.5 + 0.5 * sin(_rel * 5.0))) if frac < 0.3 and frac > 0.0 else 0.0
 	var ev := _centro_globo(vp, false)
 	var ed := _centro_globo(vp, true)
-	Arte.globo_mini(_ctl, ev, raio, frac, _hp_fantasma, Tema.cor("vida_escura"), Tema.cor("vida_clara"), _rel, pulso)
+	Arte.globo_pixel(_ctl, ev, raio, frac, _hp_fantasma, Tema.cor("vida_escura"), Tema.cor("vida_clara"), _rel, pulso)
 	_texto_globo(ev, raio, "%d/%d" % [ceili(jogador.hp), int(hmax)])
 	if "mana" in jogador:   # mana real (runtime de habilidades das classes)
 		var mmax: float = maxf(1.0, jogador.stats.get("mana_max", 1.0))
-		Arte.globo_mini(_ctl, ed, raio, clampf(jogador.mana / mmax, 0.0, 1.0), 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel)
+		Arte.globo_pixel(_ctl, ed, raio, clampf(jogador.mana / mmax, 0.0, 1.0), 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel)
 		_texto_globo(ed, raio, "%d/%d" % [floori(jogador.mana), int(mmax)])
 	elif jogador.has_method("recurso_frac"):   # guerreiro: ímpeto
-		Arte.globo_mini(_ctl, ed, raio, jogador.recurso_frac(), 0.0, Tema.cor("impeto_escura"), Tema.cor("impeto_clara"), _rel)
+		Arte.globo_pixel(_ctl, ed, raio, jogador.recurso_frac(), 0.0, Tema.cor("impeto_escura"), Tema.cor("impeto_clara"), _rel)
 		if "impeto" in jogador:
 			_texto_globo(ed, raio, "%d/%d" % [floori(jogador.impeto), int(jogador.stats.get("impeto_max", 0.0))])
 	else:   # recurso ainda trancado: vidro vazio com cadeado
-		Arte.globo_mini(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
+		Arte.globo_pixel(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
 		Arte.cadeado(_ctl, ed + Vector2(0, -6), 14.0)
 
 func _texto_globo(centro: Vector2, raio: float, s: String) -> void:

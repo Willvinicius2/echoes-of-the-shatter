@@ -777,11 +777,14 @@ static func slot_mini(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float,
 	if tecla != "":
 		tecla_canto(c, r, tecla)
 
-## Tecla no canto do slot: plaquinha escura com letra clara de 12 px.
+## Tecla no canto do slot: plaquinha escura com letra clara de 14 px, na largura do texto (no mínimo a de uma letra).
 static func tecla_canto(c: CanvasItem, r: Rect2, tecla: String) -> void:
-	var larg := ThemeDB.fallback_font.get_string_size(tecla, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 6.0
-	c.draw_rect(Rect2(r.position + Vector2(2, r.size.y - 20.0), Vector2(larg, 14.0)), Color(0, 0, 0, 0.75))
-	texto(c, r.position + Vector2(5, r.size.y - 8.0), tecla, 12, Color(1, 0.95, 0.8))
+	var tam := 14
+	var larg := minf(maxf(ThemeDB.fallback_font.get_string_size(tecla, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x + 8.0, 18.0), r.size.x - 4.0)
+	var placa_r := Rect2(r.position + Vector2(2, r.size.y - 19.0), Vector2(larg, 17.0))
+	c.draw_rect(placa_r, Color(0, 0, 0, 0.82))
+	c.draw_rect(placa_r, Color(_c("metal_medio"), 0.9), false, 1.0)
+	texto(c, placa_r.position + Vector2(0, 13.0), tecla, tam, Color(1, 0.95, 0.8), HORIZONTAL_ALIGNMENT_CENTER, larg)
 
 ## Encaixe vazio: vão escuro com moldura apagada e a tecla.
 static func encaixe_mini(c: CanvasItem, r: Rect2, tecla: String) -> void:
@@ -814,6 +817,62 @@ static func globo_mini(c: CanvasItem, centro: Vector2, raio: float, frac: float,
 	c.draw_arc(centro, raio, 0.0, TAU, 40, Color(0, 0, 0, 0.7), 1.0)
 	if pulso > 0.0:
 		c.draw_arc(centro, raio + 1.0, 0.0, TAU, 40, Color(1.0, 0.25, 0.2, 0.9 * pulso), 2.5)
+
+## Globo em pixel art: líquido em fileiras de pixel com três faixas de cor, superfície que ondula de pixel em pixel e
+## bolhas de um pixel, sob o aro e o vidro de art2d/ui/hud_globo_pixel.png (tools/arte/gerar_hud_pixel.py; 50 px em 2x).
+## Mesmos parâmetros do globo_mini; sem a peça de arte, cai nele.
+static func globo_pixel(c: CanvasItem, centro: Vector2, raio: float, frac: float, fantasma: float, escura: Color, clara: Color, t: float, pulso := 0.0, vazio := false) -> void:
+	var aro_tex := tex("hud_globo_pixel")
+	if aro_tex == null:
+		globo_mini(c, centro, raio, frac, fantasma, escura, clara, t, pulso, vazio)
+		return
+	if pulso > 0.0:
+		clara = clara.lightened(0.3 * pulso)
+		escura = escura.lightened(0.18)
+	if vazio:
+		frac = 0.14
+		escura = escura.darkened(0.5)
+		clara = clara.darkened(0.6)
+	frac = clampf(frac, 0.0, 1.0)
+	var px := raio / 25.0            # lado de um pixel da arte na tela
+	var r_in := 20.5                 # raio do vidro, em pixels da arte
+	var linhas := 41
+	var topo := -20                  # primeira fileira (pixels da arte, a partir do centro)
+	var nivel := topo + roundi(linhas * (1.0 - frac))          # fileira da superfície
+	var nivel_f := topo + roundi(linhas * (1.0 - clampf(fantasma, 0.0, 1.0)))
+	var media := escura.lerp(clara, 0.5)
+	c.draw_circle(centro + Vector2(0, 2.0 * px), raio, Color(0, 0, 0, 0.45))
+	for j in range(topo, topo + linhas):
+		var hw := floori(sqrt(maxf(r_in * r_in - (j + 0.5) * (j + 0.5), 0.0)) + 0.5)
+		var y := centro.y + j * px
+		var cor := Color(0.035, 0.025, 0.045)
+		if frac > 0.0 and j >= nivel:
+			var u := float(j - nivel) / maxf(1.0, linhas * frac)
+			cor = clara if u < 0.34 else (media if u < 0.7 else escura)
+			if j == nivel and frac < 1.0:
+				cor = clara.lightened(0.35)
+		elif fantasma > frac and j >= nivel_f:
+			cor = Color(0.85, 0.5, 0.36)
+		c.draw_rect(Rect2(centro.x - hw * px, y, 2.0 * hw * px, px), cor)
+		if frac > 0.0 and j > nivel and hw > 4:   # volume: luz à esquerda e sombra à direita, um degrau de cor
+			c.draw_rect(Rect2(centro.x - (hw - 1) * px, y, 2.0 * px, px), cor.lightened(0.14))
+			c.draw_rect(Rect2(centro.x + (hw - 4) * px, y, 3.0 * px, px), cor.darkened(0.28))
+	if frac > 0.0 and frac < 1.0:
+		# marola: trechos de 3 pixels sobem um pixel, em revezamento lento
+		var hw_n := floori(sqrt(maxf(r_in * r_in - (nivel - 0.5) * (nivel - 0.5), 0.0)))
+		var k := -hw_n
+		while k < hw_n:
+			if sin(t * 2.2 + k * 0.9) > 0.35:
+				c.draw_rect(Rect2(centro.x + k * px, centro.y + (nivel - 1) * px, minf(3.0, hw_n - k) * px, px), clara.lightened(0.35))
+			k += 3
+		for b in 3:   # bolhas de um pixel subindo
+			var u := fmod(t * 0.22 + b * 0.37, 1.0)
+			var by := lerpf(17.0, float(nivel + 2), u)
+			var bx := roundi(sin(b * 2.4 + 1.0) * 9.0)
+			if by > nivel + 1 and absf(bx) + 2.0 < sqrt(maxf(r_in * r_in - by * by, 0.0)):
+				c.draw_rect(Rect2(centro.x + bx * px, centro.y + floorf(by) * px, px, px), Color(clara.lightened(0.5), 0.8 * (1.0 - u)))
+	var tinta := Color.WHITE.lerp(Color(1.0, 0.45, 0.4), pulso)
+	c.draw_texture_rect(aro_tex, Rect2(centro - Vector2(raio, raio), Vector2(raio, raio) * 2.0), false, tinta)
 
 ## Plaquinha da sala e do tempo: retângulo com cantos chanfrados e duas linhas pequenas.
 static func placa_mini(c: CanvasItem, r: Rect2, titulo: String, apoio: String) -> void:
