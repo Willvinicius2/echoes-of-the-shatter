@@ -6,10 +6,10 @@ estamina_altura,12,px,altura da barra de estamina
 mana_altura,12,px,altura da barra de mana (reservada)
 barra_espaco,6,px,espaco entre barras
 lista_y,12,px,topo da lista de upgrades
-slot_tamanho,46,px,lado de cada slot de habilidade ativa (Q E F R)
+slot_tamanho,52,px,lado de cada slot de habilidade ativa (Q E F R)
 slot_espaco,5,px,espaco entre slots
 slot_total,4,slots,slots de habilidade ativa (Q E F R); ataque e esquiva ficam em slots menores a esquerda
-slot_pequeno,46,px,lado dos slots de ataque basico e esquiva
+slot_pequeno,52,px,lado dos slots de ataque basico e esquiva
 slot_grupo_espaco,12,px,distancia entre os slots pequenos e os de habilidade
 slot_base,6,px,distancia do rodape ate a base dos slots
 icone_carta,64,px,lado do icone nas cartas de upgrade
@@ -30,3 +30,5 @@ chefe_elite_y,44,px,topo da barra de vida do elite do portao (o chefe da corrida
 globo_espaco,6,px,distancia entre o globo de vida e o de recurso (os dois ficam a esquerda)
 xp_altura,6,px,altura da barra fina de XP acima dos slots
 dica_base,176,px,distancia do rodape ate a linha de base da dica de controles dos primeiros segundos (fica bem acima da barra de XP)
+mensagem_y,118,px,linha de base da mensagem central (gema, portal aberto): fica no alto, fora da area da luta
+mensagem_fonte,24,px,tamanho da mensagem central (serifa dourada)

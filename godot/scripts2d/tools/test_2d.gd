@@ -57,6 +57,7 @@ func _testar() -> void:
 	await _testar_habilidades_arqueiro()
 	await _testar_fisica_habilidades()
 	await _testar_leque_skills()
+	await preload("res://scripts2d/tools/test_reacoes_2d.gd").new(self, check).rodar()   # reações elementais (doc 38)
 	await AutocastTestes.new(self, check).rodar()
 	await HordaTestes.new(self, check).rodar()
 	await preload("res://scripts2d/tools/test_fases_2d.gd").new(self, check).rodar()   # fases, desbloqueio e elite do portão (doc 34)
@@ -704,6 +705,22 @@ func _testar_opcoes_steam_tutorial() -> void:
 	var SteamScript = preload("res://scripts2d/steam_2d.gd")
 	OpcoesScript.caminho = "user://teste_opcoes.json"
 	SteamScript.caminho = "user://teste_steam.json"
+	# Gravação segura dos saves do cliente (arquivo_2d.gd): grava no .tmp e troca
+	var Arq = preload("res://scripts2d/arquivo_2d.gd")
+	var alvo := "user://teste_arquivo_2d.json"
+	DirAccess.remove_absolute(alvo)
+	DirAccess.remove_absolute(alvo + Arq.SUFIXO)
+	check(Arq.ler(alvo) == "" and not Arq.existe(alvo), "arquivo: sem arquivo le vazio")
+	check(Arq.gravar(alvo, "um") and Arq.gravar(alvo, "dois") and Arq.ler(alvo) == "dois", "arquivo: regrava por cima")
+	check(not FileAccess.file_exists(alvo + Arq.SUFIXO), "arquivo: nao deixa .tmp para tras")
+	DirAccess.remove_absolute(alvo)
+	var so_tmp := FileAccess.open(alvo + Arq.SUFIXO, FileAccess.WRITE)
+	so_tmp.store_string("tres")
+	so_tmp.close()
+	check(Arq.existe(alvo) and Arq.ler(alvo) == "tres", "arquivo: troca interrompida le o .tmp")
+	check(Arq.gravar(alvo, "quatro") and Arq.ler(alvo) == "quatro", "arquivo: grava de novo depois da troca interrompida")
+	check(not Arq.gravar("user://pasta_que_nao_existe/x.json", "x"), "arquivo: falha de gravacao devolve false")
+	DirAccess.remove_absolute(alvo)
 	DirAccess.remove_absolute(OpcoesScript.caminho)
 	DirAccess.remove_absolute(SteamScript.caminho)
 	var o = OpcoesScript.new()

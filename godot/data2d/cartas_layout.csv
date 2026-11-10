@@ -1,0 +1,16 @@
+chave,valor,unidade,nota
+fundo_alfa,0.82,0..1,escurecimento do jogo atras das cartas
+titulo_fonte,30,px,titulo da tela (serifa)
+sub_fonte,15,px,linha de ajuda sob o titulo
+enfeite_largura,320,px,fio dourado com losango sob o titulo
+respiro,14,px,espaco entre a ajuda e as cartas
+carta_largura,250,px,largura de cada carta (tela logica de 1280 x 720; quatro cabem lado a lado)
+carta_altura,356,px,altura de cada carta
+carta_espaco,22,px,distancia entre as cartas
+carta_margem,14,px,margem interna da carta
+icone_lado,144,px,lado do icone na carta (pixel art de 48 px em 2x; use multiplos de 48)
+nome_fonte,19,px,nome da carta (serifa)
+desc_fonte,14,px,descricao da carta
+fio_largura,120,px,fio colorido entre o nome e a descricao
+entrada_tempo,0.18,s,tempo do surgimento de cada carta
+entrada_atraso,0.06,s,atraso entre uma carta e a seguinte no surgimento

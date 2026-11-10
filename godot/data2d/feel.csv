@@ -31,7 +31,7 @@ spark_count,14,x,particulas da faisca de impacto
 spark_speed,230,px/s,velocidade das particulas da faisca
 spark_time,0.28,s,vida das particulas da faisca
 death_dissolve_time,0.5,s,tempo da dissolucao na morte (sombra some junto)
-death_particles,18,x,particulas de poeira e alma na morte
+death_particles,7,x,particulas de poeira e alma na morte
 death_particle_time,0.7,s,vida das particulas da morte
 arrow_scale,0.9,x,escala do sprite da flecha
 arrow_glow_scale,0.9,x,escala do brilho da flecha
@@ -69,3 +69,6 @@ fx_max_status,6,x,overlays grandes de status (frio, veneno, queimadura) ao mesmo
 flash_amount,0.5,x,quanto o inimigo atingido fica branco (0 a 1)
 dmg_number_group_ms,200,ms,golpes no mesmo alvo dentro desta janela somam num unico numero
 dmg_pixel_escala,0.68,x,aumento do texto dos numeros de dano para continuar legivel na grade de pixel art
+dodge_trail_count,3,x,copias do personagem que ficam para tras na esquiva (0 desliga o rastro)
+dodge_trail_time,0.32,s,tempo que cada copia do rastro leva para sumir
+dodge_trail_alpha,0.6,0..1,opacidade inicial de cada copia do rastro

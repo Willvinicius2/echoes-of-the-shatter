@@ -16,6 +16,7 @@ var _tempo := 0.0
 var _rotulo: Label
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS   # some na pausa (cartas, menus) em vez de ficar por cima delas
 	layer = 15
 	passos = Csv.rows("res://data2d/tutorial.csv")
 	_rotulo = Label.new()
@@ -68,7 +69,8 @@ func _nome(acao: String) -> String:
 	return Csv.t("tutorial.key_" + acao)   # mouse e controle: nome em loc
 
 func _process(delta: float) -> void:
-	if not ativo or indice < 0 or indice >= passos.size():
+	_rotulo.visible = ativo and not get_tree().paused
+	if not ativo or indice < 0 or indice >= passos.size() or get_tree().paused:
 		return
 	_tempo += delta
 	var p: Dictionary = passos[indice]

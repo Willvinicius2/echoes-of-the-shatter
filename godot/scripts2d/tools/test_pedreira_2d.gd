@@ -8,6 +8,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const RoomScript = preload("res://scripts2d/room_2d.gd")
 const Terreno = preload("res://scripts2d/terreno_2d.gd")
 const Ancoragem = preload("res://scripts2d/ancoragem_2d.gd")
+const ArteInimigos = preload("res://scripts2d/tools/arte_inimigos_2d.gd")
 const SALA := "res://data2d/rooms/fase_2.txt"
 const SALA_1 := "res://data2d/rooms/fase_1.txt"
 const RAIO_JOGADOR := 12.0   # px: o colisor do arqueiro é um círculo de ~10 px (sobra de 2 px)
@@ -425,17 +426,11 @@ func _testar_passagem(sala) -> void:
 		var sem_vao := g.alcance(sala.spawn_jogador)
 		check.call(g.chegou(sem_vao, sala.posicao_chefe) and not g.chegou(sem_vao, sala.posicao_portal), "passagem: tapando o vão, o portal fica fechado (o portão é o único caminho)")
 
-## O inimigo tem arte quando toda linha dele no manifesto aponta para uma folha que existe (ash_hound e stone_herald têm linha
-## no manifesto mas ainda não têm as folhas, e o stone_herald também serve ao ossuary_warden) e tem stats em enemies.csv.
+## O inimigo tem arte quando passa em `ArteInimigos` (stats em enemies.csv, as 5 animações do manifesto com as folhas, as 5
+## direções e o tamanho certo). ash_hound e stone_herald têm linha no manifesto mas ainda não têm as folhas, e o stone_herald
+## também serve ao ossuary_warden.
 func _inimigo_pronto(id: String) -> bool:
-	var linhas := 0
-	var faltando := 0
-	for r in Csv.rows("res://data2d/sprites_manifest.csv"):
-		if r["id"] == id:
-			linhas += 1
-			if not FileAccess.file_exists(r["arquivo"]):
-				faltando += 1
-	return linhas > 0 and faltando == 0 and not Csv.enemy(id).is_empty()
+	return ArteInimigos.pronto(id)
 
 ## Props novos da Pedreira: arquivo no tamanho do manifesto, pivô no pé, lascas sem colisor e portão só com pés.
 func _testar_arte_dos_props() -> void:

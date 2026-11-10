@@ -1,0 +1,72 @@
+name: capturas-andar
+# Vídeo da corrida do arqueiro nas 8 direções (xvfb), para revisão visual sem depender do PC do Will.
+# Como usar: rótulo `capturas-andar` no PR. Resultado: artefato `capturas-andar` e branch `capturas/andar-pr-<número>` (MP4 + quadros).
+on:
+  pull_request:
+    types: [labeled, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  andar:
+    if: contains(github.event.pull_request.labels.*.name, 'capturas-andar')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true
+    env:
+      GODOT: ./Godot_v4.4.1-stable_linux.x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compilar a GDExtension (ShatterCore + godot-cpp 4.4)
+        run: |
+          git clone --depth 1 -b godot-4.4-stable https://github.com/godotengine/godot-cpp "$RUNNER_TEMP/godot-cpp"
+          cmake -S godot/gdextension -B build-ext -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="$RUNNER_TEMP/godot-cpp"
+          cmake --build build-ext -j"$(nproc)"
+      - name: Baixar Godot e dependências de tela virtual
+        run: |
+          curl -sSL -o godot.zip https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.4.1-stable_linux.x86_64
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1 libxi6 libxcursor1 libxrandr2 libxinerama1 ffmpeg
+      - name: Montar projeto só com o cliente 2D (sem C#)
+        run: |
+          mkdir proj
+          for d in scripts2d scenes2d data2d art2d gdextension addons; do ln -s "$PWD/godot/$d" "proj/$d"; done
+          ln -s "$PWD/godot/shatter_rogue.gdextension" proj/shatter_rogue.gdextension
+          python3 - <<'PY'
+          import re
+          s = open('godot/project.godot').read()
+          s = s.replace('"4.7", "C#", "Forward Plus"', '"4.4", "Forward Plus"')
+          s = re.sub(r'\[dotnet\]\n\nproject/assembly_name="[^"]*"\n\n', '', s)
+          open('proj/project.godot', 'w').write(s)
+          PY
+          timeout -k 5 180 $GODOT --headless --path proj --import || true
+      - name: Capturar e montar o vídeo
+        run: |
+          mkdir -p capturas quadros
+          timeout -k 5 600 xvfb-run -a -s "-screen 0 1280x720x24" $GODOT --path proj --rendering-driver opengl3 --script res://scripts2d/tools/captura_andar_2d.gd -- "$PWD/quadros" 2 || true
+          ls quadros | wc -l
+          ffmpeg -loglevel error -y -framerate 15 -i quadros/andar_%d.png -c:v libx264 -pix_fmt yuv420p capturas/andar_8_direcoes.mp4
+          rm -rf quadros
+          mkdir -p quadros
+          timeout -k 5 300 xvfb-run -a -s "-screen 0 1280x720x24" $GODOT --path proj --rendering-driver opengl3 --script res://scripts2d/tools/captura_andar_2d.gd -- "$PWD/quadros" 2 acao || true
+          ffmpeg -loglevel error -y -framerate 15 -i quadros/andar_%d.png -c:v libx264 -pix_fmt yuv420p capturas/atirar_esquivar.mp4 || true
+          cp quadros/andar_1.png quadros/andar_20.png quadros/andar_50.png quadros/andar_80.png capturas/ || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capturas-andar
+          path: capturas/
+      - name: Publicar na branch capturas/andar-pr-<número>
+        run: |
+          cd capturas
+          if ! ls *.mp4 >/dev/null 2>&1; then echo "sem vídeo"; exit 0; fi
+          git init -q
+          git checkout -q -b "capturas/andar-pr-${{ github.event.pull_request.number }}"
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "andar do arqueiro, PR ${{ github.event.pull_request.number }}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" "capturas/andar-pr-${{ github.event.pull_request.number }}"

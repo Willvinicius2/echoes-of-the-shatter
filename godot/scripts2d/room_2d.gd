@@ -28,6 +28,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
 const Terreno = preload("res://scripts2d/terreno_2d.gd")
 const OrlaTerra = preload("res://scripts2d/orla_terra_2d.gd")
+const Aneis = preload("res://scripts2d/aneis_runas_2d.gd")
 const COR_MASSA_PEDREIRA := Color(0.56, 0.54, 0.62)   # a rocha da pedreira é o tile do piso em marrom-escuro (o preto da mata some a emenda com o ocre)
 const ATLAS := "res://art2d/tiles/cripta_tiles.png"
 const ATLAS_GRAMA := "res://art2d/tiles/cripta_grama.png"
@@ -63,6 +64,7 @@ var piso_grama := false
 var tema := ""   # "" = o da Cripta; "pedreira" (`@piso pedreira`): chão seco, lajes quentes, sem vaga-lumes
 var decalques: Array = []   # `@decalque`: {arquivo, pos (px), topo}
 var braseiros: Array[Vector2] = []
+var _estruturas: Array = []   # braseiros e pilares do mapa que reagem a fogo, raio e gelo: [{tipo, pos, ate}] (reacoes_2d.gd)
 var caminhos: Array = []  # {larg (células), pts (px)}
 var brilho_estrada := 1.0   # `@brilho_estrada`: fator de luz das lajes da primeira `@caminho` (1 = igual ao resto)
 var riachos: Array = []
@@ -79,6 +81,7 @@ func tamanho_px() -> Vector2:
 	return Vector2(colunas * tile, linhas * tile)
 
 func carregar(caminho: String) -> bool:
+	add_to_group("sala_2d")
 	tile = int(Csv.kv("res://data2d/run_settings.csv")["tile"])
 	var f := FileAccess.open(caminho, FileAccess.READ)
 	if f == null:
@@ -218,9 +221,11 @@ func _montar() -> void:
 					idx = T_PISO_ESCURO
 				"O":
 					idx = T_PILAR
+					_estruturas.append({"tipo": "pilar", "pos": _centro(x, y), "ate": 0})
 				"B":
 					idx = T_BRASEIRO
 					braseiros.append(_centro(x, y))
+					_estruturas.append({"tipo": "braseiro", "pos": _centro(x, y), "ate": 0})
 				"P":
 					spawn_jogador = _centro(x, y)
 				"E":
@@ -504,14 +509,14 @@ func _desenhar_lajes() -> void:
 		if not escuro and i > 0 and lajes[i - 1]["tom"] == "escuro" and m["raio"] < lajes[i - 1]["raio"]:
 			cor_laje = Color(0.72, 0.68, 0.66, 0.8)   # estrado sobre a laje escura: contraste baixo, sem cara de tapete
 		raiz.add_child(_laje_esfumada(m, 11 + i, tex_escuro if escuro else tex_claro, cor_laje, 0.95, minf(34.0, m["raio"] * 0.6)))
-	_desenhar_aneis(raiz)
+	Aneis.desenhar(raiz, aneis, lajes)
 
 ## Laje de contorno irregular com a beira esfumada: o miolo é opaco e uma faixa externa perde a opacidade até zero,
 ## então a pedra some no gramado sem a divisa reta de antes.
 func _laje_esfumada(m: Dictionary, semente: int, tex: Texture2D, cor: Color, fator_dentro: float, faixa: float) -> MeshInstance2D:
 	var np := maxi(48, int(m["raio"] / 2.5))   # a mesma contagem de pontos nos dois contornos
-	var dentro := _contorno(m["centro"], m["raio"] * fator_dentro, semente, 0.06, np)
-	var fora := _contorno(m["centro"], m["raio"] * fator_dentro + faixa, semente, 0.06, np)
+	var dentro := Aneis.contorno(m["centro"], m["raio"] * fator_dentro, semente, 0.06, np)
+	var fora := Aneis.contorno(m["centro"], m["raio"] * fator_dentro + faixa, semente, 0.06, np)
 	var n := dentro.size()
 	var pts := PackedVector2Array()
 	pts.append_array(dentro)
@@ -545,134 +550,6 @@ func _laje_esfumada(m: Dictionary, semente: int, tex: Texture2D, cor: Color, fat
 		mi.texture = tex
 		mi.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	return mi
-
-## Anéis de runas: um sulco de pedra escuro com fio dourado dentro e glifos desenhados (losango, triângulo, cruz,
-## círculo, ampulheta, setas) sobre plaquetas escuras, espaçados por igual. Com `sigilo` o anel vira um círculo
-## fechado de glifos com halo, sem sulco (marca o centro da arena).
-func _desenhar_aneis(raiz: Node2D) -> void:
-	var mat := CanvasItemMaterial.new()
-	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
-	for a in aneis:
-		var idx: int = a["laje"]
-		if idx < 0 or idx >= lajes.size():
-			continue
-		var m: Dictionary = lajes[idx]
-		var raio_anel: float = m["raio"] * float(a["fator"])
-		var pts := _contorno(m["centro"], raio_anel, 11 + idx, 0.0)
-		var sigilo: bool = a.get("sigilo", false)
-		var n := pts.size()
-		pts.append(pts[0])
-		if sigilo:
-			var halo := Sprite2D.new()
-			halo.texture = _halo_dourado()
-			halo.position = m["centro"]
-			halo.scale = Vector2.ONE * (raio_anel * 2.8 / 128.0)
-			halo.material = mat
-			raiz.add_child(halo)
-			for escala in [1.0, 0.62]:   # dois círculos fechados: o sigilo lê como um círculo, não como fragmentos
-				var circ := Line2D.new()
-				circ.points = _contorno(m["centro"], raio_anel * escala, 11 + idx, 0.0)
-				circ.closed = true
-				circ.width = 2.0
-				circ.default_color = Color(1.0, 0.8, 0.35, 0.6)
-				circ.material = mat
-				raiz.add_child(circ)
-		else:
-			var sulco := Line2D.new()   # sulco escavado na pedra
-			sulco.points = pts
-			sulco.width = 11.0
-			sulco.default_color = Color(0.05, 0.04, 0.04, 0.75)
-			raiz.add_child(sulco)
-			var brilho := Line2D.new()
-			brilho.points = pts
-			brilho.width = 7.0
-			brilho.default_color = Color(1.0, 0.7, 0.22, 0.14)
-			brilho.material = mat
-			raiz.add_child(brilho)
-			var fio := Line2D.new()
-			fio.points = pts
-			fio.width = 2.0
-			fio.default_color = Color(1.0, 0.8, 0.35, 0.5)
-			fio.material = mat
-			raiz.add_child(fio)
-		var comprimento := 0.0
-		for k in n:
-			comprimento += pts[k].distance_to(pts[k + 1])
-		var qtd := 8 if sigilo else maxi(int(comprimento / 70.0), 8)
-		var passo := comprimento / qtd
-		var andou := passo * 0.5
-		var cont := 0
-		for k in n:
-			var seg := pts[k].distance_to(pts[k + 1])
-			while andou < seg:
-				var c := pts[k].lerp(pts[k + 1], andou / maxf(seg, 0.001))
-				var ang: float = (pts[k + 1] - pts[k]).angle() if not sigilo else (c - m["centro"]).angle() - PI * 0.5
-				_glifo(raiz, c, ang, 11.0 if not sigilo else 9.0, cont % 6, mat)
-				cont += 1
-				andou += passo
-			andou -= seg
-
-## Um glifo de runa em traços dourados aditivos sobre uma plaqueta escura. `tam` é a meia-altura em px.
-func _glifo(raiz: Node2D, pos: Vector2, ang: float, tam: float, tipo: int, mat: CanvasItemMaterial) -> void:
-	var no := Node2D.new()
-	no.position = pos
-	no.rotation = ang
-	raiz.add_child(no)
-	var placa := Polygon2D.new()
-	placa.polygon = PackedVector2Array([Vector2(-tam, -tam * 1.25), Vector2(tam, -tam * 1.25), Vector2(tam, tam * 1.25), Vector2(-tam, tam * 1.25)])
-	placa.color = Color(0.05, 0.04, 0.04, 0.6)
-	no.add_child(placa)
-	var t := tam * 0.75
-	var tracos: Array = []
-	match tipo:
-		0:   # losango com ponto
-			tracos = [[Vector2(0, -t), Vector2(t * 0.7, 0), Vector2(0, t), Vector2(-t * 0.7, 0), Vector2(0, -t)], [Vector2(0, -2), Vector2(0, 2)]]
-		1:   # triângulo com barra
-			tracos = [[Vector2(0, -t), Vector2(t * 0.8, t * 0.8), Vector2(-t * 0.8, t * 0.8), Vector2(0, -t)], [Vector2(0, -t * 0.2), Vector2(0, t * 0.8)]]
-		2:   # cruz com travessa
-			tracos = [[Vector2(0, -t), Vector2(0, t)], [Vector2(-t * 0.7, -t * 0.2), Vector2(t * 0.7, -t * 0.2)], [Vector2(-t * 0.4, t * 0.6), Vector2(t * 0.4, t * 0.6)]]
-		3:   # círculo cortado
-			var circ: Array = []
-			for q in 9:
-				circ.append(Vector2(cos(TAU * q / 8.0), sin(TAU * q / 8.0)) * t * 0.7)
-			tracos = [circ, [Vector2(0, -t), Vector2(0, t)]]
-		4:   # ampulheta
-			tracos = [[Vector2(-t * 0.7, -t), Vector2(t * 0.7, -t), Vector2(-t * 0.7, t), Vector2(t * 0.7, t), Vector2(-t * 0.7, -t)]]
-		_:   # setas empilhadas
-			tracos = [[Vector2(-t * 0.7, -t * 0.2), Vector2(0, -t), Vector2(t * 0.7, -t * 0.2)], [Vector2(-t * 0.7, t * 0.7), Vector2(0, t * 0.1), Vector2(t * 0.7, t * 0.7)]]
-	for tr in tracos:
-		var l := Line2D.new()
-		l.points = PackedVector2Array(tr)
-		l.width = 2.0
-		l.default_color = Color(1.0, 0.84, 0.4, 0.95)
-		l.material = mat
-		no.add_child(l)
-
-func _halo_dourado() -> Texture2D:
-	var g := Gradient.new()
-	g.set_color(0, Color(1.0, 0.75, 0.3, 0.32))
-	g.set_color(1, Color(1.0, 0.6, 0.2, 0.0))
-	var t := GradientTexture2D.new()
-	t.gradient = g
-	t.width = 128
-	t.height = 128
-	t.fill = GradientTexture2D.FILL_RADIAL
-	t.fill_from = Vector2(0.5, 0.5)
-	t.fill_to = Vector2(1.0, 0.5)
-	return t
-
-## Círculo ondulado (raio em px) para as manchas de laje; a mesma semente dá o mesmo contorno.
-func _contorno(centro: Vector2, raio: float, semente: int, serrilha := 0.0, n_pts := 0) -> PackedVector2Array:
-	var pts := PackedVector2Array()
-	var n := n_pts if n_pts > 0 else maxi(48, int(raio / 2.5))
-	var f1 := 2.0 + posmod(semente * 7, 3)
-	var f2 := 5.0 + posmod(semente * 13, 4)
-	for k in n:
-		var a := k * TAU / n
-		var onda := 0.12 * sin(a * f1 + semente) + 0.06 * sin(a * f2 + semente * 2.3) + 0.03 * sin(a * 11.0 + semente * 0.7)
-		onda += serrilha * (float(posmod(hash(Vector2i(k, semente)), 100)) / 100.0 - 0.5)   # beira irregular, sem curva lisa
-		pts.append(centro + Vector2(cos(a), sin(a)) * raio * (1.0 + onda))
-	return pts
 
 ## Textura de 2 x 2 tiles do atlas da cripta a partir de `idx` (4 variantes lado a lado), para repetir sem emenda visível.
 func _textura_lajes(idx: int) -> Texture2D:
@@ -715,6 +592,24 @@ func seguir_vinheta(centro: Vector2, tam_vista: Vector2) -> void:
 		return
 	_vinheta.position = centro
 	_vinheta.scale = tam_vista * 1.5 / float(_vinheta.texture.get_width())
+
+var _agua_pts: Array = []   # [{pts: PackedVector2Array (spline em px), meia: meia-largura em px}], montado na primeira consulta
+
+## `p` está a até `dist` px da margem de algum riacho (dentro da água também conta)? Usado pelas reações com a água.
+func perto_agua(p: Vector2, dist: float) -> bool:
+	if _agua_pts.is_empty() and not riachos.is_empty():
+		for r in riachos:
+			_agua_pts.append({"pts": Terreno.spline(r["pts"], tile * 0.5), "meia": float(r["larg"]) * tile * 0.5})
+	for a in _agua_pts:
+		var pts: PackedVector2Array = a["pts"]
+		for i in pts.size() - 1:
+			if Geometry2D.get_closest_point_to_segment(p, pts[i], pts[i + 1]).distance_to(p) - float(a["meia"]) <= dist:
+				return true
+	return false
+
+## Braseiros e pilares a até `dist` px de `p` (dicionários vivos: a recarga fica neles).
+func estruturas_perto(p: Vector2, dist: float) -> Array:
+	return _estruturas.filter(func(e): return e["pos"].distance_to(p) <= dist)
 
 ## Fase aberta: o mapa é maior que a tela (a câmera segue o jogador e as ondas nascem fora da vista).
 func aberta() -> bool:

@@ -24,6 +24,19 @@ static func no_raio(arvore: SceneTree, centro: Vector2, r: float, metodo := "", 
 			out.append(n)
 	return out
 
+## Inimigo com o centro mais perto de `pos` (até `max_d`, sem descontar o raio do corpo); em empate fica o último da lista.
+## `metodo`: exige esse método; `excluir`: nós ignorados.
+static func centro_mais_proximo(arvore: SceneTree, pos: Vector2, max_d: float, metodo := "", excluir: Array = []) -> Node2D:
+	var melhor: Node2D = null
+	var melhor_d := max_d
+	for n in vivos(arvore):
+		if n is Node2D and (metodo == "" or n.has_method(metodo)) and not excluir.has(n):
+			var d: float = n.global_position.distance_to(pos)
+			if d <= melhor_d:
+				melhor_d = d
+				melhor = n
+	return melhor
+
 ## Cone com vértice em `origem`, abertura total `angulo` (graus) e comprimento `compr`.
 static func em_cone(arvore: SceneTree, origem: Vector2, dir: Vector2, compr: float, angulo: float) -> Array:
 	var out := []

@@ -355,15 +355,7 @@ class _Serpente extends Node2D:
 			queue_free()
 
 	func _mais_perto() -> Node2D:
-		var melhor: Node2D = null
-		var melhor_d := 700.0
-		for n in get_tree().get_nodes_in_group("hurtable"):
-			if n is Node2D and n.has_method("take_damage"):
-				var d: float = n.global_position.distance_to(global_position)
-				if d <= melhor_d:
-					melhor_d = d
-					melhor = n
-		return melhor
+		return Alvos.centro_mais_proximo(get_tree(), global_position, 700.0, "take_damage")
 
 	## Corpo: rastro ondulado luminoso (grosso na cabeça, fino na cauda, núcleo amarelo); brasas vermelho-escuras atrás.
 	func _draw() -> void:
