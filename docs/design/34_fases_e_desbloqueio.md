@@ -31,3 +31,11 @@ O portão onde ele espera é o `pedreira_portao` (portal de pedra maciça com gr
 ## Pontos para o design decidir
 - Vida do elite do portão (decidido em 10/11): a regra adaptativa do core limita a vida a `boss_hp_max` (2,5) vezes a base, no máximo 600 para o capitão (240). Em vez de mexer no core, `run_settings.csv` tem `gate_elite_hp_mult` (3: até 1.800).
 - O core não aplica a curva de dano ao chefe; `gate_elite_damage_mult` (1,5) dá ao capitão 30 de dano em vez de 20.
+
+## Terceira área: o que falta decidir (não começar sem estas respostas)
+Registro de 10/11/2026. Nada da terceira área foi implementado. Antes de abrir uma branch de arte ou de mapa, o design precisa fechar:
+1. **Tema e nome da área**: Cripta (área 1) e Pedreira dos Ecos (área 2) já existem. Qual é a terceira (ex.: fosso, ossuário profundo, outra)? Define paleta, piso e a escolha de props.
+2. **Chefe da área**: Guardião do tipo `kind=boss` com script próprio, ou elite do portão como na Pedreira (inimigo comum com `gate_elite_*` em `run_settings.csv`)? O Carcereiro do Ossuário e o Arauto de Pedra já existem como mini-chefes de onda.
+3. **Elenco**: quais inimigos comuns e elites entram nas ondas (`ondas.csv`) e qual ficará exclusivo da área. Cada novo inimigo precisa de arte por código (sem PixelLab pago) nas escalas fechadas: comuns 1,1x, elites 1,5x, mini-chefes 1,75x a 2x a altura do Arqueiro, Guardião 1x.
+4. **Desbloqueio**: o que abre a área (vitória na Pedreira, nível do herói, item) e se a rota do elite do Ossuário (`rota.csv`) continua valendo.
+5. **Mapa**: tamanho da sala e quantos encontros `@guarda`; ver `docs/arte/35_pedreira_dos_ecos.md` para o formato.
