@@ -676,8 +676,14 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 	var cor_tocha := Color(1.0, 0.42, 0.12, 0.34) if pedreira else Color(1.0, 0.55, 0.18, 0.62 if grama else 0.4)
 	var cor_vela := Color(1.0, 0.55, 0.2, 0.28) if pedreira else Color(1.0, 0.72, 0.3, 0.34)
 	for b in sala.braseiros:
-		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache("tocha_pedreira" if pedreira else ("tocha_grama" if grama else "tocha"), cor_tocha, 256), 3, true)
+		var chave := "tocha_pedreira" if pedreira else ("tocha_grama" if grama else "tocha")
+		# decisão do Jev (10/11): o halo forte fica sob os atores (z -1); acima deles só um resto fraco, para o Arqueiro esquentar um pouco
+		# sem lavar o musgo do Arauto nem o vermelho do Guardião
+		var h := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache(chave, cor_tocha, 256), -1, true)
 		amb.add_halo(h)
+		var cor_resto := Color(cor_tocha, cor_tocha.a * 0.2)
+		var h2 := _mancha(sala, b + Vector2(0, -10), Vector2(400, 400), _radial_cache(chave + "_resto", cor_resto, 256), 3, true)
+		amb.add_halo(h2)
 	for p in sala.props:
 		if String(p["id"]).contains("candles"):
 			var h := _mancha(sala, p["pos"] + Vector2(0, 10), Vector2(230, 230), _radial_cache("vela_pedreira" if pedreira else "vela", cor_vela, 256), 3, true)

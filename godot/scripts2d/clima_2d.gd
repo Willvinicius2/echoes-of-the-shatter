@@ -529,7 +529,7 @@ func _braseiro(b: Vector2) -> void:
 	fogo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mf := _mat_shader(FOGO_SHADER, {"semente": _rng.randf() * 100.0, "fps": cfg["fogo_fps"], "res": fogo.size / cfg["fogo_pixel"]})
 	fogo.material = mf
-	fogo.z_index = 4
+	fogo.z_index = -1   # decisão do Jev (10/11): chama sob os atores (antes z 4 pintava fogo sobre o braço do Guardião)
 	add_child(fogo)
 	_mats_fogo.append(mf)
 	# poça de luz quente no chão e nas folhas em volta (aditiva, tremeluz com o fogo)
@@ -573,8 +573,8 @@ func _braseiro(b: Vector2) -> void:
 	miolo.initial_velocity_max = 16.0
 	miolo.scale_amount_min = 0.7
 	miolo.scale_amount_max = 1.0
-	miolo.color_ramp = _rampa([[0.0, Color(1, 0.7, 0.3, 0.0)], [0.3, Color(1, 0.6, 0.2, 0.12)], [1.0, Color(1, 0.4, 0.1, 0.0)]])
-	miolo.z_index = 5
+	miolo.color_ramp = _rampa([[0.0, Color(1, 0.55, 0.2, 0.0)], [0.3, Color(1, 0.45, 0.12, 0.05)], [1.0, Color(1, 0.3, 0.08, 0.0)]])
+	miolo.z_index = -1
 	add_child(miolo)
 	_fogo.append({"no": miolo, "base": Vector2(0, -20), "fator": 0.08})
 	# brasas subindo e indo com o vento
