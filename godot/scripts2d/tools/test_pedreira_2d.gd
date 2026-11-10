@@ -119,6 +119,7 @@ func rodar() -> void:
 	sala.free()
 	_testar_arte_dos_props()
 	_testar_arte_do_cao()
+	_testar_arte_do_arauto()
 	_testar_ondas()
 
 func _def(id: String) -> Dictionary:
@@ -454,11 +455,30 @@ func _testar_arte_dos_props() -> void:
 ## nas 5 direções, alfa binário, paleta curta (a base tem 22 cores; boca, dentes e brasa apagando somam poucas), nenhum quadro
 ## vazio e nenhum pixel colado na borda do quadro (o bote e a morte não podem ser cortados).
 func _testar_arte_do_cao() -> void:
+	_conferir_folhas_por_codigo({"id": "ash_hound", "nome": "cão de cinza", "lado": 92, "pivo": Vector2i(46, 74), "cores": 26,
+		"contato": 4, "pe": Vector2i(-1, 1), "centro": -1})
+
+## Arauto de Pedra, modelo 3D de pedra feito por código (tools/sprites2d/arauto_de_pedra): quadro de 176 px com o centro dos pés
+## no pivô (88, 132) (o pé da frente fica logo abaixo dele), alfa binário, no máximo 24 cores, nenhum quadro vazio e nenhum pixel
+## colado na borda (a martelada com os punhos erguidos e a pilha da morte ocupam o quadro quase todo) e o golpe de 8 quadros com
+## o contato (os punhos no chão) no quadro 5.
+func _testar_arte_do_arauto() -> void:
+	_conferir_folhas_por_codigo({"id": "stone_herald", "nome": "arauto de pedra", "lado": 176, "pivo": Vector2i(88, 132), "cores": 24,
+		"contato": 5, "pe": Vector2i(0, 20), "centro": 6})
+
+## Conferência comum das folhas feitas por código. `cfg`: id, nome (para as mensagens), lado e pivo esperados no manifesto, cores
+## (máximo), contato (quadro do golpe com 8 quadros), pe (faixa, em px abaixo do pivô, da linha mais baixa do idle) e centro
+## (folga em px do centro do desenho do idle em relação ao pivô; -1 não confere).
+func _conferir_folhas_por_codigo(cfg: Dictionary) -> void:
+	var id: String = cfg["id"]
+	var nome: String = cfg["nome"]
+	var pivo: Vector2i = cfg["pivo"]
+	var faixa_pe: Vector2i = cfg["pe"]
 	var linhas := {}
 	for r in Csv.rows("res://data2d/sprites_manifest.csv"):
-		if r["id"] == "ash_hound":
+		if r["id"] == id:
 			linhas[r["anim"]] = r
-	check.call(linhas.size() == 5, "cão de cinza: 5 animações no manifesto (%d)" % linhas.size())
+	check.call(linhas.size() == 5, "%s: 5 animações no manifesto (%d)" % [nome, linhas.size()])
 	if linhas.size() != 5:
 		return
 	var cores := {}
@@ -470,12 +490,12 @@ func _testar_arte_do_cao() -> void:
 		var m: Dictionary = linhas[anim]
 		var img := Image.load_from_file(ProjectSettings.globalize_path(m["arquivo"]))
 		if img == null:
-			check.call(false, "cão de cinza: carrega a folha %s" % anim)
+			check.call(false, "%s: carrega a folha %s" % [nome, anim])
 			continue
 		img.convert(Image.FORMAT_RGBA8)
 		var lado := int(m["quadro"])
 		var n := int(m["quadros"])
-		check.call(lado == 92 and int(m["pivo_x"]) == 46 and int(m["pivo_y"]) == 74, "cão de cinza %s: quadro de 92 px com o pivô em (46, 74)" % anim)
+		check.call(lado == int(cfg["lado"]) and int(m["pivo_x"]) == pivo.x and int(m["pivo_y"]) == pivo.y, "%s %s: quadro de %d px com o pivô em (%d, %d)" % [nome, anim, cfg["lado"], pivo.x, pivo.y])
 		var d := img.get_data()
 		var larg := img.get_width()
 		for i in range(larg * img.get_height()):
@@ -506,21 +526,26 @@ func _testar_arte_do_cao() -> void:
 					vazios += 1
 				if anim == "idle" and q == 0:
 					var pe := -1
+					var esq := lado
+					var dir_x := -1
 					for y in range(lado - 1, -1, -1):
 						for x in range(lado):
 							if d[((y0 + y) * larg + x0 + x) * 4 + 3] != 0:
-								pe = y
-								break
-						if pe >= 0:
-							break
-					if absi(pe - int(m["pivo_y"])) > 1:
+								if pe < 0:
+									pe = y
+								esq = mini(esq, x)
+								dir_x = maxi(dir_x, x)
+					var abaixo := pe - int(m["pivo_y"])
+					if abaixo < faixa_pe.x or abaixo > faixa_pe.y:
 						pe_fora.append("dir %d: pé na linha %d" % [dir, pe])
-	check.call(alfa_binario, "cão de cinza: alfa binário (pixel art sem meio-tom)")
-	check.call(cores.size() <= 26, "cão de cinza: paleta curta (%d cores, no máximo 26)" % cores.size())
-	check.call(vazios == 0, "cão de cinza: nenhum quadro vazio (%d)" % vazios)
-	check.call(cortados == 0, "cão de cinza: nenhum pixel colado na borda do quadro (%d)" % cortados)
-	check.call(pe_fora.is_empty(), "cão de cinza: o pé do idle fica no pivô nas 5 direções %s" % str(pe_fora))
-	check.call(int(linhas["attack"]["evento_quadro"]) == 4 and int(linhas["attack"]["quadros"]) == 8, "cão de cinza: o bote tem 8 quadros e o contato é o quadro 4")
+					if int(cfg["centro"]) >= 0 and absf((esq + dir_x) / 2.0 - float(m["pivo_x"])) > float(cfg["centro"]):
+						pe_fora.append("dir %d: desenho fora do centro do pivô (%d a %d)" % [dir, esq, dir_x])
+	check.call(alfa_binario, "%s: alfa binário (pixel art sem meio-tom)" % nome)
+	check.call(cores.size() <= int(cfg["cores"]), "%s: paleta curta (%d cores, no máximo %d)" % [nome, cores.size(), cfg["cores"]])
+	check.call(vazios == 0, "%s: nenhum quadro vazio (%d)" % [nome, vazios])
+	check.call(cortados == 0, "%s: nenhum pixel colado na borda do quadro (%d)" % [nome, cortados])
+	check.call(pe_fora.is_empty(), "%s: o pé e o centro do idle ficam no pivô nas 5 direções %s" % [nome, str(pe_fora)])
+	check.call(int(linhas["attack"]["evento_quadro"]) == int(cfg["contato"]) and int(linhas["attack"]["quadros"]) == 8, "%s: o golpe tem 8 quadros e o contato é o quadro %d" % [nome, cfg["contato"]])
 
 ## Ondas da Pedreira só com inimigos que já têm folha de sprite e stats: nada de caixa marrom provisória no jogo.
 func _testar_ondas() -> void:

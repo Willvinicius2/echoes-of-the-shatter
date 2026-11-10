@@ -91,22 +91,25 @@ func _testar_tabela() -> void:
 			sem_capitao = sem_capitao and not mix.contains("ossuary_captain")
 			todas += mix
 		check.call(sem_capitao, "pedreira: o capitão não aparece nas ondas comuns")
-		# a assinatura da fase são as matilhas de ash_hound (folha animada por código, tools/sprites2d/cao_de_cinza); o
-		# stone_herald espera a folha. As ondas só usam inimigos que têm arte (test_pedreira_2d.gd confere que nenhum sem folha
-		# entra) e variam entre os sete que existem
+		# a assinatura da fase são as matilhas de ash_hound (folha animada por código, tools/sprites2d/cao_de_cinza) e o
+		# stone_herald (modelo de pedra por código, tools/sprites2d/arauto_de_pedra) pesa nas duas últimas ondas. As ondas só usam
+		# inimigos que têm arte (test_pedreira_2d.gd confere que nenhum sem folha entra) e variam entre os oito que existem
 		check.call(todas.contains("ash_hound"), "pedreira: a matilha de ash_hound é a assinatura da fase")
+		check.call(todas.contains("stone_herald"), "pedreira: o Arauto de Pedra pesa nas ondas finais")
 		var tipos := 0
-		for id in ["skeleton_soldier", "hollow_sentinel", "crypt_bat", "wandering_ghost", "ghost_archer", "chain_wraith", "ash_hound"]:
+		for id in ["skeleton_soldier", "hollow_sentinel", "crypt_bat", "wandering_ghost", "ghost_archer", "chain_wraith", "ash_hound", "stone_herald"]:
 			tipos += 1 if todas.contains(id) else 0
-		check.call(tipos >= 6, "pedreira: as ondas variam entre os inimigos que têm arte (%d dos 7)" % tipos)
+		check.call(tipos >= 7, "pedreira: as ondas variam entre os inimigos que têm arte (%d dos 8)" % tipos)
 	if por_id.has("cripta"):
 		check.call(str(por_id["cripta"]["boss"]) == "crypt_guardian", "cripta: o chefe continua o Guardião")
+		var cripta := JSON.stringify(por_id["cripta"]["waves"])
+		check.call(cripta.contains("stone_herald"), "cripta: o Arauto de Pedra voltou às ondas (a folha por código está pronta)")
 	m = null
 
 ## Regra da direção de arte: nenhuma fase vai ao jogador com a caixa provisória. Toda fase da tabela só pode pôr na tela inimigos
 ## prontos (stats, as 5 animações com as 5 direções e folhas do tamanho do manifesto): ondas, chefe, enxame e encontros do mapa.
-## Quando a folha de um inimigo pendente (stone_herald, ossuary_warden) chegar, ele volta às ondas da Cripta
-## (docs/arte/35_pedreira_dos_ecos.md). O ash_hound já voltou.
+## Quando a folha de um inimigo pendente (ossuary_warden) chegar, ele volta às ondas da Cripta
+## (docs/arte/35_pedreira_dos_ecos.md). O ash_hound e o stone_herald já voltaram.
 func _testar_arte_das_fases() -> void:
 	var fases := Csv.rows("res://data2d/fases_2d.csv")
 	check.call(fases.size() >= 2, "arte das fases: a tabela tem %d fases" % fases.size())
