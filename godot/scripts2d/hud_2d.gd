@@ -15,12 +15,14 @@ var chefe: Node2D
 var chefe_nome := "hud.chefe_nome"   # chave de loc do nome sobre a barra do chefe (o elite do portão usa enemy.<id>.name)
 var upgrades: RefCounted
 var tempo := 0.0
+var chave_sala := "hud.room"   # rótulo da plaqueta: "hud.wave" no modo horda (ondas, não salas)
 var _ctl: Control
 var _lay := {}
 var _rel := 0.0         # relógio da animação (líquido, pulso)
 var _hp_fantasma := 1.0 # fração antiga de vida, desce devagar depois de um golpe
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS   # redesenha também na pausa: a mensagem central sai de trás das cartas e dos menus
 	_lay = Csv.kv("res://data2d/hud_layout.csv")
 	_ctl = Control.new()
 	_ctl.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -42,7 +44,7 @@ func _desenhar() -> void:
 		_desenhar_globos(vp)
 		_desenhar_xp(vp)
 	_desenhar_upgrades()
-	Arte.placa_mini(_ctl, Rect2(vp.x - 6 - _lay["plaqueta_largura"], 6, _lay["plaqueta_largura"], 36), Csv.t("hud.room") % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
+	Arte.placa_mini(_ctl, Rect2(vp.x - 6 - _lay["plaqueta_largura"], 6, _lay["plaqueta_largura"], 36), Csv.t(chave_sala) % [sala, total_salas], Csv.t("hud.time") % _tempo_texto())
 	if _rel < 5.0 and estado_ajuda_visivel():
 		var al := clampf((5.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
@@ -57,7 +59,7 @@ func _desenhar() -> void:
 		# a barra do elite desce 20 px da faixa do topo e o nome ganha uma placa escura (a verga do portão é clara)
 		var r := Arte.barra_chefe_fina(_ctl, vp.x * 0.5, _lay["chefe_elite_y"], w, _lay["chefe_altura"], chefe.hp / chefe.hp_max, Tema.cor("chefe_clara"), [])
 		Arte.placa_nome(_ctl, r.position.x, r.position.y - 6.0, Csv.t(chefe_nome), 13, Tema.cor("texto"))
-	if mensagem != "":
+	if mensagem != "" and not get_tree().paused:
 		Arte.texto(_ctl, Vector2(0, vp.y * 0.3), mensagem, 32, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 
 ## A lista completa de controles só aparece nos primeiros segundos (os slots já têm as plaquinhas de tecla).

@@ -25,3 +25,14 @@ hud.chefe_nome,Guardião da Cripta
 hud.gate_altar,O guardião do portão pode ser despertado. Vá até o portão quando estiver pronto
 hud.gate_swarm,O prazo acabou: o enxame final chegou e o guardião do portão despertou
 hud.gate_open,O guardião do portão caiu! Entre no portal
+carta.dica,Clique na carta ou aperte de 1 a %d
+carta.tipo_ativa,Ativa
+carta.tipo_passiva,Passiva
+carta.raridade_comum,Reforço
+carta.raridade_rara,Reforço raro
+carta.nova,Nova habilidade
+carta.corrida,Vale pela corrida inteira
+hud.wave,Onda %d/%d
+menu.sum_waves,Onda alcançada: %d de %d
+menu.sum_level,Nível do Cristal de Eco: %d
+menu.sum_kills,Inimigos derrotados: %d

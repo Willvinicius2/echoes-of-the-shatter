@@ -8,7 +8,7 @@ hud.victory,Cripta vencida! Recomeçando...
 hud.boss,Guardião da Cripta
 hud.help,WASD move | Mouse mira | Clique ataca | Espaço esquiva | T árvore | Esc pausa
 hud.upgrades,Upgrades
-upgrade.title,Escolha um upgrade
+upgrade.title,Escolha um reforço
 upgrade.level,Nível %d/%d
 upgrade.power.name,Flecha Pesada
 upgrade.power.desc,+25% de dano por flecha
@@ -38,7 +38,7 @@ menu.victory,Cripta vencida!
 menu.play_again,Jogar de novo
 menu.sum_time,Tempo: %s
 menu.sum_rooms,Salas: %d/%d
-menu.sum_upgrades,Upgrades escolhidos: %d
+menu.sum_upgrades,Reforços escolhidos: %d
 hud.stamina,Estamina
 hud.mana,Mana
 hud.skill.shoot,Tiro
@@ -540,7 +540,7 @@ skill.eco_gelo.name,Eco do Gelo
 skill.eco_gelo.desc,"Flecha básica de cristal: cada acerto soma frio; no quarto, o inimigo congela"
 skill.eco_cinzas.name,Eco das Cinzas
 skill.eco_cinzas.desc,"Flecha básica em chamas: +10% de dano, queima e deixa uma brasa no chão"
-upgrade.afinidade,Escolha o Eco do seu arco (vale pela corrida)
+upgrade.afinidade,Escolha o Eco do seu arco
 ramo.afinidade.name,Ecos
 hud.afinidade,Eco escolhido: %s
 skill.thunder_burst.name,Trovoada

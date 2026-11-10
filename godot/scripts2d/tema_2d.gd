@@ -12,6 +12,10 @@ static func cor(chave: String) -> Color:
 			_cores[r["chave"]] = Color.html(r["valor"])
 	return _cores.get(chave, Color.MAGENTA)
 
+static func tem(chave: String) -> bool:
+	cor(chave)
+	return _cores.has(chave)
+
 ## Moldura de pedra: fundo, borda e cantos arredondados.
 static func caixa(fundo: Color, borda: Color, largura := 2, raio := 5, margem := 10) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
