@@ -8,9 +8,9 @@ só cores da paleta), e o contorno de 1 px sai depois, já na grade final.
 import math
 import numpy as np
 
-QUADRO = 176
-PIVO = (88, 132)
-ESC = 31.0                      # px por metro
+QUADRO = 256
+PIVO = (128, 192)
+ESC = 38.0                      # px por metro
 SS = 3                          # amostras por pixel (por eixo)
 PITCH = math.radians(35.0)      # a câmera olha para baixo 35 graus
 D = np.array([0.0, -math.sin(PITCH), -math.cos(PITCH)])     # direção dos raios

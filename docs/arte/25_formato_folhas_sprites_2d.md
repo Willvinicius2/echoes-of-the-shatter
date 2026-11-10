@@ -12,7 +12,7 @@ Contrato entre a arte (threads de sprites) e o cliente 2D (`godot/scripts2d/`). 
 | Classe de tamanho | Quadro | Pé (pivô) | Quem |
 |---|---|---|---|
 | M | 128 x 128 px | x=64, y=104 | arqueiro, sentinela oca, arqueiro fantasma (formato HD antigo; os inimigos em pixel art usam o quadro de 92 px do esqueleto, com o pivô no pé, em escala 2.5 no `sprites_escala.csv`) |
-| G | 192 x 192 px | x=96, y=156 | formato HD antigo, sem uso (o arauto de pedra em pixel art usa o quadro de 176 px com o pivô no centro dos pés, em (88, 132), em escala 2.5 no `sprites_escala.csv`; ver `36_animacao_por_codigo.md`) |
+| G | 192 x 192 px | x=96, y=156 | formato HD antigo, sem uso (o arauto de pedra e o carcereiro em pixel art usam o quadro de 256 px (render 45 px por metro, ~1,45x o antigo de 176 px, para medir 2x a altura do arqueiro) com o pivô no centro dos pés, em (128, 192), em escala 2.5 no `sprites_escala.csv`; ver `36_animacao_por_codigo.md`) |
 | XG | 256 x 256 px | x=128, y=208 | Guardião da Cripta (chefe) |
 
 O personagem em pé ocupa ~96 px de altura no quadro M (cabeça perto de y=8, pés em y=104). Sobra espaço embaixo para a sombra e para poses de esquiva.
