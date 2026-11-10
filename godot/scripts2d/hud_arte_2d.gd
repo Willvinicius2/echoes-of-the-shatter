@@ -781,7 +781,9 @@ static func slot_mini(c: CanvasItem, r: Rect2, icone: Texture2D, recarga: float,
 static func tecla_canto(c: CanvasItem, r: Rect2, tecla: String) -> void:
 	var tam := 14
 	var larg := minf(maxf(ThemeDB.fallback_font.get_string_size(tecla, HORIZONTAL_ALIGNMENT_LEFT, -1, tam).x + 8.0, 18.0), r.size.x - 4.0)
-	var placa_r := Rect2(r.position + Vector2(2, r.size.y - 19.0), Vector2(larg, 17.0))
+	# rótulos de palavra (Clique, Espaço) sobem 5 px: a plaquinha larga encostava na moldura inferior
+	var sobe := 5.0 if tecla.length() > 1 else 0.0
+	var placa_r := Rect2(r.position + Vector2(2, r.size.y - 19.0 - sobe), Vector2(larg, 17.0))
 	c.draw_rect(placa_r, Color(0, 0, 0, 0.82))
 	c.draw_rect(placa_r, Color(_c("metal_medio"), 0.9), false, 1.0)
 	texto(c, placa_r.position + Vector2(0, 13.0), tecla, tam, Color(1, 0.95, 0.8), HORIZONTAL_ALIGNMENT_CENTER, larg)

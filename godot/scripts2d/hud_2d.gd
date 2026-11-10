@@ -49,9 +49,9 @@ func _desenhar() -> void:
 		var al := clampf((5.0 - _rel) / 2.0, 0.0, 1.0)
 		var cor := Color(Tema.cor("texto").r, Tema.cor("texto").g, Tema.cor("texto").b, al)
 		var ajuda := Csv.t("hud.help")
-		# sem faixa: ela tapava os galhos e props do chão; o contorno escuro de 1 px em 4 direções mantém a leitura
+		# sem faixa: ela tapava os galhos e props do chão; o contorno escuro de 1 px em 7 direções (com sombra baixa) mantém a leitura
 		var y_ajuda: float = vp.y - _lay["dica_base"]
-		for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:
+		for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1), Vector2(-1, 1), Vector2(1, 1), Vector2(0, 2)]:
 			_ctl.draw_string(ThemeDB.fallback_font, Vector2(0, y_ajuda) + d, ajuda, HORIZONTAL_ALIGNMENT_CENTER, vp.x, 12, Color(0, 0, 0, al))
 		Arte.texto(_ctl, Vector2(0, y_ajuda), ajuda, 12, cor, HORIZONTAL_ALIGNMENT_CENTER, vp.x)
 	if chefe != null and is_instance_valid(chefe) and chefe.hp > 0.0:
@@ -109,12 +109,19 @@ func _desenhar_xp(vp: Vector2) -> void:
 	var r := Rect2(g.position.x, g.position.y - 14.0, g.size.x, _lay.get("xp_altura", 6.0))
 	var prox := maxf(1.0, float(e.get("xp_next", 1)))
 	var frac := clampf(float(e.get("xp", 0)) / prox, 0.0, 1.0)
-	_ctl.draw_rect(r.grow(1.5), Color(0, 0, 0, 0.7))
-	_ctl.draw_rect(r, Color(0.05, 0.05, 0.08, 0.9))
+	# mesmo chanfro dos slots (octógono com corte de 2 px), em vez de retângulo reto
+	var corte := 2.0 / minf(r.grow(1.5).size.x, r.grow(1.5).size.y)
+	var moldura := Arte.octogono(r.grow(1.5), corte)
+	_ctl.draw_colored_polygon(moldura, Color(0, 0, 0, 0.7))
+	_ctl.draw_colored_polygon(Arte.octogono(r, corte), Color(0.05, 0.05, 0.08, 0.9))
 	if frac > 0.0:
-		_ctl.draw_rect(Rect2(r.position, Vector2(r.size.x * frac, r.size.y)), Tema.cor("destaque"))
-		_ctl.draw_rect(Rect2(r.position, Vector2(r.size.x * frac, 2.0)), Color(1, 1, 1, 0.25))
-	_ctl.draw_rect(r.grow(1.5), Tema.cor("metal_claro"), false, 1.0)
+		var cheio := Rect2(r.position, Vector2(r.size.x * frac, r.size.y))
+		if frac >= 0.1:
+			_ctl.draw_colored_polygon(Arte.octogono(cheio, 2.0 / minf(cheio.size.x, cheio.size.y)), Tema.cor("destaque"))
+		else:
+			_ctl.draw_rect(cheio, Tema.cor("destaque"))
+		_ctl.draw_rect(Rect2(cheio.position + Vector2(1, 0), Vector2(maxf(cheio.size.x - 2.0, 0.0), 2.0)), Color(1, 1, 1, 0.25))
+	_ctl.draw_polyline(Arte._fechar(moldura), Tema.cor("metal_claro"), 1.0)
 	Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 4.0), Csv.t("hud.nivel") % int(e.get("level", 1)), 13, Tema.cor("texto"))
 	Arte.texto(_ctl, Vector2(r.position.x, r.position.y - 4.0), Csv.t("hud.xp_valor") % [int(e.get("xp", 0)), int(prox)], 12, Tema.cor("texto_suave"), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x)
 
