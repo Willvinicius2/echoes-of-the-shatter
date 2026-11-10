@@ -617,6 +617,13 @@ func _nascer(s: Dictionary) -> void:
 		e.hp = vida_chefe
 		e.hp_max = vida_chefe
 		if portao:
+			# o core limita a vida do chefe a boss_hp_max x a base e não aplica a curva de dano a chefe; o elite do portão
+			# (Capitão do Ossuário) ganha multiplicadores próprios, em run_settings.csv
+			vida_chefe *= float(config.get("gate_elite_hp_mult", 1.0))
+			e.stats["hp"] = vida_chefe
+			e.hp = vida_chefe
+			e.hp_max = vida_chefe
+			e.stats["damage"] = float(e.stats["damage"]) * float(config.get("gate_elite_damage_mult", 1.0))
 			_preparar_elite_portao(e)
 		elif player.global_position.distance_to(onde) > 2.0 * float(config.get("boss_wake_radius", 260.0)):
 			# só quando ele acorda longe (prazo do enxame); se foi o jogador que chegou ao altar, a barra do chefe já diz tudo

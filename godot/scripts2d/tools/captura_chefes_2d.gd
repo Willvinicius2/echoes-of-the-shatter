@@ -26,13 +26,13 @@ func _initialize() -> void:
 	p.autocast = false
 	var base: Vector2 = run.room.spawn_jogador + Vector2(0, 40)
 	p.global_position = base
-	var lista := [["stone_herald", 150.0], ["ossuary_warden", 330.0], ["crypt_guardian", 560.0]]
+	var lista := [["stone_herald", 300.0], ["ossuary_warden", 640.0], ["crypt_guardian", 1000.0]]
 	for it in lista:
 		var e = (Boss if it[0] == "crypt_guardian" else Enemy).new()
 		run.atores.add_child(e)
 		e.setup(it[0], p, base + Vector2(float(it[1]), 0))
 		e.set_physics_process(false)
-	run.camera.position = base + Vector2(280, 0)
+	run.camera.position = base + Vector2(500, 0)
 	run.camera.reset_smoothing()
 	for i in 40:
 		await physics_frame

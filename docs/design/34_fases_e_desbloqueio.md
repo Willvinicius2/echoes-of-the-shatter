@@ -29,5 +29,5 @@ O portão onde ele espera é o `pedreira_portao` (portal de pedra maciça com gr
 - Capturas: `scripts2d/tools/captura_fases_2d.gd -- <prefixo>` (título, tela de fim e o elite do portão).
 
 ## Pontos para o design decidir
-- Vida do elite do portão: a regra adaptativa limita a vida a `boss_hp_max` (2,5) vezes a vida base. Para o capitão (240) isso dá no máximo 600, contra até 3.250 do Guardião. Com o DPS do fim da corrida ele pode morrer em poucos segundos. Ajustar exige uma vida própria do capitão como chefe, ou limites por fase no core.
-- O capitão como chefe não recebe a curva de dano da onda (o core só aplica a curva a comuns e elites). Ele bate com o dano base de `enemies.csv` (20).
+- Vida do elite do portão (decidido em 10/11): a regra adaptativa do core limita a vida a `boss_hp_max` (2,5) vezes a base, no máximo 600 para o capitão (240). Em vez de mexer no core, `run_settings.csv` tem `gate_elite_hp_mult` (3: até 1.800).
+- O core não aplica a curva de dano ao chefe; `gate_elite_damage_mult` (1,5) dá ao capitão 30 de dano em vez de 20.
