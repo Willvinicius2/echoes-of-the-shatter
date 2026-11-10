@@ -1,6 +1,6 @@
 # 35 — Pedreira dos Ecos (área 2 do Ato I)
 
-Estado em 10/11/2026: **terreno aprovado, Cão de Cinza integrado, Arauto de Pedra pendente**. O mapa, o chão, os props, a luz, o portão de pedra e o elite do portão estão prontos e rodando no motor. Dos dois inimigos novos que a fase pedia, o `ash_hound` já tem folha (animado por código a partir da base aprovada, sem serviço pago: `docs/arte/36_animacao_por_codigo.md`) e voltou às ondas; o `stone_herald` ainda não, então a fase **não usa nenhum inimigo sem arte** (ver "Inimigos e ondas"). O fluxo de fases (escolha no título, desbloqueio, elite do portão) está em `docs/design/34_fases_e_desbloqueio.md`.
+Estado em 10/11/2026: **terreno e inimigos aprovados** (só o Carcereiro do Ossuário segue sem arte própria, fora das ondas). O mapa, o chão, os props, a luz, o portão de pedra e o elite do portão estão prontos e rodando no motor. Os dois inimigos novos que a fase pedia têm folha animada por código, sem serviço pago (`docs/arte/36_animacao_por_codigo.md`): o `ash_hound` (a partir da base aprovada) e o `stone_herald` (modelo de pedra desenhado em pixel art). Os dois voltaram às ondas, então a fase **não usa nenhum inimigo sem arte** (ver "Inimigos e ondas"). O fluxo de fases (escolha no título, desbloqueio, elite do portão) está em `docs/design/34_fases_e_desbloqueio.md`.
 
 Direção: Jev (direção visual) e o crítico de arte, thread "Terminar o mapa da área 1 do arqueiro". Regras de trabalho: o Will não revisa; as dúvidas de design vão por `docs/progresso/estado.json`.
 

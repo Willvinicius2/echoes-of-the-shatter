@@ -2,6 +2,8 @@
 
 Atualizado em 08/11/2026 (thread "Terminar o mapa da área 1 do arqueiro"). O detalhe técnico do mapa está em `docs/arte/31_pixellab_arqueiro.md` (seção "Mapa da área 1").
 
+**A lista "Falta" abaixo foi substituída pela passagem de 10/11/2026: `docs/progresso/handoff/mapas_areas_arqueiro_20261110.md`.** Parta dela.
+
 ## Feito
 - PRs 209 a 213 mergeados (sombras, cascalho, inimigos em pixel art, olhos, números de dano, barra de vida).
 - Estrada de pedra principal do arqueiro até a arena (160 tiles, 2 curvas, 1 bifurcação curta para o bolsão com baú), com os marcos pedidos: pilares com símbolo e braseiros no início, ruína no meio, árvore seca grande na bifurcação, respiro com braseiros e portão de caveiras e brasas antes da arena, cada um com luz própria.
@@ -13,7 +15,7 @@ Atualizado em 08/11/2026 (thread "Terminar o mapa da área 1 do arqueiro"). O de
 1. ~~Barra de vida do morcego 4 px mais alta~~ (feito no polimento depois da PR 215: `hp_bar_dy` em `enemies.csv`).
 2. ~~Fonte bitmap para os números de dano~~ (feito: Jersey 15, 20 e 25, SIL OFL, em `godot/art2d/fonts/`).
 3. Elites e chefe em escala 1,5 a 2x (decisão de arte: a escala 1,5 deixa os pixels maiores que a grade; 2 inteiro fica "grosso").
-4. ~~Segunda área~~ (feito: Pedreira dos Ecos, `tools/mapas/gerar_fase_2.py`; terreno aprovado, inimigos pendentes por falta de saldo no PixelLab; ver `docs/arte/35_pedreira_dos_ecos.md`).
+4. ~~Segunda área~~ (feito: Pedreira dos Ecos, `tools/mapas/gerar_fase_2.py`; terreno e inimigos aprovados, os dois inimigos novos por código e sem serviço pago; ver `docs/arte/35_pedreira_dos_ecos.md`).
 
 ## Atenção
 - Push forçado é negado: use merge normal.
