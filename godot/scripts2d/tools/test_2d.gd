@@ -1411,10 +1411,21 @@ func _testar_habilidades_arqueiro() -> void:
 			"furia":
 				check(p.cad_buff > 1.0 and p.vel_buff > 1.0, "adrenalina acelera tiro e corrida")
 			"armadilha":
-				for e in es:
-					e.global_position = p.global_position + Vector2(160, 0)
-				await _esperar(func(): return es.any(func(e): return e.atordoado > 0.0), 2.0)
-				check(es.any(func(e): return e.atordoado > 0.0), "armadilha atordoa quem pisa")
+				# Causa da instabilidade: o arqueiro atira sozinho e pode ferir o inimigo (encerrando a
+				# 1a espera) antes de a armadilha, a 280 px, disparar; mover os inimigos para 160 px
+				# os deixava fora do gatilho de 40,5 px. Agora eles vão ao centro da zona real.
+				var zona = null
+				for c in mundo.get_children():
+					if c.get("tipo") == "armadilha":
+						zona = c
+				if zona != null:
+					for e in es:
+						e.global_position = zona.global_position
+					await _esperar(func(): return es.any(func(e): return e.atordoado > 0.0), 2.0)
+					check(es.any(func(e): return e.atordoado > 0.0), "armadilha atordoa quem pisa")
+				else:
+					# já disparou na 1a espera: dano e atordoamento saem no mesmo quadro
+					check(es.any(func(e): return e.hp < 1000.0), "armadilha atordoa quem pisa (disparou sozinha)")
 			_:
 				check(afetado, "%s afeta os inimigos à frente" % r["id"])
 		mundo.queue_free()
