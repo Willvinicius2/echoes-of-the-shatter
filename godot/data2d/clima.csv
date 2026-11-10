@@ -31,5 +31,5 @@ tigela_borda,0.19,0..1,linha da borda da tigela no tile do braseiro (acima disso
 tigela_fundo,0.4,0..1,fundo da tigela (entre a borda e o fundo o fogo pintado vira carvão)
 fogo_base,0.36,0..1,altura da base do fogo animado no tile do braseiro (fração do tile; fica no fundo da tigela)
 escala_area_max,8,,teto do multiplicador de nuvens/poeira/folhas em mapas grandes
-poca_alpha,0.28,0..1,força da poça de luz quente no chão em volta do braseiro
+poca_alpha,0.22,0..1,força da poça de luz quente no chão em volta do braseiro
 poca_raio,230,px,raio da poça de luz quente do braseiro
