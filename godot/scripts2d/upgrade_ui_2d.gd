@@ -199,6 +199,7 @@ func _carta(i: int, id: String) -> Button:
 	icone.custom_minimum_size = Vector2(lado_icone, lado_icone)
 	icone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icone.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # pixel art de 48 px: sobe em escala inteira, sem suavizar
 	icone.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(icone)

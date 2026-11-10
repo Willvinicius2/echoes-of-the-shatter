@@ -48,6 +48,7 @@ var dodge_cd := 0.0
 var _shoot_cd := 0.0
 var _dodge_t := 0.0
 var _dodge_dir := Vector2.DOWN
+var _rastro_t := 0.0           # tempo até a próxima cópia do rastro da esquiva
 var _aim := Vector2.DOWN
 var _disparou := false
 var vel_buff := 1.0            # habilidade Adrenalina: velocidade de corrida
@@ -263,6 +264,9 @@ func _physics_process(delta: float) -> void:
 		Estado.ESQUIVA:
 			_dodge_t -= delta
 			velocity = _dodge_dir * (_salto_vel if _salto_vel > 0.0 else stats["dodge_speed"])
+			_rastro_t -= delta
+			if _rastro_t <= 0.0:
+				_rastro_esquiva()
 			if _dodge_t <= 0.0:
 				estado = Estado.LIVRE
 				_salto_vel = 0.0
@@ -314,8 +318,35 @@ func _ler_mira(entrada := Vector2.ZERO) -> Vector2:
 	var d := get_global_mouse_position() - global_position
 	return d.normalized() if d.length() > 4.0 else _aim
 
+## Rastro da esquiva: uma cópia do quadro atual fica para trás, tingida de frio, e some em poucos quadros.
+## Quantas cópias por esquiva, quanto duram e a força: dodge_trail_* em data2d/feel.csv (0 cópias desliga).
+func _rastro_esquiva() -> void:
+	var c := Feel.cfg()
+	var n := int(c.get("dodge_trail_count", 0))
+	if n <= 0 or sprite == null or not is_inside_tree():
+		_rastro_t = 1.0e9
+		return
+	_rastro_t = float(stats["dodge_time"]) / n
+	var tex: Texture2D = sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	if tex == null:
+		return
+	var g := Sprite2D.new()
+	g.texture = tex
+	g.centered = sprite.centered
+	g.offset = sprite.offset
+	g.flip_h = sprite.flip_h
+	g.scale = sprite.global_scale
+	g.modulate = Color(0.55, 0.85, 1.0, float(c.get("dodge_trail_alpha", 0.4)))
+	g.add_to_group("rastro_esquiva")
+	get_parent().add_child(g)
+	g.global_position = sprite.global_position - Vector2(0, 0.5)   # meio pixel acima: no y-sort fica atrás do jogador
+	var tw := g.create_tween()
+	tw.tween_property(g, "modulate:a", 0.0, float(c.get("dodge_trail_time", 0.2)))
+	tw.tween_callback(g.queue_free)
+
 func _comecar_esquiva(dir: Vector2) -> void:
 	estado = Estado.ESQUIVA
+	_rastro_t = 0.0
 	_dodge_dir = dir.normalized()
 	_dodge_t = stats["dodge_time"]
 	dodge_cd = stats["dodge_cooldown"]
@@ -461,6 +492,7 @@ func saltar(dir: Vector2, dist: float, dur: float) -> void:
 	_dodge_dir = dir.normalized()
 	_dodge_t = dur
 	_salto_vel = dist / maxf(dur, 0.01)
+	_rastro_t = 0.0
 	invencivel = maxf(invencivel, dur)
 	play("dodge", true)
 	Audio.tocar("dodge")

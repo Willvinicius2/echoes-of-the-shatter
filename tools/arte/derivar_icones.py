@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Ícones provisórios derivados de ícones pintados já aprovados (godot/art2d/ui/icone_<id>.png).
+"""Ícones provisórios derivados de ícones pintados já aprovados (art-src/ui/icones_pintados/icone_<id>.png).
 
 Habilidades, reforços e Ecos do arqueiro que ainda não têm ícone próprio usam um ícone aprovado de mesmo tema
 (os do mago e do guerreiro não aparecem na partida do arqueiro), copiado ou com o miolo trocado de matiz; a
 moldura de pedra e ferro fica intacta. Quando o ícone definitivo for pintado (doc 29), basta gravar por cima
 do mesmo arquivo e tirar a linha da tabela abaixo.
 
-Uso: python3 tools/arte/derivar_icones.py [pasta_saida]   (padrão: godot/art2d/ui)
+Uso: python3 tools/arte/derivar_icones.py [pasta_saida]   (padrão: art-src/ui/icones_pintados; depois rode tools/arte/pixelizar_icones.py)
 """
 import colorsys, sys
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter
 
-UI = Path(__file__).resolve().parents[2] / "godot" / "art2d" / "ui"
+UI = Path(__file__).resolve().parents[2] / "art-src" / "ui" / "icones_pintados"
 MOLDURA = 13     # px da moldura que não muda de cor (ícones de 128 px)
 SUAVE = 3        # px de transição entre a moldura e o miolo
 

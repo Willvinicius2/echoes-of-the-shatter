@@ -8,7 +8,7 @@ carta_largura,250,px,largura de cada carta (tela logica de 1280 x 720; quatro ca
 carta_altura,356,px,altura de cada carta
 carta_espaco,22,px,distancia entre as cartas
 carta_margem,14,px,margem interna da carta
-icone_lado,112,px,lado do icone pintado
+icone_lado,144,px,lado do icone na carta (pixel art de 48 px em 2x; use multiplos de 48)
 nome_fonte,19,px,nome da carta (serifa)
 desc_fonte,14,px,descricao da carta
 fio_largura,120,px,fio colorido entre o nome e a descricao
