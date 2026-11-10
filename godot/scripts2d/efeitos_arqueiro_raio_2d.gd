@@ -441,15 +441,7 @@ class Haste extends Node2D:
 				_faiscas.append([_rng.randf() * TAU, _rng.randf_range(10.0, 24.0)])
 
 	func _mais_perto(excluir: Array) -> Node2D:
-		var melhor: Node2D = null
-		var melhor_d := raio
-		for n in get_tree().get_nodes_in_group("hurtable"):
-			if n is Node2D and n.has_method("take_damage") and not excluir.has(n):
-				var d: float = n.global_position.distance_to(global_position)
-				if d <= melhor_d:
-					melhor_d = d
-					melhor = n
-		return melhor
+		return Alvos.centro_mais_proximo(get_tree(), global_position, raio, "take_damage", excluir)
 
 	## Glifo no chão (C0): área real (raio do CSV) tênue, anel interno que encolhe até a próxima descarga e acende nela.
 	func _draw() -> void:
