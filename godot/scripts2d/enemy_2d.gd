@@ -424,6 +424,11 @@ func _feedback_golpe(amount: float, origem: Vector2, morreu: bool) -> void:
 		var dir := (global_position - origem).normalized()
 		_kb = dir * c["enemy_knockback"] * (1.0 - stats.get("kb_resist", 0.0))
 
+## `hp_bar_dy` negativo (Arauto de Pedra: o quadro de 176 px tem folga em cima para os punhos erguidos e para a pilha da morte)
+## desce o topo, e com ele a barra de vida e os números de dano; o positivo só sobe a barra (ver `_draw`).
+func topo_visual() -> float:
+	return super.topo_visual() - minf(0.0, float(stats.get("hp_bar_dy", 0.0)))
+
 func _draw() -> void:
 	super._draw()
 	if estado == Estado.TELEGRAFA and _wind_total > 0.0:
@@ -431,7 +436,7 @@ func _draw() -> void:
 	if stats.get("hp_bar", 0.0) > 0.0 and estado != Estado.MORTO and hp < hp_max:
 		var larg := 40.0
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		var topo := topo_visual() - float(stats.get("hp_bar_dy", 0.0))   # hp_bar_dy: px a mais acima do topo (o morcego bate asa por cima da barra)
+		var topo := topo_visual() - maxf(0.0, float(stats.get("hp_bar_dy", 0.0)))   # hp_bar_dy positivo: px a mais acima do topo (o morcego bate asa por cima da barra)
 		draw_rect(Rect2(-larg / 2.0 - 1.0, topo - 1.0, larg + 2.0, 7.0), Color(0.02, 0.02, 0.03, 0.95))   # borda escura de 1 px
 		draw_rect(Rect2(-larg / 2.0, topo, larg, 5.0), Color(0.12, 0.05, 0.06, 1.0))
 		draw_rect(Rect2(-larg / 2.0, topo, larg * hp / hp_max, 5.0), Color(0.8, 0.15, 0.15))
