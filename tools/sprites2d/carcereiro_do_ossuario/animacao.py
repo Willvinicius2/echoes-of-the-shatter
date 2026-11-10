@@ -62,17 +62,17 @@ def idle(f, n=6):
 def run(f, n=8):
     p = 2 * math.pi * f / n
     pose = {}
-    A = 13.0
+    A = 26.0
     for L, ph in (('L', p), ('R', p + math.pi)):
         sw = math.sin(ph)
         q = -A * sw
         lift = max(0.0, math.cos(ph))
-        k = 5 + 30 * lift ** 1.3
+        k = 8 + 42 * lift ** 1.3
         pose['quad' + L] = (q, 0, 0)
         pose['joe' + L] = (k, 0, 0)
         pose['pe' + L] = (-(q + k), 0, 0)
     lean = 6.0
-    pose['tronco'] = (lean, 7.0 * math.sin(p), 2.0 * math.cos(2 * p))
+    pose['tronco'] = (lean, 10.0 * math.sin(p), 3.0 * math.cos(2 * p))
     pose['cabeca'] = (-lean * 0.6, -4.0 * math.sin(p), 0)
     for L, ph, sg in (('L', p + math.pi, -1), ('R', p, 1)):
         sw = math.sin(ph)
@@ -94,9 +94,9 @@ ATAQUE = [
     # giro do tronco (ty) e abertura entre os braços (ds, em graus de ombro: o direito sobe mais, o esquerdo fica mais à frente).
     # Vistos de lado (direção E) os dois braços erguidos se sobrepunham num poste; o giro e a abertura os separam.
     dict(tr=-7, br=-40, co=-24, y=0.00, z=0.00, qd=0, jo=4, ca=3, ol=0, ty=0, ds=0),
-    dict(tr=-13, br=-100, co=-30, y=0.05, z=-0.03, qd=0, jo=0, ca=6, ol=0, ty=7, ds=5),
-    dict(tr=-19, br=-128, co=-34, y=0.11, z=-0.06, qd=3, jo=-2, ca=9, ol=0, ty=13, ds=10),
-    dict(tr=-22, br=-138, co=-26, y=0.13, z=-0.08, qd=4, jo=-3, ca=10, ol=0, ty=13, ds=10),
+    dict(tr=-13, br=-92, co=-30, y=0.05, z=-0.03, qd=0, jo=0, ca=6, ol=0, ty=7, ds=5),
+    dict(tr=-19, br=-108, co=-34, y=0.11, z=-0.06, qd=3, jo=-2, ca=9, ol=0, ty=13, ds=10),
+    dict(tr=-22, br=-114, co=-26, y=0.13, z=-0.08, qd=4, jo=-3, ca=10, ol=0, ty=13, ds=10),
     dict(tr=12, br=-100, co=-26, y=-0.05, z=0.04, qd=-14, jo=40, ca=-4, ol=0, ty=5, ds=3),
     dict(tr=36, br=-24, co=-10, y=-0.16, z=0.12, qd=-26, jo=62, ca=-16, ol=0, ty=0, ds=0),
     dict(tr=38, br=-22, co=-8, y=-0.18, z=0.13, qd=-26, jo=66, ca=-14, ol=0, ty=0, ds=0),
