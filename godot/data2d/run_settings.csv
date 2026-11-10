@@ -19,8 +19,8 @@ spawn_margem_min,1.0,tiles,ondas nascem ao menos esta distancia fora da borda da
 spawn_margem_max,4.0,tiles,e no maximo esta distancia fora da borda da tela
 next_wave_delay,1.5,s,pausa entre o fim de uma onda (e a carta) e a proxima na fase aberta
 boss_hint_time,3.0,s,tempo do aviso de onde o chefe espera na fase aberta
-xp_level_base,5,xp,XP para o nivel 2 (gemas de XP; plano 31 H4)
-xp_level_step,6,xp,XP a mais por nivel (nivel n pede base + passo x (n - 1))
+xp_level_base,4,xp,XP para o nivel 2 (gemas de XP; plano 31 H4)
+xp_level_step,5,xp,XP a mais por nivel (nivel n pede base + passo x (n - 1))
 level_cards,3,cartas,cartas oferecidas a cada nivel (ao menos uma de ataque)
 chest_cards,3,cartas,cartas raras oferecidas pelo bau de elite
 level_rerolls,2,vezes,sorteios novos da oferta de nivel por corrida
