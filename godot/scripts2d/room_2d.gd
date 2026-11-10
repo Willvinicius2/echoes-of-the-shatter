@@ -64,6 +64,7 @@ var piso_grama := false
 var tema := ""   # "" = o da Cripta; "pedreira" (`@piso pedreira`): chão seco, lajes quentes, sem vaga-lumes
 var decalques: Array = []   # `@decalque`: {arquivo, pos (px), topo}
 var braseiros: Array[Vector2] = []
+var _estruturas: Array = []   # braseiros e pilares do mapa que reagem a fogo, raio e gelo: [{tipo, pos, ate}] (reacoes_2d.gd)
 var caminhos: Array = []  # {larg (células), pts (px)}
 var brilho_estrada := 1.0   # `@brilho_estrada`: fator de luz das lajes da primeira `@caminho` (1 = igual ao resto)
 var riachos: Array = []
@@ -220,9 +221,11 @@ func _montar() -> void:
 					idx = T_PISO_ESCURO
 				"O":
 					idx = T_PILAR
+					_estruturas.append({"tipo": "pilar", "pos": _centro(x, y), "ate": 0})
 				"B":
 					idx = T_BRASEIRO
 					braseiros.append(_centro(x, y))
+					_estruturas.append({"tipo": "braseiro", "pos": _centro(x, y), "ate": 0})
 				"P":
 					spawn_jogador = _centro(x, y)
 				"E":
@@ -603,6 +606,10 @@ func perto_agua(p: Vector2, dist: float) -> bool:
 			if Geometry2D.get_closest_point_to_segment(p, pts[i], pts[i + 1]).distance_to(p) - float(a["meia"]) <= dist:
 				return true
 	return false
+
+## Braseiros e pilares a até `dist` px de `p` (dicionários vivos: a recarga fica neles).
+func estruturas_perto(p: Vector2, dist: float) -> Array:
+	return _estruturas.filter(func(e): return e["pos"].distance_to(p) <= dist)
 
 ## Fase aberta: o mapa é maior que a tela (a câmera segue o jogador e as ondas nascem fora da vista).
 func aberta() -> bool:

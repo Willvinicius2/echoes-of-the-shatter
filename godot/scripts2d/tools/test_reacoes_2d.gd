@@ -106,6 +106,53 @@ func rodar() -> void:
 	var h := _inimigo(mundo, p, base + Vector2(0, 3200))
 	h.aplicar_status("queimadura", 3.0, 2.0)
 	check.call(not h.tem_status("queimadura"), "apagar fogo: a água impede a queimadura")
+	agua.remove_from_group("sala_2d")   # queue_free só vale no fim do quadro; sem isto a água falsa ainda responderia
 	agua.queue_free()
+	# dicas de resistência junto da barra de vida
+	var dc: Array = Reacoes.dicas("skeleton_soldier")
+	check.call(dc.size() == 2 and dc[0]["el"] == "raio" and dc[1]["m"] == 0.0, "dicas: esqueleto sofre mais raio e é imune a veneno")
+	check.call(Reacoes.dicas("hollow_sentinel").is_empty() and cao._dicas.size() == 2, "dicas: sentinela sem dica; cão mostra fogo e gelo")
+	# mapa: braseiros e pilares reagem (sala falsa com um braseiro em (900,4000) e um pilar em (900,4400))
+	var mapa := Node2D.new()
+	mapa.set_script(preload("res://scripts2d/tools/sala_falsa_mapa_2d.gd"))
+	mapa.add_to_group("sala_2d")
+	mundo.add_child(mapa)
+	check.call(Reacoes.defs_mapa().size() == 4, "quatro reações do mapa no CSV")
+	var m1 := _inimigo(mundo, p, Vector2(900, 4040))
+	var m2 := _inimigo(mundo, p, Vector2(960, 4040))
+	var hm: float = m2.hp
+	m1.aplicar_status("queimadura", 3.0, 2.0)
+	check.call(m2.hp < hm and m2.tem_status("queimadura"), "braseiro + fogo: labareda queima quem está em volta")
+	var hm2: float = m2.hp
+	var m3 := _inimigo(mundo, p, Vector2(930, 4040))
+	m3.aplicar_status("queimadura", 3.0, 2.0)
+	check.call(is_equal_approx(m2.hp, hm2), "braseiro tem recarga própria")
+	mapa._estruturas[0]["ate"] = 0
+	var m4 := _inimigo(mundo, p, Vector2(900, 3960))
+	var m5 := _inimigo(mundo, p, Vector2(960, 3960))
+	m4.aplicar_status("choque", 3.0, 0.15)
+	check.call(m1.tem_status("choque") and m3.tem_status("choque") and not m5.tem_status("choque"), "braseiro + raio: descarga choca os 2 vizinhos mais próximos do braseiro")
+	mapa._estruturas[0]["ate"] = 0
+	var m6 := _inimigo(mundo, p, Vector2(900, 4060))
+	m6.set_meta("frio_acumulos", 1)
+	m6.aplicar_status("lentidao", 3.0, 0.2)
+	check.call(int(mapa._estruturas[0]["apagado"]) > Time.get_ticks_msec(), "braseiro + gelo: apaga o braseiro")
+	mapa._estruturas[0]["ate"] = 0
+	var m7 := _inimigo(mundo, p, Vector2(930, 4080))
+	var m8 := _inimigo(mundo, p, Vector2(990, 4080))
+	var hm8: float = m8.hp
+	m7.aplicar_status("queimadura", 3.0, 2.0)
+	check.call(is_equal_approx(m8.hp, hm8), "braseiro apagado não reage")
+	var q1 := _inimigo(mundo, p, Vector2(900, 4440))
+	var q2 := _inimigo(mundo, p, Vector2(1000, 4440))
+	var hq: float = q2.hp
+	q1.aplicar_status("choque", 3.0, 0.15)
+	check.call(q2.hp < hq and q2.tem_status("choque"), "pilar + raio: para-raios descarrega no vizinho")
+	var far := _inimigo(mundo, p, Vector2(2500, 4440))
+	var fv := _inimigo(mundo, p, Vector2(2560, 4440))
+	var hf2: float = fv.hp
+	far.aplicar_status("choque", 3.0, 0.15)
+	check.call(is_equal_approx(fv.hp, hf2), "longe de braseiro e pilar nada reage")
+	mapa.queue_free()
 	mundo.queue_free()
 	await t.physics_frame
