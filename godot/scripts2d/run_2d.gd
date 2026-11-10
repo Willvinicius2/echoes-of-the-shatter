@@ -353,7 +353,10 @@ func _ajustar_camera(cortar := true) -> void:
 		camera.position = tam / 2.0
 		camera.zoom = Vector2(cabe, cabe)
 		return
-	var z := maxf(float(config.get("camera_zoom", 1.0)), cabe)   # nunca mostra além da borda do mapa
+	var k := 1.0   # mundo em SubViewport de pixel art: mantém o campo de visão de antes (altura de referência)
+	if ui_raiz != null:
+		k = vp.y / float(config.get("pixel_ref_altura", 900.0))
+	var z := maxf(float(config.get("camera_zoom", 1.0)) * k, cabe)   # nunca mostra além da borda do mapa
 	camera.zoom = Vector2(z, z)
 	camera.limit_left = 0
 	camera.limit_top = 0

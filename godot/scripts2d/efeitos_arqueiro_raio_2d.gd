@@ -4,6 +4,7 @@ extends RefCounted
 ## A integradora delega daqui por `match` (efeitos "flecha_eletrica", "raio_encadeado", "tornado") e chama
 ## `ao_morrer(inimigo)` na morte do inimigo para o Arauto do Trovão. Folhas em res://art2d/fx/raio/.
 
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
@@ -178,11 +179,10 @@ static func ao_morrer(inimigo: Node2D) -> void:
 			imp.preparar(_tex("raio_impacto"), 8, 24.0, false, Vector2.ZERO)
 			imp.global_position = pos
 			cena.add_child(imp)
-			for n in tree.get_nodes_in_group("hurtable"):
-				if n != inimigo and n is Node2D and n.global_position.distance_to(pos) <= raio:
-					n.take_damage(dano, pos)
-					if is_instance_valid(n) and n.has_method("aplicar_status"):
-						aplicar_choque(n, def.get("duracao", 3.0), 0.15)
+			for n in Alvos.no_raio(tree, pos, raio, "", inimigo):
+				n.take_damage(dano, pos)
+				if is_instance_valid(n) and n.has_method("aplicar_status"):
+					aplicar_choque(n, def.get("duracao", 3.0), 0.15)
 
 ## Liga o Arauto do Trovão (gema equipada): guarda a linha do CSV no jogador e põe a aura. Desliga com def vazio.
 static func ativar_arauto(jogador: Node2D, def: Dictionary) -> void:
@@ -339,9 +339,8 @@ class Tornado extends Node2D:
 					n.global_position += v.normalized() * minf(puxa * delta, v.length())
 		if _acc >= pulso:
 			_acc = 0.0
-			for n in get_tree().get_nodes_in_group("hurtable"):
-				if n is Node2D and n.has_method("take_damage") and n.global_position.distance_to(global_position) <= raio:
-					n.take_damage(dano, global_position)
+			for n in Alvos.no_raio(get_tree(), global_position, raio, "take_damage"):
+				n.take_damage(dano, global_position)
 		if _t >= duracao:
 			queue_free()
 			return

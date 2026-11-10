@@ -4,6 +4,7 @@ extends RefCounted
 ## Entrada: `executar(efeito, jogador, def, nivel, mira)` com efeito = tiro_veneno | bola_veneno | chuva_corrosiva.
 ## Gancho do Herald: `arauto_peste_morte(inimigo, def)`. A integradora liga os dois em efeitos_arqueiro_2d.gd.
 
+const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const Recolor = preload("res://scripts2d/recolor_2d.gd")
@@ -57,10 +58,8 @@ static func arauto_peste_morte(inimigo: Node2D, def: Dictionary) -> void:
 	var raio: float = def.get("raio", 140.0)
 	var pai := inimigo.get_parent()
 	_anim_unica(pai, "fx_veneno_arauto_gatilho", inimigo.global_position + Vector2(0, -40), raio / 64.0)
-	for n in inimigo.get_tree().get_nodes_in_group("hurtable"):
-		if n != inimigo and n is Node2D and n.has_method("aplicar_status") \
-				and n.global_position.distance_to(inimigo.global_position) <= raio:
-			n.aplicar_status("veneno", def.get("duracao", 3.0), def.get("valor", 4.0))
+	for n in Alvos.no_raio(inimigo.get_tree(), inimigo.global_position, raio, "aplicar_status", inimigo):
+		n.aplicar_status("veneno", def.get("duracao", 3.0), def.get("valor", 4.0))
 
 ## Overlay curto do status veneno no inimigo (bolhas verdes subindo). Chamar quando aplica o status.
 static func overlay_status(inimigo: Node2D, dur: float) -> void:
@@ -231,11 +230,7 @@ class ZonaVeneno extends Node2D:
 		Vfx.anel_entrada(get_parent(), global_position, raio, VERDE)   # anel de entrada (doc 33 seção 2)
 
 	func _alvos() -> Array:
-		var out := []
-		for n in get_tree().get_nodes_in_group("hurtable"):
-			if n is Node2D and n.global_position.distance_to(global_position) <= raio:
-				out.append(n)
-		return out
+		return Alvos.no_raio(get_tree(), global_position, raio)
 
 	func _physics_process(delta: float) -> void:
 		_t += delta

@@ -1,13 +1,14 @@
 # Echoes of the Shatter — instruções para o Claude Code
 
-ARPG single-player em 3D estilizado (câmera fixa 3/4) com expedições idle, para Steam (Acesso Antecipado).
+ARPG roguelike single-player em 2D top-down em pixel art (visual 2D definitivo desde 29/10/2026) com expedições idle, para Steam (Acesso Antecipado).
 Motor: **Godot 4 (.NET, C#)** (decisão do dono em 20/10/2026; antes Unity 6.3, UE 5.8 e o Godot 4 do plano original). O ShatterCore (C++17) vira biblioteca nativa chamada por P/Invoke. Plano e o que mudou: `docs/tecnico/23_migracao_godot.md`. O último estado da Unity está no branch `arquivo/unity-final`; não restaure Unity no `master`.
 
 ## Máquina e disco
 - O disco C está cheio: tudo do projeto fica no disco D. Repositório em `D:\openclaude\EchoesOfTheShatter`, arquivos de trabalho em `D:\openclaude\_trabalho-claude`.
 - Godot e MCP do Godot ficam no disco D. O projeto Godot fica em `godot/` (criado pela migração). A pasta Unity antiga do PC só é apagada quando o dono confirmar.
 
-## Direção de arte (aprovada em 16/10/2026)
+## Direção de arte
+- **Vigente: 2D top-down em pixel art** (`docs/arte/26_direcao_visual_2d.md`). As linhas abaixo sobre 3D estilo Spell Brigade são histórico de 16/10 e só valem como referência de estilo.
 - O visual segue o estilo do Spell Brigade: 3D estilizado pintado à mão, heróis chibi, magia em neon e UI de pedra escura. As decisões de renderização estão em `docs/arte/08_decisoes_visual_3d.md`.
 - As referências aprovadas e as folhas oficiais de heróis, inimigos, chefes, cenários e ícones estão em `docs/arte/referencias-geracao/` (ver o README dessa pasta). Todo personagem novo deve seguir essas folhas.
 - Os assets extraídos do Spell Brigade (`D:\openclaude\spell-brigade-re`) servem só de referência de estilo. Nunca entram no projeto nem no build.
@@ -64,6 +65,7 @@ Não use o modelo mais caro para trabalho que o mais barato resolve: isso gasta 
 - Nunca use `--force` no `master`, nunca reescreva histórico já enviado e nunca apague branch sem o ok do dono.
 - O hook Stop de `.claude/settings.json` (`tools/git/checar_envio.py`) não deixa a sessão encerrar a vez com commit que não está no GitHub.
 - Ao fechar uma etapa, ou quando o dono pedir, rode o agente `guardiao-github` (confere todas as worktrees e envia o que faltar) e depois o `painel-progresso`.
+- Capturas, prévias e PNGs de revisão nunca entram no Git (o histórico já chegou a 822 MB): guarde em `/mnt/project-files/capturas/` ou no artefato do CI e cite o caminho no PR. Ver `docs/tecnico/27_capturas_fora_do_git.md`.
 - Ficam fora do GitHub de propósito: caches, `venv`, saídas brutas do TripoSG em `_trabalho-claude/modelos3d/`, imagens de trabalho do Codex, packs KayKit e os assets do Spell Brigade. A arte aprovada entra no repositório.
 
 ## Como compilar e testar o ShatterCore
@@ -92,9 +94,9 @@ O MSVC local não acusa vários avisos que o GCC e o Clang do CI tratam como err
 - Arte 3D: o `escolhedor-ferramentas` também é o revisor crítico; o que ia para aprovação do dono passa antes por ele, e só chega ao dono o que estiver bonito. O dono continua sendo quem aprova a arte.
 
 ## Pendências de decisão
-- **PRIORIDADE MÁXIMA — Alinhamento de Contexto, Dupla e Escopo (`docs/design/20_alinhamento_ia_e_escopo.md`):** Antes de iniciar qualquer nova frente ou disparar subagentes, leia `docs/design/20_alinhamento_ia_e_escopo.md` e peça ao dono para decidir as duas pendências prioritárias em `docs/progresso/estado.json` (`fluxo-agentes-contexto` e `foco-fatia-vertical`). Não aprove artes nem decisões de design em nome do dono.
+- Fluxo dos agentes (decidido em 09/11/2026): uma thread por assunto, contexto enxuto pelo índice `docs/design/20_alinhamento_ia_e_escopo.md` e pelos cartões de contexto, passagem de bastão curta ao fechar. Foco da fatia vertical: o Arqueiro no jogo 2D. Não aprove artes nem decisões de design em nome do dono; a revisão é das threads revisoras.
 - Versão do Godot 4.x/.NET e o carregamento da biblioteca nativa no export: definir ao criar o projeto (doc 23).
 - O protótipo Godot F1 fica em `prototipos/godot-f1/` como referência de game feel (2D, GDScript). Não é a base do jogo atual. Como rodar: `prototipos/godot-f1/COMO_RODAR.md`.
 
 ## Próximo passo
-Etapa 2, fatia jogável da Cripta, agora no Godot (ver `docs/design/15_etapas.md` e `docs/tecnico/23_migracao_godot.md`): primeiro a Cripta montada no Godot via MCP, depois o Guerreiro, ligados ao core. Layout da Cripta na escala A (`docs/tecnico/14_layout_cripta.md`), modelos 3D gerados pelo TripoSG a partir de `docs/arte/referencias-geracao/aprovadas/modelagem/` e cenário da Cripta.
+Fatia jogável 2D do Arqueiro (ver `docs/design/27_cronograma_jogavel.md` e `docs/progresso/estado.json`): inimigos em pixel art da Pedreira dos Ecos (área 2, falta saldo no PixelLab), elites e chefe em escala maior, depois meta-progressão com save, hub com craft básico e exploração por rotas, e por fim a migração das regras ao ShatterCore.

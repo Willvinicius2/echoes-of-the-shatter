@@ -30,7 +30,7 @@ Haiku: Git, LFS, conferir envio, rodar script pronto. Sonnet 5.5: padrão (model
 | Áudio | `godot-audio` | — | Godot | Sonnet |
 | Testes e QA | `godot-gdscript-headless-testing`, `performance-optimization` | `docs/requisitos-qa/10_qa.md` | ctest, Godot headless | Sonnet |
 | Export / Steam | `godot-export`, `steam-publish` | `docs/design/15_etapas.md` (etapa 5) | Godot export | Sonnet |
-| Git, LFS, PR | nenhuma | `.gitattributes` (LFS para `.blend`, `.fbx`, `.dll`) | `guardiao-github`; branch temporária, PR, CI verde, merge, apagar branch | Haiku |
+| Git, LFS, PR | nenhuma | `.gitattributes` (LFS para `.blend`, `.fbx`, `.dll`); capturas e prévias de revisão NÃO entram no Git (`docs/tecnico/27_capturas_fora_do_git.md`): vão para `/mnt/project-files/capturas/` ou artefato do CI | | `guardiao-github`; branch temporária, PR, CI verde, merge, apagar branch | Haiku |
 | Pesquisa de referência | — | `pesquisador-referencias` | WebSearch/WebFetch | Sonnet |
 | Painel/roteiro | — | `docs/progresso/estado.json` | `painel-progresso` | Sonnet |
 

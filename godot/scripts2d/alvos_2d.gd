@@ -15,6 +15,15 @@ static func em_circulo(arvore: SceneTree, centro: Vector2, raio: float) -> Array
 			out.append(n)
 	return out
 
+## Inimigos cujo CENTRO está a até `r` de `centro` (sem descontar o raio do corpo, ao contrário de `em_circulo`).
+## `metodo`: exige que o nó tenha esse método (ex.: "take_damage", "aplicar_status"). `excluir`: nó que fica de fora.
+static func no_raio(arvore: SceneTree, centro: Vector2, r: float, metodo := "", excluir: Node = null) -> Array:
+	var out := []
+	for n in vivos(arvore):
+		if n is Node2D and n != excluir and (metodo == "" or n.has_method(metodo)) and n.global_position.distance_to(centro) <= r:
+			out.append(n)
+	return out
+
 ## Cone com vértice em `origem`, abertura total `angulo` (graus) e comprimento `compr`.
 static func em_cone(arvore: SceneTree, origem: Vector2, dir: Vector2, compr: float, angulo: float) -> Array:
 	var out := []
