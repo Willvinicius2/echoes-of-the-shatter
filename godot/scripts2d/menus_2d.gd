@@ -132,6 +132,8 @@ func mostrar_titulo() -> void:
 	var linhas := []
 	if meta != null:
 		linhas = _resumo_hub()
+		if linhas.size() > 1 and not meta.materiais.is_empty() and not str(linhas[1]).begins_with(Csv.t("menu.forge_equipped").split("%")[0]):
+			linhas.remove_at(1)   # os materiais aparecem na Forja; no título a lista comprida empurrava os botões para fora da tela
 	_no_hub = true
 	var botoes := [["menu.play", _jogar_do_titulo, jogar_bloqueado()], ["menu.forge", mostrar_forja], ["menu.meta", mostrar_meta]]
 	if opcoes.prologo_visto:
@@ -428,7 +430,7 @@ func _montar(t: Tela, titulo: String, subtitulo: String, botoes: Array, linhas: 
 		c.queue_free()
 	_caixa.custom_minimum_size.x = 560 if t == Tela.TITULO else 420
 	_caixa.add_theme_constant_override("separation", 10 if t == Tela.TITULO else 14)
-	_centro.anchor_left = 0.3 if t == Tela.TITULO else 0.0   # título: o painel vai para a direita e deixa os heróis da arte à vista
+	_centro.anchor_right = 0.52 if t == Tela.TITULO else 1.0   # título: o painel fica à esquerda e deixa o céu e o sino da arte à vista
 	var titulo_l := _rotulo(Csv.t(titulo), 46 if t == Tela.TITULO else 40, Tema.cor("destaque"))
 	titulo_l.add_theme_font_override("font", load(FONTE_TITULO))
 	if t == Tela.TITULO:
@@ -498,6 +500,7 @@ func _rotulo(texto: String, tam: int, cor := Color(0.9, 0.88, 0.84)) -> Label:
 	l.add_theme_font_size_override("font_size", tam)
 	l.add_theme_color_override("font_color", cor)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = _caixa.custom_minimum_size.x   # sem largura mínima, uma linha comprida quebra palavra por palavra e estica o painel para fora da tela
 	_caixa.add_child(l)
 	return l
 
