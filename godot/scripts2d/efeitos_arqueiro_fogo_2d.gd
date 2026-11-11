@@ -175,7 +175,6 @@ class _Meteoro extends Node2D:
 	var _caiu := false
 	var _queda: Node2D
 	var _aviso: Node2D
-	var _avisou := false   # o aviso some sozinho; um nó liberado compara igual a null, então a vez é marcada à parte
 
 	func preparar(p: Vector2, r: float, d: float, du: float, v: float) -> void:
 		position = p
@@ -197,8 +196,7 @@ class _Meteoro extends Node2D:
 		if atraso > 0.0:
 			atraso -= delta
 			return
-		if not _avisou:
-			_avisou = true
+		if _aviso == null and not _caiu:
 			_queda.visible = true
 			_aviso = Vfx.sombra_aviso(get_parent(), global_position, raio, COR_BRASA, TEMPO_QUEDA)   # sombra de aviso (C0)
 		_t += delta

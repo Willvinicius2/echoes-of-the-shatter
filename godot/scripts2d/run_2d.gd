@@ -856,6 +856,8 @@ func _aprender_gema(id: String) -> void:
 
 ## Abre a tela de cartas se o core tem uma oferta de nível ou de baú esperando.
 func _checar_oferta_nivel() -> void:
+	if player != null and "nivel_partida" in player:
+		player.nivel_partida = _nivel_atual()
 	if ui.aberta or not upgrades.has_method("nivel_estado"):
 		return
 	var n: Dictionary = upgrades.nivel_estado()
