@@ -98,6 +98,10 @@ func _iniciar(g: Dictionary) -> void:
 			if _pontos.is_empty():
 				for i in n:
 					_pontos.append(global_position + Vector2.from_angle(TAU * i / n + 0.5) * _num("raio"))
+	for i in _pontos.size():   # a ninhada nasce deslocada do jogador (pelo menos ~1 tile): o filhote não esconde o herói
+		var d: Vector2 = _pontos[i] - alvo.global_position
+		if d.length() < 80.0:
+			_pontos[i] = alvo.global_position + (d.normalized() if d.length() > 0.01 else Vector2.RIGHT) * 80.0
 	velocity = Vector2.ZERO
 	play("idle", true)
 	tremer_sprite(2.0, _aviso)
@@ -207,9 +211,9 @@ func _aviso_teia(p: float) -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	draw_line(Vector2(0, -60), c, Color(0.9, 0.97, 1.0, 0.25 + 0.5 * p), 1.0)   # o fio que ela lança até o ponto
 	draw_set_transform(c, 0.0, Vector2(1.0, Efeitos.ACHATA))
-	draw_circle(Vector2.ZERO, r, Color(Efeitos.COR_TEIA.r, Efeitos.COR_TEIA.g, Efeitos.COR_TEIA.b, 0.08 + 0.1 * p))
-	draw_circle(Vector2.ZERO, r * p, Color(Efeitos.COR_TEIA.r, Efeitos.COR_TEIA.g, Efeitos.COR_TEIA.b, 0.25))
-	draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(0.9, 0.97, 1.0, 0.45 + 0.5 * p), 2.0)
+	draw_circle(Vector2.ZERO, r, Color(Efeitos.COR_TEIA.r, Efeitos.COR_TEIA.g, Efeitos.COR_TEIA.b, 0.2 + 0.18 * p))
+	draw_circle(Vector2.ZERO, r * p, Color(Efeitos.COR_TEIA.r, Efeitos.COR_TEIA.g, Efeitos.COR_TEIA.b, 0.4))
+	draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(1.0, 1.0, 1.0, 0.8 + 0.2 * p), 2.0)   # borda branca
 	for i in 6:
 		draw_line(Vector2.ZERO, Vector2.from_angle(TAU * i / 6.0 + 0.2) * r * p, Color(0.9, 0.97, 1.0, 0.6), 1.0)
 
@@ -228,10 +232,10 @@ func _aviso_filhotes(p: float) -> void:
 	for pt in _pontos:
 		var c := to_local(pt)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		draw_line(Vector2(0, -50), c, Color(0.85, 0.9, 1.0, 0.2 + 0.35 * p), 1.0)
-		draw_set_transform(c, 0.0, Vector2(1.0, Efeitos.ACHATA))
-		var r := 14.0 + 16.0 * p
-		draw_circle(Vector2.ZERO, r, Color(0.05, 0.04, 0.05, 0.45))
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 24, Color(1.0, 0.7, 0.25, 0.5 + 0.5 * p), 2.0)
-		for i in 5:   # fendas de onde as aranhas saem
-			draw_line(Vector2.ZERO, Vector2.from_angle(TAU * i / 5.0 + c.x) * r * 1.3, Color(1.0, 0.7, 0.25, 0.6), 1.0)
+		draw_line(Vector2(0, -50), c, Color(1.0, 0.72, 0.3, 0.2 + 0.35 * p), 1.0)
+		draw_set_transform(c, 0.0, Vector2(1.0, Efeitos.ACHATA))   # círculo de convocação: 4 anéis que se fecham no ponto, na cor do aviso da badalada
+		draw_circle(Vector2.ZERO, 34.0, Color(0.05, 0.04, 0.05, 0.35 + 0.2 * p))
+		for k in 4:
+			var f := fposmod(p * 2.0 + k / 4.0, 1.0)
+			draw_arc(Vector2.ZERO, 12.0 + 26.0 * (1.0 - f), 0.0, TAU, 28, Color(1.0, 0.72, 0.3, 0.35 + 0.65 * f), 2.0)
+		draw_arc(Vector2.ZERO, 38.0, 0.0, TAU, 28, Color(1.0, 0.78, 0.4, 0.5 + 0.5 * p), 3.0)
