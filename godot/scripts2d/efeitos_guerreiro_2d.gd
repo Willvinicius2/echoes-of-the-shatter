@@ -363,10 +363,28 @@ class EspadasEspectrais extends Node2D:
 	var ang := 0.0
 	var espadas: Array = []
 	var bateu := {}   # id do inimigo -> instante (ms) do último toque
+	var _pulso := 0.0
+
+	func _ready() -> void:
+		show_behind_parent = true
+
+	func _draw() -> void:
+		if espadas.is_empty():
+			return
+		# aura no chão (anel de aço tracejado, cores chapadas): fica sob o herói e cresce com as espadas
+		var r: float = j.stats.get("espadas_raio", 74.0) * (1.0 + 0.04 * sin(_pulso * 2.0))
+		draw_set_transform(Vector2(0, -2), 0.0, Vector2(1.0, 0.6))
+		var n := 24
+		for i in n:
+			if i % 2 == 0:
+				draw_arc(Vector2.ZERO, r, TAU * i / n + _pulso * 0.3, TAU * (i + 1) / n + _pulso * 0.3, 6, Color(0.55, 0.78, 1.0), 2.0)
+		draw_arc(Vector2.ZERO, r * 0.55, 0.0, TAU, 24, Color(0.35, 0.5, 0.75), 1.0)
 
 	func _physics_process(delta: float) -> void:
 		if not is_instance_valid(j) or j.esta_morto():
 			return
+		_pulso += delta
+		queue_redraw()
 		var alvo := mini(int(j.nivel_partida * j.stats.get("espadas_por_nivel", 0.0)), int(j.stats.get("espadas_max", 0.0)))
 		while espadas.size() < alvo:
 			var s := Fxg.criar("lamina", 46.0, 0.0, Color(0.75, 0.9, 1.0))
@@ -490,14 +508,83 @@ static func _erupcao(j: Node2D, d: Dictionary, mira: Vector2) -> void:
 				return
 			Vfx.sombra_aviso(cena, p, d["raio"], CORES["fogo"], 0.2)
 			j.get_tree().create_timer(0.2, false).timeout.connect(func():
-				if not is_instance_valid(j) or not is_instance_valid(cena):
-					return
-				Fx.tocar(cena, "pilar_fogo", p, d["raio"] * 2.0, 0.0, Color(1, 1, 1, 0.8), -1)   # atrás dos atores e translúcido: o herói não some na chama
-				for a in _perto(j, p, d["raio"]):
-					j.acertar(a, d["dano"])
-					j.aplicar_status(a, "queimadura", d["duracao"], d["valor"])
-				zona_chao(j, p, d["raio"] * 0.8, d["duracao"], "queimadura", d["valor"])
-				Feel.shake(j, 4.0, 0.12)))
+				if is_instance_valid(j) and is_instance_valid(cena):
+					_pilar(j, d, p)))
+
+## Coluna de fogo no ponto `p`: fere, queima e deixa brasas.
+static func _pilar(j: Node2D, d: Dictionary, p: Vector2) -> void:
+	var cena: Node = j.get_parent()
+	Fx.tocar(cena, "pilar_fogo", p, d["raio"] * 2.0, 0.0, Color(1, 1, 1, 0.8), -1)   # atrás dos atores e translúcido: o herói não some na chama
+	for a in _perto(j, p, d["raio"]):
+		j.acertar(a, d["dano"])
+		j.aplicar_status(a, "queimadura", d["duracao"], d["valor"])
+	zona_chao(j, p, d["raio"] * 0.8, d["duracao"], "queimadura", d["valor"])
+	Feel.shake(j, 4.0, 0.12)
+
+## Reverberação: o eco de uma ativa já aprendida cai em `p` (do céu, anel no chão, poça ou cadeia de raios), sem animação do herói.
+static func reverberar(j: Node2D, d: Dictionary, p: Vector2) -> void:
+	var cena: Node = j.get_parent()
+	match str(d.get("efeito", "")):
+		"golpe_trovao", "laminas_tempestade":
+			_golpe_trovao(j, d, p)
+		"erupcao", "onda_flamejante":
+			Vfx.sombra_aviso(cena, p, d["raio"], CORES["fogo"], 0.2)
+			j.get_tree().create_timer(0.2, false).timeout.connect(func():
+				if is_instance_valid(j) and is_instance_valid(cena):
+					_pilar(j, d, p))
+		"cravar_gelido", "escudo_geada":
+			for a in _perto(j, p, d["raio"]):
+				j.acertar(a, d["dano"])
+				Gelo.acumular_frio(a, int(d.get("qtd", 2)), d)
+			Fx.tocar(cena, "anel_gelo", p, d["raio"], 0.0, Color.WHITE, 0)
+		"talho_pestilento", "estandarte_peste":
+			for a in _perto(j, p, d["raio"]):
+				j.acertar(a, d["dano"])
+				j.aplicar_status(a, "veneno", d["duracao"], d["valor"])
+			Fx.tocar(cena, "onda", p, d["raio"], 0.0, TINTAS["veneno"], 0)
+			zona_chao(j, p, d["raio"] * 0.8, d["duracao"], "veneno", d["valor"])
+
+## Reverberações: de tempos em tempos cada ativa elemental aprendida ecoa sobre inimigos aleatórios. Quanto maior o nível da
+## partida, mais seguidas e mais numerosas (data2d/guerreiro.csv: rev_*). Habilidade no nível máximo conta em dobro e ecoa maior.
+class Reverberacoes extends Node2D:
+	const Efeitos = preload("res://scripts2d/efeitos_guerreiro_2d.gd")
+	const ELEMENTAIS := ["golpe_trovao", "laminas_tempestade", "erupcao", "onda_flamejante", "cravar_gelido", "escudo_geada", "talho_pestilento", "estandarte_peste"]
+	var j: Node2D
+	var _t := 1.0
+
+	func _physics_process(delta: float) -> void:
+		if not is_instance_valid(j) or j.esta_morto():
+			return
+		var np: int = j.nivel_partida
+		if np < int(j.stats.get("rev_nivel_min", 5.0)):
+			return
+		_t -= delta
+		if _t > 0.0:
+			return
+		_t = maxf(j.stats.get("rev_intervalo_min", 0.3), j.stats.get("rev_intervalo", 1.6) - j.stats.get("rev_intervalo_por_nivel", 0.08) * np)
+		var sk = j.habilidades
+		var ids: Array = []
+		for id in sk.niveis:
+			if sk.eh_ativa(id) and ELEMENTAIS.has(sk.defs[id]["efeito"]):
+				ids.append(id)
+				if sk.nivel(id) >= int(sk.defs[id]["nivel_max"]):
+					ids.append(id)
+		if ids.is_empty():
+			return
+		var alvos: Array = Efeitos._perto(j, j.global_position, j.stats.get("rev_alcance", 460.0)).filter(func(a): return Efeitos._vivo(a))
+		if alvos.is_empty():
+			return
+		var n := mini(1 + int(np * j.stats.get("rev_por_nivel", 0.15)), int(j.stats.get("rev_max", 6.0)))
+		for i in n:
+			var id: String = ids[randi() % ids.size()]
+			var d: Dictionary = Efeitos._crescer_com_nivel(j, sk.def_nivel(id))
+			d["dano"] = d["dano"] * j.stats.get("rev_dano", 0.5)
+			if sk.nivel(id) >= int(sk.defs[id]["nivel_max"]):
+				d["raio"] = d["raio"] * 1.35
+			var p: Vector2 = alvos[randi() % alvos.size()].global_position
+			get_tree().create_timer(0.08 * i + 0.01, false).timeout.connect(func():
+				if is_instance_valid(j) and not j.esta_morto():
+					Efeitos.reverberar(j, d, p))
 
 # ---------------------------------------------------------------- zonas no chão (brasa e poça de veneno)
 

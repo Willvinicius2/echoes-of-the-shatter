@@ -7,6 +7,7 @@ const HabScript = preload("res://scripts2d/habilidades_2d.gd")
 const CorridaScript = preload("res://scripts2d/upgrades_2d.gd")
 const Afinidades = preload("res://scripts2d/afinidades_2d.gd")
 const Fx = preload("res://scripts2d/fx_guerreiro_2d.gd")
+const Efeitos = preload("res://scripts2d/efeitos_guerreiro_2d.gd")
 const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
 const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
@@ -478,7 +479,6 @@ func _horda() -> void:
 func _escalada() -> void:
 	var j = await _novo_guerreiro(60)
 	j.god_mode = true
-	var Efeitos = preload("res://scripts2d/efeitos_guerreiro_2d.gd")
 	var def: Dictionary = {"qtd": 2.0, "raio": 100.0, "duracao": 2.0, "ramo": "raio"}
 	j.nivel_partida = 1
 	check.call(Efeitos._crescer_com_nivel(j, def)["qtd"] == 2.0, "escalada: nível 1 não muda a habilidade")
@@ -496,5 +496,13 @@ func _escalada() -> void:
 			espadas += 1
 	check.call(espadas >= 1, "escalada: espadas espectrais existem como filhas do guerreiro")
 	check.call(j.stats.get("cd_por_nivel", 0.0) > 0.0 and j.stats.get("espadas_max", 0.0) > 0.0, "escalada: números nos dados do guerreiro")
+	for efeito in ["golpe_trovao", "erupcao", "cravar_gelido", "talho_pestilento"]:
+		Efeitos.reverberar(j, {"efeito": efeito, "dano": 1.0, "raio": 60.0, "duracao": 2.0, "valor": 2.0, "qtd": 2.0}, j.global_position + Vector2(120, 0))
+	await t.physics_frame
+	var rev := 0
+	for c in j.get_children():
+		if c is Efeitos.Reverberacoes:
+			rev += 1
+	check.call(rev == 1, "escalada: guerreiro tem o nó de reverberações e as quatro reverberações rodam")
 	j.queue_free()
 	await t.physics_frame

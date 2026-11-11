@@ -83,3 +83,11 @@ onda_alcance,300,px,alcance da onda de corte
 hab_qtd_por_nivel,0.15,,Alvos extras das habilidades elementais por nível de partida
 hab_raio_por_nivel,0.02,,Raio extra das habilidades por nível de partida
 hab_duracao_por_nivel,0.02,,Duração extra das habilidades elementais por nível de partida
+rev_nivel_min,4,,Nivel da partida em que as ativas comecam a reverberar
+rev_intervalo,1.5,s,Intervalo entre reverberacoes no nivel minimo
+rev_intervalo_por_nivel,0.07,s,Quanto o intervalo encurta por nivel
+rev_intervalo_min,0.35,s,Menor intervalo
+rev_por_nivel,0.2,,Ecos por rajada a cada nivel
+rev_max,7,,Maximo de ecos por rajada
+rev_dano,0.5,x,Dano do eco em relacao a habilidade
+rev_alcance,460,px,Alcance para escolher alvos

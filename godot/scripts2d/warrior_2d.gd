@@ -84,6 +84,9 @@ func _ready() -> void:
 	var espectrais := Efeitos.EspadasEspectrais.new()
 	espectrais.j = self
 	add_child(espectrais)
+	var reverb := Efeitos.Reverberacoes.new()
+	reverb.j = self
+	add_child(reverb)
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("guerreiro")
