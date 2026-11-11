@@ -1,5 +1,5 @@
 chave,valor,unidade,nota
-hp_max,120,hp,vida do arqueiro
+hp_max,100,hp,vida do arqueiro
 speed,260,px/s,velocidade de corrida
 accel,2400,px/s2,aceleracao
 friction,3000,px/s2,desaceleracao
