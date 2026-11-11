@@ -5,7 +5,7 @@ extends SceneTree
 ##         --script res://scripts2d/tools/video_poder_2d.gd -- 20
 ## Argumento: segundos por trecho. Com `foto pasta` no lugar, grava PNGs (um a cada 15 quadros).
 const MainScene = preload("res://scenes2d/Main2D.tscn")
-const SKILLS := ["power_shot", "storm_orbs", "arrow_rain", "toxic_mines"]
+const SKILLS := ["icicle_lance", "toxic_mines", "storm_tornado", "flecha_meteoro"]
 var run
 var p
 var legenda: Label
@@ -47,7 +47,7 @@ func _initialize() -> void:
 			h.equipar(s, "")
 		for s in (1 if nv == 1 else (3 if nv == 8 else 4)):
 			h.equipar(s, SKILLS[s])
-		legenda.text = "Nível %d" % nv
+		legenda.text = "Poder de nível %d (simulado)" % nv
 		for i in int(dur * float(Engine.physics_ticks_per_second)):
 			if run.ui.aberta:
 				run.ui.escolher(0)

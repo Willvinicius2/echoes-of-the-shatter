@@ -75,10 +75,10 @@ class Feixe extends Node2D:
 		var comp := _comp * cresce
 		_fim = d * comp
 		# 1) rastro da varredura: três leques de chão que ficam para trás (resíduo), do mais velho ao mais novo
-		for k in 3:
+		for k in 2:
 			var ak := a - float(k + 1) * 0.09 * signf(_arco) * (1.0 if _t < _dur else 0.0)
 			var dk := Vector2.from_angle(ak)
-			draw_line(Vector2.ZERO, dk * comp * (0.9 - 0.12 * k), Color(_cor[0], 0.35 - 0.1 * k), _larg * 0.5, false)
+			draw_line(Vector2.ZERO, dk * comp * (0.9 - 0.12 * k), _cor[0] if k == 0 else _cor[1], _larg * (0.45 - 0.2 * k), false)
 		# 2) corpo em degraus (borda dura): casca, miolo, fio de luz; larga na ponta, fina na boca
 		for faixa in 3:
 			var esc: float = [1.0, 0.62, 0.22][faixa]

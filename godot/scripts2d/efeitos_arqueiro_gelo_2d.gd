@@ -483,7 +483,6 @@ class Nova extends Node2D:
 		var apaga := clampf((VIDA - _t) / 0.35, 0.0, 1.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
 		# pixel art de 3 tons com borda dura: banda de geada, fio claro e contorno escuro (sem alfa suave)
-		draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.12 * apaga))
 		draw_arc(Vector2.ZERO, r * 0.93, 0.0, TAU, 48, Color(PAL[1], 0.95 * apaga), 16.0)    # banda de geada
 		draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(PAL[0], apaga), 6.0)                   # fio claro da borda
 		draw_arc(Vector2.ZERO, r * 0.84, 0.0, TAU, 48, Color(PAL[2], 0.9 * apaga), 3.0)      # contorno escuro interno
