@@ -177,7 +177,7 @@ TEST(rogue_waves_finalize_cross_checks) {
     int missing = 0;
     for (const ContentError& e : d.Errors())
         missing += e.message.find("has no") != std::string::npos ? 1 : 0;
-    EXPECT_EQ(missing, 3);  // cripta e pedreira sem linha de fase e "outra" sem ondas
+    EXPECT_EQ(missing, 4);  // cripta, pedreira e ponte sem linha de fase e "outra" sem ondas
     fs::remove_all(dir);
 }
 

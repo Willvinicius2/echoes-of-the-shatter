@@ -47,7 +47,14 @@ static func enemy(id: String) -> Dictionary:
 ## Texto visível por chave de localização.
 static func t(key: String) -> String:
 	if _loc.is_empty():
-		for arq in ["res://data2d/loc_2d.csv", "res://data2d/loc_mago.csv", "res://data2d/loc_fase.csv"]:
+		for arq in ["res://data2d/loc_2d.csv", "res://data2d/loc_mago.csv", "res://data2d/loc_fase.csv", "res://data2d/loc_guerreiro.csv"]:
 			for r in rows(arq):
 				_loc[r["chave"]] = r["pt"]
 	return _loc.get(key, key)
+
+## Texto da chave com a variante da classe quando existe (`<chave>.<classe>`): a mesma carta do core descreve o que
+## ela faz para o guerreiro ("+25% de dano da espada") sem mudar o texto do arqueiro.
+static func t_classe(key: String, classe: String) -> String:
+	var com_classe := "%s.%s" % [key, classe]
+	var txt := t(com_classe)
+	return t(key) if txt == com_classe else txt

@@ -10,6 +10,7 @@ const Tema = preload("res://scripts2d/tema_2d.gd")
 const Icones = preload("res://scripts2d/icones_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const Afinidades = preload("res://scripts2d/afinidades_2d.gd")
+const Classe = preload("res://scripts2d/classe_2d.gd")
 const FONTE_TITULO := "res://art2d/ui/DejaVuSerif-Bold.ttf"
 
 signal escolhido(id: String)
@@ -98,9 +99,8 @@ func abrir(ids: Array, m := "sala", nivel := 0, fonte: RefCounted = null) -> voi
 			_titulo.text = Csv.t("upgrade.chest")
 		"gem":
 			_titulo.text = Csv.t("upgrade.gem")
-		"afinidade":   # título por classe quando existe (upgrade.afinidade.<classe>), senão o comum
-			var chave := "upgrade.afinidade." + (Afinidades.classe_de(str(ids[0])) if not ids.is_empty() else "")
-			_titulo.text = Csv.t(chave) if Csv.t(chave) != chave else Csv.t("upgrade.afinidade")
+		"afinidade":
+			_titulo.text = Csv.t_classe("upgrade.afinidade", Classe.atual)
 		_:
 			_titulo.text = Csv.t("upgrade.title")
 	_sub.text = Csv.t("carta.dica") % ids.size()
@@ -205,7 +205,7 @@ func _carta(i: int, id: String) -> Button:
 	icone.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(icone)
 	# Nome e descrição
-	var nome := _rotulo(col, Csv.t("%s.%s.name" % [pre, id]), int(_lay.get("nome_fonte", 19)), Tema.cor("destaque"), true)
+	var nome := _rotulo(col, Csv.t_classe("%s.%s.name" % [pre, id], Classe.atual), int(_lay.get("nome_fonte", 19)), Tema.cor("destaque"), true)
 	nome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var fio := ColorRect.new()
 	fio.color = Color(cor, 0.5)
@@ -213,7 +213,7 @@ func _carta(i: int, id: String) -> Button:
 	fio.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	fio.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(fio)
-	var desc := _rotulo(col, Csv.t("%s.%s.desc" % [pre, id]), int(_lay.get("desc_fonte", 14)), Tema.cor("texto"))
+	var desc := _rotulo(col, Csv.t_classe("%s.%s.desc" % [pre, id], Classe.atual), int(_lay.get("desc_fonte", 14)), Tema.cor("texto"))
 	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	desc.vertical_alignment = VERTICAL_ALIGNMENT_CENTER

@@ -1,38 +1,42 @@
 extends RefCounted
-## Tabelas de afinidade do ataque básico ("Ecos") por classe: res://data2d/afinidades_<classe>.csv, todas com as colunas
-## id,elemento,dano,vel,perfura,qtd,raio,duracao,valor,icone,nota. Aqui só a leitura (cartas, HUD e escolha da corrida);
-## o que cada Eco faz no golpe fica no script da classe. Ids são únicos entre as classes.
+## Afinidades do ataque básico ("Ecos") por classe: tabela em data2d/afinidades_<classe>.csv, mesmas colunas para
+## todas as classes (id, elemento, dano, vel, perfura, qtd, raio, duracao, valor, icone, nota) e ids únicos entre elas.
+## Só leitura de dados; o que o Eco faz no golpe mora na classe (arqueiro: efeitos_arqueiro_afinidade_2d.gd).
 
 const Csv = preload("res://scripts2d/csv2d.gd")
-const CLASSES := "res://data2d/classes_2d.csv"
-const NUMEROS := ["dano", "vel", "perfura", "qtd", "raio", "duracao", "valor"]
 
-static var _cache := {}   # classe -> {id: linha com os números já convertidos}
+const CAMPOS_NUM := ["dano", "vel", "perfura", "qtd", "raio", "duracao", "valor"]
 
-## Linhas da tabela da classe por id (vazio quando a classe não tem tabela).
+static var _defs := {}   # classe -> {id: linha}
+
+## Linhas da classe por id (números já convertidos). Classe sem arquivo = vazio.
 static func defs(classe: String) -> Dictionary:
-	if not _cache.has(classe):
-		var d := {}
-		var arq := "res://data2d/afinidades_%s.csv" % classe
-		if FileAccess.file_exists(arq):
-			for r in Csv.rows(arq):
-				var linha: Dictionary = r.duplicate()
-				for k in NUMEROS:
-					linha[k] = float(r.get(k, "0")) if str(r.get(k, "")) != "" else 0.0
-				d[str(r["id"])] = linha
-		_cache[classe] = d
-	return _cache[classe]
+	if not _defs.has(classe):
+		var out := {}
+		var caminho := "res://data2d/afinidades_%s.csv" % classe
+		if FileAccess.file_exists(caminho):
+			for r in Csv.rows(caminho):
+				var d: Dictionary = r.duplicate()
+				for c in CAMPOS_NUM:
+					d[c] = float(r.get(c, "")) if str(r.get(c, "")) != "" else 0.0
+				out[d["id"]] = d
+		_defs[classe] = out
+	return _defs[classe]
 
 static func ids(classe: String) -> Array:
 	return defs(classe).keys()
 
+## Elemento do Eco `id`, procurado nas tabelas de todas as classes de classes_2d.csv ("" se não existe).
+static func elemento(id: String) -> String:
+	for r in Csv.rows("res://data2d/classes_2d.csv"):
+		var d: Dictionary = defs(str(r["id"]))
+		if d.has(id):
+			return str(d[id].get("elemento", ""))
+	return ""
+
 ## Classe dona do Eco `id` ("" se o id não é um Eco).
 static func classe_de(id: String) -> String:
-	for r in Csv.rows(CLASSES):
+	for r in Csv.rows("res://data2d/classes_2d.csv"):
 		if defs(str(r["id"])).has(id):
 			return str(r["id"])
 	return ""
-
-## Elemento (raio, veneno, gelo, fogo) do Eco `id`, de qualquer classe; "" se o id não é um Eco.
-static func elemento(id: String) -> String:
-	return str(defs(classe_de(id)).get(id, {}).get("elemento", ""))

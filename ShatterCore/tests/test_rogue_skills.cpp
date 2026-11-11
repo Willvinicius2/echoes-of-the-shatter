@@ -100,7 +100,7 @@ TEST(rogue_skills_load_classes_and_trees) {
     ASSERT_TRUE(d.Ok());
     ASSERT_EQ(d.Classes().size(), std::size_t(3));
     EXPECT_EQ(d.Classes()[0].skills.size(), std::size_t(4));
-    EXPECT_EQ(d.Classes()[1].skills.size(), std::size_t(20));
+    EXPECT_EQ(d.Classes()[1].skills.size(), std::size_t(32));  // 20 de aço + 8 ativas de elemento + 4 Arautos
     EXPECT_EQ(d.Classes()[2].skills.size(), std::size_t(0));  // árvore ausente = classe sem árvore
     EXPECT_EQ(d.SkillPointsRoom(), std::int64_t(1));
     EXPECT_EQ(d.SkillPointsBoss(), std::int64_t(3));
@@ -250,8 +250,8 @@ TEST(rogue_skills_passives_apply_on_run_stats_and_add_missing_stat) {
     ASSERT_TRUE(w.Learn("w_keen_edge") == RogueSkillResult::Ok);
     ASSERT_TRUE(w.Learn("w_heavy_slash") == RogueSkillResult::Ok);
     ASSERT_TRUE(w.Learn("w_executioner") == RogueSkillResult::Ok);
-    const RogueStats ws = w.ApplySkillPassives({{"damage", 20.0}});
-    EXPECT_NEAR(Stat(ws, "damage"), 24.0, 1e-9);
+    const RogueStats ws = w.ApplySkillPassives({{"arrow_damage", 20.0}});
+    EXPECT_NEAR(Stat(ws, "arrow_damage"), 24.0, 1e-9);
     EXPECT_NEAR(Stat(ws, "exec_bonus"), 0.4, 1e-12);
     EXPECT_EQ(ws.back().first, std::string("exec_bonus"));
 }

@@ -5,8 +5,10 @@ extends SceneTree
 ## Grava pasta/NNN_<momento>.png nos momentos-chave e a cada `intervalo_s` de luta. Com --write-movie vira o vídeo da partida.
 ## `pular_ate_onda` adianta o spawner do core até essa onda antes de jogar (conferir o chefe e o fim sem esperar a fase toda).
 ## `deus=1` deixa o jogador invulnerável (para ver a fase até o fim); o padrão é a partida de verdade.
+## Com `--classe=guerreiro` (qualquer posição depois de `pasta`) o bot luta de perto: vai até o inimigo mais próximo.
 const MainScene = preload("res://scenes2d/Main2D.tscn")
 const Fase = preload("res://scripts2d/fase_2d.gd")
+const Classe = preload("res://scripts2d/classe_2d.gd")
 
 const ONDA_CHEFE := 6
 
@@ -14,6 +16,7 @@ var pasta := "partida"
 var intervalo := 5.0
 var deus := false
 var limite := 900.0
+var esperto := false
 var pular := 0
 var run
 var _n := 0
@@ -38,12 +41,16 @@ func _initialize() -> void:
 		Fase.atual = args[4]
 	if args.size() > 5:
 		pular = int(args[5])
+	esperto = OS.get_cmdline_user_args().has("--esperto")
 	DirAccess.make_dir_recursive_absolute(pasta)
 	_rng.seed = 7
 	var main = MainScene.instantiate()
 	root.add_child(main)
 	await physics_frame
 	run = main.run
+	if args.size() > 4 and args[4] != "cripta":
+		Fase.definir(args[4])   # o save do meta, lido ao abrir a cena, devolve a fase escolhida antes: a do argumento vale por cima
+		run.menus.trocar_fase(0)   # redesenha o cartão do título e grava a escolha
 	await _quadros(60)
 	await _foto("titulo")
 	run.menus._jogar_do_titulo()
@@ -93,7 +100,7 @@ func _jogar() -> void:
 		if run.ui.aberta:
 			await _quadros(50)
 			await _foto("carta_%s" % run.ui.modo)
-			run.ui.escolher(_rng.randi_range(0, maxi(0, run.ui._ids.size() - 1)))
+			run.ui.escolher(_escolher_carta() if esperto else _rng.randi_range(0, maxi(0, run.ui._ids.size() - 1)))
 			await _quadros(8)
 			continue
 		if run.estado == run.Estado.VENCEU or run.estado == run.Estado.MORTO:
@@ -121,6 +128,27 @@ func _jogar() -> void:
 			esquiva_t = 1.0
 	print("[partida] LIMITE t=%.0f onda=%d" % [t, run.onda])
 
+## Com `--esperto` o bot monta a build mais forte (mostra a escalada de poder): gema nova primeiro, depois sobe o que já tem;
+## nas cartas de nível, quantidade, perfuração, área e recarga antes do resto.
+const CARTAS_BOAS := ["multishot", "pierce", "wide_reach", "extra_shot", "swift_shots", "piercing_skills", "lingering", "haste", "power"]
+
+func _escolher_carta() -> int:
+	var ids: Array = run.ui._ids
+	var hab = run.player.habilidades
+	if run.ui.modo == "gem" or run.ui.modo == "afinidade":
+		for i in ids.size():
+			if hab.defs.has(ids[i]) and hab.eh_ativa(ids[i]) and hab.nivel(ids[i]) == 0:
+				return i
+		for i in ids.size():
+			if hab.defs.has(ids[i]) and hab.eh_ativa(ids[i]):
+				return i
+		return 0
+	for b in CARTAS_BOAS:
+		var k: int = ids.find(b)
+		if k >= 0:
+			return k
+	return 0
+
 func _agir(p, pode_esquivar: bool) -> bool:
 	if run.estado == run.Estado.LIMPA:
 		var s: Vector2 = run.posicao_saida()
@@ -135,11 +163,14 @@ func _agir(p, pode_esquivar: bool) -> bool:
 			and run.onda >= ONDA_CHEFE and int(w.get("can_wake", -1)) == 0
 	var fuga := Vector2.ZERO
 	var melhor := INF
+	var perto: Node2D = null
 	for n in get_nodes_in_group("hurtable"):
 		if not is_instance_valid(n):
 			continue
 		var de: Vector2 = p.global_position - n.global_position
 		var d := de.length()
+		if d < melhor:
+			perto = n
 		melhor = minf(melhor, d)
 		if d < 380.0 and d > 0.01:
 			fuga += de / (d * d) * 10000.0
@@ -151,11 +182,16 @@ func _agir(p, pode_esquivar: bool) -> bool:
 		mover = fuga.normalized() + lado * 0.5 + ao_destino * (1.4 if ir_altar else 0.5)
 	else:
 		mover = ao_destino * (1.0 if ir_altar else 0.3)
+	if Classe.atual == "guerreiro" and perto != null and not ir_altar:
+		# corpo a corpo: encosta no mais próximo e gira em volta dele para não ficar cercado
+		var ate: Vector2 = perto.global_position - p.global_position
+		var lado_g := Vector2(-ate.y, ate.x).normalized()
+		mover = ate.normalized() if melhor > 70.0 else lado_g * 0.6 + fuga.normalized() * 0.25
 	_destravar(p)
 	if _fuga_t > 0.0:
 		mover = _fuga_dir
 	p.auto_move = mover.normalized() if mover.length() > 0.01 else Vector2.ZERO
-	if pode_esquivar and melhor < 70.0:
+	if pode_esquivar and melhor < (34.0 if Classe.atual == "guerreiro" else 70.0):
 		Input.action_press("dodge")
 	return Input.is_action_pressed("dodge")
 

@@ -14,6 +14,9 @@ const RaioFx = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const PoderNivel = preload("res://scripts2d/poder_nivel_2d.gd")
+const OrbitaisScript = preload("res://scripts2d/orbitais_poder_2d.gd")
+var _orbitais: Node2D
 const ANCORAS := "res://data2d/ancoras_2d.csv"   # boca do arco por linha da folha (doc 33 seção 2)
 static var _ancoras := {}   # sprite_id -> {linha: Vector2 (px a partir dos pés)}
 const Audio = preload("res://scripts2d/audio_2d.gd")
@@ -51,6 +54,8 @@ var _dodge_dir := Vector2.DOWN
 var _rastro_t := 0.0           # tempo até a próxima cópia do rastro da esquiva
 var _aim := Vector2.DOWN
 var _disparou := false
+var lent_v := 0.0              # lentidão vinda de inimigos (teia da Tecelã): fração da velocidade de corrida perdida
+var lent_t := 0.0              # segundos restantes dela; a esquiva não é afetada (é a saída da teia)
 var vel_buff := 1.0            # habilidade Adrenalina: velocidade de corrida
 var cad_buff := 1.0            # habilidade Adrenalina: cadência de tiro
 var buff_t := 0.0
@@ -235,6 +240,8 @@ func reset() -> void:
 	_shoot_cd = 0.0
 	buff_t = 0.0
 	vel_buff = 1.0
+	lent_v = 0.0
+	lent_t = 0.0
 	cad_buff = 1.0
 	_salto_vel = 0.0
 	velocity = Vector2.ZERO
@@ -254,6 +261,17 @@ func _physics_process(delta: float) -> void:
 			cad_buff = 1.0
 	dodge_cd = maxf(0.0, dodge_cd - delta)
 	invencivel = maxf(0.0, invencivel - delta)
+	habilidades.nivel_poder = PoderNivel.nivel_de(self)
+	if _orbitais == null and classe == "arqueiro":
+		_orbitais = OrbitaisScript.new()
+		add_child(_orbitais)
+	if _orbitais != null:
+		_orbitais.definir(PoderNivel.orbitais(habilidades.nivel_poder))
+	if lent_t > 0.0:
+		lent_t -= delta
+		if lent_t <= 0.0:
+			lent_v = 0.0
+			modulate = Color.WHITE
 	habilidades.tick(delta)
 	if estado != Estado.MORTO:
 		ganhar_mana(taxa_regen_mana() * delta)
@@ -271,7 +289,7 @@ func _physics_process(delta: float) -> void:
 				estado = Estado.LIVRE
 				_salto_vel = 0.0
 		_:
-			var vmax: float = stats["speed"] * vel_buff * (stats["attack_move_mult"] if estado == Estado.ATIRANDO else 1.0)
+			var vmax: float = stats["speed"] * vel_buff * (1.0 - lent_v) * (stats["attack_move_mult"] if estado == Estado.ATIRANDO else 1.0)
 			var alvo := entrada * vmax
 			var taxa: float = stats["accel"] if entrada != Vector2.ZERO else stats["friction"]
 			velocity = velocity.move_toward(alvo, taxa * delta)
@@ -292,6 +310,14 @@ func _physics_process(delta: float) -> void:
 ## Fração 0..1 da recarga do tiro (0 = pronto), para a barra de habilidades.
 func recarga_tiro() -> float:
 	return clampf(_shoot_cd / stats["shoot_cooldown"], 0.0, 1.0)
+
+## Lentidão de inimigo (teia da Tecelã): `frac` da velocidade de corrida por `dur` s; reaplicar renova com o maior valor. Tinge o corpo de azul frio.
+func aplicar_lentidao(frac: float, dur: float) -> void:
+	if estado == Estado.MORTO:
+		return
+	lent_v = maxf(lent_v if lent_t > 0.0 else 0.0, frac)
+	lent_t = maxf(lent_t, dur)
+	modulate = Color(0.78, 0.88, 1.0)
 
 func esta_morto() -> bool:
 	return estado == Estado.MORTO
@@ -444,6 +470,7 @@ func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult :
 		boca["altura"], stats["arrow_altura"], stats["arrow_altura_dist"], boca["desloc"])
 	f.pierce = int(stats["arrow_pierce"]) + pierce_extra + int(def.get("perfura", 0))  # gancho de upgrades e passivos
 	f.add_to_group("flecha_jogador")
+	f.ricochetes = PoderNivel.ricochetes(PoderNivel.nivel_de(self))
 	if stats["poison_dps"] > 0.0:
 		f.veneno_dps = stats["poison_dps"]
 		f.veneno_t = stats["poison_time"]

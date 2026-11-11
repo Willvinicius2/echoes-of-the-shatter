@@ -69,3 +69,11 @@ arqueiro,blizzard,si,0,220,2
 arqueiro,flame_breath,proximo,0,240,1
 arqueiro,ring_of_fire,si,0,170,2
 arqueiro,fuse_bomb,proximo,0,700,1
+guerreiro,w_thunder_strike,grupo,0,420,1
+guerreiro,w_storm_blades,si,0,160,1
+guerreiro,w_flame_wave,proximo,0,360,1
+guerreiro,w_eruption,grupo,0,300,1
+guerreiro,w_glacial_plant,si,0,125,2
+guerreiro,w_frost_shield,proximo,0,360,1
+guerreiro,w_venom_cleave,proximo,0,115,1
+guerreiro,w_plague_banner,grupo,0,200,2

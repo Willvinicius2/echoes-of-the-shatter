@@ -415,7 +415,7 @@ class CometaCorpo extends Node2D:
 class Nova extends Node2D:
 	const PAL := [Color("F0FBFF"), Color("7FD3F2"), Color("123A5C")]
 	const EXPANDE := 0.3
-	const VIDA := 0.8
+	const VIDA := 1.1
 	var raio := 200.0
 	var dano := 0.0
 	var lascas := 8
@@ -429,7 +429,7 @@ class Nova extends Node2D:
 		raio = d.get("raio", 200.0)
 		lascas = maxi(0, int(d.get("qtd", 8)))
 		dano = dn
-		z_index = -1
+		z_index = 0
 
 	func _ready() -> void:
 		Vfx.registrar_animado(self)
@@ -482,20 +482,16 @@ class Nova extends Node2D:
 		var r := raio * (1.0 - pow(1.0 - k, 2.0))
 		var apaga := clampf((VIDA - _t) / 0.35, 0.0, 1.0)
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.55))
-		# gradiente radial: centro quase vazio, faixa clara perto da borda (nada de disco chapado)
-		draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.05 * apaga))
-		for i in 4:
-			var f := 0.55 + 0.11 * i
-			draw_arc(Vector2.ZERO, r * f, 0.0, TAU, 64, Color(PAL[1], (0.06 + 0.07 * i) * apaga), r * 0.12)
-		draw_arc(Vector2.ZERO, r * 0.97, 0.0, TAU, 64, Color(PAL[0], 0.3 * apaga), 8.0)   # brilho da borda
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(PAL[1], 0.45 * apaga), 10.0)   # halo
-		draw_arc(Vector2.ZERO, r, 0.0, TAU, 64, Color(PAL[0], 0.95 * apaga), 2.5)    # borda clara
-		draw_arc(Vector2.ZERO, r * 0.9, 0.0, TAU, 64, Color(PAL[2], 0.5 * apaga), 1.0)
+		# pixel art de 3 tons com borda dura: banda de geada, fio claro e contorno escuro (sem alfa suave)
+		draw_circle(Vector2.ZERO, r, Color(PAL[1], 0.12 * apaga))
+		draw_arc(Vector2.ZERO, r * 0.93, 0.0, TAU, 48, Color(PAL[1], 0.95 * apaga), 16.0)    # banda de geada
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, Color(PAL[0], apaga), 6.0)                   # fio claro da borda
+		draw_arc(Vector2.ZERO, r * 0.84, 0.0, TAU, 48, Color(PAL[2], 0.9 * apaga), 3.0)      # contorno escuro interno
 		for pt in _pontas:   # pontas de cristal na borda (silhueta angular)
 			var d := Vector2.from_angle(pt[0])
 			var b := d * r
-			var alt: float = (10.0 + 18.0 * float(pt[1])) * (0.6 + 0.4 * k)
-			var tri := PackedVector2Array([b + d.orthogonal() * 5.0, b + d * alt, b - d.orthogonal() * 5.0])
+			var alt: float = (18.0 + 26.0 * float(pt[1])) * (0.6 + 0.4 * k)
+			var tri := PackedVector2Array([b + d.orthogonal() * 8.0, b + d * alt, b - d.orthogonal() * 8.0])
 			draw_colored_polygon(tri, Color(PAL[1], 0.85 * apaga))
 			draw_line(b, b + d * alt, Color(PAL[0], apaga), 1.0)
 

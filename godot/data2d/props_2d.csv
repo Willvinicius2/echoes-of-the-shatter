@@ -82,3 +82,10 @@ pedreira_portao,1,0,0,-207:-36:-65:0|64:-36:206:0
 pedreira_lasca_0,1,0,0,
 pedreira_lasca_1,1,0,0,
 pedreira_lasca_2,1,0,0,
+ponte_sino,1,0,0,-88:-10:-46:0|46:-10:88:0
+ponte_sino_caido,1,220,50,
+ponte_sino_maior,1,0,0,-214:-18:-126:0|126:-18:214:0
+ponte_casulo,1,30,10,
+ponte_teia_0,1,0,0,
+ponte_teia_1,1,0,0,
+ponte_entulho,1,90,16,

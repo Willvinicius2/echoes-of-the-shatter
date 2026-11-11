@@ -73,7 +73,7 @@ TEST(rogue_data_loads_real_csv) {
     ASSERT_TRUE(d.Ok());
     EXPECT_EQ(d.MetaDefs().size(), std::size_t(6));
     EXPECT_EQ(d.Recipes().size(), std::size_t(9));
-    EXPECT_EQ(d.Drops().size(), std::size_t(13));
+    EXPECT_EQ(d.Drops().size(), std::size_t(15));
     EXPECT_EQ(d.Stages().size(), std::size_t(4));
     EXPECT_EQ(d.Upgrades().size(), std::size_t(21));
     EXPECT_EQ(d.UpgradeCards(), 3);

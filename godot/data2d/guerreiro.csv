@@ -4,8 +4,8 @@ speed,235,px/s,velocidade de corrida
 accel,2400,px/s2,aceleracao
 friction,3000,px/s2,desaceleracao
 radius,15,px,raio de colisao nos pes
-damage,18,hp,dano base do golpe de espada (1x)
-attack_cooldown,0.42,s,intervalo entre golpes do combo
+arrow_damage,18,hp,dano base do golpe de espada (1x); o nome e o do arqueiro para as cartas de nivel do core valerem para as 3 classes
+shoot_cooldown,0.42,s,intervalo entre golpes do combo (mesmo nome do arqueiro: cartas do core)
 attack_range,88,px,alcance do golpe basico
 attack_arc,110,graus,abertura do cone do golpe basico
 attack_move_mult,0.8,x,fator de velocidade durante o golpe (horda: automatico)
@@ -40,3 +40,54 @@ guard_reduction,0.7,x,reducao de dano frontal na Postura de Guarda
 guard_arc,150,graus,abertura da guarda
 guard_move_mult,0.45,x,fator de velocidade em guarda
 guard_impeto,12,pt,impeto ganho ao bloquear
+arrow_count,1,golpes,golpes por ataque basico (carta Lamina Dupla: cada golpe extra e um eco atrasado)
+arrow_pierce,0,niveis,niveis da carta Lamina Longa (alcance e arco do golpe basico)
+echo_mult,0.5,x,dano de cada eco da Lamina Dupla
+echo_delay,0.12,s,atraso entre o golpe e cada eco
+reach_per_pierce,0.12,x,alcance e arco extras do golpe basico por nivel da Lamina Longa
+crit_chance,0,fracao,chance de golpe critico (cartas somam)
+crit_mult,2,x,multiplicador do dano critico
+skill_cd_mult,1,x,multiplicador da recarga das habilidades (menor = mais rapido)
+autocast_intervalo,0.12,s,espera entre dois autocasts seguidos
+run_area,0,fracao,aumento de raio e abertura das habilidades de area (cartas)
+run_proj,0,projeteis,projeteis extras por habilidade de projetil
+run_vel,0,fracao,aumento de velocidade dos projeteis das habilidades
+run_dur,0,fracao,aumento de duracao das zonas
+run_pierce,0,corpos,perfuracao extra das habilidades de projetil
+run_dmg_fogo,0,fracao,aumento de dano das habilidades de fogo
+run_dmg_gelo,0,fracao,aumento de dano das habilidades de gelo
+run_dmg_raio,0,fracao,aumento de dano das habilidades de raio
+run_dmg_veneno,0,fracao,aumento de dano das habilidades de veneno
+run_dmg_herald,0,fracao,aumento de dano dos Arautos
+cd_por_nivel,0.07,fracao,recarga extra das ativas por nivel de XP da corrida (nivel 16 = 75% mais rapido)
+proc_base,0.35,chance,chance base de cada golpe do combo ativar o Eco de um elemento aprendido na arvore
+proc_por_rank,0.15,chance,chance extra por nivel de habilidade do elemento
+proc_max,0.95,chance,teto da chance de fúria elemental
+proc_qtd_por_rank,0.5,saltos,saltos extras do Eco por nivel de habilidade do elemento
+proc_qtd_por_nivel,0.3,saltos,saltos extras do Eco por nivel de XP da corrida
+proc_contagio_raio,140,px,alcance do salto do veneno, do gelo e do fogo
+espadas_por_nivel,0.5,espadas,espadas espectrais em orbita por nivel de XP (arredonda para baixo)
+espadas_max,10,espadas,teto de espadas espectrais
+espadas_raio,74,px,raio da orbita das espadas espectrais
+espadas_vel,3,rad/s,velocidade da orbita
+espadas_dano,0.35,x,dano de cada toque das espadas espectrais (multiplo do golpe)
+arco_por_nivel,0.03,fracao,abertura extra do arco do golpe por nivel de XP
+ecos_por_nivel,0.2,golpes,ecos extras do corte (golpe duplo, triplo) por nivel de XP, somados a Lamina Dupla
+onda_nivel_min,3,nivel,nivel de XP em que o 3o golpe passa a soltar uma onda de corte
+onda_por_nivel,0.4,ondas,ondas de corte extras por nivel acima do minimo
+onda_max,6,ondas,teto de ondas de corte por golpe
+onda_leque,14,graus,abertura entre as ondas de corte
+onda_dano,0.8,x,dano da onda de corte (multiplo do golpe)
+onda_raio,40,px,raio da onda de corte
+onda_alcance,300,px,alcance da onda de corte
+hab_qtd_por_nivel,0.15,,Alvos extras das habilidades elementais por nível de partida
+hab_raio_por_nivel,0.02,,Raio extra das habilidades por nível de partida
+hab_duracao_por_nivel,0.02,,Duração extra das habilidades elementais por nível de partida
+rev_nivel_min,4,,Nivel da partida em que as ativas comecam a reverberar
+rev_intervalo,1.5,s,Intervalo entre reverberacoes no nivel minimo
+rev_intervalo_por_nivel,0.07,s,Quanto o intervalo encurta por nivel
+rev_intervalo_min,0.35,s,Menor intervalo
+rev_por_nivel,0.2,,Ecos por rajada a cada nivel
+rev_max,7,,Maximo de ecos por rajada
+rev_dano,0.5,x,Dano do eco em relacao a habilidade
+rev_alcance,460,px,Alcance para escolher alvos
