@@ -10,6 +10,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const Nucleo = preload("res://scripts2d/nucleo_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const Passivos = preload("res://scripts2d/passivos_2d.gd")
+const Poder = preload("res://scripts2d/poder_nivel_2d.gd")
 
 const SLOTS := 4
 ## Autocast: como cada ativa (e o ataque básico, id `basico`) escolhe o alvo e se é a ult manual. Ver alvos_2d.escolher.
@@ -41,6 +42,8 @@ var miras := {}           # id -> {mira, ult, alcance, min_alvos} da classe (dat
 var passivos: RefCounted
 ## Fator extra no tick das recargas (tree `global skill_cd_mult` que o core não viu): 1 = sem efeito.
 var cd_extra := 1.0
+## Nível do jogador para a escalada de poder (poder_nivel_2d.gd): o jogador o atualiza a cada quadro.
+var nivel_poder := 1
 
 ## Linhas de data2d/classes_2d.csv por id.
 static func classes() -> Dictionary:
@@ -237,9 +240,10 @@ func _acao(ok: bool) -> bool:
 
 func tick(delta: float) -> void:
 	if nucleo != null and not recargas.is_empty():
-		nucleo.habilidades_tick(delta * cd_extra)
+		var vel := cd_extra * Poder.velocidade_recarga(nivel_poder)
+		nucleo.habilidades_tick(delta * vel)
 		for id in recargas.keys():
-			recargas[id] = maxf(0.0, recargas[id] - delta)
+			recargas[id] = maxf(0.0, recargas[id] - delta * vel)
 			if recargas[id] <= 0.0:
 				recargas.erase(id)
 
@@ -274,6 +278,8 @@ func usar(slot: int, jogador: Node2D, mira: Vector2) -> bool:
 		jogador.gastar_mana(float(r["custo"]))
 	sincronizar(false)
 	usada.emit(slot, id)
+	if not eh_ult(id):
+		Poder.ecoar(jogador, d, func(j: Node2D, def: Dictionary, dir: Vector2) -> void: _efeitos.executar(def["efeito"], j, def, nivel(id), dir))
 	return true
 
 ## Inicia a recarga da ativa `id` sem passar por usar(): para classes que pagam com outro recurso (o ímpeto do Guerreiro)

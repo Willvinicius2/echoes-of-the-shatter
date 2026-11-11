@@ -1,0 +1,18 @@
+chave,valor,unidade,nota
+eco_nivel_1,6,nivel do jogador,a partir daqui cada habilidade ativa dispara 1 eco em outro inimigo
+eco_nivel_2,12,nivel do jogador,a partir daqui 2 ecos
+eco_nivel_3,18,nivel do jogador,a partir daqui 3 ecos
+eco_atraso,0.28,s,tempo entre um eco e o seguinte
+eco_alcance,650,px,alcance para escolher o inimigo de cada eco
+eco_dano,0.7,fracao,dano de cada eco em relacao ao disparo original
+ricochete_cada,4,niveis,um ricochete a mais no ataque basico a cada N niveis do jogador (nivel 4 = 1)
+ricochete_max,6,ricochetes,teto de ricochetes
+ricochete_alcance,360,px,distancia maxima do proximo inimigo no ricochete
+ricochete_dano,0.8,fracao,dano mantido a cada ricochete
+recarga_por_nivel,0.025,fracao,reducao da recarga das habilidades por nivel do jogador acima do 1
+recarga_max,0.5,fracao,teto da reducao de recarga
+orbital_cada,3,niveis,um orbital a mais girando em volta do heroi a cada N niveis do jogador
+orbital_max,6,orbitais,teto de orbitais
+orbital_raio,78,px,raio da orbita no chao
+orbital_dano,0.5,fracao,dano do orbital por toque (fracao do dano da flecha)
+orbital_refresco,0.6,s,tempo ate o mesmo inimigo poder ser ferido de novo pelo orbital

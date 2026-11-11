@@ -6,6 +6,7 @@ extends Area2D
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const Placeholders = preload("res://scripts2d/placeholders.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
+const Poder = preload("res://scripts2d/poder_nivel_2d.gd")
 
 var team := "player"
 var velocity := Vector2.ZERO
@@ -16,6 +17,8 @@ var veneno_dps := 0.0       # habilidade Pontas Venenosas
 var veneno_t := 0.0
 var explode_raio := 0.0     # habilidade Flecha Explosiva: explode ao acertar
 var explode_dano := 0.0
+var ricochetes := 0         # pulos restantes de inimigo em inimigo (poder_nivel_2d.gd)
+var _ja: Array = []         # já atingidos (o ricochete não volta neles)
 ## Cor do elemento (árvore): pinta brilho, rastro, flash de boca e explosão. Mudar depois de criada repinta na hora.
 var cor_fx := Color(0.8, 0.8, 0.8):
 	set(v):
@@ -137,6 +140,9 @@ func _on_body(corpo: Node) -> void:
 		corpo.take_damage(damage, global_position - velocity.normalized() * 8.0)
 		if veneno_dps > 0.0 and corpo.has_method("aplicar_status"):
 			corpo.aplicar_status("veneno", veneno_t, veneno_dps)
+		_ja.append(corpo)
+		if ricochetes > 0 and is_inside_tree() and _ricochetear(corpo):
+			return
 		if pierce > 0:
 			pierce -= 1
 			return
@@ -145,6 +151,32 @@ func _on_body(corpo: Node) -> void:
 	if explode_raio > 0.0 and is_inside_tree():
 		_explodir()
 	_fim()
+
+## Salta para o inimigo mais perto que ainda não foi atingido: muda a direção, mantém parte do dano e risca um arco no ar.
+func _ricochetear(de: Node) -> bool:
+	var prox := Poder.proximo_ricochete(get_tree(), global_position, _ja)
+	if prox == null:
+		return false
+	var v := prox.global_position - global_position
+	velocity = v.normalized() * velocity.length()
+	vis.rotation = velocity.angle()
+	damage *= Poder.dano_ricochete()
+	ricochetes -= 1
+	_viajado = maxf(0.0, _viajado - 160.0)   # o pulo não gasta o alcance da flecha
+	_faisca_ricochete(global_position, prox.global_position)
+	return true
+
+func _faisca_ricochete(a: Vector2, b: Vector2) -> void:
+	var l := Line2D.new()
+	l.top_level = true
+	l.width = 5.0
+	l.default_color = Color(_cor, 0.9)
+	l.material = Feel.aditivo()
+	l.points = PackedVector2Array([a + Vector2(0, -altura), b + Vector2(0, -altura)])
+	get_parent().add_child(l)
+	var tw := l.create_tween()
+	tw.tween_property(l, "modulate:a", 0.0, 0.25)
+	tw.tween_callback(l.queue_free)
 
 func _explodir() -> void:
 	Feel.impacto(get_parent(), ponta(), cor_fx, Vector2.ZERO, explode_raio / 40.0)

@@ -139,7 +139,7 @@ class Mina extends Node2D:
 	var _t := 0.0
 
 	func _ready() -> void:
-		z_index = -1
+		z_index = 0
 		Vfx.registrar_decalque(self)
 
 	func _physics_process(delta: float) -> void:
@@ -165,7 +165,7 @@ class Mina extends Node2D:
 	func _draw() -> void:
 		var surgir := clampf(_t / 0.15, 0.0, 1.0)
 		var armada := _t >= ARMA
-		var m := 2.0   # mina grande o bastante para ler a 640x360
+		var m := 2.8   # mina grande o bastante para ler a 640x360 (>= 24 px de altura no mundo)
 		U.elipse(self, Vector2.ZERO, 22.0 * m * surgir, Color(0.1, 0.25, 0.05, 0.6))
 		U.elipse_arco(self, Vector2.ZERO, 22.0 * m * surgir, Color(0.7, 1.0, 0.3, 0.7), 2.0)   # poça verde clara sob a mina
 		for i in 8:   # espinhos em volta do casco

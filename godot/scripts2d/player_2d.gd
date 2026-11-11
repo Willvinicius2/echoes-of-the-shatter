@@ -14,6 +14,9 @@ const RaioFx = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 const ArrowScript = preload("res://scripts2d/arrow_2d.gd")
 const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const PoderNivel = preload("res://scripts2d/poder_nivel_2d.gd")
+const OrbitaisScript = preload("res://scripts2d/orbitais_poder_2d.gd")
+var _orbitais: Node2D
 const ANCORAS := "res://data2d/ancoras_2d.csv"   # boca do arco por linha da folha (doc 33 seção 2)
 static var _ancoras := {}   # sprite_id -> {linha: Vector2 (px a partir dos pés)}
 const Audio = preload("res://scripts2d/audio_2d.gd")
@@ -258,6 +261,12 @@ func _physics_process(delta: float) -> void:
 			cad_buff = 1.0
 	dodge_cd = maxf(0.0, dodge_cd - delta)
 	invencivel = maxf(0.0, invencivel - delta)
+	habilidades.nivel_poder = PoderNivel.nivel_de(self)
+	if _orbitais == null and classe == "arqueiro":
+		_orbitais = OrbitaisScript.new()
+		add_child(_orbitais)
+	if _orbitais != null:
+		_orbitais.definir(PoderNivel.orbitais(habilidades.nivel_poder))
 	if lent_t > 0.0:
 		lent_t -= delta
 		if lent_t <= 0.0:
@@ -461,6 +470,7 @@ func lancar_flecha(dir: Vector2, dano_mult := 1.0, pierce_extra := 0, vel_mult :
 		boca["altura"], stats["arrow_altura"], stats["arrow_altura_dist"], boca["desloc"])
 	f.pierce = int(stats["arrow_pierce"]) + pierce_extra + int(def.get("perfura", 0))  # gancho de upgrades e passivos
 	f.add_to_group("flecha_jogador")
+	f.ricochetes = PoderNivel.ricochetes(PoderNivel.nivel_de(self))
 	if stats["poison_dps"] > 0.0:
 		f.veneno_dps = stats["poison_dps"]
 		f.veneno_t = stats["poison_time"]
