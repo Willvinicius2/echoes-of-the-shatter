@@ -156,7 +156,7 @@ func take_damage(amount: float, origem := Vector2.ZERO) -> void:
 func _draw() -> void:
 	super._draw()
 	if escudo > 0.0:   # Barreira de Gelo: anel de geada no chão e os cristais de trás (os da frente ficam na _Frente)
-		ExtraU.elipse_arco(self, Vector2.ZERO, 40.0, Color(0.7, 0.92, 1.0, 0.7), 2.5)
+		ExtraU.elipse_arco(self, Vector2.ZERO, 80.0, Color(0.7, 0.92, 1.0, 0.7), 2.5)
 		_cristais(self, false)
 	if _frente == null:
 		_frente = _Frente.new()
@@ -177,8 +177,8 @@ func _cristais(ci: CanvasItem, na_frente: bool) -> void:
 		var a := _t_fx * 1.0 + TAU * float(i) / float(CRISTAIS)
 		if (sin(a) > 0.0) != na_frente:
 			continue
-		var p := Vector2(cos(a) * 40.0, sin(a) * 20.0 - 44.0)
-		ExtraU.cristal(ci, p, -PI / 2.0, 52.0, 12.0, 0.95 if na_frente else 0.7)
+		var p := Vector2(cos(a) * 80.0, sin(a) * 36.0 - 4.0)
+		ExtraU.cristal(ci, p, -PI / 2.0, 48.0, 11.0, 0.95 if na_frente else 0.7)
 
 ## Camada desenhada por cima do sprite do mago (cristais da Barreira que passam pela frente).
 class _Frente extends Node2D:
