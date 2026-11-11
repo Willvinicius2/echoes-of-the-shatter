@@ -347,7 +347,7 @@ static func _erupcao(j: Node2D, d: Dictionary, mira: Vector2) -> void:
 			j.get_tree().create_timer(0.2, false).timeout.connect(func():
 				if not is_instance_valid(j) or not is_instance_valid(cena):
 					return
-				Fx.tocar(cena, "pilar_fogo", p, d["raio"] * 2.0, 0.0, Color.WHITE, 0)
+				Fx.tocar(cena, "pilar_fogo", p, d["raio"] * 2.0, 0.0, Color(1, 1, 1, 0.8), -1)   # atrás dos atores e translúcido: o herói não some na chama
 				for a in _perto(j, p, d["raio"]):
 					j.acertar(a, d["dano"])
 					j.aplicar_status(a, "queimadura", d["duracao"], d["valor"])

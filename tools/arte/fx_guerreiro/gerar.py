@@ -87,7 +87,7 @@ def corte():
     w, h, cx, cy, R = 44, 60, 5, 30, 36
     a0, a1 = math.radians(-62), math.radians(62)
     trechos = [(0.0, 0.42), (0.0, 0.8), (0.12, 1.0), (0.45, 1.0), (0.78, 1.0)]
-    esp = [9, 12, 12, 9, 5]
+    esp = [11, 14, 14, 11, 7]
     for i, (u0, u1) in enumerate(trechos):
         t = Tela(w, h)
         crescente(t, cx, cy, R, esp[i], a0, a1, u0, u1, MARFIM)
@@ -106,7 +106,7 @@ def corte_pesado():
     w, h, cx, cy, R = 62, 96, 6, 48, 52
     a0, a1 = math.radians(-78), math.radians(78)
     trechos = [(0.0, 0.3), (0.0, 0.7), (0.05, 1.0), (0.3, 1.0), (0.6, 1.0), (0.85, 1.0)]
-    esp = [12, 17, 18, 14, 10, 6]
+    esp = [14, 19, 20, 16, 12, 8]
     for i, (u0, u1) in enumerate(trechos):
         t = Tela(w, h)
         crescente(t, cx, cy, R, esp[i], a0, a1, u0, u1, MARFIM)

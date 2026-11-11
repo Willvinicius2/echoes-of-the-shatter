@@ -14,10 +14,33 @@ sys.argv = [sys.argv[0]] + sys.argv[2:]
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pixelar_inimigos as P  # noqa: E402
 from PIL import Image  # noqa: E402
+import numpy as np  # noqa: E402
 
 PIVO_Y_HD = 104
 FATOR = 0.58
 QUADRO, PIVO = 92, (46, 76)
+ARO = (126, 190, 238)   # aro azul-aço: o herói é o único com contorno frio e não se perde entre esqueletos e capas vermelhas
+
+
+def aro(folha):
+    """Contorno de 1 px azul-aço por fora da silhueta, mais um halo de 1 px a 35% (cada quadro separado)."""
+    a = np.asarray(folha, dtype=np.uint8).copy()
+    op = a[..., 3] > 40
+    viz = np.zeros_like(op)
+    viz[1:, :] |= op[:-1, :]
+    viz[:-1, :] |= op[1:, :]
+    viz[:, 1:] |= op[:, :-1]
+    viz[:, :-1] |= op[:, 1:]
+    borda = viz & ~op
+    halo = np.zeros_like(op)
+    halo[1:, :] |= borda[:-1, :]
+    halo[:-1, :] |= borda[1:, :]
+    halo[:, 1:] |= borda[:, :-1]
+    halo[:, :-1] |= borda[:, 1:]
+    halo &= ~op & ~borda
+    a[halo] = (*ARO, 90)
+    a[borda] = (*ARO, 255)
+    return Image.fromarray(a, "RGBA")
 
 
 def main():
@@ -40,6 +63,7 @@ def main():
             for co in range(cols):
                 q = peq.crop((co * novo, li * novo, (co + 1) * novo, (li + 1) * novo))
                 folha.paste(q, (co * QUADRO + dx, li * QUADRO + dy))
+        folha = aro(folha)
         folha.save(os.path.join(P.SPR, heroi, nome))
         r["quadro"] = str(QUADRO)
         r["pivo_x"] = str(PIVO[0])

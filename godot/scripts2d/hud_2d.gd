@@ -158,8 +158,13 @@ func _desenhar_globos(vp: Vector2) -> void:
 		Arte.globo_pixel(_ctl, ed, raio, 0.0, 0.0, Tema.cor("mana_escura"), Tema.cor("mana_clara"), _rel, 0.0, true)
 		Arte.cadeado(_ctl, ed + Vector2(0, -6), 14.0)
 
+## Número dentro do globo: contorno preto de 1 px em volta e branco puro, para ler sobre o líquido escuro e o vermelho.
 func _texto_globo(centro: Vector2, raio: float, s: String) -> void:
-	Arte.texto(_ctl, centro + Vector2(-raio, 6), s, 15, Tema.cor("texto"), HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0)
+	var pos := centro + Vector2(-raio, 6)
+	var f: Font = ThemeDB.fallback_font
+	for d in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1), Vector2(-1, -1), Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1)]:
+		_ctl.draw_string(f, pos + d, s, HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0, 16, Color(0, 0, 0, 1))
+	_ctl.draw_string(f, pos, s, HORIZONTAL_ALIGNMENT_CENTER, raio * 2.0, 16, Color(1, 0.97, 0.9))
 
 func _desenhar_upgrades() -> void:
 	if upgrades == null or upgrades.niveis.is_empty():
