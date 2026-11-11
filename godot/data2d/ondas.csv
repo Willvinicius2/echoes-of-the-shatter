@@ -14,3 +14,10 @@ pedreira,4,60,1.4,5,260,32,skeleton_soldier:3|ash_hound:3|hollow_sentinel:3|ghos
 pedreira,5,60,1.3,5,330,36,skeleton_soldier:3|ash_hound:3|hollow_sentinel:2|chain_wraith:2:2|ghost_archer:2:2|crypt_bat:3,2,4,1.5
 pedreira,6,65,1.2,6,420,40,skeleton_soldier:3|ash_hound:3|hollow_sentinel:2|chain_wraith:2:2|ghost_archer:2:2|wandering_ghost:2|crypt_bat:2|stone_herald:1:3,2,4,1.5
 pedreira,7,65,1.2,6,520,40,skeleton_soldier:3|ash_hound:3|hollow_sentinel:3|chain_wraith:3:2|ghost_archer:2:2|wandering_ghost:2|crypt_bat:2|stone_herald:1:3,3,4,1.5
+ponte,1,55,1.9,3,90,20,gravel_spiderling:4|crypt_bat:3|wandering_ghost:2,0,,
+ponte,2,55,1.7,4,130,24,gravel_spiderling:4|crypt_bat:3|wandering_ghost:2|ghost_archer:1:2,1,4,1.5
+ponte,3,60,1.5,4,205,28,gravel_spiderling:4|crypt_bat:3|wandering_ghost:2|ghost_archer:2:2,1,4,1.5
+ponte,4,60,1.4,5,265,32,gravel_spiderling:4|ghost_archer:2:2|wandering_ghost:2|hollow_sentinel:1:2|crypt_bat:2,1,4,1.5
+ponte,5,60,1.3,5,335,36,gravel_spiderling:4|ghost_archer:3:2|crypt_bat:3|hollow_sentinel:1:2|wandering_ghost:2,2,4,1.5
+ponte,6,65,1.2,6,425,40,gravel_spiderling:5|ghost_archer:3:2|wandering_ghost:2|hollow_sentinel:2:2|crypt_bat:2,2,4,1.5
+ponte,7,65,1.2,6,520,40,gravel_spiderling:5|ghost_archer:3:2|wandering_ghost:2|hollow_sentinel:2:2|crypt_bat:2|ossuary_warden:1:4,3,4,1.5

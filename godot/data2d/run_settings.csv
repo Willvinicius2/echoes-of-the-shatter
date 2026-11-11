@@ -63,3 +63,5 @@ gate_elite_shake_time,0.6,s,duracao do tremor de tela na entrada do elite do por
 gate_elite_luz_tamanho,380,px,luz propria do elite do portao: diametro do halo aditivo laranja preso a ele (0 desliga)
 gate_elite_luz_alfa,0.38,0..1,luz propria do elite do portao: intensidade do halo que fica atras do sprite (pulsa entre 70% e 100% disto)
 dev_fases_abertas,0,0/1,so em build de debug: 1 abre todas as fases no titulo (testes e capturas; nao grava no save)
+gate_elite_scale_bell_weaver,1,x,escala do elite do portao quando ele e a Tecela de Cascalho: a folha dela ja nasce no tamanho de chefe (1 px da arte = 1 px da grade) e por isso nao cresce
+gate_elite_hp_mult_bell_weaver,3.2,x,vida da Tecela de Cascalho em cima da vida adaptativa do core (300 de base: ate 750 no core e ate 2400 com este multiplicador)

@@ -65,7 +65,8 @@ func rodar() -> void:
 ## fases_2d.csv: Cripta aberta de saída, Pedreira pede a Cripta; textos por chave; a fase do spawner existe no core.
 func _testar_tabela() -> void:
 	Fase.tabela = "res://data2d/fases_2d.csv"
-	check.call(Fase.ids() == ["cripta", "pedreira"], "fases: tabela tem cripta e pedreira (%s)" % str(Fase.ids()))
+	check.call(Fase.ids() == ["cripta", "pedreira", "ponte"], "fases: tabela tem cripta, pedreira e ponte (%s)" % str(Fase.ids()))
+	check.call(Fase.requer("ponte") == "pedreira" and Fase.sala("ponte") == "res://data2d/rooms/fase_3.txt", "fases: a ponte pede a pedreira e usa a fase_3")
 	check.call(Fase.requer("cripta") == "" and Fase.requer("pedreira") == "cripta", "fases: a pedreira pede a cripta")
 	check.call(Fase.sala("cripta") == "res://data2d/rooms/fase_1.txt" and Fase.sala("pedreira") == "res://data2d/rooms/fase_2.txt", "fases: salas da tabela")
 	for id in Fase.ids():

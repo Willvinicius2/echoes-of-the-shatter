@@ -22,3 +22,5 @@ hollow_sentinel_elite,2.5,"elite em pixel art 1,5x (pixelar_variantes.py): 1 px 
 ossuary_captain_elite,2.5,"elite em pixel art 1,5x (pixelar_variantes.py): 1 px da arte = 1 px da grade"
 skeleton_soldier_elite,2.5,"elite em pixel art 1,5x (pixelar_variantes.py): 1 px da arte = 1 px da grade"
 wandering_ghost_elite,2.5,"elite em pixel art 1,5x (pixelar_variantes.py): 1 px da arte = 1 px da grade"
+gravel_spiderling,2.5,Filhote de Cascalho: aranha de cascalho feita por codigo e desenhada em pixel art (tools/sprites2d/tecela_de_cascalho): 1 px da arte = 1 px da grade
+bell_weaver,2.5,Tecela de Cascalho: aranha de bronze de sino feita por codigo e desenhada em pixel art (tools/sprites2d/tecela_de_cascalho): 1 px da arte = 1 px da grade
