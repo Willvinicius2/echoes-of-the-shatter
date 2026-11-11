@@ -196,9 +196,12 @@ class Poco extends Node2D:
 	func _draw() -> void:
 		var k := clampf(_t / 0.25, 0.0, 1.0) * Vfx.fade_zona(_t, dur)
 		var pal: Array = FxMago.paleta("veneno")
-		FxMago.elipse_pixel(self, Vector2.ZERO, raio * k, pal[0])
-		FxMago.elipse_pixel(self, Vector2.ZERO, raio * 0.84 * k, pal[1])
-		FxMago.elipse_pixel(self, Vector2(-raio * 0.15, -raio * 0.04), raio * 0.46 * k, pal[2])
+		for i in 6:   # várias poças pequenas e irregulares (2 tons), com vãos entre elas para o chão aparecer
+			var a := float(i) * 2.1 + 0.4
+			var c := ((Vector2(cos(a), sin(a) * 0.5) * raio * (0.1 + 0.62 * fmod(float(i) * 0.41, 1.0))) / 2.5).round() * 2.5
+			var r := raio * (0.3 + 0.07 * float(i % 3)) * k
+			FxMago.elipse_pixel(self, c, r, pal[1])
+			FxMago.elipse_pixel(self, c + Vector2(-r * 0.12, -2.5), r * 0.6, pal[2])
 		for i in 7:   # bolhas quadradas que nascem, crescem e estouram
 			var u := fmod(_t * (0.7 + 0.13 * float(i)) + float(i) * 0.37, 1.0)
 			var a := float(i) * 2.4
