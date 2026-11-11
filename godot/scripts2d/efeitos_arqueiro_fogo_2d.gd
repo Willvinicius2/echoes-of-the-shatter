@@ -4,6 +4,8 @@ extends RefCounted
 ## Sem arte (PNG ausente) cada efeito cai num desenho de código, para o jogo e o teste headless nunca quebrarem.
 ## Nenhum número de balanceamento aqui: tudo vem do `def` (data2d/habilidades_arqueiro.csv).
 
+const FxMago = preload("res://scripts2d/fx_mago_2d.gd")
+const BrasasPixel = preload("res://scripts2d/brasas_pixel_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const U = preload("res://scripts2d/fogo_util_2d.gd")
 const Anim = preload("res://scripts2d/fogo_anim_2d.gd")
@@ -171,6 +173,7 @@ class _Meteoro extends Node2D:
 	var dur: float
 	var dps: float
 	var atraso := 0.0   # forma "brasas": cada queda espera um pouco mais (só ritmo visual)
+	var pixel := false   # Mago: impacto e chão em chamas de pixel (2 a 3 tons, borda dura) em vez das animações HD
 	var _t := 0.0
 	var _caiu := false
 	var _queda: Node2D
@@ -208,12 +211,19 @@ class _Meteoro extends Node2D:
 				_queda.queue_free()
 				if is_instance_valid(_aviso):
 					_aviso.concluir()
-				var e := Anim.new("meteoro_impacto", false, raio * 2.2)
-				e.position = Vector2(0, -20)
-				add_child(e)
-				var b := Anim.new("brasas_chao", true, raio * 2.0)
-				b.z_index = -1
-				add_child(b)
+				if pixel:
+					FxMago.explosao(get_parent(), global_position, "fogo", raio)
+					var br := BrasasPixel.new()
+					br.raio = raio
+					br.dur = dur
+					add_child(br)
+				else:
+					var e := Anim.new("meteoro_impacto", false, raio * 2.2)
+					e.position = Vector2(0, -20)
+					add_child(e)
+					var b := Anim.new("brasas_chao", true, raio * 2.0)
+					b.z_index = -1
+					add_child(b)
 				for n in U.no_raio(self, global_position, raio):
 					n.take_damage(dano, global_position)
 					U.queimar(n, dur, dps)
@@ -226,7 +236,7 @@ class _Meteoro extends Node2D:
 				queue_free()
 
 	func _draw() -> void:
-		if _caiu:   # brasas: contorno da área que ainda queima, apagando no fim
+		if _caiu and not pixel:   # brasas: contorno da área que ainda queima, apagando no fim
 			var apaga := Vfx.fade_zona(_t, dur)
 			draw_arc(Vector2.ZERO, raio, 0.0, TAU, 40, Color(1.0, 0.6, 0.2, 0.35 * apaga), 2.0)
 

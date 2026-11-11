@@ -60,7 +60,7 @@ mana_on_hit,1.5,mana,mana devolvida por inimigo atingido pelo ataque basico (o b
 frost_bolt_pierce,2,corpos,inimigos que a Lanca de Gelo atravessa
 cast_time,0.3,s,tempo do gesto de conjuracao (so animacao; nao trava o movimento)
 espirito_nivel_passo,1.5,niv,um espirito elemental gira em volta do mago a cada tantos niveis da corrida
-espirito_max,14,un,maximo de espiritos em volta
+espirito_max,8,un,maximo de espiritos em volta
 espirito_cd,3.2,s,recarga de tiro de cada espirito no nivel 0
 espirito_cd_por_nivel,0.14,s,quanto a recarga encurta por nivel
 espirito_cd_min,0.9,s,menor recarga possivel
