@@ -31,6 +31,7 @@ func rodar() -> void:
 	_testar_grade()
 	_testar_arte()
 	_testar_ondas()
+	_testar_tecela()
 
 func _testar_mapa(sala) -> void:
 	check.call(sala.tema == "ponte" and sala.piso_grama, "Ponte: `@piso ponte` liga o tema e o piso aberto")
@@ -154,3 +155,60 @@ func _testar_ondas() -> void:
 		if not ArteInimigos.pronto(id):
 			sem_arte.append(id)
 	check.call(sem_arte.is_empty(), "ondas da Ponte: só inimigos com arte e stats %s" % str(sem_arte))
+
+## Alvo mínimo da Tecelã: conta dano e lentidão recebidos.
+class AlvoFalso extends Node2D:
+	var dano := 0.0
+	var lentidao := 0.0
+	func take_damage(n: float, _origem := Vector2.ZERO) -> void:
+		dano += n
+	func aplicar_lentidao(frac: float, _dur: float) -> void:
+		lentidao = maxf(lentidao, frac)
+	func esta_morto() -> bool:
+		return false
+
+## Golpes próprios da Tecelã (tecela_2d.gd, data2d/tecela_golpes_2d.csv): cada golpe avisa antes de sair, a teia desacelera quem está
+## dentro, a badalada fere uma vez quem fica no anel e a ninhada respeita o máximo de filhotes vivos.
+func _testar_tecela() -> void:
+	var golpes := Csv.rows("res://data2d/tecela_golpes_2d.csv")
+	var tipos := []
+	var aviso_ok := true
+	for g in golpes:
+		tipos.append(g["golpe"])
+		aviso_ok = aviso_ok and float(g["aviso"]) >= 0.8   # tempo de ler o aviso e reagir
+	check.call(tipos.has("teia") and tipos.has("badalada") and tipos.has("filhotes"), "Tecelã: golpes teia, badalada e filhotes no CSV")
+	check.call(aviso_ok, "Tecelã: todo golpe avisa por pelo menos 0,8 s")
+	var cena := Node2D.new()
+	t.root.add_child(cena)
+	var jogador := AlvoFalso.new()
+	cena.add_child(jogador)
+	var chamados := []
+	var tecela = load("res://scripts2d/tecela_2d.gd").new()
+	cena.add_child(tecela)
+	tecela.setup("bell_weaver", jogador, Vector2.ZERO)
+	jogador.global_position = Vector2(400, 0)
+	tecela._speed = 0.0   # parada: sem andar nem bater de perto, só os golpes especiais (e sem física fora da árvore)
+	tecela.pontos_livres = func(c: Vector2, _r: float, n: int) -> Array:
+		var out := []
+		for i in n:
+			out.append(c + Vector2(100 + 30 * i, 0))
+		return out
+	tecela.convocar = func(id: String, pontos: Array) -> Array:
+		chamados.append([id, pontos.size()])
+		return []
+	var viu_teia := false
+	var viu_onda := false
+	for _q in 60 * 40:   # 40 s de luta, quadro a quadro (a árvore não anda sozinha aqui: o teste avança os efeitos também)
+		tecela._physics_process(1.0 / 60.0)
+		for f in cena.get_children():
+			if f == tecela or f == jogador or not ("lentidao" in f or "raio_max" in f):
+				continue
+			viu_teia = viu_teia or "lentidao" in f
+			viu_onda = viu_onda or "raio_max" in f
+			f._physics_process(1.0 / 60.0)
+		if not chamados.is_empty() and jogador.dano > 0.0 and jogador.lentidao > 0.0:
+			break
+	check.call(not chamados.is_empty() and chamados[0][0] == "gravel_spiderling" and chamados[0][1] == 3, "Tecelã: chama 3 Filhotes de Cascalho (%s)" % str(chamados))
+	check.call(viu_teia and jogador.lentidao >= 0.5, "Tecelã: a teia sai e desacelera quem está dentro (%.2f)" % jogador.lentidao)
+	check.call(viu_onda and jogador.dano > 0.0, "Tecelã: a badalada sai e fere quem fica no anel (dano %.1f)" % jogador.dano)
+	cena.queue_free()

@@ -36,10 +36,21 @@ Gerado por `tools/mapas/gerar_fase_3.py` (não editar o `.txt` à mão). Da esqu
 - **Filhote de Cascalho**: aranha pequena de cascalho cinza, pernas bem abertas e pontos âmbar nas costas. Quadro de 96 px, pivô (48, 58), mesmas 5 animações.
 - Folhas de contato para revisão (fora do Git): `python3 tools/sprites2d/tecela_de_cascalho/contato.py <tecela|filhote> <anim> <direcoes|todas> <escala> <png>`.
 
+## Golpes da Tecelã (11/11/2026)
+A Tecelã (`godot/scripts2d/tecela_2d.gd`, ligada em `run_2d.gd` por `IaChefePortao`) mantém o corpo a corpo do inimigo comum e ganha três golpes próprios, em ciclo, cada um com aviso no chão antes de sair. Ficam no cliente (GDScript, números em CSV) e não no ShatterCore: o core ainda não tem chefes com padrões (o Guardião também vive no cliente, em `boss_2d.gd`); quando a migração chegar, os três golpes viram linhas de padrão como as do `boss_patterns_2d.csv`.
+
+| Golpe | Aviso | Efeito | Como escapar |
+|---|---|---|---|
+| Teia | fio que ela lança até o ponto (travado no início do aviso) e círculo claro que enche, 1,1 s | mancha de teia por 5,5 s que tira 55% da velocidade de corrida de quem está dentro (o Arqueiro fica azulado) | sair do círculo antes de cair, ou esquivar (a esquiva não é freada) |
+| Badalada | anéis âmbar se fechando sobre o sino e o contorno do alcance, 1,4 s | onda em anel (520 px) a 420 px/s, dano uma vez, 90% do dano base | esquiva com invulnerabilidade na hora em que o anel passa |
+| Filhotes | fendas âmbar em 3 pontos em volta dela com fios até lá, 1,25 s | 3 Filhotes de Cascalho (5 na fase 2), no máximo 7 vivos; saem da conta do spawner e morrem junto com ela | matar os filhotes ou atirar nela de longe |
+
+Abaixo de 50% de vida entra a fase 2: avisos 15% mais curtos, pausas 35% menores e ninhadas com 2 a mais. Tempos, raios e dano: `data2d/tecela_golpes_2d.csv` e as chaves `tecela_*` de `run_settings.csv`. Teste: `test_ponte_2d.gd` (`_testar_tecela`). Capturas dos avisos e dos efeitos: `godot --path godot --resolution 1280x720 --script res://scripts2d/tools/captura_tecela_2d.gd -- pasta` (precisa de janela).
+
 ## Regras e números (tudo em CSV)
 - `enemies.csv`: `gravel_spiderling` (30 de vida, rápido, dano 7) e `bell_weaver` (300 de vida de base).
 - `ondas.csv` e `ondas_fases.csv`: 7 ondas; filhotes, morcegos e fantasmas errantes desde o começo, arqueiros fantasmas a partir da 2, sentinela oca como elite a partir da 4 e o Carcereiro do Ossuário como mini-chefe na 7. O Arauto de Pedra não entra nesta área.
-- A Tecelã é chefe do tipo elite do portão (inimigo comum com `gate_elite_*`), como o Capitão na Pedreira. Duas chaves novas por inimigo em `run_settings.csv`: `gate_elite_scale_<id>` e `gate_elite_hp_mult_<id>` (a folha dela já nasce no tamanho de chefe, então a escala é 1).
+- A Tecelã é chefe do tipo elite do portão (inimigo comum com `gate_elite_*`), como o Capitão na Pedreira, com a IA de golpes própria acima. Duas chaves novas por inimigo em `run_settings.csv`: `gate_elite_scale_<id>` e `gate_elite_hp_mult_<id>` (a folha dela já nasce no tamanho de chefe, então a escala é 1).
 
 ## Como ver
 ```
@@ -49,6 +60,5 @@ godot --path godot --resolution 1280x720 --script res://scripts2d/tools/partida_
 Capturas e vídeo desta entrega: `/mnt/project-files/capturas/ponte_do_sino/`.
 
 ## O que ficou para depois
-- A Tecelã usa a IA de corpo a corpo comum. Golpes próprios (teia que prende, chamar filhotes, badalada em área) pedem regra nova e ficam para a migração ao ShatterCore.
 - O sino caído é pequeno perto do sino do pórtico; vale redesenhar maior numa próxima passada de arte.
 - Som dos sinos e música da área.
