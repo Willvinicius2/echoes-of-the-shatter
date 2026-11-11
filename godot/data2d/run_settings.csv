@@ -27,9 +27,9 @@ level_rerolls,2,vezes,sorteios novos da oferta de nivel por corrida
 level_skips,1,vezes,ofertas que o jogador pode pular por corrida
 level_bans,1,vezes,cartas que o jogador pode banir por corrida
 skill_points_every_levels,0,niveis,modo horda: 0 desliga os pontos por nivel (as habilidades vem das gemas e 0 no core = desligado)
-boss_fight_time,45,s,tempo-alvo da luta com o chefe: vida = DPS medido x este tempo
+boss_fight_time,30,s,tempo-alvo da luta com o chefe: vida = DPS medido x este tempo
 boss_hp_min,0.6,x,vida minima do chefe (fracao da vida base de enemies.csv)
-boss_hp_max,2.5,x,vida maxima do chefe (multiplo da vida base)
+boss_hp_max,1.6,x,vida maxima do chefe (multiplo da vida base)
 horda,1,0/1,fase aberta com o spawner de hordas do core (0 = etapas de run.csv)
 gem_magnet_radius,140,px,gemas e baus voam para o jogador a esta distancia
 gem_pickup_radius,24,px,distancia em que a gema e coletada
