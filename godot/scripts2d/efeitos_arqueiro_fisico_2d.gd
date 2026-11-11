@@ -69,6 +69,8 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, mira: Vec
 				l.jogador = jogador
 				l.dir = dir.rotated(a)
 				l.alcance = def.get("alcance", 380.0)
+				if not volta and n > 1:   # a lâmina do centro vai mais longe: o conjunto lê como leque (V), não como coluna
+					l.alcance *= 1.0 - 0.3 * absf(a) / maxf(abertura * 0.5, 0.01)
 				l.vel = jogador.stats["arrow_speed"] * float(def.get("vel", 1.0))
 				l.dano = dano
 				l.position = jogador.global_position   # antes do add_child: o _ready guarda a origem
