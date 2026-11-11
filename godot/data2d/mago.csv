@@ -18,7 +18,7 @@ arrow_count,1,orbes,orbes por disparo
 arrow_pierce,0,corpos,inimigos atravessados pelo orbe
 multishot_spread,10,graus,abertura entre orbes
 mana_max,100,mana,reserva de mana
-mana_regen,8,mana/s,regeneracao de mana
+mana_regen,12,mana/s,regeneracao de mana
 bolt_radius,7,px,raio do orbe arcano
 cooldown_mult,1.0,x,multiplicador de recarga das habilidades (passivas mexem)
 spell_power,1.0,x,multiplicador de dano das habilidades
