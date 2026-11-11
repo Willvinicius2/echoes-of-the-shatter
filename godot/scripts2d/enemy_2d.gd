@@ -47,6 +47,7 @@ var _burst := 0.0
 var _kb_decay := 0.0
 var raio_despertar := 0.0       # > 0: começa adormecido; acorda (com o grupo) quando o jogador chega a essa distância ou fere alguém
 var grupo_despertar := "inimigos_adormecidos"   # quem dorme junto: a sala toda, ou um encontro do mapa (`@guarda`)
+var arte_base := ""            # folha em uso quando a fase troca a arte do inimigo (trocar_arte); vazio = a do próprio id
 var entrada_t := 0.0            # > 0: entrada do elite do portão (parado e invulnerável) por mais estes segundos
 
 var _dicas: Array = []   # resistências a mostrar junto da barra de vida
@@ -87,10 +88,15 @@ func setup(id: String, jogador: Node2D, pos: Vector2) -> void:
 	add_child(cs)
 	play("idle", true)
 
+## Folha própria da fase (data2d/arte_fase_2d.csv, ex.: Sentinela em bronze na Ponte do Sino); a versão elite vem de `<arte>_elite`.
+func trocar_arte(arte: String) -> void:
+	if usar_arte(arte):
+		arte_base = arte
+
 ## Elite 1,5x: troca para a folha `<id>_elite` (re-renderizada maior na grade nativa) e cresce só a colisão e a sombra; sem
 ## folha elite, cresce o sprite esticado como antes. Devolve true se usou a folha elite.
 func virar_elite(f: float) -> bool:
-	var tem := usar_arte(str(stats["id"]) + "_elite")
+	var tem := usar_arte((arte_base if arte_base != "" else str(stats["id"])) + "_elite")
 	aumentar(f, not tem)
 	return tem
 

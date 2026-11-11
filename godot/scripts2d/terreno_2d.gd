@@ -702,17 +702,7 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 			amb.add_nevoa(m, 28.0)
 		n_riacho += 1
 	if tema == "ponte":
-		# névoa do abismo: manchas claras e frias que derivam devagar sobre o vazio (só onde não há tabuleiro), sob os atores
-		for y in range(1, sala.linhas, 4):
-			for x in range(1, sala.colunas, 5):
-				var hh := hash(Vector2i(x * 13, y * 7))
-				var cx: int = x + posmod(hh, 4)
-				var cy: int = y + posmod(hh / 7, 3)
-				if not sala.eh_fosso(cx, cy):
-					continue
-				var mn := _mancha(sala, Vector2((cx + 0.5) * tile, (cy + 0.5) * tile), Vector2(520 + posmod(hh / 11, 200), 200 + posmod(hh / 17, 90)),
-					_radial_cache("nevoa_abismo", Color(0.62, 0.72, 0.86, 0.085), 256), -1)
-				amb.add_nevoa(mn, 18.0 + posmod(hh / 23, 14))
+		_nevoa_do_abismo(sala, amb, tile)
 	if grama and tema != "ponte":
 		var musgo := Polygon2D.new()
 		var y0: float = 2 * tile
@@ -720,6 +710,68 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 		var cor_musgo := Color(0.27, 0.2, 0.11) if tema == "pedreira" else Color(0.2, 0.28, 0.12)
 		musgo.vertex_colors = PackedColorArray([Color(cor_musgo, 0.75), Color(cor_musgo, 0.75), Color(cor_musgo, 0.0), Color(cor_musgo, 0.0)])
 		sala.add_child(musgo)
+
+## Névoa e arcos distantes sobre o abismo da Ponte do Sino (só onde não há tabuleiro, sob os atores): degradê em pixel art de três tons
+## com os degraus em pontilhado (nevoa_0..2.png) que deriva devagar, e a silhueta de outra ponte lá no fundo (arco_distante_0..1.png)
+## que sai da névoa; as duas vêm de tools/mapas/ponte_nevoa.py. Um arco fica no vão dos atiradores e outro no terceiro vão, a
+## `ARCO_FOLGA` células abaixo da face sul da ponte (acha o chão andável pela grade).
+const NEVOA_TEX := ["res://art2d/ponte/nevoa_0.png", "res://art2d/ponte/nevoa_1.png", "res://art2d/ponte/nevoa_2.png"]
+const ARCO_TEX := ["res://art2d/ponte/arco_distante_0.png", "res://art2d/ponte/arco_distante_1.png"]
+const ARCO_COLUNAS := [73, 119]
+const ARCO_FOLGA := 2
+
+static func _tex_ponte(caminho: String) -> Texture2D:
+	if ResourceLoader.exists(caminho):
+		return load(caminho)
+	if FileAccess.file_exists(caminho):
+		return ImageTexture.create_from_image(Image.load_from_file(ProjectSettings.globalize_path(caminho)))
+	return null
+
+static func _nevoa_do_abismo(sala: Node2D, amb: Node, tile: int) -> void:
+	var vazio := sala.get_node_or_null("Abismo")
+	if vazio != null:
+		vazio.z_index = -5   # o fundo liso fica sob a névoa e os arcos (z -1 e -3), que antes ficavam atrás dele
+	var arcos := Node2D.new()
+	arcos.name = "ArcosDistantes"
+	arcos.z_index = -3
+	sala.add_child(arcos)
+	for i in ARCO_COLUNAS.size():
+		var cx: int = ARCO_COLUNAS[i]
+		var y_deck: int = sala.linhas / 2
+		while y_deck > 0 and sala.eh_fosso(cx, y_deck):
+			y_deck -= 1   # a coluna pode cair já no abismo: sobe até achar o tabuleiro
+		while y_deck < sala.linhas and not sala.eh_fosso(cx, y_deck):
+			y_deck += 1   # e desce até a primeira célula de abismo ao sul dele
+		var tex := _tex_ponte(ARCO_TEX[i % ARCO_TEX.size()])
+		if tex == null or y_deck + ARCO_FOLGA >= sala.linhas:
+			continue
+		var sp := Sprite2D.new()
+		sp.texture = tex
+		sp.centered = false
+		sp.position = Vector2(cx * tile - tex.get_width() * 0.5, (y_deck + ARCO_FOLGA) * tile)
+		sp.modulate = Color(1, 1, 1, 0.9)
+		arcos.add_child(sp)
+	var texs: Array = []
+	for c in NEVOA_TEX:
+		var tx := _tex_ponte(c)
+		if tx != null:
+			texs.append(tx)
+	if texs.is_empty():
+		return
+	for y in range(1, sala.linhas, 4):
+		for x in range(1, sala.colunas, 5):
+			var hh := hash(Vector2i(x * 13, y * 7))
+			var cx: int = x + posmod(hh, 4)
+			var cy: int = y + posmod(hh / 7, 3)
+			if not sala.eh_fosso(cx, cy):
+				continue
+			var mn := Sprite2D.new()
+			mn.texture = texs[posmod(hh / 5, texs.size())]
+			mn.position = Vector2((cx + 0.5) * tile, (cy + 0.5) * tile).round()
+			mn.flip_h = posmod(hh / 3, 2) == 0
+			mn.z_index = -1
+			sala.add_child(mn)
+			amb.add_nevoa(mn, 18.0 + posmod(hh / 23, 14))
 
 ## Poucas folhas laranja caindo devagar pela sala.
 static func _folhas_caindo(sala: Node2D, tex: Texture2D, larg: float, alt: float) -> void:
