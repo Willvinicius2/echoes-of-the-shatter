@@ -4,8 +4,8 @@ speed,235,px/s,velocidade de corrida
 accel,2400,px/s2,aceleracao
 friction,3000,px/s2,desaceleracao
 radius,15,px,raio de colisao nos pes
-damage,18,hp,dano base do golpe de espada (1x)
-attack_cooldown,0.42,s,intervalo entre golpes do combo
+arrow_damage,18,hp,dano base do golpe de espada (1x); o nome e o do arqueiro para as cartas de nivel do core valerem para as 3 classes
+shoot_cooldown,0.42,s,intervalo entre golpes do combo (mesmo nome do arqueiro: cartas do core)
 attack_range,88,px,alcance do golpe basico
 attack_arc,110,graus,abertura do cone do golpe basico
 attack_move_mult,0.8,x,fator de velocidade durante o golpe (horda: automatico)
@@ -40,3 +40,22 @@ guard_reduction,0.7,x,reducao de dano frontal na Postura de Guarda
 guard_arc,150,graus,abertura da guarda
 guard_move_mult,0.45,x,fator de velocidade em guarda
 guard_impeto,12,pt,impeto ganho ao bloquear
+arrow_count,1,golpes,golpes por ataque basico (carta Lamina Dupla: cada golpe extra e um eco atrasado)
+arrow_pierce,0,niveis,niveis da carta Lamina Longa (alcance e arco do golpe basico)
+echo_mult,0.5,x,dano de cada eco da Lamina Dupla
+echo_delay,0.12,s,atraso entre o golpe e cada eco
+reach_per_pierce,0.12,x,alcance e arco extras do golpe basico por nivel da Lamina Longa
+crit_chance,0,fracao,chance de golpe critico (cartas somam)
+crit_mult,2,x,multiplicador do dano critico
+skill_cd_mult,1,x,multiplicador da recarga das habilidades (menor = mais rapido)
+autocast_intervalo,0.25,s,espera entre dois autocasts seguidos
+run_area,0,fracao,aumento de raio e abertura das habilidades de area (cartas)
+run_proj,0,projeteis,projeteis extras por habilidade de projetil
+run_vel,0,fracao,aumento de velocidade dos projeteis das habilidades
+run_dur,0,fracao,aumento de duracao das zonas
+run_pierce,0,corpos,perfuracao extra das habilidades de projetil
+run_dmg_fogo,0,fracao,aumento de dano das habilidades de fogo
+run_dmg_gelo,0,fracao,aumento de dano das habilidades de gelo
+run_dmg_raio,0,fracao,aumento de dano das habilidades de raio
+run_dmg_veneno,0,fracao,aumento de dano das habilidades de veneno
+run_dmg_herald,0,fracao,aumento de dano dos Arautos

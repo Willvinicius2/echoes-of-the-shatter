@@ -1,0 +1,43 @@
+chave,pt
+skill.w_thunder_strike.name,Golpe do Trovão
+skill.w_thunder_strike.desc,"Ergue a espada e um raio cai do céu sobre o grupo: 2,2x de dano, choque e o raio salta para 2 vizinhos"
+skill.w_storm_blades.name,Lâminas da Tempestade
+skill.w_storm_blades.desc,"3 lâminas elétricas giram em volta de você por 6s: cada toque fere e deixa o inimigo em choque"
+skill.w_flame_wave.name,Onda Flamejante
+skill.w_flame_wave.desc,"O corte lança uma meia-lua de fogo que atravessa os inimigos, queima e deixa um rastro de brasas"
+skill.w_eruption.name,Erupção
+skill.w_eruption.desc,"Crava a espada: 3 colunas de fogo brotam do chão em sequência à sua frente e queimam quem ficar"
+skill.w_glacial_plant.name,Cravar Gélido
+skill.w_glacial_plant.desc,"Crava a espada no chão: um anel de espinhos de gelo brota em volta, fere e soma 2 de frio"
+skill.w_frost_shield.name,Escudo de Geada
+skill.w_frost_shield.desc,"Arremessa o escudo: ele ricocheteia em até 4 inimigos somando frio e volta para a sua mão"
+skill.w_venom_cleave.name,Talho Pestilento
+skill.w_venom_cleave.desc,"Corte largo que envenena e deixa uma poça de veneno em leque no chão por 4s"
+skill.w_plague_banner.name,Estandarte da Peste
+skill.w_plague_banner.desc,"Finca um estandarte que pulsa veneno em área por 6s; inimigos perto dele ficam lentos"
+skill.eco_w_trovao.name,Eco do Trovão
+skill.eco_w_trovao.desc,"O 3º golpe do combo chama um arco elétrico que salta para 2 vizinhos e deixa todos em choque"
+skill.eco_w_peste.name,Eco da Peste
+skill.eco_w_peste.desc,"Golpes um pouco mais fracos, de arco mais largo, que envenenam tudo o que cortam"
+skill.eco_w_gelo.name,Eco do Gelo
+skill.eco_w_gelo.desc,"Cada golpe soma frio e deixa o inimigo lento; no quarto acúmulo ele congela"
+skill.eco_w_cinzas.name,Eco das Cinzas
+skill.eco_w_cinzas.desc,"Lâmina em chamas: +10% de dano, queima, e o 3º golpe deixa uma brasa no chão"
+upgrade.afinidade.guerreiro,Escolha o Eco da sua lâmina
+upgrade.power.name.guerreiro,Lâmina Pesada
+upgrade.power.desc.guerreiro,+25% de dano da espada
+upgrade.haste.desc.guerreiro,Golpes 15% mais rápidos
+upgrade.multishot.name.guerreiro,Lâmina Dupla
+upgrade.multishot.desc.guerreiro,Cada golpe básico ganha um eco: +1 corte com metade do dano
+upgrade.pierce.name.guerreiro,Lâmina Longa
+upgrade.pierce.desc.guerreiro,+12% de alcance e de arco do golpe básico
+upgrade.ember_tip.name.guerreiro,Fio em Brasa
+upgrade.ember_tip.desc.guerreiro,+4 de dano da espada
+upgrade.keen_eye.desc.guerreiro,+5% de chance de golpe crítico
+upgrade.extra_shot.desc.guerreiro,+1 projétil nas habilidades de arremesso (onda de fogo e escudo)
+upgrade.swift_shots.name.guerreiro,Arremesso Veloz
+upgrade.swift_shots.desc.guerreiro,+20% de velocidade da onda de fogo e do escudo
+upgrade.piercing_skills.name.guerreiro,Ricochete
+upgrade.piercing_skills.desc.guerreiro,O escudo ricocheteia em +1 inimigo
+class.guerreiro.desc,"Luta corpo a corpo: combo de espada, escudo e habilidades de aço e dos quatro elementos."
+tutorial.shoot.guerreiro,Chegue perto dos inimigos e golpeie com %s
