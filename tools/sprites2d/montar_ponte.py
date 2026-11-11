@@ -246,24 +246,26 @@ def montar_sino():
 
 
 def montar_sino_caido():
-    w, h = 170, 120
+    """Sino rachado tombado de lado, com o dobro do tamanho do sino do pórtico (a revisão pediu bem maior e legível)."""
+    k = 2
+    w, h = 170 * k, 120 * k
     img = nova(w, h)
-    cx = w // 2
-    tmp = nova(140, 140)
-    sino(tmp, 70, 12, 96, 100, seed=23, rachado=True, mordida=(-0.2, 0.5))
+    tmp = nova(140 * k, 140 * k)
+    sino(tmp, 70 * k, 12 * k, 96 * k, 100 * k, seed=23, rachado=True, mordida=(-0.2, 0.5))
     # tombado: gira 90 graus e achata um pouco (a boca fica para a direita)
     gir = np.rot90(tmp, 3)
-    gir = np.array(Image.fromarray(gir, "RGBA").resize((126, 92), Image.NEAREST))
-    y0 = h - 6 - 92
+    gir = np.array(Image.fromarray(gir, "RGBA").resize((126 * k, 92 * k), Image.NEAREST))
+    y0 = h - 6 * k - 92 * k
     a = gir[..., 3] > 0
-    img[y0:y0 + 92, 20:146][a] = gir[a]
+    img[y0:y0 + 92 * k, 20 * k:146 * k][a] = gir[a]
     # cacos e teia
-    for k, (x, y, lw, lh) in enumerate([(8, h - 16, 18, 10), (148, h - 12, 14, 7), (132, h - 22, 10, 8)]):
+    for (x, y, lw, lh) in [(8, h - 16, 18, 10), (148, h - 12, 14, 7), (132, h - 22, 10, 8), (60, h - 10, 16, 8), (250, h - 14, 22, 9), (300, h - 26, 12, 9)]:
+        x = x * k if x < 160 else x
         por(img, x, y, x + lw, y + lh, B2)
         por(img, x, y, x + lw, y + 2, B4)
         por(img, x + lw - 3, y + 2, x + lw, y + lh, B0)
-    teia(img, [(22, y0 + 10), (60, y0 - 2 + 20), (110, y0 + 6)], seed=4)
-    teia(img, [(150, y0 + 30), (160, h - 14)], seed=5)
+    teia(img, [(44, y0 + 20), (120, y0 + 36), (220, y0 + 12)], seed=4)
+    teia(img, [(300, y0 + 60), (320, h - 28)], seed=5)
     return recortar(contornar(img))
 
 

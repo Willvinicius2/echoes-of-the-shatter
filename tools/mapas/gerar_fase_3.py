@@ -98,7 +98,7 @@ def marcar(x, y, c):
 # --------------------------------------------------------------------------------------------------------------------
 # Props
 # --------------------------------------------------------------------------------------------------------------------
-RAIO = {"ponte_sino": 1.6, "ponte_sino_caido": 1.3, "ponte_sino_maior": 3.6, "ponte_casulo": 0.4, "ponte_entulho": 0.8,
+RAIO = {"ponte_sino": 1.6, "ponte_sino_caido": 2.4, "ponte_sino_maior": 3.6, "ponte_casulo": 0.4, "ponte_entulho": 0.8,
         "pedreira_poste_lanterna": 0.35, "rock_rubble": 0.55, "rock_slabs": 0.7, "pillar_broken": 0.6, "pillar_cracked": 0.55,
         "pillar_fallen": 0.9, "skull_pile": 0.4, "bones_ribcage": 0.5}
 BAIXOS = {"ponte_teia_0", "ponte_teia_1", "rock_rubble", "bones_scattered", "skull_single", "skull_pair", "bones_chains", "skeleton_curled"}
@@ -177,7 +177,7 @@ cx, cy = centro("praca_vigias")
 x0, y0, x1, y1 = ret["praca_vigias"]
 pôr("ponte_sino", cx, y0 + 3.4, forcar=True)
 lajes.append(("claro", 5.4, cx, cy + 0.6))
-lajes.append(("escuro", 3.2, cx, y0 + 3.6))
+lajes.append(("escuro", 2.2, cx, y0 + 3.6))
 luzes.append((cx, y0 + 2.4, 4.2, (1.0, 0.62, 0.26, 0.24)))
 braseiro(cx - 5, y0 + 5)
 braseiro(cx + 5, y0 + 5)
@@ -191,15 +191,15 @@ capturas["2_praca_dos_vigias"] = (cx - 2.5, cy + 2.2, ":g:cy-150")
 # ---- Praça do Sino Caído: o ninho (sino rachado no chão, casulos e teias) e o balcão do baú ----
 cx, cy = centro("praca_caido")
 x0, y0, x1, y1 = ret["praca_caido"]
-pôr("ponte_sino_caido", cx + 0.6, y0 + 4.2, forcar=True)
-lajes.append(("escuro", 5.2, cx, cy - 0.5))
+pôr("ponte_sino_caido", cx + 0.4, cy - 1.2, forcar=True)
+lajes.append(("escuro", 3.6, cx, cy - 0.5))
 for dx, dy, fl in [(-7.6, -5.0, False), (-5.0, -5.6, True), (6.4, -5.4, False), (8.2, -2.0, True), (-8.2, 3.8, False), (7.4, 4.6, True)]:
     pôr("ponte_casulo", cx + dx, cy + dy, fl, forcar=True)
 for dx, dy, v in [(-4.6, -1.0, 0), (4.8, 1.8, 0), (-1.0, 4.4, 1), (2.6, -4.6, 1), (-7.0, 1.2, 1), (7.6, -4.0, 1)]:
     pôr("ponte_teia_%d" % v, cx + dx, cy + dy, dx > 0, forcar=True)
 pôr("bones_ribcage", cx - 3.2, y0 + 3.6, forcar=True)
 pôr("skull_pile", cx + 4.4, y0 + 2.4, forcar=True)
-luzes.append((cx + 0.6, y0 + 3.6, 4.4, (0.55, 0.8, 1.0, 0.16)))       # o ninho tem a luz fria da teia, não fogo
+luzes.append((cx + 0.4, cy - 2.4, 5.0, (0.55, 0.8, 1.0, 0.2)))       # o ninho tem a luz fria da teia, não fogo
 capturas["4_praca_do_sino_caido"] = (cx - 3.0, cy + 2.6, ":g:cy-140")
 bx, by = BOLSAO
 bolsoes.append((bx, by, "bau"))
@@ -227,7 +227,7 @@ cx, cy = centro("arena")
 x0, y0, x1, y1 = ret["arena"]
 pôr("ponte_sino_maior", SINO_MAIOR[0], SINO_MAIOR[1], forcar=True)
 lajes.append(("claro", 8.6, cx, cy - 0.5))
-lajes.append(("escuro", 6.2, cx, cy - 0.5))
+lajes.append(("escuro", 4.3, cx, cy - 0.5))
 luzes.append((ELITE[0], ELITE[1] + 0.2, 3.2, (1.0, 0.5, 0.18, 0.26)))   # poço de luz quente nos pés da chefe (o bronze acende)
 for dx, dy in [(-7.5, -6.0), (7.5, -6.0), (-7.5, 7.0), (7.5, 7.0)]:
     braseiro(cx + dx, cy + dy)
@@ -238,8 +238,8 @@ for dx, dy, v in [(-5.6, -3.4, 0), (5.8, -2.6, 0), (-6.2, 4.4, 0), (5.4, 5.6, 0)
     pôr("ponte_teia_%d" % v, cx + dx, cy + dy, dx > 0, forcar=True)
 G_CEL = marcar(*ELITE, "G")
 X_CEL = marcar(*PORTAL, "X")
-capturas["6_sino_maior_com_a_tecela"] = (ELITE[0] - 3.4, ELITE[1] + 4.2, ":e:cx140:cy-330")
-capturas["6a_arena"] = (ELITE[0] - 5.0, ELITE[1] + 5.0, ":e:cx200:cy-120")
+capturas["6_sino_maior_com_a_tecela"] = (ELITE[0] - 3.4, ELITE[1] + 6.0, ":e:cx140:cy-260")
+capturas["6a_arena"] = (ELITE[0] - 2.0, ELITE[1] + 4.0, ":e:cx0:cy-190")
 
 # ---- Encontros: 6 na espinha (o primeiro com 3), mais o do balcão do baú ----
 ENCONTROS = [

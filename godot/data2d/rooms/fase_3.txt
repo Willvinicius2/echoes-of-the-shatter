@@ -52,11 +52,11 @@ mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 @caminho 2.4 7,26 22,26 40,26 47,24.5 56,21 62,20 84,20 90,20.6 102,22.4 108,23.5 130,23.5 136,22.6 144,23 152,23 158,23.4 163,23.6
 @lajes claro 4.6 13.5,26
 @lajes claro 5.4 52.5,22.6
-@lajes escuro 3.2 52.5,18.6
-@lajes escuro 5.2 95.5,20
+@lajes escuro 2.2 52.5,18.6
+@lajes escuro 3.6 95.5,20
 @lajes claro 4.4 138.5,21.5
 @lajes claro 8.6 163,23
-@lajes escuro 6.2 163,23
+@lajes escuro 4.3 163,23
 @decalque res://art2d/ponte/borda_00.png 2812 931
 @decalque res://art2d/ponte/borda_01.png 3072 931
 @decalque res://art2d/ponte/borda_02.png 4096 995
@@ -93,7 +93,7 @@ mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 @luz 111.75,18.35 3.6 1,0.58,0.22,0.28
 @luz 119.65,18.35 3.6 1,0.58,0.22,0.28
 @luz 52.5,17.4 4.2 1,0.62,0.26,0.24
-@luz 96.1,17.6 4.4 0.55,0.8,1,0.16
+@luz 95.9,18.1 5 0.55,0.8,1,0.2
 @luz 96,30.8 3.6 1,0.6,0.24,0.3
 @luz 163,23.2 3.2 1,0.5,0.18,0.26
 @bolsao 96,31.2 bau
@@ -143,7 +143,6 @@ bones_scattered 152.5 17 flip
 pillar_fallen 138.3 17.2
 bones_ribcage 92.3 17.6
 bones_chains 60.3 18.1 flip
-ponte_sino_caido 96.1 18.2
 ponte_sino 52.5 18.4
 ponte_casulo 103.7 18.5 flip
 skull_single 113.8 18.8 flip
@@ -151,6 +150,7 @@ ponte_entulho 146.6 18.8 flip
 rock_slabs 115.1 18.9 flip
 bones_chains 102.9 19
 bones_scattered 116.4 19
+ponte_sino_caido 95.9 19.3
 ponte_entulho 149.7 19.3
 skull_single 165.8 19.3 flip
 pedreira_poste_lanterna 111.2 19.35

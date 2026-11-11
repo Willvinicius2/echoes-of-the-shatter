@@ -525,7 +525,7 @@ func _desenhar_lajes() -> void:
 		var escuro: bool = m["tom"] == "escuro"
 		# Sombra de terra e musgo esfumadas (sem contorno duro) sob a pedra.
 		if tema == "ponte":
-			orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.06, 0.08, 0.14, 0.26), 1.0, minf(30.0, m["raio"] * 0.5)))   # sobre a calçada não há terra nem musgo: só uma sombra fria e curta
+			orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.06, 0.08, 0.14, 0.12), 1.0, minf(30.0, m["raio"] * 0.5)))   # sobre a calçada não há terra nem musgo: só uma sombra fria e curta
 		else:
 			orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.22, 0.3, 0.12, 0.3), 1.0, minf(56.0, m["raio"] * 0.9)))
 			orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.13, 0.11, 0.08, 0.4), 1.0, minf(30.0, m["raio"] * 0.5)))
@@ -533,7 +533,7 @@ func _desenhar_lajes() -> void:
 		if tema == "pedreira":
 			cor_laje = Color(0.9, 0.78, 0.6) if escuro else Color(1.0, 0.9, 0.7)   # arenito: a laje esquenta para casar com o chão ocre
 		elif tema == "ponte":
-			cor_laje = Color(0.66, 0.72, 0.88) if escuro else Color(0.8, 0.86, 1.0)   # laje fria, no azul da calçada
+			cor_laje = Color(0.84, 0.9, 1.0) if escuro else Color(0.8, 0.86, 1.0)   # laje fria, no azul da calçada
 		if not escuro and i > 0 and lajes[i - 1]["tom"] == "escuro" and m["raio"] < lajes[i - 1]["raio"]:
 			cor_laje = Color(0.72, 0.68, 0.66, 0.8)   # estrado sobre a laje escura: contraste baixo, sem cara de tapete
 		raiz.add_child(_laje_esfumada(m, 11 + i, tex_escuro if escuro else tex_claro, cor_laje, 0.95, minf(34.0, m["raio"] * 0.6)))
