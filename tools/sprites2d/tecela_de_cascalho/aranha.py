@@ -19,7 +19,7 @@ PERNAS_FILHOTE = [(0.72, 62.0), (0.52, 24.0), (0.32, -20.0), (0.14, -58.0)]
 CONFIG = {
     # quadro, pivô e px por metro de cada variante (render.configurar)
     'tecela': dict(quadro=256, pivo=(128, 164), esc=42.0),
-    'filhote': dict(quadro=96, pivo=(48, 58), esc=10.5),
+    'filhote': dict(quadro=96, pivo=(48, 58), esc=8.9),
 }
 
 

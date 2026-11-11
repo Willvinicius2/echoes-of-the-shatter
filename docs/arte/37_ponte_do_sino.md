@@ -47,6 +47,11 @@ A Tecelã (`godot/scripts2d/tecela_2d.gd`, ligada em `run_2d.gd` por `IaChefePor
 
 Abaixo de 50% de vida entra a fase 2: avisos 15% mais curtos, pausas 35% menores e ninhadas com 2 a mais. Tempos, raios e dano: `data2d/tecela_golpes_2d.csv` e as chaves `tecela_*` de `run_settings.csv`. Teste: `test_ponte_2d.gd` (`_testar_tecela`). Capturas dos avisos e dos efeitos: `godot --path godot --resolution 1280x720 --script res://scripts2d/tools/captura_tecela_2d.gd -- pasta` (precisa de janela).
 
+## Acabamento (11/11/2026)
+- **Abismo**: a névoa deixou de ser mancha radial macia: `tools/mapas/ponte_nevoa.py` pinta `nevoa_0..2.png` (três tons de azul frio, degraus em pontilhado Bayer, bordas em degraus irregulares) e dois arcos distantes (`arco_distante_0..1.png`, outra ponte no fundo que some na névoa), colocados por `terreno_2d.gd` (`_nevoa_do_abismo`; o fundo liso do abismo agora fica em z -5, sob a névoa).
+- **Sentinela Oca em bronze escurecido** só nesta área: `tools/sprites2d/recolorir_sentinela_bronze.py` recolore as folhas (comum e elite) e `data2d/arte_fase_2d.csv` (fase, inimigo, arte) troca a folha ao nascer; a Cripta e a Pedreira ficam no dourado.
+- **Filhotes 15% menores**: folha regerada com `esc=8,9` (era 10,5) e raio de colisão 11 (era 13).
+
 ## Enquadramento da chefe
 O corpo da Tecelã (uns 300 px acima do pé) cortava no alto. Perto dela (até `camera_chefe_raio`, 900 px) a câmera se afasta (`camera_chefe_zoom_bell_weaver`, 0,78) e mira a meio caminho entre o jogador e o meio do corpo dela (`camera_chefe_vies_...` e `camera_chefe_dy_...`), em transição de uns 0,8 s (`run_2d.gd`, `_alvo_camera`). Só vale para chefes de portão com essas chaves por id: as outras áreas ficam como estavam. Se o jogador foge para longe (mais de uns 450 px), a cabeça ainda pode cortar: o jogador sempre fica na tela.
 

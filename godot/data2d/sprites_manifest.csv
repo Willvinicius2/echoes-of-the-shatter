@@ -137,3 +137,13 @@ bell_weaver,run,res://art2d/sprites/bell_weaver/bell_weaver_run.png,256,8,12,tru
 bell_weaver,attack,res://art2d/sprites/bell_weaver/bell_weaver_attack.png,256,8,12,false,5,128,164,5
 bell_weaver,hit,res://art2d/sprites/bell_weaver/bell_weaver_hit.png,256,3,12,false,5,128,164,-1
 bell_weaver,death,res://art2d/sprites/bell_weaver/bell_weaver_death.png,256,8,10,false,5,128,164,-1
+hollow_sentinel_bronze,idle,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_idle.png,101,6,8,true,5,50,82,-1
+hollow_sentinel_bronze,run,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_run.png,101,8,12,true,5,50,82,-1
+hollow_sentinel_bronze,attack,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_attack.png,101,6,12,false,5,50,82,3
+hollow_sentinel_bronze,hit,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_hit.png,101,3,12,false,5,50,82,-1
+hollow_sentinel_bronze,death,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_death.png,101,8,10,false,5,50,82,-1
+hollow_sentinel_bronze_elite,idle,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_elite_idle.png,138,6,8,true,5,69,112,-1
+hollow_sentinel_bronze_elite,run,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_elite_run.png,138,8,12,true,5,69,112,-1
+hollow_sentinel_bronze_elite,attack,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_elite_attack.png,138,6,12,false,5,69,112,3
+hollow_sentinel_bronze_elite,hit,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_elite_hit.png,138,3,12,false,5,69,112,-1
+hollow_sentinel_bronze_elite,death,res://art2d/sprites/hollow_sentinel/hollow_sentinel_bronze_elite_death.png,138,8,10,false,5,69,112,-1

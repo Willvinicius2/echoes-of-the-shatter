@@ -74,6 +74,7 @@ var menus: CanvasLayer
 var com_menu := true   # false nos testes: começa direto na sala 1
 var tempo := 0.0       # segundos da corrida atual (só conta luta e sala limpa)
 var camera: Camera2D
+var _arte_fase := {}            # arte_fase_2d.csv (carregado na primeira necessidade)
 var _zoom_base := Vector2.ONE     # zoom da câmera sem o enquadramento do chefe
 var _cam_chefe := 0.0           # 0..1: quanto do enquadramento do chefe grande já está aplicado
 var _cam_zoom_chefe := 1.0
@@ -481,6 +482,7 @@ func _nascer_guarda(g: Dictionary) -> void:
 			var e: Node2D = EnemyScript.new()
 			atores.add_child(e)
 			e.setup(p[0], player, pontos[k])
+			_arte_da_fase(e)
 			e.stats["hp"] = float(e.stats["hp"]) * float(_mult_onda["hp"]) * forca
 			e.hp = e.stats["hp"]
 			e.hp_max = e.hp
@@ -633,6 +635,7 @@ func _nascer(s: Dictionary) -> void:
 	else:
 		onde = room.empurrar_para_dentro(player.global_position + Vector2.from_angle(float(s["angle"])) * float(s["radius"]))
 	e.setup(id, player, onde)
+	_arte_da_fase(e)
 	if chefe:
 		dps_medido = _medir_dps()
 		vida_chefe = float(nucleo.vida_chefe(float(e.stats["hp"]), dps_medido))   # vida adaptativa: regra do core
@@ -674,6 +677,16 @@ func _nascer(s: Dictionary) -> void:
 	e.set_meta("spawn_id", int(s["id"]))
 	e.set_meta("xp_mult", float(s.get("xp_mult", 1.0)))
 	e.died.connect(_on_inimigo_morto)
+
+## Folha própria da fase para o inimigo (arte_fase_2d.csv: fase,inimigo,arte). Chamar logo depois do `setup`, antes de virar elite.
+func _arte_da_fase(e: Node2D) -> void:
+	if _arte_fase.is_empty():
+		_arte_fase["_"] = ""
+		for r in Csv.rows("res://data2d/arte_fase_2d.csv"):
+			_arte_fase[str(r["fase"]) + "|" + str(r["inimigo"])] = str(r["arte"])
+	var arte: String = _arte_fase.get(fase_horda + "|" + str(e.stats["id"]), "")
+	if arte != "":
+		e.trocar_arte(arte)
 
 ## Filhotes chamados pelo chefe (Tecelã): nascem nos `pontos`, valem a curva da onda atual, ficam fora da conta do spawner (como
 ## os encontros do mapa) e soltam XP normal. Devolve os inimigos para o chefe contar os vivos.
