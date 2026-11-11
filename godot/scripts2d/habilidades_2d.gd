@@ -182,6 +182,14 @@ func ramos() -> Array:
 func ids_do_ramo(ramo: String) -> Array:
 	return ordem.filter(func(i): return defs[i]["ramo"] == ramo)
 
+## Soma dos níveis aprendidos nas habilidades de um ramo (mede o quanto o jogador investiu num elemento).
+func pontos_do_ramo(ramo: String) -> int:
+	var n := 0
+	for id in ordem:
+		if defs[id]["ramo"] == ramo:
+			n += nivel(id)
+	return n
+
 func eh_ativa(id: String) -> bool:
 	return defs.has(id) and defs[id]["tipo"] == "ativa"
 

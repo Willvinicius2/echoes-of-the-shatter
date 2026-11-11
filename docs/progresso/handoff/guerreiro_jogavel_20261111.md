@@ -22,3 +22,10 @@ Atualizado em 11/11/2026, ao fechar a thread "Levar o Guerreiro ao nível jogáv
 - A thread do Mago cria o mesmo `afinidades_2d.gd` e mexe no mesmo trecho de afinidade de `run_2d.gd` e `upgrade_ui_2d.gd`. O contrato combinado é `defs(classe)`, `ids(classe)`, `elemento(id)` lendo `data2d/afinidades_<classe>.csv`. Quem mesclar depois adapta no rebase.
 - CSV novo em `data2d/` precisa do `.import` com `importer="keep"` (`tools/build/checar_csv_keep.sh`).
 - Depois de `godot --import`, desfaça os `.import` rastreados que o editor mexeu: `git ls-files -m | grep '\.import$' | xargs -r git checkout --`.
+
+## Escalada de habilidades (11/11, pedido do Will: "virar caos")
+- **Autocast em paralelo.** `autocast_intervalo` 0,12 s e recargas curtas das ativas (1 a 7 s) em `habilidades_guerreiro.csv`; `cd_por_nivel` encurta todas por nível da partida (`warrior_2d.gd`, `nivel_partida` vem de `run_2d._checar_oferta_nivel`).
+- **Cada nível muda a tela.** `Efeitos._crescer_com_nivel` soma alvos, raio e duração às ativas (`hab_*_por_nivel` em `guerreiro.csv`). O golpe básico cresce: arco mais largo, mais ecos e onda de corte no 3º golpe (`onda_*`). Fúria elemental: o Eco do golpe vira proc com chance por pontos do ramo e contagia vizinhos (`proc_*`). Espadas espectrais giram em volta do herói e crescem com o nível (`espadas_*`).
+- **Sonda.** `scripts2d/tools/sonda_escalada_2d.gd -- guerreiro 300` imprime nível, ativas equipadas e efeitos por segundo; o bot `--esperto` prefere gemas de habilidade nova.
+- **Não tocado.** Curva de XP e ondas (thread de balanceamento): os números novos agem sobre o nível da partida, então um XP mais rápido deixa a escalada mais rápida.
+- **Falta.** Evoluções de nível máximo com visual próprio, aura no chão, limite de efeitos e números de dano por quadro com pool de nós.

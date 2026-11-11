@@ -37,6 +37,7 @@ var invencivel := 0.0
 var god_mode := false          # testes automáticos
 var auto_aim := Vector2.ZERO   # testes: mira forçada (e ataque contínuo)
 var auto_move := Vector2.ZERO  # testes: movimento forçado
+var nivel_partida := 1          # nível de XP da corrida (a corrida atualiza): acelera as recargas e enche os Ecos de saltos
 var autocast := true           # combo e ativas disparam sozinhos (falso: só tecla, como antes)
 var _alvo_basico := {}         # alvo do combo no autocast ({} = ninguém no alcance)
 var dodge_cd := 0.0
@@ -80,6 +81,12 @@ func _ready() -> void:
 		habilidades = HabilidadesScript.new()
 		habilidades.carregar_classe("guerreiro")
 	habilidades.mudou.connect(_atualizar_heralds)
+	var espectrais := Efeitos.EspadasEspectrais.new()
+	espectrais.j = self
+	add_child(espectrais)
+	var reverb := Efeitos.Reverberacoes.new()
+	reverb.j = self
+	add_child(reverb)
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("guerreiro")
@@ -116,6 +123,7 @@ func reset() -> void:
 	_atk_cd = 0.0
 	_combo_t = 0.0
 	habilidades.limpar_recargas()
+	nivel_partida = 1
 	_cast = {}
 	_dash = {}
 	_buff_cry = 0.0
@@ -194,6 +202,9 @@ func _tick(delta: float) -> void:
 	_sem_dano += delta
 	_sem_acerto += delta
 	habilidades.tick(delta)
+	var extra: float = stats.get("cd_por_nivel", 0.0) * float(maxi(nivel_partida - 1, 0))
+	if extra > 0.0:
+		habilidades.tick(delta * extra)   # a cada nível de XP as ativas recarregam mais rápido
 	if _sem_acerto > stats["impeto_decay_delay"]:
 		impeto = maxf(0.0, impeto - stats["impeto_decay"] * delta)
 	if stats["regen"] > 0.0 and _sem_dano >= stats["regen_delay"] and hp < stats["hp_max"]:
@@ -336,11 +347,15 @@ func _golpe_basico() -> void:
 		mult *= eco.get("dano", 1.0)
 		if el == "veneno":
 			arco *= 1.25   # Eco da Peste: corte mais largo
+	arco *= 1.0 + stats.get("arco_por_nivel", 0.0) * float(maxi(nivel_partida - 1, 0))   # o corte abre com o nível de XP
 	arco = minf(arco, 300.0)
 	var alcance := _alcance_basico()
 	_cortar(mult, arco, alcance, combo, eco)
 	# Lâmina Dupla (carta `multishot`): cada golpe extra é um eco atrasado do mesmo corte, mais fraco.
-	var ecos := int(stats.get("arrow_count", 1)) - 1
+	var ecos := int(stats.get("arrow_count", 1)) - 1 + int(float(nivel_partida) * stats.get("ecos_por_nivel", 0.0))   # golpe duplo, triplo...
+	if combo == 3 and nivel_partida >= int(stats.get("onda_nivel_min", 99)):
+		var qtd_o := mini(1 + int(float(nivel_partida - int(stats.get("onda_nivel_min", 99))) * stats.get("onda_por_nivel", 0.0)), int(stats.get("onda_max", 1)))
+		Efeitos.ondas_de_corte(self, _aim, qtd_o, Efeitos.TINTAS.get(el, Efeitos.COR_PESADO))
 	for k in ecos:
 		var mira := _aim
 		var golpe := combo
@@ -362,6 +377,7 @@ func _cortar(mult: float, arco: float, alcance: float, golpe: int, eco: Dictiona
 	var el := str(eco.get("elemento", ""))
 	if not eco.is_empty():
 		Efeitos.eco_golpe(self, alvos, golpe, eco, mira, alcance)
+	Efeitos.furia_elemental(self, alvos, mira, alcance, eco)
 	var cor: Color = Efeitos.TINTAS.get(el, Efeitos.COR_LAMINA if golpe < 3 else Efeitos.COR_PESADO)
 	var s := Fx.tocar(get_parent(), "corte_pesado" if golpe == 3 else "corte", global_position + Efeitos.PEITO, alcance * (0.9 if eco_duplo else 1.0), mira.angle() + (0.35 if eco_duplo else 0.0), cor)
 	if golpe == 2 and s is AnimatedSprite2D:

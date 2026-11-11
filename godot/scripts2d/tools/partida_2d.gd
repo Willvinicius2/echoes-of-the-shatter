@@ -16,6 +16,7 @@ var pasta := "partida"
 var intervalo := 5.0
 var deus := false
 var limite := 900.0
+var esperto := false
 var pular := 0
 var run
 var _n := 0
@@ -40,6 +41,7 @@ func _initialize() -> void:
 		Fase.atual = args[4]
 	if args.size() > 5:
 		pular = int(args[5])
+	esperto = OS.get_cmdline_user_args().has("--esperto")
 	DirAccess.make_dir_recursive_absolute(pasta)
 	_rng.seed = 7
 	var main = MainScene.instantiate()
@@ -98,7 +100,7 @@ func _jogar() -> void:
 		if run.ui.aberta:
 			await _quadros(50)
 			await _foto("carta_%s" % run.ui.modo)
-			run.ui.escolher(_rng.randi_range(0, maxi(0, run.ui._ids.size() - 1)))
+			run.ui.escolher(_escolher_carta() if esperto else _rng.randi_range(0, maxi(0, run.ui._ids.size() - 1)))
 			await _quadros(8)
 			continue
 		if run.estado == run.Estado.VENCEU or run.estado == run.Estado.MORTO:
@@ -125,6 +127,27 @@ func _jogar() -> void:
 		if _agir(p, esquiva_t <= 0.0):
 			esquiva_t = 1.0
 	print("[partida] LIMITE t=%.0f onda=%d" % [t, run.onda])
+
+## Com `--esperto` o bot monta a build mais forte (mostra a escalada de poder): gema nova primeiro, depois sobe o que já tem;
+## nas cartas de nível, quantidade, perfuração, área e recarga antes do resto.
+const CARTAS_BOAS := ["multishot", "pierce", "wide_reach", "extra_shot", "swift_shots", "piercing_skills", "lingering", "haste", "power"]
+
+func _escolher_carta() -> int:
+	var ids: Array = run.ui._ids
+	var hab = run.player.habilidades
+	if run.ui.modo == "gem" or run.ui.modo == "afinidade":
+		for i in ids.size():
+			if hab.defs.has(ids[i]) and hab.eh_ativa(ids[i]) and hab.nivel(ids[i]) == 0:
+				return i
+		for i in ids.size():
+			if hab.defs.has(ids[i]) and hab.eh_ativa(ids[i]):
+				return i
+		return 0
+	for b in CARTAS_BOAS:
+		var k: int = ids.find(b)
+		if k >= 0:
+			return k
+	return 0
 
 func _agir(p, pode_esquivar: bool) -> bool:
 	if run.estado == run.Estado.LIMPA:
