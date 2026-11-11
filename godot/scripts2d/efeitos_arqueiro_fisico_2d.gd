@@ -436,9 +436,12 @@ class Andorinha extends Node2D:
 			queue_free()
 
 	func _draw() -> void:
-		for i in range(1, _rastro.size()):
-			var k := float(i) / float(_rastro.size())
-			draw_line(_rastro[i - 1], _rastro[i], Color(OURO, 0.85 * k), 3.0 + 6.0 * k)
+		# rastro em pixels duros: quadrados de 3 tons (sem alfa), do mais velho (escuro) ao mais novo (claro)
+		for i in range(0, _rastro.size(), 2):
+			var k := float(i) / float(maxi(_rastro.size() - 1, 1))
+			var tom := Color(0.55, 0.36, 0.12) if k < 0.4 else (OURO if k < 0.8 else Color(1.0, 0.97, 0.8))
+			var t := 4.0 + 6.0 * k
+			draw_rect(Rect2(_rastro[i] - Vector2(t, t) * 0.5, Vector2(t, t)), tom)
 
 ## Leque de Lâminas: a lâmina gira para fora desacelerando até `alcance`, para um instante e VOLTA para o arqueiro
 ## (onde ele estiver), ferindo na ida e de novo na volta. Parede no caminho faz voltar antes.
