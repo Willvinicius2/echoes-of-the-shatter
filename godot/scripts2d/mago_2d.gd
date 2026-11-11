@@ -6,6 +6,7 @@ extends "res://scripts2d/player_2d.gd"
 const Efeitos = preload("res://scripts2d/efeitos_mago_2d.gd")
 const Basico = preload("res://scripts2d/efeitos_mago_afinidade_2d.gd")
 const FxMago = preload("res://scripts2d/fx_mago_2d.gd")
+const Espiritos = preload("res://scripts2d/espiritos_mago_2d.gd")
 const ExtraU = preload("res://scripts2d/efeitos_extra_util_2d.gd")
 
 var escudo := 0.0        # dano que a Barreira de Gelo ainda absorve
@@ -17,6 +18,8 @@ var surto_mult := 0.0    # regeneração extra (x) enquanto dura
 var _cast_t := 0.0
 var _dano_base := 1.0    # arrow_damage de mago.csv: as cartas de dano escalam as magias na mesma proporção
 var _t_fx := 0.0
+var nivel_corrida := 1   # nível da corrida (a corrida atualiza): quantos espíritos giram em volta e quanto ricocheteiam
+var espiritos: Node2D
 
 func _init() -> void:
 	stats_csv = "res://data2d/mago.csv"
@@ -27,6 +30,8 @@ func _ready() -> void:
 	_dano_base = maxf(float(Csv.kv(stats_csv)["arrow_damage"]), 0.001)
 	super._ready()
 	add_to_group("mago")
+	espiritos = Espiritos.new()
+	add_child(espiritos)
 
 func reset() -> void:
 	super.reset()
@@ -105,6 +110,7 @@ func lancar_efeito(efeito: String, def: Dictionary, nivel := 1) -> bool:
 	var ok := Efeitos.executar(efeito, self, def, nivel, _aim)
 	if ok:
 		animar_conjuracao()
+		espiritos.rajada()
 	return ok
 
 ## Ícone do ataque na HUD: o Eco escolhido ou o orbe arcano.
@@ -165,11 +171,11 @@ func _draw() -> void:
 ## Três cristais giram em volta do mago; `na_frente` escolhe a metade da órbita que passa diante do corpo.
 func _cristais(ci: CanvasItem, na_frente: bool) -> void:
 	for i in 3:
-		var a := _t_fx * 2.4 + TAU * float(i) / 3.0
+		var a := _t_fx * 1.3 + TAU * float(i) / 3.0
 		if (sin(a) > 0.0) != na_frente:
 			continue
 		var p := Vector2(cos(a) * 40.0, sin(a) * 20.0 - 44.0)
-		ExtraU.cristal(ci, p, -PI / 2.0, 30.0, 8.0, 0.95 if na_frente else 0.7)
+		ExtraU.cristal(ci, p, -PI / 2.0, 42.0, 11.0, 0.95 if na_frente else 0.7)
 
 ## Camada desenhada por cima do sprite do mago (cristais da Barreira que passam pela frente).
 class _Frente extends Node2D:

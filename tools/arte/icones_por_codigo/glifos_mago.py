@@ -10,8 +10,11 @@ import numpy as np
 
 import pintura as P
 import glifos as G
-from glifos import FOGO, VENENO, RAIO, PEDRA, ROXO, tela
+from glifos import FOGO, VENENO, RAIO, PEDRA, ROXO, FERRO, tela
 
+AMARELO = [(30, 30, 6), (110, 110, 14), (186, 184, 36), (236, 226, 88), (255, 250, 168)]
+OSSO_C = [(40, 30, 22), (120, 100, 78), (196, 176, 140), (240, 228, 196)]
+FERRO_C = [(20, 20, 26), (70, 70, 84), (140, 138, 150), (214, 208, 204)]
 C_FOGO = (1.0, 0.5, 0.1)
 C_GELO = (0.5, 0.85, 1.0)
 C_RAIO = (0.5, 0.65, 1.0)
@@ -66,16 +69,19 @@ def _nuvem(t, cx, cy, largura, semente, paleta, alfa=0.95):
 
 
 def plague_cloud():
-    t = tela(C_VENENO, 56, 0.42, 64, 62)
-    _nuvem(t, 58, 76, 84, 491, VENENO[:5], 0.8)
-    _nuvem(t, 70, 46, 92, 492, VENENO)
-    for (x, y, r) in [(40, 100, 4.5), (64, 106, 3.6), (88, 98, 4.0)]:
-        gg = G.gota(x, y, r)
-        t.brilho(gg, C_VENENO, 3, 0.8)
-        t.pintar(gg, P.rampa(0.8, VENENO), 1.0)
-    for (x, y, r) in [(52, 44, 5), (84, 38, 6), (70, 56, 3.5)]:   # bolhas na nuvem
-        t.pintar(P.anel(x, y, r, 1.4), P.rampa(0.95, VENENO), 0.85)
-    G.faiscas(t, 493, (64, 60), 50, 8, C_VENENO)
+    """Nuvem amarelo-esverdeada com caveira no miolo: lê como peste mesmo ao lado do cogumelo e da poça."""
+    t = tela((0.8, 0.9, 0.2), 56, 0.45, 64, 60)
+    _nuvem(t, 62, 80, 92, 491, AMARELO[:4], 0.85)
+    _nuvem(t, 66, 50, 100, 492, AMARELO)
+    cr = P.seguir(P.circulo(64, 52, 20), P.elipse(64, 70, 13, 9))
+    t.sombra(cr, 3, 0.5)
+    t.pintar(cr, P.rampa(0.88, OSSO_C), 1.0)
+    for ox in (-8, 8):
+        t.pintar(P.circulo(64 + ox, 52, 5.6), (0.08, 0.06, 0.02), 1.0)
+    t.pintar(P.poligono([(64, 58), (60, 65), (68, 65)]), (0.08, 0.06, 0.02), 1.0)
+    for ox in (-6, -2, 2, 6):
+        t.pintar(P.tubo([(64 + ox, 66), (64 + ox, 74)], 1.4, 1.4), (0.08, 0.06, 0.02), 1.0)
+    G.faiscas(t, 493, (64, 60), 50, 8, (0.8, 0.9, 0.2))
     return t.reduzir()
 
 
@@ -95,19 +101,26 @@ def spore_mark():
 
 
 def acid_pool():
-    t = tela(C_VENENO, 56, 0.42, 64, 74)
-    borda = P.elipse(64, 82, 56, 30)
-    t.pintar(borda, P.rampa(0.2 + 0.25 * P.ruido(511, 9, 3), PEDRA), 1.0)
-    poca = P.elipse(64, 82, 48, 23)
-    poca = np.clip(P.deformar(poca, (P.ruido(512, 20, 3) - 0.5) * 10, (P.ruido(513, 20, 3) - 0.5) * 6), 0, 1)
+    """Tonel de ferro virado derramando ácido numa poça sobre pedra escura: a silhueta de objeto separa do cogumelo e da nuvem."""
+    t = tela(C_VENENO, 50, 0.3, 64, 78)
+    chao = P.elipse(64, 100, 56, 18)
+    t.pintar(chao, P.rampa(0.2 + 0.25 * P.ruido(511, 9, 3), PEDRA), 1.0)
+    poca = P.elipse(70, 100, 44, 13)
     t.brilho(poca, C_VENENO, 6, 0.6)
-    t.pintar(poca, P.rampa(0.35 + 0.5 * P.ruido(514, (26, 10), 4), VENENO), 1.0)
-    t.somar(P.borda_luz(poca).clip(0, 1) * poca, (0.9, 1.0, 0.6), 0.6)
-    for (x, y, r) in [(40, 80, 7), (70, 90, 5), (86, 74, 8), (58, 70, 4)]:
-        G.esfera(t, x, y, r, R_VENENO, alfa=0.9)
-    for (x, y, r) in [(48, 44, 5), (78, 34, 6.5), (64, 54, 3.5), (92, 50, 4)]:   # bolhas que sobem
-        t.brilho(P.circulo(x, y, r), C_VENENO, 3, 0.6)
-        G.esfera(t, x, y, r, R_VENENO, alfa=0.85)
+    t.pintar(poca, P.rampa(0.5 + 0.4 * P.ruido(514, (26, 10), 4), VENENO), 1.0)
+    jato = P.tubo([(46, 62), (50, 80), (58, 98)], 9, 6)
+    t.pintar(jato, P.rampa(0.8, VENENO), 1.0)
+    tonel = P.poligono([(10, 56), (22, 28), (60, 20), (76, 46), (62, 74), (24, 82)])
+    t.sombra(tonel, 4, 0.5)
+    t.volume(tonel, [(14, 12, 10), (60, 36, 22), (116, 74, 40), (190, 130, 70)], 3.0, 1.0)
+    for (a, b) in [((20, 32), (14, 74)), ((38, 24), (36, 80)), ((62, 22), (66, 70))]:
+        t.volume(P.tubo([a, b], 4.2, 4.2), FERRO_C, 1.4, 1.0)
+    boca = P.elipse(14, 66, 8, 13, 10)
+    t.pintar(boca, (0.04, 0.12, 0.03), 1.0)
+    t.pintar(P.anel(14, 66, 9, 1.8), P.rampa(0.8, FERRO_C), 1.0)
+    for (x, y, r) in [(84, 94, 5), (100, 98, 4)]:
+        G.esfera(t, x, y, r, R_VENENO, alfa=0.95)
+    G.faiscas(t, 515, (64, 64), 50, 6, C_VENENO)
     return t.reduzir()
 
 
@@ -129,17 +142,24 @@ def eco_m_trovao():
 
 
 def eco_m_peste():
-    t = tela(C_VENENO, 54, 0.45, 64, 62)
-    t.brilho(P.circulo(64, 60, 36), C_VENENO, 8, 0.5)
-    G.esfera(t, 64, 60, 36, [(6, 40, 6), (40, 130, 20), (120, 214, 50), (220, 255, 150)], alfa=0.7)
-    t.somar(P.anel(64, 60, 36, 3.0), (0.8, 1.0, 0.5), 0.8)
-    t.pintar(P.elipse(48, 44, 9, 5, -40), (1, 1, 0.92), 0.85)
-    for (x, y, r) in [(72, 70, 8), (54, 74, 5), (80, 50, 4)]:
-        t.pintar(P.anel(x, y, r, 1.6), P.rampa(0.92, VENENO), 0.9)
-    for (x, y, r) in [(34, 108, 4.5), (64, 112, 3.5), (96, 106, 4)]:
-        gg = G.gota(x, y, r)
-        t.pintar(gg, P.rampa(0.78, VENENO), 1.0)
-    G.faiscas(t, 531, (64, 60), 52, 8, C_VENENO)
+    """Frasco de vidro com veneno e fumaça roxa saindo do gargalo: não se confunde com o orbe do golpe básico."""
+    t = tela(C_VENENO, 50, 0.4, 64, 74)
+    for k, (x, y, r) in enumerate([(64, 30, 16), (50, 20, 13), (80, 16, 12), (66, 6, 10)]):   # fumaça roxa
+        f = P.circulo(x, y, r)
+        t.pintar(f, P.rampa(0.35 + 0.15 * k, ROXO), 0.9)
+        t.somar(P.borda_luz(f).clip(0, 1) * f, (0.7, 0.5, 1.0), 0.4)
+    vidro = P.seguir(P.circulo(64, 84, 32), P.tubo([(64, 62), (64, 40)], 15, 11))
+    t.sombra(vidro, 4, 0.5)
+    t.pintar(vidro, (0.08, 0.2, 0.18), 0.95)
+    liquido = vidro * (P.Y > 78)
+    t.volume(liquido, VENENO, 2.6, 1.0, brilho_borda=0.3)
+    t.somar(P.borda_luz(vidro).clip(0, 1) * vidro, (0.8, 1.0, 0.9), 0.7)
+    t.pintar(P.elipse(50, 74, 3.5, 9, 10), (0.9, 1.0, 0.95), 0.7)
+    rolha = P.poligono([(54, 40), (74, 40), (72, 31), (56, 31)])
+    t.volume(rolha, [(30, 16, 8), (90, 54, 26), (150, 100, 50), (200, 150, 86)], 1.4, 1.0)
+    for (x, y, r) in [(54, 92, 3.0), (72, 98, 2.4), (62, 86, 2.0)]:
+        t.pintar(P.anel(x, y, r, 1.0), P.rampa(0.95, VENENO), 0.9)
+    G.faiscas(t, 531, (64, 40), 44, 6, C_ARCANO)
     return t.reduzir()
 
 

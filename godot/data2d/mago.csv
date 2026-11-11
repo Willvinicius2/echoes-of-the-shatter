@@ -59,3 +59,16 @@ run_dmg_herald,0,fracao,aumento de dano dos Arautos
 mana_on_hit,1.5,mana,mana devolvida por inimigo atingido pelo ataque basico (o basico alimenta as magias)
 frost_bolt_pierce,2,corpos,inimigos que a Lanca de Gelo atravessa
 cast_time,0.3,s,tempo do gesto de conjuracao (so animacao; nao trava o movimento)
+espirito_nivel_passo,2,niv,um espirito elemental gira em volta do mago a cada tantos niveis da corrida
+espirito_max,10,un,maximo de espiritos em volta
+espirito_cd,3.2,s,recarga de tiro de cada espirito no nivel 0
+espirito_cd_por_nivel,0.1,s,quanto a recarga encurta por nivel
+espirito_cd_min,0.9,s,menor recarga possivel
+espirito_dano,0.55,x,dano do tiro do espirito em fracao do golpe basico
+espirito_alcance,460,px,alcance para achar alvo
+espirito_vel,520,px/s,velocidade do tiro do espirito
+espirito_orbita,62,px,raio da orbita do anel de dentro
+espirito_ricochete_base,1,un,ricochetes do tiro do espirito no nivel 0
+espirito_nivel_ricochete,5,niv,a cada tantos niveis o tiro ganha mais um ricochete
+espirito_efeito_dur,3,s,duracao de veneno queimadura choque e frio do espirito
+espirito_efeito_ratio,0.5,x,dano por segundo do veneno e da queimadura em fracao do tiro

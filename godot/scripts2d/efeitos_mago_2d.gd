@@ -201,8 +201,6 @@ class NovaFogo extends Node2D:
 		var k := clampf(_t / VIDA, 0.0, 1.0)
 		var frente := raio * (1.0 - pow(1.0 - k, 2.0))
 		var some := clampf((VIDA + 0.25 - _t) / 0.25, 0.0, 1.0)
-		U.elipse(self, Vector2.ZERO, frente, Color(0.25, 0.06, 0.02, 0.35 * some))
-		U.elipse(self, Vector2.ZERO, frente * 0.8, Color(1.0, 0.45, 0.1, 0.25 * (1.0 - k)))
 		U.elipse_arco(self, Vector2.ZERO, frente, Color(1.0, 0.8, 0.35, 0.9 * some), 3.0)
 		var n := 30
 		var ordem := []
