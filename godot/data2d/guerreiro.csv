@@ -91,3 +91,4 @@ rev_por_nivel,0.2,,Ecos por rajada a cada nivel
 rev_max,7,,Maximo de ecos por rajada
 rev_dano,0.5,x,Dano do eco em relacao a habilidade
 rev_alcance,460,px,Alcance para escolher alvos
+rev_fps_min,40,fps,Abaixo disso a rajada de reverberacoes e pulada

@@ -543,12 +543,24 @@ static func reverberar(j: Node2D, d: Dictionary, p: Vector2) -> void:
 				j.aplicar_status(a, "veneno", d["duracao"], d["valor"])
 			Fx.tocar(cena, "onda", p, d["raio"], 0.0, TINTAS["veneno"], 0)
 			zona_chao(j, p, d["raio"] * 0.8, d["duracao"], "veneno", d["valor"])
+		"redemoinho", "furia", "grito_guerra":   # aço: giro de lâminas que cai sobre o alvo
+			for a in _perto(j, p, d["raio"]):
+				j.acertar(a, d["dano"])
+			Fx.tocar(cena, "giro", p + PEITO, d["raio"], 0.0, COR_LAMINA)
+		"fenda_pedra", "golpe_pesado", "escudada":   # aço: onda de choque de pedra no chão
+			for a in _perto(j, p, d["raio"]):
+				j.acertar(a, d["dano"], 0.4)
+			Fx.tocar(cena, "onda", p, d["raio"], 0.0, COR_PEDRA, 0)
+			_poeira(j, p, d["raio"] * 0.5, 4)
+	if d.get("evoluida", false):   # nível máximo: segundo anel por cima, para a evolução aparecer
+		Fx.tocar(cena, "onda", p, d["raio"] * 1.25, 0.0, Color(1.0, 0.95, 0.7), 0)
 
 ## Reverberações: de tempos em tempos cada ativa elemental aprendida ecoa sobre inimigos aleatórios. Quanto maior o nível da
 ## partida, mais seguidas e mais numerosas (data2d/guerreiro.csv: rev_*). Habilidade no nível máximo conta em dobro e ecoa maior.
 class Reverberacoes extends Node2D:
 	const Efeitos = preload("res://scripts2d/efeitos_guerreiro_2d.gd")
-	const ELEMENTAIS := ["golpe_trovao", "laminas_tempestade", "erupcao", "onda_flamejante", "cravar_gelido", "escudo_geada", "talho_pestilento", "estandarte_peste"]
+	const ELEMENTAIS := ["golpe_trovao", "laminas_tempestade", "erupcao", "onda_flamejante", "cravar_gelido", "escudo_geada", "talho_pestilento", "estandarte_peste",
+		"redemoinho", "fenda_pedra", "golpe_pesado", "escudada"]
 	var j: Node2D
 	var _t := 1.0
 
@@ -560,6 +572,9 @@ class Reverberacoes extends Node2D:
 			return
 		_t -= delta
 		if _t > 0.0:
+			return
+		if Engine.get_frames_per_second() < j.stats.get("rev_fps_min", 40.0) and DisplayServer.get_name() != "headless":
+			_t = 0.3   # tela pesada: pula esta rajada para o jogo não cair de 60
 			return
 		_t = maxf(j.stats.get("rev_intervalo_min", 0.3), j.stats.get("rev_intervalo", 1.6) - j.stats.get("rev_intervalo_por_nivel", 0.08) * np)
 		var sk = j.habilidades
@@ -581,6 +596,7 @@ class Reverberacoes extends Node2D:
 			d["dano"] = d["dano"] * j.stats.get("rev_dano", 0.5)
 			if sk.nivel(id) >= int(sk.defs[id]["nivel_max"]):
 				d["raio"] = d["raio"] * 1.35
+				d["evoluida"] = true
 			var p: Vector2 = alvos[randi() % alvos.size()].global_position
 			get_tree().create_timer(0.08 * i + 0.01, false).timeout.connect(func():
 				if is_instance_valid(j) and not j.esta_morto():
