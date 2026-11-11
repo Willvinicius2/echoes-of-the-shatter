@@ -211,9 +211,7 @@ class _Meteoro extends Node2D:
 				var e := Anim.new("meteoro_impacto", false, raio * 2.2)
 				e.position = Vector2(0, -20)
 				add_child(e)
-				var b := Anim.new("brasas_chao", true, raio * 2.0)
-				b.z_index = -1
-				add_child(b)
+				z_index = 0   # a poça de brasas é desenhada em código (pixel duro) e fica sob os atores
 				for n in U.no_raio(self, global_position, raio):
 					n.take_damage(dano, global_position)
 					U.queimar(n, dur, dps)
@@ -226,9 +224,39 @@ class _Meteoro extends Node2D:
 				queue_free()
 
 	func _draw() -> void:
-		if _caiu:   # brasas: contorno da área que ainda queima, apagando no fim
-			var apaga := Vfx.fade_zona(_t, dur)
-			draw_arc(Vector2.ZERO, raio, 0.0, TAU, 40, Color(1.0, 0.6, 0.2, 0.35 * apaga), 2.0)
+		if not _caiu:
+			return
+		# Poça de brasas em pixel duro: contorno de 1 px, casca escura, miolo laranja e pontos quentes; alfa binário.
+		var apaga := Vfx.fade_zona(_t, dur)
+		if apaga < 0.15:
+			return
+		var rx := raio * 0.95 * (0.7 + 0.3 * apaga)
+		var ry := rx * 0.5
+		var pts := PackedVector2Array()
+		for i in 28:
+			var a := TAU * float(i) / 28.0
+			var r := 1.0 + 0.12 * (_ru(float(i), 3.0) - 0.5) * 2.0   # borda irregular, não uma elipse perfeita
+			pts.append(Vector2(cos(a) * rx * r, sin(a) * ry * r))
+		draw_colored_polygon(pts, Color(0.16, 0.05, 0.03))
+		draw_colored_polygon(_encolher(pts, 0.78), Color(0.78, 0.26, 0.06))
+		draw_colored_polygon(_encolher(pts, 0.45), Color(1.0, 0.68, 0.16))
+		draw_polyline(pts + PackedVector2Array([pts[0]]), Color(0.06, 0.02, 0.02), 1.0)
+		var passo := floori(_t * 8.0)
+		for i in 7:   # chamas pequenas subindo da poça, 3 tempos: nascem, sobem, apagam
+			var f := fposmod(float(passo + i * 3), 7.0) / 7.0
+			var base := Vector2((_ru(float(i), 9.0) - 0.5) * 1.5 * rx, (_ru(float(i), 4.0) - 0.5) * 1.2 * ry)
+			var h := 10.0 + 8.0 * _ru(float(i), 1.0)
+			var tom := Color(1.0, 0.85, 0.3) if f < 0.5 else Color(0.9, 0.35, 0.08)
+			draw_rect(Rect2(base + Vector2(-2, -h * f - 4.0), Vector2(4, 4 + 4.0 * (1.0 - f))), tom)
+
+	func _encolher(pts: PackedVector2Array, k: float) -> PackedVector2Array:
+		var o := PackedVector2Array()
+		for p in pts:
+			o.append(p * k)
+		return o
+
+	func _ru(a: float, b: float) -> float:   # ruído barato e estável para desenhar
+		return fposmod(sin(a * 12.9898 + b * 78.233) * 43758.5453, 1.0)
 
 ## Muralha de Brasas: linha de chamas no chão; fere e queima quem cruza, em pulsos.
 class _Muralha extends Node2D:
