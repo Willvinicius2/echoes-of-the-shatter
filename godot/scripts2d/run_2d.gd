@@ -430,6 +430,8 @@ func _spawn_inimigos(spec: String) -> void:
 			# Fase aberta: o chefe espera no lugar dele (G, na arena); o jogador vai até lá.
 			var onde: Vector2 = room.posicao_chefe if chefe and room.aberta() and room.posicao_chefe != Vector2.ZERO else pontos[k % pontos.size()]
 			e.setup(p[0], player, onde)
+			if not chefe:
+				_arte_da_fase(e)   # salas do mapa também usam a folha da fase (Sentinela bronze na Ponte)
 			if chefe and room.aberta() and room.posicao_chefe != Vector2.ZERO:
 				_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
 			if indice == 0 and e.has_method("adormecer") and config.get("first_room_wake_radius", 0.0) > 0.0:
