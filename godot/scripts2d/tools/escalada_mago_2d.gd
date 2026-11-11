@@ -8,7 +8,7 @@ const EnemyScript = preload("res://scripts2d/enemy_2d.gd")
 const TRECHOS := [
 	{"nivel": 1, "eco": "", "skills": [], "niveis": 1},
 	{"nivel": 8, "eco": "eco_m_trovao", "skills": ["skill.mage.chain_lightning", "skill.mage.fireball"], "niveis": 1},
-	{"nivel": 16, "eco": "eco_m_trovao", "skills": ["skill.mage.chain_lightning", "skill.mage.fireball", "skill.mage.plague_cloud", "skill.mage.frost_bolt", "skill.mage.thunderstorm", "skill.mage.meteor", "skill.mage.blizzard", "skill.mage.spore_mark"], "niveis": 3},
+	{"nivel": 16, "eco": "eco_m_trovao", "skills": ["skill.mage.chain_lightning", "skill.mage.meteor", "skill.mage.acid_pool", "skill.mage.blizzard"], "niveis": 5},
 ]
 
 func _initialize() -> void:
@@ -25,8 +25,8 @@ func _initialize() -> void:
 	chao.z_index = -10
 	mundo.add_child(chao)
 	var cam := Camera2D.new()
-	cam.position = Vector2(150, 0)
-	cam.zoom = Vector2(1.3, 1.3)
+	cam.position = Vector2(230, 0)
+	cam.zoom = Vector2(1.0, 1.0)
 	mundo.add_child(cam)
 	cam.make_current()
 	var p = PlayerScript.new()

@@ -101,7 +101,7 @@ class Nuvem extends Node2D:
 
 	func _draw() -> void:
 		var k := clampf(minf(_t / 0.3, (dur - _t) / 0.5), 0.0, 1.0)
-		U.elipse(self, Vector2.ZERO, raio * k, Color(0.12, 0.3, 0.06, 0.3))
+		FxMago.elipse_pixel(self, Vector2.ZERO, raio * k, Color(0.12, 0.3, 0.06))
 		U.elipse_arco(self, Vector2.ZERO, raio * k, Color(VERDE, 0.5), 2.0)
 
 ## Esporo preso a um inimigo: pulsa cada vez mais rápido e estoura no fim do pavio, ou na hora se o hospedeiro morrer.
@@ -196,10 +196,9 @@ class Poco extends Node2D:
 	func _draw() -> void:
 		var k := clampf(_t / 0.25, 0.0, 1.0) * Vfx.fade_zona(_t, dur)
 		var pal: Array = FxMago.paleta("veneno")
-		U.elipse(self, Vector2.ZERO, raio * k, Color(pal[0], 0.7))
-		U.elipse(self, Vector2.ZERO, raio * 0.86 * k, Color(pal[1], 0.75))
-		U.elipse(self, Vector2(-raio * 0.15, -raio * 0.05), raio * 0.5 * k, Color(pal[2], 0.45))
-		U.elipse_arco(self, Vector2.ZERO, raio * k, Color(pal[3], 0.6), 2.0)
+		FxMago.elipse_pixel(self, Vector2.ZERO, raio * k, pal[0])
+		FxMago.elipse_pixel(self, Vector2.ZERO, raio * 0.84 * k, pal[1])
+		FxMago.elipse_pixel(self, Vector2(-raio * 0.15, -raio * 0.04), raio * 0.46 * k, pal[2])
 		for i in 7:   # bolhas quadradas que nascem, crescem e estouram
 			var u := fmod(_t * (0.7 + 0.13 * float(i)) + float(i) * 0.37, 1.0)
 			var a := float(i) * 2.4

@@ -33,6 +33,7 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 	if jogador == null or not jogador.is_inside_tree():
 		return false
 	var dir := mira.normalized() if mira.length() > 0.01 else Vector2.DOWN
+	def = _por_nivel(efeito, jogador, def, nivel)
 	match efeito:
 		"bola_fogo": return _bola_fogo(jogador, def, dir)
 		"sopro_chamas": return _sopro(jogador, def, dir)
@@ -52,6 +53,25 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 		"nuvem_peste", "esporos", "poco_acido": return Veneno.executar(efeito, jogador, def, dir)
 	push_warning("efeito de habilidade desconhecido: " + efeito)
 	return false
+
+## Cada nível da magia muda a tela: +projéteis em leque, +saltos/raios/fileiras, +área e +meteoros (mago.csv, `magia_nivel_*`).
+static func _por_nivel(efeito: String, jogador: Node2D, def: Dictionary, nivel: int) -> Dictionary:
+	var n := float(maxi(nivel, 1) - 1)
+	if n <= 0.0:
+		return def
+	var d := def.duplicate()
+	var st: Dictionary = jogador.stats
+	if efeito in ["bola_fogo", "raio_gelo"]:
+		d["proj_extra"] = int(d.get("proj_extra", 0)) + int(n * float(st.get("magia_nivel_proj", 0.0)))
+	if efeito in ["corrente_raios", "tempestade", "nova_raio"]:
+		d["qtd"] = float(d.get("qtd", 0.0)) + n * float(st.get("magia_nivel_salto", 0.0))
+	if efeito == "estacas_gelo":
+		d["qtd"] = float(d.get("qtd", 0.0)) + n * float(st.get("magia_nivel_fileira", 0.0))
+	if efeito == "meteoro":
+		d["meteoros_extra"] = int(n * float(st.get("magia_nivel_meteoro", 0.0)))
+	if efeito in ["bola_fogo", "meteoro", "nova_fogo", "nova_gelo", "nevasca", "nuvem_peste", "poco_acido", "barreira_gelo", "estacas_gelo", "nova_raio"]:
+		d["raio"] = float(d.get("raio", 0.0)) * (1.0 + n * float(st.get("magia_nivel_area", 0.0)))
+	return d
 
 # ---- números derivados -------------------------------------------------------------------
 
@@ -156,6 +176,15 @@ static func _meteoro(jogador: Node2D, def: Dictionary, dir: Vector2) -> bool:
 		float(def.get("valor", 6.0)) * (1.0 + float(jogador.stats.get("burn_bonus", 0.0))))
 	_cena(jogador).add_child(m)
 	m.global_position = ponto
+	var raio_m := float(def.get("raio", 150.0))
+	for k in int(def.get("meteoros_extra", 0)):   # chuva: cada nível a mais derruba mais um, espalhado e um pouco depois
+		var x := FogoFx._Meteoro.new()
+		var off := Vector2.from_angle(randf() * TAU) * raio_m * randf_range(0.9, 1.8)
+		x.preparar(ponto + off, raio_m, _dano(jogador, def) * 0.7, float(def.get("duracao", 3.0)),
+			float(def.get("valor", 6.0)) * (1.0 + float(jogador.stats.get("burn_bonus", 0.0))))
+		x.atraso = 0.25 * float(k + 1)
+		_cena(jogador).add_child(x)
+		x.global_position = ponto + off
 	var eu: WeakRef = weakref(jogador)
 	jogador.get_tree().create_timer(FogoU.TEMPO_QUEDA).timeout.connect(func() -> void:
 		if eu.get_ref() != null:
@@ -195,6 +224,8 @@ class NovaFogo extends Node2D:
 				Alvos.golpear(e, dano, global_position, status)
 		queue_redraw()
 		if _t >= VIDA + 0.25:
+			FxMago.anel(get_parent(), global_position, "fogo", raio, 0.3)   # brasas que sobem no fim
+			FxMago.impacto(get_parent(), global_position + Vector2(0, -20), "fogo", 1.6)
 			queue_free()
 
 	func _draw() -> void:   # chão queimado por baixo e uma parede de labaredas na frente da onda (elipse da visão 3/4)
@@ -203,14 +234,16 @@ class NovaFogo extends Node2D:
 		var some := clampf((VIDA + 0.25 - _t) / 0.25, 0.0, 1.0)
 		U.elipse_arco(self, Vector2.ZERO, frente, Color(1.0, 0.8, 0.35, 0.9 * some), 3.0)
 		var n := 30
-		var ordem := []
-		for i in n:
-			var a := TAU * float(i) / float(n)
-			ordem.append(Vector2(cos(a) * frente, sin(a) * frente * 0.5))
-		ordem.sort_custom(func(p: Vector2, q: Vector2) -> bool: return p.y < q.y)   # as de trás primeiro
-		for i in n:
-			var h := (30.0 + 16.0 * sin(_t * 22.0 + float(i) * 2.1)) * (0.6 + 0.4 * some)
-			U.chama(self, ordem[i], h, 9.0, float(i) + _t * 9.0, some)
+		for fila in 2:   # duas fileiras: a de dentro é baixa e a de fora é alta
+			var rr := frente * (0.86 if fila == 0 else 1.0)
+			var ordem := []
+			for i in n:
+				var a := TAU * (float(i) + 0.5 * float(fila)) / float(n)
+				ordem.append(Vector2(cos(a) * rr, sin(a) * rr * 0.5))
+			ordem.sort_custom(func(p: Vector2, q: Vector2) -> bool: return p.y < q.y)   # as de trás primeiro
+			for i in n:
+				var h := (18.0 if fila == 0 else 30.0 + 16.0 * sin(_t * 22.0 + float(i) * 2.1)) * (0.6 + 0.4 * some)
+				U.chama(self, ordem[i], h, 8.0, float(i) + _t * 9.0 + float(fila) * 3.0, some)
 
 # ---- gelo --------------------------------------------------------------------------------
 

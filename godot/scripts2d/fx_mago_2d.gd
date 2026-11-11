@@ -126,6 +126,19 @@ static func _nivel(forma: String, p: Vector2, tam: Vector2) -> int:
 		return 2
 	return 1
 
+## Elipse cheia (visão 3/4) em linhas de pixel na grade do mundo, opaca: as zonas do Mago não usam polígono liso nem alfa suave.
+static func elipse_pixel(ci: CanvasItem, centro: Vector2, r: float, cor: Color) -> void:
+	if r < GRADE:
+		return
+	var meio := r * 0.5
+	var y := -meio
+	while y < meio:
+		var w := r * sqrt(maxf(0.0, 1.0 - pow((y + GRADE * 0.5) / meio, 2.0)))
+		var px := roundf((centro.x - w) / GRADE) * GRADE
+		var py := roundf((centro.y + y) / GRADE) * GRADE
+		ci.draw_rect(Rect2(Vector2(px, py), Vector2(roundf(2.0 * w / GRADE) * GRADE, GRADE)), cor)
+		y += GRADE
+
 # ---- impactos ----------------------------------------------------------------------------
 
 ## Estouro pequeno de pixels no ar (acerto de projétil). `escala` 1 = orbe básico.

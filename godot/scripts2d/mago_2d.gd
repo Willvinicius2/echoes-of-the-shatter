@@ -6,9 +6,11 @@ extends "res://scripts2d/player_2d.gd"
 const Efeitos = preload("res://scripts2d/efeitos_mago_2d.gd")
 const Basico = preload("res://scripts2d/efeitos_mago_afinidade_2d.gd")
 const FxMago = preload("res://scripts2d/fx_mago_2d.gd")
+const Orbe = preload("res://scripts2d/orbe_2d.gd")
 const Espiritos = preload("res://scripts2d/espiritos_mago_2d.gd")
 const ExtraU = preload("res://scripts2d/efeitos_extra_util_2d.gd")
 
+const CRISTAIS := 7
 var escudo := 0.0        # dano que a Barreira de Gelo ainda absorve
 var escudo_t := 0.0
 var _frente: Node2D
@@ -140,6 +142,7 @@ func take_damage(amount: float, origem := Vector2.ZERO) -> void:
 		return
 	if escudo > 0.0:
 		var absorve := minf(escudo, amount)
+		_estilhacos(origem)
 		escudo -= absorve
 		amount -= absorve
 		if escudo <= 0.0:
@@ -170,12 +173,12 @@ func _draw() -> void:
 
 ## Três cristais giram em volta do mago; `na_frente` escolhe a metade da órbita que passa diante do corpo.
 func _cristais(ci: CanvasItem, na_frente: bool) -> void:
-	for i in 3:
-		var a := _t_fx * 1.3 + TAU * float(i) / 3.0
+	for i in CRISTAIS:
+		var a := _t_fx * 1.0 + TAU * float(i) / float(CRISTAIS)
 		if (sin(a) > 0.0) != na_frente:
 			continue
 		var p := Vector2(cos(a) * 40.0, sin(a) * 20.0 - 44.0)
-		ExtraU.cristal(ci, p, -PI / 2.0, 42.0, 11.0, 0.95 if na_frente else 0.7)
+		ExtraU.cristal(ci, p, -PI / 2.0, 52.0, 12.0, 0.95 if na_frente else 0.7)
 
 ## Camada desenhada por cima do sprite do mago (cristais da Barreira que passam pela frente).
 class _Frente extends Node2D:
@@ -183,3 +186,17 @@ class _Frente extends Node2D:
 		var m = get_parent()
 		if m.escudo > 0.0:
 			m._cristais(self, true)
+
+## Ao bloquear um golpe, a Barreira solta 3 a 4 estilhaços de gelo (lascas em pixel) para os lados.
+func _estilhacos(origem: Vector2) -> void:
+	if not is_inside_tree():
+		return
+	var base := (origem - global_position).angle() if origem != Vector2.ZERO else randf() * TAU
+	var dano_e := float(escudo_def.get("dano_final", 0.0)) * 0.3
+	for i in 4:
+		var l := Orbe.new()
+		l.setup(global_position, Vector2.from_angle(base + (float(i) - 1.5) * 0.7), 420.0, dano_e, 150.0)
+		l.elemento = "gelo"
+		l.forma = "lasca"
+		l.tamanho = 7.0
+		get_parent().add_child(l)
