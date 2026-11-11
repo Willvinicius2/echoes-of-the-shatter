@@ -52,6 +52,9 @@ Abaixo de 50% de vida entra a fase 2: avisos 15% mais curtos, pausas 35% menores
 - **Sentinela Oca em bronze escurecido** só nesta área: `tools/sprites2d/recolorir_sentinela_bronze.py` recolore as folhas (comum e elite) e `data2d/arte_fase_2d.csv` (fase, inimigo, arte) troca a folha ao nascer; a Cripta e a Pedreira ficam no dourado.
 - **Filhotes 15% menores**: folha regerada com `esc=8,9` (era 10,5) e raio de colisão 11 (era 13).
 
+## Enquadramento da chefe
+O corpo da Tecelã (uns 300 px acima do pé) cortava no alto. Perto dela (até `camera_chefe_raio`, 900 px) a câmera se afasta (`camera_chefe_zoom_bell_weaver`, 0,78) e mira a meio caminho entre o jogador e o meio do corpo dela (`camera_chefe_vies_...` e `camera_chefe_dy_...`), em transição de uns 0,8 s (`run_2d.gd`, `_alvo_camera`). Só vale para chefes de portão com essas chaves por id: as outras áreas ficam como estavam. Se o jogador foge para longe (mais de uns 450 px), a cabeça ainda pode cortar: o jogador sempre fica na tela.
+
 ## Regras e números (tudo em CSV)
 - `enemies.csv`: `gravel_spiderling` (30 de vida, rápido, dano 7) e `bell_weaver` (300 de vida de base).
 - `ondas.csv` e `ondas_fases.csv`: 7 ondas; filhotes, morcegos e fantasmas errantes desde o começo, arqueiros fantasmas a partir da 2, sentinela oca como elite a partir da 4 e o Carcereiro do Ossuário como mini-chefe na 7. O Arauto de Pedra não entra nesta área.
