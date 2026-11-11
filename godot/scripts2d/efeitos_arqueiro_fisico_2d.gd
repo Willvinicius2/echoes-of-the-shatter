@@ -457,7 +457,7 @@ class Lamina extends Node2D:
 		z_index = 4
 		Vfx.registrar_animado(self)
 		_origem = global_position
-		_spr = F.sprite("lamina", 2.4)
+		_spr = F.sprite("lamina", 3.6)
 		_spr.position = Vector2(0, -ALT)
 		add_child(_spr)
 
@@ -713,10 +713,10 @@ class Estilhacos extends Node2D:
 			var k := _t / fim
 			var p := alvo * k + Vector2(0, -110.0 * sin(k * PI))
 			U.elipse(self, alvo * k, 6.0, Color(0, 0, 0, 0.3))
-			draw_circle(p, 21.0, Color(0.1, 0.08, 0.1))
-			draw_circle(p, 16.0, F.PALETA["R"])
-			draw_rect(Rect2(p + Vector2(-10.0, -10.0), Vector2(7.5, 7.5)), Color(1.0, 0.6, 0.45))
-			draw_rect(Rect2(p + Vector2(-5.0, -31.0), Vector2(10, 10)), F.PALETA["Y"] if int(_t * 30.0) % 2 == 0 else Color.WHITE)
+			draw_circle(p, 28.0, Color(0.1, 0.08, 0.1))
+			draw_circle(p, 22.0, F.PALETA["R"])
+			draw_rect(Rect2(p + Vector2(-13.0, -13.0), Vector2(10, 10)), Color(1.0, 0.6, 0.45))
+			draw_rect(Rect2(p + Vector2(-6.0, -40.0), Vector2(12, 12)), F.PALETA["Y"] if int(_t * 30.0) % 2 == 0 else Color.WHITE)
 
 ## Falcão do caçador: mergulha do céu até o alvo, fere, e deixa a Marca. Também leva a marca de um morto ao próximo.
 class Falcao extends Node2D:

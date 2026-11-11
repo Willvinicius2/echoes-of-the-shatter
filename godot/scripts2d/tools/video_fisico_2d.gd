@@ -16,6 +16,7 @@ var run
 var p
 var legenda: Label
 var _treino: Array = []
+var limpo := false   # argumento `limpo`: só dois alvos bem separados, para ver a marca no chão
 var horda := false   # argumento `horda` no fim: deixa a horda de verdade vir junto
 
 func _initialize() -> void:
@@ -24,6 +25,9 @@ func _initialize() -> void:
 	var pasta: String = args[1] if foto and args.size() > 1 else ""
 	var dur: float = 5.0 if foto or args.is_empty() else float(args[0])
 	var ids: Array = args.slice(2 if foto else 1)
+	if ids.has("limpo"):
+		limpo = true
+		ids.erase("limpo")
 	if ids.has("horda"):
 		horda = true
 		ids.erase("horda")
@@ -102,7 +106,7 @@ func _alvos() -> void:
 		if is_instance_valid(e):
 			e.queue_free()
 	_treino.clear()
-	for q in [Vector2(200, -90), Vector2(280, 40), Vector2(380, -40), Vector2(460, 90), Vector2(330, 150), Vector2(540, -10)]:
+	for q in ([Vector2(420, -120), Vector2(420, 120)] if limpo else [Vector2(200, -90), Vector2(280, 40), Vector2(380, -40), Vector2(460, 90), Vector2(330, 150), Vector2(540, -10)]):
 		var e = load("res://scripts2d/enemy_2d.gd").new()
 		p.get_parent().add_child(e)
 		e.setup("skeleton_soldier", p, p.global_position + q)
