@@ -24,6 +24,8 @@ const CorridaGuerreiroScript = preload("res://scripts2d/corrida_guerreiro_2d.gd"
 const Classe = preload("res://scripts2d/classe_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const ElitePortao = preload("res://scripts2d/elite_portao_2d.gd")
+## Elites do portão com IA própria de golpes (o resto usa o corpo a corpo comum de enemy_2d.gd).
+const IAS_CHEFE_PORTAO := {"bell_weaver": preload("res://scripts2d/tecela_2d.gd")}
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
@@ -602,7 +604,12 @@ func _nascer(s: Dictionary) -> void:
 	var id := str(s["enemy"])
 	# Chefe que não é `kind=boss` (elite do portão): IA comum, não o Guardião (BossScript e boss_patterns_2d.csv).
 	var portao: bool = chefe and str(Csv.enemy(id).get("kind", "boss")) != "boss"
-	var e: Node2D = (BossScript if chefe and not portao else EnemyScript).new()
+	var classe = EnemyScript
+	if chefe and not portao:
+		classe = BossScript
+	elif portao:
+		classe = IAS_CHEFE_PORTAO.get(id, EnemyScript)
+	var e: Node2D = classe.new()
 	atores.add_child(e)
 	var onde: Vector2
 	if chefe and room.posicao_chefe != Vector2.ZERO:
@@ -625,6 +632,9 @@ func _nascer(s: Dictionary) -> void:
 			e.hp_max = vida_chefe
 			e.stats["damage"] = float(e.stats["damage"]) * float(config.get("gate_elite_damage_mult", 1.0))
 			_preparar_elite_portao(e)
+			if e.has_method("_iniciar_proximo"):   # IA própria de golpes (a Tecelã): liga aos pontos livres do mapa e ao nascimento dos filhotes
+				e.pontos_livres = func(c: Vector2, r: float, n: int) -> Array: return room.pontos_livres_perto(c, r, n, rng)
+				e.convocar = _convocar_filhotes
 		elif player.global_position.distance_to(onde) > 2.0 * float(config.get("boss_wake_radius", 260.0)):
 			# só quando ele acorda longe (prazo do enxame); se foi o jogador que chegou ao altar, a barra do chefe já diz tudo
 			_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
@@ -648,6 +658,25 @@ func _nascer(s: Dictionary) -> void:
 	e.set_meta("spawn_id", int(s["id"]))
 	e.set_meta("xp_mult", float(s.get("xp_mult", 1.0)))
 	e.died.connect(_on_inimigo_morto)
+
+## Filhotes chamados pelo chefe (Tecelã): nascem nos `pontos`, valem a curva da onda atual, ficam fora da conta do spawner (como
+## os encontros do mapa) e soltam XP normal. Devolve os inimigos para o chefe contar os vivos.
+func _convocar_filhotes(id: String, pontos: Array) -> Array:
+	var nascidos := []
+	for pt in pontos:
+		var e: Node2D = EnemyScript.new()
+		atores.add_child(e)
+		e.setup(id, player, pt)
+		if not _mult_onda.is_empty():
+			e.stats["hp"] = float(e.stats["hp"]) * float(_mult_onda["hp"])
+			e.stats["damage"] = float(e.stats["damage"]) * float(_mult_onda["damage"])
+			e.hp = e.stats["hp"]
+			e.hp_max = e.hp
+		e.set_meta("guarda", true)
+		e.set_meta("xp_mult", float(_mult_onda.get("xp", 1.0)))
+		e.died.connect(_on_inimigo_morto)
+		nascidos.append(e)
+	return nascidos
 
 ## Elite do portão (decisão do Jev para a Pedreira): conta como elite (XP, baú e gema de elite) mas sem o tom dourado
 ## nem a escala dos elites de onda; cresce `gate_elite_scale` (sprite e colisão), entra parado e invulnerável por
