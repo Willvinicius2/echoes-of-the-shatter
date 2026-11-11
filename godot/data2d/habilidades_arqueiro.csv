@@ -44,7 +44,7 @@ storm_orbs,raio,ativa,2,shock_arrow,2,3,orbes_tempestade,14,0,0.6,3,,90,6,,0.15,
 plague_spread,veneno,ativa,2,poison_arrow,2,3,contagio,10,0,0.8,,,150,4,,5,0.15,,,plague_spread
 toxic_mines,veneno,ativa,2,poison_arrow,2,3,minas_toxicas,12,0,1.6,3,,110,8,500,5,0.15,,,toxic_mines
 acid_geyser,veneno,ativa,3,plague_spread,3,3,geiser_acido,13,0,1.5,4,,260,,600,5,0.15,,,acid_geyser
-icicle_lance,gelo,ativa,2,frost_arrow,2,3,lanca_gelo,9,0,2.2,2,,30,3,640,0.15,0.12,,,icicle_lance
+icicle_lance,gelo,ativa,2,frost_arrow,2,3,lanca_gelo,9,0,0.2,2,80,30,1.4,640,0.15,0.12,,,icicle_lance
 ice_spikes,gelo,ativa,3,glacial_shard,3,3,espinhos_gelo,10,0,1.6,7,,46,3,520,0.15,0.12,,,ice_spikes
 blizzard,gelo,ativa,3,ice_comet,3,3,nevasca,18,0,0.7,,,220,6,,0.15,0.12,,,blizzard
 flame_breath,fogo,ativa,2,flecha_ardente,2,3,sopro_chamas,8,0,0.45,3,70,,1.2,260,4,0.15,,,flame_breath

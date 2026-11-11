@@ -555,8 +555,8 @@ skill.toxic_mines.name,Minas Tóxicas
 skill.toxic_mines.desc,"Planta minas de esporos no chão que estouram em nuvem de veneno quando um inimigo se aproxima"
 skill.acid_geyser.name,Gêiser Ácido
 skill.acid_geyser.desc,"Jatos de ácido brotam do chão sob os inimigos mais próximos, ferem, envenenam e atordoam"
-skill.icicle_lance.name,Lança de Gelo
-skill.icicle_lance.desc,"Uma lança de cristal cruza a linha à frente num instante, gela tudo no caminho e se estilhaça"
+skill.icicle_lance.name,Raio Glacial
+skill.icicle_lance.desc,"Um feixe de gelo varre o arco à frente, queimando de frio tudo o que cruza e acumulando geada até congelar"
 skill.ice_spikes.name,Espinhos de Gelo
 skill.ice_spikes.desc,"Uma onda de espinhos de gelo brota do chão em linha, ferindo e gelando quem está em cima"
 skill.blizzard.name,Nevasca

@@ -4,6 +4,7 @@ extends RefCounted
 ## O frio usa as regras do ramo (Gelo.acumular_frio: lentidão por acúmulo, congela no 4º). Tudo vetorial.
 
 const U = preload("res://scripts2d/efeitos_extra_util_2d.gd")
+const Feixe = preload("res://scripts2d/efeito_feixe_2d.gd")
 const Gelo = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
 const Vfx = preload("res://scripts2d/vfx_2d.gd")
 const Px = preload("res://scripts2d/fx_pixel_2d.gd")
@@ -16,15 +17,14 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, mira: Vec
 	var cena: Node = jogador.get_parent()
 	match efeito:
 		"lanca_gelo":
-			var l := Lanca.new()
-			l.dir = dir
-			l.comp = def.get("alcance", 640.0)
-			l.larg = def.get("raio", 30.0)
-			l.dano = dano
-			l.frio = maxi(1, int(def.get("qtd", 2)))
-			l.def = def
-			cena.add_child(l)
-			l.global_position = jogador.global_position
+			# Raio Glacial: feixe contínuo que varre um arco à frente (forma genérica em efeito_feixe_2d.gd).
+			Feixe.lancar(jogador, dir, {
+				"cor": [Color(0.12, 0.3, 0.6), Color(0.5, 0.85, 1.0), Color(0.96, 1.0, 1.0)],
+				"comp": def.get("alcance", 640.0) * 0.55, "larg": def.get("raio", 30.0) * 1.7,
+				"arco": deg_to_rad(def.get("angulo", 80.0)), "dur": def.get("duracao", 1.4), "tick": 0.12,
+				"dano": dano,
+				"ao_acertar": func(e: Node2D) -> void:
+					Gelo.acumular_frio(e, 1, def)})
 		"espinhos_gelo":
 			var e := Espinhos.new()
 			e.dir = dir
