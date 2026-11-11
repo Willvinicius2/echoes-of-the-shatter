@@ -1,0 +1,263 @@
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff....................fffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmffffffffffffffffffffffffffffffffffffffffff..................ffffffffffffffffffffffff....................fffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmffffffffffffffffffffffffffffffffffffffffff..............................................................ffffffffffffffffffffffffff..............fffffff.....................ffffmm
+mmffffffffffffffffffffffffffffffffffffffffff....................E.........................................ffffffffffffffffffffffffff..E...........fffffff.....................ffffmm
+mmffffffffffffffffffffffffffffffffffffffffff..............................................................ffffffffffffffffffffffffff....B.....B...fffffff...B..............B..ffffmm
+mmffff................ffffffffffffffffffffff..................................................................................................................................ffffmm
+mmffff................ffffffffffffffffffffff....B.........B.................................................E.................................................................ffffmm
+mmffff................ffffffffffffffffffffff..................................................................................................................................ffffmm
+mmffff.............................................................................E..........................................................................................ffffmm
+mmffff.........B........E..........................................................................................................................................G..........ffffmm
+mmffff........................................................ffffffffffffffffffffffff........................................................................................ffffmm
+mmffff........................................................ffffffffffffffffffffffff..................................................B.....B...............................ffffmm
+mmffff......P.................................................ffffffffffffffffffffffff.........................................................E..............................ffffmm
+mmffff........................................................ffffffffffffffffffffffff............................................................fffffff.....................ffffmm
+mmffff...................................E....................ffffffffffffffffffffffffffffff........fffffffffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmffff.........B..............................................ffffffffffffffffffffffffffffff........fffffffffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmffff................ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff........fffffffffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmffff................ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff........fffffffffffffffffffffffffffffffffffffffffffffffffffff...B..............B..ffffmm
+mmffff................ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff........fffffffffffffffffffffffffffffffffffffffffffffffffffff..........X..........ffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff........fffffffffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.....................ffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffmm
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+@piso ponte
+@caminho 2.4 7,26 22,26 40,26 47,24.5 56,21 62,20 84,20 90,20.6 102,22.4 108,23.5 130,23.5 136,22.6 144,23 152,23 158,23.4 163,23.6
+@lajes claro 4.6 13.5,26
+@lajes claro 5.4 52.5,22.6
+@lajes escuro 2.2 52.5,18.6
+@lajes escuro 3.6 95.5,20
+@lajes claro 4.4 138.5,21.5
+@lajes claro 8.6 163,23
+@lajes escuro 4.3 163,23
+@decalque res://art2d/ponte/borda_00.png 2812 931
+@decalque res://art2d/ponte/borda_01.png 3072 931
+@decalque res://art2d/ponte/borda_02.png 4096 995
+@decalque res://art2d/ponte/borda_03.png 5120 867
+@decalque res://art2d/ponte/borda_04.png 6144 867
+@decalque res://art2d/ponte/borda_05.png 8444 995
+@decalque res://art2d/ponte/borda_06.png 9216 747
+@decalque res://art2d/ponte/borda_07.png 10240 739
+@decalque res://art2d/ponte/borda_08.png 380 1187
+@decalque res://art2d/ponte/borda_09.png 1024 1187
+@decalque res://art2d/ponte/borda_10.png 2048 1024
+@decalque res://art2d/ponte/borda_11.png 3072 1024
+@decalque res://art2d/ponte/borda_12.png 4096 1024
+@decalque res://art2d/ponte/borda_13.png 5120 1024
+@decalque res://art2d/ponte/borda_14.png 6392 1024
+@decalque res://art2d/ponte/borda_15.png 7168 1187
+@decalque res://art2d/ponte/borda_16.png 8192 1024
+@decalque res://art2d/ponte/borda_17.png 9216 1024
+@decalque res://art2d/ponte/borda_18.png 11128 1024
+@decalque res://art2d/ponte/borda_19.png 380 2048
+@decalque res://art2d/ponte/borda_20.png 1024 2048
+@decalque res://art2d/ponte/borda_21.png 2274 2048
+@decalque res://art2d/ponte/borda_22.png 3072 2048
+@decalque res://art2d/ponte/borda_23.png 5884 2048
+@decalque res://art2d/ponte/borda_24.png 6144 2048
+@decalque res://art2d/ponte/borda_25.png 9788 2048
+@decalque res://art2d/ponte/borda_26.png 10240 2048
+@luz 21.55,21.4 3.6 1,0.58,0.22,0.28
+@luz 20.45,29.4 3.6 1,0.58,0.22,0.28
+@luz 27.75,21.35 3.6 1,0.58,0.22,0.28
+@luz 35.65,21.35 3.6 1,0.58,0.22,0.28
+@luz 67.75,15.35 3.6 1,0.58,0.22,0.28
+@luz 75.65,15.35 3.6 1,0.58,0.22,0.28
+@luz 111.75,18.35 3.6 1,0.58,0.22,0.28
+@luz 119.65,18.35 3.6 1,0.58,0.22,0.28
+@luz 52.5,17.4 4.2 1,0.62,0.26,0.24
+@luz 95.9,18.1 5 0.55,0.8,1,0.2
+@luz 96,30.8 3.6 1,0.6,0.24,0.3
+@luz 163,23.2 3.2 1,0.5,0.18,0.26
+@bolsao 96,31.2 bau
+@brilho_estrada 1.12
+@guarda 96,29 260 1.1 gravel_spiderling:4
+@guarda 32.5,25.5 260 0.85 gravel_spiderling:3
+@guarda 52.5,25 260 0.95 gravel_spiderling:3|ghost_archer:1
+@guarda 73.5,19.5 260 1 ghost_archer:2|wandering_ghost:1
+@guarda 95.5,23 260 1.05 gravel_spiderling:5|hollow_sentinel:1
+@guarda 118.5,23 260 1.1 ghost_archer:2|crypt_bat:3
+@guarda 149,22.5 260 1.2 hollow_sentinel:2|gravel_spiderling:3
+@props
+skull_single 170.9 13
+skull_single 172.8 13 flip
+ponte_entulho 155.6 13.4
+pillar_broken 98 13.7
+ponte_casulo 158.4 13.7 flip
+ponte_casulo 167.8 13.7
+pillar_broken 86.9 13.8
+pillar_broken 96.8 13.8 flip
+ponte_casulo 153.8 13.9
+ponte_casulo 172 14.1 flip
+rock_slabs 94 14.2 flip
+ponte_sino_maior 163 14.4
+rock_slabs 47.3 14.7 flip
+bones_scattered 105.4 14.8
+ponte_casulo 90.5 14.9 flip
+ponte_casulo 101.9 15.1
+skull_single 71.4 15.5 flip
+ponte_casulo 87.9 15.5
+bones_chains 139.3 15.5 flip
+ponte_teia_1 98.1 15.9 flip
+ponte_entulho 49 16 flip
+bones_chains 91.4 16.2
+pedreira_poste_lanterna 67.2 16.35
+pedreira_poste_lanterna 76.2 16.35 flip
+ponte_casulo 60.4 16.4
+skull_pile 99.9 16.4
+ponte_teia_1 103.1 16.5 flip
+ponte_teia_1 160.4 16.5
+pillar_cracked 45.4 16.6
+ponte_teia_1 46.1 16.6
+bones_scattered 66.3 16.8
+skull_single 104.4 16.8
+ponte_teia_1 166 16.9 flip
+bones_scattered 152.5 17 flip
+pillar_fallen 138.3 17.2
+bones_ribcage 92.3 17.6
+bones_chains 60.3 18.1 flip
+ponte_sino 52.5 18.4
+ponte_casulo 103.7 18.5 flip
+skull_single 113.8 18.8 flip
+ponte_entulho 146.6 18.8 flip
+rock_slabs 115.1 18.9 flip
+bones_chains 102.9 19
+bones_scattered 116.4 19
+ponte_sino_caido 95.9 19.3
+ponte_entulho 149.7 19.3
+skull_single 165.8 19.3 flip
+pedreira_poste_lanterna 111.2 19.35
+pedreira_poste_lanterna 120.2 19.35 flip
+ponte_teia_0 90.9 19.5
+ponte_teia_1 154.4 19.5
+bones_scattered 15.3 19.7 flip
+bones_chains 130.9 19.7
+bones_chains 103.2 20.1 flip
+ponte_teia_0 157.4 20.1
+ponte_teia_0 153 20.2
+ponte_entulho 18.5 20.6
+bones_chains 160.7 20.6 flip
+ponte_teia_0 168.8 20.9 flip
+ponte_teia_1 10.5 21.1
+ponte_teia_0 104.6 21.1
+ponte_entulho 46.4 21.3
+skull_single 113.9 21.3 flip
+pillar_broken 9 21.4
+skull_single 43.9 21.4
+ponte_teia_1 88.5 21.7
+bones_scattered 167.3 21.7 flip
+bones_scattered 79.9 21.9 flip
+ponte_teia_1 70 22.1
+skull_single 61.3 22.3 flip
+ponte_teia_0 100.3 22.3 flip
+pedreira_poste_lanterna 27.2 22.35
+pedreira_poste_lanterna 36.2 22.35 flip
+pedreira_poste_lanterna 21 22.4
+ponte_teia_0 26.3 22.6 flip
+ponte_entulho 63.6 22.8
+pillar_broken 69 22.9
+bones_scattered 91.1 22.9
+bones_scattered 77.6 23 flip
+bones_scattered 81.4 23 flip
+ponte_entulho 17.8 23.1
+ponte_entulho 71.3 23.1
+ponte_entulho 85.1 23.2
+pillar_broken 62.4 23.4 flip
+ponte_casulo 153.6 23.9
+bones_chains 167 23.9 flip
+bones_scattered 9.6 24
+bones_scattered 26.1 24
+skull_single 97.7 24.1 flip
+ponte_casulo 87.3 24.3
+ponte_casulo 172.2 24.5 flip
+ponte_teia_1 94.5 24.9
+ponte_casulo 102.9 25.1 flip
+ponte_teia_0 163 25.7
+bones_scattered 58.1 25.8
+rock_slabs 152.3 25.8
+bones_chains 51.7 25.9
+skull_single 132 26
+ponte_entulho 96.3 26.2 flip
+skull_single 129.4 26.4
+skull_single 158.1 26.9
+ponte_entulho 133.6 27
+rock_slabs 135.3 27 flip
+pillar_broken 102.2 27.1
+rock_slabs 115.3 27.1
+ponte_entulho 128.3 27.1 flip
+pillar_broken 131.2 27.1 flip
+bones_scattered 50.5 27.3 flip
+ponte_teia_1 171.4 27.5 flip
+ponte_teia_1 43.5 27.7
+bones_chains 169.3 27.7
+ponte_teia_0 58.7 27.8 flip
+ponte_teia_0 156.8 27.9
+skull_single 28.8 28
+ponte_teia_0 172.8 28.6
+ponte_entulho 29.9 28.7 flip
+ponte_teia_0 51.8 28.7
+pillar_broken 45.4 28.8 flip
+bones_chains 27.7 28.9 flip
+rock_slabs 55.1 28.9 flip
+rock_slabs 31.3 29.1
+ponte_teia_0 168.4 29.1 flip
+bones_chains 19.7 29.2
+ponte_entulho 34.5 29.2 flip
+ponte_teia_1 95.6 29.2
+bones_chains 38.5 29.3
+ponte_entulho 53.4 29.3
+skull_single 22.7 29.4 flip
+skull_single 160.6 29.6 flip
+bones_scattered 9.6 29.7 flip
+ponte_teia_1 159 29.7
+ponte_casulo 93.2 29.8
+ponte_casulo 98.8 30.2 flip
+skull_single 10.9 30.4
+pedreira_poste_lanterna 21 30.4 flip
+ponte_entulho 92.2 30.5
+ponte_teia_0 94.6 30.6 flip
+bones_scattered 93.4 31.1
+pillar_cracked 9.2 31.2 flip
+pillar_broken 20.4 31.7
+skull_single 9.9 32 flip
+pillar_broken 15.8 32 flip
+ponte_teia_1 163.4 32.1 flip
+pillar_broken 97 32.6 flip
+rock_slabs 98.3 32.6
+rock_slabs 92.6 32.9
+pillar_broken 94.3 33.2 flip
+ponte_teia_0 155.5 33.7
+ponte_casulo 172 33.7 flip
+ponte_casulo 154 33.9
+ponte_entulho 164.5 34.5
+rock_slabs 170.6 34.7 flip
+ponte_teia_1 168.5 34.8
+ponte_entulho 158.4 34.9 flip
+bones_scattered 171.8 34.9

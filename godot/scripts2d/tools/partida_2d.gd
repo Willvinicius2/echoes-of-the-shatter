@@ -46,6 +46,9 @@ func _initialize() -> void:
 	root.add_child(main)
 	await physics_frame
 	run = main.run
+	if args.size() > 4 and args[4] != "cripta":
+		Fase.definir(args[4])   # o save do meta, lido ao abrir a cena, devolve a fase escolhida antes: a do argumento vale por cima
+		run.menus.trocar_fase(0)   # redesenha o cartão do título e grava a escolha
 	await _quadros(60)
 	await _foto("titulo")
 	run.menus._jogar_do_titulo()
