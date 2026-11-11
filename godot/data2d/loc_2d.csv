@@ -567,3 +567,7 @@ skill.ring_of_fire.name,Anel de Fogo
 skill.ring_of_fire.desc,"Um círculo de chamas se acende no chão: quem cruza o anel queima enquanto ele durar"
 skill.fuse_bomb.name,Bomba-Rastilho
 skill.fuse_bomb.desc,"A flecha vira uma bomba de pavio no alvo; ao explodir, arma as bombas dos vizinhos em cadeia"
+enemy.gravel_spiderling.name,Filhote de Cascalho
+enemy.bell_weaver.name,Tecelã de Cascalho
+enemy.gravel_spiderling.desc,Aranha de cascalho. Vem em ninhadas e cerca pelos lados.
+enemy.bell_weaver.desc,Aranha de bronze que fez ninho no sino maior. Empina antes de cravar as presas.

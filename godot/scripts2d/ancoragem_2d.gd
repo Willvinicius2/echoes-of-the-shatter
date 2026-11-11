@@ -71,7 +71,7 @@ static func tipo(id: String) -> String:
 		return "solido"
 	if id.begins_with("tree_") or id.begins_with("sapling_"):
 		return "arvore"
-	for pre in ["leaves_", "bones_", "skeleton_", "skull_single", "skull_pair", "skull_teal", "branches_", "flowers_", "grass_", "roots_", "ferns_", "reeds_", "thistles_"]:
+	for pre in ["leaves_", "bones_", "skeleton_", "skull_single", "skull_pair", "skull_teal", "branches_", "flowers_", "grass_", "roots_", "ferns_", "reeds_", "thistles_", "ponte_teia_"]:
 		if id.begins_with(pre):
 			return "raso"
 	for pre in ["bush_", "shrub_"]:

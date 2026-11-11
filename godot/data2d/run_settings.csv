@@ -63,3 +63,19 @@ gate_elite_shake_time,0.6,s,duracao do tremor de tela na entrada do elite do por
 gate_elite_luz_tamanho,380,px,luz propria do elite do portao: diametro do halo aditivo laranja preso a ele (0 desliga)
 gate_elite_luz_alfa,0.38,0..1,luz propria do elite do portao: intensidade do halo que fica atras do sprite (pulsa entre 70% e 100% disto)
 dev_fases_abertas,0,0/1,so em build de debug: 1 abre todas as fases no titulo (testes e capturas; nao grava no save)
+gate_elite_scale_bell_weaver,1,x,escala do elite do portao quando ele e a Tecela de Cascalho: a folha dela ja nasce no tamanho de chefe (1 px da arte = 1 px da grade) e por isso nao cresce
+gate_elite_hp_mult_bell_weaver,3.2,x,vida da Tecela de Cascalho em cima da vida adaptativa do core (300 de base: ate 750 no core e ate 2400 com este multiplicador)
+tecela_fase2_hp_pct,50,%,vida restante da Tecela de Cascalho (em % da maxima) a partir da qual ela entra na fase 2: golpes mais rapidos e ninhadas maiores
+tecela_fase2_aviso_mult,0.85,x,fase 2 da Tecela: multiplica o tempo de aviso de cada golpe (menor = mais dificil de ler)
+tecela_fase2_pausa_mult,0.65,x,fase 2 da Tecela: multiplica a pausa entre golpes especiais
+tecela_fase2_qtd_extra,2,filhotes,fase 2 da Tecela: filhotes a mais por ninhada
+tecela_filhotes_max,7,filhotes,maximo de filhotes chamados pela Tecela vivos ao mesmo tempo (a ninhada espera se ja ha tantos)
+tecela_alcance_especial,820,px,distancia maxima ao jogador para a Tecela iniciar um golpe especial (alem disso ela so anda)
+tecela_primeira_pausa,1.6,s,pausa depois da entrada da Tecela ate o primeiro golpe especial
+tecela_recuperacao,0.75,s,tempo que a Tecela fica parada depois de soltar o golpe especial (a animacao de ataque toca nele)
+tecela_fim_filhotes,1,0/1,1 = os filhotes chamados morrem junto com a Tecela (a teia se desfaz)
+camera_chefe_raio,900,px,distancia do jogador ao chefe grande abaixo da qual a camera o enquadra (camera_chefe_zoom_<id> e camera_chefe_vies_<id>; sem a chave do id a camera nao muda)
+camera_chefe_vel,1.2,1/s,velocidade da transicao do enquadramento do chefe (1 = leva 1 s)
+camera_chefe_zoom_bell_weaver,0.78,x,zoom da camera perto da Tecela (multiplica o zoom da fase; menor = mais longe) para o corpo dela caber na tela
+camera_chefe_vies_bell_weaver,0.55,0-1,quanto a camera vai do jogador em direcao a Tecela (0 = no jogador; 1 = nela) para a cabeca nao cortar no alto
+camera_chefe_dy_bell_weaver,-120,px,deslocamento vertical do ponto que a camera mira na Tecela (negativo sobe): o corpo dela se estende uns 300 px acima do pe

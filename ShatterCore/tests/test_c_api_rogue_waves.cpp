@@ -150,7 +150,7 @@ TEST(c_api_rogue_wave_defs) {
     Rogue g;
     const json::Value d =
         Parse(Out([&](std::uint8_t* o, std::size_t c, std::size_t* n) { return shatter_rogue_wave_defs_json(g.r, o, c, n); }));
-    ASSERT_EQ(d["phases"].Size(), std::size_t(2));  // cripta e pedreira (godot/data2d)
+    ASSERT_EQ(d["phases"].Size(), std::size_t(3));  // cripta, pedreira e ponte (godot/data2d)
     const json::Value& ph = d["phases"].At(0);
     EXPECT_EQ(ph["id"].AsString(), std::string("cripta"));
     ASSERT_EQ(ph["waves"].Size(), std::size_t(8));

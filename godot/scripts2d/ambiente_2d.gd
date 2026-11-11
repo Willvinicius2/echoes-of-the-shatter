@@ -31,7 +31,7 @@ func _process(delta: float) -> void:
 		h["sp"].scale = h["escala"] * (0.95 + 0.08 * f)
 		h["sp"].modulate.a = h["alpha"] * (0.74 + 0.26 * f)
 	for n in _nevoa:
-		n["sp"].position.x = n["x0"] + sin(_t * 0.18 + n["fase"]) * n["amp"]
+		n["sp"].position.x = roundf(n["x0"] + sin(_t * 0.18 + n["fase"]) * n["amp"])   # na grade de 1 px: a névoa em pixel art anda de pixel em pixel
 	for fo in _folhas:
 		var u: float = fposmod(float(fo["u"]) + delta * float(fo["vel"]), 1.0)
 		fo["u"] = u

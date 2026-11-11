@@ -97,3 +97,10 @@ Elite de silhueta própria, sem serviço pago (10/11/2026). O modelo é um esque
 - Gerar: `python3 tools/sprites2d/carcereiro_do_ossuario/montar_folhas.py` (em torno de 20 s) e `contato.py <anim> todas 2 <png>` para a revisão (fora do Git; as folhas de contato desta rodada estão em `/mnt/project-files/capturas/carcereiro/`).
 - Revisão do Jev (10/11): ossos e membros engrossados (6 a 8 px), tronco e ombreiras 30% maiores, braços mais curtos, marreta com cabeça 2x maior, correntes e molho de chaves claros na cintura, mão esquerda fechada numa corrente com bola de ferro e corrida com passada mais aberta (quadril 26 graus, joelho até 50) e tronco balançando mais.
 - Limites: estilo de peças finas, sem rosto detalhado.
+
+## Tecelã de Cascalho e Filhote (`tools/sprites2d/tecela_de_cascalho/`)
+Mesmo método do Arauto de Pedra (modelo de poliedros convexos traçado por raios e reduzido a pixel art), com materiais de bronze, pátina, fio de teia e cascalho. `aranha.py` monta o corpo das duas variantes (a Tecelã com o abdômen de sino quebrado; o Filhote menor e de pernas abertas), `animacao.py` anima as 8 pernas (idle, corrida, golpe, dano e morte) e `montar_folhas.py` grava as folhas de `bell_weaver` e `gravel_spiderling`. Ver `docs/arte/37_ponte_do_sino.md`.
+```
+python3 tools/sprites2d/tecela_de_cascalho/montar_folhas.py [tecela|filhote|todas] [anim,anim] [pasta_saida]
+python3 tools/sprites2d/tecela_de_cascalho/contato.py <tecela|filhote> <anim> <direcoes|todas> <escala> <arquivo_png>
+```

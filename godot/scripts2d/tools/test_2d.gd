@@ -63,6 +63,7 @@ func _testar() -> void:
 	await HordaTestes.new(self, check).rodar()
 	await preload("res://scripts2d/tools/test_fases_2d.gd").new(self, check).rodar()   # fases, desbloqueio e elite do portão (doc 34)
 	preload("res://scripts2d/tools/test_pedreira_2d.gd").new(self, check).rodar()   # mapa, terreno, portão e ondas da Pedreira (doc 35)
+	preload("res://scripts2d/tools/test_ponte_2d.gd").new(self, check).rodar()   # mapa, sinos, aranhas e ondas da Ponte do Sino (doc 37)
 	await _testar_hud_slots()
 
 func _testar_audio_e_ui() -> void:
