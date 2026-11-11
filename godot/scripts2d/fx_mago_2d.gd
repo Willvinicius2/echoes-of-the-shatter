@@ -210,3 +210,4 @@ class Estouro extends Node2D:
 			var m := 2.5 * 2.0
 			draw_rect(Rect2(Vector2(-m, -m * 0.5), Vector2(m * 2.0, m)), Color(pal[4], 0.9))
 			draw_rect(Rect2(Vector2(-m * 0.5, -m), Vector2(m, m * 2.0)), Color(pal[4], 0.9))
+

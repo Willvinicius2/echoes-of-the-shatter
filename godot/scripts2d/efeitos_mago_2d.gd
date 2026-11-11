@@ -172,6 +172,7 @@ static func _muralha(jogador: Node2D, def: Dictionary, dir: Vector2) -> bool:
 static func _meteoro(jogador: Node2D, def: Dictionary, dir: Vector2) -> bool:
 	var ponto := _alvo_chao(jogador, dir, float(def.get("alcance", 700.0)))
 	var m := FogoFx._Meteoro.new()
+	m.pixel = true
 	m.preparar(ponto, float(def.get("raio", 150.0)), _dano(jogador, def), float(def.get("duracao", 3.0)),
 		float(def.get("valor", 6.0)) * (1.0 + float(jogador.stats.get("burn_bonus", 0.0))))
 	_cena(jogador).add_child(m)
@@ -179,6 +180,7 @@ static func _meteoro(jogador: Node2D, def: Dictionary, dir: Vector2) -> bool:
 	var raio_m := float(def.get("raio", 150.0))
 	for k in int(def.get("meteoros_extra", 0)):   # chuva: cada nível a mais derruba mais um, espalhado e um pouco depois
 		var x := FogoFx._Meteoro.new()
+		x.pixel = true
 		var off := Vector2.from_angle(randf() * TAU) * raio_m * randf_range(0.9, 1.8)
 		x.preparar(ponto + off, raio_m, _dano(jogador, def) * 0.7, float(def.get("duracao", 3.0)),
 			float(def.get("valor", 6.0)) * (1.0 + float(jogador.stats.get("burn_bonus", 0.0))))
