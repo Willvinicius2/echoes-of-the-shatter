@@ -496,8 +496,8 @@ func _escalada() -> void:
 			espadas += 1
 	check.call(espadas >= 1, "escalada: espadas espectrais existem como filhas do guerreiro")
 	check.call(j.stats.get("cd_por_nivel", 0.0) > 0.0 and j.stats.get("espadas_max", 0.0) > 0.0, "escalada: números nos dados do guerreiro")
-	for efeito in ["golpe_trovao", "erupcao", "cravar_gelido", "talho_pestilento"]:
-		Efeitos.reverberar(j, {"efeito": efeito, "dano": 1.0, "raio": 60.0, "duracao": 2.0, "valor": 2.0, "qtd": 2.0}, j.global_position + Vector2(120, 0))
+	for efeito in ["golpe_trovao", "erupcao", "cravar_gelido", "talho_pestilento", "redemoinho", "fenda_pedra"]:
+		Efeitos.reverberar(j, {"efeito": efeito, "dano": 1.0, "raio": 60.0, "duracao": 2.0, "valor": 2.0, "qtd": 2.0, "evoluida": true}, j.global_position + Vector2(120, 0))
 	await t.physics_frame
 	var rev := 0
 	for c in j.get_children():
