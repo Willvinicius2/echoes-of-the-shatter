@@ -16,6 +16,7 @@ const VfxIdent = preload("res://scripts2d/vfx_identidade_2d.gd")
 const Raio = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 const Gelo = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
 const FogoAnim = preload("res://scripts2d/fogo_anim_2d.gd")
+const Afinidades = preload("res://scripts2d/afinidades_2d.gd")
 
 const COR_LAMINA := Color(0.95, 0.92, 0.8)
 const COR_PESADO := Color(1.0, 0.74, 0.46)
@@ -34,6 +35,7 @@ const COM_PREPARO := ["golpe_pesado", "redemoinho", "fenda_pedra", "escudada", "
 static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: int, mira: Vector2) -> bool:
 	if jogador.estado != jogador.Estado.LIVRE:
 		return false
+	def = _crescer_com_nivel(jogador, def)
 	match efeito:
 		"investida":
 			jogador.comecar_investida(def, mira, nivel)
@@ -49,6 +51,20 @@ static func executar(efeito: String, jogador: Node2D, def: Dictionary, nivel: in
 				return false
 			jogador.comecar_conjuracao(efeito, def, mira, nivel)
 	return true
+
+## Cada nível de partida acrescenta alvos, raio e duração às habilidades ativas (o nível da gema continua valendo à parte).
+static func _crescer_com_nivel(j: Node2D, def: Dictionary) -> Dictionary:
+	var np: int = maxi(int(j.get("nivel_partida")) - 1, 0)
+	if np <= 0:
+		return def
+	var d := def.duplicate()
+	if d.has("qtd") and str(d.get("ramo", "")) != "lamina":
+		d["qtd"] = d["qtd"] + floorf(np * j.stats.get("hab_qtd_por_nivel", 0.15))
+	if d.has("raio"):
+		d["raio"] = d["raio"] * (1.0 + np * j.stats.get("hab_raio_por_nivel", 0.02))
+	if d.has("duracao") and str(d.get("ramo", "")) != "lamina":
+		d["duracao"] = d["duracao"] * (1.0 + np * j.stats.get("hab_duracao_por_nivel", 0.02))
+	return d
 
 ## Onde a habilidade de ponto cai: no maior grupo ao alcance; sem ninguém, um pouco à frente na mira.
 static func _ponto_alvo(j: Node2D, mira: Vector2, alcance: float, raio: float) -> Vector2:
@@ -200,12 +216,59 @@ static func eco_golpe(j: Node2D, alvos: Array, combo: int, def: Dictionary, mira
 			vistos += 1
 	if combo != 3:
 		return
+	var vivos: Array = alvos.filter(func(a): return _vivo(a))
 	if el == "raio":
-		var vivos: Array = alvos.filter(func(a): return _vivo(a))
 		if not vivos.is_empty():
 			_saltar(j, vivos[0], alvos, j.dano_base(def.get("valor", 0.5)), def.get("raio", 150.0), int(def.get("qtd", 2)), def.get("duracao", 2.0))
 	elif el == "fogo":
 		zona_chao(j, j.global_position + mira * alcance * 0.6, def.get("raio", 44.0), 1.5, "queimadura", def.get("valor", 3.0))
+		if not vivos.is_empty():
+			_contagiar(j, vivos[0], alvos, def, "fogo")
+	elif not vivos.is_empty():   # peste e gelo: o efeito pula para quem estava fora do corte
+		_contagiar(j, vivos[0], alvos, def, el)
+
+## Contágio: o status do Eco pula do alvo para até `qtd` vizinhos fora do corte (peste espalha veneno, gelo soma frio, fogo acende).
+static func _contagiar(j: Node2D, de: Node2D, ja: Array, def: Dictionary, el: String) -> void:
+	var visitados: Array = ja.duplicate()
+	var atual: Node2D = de
+	var cena: Node = j.get_parent()
+	var raio: float = maxf(def.get("raio", 0.0), j.stats.get("proc_contagio_raio", 140.0))
+	for _i in int(def.get("qtd", 1)):
+		var prox: Node2D = Raio.mais_proximo_de(j, atual.global_position, raio, visitados)
+		if prox == null:
+			break
+		visitados.append(prox)
+		VfxIdent.impacto(cena, prox.global_position + PEITO, el, Vector2.ZERO, 0.8)
+		match el:
+			"veneno":
+				j.aplicar_status(prox, "veneno", def.get("duracao", 4.0), def.get("valor", 4.0))
+			"gelo":
+				Gelo.acumular_frio(prox, 1, def)
+			"fogo":
+				j.aplicar_status(prox, "queimadura", def.get("duracao", 2.5), def.get("valor", 3.0))
+		prox.take_damage(j.dano_base(0.35), atual.global_position)
+		atual = prox
+
+## Fúria elemental: cada golpe do combo ativa, por sorte, o Eco de todo elemento que o jogador aprendeu na árvore (além do Eco
+## escolhido). Mais níveis em habilidades de um elemento = mais chance e mais saltos, então a tela vai enchendo de raio,
+## veneno, gelo e brasa conforme a partida avança.
+static func furia_elemental(j: Node2D, alvos: Array, mira: Vector2, alcance: float, eco: Dictionary) -> void:
+	if alvos.is_empty():
+		return
+	var ecos: Dictionary = Afinidades.defs("guerreiro")
+	var nivel_p: int = j.nivel_partida
+	for id in ecos:
+		var d: Dictionary = ecos[id].duplicate()
+		var el := str(d.get("elemento", ""))
+		var ranks: int = j.habilidades.pontos_do_ramo(el)
+		if ranks <= 0:
+			continue
+		var chance: float = clampf(j.stats.get("proc_base", 0.0) + j.stats.get("proc_por_rank", 0.0) * ranks, 0.0, j.stats.get("proc_max", 0.9))
+		if j._rng.randf() > chance:
+			continue
+		d["qtd"] = d.get("qtd", 1.0) + floorf(ranks * j.stats.get("proc_qtd_por_rank", 0.0)) + floorf(nivel_p * j.stats.get("proc_qtd_por_nivel", 0.0))
+		d["raio"] = d.get("raio", 0.0) * (1.0 + 0.04 * ranks)
+		eco_golpe(j, alvos, 3, d, mira, alcance)
 
 ## Arco que pula do alvo `de` para vizinhos ainda não atingidos (até `saltos`), com dano `dano` e choque.
 static func _saltar(j: Node2D, de: Node2D, ja: Array, dano: float, raio: float, saltos: int, dur: float) -> void:
@@ -291,6 +354,41 @@ class LaminasOrbitais extends Node2D:
 			var k := randi() % laminas.size()
 			RaioG.arco_entre(j.get_parent(), laminas[k].global_position, laminas[(k + 1) % laminas.size()].global_position, 0.6)
 
+## Espadas espectrais: orbitam o herói o tempo todo e cortam quem encosta. A quantidade cresce com o nível de XP da corrida
+## (data2d/guerreiro.csv: espadas_por_nivel, espadas_max), então quem olha vê o herói ficando mais forte a cada nível.
+class EspadasEspectrais extends Node2D:
+	const Fxg = preload("res://scripts2d/fx_guerreiro_2d.gd")
+	const AlvosG = preload("res://scripts2d/alvos_2d.gd")
+	var j: Node2D
+	var ang := 0.0
+	var espadas: Array = []
+	var bateu := {}   # id do inimigo -> instante (ms) do último toque
+
+	func _physics_process(delta: float) -> void:
+		if not is_instance_valid(j) or j.esta_morto():
+			return
+		var alvo := mini(int(j.nivel_partida * j.stats.get("espadas_por_nivel", 0.0)), int(j.stats.get("espadas_max", 0.0)))
+		while espadas.size() < alvo:
+			var s := Fxg.criar("lamina", 46.0, 0.0, Color(0.75, 0.9, 1.0))
+			add_child(s)
+			espadas.append(s)
+		ang += delta * j.stats.get("espadas_vel", 3.0)
+		var r: float = j.stats.get("espadas_raio", 74.0)
+		var agora := Time.get_ticks_msec()
+		for i in espadas.size():
+			var a: float = ang + TAU * float(i) / float(espadas.size())
+			var chao := Vector2(cos(a), sin(a) * 0.6) * r
+			var s: Node2D = espadas[i]
+			s.position = chao + Vector2(0, -24)
+			s.rotation = Vector2(-sin(a), cos(a) * 0.6).angle()
+			s.z_index = 1 if sin(a) > 0.0 else -1
+			for n in AlvosG.no_raio(get_tree(), j.global_position + chao, 30.0, "take_damage"):
+				var id: int = n.get_instance_id()
+				if agora - int(bateu.get(id, -100000)) < 600:
+					continue
+				bateu[id] = agora
+				j.acertar(n, j.stats.get("espadas_dano", 0.35))
+
 # ---------------------------------------------------------------- fogo
 
 ## Meia-lua de fogo que anda em linha reta, atravessa os inimigos (queima cada um uma vez) e deixa brasas.
@@ -331,6 +429,53 @@ class OndaFogo extends Node2D:
 			j.Efeitos.zona_chao(j, global_position, 34.0, 1.6, "queimadura", d.get("valor", 4.0))
 		if andou >= d.get("alcance", 380.0):
 			queue_free()
+
+## Onda de corte: meia-lua que sai da lâmina no 3º golpe e atravessa quem está na frente (cresce com o nível de XP).
+class OndaCorte extends Node2D:
+	const Fxg = preload("res://scripts2d/fx_guerreiro_2d.gd")
+	const AlvosG = preload("res://scripts2d/alvos_2d.gd")
+	var j: Node2D
+	var dir := Vector2.RIGHT
+	var dano := 0.8
+	var raio := 40.0
+	var alcance := 300.0
+	var cor := Color.WHITE
+	var andou := 0.0
+	var rastro := 0.0
+	var feridos := {}
+
+	func _physics_process(delta: float) -> void:
+		if not is_instance_valid(j):
+			queue_free()
+			return
+		var passo := 620.0 * delta
+		global_position += dir * passo
+		andou += passo
+		rastro += passo
+		if rastro >= 36.0:
+			rastro = 0.0
+			Fxg.tocar(get_parent(), "corte", global_position + Vector2(0, -30), raio * 1.6, dir.angle(), cor, 1)
+		for n in AlvosG.no_raio(get_tree(), global_position, raio, "take_damage"):
+			if feridos.has(n.get_instance_id()):
+				continue
+			feridos[n.get_instance_id()] = true
+			j.acertar(n, dano)
+		if andou >= alcance:
+			queue_free()
+
+## Lança `qtd` ondas de corte em leque a partir do herói.
+static func ondas_de_corte(j: Node2D, mira: Vector2, qtd: int, cor: Color) -> void:
+	var cena: Node = j.get_parent()
+	for i in qtd:
+		var o := OndaCorte.new()
+		o.j = j
+		o.dir = mira.rotated(deg_to_rad(j.stats.get("onda_leque", 14.0)) * (i - (qtd - 1) * 0.5))
+		o.dano = j.stats.get("onda_dano", 0.8)
+		o.raio = j.stats.get("onda_raio", 40.0)
+		o.alcance = j.stats.get("onda_alcance", 300.0)
+		o.cor = cor
+		cena.add_child(o)
+		o.global_position = j.global_position + mira * 28.0
 
 ## Erupção: `qtd` colunas de fogo em linha, uma depois da outra, cada uma com aviso no chão; o chão fica em brasa.
 static func _erupcao(j: Node2D, d: Dictionary, mira: Vector2) -> void:

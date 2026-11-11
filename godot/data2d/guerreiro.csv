@@ -48,7 +48,7 @@ reach_per_pierce,0.12,x,alcance e arco extras do golpe basico por nivel da Lamin
 crit_chance,0,fracao,chance de golpe critico (cartas somam)
 crit_mult,2,x,multiplicador do dano critico
 skill_cd_mult,1,x,multiplicador da recarga das habilidades (menor = mais rapido)
-autocast_intervalo,0.25,s,espera entre dois autocasts seguidos
+autocast_intervalo,0.12,s,espera entre dois autocasts seguidos
 run_area,0,fracao,aumento de raio e abertura das habilidades de area (cartas)
 run_proj,0,projeteis,projeteis extras por habilidade de projetil
 run_vel,0,fracao,aumento de velocidade dos projeteis das habilidades
@@ -59,3 +59,27 @@ run_dmg_gelo,0,fracao,aumento de dano das habilidades de gelo
 run_dmg_raio,0,fracao,aumento de dano das habilidades de raio
 run_dmg_veneno,0,fracao,aumento de dano das habilidades de veneno
 run_dmg_herald,0,fracao,aumento de dano dos Arautos
+cd_por_nivel,0.07,fracao,recarga extra das ativas por nivel de XP da corrida (nivel 16 = 75% mais rapido)
+proc_base,0.35,chance,chance base de cada golpe do combo ativar o Eco de um elemento aprendido na arvore
+proc_por_rank,0.15,chance,chance extra por nivel de habilidade do elemento
+proc_max,0.95,chance,teto da chance de fúria elemental
+proc_qtd_por_rank,0.5,saltos,saltos extras do Eco por nivel de habilidade do elemento
+proc_qtd_por_nivel,0.3,saltos,saltos extras do Eco por nivel de XP da corrida
+proc_contagio_raio,140,px,alcance do salto do veneno, do gelo e do fogo
+espadas_por_nivel,0.5,espadas,espadas espectrais em orbita por nivel de XP (arredonda para baixo)
+espadas_max,10,espadas,teto de espadas espectrais
+espadas_raio,74,px,raio da orbita das espadas espectrais
+espadas_vel,3,rad/s,velocidade da orbita
+espadas_dano,0.35,x,dano de cada toque das espadas espectrais (multiplo do golpe)
+arco_por_nivel,0.03,fracao,abertura extra do arco do golpe por nivel de XP
+ecos_por_nivel,0.2,golpes,ecos extras do corte (golpe duplo, triplo) por nivel de XP, somados a Lamina Dupla
+onda_nivel_min,3,nivel,nivel de XP em que o 3o golpe passa a soltar uma onda de corte
+onda_por_nivel,0.4,ondas,ondas de corte extras por nivel acima do minimo
+onda_max,6,ondas,teto de ondas de corte por golpe
+onda_leque,14,graus,abertura entre as ondas de corte
+onda_dano,0.8,x,dano da onda de corte (multiplo do golpe)
+onda_raio,40,px,raio da onda de corte
+onda_alcance,300,px,alcance da onda de corte
+hab_qtd_por_nivel,0.15,,Alvos extras das habilidades elementais por nível de partida
+hab_raio_por_nivel,0.02,,Raio extra das habilidades por nível de partida
+hab_duracao_por_nivel,0.02,,Duração extra das habilidades elementais por nível de partida
