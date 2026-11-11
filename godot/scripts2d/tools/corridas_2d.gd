@@ -1,8 +1,9 @@
 extends SceneTree
 ## Corridas automáticas (bot) do cliente 2D, sem god mode, para achar travas e picos de dificuldade:
 ##   godot --headless --fixed-fps 600 --path godot --script res://scripts2d/tools/corridas_2d.gd -- [corridas=10] [saida_dir=.] [seed=1] [--classe=mago]
+##   opções: --cartas=acaso (escolha de carta ao acaso, como antes), --fase=pedreira (joga outra fase)
 ## No modo horda (pacote H4 do plano 31) cada "sala" do relatório é uma onda do spawner; o bot pega as gemas, escolhe
-## cartas ao acaso, acorda o Guardião no altar a partir da onda BOT_ONDA_CHEFE e mede mortes por onda, tempo de fase,
+## cartas com critério (ver _escolher_carta), acorda o Guardião no altar a partir da onda BOT_ONDA_CHEFE e mede mortes por onda, tempo de fase,
 ## DPS medido, vida que o core deu ao chefe e o nível final.
 ## Use --fixed-fps 600: sem ele o headless anda em tempo real (uma corrida leva ~100 s) e com ele ~10x mais rápido.
 ## Escreve metricas_corridas.json e metricas_corridas.md em saida_dir.
@@ -16,6 +17,7 @@ const LIMITE_ONDA := 420.0     # modo horda: uma onda pode durar ate este tempo 
 const BOT_SEM_ABATE := 45.0    # modo horda: sem nenhum abate por este tempo, o bot sai do canto onde encalhou (centro do mapa)
 const LIMITE_CORRIDA := 1500.0 # s simulados numa corrida inteira = travou
 const BOT_ONDA_CHEFE := 6      # modo horda: a partir desta onda o bot vai ao altar acordar o Guardião
+const BOT_CHEFE_PERTO := 15.0  # modo horda: a cada tanto, com o chefe vivo e longe, o bot vai para perto dele
 const BOT_COLETA := 3.0        # s entre as coletas de gemas (o bot não anda até elas; um jogador anda)
 
 var n_corridas := 10
@@ -25,9 +27,20 @@ var rng := RandomNumberGenerator.new()
 var run
 var resultados: Array = []
 var _na_porta := false
+var cartas_acaso := false   # --cartas=acaso: volta à escolha ao acaso (comparar com o critério)
+var _cartas_def := {}       # id -> {tipo, raridade, stat} de upgrades.csv
 
 func _initialize() -> void:
 	var args := Array(OS.get_cmdline_user_args()).filter(func(a): return not str(a).begins_with("--"))
+	for a in OS.get_cmdline_user_args():
+		if str(a) == "--cartas=acaso":
+			cartas_acaso = true
+		elif str(a).begins_with("--fase="):
+			var Fase = preload("res://scripts2d/fase_2d.gd")
+			Fase.todas_abertas = true
+			Fase.atual = str(a).trim_prefix("--fase=")
+	for l in Csv.rows("res://data2d/upgrades.csv"):
+		_cartas_def[l["id"]] = l
 	if args.size() > 0:
 		n_corridas = int(args[0])
 	if args.size() > 1:
@@ -78,7 +91,13 @@ func _corrida(n: int) -> Dictionary:
 	p.god_mode = false
 	var salas_tempo := {}   # sala (1..N) -> segundos simulados
 	var r := {"corrida": n + 1, "resultado": "travou", "sala_final": 1, "morreu_na_sala": 0, "tempo": 0.0, "cartas": 0, "vida_final": 0.0, "salas": salas_tempo,
-		"classe": preload("res://scripts2d/classe_2d.gd").atual, "horda": run.horda, "nivel": 1, "mortes": 0, "dps_chefe": 0.0, "vida_chefe": 0.0, "pico_vivos": 0}
+		"classe": preload("res://scripts2d/classe_2d.gd").atual, "horda": run.horda, "nivel": 1, "mortes": 0, "dps_chefe": 0.0, "vida_chefe": 0.0, "pico_vivos": 0,
+		"afinidade": "", "habilidades": [], "nivel_onda": {}, "vida_min_onda": {}, "tempo_chefe": 0.0, "dano_onda": {}, "dano_fonte": {}, "fase": preload("res://scripts2d/fase_2d.gd").atual}
+	var nivel_onda: Dictionary = r["nivel_onda"]       # onda -> nível do Cristal ao fim dela (curva de nível)
+	var vida_min_onda: Dictionary = r["vida_min_onda"] # onda -> menor vida do jogador nela (aperto)
+	var dano_onda: Dictionary = r["dano_onda"]         # onda -> dano que o jogador levou nela
+	var dano_fonte: Dictionary = r["dano_fonte"]       # quem bateu (inimigo encostado, senão "tiro") -> dano
+	var vida_antes: float = p.hp
 	var coleta_t := 0.0
 	var ultimo_abate := 0
 	var sem_abate := 0.0
@@ -86,6 +105,7 @@ func _corrida(n: int) -> Dictionary:
 	var t_sala := 0.0
 	var t_corrida := 0.0
 	var esquiva_t := 0.0
+	var boss_t := 0.0
 	while true:
 		await physics_frame
 		var dt := 1.0 / 60.0
@@ -106,12 +126,38 @@ func _corrida(n: int) -> Dictionary:
 				sem_abate = 0.0
 				var centro: Vector2 = run.room.tamanho_px() / 2.0
 				p.global_position = run.room.empurrar_para_dentro(centro + Vector2(rng.randf_range(-600.0, 600.0), rng.randf_range(-600.0, 600.0)))
+		if run.horda and run.estado == run.Estado.LUTA and run.hud.chefe != null and is_instance_valid(run.hud.chefe) and run.hud.chefe.hp > 0.0:
+			# Chefe vivo e o bot longe dele ou sem acertá-lo: um jogador chegaria perto; o bot é levado a ~320 px a cada 15 s
+			# (o autocast só mira o que está no alcance; sem isto a corrida podia passar de 7 min sem terminar o chefe).
+			boss_t += dt
+			if boss_t >= BOT_CHEFE_PERTO:
+				boss_t = 0.0
+				if p.global_position.distance_to(run.hud.chefe.global_position) > 420.0:
+					p.global_position = run.room.empurrar_para_dentro(run.hud.chefe.global_position + Vector2.from_angle(rng.randf() * TAU) * 320.0)
 		if run.horda:
 			coleta_t += dt
 			if coleta_t >= BOT_COLETA:
 				coleta_t = 0.0
 				run.atrair_coletaveis()
 		salas_tempo[sala + 1] = float(salas_tempo.get(sala + 1, 0.0)) + dt
+		if p.hp < vida_antes:
+			var perda: float = vida_antes - p.hp
+			dano_onda[sala + 1] = float(dano_onda.get(sala + 1, 0.0)) + perda
+			var fonte := "tiro"
+			var d_fonte := INF
+			for e in get_nodes_in_group("hurtable"):
+				if is_instance_valid(e):
+					var de: float = e.global_position.distance_to(p.global_position)
+					if de < d_fonte and de <= float(e.stats.get("attack_range", 0.0)) + 40.0 and str(e.stats.get("kind", "")) != "ranged":
+						d_fonte = de
+						fonte = str(e.stats.get("id", "?"))
+			dano_fonte[fonte] = float(dano_fonte.get(fonte, 0.0)) + perda
+		vida_antes = p.hp
+		if run.horda and run.upgrades.has_method("nivel_estado"):
+			nivel_onda[sala + 1] = int(run.upgrades.nivel_estado().get("level", 1))
+			vida_min_onda[sala + 1] = minf(float(vida_min_onda.get(sala + 1, p.hp)), p.hp)
+			if bool(run.nucleo.ondas_estado().get("boss_spawned", false)) and run.estado == run.Estado.LUTA:
+				r["tempo_chefe"] += dt
 		r["sala_final"] = sala + 1
 		if int(t_corrida * 60.0) % 600 == 0:
 			var perto := INF
@@ -141,6 +187,14 @@ func _corrida(n: int) -> Dictionary:
 			r["resultado"] = "morte"
 			r["morreu_na_sala"] = sala + 1
 			break
+		if run.horda and t_sala > LIMITE_ONDA and bool(run.nucleo.ondas_estado().get("boss_spawned", false)) \
+				and run.hud.chefe != null and is_instance_valid(run.hud.chefe) and run.hud.chefe.hp > 0.0:
+			# Luta de chefe que passou do limite com o bot vivo e o chefe ainda de pé: dificuldade (lenta demais), não trava do
+			# jogo. Conta como "lenta" no relatório e não derruba o CI; trava de verdade (sem chefe vivo) continua falhando.
+			r["resultado"] = "lenta"
+			r["morreu_na_sala"] = sala + 1
+			print("[bot] corrida %d: luta do chefe passou de %.0f s (lenta)" % [n + 1, LIMITE_ONDA])
+			break
 		if t_sala > (LIMITE_ONDA if run.horda else LIMITE_SALA) or t_corrida > LIMITE_CORRIDA:
 			push_error("corrida %d travada na sala %d (estado %d)" % [n + 1, sala + 1, run.estado])
 			break
@@ -150,7 +204,7 @@ func _corrida(n: int) -> Dictionary:
 		if _agir(p, esquiva_t <= 0.0):
 			esquiva_t = 1.0
 		if run.ui.aberta:
-			run.ui.escolher(rng.randi_range(0, maxi(0, run.ui._ids.size() - 1)))
+			run.ui.escolher(_escolher_carta(p, n))
 			r["cartas"] += 1
 		elif run.estado == run.Estado.ROTA:
 			run.escolher_rota(run.opcoes_rota[rng.randi_range(0, run.opcoes_rota.size() - 1)])
@@ -161,9 +215,80 @@ func _corrida(n: int) -> Dictionary:
 		r["nivel"] = int(run.upgrades.nivel_estado().get("level", 1)) if run.upgrades.has_method("nivel_estado") else 1
 		r["dps_chefe"] = run.dps_medido
 		r["vida_chefe"] = run.vida_chefe
+	if "afinidade" in p:
+		r["afinidade"] = p.afinidade
+	if "habilidades" in p and p.habilidades != null:
+		for id in p.habilidades.slots:
+			if id != "":
+				r["habilidades"].append("%s:%d" % [id, p.habilidades.nivel(id)])
 	p.auto_aim = Vector2.ZERO
 	p.auto_move = Vector2.ZERO
 	return r
+
+## Escolha de carta com critério, como um jogador que monta a corrida em volta de um elemento:
+## - afinidade (Eco do básico): uma por corrida, em rodízio, para medir os quatro elementos;
+## - gema de habilidade: prefere habilidade ativa do elemento da afinidade, depois subir uma que já tem;
+## - carta de nível ou baú: ataque antes de tudo, vida quando está apanhando, e saber elemental só do elemento que usa.
+## Empate decide no sorteio (a semente continua valendo).
+func _escolher_carta(p, n: int) -> int:
+	var ids: Array = run.ui._ids
+	if ids.is_empty():
+		return 0
+	if cartas_acaso:
+		return rng.randi_range(0, ids.size() - 1)
+	if run.ui.modo == "afinidade":
+		return (semente + n) % ids.size()
+	var h = p.habilidades if "habilidades" in p else null
+	var el := ""
+	if "afinidade" in p and p.afinidade != "":
+		el = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd").elemento(p.afinidade)
+	var elementos := {}   # elementos das habilidades que o bot já tem
+	var ativas := 0
+	if h != null:
+		for id in h.slots:
+			if id != "":
+				ativas += 1
+				elementos[str(h.defs[id].get("ramo", ""))] = true
+	var melhor := -INF
+	var escolha := 0
+	for i in ids.size():
+		var id := str(ids[i])
+		var nota := rng.randf() * 0.5
+		if run.ui.modo == "gem" and h != null:
+			var d: Dictionary = h.defs.get(id, {})
+			var ativa: bool = str(d.get("tipo", "")) == "ativa"
+			if str(d.get("ramo", "")) == el:
+				nota += 3.0
+			if h.nivel(id) > 0:
+				nota += 2.0
+			elif ativa and h.slots.has(""):
+				nota += 2.5
+			elif ativa:
+				nota -= 2.0   # ativa nova sem slot livre não entra na barra
+		else:
+			var c: Dictionary = _cartas_def.get(id, {})
+			var stat := str(c.get("stat", ""))
+			match str(c.get("tipo", "")):
+				"ataque":
+					nota += 3.0
+				"defesa":
+					nota += 4.0 if p.hp < 0.6 * float(p.stats.get("hp_max", 100.0)) else 1.5
+				_:
+					nota += 1.0
+			if str(c.get("raridade", "")) == "rara":
+				nota += 0.75
+			if stat.begins_with("run_dmg_"):
+				var e := stat.trim_prefix("run_dmg_")
+				if e == "herald" or not elementos.has(e):
+					nota -= 3.0   # saber de um elemento que ele não usa
+			elif stat.begins_with("run_") and ativas == 0:
+				nota -= 3.0       # reforço de habilidade sem ter habilidade
+			if stat == "hp_max" and str(c.get("tipo", "")) == "defesa" and int(run.onda) >= 4:
+				nota += 0.5
+		if nota > melhor:
+			melhor = nota
+			escolha = i
+	return escolha
 
 ## Bot simples: mira no inimigo mais próximo, mantém distância, esquiva de perto; sala limpa -> vai à porta.
 var _preso_t := 0.0
@@ -223,7 +348,8 @@ func _agir(p, pode_esquivar: bool) -> bool:
 	return Input.is_action_pressed("dodge")
 
 ## Modo horda: como um jogador de horda, o bot deixa o autocast mirar e só anda. Foge do peso dos inimigos perto
-## (1/d²), circula em volta deles, puxa para o centro do mapa para não encurralar e esquiva quando alguém encosta.
+## (1/d²), circula em volta deles, puxa para o centro do mapa para não encurralar, esquiva quando alguém encosta e
+## sai de lado da linha dos tiros inimigos que vêm na direção dele (um jogador vê a linha de mira e o projétil).
 var _fuga_dir := Vector2.RIGHT
 var _fuga_t := 0.0
 func _agir_horda(p, pode_esquivar: bool, alvo, melhor: float) -> bool:
@@ -244,6 +370,9 @@ func _agir_horda(p, pode_esquivar: bool, alvo, melhor: float) -> bool:
 		mover = fuga.normalized() + lado * 0.5 + ao_centro * 0.8
 	else:
 		mover = (alvo.global_position - p.global_position).normalized() * (1.0 if melhor > 360.0 else 0.0) + ao_centro * 0.3
+	var desvio := _desvio_tiros(p)
+	if desvio != Vector2.ZERO:
+		mover = mover.normalized() * 0.4 + desvio
 	_preso_t = _preso_t + 1.0 / 60.0 if p.global_position.distance_to(_ultima_pos) < 0.5 else 0.0
 	_ultima_pos = p.global_position
 	_fuga_t = maxf(0.0, _fuga_t - 1.0 / 60.0)
@@ -257,6 +386,31 @@ func _agir_horda(p, pode_esquivar: bool, alvo, melhor: float) -> bool:
 	if pode_esquivar and melhor < 70.0:
 		Input.action_press("dodge")
 	return Input.is_action_pressed("dodge")
+
+## Direção para sair de lado do tiro inimigo mais urgente (o que passaria a menos de BOT_TIRO_FOLGA px em até
+## BOT_TIRO_TEMPO s); Vector2.ZERO quando nenhum vem. O bot não é perfeito: só reage ao tiro já no ar.
+const BOT_TIRO_FOLGA := 55.0
+const BOT_TIRO_TEMPO := 0.7
+func _desvio_tiros(p) -> Vector2:
+	var urgente := INF
+	var lado := Vector2.ZERO
+	for f in p.get_parent().get_children():
+		if not (f is Area2D) or not ("team" in f) or f.team != "enemy":
+			continue
+		var v: Vector2 = f.velocity
+		var vel := v.length()
+		if vel < 1.0:
+			continue
+		var dir := v / vel
+		var ate: Vector2 = p.global_position - f.global_position
+		var frente := ate.dot(dir)
+		if frente < 0.0 or frente / vel > BOT_TIRO_TEMPO:
+			continue
+		var fora := ate - dir * frente   # do eixo do tiro até o jogador
+		if fora.length() < BOT_TIRO_FOLGA and frente / vel < urgente:
+			urgente = frente / vel
+			lado = fora.normalized() if fora.length() > 1.0 else Vector2(-dir.y, dir.x)
+	return lado
 
 func _gravar() -> void:
 	DirAccess.make_dir_recursive_absolute(saida)
@@ -276,7 +430,7 @@ func _gravar() -> void:
 				d["mortes"] += 1
 			por_sala[s] = d
 	var md := "# Métricas de corridas automáticas\n\n"
-	md += "Corridas: %d | vitórias: %d | mortes: %d | travadas: %d | semente: %d\n\n" % [n, _contar("vitoria"), _contar("morte"), _contar("travou"), semente]
+	md += "Corridas: %d | vitórias: %d | mortes: %d | lentas (chefe de pé após o limite): %d | travadas: %d | semente: %d\n\n" % [n, _contar("vitoria"), _contar("morte"), _contar("lenta"), _contar("travou"), semente]
 	md += "| Sala | Entradas | Mortes | Tempo médio (s) |\n|---|---|---|---|\n"
 	var chaves := por_sala.keys()
 	chaves.sort()
@@ -287,10 +441,42 @@ func _gravar() -> void:
 	for t in tempos:
 		soma += t
 	md += "\nTempo médio de corrida: %.1f s\n\n" % (soma / maxf(1.0, n))
-	md += "| # | Classe | Resultado | Sala/onda final | Tempo (s) | Cartas | Vida final | Nível | Mortes | Pico vivos | DPS no chefe | Vida do chefe |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n"
+	md += "| # | Classe | Resultado | Sala/onda final | Tempo (s) | Cartas | Vida final | Nível | Mortes | Pico vivos | DPS no chefe | Vida do chefe | Luta do chefe (s) | Eco | Habilidades |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"
 	for r in resultados:
-		md += "| %d | %s | %s | %d | %.1f | %d | %.0f | %d | %d | %d | %.1f | %.0f |\n" % [r["corrida"], r["classe"], r["resultado"], r["sala_final"], r["tempo"], r["cartas"], r["vida_final"],
-			r["nivel"], r["mortes"], r["pico_vivos"], r["dps_chefe"], r["vida_chefe"]]
+		md += "| %d | %s | %s | %d | %.1f | %d | %.0f | %d | %d | %d | %.1f | %.0f | %.0f | %s | %s |\n" % [r["corrida"], r["classe"], r["resultado"], r["sala_final"], r["tempo"], r["cartas"], r["vida_final"],
+			r["nivel"], r["mortes"], r["pico_vivos"], r["dps_chefe"], r["vida_chefe"], r["tempo_chefe"], r["afinidade"], " ".join(r["habilidades"])]
+	md += "\nNível do Cristal ao fim de cada onda e menor vida nela (cartas: %s):\n\n| # | Curva (onda:nível/vida mínima) |\n|---|---|\n" % ("acaso" if cartas_acaso else "critério")
+	for r in resultados:
+		var partes := []
+		var ks: Array = r["nivel_onda"].keys()
+		ks.sort()
+		for k in ks:
+			partes.append("%d:%d/%.0f" % [k, r["nivel_onda"][k], r["vida_min_onda"].get(k, 0.0)])
+		md += "| %d | %s |\n" % [r["corrida"], " ".join(partes)]
+	# Dano levado: média por onda (entre as corridas que chegaram nela) e por quem bateu (soma de todas).
+	var dano_ondas := {}
+	var fontes := {}
+	for r in resultados:
+		for k in r["salas"]:
+			var d: Dictionary = dano_ondas.get(k, {"dano": 0.0, "n": 0, "tempo": 0.0})
+			d["dano"] += float(r["dano_onda"].get(k, 0.0))
+			d["tempo"] += float(r["salas"][k])
+			d["n"] += 1
+			dano_ondas[k] = d
+		for q in r["dano_fonte"]:
+			fontes[q] = float(fontes.get(q, 0.0)) + float(r["dano_fonte"][q])
+	md += "\n| Onda | Dano levado (média) | Dano por minuto |\n|---|---|---|\n"
+	var ko := dano_ondas.keys()
+	ko.sort()
+	for k in ko:
+		var d: Dictionary = dano_ondas[k]
+		md += "| %d | %.0f | %.1f |\n" % [k, d["dano"] / maxf(1.0, d["n"]), 60.0 * d["dano"] / maxf(1.0, d["tempo"])]
+	var kf := fontes.keys()
+	kf.sort_custom(func(a, b): return fontes[a] > fontes[b])
+	md += "\nDano levado por fonte (todas as corridas): "
+	for q in kf:
+		md += "%s %.0f, " % [q, fontes[q]]
+	md += "\n"
 	var g := FileAccess.open(saida.path_join("metricas_corridas.md"), FileAccess.WRITE)
 	g.store_string(md)
 	g.close()
