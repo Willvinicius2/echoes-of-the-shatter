@@ -74,6 +74,11 @@ var menus: CanvasLayer
 var com_menu := true   # false nos testes: começa direto na sala 1
 var tempo := 0.0       # segundos da corrida atual (só conta luta e sala limpa)
 var camera: Camera2D
+var _zoom_base := Vector2.ONE     # zoom da câmera sem o enquadramento do chefe
+var _cam_chefe := 0.0           # 0..1: quanto do enquadramento do chefe grande já está aplicado
+var _cam_zoom_chefe := 1.0
+var _cam_vies_chefe := 0.0
+var _cam_pos_chefe := Vector2.ZERO
 var arvore: CanvasLayer   # árvore de habilidades (tecla T)
 var atores: Node2D
 var vivos := 0
@@ -354,6 +359,8 @@ func _ajustar_camera(cortar := true) -> void:
 		k = vp.y / float(config.get("pixel_ref_altura", 900.0))
 	var z := maxf(float(config.get("camera_zoom", 1.0)) * k, cabe)   # nunca mostra além da borda do mapa
 	camera.zoom = Vector2(z, z)
+	_zoom_base = camera.zoom
+	_cam_chefe = 0.0
 	camera.limit_left = 0
 	camera.limit_top = 0
 	camera.limit_right = int(tam.x)
@@ -363,6 +370,25 @@ func _ajustar_camera(cortar := true) -> void:
 	camera.position = player.global_position
 	if cortar:
 		camera.reset_smoothing()
+
+## Enquadramento do chefe grande (`camera_chefe_zoom_<id>` e `camera_chefe_vies_<id>` em run_settings.csv; sem a chave, a câmera é
+## a de sempre): perto dele a câmera se afasta e vai um pouco em direção a ele, para o corpo caber na tela sem o jogador sair dela.
+## A transição leva `camera_chefe_vel` e volta ao normal quando ele morre ou o jogador se afasta mais de `camera_chefe_raio`.
+func _alvo_camera(delta: float) -> Vector2:
+	var chefe = hud.chefe if hud != null else null
+	var alvo_f := 0.0
+	if chefe != null and is_instance_valid(chefe) and chefe.has_meta("chefe_portao"):
+		var id := str(chefe.stats["id"])
+		_cam_zoom_chefe = float(config.get("camera_chefe_zoom_" + id, 1.0))
+		_cam_vies_chefe = float(config.get("camera_chefe_vies_" + id, 0.0))
+		_cam_pos_chefe = chefe.global_position + Vector2(0.0, float(config.get("camera_chefe_dy_" + id, 0.0)))   # o corpo grande sobe acima do pé: a câmera mira o meio dele
+		if (_cam_zoom_chefe != 1.0 or _cam_vies_chefe != 0.0) and player.global_position.distance_to(_cam_pos_chefe) <= float(config.get("camera_chefe_raio", 900.0)):
+			alvo_f = 1.0
+	_cam_chefe = move_toward(_cam_chefe, alvo_f, delta * float(config.get("camera_chefe_vel", 1.2)))
+	if _cam_chefe <= 0.0:
+		return player.global_position
+	camera.zoom = _zoom_base * lerpf(1.0, _cam_zoom_chefe, _cam_chefe)
+	return player.global_position.lerp(_cam_pos_chefe, _cam_vies_chefe * _cam_chefe)
 
 ## Área do mapa que o jogador vê agora (px), centrada nele e presa à borda como a câmera.
 func vista() -> Rect2:
@@ -864,7 +890,7 @@ func _physics_process(delta: float) -> void:
 					estado = Estado.LIMPA
 					_on_porta()
 	if room != null and room.aberta() and estado != Estado.MENU:
-		camera.position = player.global_position
+		camera.position = _alvo_camera(delta)
 		var v := vista()
 		room.seguir_vinheta(v.get_center(), v.size)
 

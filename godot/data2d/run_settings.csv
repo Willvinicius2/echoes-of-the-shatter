@@ -74,3 +74,8 @@ tecela_alcance_especial,820,px,distancia maxima ao jogador para a Tecela iniciar
 tecela_primeira_pausa,1.6,s,pausa depois da entrada da Tecela ate o primeiro golpe especial
 tecela_recuperacao,0.75,s,tempo que a Tecela fica parada depois de soltar o golpe especial (a animacao de ataque toca nele)
 tecela_fim_filhotes,1,0/1,1 = os filhotes chamados morrem junto com a Tecela (a teia se desfaz)
+camera_chefe_raio,900,px,distancia do jogador ao chefe grande abaixo da qual a camera o enquadra (camera_chefe_zoom_<id> e camera_chefe_vies_<id>; sem a chave do id a camera nao muda)
+camera_chefe_vel,1.2,1/s,velocidade da transicao do enquadramento do chefe (1 = leva 1 s)
+camera_chefe_zoom_bell_weaver,0.78,x,zoom da camera perto da Tecela (multiplica o zoom da fase; menor = mais longe) para o corpo dela caber na tela
+camera_chefe_vies_bell_weaver,0.55,0-1,quanto a camera vai do jogador em direcao a Tecela (0 = no jogador; 1 = nela) para a cabeca nao cortar no alto
+camera_chefe_dy_bell_weaver,-120,px,deslocamento vertical do ponto que a camera mira na Tecela (negativo sobe): o corpo dela se estende uns 300 px acima do pe
