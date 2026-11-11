@@ -1,77 +1,103 @@
 chave,pt
 classe.mago,Mago
 skill.skill.mage.fireball.name,Bola de Fogo
-skill.skill.mage.fireball.desc,Lanca uma esfera que explode ao acertar e queima os inimigos.
+skill.skill.mage.fireball.desc,Cometa de fogo que explode no primeiro toque e queima todos na explosão.
 skill.skill.mage.flame_breath.name,Sopro de Chamas
-skill.skill.mage.flame_breath.desc,Cone de fogo a curta distancia que queima tudo a frente.
+skill.skill.mage.flame_breath.desc,"Cone de fogo que sai do cajado, acompanha a mira e queima em pulsos."
 skill.skill.mage.embers.name,Brasas Vivas
 skill.skill.mage.embers.desc,Passiva: queimaduras causam mais dano.
 skill.skill.mage.fire_wall.name,Muralha de Fogo
-skill.skill.mage.fire_wall.desc,Cria uma linha de chamas que queima quem a atravessa.
+skill.skill.mage.fire_wall.desc,Parede de chamas atravessada na frente dos inimigos; quem cruza queima.
 skill.skill.mage.meteor.name,Meteoro
-skill.skill.mage.meteor.desc,Chama um meteoro que cai apos um instante e devasta a area.
+skill.skill.mage.meteor.desc,"Uma rocha em chamas cai do céu no maior grupo, explode e deixa o chão em brasa."
 skill.skill.mage.inferno_nova.name,Nova Infernal
-skill.skill.mage.inferno_nova.desc,Explosao de fogo ao redor do mago. Ultimate do fogo.
-skill.skill.mage.frost_bolt.name,Raio de Gelo
-skill.skill.mage.frost_bolt.desc,Projetil gelado que retarda os inimigos.
+skill.skill.mage.inferno_nova.desc,Onda de fogo que abre do mago e queima tudo em volta.
+skill.skill.mage.frost_bolt.name,Lança de Gelo
+skill.skill.mage.frost_bolt.desc,"Lasca veloz que atravessa a fila e soma dois acúmulos de frio; no quarto, congela."
 skill.skill.mage.frost_nova.name,Nova Glacial
-skill.skill.mage.frost_nova.desc,Onda de gelo que congela os inimigos proximos.
+skill.skill.mage.frost_nova.desc,Explosão de gelo em volta do mago que congela na hora quem estiver perto.
 skill.skill.mage.chill.name,Frio Cortante
-skill.skill.mage.chill.desc,Passiva: lentidao do gelo mais forte.
+skill.skill.mage.chill.desc,Passiva: cada acúmulo de frio deixa o inimigo ainda mais lento.
 skill.skill.mage.ice_barrier.name,Barreira de Gelo
-skill.skill.mage.ice_barrier.desc,Escudo de gelo que absorve dano por alguns segundos.
+skill.skill.mage.ice_barrier.desc,"Escudo que absorve dano; quando quebra ou acaba, estilhaça e gela quem está perto."
 skill.skill.mage.blizzard.name,Nevasca
-skill.skill.mage.blizzard.desc,Tempestade de gelo que retarda e fere quem estiver dentro.
+skill.skill.mage.blizzard.desc,Tempestade de neve parada no ponto mirado: fere em pulsos e vai congelando quem fica nela.
 skill.skill.mage.glacial_spike.name,Estacas Glaciais
-skill.skill.mage.glacial_spike.desc,Leque de estacas que atravessam e congelam. Ultimate do gelo.
+skill.skill.mage.glacial_spike.desc,"Três fileiras de estacas brotam do chão em leque, ferindo e gelando no caminho."
 skill.skill.mage.chain_lightning.name,Corrente de Raios
-skill.skill.mage.chain_lightning.desc,Raio que salta entre inimigos proximos.
+skill.skill.mage.chain_lightning.desc,"Raio que sai do cajado e salta de inimigo em inimigo, dando choque."
 skill.skill.mage.blink.name,Salto Arcano
-skill.skill.mage.blink.desc,Teleporta para a mira e abala quem estiver no ponto de chegada.
-skill.skill.mage.static_charge.name,Carga Estatica
-skill.skill.mage.static_charge.desc,Passiva: conjura mais rapido.
+skill.skill.mage.blink.desc,Some num raio e reaparece longe do perigo; cai um raio na saída e outro na chegada.
+skill.skill.mage.static_charge.name,Carga Estática
+skill.skill.mage.static_charge.desc,Passiva: as magias recarregam mais rápido.
 skill.skill.mage.thunderstorm.name,Tempestade
-skill.skill.mage.thunderstorm.desc,Raios caem do ceu em pontos aleatorios da area.
+skill.skill.mage.thunderstorm.desc,"Nuvem escura sobre o maior grupo que derruba raios com aviso, um de cada vez."
 skill.skill.mage.mana_surge.name,Surto de Mana
-skill.skill.mage.mana_surge.desc,Por alguns segundos regenera mana muito mais rapido.
+skill.skill.mage.mana_surge.desc,Por alguns segundos a mana volta muito mais rápido.
 skill.skill.mage.overload.name,Sobrecarga
-skill.skill.mage.overload.desc,Descarga eletrica enorme ao redor. Ultimate do arcano.
-ramo.fogo,Fogo
-ramo.gelo,Gelo
-ramo.raio,Arcano
+skill.skill.mage.overload.desc,Estrela de raios em todas as direções: choque e atordoamento. Ult do mago.
+skill.skill.mage.plague_cloud.name,Nuvem Pestilenta
+skill.skill.mage.plague_cloud.desc,Nuvem baixa que anda devagar na direção da mira e envenena o que cobre.
+skill.skill.mage.spore_mark.name,Esporos Vorazes
+skill.skill.mage.spore_mark.desc,Marca os inimigos mais próximos; cada esporo estoura em área e envenena os vizinhos.
+skill.skill.mage.acid_pool.name,Poço Ácido
+skill.skill.mage.acid_pool.desc,Jato de ácido no maior grupo que deixa um poço: quem pisa fica envenenado.
+skill.skill.mage.basic.name,Orbe Arcano
+skill.skill.mage.basic.desc,Ataque básico do mago: orbe que voa reto e devolve mana ao acertar.
 skill.mage.fireball.name,Bola de Fogo
-skill.mage.fireball.desc,Lanca uma esfera que explode ao acertar e queima os inimigos.
+skill.mage.fireball.desc,Cometa de fogo que explode no primeiro toque e queima todos na explosão.
 skill.mage.flame_breath.name,Sopro de Chamas
-skill.mage.flame_breath.desc,Cone de fogo a curta distancia que queima tudo a frente.
+skill.mage.flame_breath.desc,"Cone de fogo que sai do cajado, acompanha a mira e queima em pulsos."
 skill.mage.embers.name,Brasas Vivas
 skill.mage.embers.desc,Passiva: queimaduras causam mais dano.
 skill.mage.fire_wall.name,Muralha de Fogo
-skill.mage.fire_wall.desc,Cria uma linha de chamas que queima quem a atravessa.
+skill.mage.fire_wall.desc,Parede de chamas atravessada na frente dos inimigos; quem cruza queima.
 skill.mage.meteor.name,Meteoro
-skill.mage.meteor.desc,Chama um meteoro que cai apos um instante e devasta a area.
+skill.mage.meteor.desc,"Uma rocha em chamas cai do céu no maior grupo, explode e deixa o chão em brasa."
 skill.mage.inferno_nova.name,Nova Infernal
-skill.mage.inferno_nova.desc,Explosao de fogo ao redor do mago. Ultimate do fogo.
-skill.mage.frost_bolt.name,Raio de Gelo
-skill.mage.frost_bolt.desc,Projetil gelado que retarda os inimigos.
+skill.mage.inferno_nova.desc,Onda de fogo que abre do mago e queima tudo em volta.
+skill.mage.frost_bolt.name,Lança de Gelo
+skill.mage.frost_bolt.desc,"Lasca veloz que atravessa a fila e soma dois acúmulos de frio; no quarto, congela."
 skill.mage.frost_nova.name,Nova Glacial
-skill.mage.frost_nova.desc,Onda de gelo que congela os inimigos proximos.
+skill.mage.frost_nova.desc,Explosão de gelo em volta do mago que congela na hora quem estiver perto.
 skill.mage.chill.name,Frio Cortante
-skill.mage.chill.desc,Passiva: lentidao do gelo mais forte.
+skill.mage.chill.desc,Passiva: cada acúmulo de frio deixa o inimigo ainda mais lento.
 skill.mage.ice_barrier.name,Barreira de Gelo
-skill.mage.ice_barrier.desc,Escudo de gelo que absorve dano por alguns segundos.
+skill.mage.ice_barrier.desc,"Escudo que absorve dano; quando quebra ou acaba, estilhaça e gela quem está perto."
 skill.mage.blizzard.name,Nevasca
-skill.mage.blizzard.desc,Tempestade de gelo que retarda e fere quem estiver dentro.
+skill.mage.blizzard.desc,Tempestade de neve parada no ponto mirado: fere em pulsos e vai congelando quem fica nela.
 skill.mage.glacial_spike.name,Estacas Glaciais
-skill.mage.glacial_spike.desc,Leque de estacas que atravessam e congelam. Ultimate do gelo.
+skill.mage.glacial_spike.desc,"Três fileiras de estacas brotam do chão em leque, ferindo e gelando no caminho."
 skill.mage.chain_lightning.name,Corrente de Raios
-skill.mage.chain_lightning.desc,Raio que salta entre inimigos proximos.
+skill.mage.chain_lightning.desc,"Raio que sai do cajado e salta de inimigo em inimigo, dando choque."
 skill.mage.blink.name,Salto Arcano
-skill.mage.blink.desc,Teleporta para a mira e abala quem estiver no ponto de chegada.
-skill.mage.static_charge.name,Carga Estatica
-skill.mage.static_charge.desc,Passiva: conjura mais rapido.
+skill.mage.blink.desc,Some num raio e reaparece longe do perigo; cai um raio na saída e outro na chegada.
+skill.mage.static_charge.name,Carga Estática
+skill.mage.static_charge.desc,Passiva: as magias recarregam mais rápido.
 skill.mage.thunderstorm.name,Tempestade
-skill.mage.thunderstorm.desc,Raios caem do ceu em pontos aleatorios da area.
+skill.mage.thunderstorm.desc,"Nuvem escura sobre o maior grupo que derruba raios com aviso, um de cada vez."
 skill.mage.mana_surge.name,Surto de Mana
-skill.mage.mana_surge.desc,Por alguns segundos regenera mana muito mais rapido.
+skill.mage.mana_surge.desc,Por alguns segundos a mana volta muito mais rápido.
 skill.mage.overload.name,Sobrecarga
-skill.mage.overload.desc,Descarga eletrica enorme ao redor. Ultimate do arcano.
+skill.mage.overload.desc,Estrela de raios em todas as direções: choque e atordoamento. Ult do mago.
+skill.mage.plague_cloud.name,Nuvem Pestilenta
+skill.mage.plague_cloud.desc,Nuvem baixa que anda devagar na direção da mira e envenena o que cobre.
+skill.mage.spore_mark.name,Esporos Vorazes
+skill.mage.spore_mark.desc,Marca os inimigos mais próximos; cada esporo estoura em área e envenena os vizinhos.
+skill.mage.acid_pool.name,Poço Ácido
+skill.mage.acid_pool.desc,Jato de ácido no maior grupo que deixa um poço: quem pisa fica envenenado.
+skill.mage.basic.name,Orbe Arcano
+skill.mage.basic.desc,Ataque básico do mago: orbe que voa reto e devolve mana ao acertar.
+skill.eco_m_trovao.name,Eco do Trovão
+skill.eco_m_trovao.desc,"Centelha: o básico vira um raio que cai na hora no alvo e salta para um vizinho, dando choque nos dois."
+skill.eco_m_peste.name,Eco da Peste
+skill.eco_m_peste.desc,Bolha: o básico vira uma bolha lenta que atravessa a fila inteira envenenando e estoura numa nuvem.
+skill.eco_m_gelo.name,Eco do Gelo
+skill.eco_m_gelo.desc,"Lascas: o básico vira um leque de três lascas; cada acerto soma frio e, no quarto, o inimigo congela."
+skill.eco_m_cinzas.name,Eco das Cinzas
+skill.eco_m_cinzas.desc,Brasa: o básico vira um cometa de fogo que explode ao tocar e queima em volta.
+ramo.fogo,Fogo
+ramo.gelo,Gelo
+ramo.raio,Raio
+ramo.veneno,Veneno
+upgrade.afinidade.mago,Escolha o Eco do seu cajado

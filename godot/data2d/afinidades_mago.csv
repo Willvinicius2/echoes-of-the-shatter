@@ -1,0 +1,5 @@
+id,elemento,dano,vel,perfura,qtd,raio,duracao,valor,icone,nota
+eco_m_trovao,raio,0.9,1.0,0,1,170,2.0,0.5,eco_m_trovao,Centelha: sem projetil; um raio cai na hora no alvo e salta para qtd vizinhos a ate raio px com valor do dano; choque por duracao s
+eco_m_peste,veneno,0.6,0.55,99,1,70,3.0,3,eco_m_peste,Bolha: orbe lento que atravessa todos e envenena (valor hp/s por duracao s); no fim estoura numa nuvem de raio px que envenena
+eco_m_gelo,gelo,0.55,1.1,1,3,14,3.0,0.15,eco_m_gelo,Lascas: qtd lascas em leque (raio = graus entre elas); cada uma atravessa perfura corpos e soma 1 acumulo de frio (valor de lentidao por duracao s); no 4o congela
+eco_m_cinzas,fogo,1.0,0.9,0,1,60,2.5,3,eco_m_cinzas,Brasa: explode ao tocar em raio px e queima valor hp/s por duracao s

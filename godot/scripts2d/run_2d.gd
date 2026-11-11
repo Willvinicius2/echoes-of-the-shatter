@@ -778,6 +778,7 @@ func _on_coletada(g) -> void:
 	else:
 		var antes := _nivel_atual()
 		nucleo.nivel_ganhar_xp(int(g.valor))
+		_nivel_atual()   # o Mago lê o nível da corrida (espíritos em volta)
 		var cada := int(config.get("skill_gem_every_levels", 0))
 		if cada > 0 and _habilidades_do_zero():
 			for lv in range(antes + 1, _nivel_atual() + 1):
@@ -786,6 +787,8 @@ func _on_coletada(g) -> void:
 	_checar_oferta_nivel()
 
 func _nivel_atual() -> int:
+	if "nivel_corrida" in player:
+		player.nivel_corrida = int(upgrades.nivel_estado().get("level", 1)) if upgrades.has_method("nivel_estado") else 1
 	return int(upgrades.nivel_estado().get("level", 1)) if upgrades.has_method("nivel_estado") else 1
 
 ## Habilidades que uma gema pode dar agora: raiz sem pré-requisito ou filha de pai aprendido, abaixo do nível máximo.

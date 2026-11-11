@@ -33,3 +33,10 @@ static func elemento(id: String) -> String:
 		if d.has(id):
 			return str(d[id].get("elemento", ""))
 	return ""
+
+## Classe dona do Eco `id` ("" se o id não é um Eco).
+static func classe_de(id: String) -> String:
+	for r in Csv.rows("res://data2d/classes_2d.csv"):
+		if defs(str(r["id"])).has(id):
+			return str(r["id"])
+	return ""
