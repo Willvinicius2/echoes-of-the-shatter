@@ -20,7 +20,7 @@ LUZ = np.array([-0.52, 0.78, 0.46])
 LUZ = LUZ / np.linalg.norm(LUZ)
 
 # materiais
-PEDRA, TERRA, OLHO, CINZA = 0, 1, 2, 3
+PEDRA, TERRA, OLHO, CINZA, CINZA_CLARO = 0, 1, 2, 3, 4   # CINZA_CLARO = ferro um tom mais claro (elos e chaves do cinto), mesma paleta
 
 PAL = {
     # pedra cinza-areia (revisão do Jev em 10/11: 15 a 20% mais escura e menos creme que a primeira prévia) e musgo mais escuro e saturado;
@@ -390,6 +390,9 @@ def sombrear(cena, olho=0, quadro=QUADRO, ss=SS, cinza=None, linhas=True, rachad
             ci[m] = c
         elif p['mat'] == CINZA:
             bd = banda(v, (0.78, 0.50, 0.28))
+            ci[m] = _o('cinza', bd)
+        elif p['mat'] == CINZA_CLARO:
+            bd = np.maximum(banda(v, (0.78, 0.50, 0.28)) - 1, 0)   # um tom acima na mesma rampa do ferro
             ci[m] = _o('cinza', bd)
         else:
             bd = banda(v, (0.78, 0.50, 0.28))
