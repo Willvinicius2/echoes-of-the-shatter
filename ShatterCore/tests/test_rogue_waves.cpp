@@ -96,7 +96,7 @@ TEST(rogue_waves_real_csv_loads) {
     const RogueWavePhaseDef* p = d.FindWavePhaseDef("cripta");
     ASSERT_TRUE(p != nullptr);
     EXPECT_EQ(p->boss, std::string("crypt_guardian"));
-    EXPECT_NEAR(p->deadline, 480.0, 1e-9);  // ~8 min (plano 31)
+    EXPECT_NEAR(p->deadline, 660.0, 1e-9);  // 11 min (balanceamento da segunda rodada; era ~8 min no plano 31)
     EXPECT_TRUE(p->ringMin > 0.0 && p->ringMax >= p->ringMin);
     EXPECT_TRUE(p->wakeWave >= 1 && p->wakeWave <= count);
     EXPECT_EQ(p->swarm.wave, count + 1);
@@ -382,7 +382,7 @@ TEST(rogue_waves_restore_continues) {
         a.Start("cripta", 77);
         Bot ba;
         ba.wake = part == 0;
-        for (int i = 0; i < (part == 0 ? 400 : 1960); ++i) ba.Step(a, 0.25);  // part 1: perto do prazo
+        for (int i = 0; i < (part == 0 ? 400 : 2600); ++i) ba.Step(a, 0.25);  // part 1: perto do prazo
         const std::string mid = a.StateJson();
         RogueWaves b(RealData());
         std::string err;
