@@ -6,7 +6,7 @@ com peças finas: o que o distingue do golem é a silhueta de ossos com vãos, n
 Materiais: PEDRA = osso, TERRA = sombra do interior e panos, CINZA = ferro, OLHO = brasa nas órbitas.
 """
 import numpy as np
-from render import caixa, esfera, PEDRA, TERRA, OLHO, CINZA
+from render import caixa, esfera, PEDRA, TERRA, OLHO, CINZA, CINZA_CLARO
 
 JUNTAS = {
     'tronco': (0.0, 1.40, 0.0),
@@ -30,13 +30,13 @@ def construir(variante=0):
     add(caixa('cinto', (0, 1.46, 0.0), (0.40, 0.05, 0.24), TERRA, ch=0.03, jit=0.03, seed=3, grupo='pelvis'))
     add(caixa('fivela', (0, 1.46, 0.205), (0.07, 0.06, 0.03), CINZA, ch=0.02, jit=0.03, seed=4, grupo='pelvis'))
     # argola e molho de chaves de ferro claro no quadril esquerdo, correntes pendendo do cinto
-    add(caixa('argola', (-0.42, 1.36, 0.10), (0.05, 0.12, 0.12), CINZA, ch=0.04, jit=0.04, seed=5, grupo='pelvis'))
+    add(caixa('argola', (-0.42, 1.36, 0.10), (0.05, 0.12, 0.12), CINZA_CLARO, ch=0.04, jit=0.04, seed=5, grupo='pelvis'))
     for i, (dy, dz) in enumerate(((1.10, 0.14), (1.02, 0.04), (1.12, -0.06))):
-        add(caixa('chave%d' % i, (-0.45, dy, dz), (0.04, 0.15, 0.05), CINZA, ch=0.03, jit=0.04, seed=6 + i, grupo='pelvis'))
-        add(caixa('dentes%d' % i, (-0.45, dy - 0.17, dz), (0.04, 0.055, 0.09), CINZA, ch=0.02, jit=0.04, seed=9 + i, grupo='pelvis'))
+        add(caixa('chave%d' % i, (-0.45, dy, dz), (0.04, 0.15, 0.05), CINZA_CLARO, ch=0.03, jit=0.04, seed=6 + i, grupo='pelvis'))
+        add(caixa('dentes%d' % i, (-0.45, dy - 0.17, dz), (0.04, 0.055, 0.09), CINZA_CLARO, ch=0.02, jit=0.04, seed=9 + i, grupo='pelvis'))
     for lado, x0 in ((1, 0.30), (-1, -0.12)):
         for i in range(4):
-            add(caixa('corr%d_%d' % (lado, i), (x0 + 0.03 * i * lado, 1.38 - 0.13 * i, 0.26), (0.06, 0.055, 0.04), CINZA, rot=(0, 0, 90 * (i % 2)), ch=0.03, jit=0.04, seed=70 + i, grupo='pelvis'))
+            add(caixa('corr%d_%d' % (lado, i), (x0 + 0.03 * i * lado, 1.38 - 0.13 * i, 0.26), (0.06, 0.055, 0.04), CINZA_CLARO, rot=(0, 0, 90 * (i % 2)), ch=0.03, jit=0.04, seed=70 + i, grupo='pelvis'))
     for s, L in ((-1, 'L'), (1, 'R')):
         q = ('quad' + L,)
         j = ('quad' + L, 'joe' + L)

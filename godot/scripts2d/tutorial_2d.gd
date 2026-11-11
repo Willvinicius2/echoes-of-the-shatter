@@ -5,6 +5,7 @@ extends CanvasLayer
 
 const Csv = preload("res://scripts2d/csv2d.gd")
 const Tema = preload("res://scripts2d/tema_2d.gd")
+const Classe = preload("res://scripts2d/classe_2d.gd")
 
 signal concluido
 
@@ -61,7 +62,7 @@ func _texto(p: Dictionary) -> String:
 		var n := _nome(a)
 		if n != "" and not teclas.has(n):
 			teclas.append(n)
-	return Csv.t(p["loc"]) % " ".join(teclas)
+	return Csv.t_classe(p["loc"], Classe.atual) % " ".join(teclas)   # texto próprio da classe, se houver
 
 func _nome(acao: String) -> String:
 	if opcoes != null and opcoes.acoes.has(acao):

@@ -193,7 +193,7 @@ func _montar() -> void:
 	for b in sala.braseiros:
 		_braseiro(b)
 	_criar_poeira()
-	if sala.piso_grama:
+	if sala.piso_grama and sala.tema != "ponte":
 		_criar_nuvens(Color(0.02, 0.03, 0.06, cfg["nuvem_alpha"]), 2)
 		_criar_ondas()
 	else:  # cripta de pedra: névoa rasteira clara em vez de sombra de nuvem

@@ -1,0 +1,5 @@
+id,elemento,dano,vel,perfura,qtd,raio,duracao,valor,icone,nota
+eco_w_trovao,raio,1.0,1.0,0,2,150,2.0,0.5,eco_w_trovao,o 3o golpe do combo chama um arco que salta para qtd vizinhos a ate raio px com valor do dano e choque por duracao s
+eco_w_peste,veneno,0.9,1.0,0,1,0,4.0,4,eco_w_peste,golpes 10% mais fracos que envenenam valor hp/s por duracao s e o arco do corte fica 25% mais largo
+eco_w_gelo,gelo,1.0,1.0,0,1,0,3.0,0.15,eco_w_gelo,cada golpe soma qtd acumulos de frio (valor de lentidao por acumulo por duracao s); no 4o congela
+eco_w_cinzas,fogo,1.1,1.0,0,1,44,2.5,3,eco_w_cinzas,dano +10%; queima valor hp/s por duracao s e o 3o golpe deixa brasa de raio px no chao

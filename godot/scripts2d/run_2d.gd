@@ -20,10 +20,11 @@ const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
 const ArvoreUiScript = preload("res://scripts2d/arvore_ui_2d.gd")
 const MagoScript = preload("res://scripts2d/mago_2d.gd")
-const CorridaGuerreiroScript = preload("res://scripts2d/corrida_guerreiro_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const ElitePortao = preload("res://scripts2d/elite_portao_2d.gd")
+## Elites do portão com IA própria de golpes (o resto usa o corpo a corpo comum de enemy_2d.gd).
+const IAS_CHEFE_PORTAO := {"bell_weaver": preload("res://scripts2d/tecela_2d.gd")}
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 const UpgradeUiScript = preload("res://scripts2d/upgrade_ui_2d.gd")
 const MenusScript = preload("res://scripts2d/menus_2d.gd")
@@ -31,7 +32,7 @@ const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const PortalScript = preload("res://scripts2d/portal_2d.gd")
 const GemaScript = preload("res://scripts2d/gema_2d.gd")
-const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
+const Afinidades = preload("res://scripts2d/afinidades_2d.gd")
 const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
 const Fase = preload("res://scripts2d/fase_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
@@ -73,6 +74,12 @@ var menus: CanvasLayer
 var com_menu := true   # false nos testes: começa direto na sala 1
 var tempo := 0.0       # segundos da corrida atual (só conta luta e sala limpa)
 var camera: Camera2D
+var _arte_fase := {}            # arte_fase_2d.csv (carregado na primeira necessidade)
+var _zoom_base := Vector2.ONE     # zoom da câmera sem o enquadramento do chefe
+var _cam_chefe := 0.0           # 0..1: quanto do enquadramento do chefe grande já está aplicado
+var _cam_zoom_chefe := 1.0
+var _cam_vies_chefe := 0.0
+var _cam_pos_chefe := Vector2.ZERO
 var arvore: CanvasLayer   # árvore de habilidades (tecla T)
 var atores: Node2D
 var vivos := 0
@@ -203,20 +210,16 @@ func _montar_camada_partida() -> void:
 	if arvore != null:
 		arvore.definir(arvore_fixa)
 
-## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro e mago: cartas do core; guerreiro: só a árvore comum).
+## Cria o jogador e as cartas da classe escolhida (as três classes recebem as cartas do core).
 func _criar_classe() -> void:
-	var guerreiro: bool = Classe.atual == "guerreiro"
-	player = (WarriorScript if guerreiro else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
+	player = (WarriorScript if Classe.atual == "guerreiro" else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
 	player.died.connect(_on_player_died)
 	atores.add_child(player)
 	arvore_fixa = player.habilidades   # recém-criado: ainda é a árvore fixa (core do meta); a camada de partida entra no início da corrida
-	upgrades = (CorridaGuerreiroScript if guerreiro else UpgradesScript).new()
+	upgrades = UpgradesScript.new()
 	upgrades.meta = meta
 	player.habilidades.nucleo = nucleo   # árvore de habilidades com as regras no core do meta (as 3 classes)
-	if guerreiro:
-		player.habilidades.carregar_classe("guerreiro")
-	else:  # arqueiro e mago: stats da classe e a árvore
-		player.definir_classe(Classe.atual)
+	player.definir_classe(Classe.atual)   # stats da classe e a árvore
 	upgrades.habilidades = player.habilidades
 	if arvore != null:
 		arvore.definir(player.habilidades if "habilidades" in player else null)
@@ -262,21 +265,16 @@ func iniciar_corrida() -> void:
 	indice = 0
 	tempo = 0.0
 	menus.limpar_fade()
-	var guerreiro: bool = Classe.atual == "guerreiro"
-	# O guerreiro não usa as cartas do core (só a árvore comum): o core roda o fluxo da corrida sem cartas.
 	nucleo.classe_definir(Classe.atual)   # pontos por sala e passivas da árvore vão para esta classe
-	nucleo.corrida_cartas_externas(guerreiro)
-	if not guerreiro:
-		upgrades.semente = int(rng.seed)
+	nucleo.corrida_cartas_externas(false)   # as três classes recebem as cartas do core
+	upgrades.semente = int(rng.seed)
 	_montar_camada_partida()
-	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador; o arqueiro também começa a corrida no core
-	if guerreiro:
-		nucleo.corrida_iniciar(int(rng.seed), upgrades.base_numerica())
+	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador; a corrida começa no core
 	meta.sincronizar()
 	player.reset()
 	_carregar_sala(0)
 
-## Cartas da sala limpa: as que o core sorteou (o guerreiro não recebe cartas, só pontos da árvore).
+## Cartas da sala limpa: as que o core sorteou.
 func _cartas_da_sala() -> Array:
 	return upgrades.oferta()
 
@@ -362,6 +360,8 @@ func _ajustar_camera(cortar := true) -> void:
 		k = vp.y / float(config.get("pixel_ref_altura", 900.0))
 	var z := maxf(float(config.get("camera_zoom", 1.0)) * k, cabe)   # nunca mostra além da borda do mapa
 	camera.zoom = Vector2(z, z)
+	_zoom_base = camera.zoom
+	_cam_chefe = 0.0
 	camera.limit_left = 0
 	camera.limit_top = 0
 	camera.limit_right = int(tam.x)
@@ -371,6 +371,25 @@ func _ajustar_camera(cortar := true) -> void:
 	camera.position = player.global_position
 	if cortar:
 		camera.reset_smoothing()
+
+## Enquadramento do chefe grande (`camera_chefe_zoom_<id>` e `camera_chefe_vies_<id>` em run_settings.csv; sem a chave, a câmera é
+## a de sempre): perto dele a câmera se afasta e vai um pouco em direção a ele, para o corpo caber na tela sem o jogador sair dela.
+## A transição leva `camera_chefe_vel` e volta ao normal quando ele morre ou o jogador se afasta mais de `camera_chefe_raio`.
+func _alvo_camera(delta: float) -> Vector2:
+	var chefe = hud.chefe if hud != null else null
+	var alvo_f := 0.0
+	if chefe != null and is_instance_valid(chefe) and chefe.has_meta("chefe_portao"):
+		var id := str(chefe.stats["id"])
+		_cam_zoom_chefe = float(config.get("camera_chefe_zoom_" + id, 1.0))
+		_cam_vies_chefe = float(config.get("camera_chefe_vies_" + id, 0.0))
+		_cam_pos_chefe = chefe.global_position + Vector2(0.0, float(config.get("camera_chefe_dy_" + id, 0.0)))   # o corpo grande sobe acima do pé: a câmera mira o meio dele
+		if (_cam_zoom_chefe != 1.0 or _cam_vies_chefe != 0.0) and player.global_position.distance_to(_cam_pos_chefe) <= float(config.get("camera_chefe_raio", 900.0)):
+			alvo_f = 1.0
+	_cam_chefe = move_toward(_cam_chefe, alvo_f, delta * float(config.get("camera_chefe_vel", 1.2)))
+	if _cam_chefe <= 0.0:
+		return player.global_position
+	camera.zoom = _zoom_base * lerpf(1.0, _cam_zoom_chefe, _cam_chefe)
+	return player.global_position.lerp(_cam_pos_chefe, _cam_vies_chefe * _cam_chefe)
 
 ## Área do mapa que o jogador vê agora (px), centrada nele e presa à borda como a câmera.
 func vista() -> Rect2:
@@ -463,6 +482,7 @@ func _nascer_guarda(g: Dictionary) -> void:
 			var e: Node2D = EnemyScript.new()
 			atores.add_child(e)
 			e.setup(p[0], player, pontos[k])
+			_arte_da_fase(e)
 			e.stats["hp"] = float(e.stats["hp"]) * float(_mult_onda["hp"]) * forca
 			e.hp = e.stats["hp"]
 			e.hp_max = e.hp
@@ -602,7 +622,12 @@ func _nascer(s: Dictionary) -> void:
 	var id := str(s["enemy"])
 	# Chefe que não é `kind=boss` (elite do portão): IA comum, não o Guardião (BossScript e boss_patterns_2d.csv).
 	var portao: bool = chefe and str(Csv.enemy(id).get("kind", "boss")) != "boss"
-	var e: Node2D = (BossScript if chefe and not portao else EnemyScript).new()
+	var classe = EnemyScript
+	if chefe and not portao:
+		classe = BossScript
+	elif portao:
+		classe = IAS_CHEFE_PORTAO.get(id, EnemyScript)
+	var e: Node2D = classe.new()
 	atores.add_child(e)
 	var onde: Vector2
 	if chefe and room.posicao_chefe != Vector2.ZERO:
@@ -610,6 +635,7 @@ func _nascer(s: Dictionary) -> void:
 	else:
 		onde = room.empurrar_para_dentro(player.global_position + Vector2.from_angle(float(s["angle"])) * float(s["radius"]))
 	e.setup(id, player, onde)
+	_arte_da_fase(e)
 	if chefe:
 		dps_medido = _medir_dps()
 		vida_chefe = float(nucleo.vida_chefe(float(e.stats["hp"]), dps_medido))   # vida adaptativa: regra do core
@@ -619,12 +645,15 @@ func _nascer(s: Dictionary) -> void:
 		if portao:
 			# o core limita a vida do chefe a boss_hp_max x a base e não aplica a curva de dano a chefe; o elite do portão
 			# (Capitão do Ossuário) ganha multiplicadores próprios, em run_settings.csv
-			vida_chefe *= float(config.get("gate_elite_hp_mult", 1.0))
+			vida_chefe *= float(config.get("gate_elite_hp_mult_" + id, config.get("gate_elite_hp_mult", 1.0)))   # por id, se houver
 			e.stats["hp"] = vida_chefe
 			e.hp = vida_chefe
 			e.hp_max = vida_chefe
 			e.stats["damage"] = float(e.stats["damage"]) * float(config.get("gate_elite_damage_mult", 1.0))
 			_preparar_elite_portao(e)
+			if e.has_method("_iniciar_proximo"):   # IA própria de golpes (a Tecelã): liga aos pontos livres do mapa e ao nascimento dos filhotes
+				e.pontos_livres = func(c: Vector2, r: float, n: int) -> Array: return room.pontos_livres_perto(c, r, n, rng)
+				e.convocar = _convocar_filhotes
 		elif player.global_position.distance_to(onde) > 2.0 * float(config.get("boss_wake_radius", 260.0)):
 			# só quando ele acorda longe (prazo do enxame); se foi o jogador que chegou ao altar, a barra do chefe já diz tudo
 			_avisar(Csv.t("hud.boss_awaits"), float(config.get("boss_hint_time", 3.0)))
@@ -649,6 +678,35 @@ func _nascer(s: Dictionary) -> void:
 	e.set_meta("xp_mult", float(s.get("xp_mult", 1.0)))
 	e.died.connect(_on_inimigo_morto)
 
+## Folha própria da fase para o inimigo (arte_fase_2d.csv: fase,inimigo,arte). Chamar logo depois do `setup`, antes de virar elite.
+func _arte_da_fase(e: Node2D) -> void:
+	if _arte_fase.is_empty():
+		_arte_fase["_"] = ""
+		for r in Csv.rows("res://data2d/arte_fase_2d.csv"):
+			_arte_fase[str(r["fase"]) + "|" + str(r["inimigo"])] = str(r["arte"])
+	var arte: String = _arte_fase.get(fase_horda + "|" + str(e.stats["id"]), "")
+	if arte != "":
+		e.trocar_arte(arte)
+
+## Filhotes chamados pelo chefe (Tecelã): nascem nos `pontos`, valem a curva da onda atual, ficam fora da conta do spawner (como
+## os encontros do mapa) e soltam XP normal. Devolve os inimigos para o chefe contar os vivos.
+func _convocar_filhotes(id: String, pontos: Array) -> Array:
+	var nascidos := []
+	for pt in pontos:
+		var e: Node2D = EnemyScript.new()
+		atores.add_child(e)
+		e.setup(id, player, pt)
+		if not _mult_onda.is_empty():
+			e.stats["hp"] = float(e.stats["hp"]) * float(_mult_onda["hp"])
+			e.stats["damage"] = float(e.stats["damage"]) * float(_mult_onda["damage"])
+			e.hp = e.stats["hp"]
+			e.hp_max = e.hp
+		e.set_meta("guarda", true)
+		e.set_meta("xp_mult", float(_mult_onda.get("xp", 1.0)))
+		e.died.connect(_on_inimigo_morto)
+		nascidos.append(e)
+	return nascidos
+
 ## Elite do portão (decisão do Jev para a Pedreira): conta como elite (XP, baú e gema de elite) mas sem o tom dourado
 ## nem a escala dos elites de onda; cresce `gate_elite_scale` (sprite e colisão), entra parado e invulnerável por
 ## `gate_elite_intro` s com o clarão no portão, tremor e o nome dele, e ganha a barra de chefe da HUD.
@@ -656,7 +714,7 @@ func _preparar_elite_portao(e: Node2D) -> void:
 	e.set_meta("elite", true)
 	e.set_meta("chefe_portao", true)
 	e.stats["hp_bar"] = 0.0   # a barra é a grande da HUD, não a da cabeça
-	e.virar_elite(float(config.get("gate_elite_scale", 1.5)))
+	e.virar_elite(float(config.get("gate_elite_scale_" + str(e.stats["id"]), config.get("gate_elite_scale", 1.5))))   # `gate_elite_scale_<id>`: chefe com folha já no tamanho final
 	var dur := float(config.get("gate_elite_intro", 1.4))
 	e.iniciar_entrada(dur)
 	hud.chefe = e
@@ -750,9 +808,9 @@ func _usar_gema_habilidade() -> void:
 	if ui.aberta:
 		_gemas_pendentes += 1
 		return
-	# Primeira gema do arqueiro na corrida: escolha do Eco do básico entre as QUATRO afinidades (doc 36 seção 2).
-	if "afinidade" in player and player.afinidade == "" and int(config.get("affinity_first_gem", 1)) == 1 and not AfinidadeFx.ids().is_empty():
-		ui.abrir(AfinidadeFx.ids(), "afinidade", 0, AfinidadeFonte.new())
+	# Primeira gema da corrida: escolha do Eco do básico entre as QUATRO afinidades da classe (doc 36 seção 2).
+	if "afinidade" in player and player.afinidade == "" and int(config.get("affinity_first_gem", 1)) == 1 and not Afinidades.ids(Classe.atual).is_empty():
+		ui.abrir(Afinidades.ids(Classe.atual), "afinidade", 0, AfinidadeFonte.new())
 		return
 	var cands := _gemas_possiveis()
 	if cands.is_empty():
@@ -761,7 +819,7 @@ func _usar_gema_habilidade() -> void:
 	var n := maxi(1, int(config.get("skill_gem_cards", 3)))
 	# A afinidade garante uma skill do seu elemento na oferta, quando houver (doc 36 seção 0).
 	if "afinidade" in player and player.afinidade != "":
-		var el: String = AfinidadeFx.elemento(player.afinidade)
+		var el: String = Afinidades.elemento(player.afinidade)
 		var h = player.habilidades
 		var i_el: int = cands.find_custom(func(id): return h.defs[id].get("ramo", "") == el)
 		if i_el >= n:
@@ -775,7 +833,7 @@ func _usar_gema_habilidade() -> void:
 class AfinidadeFonte extends RefCounted:
 	var defs := {}
 	func _init() -> void:
-		for id in AfinidadeFx.ids():
+		for id in Afinidades.ids(Classe.atual):
 			defs[id] = {"ramo": "afinidade", "nivel_max": 1, "icone": id}
 	func nivel(_id: String) -> int:
 		return 0
@@ -845,7 +903,7 @@ func _physics_process(delta: float) -> void:
 					estado = Estado.LIMPA
 					_on_porta()
 	if room != null and room.aberta() and estado != Estado.MENU:
-		camera.position = player.global_position
+		camera.position = _alvo_camera(delta)
 		var v := vista()
 		room.seguir_vinheta(v.get_center(), v.size)
 
