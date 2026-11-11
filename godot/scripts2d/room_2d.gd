@@ -7,7 +7,9 @@ extends Node2D
 ## câmera seguindo o jogador e um portal em `X` depois do chefe.
 ## `@caminho largura x,y x,y ...` e `@riacho largura x,y ...` (células; curva suave) desenham caminho de pedra
 ## e riacho; o riacho bloqueia jogador e inimigos (camada 8) menos onde o caminho o cruza.
-## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png); `@piso pedreira` é o mesmo
+## A linha `@piso grama` antes de `@props` troca o piso padrão por gramado (atlas cripta_grama.png);
+## `@piso ponte` é o piso aberto da Ponte do Sino (atlas cripta_ponte.png, tools/sprites2d/montar_ponte.py): calçada azul-acinzentada, e as
+## células `f` e `m` viram o abismo (fundo liso; `f` bloqueia só o passo, então flecha e magia cruzam o vazio). `@piso pedreira` é o
 ## piso aberto na versão seca e poeirenta da Pedreira dos Ecos (atlas cripta_pedreira.png, tools/sprites2d/recolorir_piso_pedreira.py):
 ## lajes aquecidas (arenito), massa de rocha `m` em marrom-escuro e uma orla de terra irregular entre ela e o chão (orla_terra_2d.gd).
 ## Fosso da Pedreira (tools/mapas/fosso_pixel.py): `f` é uma célula de fosso (bloqueia jogador e inimigos na camada 8, como a água;
@@ -33,6 +35,8 @@ const COR_MASSA_PEDREIRA := Color(0.56, 0.54, 0.62)   # a rocha da pedreira é o
 const ATLAS := "res://art2d/tiles/cripta_tiles.png"
 const ATLAS_GRAMA := "res://art2d/tiles/cripta_grama.png"
 const ATLAS_PEDREIRA := "res://art2d/tiles/cripta_pedreira.png"
+const ATLAS_PONTE := "res://art2d/tiles/cripta_ponte.png"   # calçada da Ponte do Sino (tools/sprites2d/montar_ponte.py)
+const COR_ABISMO := Color(0.063, 0.082, 0.141)   # o vazio em volta do tabuleiro da Ponte do Sino (o A1 de tools/mapas/ponte_pixel.py)
 const T_PISO := 0
 const T_PISO_ESCURO := 6
 const T_PORTA_FECHADA := 7
@@ -61,7 +65,7 @@ var _piso: TileMapLayer
 var aneis: Array = []   # [{laje, fator}]
 var _brilho_runas: TileMapLayer
 var piso_grama := false
-var tema := ""   # "" = o da Cripta; "pedreira" (`@piso pedreira`): chão seco, lajes quentes, sem vaga-lumes
+var tema := ""   # "" = o da Cripta; "pedreira" (`@piso pedreira`): chão seco, lajes quentes, sem vaga-lumes; "ponte" (`@piso ponte`): calçada fria sobre o abismo
 var decalques: Array = []   # `@decalque`: {arquivo, pos (px), topo}
 var braseiros: Array[Vector2] = []
 var _estruturas: Array = []   # braseiros e pilares do mapa que reagem a fogo, raio e gelo: [{tipo, pos, ate}] (reacoes_2d.gd)
@@ -99,6 +103,9 @@ func carregar(caminho: String) -> bool:
 		elif l == "@piso pedreira":
 			piso_grama = true   # piso aberto como o gramado (manchas de chão, tufos, atlas de 4 variantes + lajes), com o tema da Pedreira
 			tema = "pedreira"
+		elif l == "@piso ponte":
+			piso_grama = true   # piso aberto, com o tema da Ponte do Sino: calçada azul-acinzentada e abismo em volta do tabuleiro
+			tema = "ponte"
 		elif l.begins_with("@decalque "):
 			var q := l.split(" ", false)   # @decalque arquivo x y [topo]
 			decalques.append({"arquivo": q[1], "pos": Vector2(float(q[2]), float(q[3])), "topo": q.size() > 4 and q[4] == "topo"})
@@ -167,6 +174,15 @@ func _montar() -> void:
 		# Gramado: um pouco mais escuro que o atlas para caminho e inimigos se destacarem; na fase aberta, mais claro
 		# (a revisão achou o mapa grande escuro demais) e com variação de tom em _tons_do_gramado.
 		_piso.modulate = Color(0.94, 0.96, 0.88) if colunas * linhas > 2000 else Color(0.8, 0.83, 0.78)
+		if tema == "ponte":
+			_piso.modulate = Color(0.86, 0.88, 0.92)   # a calçada já é fria: só desce um pouco para os atores e as lajes da estrada saltarem
+			var vazio := Polygon2D.new()   # o abismo: um fundo liso sob tudo (as bordas pintadas e a névoa vêm por cima)
+			vazio.name = "Abismo"
+			vazio.color = COR_ABISMO
+			var tam := Vector2(colunas * tile, linhas * tile)
+			vazio.polygon = PackedVector2Array([Vector2(-2000, -2000), Vector2(tam.x + 2000, -2000), tam + Vector2(2000, 2000), Vector2(-2000, tam.y + 2000)])
+			add_child(vazio)
+			move_child(vazio, 0)
 	add_child(_piso)
 	_mata = TileMapLayer.new()  # chão da mata fechada, bem mais escuro que o gramado
 	_mata.tile_set = ts
@@ -234,6 +250,8 @@ func _montar() -> void:
 					posicao_portal = _centro(x, y)
 				"G":
 					posicao_chefe = _centro(x, y)
+			if tema == "ponte" and (c == "m" or c == "f"):
+				continue   # abismo: sem chão (o fundo liso e a névoa cuidam dele)
 			if c == "m":
 				if piso_grama:
 					_mata.set_cell(Vector2i(x, y), 1, Vector2i(posmod(hash(Vector2i(x, y)), 4), 0))
@@ -278,6 +296,8 @@ func _montar() -> void:
 		_tons_do_gramado()
 	if tema == "pedreira":
 		OrlaTerra.montar(self, _grade, colunas, linhas, tile, _layer)   # rocha marrom com orla de terra irregular (sem a sombra preta da mata)
+	elif tema == "ponte":
+		pass   # a borda do tabuleiro é pintada (decalques de tools/mapas/ponte_pixel.py): nada de sombra de mata
 	else:
 		_sombra_da_mata()
 	_desenhar_lajes()
@@ -427,6 +447,8 @@ func _tons_do_gramado() -> void:
 	if tema == "pedreira":
 		_manchas_da_pedreira()
 		return
+	if tema == "ponte":
+		return   # calçada limpa: as manchas ficam para as lajes e as teias do mapa
 	var g := Gradient.new()
 	g.set_color(0, Color(1, 1, 1, 1))
 	g.set_color(1, Color(1, 1, 1, 0))
@@ -502,11 +524,16 @@ func _desenhar_lajes() -> void:
 		var m: Dictionary = lajes[i]
 		var escuro: bool = m["tom"] == "escuro"
 		# Sombra de terra e musgo esfumadas (sem contorno duro) sob a pedra.
-		orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.22, 0.3, 0.12, 0.3), 1.0, minf(56.0, m["raio"] * 0.9)))
-		orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.13, 0.11, 0.08, 0.4), 1.0, minf(30.0, m["raio"] * 0.5)))
+		if tema == "ponte":
+			orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.06, 0.08, 0.14, 0.26), 1.0, minf(30.0, m["raio"] * 0.5)))   # sobre a calçada não há terra nem musgo: só uma sombra fria e curta
+		else:
+			orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.22, 0.3, 0.12, 0.3), 1.0, minf(56.0, m["raio"] * 0.9)))
+			orlas.add_child(_laje_esfumada(m, 11 + i, null, Color(0.13, 0.11, 0.08, 0.4), 1.0, minf(30.0, m["raio"] * 0.5)))
 		var cor_laje := Color(0.85, 0.82, 0.8) if escuro else Color(0.92, 0.92, 0.9)
 		if tema == "pedreira":
 			cor_laje = Color(0.9, 0.78, 0.6) if escuro else Color(1.0, 0.9, 0.7)   # arenito: a laje esquenta para casar com o chão ocre
+		elif tema == "ponte":
+			cor_laje = Color(0.66, 0.72, 0.88) if escuro else Color(0.8, 0.86, 1.0)   # laje fria, no azul da calçada
 		if not escuro and i > 0 and lajes[i - 1]["tom"] == "escuro" and m["raio"] < lajes[i - 1]["raio"]:
 			cor_laje = Color(0.72, 0.68, 0.66, 0.8)   # estrado sobre a laje escura: contraste baixo, sem cara de tapete
 		raiz.add_child(_laje_esfumada(m, 11 + i, tex_escuro if escuro else tex_claro, cor_laje, 0.95, minf(34.0, m["raio"] * 0.6)))
@@ -828,7 +855,7 @@ func _tileset() -> TileSet:
 		for x in tex.get_width() / tile:
 			sr.create_tile(Vector2i(x, y))
 	ts.add_source(sr, 2)
-	var tg := _carregar_textura(ATLAS_PEDREIRA if tema == "pedreira" else ATLAS_GRAMA)
+	var tg := _carregar_textura(ATLAS_PEDREIRA if tema == "pedreira" else (ATLAS_PONTE if tema == "ponte" else ATLAS_GRAMA))
 	if tg != null:
 		var sg := TileSetAtlasSource.new()
 		sg.texture = tg
@@ -874,6 +901,8 @@ func colocar_props(alvo: Node2D) -> void:
 			spr.modulate = Color(0.62, 0.6, 0.66)  # pedras mais escuras: o cinza claro chapado saltava do gramado
 		elif String(p["id"]).begins_with("tree_"):
 			spr.modulate = Color(0.8, 0.77, 0.76)  # copas de fundo menos saturadas
+		if tema == "ponte" and not (String(p["id"]).begins_with("ponte_") or String(p["id"]).begins_with("pedreira_poste")):
+			spr.modulate = Color(0.6, 0.68, 0.88) if not String(p["id"]).begins_with("bones_") and not String(p["id"]).begins_with("skull_") else Color(0.82, 0.86, 0.98)   # pedra e osso herdados da Cripta esfriam: na Ponte só o bronze e os lampiões são quentes
 		if spr.flip_h:
 			spr.offset.x = -(tex.get_width() - float(arte["pivo_x"]))
 		var tex_base: Texture2D = Ancoragem.textura_base(p["id"], tex, d)  # base escurecida: afunda no chão

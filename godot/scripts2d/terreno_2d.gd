@@ -126,7 +126,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 		for degrau in 3:
 			var folga: float = [14.0, 9.0, 4.0][degrau]
 			var alfa: float = [0.28, 0.4, 0.55][degrau]
-			var cor_terra := Color(0.2, 0.16, 0.1, alfa)
+			var cor_terra := Color(0.06, 0.08, 0.14, alfa * 0.7) if tema == "ponte" else Color(0.2, 0.16, 0.1, alfa)
 			var anel := faixa(linha, c["larg"] * tile + folga * 2.0, 5.0 - degrau, 21 + i * 3 + degrau)
 			if anel.is_empty():
 				continue
@@ -140,7 +140,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			for b in fora_anel:
 				_poligono(raiz, b, cor_terra)
 		for q in fora_agua_fc:
-			var pg := _poligono(raiz, q, Color(1, 1, 1))
+			var pg := _poligono(raiz, q, Color(0.72, 0.79, 0.96) if tema == "ponte" else Color(1, 1, 1))   # na Ponte a estrada esfria e desce: guia sem brigar com o bronze
 			pg.texture = lajes_do_caminho
 			pg.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 			pg.uv = q
@@ -178,7 +178,7 @@ static func montar(sala: Node2D, caminhos: Array, riachos: Array, grama: bool, t
 			cp.polygon = b
 			corpo_agua.add_child(cp)
 	_luz(sala, riachos, grama, tile)
-	if grama and tema != "pedreira":   # a Pedreira é seca e de dia: sem vaga-lumes
+	if grama and tema != "pedreira" and tema != "ponte":   # a Pedreira é seca e de dia, e a Ponte é pedra sobre o vazio: sem vaga-lumes
 		_vagalumes(sala, tile)
 
 ## Os pontos do contorno que não caem dentro de nenhum dos polígonos `outros` (lajes de caminhos já desenhados).
@@ -458,7 +458,7 @@ static func _musgo_na_borda(raiz: Node2D, contorno: PackedVector2Array) -> void:
 			var ang := TAU * a / 8.0
 			var rr := raio * (0.7 + 0.5 * float(posmod(h / (a + 3), 10)) / 10.0)
 			pts.append(c + Vector2(cos(ang) * rr, sin(ang) * rr * 0.7))
-		var cor := Color(0.17, 0.11, 0.06, 0.44 + 0.14 * float(posmod(h / 7, 4)) / 3.0) if tema == "pedreira" else Color(0.13, 0.2, 0.1, 0.3 + 0.12 * float(posmod(h / 7, 4)) / 3.0)
+		var cor := Color(0.17, 0.11, 0.06, 0.44 + 0.14 * float(posmod(h / 7, 4)) / 3.0) if tema == "pedreira" else (Color(0.1, 0.12, 0.2, 0.3 + 0.12 * float(posmod(h / 7, 4)) / 3.0) if tema == "ponte" else Color(0.13, 0.2, 0.1, 0.3 + 0.12 * float(posmod(h / 7, 4)) / 3.0))
 		_poligono(raiz, pts, cor)
 		i += 2 + posmod(h / 5, 4)
 
@@ -701,7 +701,19 @@ static func _luz(sala: Node2D, riachos: Array, grama: bool, tile: int) -> void:
 			var m := _mancha(sala, linha[k] + Vector2(0, -6), Vector2(380, 140), _radial_cache("nevoa", Color(0.78, 0.84, 0.84, 0.025), 256), 6)
 			amb.add_nevoa(m, 28.0)
 		n_riacho += 1
-	if grama:
+	if tema == "ponte":
+		# névoa do abismo: manchas claras e frias que derivam devagar sobre o vazio (só onde não há tabuleiro), sob os atores
+		for y in range(1, sala.linhas, 4):
+			for x in range(1, sala.colunas, 5):
+				var hh := hash(Vector2i(x * 13, y * 7))
+				var cx: int = x + posmod(hh, 4)
+				var cy: int = y + posmod(hh / 7, 3)
+				if not sala.eh_fosso(cx, cy):
+					continue
+				var mn := _mancha(sala, Vector2((cx + 0.5) * tile, (cy + 0.5) * tile), Vector2(520 + posmod(hh / 11, 200), 200 + posmod(hh / 17, 90)),
+					_radial_cache("nevoa_abismo", Color(0.62, 0.72, 0.86, 0.085), 256), -1)
+				amb.add_nevoa(mn, 18.0 + posmod(hh / 23, 14))
+	if grama and tema != "ponte":
 		var musgo := Polygon2D.new()
 		var y0: float = 2 * tile
 		musgo.polygon = PackedVector2Array([Vector2(tile, y0), Vector2(larg - tile, y0), Vector2(larg - tile, y0 + 34), Vector2(tile, y0 + 34)])

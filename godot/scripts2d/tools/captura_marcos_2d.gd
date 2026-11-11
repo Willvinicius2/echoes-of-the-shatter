@@ -1,7 +1,7 @@
 extends SceneTree
 ## Capturas dos marcos da fase aberta pela cena principal (Main2D, com o mundo no SubViewport de pixel art; precisa de
 ## janela, use xvfb no CI):
-##   godot --path godot --resolution 1600x900 --script res://scripts2d/tools/captura_marcos_2d.gd -- prefixo [sala=<arquivo>] nome:x:y[:g][:d][:cx<px>][:cy<px>] ...
+##   godot --path godot --resolution 1600x900 --script res://scripts2d/tools/captura_marcos_2d.gd -- prefixo [sala=<arquivo>] [elite=<id>] nome:x:y[:g][:d][:cx<px>][:cy<px>] ...
 ## Cada ponto é "nome:x:y" (células do mapa, aceita fração): o jogador vai para lá e grava <prefixo>_<nome>.png. A
 ## corrida fica parada (sem horda nem tiro automático); o sufixo ":g" faz os encontros (`@guarda`) ao alcance
 ## nascerem adormecidos, e eles seguem dormindo na foto; o sufixo ":e" faz o elite do portão (o chefe do mapa que não é `kind=boss`,
@@ -25,6 +25,10 @@ func _initialize() -> void:
 	var sala := ""
 	if resto.size() > 0 and String(resto[0]).begins_with("sala="):
 		sala = String(resto[0]).substr(5)
+		resto = resto.slice(1)
+	var elite := "ossuary_captain"
+	if resto.size() > 0 and String(resto[0]).begins_with("elite="):
+		elite = String(resto[0]).substr(6)   # o chefe da foto ":e" (por exemplo `elite=bell_weaver` na Ponte do Sino)
 		resto = resto.slice(1)
 	var pontos: Array = resto if resto.size() > 0 else PONTOS_PADRAO
 	var main = MainScene.instantiate()
@@ -78,7 +82,7 @@ func _initialize() -> void:
 		run.hud.chefe = null
 		run.hud.mensagem = ""   # nem a barra grande nem o nome do elite (o aviso dura 3 s) atravessam para a foto seguinte
 		if com_elite and run.room.posicao_chefe != Vector2.ZERO:
-			run._nascer({"id": 9001, "enemy": "ossuary_captain", "boss": true, "angle": 0.0, "radius": 0.0})
+			run._nascer({"id": 9001, "enemy": elite, "boss": true, "angle": 0.0, "radius": 0.0})
 			for e in get_nodes_in_group("hurtable"):
 				if e.has_meta("chefe_portao"):
 					e.entrada_t = 0.0          # a foto pega o elite depois da entrada: parado, sem o clarão

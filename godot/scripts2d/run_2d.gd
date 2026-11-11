@@ -619,7 +619,7 @@ func _nascer(s: Dictionary) -> void:
 		if portao:
 			# o core limita a vida do chefe a boss_hp_max x a base e não aplica a curva de dano a chefe; o elite do portão
 			# (Capitão do Ossuário) ganha multiplicadores próprios, em run_settings.csv
-			vida_chefe *= float(config.get("gate_elite_hp_mult", 1.0))
+			vida_chefe *= float(config.get("gate_elite_hp_mult_" + id, config.get("gate_elite_hp_mult", 1.0)))   # por id, se houver
 			e.stats["hp"] = vida_chefe
 			e.hp = vida_chefe
 			e.hp_max = vida_chefe
@@ -656,7 +656,7 @@ func _preparar_elite_portao(e: Node2D) -> void:
 	e.set_meta("elite", true)
 	e.set_meta("chefe_portao", true)
 	e.stats["hp_bar"] = 0.0   # a barra é a grande da HUD, não a da cabeça
-	e.virar_elite(float(config.get("gate_elite_scale", 1.5)))
+	e.virar_elite(float(config.get("gate_elite_scale_" + str(e.stats["id"]), config.get("gate_elite_scale", 1.5))))   # `gate_elite_scale_<id>`: chefe com folha já no tamanho final
 	var dur := float(config.get("gate_elite_intro", 1.4))
 	e.iniciar_entrada(dur)
 	hud.chefe = e

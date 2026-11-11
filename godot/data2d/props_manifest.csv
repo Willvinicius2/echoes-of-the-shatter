@@ -82,3 +82,10 @@ pedreira_portao,res://art2d/props/pedreira_portao.png,416,254,208,254
 pedreira_lasca_0,res://art2d/props/pedreira_lasca_0.png,24,13,12,13
 pedreira_lasca_1,res://art2d/props/pedreira_lasca_1.png,36,20,18,20
 pedreira_lasca_2,res://art2d/props/pedreira_lasca_2.png,48,21,24,21
+ponte_sino,res://art2d/props/ponte_sino.png,182,199,91,199
+ponte_sino_caido,res://art2d/props/ponte_sino_caido.png,156,89,78,89
+ponte_sino_maior,res://art2d/props/ponte_sino_maior.png,430,388,215,388
+ponte_casulo,res://art2d/props/ponte_casulo.png,38,94,19,94
+ponte_teia_0,res://art2d/props/ponte_teia_0.png,130,87,65,80
+ponte_teia_1,res://art2d/props/ponte_teia_1.png,92,55,46,55
+ponte_entulho,res://art2d/props/ponte_entulho.png,102,38,51,38
