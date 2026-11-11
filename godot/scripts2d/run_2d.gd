@@ -20,7 +20,6 @@ const UpgradesScript = preload("res://scripts2d/upgrades_2d.gd")
 const WarriorScript = preload("res://scripts2d/warrior_2d.gd")
 const ArvoreUiScript = preload("res://scripts2d/arvore_ui_2d.gd")
 const MagoScript = preload("res://scripts2d/mago_2d.gd")
-const CorridaGuerreiroScript = preload("res://scripts2d/corrida_guerreiro_2d.gd")
 const Classe = preload("res://scripts2d/classe_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
 const ElitePortao = preload("res://scripts2d/elite_portao_2d.gd")
@@ -31,7 +30,7 @@ const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const PortalScript = preload("res://scripts2d/portal_2d.gd")
 const GemaScript = preload("res://scripts2d/gema_2d.gd")
-const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
+const Afinidades = preload("res://scripts2d/afinidades_2d.gd")
 const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
 const Fase = preload("res://scripts2d/fase_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
@@ -203,20 +202,16 @@ func _montar_camada_partida() -> void:
 	if arvore != null:
 		arvore.definir(arvore_fixa)
 
-## Cria o jogador e a árvore de upgrades da classe escolhida (arqueiro e mago: cartas do core; guerreiro: só a árvore comum).
+## Cria o jogador e as cartas da classe escolhida (as três classes recebem as cartas do core).
 func _criar_classe() -> void:
-	var guerreiro: bool = Classe.atual == "guerreiro"
-	player = (WarriorScript if guerreiro else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
+	player = (WarriorScript if Classe.atual == "guerreiro" else (MagoScript if Classe.atual == "mago" else PlayerScript)).new()
 	player.died.connect(_on_player_died)
 	atores.add_child(player)
 	arvore_fixa = player.habilidades   # recém-criado: ainda é a árvore fixa (core do meta); a camada de partida entra no início da corrida
-	upgrades = (CorridaGuerreiroScript if guerreiro else UpgradesScript).new()
+	upgrades = UpgradesScript.new()
 	upgrades.meta = meta
 	player.habilidades.nucleo = nucleo   # árvore de habilidades com as regras no core do meta (as 3 classes)
-	if guerreiro:
-		player.habilidades.carregar_classe("guerreiro")
-	else:  # arqueiro e mago: stats da classe e a árvore
-		player.definir_classe(Classe.atual)
+	player.definir_classe(Classe.atual)   # stats da classe e a árvore
 	upgrades.habilidades = player.habilidades
 	if arvore != null:
 		arvore.definir(player.habilidades if "habilidades" in player else null)
@@ -262,21 +257,16 @@ func iniciar_corrida() -> void:
 	indice = 0
 	tempo = 0.0
 	menus.limpar_fade()
-	var guerreiro: bool = Classe.atual == "guerreiro"
-	# O guerreiro não usa as cartas do core (só a árvore comum): o core roda o fluxo da corrida sem cartas.
 	nucleo.classe_definir(Classe.atual)   # pontos por sala e passivas da árvore vão para esta classe
-	nucleo.corrida_cartas_externas(guerreiro)
-	if not guerreiro:
-		upgrades.semente = int(rng.seed)
+	nucleo.corrida_cartas_externas(false)   # as três classes recebem as cartas do core
+	upgrades.semente = int(rng.seed)
 	_montar_camada_partida()
-	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador; o arqueiro também começa a corrida no core
-	if guerreiro:
-		nucleo.corrida_iniciar(int(rng.seed), upgrades.base_numerica())
+	upgrades.restaurar(player)  # stats base de volta antes do reset do jogador; a corrida começa no core
 	meta.sincronizar()
 	player.reset()
 	_carregar_sala(0)
 
-## Cartas da sala limpa: as que o core sorteou (o guerreiro não recebe cartas, só pontos da árvore).
+## Cartas da sala limpa: as que o core sorteou.
 func _cartas_da_sala() -> Array:
 	return upgrades.oferta()
 
@@ -750,9 +740,9 @@ func _usar_gema_habilidade() -> void:
 	if ui.aberta:
 		_gemas_pendentes += 1
 		return
-	# Primeira gema do arqueiro na corrida: escolha do Eco do básico entre as QUATRO afinidades (doc 36 seção 2).
-	if "afinidade" in player and player.afinidade == "" and int(config.get("affinity_first_gem", 1)) == 1 and not AfinidadeFx.ids().is_empty():
-		ui.abrir(AfinidadeFx.ids(), "afinidade", 0, AfinidadeFonte.new())
+	# Primeira gema da corrida: escolha do Eco do básico entre as QUATRO afinidades da classe (doc 36 seção 2).
+	if "afinidade" in player and player.afinidade == "" and int(config.get("affinity_first_gem", 1)) == 1 and not Afinidades.ids(Classe.atual).is_empty():
+		ui.abrir(Afinidades.ids(Classe.atual), "afinidade", 0, AfinidadeFonte.new())
 		return
 	var cands := _gemas_possiveis()
 	if cands.is_empty():
@@ -761,7 +751,7 @@ func _usar_gema_habilidade() -> void:
 	var n := maxi(1, int(config.get("skill_gem_cards", 3)))
 	# A afinidade garante uma skill do seu elemento na oferta, quando houver (doc 36 seção 0).
 	if "afinidade" in player and player.afinidade != "":
-		var el: String = AfinidadeFx.elemento(player.afinidade)
+		var el: String = Afinidades.elemento(player.afinidade)
 		var h = player.habilidades
 		var i_el: int = cands.find_custom(func(id): return h.defs[id].get("ramo", "") == el)
 		if i_el >= n:
@@ -775,7 +765,7 @@ func _usar_gema_habilidade() -> void:
 class AfinidadeFonte extends RefCounted:
 	var defs := {}
 	func _init() -> void:
-		for id in AfinidadeFx.ids():
+		for id in Afinidades.ids(Classe.atual):
 			defs[id] = {"ramo": "afinidade", "nivel_max": 1, "icone": id}
 	func nivel(_id: String) -> int:
 		return 0

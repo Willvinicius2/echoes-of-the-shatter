@@ -1,7 +1,9 @@
 extends "res://scripts2d/actor_2d.gd"
 ## Guerreiro 2D: combo de espada em 3 golpes, esquiva e até 4 habilidades ativas da árvore comum (habilidades_2d.gd).
 ## Autocast: o combo e as ativas saem sozinhos no inimigo certo (data2d/habilidades_mira.csv); a ult e a postura de
-## guarda ficam na tecla.
+## guarda ficam na tecla. Na partida ele progride como o arqueiro: cartas de nível do core (os stats usam os mesmos
+## nomes, `arrow_damage` e `shoot_cooldown`), gemas de habilidade, Arautos e o Eco da lâmina (afinidade do golpe
+## básico, data2d/afinidades_guerreiro.csv), que muda o que o corte faz.
 ## Números em data2d/guerreiro.csv e data2d/habilidades_guerreiro.csv; custo das ativas é ímpeto, não mana. Mesma interface do player_2d.gd (arqueiro).
 
 signal died
@@ -12,17 +14,24 @@ const Audio = preload("res://scripts2d/audio_2d.gd")
 const Efeitos = preload("res://scripts2d/efeitos_guerreiro_2d.gd")
 const HabilidadesScript = preload("res://scripts2d/habilidades_2d.gd")
 const Alvos = preload("res://scripts2d/alvos_2d.gd")
+const Afinidades = preload("res://scripts2d/afinidades_2d.gd")
+const Fx = preload("res://scripts2d/fx_guerreiro_2d.gd")
+const Vfx = preload("res://scripts2d/vfx_2d.gd")
+const VenenoFx = preload("res://scripts2d/efeitos_arqueiro_veneno_2d.gd")
+const GeloFx = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
+const FogoFx = preload("res://scripts2d/efeitos_arqueiro_fogo_2d.gd")
+const RaioFx = preload("res://scripts2d/efeitos_arqueiro_raio_2d.gd")
 
 enum Estado { LIVRE, ATACANDO, CONJURANDO, INVESTIDA, SALTO, ESQUIVA, MORTO }
 
 const TECLAS_SKILL := {"skill_1": KEY_Q, "skill_2": KEY_E, "skill_3": KEY_F, "skill_4": KEY_R}
-const COR_LAMINA := Color(0.95, 0.92, 0.8)
-const COR_FOGO := Color(1.0, 0.55, 0.2)
 const COR_ESCUDO := Color(0.35, 0.65, 0.95)
-const COR_FURIA := Color(0.9, 0.25, 0.2)
 
 var stats := {}
 var hp := 0.0
+var classe := "guerreiro"
+## Eco da lâmina: id de data2d/afinidades_guerreiro.csv ou vazio (golpe neutro). Escolhido na primeira gema da corrida.
+var afinidade := ""
 var estado := Estado.LIVRE
 var invencivel := 0.0
 var god_mode := false          # testes automáticos
@@ -58,7 +67,10 @@ var _sem_dano := 0.0
 var _sem_acerto := 0.0
 var _guarda_ativa_antes := false
 var _resistiu := false         # Última Resistência já usada nesta corrida
-var _fx: Array = []            # efeitos visuais: {tipo, ang, r, arco, t, dur, cor, comp, larg}
+var _rng := RandomNumberGenerator.new()
+var _critico := false          # o último golpe calculado foi crítico
+var _prox_autocast := 0.0      # espera entre dois autocasts seguidos
+var _rastro_t := 0.0           # poeira da investida
 
 func _ready() -> void:
 	stats = Csv.kv("res://data2d/guerreiro.csv")
@@ -67,6 +79,7 @@ func _ready() -> void:
 	if habilidades == null:
 		habilidades = HabilidadesScript.new()
 		habilidades.carregar_classe("guerreiro")
+	habilidades.mudou.connect(_atualizar_heralds)
 	collision_layer = 2
 	collision_mask = 1 | 8
 	add_to_group("guerreiro")
@@ -77,6 +90,12 @@ func _ready() -> void:
 	cs.shape = sh
 	add_child(cs)
 	reset()
+
+## Mesma interface do arqueiro (run_2d.gd): stats da classe e a árvore dela.
+func definir_classe(id: String) -> void:
+	classe = id
+	stats = Csv.kv("res://data2d/guerreiro.csv")
+	habilidades.carregar_classe(id)
 
 static func _registrar_acoes() -> void:
 	for a in TECLAS_SKILL:
@@ -101,10 +120,12 @@ func reset() -> void:
 	_dash = {}
 	_buff_cry = 0.0
 	_buff_furia = 0.0
-	_fx.clear()
 	_sem_dano = 0.0
 	_sem_acerto = 0.0
 	_resistiu = false
+	_prox_autocast = 0.0
+	for nome in ["AuraFuria", "LaminasTempestade"]:
+		_tirar_no(nome)
 	velocity = Vector2.ZERO
 	modulate = Color.WHITE
 	if sprite != null:
@@ -132,6 +153,10 @@ func _physics_process(delta: float) -> void:
 			_dash_t -= delta
 			velocity = _dash["mira"] * _investida_vel()
 			_investida_acertar()
+			_rastro_t -= delta
+			if _rastro_t <= 0.0:
+				_rastro_t = 0.06
+				Fx.tocar(get_parent(), "poeira", global_position, 0.0, 0.0, Color.WHITE, 0)
 			if _dash_t <= 0.0:
 				estado = Estado.LIVRE
 		Estado.SALTO:
@@ -160,6 +185,7 @@ func _physics_process(delta: float) -> void:
 
 func _tick(delta: float) -> void:
 	_atk_cd = maxf(0.0, _atk_cd - delta)
+	_prox_autocast = maxf(0.0, _prox_autocast - delta)
 	dodge_cd = maxf(0.0, dodge_cd - delta)
 	invencivel = maxf(0.0, invencivel - delta)
 	_combo_t = maxf(0.0, _combo_t - delta)
@@ -173,9 +199,6 @@ func _tick(delta: float) -> void:
 	if stats["regen"] > 0.0 and _sem_dano >= stats["regen_delay"] and hp < stats["hp_max"]:
 		hp = minf(stats["hp_max"], hp + stats["regen"] * delta)
 		hp_changed.emit(hp, stats["hp_max"])
-	for f in _fx:
-		f["t"] -= delta
-	_fx = _fx.filter(func(f): return f["t"] > 0.0)
 
 func _decidir_acao(entrada: Vector2) -> void:
 	var guarda_id := _slot_de("w_guard_stance")
@@ -219,11 +242,14 @@ func _dir_auto(id: String) -> Vector2:
 
 ## Autocast: a primeira ativa equipada pronta, com ímpeto e com alvo, sai agora. A ult e a guarda não entram.
 func _autocast_habilidades() -> bool:
+	if _prox_autocast > 0.0:
+		return false
 	for id in habilidades.slots:
 		if not habilidades.automatica(id) or _cd(id) > 0.0:
 			continue
 		var a: Dictionary = habilidades.alvo_auto(id, get_tree(), global_position, stats["attack_range"])
 		if not a.is_empty() and usar(id, _aim if Alvos.mira_mouse else a["dir"]):
+			_prox_autocast = stats.get("autocast_intervalo", 0.25)
 			return true
 	return false
 
@@ -275,7 +301,7 @@ func _comecar_golpe() -> void:
 	combo = (combo % 3) + 1 if _combo_t > 0.0 else 1
 	_combo_t = stats["combo_window"]
 	var taxa := _taxa_ataque()
-	_atk_cd = stats["attack_cooldown"] * (1.4 if combo == 3 else 1.0) / taxa
+	_atk_cd = stats["shoot_cooldown"] * (1.4 if combo == 3 else 1.0) / taxa
 	_golpeou = false
 	facing = _aim
 	sprite.speed_scale = taxa
@@ -288,23 +314,58 @@ func _on_frame_changed() -> void:
 		_golpeou = true
 		_golpe_basico()
 
+## Def do Eco escolhido ({} = golpe neutro).
+func _eco() -> Dictionary:
+	return Afinidades.defs(classe).get(afinidade, {}) if afinidade != "" else {}
+
+## Alcance e arco do golpe básico: a carta Lâmina Longa (`arrow_pierce` no core) estica os dois.
+func _alcance_basico() -> float:
+	return stats["attack_range"] * (1.0 + stats.get("reach_per_pierce", 0.0) * stats.get("arrow_pierce", 0.0))
+
 func _golpe_basico() -> void:
+	var eco := _eco()
+	var el := str(eco.get("elemento", ""))
 	var mult := 1.0
-	var arco: float = stats["attack_arc"]
+	var arco: float = stats["attack_arc"] * (1.0 + stats.get("reach_per_pierce", 0.0) * stats.get("arrow_pierce", 0.0))
 	if combo == 2:
 		mult = stats["combo2_mult"]
 	elif combo == 3:
 		mult = stats["combo3_mult"]
 		arco *= stats["combo3_arc_mult"]
-	var alcance: float = stats["attack_range"]
-	var alvos := alvos_cone(global_position, _aim, alcance, arco)
-	for a in alvos:
-		acertar(a, mult)
-	_fx.append({"tipo": "arco", "ang": _aim.angle(), "r": alcance, "arco": deg_to_rad(arco), "t": 0.16, "dur": 0.16, "cor": COR_LAMINA if combo < 3 else COR_FOGO})
+	if not eco.is_empty():
+		mult *= eco.get("dano", 1.0)
+		if el == "veneno":
+			arco *= 1.25   # Eco da Peste: corte mais largo
+	arco = minf(arco, 300.0)
+	var alcance := _alcance_basico()
+	_cortar(mult, arco, alcance, combo, eco)
+	# Lâmina Dupla (carta `multishot`): cada golpe extra é um eco atrasado do mesmo corte, mais fraco.
+	var ecos := int(stats.get("arrow_count", 1)) - 1
+	for k in ecos:
+		var mira := _aim
+		var golpe := combo
+		get_tree().create_timer(stats.get("echo_delay", 0.12) * (k + 1), false).timeout.connect(func():
+			if estado != Estado.MORTO:
+				_cortar(mult * stats.get("echo_mult", 0.5), arco, alcance, golpe, eco, mira, true))
 	velocity += _aim * stats["combo_lunge"]
 	Audio.tocar("shoot")
 	var c := Feel.cfg()
 	Feel.shake(self, c["shake_shot_amp"] * (2.0 if combo == 3 else 1.0), c["shake_shot_time"])
+
+## Um corte do combo: acerta o cone, aplica o Eco e desenha a meia-lua (o 3º golpe é o corte pesado).
+func _cortar(mult: float, arco: float, alcance: float, golpe: int, eco: Dictionary, mira := Vector2.ZERO, eco_duplo := false) -> void:
+	if mira == Vector2.ZERO:
+		mira = _aim
+	var alvos := alvos_cone(global_position, mira, alcance, arco)
+	for a in alvos:
+		acertar(a, mult)
+	var el := str(eco.get("elemento", ""))
+	if not eco.is_empty():
+		Efeitos.eco_golpe(self, alvos, golpe, eco, mira, alcance)
+	var cor: Color = Efeitos.TINTAS.get(el, Efeitos.COR_LAMINA if golpe < 3 else Efeitos.COR_PESADO)
+	var s := Fx.tocar(get_parent(), "corte_pesado" if golpe == 3 else "corte", global_position + Efeitos.PEITO, alcance * (0.9 if eco_duplo else 1.0), mira.angle() + (0.35 if eco_duplo else 0.0), cor)
+	if golpe == 2 and s is AnimatedSprite2D:
+		s.flip_v = true   # o segundo golpe volta pelo outro lado
 
 func _on_anim_finished() -> void:
 	if estado == Estado.ATACANDO:
@@ -352,8 +413,8 @@ func usar(id: String, mira := Vector2.ZERO) -> bool:
 	facing = _aim
 	return true
 
-func comecar_conjuracao(efeito: String, d: Dictionary, mira: Vector2, nivel: int) -> void:
-	_cast = {"efeito": efeito, "def": d, "nivel": nivel, "mira": mira, "espera": d["espera"], "resta": d["espera"] + d["recup"], "aplicou": false}
+func comecar_conjuracao(efeito: String, d: Dictionary, mira: Vector2, nivel: int, ponto := Vector2.INF) -> void:
+	_cast = {"efeito": efeito, "def": d, "nivel": nivel, "mira": mira, "ponto": ponto, "espera": d["espera"], "resta": d["espera"] + d["recup"], "aplicou": false}
 	estado = Estado.CONJURANDO
 	sprite.speed_scale = 1.0
 	play("attack", true)
@@ -363,7 +424,7 @@ func _conjurar_passo(delta: float) -> void:
 	_cast["espera"] -= delta
 	if not _cast["aplicou"] and _cast["espera"] <= 0.0:
 		_cast["aplicou"] = true
-		Efeitos.aplicar(_cast["efeito"], self, _cast["def"], _cast["nivel"], _cast["mira"])
+		Efeitos.aplicar(_cast["efeito"], self, _cast["def"], _cast["nivel"], _cast["mira"], _cast["ponto"])
 	if _cast["resta"] <= 0.0:
 		_cast = {}
 		estado = Estado.LIVRE
@@ -454,8 +515,15 @@ func alvos_retangulo(origem: Vector2, dir: Vector2, comprimento: float, largura:
 func _lifesteal() -> float:
 	return stats["lifesteal"] + (0.1 if _buff_furia > 0.0 else 0.0)
 
+## Dano base do guerreiro vezes `mult`, sem crítico nem bônus de alvo (pulsos e saltos de raio das habilidades).
+func dano_base(mult: float) -> float:
+	return stats["arrow_damage"] * mult
+
 func _dano_para(alvo: Node, mult: float) -> float:
-	var m: float = stats["damage"] * mult * (1.0 + impeto / maxf(stats["impeto_max"], 1.0) * stats["impeto_damage"])
+	var m: float = stats["arrow_damage"] * mult * (1.0 + impeto / maxf(stats["impeto_max"], 1.0) * stats["impeto_damage"])
+	_critico = stats.get("crit_chance", 0.0) > 0.0 and _rng.randf() < stats["crit_chance"]
+	if _critico:
+		m *= stats.get("crit_mult", 2.0)
 	if _buff_cry > 0.0:
 		m *= 1.0 + _buff_cry_dano
 	if _buff_furia > 0.0:
@@ -493,11 +561,52 @@ func aplicar_status(alvo: Node, tipo: String, dur: float, valor := 0.0) -> void:
 	if dur > 0.0 and is_instance_valid(alvo) and alvo.has_method("aplicar_status"):
 		alvo.aplicar_status(tipo, dur, valor)
 
-func fx_arco(ang: float, r: float, arco: float, dur: float, cor: Color) -> void:
-	_fx.append({"tipo": "arco", "ang": ang, "r": r, "arco": arco, "t": dur, "dur": dur, "cor": cor})
+# ---------------------------------------------------------------- Arautos (mesmos gatilhos do arqueiro)
 
-func fx_faixa(ang: float, comp: float, larg: float, dur: float, cor: Color) -> void:
-	_fx.append({"tipo": "faixa", "ang": ang, "comp": comp, "larg": larg, "t": dur, "dur": dur, "cor": cor})
+## Gatilhos de morte dos Arautos aprendidos na partida. `sobra` = dano que passou da vida do inimigo no golpe fatal.
+func herald_morte(inimigo: Node2D, sobra := 0.0) -> void:
+	if habilidades == null:
+		return
+	if habilidades.nivel("herald_plague") > 0 and inimigo.tem_status("veneno"):
+		VenenoFx.arauto_peste_morte(inimigo, habilidades.def_nivel("herald_plague"))
+		Vfx.aura_acender(self, "AuraPeste")
+	if habilidades.nivel("herald_ice") > 0:
+		GeloFx.arauto_vigiar(inimigo, self, habilidades.def_nivel("herald_ice"))
+		if GeloFx.esta_congelado(inimigo):
+			Vfx.aura_acender(self, "AuraGelo")
+	if habilidades.nivel("herald_thunder") > 0:
+		RaioFx.ao_morrer(inimigo)
+		if inimigo.tem_status("choque"):
+			Vfx.aura_acender(self, "AuraArauto")
+	if habilidades.nivel("arauto_cinzas") > 0:
+		var d: Dictionary = habilidades.def_nivel("arauto_cinzas").duplicate()
+		d["minimo"] = float(inimigo.hp_max) * float(d.get("qtd", 0.0)) / 100.0
+		if FogoFx.ao_abate(self, inimigo.global_position, sobra, d):
+			Vfx.aura_acender(self, "AuraCinzas")
+
+## Auras dos Arautos seguem o que está aprendido (liga e desliga quando a árvore muda).
+func _atualizar_heralds() -> void:
+	if habilidades == null or not is_inside_tree():
+		return
+	if habilidades.nivel("herald_plague") > 0:
+		VenenoFx.aura_arauto(self)
+	else:
+		_tirar_no("AuraPeste")
+	RaioFx.ativar_arauto(self, habilidades.def_nivel("herald_thunder") if habilidades.nivel("herald_thunder") > 0 else {})
+	if habilidades.nivel("herald_ice") > 0:
+		if not has_node("AuraGelo"):
+			GeloFx.aura(self)
+	else:
+		_tirar_no("AuraGelo")
+	if habilidades.nivel("arauto_cinzas") > 0:
+		if not has_node("AuraCinzas"):
+			FogoFx.aura(self).name = "AuraCinzas"
+	else:
+		_tirar_no("AuraCinzas")
+
+func _tirar_no(nome: String) -> void:
+	if has_node(nome):
+		get_node(nome).queue_free()
 
 # ---------------------------------------------------------------- dano recebido
 
@@ -517,7 +626,8 @@ func take_damage(amount: float, origem := Vector2.ZERO) -> void:
 		bloqueou = true
 		final *= 1.0 - stats["guard_reduction"]
 		impeto = minf(stats["impeto_max"], impeto + stats["guard_impeto"])
-		_fx.append({"tipo": "arco", "ang": (origem - global_position).angle(), "r": 40.0, "arco": 1.2, "t": 0.18, "dur": 0.18, "cor": COR_ESCUDO})
+		var lado := (origem - global_position).normalized()
+		Fx.tocar(get_parent(), "escudada", global_position + Efeitos.PEITO + lado * 18.0, 40.0, lado.angle())
 	hp = maxf(0.0, hp - final)
 	_sem_dano = 0.0
 	invencivel = stats["hit_iframes"] * (0.5 if bloqueou else 1.0)
@@ -533,7 +643,7 @@ func take_damage(amount: float, origem := Vector2.ZERO) -> void:
 		_resistiu = true
 		hp = stats["hp_max"] * stats["last_stand_heal"] * stats["last_stand"]
 		invencivel = stats["last_stand_time"] * stats["last_stand"]
-		_fx.append({"tipo": "arco", "ang": 0.0, "r": 90.0, "arco": TAU, "t": 0.6, "dur": 0.6, "cor": COR_ESCUDO})
+		Fx.tocar(get_parent(), "onda", global_position, 90.0, 0.0, Color(0.6, 0.82, 1.0), 0)
 	hp_changed.emit(hp, stats["hp_max"])
 	if hp <= 0.0:
 		estado = Estado.MORTO
@@ -546,14 +656,14 @@ func take_damage(amount: float, origem := Vector2.ZERO) -> void:
 func _revidar() -> void:
 	for a in alvos_cone(global_position, _aim, stats["revide_radius"], 360.0):
 		if is_instance_valid(a) and a.is_in_group("hurtable"):
-			a.take_damage(stats["damage"] * stats["revide"], global_position)
-	_fx.append({"tipo": "arco", "ang": 0.0, "r": stats["revide_radius"], "arco": TAU, "t": 0.25, "dur": 0.25, "cor": COR_FURIA})
+			a.take_damage(stats["arrow_damage"] * stats["revide"], global_position)
+	Fx.tocar(get_parent(), "onda", global_position, stats["revide_radius"], 0.0, Efeitos.COR_FURIA, 0)
 
 # ---------------------------------------------------------------- HUD e animação
 
 ## Fração 0..1 da recarga do golpe básico (0 = pronto).
 func recarga_tiro() -> float:
-	return clampf(_atk_cd / maxf(stats["attack_cooldown"], 0.01), 0.0, 1.0)
+	return clampf(_atk_cd / maxf(stats["shoot_cooldown"], 0.01), 0.0, 1.0)
 
 ## Barra do recurso (ímpeto), 0..1.
 func recurso_frac() -> float:
@@ -562,7 +672,7 @@ func recurso_frac() -> float:
 ## Slots da barra de habilidades: golpe, esquiva e as ativas aprendidas (tecla Q, E, F, R).
 func slots_hud() -> Array:
 	var out := [
-		{"icone": "golpe", "tecla": "hud.key.shoot", "recarga": recarga_tiro()},
+		{"icone": afinidade if afinidade != "" else "golpe", "tecla": "hud.key.shoot", "recarga": recarga_tiro()},
 		{"icone": "esquiva", "tecla": "hud.key.dodge", "recarga": clampf(dodge_cd / stats["dodge_cooldown"], 0.0, 1.0)},
 	]
 	if habilidades != null:
@@ -584,23 +694,6 @@ func _animar(entrada: Vector2) -> void:
 
 func _draw() -> void:
 	super._draw()
-	var centro := Vector2(0, -30)
 	if guardando:
-		draw_arc(centro, 44.0, _aim.angle() - deg_to_rad(stats["guard_arc"]) * 0.5, _aim.angle() + deg_to_rad(stats["guard_arc"]) * 0.5, 20, COR_ESCUDO, 5.0)
-	if _buff_furia > 0.0 or _buff_cry > 0.0:
-		draw_arc(Vector2.ZERO, 22.0, 0.0, TAU, 24, COR_FURIA if _buff_furia > 0.0 else Color(1.0, 0.8, 0.3), 2.0)
-	for f in _fx:
-		var a: float = clampf(f["t"] / f["dur"], 0.0, 1.0)
-		var cor: Color = f["cor"]
-		cor.a = a * 0.9
-		if f["tipo"] == "arco":
-			var meio: float = f["arco"] * 0.5
-			draw_arc(centro, f["r"], f["ang"] - meio, f["ang"] + meio, 28, cor, 7.0 * a + 1.0)
-			draw_arc(centro, f["r"] * 0.7, f["ang"] - meio, f["ang"] + meio, 28, Color(cor.r, cor.g, cor.b, cor.a * 0.5), 3.0)
-		else:
-			var dir := Vector2.RIGHT.rotated(f["ang"])
-			var larg: float = f["larg"]
-			var comp: float = f["comp"]
-			var lado: Vector2 = dir.orthogonal() * larg * 0.5
-			var fim: Vector2 = dir * comp
-			draw_colored_polygon(PackedVector2Array([lado, fim + lado * 0.4, fim - lado * 0.4, -lado]), Color(cor.r, cor.g, cor.b, a * 0.35))
+		var meio: float = deg_to_rad(stats["guard_arc"]) * 0.5
+		draw_arc(Vector2(0, -30), 44.0, _aim.angle() - meio, _aim.angle() + meio, 20, COR_ESCUDO, 5.0)
