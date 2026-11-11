@@ -1,5 +1,6 @@
 id,escala,nota
 arqueiro,2.5,escala de mundo para numeros e alcances (1/zoom 0.4 em 360 de altura); o desenho usa 1/zoom da camera em tempo de execucao
+mago,2.5,mago em pixel art (pixelar_mago.py): 1 px da arte = 1 px da grade como o arqueiro
 chain_wraith,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
 crypt_bat,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade
 crypt_guardian,2.5,inimigo em pixel art (pixelar_inimigos.py): 1 px da arte = 1 px da grade

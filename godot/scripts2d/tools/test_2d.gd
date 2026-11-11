@@ -1139,26 +1139,48 @@ func _testar_status() -> void:
 
 ## Mago: dados de habilidades coerentes e efeitos que de fato ferem, lentificam, queimam e protegem.
 func _testar_mago() -> void:
-	var Efeitos = preload("res://scripts2d/efeitos_mago_2d.gd")
 	var Icones = preload("res://scripts2d/icones_2d.gd")
+	var Afin = preload("res://scripts2d/afinidades_2d.gd")
+	var Basico = preload("res://scripts2d/efeitos_mago_afinidade_2d.gd")
+	var Gelo = preload("res://scripts2d/efeitos_arqueiro_gelo_2d.gd")
 	var defs := {}
 	for r in Csv.rows("res://data2d/habilidades_mago.csv"):
 		defs[r["id"]] = r
 	var mstats := Csv.kv("res://data2d/mago.csv")
-	check(defs.size() >= 15 and defs.size() <= 20, "mago tem 15 a 20 habilidades (%d)" % defs.size())
+	check(defs.size() >= 20 and defs.size() <= 28, "mago tem 20 a 28 habilidades (%d)" % defs.size())
 	var ramos := {}
 	for id in defs:
 		var d: Dictionary = defs[id]
 		ramos[d["ramo"]] = true
 		check(Csv.t("skill.%s.name" % id) != "skill.%s.name" % id and Csv.t("skill.%s.desc" % id) != "skill.%s.desc" % id, "%s tem nome e descricao" % id)
-		check(Icones.textura(d["icone"]) != null, "%s tem icone" % id)
+		check(ResourceLoader.exists("res://art2d/ui/icone_%s.png" % d["icone"]), "%s tem icone em pixel art" % id)
 		check(d["pai"] == "" or (defs.has(d["pai"]) and int(defs[d["pai"]]["tier"]) < int(d["tier"]) and defs[d["pai"]]["ramo"] == d["ramo"]), "%s: pai valido no mesmo ramo" % id)
 		check(d["pai"] != "" or d["tier"] == "1", "%s: raiz so no tier 1" % id)
 		if d["tipo"] == "passiva":
-			check(mstats.has(d["stat"]) and (d["modo"] == "add" or d["modo"] == "mult"), "%s: passiva mexe em stat existente" % id)
+			var arauto: bool = str(id).begins_with("herald_") or str(id).begins_with("arauto_")
+			check(arauto or (mstats.has(d["stat"]) and (d["modo"] == "add" or d["modo"] == "mult")), "%s: passiva mexe em stat existente" % id)
 		else:
-			check(float(d["cd"]) > 0.0 or float(d["custo"]) == 0.0, "%s: tem recarga" % id)
-	check(ramos.size() == 3, "3 ramos de habilidade")
+			check(float(d["cd"]) > 0.0, "%s: tem recarga" % id)
+	for ramo in ["fogo", "gelo", "raio", "veneno"]:
+		check(ramos.has(ramo), "ramo %s existe" % ramo)
+		var tem_arauto := false
+		var ativas := 0
+		for id in defs:
+			if defs[id]["ramo"] == ramo:
+				tem_arauto = tem_arauto or (defs[id]["tipo"] == "passiva" and defs[id]["efeito"] != "")
+				ativas += 1 if defs[id]["tipo"] == "ativa" else 0
+		check(tem_arauto and ativas >= 3, "ramo %s tem Arauto e 3 ou mais magias ativas (%d)" % [ramo, ativas])
+	check(ramos.size() == 4, "4 ramos de habilidade (um por elemento)")
+	# Ecos: quatro elementos, cada um com nome, descricao e icone
+	var ecos: Array = Afin.ids("mago")
+	var elementos := {}
+	for id in ecos:
+		elementos[Afin.elemento(id)] = true
+		check(Afin.classe_de(id) == "mago", "%s e Eco do mago" % id)
+		check(Csv.t("skill.%s.name" % id) != "skill.%s.name" % id and Csv.t("skill.%s.desc" % id) != "skill.%s.desc" % id, "%s tem nome e descricao" % id)
+		check(ResourceLoader.exists("res://art2d/ui/icone_%s.png" % id), "%s tem icone" % id)
+	check(ecos.size() == 4 and elementos.size() == 4, "mago tem 4 Ecos, um por elemento")
+	check(Icones.textura("skill.mage.basic") != null and ResourceLoader.exists("res://art2d/ui/icone_skill.mage.basic.png"), "golpe basico do mago tem icone")
 	# cena com mago e inimigos
 	var mundo := Node2D.new()
 	root.add_child(mundo)
@@ -1168,10 +1190,32 @@ func _testar_mago() -> void:
 	m.god_mode = true
 	await physics_frame
 	check(m.mana == mstats["mana_max"] and m.stats["hp_max"] == mstats["hp_max"], "mago comeca com mana e vida do mago.csv")
-	check(m.gastar_mana(30.0) and not m.gastar_mana(1000.0) and absf(m.mana - 70.0) < 0.5, "gastar mana")
+	check(m.gastar_mana(30.0) and not m.gastar_mana(1000.0) and absf(m.mana - (mstats["mana_max"] - 30.0)) < 0.5, "gastar mana")
 	var antes: float = m.mana
 	await _esperar(func(): return m.mana > antes + 3.0, 2.0)
 	check(m.mana > antes + 3.0, "mana regenera")
+	# golpe basico: sem Eco e com cada Eco fere; cada Eco deixa a marca do elemento dele
+	var marca := {"fogo": "queimadura", "gelo": "lentidao", "raio": "choque", "veneno": "veneno"}
+	for eco in [""] + ecos:
+		var alvos := _alvos_mago(mundo, m)
+		var a0 = alvos[2]   # o do meio fica na linha da mira
+		a0.global_position = m.global_position + Vector2(140, 0)
+		m.afinidade = eco
+		m.mana = 0.0
+		Basico.disparar(m, Vector2.RIGHT)
+		await _esperar(func(): return a0.hp < a0.hp_max, 2.0)
+		check(a0.hp < a0.hp_max, "golpe basico '%s' fere" % eco)
+		check(m.mana > 0.0, "golpe basico '%s' devolve mana ao acertar" % eco)
+		if eco != "":
+			var st: String = marca[Afin.elemento(eco)]
+			await _esperar(func(): return a0.tem_status(st), 1.0)
+			check(a0.tem_status(st), "Eco %s aplica %s" % [eco, st])
+		for e in alvos:
+			if is_instance_valid(e):
+				e.queue_free()
+		await physics_frame
+	m.afinidade = ""
+	m.mana = m.stats["mana_max"]
 	var funcionou := {}
 	for id in defs:
 		var d: Dictionary = defs[id].duplicate()
@@ -1184,9 +1228,10 @@ func _testar_mago() -> void:
 		var hp_antes := 0.0
 		for e in inimigos:
 			hp_antes += e.hp
+		var pos_m: Vector2 = m.global_position
 		var ok: bool = m.lancar_efeito(d["efeito"], def, 1)
 		check(ok, "%s (%s) executa" % [id, d["efeito"]])
-		await _esperar(func(): return false, 1.3)   # projétil voa, marca de meteoro cai
+		await _esperar(func(): return false, 2.6 if d["efeito"] == "esporos" else 1.5)   # projétil voa, meteoro cai, esporo estoura
 		var hp_depois := 0.0
 		for e in inimigos:
 			if is_instance_valid(e):
@@ -1195,44 +1240,68 @@ func _testar_mago() -> void:
 		for e in inimigos:
 			if is_instance_valid(e):
 				e.queue_free()
+		m.global_position = pos_m
 		await physics_frame
-	for ef in ["bola_fogo", "raio_gelo", "sopro_chamas", "meteoro", "nova_fogo", "nova_gelo", "nova_raio", "corrente_raios", "estacas_gelo", "salto_arcano"]:
+	for ef in ["bola_fogo", "raio_gelo", "sopro_chamas", "meteoro", "nova_fogo", "nova_gelo", "nova_raio", "corrente_raios",
+			"estacas_gelo", "salto_arcano", "muralha_fogo", "nevasca", "tempestade", "nuvem_peste", "esporos", "poco_acido"]:
 		check(funcionou.get(ef, false), "efeito %s causa dano" % ef)
-	# muralha, nevasca e tempestade são zonas: dano por ticks no ponto mirado (a frente do mago)
-	for ef in ["muralha_fogo", "nevasca", "tempestade"]:
-		check(funcionou.has(ef), "zona %s executou sem erro" % ef)
+	check(funcionou.has("barreira_gelo") and funcionou.has("surto_mana"), "barreira e surto executam")
+	await _esperar(func(): return false, 0.3)
+	m.escudo = 0.0
+	m.escudo_t = 0.0
+	m.escudo_def = {}
 	var inimigos := _alvos_mago(mundo, m)
-	# status
-	var alvo = inimigos[0]
-	alvo.hp = alvo.hp_max
+	# status por elemento
+	var alvo = inimigos[2]
 	alvo.global_position = m.global_position + Vector2(150, 0)
-	m.lancar_efeito("raio_gelo", {"dano": 10.0, "raio": 0.0, "alcance": 900.0, "valor": 600.0}, 1)
+	m.lancar_efeito("raio_gelo", {"dano": 1.0, "qtd": 2.0, "alcance": 900.0, "valor": 700.0, "duracao": 3.0}, 1)
 	await _esperar(func(): return alvo.tem_status("lentidao"), 1.5)
-	check(alvo.tem_status("lentidao"), "raio de gelo lentifica")
-	alvo.hp = alvo.hp_max
-	m.lancar_efeito("bola_fogo", {"dano": 20.0, "raio": 90.0, "alcance": 900.0, "valor": 640.0}, 1)
+	check(alvo.tem_status("lentidao") and int(alvo.get_meta("frio_acumulos", 0)) >= 2, "lanca de gelo soma acumulos de frio")
+	m.lancar_efeito("bola_fogo", {"dano": 2.0, "raio": 90.0, "alcance": 900.0}, 1)
 	await _esperar(func(): return alvo.tem_status("queimadura"), 1.5)
 	check(alvo.tem_status("queimadura"), "bola de fogo queima")
-	m.lancar_efeito("nova_gelo", {"dano": 5.0, "raio": 300.0}, 1)
-	check(alvo.tem_status("atordoamento"), "nova glacial congela")
-	# escudo, surto e salto
+	m.lancar_efeito("nova_gelo", {"dano": 1.0, "raio": 300.0}, 1)
+	check(alvo.tem_status("atordoamento") and Gelo.esta_congelado(alvo), "nova glacial congela")
+	m.lancar_efeito("corrente_raios", {"dano": 1.0, "qtd": 3.0, "raio": 200.0, "alcance": 600.0, "duracao": 2.0, "valor": 0.8}, 1)
+	await _esperar(func(): return alvo.tem_status("choque"), 1.0)
+	check(alvo.tem_status("choque"), "corrente de raios da choque")
+	m.lancar_efeito("nuvem_peste", {"dano": 1.0, "raio": 120.0, "alcance": 300.0, "duracao": 3.0, "valor": 4.0}, 1)
+	await _esperar(func(): return alvo.tem_status("veneno"), 2.0)
+	check(alvo.tem_status("veneno"), "nuvem de peste envenena")
+	for e in inimigos:
+		e.queue_free()
+	await _esperar(func(): return false, 0.2)
+	# escudo, estilhaco, surto e salto
 	m.god_mode = false
 	m.invencivel = 0.0
-	m.lancar_efeito("barreira_gelo", {"valor": 40.0, "duracao": 5.0}, 1)
+	inimigos = _alvos_mago(mundo, m)
+	var perto = inimigos[0]
+	perto.global_position = m.global_position + Vector2(60, 0)
+	m.lancar_efeito("barreira_gelo", {"valor": 40.0, "duracao": 5.0, "dano": 5.0, "raio": 150.0, "qtd": 2.0}, 1)
 	var hp0: float = m.hp
 	m.take_damage(25.0)
 	check(m.hp == hp0 and m.escudo == 15.0, "barreira absorve dano")
 	m.invencivel = 0.0
+	var hp_perto: float = perto.hp
 	m.take_damage(25.0)
 	check(m.hp == hp0 - 10.0 and m.escudo == 0.0, "dano acima do escudo passa")
+	check(perto.hp < hp_perto and perto.tem_status("lentidao"), "barreira quebrada estilhaca: fere e esfria quem esta perto")
+	m.god_mode = true
 	m.lancar_efeito("surto_mana", {"valor": 3.0, "duracao": 2.0}, 1)
 	m.mana = 10.0
 	var mana0: float = m.mana
 	await _esperar(func(): return false, 0.5)
 	check(m.mana - mana0 > m.stats["mana_regen"] * 0.5 * 2.0, "surto de mana acelera a regeneracao")
+	for e in inimigos:
+		e.queue_free()
+	await physics_frame
 	var pos0: Vector2 = m.global_position
 	m.lancar_efeito("salto_arcano", {"dano": 5.0, "raio": 80.0, "alcance": 200.0}, 1)
 	check(m.global_position.distance_to(pos0 + Vector2(200, 0)) < 40.0, "salto arcano teleporta na direcao da mira")
+	# HUD: o slot do golpe basico mostra o icone do Eco escolhido
+	check(m.slots_hud()[0]["icone"] == "skill.mage.basic", "HUD mostra o golpe basico arcano")
+	m.afinidade = ecos[0]
+	check(m.slots_hud()[0]["icone"] == ecos[0], "HUD mostra o Eco escolhido")
 	mundo.queue_free()
 	await physics_frame
 
@@ -1242,7 +1311,10 @@ func _alvos_mago(mundo: Node, m: Node) -> Array:
 		var e = load("res://scripts2d/enemy_2d.gd").new()
 		mundo.add_child(e)
 		e.setup("hollow_sentinel", m, m.global_position + Vector2(120 + i * 30, (i - 2) * 25))
-		e.stats["speed"] = 0.0   # fica parado para a medição
+		e.set("_speed", 0.0)   # fica parado para a medição
+		e.set("_aggro", 0.0)
+		e.hp = 400.0
+		e.hp_max = 400.0
 		out.append(e)
 	return out
 ## habilidades_arqueiro.csv: árvore coerente, textos, ícones e efeitos ativos funcionando.

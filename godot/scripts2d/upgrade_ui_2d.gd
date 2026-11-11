@@ -9,7 +9,7 @@ const Csv = preload("res://scripts2d/csv2d.gd")
 const Tema = preload("res://scripts2d/tema_2d.gd")
 const Icones = preload("res://scripts2d/icones_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
-const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
+const Afinidades = preload("res://scripts2d/afinidades_2d.gd")
 const FONTE_TITULO := "res://art2d/ui/DejaVuSerif-Bold.ttf"
 
 signal escolhido(id: String)
@@ -98,8 +98,9 @@ func abrir(ids: Array, m := "sala", nivel := 0, fonte: RefCounted = null) -> voi
 			_titulo.text = Csv.t("upgrade.chest")
 		"gem":
 			_titulo.text = Csv.t("upgrade.gem")
-		"afinidade":
-			_titulo.text = Csv.t("upgrade.afinidade")
+		"afinidade":   # título por classe quando existe (upgrade.afinidade.<classe>), senão o comum
+			var chave := "upgrade.afinidade." + (Afinidades.classe_de(str(ids[0])) if not ids.is_empty() else "")
+			_titulo.text = Csv.t(chave) if Csv.t(chave) != chave else Csv.t("upgrade.afinidade")
 		_:
 			_titulo.text = Csv.t("upgrade.title")
 	_sub.text = Csv.t("carta.dica") % ids.size()
@@ -131,7 +132,7 @@ func abrir(ids: Array, m := "sala", nivel := 0, fonte: RefCounted = null) -> voi
 func _cor_da_carta(id: String, d: Dictionary) -> Color:
 	var ramo := str(d.get("ramo", ""))
 	if ramo == "afinidade":
-		ramo = AfinidadeFx.elemento(id)
+		ramo = Afinidades.elemento(id)
 	if ramo != "":
 		return Tema.cor("ramo_" + ramo) if Tema.tem("ramo_" + ramo) else Tema.cor("destaque")
 	return Tema.cor("carta_rara") if _raridade.get(id, "comum") == "rara" else Tema.cor("carta_comum")
@@ -139,7 +140,7 @@ func _cor_da_carta(id: String, d: Dictionary) -> Color:
 func _etiqueta(id: String, d: Dictionary) -> String:
 	var ramo := str(d.get("ramo", ""))
 	if ramo == "afinidade":
-		return Csv.t("ramo.%s.name" % AfinidadeFx.elemento(id))
+		return Csv.t("ramo.%s.name" % Afinidades.elemento(id))
 	if ramo != "":
 		return "%s · %s" % [Csv.t("ramo.%s.name" % ramo), Csv.t("carta.tipo_" + str(d.get("tipo", "ativa")))]
 	return Csv.t("carta.raridade_" + str(_raridade.get(id, "comum")))

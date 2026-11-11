@@ -31,7 +31,7 @@ const MetaScript = preload("res://scripts2d/meta_2d.gd")
 const Audio = preload("res://scripts2d/audio_2d.gd")
 const PortalScript = preload("res://scripts2d/portal_2d.gd")
 const GemaScript = preload("res://scripts2d/gema_2d.gd")
-const AfinidadeFx = preload("res://scripts2d/efeitos_arqueiro_afinidade_2d.gd")
+const Afinidades = preload("res://scripts2d/afinidades_2d.gd")
 const ConsoleDev = preload("res://scripts2d/console_dev_2d.gd")
 const Fase = preload("res://scripts2d/fase_2d.gd")
 const Feel = preload("res://scripts2d/feel_2d.gd")
@@ -751,8 +751,8 @@ func _usar_gema_habilidade() -> void:
 		_gemas_pendentes += 1
 		return
 	# Primeira gema do arqueiro na corrida: escolha do Eco do básico entre as QUATRO afinidades (doc 36 seção 2).
-	if "afinidade" in player and player.afinidade == "" and int(config.get("affinity_first_gem", 1)) == 1 and not AfinidadeFx.ids().is_empty():
-		ui.abrir(AfinidadeFx.ids(), "afinidade", 0, AfinidadeFonte.new())
+	if "afinidade" in player and player.afinidade == "" and int(config.get("affinity_first_gem", 1)) == 1 and not Afinidades.ids(Classe.atual).is_empty():
+		ui.abrir(Afinidades.ids(Classe.atual), "afinidade", 0, AfinidadeFonte.new(Classe.atual))
 		return
 	var cands := _gemas_possiveis()
 	if cands.is_empty():
@@ -761,7 +761,7 @@ func _usar_gema_habilidade() -> void:
 	var n := maxi(1, int(config.get("skill_gem_cards", 3)))
 	# A afinidade garante uma skill do seu elemento na oferta, quando houver (doc 36 seção 0).
 	if "afinidade" in player and player.afinidade != "":
-		var el: String = AfinidadeFx.elemento(player.afinidade)
+		var el: String = Afinidades.elemento(player.afinidade)
 		var h = player.habilidades
 		var i_el: int = cands.find_custom(func(id): return h.defs[id].get("ramo", "") == el)
 		if i_el >= n:
@@ -774,8 +774,8 @@ func _usar_gema_habilidade() -> void:
 ## Fonte das cartas de afinidade para a tela de escolha: `defs[id]` com `ramo` e `nivel_max`, `nivel(id)` sempre 0.
 class AfinidadeFonte extends RefCounted:
 	var defs := {}
-	func _init() -> void:
-		for id in AfinidadeFx.ids():
+	func _init(classe := "arqueiro") -> void:
+		for id in Afinidades.ids(classe):
 			defs[id] = {"ramo": "afinidade", "nivel_max": 1, "icone": id}
 	func nivel(_id: String) -> int:
 		return 0

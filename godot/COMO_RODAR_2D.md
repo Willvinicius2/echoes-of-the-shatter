@@ -26,6 +26,14 @@ O título tem o cartão da fase (setas ou ← →): `data2d/fases_2d.csv` diz a 
 ## Clima vivo das salas
 `scripts2d/clima_2d.gd` (criado pelo `ambiente_2d.gd` de cada sala) dá movimento ao cenário: vento com rajadas, árvores, arbustos e capim balançando por shader, folhas caindo das copas e atravessando a sala nas rajadas, fogo em línguas, brasas e fumaça nos braseiros, sombra de nuvem (grama) ou névoa rasteira (pedra), poeira no ar e ondas de vento no gramado. Só visual. Números em `data2d/clima.csv`. Para ver em movimento: `godot --path godot --script res://scripts2d/tools/captura_clima_2d.gd -- pasta res://data2d/rooms/sala_1.txt 90 2` grava quadros (junte com ffmpeg).
 
+## Mago (classe jogável)
+- Escolha na tela de título (trocar de classe) ou `-- --classe=mago` na linha de comando (testes, bot e `partida_2d.gd`).
+- Golpe básico: orbe arcano que devolve mana ao acertar. A primeira gema da corrida escolhe o Eco (`data2d/afinidades_mago.csv`), que muda o que o básico faz: Centelha (raio na hora, salta entre inimigos), Bolha (lenta, atravessa a fila e estoura em nuvem), Lascas (leque que soma frio e congela) e Brasa (cometa que explode e queima).
+- Árvore em `data2d/habilidades_mago.csv`: quatro ramos (fogo, gelo, raio e veneno), cada um com Arauto. Regras em `scripts2d/efeitos_mago_2d.gd`, `efeitos_mago_veneno_2d.gd` e `efeitos_mago_afinidade_2d.gd`; aparência dos projéteis em `fx_mago_2d.gd` e `orbe_2d.gd`. Números só nos CSV (`mago.csv` para os atributos).
+- Sprite: `python3 tools/sprites2d/pixelar_mago.py` reduz as folhas pintadas de `art-src/sprites-hd-originais/mago/` para a grade do jogo (quadro 92 px, sem serviço pago).
+- Ícones que faltavam (básico, veneno e Ecos): `python3 tools/arte/icones_por_codigo/gerar.py --receitas glifos_mago --jogo`. Os outros 18 são pintados e não devem ser regravados.
+- Captura das magias para revisão (precisa de janela): `xvfb-run -a godot --path godot --resolution 1280x720 --script res://scripts2d/tools/captura_mago_2d.gd -- pasta grupo [quadros]` (grupos no cabeçalho do script).
+
 ## Testes e captura
 ```
 godot --headless --path godot --script res://scripts2d/tools/test_2d.gd     # corrida completa, salas, manifesto (CI: cliente2d.yml)

@@ -196,7 +196,7 @@ class _Meteoro extends Node2D:
 		if atraso > 0.0:
 			atraso -= delta
 			return
-		if _aviso == null:
+		if _aviso == null and not _caiu:
 			_queda.visible = true
 			_aviso = Vfx.sombra_aviso(get_parent(), global_position, raio, COR_BRASA, TEMPO_QUEDA)   # sombra de aviso (C0)
 		_t += delta

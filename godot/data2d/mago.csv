@@ -4,9 +4,9 @@ speed,250,px/s,velocidade de corrida
 accel,2400,px/s2,aceleracao
 friction,3000,px/s2,desaceleracao
 radius,14,px,raio de colisao nos pes
-shoot_cooldown,0.45,s,intervalo entre orbes arcanos (ataque basico)
+shoot_cooldown,0.5,s,intervalo entre orbes arcanos (ataque basico)
 arrow_speed,720,px/s,velocidade do orbe arcano
-arrow_damage,14,hp,dano do orbe arcano
+arrow_damage,13,hp,dano do orbe arcano
 arrow_range,950,px,alcance maximo do orbe
 arrow_spawn_dist,36,px,distancia do orbe a partir dos pes
 dodge_speed,620,px/s,velocidade da esquiva
@@ -23,7 +23,8 @@ bolt_radius,7,px,raio do orbe arcano
 cooldown_mult,1.0,x,multiplicador de recarga das habilidades (passivas mexem)
 spell_power,1.0,x,multiplicador de dano das habilidades
 burn_bonus,0,x,bonus de dano da queimadura (passiva Brasas Vivas)
-slow_bonus,0,x,bonus de lentidao (passiva Frio Cortante)
+chill_per_stack,0.15,x,lentidao por acumulo de frio das magias de gelo (no 4o acumulo congela)
+slow_bonus,0,x,lentidao extra por acumulo de frio (passiva Frio Cortante)
 burn_dps_ratio,0.25,x,dano por segundo da queimadura = dano do golpe x este valor
 burn_duration,3,s,duracao da queimadura
 slow_amount,0.45,x,fracao de velocidade perdida na lentidao
@@ -34,3 +35,27 @@ thunder_strike_radius,45,px,raio de cada raio da Tempestade
 blink_iframes,0.35,s,invulnerabilidade depois do Salto Arcano
 chain_ray_time,0.18,s,tempo que o raio da Corrente fica na tela
 skill_points_start,6,pontos,pontos de habilidade no inicio da corrida
+skill_cd_mult,1,x,multiplicador da recarga das habilidades (menor = mais rapido)
+crit_chance,0,fracao,chance de golpe crítico das flechas (habilidades somam)
+crit_mult,2,x,multiplicador do dano crítico
+poison_dps,0,hp/s,veneno aplicado pela flecha (habilidade Pontas Venenosas)
+poison_time,3,s,duração do veneno
+leque_graus,9,graus,abertura entre disparos de habilidades que saem juntas (leque coerente do autocast)
+leque_janela,0.4,s,tempo em que disparos contam como parte do mesmo leque
+autocast_intervalo,0.12,s,espera entre dois autocasts seguidos (as habilidades saem em sequência, não todas no mesmo quadro)
+arrow_altura,30,px,altura do desenho da flecha em voo (peito dos inimigos)
+arrow_altura_dist,240,px,distancia em que a flecha desce da boca do arco ate a altura de voo
+projetil_atraso,0.04,s,atraso entre copias de um mesmo disparo (multishot e leque saem do mesmo arco uma a uma)
+run_area,0,fracao,aumento de raio e abertura das habilidades de area (cartas e nos de preparo)
+run_proj,0,projeteis,projeteis extras por habilidade de projetil
+run_vel,0,fracao,aumento de velocidade dos projeteis das habilidades
+run_dur,0,fracao,aumento de duracao das zonas
+run_pierce,0,corpos,perfuracao extra das habilidades de projetil
+run_dmg_fogo,0,fracao,aumento de dano das habilidades de fogo
+run_dmg_gelo,0,fracao,aumento de dano das habilidades de gelo
+run_dmg_raio,0,fracao,aumento de dano das habilidades de raio
+run_dmg_veneno,0,fracao,aumento de dano das habilidades de veneno
+run_dmg_herald,0,fracao,aumento de dano dos Arautos
+mana_on_hit,1.5,mana,mana devolvida por inimigo atingido pelo ataque basico (o basico alimenta as magias)
+frost_bolt_pierce,2,corpos,inimigos que a Lanca de Gelo atravessa
+cast_time,0.3,s,tempo do gesto de conjuracao (so animacao; nao trava o movimento)
